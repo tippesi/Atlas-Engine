@@ -150,6 +150,7 @@
     <ClInclude Include="Blue Engine\src\camera.h" />
     <ClInclude Include="Blue Engine\src\engine.h" />
     <ClInclude Include="Blue Engine\src\system.h" />
+    <ClInclude Include="Blue Engine\src\texture.h" />
     <ClInclude Include="Blue Engine\src\viewport.h" />
     <ClInclude Include="Blue Engine\src\window.h" />
   </ItemGroup>
@@ -157,6 +158,7 @@
     <ClCompile Include="Blue Engine.cpp" />
     <ClCompile Include="Blue Engine\src\camera.cpp" />
     <ClCompile Include="Blue Engine\src\engine.cpp" />
+    <ClCompile Include="Blue Engine\src\texture.cpp" />
     <ClCompile Include="Blue Engine\src\window.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

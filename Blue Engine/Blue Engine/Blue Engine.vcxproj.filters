@@ -27,11 +27,14 @@
     <ClInclude Include="Blue Engine\src\system.h">
       <Filter>Blue Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Blue Engine\src\engine.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="Blue Engine\src\viewport.h">
       <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\engine.h">
+      <Filter>Blue Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\texture.h">
+      <Filter>Blue Engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -45,7 +48,10 @@
       <Filter>Blue Engine</Filter>
     </ClCompile>
     <ClCompile Include="Blue Engine\src\engine.cpp">
-      <Filter>Quelldateien</Filter>
+      <Filter>Blue Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\texture.cpp">
+      <Filter>Blue Engine</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

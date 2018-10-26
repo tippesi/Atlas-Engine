@@ -8,7 +8,7 @@ Window::Window(const char* title, int32_t x, int32_t y, int32_t width, int32_t h
 		throw new EngineException("Error initializing window");
 	}
 
-	SDL_GLContext sdlContext = SDL_GL_CreateContext(sdlWindow);
+	context = SDL_GL_CreateContext(sdlWindow);
 
 	this->viewport = new Viewport(0, 0, width, height);	
 
@@ -23,6 +23,8 @@ void Window::Update() {
 Window::~Window() {
 
 	SDL_DestroyWindow(sdlWindow);
+
+	SDL_GL_DeleteContext(context);
 
 	delete this->viewport;
 

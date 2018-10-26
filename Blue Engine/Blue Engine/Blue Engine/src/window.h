@@ -3,6 +3,7 @@
 
 #include "system.h"
 #include "viewport.h"
+#include "texture.h"
 
 #include "libraries/SDL/include/SDL.h"
 
@@ -28,7 +29,7 @@ public:
 
 	void SetTitle(const char* title);
 
-	// void SetIcon() Needs the texture loading to work
+	void SetIcon(Texture* icon);
 
 	void SetPosition(int32_t x, int32_t y);
 
@@ -46,6 +47,7 @@ public:
 
 private:
 	SDL_Window * sdlWindow;
+	SDL_GLContext context;
 
 };
 
