@@ -61,6 +61,9 @@ namespace Engine {
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 #endif
 
+		int32_t maxAnisotropy = Texture::GetMaxAnisotropyLevel();
+		Texture::SetAnisotropyLevel(maxAnisotropy);
+
 		LockFramerate();
 
 		return window;

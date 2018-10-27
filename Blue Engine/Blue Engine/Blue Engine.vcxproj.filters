@@ -27,13 +27,13 @@
     <ClInclude Include="Blue Engine\src\system.h">
       <Filter>Blue Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Blue Engine\src\viewport.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="Blue Engine\src\engine.h">
       <Filter>Blue Engine</Filter>
     </ClInclude>
     <ClInclude Include="Blue Engine\src\texture.h">
+      <Filter>Blue Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\viewport.h">
       <Filter>Blue Engine</Filter>
     </ClInclude>
   </ItemGroup>
