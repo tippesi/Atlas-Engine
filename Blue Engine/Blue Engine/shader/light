@@ -1,0 +1,42 @@
+uniform sampler2D colortextures[10];
+uniform sampler2D normaltextures[10];
+
+uniform float shininess[10];
+uniform float reflectivity;
+
+in vec3 fragPos;
+
+vec4 CalculateDirectionalLight(Light light, vec3 normal, vec2 texcoords, int textureid, float shadowFactor) {
+
+	vec3 tolight = normalize(light.position);
+
+	vec3 diffuse = max((dot(normal, tolight) * light.color) * shadowFactor, light.ambient);
+ 
+    vec3 finalSpecular = vec3(0.0f);
+	
+	vec4 color = texture(colortextures[textureid], texcoords);
+	
+	if(color.a < 0.1f) {
+		discard;
+	}
+	
+	if(reflectivity > 0.0f) {
+		
+		vec3 tocamera = normalize(-fragPos);
+
+		vec3 halfDir = normalize(tolight + tocamera);
+		float specAngle = max(dot(halfDir, normal), 0.0);
+		float dampedFactor = pow(specAngle, shininess[textureid]);
+		finalSpecular = reflectivity * dampedFactor * light.color;
+		
+	}
+	if(shadowFactor < 0.5f) {
+		color = vec4(diffuse, 1.0f) * color;
+	}
+	else {
+		color = vec4(diffuse, 1.0f) * color + vec4(finalSpecular, 1.0f);
+	}
+	
+	return color;
+	
+}
