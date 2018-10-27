@@ -21,6 +21,8 @@ public:
 
 	bool Compile();
 
+	~ShaderSource();
+
 	int32_t ID;
 	int32_t type;
 

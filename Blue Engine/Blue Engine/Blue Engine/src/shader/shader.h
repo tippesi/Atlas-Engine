@@ -12,17 +12,28 @@ class Shader {
 public:
 	Shader();
 
-	Uniform* GetUniform(const char* uniformName);
-
 	ShaderSource* AddComponent(int32_t type, const char* filename);
+
+	Uniform* GetUniform(const char* uniformName);
 
 	void AddMacro(const char* macro);
 
 	void RemoveMacro(const char* macro);
 
-	void Compile();
+	bool Compile();
 
+	void Use();
+
+	~Shader();
+	
 	list<ShaderSource*> shaderComponents;
+
+	bool isCompiled;
+
+private:
+	uint32_t ID;
+
+	static uint32_t boundShaderID;
 
 };
 

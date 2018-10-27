@@ -6,9 +6,30 @@
 class Uniform {
 
 public:
-	Uniform(const char* uniformName);
+	Uniform(uint32_t shaderID, const char* uniformName);
 
+	void SetValue(int32_t value);
 
+	void SetValue(float value);
+
+	void SetValue(bool value);
+
+	void SetValue(mat4 value);
+
+	void SetValue(mat3 value);
+
+	void SetValue(vec4 value);
+
+	void SetValue(vec3 value);
+
+	void SetValue(vec2 value);
+
+	void SetValue(int32_t *value, size_t length);
+
+	void SetValue(float *value, size_t length);
+
+private:
+	int32_t ID;
 
 };
 

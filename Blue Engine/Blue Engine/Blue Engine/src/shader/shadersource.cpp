@@ -75,6 +75,12 @@ bool ShaderSource::Compile() {
 
 }
 
+ShaderSource::~ShaderSource() {
+
+	glDeleteShader(ID);
+
+}
+
 string ShaderSource::ReadShaderFile(const char* filename) {
 
 	string shaderCode;
