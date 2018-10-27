@@ -149,6 +149,9 @@
   <ItemGroup>
     <ClInclude Include="Blue Engine\src\camera.h" />
     <ClInclude Include="Blue Engine\src\engine.h" />
+    <ClInclude Include="Blue Engine\src\shader\shader.h" />
+    <ClInclude Include="Blue Engine\src\shader\shadersource.h" />
+    <ClInclude Include="Blue Engine\src\shader\uniform.h" />
     <ClInclude Include="Blue Engine\src\system.h" />
     <ClInclude Include="Blue Engine\src\texture.h" />
     <ClInclude Include="Blue Engine\src\viewport.h" />
@@ -158,6 +161,9 @@
     <ClCompile Include="Blue Engine.cpp" />
     <ClCompile Include="Blue Engine\src\camera.cpp" />
     <ClCompile Include="Blue Engine\src\engine.cpp" />
+    <ClCompile Include="Blue Engine\src\shader\shader.cpp" />
+    <ClCompile Include="Blue Engine\src\shader\shadersource.cpp" />
+    <ClCompile Include="Blue Engine\src\shader\uniform.cpp" />
     <ClCompile Include="Blue Engine\src\texture.cpp" />
     <ClCompile Include="Blue Engine\src\window.cpp" />
   </ItemGroup>

@@ -16,6 +16,12 @@
     <Filter Include="Blue Engine">
       <UniqueIdentifier>{b81196c1-1539-4abc-b0ee-d82392088bad}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Blue Engine\Shader">
+      <UniqueIdentifier>{6070614d-756b-4346-a3d3-cff80cddf62b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Blue Engine\Renderer">
+      <UniqueIdentifier>{3e9c30ad-2eca-4342-be47-4ef5c5f9a635}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Blue Engine\src\camera.h">
@@ -36,6 +42,15 @@
     <ClInclude Include="Blue Engine\src\viewport.h">
       <Filter>Blue Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\shader\uniform.h">
+      <Filter>Blue Engine\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\shader\shadersource.h">
+      <Filter>Blue Engine\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\shader\shader.h">
+      <Filter>Blue Engine\Shader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">
@@ -52,6 +67,15 @@
     </ClCompile>
     <ClCompile Include="Blue Engine\src\texture.cpp">
       <Filter>Blue Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\shader\uniform.cpp">
+      <Filter>Blue Engine\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\shader\shadersource.cpp">
+      <Filter>Blue Engine\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\shader\shader.cpp">
+      <Filter>Blue Engine\Shader</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
