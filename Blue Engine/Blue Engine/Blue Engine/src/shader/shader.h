@@ -22,11 +22,11 @@ public:
 
 	bool Compile();
 
-	void Use();
+	void Bind();
 
 	~Shader();
 	
-	list<ShaderSource*> shaderComponents;
+	list<ShaderSource*> components;
 
 	bool isCompiled;
 

@@ -4,6 +4,7 @@
 #include "system.h"
 #include "window.h"
 #include "camera.h"
+#include "rendertarget.h"
 #include "shader/shader.h"
 
 namespace Engine {

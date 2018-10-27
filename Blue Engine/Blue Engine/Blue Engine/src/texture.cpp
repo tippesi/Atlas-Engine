@@ -10,10 +10,15 @@
 int32_t Texture::anisotropyLevel = 0;
 
 
-Texture::Texture(void* data, GLenum dataFormat, int32_t width, int32_t height, int32_t internalFormat,
-	int32_t format, float LoD, int32_t wrapping, int32_t filtering, bool anisotropic, bool mipmaps) {
+Texture::Texture(GLenum dataFormat, int32_t width, int32_t height, 
+	int32_t internalFormat,	float LoD, int32_t wrapping, int32_t filtering,
+	bool anisotropic, bool mipmaps) : width(width), height(height) {
 
-	
+	int32_t format = GetBaseFormat(internalFormat);
+
+	GenerateTexture(dataFormat, internalFormat, format, LoD, wrapping, filtering, anisotropic, mipmaps);
+
+	data = new uint8_t[width * height * channels];
 
 }
 
@@ -69,7 +74,8 @@ void Texture::SetData(uint8_t* data) {
 
 	this->data = data;
 
-	// To be continued
+	glBindTexture(GL_TEXTURE_2D, ID);
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, data);
 
 }
 
@@ -77,8 +83,7 @@ uint8_t* Texture::GetData() {
 
 #ifdef ENGINE_OGL
 	glBindTexture(GL_TEXTURE_2D, ID);
-	glGetTexImage(GL_TEXTURE_2D, 0, format, GL_UNSIGNED_BYTE, this->data);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glGetTexImage(GL_TEXTURE_2D, 0, GetBaseFormat(internalFormat), GL_UNSIGNED_BYTE, this->data);
 #endif
 
 	// We want to return a copy of the data
@@ -86,6 +91,19 @@ uint8_t* Texture::GetData() {
 	memcpy(data, this->data, width * height * channels);
 
 	return data;
+
+}
+
+void Texture::Resize(int32_t width, int32_t height) {
+
+	this->width = width;
+	this->height = height;
+
+	delete data;
+	data = new uint8_t[width * height * channels];
+
+	glBindTexture(GL_TEXTURE_2D, ID);
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, NULL);
 
 }
 
@@ -99,7 +117,7 @@ void Texture::MirrorHorizontally() {
 
 }
 
-void Texture::SaveToFile(const char* filename) {
+void Texture::SaveToPNG(const char* filename) {
 
 	uint8_t* data = GetData();
 	uint8_t* mirroredData = MirrorDataHorizontally(data);
@@ -108,6 +126,12 @@ void Texture::SaveToFile(const char* filename) {
 
 	delete data;
 	delete mirroredData;
+
+}
+
+uint32_t Texture::GetID() {
+
+	return ID;
 
 }
 
@@ -268,6 +292,46 @@ void Texture::GenerateTexture(GLenum dataFormat, int32_t internalFormat,
 		channels = 3;
 		break;
 
+	}
+
+	this->dataFormat = dataFormat;
+	this->internalFormat = internalFormat;
+
+}
+
+int32_t Texture::GetBaseFormat(int32_t internalFormat) {
+
+	// See https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
+	// Might need a change for OpenGL ES
+	switch (internalFormat) {
+	case GL_R8: return GL_RED;
+	case GL_R8_SNORM: return GL_RED;
+	case GL_R16: return GL_RED;
+	case GL_R16_SNORM: return GL_RED;
+	case GL_RG8: return GL_RG;
+	case GL_RG8_SNORM: return GL_RG;
+	case GL_RG16: return GL_RG;
+	case GL_RG16_SNORM: return GL_RG;
+	case GL_RGB5_A1: return GL_RGBA;
+	case GL_RGBA8: return GL_RGBA;
+	case GL_RGBA8_SNORM: return GL_RGBA;
+	case GL_RGB10_A2: return GL_RGBA;
+	case GL_RGB10_A2UI: return GL_RGBA;
+	case GL_RGBA12: return GL_RGBA;
+	case GL_RGBA16: return GL_RGBA;
+	case GL_SRGB8_ALPHA8: return GL_RGBA;
+	case GL_R16F: return GL_RED;
+	case GL_RG16F: return GL_RG;
+	case GL_RGBA16F: return GL_RGBA;
+	case GL_R32F: return GL_RED;
+	case GL_RG32F: return GL_RG;
+	case GL_RGBA32F: return GL_RGBA;
+	case GL_DEPTH_COMPONENT16: return GL_DEPTH_COMPONENT;
+	case GL_DEPTH_COMPONENT24: return GL_DEPTH_COMPONENT;
+	case GL_DEPTH_COMPONENT32F: return GL_DEPTH_COMPONENT;
+	case GL_DEPTH24_STENCIL8: return GL_DEPTH_STENCIL;
+	case GL_DEPTH32F_STENCIL8: return GL_DEPTH_STENCIL;
+	default: return GL_RGB;
 	}
 
 }

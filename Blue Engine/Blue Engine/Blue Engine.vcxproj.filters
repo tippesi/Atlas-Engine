@@ -51,6 +51,12 @@
     <ClInclude Include="Blue Engine\src\shader\shader.h">
       <Filter>Blue Engine\Shader</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\rendertarget.h">
+      <Filter>Blue Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\framebuffer.h">
+      <Filter>Blue Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">
@@ -76,6 +82,12 @@
     </ClCompile>
     <ClCompile Include="Blue Engine\src\shader\shader.cpp">
       <Filter>Blue Engine\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\rendertarget.cpp">
+      <Filter>Blue Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\framebuffer.cpp">
+      <Filter>Blue Engine</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

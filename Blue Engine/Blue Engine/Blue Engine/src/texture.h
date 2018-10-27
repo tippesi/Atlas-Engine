@@ -9,8 +9,8 @@ public:
 	/// <summary>
 	/// Constructs a <see cref="Texture"/>.
 	/// </summary>
-	Texture(void* data, GLenum dataFormat, int32_t width, int32_t height, int32_t internalFormat,
-		int32_t format, float LoD, int32_t wrapping, int32_t filtering, bool anisotropic, bool mipmaps);
+	Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t internalFormat,
+		float LoD, int32_t wrapping, int32_t filtering, bool anisotropic, bool mipmaps);
 
 	/// <summary>
 	/// Constructs a <see cref="Texture"/>.
@@ -32,22 +32,33 @@ public:
 	uint8_t* GetData();
 
 	/// <summary>
+	/// Resizes the texture. Results in a loss of data.
+	/// </summary>
+	/// <param name="width">The new width of the texture.</param>
+	/// <param name="height">The new height of the texture.</param>
+	void Resize(int32_t width, int32_t height);
+
+	/// <summary>
 	/// Mirrors the data horizontally. OpenGL stores data upside down.
 	/// </summary>
 	void MirrorHorizontally();
 
 	/// <summary>
-	/// Saves the texture to a file.
+	/// Saves the texture as a portable network graphics.
 	/// </summary>
 	/// <param name="filename">The name of the file where the texture should be stored.</param>
-	void SaveToFile(const char* filename);
+	void SaveToPNG(const char* filename);
+
+	/// <summary>
+	/// Gets the OpenGL texture ID.
+	/// </summary>
+	uint32_t GetID();
 
 	~Texture();
 
 	int32_t width;
 	int32_t height;
 
-	int32_t format;
 	int32_t channels;
 
 	/// Static members
@@ -88,9 +99,14 @@ private:
 
 	uint8_t* data;
 
+	GLenum dataFormat;
+	int32_t internalFormat;
+
 	/// Static members
 	/// The current anisotropicLevel
 	static int32_t anisotropyLevel;
+	/// Returns the base format of a sized internal format
+	static int32_t GetBaseFormat(int32_t sizedFormat);
 
 };
 

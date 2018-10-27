@@ -13,7 +13,7 @@ ShaderSource* Shader::AddComponent(int32_t type, const char* filename) {
 
 	ShaderSource* source = new ShaderSource(type, filename);
 
-	shaderComponents.push_back(source);
+	components.push_back(source);
 
 	return source;
 
@@ -27,9 +27,7 @@ Uniform* Shader::GetUniform(const char* uniformName) {
 		}
 	}
 
-	if (boundShaderID != ID) {
-		glUseProgram(ID);
-	}
+	Bind();
 
 	return new Uniform(ID, uniformName);
 
@@ -37,7 +35,7 @@ Uniform* Shader::GetUniform(const char* uniformName) {
 
 void Shader::AddMacro(const char* macro) {
 
-	for (list<ShaderSource*>::iterator iterator = shaderComponents.begin(); iterator != shaderComponents.end(); iterator++) {
+	for (list<ShaderSource*>::iterator iterator = components.begin(); iterator != components.end(); iterator++) {
 		(*iterator)->AddMacro(macro);
 	}
 
@@ -45,7 +43,7 @@ void Shader::AddMacro(const char* macro) {
 
 void Shader::RemoveMacro(const char* macro) {
 
-	for (list<ShaderSource*>::iterator iterator = shaderComponents.begin(); iterator != shaderComponents.end(); iterator++) {
+	for (list<ShaderSource*>::iterator iterator = components.begin(); iterator != components.end(); iterator++) {
 		(*iterator)->RemoveMacro(macro);
 	}
 
@@ -55,7 +53,7 @@ bool Shader::Compile() {
 
 	bool compile = true;
 
-	for (list<ShaderSource*>::iterator iterator = shaderComponents.begin(); iterator != shaderComponents.end(); iterator++) {
+	for (list<ShaderSource*>::iterator iterator = components.begin(); iterator != components.end(); iterator++) {
 		compile = compile & (*iterator)->Compile();
 	}
 
@@ -66,13 +64,13 @@ bool Shader::Compile() {
 			ID = glCreateProgram();
 		}
 
-		for (list<ShaderSource*>::iterator iterator = shaderComponents.begin(); iterator != shaderComponents.end(); iterator++) {
+		for (list<ShaderSource*>::iterator iterator = components.begin(); iterator != components.end(); iterator++) {
 			glAttachShader(ID, (*iterator)->ID);
 		}
 
 		glLinkProgram(ID);
 
-		for (list<ShaderSource*>::iterator iterator = shaderComponents.begin(); iterator != shaderComponents.end(); iterator++) {
+		for (list<ShaderSource*>::iterator iterator = components.begin(); iterator != components.end(); iterator++) {
 			glDetachShader(ID, (*iterator)->ID);
 		}
 
@@ -99,7 +97,7 @@ bool Shader::Compile() {
 
 }
 
-void Shader::Use() {
+void Shader::Bind() {
 
 	if (boundShaderID != ID) {
 		glUseProgram(ID);
@@ -113,7 +111,7 @@ Shader::~Shader() {
 
 	glDeleteProgram(ID);
 
-	for (list<ShaderSource*>::iterator iterator = shaderComponents.begin(); iterator != shaderComponents.end(); iterator++) {		
+	for (list<ShaderSource*>::iterator iterator = components.begin(); iterator != components.end(); iterator++) {
 		delete (*iterator);
 	}
 
