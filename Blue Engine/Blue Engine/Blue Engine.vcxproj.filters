@@ -72,6 +72,12 @@
     <ClInclude Include="Blue Engine\src\mesh\meshinstance.h">
       <Filter>Blue Engine\Mesh</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\mesh\packing.h">
+      <Filter>Blue Engine\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\mesh\datacomponent.h">
+      <Filter>Blue Engine\Mesh</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">
@@ -114,6 +120,9 @@
       <Filter>Blue Engine\Mesh</Filter>
     </ClCompile>
     <ClCompile Include="Blue Engine\src\mesh\meshinstance.cpp">
+      <Filter>Blue Engine\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\mesh\packing.cpp">
       <Filter>Blue Engine\Mesh</Filter>
     </ClCompile>
   </ItemGroup>

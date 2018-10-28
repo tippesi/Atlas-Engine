@@ -150,9 +150,11 @@
     <ClInclude Include="Blue Engine\src\camera.h" />
     <ClInclude Include="Blue Engine\src\engine.h" />
     <ClInclude Include="Blue Engine\src\framebuffer.h" />
+    <ClInclude Include="Blue Engine\src\mesh\datacomponent.h" />
     <ClInclude Include="Blue Engine\src\mesh\mesh.h" />
     <ClInclude Include="Blue Engine\src\mesh\meshdata.h" />
     <ClInclude Include="Blue Engine\src\mesh\meshinstance.h" />
+    <ClInclude Include="Blue Engine\src\mesh\packing.h" />
     <ClInclude Include="Blue Engine\src\rendertarget.h" />
     <ClInclude Include="Blue Engine\src\scene.h" />
     <ClInclude Include="Blue Engine\src\shader\shader.h" />
@@ -171,6 +173,7 @@
     <ClCompile Include="Blue Engine\src\mesh\mesh.cpp" />
     <ClCompile Include="Blue Engine\src\mesh\meshdata.cpp" />
     <ClCompile Include="Blue Engine\src\mesh\meshinstance.cpp" />
+    <ClCompile Include="Blue Engine\src\mesh\packing.cpp" />
     <ClCompile Include="Blue Engine\src\rendertarget.cpp" />
     <ClCompile Include="Blue Engine\src\scene.cpp" />
     <ClCompile Include="Blue Engine\src\shader\shader.cpp" />

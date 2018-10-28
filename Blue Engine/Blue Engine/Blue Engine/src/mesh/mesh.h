@@ -7,7 +7,11 @@
 class Mesh {
 
 public:
-	Mesh();
+	Mesh(MeshData* data);
+
+	Mesh(const char* filename);
+
+	MeshData* data;
 
 };
 
