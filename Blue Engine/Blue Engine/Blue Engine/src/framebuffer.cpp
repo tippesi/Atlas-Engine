@@ -16,6 +16,8 @@ void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t in
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture->GetID(), 0);
 
+	components.push_back(texture);
+
 }
 
 void Framebuffer::Resize(int32_t width, int32_t height) {

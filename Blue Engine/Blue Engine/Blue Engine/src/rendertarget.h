@@ -7,9 +7,11 @@
 class RenderTarget {
 
 public:
-	RenderTarget();
+	RenderTarget(int32_t width, int32_t height);
 
 	void Resize(int32_t width, int32_t height);
+
+	Framebuffer* framebuffer;
 
 };
 
