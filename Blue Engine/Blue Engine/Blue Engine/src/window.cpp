@@ -14,6 +14,12 @@ Window::Window(const char* title, int32_t x, int32_t y, int32_t width, int32_t h
 
 }
 
+void Window::SetTitle(const char* title) {
+
+	SDL_SetWindowTitle(sdlWindow, title);
+
+}
+
 void Window::SetIcon(Texture* icon) {
 
 	uint8_t* data = icon->GetData();
@@ -25,6 +31,30 @@ void Window::SetIcon(Texture* icon) {
 
 	SDL_FreeSurface(surface);
 	delete data;
+
+}
+
+void Window::SetPosition(int32_t x, int32_t y) {
+
+	SDL_SetWindowPosition(sdlWindow, x, y);
+
+}
+
+void Window::SetSize(int32_t width, int32_t height) {
+
+	SDL_SetWindowSize(sdlWindow, width, height);
+
+}
+
+void Window::Show() {
+
+	SDL_ShowWindow(sdlWindow);
+
+}
+
+void Window::Hide() {
+
+	SDL_HideWindow(sdlWindow);
 
 }
 
