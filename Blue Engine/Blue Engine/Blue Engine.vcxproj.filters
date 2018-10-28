@@ -22,6 +22,9 @@
     <Filter Include="Blue Engine\Renderer">
       <UniqueIdentifier>{3e9c30ad-2eca-4342-be47-4ef5c5f9a635}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Blue Engine\Mesh">
+      <UniqueIdentifier>{994b2692-07ef-4101-b6f1-ba1bdba17567}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Blue Engine\src\camera.h">
@@ -60,6 +63,15 @@
     <ClInclude Include="Blue Engine\src\scene.h">
       <Filter>Blue Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\mesh\meshdata.h">
+      <Filter>Blue Engine\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\mesh\mesh.h">
+      <Filter>Blue Engine\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\mesh\meshinstance.h">
+      <Filter>Blue Engine\Mesh</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">
@@ -94,6 +106,15 @@
     </ClCompile>
     <ClCompile Include="Blue Engine\src\scene.cpp">
       <Filter>Blue Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\mesh\meshdata.cpp">
+      <Filter>Blue Engine\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\mesh\mesh.cpp">
+      <Filter>Blue Engine\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\mesh\meshinstance.cpp">
+      <Filter>Blue Engine\Mesh</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
