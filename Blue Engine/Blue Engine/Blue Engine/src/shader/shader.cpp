@@ -35,16 +35,16 @@ Uniform* Shader::GetUniform(const char* uniformName) {
 
 void Shader::AddMacro(const char* macro) {
 
-	for (list<ShaderSource*>::iterator iterator = components.begin(); iterator != components.end(); iterator++) {
-		(*iterator)->AddMacro(macro);
+	for (ShaderSource* source : components) {
+		source->AddMacro(macro);
 	}
 
 }
 
 void Shader::RemoveMacro(const char* macro) {
 
-	for (list<ShaderSource*>::iterator iterator = components.begin(); iterator != components.end(); iterator++) {
-		(*iterator)->RemoveMacro(macro);
+	for (ShaderSource* source : components) {
+		source->RemoveMacro(macro);
 	}
 
 }
@@ -53,8 +53,8 @@ bool Shader::Compile() {
 
 	bool compile = true;
 
-	for (list<ShaderSource*>::iterator iterator = components.begin(); iterator != components.end(); iterator++) {
-		compile = compile & (*iterator)->Compile();
+	for (ShaderSource* source : components) {
+		compile = compile & source->Compile();
 	}
 
 	if (compile) {
@@ -64,14 +64,14 @@ bool Shader::Compile() {
 			ID = glCreateProgram();
 		}
 
-		for (list<ShaderSource*>::iterator iterator = components.begin(); iterator != components.end(); iterator++) {
-			glAttachShader(ID, (*iterator)->ID);
+		for (ShaderSource* source : components) {
+			glAttachShader(ID, source->ID);
 		}
 
 		glLinkProgram(ID);
 
-		for (list<ShaderSource*>::iterator iterator = components.begin(); iterator != components.end(); iterator++) {
-			glDetachShader(ID, (*iterator)->ID);
+		for (ShaderSource* source : components) {
+			glDetachShader(ID, source->ID);
 		}
 
 		int32_t isLinked = 0;
@@ -111,8 +111,8 @@ Shader::~Shader() {
 
 	glDeleteProgram(ID);
 
-	for (list<ShaderSource*>::iterator iterator = components.begin(); iterator != components.end(); iterator++) {
-		delete (*iterator);
+	for (ShaderSource* source : components) {
+		delete source;
 	}
 
 }

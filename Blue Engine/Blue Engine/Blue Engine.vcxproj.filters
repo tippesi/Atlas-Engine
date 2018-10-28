@@ -78,6 +78,9 @@
     <ClInclude Include="Blue Engine\src\mesh\datacomponent.h">
       <Filter>Blue Engine\Mesh</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\mesh\material.h">
+      <Filter>Blue Engine\Mesh</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">

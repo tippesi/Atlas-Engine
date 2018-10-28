@@ -151,6 +151,7 @@
     <ClInclude Include="Blue Engine\src\engine.h" />
     <ClInclude Include="Blue Engine\src\framebuffer.h" />
     <ClInclude Include="Blue Engine\src\mesh\datacomponent.h" />
+    <ClInclude Include="Blue Engine\src\mesh\material.h" />
     <ClInclude Include="Blue Engine\src\mesh\mesh.h" />
     <ClInclude Include="Blue Engine\src\mesh\meshdata.h" />
     <ClInclude Include="Blue Engine\src\mesh\meshinstance.h" />

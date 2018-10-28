@@ -3,6 +3,16 @@
 
 #include "../system.h"
 #include "datacomponent.h"
+#include "material.h"
+
+#include <vector>
+
+#define PRIMITIVE_TRIANGLES 0x0004
+#define PRIMITIVE_TRIANGLE_STRIP 0x0005
+
+#ifdef ENGINE_OGL
+#define PRIMITIVE_QUADS 0x0007
+#endif
 
 typedef struct SubData {
 	uint32_t offset;
@@ -31,6 +41,11 @@ public:
 	DataComponent<float>* texCoords;
 	DataComponent<float>* normals;
 	DataComponent<float>* tangents;
+
+	vector<Material*> materials;
+	vector<SubData*> subData;
+
+	int32_t primitiveType;
 
 private:
 	int32_t indexCount;

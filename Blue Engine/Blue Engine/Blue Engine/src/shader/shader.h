@@ -5,7 +5,7 @@
 #include "shadersource.h"
 #include "uniform.h"
 
-#include <list>
+#include <vector>
 
 class Shader {
 
@@ -26,7 +26,7 @@ public:
 
 	~Shader();
 	
-	list<ShaderSource*> components;
+	vector<ShaderSource*> components;
 
 	bool isCompiled;
 
