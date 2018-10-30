@@ -2,6 +2,7 @@
 #define SHADERSOURCE_H
 
 #include "../system.h"
+#include "shaderconstant.h"
 
 #include <list>
 #include <string>
@@ -19,6 +20,8 @@ public:
 
 	void RemoveMacro(const char* macro);
 
+	ShaderConstant* GetConstant(const char* constant);
+
 	bool Compile();
 
 	~ShaderSource();
@@ -29,10 +32,11 @@ public:
 	const char* filename;
 
 private:
-	string ReadShaderFile(const char* filename);
+	string ReadShaderFile(const char* filename, bool mainFile);
 
 	string code;
 	list<string> macros;
+	list<ShaderConstant*> constants;
 
 };
 

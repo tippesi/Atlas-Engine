@@ -129,6 +129,12 @@ void Texture::SaveToPNG(const char* filename) {
 
 }
 
+Texture::~Texture() {
+
+
+
+}
+
 uint32_t Texture::GetID() {
 
 	return ID;

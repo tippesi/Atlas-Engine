@@ -4,7 +4,7 @@
 
 ShaderSource::ShaderSource(int32_t type, const char* filename) : type(type), filename(filename) {
 
-	code = ReadShaderFile(filename);
+	code = ReadShaderFile(filename, true);
 	ID = glCreateShader(type);
 
 #ifdef ENGINE_SHOW_LOG
@@ -24,6 +24,20 @@ void ShaderSource::RemoveMacro(const char* macro) {
 
 }
 
+ShaderConstant* ShaderSource::GetConstant(const char* constant) {
+
+	string constantString(constant);
+
+	for (list<ShaderConstant*>::iterator iterator = constants.begin(); iterator != constants.end(); iterator++) {
+		if ((*iterator)->GetName() == constantString) {
+			return *iterator;
+		}
+	}
+
+	return nullptr;
+
+}
+
 bool ShaderSource::Compile() {
 
 	string composedCode;
@@ -36,6 +50,10 @@ bool ShaderSource::Compile() {
 
 	for (list<string>::iterator iterator = macros.begin(); iterator != macros.end(); iterator++) {
 		composedCode.append("#define " + *iterator + "\n");
+	}
+
+	for (list<ShaderConstant*>::iterator iterator = constants.begin(); iterator != constants.end(); iterator++) {
+		composedCode.append((*iterator)->GetValuedString() + "\n");
 	}
 
 	composedCode.append(code);
@@ -81,7 +99,7 @@ ShaderSource::~ShaderSource() {
 
 }
 
-string ShaderSource::ReadShaderFile(const char* filename) {
+string ShaderSource::ReadShaderFile(const char* filename, bool mainFile) {
 
 	string shaderCode;
 	ifstream shaderFile;
@@ -98,14 +116,15 @@ string ShaderSource::ReadShaderFile(const char* filename) {
 		throw new EngineException("Couldn't open shader file");
 	}
 
-	uint32_t includePosition = 0;
 	string filePath(filename);
 	
 	uint32_t filePathPosition = filePath.find_last_of("/");
 	filePath.erase(filePathPosition + 1, filePath.length() - 1);
 
-	while ((includePosition = shaderCode.find("#include ")) != string::npos) {
+	// Copy all includes into the code
+	while (shaderCode.find("#include ") != string::npos) {
 
+		uint32_t includePosition = shaderCode.find("#include ");
 		uint32_t lineBreakPosition = shaderCode.find("\n", includePosition);
 
 		uint32_t filenamePosition = shaderCode.find_first_of("\"<", includePosition) + 1;
@@ -113,12 +132,42 @@ string ShaderSource::ReadShaderFile(const char* filename) {
 
 		string includeFilename = shaderCode.substr(filenamePosition, filenameEndPosition - filenamePosition);
 
-		string includeCode = ReadShaderFile((filePath + includeFilename).c_str());
+		string includeCode = ReadShaderFile((filePath + includeFilename).c_str(), false);
 
 		shaderCode.replace(includePosition, lineBreakPosition, includeCode);
 	
 	}
 
+	// Find constants in the code (we have to consider that we don't want to change the constants in functions)	
+	if (mainFile) {
+
+		int32_t openedCurlyBrackets = 0;
+
+		for (uint32_t i = 0; i < shaderCode.length(); i++) {
+			if (shaderCode[i] == '{') {
+				openedCurlyBrackets++;
+			}
+			else if (shaderCode[i] == '}') {
+				openedCurlyBrackets--;
+			}
+			else if (shaderCode[i] == 'c' && openedCurlyBrackets == 0) {
+				// Check if its a constant
+				int32_t position = shaderCode.find("const ", i);
+				if (position == i) {
+					// Create a new constant
+					int32_t constantEndPosition = shaderCode.find(";", i);
+					string constantString = shaderCode.substr(i, constantEndPosition - i + 1);
+					ShaderConstant* constant = new ShaderConstant(constantString.c_str());
+					constants.push_back(constant);
+					// Remove the constant expression from the code and reduce i
+					shaderCode.erase(i, constantEndPosition - i + 1);
+					i--;
+				}
+			}
+		}
+
+	}
+	
 	return shaderCode;
 
 }

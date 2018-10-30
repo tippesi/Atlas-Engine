@@ -159,6 +159,7 @@
     <ClInclude Include="Blue Engine\src\rendertarget.h" />
     <ClInclude Include="Blue Engine\src\scene.h" />
     <ClInclude Include="Blue Engine\src\shader\shader.h" />
+    <ClInclude Include="Blue Engine\src\shader\shaderconstant.h" />
     <ClInclude Include="Blue Engine\src\shader\shadersource.h" />
     <ClInclude Include="Blue Engine\src\shader\uniform.h" />
     <ClInclude Include="Blue Engine\src\system.h" />
@@ -179,6 +180,7 @@
     <ClCompile Include="Blue Engine\src\rendertarget.cpp" />
     <ClCompile Include="Blue Engine\src\scene.cpp" />
     <ClCompile Include="Blue Engine\src\shader\shader.cpp" />
+    <ClCompile Include="Blue Engine\src\shader\shaderconstant.cpp" />
     <ClCompile Include="Blue Engine\src\shader\shadersource.cpp" />
     <ClCompile Include="Blue Engine\src\shader\uniform.cpp" />
     <ClCompile Include="Blue Engine\src\texture.cpp" />

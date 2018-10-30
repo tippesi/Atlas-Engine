@@ -81,6 +81,9 @@
     <ClInclude Include="Blue Engine\src\mesh\material.h">
       <Filter>Blue Engine\Mesh</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\shader\shaderconstant.h">
+      <Filter>Blue Engine\Shader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">
@@ -130,6 +133,9 @@
     </ClCompile>
     <ClCompile Include="Blue Engine\src\mesh\material.cpp">
       <Filter>Blue Engine\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\shader\shaderconstant.cpp">
+      <Filter>Blue Engine\Shader</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
