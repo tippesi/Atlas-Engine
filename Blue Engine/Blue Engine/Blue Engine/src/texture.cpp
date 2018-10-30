@@ -68,6 +68,13 @@ Texture::Texture(const char* filename, bool withoutCorrection) {
 
 }
 
+void Texture::Bind(uint32_t unit) {
+
+	glActiveTexture(unit);
+	glBindTexture(GL_TEXTURE_2D, ID);
+
+}
+
 void Texture::SetData(uint8_t* data) {
 
 	delete this->data;

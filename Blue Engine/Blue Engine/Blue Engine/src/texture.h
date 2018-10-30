@@ -20,6 +20,12 @@ public:
 	Texture(const char* filename, bool withoutCorrection = false);
 
 	/// <summary>
+	/// Binds the texture to a certain OpenGL texture unit
+	/// </summary>
+	/// <param name="unit">The unit where the texture should be bound.</param>
+	void Bind(uint32_t unit);
+
+	/// <summary>
 	/// Sets the data of the texture.
 	/// </summary>
 	/// <param name="data">The data which should be used. Each channel should have 8 bits and should be in the following order (r, g, b, a).</param>

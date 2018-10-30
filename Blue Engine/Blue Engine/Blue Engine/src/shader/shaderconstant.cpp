@@ -63,14 +63,14 @@ void ShaderConstant::SetValue(bool value) {
 void ShaderConstant::SetValue(vec2 value) {
 
 	v2value = value;
-	valuedString = "const int " + name + " = vec2(" + to_string(value.x) + "," + to_string(value.y) + ");";
+	valuedString = "const vec2 " + name + " = vec2(" + to_string(value.x) + "," + to_string(value.y) + ");";
 
 }
 
 void ShaderConstant::SetValue(vec3 value) {
 
 	v3value = value;
-	valuedString = "const int " + name + " = vec2(" + to_string(value.x) + "," + to_string(value.y) 
+	valuedString = "const vec3 " + name + " = vec3(" + to_string(value.x) + "," + to_string(value.y) 
 		+ "," + to_string(value.z) + ");";
 
 }
@@ -78,7 +78,7 @@ void ShaderConstant::SetValue(vec3 value) {
 void ShaderConstant::SetValue(vec4 value) {
 
 	v4value = value;
-	valuedString = "const int " + name + " = vec2(" + to_string(value.x) + "," + to_string(value.y)
+	valuedString = "const vec4 " + name + " = vec4(" + to_string(value.x) + "," + to_string(value.y)
 		+ "," + to_string(value.z) + "," + to_string(value.w) + ");";
 
 }

@@ -1,8 +1,7 @@
 layout(location=0)in vec3 vPosition;
 layout(location=1)in vec2 vTexCoord;
-#ifndef FLAT
 layout(location=2)in vec3 vNormal;
-#endif
+
 #ifdef NORMALMAPPING
 layout(location=3)in vec3 vTangent;
 #endif
@@ -28,9 +27,6 @@ layout (std140) uniform AnimationUBO {
 };
 #endif
 
-#if defined(REFLECTION) || defined(FLAT)
-out vec3 fPosition;
-#endif
 
 uniform mat4 pMatrix;
 uniform mat4 vMatrix;
@@ -55,14 +51,9 @@ void main() {
    
 	vec4 positionToCamera = mvMatrix * vec4(vPosition, 1.0f);
 	
-	gl_Position = pMatrix * positionToCamera;
-	
+	gl_Position = pMatrix * positionToCamera;	
 
-#ifndef FLAT
-	fNormal = (mvMatrix * vec4(vNormal, 0.0f)).xyz;
-#endif
-
-#if defined(NORMALMAPPING) && !defined(FLAT)
+#if defined(NORMALMAPPING)
     vec3 norm = normalize(fNormal);
     vec3 tang = normalize((mvMatrix * vec4(vTangent, 0.0f)).xyz);
 	
@@ -71,7 +62,7 @@ void main() {
 	toTangentSpace = mat3(tang, bitang, norm);
 #endif
 
-#if defined(REFLECTION) || defined(FLAT)
+#if defined(REFLECTION)
 	fPosition = vec3(positionToCamera);
 #endif
 	

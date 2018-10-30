@@ -14,6 +14,8 @@ public:
 
 	void UpdateShader();
 
+	void Bind(mat4 modelMatrix, mat4 viewMatrix, mat4 projectionMatrix);
+
 	bool HasDiffuseMap();
 	bool HasNormalMap();
 	bool HasSpecularMap();
@@ -37,6 +39,18 @@ private:
 	Shader* shader;
 
 	Uniform* diffuseMapUniform;
+	Uniform* normalMapUniform;
+	Uniform* specularMapUniform;
+	Uniform* heightMapUniform;
+	Uniform* modelMatrixUniform;
+	Uniform* viewMatrixUniform;
+	Uniform* projectionMatrixUniform;
+
+	ShaderConstant* diffuseColorConstant;
+	ShaderConstant* specularColorConstant;
+	ShaderConstant* ambientColorConstant;
+	ShaderConstant* specularHardnessConstant;
+	ShaderConstant* specularIntensityConstant;
 
 };
 

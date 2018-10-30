@@ -2,8 +2,12 @@ layout (location = 0) out vec3 diffuse;
 layout (location = 1) out vec3 normal;
 layout (location = 2) out vec2 additional;
 
+#ifdef DIFFUSE_MAP
 uniform sampler2D diffuseMap;
+#endif
+#ifdef NORMALMAPPING
 uniform sampler2D normalMap;
+#endif
 
 uniform bool useDiffuseMap;
 uniform bool useNormalMap;
@@ -13,11 +17,9 @@ uniform samplerCube environmentCube;
 uniform mat4 ivMatrix;
 #endif
 
-uniform vec3 diffuseColor;
-uniform float specularIntensity;
-uniform float specularHardness;
-uniform float reflectivity;
-uniform float brightness;
+const vec3 diffuseColor;
+const float specularIntensity;
+const float specularHardness;
 
 in vec2 fTexCoord;
 in vec3 fNormal;
@@ -27,7 +29,7 @@ in mat3 toTangentSpace;
 #endif
 
 
-#if defined(REFLECTION) || defined(FLAT)
+#if defined(REFLECTION)
 in vec3 fPosition;
 #endif
 
@@ -35,28 +37,17 @@ void main() {
 	
 	vec4 textureColor = vec4(diffuseColor, 1.0f);
 	
-	if(useDiffuseMap)
-		textureColor *= texture(diffuseMap, fTexCoord);
-	
+#ifdef DIFFUSE_MAP
+	textureColor *= texture(diffuseMap, fTexCoord);
+#endif
 	
 	if(textureColor.a < 0.2f)
 		discard;
 	
-#ifdef FLAT
-	// Get the normal of the current polygon (so its flat)
-	// We have to do this complicated because some devices dont support dFdx on 3 component vectors
-	vec3 fdx = vec3(dFdx(fPosition.x),dFdx(fPosition.y),dFdx(fPosition.z));
-	vec3 fdy = vec3(dFdy(fPosition.x),dFdy(fPosition.y),dFdy(fPosition.z));
-	normal = cross(fdx, fdy);
-#else
 	normal = fNormal;
-#endif
-	
-#if defined(NORMALMAPPING) && !defined(FLAT)
-	if(useNormalMap)
-		normal = normalize(toTangentSpace * (2.0f * texture(normalMap, fTexCoord).rgb - 1.0f));
-	else
-		normal = normalize(normal);
+
+#if defined(NORMALMAPPING)
+	normal = normalize(toTangentSpace * (2.0f * texture(normalMap, fTexCoord).rgb - 1.0f));
 #else
 	normal = normalize(normal);
 #endif

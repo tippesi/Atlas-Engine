@@ -3,8 +3,14 @@
 Material::Material() {
 
 	shader = new Shader();
-	shader->AddComponent(VERTEX_SHADER, "blub.vsh");
-	shader->AddComponent(FRAGMENT_SHADER, "blub.fsh");
+	shader->AddComponent(VERTEX_SHADER, "shader/deferred/geometry.vsh");
+	ShaderSource* fragment = shader->AddComponent(FRAGMENT_SHADER, "shader/deferred/geometry.fsh");
+
+	diffuseColorConstant = fragment->GetConstant("diffuseColor");
+	specularColorConstant = fragment->GetConstant("specularColor");
+	ambientColorConstant = fragment->GetConstant("ambientColor");
+	specularHardnessConstant = fragment->GetConstant("specularHardness");
+	specularIntensityConstant = fragment->GetConstant("specularIntensity");
 
 	diffuseMap = nullptr;
 	normalMap = nullptr;
@@ -28,7 +34,50 @@ Shader* Material::GetShader() {
 
 void Material::UpdateShader() {
 
+	delete diffuseMapUniform;
+	delete specularMapUniform;
+	delete normalMapUniform;
+	delete heightMapUniform;
+	delete modelMatrixUniform;
+	delete viewMatrixUniform;
+	delete projectionMatrixUniform;
 
+	diffuseColorConstant->SetValue(diffuseColor);
+	specularHardnessConstant->SetValue(specularHardness);
+	specularIntensityConstant->SetValue(specularIntensity);
+
+	shader->Compile();
+
+	diffuseMapUniform = shader->GetUniform("diffuseMap");
+	specularMapUniform = shader->GetUniform("specularMap");
+	normalMapUniform = shader->GetUniform("normalMap");
+	heightMapUniform = shader->GetUniform("heightMap");
+	modelMatrixUniform = shader->GetUniform("mMatrix");
+	viewMatrixUniform = shader->GetUniform("vMatrix");
+	projectionMatrixUniform = shader->GetUniform("pMatrix");
+
+}
+
+void Material::Bind(mat4 modelMatrix, mat4 viewMatrix, mat4 projectionMatrix) {
+
+	shader->Bind();
+
+	modelMatrixUniform->SetValue(modelMatrix);
+	viewMatrixUniform->SetValue(viewMatrix);
+	projectionMatrixUniform->SetValue(projectionMatrix);
+	diffuseMapUniform->SetValue(0);
+	normalMapUniform->SetValue(1);
+	specularMapUniform->SetValue(2);
+	heightMapUniform->SetValue(3);
+
+	if (HasDiffuseMap())
+		diffuseMap->Bind(GL_TEXTURE0);
+	if (HasNormalMap())
+		normalMap->Bind(GL_TEXTURE1);
+	if (HasSpecularMap())
+		specularMap->Bind(GL_TEXTURE2);
+	if (HasHeightMap())
+		heightMap->Bind(GL_TEXTURE3);
 
 }
 
@@ -76,5 +125,19 @@ Material::~Material() {
 	delete heightMap;
 
 	delete shader;
+
+	delete diffuseMapUniform;
+	delete specularMapUniform;
+	delete normalMapUniform;
+	delete heightMapUniform;
+	delete modelMatrixUniform;
+	delete viewMatrixUniform;
+	delete projectionMatrixUniform;
+
+	delete diffuseColorConstant;
+	delete specularColorConstant;
+	delete ambientColorConstant;
+	delete specularHardnessConstant;
+	delete specularIntensityConstant;
 
 }
