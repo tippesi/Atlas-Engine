@@ -11,7 +11,10 @@ public:
 
 	void Resize(int32_t width, int32_t height);
 
-	Framebuffer* framebuffer;
+	~RenderTarget();
+
+	Framebuffer* geometryFramebuffer;
+	Framebuffer* postProcessingFramebuffer;
 
 };
 

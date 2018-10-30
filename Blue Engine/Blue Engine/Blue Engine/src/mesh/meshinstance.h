@@ -7,7 +7,14 @@
 class MeshInstance {
 
 public:
-	MeshInstance();
+	MeshInstance(Mesh* mesh);
+
+	mat4 modelMatrix;
+
+	Mesh* mesh;
+
+	bool render;
+	bool castShadow;
 
 };
 

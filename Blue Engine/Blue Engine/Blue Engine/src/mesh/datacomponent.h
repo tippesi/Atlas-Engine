@@ -16,7 +16,7 @@
 template <class T> class DataComponent {
 
 public:
-	DataComponent(int32_t componentType, int32_t vertexSize);
+	DataComponent(int32_t componentType, int32_t stride);
 
 	void Set(T* values);
 
@@ -26,9 +26,9 @@ public:
 
 	void SetSize(int32_t size);
 
-	// void SetVertexSize(int32_t vertexSize);
+	int32_t GetStride();
 
-	int32_t GetVertexSize();
+	int32_t GetElementSize();
 
 	void* GetInternal();
 
@@ -41,8 +41,7 @@ private:
 	bool equalDataTypes;
 
 	int32_t componentType;
-	int32_t componentTypeSize;
-	int32_t vertexSize;
+	int32_t stride;
 	int32_t size;
 
 	T* data;
@@ -51,7 +50,7 @@ private:
 };
 
 
-template <class T> DataComponent<T>::DataComponent(int32_t componentType, int32_t vertexSize) : vertexSize(vertexSize) {
+template <class T> DataComponent<T>::DataComponent(int32_t componentType, int32_t stride) : stride(stride) {
 
 	containsData = false;
 
@@ -69,7 +68,7 @@ template <class T> void DataComponent<T>::Set(T* data) {
 	delete this->data;
 
 	if (componentType == COMPONENT_HALF_FLOAT) {
-		int32_t dataSize = vertexSize * size;
+		int32_t dataSize = stride * size;
 		float16_t* internalData = (float16_t*)this->internalData;
 		for (int32_t i = 0; i < dataSize; i++) {
 			internalData[i] = glm::detail::toFloat16(data);
@@ -82,6 +81,20 @@ template <class T> void DataComponent<T>::Set(T* data) {
 			vec4 vector = vec4(data[dataCounter], data[dataCounter + 1], data[dataCounter + 2], 0.0f);
 			internalData[i] = packNormalizedFloat_2_10_10_10_REV(vector);
 			dataCounter += 3;
+		}
+	}
+	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) < sizeof(T)) {
+		int32_t dataSize = stride * size;
+		uint16_t* internalData = (uint16_t*)this->internalData;
+		for (int32_t i = 0; i < dataSize; i++) {
+			internalData[i] = (uint16_t)data[i];
+		}
+	}
+	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) < sizeof(T)) {
+		int32_t dataSize = stride * size;
+		uint8_t* internalData = (uint8_t*)this->internalData;
+		for (int32_t i = 0; i < dataSize; i++) {
+			internalData[i] = (uint8_t)data[i];
 		}
 	}
 	else {
@@ -107,11 +120,19 @@ template <class T> void DataComponent<T>::SetType(int32_t componentType) {
 
 	if (componentType == COMPONENT_HALF_FLOAT) {
 		delete data;
-		internalData = new float16_t[vertexSize * size];
+		internalData = new float16_t[stride * size];
 	}
 	else if (componentType == COMPONENT_PACKED_FLOAT) {
 		delete data;
 		internalData = new uint32_t[size];
+	}
+	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) < sizeof(T)) {
+		delete data;
+		internalData = new uint16_t[stride * size];
+	}
+	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) < sizeof(T)) {
+		delete data;
+		internalData = new uint8_t[stride * size];
 	}
 
 }
@@ -124,18 +145,41 @@ template <class T> void DataComponent<T>::SetSize(int32_t size) {
 
 	if (componentType == COMPONENT_HALF_FLOAT) {
 		delete data;
-		internalData = new float16_t[vertexSize * size];
+		internalData = new float16_t[stride * size];
 	}
 	else if (componentType == COMPONENT_PACKED_FLOAT) {
 		delete data;
 		internalData = new uint32_t[size];
 	}
+	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) < sizeof(T)) {
+		delete data;
+		internalData = new uint16_t[stride * size];
+	}
+	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) < sizeof(T)) {
+		delete data;
+		internalData = new uint8_t[stride * size];
+	}
 
 }
 
-template <class T> int32_t DataComponent<T>::GetVertexSize() {
+template <class T> int32_t DataComponent<T>::GetStride() {
 
-	return vertexSize;
+	return stride;
+
+}
+
+template <class T> int32_t DataComponent<T>::GetElementSize() {
+
+	switch (componentType) {
+	case COMPONENT_UNSIGNED_INT: return sizeof(uint32_t) * stride;
+	case COMPONENT_UNSIGNED_SHORT: return sizeof(uint16_t) * stride;
+	case COMPONENT_UNSIGNED_BYTE: return sizeof(uint8_t) * stride;
+	case COMPONENT_FLOAT: return sizeof(float) * stride;
+	case COMPONENT_HALF_FLOAT: return sizeof(float16_t) * stride;
+	case COMPONENT_PACKED_FLOAT: return sizeof(uint32_t);
+	}
+
+	return 0;
 
 }
 

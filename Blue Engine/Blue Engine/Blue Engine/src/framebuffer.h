@@ -3,7 +3,7 @@
 
 #include "system.h"
 #include "texture.h"
-#include <list>
+#include <vector>
 
 class Framebuffer {
 
@@ -16,15 +16,22 @@ public:
 
 	void Bind();
 
-	void UnBind();
+	void Unbind();
+
+	void SetDrawBuffers(uint32_t* buffers, int32_t count);
+
+	~Framebuffer();
 
 	int32_t width;
 	int32_t height;
 
-	list<Texture*> components;
+	vector<Texture*> components;
+	vector<uint32_t> drawBuffers;
 
 private:
 	uint32_t ID;
+
+	bool drawBuffersSet;
 
 	static uint32_t boundFramebufferID;
 

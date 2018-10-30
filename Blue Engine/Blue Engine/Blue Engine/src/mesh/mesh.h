@@ -11,6 +11,8 @@ public:
 
 	Mesh(const char* filename);
 
+	void UpdateData();
+
 	uint32_t GetVAO();
 
 	MeshData* data;

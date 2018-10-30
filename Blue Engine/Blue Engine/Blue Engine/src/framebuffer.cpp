@@ -18,12 +18,17 @@ void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t in
 
 	components.push_back(texture);
 
+	if (attachment >= GL_COLOR_ATTACHMENT0 && attachment <= GL_COLOR_ATTACHMENT15) {
+		drawBuffers.push_back(attachment);
+		glDrawBuffers((GLsizei)drawBuffers.size(), &drawBuffers[0]);
+	}
+
 }
 
 void Framebuffer::Resize(int32_t width, int32_t height) {
 
-	for (list<Texture*>::iterator iterator = components.begin(); iterator != components.end(); iterator++) {
-		(*iterator)->Resize(width, height);
+	for (Texture* texture : components) {
+		texture->Resize(width, height);
 	}
 
 }
@@ -31,15 +36,28 @@ void Framebuffer::Resize(int32_t width, int32_t height) {
 void Framebuffer::Bind() {
 
 	if (boundFramebufferID != ID) {
+
 		glBindFramebuffer(GL_FRAMEBUFFER, ID);
 	
 		boundFramebufferID = ID;
 	}
 }
 
-void Framebuffer::UnBind() {
+void Framebuffer::Unbind() {
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	boundFramebufferID = 0;
+
+}
+
+void Framebuffer::SetDrawBuffers(uint32_t* drawBuffers, int32_t count) {
+
+	glNamedFramebufferDrawBuffers(ID, count, drawBuffers);
+
+}
+
+Framebuffer::~Framebuffer() {
+
+
 
 }
