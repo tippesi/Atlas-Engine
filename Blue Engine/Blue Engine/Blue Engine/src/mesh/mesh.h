@@ -11,7 +11,17 @@ public:
 
 	Mesh(const char* filename);
 
+	uint32_t GetVAO();
+
 	MeshData* data;
+
+private:
+	uint32_t vao;
+	uint32_t indices;
+	uint32_t vertices;
+	uint32_t texCoords;
+	uint32_t normals;
+	uint32_t tangents;
 
 };
 

@@ -128,5 +128,8 @@
     <ClCompile Include="Blue Engine\src\mesh\packing.cpp">
       <Filter>Blue Engine\Mesh</Filter>
     </ClCompile>
+    <ClCompile Include="Blue Engine\src\mesh\material.cpp">
+      <Filter>Blue Engine\Mesh</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
