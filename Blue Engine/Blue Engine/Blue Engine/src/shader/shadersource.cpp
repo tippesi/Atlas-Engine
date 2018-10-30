@@ -118,17 +118,17 @@ string ShaderSource::ReadShaderFile(const char* filename, bool mainFile) {
 
 	string filePath(filename);
 	
-	uint32_t filePathPosition = filePath.find_last_of("/");
+	size_t filePathPosition = filePath.find_last_of("/");
 	filePath.erase(filePathPosition + 1, filePath.length() - 1);
 
 	// Copy all includes into the code
 	while (shaderCode.find("#include ") != string::npos) {
 
-		uint32_t includePosition = shaderCode.find("#include ");
-		uint32_t lineBreakPosition = shaderCode.find("\n", includePosition);
+		size_t includePosition = shaderCode.find("#include ");
+		size_t lineBreakPosition = shaderCode.find("\n", includePosition);
 
-		uint32_t filenamePosition = shaderCode.find_first_of("\"<", includePosition) + 1;
-		uint32_t filenameEndPosition = shaderCode.find_first_of("\">", filenamePosition);
+		size_t filenamePosition = shaderCode.find_first_of("\"<", includePosition) + 1;
+		size_t filenameEndPosition = shaderCode.find_first_of("\">", filenamePosition);
 
 		string includeFilename = shaderCode.substr(filenamePosition, filenameEndPosition - filenamePosition);
 
@@ -143,7 +143,7 @@ string ShaderSource::ReadShaderFile(const char* filename, bool mainFile) {
 
 		int32_t openedCurlyBrackets = 0;
 
-		for (uint32_t i = 0; i < shaderCode.length(); i++) {
+		for (size_t i = 0; i < shaderCode.length(); i++) {
 			if (shaderCode[i] == '{') {
 				openedCurlyBrackets++;
 			}
@@ -152,10 +152,10 @@ string ShaderSource::ReadShaderFile(const char* filename, bool mainFile) {
 			}
 			else if (shaderCode[i] == 'c' && openedCurlyBrackets == 0) {
 				// Check if its a constant
-				int32_t position = shaderCode.find("const ", i);
+				size_t position = shaderCode.find("const ", i);
 				if (position == i) {
 					// Create a new constant
-					int32_t constantEndPosition = shaderCode.find(";", i);
+					size_t constantEndPosition = shaderCode.find(";", i);
 					string constantString = shaderCode.substr(i, constantEndPosition - i + 1);
 					ShaderConstant* constant = new ShaderConstant(constantString.c_str());
 					constants.push_back(constant);

@@ -54,13 +54,13 @@ void Uniform::SetValue(vec2 value) {
 
 }
 
-void Uniform::SetValue(int32_t* value, size_t length) {
+void Uniform::SetValue(int32_t* value, int32_t length) {
 
 	glUniform1iv(ID, length, value);
 
 }
 
-void Uniform::SetValue(float* value, size_t length) {
+void Uniform::SetValue(float* value, int32_t length) {
 
 	glUniform1fv(ID, length, value);
 

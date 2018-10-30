@@ -24,9 +24,9 @@ public:
 
 	void SetValue(vec2 value);
 
-	void SetValue(int32_t *value, size_t length);
+	void SetValue(int32_t *value, int32_t length);
 
-	void SetValue(float *value, size_t length);
+	void SetValue(float *value, int32_t length);
 
 private:
 	int32_t ID;

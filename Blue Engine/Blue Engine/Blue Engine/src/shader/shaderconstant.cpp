@@ -4,10 +4,10 @@ ShaderConstant::ShaderConstant(const char* constantString) {
 
 	string line(constantString);
 
-	int32_t constEndPosition = line.find(' ');
-	int32_t typePosition = line.find_first_not_of(' ', constEndPosition);
+	size_t constEndPosition = line.find(' ');
+	size_t typePosition = line.find_first_not_of(' ', constEndPosition);
 
-	int32_t typeEndPosition = line.find(' ', typePosition);
+	size_t typeEndPosition = line.find(' ', typePosition);
 
 	string typeString = line.substr(typePosition, typeEndPosition - typePosition);
 
@@ -30,8 +30,8 @@ ShaderConstant::ShaderConstant(const char* constantString) {
 		type = VECTOR4_CONSTANT;
 	}
 
-	int32_t namePosition = line.find_first_not_of(' ', typeEndPosition);
-	int32_t nameEndPosition = line.find_first_of(" ;=", namePosition);
+	size_t namePosition = line.find_first_not_of(' ', typeEndPosition);
+	size_t nameEndPosition = line.find_first_of(" ;=", namePosition);
 
 	name = line.substr(namePosition, nameEndPosition - namePosition);
 
