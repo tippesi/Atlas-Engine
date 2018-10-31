@@ -10,6 +10,7 @@ public:
 	Actor(Mesh* mesh);
 
 	mat4 modelMatrix;
+	mat4 transformedMatrix;
 
 	Mesh* mesh;
 

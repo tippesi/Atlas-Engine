@@ -28,9 +28,24 @@ public:
 
 	void Update(mat4 parentTransformation);
 
+	void AddToScene(Scene* scene);
+
+	void RemoveFromScene();
+
+	vector<SceneNode*> GetChildNodes();
+
+	vector<Actor*> GetActors();
+
+	vector<Light*> GetLights();
+
 	Scene* scene;
 
-	vector<SceneNode*> nodes;
+	mat4 transformationMatrix;
+
+private:
+	bool sceneSet;
+
+	vector<SceneNode*> childNodes;
 	vector<Actor*> actors;
 	vector<Light*> lights;
 
