@@ -1,13 +1,13 @@
-#ifndef MESHINSTANCE_H
-#define MESHINSTANCE_H
+#ifndef ACTOR_H
+#define ACTOR_H
 
 #include "../system.h"
 #include "mesh.h"
 
-class MeshInstance {
+class Actor {
 
 public:
-	MeshInstance(Mesh* mesh);
+	Actor(Mesh* mesh);
 
 	mat4 modelMatrix;
 
