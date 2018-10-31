@@ -6,7 +6,7 @@
 #include "light.h"
 #include <vector>
 
-// Forward declaration of scene
+// Forward declaration of scene class
 class Scene;
 
 class SceneNode {

@@ -15,7 +15,7 @@
 #endif
 
 typedef struct SubData {
-	uint32_t offset;
+	uint32_t indicesOffset;
 	uint32_t numIndices;
 	uint32_t materialIndex;
 }SubData;
