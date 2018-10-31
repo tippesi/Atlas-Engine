@@ -1,4 +1,5 @@
 #include "mesh.h"
+#include "../loader/modelloader.h"
 
 Mesh::Mesh(MeshData* data) : data(data) {
 
@@ -14,7 +15,15 @@ Mesh::Mesh(MeshData* data) : data(data) {
 
 Mesh::Mesh(const char* filename) {
 
+	data = ModelLoader::LoadMesh(filename);
 
+	glGenBuffers(1, &indices);
+	glGenBuffers(1, &vertices);
+	glGenBuffers(1, &texCoords);
+	glGenBuffers(1, &normals);
+	glGenBuffers(1, &tangents);
+
+	UpdateData();
 
 }
 

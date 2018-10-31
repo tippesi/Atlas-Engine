@@ -55,14 +55,9 @@ MeshData* ModelLoader::LoadMesh(const char* filename) {
 	}
 
 	for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
-
 		if (scene->mMaterials[i]->GetTextureCount(aiTextureType_NORMALS) > 0)
 			hasTangents = true;
-
 	}
-
-	meshData->SetIndexCount(indexCount);
-	meshData->SetVertexCount(vertexCount);
 
 	if (indexCount > 65535) {
 		meshData->indices->SetType(COMPONENT_UNSIGNED_INT);
@@ -75,6 +70,9 @@ MeshData* ModelLoader::LoadMesh(const char* filename) {
 	meshData->normals->SetType(COMPONENT_PACKED_FLOAT);
 	meshData->texCoords->SetType(COMPONENT_HALF_FLOAT);
 	meshData->tangents->SetType(COMPONENT_PACKED_FLOAT);
+
+	meshData->SetIndexCount(indexCount);
+	meshData->SetVertexCount(vertexCount);
 
 	if (scene->HasAnimations() || bonesCount > 0) {
 
