@@ -3,6 +3,7 @@
 
 #include "../system.h"
 #include "meshdata.h"
+#include "modelloader.h"
 
 class Mesh {
 

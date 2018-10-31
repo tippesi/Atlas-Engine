@@ -25,6 +25,9 @@
     <Filter Include="Blue Engine\Mesh">
       <UniqueIdentifier>{994b2692-07ef-4101-b6f1-ba1bdba17567}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Blue Engine\Loader">
+      <UniqueIdentifier>{2ab292e9-a55e-4f5b-b015-5a18a9d48c0c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Blue Engine\src\camera.h">
@@ -93,6 +96,9 @@
     <ClInclude Include="Blue Engine\src\mesh\actorbatch.h">
       <Filter>Blue Engine\Mesh</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\loader\modelloader.h">
+      <Filter>Blue Engine\Loader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">
@@ -151,6 +157,9 @@
     </ClCompile>
     <ClCompile Include="Blue Engine\src\mesh\actorbatch.cpp">
       <Filter>Blue Engine\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\loader\modelloader.cpp">
+      <Filter>Blue Engine\Loader</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

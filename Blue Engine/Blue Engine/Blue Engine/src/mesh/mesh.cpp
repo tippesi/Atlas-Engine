@@ -50,5 +50,4 @@ void Mesh::UpdateData() {
 			data->tangents->GetInternal(), GL_STATIC_DRAW);
 	}
 
-
 }

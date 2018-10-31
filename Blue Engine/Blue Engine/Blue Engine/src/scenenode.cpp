@@ -128,6 +128,9 @@ void SceneNode::AddToScene(Scene* scene) {
 
 void SceneNode::RemoveFromScene() {
 
+	if (!sceneSet)
+		return;
+
 	for (SceneNode* node : childNodes) {
 		node->RemoveFromScene();
 	}
