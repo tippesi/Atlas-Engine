@@ -2,6 +2,7 @@
 
 Scene::Scene() {
 
+	rootNode = new SceneNode();
 	rootNode->AddToScene(this);
 
 }
