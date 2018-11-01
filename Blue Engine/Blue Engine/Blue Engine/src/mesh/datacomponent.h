@@ -24,6 +24,8 @@ public:
 
 	void SetType(int32_t componentType);
 
+	int32_t GetType();
+
 	void SetSize(int32_t size);
 
 	int32_t GetStride();
@@ -71,7 +73,7 @@ template <class T> void DataComponent<T>::Set(T* data) {
 		int32_t dataSize = stride * size;
 		float16_t* internalData = (float16_t*)this->internalData;
 		for (int32_t i = 0; i < dataSize; i++) {
-			internalData[i] = glm::detail::toFloat16(data);
+			internalData[i] = glm::detail::toFloat16((float)data[i]);
 		}
 	}
 	else if (componentType == COMPONENT_PACKED_FLOAT) {
@@ -134,6 +136,12 @@ template <class T> void DataComponent<T>::SetType(int32_t componentType) {
 		delete data;
 		internalData = new uint8_t[stride * size];
 	}
+
+}
+
+template <class T> int32_t DataComponent<T>::GetType() {
+
+	return componentType;
 
 }
 

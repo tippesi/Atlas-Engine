@@ -1,21 +1,17 @@
 #include "modelloader.h"
 
-#include "../libraries/assimp/Importer.hpp"
-#include "../libraries/assimp/scene.h"
-#include "../libraries/assimp/postprocess.h"
-#include "../libraries/assimp/types.h"
-#include "../libraries/assimp/config.h"
-
 #include <vector>
-
-static Material* LoadMaterial(aiMaterial* assimpMaterial, string directory);
 
 MeshData* ModelLoader::LoadMesh(const char* filename) {
 
 	string directoryPath(filename);
 
 	size_t directoryPathEnd = directoryPath.find_last_of("/\\");
-	directoryPath = directoryPath.substr(0, directoryPathEnd);
+
+	if (directoryPath.find_last_of("/\\") != string::npos)
+		directoryPath = directoryPath.substr(0, directoryPathEnd);
+	else
+		directoryPath.clear();
 
 	Assimp::Importer importer;
 	importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
@@ -105,7 +101,25 @@ MeshData* ModelLoader::LoadMesh(const char* filename) {
 				vertices[usedVertices * 3 + 1] = mesh->mVertices[j].y;
 				vertices[usedVertices * 3 + 2] = mesh->mVertices[j].z;
 
+				vec3 normal = normalize(vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z));
 
+				normals[usedVertices * 3] = normal.x;
+				normals[usedVertices * 3 + 1] = normal.y;
+				normals[usedVertices * 3 + 2] = normal.z;
+
+				if (hasTangents && mesh->mTangents != NULL) {
+					vec3 tangent = vec3(mesh->mTangents[j].x, mesh->mTangents[j].y, mesh->mTangents[j].z);
+					tangent = normalize(tangent - normal * dot(normal, tangent));
+
+					tangents[usedVertices * 3] = tangent.x;
+					tangents[usedVertices * 3 + 1] = tangent.y;
+					tangents[usedVertices * 3 + 2] = tangent.z;
+				}
+
+				if (hasTexCoords && mesh->mTextureCoords[0] != NULL) {
+					texCoords[usedVertices * 2] = mesh->mTextureCoords[0][j].x;
+					texCoords[usedVertices * 2 + 1] = mesh->mTextureCoords[0][j].y;
+				}
 
 				usedVertices++;
 			}
@@ -137,7 +151,7 @@ MeshData* ModelLoader::LoadMesh(const char* filename) {
 
 }
 
-static Material* LoadMaterial(aiMaterial* assimpMaterial, string directory) {
+Material* ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, string directory) {
 
 	Material* material = new Material();
 

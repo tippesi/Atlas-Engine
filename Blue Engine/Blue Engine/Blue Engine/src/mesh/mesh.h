@@ -19,6 +19,9 @@ public:
 	MeshData* data;
 
 private:
+	void InitializeVBO();
+	void InitializeVAO();
+
 	uint32_t vao;
 	uint32_t indices;
 	uint32_t vertices;
