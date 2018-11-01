@@ -105,6 +105,9 @@
     <ClInclude Include="Blue Engine\src\renderer\postprocessrenderer.h">
       <Filter>Blue Engine\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\renderer\IRenderer.h">
+      <Filter>Blue Engine\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">

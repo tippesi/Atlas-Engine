@@ -163,6 +163,7 @@
     <ClInclude Include="Blue Engine\src\mesh\meshdata.h" />
     <ClInclude Include="Blue Engine\src\mesh\actor.h" />
     <ClInclude Include="Blue Engine\src\mesh\packing.h" />
+    <ClInclude Include="Blue Engine\src\renderer\IRenderer.h" />
     <ClInclude Include="Blue Engine\src\renderer\masterrenderer.h" />
     <ClInclude Include="Blue Engine\src\renderer\postprocessrenderer.h" />
     <ClInclude Include="Blue Engine\src\rendertarget.h" />

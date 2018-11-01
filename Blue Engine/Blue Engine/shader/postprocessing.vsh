@@ -1,4 +1,3 @@
-
 layout(location=0)in vec2 vPosition;
 
 out vec2 fPosition;

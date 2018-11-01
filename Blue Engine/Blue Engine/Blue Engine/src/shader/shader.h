@@ -14,11 +14,15 @@ public:
 
 	ShaderSource* AddComponent(int32_t type, const char* filename);
 
+	void AddComponent(ShaderSource* source);
+
 	Uniform* GetUniform(const char* uniformName);
 
 	void AddMacro(const char* macro);
 
 	void RemoveMacro(const char* macro);
+
+	bool HasMacro(const char* macro);
 
 	bool Compile();
 
@@ -32,6 +36,8 @@ public:
 
 private:
 	uint32_t ID;
+
+	vector<string> macros;
 
 	static uint32_t boundShaderID;
 
