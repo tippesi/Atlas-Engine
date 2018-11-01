@@ -108,6 +108,9 @@
     <ClInclude Include="Blue Engine\src\renderer\IRenderer.h">
       <Filter>Blue Engine\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\renderer\geometryrenderer.h">
+      <Filter>Blue Engine\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">
@@ -174,6 +177,9 @@
       <Filter>Blue Engine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Blue Engine\src\renderer\postprocessrenderer.cpp">
+      <Filter>Blue Engine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\renderer\geometryrenderer.cpp">
       <Filter>Blue Engine\Renderer</Filter>
     </ClCompile>
   </ItemGroup>

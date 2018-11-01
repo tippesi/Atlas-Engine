@@ -122,6 +122,7 @@ void SceneNode::AddToScene(Scene* scene) {
 		scene->Add(light);
 	}
 
+	this->scene = scene;
 	sceneSet = true;
 
 }
@@ -143,6 +144,7 @@ void SceneNode::RemoveFromScene() {
 		scene->Remove(light);
 	}
 
+	this->scene = nullptr;
 	sceneSet = false;
 
 }

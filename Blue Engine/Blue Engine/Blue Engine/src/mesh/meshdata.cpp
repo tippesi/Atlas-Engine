@@ -12,6 +12,8 @@ MeshData::MeshData() {
 	indexCount = 0;
 	vertexCount = 0;
 
+	primitiveType = PRIMITIVE_TRIANGLES;
+
 }
 
 void MeshData::SetIndexCount(int32_t count) {

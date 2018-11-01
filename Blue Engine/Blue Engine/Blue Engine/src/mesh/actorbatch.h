@@ -18,9 +18,9 @@ public:
 
 	Mesh* GetMesh();
 
-private:
 	vector<Actor*> actors;
 
+private:
 	Mesh* mesh;
 
 };

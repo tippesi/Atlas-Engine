@@ -11,6 +11,9 @@ Camera::Camera(float fieldOfView, float aspectRatio, float nearPlane, float farP
 	this->location = location;
 	this->rotation = rotation;
 
+	thirdPerson = false;
+	thirdPersonDistance = 10.0f;
+
 	UpdateView();
 	UpdateProjection();
 

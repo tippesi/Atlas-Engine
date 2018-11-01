@@ -49,8 +49,9 @@ namespace Engine {
 #endif
 
 		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LEQUAL);
-		glEnable(GL_CULL_FACE);
+		// glEnable(GL_CULL_FACE);
 
 		glEnable(GL_TEXTURE_2D);
 

@@ -101,7 +101,7 @@ void  Mesh::InitializeVAO() {
 
 void Mesh::Bind() {
 
-	glBindVertexArray(vao);;
+	glBindVertexArray(vao);
 
 }
 

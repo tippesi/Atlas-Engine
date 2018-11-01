@@ -76,9 +76,9 @@ MeshData* ModelLoader::LoadMesh(const char* filename) {
 
 	}
 
-	int32_t usedFaces = 0;
-	int32_t usedVertices = 0;
-	int32_t loadedVertices = 0;
+	uint32_t usedFaces = 0;
+	uint32_t usedVertices = 0;
+	uint32_t loadedVertices = 0;
 
 	uint32_t* indices = new uint32_t[indexCount];
 	float* vertices = new float[vertexCount * 3];
@@ -125,11 +125,14 @@ MeshData* ModelLoader::LoadMesh(const char* filename) {
 			}
 			// Copy indices
 			for (uint32_t j = 0; j < mesh->mNumFaces; j++) {
-				for (uint8_t k = 0; k < 3; k++) {
+				for (uint32_t k = 0; k < 3; k++) {
 					indices[usedFaces * 3 + k] = mesh->mFaces[j].mIndices[k] + loadedVertices;
 				}
 				usedFaces++;
 			}
+
+			loadedVertices = usedVertices;
+
 		}
 
 		subData->numIndices = usedFaces * 3 - subData->indicesOffset;

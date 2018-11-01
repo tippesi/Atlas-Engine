@@ -14,7 +14,9 @@ public:
 
 	void UpdateShader();
 
-	void Bind(mat4 modelMatrix, mat4 viewMatrix, mat4 projectionMatrix);
+	void Bind(mat4 viewMatrix, mat4 projectionMatrix);
+	
+	Uniform* GetModelMatrixUniform();
 
 	bool HasDiffuseMap();
 	bool HasNormalMap();

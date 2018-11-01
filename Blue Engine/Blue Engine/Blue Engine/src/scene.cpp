@@ -18,6 +18,11 @@ void Scene::Add(Actor* actor) {
 
 	}
 
+	ActorBatch* actorBatch = new ActorBatch(actor->mesh);
+	actorBatch->Add(actor);
+
+	actorBatches.push_back(actorBatch);
+
 }
 
 void Scene::Remove(Actor* actor) {

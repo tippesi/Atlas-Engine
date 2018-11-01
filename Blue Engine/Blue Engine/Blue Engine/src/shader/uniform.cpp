@@ -26,13 +26,13 @@ void Uniform::SetValue(bool value) {
 
 void Uniform::SetValue(mat4 value) {
 
-	glUniform4fv(ID, 1, &value[0][0]);
+	glUniformMatrix4fv(ID, 1, GL_FALSE, &value[0][0]);
 
 }
 
 void Uniform::SetValue(mat3 value) {
 
-	glUniform3fv(ID, 1, &value[0][0]);
+	glUniformMatrix3fv(ID, 1, GL_FALSE, &value[0][0]);
 
 }
 

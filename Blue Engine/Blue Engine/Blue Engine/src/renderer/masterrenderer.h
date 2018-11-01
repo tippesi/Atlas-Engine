@@ -3,6 +3,7 @@
 
 #include "../system.h"
 
+#include "geometryrenderer.h"
 #include "postprocessrenderer.h"
 
 class MasterRenderer {
@@ -10,13 +11,19 @@ class MasterRenderer {
 public:
 	MasterRenderer();
 
-	void RenderScene();
+	void RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	void RenderTexture();
+	void RenderTexture(Texture* texture);
 
-	void RenderRectangle();
+	void RenderRectangle(vec3 color);
 
 	static uint32_t GenerateRectangleVAO();
+
+private:
+	GeometryRenderer * geometryRenderer;
+	PostProcessRenderer * postProcessRenderer;
+
+	uint32_t rectangleVAO;
 
 };
 

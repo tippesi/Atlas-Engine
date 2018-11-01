@@ -2,9 +2,9 @@ layout (location = 0) out vec3 diffuse;
 layout (location = 1) out vec3 normal;
 layout (location = 2) out vec2 additional;
 
-#ifdef DIFFUSE_MAP
+
 uniform sampler2D diffuseMap;
-#endif
+
 #ifdef NORMALMAPPING
 uniform sampler2D normalMap;
 #endif
@@ -37,12 +37,7 @@ void main() {
 	
 	vec4 textureColor = vec4(diffuseColor, 1.0f);
 	
-#ifdef DIFFUSE_MAP
 	textureColor *= texture(diffuseMap, fTexCoord);
-#endif
-	
-	if(textureColor.a < 0.2f)
-		discard;
 	
 	normal = fNormal;
 

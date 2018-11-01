@@ -1,6 +1,6 @@
 layout(location=0)in vec3 vPosition;
-layout(location=1)in vec2 vTexCoord;
-layout(location=2)in vec3 vNormal;
+layout(location=1)in vec3 vNormal;
+layout(location=2)in vec2 vTexCoord;
 
 #ifdef NORMALMAPPING
 layout(location=3)in vec3 vTangent;
@@ -26,8 +26,6 @@ layout (std140) uniform AnimationUBO {
     mat4 boneMatrices[256];
 };
 #endif
-
-
 uniform mat4 pMatrix;
 uniform mat4 vMatrix;
 #ifndef INSTANCING
@@ -51,7 +49,9 @@ void main() {
    
 	vec4 positionToCamera = mvMatrix * vec4(vPosition, 1.0f);
 	
-	gl_Position = pMatrix * positionToCamera;	
+	gl_Position = pMatrix * positionToCamera;
+	
+	fNormal = (mvMatrix * vec4(vNormal, 0.0f)).xyz;
 
 #if defined(NORMALMAPPING)
     vec3 norm = normalize(fNormal);

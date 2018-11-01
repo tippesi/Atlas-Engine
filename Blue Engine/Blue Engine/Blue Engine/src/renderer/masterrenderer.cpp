@@ -2,7 +2,25 @@
 
 MasterRenderer::MasterRenderer() {
 
+	rectangleVAO = GenerateRectangleVAO();
 
+}
+
+void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+
+
+
+}
+
+void MasterRenderer::RenderTexture(Texture* texture) {
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+}
+
+void MasterRenderer::RenderRectangle(vec3 color) {
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 }
 

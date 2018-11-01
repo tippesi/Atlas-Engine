@@ -36,7 +36,6 @@ void Framebuffer::Resize(int32_t width, int32_t height) {
 void Framebuffer::Bind() {
 
 	if (boundFramebufferID != ID) {
-
 		glBindFramebuffer(GL_FRAMEBUFFER, ID);
 	
 		boundFramebufferID = ID;

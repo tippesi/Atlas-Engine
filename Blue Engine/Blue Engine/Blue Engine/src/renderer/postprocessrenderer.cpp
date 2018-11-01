@@ -28,12 +28,14 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 	exposure->SetValue(1.0f);
 	saturation->SetValue(1.0f);
 
-	target->texture->Bind(GL_TEXTURE0);
-
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	target->geometryFramebuffer->components[1]->Bind(GL_TEXTURE0);
+
 	glBindVertexArray(rectangleVAO);
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

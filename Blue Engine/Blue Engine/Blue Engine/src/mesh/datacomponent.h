@@ -40,7 +40,6 @@ public:
 
 private:
 	bool containsData;
-	bool equalDataTypes;
 
 	int32_t componentType;
 	int32_t stride;
@@ -172,7 +171,7 @@ template <class T> void DataComponent<T>::SetSize(int32_t size) {
 
 template <class T> int32_t DataComponent<T>::GetStride() {
 
-	return stride;
+	return componentType != COMPONENT_PACKED_FLOAT ? stride : 4;
 
 }
 
@@ -206,8 +205,7 @@ template <class T> bool DataComponent<T>::ContainsData() {
 template <class T> DataComponent<T>::~DataComponent() {
 
 	delete T;
-	if (internalData != NULL && componentType)
-		delete internalData;
+	delete internalData;
 
 }
 

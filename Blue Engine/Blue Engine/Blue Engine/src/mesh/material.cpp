@@ -46,6 +46,13 @@ void Material::UpdateShader() {
 	specularHardnessConstant->SetValue(specularHardness);
 	specularIntensityConstant->SetValue(specularIntensity);
 
+	if (HasNormalMap() && !shader->HasMacro("NORMALMAPPING")) {
+		shader->AddMacro("NORMALMAPPING");
+	}
+	else {
+		shader->RemoveMacro("NORMALMAPPING");
+	}
+
 	shader->Compile();
 
 	diffuseMapUniform = shader->GetUniform("diffuseMap");
@@ -58,11 +65,10 @@ void Material::UpdateShader() {
 
 }
 
-void Material::Bind(mat4 modelMatrix, mat4 viewMatrix, mat4 projectionMatrix) {
+void Material::Bind(mat4 viewMatrix, mat4 projectionMatrix) {
 
 	shader->Bind();
 
-	modelMatrixUniform->SetValue(modelMatrix);
 	viewMatrixUniform->SetValue(viewMatrix);
 	projectionMatrixUniform->SetValue(projectionMatrix);
 	diffuseMapUniform->SetValue(0);
@@ -78,6 +84,12 @@ void Material::Bind(mat4 modelMatrix, mat4 viewMatrix, mat4 projectionMatrix) {
 		specularMap->Bind(GL_TEXTURE2);
 	if (HasHeightMap())
 		heightMap->Bind(GL_TEXTURE3);
+
+}
+
+Uniform* Material::GetModelMatrixUniform() {
+
+	return modelMatrixUniform;
 
 }
 
