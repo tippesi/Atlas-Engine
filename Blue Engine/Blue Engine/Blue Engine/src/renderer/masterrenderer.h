@@ -16,6 +16,7 @@ public:
 
 	void RenderRectangle();
 
+	static uint32_t GenerateRectangleVAO();
 
 };
 

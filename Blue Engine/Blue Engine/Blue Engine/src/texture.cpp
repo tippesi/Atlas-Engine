@@ -84,6 +84,9 @@ void Texture::SetData(uint8_t* data) {
 	glBindTexture(GL_TEXTURE_2D, ID);
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, data);
 
+	if (mipmaps)
+		glGenerateMipmap(GL_TEXTURE_2D);
+
 }
 
 uint8_t* Texture::GetData() {
@@ -112,22 +115,23 @@ void Texture::Resize(int32_t width, int32_t height) {
 	glBindTexture(GL_TEXTURE_2D, ID);
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, NULL);
 
+	if (mipmaps)
+		glGenerateMipmap(GL_TEXTURE_2D);
+
 }
 
-void Texture::MirrorHorizontally() {
+void Texture::FlipHorizontally() {
 
 	uint8_t* data = GetData();
-	uint8_t* mirroredData = MirrorDataHorizontally(data);
+	uint8_t* mirroredData = FlipDataHorizontally(data);
 	SetData(mirroredData);
-
-	delete data;
 
 }
 
 void Texture::SaveToPNG(const char* filename) {
 
 	uint8_t* data = GetData();
-	uint8_t* mirroredData = MirrorDataHorizontally(data);
+	uint8_t* mirroredData = FlipDataHorizontally(data);
 
 	stbi_write_png(filename, width, height, channels, mirroredData, width * channels);
 
@@ -196,7 +200,7 @@ void Texture::UncorrectGamma() {
 
 }
 
-uint8_t* Texture::MirrorDataHorizontally(uint8_t* data) {
+uint8_t* Texture::FlipDataHorizontally(uint8_t* data) {
 
 	if (data != NULL) {
 
@@ -231,10 +235,10 @@ uint8_t* Texture::MirrorDataHorizontally(uint8_t* data) {
 void Texture::GenerateTexture(GLenum dataFormat, int32_t internalFormat,
 	int32_t format, float LoD, int32_t wrapping, int32_t filtering, bool anisotropic, bool mipmaps) {
 
-	glGenTextures(1, &ID);
+	if (ID == 0)
+		glGenTextures(1, &ID);
 
 	glBindTexture(GL_TEXTURE_2D, ID);
-
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataFormat, data);
 
 	if (mipmaps) {
@@ -309,6 +313,7 @@ void Texture::GenerateTexture(GLenum dataFormat, int32_t internalFormat,
 
 	this->dataFormat = dataFormat;
 	this->internalFormat = internalFormat;
+	this->mipmaps = mipmaps;
 
 }
 

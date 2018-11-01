@@ -45,9 +45,9 @@ public:
 	void Resize(int32_t width, int32_t height);
 
 	/// <summary>
-	/// Mirrors the data horizontally. OpenGL stores data upside down.
+	/// Flips the data horizontally. OpenGL stores data upside down.
 	/// </summary>
-	void MirrorHorizontally();
+	void FlipHorizontally();
 
 	/// <summary>
 	/// Saves the texture as a portable network graphics.
@@ -88,11 +88,11 @@ private:
 	void UncorrectGamma();
 
 	/// <summary>
-	/// Mirrors texture data.
+	/// Flips texture data.
 	/// </summary>
 	/// <param name="data">The data which should be used. Each channel should have 8 bits and should be in the following order (r, g, b, a).</param>
 	/// <return>The data where each channel as 8 bits in the following order (r, g, b, a).</return>
-	uint8_t* MirrorDataHorizontally(uint8_t* data);
+	uint8_t* FlipDataHorizontally(uint8_t* data);
 
 	/// <summary>
 	/// Generates an OpenGL texture and uploads the data to the GPU
@@ -107,6 +107,8 @@ private:
 
 	GLenum dataFormat;
 	int32_t internalFormat;
+
+	bool mipmaps;
 
 	/// Static members
 	/// The current anisotropicLevel

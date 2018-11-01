@@ -5,12 +5,13 @@
 #include "../rendertarget.h"
 #include "../camera.h"
 #include "../scene.h"
+#include "../window.h"
 
 
 class IRenderer {
 
 public:
-	virtual void Render(RenderTarget* target, Camera* camera, Scene* scene) = 0;
+	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) = 0;
 	virtual ~IRenderer() {}
 
 };

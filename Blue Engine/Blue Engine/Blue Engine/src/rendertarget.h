@@ -16,6 +16,8 @@ public:
 	Framebuffer* geometryFramebuffer;
 	Framebuffer* postProcessingFramebuffer;
 
+	Texture* texture;
+
 };
 
 
