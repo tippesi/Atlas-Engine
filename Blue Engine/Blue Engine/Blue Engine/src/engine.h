@@ -7,6 +7,7 @@
 #include "scene.h"
 #include "rendertarget.h"
 #include "shader/shader.h"
+#include "renderer/masterrenderer.h"
 
 namespace Engine {
 
@@ -18,4 +19,4 @@ namespace Engine {
 
 }
 
-#endif 
+#endif

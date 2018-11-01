@@ -99,6 +99,12 @@
     <ClInclude Include="Blue Engine\src\loader\modelloader.h">
       <Filter>Blue Engine\Loader</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\renderer\masterrenderer.h">
+      <Filter>Blue Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\renderer\postprocessrenderer.h">
+      <Filter>Blue Engine\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">
@@ -160,6 +166,12 @@
     </ClCompile>
     <ClCompile Include="Blue Engine\src\loader\modelloader.cpp">
       <Filter>Blue Engine\Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\renderer\masterrenderer.cpp">
+      <Filter>Blue Engine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\renderer\postprocessrenderer.cpp">
+      <Filter>Blue Engine\Renderer</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

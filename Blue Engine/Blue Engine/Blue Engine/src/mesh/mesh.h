@@ -14,7 +14,11 @@ public:
 
 	void UpdateData();
 
-	uint32_t GetVAO();
+	void Bind();
+
+	void Unbind();
+
+	~Mesh();
 
 	MeshData* data;
 

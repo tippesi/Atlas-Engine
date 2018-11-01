@@ -98,3 +98,21 @@ void  Mesh::InitializeVAO() {
 	glBindVertexArray(0);
 
 }
+
+void Mesh::Bind() {
+
+	glBindVertexArray(vao);;
+
+}
+
+void Mesh::Unbind() {
+
+	glBindVertexArray(0);
+
+}
+
+Mesh::~Mesh() {
+
+
+
+}
