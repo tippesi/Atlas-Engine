@@ -2,15 +2,18 @@ layout (location = 0) out vec3 diffuse;
 layout (location = 1) out vec3 normal;
 layout (location = 2) out vec2 additional;
 
-
+#ifdef DIFFUSE_MAP
 uniform sampler2D diffuseMap;
-
-#ifdef NORMALMAPPING
+#endif
+#ifdef NORMAL_MAP
 uniform sampler2D normalMap;
 #endif
-
-uniform bool useDiffuseMap;
-uniform bool useNormalMap;
+#ifdef SPECULAR_MAP
+uniform sampler2D specularMap;
+#endif
+#ifdef HEIGHT_MAP
+uniform sampler2D heightMap;
+#endif
 
 #ifdef REFLECTION
 uniform samplerCube environmentCube;
@@ -24,12 +27,12 @@ const float specularHardness;
 in vec2 fTexCoord;
 in vec3 fNormal;
 
-#ifdef NORMALMAPPING
+#ifdef NORMAL_MAP
 in mat3 toTangentSpace;
 #endif
 
 
-#if defined(REFLECTION)
+#ifdef REFLECTION
 in vec3 fPosition;
 #endif
 
@@ -37,11 +40,16 @@ void main() {
 	
 	vec4 textureColor = vec4(diffuseColor, 1.0f);
 	
+#ifdef DIFFUSE_MAP
 	textureColor *= texture(diffuseMap, fTexCoord);
 	
+	if (textureColor.a < 0.2f)
+		discard;
+#endif
+
 	normal = fNormal;
 
-#if defined(NORMALMAPPING)
+#ifdef NORMAL_MAP
 	normal = normalize(toTangentSpace * (2.0f * texture(normalMap, fTexCoord).rgb - 1.0f));
 #else
 	normal = normalize(normal);

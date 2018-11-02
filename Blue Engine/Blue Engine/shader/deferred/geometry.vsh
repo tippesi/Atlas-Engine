@@ -2,7 +2,7 @@ layout(location=0)in vec3 vPosition;
 layout(location=1)in vec3 vNormal;
 layout(location=2)in vec2 vTexCoord;
 
-#ifdef NORMALMAPPING
+#ifdef NORMAL_MAP
 layout(location=3)in vec3 vTangent;
 #endif
 #ifdef ANIMATION
@@ -15,7 +15,7 @@ layout(location=6)in mat4 mMatrix;
 
 out vec2 fTexCoord;
 
-#ifdef NORMALMAPPING
+#ifdef NORMAL_MAP
 out mat3 toTangentSpace;
 #endif
 
@@ -53,7 +53,7 @@ void main() {
 	
 	fNormal = (mvMatrix * vec4(vNormal, 0.0f)).xyz;
 
-#if defined(NORMALMAPPING)
+#ifdef NORMAL_MAP
     vec3 norm = normalize(fNormal);
     vec3 tang = normalize((mvMatrix * vec4(vTangent, 0.0f)).xyz);
 	

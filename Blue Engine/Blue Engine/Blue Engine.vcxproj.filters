@@ -182,5 +182,8 @@
     <ClCompile Include="Blue Engine\src\renderer\geometryrenderer.cpp">
       <Filter>Blue Engine\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Blue Engine\src\light.cpp">
+      <Filter>Blue Engine</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

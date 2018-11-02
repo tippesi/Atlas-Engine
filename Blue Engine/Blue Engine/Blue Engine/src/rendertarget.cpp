@@ -1,6 +1,6 @@
 #include "rendertarget.h"
 
-RenderTarget::RenderTarget(int32_t width, int32_t height) {
+RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height(height) {
 
 	geometryFramebuffer = new Framebuffer(width, height);
 
@@ -20,6 +20,9 @@ void RenderTarget::Resize(int32_t width, int32_t height) {
 
 	geometryFramebuffer->Resize(width, height);
 	postProcessingFramebuffer->Resize(width, height);
+
+	this->width = width;
+	this->height = height;
 
 }
 

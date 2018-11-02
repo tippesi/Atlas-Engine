@@ -1,14 +1,27 @@
 #include "masterrenderer.h"
 
-MasterRenderer::MasterRenderer() {
+const char* MasterRenderer::postProcessVertexPath = "postprocessing.vsh";
+const char* MasterRenderer::postProcessFragmentPath = "postprocessing.fsh";
+
+MasterRenderer::MasterRenderer(const char* shaderDirectory) {
+
+	string directory(shaderDirectory);
+
+	directory += "/";
 
 	rectangleVAO = GenerateRectangleVAO();
+
+	geometryRenderer = new GeometryRenderer();
+	postProcessRenderer = new PostProcessRenderer(
+		(directory + string(postProcessVertexPath)).c_str(),
+		(directory + string(postProcessFragmentPath)).c_str());
 
 }
 
 void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
-
+	geometryRenderer->Render(window, target, camera, scene);
+	postProcessRenderer->Render(window, target, camera, scene);
 
 }
 

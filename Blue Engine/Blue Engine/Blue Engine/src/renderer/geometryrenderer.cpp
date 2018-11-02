@@ -32,7 +32,8 @@ void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* came
 
 				modelMatrixUniform->SetValue(actor->transformedMatrix);
 
-				glDrawElements(mesh->data->primitiveType, subData->numIndices, mesh->data->indices->GetType(), (void*)(subData->indicesOffset * sizeof(uint32_t)));
+				glDrawElements(mesh->data->primitiveType, subData->numIndices, mesh->data->indices->GetType(), 
+					(void*)(subData->indicesOffset * mesh->data->indices->GetElementSize()));
 
 			}
 

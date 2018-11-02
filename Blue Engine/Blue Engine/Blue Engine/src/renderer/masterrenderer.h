@@ -9,7 +9,7 @@
 class MasterRenderer {
 
 public:
-	MasterRenderer();
+	MasterRenderer(const char* shaderDirectory);
 
 	void RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
@@ -24,6 +24,9 @@ private:
 	PostProcessRenderer * postProcessRenderer;
 
 	uint32_t rectangleVAO;
+
+	static const char* postProcessVertexPath;
+	static const char* postProcessFragmentPath;	
 
 };
 
