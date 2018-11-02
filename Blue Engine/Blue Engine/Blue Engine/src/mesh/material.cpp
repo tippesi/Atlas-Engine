@@ -52,14 +52,14 @@ void Material::UpdateShader() {
 	else {
 		shader->RemoveMacro("DIFFUSE_MAP");
 	}
-
+	
 	if (HasNormalMap() && !shader->HasMacro("NORMAL_MAP")) {
 		shader->AddMacro("NORMAL_MAP");
 	}
 	else {
 		shader->RemoveMacro("NORMAL_MAP");
 	}
-
+	
 	shader->Compile();
 
 	diffuseMapUniform = shader->GetUniform("diffuseMap");

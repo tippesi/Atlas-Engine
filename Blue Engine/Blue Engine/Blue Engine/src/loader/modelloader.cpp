@@ -184,7 +184,7 @@ Material* ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, string directory
 		string path;
 		assimpMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
 		path = directory + string(aiPath.C_Str());
-		material->normalMap = new Texture(path.c_str());
+		material->normalMap = new Texture(path.c_str(), true);
 	}
 
 	material->UpdateShader();

@@ -29,7 +29,7 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	target->geometryFramebuffer->components[1]->Bind(GL_TEXTURE0);
+	target->postProcessingFramebuffer->components[0]->Bind(GL_TEXTURE0);
 
 	glBindVertexArray(rectangleVAO);
 

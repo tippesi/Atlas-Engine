@@ -28,7 +28,7 @@ MasterRenderer::MasterRenderer(const char* shaderDirectory) {
 void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
 	geometryRenderer->Render(window, target, camera, scene);
-
+	directionalLightRenderer->Render(window, target, camera, scene);
 	postProcessRenderer->Render(window, target, camera, scene);
 
 }

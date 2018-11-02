@@ -20,6 +20,7 @@ out mat3 toTangentSpace;
 #endif
 
 out vec3 fNormal;
+out vec3 fTangent;
 
 #ifdef ANIMATION
 layout (std140) uniform AnimationUBO {
@@ -45,8 +46,7 @@ void main() {
 	mat4 mvMatrix = vMatrix * mMatrix * boneTransform;
 #else
 	mat4 mvMatrix = vMatrix * mMatrix;
-#endif
-   
+#endif   
 	vec4 positionToCamera = mvMatrix * vec4(vPosition, 1.0f);
 	
 	gl_Position = pMatrix * positionToCamera;
@@ -56,6 +56,8 @@ void main() {
 #ifdef NORMAL_MAP
     vec3 norm = normalize(fNormal);
     vec3 tang = normalize((mvMatrix * vec4(vTangent, 0.0f)).xyz);
+	
+	fTangent = tang;
 	
 	vec3 bitang = cross(tang, norm);   
 

@@ -18,7 +18,26 @@ DirectionalLightRenderer::DirectionalLightRenderer(const char* vertexSource, con
 
 void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
+	shader->Bind();
+	target->postProcessingFramebuffer->Bind();
 
+	lightDirection->SetValue(vec3(0.0f, -1.0f, 0.0f));
+	lightColor->SetValue(vec3(1.0f, 1.0f, 1.0f));
+	lightAmbient->SetValue(0.2f);
+	inverseViewMatrix->SetValue(camera->inverseViewMatrix);
+	inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
+
+	target->geometryFramebuffer->components[0]->Bind(GL_TEXTURE0);
+	target->geometryFramebuffer->components[1]->Bind(GL_TEXTURE1);
+	target->geometryFramebuffer->components[2]->Bind(GL_TEXTURE2);
+
+	glBindVertexArray(rectangleVAO);
+
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	glBindVertexArray(0);
+
+	target->postProcessingFramebuffer->Unbind();
 
 }
 
@@ -47,5 +66,11 @@ void DirectionalLightRenderer::GetUniforms() {
 	lightSpaceMatrix = shader->GetUniform("lightSpaceMatrix");
 	inverseViewMatrix = shader->GetUniform("ivMatrix");
 	inverseProjectionMatrix = shader->GetUniform("ipMatrix");
+
+	diffuseTexture->SetValue(0);
+	normalTexture->SetValue(1);
+	materialTexture->SetValue(2);
+	depthTexture->SetValue(3);
+	aoTexture->SetValue(4);
 
 }
