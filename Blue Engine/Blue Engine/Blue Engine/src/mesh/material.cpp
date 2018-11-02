@@ -70,6 +70,11 @@ void Material::UpdateShader() {
 	viewMatrixUniform = shader->GetUniform("vMatrix");
 	projectionMatrixUniform = shader->GetUniform("pMatrix");
 
+	diffuseMapUniform->SetValue(0);
+	normalMapUniform->SetValue(1);
+	specularMapUniform->SetValue(2);
+	heightMapUniform->SetValue(3);
+
 }
 
 void Material::Bind(mat4 viewMatrix, mat4 projectionMatrix) {
@@ -78,10 +83,6 @@ void Material::Bind(mat4 viewMatrix, mat4 projectionMatrix) {
 
 	viewMatrixUniform->SetValue(viewMatrix);
 	projectionMatrixUniform->SetValue(projectionMatrix);
-	diffuseMapUniform->SetValue(0);
-	normalMapUniform->SetValue(1);
-	specularMapUniform->SetValue(2);
-	heightMapUniform->SetValue(3);
 
 	if (HasDiffuseMap())
 		diffuseMap->Bind(GL_TEXTURE0);

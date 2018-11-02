@@ -4,6 +4,7 @@
 #include "../system.h"
 
 #include "geometryrenderer.h"
+#include "directionallightrenderer.h"
 #include "postprocessrenderer.h"
 
 class MasterRenderer {
@@ -20,11 +21,14 @@ public:
 	static uint32_t GenerateRectangleVAO();
 
 private:
-	GeometryRenderer * geometryRenderer;
-	PostProcessRenderer * postProcessRenderer;
+	GeometryRenderer* geometryRenderer;
+	DirectionalLightRenderer* directionalLightRenderer;
+	PostProcessRenderer* postProcessRenderer;
 
 	uint32_t rectangleVAO;
 
+	static const char* directionalLightVertexPath;
+	static const char* directionalLightFragmentPath;
 	static const char* postProcessVertexPath;
 	static const char* postProcessFragmentPath;	
 

@@ -134,7 +134,10 @@ string ShaderSource::ReadShaderFile(const char* filename, bool mainFile) {
 
 		string includeCode = ReadShaderFile((filePath + includeFilename).c_str(), false);
 
-		shaderCode.replace(includePosition, lineBreakPosition, includeCode);
+		string codeBeforeInclude = shaderCode.substr(0, includePosition);
+		string codeAfterInclude = shaderCode.substr(lineBreakPosition, shaderCode.length() - 1);
+
+		shaderCode = codeBeforeInclude + includeCode + codeAfterInclude;
 	
 	}
 

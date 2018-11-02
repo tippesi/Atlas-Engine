@@ -12,10 +12,6 @@ class Scene {
 public:
 	Scene();
 
-	void Add(SceneNode* node);
-
-	void Remove(SceneNode* node);
-
 	void Add(Actor* actor);
 
 	void Remove(Actor* actor);

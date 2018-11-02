@@ -14,12 +14,11 @@ PostProcessRenderer::PostProcessRenderer(const char* vertexSource, const char* f
 
 	shader->Compile();
 
-	exposure = shader->GetUniform("exposure");
-	saturation = shader->GetUniform("saturation");
+	GetUniforms();
 
 }
 
-void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
 	glViewport(window->viewport->x, window->viewport->y, window->viewport->width, window->viewport->height);
 
@@ -40,5 +39,15 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	glBindVertexArray(0);
+
+}
+
+void PostProcessRenderer::GetUniforms() {
+
+	delete exposure;
+	delete saturation;
+
+	exposure = shader->GetUniform("exposure");
+	saturation = shader->GetUniform("saturation");
 
 }

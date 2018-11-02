@@ -1,5 +1,7 @@
 #include "masterrenderer.h"
 
+const char* MasterRenderer::directionalLightVertexPath = "deferred/directional.vsh";
+const char* MasterRenderer::directionalLightFragmentPath = "deferred/directional.fsh";
 const char* MasterRenderer::postProcessVertexPath = "postprocessing.vsh";
 const char* MasterRenderer::postProcessFragmentPath = "postprocessing.fsh";
 
@@ -12,6 +14,11 @@ MasterRenderer::MasterRenderer(const char* shaderDirectory) {
 	rectangleVAO = GenerateRectangleVAO();
 
 	geometryRenderer = new GeometryRenderer();
+
+	directionalLightRenderer = new DirectionalLightRenderer(
+		(directory + string(directionalLightVertexPath)).c_str(),
+		(directory + string(directionalLightFragmentPath)).c_str());
+
 	postProcessRenderer = new PostProcessRenderer(
 		(directory + string(postProcessVertexPath)).c_str(),
 		(directory + string(postProcessFragmentPath)).c_str());
@@ -21,6 +28,7 @@ MasterRenderer::MasterRenderer(const char* shaderDirectory) {
 void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
 	geometryRenderer->Render(window, target, camera, scene);
+
 	postProcessRenderer->Render(window, target, camera, scene);
 
 }

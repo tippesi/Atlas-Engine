@@ -1,5 +1,4 @@
 #include "geometryrenderer.h"
-#include <time.h>
 
 GeometryRenderer::GeometryRenderer() {
 
@@ -7,7 +6,7 @@ GeometryRenderer::GeometryRenderer() {
 
 }
 
-void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
 	target->geometryFramebuffer->Bind();
 

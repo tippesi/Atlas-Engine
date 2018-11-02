@@ -10,9 +10,11 @@ class PostProcessRenderer : public IRenderer {
 public:
 	PostProcessRenderer(const char* vertexSource, const char* fragmentSource);
 
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 
 private:
+	void GetUniforms();
+
 	uint32_t rectangleVAO;
 
 	Shader* shader;

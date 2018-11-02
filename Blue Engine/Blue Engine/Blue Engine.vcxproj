@@ -163,6 +163,7 @@
     <ClInclude Include="Blue Engine\src\mesh\meshdata.h" />
     <ClInclude Include="Blue Engine\src\mesh\actor.h" />
     <ClInclude Include="Blue Engine\src\mesh\packing.h" />
+    <ClInclude Include="Blue Engine\src\renderer\directionallightrenderer.h" />
     <ClInclude Include="Blue Engine\src\renderer\geometryrenderer.h" />
     <ClInclude Include="Blue Engine\src\renderer\IRenderer.h" />
     <ClInclude Include="Blue Engine\src\renderer\masterrenderer.h" />
@@ -192,6 +193,7 @@
     <ClCompile Include="Blue Engine\src\mesh\meshdata.cpp" />
     <ClCompile Include="Blue Engine\src\mesh\actor.cpp" />
     <ClCompile Include="Blue Engine\src\mesh\packing.cpp" />
+    <ClCompile Include="Blue Engine\src\renderer\directionallightrenderer.cpp" />
     <ClCompile Include="Blue Engine\src\renderer\geometryrenderer.cpp" />
     <ClCompile Include="Blue Engine\src\renderer\masterrenderer.cpp" />
     <ClCompile Include="Blue Engine\src\renderer\postprocessrenderer.cpp" />

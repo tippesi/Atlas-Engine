@@ -111,6 +111,9 @@
     <ClInclude Include="Blue Engine\src\renderer\geometryrenderer.h">
       <Filter>Blue Engine\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\renderer\directionallightrenderer.h">
+      <Filter>Blue Engine\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">
@@ -184,6 +187,9 @@
     </ClCompile>
     <ClCompile Include="Blue Engine\src\light.cpp">
       <Filter>Blue Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\renderer\directionallightrenderer.cpp">
+      <Filter>Blue Engine\Renderer</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

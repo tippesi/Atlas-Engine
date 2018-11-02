@@ -14,6 +14,7 @@ struct Shadow {
 struct Light {
 
     vec3 position;
+	vec3 direction;
     vec3 color;
 	float ambient;
 	Shadow shadow;
