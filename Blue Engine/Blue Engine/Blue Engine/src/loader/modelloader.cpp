@@ -9,7 +9,7 @@ MeshData* ModelLoader::LoadMesh(const char* filename) {
 	size_t directoryPathEnd = directoryPath.find_last_of("/\\");
 
 	if (directoryPath.find_last_of("/\\") != string::npos)
-		directoryPath = directoryPath.substr(0, directoryPathEnd);
+		directoryPath = directoryPath.substr(0, directoryPathEnd + 1);
 	else
 		directoryPath.clear();
 
