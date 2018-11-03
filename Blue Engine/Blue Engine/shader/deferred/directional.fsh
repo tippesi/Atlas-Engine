@@ -56,7 +56,7 @@ void main() {
 	float occlusionFactor = 1.0f;
 		
 	vec3 viewDir = normalize(-fragPos);
-	vec3 lightDir = light.direction;
+	vec3 lightDir = -light.direction;
 	
 #ifdef SSAO
 	occlusionFactor = pow(texture(aoTexture, fTexCoord).r, aoStrength);

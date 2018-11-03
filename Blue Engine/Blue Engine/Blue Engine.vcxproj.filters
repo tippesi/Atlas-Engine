@@ -114,6 +114,12 @@
     <ClInclude Include="Blue Engine\src\renderer\directionallightrenderer.h">
       <Filter>Blue Engine\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="keyboard.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="mouse.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">
@@ -190,6 +196,12 @@
     </ClCompile>
     <ClCompile Include="Blue Engine\src\renderer\directionallightrenderer.cpp">
       <Filter>Blue Engine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="keyboard.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="mouse.cpp">
+      <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -98,7 +98,7 @@ void SceneNode::Update(mat4 parentTransformation) {
 	}
 
 	for (Actor* actor : actors) {
-		actor->transformedMatrix = transformation * actor->modelMatrix;
+		actor->transformedMatrix = transformation * actor->transformedMatrix;
 	}
 
 	// Lights should be calculated here

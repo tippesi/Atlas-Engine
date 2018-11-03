@@ -59,6 +59,14 @@ void Scene::Remove(Light* light) {
 
 void Scene::Update() {
 
+	// We have to copy the matrices because some actors might not be added
+	// to the root node. In this case the trasformedMatrix would never get updated
+	for (auto actorBatch : actorBatches) {
+		for (auto actor : actorBatch->actors) {
+			actor->transformedMatrix = actor->modelMatrix;
+		}
+	}
+
 	rootNode->Update(mat4(1.0f));
 
 }

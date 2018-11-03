@@ -21,9 +21,11 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 	shader->Bind();
 	target->postProcessingFramebuffer->Bind();
 
-	lightDirection->SetValue(vec3(0.0f, -1.0f, 0.0f));
+	vec3 direction = normalize(vec3(camera->viewMatrix * vec4(0.0f, -1.0f, 0.0f, 0.0f)));
+
+	lightDirection->SetValue(direction);
 	lightColor->SetValue(vec3(1.0f, 1.0f, 1.0f));
-	lightAmbient->SetValue(0.2f);
+	lightAmbient->SetValue(0.1f);
 	inverseViewMatrix->SetValue(camera->inverseViewMatrix);
 	inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
