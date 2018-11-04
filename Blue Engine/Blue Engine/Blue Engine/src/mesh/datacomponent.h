@@ -79,9 +79,10 @@ template <class T> void DataComponent<T>::Set(T* data) {
 		uint32_t* internalData = (uint32_t*)this->internalData;
 		int32_t dataCounter = 0;
 		for (int32_t i = 0; i < size; i++) {
-			vec4 vector = vec4(data[dataCounter], data[dataCounter + 1], data[dataCounter + 2], 0.0f);
+			vec4 vector = vec4(data[dataCounter], data[dataCounter + 1],
+				data[dataCounter + 2], data[dataCounter + 3]);
 			internalData[i] = packNormalizedFloat_2_10_10_10_REV(vector);
-			dataCounter += 3;
+			dataCounter += 4;
 		}
 	}
 	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) < sizeof(T)) {

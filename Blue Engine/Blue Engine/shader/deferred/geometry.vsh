@@ -3,7 +3,7 @@ layout(location=1)in vec3 vNormal;
 layout(location=2)in vec2 vTexCoord;
 
 #ifdef NORMAL_MAP
-layout(location=3)in vec3 vTangent;
+layout(location=3)in vec4 vTangent;
 #endif
 #ifdef ANIMATION
 layout(location=4)in uvec4 vBoneIDs;
@@ -20,7 +20,6 @@ out mat3 toTangentSpace;
 #endif
 
 out vec3 fNormal;
-out vec3 fTangent;
 
 #ifdef ANIMATION
 layout (std140) uniform AnimationUBO {
@@ -55,11 +54,10 @@ void main() {
 
 #ifdef NORMAL_MAP
     vec3 norm = normalize(fNormal);
-    vec3 tang = normalize((mvMatrix * vec4(vTangent, 0.0f)).xyz);
+	float correctionFactor = vTangent.w;
+    vec3 tang = normalize((mvMatrix * vec4(vTangent.xyz, 0.0f)).xyz);
 	
-	fTangent = tang;
-	
-	vec3 bitang = cross(tang, norm);   
+	vec3 bitang = correctionFactor * cross(tang, norm);
 
 	toTangentSpace = mat3(tang, bitang, norm);
 #endif

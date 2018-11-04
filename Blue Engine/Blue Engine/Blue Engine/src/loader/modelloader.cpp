@@ -82,9 +82,9 @@ MeshData* ModelLoader::LoadMesh(const char* filename) {
 
 	uint32_t* indices = new uint32_t[indexCount];
 	float* vertices = new float[vertexCount * 3];
-	float* normals = new float[vertexCount * 3];
+	float* normals = new float[vertexCount * 4];
 	float* texCoords = hasTexCoords ? new float[vertexCount * 2] : nullptr;
-	float* tangents = hasTangents ? new float[vertexCount * 3] : nullptr;
+	float* tangents = hasTangents ? new float[vertexCount * 4] : nullptr;
 
 	for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 
@@ -103,17 +103,25 @@ MeshData* ModelLoader::LoadMesh(const char* filename) {
 
 				vec3 normal = normalize(vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z));
 
-				normals[usedVertices * 3] = normal.x;
-				normals[usedVertices * 3 + 1] = normal.y;
-				normals[usedVertices * 3 + 2] = normal.z;
+				normals[usedVertices * 4] = normal.x;
+				normals[usedVertices * 4 + 1] = normal.y;
+				normals[usedVertices * 4 + 2] = normal.z;
+				normals[usedVertices * 4 + 3] = 0.0f;
 
 				if (hasTangents && mesh->mTangents != NULL) {
 					vec3 tangent = vec3(mesh->mTangents[j].x, mesh->mTangents[j].y, mesh->mTangents[j].z);
 					tangent = normalize(tangent - normal * dot(normal, tangent));
 
-					tangents[usedVertices * 3] = tangent.x;
-					tangents[usedVertices * 3 + 1] = tangent.y;
-					tangents[usedVertices * 3 + 2] = tangent.z;
+					vec3 estimatedBitangent = normalize(cross(tangent, normal));
+					vec3 correctBitangent = normalize(vec3(mesh->mBitangents[j].x, mesh->mBitangents[j].y,
+						mesh->mBitangents[j].z));
+
+					float dotProduct = dot(estimatedBitangent, correctBitangent);
+
+					tangents[usedVertices * 4] = tangent.x;
+					tangents[usedVertices * 4 + 1] = tangent.y;
+					tangents[usedVertices * 4 + 2] = tangent.z;
+					tangents[usedVertices * 4 + 3] = dotProduct < 0.0f ? -1.0f : 1.0f;
 				}
 
 				if (hasTexCoords && mesh->mTextureCoords[0] != NULL) {

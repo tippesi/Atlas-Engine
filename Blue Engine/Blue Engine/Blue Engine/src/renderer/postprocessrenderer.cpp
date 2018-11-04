@@ -11,6 +11,7 @@ PostProcessRenderer::PostProcessRenderer(const char* vertexSource, const char* f
 	shader->AddComponent(FRAGMENT_SHADER, fragmentSoure);
 
 	shader->AddMacro("FILMIC_TONEMAPPING");
+	shader->AddMacro("CHROMATIC_ABERRATION");
 
 	shader->Compile();
 
@@ -26,6 +27,9 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 
 	exposure->SetValue(1.0f);
 	saturation->SetValue(1.0f);
+
+	aberrationStrength->SetValue(0.7f);
+	aberrationReversed->SetValue(1.0f);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -46,8 +50,22 @@ void PostProcessRenderer::GetUniforms() {
 
 	delete exposure;
 	delete saturation;
+	delete bloomPassses;
+	delete aberrationStrength;
+	delete aberrationReversed;
+	delete vignetteOffset;
+	delete vignettePower;
+	delete vignetteStrength;
+	delete vignetteColor;
 
 	exposure = shader->GetUniform("exposure");
 	saturation = shader->GetUniform("saturation");
+	bloomPassses = shader->GetUniform("bloomPassses");
+	aberrationStrength = shader->GetUniform("aberrationStrength");
+	aberrationReversed = shader->GetUniform("aberrationReversed");
+	vignetteOffset = shader->GetUniform("vignetteOffset");
+	vignettePower = shader->GetUniform("vignettePower");
+	vignetteStrength = shader->GetUniform("vignetteStrength");
+	vignetteColor = shader->GetUniform("vignetteColor");
 
 }

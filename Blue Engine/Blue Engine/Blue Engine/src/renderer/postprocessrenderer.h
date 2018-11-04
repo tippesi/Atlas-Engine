@@ -21,6 +21,13 @@ private:
 
 	Uniform* exposure;
 	Uniform* saturation;
+	Uniform* bloomPassses;
+	Uniform* aberrationStrength;
+	Uniform* aberrationReversed;
+	Uniform* vignetteOffset;
+	Uniform* vignettePower;
+	Uniform* vignetteStrength;
+	Uniform* vignetteColor;
 
 };
 
