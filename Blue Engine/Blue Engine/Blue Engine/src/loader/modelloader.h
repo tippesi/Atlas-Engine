@@ -1,8 +1,8 @@
 #ifndef MODELLOADER_H
 #define MODELLOADER_H
 
-#include "../system.h"
-#include "../mesh/meshdata.h"
+#include "../System.h"
+#include "../Mesh/MeshData.h"
 
 #include "../libraries/assimp/Importer.hpp"
 #include "../libraries/assimp/scene.h"
