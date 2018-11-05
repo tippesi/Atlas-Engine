@@ -10,9 +10,6 @@ PostProcessRenderer::PostProcessRenderer(const char* vertexSource, const char* f
 	shader->AddComponent(VERTEX_SHADER, vertexSource);
 	shader->AddComponent(FRAGMENT_SHADER, fragmentSoure);
 
-	shader->AddMacro("FILMIC_TONEMAPPING");
-	shader->AddMacro("CHROMATIC_ABERRATION");
-
 	shader->Compile();
 
 	GetUniforms();
@@ -23,15 +20,63 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 
 	glViewport(window->viewport->x, window->viewport->y, window->viewport->width, window->viewport->height);
 
+	PostProcessing* postProcessing = scene->postProcessing;
+
+	bool shaderChanged = false;
+
+	bool hasFilmicTonemappingMacro = shader->HasMacro("FILMIC_TONEMAPPING");
+	bool hasVignetteMacro = shader->HasMacro("VIGNETTE");
+	bool hasChromaticAberrationMacro = shader->HasMacro("CHROMATIC_ABERRATION");
+
+	if (postProcessing->filmicTonemapping && !hasFilmicTonemappingMacro) {
+		shader->AddMacro("FILMIC_TONEMAPPING");
+		shaderChanged = true;
+	}
+	else if (!postProcessing->filmicTonemapping && hasFilmicTonemappingMacro) {
+		shader->RemoveMacro("FILMIC_TONEMAPPING");
+		shaderChanged = true;
+	}
+
+	if (postProcessing->vignette->use && !hasVignetteMacro) {
+		shader->AddMacro("VIGNETTE");
+		shaderChanged = true;
+	}
+	else if (!postProcessing->vignette->use && hasVignetteMacro) {
+		shader->RemoveMacro("VIGNETTE");
+		shaderChanged = true;
+	}
+
+	if (postProcessing->chromaticAberration->use && !hasChromaticAberrationMacro) {
+		shader->AddMacro("CHROMATIC_ABERRATION");
+		shaderChanged = true;
+	}
+	else if (!postProcessing->chromaticAberration->use && hasChromaticAberrationMacro) {
+		shader->RemoveMacro("CHROMATIC_ABERRATION");
+		shaderChanged = true;
+	}
+
+	if (shaderChanged) {
+		shader->Compile();
+		GetUniforms();
+	}
+
 	shader->Bind();
 
-	exposure->SetValue(1.0f);
-	saturation->SetValue(1.0f);
+	exposure->SetValue(postProcessing->exposure);
+	saturation->SetValue(postProcessing->saturation);
 
-	aberrationStrength->SetValue(0.7f);
-	aberrationReversed->SetValue(1.0f);
+	if (postProcessing->chromaticAberration->use) {
+		float reversedValue = postProcessing->chromaticAberration->colorsReversed ? 1.0f : 0.0f;
+		aberrationStrength->SetValue(postProcessing->chromaticAberration->strength);
+		aberrationReversed->SetValue(reversedValue);
+	}
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	if (postProcessing->vignette->use) {
+		vignetteOffset->SetValue(postProcessing->vignette->offset);
+		vignettePower->SetValue(postProcessing->vignette->power);
+		vignetteStrength->SetValue(postProcessing->vignette->strength);
+		vignetteColor->SetValue(postProcessing->vignette->color);
+	}
 
 	target->postProcessingFramebuffer->components[0]->Bind(GL_TEXTURE0);
 

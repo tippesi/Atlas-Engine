@@ -28,6 +28,9 @@
     <Filter Include="Blue Engine\Loader">
       <UniqueIdentifier>{2ab292e9-a55e-4f5b-b015-5a18a9d48c0c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Blue Engine\PostProcessing">
+      <UniqueIdentifier>{e5c072fd-6c1d-4029-a162-3f8d26ab8563}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Blue Engine\src\camera.h">
@@ -120,6 +123,15 @@
     <ClInclude Include="mouse.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\postprocessing\ChromaticAberration.h">
+      <Filter>Blue Engine\PostProcessing</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\postprocessing\PostProcessing.h">
+      <Filter>Blue Engine\PostProcessing</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\postprocessing\Vignette.h">
+      <Filter>Blue Engine\PostProcessing</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">
@@ -202,6 +214,15 @@
     </ClCompile>
     <ClCompile Include="mouse.cpp">
       <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\postprocessing\ChromaticAberration.cpp">
+      <Filter>Blue Engine\PostProcessing</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\postprocessing\PostProcessing.cpp">
+      <Filter>Blue Engine\PostProcessing</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\postprocessing\Vignette.cpp">
+      <Filter>Blue Engine\PostProcessing</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

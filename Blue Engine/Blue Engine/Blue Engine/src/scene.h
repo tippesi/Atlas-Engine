@@ -1,11 +1,12 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include "system.h"
-#include "scenenode.h"
-#include "mesh/actor.h"
-#include "mesh/actorbatch.h"
-#include "light.h"
+#include "System.h"
+#include "SceneNode.h"
+#include "Mesh/Actor.h"
+#include "Mesh/ActorBatch.h"
+#include "Light.h"
+#include "PostProcessing/PostProcessing.h"
 
 class Scene {
 
@@ -22,10 +23,14 @@ public:
 
 	void Update();
 
+	~Scene();
+
 	SceneNode* rootNode;
 
 	vector<Light*> lights;
 	vector<ActorBatch*> actorBatches;
+
+	PostProcessing* postProcessing;
 
 };
 

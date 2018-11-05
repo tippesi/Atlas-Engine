@@ -41,6 +41,8 @@ Uniform* Shader::GetUniform(const char* uniformName) {
 
 void Shader::AddMacro(const char* macro) {
 
+	isCompiled = false;
+
 	for (ShaderSource* source : components) {
 		source->AddMacro(macro);
 	}
@@ -60,6 +62,7 @@ void Shader::RemoveMacro(const char* macro) {
 	for (auto iterator = macros.begin(); iterator != macros.end(); iterator++) {
 		if (macroString == *iterator) {
 			macros.erase(iterator);
+			isCompiled = false;
 			return;
 		}
 	}
@@ -129,6 +132,10 @@ bool Shader::Compile() {
 }
 
 void Shader::Bind() {
+
+	if (!isCompiled) {
+		Compile();
+	}
 
 	if (boundShaderID != ID) {
 		glUseProgram(ID);

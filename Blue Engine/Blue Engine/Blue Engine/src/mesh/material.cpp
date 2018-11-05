@@ -46,17 +46,20 @@ void Material::UpdateShader() {
 	specularHardnessConstant->SetValue(specularHardness);
 	specularIntensityConstant->SetValue(specularIntensity);
 
-	if (HasDiffuseMap() && !shader->HasMacro("DIFFUSE_MAP")) {
+	bool hasDiffuseMapMacro = shader->HasMacro("DIFFUSE_MAP");
+	bool hasNormalMapMacro = shader->HasMacro("NORMAL_MAP");
+
+	if (HasDiffuseMap() && !hasDiffuseMapMacro) {
 		shader->AddMacro("DIFFUSE_MAP");
 	}
-	else {
+	else if (!HasDiffuseMap() && hasDiffuseMapMacro){
 		shader->RemoveMacro("DIFFUSE_MAP");
 	}
 	
 	if (HasNormalMap() && !shader->HasMacro("NORMAL_MAP")) {
 		shader->AddMacro("NORMAL_MAP");
 	}
-	else {
+	else if (!HasNormalMap() && hasNormalMapMacro){
 		shader->RemoveMacro("NORMAL_MAP");
 	}
 	

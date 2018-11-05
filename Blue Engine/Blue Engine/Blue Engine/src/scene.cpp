@@ -5,6 +5,8 @@ Scene::Scene() {
 	rootNode = new SceneNode();
 	rootNode->AddToScene(this);
 
+	postProcessing = new PostProcessing();
+
 }
 
 void Scene::Add(Actor* actor) {
@@ -68,5 +70,12 @@ void Scene::Update() {
 	}
 
 	rootNode->Update(mat4(1.0f));
+
+}
+
+Scene::~Scene() {
+
+	delete rootNode;
+	delete postProcessing;
 
 }
