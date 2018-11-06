@@ -1,9 +1,8 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "../system.h"
-#include "meshdata.h"
-#include "modelloader.h"
+#include "../System.h"
+#include "MeshData.h"
 
 class Mesh {
 

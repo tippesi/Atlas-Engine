@@ -1,5 +1,7 @@
 #include "masterrenderer.h"
 
+const char* MasterRenderer::shadowVertexPath = "shadow.vsh";
+const char* MasterRenderer::shadowFragmentPath = "shadow.fsh";
 const char* MasterRenderer::directionalLightVertexPath = "deferred/directional.vsh";
 const char* MasterRenderer::directionalLightFragmentPath = "deferred/directional.fsh";
 const char* MasterRenderer::postProcessVertexPath = "postprocessing.vsh";
@@ -14,6 +16,10 @@ MasterRenderer::MasterRenderer(const char* shaderDirectory) {
 	rectangleVAO = GenerateRectangleVAO();
 
 	geometryRenderer = new GeometryRenderer();
+
+	shadowRenderer = new ShadowRenderer(
+		(directory + string(shadowVertexPath)).c_str(),
+		(directory + string(shadowFragmentPath)).c_str());
 
 	directionalLightRenderer = new DirectionalLightRenderer(
 		(directory + string(directionalLightVertexPath)).c_str(),

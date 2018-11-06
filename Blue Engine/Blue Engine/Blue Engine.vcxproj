@@ -154,7 +154,9 @@
     <ClInclude Include="Blue Engine\src\Camera.h" />
     <ClInclude Include="Blue Engine\src\Engine.h" />
     <ClInclude Include="Blue Engine\src\Framebuffer.h" />
-    <ClInclude Include="Blue Engine\src\Light.h" />
+    <ClInclude Include="Blue Engine\src\lighting\Light.h" />
+    <ClInclude Include="Blue Engine\src\lighting\Shadow.h" />
+    <ClInclude Include="Blue Engine\src\lighting\Sky.h" />
     <ClInclude Include="Blue Engine\src\Loader\ModelLoader.h" />
     <ClInclude Include="Blue Engine\src\Mesh\ActorBatch.h" />
     <ClInclude Include="Blue Engine\src\Mesh\DataComponent.h" />
@@ -191,7 +193,9 @@
     <ClCompile Include="Blue Engine\src\Camera.cpp" />
     <ClCompile Include="Blue Engine\src\Engine.cpp" />
     <ClCompile Include="Blue Engine\src\Framebuffer.cpp" />
-    <ClCompile Include="Blue Engine\src\Light.cpp" />
+    <ClCompile Include="Blue Engine\src\lighting\Light.cpp" />
+    <ClCompile Include="Blue Engine\src\lighting\Shadow.cpp" />
+    <ClCompile Include="Blue Engine\src\lighting\Sky.cpp" />
     <ClCompile Include="Blue Engine\src\Loader\ModelLoader.cpp" />
     <ClCompile Include="Blue Engine\src\Mesh\ActorBatch.cpp" />
     <ClCompile Include="Blue Engine\src\Mesh\Material.cpp" />

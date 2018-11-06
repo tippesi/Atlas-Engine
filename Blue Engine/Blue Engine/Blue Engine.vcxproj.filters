@@ -31,6 +31,9 @@
     <Filter Include="Blue Engine\PostProcessing">
       <UniqueIdentifier>{e5c072fd-6c1d-4029-a162-3f8d26ab8563}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Blue Engine\Lighting">
+      <UniqueIdentifier>{521738aa-57d4-4267-b22e-caeff34e53a1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Blue Engine\src\camera.h">
@@ -93,9 +96,6 @@
     <ClInclude Include="Blue Engine\src\mesh\actor.h">
       <Filter>Blue Engine\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="Blue Engine\src\light.h">
-      <Filter>Blue Engine</Filter>
-    </ClInclude>
     <ClInclude Include="Blue Engine\src\mesh\actorbatch.h">
       <Filter>Blue Engine\Mesh</Filter>
     </ClInclude>
@@ -134,6 +134,15 @@
     </ClInclude>
     <ClInclude Include="Blue Engine\src\renderer\ShadowRenderer.h">
       <Filter>Blue Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\lighting\Light.h">
+      <Filter>Blue Engine\Lighting</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\lighting\Shadow.h">
+      <Filter>Blue Engine\Lighting</Filter>
+    </ClInclude>
+    <ClInclude Include="Blue Engine\src\lighting\Sky.h">
+      <Filter>Blue Engine\Lighting</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -206,9 +215,6 @@
     <ClCompile Include="Blue Engine\src\renderer\geometryrenderer.cpp">
       <Filter>Blue Engine\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Blue Engine\src\light.cpp">
-      <Filter>Blue Engine</Filter>
-    </ClCompile>
     <ClCompile Include="Blue Engine\src\renderer\directionallightrenderer.cpp">
       <Filter>Blue Engine\Renderer</Filter>
     </ClCompile>
@@ -229,6 +235,15 @@
     </ClCompile>
     <ClCompile Include="Blue Engine\src\renderer\ShadowRenderer.cpp">
       <Filter>Blue Engine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\lighting\Light.cpp">
+      <Filter>Blue Engine\Lighting</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\lighting\Shadow.cpp">
+      <Filter>Blue Engine\Lighting</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\lighting\Sky.cpp">
+      <Filter>Blue Engine\Lighting</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

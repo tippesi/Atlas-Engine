@@ -1,7 +1,8 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
-#include "System.h"
+#include "../System.h"
+#include "Shadow.h"
 
 #define DIRECTIONAL_LIGHT 0
 #define POINT_LIGHT 1
@@ -19,6 +20,8 @@ public:
 	
 	vec3 diffuseColor;
 	float ambient;
+
+	Shadow* shadow;
 
 };
 

@@ -1,11 +1,12 @@
 #ifndef MASTERRENDERER_H
 #define MASTERRENDERER_H
 
-#include "../system.h"
+#include "../System.h"
 
-#include "geometryrenderer.h"
-#include "directionallightrenderer.h"
-#include "postprocessrenderer.h"
+#include "GeometryRenderer.h"
+#include "ShadowRenderer.h"
+#include "DirectionalLightRenderer.h"
+#include "PostProcessRenderer.h"
 
 class MasterRenderer {
 
@@ -22,11 +23,14 @@ public:
 
 private:
 	GeometryRenderer* geometryRenderer;
+	ShadowRenderer* shadowRenderer;
 	DirectionalLightRenderer* directionalLightRenderer;
 	PostProcessRenderer* postProcessRenderer;
 
 	uint32_t rectangleVAO;
 
+	static const char* shadowVertexPath;
+	static const char* shadowFragmentPath;
 	static const char* directionalLightVertexPath;
 	static const char* directionalLightFragmentPath;
 	static const char* postProcessVertexPath;

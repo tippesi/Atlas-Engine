@@ -5,7 +5,7 @@
 #include "SceneNode.h"
 #include "Mesh/Actor.h"
 #include "Mesh/ActorBatch.h"
-#include "Light.h"
+#include "Lighting/Light.h"
 #include "PostProcessing/PostProcessing.h"
 
 class Scene {
