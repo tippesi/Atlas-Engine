@@ -19,6 +19,10 @@ private:
 
 	Shader* shader;
 
+	Uniform* hdrTexture;
+	Uniform* bloomFirstTexture;
+	Uniform* bloomSecondTexture;
+	Uniform* bloomThirdTexture;
 	Uniform* exposure;
 	Uniform* saturation;
 	Uniform* bloomPassses;

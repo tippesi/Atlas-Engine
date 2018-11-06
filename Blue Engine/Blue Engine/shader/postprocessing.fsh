@@ -1,6 +1,9 @@
 in vec2 fPosition;
 
-uniform sampler2D textures[4];
+uniform sampler2D hdrTexture;
+uniform sampler2D bloomFirstTexture;
+uniform sampler2D bloomSecondTexture;
+uniform sampler2D bloomThirdTexture;
 uniform float exposure;
 uniform float saturation;
 
@@ -55,42 +58,42 @@ void main() {
 	vec2 uvBlueChannel =  (fPosition - fPosition * 0.005f * aberrationStrength
 		* (1.0f - aberrationReversed)) * 0.5f + 0.5f;
 	
-	color.r = texture(textures[0], uvRedChannel).r;
-	color.g = texture(textures[0], uvGreenChannel).g;
-	color.b = texture(textures[0], uvBlueChannel).b;
+	color.r = texture(hdrTexture, uvRedChannel).r;
+	color.g = texture(hdrTexture, uvGreenChannel).g;
+	color.b = texture(hdrTexture, uvBlueChannel).b;
 	
 #ifdef BLOOM
     // We want to keep a constant expression in texture[const]
 	// because OpenGL ES doesn't support dynamic texture fetches
 	// inside a loop
 	if (bloomPasses > 0) {
-		color.r += texture(textures[1], uvRedChannel).r;
-		color.g += texture(textures[1], uvGreenChannel).g;
-		color.b += texture(textures[1], uvBlueChannel).b;
+		color.r += texture(bloomFirstTexture, uvRedChannel).r;
+		color.g += texture(bloomFirstTexture, uvGreenChannel).g;
+		color.b += texture(bloomFirstTexture, uvBlueChannel).b;
 	}
 	if (bloomPasses > 1) {
-		color.r += texture(textures[2], uvRedChannel).r;
-		color.g += texture(textures[2], uvGreenChannel).g;
-		color.b += texture(textures[2], uvBlueChannel).b;
+		color.r += texture(bloomSecondTexture, uvRedChannel).r;
+		color.g += texture(bloomSecondTexture, uvGreenChannel).g;
+		color.b += texture(bloomSecondTexture, uvBlueChannel).b;
 	}
 	if (bloomPasses > 2) {
-		color.r += texture(textures[3], uvRedChannel).r;
-		color.g += texture(textures[3], uvGreenChannel).g;
-		color.b += texture(textures[3], uvBlueChannel).b;
+		color.r += texture(bloomThirdTexture, uvRedChannel).r;
+		color.g += texture(bloomThirdTexture, uvGreenChannel).g;
+		color.b += texture(bloomThirdTexture, uvBlueChannel).b;
 	}
 #endif
 #else
-	color = texture(textures[0], fTexCoord).rgb;
+	color = texture(hdrTexture, fTexCoord).rgb;
 	
 #ifdef BLOOM
 	if (bloomPasses > 0) {
-		color += texture(textures[1], fTexCoord).rgb;
+		color += texture(bloomFirstTexture, fTexCoord).rgb;
 	}
 	if (bloomPasses > 1) {
-		color += texture(textures[2], fTexCoord).rgb;
+		color += texture(bloomSecondTexture, fTexCoord).rgb;
 	}
 	if (bloomPasses > 2) {
-		color += texture(textures[3], fTexCoord).rgb;
+		color += texture(bloomThirdTexture, fTexCoord).rgb;
 	}
 #endif
 #endif

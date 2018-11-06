@@ -93,6 +93,10 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 
 void PostProcessRenderer::GetUniforms() {
 
+	delete hdrTexture;
+	delete bloomFirstTexture;
+	delete bloomSecondTexture;
+	delete bloomThirdTexture;
 	delete exposure;
 	delete saturation;
 	delete bloomPassses;
@@ -103,6 +107,10 @@ void PostProcessRenderer::GetUniforms() {
 	delete vignetteStrength;
 	delete vignetteColor;
 
+	hdrTexture = shader->GetUniform("hdrTexture");
+	bloomFirstTexture = shader->GetUniform("bloomFirstTexture");
+	bloomSecondTexture = shader->GetUniform("bloomSecondTexture");
+	bloomThirdTexture = shader->GetUniform("bloomThirdTexture");
 	exposure = shader->GetUniform("exposure");
 	saturation = shader->GetUniform("saturation");
 	bloomPassses = shader->GetUniform("bloomPassses");
@@ -112,5 +120,10 @@ void PostProcessRenderer::GetUniforms() {
 	vignettePower = shader->GetUniform("vignettePower");
 	vignetteStrength = shader->GetUniform("vignetteStrength");
 	vignetteColor = shader->GetUniform("vignetteColor");
+
+	hdrTexture->SetValue(0);
+	bloomFirstTexture->SetValue(1);
+	bloomSecondTexture->SetValue(2);
+	bloomThirdTexture->SetValue(3);
 
 }
