@@ -52,7 +52,7 @@ Texture::Texture(const char* filename, bool withoutCorrection) {
 	}
 #else
 	// We want to uncorrect the data ourself, when OpenGL isn't doing it for us
-	UncorrectGamma();
+	UncorrectGamma(data, width, height, channels, 2.2f);
 
 	// For OpenGL ES we use different texture formats
 	if (channels == 4) {
@@ -188,14 +188,14 @@ void Texture::SetAnisotropyLevel(int32_t anisotropyLevel) {
 
 }
 
-void Texture::UncorrectGamma() {
+void Texture::UncorrectGamma(uint8_t* data, int32_t width, int32_t height, int32_t channels, float gamma) {
 
 	for (int32_t i = 0; i < width * height * channels; i++) {
 		// Don't correct the aplha values
 		if (channels == 4 && (i + 1) % 4 == 0)
 			continue;
 		// Before we can uncorrect it we have to bring it in normalized space
-		data[i] = (uint8_t)(pow((float)data[i] / 255.0f, 2.2f) * 255.0f);
+		data[i] = (uint8_t)(powf((float)data[i] / 255.0f, gamma) * 255.0f);
 	}
 
 }

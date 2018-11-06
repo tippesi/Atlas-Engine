@@ -81,12 +81,12 @@ public:
 	/// <param name="anisotropyLevel">The level of anisotropy applied to the textures.</param>
 	static void SetAnisotropyLevel(int32_t anisotropyLevel);
 
-private:
 	/// <summary>
 	/// Removes gamma correction of image data (sRGB to RGB)
 	/// </summary>
-	void UncorrectGamma();
+	static void UncorrectGamma(uint8_t* data, int32_t width, int32_t height, int32_t channels, float gamma);
 
+private:
 	/// <summary>
 	/// Flips texture data.
 	/// </summary>

@@ -144,6 +144,9 @@
     <ClInclude Include="Blue Engine\src\lighting\Sky.h">
       <Filter>Blue Engine\Lighting</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\Cubemap.h">
+      <Filter>Blue Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">
@@ -244,6 +247,9 @@
     </ClCompile>
     <ClCompile Include="Blue Engine\src\lighting\Sky.cpp">
       <Filter>Blue Engine\Lighting</Filter>
+    </ClCompile>
+    <ClCompile Include="Blue Engine\src\Cubemap.cpp">
+      <Filter>Blue Engine</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

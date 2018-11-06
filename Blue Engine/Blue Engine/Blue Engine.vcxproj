@@ -152,6 +152,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Blue Engine\src\Camera.h" />
+    <ClInclude Include="Blue Engine\src\Cubemap.h" />
     <ClInclude Include="Blue Engine\src\Engine.h" />
     <ClInclude Include="Blue Engine\src\Framebuffer.h" />
     <ClInclude Include="Blue Engine\src\lighting\Light.h" />
@@ -191,6 +192,7 @@
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp" />
     <ClCompile Include="Blue Engine\src\Camera.cpp" />
+    <ClCompile Include="Blue Engine\src\Cubemap.cpp" />
     <ClCompile Include="Blue Engine\src\Engine.cpp" />
     <ClCompile Include="Blue Engine\src\Framebuffer.cpp" />
     <ClCompile Include="Blue Engine\src\lighting\Light.cpp" />
