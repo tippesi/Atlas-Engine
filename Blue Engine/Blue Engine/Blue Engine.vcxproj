@@ -207,9 +207,7 @@
     <ClCompile Include="Blue Engine\src\Mesh\MeshData.cpp" />
     <ClCompile Include="Blue Engine\src\Mesh\Actor.cpp" />
     <ClCompile Include="Blue Engine\src\Mesh\Packing.cpp" />
-    <ClCompile Include="Blue Engine\src\PostProcessing\ChromaticAberration.cpp" />
     <ClCompile Include="Blue Engine\src\PostProcessing\PostProcessing.cpp" />
-    <ClCompile Include="Blue Engine\src\PostProcessing\Vignette.cpp" />
     <ClCompile Include="Blue Engine\src\Renderer\DirectionalLightRenderer.cpp" />
     <ClCompile Include="Blue Engine\src\Renderer\GeometryRenderer.cpp" />
     <ClCompile Include="Blue Engine\src\Renderer\MasterRenderer.cpp" />

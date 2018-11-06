@@ -233,13 +233,7 @@
     <ClCompile Include="mouse.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="Blue Engine\src\postprocessing\ChromaticAberration.cpp">
-      <Filter>Blue Engine\PostProcessing</Filter>
-    </ClCompile>
     <ClCompile Include="Blue Engine\src\postprocessing\PostProcessing.cpp">
-      <Filter>Blue Engine\PostProcessing</Filter>
-    </ClCompile>
-    <ClCompile Include="Blue Engine\src\postprocessing\Vignette.cpp">
       <Filter>Blue Engine\PostProcessing</Filter>
     </ClCompile>
     <ClCompile Include="Blue Engine\src\renderer\ShadowRenderer.cpp">

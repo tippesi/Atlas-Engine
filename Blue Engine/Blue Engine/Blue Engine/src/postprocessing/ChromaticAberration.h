@@ -6,13 +6,11 @@
 class ChromaticAberration {
 
 public:
-	ChromaticAberration();
+	ChromaticAberration(float strength, bool colorsReversed = false) : 
+		strength(strength), colorsReversed(colorsReversed) {};
 
 	float strength;
 	bool colorsReversed;
-
-	bool use;
-
 
 };
 
