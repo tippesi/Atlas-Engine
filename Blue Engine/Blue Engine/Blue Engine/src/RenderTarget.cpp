@@ -2,7 +2,7 @@
 
 RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height(height) {
 
-	// We want a shared depth texture across both framebuffers
+	// We want a shared depth texture across the geometry and lighting framebuffers
 	Texture* depthTexture = new Texture(GL_UNSIGNED_INT, width, height, GL_DEPTH_COMPONENT24, 0.0f, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 	geometryFramebuffer = new Framebuffer(width, height);
