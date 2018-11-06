@@ -175,6 +175,7 @@
     <ClInclude Include="Blue Engine\src\Renderer\MasterRenderer.h" />
     <ClInclude Include="Blue Engine\src\Renderer\PostProcessRenderer.h" />
     <ClInclude Include="Blue Engine\src\renderer\ShadowRenderer.h" />
+    <ClInclude Include="Blue Engine\src\renderer\SkyboxRenderer.h" />
     <ClInclude Include="Blue Engine\src\RenderTarget.h" />
     <ClInclude Include="Blue Engine\src\Scene.h" />
     <ClInclude Include="Blue Engine\src\SceneNode.h" />
@@ -213,6 +214,7 @@
     <ClCompile Include="Blue Engine\src\Renderer\MasterRenderer.cpp" />
     <ClCompile Include="Blue Engine\src\Renderer\PostProcessRenderer.cpp" />
     <ClCompile Include="Blue Engine\src\renderer\ShadowRenderer.cpp" />
+    <ClCompile Include="Blue Engine\src\renderer\SkyboxRenderer.cpp" />
     <ClCompile Include="Blue Engine\src\SceneNode.cpp" />
     <ClCompile Include="Blue Engine\src\RenderTarget.cpp" />
     <ClCompile Include="Blue Engine\src\Scene.cpp" />

@@ -1,17 +1,19 @@
-#ifndef SHADOWRENDERER_H
-#define SHADOWRENDERER_H
+#ifndef SKYBOXRENDERER_H
+#define SKYBOXRENDERER_H
 
 #include "../System.h"
 #include "IRenderer.h"
 
-class ShadowRenderer : public IRenderer {
+class SkyboxRenderer : public IRenderer {
 
 public:
-	ShadowRenderer(const char* vertexSource, const char* fragmentSource);
+	SkyboxRenderer(const char* vertexSource, const char* fragmentSource);
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 
-};
+private:
+	uint32_t 
 
+};
 
 #endif

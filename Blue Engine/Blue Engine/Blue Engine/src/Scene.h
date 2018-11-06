@@ -6,6 +6,7 @@
 #include "Mesh/Actor.h"
 #include "Mesh/ActorBatch.h"
 #include "Lighting/Light.h"
+#include "Lighting/Sky.h"
 #include "PostProcessing/PostProcessing.h"
 
 class Scene {
