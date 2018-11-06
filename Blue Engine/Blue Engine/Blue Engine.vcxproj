@@ -158,6 +158,7 @@
     <ClInclude Include="Blue Engine\src\lighting\Light.h" />
     <ClInclude Include="Blue Engine\src\lighting\Shadow.h" />
     <ClInclude Include="Blue Engine\src\lighting\Sky.h" />
+    <ClInclude Include="Blue Engine\src\lighting\Skybox.h" />
     <ClInclude Include="Blue Engine\src\Loader\ModelLoader.h" />
     <ClInclude Include="Blue Engine\src\Mesh\ActorBatch.h" />
     <ClInclude Include="Blue Engine\src\Mesh\DataComponent.h" />

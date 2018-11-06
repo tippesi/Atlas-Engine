@@ -12,6 +12,8 @@ public:
 
 	void AddComponent(int32_t attachment, GLenum dataFormat, int32_t internalFormat, int32_t wrapping, int32_t filtering);
 
+	void AddComponent(int32_t attachment, Texture* texture);
+
 	void Resize(int32_t width, int32_t height);
 
 	void Bind();

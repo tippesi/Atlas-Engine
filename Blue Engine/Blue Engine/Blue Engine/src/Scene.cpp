@@ -5,6 +5,7 @@ Scene::Scene() {
 	rootNode = new SceneNode();
 	rootNode->AddToScene(this);
 
+	sky = new Sky();
 	postProcessing = new PostProcessing();
 
 }
@@ -76,6 +77,7 @@ void Scene::Update() {
 Scene::~Scene() {
 
 	delete rootNode;
+	delete sky;
 	delete postProcessing;
 
 }

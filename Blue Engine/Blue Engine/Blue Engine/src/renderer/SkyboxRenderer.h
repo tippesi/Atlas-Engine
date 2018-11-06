@@ -12,7 +12,14 @@ public:
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 
 private:
-	uint32_t 
+	Shader* shader;
+
+	Uniform* skyCubemap;
+	Uniform* modelViewProjectionMatrix;
+
+	uint32_t skyboxVBO;
+
+	static const float skyboxVertices[];
 
 };
 

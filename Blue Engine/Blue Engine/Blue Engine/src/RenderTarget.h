@@ -14,7 +14,7 @@ public:
 	~RenderTarget();
 
 	Framebuffer* geometryFramebuffer;
-	Framebuffer* postProcessingFramebuffer;
+	Framebuffer* lightingFramebuffer;
 
 	int32_t width;
 	int32_t height;

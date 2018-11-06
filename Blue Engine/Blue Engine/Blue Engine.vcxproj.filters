@@ -150,6 +150,9 @@
     <ClInclude Include="Blue Engine\src\renderer\SkyboxRenderer.h">
       <Filter>Blue Engine\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Blue Engine\src\lighting\Skybox.h">
+      <Filter>Blue Engine\Lighting</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Blue Engine.cpp">

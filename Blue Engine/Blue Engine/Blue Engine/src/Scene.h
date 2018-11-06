@@ -31,6 +31,7 @@ public:
 	vector<Light*> lights;
 	vector<ActorBatch*> actorBatches;
 
+	Sky* sky;
 	PostProcessing* postProcessing;
 
 };

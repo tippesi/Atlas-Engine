@@ -25,6 +25,21 @@ void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t in
 
 }
 
+void Framebuffer::AddComponent(int32_t attachment, Texture* texture) {
+
+	Bind();
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture->GetID(), 0);
+
+	components.push_back(texture);
+
+	if (attachment >= GL_COLOR_ATTACHMENT0 && attachment <= GL_COLOR_ATTACHMENT15) {
+		drawBuffers.push_back(attachment);
+		glDrawBuffers((GLsizei)drawBuffers.size(), &drawBuffers[0]);
+	}
+
+}
+
 void Framebuffer::Resize(int32_t width, int32_t height) {
 
 	for (Texture* texture : components) {

@@ -19,7 +19,6 @@ DirectionalLightRenderer::DirectionalLightRenderer(const char* vertexSource, con
 void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
 	shader->Bind();
-	target->postProcessingFramebuffer->Bind();
 
 	vec3 direction = normalize(vec3(camera->viewMatrix * vec4(0.0f, -1.0f, 0.0f, 0.0f)));
 
@@ -33,13 +32,7 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 	target->geometryFramebuffer->components[1]->Bind(GL_TEXTURE1);
 	target->geometryFramebuffer->components[2]->Bind(GL_TEXTURE2);
 
-	glBindVertexArray(rectangleVAO);
-
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-	glBindVertexArray(0);
-
-	target->postProcessingFramebuffer->Unbind();
 
 }
 

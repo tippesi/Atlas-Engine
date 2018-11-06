@@ -6,6 +6,7 @@
 #include "GeometryRenderer.h"
 #include "ShadowRenderer.h"
 #include "DirectionalLightRenderer.h"
+#include "SkyboxRenderer.h"
 #include "PostProcessRenderer.h"
 
 class MasterRenderer {
@@ -25,6 +26,7 @@ private:
 	GeometryRenderer* geometryRenderer;
 	ShadowRenderer* shadowRenderer;
 	DirectionalLightRenderer* directionalLightRenderer;
+	SkyboxRenderer* skyboxRenderer;
 	PostProcessRenderer* postProcessRenderer;
 
 	uint32_t rectangleVAO;
@@ -33,6 +35,8 @@ private:
 	static const char* shadowFragmentPath;
 	static const char* directionalLightVertexPath;
 	static const char* directionalLightFragmentPath;
+	static const char* skyboxVertexPath;
+	static const char* skyboxFragmentPath;
 	static const char* postProcessVertexPath;
 	static const char* postProcessFragmentPath;	
 

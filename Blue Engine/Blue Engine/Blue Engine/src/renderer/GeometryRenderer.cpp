@@ -8,13 +8,6 @@ GeometryRenderer::GeometryRenderer() {
 
 void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
-	target->geometryFramebuffer->Bind();
-
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-	glViewport(0, 0, target->geometryFramebuffer->width, target->geometryFramebuffer->height);
-
 	for (auto actorBatch : scene->actorBatches) {
 
 		Mesh* mesh = actorBatch->GetMesh();		
@@ -43,7 +36,5 @@ void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* came
 		}
 
 	}
-
-	target->geometryFramebuffer->Unbind();
 
 }

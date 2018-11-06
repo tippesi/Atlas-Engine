@@ -10,8 +10,6 @@ class PostProcessing {
 public:
 	PostProcessing();
 
-	~PostProcessing();
-
 	float exposure;
 	float saturation;
 

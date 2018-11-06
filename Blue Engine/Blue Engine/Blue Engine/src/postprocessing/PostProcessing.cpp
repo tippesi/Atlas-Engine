@@ -7,14 +7,7 @@ PostProcessing::PostProcessing() {
 
 	filmicTonemapping = false;
 
-	vignette = new Vignette();
-	chromaticAberration = new ChromaticAberration();
-
-}
-
-PostProcessing::~PostProcessing() {
-
-	delete vignette;
-	delete chromaticAberration;
+	vignette = nullptr;
+	chromaticAberration = nullptr;
 
 }

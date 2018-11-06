@@ -37,20 +37,20 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 		shaderChanged = true;
 	}
 
-	if (postProcessing->vignette->use && !hasVignetteMacro) {
+	if (postProcessing->vignette != nullptr && !hasVignetteMacro) {
 		shader->AddMacro("VIGNETTE");
 		shaderChanged = true;
 	}
-	else if (!postProcessing->vignette->use && hasVignetteMacro) {
+	else if (postProcessing->vignette == nullptr  && hasVignetteMacro) {
 		shader->RemoveMacro("VIGNETTE");
 		shaderChanged = true;
 	}
 
-	if (postProcessing->chromaticAberration->use && !hasChromaticAberrationMacro) {
+	if (postProcessing->chromaticAberration != nullptr && !hasChromaticAberrationMacro) {
 		shader->AddMacro("CHROMATIC_ABERRATION");
 		shaderChanged = true;
 	}
-	else if (!postProcessing->chromaticAberration->use && hasChromaticAberrationMacro) {
+	else if (postProcessing->chromaticAberration == nullptr && hasChromaticAberrationMacro) {
 		shader->RemoveMacro("CHROMATIC_ABERRATION");
 		shaderChanged = true;
 	}
@@ -65,29 +65,25 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 	exposure->SetValue(postProcessing->exposure);
 	saturation->SetValue(postProcessing->saturation);
 
-	if (postProcessing->chromaticAberration->use) {
+	if (postProcessing->chromaticAberration != nullptr) {
 		float reversedValue = postProcessing->chromaticAberration->colorsReversed ? 1.0f : 0.0f;
 		aberrationStrength->SetValue(postProcessing->chromaticAberration->strength);
 		aberrationReversed->SetValue(reversedValue);
 	}
 
-	if (postProcessing->vignette->use) {
+	if (postProcessing->vignette != nullptr) {
 		vignetteOffset->SetValue(postProcessing->vignette->offset);
 		vignettePower->SetValue(postProcessing->vignette->power);
 		vignetteStrength->SetValue(postProcessing->vignette->strength);
 		vignetteColor->SetValue(postProcessing->vignette->color);
 	}
 
-	target->postProcessingFramebuffer->components[0]->Bind(GL_TEXTURE0);
-
-	glBindVertexArray(rectangleVAO);
+	target->lightingFramebuffer->components[0]->Bind(GL_TEXTURE0);
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-	glBindVertexArray(0);
 
 }
 
