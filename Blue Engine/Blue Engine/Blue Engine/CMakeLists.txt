@@ -101,9 +101,9 @@ if(UNIX AND NOT APPLE)
     add_custom_command(TARGET ${PROJECT_NAME}
             COMMAND cp -rf lib/Linux/libassimp.4.1.0.so ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libassimp.so.4
             )
-    # add_custom_command(TARGET ${PROJECT_NAME}
-            # COMMAND cp -rf ../lib/Linux/libGLEW.so.2.1.0 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libGlEW.so
-            #)
+    add_custom_command(TARGET ${PROJECT_NAME}
+            COMMAND cp -rf lib/Linux/libGLEW.so ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libGLEW.so.2.1
+            )
 endif()
 
 if(MSVC)
