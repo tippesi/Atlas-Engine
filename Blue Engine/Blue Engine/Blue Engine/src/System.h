@@ -44,21 +44,11 @@
 #pragma comment(lib, "OPENGL32.lib")
 
 // Assuming that the Engine folder is in the root source folder 
-#if _WIN64 || _WIN32
-#ifdef _WIN64
 #pragma comment(lib, "Blue Engine/lib/Windows/x64/glew32.lib")
 #pragma comment(lib, "Blue Engine/lib/Windows/x64/SDL2main.lib")
 #pragma comment(lib, "Blue Engine/lib/Windows/x64/SDL2.lib")
 #pragma comment(lib, "Blue Engine/lib/Windows/x64/assimp-vc140-mt.lib")
 // #pragma comment(lib, "Engine/lib/Windows/x64/freetype.lib")
-#else
-#pragma comment(lib, "Blue Engine/lib/Windows/x86/glew32.lib")
-#pragma comment(lib, "Blue Engine/lib/Windows/x86/SDL2main.lib")
-#pragma comment(lib, "Blue Engine/lib/Windows/x86/SDL2.lib")
-#pragma comment(lib, "Blue Engine/lib/Windows/x86/assimp-vc140-mt.lib")
-// #pragma comment(lib, "Engine/lib/Windows/x86/freetype.lib")
-#endif
-#endif
 
 #endif
 

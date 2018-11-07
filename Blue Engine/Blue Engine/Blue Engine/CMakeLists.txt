@@ -14,16 +14,18 @@ include_directories(${OPENGL_INCLUDE_DIR})
 if(MSVC)
     # for detecting Windows compiler MSVC
     include_directories(lib/windows)
-    set(ASSIMP_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/lib/windows/assimp-vc140-mt.lib)
-    set(GLFW_LIBRARY  ${CMAKE_CURRENT_SOURCE_DIR}/lib/windows/glfw3dll.lib)
-    set(LIBS ${GLFW_LIBRARY} opengl32 ${ASSIMP_LIBRARY})
+	set(SDL_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib/SDL2.lib)
+	set(SDLMAIN_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib/SDL2main.lib)
+    set(ASSIMP_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib/assimp-vc140-mt.lib)
+    set(GLEW_LIBRARY  ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib/glew32.lib)
+    set(LIBS ${GLEW_LIBRARY} ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} opengl32 ${ASSIMP_LIBRARY})
 endif()
 
 if(APPLE)
     # for MacOS X or iOS, watchOS, tvOS (since 3.10.3)
     include_directories(lib/mac)
     set(ASSIMP_LIBRARY assimp.4.1.0)
-    set(GLFW_LIBRARY glfw3)
+    set(GLEW_LIBRARY glfw3)
     link_directories(lib/mac/)
 
     INCLUDE_DIRECTORIES(/System/Library/Frameworks)
@@ -33,7 +35,7 @@ if(APPLE)
     FIND_LIBRARY(CoreVideo_LIBRARY CoreVideo)
     MARK_AS_ADVANCED(COCOA_LIBRARY OpenGL_LIBRARY)
     SET(APPLE_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
-    SET(APPLE_LIBS ${APPLE_LIBS} ${GLFW_LIBRARY} ${ASSIMP_LIBRARY})
+    SET(APPLE_LIBS ${APPLE_LIBS} ${GLEW_LIBRARY} ${ASSIMP_LIBRARY})
     set(LIBS ${LIBS} ${APPLE_LIBS})
 
 endif()
@@ -42,7 +44,7 @@ if(UNIX AND NOT APPLE)
     # for Linux, BSD, Solaris, Minix
     include_directories(lib/linux)
     set(ASSIMP_LIBRARY assimp.4.1.0)
-    set(GLFW_LIBRARY glfSw3)
+    set(GLEW_LIBRARY glfSw3)
     link_directories(lib/linux/)
 
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
@@ -51,7 +53,7 @@ if(UNIX AND NOT APPLE)
     find_package(X11 REQUIRED)
     # note that the order is important for setting the libs
     # use pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3) in a terminal to confirm
-    set(LIBS ${GLFW_LIBRARY} X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread ${ASSIMP_LIBRARY})
+    set(LIBS ${GLEW_LIBRARY} X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread ${ASSIMP_LIBRARY})
     set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 
         # rpath settings
@@ -65,8 +67,6 @@ endif()
 
 include_directories(src)
 include_directories(src/libraries)
-include_directories(external_include/assimp) # only because of assimp
-
 
 file(GLOB_RECURSE BLUE_ENGINE_SOURCE_FILES
         "src/*.cpp"
@@ -86,7 +86,6 @@ target_link_libraries(${PROJECT_NAME} ${LIBS})
 
 if(APPLE)
     # for MacOS X or iOS, watchOS, tvOS (since 3.10.3)
-
     add_custom_command(TARGET ${PROJECT_NAME}
             COMMAND install_name_tool -change /Users/corbiniangruber/Downloads/assimp-4.1.0/lib/libassimp.4.dylib @executable_path/libassimp.4.1.0.dylib ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}
             )
@@ -106,10 +105,14 @@ if(MSVC)
     # for detecting Windows compiler MSVC
     add_custom_command(TARGET ${PROJECT_NAME}
             COMMAND ${CMAKE_COMMAND}
-            ARGS -E copy ../lib/windows/assimp-vc140-mt.dll "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
+            ARGS -E copy ../lib/Windows/dll/assimp-vc140-mt.dll "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
             )
     add_custom_command(TARGET ${PROJECT_NAME}
             COMMAND ${CMAKE_COMMAND}
-            ARGS -E copy ../lib/windows/glfw3.dll "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
+            ARGS -E copy ../lib/Windows/dll/glew32.dll "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
+            )
+	add_custom_command(TARGET ${PROJECT_NAME}
+            COMMAND ${CMAKE_COMMAND}
+            ARGS -E copy ../lib/Windows/dll/SDL2.dll "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
             )
 endif()
