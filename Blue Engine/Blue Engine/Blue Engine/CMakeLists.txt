@@ -18,7 +18,6 @@ endif()
 
 if(MSVC)
     # for detecting Windows compiler MSVC
-    include_directories(lib/windows)
 	set(SDL_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib/SDL2.lib)
 	set(SDLMAIN_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib/SDL2main.lib)
     set(ASSIMP_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib/assimp-vc140-mt.lib)
