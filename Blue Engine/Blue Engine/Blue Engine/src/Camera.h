@@ -1,7 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "system.h"
+#include "System.h"
 
 /// <summary>
 /// Used to represent a camera in the engine.

@@ -1,4 +1,4 @@
-#include "camera.h"
+#include "Camera.h"
 
 
 Camera::Camera(float fieldOfView, float aspectRatio, float nearPlane, float farPlane, vec3 location, vec2 rotation) {

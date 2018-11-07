@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.5)
 project(BlueEngine)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -78,7 +78,7 @@ file(GLOB_RECURSE BLUE_ENGINE_SOURCE_FILES
 
 
 add_executable(${PROJECT_NAME}
-${WORLD_ENGINE_SOURCE_FILES}
+${BLUE_ENGINE_SOURCE_FILES}
         )
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
