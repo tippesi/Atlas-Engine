@@ -4,11 +4,13 @@ int main(int argc, char* argv[])
 {
 
         Window* window = Engine::Init("Blue Engine", WINDOWPOSITION_UNDEFINED, WINDOWPOSITION_UNDEFINED,
-                1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
+                1280, 720, WINDOW_RESIZABLE);
 
 		Shader::SetSourceDirectory("../shader");
 
         Camera* camera = new Camera(45.0f, 2.0f, 1.0f, 400.0f);
+		camera->location = vec3(51.323f, 0.510f, -9.508);
+		camera->rotation = vec2(5.059f, 0.345f);
 
         Texture* texture = new Texture("../image.png");
 
@@ -25,7 +27,7 @@ int main(int argc, char* argv[])
                 "../cubemap/front.png",
                 "../cubemap/back.png");
 
-        scene->sky->skybox = new Skybox(cubemap, scale(mat4(1.0f), vec3(300.0f)));
+        scene->sky->skybox = new Skybox(cubemap, mat4(1.0f));
 
         Mesh* mesh = new Mesh("../cube.dae");
         Mesh* sponzaMesh = new Mesh("../sponza/sponza.dae");

@@ -13,6 +13,8 @@ Shadow::Shadow(float distance, float bias, int32_t numCascades) :
 
 void Shadow::Update(Camera* camera) {
 
-
+	for (uint32_t i = 0; i < numCascades; i++) {
+		
+	}
 
 }
