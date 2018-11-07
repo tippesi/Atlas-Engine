@@ -6,35 +6,29 @@ int main(int argc, char* argv[])
         Window* window = Engine::Init("Blue Engine", WINDOWPOSITION_UNDEFINED, WINDOWPOSITION_UNDEFINED,
                 1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
 
-		Shader::SetSourceDirectory("../../shader");
+		Shader::SetSourceDirectory("../shader");
 
         Camera* camera = new Camera(45.0f, 2.0f, 1.0f, 400.0f);
 
-        Texture* texture = new Texture("../../image.png");
+        Texture* texture = new Texture("../image.png");
 
         window->SetIcon(texture);
 
-        EngineLog("Create RenderTarget");
-
         RenderTarget* target = new RenderTarget(1920, 1080);
-
-        EngineLog("Create Scene");
 
         Scene* scene = new Scene();
 
-        EngineLog("Create Cubemap");
-
-        Cubemap* cubemap = new Cubemap("../../cubemap/right.png",
-                "../../cubemap/left.png",
-                "../../cubemap/top.png",
-                "../../cubemap/bottom.png",
-                "../../cubemap/front.png",
-                "../../cubemap/back.png");
+        Cubemap* cubemap = new Cubemap("../cubemap/right.png",
+                "../cubemap/left.png",
+                "../cubemap/top.png",
+                "../cubemap/bottom.png",
+                "../cubemap/front.png",
+                "../cubemap/back.png");
 
         scene->sky->skybox = new Skybox(cubemap, scale(mat4(1.0f), vec3(300.0f)));
 
-        Mesh* mesh = new Mesh("../../cube.dae");
-        Mesh* sponzaMesh = new Mesh("../../sponza/sponza.dae");
+        Mesh* mesh = new Mesh("../cube.dae");
+        Mesh* sponzaMesh = new Mesh("../sponza/sponza.dae");
 
         Actor* actor = new Actor(mesh);
         Actor* sponza = new Actor(sponzaMesh);
