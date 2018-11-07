@@ -44,9 +44,9 @@ if(UNIX AND NOT APPLE)
     # for Linux, BSD, Solaris, Minix
     include_directories(lib/Linux)
     set(ASSIMP_LIBRARY assimp.4.1.0)
-    set(GLEW_LIBRARY libGLEW)
-    set(SDLMAIN_LIBRARY libSDL2main)
-    set(SDL_LIBRARY libSDL2)
+    set(GLEW_LIBRARY GLEW)
+    set(SDLMAIN_LIBRARY SDL2main)
+    set(SDL_LIBRARY SDL2)
     link_directories(lib/Linux/)
 
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
@@ -99,10 +99,10 @@ endif()
 if(UNIX AND NOT APPLE)
     # for Linux, BSD, Solaris, Minix
     add_custom_command(TARGET ${PROJECT_NAME}
-            COMMAND cp -rf ../lib/linux/libassimp.4.1.0.so ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libassimp.so.4
+            COMMAND cp -rf lib/Linux/libassimp.4.1.0.so ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libassimp.so.4
             )
     # add_custom_command(TARGET ${PROJECT_NAME}
-            # COMMAND cp -rf ../lib/linux/libGLEW.so.2.1.0 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libGlEW.so
+            # COMMAND cp -rf ../lib/Linux/libGLEW.so.2.1.0 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libGlEW.so
             #)
 endif()
 

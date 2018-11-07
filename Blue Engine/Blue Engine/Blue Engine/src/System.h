@@ -70,7 +70,7 @@ typedef short float16_t;
 class EngineException : public std::exception {
 
 public:
-	EngineException(const char* message) : msg(message), std::exception(message) { }
+	EngineException(const char* message) : msg(message), std::exception() { }
 
 	virtual const char* what() const throw()
 	{

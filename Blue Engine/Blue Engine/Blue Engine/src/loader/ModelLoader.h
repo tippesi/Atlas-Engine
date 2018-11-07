@@ -2,7 +2,7 @@
 #define MODELLOADER_H
 
 #include "../System.h"
-#include "../Mesh/MeshData.h"
+#include "../mesh/MeshData.h"
 
 #include "../libraries/assimp/Importer.hpp"
 #include "../libraries/assimp/scene.h"

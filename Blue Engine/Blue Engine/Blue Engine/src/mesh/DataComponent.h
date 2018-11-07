@@ -205,7 +205,7 @@ template <class T> bool DataComponent<T>::ContainsData() {
 
 template <class T> DataComponent<T>::~DataComponent() {
 
-	delete T;
+	delete data;
 	delete internalData;
 
 }

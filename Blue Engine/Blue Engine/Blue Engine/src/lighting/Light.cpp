@@ -1,4 +1,4 @@
-#include "light.h"
+#include "Light.h"
 
 Light::Light(int32_t type) : type(type) {
 

@@ -1,4 +1,4 @@
-#include "actorbatch.h"
+#include "ActorBatch.h"
 
 ActorBatch::ActorBatch(Mesh* mesh) : mesh(mesh) {
 
