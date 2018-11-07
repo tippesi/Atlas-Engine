@@ -1,18 +1,22 @@
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+  message(FATAL_ERROR "Prevented in-tree built. Please create a build directory outside of the source code and call cmake from there")
+endif()
+
 cmake_minimum_required(VERSION 3.5)
 project(Blue-Engine)
 
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+	message(FATAL_ERROR "32 bit isn't supported")
+endif()
+
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(OpenGL_GL_PREFERENCE GLVND)
 
 include_directories(${OPENGL_INCLUDE_DIR})
 
 add_definitions(-DENGINE_CMAKE)
-
-if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-	message(SEND_ERROR "32 bit isn't supported")
-endif()
 
 # Setting linker flags and library stuff for the different platforms
 
