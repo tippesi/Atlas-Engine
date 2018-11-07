@@ -14,6 +14,9 @@ Texture::Texture(GLenum dataFormat, int32_t width, int32_t height,
 	int32_t internalFormat,	float LoD, int32_t wrapping, int32_t filtering,
 	bool anisotropic, bool mipmaps) : width(width), height(height) {
 
+	ID = 0;
+	data = nullptr;
+
 	int32_t format = GetBaseFormat(internalFormat);
 
 	GenerateTexture(dataFormat, internalFormat, format, LoD, wrapping, filtering, anisotropic, mipmaps);
@@ -25,6 +28,7 @@ Texture::Texture(GLenum dataFormat, int32_t width, int32_t height,
 
 Texture::Texture(const char* filename, bool withoutCorrection) {
 
+	ID = 0;
 	width = 0;
 	height = 0;
 	channels = 0;

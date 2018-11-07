@@ -12,7 +12,7 @@ DirectionalLightRenderer::DirectionalLightRenderer(const char* vertexSource, con
 
 	shader->Compile();
 
-	GetUniforms();
+	GetUniforms(false);
 
 }
 
@@ -36,19 +36,21 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 
 }
 
-void DirectionalLightRenderer::GetUniforms() {
+void DirectionalLightRenderer::GetUniforms(bool deleteUniforms) {
 
-	delete diffuseTexture;
-	delete normalTexture;
-	delete materialTexture;
-	delete depthTexture;
-	delete aoTexture;
-	delete lightDirection;
-	delete lightColor;
-	delete lightAmbient;
-	delete lightSpaceMatrix;
-	delete inverseViewMatrix;
-	delete inverseProjectionMatrix;
+	if (deleteUniforms) {
+		delete diffuseTexture;
+		delete normalTexture;
+		delete materialTexture;
+		delete depthTexture;
+		delete aoTexture;
+		delete lightDirection;
+		delete lightColor;
+		delete lightAmbient;
+		delete lightSpaceMatrix;
+		delete inverseViewMatrix;
+		delete inverseProjectionMatrix;
+	}
 
 	diffuseTexture = shader->GetUniform("diffuseTexture");
 	normalTexture = shader->GetUniform("normalTexture");

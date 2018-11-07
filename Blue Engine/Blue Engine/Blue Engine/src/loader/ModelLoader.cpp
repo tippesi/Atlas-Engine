@@ -195,7 +195,7 @@ Material* ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, string directory
 		material->normalMap = new Texture(path.c_str(), true);
 	}
 
-	material->UpdateShader();
+	material->UpdateShader(false);
 
 	return material;
 

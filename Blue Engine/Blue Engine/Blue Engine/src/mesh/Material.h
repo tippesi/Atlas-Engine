@@ -12,7 +12,7 @@ public:
 
 	Shader* GetShader();
 
-	void UpdateShader();
+	void UpdateShader(bool deleteUniforms = true);
 
 	void Bind(mat4 viewMatrix, mat4 projectionMatrix);
 	

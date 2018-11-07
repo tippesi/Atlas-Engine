@@ -12,7 +12,7 @@ public:
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 
 private:
-	void GetUniforms();
+	void GetUniforms(bool deleteUniforms);
 
 	uint32_t rectangleVAO;
 

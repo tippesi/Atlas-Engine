@@ -113,6 +113,9 @@ string ShaderSource::ReadShaderFile(const char* filename, bool mainFile) {
 		shaderCode = shaderStream.str();
 	}
 	else {
+#ifdef ENGINE_SHOW_LOG
+		EngineLog("Shader file %s not found", filename);
+#endif
 		throw new EngineException("Couldn't open shader file");
 	}
 

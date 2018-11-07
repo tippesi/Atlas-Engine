@@ -12,7 +12,7 @@ PostProcessRenderer::PostProcessRenderer(const char* vertexSource, const char* f
 
 	shader->Compile();
 
-	GetUniforms();
+	GetUniforms(false);
 
 }
 
@@ -57,7 +57,7 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 
 	if (shaderChanged) {
 		shader->Compile();
-		GetUniforms();
+		GetUniforms(true);
 	}
 
 	shader->Bind();
@@ -87,21 +87,23 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 
 }
 
-void PostProcessRenderer::GetUniforms() {
+void PostProcessRenderer::GetUniforms(bool deleteUniforms) {
 
-	delete hdrTexture;
-	delete bloomFirstTexture;
-	delete bloomSecondTexture;
-	delete bloomThirdTexture;
-	delete exposure;
-	delete saturation;
-	delete bloomPassses;
-	delete aberrationStrength;
-	delete aberrationReversed;
-	delete vignetteOffset;
-	delete vignettePower;
-	delete vignetteStrength;
-	delete vignetteColor;
+	if (deleteUniforms) {
+		delete hdrTexture;
+		delete bloomFirstTexture;
+		delete bloomSecondTexture;
+		delete bloomThirdTexture;
+		delete exposure;
+		delete saturation;
+		delete bloomPassses;
+		delete aberrationStrength;
+		delete aberrationReversed;
+		delete vignetteOffset;
+		delete vignettePower;
+		delete vignetteStrength;
+		delete vignetteColor;
+	}
 
 	hdrTexture = shader->GetUniform("hdrTexture");
 	bloomFirstTexture = shader->GetUniform("bloomFirstTexture");

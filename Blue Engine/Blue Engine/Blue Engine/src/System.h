@@ -39,11 +39,12 @@
 
 #include "libraries/glew/glew.h"
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(ENGINE_CMAKE)
 // For Visual Studio we can add all the libraries
 #pragma comment(lib, "OPENGL32.lib")
 
-// Assuming that the Engine folder is in the root source folder 
+// Assuming that the Engine folder is in the root source folder
+
 #pragma comment(lib, "Blue Engine/lib/Windows/lib/glew32.lib")
 #pragma comment(lib, "Blue Engine/lib/Windows/lib/SDL2main.lib")
 #pragma comment(lib, "Blue Engine/lib/Windows/lib/SDL2.lib")

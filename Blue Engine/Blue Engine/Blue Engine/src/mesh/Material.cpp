@@ -3,8 +3,8 @@
 Material::Material() {
 
 	shader = new Shader();
-	shader->AddComponent(VERTEX_SHADER, "shader/deferred/geometry.vsh");
-	ShaderSource* fragment = shader->AddComponent(FRAGMENT_SHADER, "shader/deferred/geometry.fsh");
+	shader->AddComponent(VERTEX_SHADER, "deferred/geometry.vsh");
+	ShaderSource* fragment = shader->AddComponent(FRAGMENT_SHADER, "deferred/geometry.fsh");
 
 	diffuseColorConstant = fragment->GetConstant("diffuseColor");
 	specularColorConstant = fragment->GetConstant("specularColor");
@@ -32,15 +32,17 @@ Shader* Material::GetShader() {
 
 }
 
-void Material::UpdateShader() {
+void Material::UpdateShader(bool deleteUniforms) {
 
-	delete diffuseMapUniform;
-	delete specularMapUniform;
-	delete normalMapUniform;
-	delete heightMapUniform;
-	delete modelMatrixUniform;
-	delete viewMatrixUniform;
-	delete projectionMatrixUniform;
+	if (deleteUniforms) {
+		delete diffuseMapUniform;
+		delete specularMapUniform;
+		delete normalMapUniform;
+		delete heightMapUniform;
+		delete modelMatrixUniform;
+		delete viewMatrixUniform;
+		delete projectionMatrixUniform;
+	}
 
 	diffuseColorConstant->SetValue(diffuseColor);
 	specularHardnessConstant->SetValue(specularHardness);

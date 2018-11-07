@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(BlueEngine)
+project(Blue-Engine)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
@@ -8,6 +8,11 @@ set(OpenGL_GL_PREFERENCE GLVND)
 
 include_directories(${OPENGL_INCLUDE_DIR})
 
+add_definitions(-DENGINE_CMAKE)
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+	message(SEND_ERROR "32 bit isn't supported")
+endif()
 
 # Setting linker flags and library stuff for the different platforms
 
@@ -37,7 +42,6 @@ if(APPLE)
     SET(APPLE_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
     SET(APPLE_LIBS ${APPLE_LIBS} ${GLEW_LIBRARY} ${ASSIMP_LIBRARY})
     set(LIBS ${LIBS} ${APPLE_LIBS})
-
 endif()
 
 if(UNIX AND NOT APPLE)
@@ -73,9 +77,11 @@ include_directories(src/libraries)
 file(GLOB_RECURSE BLUE_ENGINE_SOURCE_FILES
         "src/*.cpp"
         "src/*.c"
+		"src/*.h"
+		"src/*.hpp"
         )
 
-
+list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*src/libraries/.*")
 
 add_executable(${PROJECT_NAME}
 ${BLUE_ENGINE_SOURCE_FILES}

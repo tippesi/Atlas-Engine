@@ -58,6 +58,8 @@ template <class T> DataComponent<T>::DataComponent(int32_t componentType, int32_
 	internalData = nullptr;
 	data = nullptr;
 
+	size = 0;
+
 	SetType(componentType);
 
 }

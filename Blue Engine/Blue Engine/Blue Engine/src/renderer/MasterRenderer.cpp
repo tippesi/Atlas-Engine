@@ -9,31 +9,16 @@ const char* MasterRenderer::skyboxFragmentPath = "skybox.fsh";
 const char* MasterRenderer::postProcessVertexPath = "postprocessing.vsh";
 const char* MasterRenderer::postProcessFragmentPath = "postprocessing.fsh";
 
-MasterRenderer::MasterRenderer(const char* shaderDirectory) {
-
-	string directory(shaderDirectory);
-
-	directory += "/";
+MasterRenderer::MasterRenderer() {
 
 	rectangleVAO = GenerateRectangleVAO();
 
 	geometryRenderer = new GeometryRenderer();
 
-	shadowRenderer = new ShadowRenderer(
-		(directory + string(shadowVertexPath)).c_str(),
-		(directory + string(shadowFragmentPath)).c_str());
-
-	directionalLightRenderer = new DirectionalLightRenderer(
-		(directory + string(directionalLightVertexPath)).c_str(),
-		(directory + string(directionalLightFragmentPath)).c_str());
-
-	skyboxRenderer = new SkyboxRenderer(
-		(directory + string(skyboxVertexPath)).c_str(),
-		(directory + string(skyboxFragmentPath)).c_str());
-
-	postProcessRenderer = new PostProcessRenderer(
-		(directory + string(postProcessVertexPath)).c_str(),
-		(directory + string(postProcessFragmentPath)).c_str());
+	shadowRenderer = new ShadowRenderer(shadowVertexPath, shadowFragmentPath);
+	directionalLightRenderer = new DirectionalLightRenderer(directionalLightVertexPath, directionalLightFragmentPath);
+	skyboxRenderer = new SkyboxRenderer(skyboxVertexPath, skyboxFragmentPath);
+	postProcessRenderer = new PostProcessRenderer(postProcessVertexPath, postProcessFragmentPath);
 
 }
 

@@ -12,7 +12,7 @@
 class MasterRenderer {
 
 public:
-	MasterRenderer(const char* shaderDirectory);
+	MasterRenderer();
 
 	void RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 

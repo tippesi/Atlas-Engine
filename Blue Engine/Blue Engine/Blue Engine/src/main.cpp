@@ -6,6 +6,8 @@ int main(int argc, char* argv[])
         Window* window = Engine::Init("Blue Engine", WINDOWPOSITION_UNDEFINED, WINDOWPOSITION_UNDEFINED,
                 1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
 
+		Shader::SetSourceDirectory("../../shader");
+
         Camera* camera = new Camera(45.0f, 2.0f, 1.0f, 400.0f);
 
         Texture* texture = new Texture("../../image.png");
@@ -38,7 +40,7 @@ int main(int argc, char* argv[])
         Actor* sponza = new Actor(sponzaMesh);
         sponza->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
 
-        MasterRenderer* renderer = new MasterRenderer("../../shader");
+        MasterRenderer* renderer = new MasterRenderer();
 
         SceneNode* node = new SceneNode();
 
