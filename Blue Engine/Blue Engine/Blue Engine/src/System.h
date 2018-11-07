@@ -44,10 +44,10 @@
 #pragma comment(lib, "OPENGL32.lib")
 
 // Assuming that the Engine folder is in the root source folder 
-#pragma comment(lib, "Blue Engine/lib/Windows/x64/glew32.lib")
-#pragma comment(lib, "Blue Engine/lib/Windows/x64/SDL2main.lib")
-#pragma comment(lib, "Blue Engine/lib/Windows/x64/SDL2.lib")
-#pragma comment(lib, "Blue Engine/lib/Windows/x64/assimp-vc140-mt.lib")
+#pragma comment(lib, "Blue Engine/lib/Windows/lib/glew32.lib")
+#pragma comment(lib, "Blue Engine/lib/Windows/lib/SDL2main.lib")
+#pragma comment(lib, "Blue Engine/lib/Windows/lib/SDL2.lib")
+#pragma comment(lib, "Blue Engine/lib/Windows/lib/assimp-vc140-mt.lib")
 // #pragma comment(lib, "Engine/lib/Windows/x64/freetype.lib")
 
 #endif
