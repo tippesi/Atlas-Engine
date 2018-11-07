@@ -1,4 +1,4 @@
-#include "packing.h"
+#include "Packing.h"
 
 
 uint32_t packNormalizedFloat_2_10_10_10_REV(vec4 vector) {

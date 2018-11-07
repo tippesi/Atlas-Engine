@@ -1,9 +1,9 @@
 #ifndef MESHDATA_H
 #define MESHDATA_H
 
-#include "../system.h"
-#include "datacomponent.h"
-#include "material.h"
+#include "../System.h"
+#include "DataComponent.h"
+#include "Material.h"
 
 #include <vector>
 

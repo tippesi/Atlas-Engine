@@ -1,4 +1,4 @@
-#include "material.h"
+#include "Material.h"
 
 Material::Material() {
 

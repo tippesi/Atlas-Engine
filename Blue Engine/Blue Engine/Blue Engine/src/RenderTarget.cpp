@@ -1,4 +1,4 @@
-#include "rendertarget.h"
+#include "RenderTarget.h"
 
 RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height(height) {
 

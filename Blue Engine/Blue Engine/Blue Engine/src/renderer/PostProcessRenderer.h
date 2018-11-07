@@ -1,9 +1,9 @@
 #ifndef POSTPROCESSRENDERER_H
 #define POSTPROCESSRENDERER_H
 
-#include "../system.h"
+#include "../System.h"
 #include "IRenderer.h"
-#include "../shader/shader.h"
+#include "../shader/Shader.h"
 
 class PostProcessRenderer : public IRenderer {
 

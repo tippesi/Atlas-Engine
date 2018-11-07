@@ -1,4 +1,4 @@
-#include "masterrenderer.h"
+#include "MasterRenderer.h"
 
 const char* MasterRenderer::shadowVertexPath = "shadow.vsh";
 const char* MasterRenderer::shadowFragmentPath = "shadow.fsh";

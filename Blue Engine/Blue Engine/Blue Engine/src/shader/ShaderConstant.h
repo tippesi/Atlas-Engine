@@ -1,7 +1,7 @@
 #ifndef SHADERCONSTANT_H
 #define SHADERCONSTANT_H
 
-#include "../system.h"
+#include "../System.h"
 
 #include <string>
 

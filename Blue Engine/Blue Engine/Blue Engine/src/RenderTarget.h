@@ -1,8 +1,8 @@
 #ifndef RENDERTARGET_H
 #define RENDERTARGET_H
 
-#include "system.h"
-#include "framebuffer.h"
+#include "System.h"
+#include "Framebuffer.h"
 
 class RenderTarget {
 

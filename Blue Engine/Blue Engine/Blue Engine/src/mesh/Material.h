@@ -1,9 +1,9 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include "../system.h"
-#include "../texture.h"
-#include "../shader/shader.h"
+#include "../System.h"
+#include "../Texture.h"
+#include "../shader/Shader.h"
 
 class Material {
 

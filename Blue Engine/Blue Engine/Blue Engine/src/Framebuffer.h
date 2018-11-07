@@ -1,8 +1,8 @@
 #ifndef FRAMEBUFFER_H
 #define FRAMEBUFFER_H
 
-#include "system.h"
-#include "texture.h"
+#include "System.h"
+#include "Texture.h"
 #include <vector>
 
 class Framebuffer {

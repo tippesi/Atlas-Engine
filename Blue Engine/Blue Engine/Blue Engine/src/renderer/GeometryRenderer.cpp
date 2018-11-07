@@ -1,4 +1,4 @@
-#include "geometryrenderer.h"
+#include "GeometryRenderer.h"
 
 GeometryRenderer::GeometryRenderer() {
 

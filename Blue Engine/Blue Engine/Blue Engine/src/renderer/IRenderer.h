@@ -1,11 +1,11 @@
 #ifndef IRENDERER_H
 #define IRENDERER_H
 
-#include "../system.h"
-#include "../rendertarget.h"
-#include "../camera.h"
-#include "../scene.h"
-#include "../window.h"
+#include "../System.h"
+#include "../RenderTarget.h"
+#include "../Camera.h"
+#include "../Scene.h"
+#include "../Window.h"
 
 
 class IRenderer {

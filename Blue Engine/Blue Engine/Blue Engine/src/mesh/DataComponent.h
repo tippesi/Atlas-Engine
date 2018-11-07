@@ -1,8 +1,8 @@
 #ifndef DATACOMPONENT_H
 #define DATACOMPONENT_H
 
-#include "../system.h"
-#include "packing.h"
+#include "../System.h"
+#include "Packing.h"
 
 #include <type_traits>
 

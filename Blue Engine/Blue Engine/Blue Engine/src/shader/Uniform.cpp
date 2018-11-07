@@ -1,4 +1,4 @@
-#include "uniform.h"
+#include "Uniform.h"
 
 Uniform::Uniform(uint32_t shaderID, const char* uniformName) {
 

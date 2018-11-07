@@ -1,4 +1,4 @@
-#include "shader.h"
+#include "Shader.h"
 
 uint32_t Shader::boundShaderID = 0;
 

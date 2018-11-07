@@ -1,5 +1,5 @@
-#include "postprocessrenderer.h"
-#include "masterrenderer.h"
+#include "PostProcessRenderer.h"
+#include "MasterRenderer.h"
 
 PostProcessRenderer::PostProcessRenderer(const char* vertexSource, const char* fragmentSoure) {
 

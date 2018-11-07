@@ -1,5 +1,5 @@
-#include "directionallightrenderer.h"
-#include "masterrenderer.h"
+#include "DirectionalLightRenderer.h"
+#include "MasterRenderer.h"
 
 DirectionalLightRenderer::DirectionalLightRenderer(const char* vertexSource, const char* fragmentSource) {
 

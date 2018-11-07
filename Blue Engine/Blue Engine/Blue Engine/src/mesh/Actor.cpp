@@ -1,4 +1,4 @@
-#include "actor.h"
+#include "Actor.h"
 
 Actor::Actor(Mesh* mesh) : mesh(mesh) {
 

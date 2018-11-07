@@ -1,4 +1,4 @@
-#include "framebuffer.h"
+#include "Framebuffer.h"
 
 uint32_t Framebuffer::boundFramebufferID = 0;
 

@@ -1,9 +1,9 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include "../system.h"
-#include "shadersource.h"
-#include "uniform.h"
+#include "../System.h"
+#include "ShaderSource.h"
+#include "Uniform.h"
 
 #include <vector>
 

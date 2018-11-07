@@ -1,7 +1,7 @@
 #ifndef DIRECTIONALLIGHTRENDERER_H
 #define DIRECTIONALLIGHTRENDERER_H
 
-#include "../system.h"
+#include "../System.h"
 #include "IRenderer.h"
 
 class DirectionalLightRenderer : public IRenderer {

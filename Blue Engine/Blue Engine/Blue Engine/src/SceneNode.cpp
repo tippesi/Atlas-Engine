@@ -1,5 +1,5 @@
-#include "scenenode.h"
-#include "scene.h"
+#include "SceneNode.h"
+#include "Scene.h"
 
 SceneNode::SceneNode() {
 

@@ -1,7 +1,7 @@
 #ifndef GEOMETRYRENDERER_H
 #define GEOMETRYRENDERER_H
 
-#include "../system.h"
+#include "../System.h"
 #include "IRenderer.h"
 
 class GeometryRenderer : public IRenderer {

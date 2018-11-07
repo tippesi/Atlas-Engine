@@ -3,11 +3,11 @@
 
 #include "System.h"
 #include "SceneNode.h"
-#include "Mesh/Actor.h"
-#include "Mesh/ActorBatch.h"
-#include "Lighting/Light.h"
-#include "Lighting/Sky.h"
-#include "PostProcessing/PostProcessing.h"
+#include "mesh/Actor.h"
+#include "mesh/ActorBatch.h"
+#include "lighting/Light.h"
+#include "lighting/Sky.h"
+#include "postprocessing/PostProcessing.h"
 
 class Scene {
 

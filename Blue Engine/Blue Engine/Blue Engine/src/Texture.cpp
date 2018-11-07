@@ -1,4 +1,4 @@
-#include "texture.h"
+#include "Texture.h"
 
 //STB image library is declared(only once)
 #define STB_IMAGE_IMPLEMENTATION

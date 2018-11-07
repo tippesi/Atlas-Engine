@@ -2,8 +2,8 @@
 #define SCENENODE_H
 
 #include "System.h"
-#include "Mesh/Actor.h"
-#include "Lighting/Light.h"
+#include "mesh/Actor.h"
+#include "lighting/Light.h"
 #include <vector>
 
 // Forward declaration of scene class

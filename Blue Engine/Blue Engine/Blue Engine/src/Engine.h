@@ -1,13 +1,13 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include "system.h"
-#include "window.h"
-#include "camera.h"
-#include "scene.h"
-#include "rendertarget.h"
-#include "shader/shader.h"
-#include "renderer/masterrenderer.h"
+#include "System.h"
+#include "Window.h"
+#include "Camera.h"
+#include "Scene.h"
+#include "RenderTarget.h"
+#include "shader/Shader.h"
+#include "renderer/MasterRenderer.h"
 
 namespace Engine {
 

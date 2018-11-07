@@ -1,4 +1,4 @@
-#include "shaderconstant.h"
+#include "ShaderConstant.h"
 
 ShaderConstant::ShaderConstant(const char* constantString) {
 

@@ -1,8 +1,8 @@
 #ifndef ACTOR_H
 #define ACTOR_H
 
-#include "../system.h"
-#include "mesh.h"
+#include "../System.h"
+#include "Mesh.h"
 
 class Actor {
 

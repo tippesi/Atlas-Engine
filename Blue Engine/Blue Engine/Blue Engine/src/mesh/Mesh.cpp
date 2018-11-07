@@ -1,5 +1,5 @@
-#include "mesh.h"
-#include "../loader/modelloader.h"
+#include "Mesh.h"
+#include "../loader/ModelLoader.h"
 
 Mesh::Mesh(MeshData* data) : data(data) {
 

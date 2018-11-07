@@ -1,7 +1,7 @@
 #ifndef PACKING_H
 #define PACKING_H
 
-#include "../system.h"
+#include "../System.h"
 
 /// <summary>
 /// Packs a vector into a 32 bit integer

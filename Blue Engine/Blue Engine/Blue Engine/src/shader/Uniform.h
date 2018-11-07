@@ -1,7 +1,7 @@
 #ifndef UNIFORM_H
 #define UNIFORM_H
 
-#include "../system.h"
+#include "../System.h"
 
 class Uniform {
 

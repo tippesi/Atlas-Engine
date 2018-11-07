@@ -1,8 +1,7 @@
 #ifndef VIEWPORT_H
 #define VIEWPORT_H
 
-#include "system.h"
-
+#include "System.h"
 
 class Viewport {
 

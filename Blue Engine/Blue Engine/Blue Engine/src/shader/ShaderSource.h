@@ -1,8 +1,8 @@
 #ifndef SHADERSOURCE_H
 #define SHADERSOURCE_H
 
-#include "../system.h"
-#include "shaderconstant.h"
+#include "../System.h"
+#include "ShaderConstant.h"
 
 #include <list>
 #include <string>

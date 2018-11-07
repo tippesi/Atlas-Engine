@@ -1,9 +1,9 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include "system.h"
-#include "viewport.h"
-#include "texture.h"
+#include "System.h"
+#include "Viewport.h"
+#include "Texture.h"
 
 #include "libraries/SDL/include/SDL.h"
 

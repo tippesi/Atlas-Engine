@@ -1,9 +1,9 @@
 #ifndef ACTORBATCH_H
 #define ACTORBATCH_H
 
-#include "../system.h"
-#include "actor.h"
-#include "mesh.h"
+#include "../System.h"
+#include "Actor.h"
+#include "Mesh.h"
 
 #include <vector>
 
