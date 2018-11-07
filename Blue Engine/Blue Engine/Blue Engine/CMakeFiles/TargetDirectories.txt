@@ -1,3 +1,0 @@
-/home/tippes/Blue-Engine/Blue Engine/Blue Engine/Blue Engine/CMakeFiles/rebuild_cache.dir
-/home/tippes/Blue-Engine/Blue Engine/Blue Engine/Blue Engine/CMakeFiles/edit_cache.dir
-/home/tippes/Blue-Engine/Blue Engine/Blue Engine/Blue Engine/CMakeFiles/BlueEngine.dir
