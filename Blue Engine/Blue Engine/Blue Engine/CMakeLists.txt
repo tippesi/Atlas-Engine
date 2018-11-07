@@ -25,7 +25,7 @@ if(APPLE)
     # for MacOS X or iOS, watchOS, tvOS (since 3.10.3)
     include_directories(lib/mac)
     set(ASSIMP_LIBRARY assimp.4.1.0)
-    set(GLEW_LIBRARY glfw3)
+    set(GLEW_LIBRARY libGLEW)
     link_directories(lib/mac/)
 
     INCLUDE_DIRECTORIES(/System/Library/Frameworks)
@@ -42,10 +42,12 @@ endif()
 
 if(UNIX AND NOT APPLE)
     # for Linux, BSD, Solaris, Minix
-    include_directories(lib/linux)
+    include_directories(lib/Linux)
     set(ASSIMP_LIBRARY assimp.4.1.0)
-    set(GLEW_LIBRARY glfSw3)
-    link_directories(lib/linux/)
+    set(GLEW_LIBRARY libGLEW)
+    set(SDLMAIN_LIBRARY libSDL2main)
+    set(SDL_LIBRARY libSDL2)
+    link_directories(lib/Linux/)
 
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
     find_package(OpenGL REQUIRED)
@@ -53,7 +55,7 @@ if(UNIX AND NOT APPLE)
     find_package(X11 REQUIRED)
     # note that the order is important for setting the libs
     # use pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3) in a terminal to confirm
-    set(LIBS ${GLEW_LIBRARY} X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread ${ASSIMP_LIBRARY})
+    set(LIBS ${GLEW_LIBRARY} ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread ${ASSIMP_LIBRARY})
     set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 
         # rpath settings
@@ -99,6 +101,9 @@ if(UNIX AND NOT APPLE)
     add_custom_command(TARGET ${PROJECT_NAME}
             COMMAND cp -rf ../lib/linux/libassimp.4.1.0.so ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libassimp.so.4
             )
+    # add_custom_command(TARGET ${PROJECT_NAME}
+            # COMMAND cp -rf ../lib/linux/libGLEW.so.2.1.0 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libGlEW.so
+            #)
 endif()
 
 if(MSVC)
