@@ -162,7 +162,7 @@ int32_t Texture::GetMaxAnisotropyLevel() {
 	glGetIntegerv(GL_NUM_EXTENSIONS, &extensionCount);
 
 	for (int32_t i = 0; i < extensionCount; i++) {
-		const char* extension = glGetStringi(GL_EXTENSIONS, i);
+		const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, i);
 		if (strcmp(extension, "GL_EXT_texture_filter_anisotropic")) {
 
 			float maxAnisotropy;
