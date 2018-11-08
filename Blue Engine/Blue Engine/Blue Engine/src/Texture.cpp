@@ -158,23 +158,26 @@ uint32_t Texture::GetID() {
 
 int32_t Texture::GetMaxAnisotropyLevel() {
 
-	const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
+	int32_t extensionCount = 0;
+	glGetIntegerv(GL_NUM_EXTENSIONS, &extensionCount);
 
-	if (strstr(extensions, "GL_EXT_texture_filter_anisotropic")) {
+	for (int32_t i = 0; i < extensionCount; i++) {
+		const char* extension = glGetStringi(GL_EXTENSIONS, i);
+		if (strcmp(extension, "GL_EXT_texture_filter_anisotropic")) {
 
-		float maxAnisotropy;
-		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+			float maxAnisotropy;
+			glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
 
-		if (!anisotropyLevel)
-			anisotropyLevel = (int)maxAnisotropy;
-		else
-			anisotropyLevel = glm::min(anisotropyLevel, (int)maxAnisotropy);
+			if (!anisotropyLevel)
+				anisotropyLevel = (int)maxAnisotropy;
+			else
+				anisotropyLevel = glm::min(anisotropyLevel, (int)maxAnisotropy);
 
-		return (int32_t)maxAnisotropy;
+			return (int32_t)maxAnisotropy;
+		}
 	}
-	else {
-		return 0;
-	}
+
+	return 0;
 
 }
 
