@@ -28,11 +28,9 @@ namespace Engine {
 		Window* window = new Window(title, x, y, width, height, flags);
 
 #ifdef ENGINE_OGL
-		glewExperimental = GL_TRUE;
-		GLenum err = glewInit();
-
-		if (err != GLEW_OK)
+		if (!gladLoadGL()) {
 			throw new EngineException("Error initializing GLEW");
+		}			
 #endif
 
 		int value;

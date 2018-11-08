@@ -18,6 +18,8 @@ include_directories(${OPENGL_INCLUDE_DIR})
 
 add_definitions(-DENGINE_CMAKE)
 
+add_subdirectory(src/libraries/glad)
+
 # Setting linker flags and library stuff for the different platforms
 
 if(MSVC)
@@ -25,15 +27,13 @@ if(MSVC)
 	set(SDL_LIBRARY ${CMAKE_SOURCE_DIR}/lib/Windows/lib/SDL2.lib)
 	set(SDLMAIN_LIBRARY ${CMAKE_SOURCE_DIR}/lib/Windows/lib/SDL2main.lib)
     set(ASSIMP_LIBRARY ${CMAKE_SOURCE_DIR}/lib/Windows/lib/assimp-vc140-mt.lib)
-    set(GLEW_LIBRARY  ${CMAKE_SOURCE_DIR}/lib/Windows/lib/glew32.lib)
-    set(LIBS ${GLEW_LIBRARY} ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} opengl32 ${ASSIMP_LIBRARY})
+    set(LIBS ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} opengl32 ${ASSIMP_LIBRARY})
 endif()
 
 if(APPLE)
     # for MacOS X or iOS, watchOS, tvOS (since 3.10.3)
 	link_directories(${CMAKE_SOURCE_DIR}/lib/Mac)	
-    set(ASSIMP_LIBRARY assimp.4.1.0)
-    set(GLEW_LIBRARY GLEW)    
+    set(ASSIMP_LIBRARY assimp.4.1.0)   
 
     INCLUDE_DIRECTORIES(/System/Library/Frameworks)
     FIND_LIBRARY(COCOA_LIBRARY Cocoa)
@@ -50,7 +50,6 @@ if(UNIX AND NOT APPLE)
     # for Linux, BSD, Solaris, Minix
     link_directories(${CMAKE_SOURCE_DIR}/lib/Linux)
     set(ASSIMP_LIBRARY assimp.4.1.0)
-    set(GLEW_LIBRARY GLEW)
     set(SDLMAIN_LIBRARY SDL2main)
     set(SDL_LIBRARY SDL2)    
 
@@ -60,7 +59,7 @@ if(UNIX AND NOT APPLE)
     find_package(X11 REQUIRED)
     # note that the order is important for setting the libs
     # use pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3) in a terminal to confirm
-    set(LIBS ${GLEW_LIBRARY} ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} X11 Xxf86vm GL dl pthread ${ASSIMP_LIBRARY})
+    set(LIBS ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} X11 Xxf86vm GL dl pthread ${ASSIMP_LIBRARY})
     set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 
         # rpath settings
@@ -74,6 +73,7 @@ endif()
 
 include_directories(src)
 include_directories(src/libraries)
+include_directories(src/libraries/glad)
 
 file(GLOB_RECURSE BLUE_ENGINE_SOURCE_FILES
         "src/*.cpp"
@@ -81,14 +81,14 @@ file(GLOB_RECURSE BLUE_ENGINE_SOURCE_FILES
 		"src/*.h"
 		"src/*.hpp"
         )
-
+		
 list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*src/libraries/.*")
 
 add_executable(${PROJECT_NAME}
 ${BLUE_ENGINE_SOURCE_FILES}
         )
 
-target_link_libraries(${PROJECT_NAME} ${LIBS})
+target_link_libraries(${PROJECT_NAME} GLAD ${LIBS})
 
 
 # Postbuild stuff
@@ -109,9 +109,6 @@ if(UNIX AND NOT APPLE)
             COMMAND cp -rf ${CMAKE_SOURCE_DIR}/lib/Linux/libassimp.4.1.0.so ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libassimp.so.4
             )
     add_custom_command(TARGET ${PROJECT_NAME}
-            COMMAND cp -rf ${CMAKE_SOURCE_DIR}/lib/Linux/libGLEW.so ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libGLEW.so.2.1
-            )
-    add_custom_command(TARGET ${PROJECT_NAME}
             COMMAND cp -rf ${CMAKE_SOURCE_DIR}/lib/Linux/libSDL2-2.0.so.0.9.0 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libSDL2-2.0.so
             )
 endif()
@@ -121,10 +118,6 @@ if(MSVC)
     add_custom_command(TARGET ${PROJECT_NAME}
             COMMAND ${CMAKE_COMMAND}
             ARGS -E copy ${CMAKE_SOURCE_DIR}/lib/Windows/dll/assimp-vc140-mt.dll "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
-            )
-    add_custom_command(TARGET ${PROJECT_NAME}
-            COMMAND ${CMAKE_COMMAND}
-            ARGS -E copy ${CMAKE_SOURCE_DIR}/lib/Windows/dll/glew32.dll "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
             )
 	add_custom_command(TARGET ${PROJECT_NAME}
             COMMAND ${CMAKE_COMMAND}

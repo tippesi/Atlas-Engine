@@ -197,6 +197,7 @@
     <ClCompile Include="Blue Engine\src\Cubemap.cpp" />
     <ClCompile Include="Blue Engine\src\Engine.cpp" />
     <ClCompile Include="Blue Engine\src\Framebuffer.cpp" />
+    <ClCompile Include="Blue Engine\src\libraries\glad.c" />
     <ClCompile Include="Blue Engine\src\lighting\Light.cpp" />
     <ClCompile Include="Blue Engine\src\lighting\Shadow.cpp" />
     <ClCompile Include="Blue Engine\src\lighting\Sky.cpp" />

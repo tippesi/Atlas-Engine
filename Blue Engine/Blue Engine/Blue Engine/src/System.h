@@ -37,7 +37,10 @@
 #elif defined(_MSC_VER) || defined(__linux__)
 #define ENGINE_OGL
 
-#include "libraries/glew/glew.h"
+#ifdef _WIN32
+#define APIENTRY __stdcall
+#endif
+#include "libraries/glad//glad/glad.h"
 
 #if defined(_MSC_VER) && !defined(ENGINE_CMAKE)
 // For Visual Studio we can add all the libraries

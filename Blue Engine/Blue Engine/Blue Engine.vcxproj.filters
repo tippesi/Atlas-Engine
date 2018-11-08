@@ -254,5 +254,8 @@
     <ClCompile Include="Blue Engine\src\renderer\SkyboxRenderer.cpp">
       <Filter>Blue Engine\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Blue Engine\src\libraries\glad.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
