@@ -1,5 +1,5 @@
 #ifndef CHROMATICABBERATION_H
-#define CHROMATICABBARATION_H
+#define CHROMATICABBERATION_H
 
 #include "../System.h"
 
