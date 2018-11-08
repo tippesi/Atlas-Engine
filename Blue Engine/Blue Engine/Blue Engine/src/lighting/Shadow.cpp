@@ -28,8 +28,25 @@ void Shadow::UpdateShadowCascade(ShadowCascade* cascade, Camera* camera) {
 
 	vec3 lightDirection = normalize(light->direction);
 
-	cascade->viewMatrix = glm::lookAt(cascadeCenter, cascadeCenter + lightDirection, vec3(0.0f, 1.0f, 0.0f));
+	cascade->viewMatrix = lookAt(cascadeCenter, cascadeCenter + lightDirection, vec3(0.0f, 1.0f, 0.0f));
 
+	vector<vec3> corners = camera->GetFrustumCorners(cascade->nearDistance, cascade->farDistance);
 
+	vec3 maxProj = corners.at(0);
+	vec3 minProj = corners.at(0);
+
+	for (auto corner : corners) {
+		corner = vec3(cascade->viewMatrix * vec4(corner, 1.0f));
+
+		maxProj.x = glm::max(maxProj.x, corner.x);
+		maxProj.y = glm::max(maxProj.y, corner.y);
+		maxProj.z = glm::max(maxProj.z, corner.z);
+
+		minProj.x = glm::min(minProj.x, corner.x);
+		minProj.y = glm::min(minProj.y, corner.y);
+		minProj.z = glm::min(minProj.z, corner.z);
+	}
+
+	cascade->projectionMatrix = glm::ortho(minProj.x, maxProj.x, minProj.y, maxProj.y, -maxProj.z, -minProj.z);
 
 }

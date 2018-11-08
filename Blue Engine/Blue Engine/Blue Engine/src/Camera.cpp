@@ -21,31 +21,60 @@ Camera::Camera(float fieldOfView, float aspectRatio, float nearPlane, float farP
 
 void Camera::UpdateView() {
 
-	direction = glm::normalize(glm::vec3(cos(rotation.y) * sin(rotation.x), sin(rotation.y), cos(rotation.y) * cos(rotation.x)));
+	direction = normalize(vec3(cos(rotation.y) * sin(rotation.x), sin(rotation.y), cos(rotation.y) * cos(rotation.x)));
 
-	right = glm::vec3(sin(rotation.x - 3.14f / 2.0f), 0.0f, cos(rotation.x - 3.14f / 2.0f));
+	right = vec3(sin(rotation.x - 3.14f / 2.0f), 0.0f, cos(rotation.x - 3.14f / 2.0f));
 
 	if (!thirdPerson) {
 
-		up = glm::cross(right, direction);
-		viewMatrix = glm::lookAt(location, location + direction, up);
+		up = cross(right, direction);
+		viewMatrix = lookAt(location, location + direction, up);
 
 	}
 	else {
 
-		up = glm::cross(right, -direction);
-		viewMatrix = glm::lookAt(location - direction * thirdPersonDistance, location, -up);
+		up = cross(right, -direction);
+		viewMatrix = lookAt(location - direction * thirdPersonDistance, location, -up);
 
 	}
 
-	inverseViewMatrix = glm::mat4(glm::inverse(viewMatrix));
+	inverseViewMatrix = mat4(inverse(viewMatrix));
 
 }
 
 void Camera::UpdateProjection() {
 
 	projectionMatrix = glm::perspective(glm::radians(fieldOfView), aspectRatio, nearPlane, farPlane);
-	inverseProjectionMatrix = glm::inverse(projectionMatrix);
+	inverseProjectionMatrix = inverse(projectionMatrix);
+
+}
+
+vector<vec3> Camera::GetFrustumCorners(float nearPlane, float farPlane) {
+
+	vector<vec3> corners;
+
+	float tang = tanf(glm::radians(fieldOfView));
+
+	float farHeight = farPlane * tang;
+	float farWidth = aspectRatio * farHeight;
+	float nearHeight = nearPlane * tang;
+	float nearWidth = aspectRatio * nearHeight;
+
+	vec3 cameraLocation = thirdPerson ? location - direction * thirdPersonDistance : location;
+	vec3 far = cameraLocation + direction * farPlane;
+	vec3 near = cameraLocation + direction * nearPlane;
+
+	corners.push_back(far + farHeight * up - farWidth * right);
+	corners.push_back(far + farHeight * up + farWidth * right);
+	corners.push_back(far - farHeight * up - farWidth * right);
+	corners.push_back(far - farHeight * up + farWidth * right);
+
+	corners.push_back(near + nearHeight * up - nearWidth * right);
+	corners.push_back(near + nearHeight * up + nearWidth * right);
+	corners.push_back(near - nearHeight * up - nearWidth * right);
+	corners.push_back(near - nearHeight * up + nearWidth * right);
+
+	return corners;
 
 }
 

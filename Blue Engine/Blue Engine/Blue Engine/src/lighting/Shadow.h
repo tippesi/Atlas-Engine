@@ -3,6 +3,7 @@
 
 #include "../System.h"
 #include "../Camera.h"
+#include "../Framebuffer.h"
 
 // Forward declaration of light class
 class Light;
@@ -14,6 +15,8 @@ typedef struct ShadowCascade {
 
 	mat4 viewMatrix;
 	mat4 projectionMatrix;
+
+	Framebuffer* map;
 
 }ShadowCascade;
 

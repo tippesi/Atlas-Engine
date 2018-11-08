@@ -34,8 +34,11 @@ public:
 
 	/// <summary>
 	/// Calculates the view frustum corners in world space
+	/// <param name="near">The near plane where the corners should be calculated
+	/// <param name="far">The far plane where the corners should be calculated
+	/// <returns> A vector where the corners are stored
 	/// </summary>
-	vector<vec3> GetFrustumCorners();
+	vector<vec3> GetFrustumCorners(float nearPlane, float farPlane);
 
 	/// <summary>
 	/// Destructs a <see cref="Camera"/>
