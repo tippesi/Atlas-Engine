@@ -60,7 +60,7 @@ if(UNIX AND NOT APPLE)
     find_package(X11 REQUIRED)
     # note that the order is important for setting the libs
     # use pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3) in a terminal to confirm
-    set(LIBS ${GLEW_LIBRARY} ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread ${ASSIMP_LIBRARY})
+    set(LIBS ${GLEW_LIBRARY} ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} X11 Xxf86vm GL dl pthread ${ASSIMP_LIBRARY})
     set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 
         # rpath settings
@@ -110,6 +110,9 @@ if(UNIX AND NOT APPLE)
             )
     add_custom_command(TARGET ${PROJECT_NAME}
             COMMAND cp -rf ${CMAKE_SOURCE_DIR}/lib/Linux/libGLEW.so ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libGLEW.so.2.1
+            )
+    add_custom_command(TARGET ${PROJECT_NAME}
+            COMMAND cp -rf ${CMAKE_SOURCE_DIR}/lib/Linux/libSDL2-2.0.so.0.9.0 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libSDL2-2.0.so
             )
 endif()
 
