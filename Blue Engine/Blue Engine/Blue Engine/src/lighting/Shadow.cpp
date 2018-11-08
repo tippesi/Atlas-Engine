@@ -18,3 +18,13 @@ void Shadow::Update(Camera* camera) {
 	}
 
 }
+
+void Shadow::UpdateShadowCascade(ShadowCascade* cascade, Camera* camera) {
+
+	vec3 cameraLocation = camera->thirdPerson ? camera->location - camera->direction * camera->thirdPersonDistance : camera->location;
+
+	vec3 cascadeCenter = cameraLocation + camera->direction * (cascade->nearDistance + (cascade->farDistance - cascade->nearDistance) * 0.5f);
+
+	vec3 lightDirection = glm::normalize(light->direction);
+
+}

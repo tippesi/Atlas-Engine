@@ -37,6 +37,8 @@ public:
 	Light* light;
 
 private:
+	void UpdateShadowCascade(ShadowCascade* cascade, Camera* camera);
+
 	int32_t numCascades;
 
 };

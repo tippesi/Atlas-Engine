@@ -2,6 +2,7 @@
 #define CAMERA_H
 
 #include "System.h"
+#include <vector>
 
 /// <summary>
 /// Used to represent a camera in the engine.
@@ -30,6 +31,11 @@ public:
 	/// Calculates the perspective matrix based on the FoV, the aspect ratio and the near and far plane.
 	/// </summary>
 	void UpdateProjection();
+
+	/// <summary>
+	/// Calculates the view frustum corners in world space
+	/// </summary>
+	vector<vec3> GetFrustumCorners();
 
 	/// <summary>
 	/// Destructs a <see cref="Camera"/>
