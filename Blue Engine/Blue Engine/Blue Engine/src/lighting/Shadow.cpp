@@ -1,4 +1,5 @@
 #include "Shadow.h"
+#include "Light.h"
 
 Shadow::Shadow(float distance, float bias, int32_t numCascades) :
 	numCascades(numCascades), distance(distance), bias(bias) {
@@ -14,7 +15,7 @@ Shadow::Shadow(float distance, float bias, int32_t numCascades) :
 void Shadow::Update(Camera* camera) {
 
 	for (uint32_t i = 0; i < numCascades; i++) {
-		
+		UpdateShadowCascade(&cascades[i], camera);
 	}
 
 }
@@ -25,6 +26,10 @@ void Shadow::UpdateShadowCascade(ShadowCascade* cascade, Camera* camera) {
 
 	vec3 cascadeCenter = cameraLocation + camera->direction * (cascade->nearDistance + (cascade->farDistance - cascade->nearDistance) * 0.5f);
 
-	vec3 lightDirection = glm::normalize(light->direction);
+	vec3 lightDirection = normalize(light->direction);
+
+	cascade->viewMatrix = glm::lookAt(cascadeCenter, cascadeCenter + lightDirection, vec3(0.0f, 1.0f, 0.0f));
+
+
 
 }
