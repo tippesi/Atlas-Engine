@@ -4,19 +4,14 @@
 #include "../System.h"
 #include "../Texture.h"
 #include "../shader/Shader.h"
+#include "../shader/ShaderConfig.h"
 
 class Material {
 
 public:
 	Material();
 
-	Shader* GetShader();
-
-	void UpdateShader(bool deleteUniforms = true);
-
-	void Bind(mat4 viewMatrix, mat4 projectionMatrix);
-	
-	Uniform* GetModelMatrixUniform();
+	void Update();
 
 	bool HasDiffuseMap();
 	bool HasNormalMap();
@@ -37,23 +32,7 @@ public:
 	float specularHardness;
 	float specularIntensity;
 
-private:
-	Shader* shader;
-
-	Uniform* diffuseMapUniform;
-	Uniform* normalMapUniform;
-	Uniform* specularMapUniform;
-	Uniform* heightMapUniform;
-	Uniform* modelMatrixUniform;
-	Uniform* viewMatrixUniform;
-	Uniform* projectionMatrixUniform;
-
-	ShaderConstant* diffuseColorConstant;
-	ShaderConstant* specularColorConstant;
-	ShaderConstant* ambientColorConstant;
-	ShaderConstant* specularHardnessConstant;
-	ShaderConstant* specularIntensityConstant;
-
+	ShaderConfig * geometryConfig;
 };
 
 #endif

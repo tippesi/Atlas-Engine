@@ -10,8 +10,8 @@ DirectionalLightRenderer::DirectionalLightRenderer(const char* vertexSource, con
 	shader->AddComponent(VERTEX_SHADER, vertexSource);
 	shader->AddComponent(FRAGMENT_SHADER, fragmentSource);
 
-	shader->AddMacro("SHADOWS");
-	shader->AddMacro("SHADOW_FILTERING");
+	//shader->AddMacro("SHADOWS");
+	//shader->AddMacro("SHADOW_FILTERING");
 
 	shader->Compile();
 
@@ -29,9 +29,11 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 	// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
 	for (Light* light : scene->lights) {
 
+		/*
 		if (light->type != DIRECTIONAL_LIGHT || light->shadow == nullptr) {
 			continue;
 		}
+		*/
 
 		vec3 direction = normalize(vec3(camera->viewMatrix * vec4(light->direction, 0.0f)));
 
@@ -50,7 +52,7 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 		target->geometryFramebuffer->components[0]->Bind(GL_TEXTURE0);
 		target->geometryFramebuffer->components[1]->Bind(GL_TEXTURE1);
 		target->geometryFramebuffer->components[2]->Bind(GL_TEXTURE2);
-		light->shadow->cascades[0].map->components[0]->Bind(GL_TEXTURE5);
+		//light->shadow->cascades[0].map->components[0]->Bind(GL_TEXTURE5);
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

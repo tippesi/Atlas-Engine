@@ -2,12 +2,13 @@
 
 ShaderConfigBatch::ShaderConfigBatch(Shader* shader) : shader(shader) {
 
-
+	ID = 0;
 
 }
 
 void ShaderConfigBatch::Add(ShaderConfig* config) {
 
+	config->batchID = ID;
 	configs.push_back(config);
 
 }

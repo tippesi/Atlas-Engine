@@ -20,9 +20,9 @@ uniform samplerCube environmentCube;
 uniform mat4 ivMatrix;
 #endif
 
-const vec3 diffuseColor;
-const float specularIntensity;
-const float specularHardness;
+uniform vec3 diffuseColor;
+uniform float specularIntensity;
+uniform float specularHardness;
 
 in vec2 fTexCoord;
 in vec3 fNormal;

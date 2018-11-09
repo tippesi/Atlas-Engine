@@ -16,6 +16,8 @@ public:
 
 	void Remove(ShaderConfig* config);
 
+	int32_t ID;
+
 	Shader* shader;
 	vector<ShaderConfig*> configs;
 	vector<Uniform*> uniforms;

@@ -13,7 +13,12 @@ public:
 
 	void RemoveMacro(const char* macro);
 
+	bool HasMacro(const char* macro);
+
+	int32_t batchID;
 	vector<string> macros;
+	
+	bool added;
 
 };
 

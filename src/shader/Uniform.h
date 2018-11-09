@@ -37,6 +37,8 @@ private:
 
 	ShaderBatch* shaderBatch;
 
+	inline Uniform* GetBatchUniform();
+
 };
 
 #endif

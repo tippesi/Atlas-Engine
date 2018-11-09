@@ -11,6 +11,8 @@ int main(int argc, char* argv[])
         Window* window = Engine::Init("Blue Engine", WINDOWPOSITION_UNDEFINED, WINDOWPOSITION_UNDEFINED,
                 1280, 720, WINDOW_RESIZABLE);
 
+		GeometryRenderer::InitShaderBatch("deferred/geometry.vsh", "deferred/geometry.fsh");
+
         Camera* camera = new Camera(45.0f, 2.0f, 1.0f, 400.0f);
 		camera->location = vec3(51.323f, 0.510f, -9.508);
 		camera->rotation = vec2(5.059f, 0.345f);
@@ -121,7 +123,7 @@ int main(int argc, char* argv[])
 
                 scene->Update();
 
-				globalLight->shadow->Update(camera);
+				// globalLight->shadow->Update(camera);
 
                 renderer->RenderScene(window, target, camera, scene);
 

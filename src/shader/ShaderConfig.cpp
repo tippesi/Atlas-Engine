@@ -2,7 +2,8 @@
 
 ShaderConfig::ShaderConfig() {
 
-
+	batchID = 0;
+	added = false;
 
 }
 
@@ -22,5 +23,19 @@ void ShaderConfig::RemoveMacro(const char* macro) {
 			return;
 		}
 	}
+
+}
+
+bool ShaderConfig::HasMacro(const char* macro) {
+
+	string macroString(macro);
+
+	for (string macro : macros) {
+		if (macro == macroString) {
+			return true;
+		}
+	}
+
+	return false;
 
 }

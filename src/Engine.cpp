@@ -31,7 +31,7 @@ namespace Engine {
 
 #ifdef ENGINE_OGL
 		if (!gladLoadGL()) {
-			throw new EngineException("Error initializing GLEW");
+			throw new EngineException("Error initializing OpenGL");
 		}			
 #endif
 
@@ -46,21 +46,18 @@ namespace Engine {
 		EngineLog("Native colorbuffer blue component precision %d bits", value);
 		SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE, &value);
 		EngineLog("Native depthbuffer precision %d bits", value);
-#endif
-
+#endif		
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LEQUAL);
 		glEnable(GL_CULL_FACE);
-
-		glEnable(GL_TEXTURE_2D);
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 #ifdef ENGINE_OGL
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-#endif
+#endif		
 
 		int32_t maxAnisotropy = Texture::GetMaxAnisotropyLevel();
 		Texture::SetAnisotropyLevel(maxAnisotropy);

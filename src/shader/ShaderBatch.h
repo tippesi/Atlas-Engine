@@ -20,9 +20,13 @@ public:
 
 	Uniform* GetUniform(const char* uniformName);
 
+	void Bind(int32_t shaderID);
+
 	vector<ShaderSource*> components;
 	vector<ShaderConfigBatch*> configBatches;
 	vector<Uniform*> uniforms;	
+
+	int32_t boundShaderID;
 
 };
 

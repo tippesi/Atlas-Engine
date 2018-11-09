@@ -3,7 +3,7 @@
 
 ShaderBatch::ShaderBatch() {
 
-
+	boundShaderID = 0;
 
 }
 
@@ -33,6 +33,7 @@ void ShaderBatch::AddConfig(ShaderConfig* config) {
 		if (i >= 0) {
 			// We found an existing shader
 			batch->Add(config);
+			config->added = true;
 			return;
 		}
 	}
@@ -47,7 +48,7 @@ void ShaderBatch::AddConfig(ShaderConfig* config) {
 	}
 
 	// Now we set the macros
-	for (string macro : config->macros) {
+	for (string& macro : config->macros) {
 		shader->AddMacro(macro.c_str());
 	}
 
@@ -59,7 +60,10 @@ void ShaderBatch::AddConfig(ShaderConfig* config) {
 		batch->uniforms.push_back(batchUniform);
 	}
 
+	batch->ID = (int32_t)configBatches.size();
+
 	batch->Add(config);
+	config->added = true;
 	configBatches.push_back(batch);
 
 }
@@ -79,9 +83,16 @@ Uniform* ShaderBatch::GetUniform(const char* uniformName) {
 
 	// We don't care about the shader ID because the uniform object
 	// is just a layer of abstraction for the renderer
-	Uniform* uniform = new Uniform(0, uniformName, this, uniforms.size());
+	Uniform* uniform = new Uniform(0, uniformName, this, (int32_t)uniforms.size());
 	uniforms.push_back(uniform);
 
 	return uniform;
+
+}
+
+void ShaderBatch::Bind(int32_t shaderID) {
+
+	boundShaderID = shaderID;
+	configBatches.at(shaderID)->shader->Bind();
 
 }
