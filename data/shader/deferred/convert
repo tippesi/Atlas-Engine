@@ -1,0 +1,15 @@
+uniform mat4 ipMatrix;
+
+vec3 ConvertDepthToViewSpace(float depth, vec2 texcoords) {
+	
+	vec4 viewSpace = ipMatrix * vec4(texcoords * 2.0f - 1.0f, depth * 2.0f - 1.0f, 1.0f);
+	return viewSpace.xyz / viewSpace.w;
+	
+}
+
+float ConvertDepthToViewSpaceDepth(float depth) {
+	
+	vec2 viewSpace = (ipMatrix * vec4(0.0f, 0.0f, depth * 2.0f - 1.0f, 1.0f)).zw;
+	return viewSpace.x / viewSpace.y;
+	
+}

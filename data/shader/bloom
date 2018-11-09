@@ -1,0 +1,12 @@
+uniform bool bloom;
+
+vec3 CalculateBloom(vec3 color) {
+
+	if(bloom) {
+		
+		float brightness = dot(color, vec3(1.0f));
+		return max(color * (brightness), 0.0f);
+		
+	}
+
+}
