@@ -1,7 +1,7 @@
 #include "MasterRenderer.h"
 
-const char* MasterRenderer::shadowVertexPath = "shadow.vsh";
-const char* MasterRenderer::shadowFragmentPath = "shadow.fsh";
+const char* MasterRenderer::shadowVertexPath = "shadowmapping.vsh";
+const char* MasterRenderer::shadowFragmentPath = "shadowmapping.fsh";
 const char* MasterRenderer::directionalLightVertexPath = "deferred/directional.vsh";
 const char* MasterRenderer::directionalLightFragmentPath = "deferred/directional.fsh";
 const char* MasterRenderer::skyboxVertexPath = "skybox.vsh";
@@ -26,6 +26,8 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
+
+	// shadowRenderer->Render(window, target, camera, scene, true);
 
 	target->geometryFramebuffer->Bind();
 

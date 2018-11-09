@@ -1,8 +1,10 @@
 #include "Uniform.h"
 
-Uniform::Uniform(uint32_t shaderID, const char* uniformName) {
+Uniform::Uniform(uint32_t shaderID, const char* uniformName, ShaderBatch* shaderBatch, int32_t ID) : name(uniformName), shaderBatch(shaderBatch), ID(ID) {
 
-	ID = glGetUniformLocation(shaderID, uniformName);
+	if (shaderBatch == nullptr) {
+		ID = glGetUniformLocation(shaderID, uniformName);
+	}
 
 }
 

@@ -16,6 +16,8 @@ class ShaderSource {
 public:
 	ShaderSource(int32_t type, const char* filename);
 
+	ShaderSource(ShaderSource* source);
+
 	void AddMacro(const char* macro);
 
 	void RemoveMacro(const char* macro);
@@ -23,6 +25,8 @@ public:
 	ShaderConstant* GetConstant(const char* constant);
 
 	bool Compile();
+
+	static void SetSourceDirectory(const char* directory);
 
 	~ShaderSource();
 
@@ -37,6 +41,8 @@ private:
 	string code;
 	list<string> macros;
 	list<ShaderConstant*> constants;
+
+	static string sourceDirectory;
 
 };
 

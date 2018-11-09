@@ -3,10 +3,12 @@
 
 #include "../System.h"
 
+class ShaderBatch;
+
 class Uniform {
 
 public:
-	Uniform(uint32_t shaderID, const char* uniformName);
+	Uniform(uint32_t shaderID, const char* uniformName, ShaderBatch* shaderBatch = nullptr, int32_t ID = 0);
 
 	void SetValue(int32_t value);
 
@@ -28,8 +30,12 @@ public:
 
 	void SetValue(float *value, int32_t length);
 
+	const char* name;
+
 private:
 	int32_t ID;
+
+	ShaderBatch* shaderBatch;
 
 };
 

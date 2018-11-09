@@ -5,10 +5,11 @@
 int main(int argc, char* argv[])
 {
 
+		// This has to be set before initialization
+		ShaderSource::SetSourceDirectory("../data/shader");
+
         Window* window = Engine::Init("Blue Engine", WINDOWPOSITION_UNDEFINED, WINDOWPOSITION_UNDEFINED,
                 1280, 720, WINDOW_RESIZABLE);
-
-		Shader::SetSourceDirectory("../data/shader");
 
         Camera* camera = new Camera(45.0f, 2.0f, 1.0f, 400.0f);
 		camera->location = vec3(51.323f, 0.510f, -9.508);
@@ -29,7 +30,7 @@ int main(int argc, char* argv[])
                 "../data/cubemap/front.png",
                 "../data/cubemap/back.png");
 
-        scene->sky->skybox = new Skybox(cubemap, mat4(1.0f));
+        scene->sky->skybox = new Skybox(cubemap);
 
         Mesh* mesh = new Mesh("../data/cube.dae");
         Mesh* sponzaMesh = new Mesh("../data/sponza/sponza.dae");
@@ -42,10 +43,17 @@ int main(int argc, char* argv[])
 
         SceneNode* node = new SceneNode();
 
+		Light* globalLight = new Light(DIRECTIONAL_LIGHT);
+		globalLight->direction = vec3(0.0f, -1.0f, 0.0f);
+		globalLight->ambient = 0.1f;
+		globalLight->shadow = new Shadow(50.0f, 0.001f, 1);
+
         node->Add(actor);
         scene->rootNode->Add(node);
 
-        scene->Add(sponza);
+		scene->Add(sponza);
+
+		scene->Add(globalLight);
 
         node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
 
@@ -112,6 +120,8 @@ int main(int argc, char* argv[])
                 actor->modelMatrix = glm::rotate((float)time / 500.0f, vec3(0.0f, 1.0f, 0.0f));
 
                 scene->Update();
+
+				globalLight->shadow->Update(camera);
 
                 renderer->RenderScene(window, target, camera, scene);
 

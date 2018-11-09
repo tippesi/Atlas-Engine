@@ -6,8 +6,15 @@ Shadow::Shadow(float distance, float bias, int32_t numCascades) :
 
 	cascades = new ShadowCascade[numCascades];
 
+	for (int32_t i = 0; i < numCascades; i++) {
+		cascades[i].nearDistance = (float)i * distance / (float)numCascades;
+		cascades[i].farDistance = (float)(i + 1) * distance / (float)numCascades;
+		cascades[i].map = new Framebuffer(1024, 1024);
+		cascades[i].map->AddComponent(GL_DEPTH_ATTACHMENT, GL_UNSIGNED_INT, GL_DEPTH_COMPONENT24, GL_CLAMP_TO_EDGE, GL_LINEAR);
+	}
+
 	filtering = true;
-	numSamples = 16;
+	sampleCount = 16;
 	sampleRange = 2.2f;
 
 }

@@ -28,22 +28,17 @@ public:
 
 	void Bind();
 
-	static void SetSourceDirectory(const char* directory);
-
 	~Shader();
 	
 	vector<ShaderSource*> components;
+	vector<string> macros;
 
 	bool isCompiled;
 
 private:
-	uint32_t ID;
-
-	vector<string> macros;
+	uint32_t ID;	
 
 	static uint32_t boundShaderID;
-
-	static string sourceDirectory;
 
 };
 

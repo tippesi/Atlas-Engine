@@ -4,7 +4,7 @@ struct Shadow {
 	float distance;
 	float bias;
 	
-	int numSamples;
+	int sampleCount;
 	float sampleRange;
 	float sampleRandomness;
 	

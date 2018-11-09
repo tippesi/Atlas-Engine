@@ -2,14 +2,34 @@
 #include <fstream>
 #include <sstream>
 
+string ShaderSource::sourceDirectory = "";
+
 ShaderSource::ShaderSource(int32_t type, const char* filename) : type(type), filename(filename) {
 
-	code = ReadShaderFile(filename, true);
+	string path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
+	path += string(filename);
+
+	code = ReadShaderFile(path.c_str(), true);
 	ID = glCreateShader(type);
 
 #ifdef ENGINE_SHOW_LOG
 	EngineLog("Loaded shader file %s", filename);
 #endif
+}
+
+ShaderSource::ShaderSource(ShaderSource* source) {
+
+	code = source->code;
+	macros = source->macros;
+	filename = source->filename;
+
+	for (list<ShaderConstant*>::iterator iterator = source->constants.begin(); iterator != source->constants.end(); iterator++) {
+		ShaderConstant* constant = new ShaderConstant((*iterator)->GetValuedString().c_str());
+		constants.push_back(constant);
+	}
+
+	ID = glCreateShader(source->type);
+
 }
 
 void ShaderSource::AddMacro(const char* macro) {
@@ -90,6 +110,12 @@ bool ShaderSource::Compile() {
 	}
 
 	return true;
+
+}
+
+void ShaderSource::SetSourceDirectory(const char* directory) {
+
+	sourceDirectory = string(directory);
 
 }
 

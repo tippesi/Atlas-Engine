@@ -32,7 +32,7 @@ public:
 
 	bool filtering;
 
-	int32_t numSamples;
+	int32_t sampleCount;
 	float sampleRange;
 
 	ShadowCascade* cascades;

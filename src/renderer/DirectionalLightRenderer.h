@@ -23,6 +23,7 @@ private:
 	Uniform* materialTexture;
 	Uniform* depthTexture;
 	Uniform* aoTexture;
+	Uniform* firstCascadeTexture;
 
 	Uniform* lightDirection;
 	Uniform* lightColor;
@@ -31,6 +32,12 @@ private:
 	Uniform* lightSpaceMatrix;
 	Uniform* inverseViewMatrix;
 	Uniform* inverseProjectionMatrix;
+
+	Uniform* shadowDistance;
+	Uniform* shadowBias;
+	Uniform* shadowSampleCount;
+	Uniform* shadowSampleRange;
+	Uniform* shadowSampleRandomness;
 
 };
 

@@ -1,7 +1,6 @@
 #include "Shader.h"
 
 uint32_t Shader::boundShaderID = 0;
-string Shader::sourceDirectory = "";
 
 Shader::Shader() {
 
@@ -12,10 +11,7 @@ Shader::Shader() {
 
 ShaderSource* Shader::AddComponent(int32_t type, const char* filename) {
 
-	string path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
-	path += string(filename);
-
-	ShaderSource* source = new ShaderSource(type, path.c_str());
+	ShaderSource* source = new ShaderSource(type, filename);
 
 	components.push_back(source);
 
@@ -146,12 +142,6 @@ void Shader::Bind() {
 
 		boundShaderID = ID;
 	}
-
-}
-
-void Shader::SetSourceDirectory(const char* directory) {
-
-	sourceDirectory = string(directory);
 
 }
 
