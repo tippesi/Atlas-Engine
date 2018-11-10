@@ -3,6 +3,7 @@
 
 #include "../System.h"
 #include <vector>
+#include <string>
 
 class ShaderConfig {
 
@@ -14,6 +15,8 @@ public:
 	void RemoveMacro(const char* macro);
 
 	bool HasMacro(const char* macro);
+
+	void ClearMacros();
 
 	int32_t batchID;
 	vector<string> macros;

@@ -1,4 +1,4 @@
-#include "mouse.h"
+#include "Mouse.h"
 
 #include <stdio.h>
 #include <stdlib.h>

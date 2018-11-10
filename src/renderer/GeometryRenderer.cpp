@@ -89,3 +89,15 @@ void GeometryRenderer::InitShaderBatch(const char* vertexSource, const char* fra
 	shaderBatch->AddComponent(FRAGMENT_SHADER, fragmentSource);
 
 }
+
+void GeometryRenderer::AddConfig(ShaderConfig* config) {
+
+	shaderBatch->AddConfig(config);
+
+}
+
+void GeometryRenderer::RemoveConfig(ShaderConfig* config) {
+
+	shaderBatch->RemoveConfig(config);
+
+}

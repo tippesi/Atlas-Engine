@@ -1,5 +1,6 @@
 #include "Material.h"
 #include "renderer/GeometryRenderer.h"
+#include "renderer/ShadowRenderer.h"
 
 Material::Material() {
 
@@ -16,31 +17,31 @@ Material::Material() {
 	specularIntensity = 0.0f;
 
 	geometryConfig = new ShaderConfig();
+	shadowConfig = new ShaderConfig();
 
 }
 
 void Material::Update() {
 
-	GeometryRenderer::shaderBatch->RemoveConfig(geometryConfig);
+	GeometryRenderer::RemoveConfig(geometryConfig);
+	ShadowRenderer::RemoveConfig(shadowConfig);
 
-	bool hasDiffuseMapMacro = geometryConfig->HasMacro("DIFFUSE_MAP");
-	bool hasNormalMapMacro = geometryConfig->HasMacro("NORMAL_MAP");
+	geometryConfig->ClearMacros();
+	shadowConfig->ClearMacros();
 
-	if (HasDiffuseMap() && !hasDiffuseMapMacro) {
+	if (HasDiffuseMap()) {
 		geometryConfig->AddMacro("DIFFUSE_MAP");
-	}
-	else if (!HasDiffuseMap() && hasDiffuseMapMacro){
-		geometryConfig->RemoveMacro("DIFFUSE_MAP");
+		if (diffuseMap->channels == 4 && shadowConfig) {
+			shadowConfig->AddMacro("ALPHA");
+		}
 	}
 	
-	if (HasNormalMap() && !hasNormalMapMacro) {
+	if (HasNormalMap()) {
 		geometryConfig->AddMacro("NORMAL_MAP");
 	}
-	else if (!HasNormalMap() && hasNormalMapMacro){
-		geometryConfig->RemoveMacro("NORMAL_MAP");
-	}
 
-	GeometryRenderer::shaderBatch->AddConfig(geometryConfig);
+	GeometryRenderer::AddConfig(geometryConfig);
+	ShadowRenderer::AddConfig(shadowConfig);
 
 }
 

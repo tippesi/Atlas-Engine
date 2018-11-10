@@ -39,3 +39,9 @@ bool ShaderConfig::HasMacro(const char* macro) {
 	return false;
 
 }
+
+void ShaderConfig::ClearMacros() {
+
+	macros.clear();
+
+}

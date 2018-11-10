@@ -12,6 +12,7 @@ int main(int argc, char* argv[])
                 1280, 720, WINDOW_RESIZABLE);
 
 		GeometryRenderer::InitShaderBatch("deferred/geometry.vsh", "deferred/geometry.fsh");
+		ShadowRenderer::InitShaderBatch("shadowmapping.vsh", "shadowmapping.fsh");
 
         Camera* camera = new Camera(45.0f, 2.0f, 1.0f, 400.0f);
 		camera->location = vec3(51.323f, 0.510f, -9.508);

@@ -3,6 +3,7 @@
 
 #include "../System.h"
 #include "IRenderer.h"
+#include "../shader/ShaderBatch.h"
 
 class ShadowRenderer : public IRenderer {
 
@@ -11,8 +12,14 @@ public:
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 
+	static void InitShaderBatch(const char* vertexSource, const char* fragmentSource);
+
+	static void AddConfig(ShaderConfig* config);
+
+	static void RemoveConfig(ShaderConfig* config);
+
 private:
-	Shader* shader;
+	static ShaderBatch* shaderBatch;
 
 };
 

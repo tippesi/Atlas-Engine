@@ -32,7 +32,9 @@ public:
 	float specularHardness;
 	float specularIntensity;
 
-	ShaderConfig * geometryConfig;
+	ShaderConfig* geometryConfig;
+	ShaderConfig* shadowConfig;
+
 };
 
 #endif

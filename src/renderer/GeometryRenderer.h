@@ -13,8 +13,10 @@ public:
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 
 	static void InitShaderBatch(const char* vertexSource, const char* fragmentSource);
-	
-	static ShaderBatch* shaderBatch;
+
+	static void AddConfig(ShaderConfig* config);
+
+	static void RemoveConfig(ShaderConfig* config);
 
 private:
 	Uniform* diffuseMapUniform;
@@ -30,6 +32,8 @@ private:
 	Uniform* ambientColorUniform;
 	Uniform* specularHardnessUniform;
 	Uniform* specularIntensityUniform;
+
+	static ShaderBatch* shaderBatch;
 
 };
 
