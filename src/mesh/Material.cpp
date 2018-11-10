@@ -21,9 +21,7 @@ Material::Material() {
 
 void Material::Update() {
 
-	if (geometryConfig != nullptr) {
-		// GeometryRenderer::shaderBatch->RemoveConfig(geometryConfig);
-	}
+	GeometryRenderer::shaderBatch->RemoveConfig(geometryConfig);
 
 	bool hasDiffuseMapMacro = geometryConfig->HasMacro("DIFFUSE_MAP");
 	bool hasNormalMapMacro = geometryConfig->HasMacro("NORMAL_MAP");

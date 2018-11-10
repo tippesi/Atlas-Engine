@@ -27,7 +27,7 @@ void main() {
 		discard;
 	
 	vec3 fragPos = ConvertDepthToViewSpace(depth, fTexCoord);	
-	vec3 normal = 2.0f * texture(normalTexture, fTexCoord).rgb - 1.0f;
+	vec3 normal = normalize(2.0f * texture(normalTexture, fTexCoord).rgb - 1.0f);
 	
 	vec3 surfaceColor = texture(diffuseTexture, fTexCoord).rgb;
 	vec2 material = texture(materialTexture, fTexCoord).rg;

@@ -17,6 +17,10 @@ void ShaderBatch::AddComponent(int32_t type, const char* filename) {
 
 void ShaderBatch::AddConfig(ShaderConfig* config) {
 
+	if (config->added) {
+		return;
+	}
+
 	std::sort(config->macros.begin(), config->macros.end());
 
 	for (ShaderConfigBatch* batch : configBatches) {
@@ -70,7 +74,19 @@ void ShaderBatch::AddConfig(ShaderConfig* config) {
 
 void ShaderBatch::RemoveConfig(ShaderConfig* config) {
 
+	if (!config->added) {
+		return;
+	}
 
+	ShaderConfigBatch* batch = configBatches[config->batchID];
+	batch->Remove(config);
+
+	config->added = false;
+
+	// Remove empty batches
+	if (batch->configs.size() == 0) {
+		configBatches.erase(configBatches.begin() + batch->ID);
+	}
 
 }
 
@@ -82,7 +98,8 @@ Uniform* ShaderBatch::GetUniform(const char* uniformName) {
 	}
 
 	// We don't care about the shader ID because the uniform object
-	// is just a layer of abstraction for the renderer
+	// is just a layer of abstraction for the renderer unlike the create
+	// uniforms in the loop above.
 	Uniform* uniform = new Uniform(0, uniformName, this, (int32_t)uniforms.size());
 	uniforms.push_back(uniform);
 
