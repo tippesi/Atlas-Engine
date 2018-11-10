@@ -42,7 +42,7 @@ void main() {
 	vec4 shadowCoords = lightSpaceMatrix * vec4(fragPos, 1.0f);
 	shadowCoords.z -= light.shadow.bias;
 	shadowCoords.xyz /= shadowCoords.w;
-	shadowCoords.w = clamp((length(fragPos) - light.shadow.distance) * 0.1f, 0.0f, 1.0f);
+	shadowCoords.w = clamp((length(fragPos) - light.shadow.distance), 0.0f, 1.0f);
 	
 	vec3 modelCoords = vec3(ivMatrix * vec4(fragPos, 1.0f));
 	

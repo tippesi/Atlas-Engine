@@ -10,12 +10,12 @@ Shadow::Shadow(float distance, float bias, int32_t numCascades) :
 		cascades[i].nearDistance = (float)i * distance / (float)numCascades;
 		cascades[i].farDistance = (float)(i + 1) * distance / (float)numCascades;
 		cascades[i].map = new Framebuffer(1024, 1024);
-		cascades[i].map->AddComponent(GL_DEPTH_ATTACHMENT, GL_UNSIGNED_INT, GL_DEPTH_COMPONENT24, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		cascades[i].map->AddComponent(GL_DEPTH_ATTACHMENT, GL_FLOAT, GL_DEPTH_COMPONENT32F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 	}
 
 	filtering = true;
 	sampleCount = 16;
-	sampleRange = 2.2f;
+	sampleRange = 4;
 
 }
 
@@ -35,7 +35,11 @@ void Shadow::UpdateShadowCascade(ShadowCascade* cascade, Camera* camera) {
 
 	vec3 lightDirection = normalize(light->direction);
 
-	cascade->viewMatrix = lookAt(cascadeCenter, cascadeCenter + lightDirection, vec3(0.0f, 1.0f, 0.0f));
+	// A near enough up vector. This is because if the light location is 
+	// (0.0f, 1.0f, 0.0f) the shadows wouldn't render correctly due to the 
+	// shadows (or lights) view matrix. This is just a hack
+	vec3 up = glm::vec3(0.0000000000000001f, 1.0f, 0.0000000000000001f);
+	cascade->viewMatrix = lookAt(cascadeCenter, cascadeCenter + lightDirection, up);
 
 	vector<vec3> corners = camera->GetFrustumCorners(cascade->nearDistance, cascade->farDistance);
 
@@ -54,6 +58,6 @@ void Shadow::UpdateShadowCascade(ShadowCascade* cascade, Camera* camera) {
 		minProj.z = glm::min(minProj.z, corner.z);
 	}
 
-	cascade->projectionMatrix = glm::ortho(minProj.x, maxProj.x, minProj.y, maxProj.y, -maxProj.z, -minProj.z);
+	cascade->projectionMatrix = glm::ortho(minProj.x, maxProj.x, minProj.y, maxProj.y, -maxProj.z - 150.0f, -minProj.z);
 
 }

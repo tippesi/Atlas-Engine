@@ -14,9 +14,9 @@ int main(int argc, char* argv[])
 		GeometryRenderer::InitShaderBatch("deferred/geometry.vsh", "deferred/geometry.fsh");
 		ShadowRenderer::InitShaderBatch("shadowmapping.vsh", "shadowmapping.fsh");
 
-        Camera* camera = new Camera(45.0f, 2.0f, 1.0f, 400.0f);
-		camera->location = vec3(51.323f, 0.510f, -9.508);
-		camera->rotation = vec2(5.059f, 0.345f);
+        Camera* camera = new Camera(47.0f, 2.0f, 1.0f, 200.0f);
+		camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
+		camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
         Texture* texture = new Texture("../data/image.png");
 
@@ -47,9 +47,10 @@ int main(int argc, char* argv[])
         SceneNode* node = new SceneNode();
 
 		Light* globalLight = new Light(DIRECTIONAL_LIGHT);
-		globalLight->direction = vec3(0.0f, -1.0f, 0.0f);
+		globalLight->direction = vec3(0.0f, -1.0f, 0.1f);
 		globalLight->ambient = 0.1f;
-		globalLight->shadow = new Shadow(50.0f, 0.001f, 1);
+		globalLight->shadow = new Shadow(25.0f, 0.001f, 1);
+		globalLight->shadow->light = globalLight;
 
         node->Add(actor);
         scene->rootNode->Add(node);
@@ -124,7 +125,7 @@ int main(int argc, char* argv[])
 
                 scene->Update();
 
-				// globalLight->shadow->Update(camera);
+				globalLight->shadow->Update(camera);
 
                 renderer->RenderScene(window, target, camera, scene);
 

@@ -39,6 +39,8 @@ private:
 	Uniform* shadowSampleRange;
 	Uniform* shadowSampleRandomness;
 
+	Uniform* firstCascadeResolution;
+
 };
 
 #endif

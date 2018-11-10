@@ -10,8 +10,8 @@ DirectionalLightRenderer::DirectionalLightRenderer(const char* vertexSource, con
 	shader->AddComponent(VERTEX_SHADER, vertexSource);
 	shader->AddComponent(FRAGMENT_SHADER, fragmentSource);
 
-	//shader->AddMacro("SHADOWS");
-	//shader->AddMacro("SHADOW_FILTERING");
+	shader->AddMacro("SHADOWS");
+	shader->AddMacro("SHADOW_FILTERING");
 
 	shader->Compile();
 
@@ -26,14 +26,19 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 	inverseViewMatrix->SetValue(camera->inverseViewMatrix);
 	inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
+	target->geometryFramebuffer->components[0]->Bind(GL_TEXTURE0);
+	target->geometryFramebuffer->components[1]->Bind(GL_TEXTURE1);
+	target->geometryFramebuffer->components[2]->Bind(GL_TEXTURE2);
+	target->geometryFramebuffer->components[3]->Bind(GL_TEXTURE3);
+
 	// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
 	for (Light* light : scene->lights) {
 
-		/*
 		if (light->type != DIRECTIONAL_LIGHT || light->shadow == nullptr) {
 			continue;
 		}
-		*/
+
+		Framebuffer* cascadeFramebuffer = light->shadow->cascades[0].map;
 
 		vec3 direction = normalize(vec3(camera->viewMatrix * vec4(light->direction, 0.0f)));
 
@@ -48,11 +53,13 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 		shadowBias->SetValue(light->shadow->bias);
 		shadowSampleCount->SetValue(light->shadow->sampleCount);
 		shadowSampleRange->SetValue(light->shadow->sampleRange);
+		firstCascadeResolution->SetValue(vec2(cascadeFramebuffer->width, cascadeFramebuffer->height));
 
-		target->geometryFramebuffer->components[0]->Bind(GL_TEXTURE0);
-		target->geometryFramebuffer->components[1]->Bind(GL_TEXTURE1);
-		target->geometryFramebuffer->components[2]->Bind(GL_TEXTURE2);
-		//light->shadow->cascades[0].map->components[0]->Bind(GL_TEXTURE5);
+		cascadeFramebuffer->components[0]->Bind(GL_TEXTURE5);
+		if (light->shadow->filtering)
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		else
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -80,6 +87,7 @@ void DirectionalLightRenderer::GetUniforms(bool deleteUniforms) {
 		delete shadowSampleCount;
 		delete shadowSampleRange;
 		delete shadowSampleRandomness;
+		delete firstCascadeResolution;
 	}
 
 	diffuseTexture = shader->GetUniform("diffuseTexture");
@@ -99,6 +107,7 @@ void DirectionalLightRenderer::GetUniforms(bool deleteUniforms) {
 	shadowSampleCount = shader->GetUniform("light.shadow.sampleCount");
 	shadowSampleRange = shader->GetUniform("light.shadow.sampleRange");
 	shadowSampleRandomness = shader->GetUniform("light.shadow.sampleRandomness");
+	firstCascadeResolution = shader->GetUniform("firstCascadeResolution");
 
 	diffuseTexture->SetValue(0);
 	normalTexture->SetValue(1);

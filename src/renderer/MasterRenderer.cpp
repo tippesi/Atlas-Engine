@@ -27,7 +27,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
-	// shadowRenderer->Render(window, target, camera, scene, true);
+	shadowRenderer->Render(window, target, camera, scene, true);
 
 	target->geometryFramebuffer->Bind();
 
