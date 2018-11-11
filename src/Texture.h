@@ -9,8 +9,8 @@ public:
 	/// <summary>
 	/// Constructs a <see cref="Texture"/>.
 	/// </summary>
-	Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t internalFormat,
-		float LoD, int32_t wrapping, int32_t filtering, bool anisotropic, bool mipmaps);
+	Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t internalFormat, float LoD,
+		int32_t wrapping, int32_t filtering, bool anisotropic, bool mipmaps, int32_t layerCount = 1);
 
 	/// <summary>
 	/// Constructs a <see cref="Texture"/>.
@@ -29,13 +29,14 @@ public:
 	/// Sets the data of the texture.
 	/// </summary>
 	/// <param name="data">The data which should be used. Each channel should have 8 bits and should be in the following order (r, g, b, a).</param>
-	void SetData(uint8_t* data);
+	/// <param name="layer">The layer where the data should be written. For a normal texture this should be 0.</param>
+	void SetData(uint8_t* data, int32_t layer = 0);
 
 	/// <summary>
 	/// Gets a copy of the data of the texture. Retrieval of the GPU data is only available for OpenGL NOT OpenGL ES
 	/// </summary>
 	/// <return>The data where each channel as 8 bits in the following order (r, g, b, a).</return>
-	uint8_t* GetData();
+	uint8_t* GetData(int32_t layer = 0);
 
 	/// <summary>
 	/// Resizes the texture. Results in a loss of data.
@@ -107,6 +108,8 @@ private:
 
 	GLenum dataFormat;
 	int32_t internalFormat;
+
+	int32_t layerCount;
 
 	bool mipmaps;
 

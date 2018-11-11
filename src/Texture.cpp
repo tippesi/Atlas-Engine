@@ -9,10 +9,8 @@
 // Static members have to be defined in the .cpp again
 int32_t Texture::anisotropyLevel = 0;
 
-
-Texture::Texture(GLenum dataFormat, int32_t width, int32_t height, 
-	int32_t internalFormat,	float LoD, int32_t wrapping, int32_t filtering,
-	bool anisotropic, bool mipmaps) : width(width), height(height) {
+Texture::Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t internalFormat,	float LoD, int32_t wrapping, 
+	int32_t filtering, 	bool anisotropic, bool mipmaps, int32_t layerCount) : width(width), height(height), layerCount(layerCount) {
 
 	ID = 0;
 	data = nullptr;
@@ -21,10 +19,11 @@ Texture::Texture(GLenum dataFormat, int32_t width, int32_t height,
 
 	GenerateTexture(dataFormat, internalFormat, format, LoD, wrapping, filtering, anisotropic, mipmaps);
 
+	// Even if the texture has several layers we just support storage for one layer
+	// There shouldn't be a use case where we want to store every layer of a texture.
 	data = new uint8_t[width * height * channels];
 
 }
-
 
 Texture::Texture(const char* filename, bool withoutCorrection) {
 
@@ -32,6 +31,7 @@ Texture::Texture(const char* filename, bool withoutCorrection) {
 	width = 0;
 	height = 0;
 	channels = 0;
+	layerCount = 1;
 
 	float LoD = -0.4f;
 
@@ -75,11 +75,16 @@ Texture::Texture(const char* filename, bool withoutCorrection) {
 void Texture::Bind(uint32_t unit) {
 
 	glActiveTexture(unit);
-	glBindTexture(GL_TEXTURE_2D, ID);
+	if (layerCount == 1) {
+		glBindTexture(GL_TEXTURE_2D, ID);
+	}
+	else {
+		glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
+	}
 
 }
 
-void Texture::SetData(uint8_t* data) {
+void Texture::SetData(uint8_t* data, int32_t layer) {
 
 	delete this->data;
 
@@ -93,7 +98,7 @@ void Texture::SetData(uint8_t* data) {
 
 }
 
-uint8_t* Texture::GetData() {
+uint8_t* Texture::GetData(int32_t layer) {
 
 #ifdef ENGINE_OGL
 	glBindTexture(GL_TEXTURE_2D, ID);

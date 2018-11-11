@@ -78,7 +78,7 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 		vignetteColor->SetValue(postProcessing->vignette->color);
 	}
 
-	target->lightingFramebuffer->components[0]->Bind(GL_TEXTURE0);
+	target->lightingFramebuffer->GetComponent(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

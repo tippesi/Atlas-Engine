@@ -28,10 +28,10 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 	inverseViewMatrix->SetValue(camera->inverseViewMatrix);
 	inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
-	target->geometryFramebuffer->components[0]->Bind(GL_TEXTURE0);
-	target->geometryFramebuffer->components[1]->Bind(GL_TEXTURE1);
-	target->geometryFramebuffer->components[2]->Bind(GL_TEXTURE2);
-	target->geometryFramebuffer->components[3]->Bind(GL_TEXTURE3);
+	target->geometryFramebuffer->GetComponent(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
+	target->geometryFramebuffer->GetComponent(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
+	target->geometryFramebuffer->GetComponent(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
+	target->geometryFramebuffer->GetComponent(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
 
 	// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
 	for (Light* light : scene->lights) {
@@ -58,7 +58,7 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 			cascades[i].distance->SetValue(cascade->farDistance);
 			cascades[i].resolution->SetValue(vec2(cascadeFramebuffer->width, cascadeFramebuffer->height));
 			cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->inverseViewMatrix);
-			cascadeFramebuffer->components[0]->Bind(GL_TEXTURE5 + i);
+			cascadeFramebuffer->GetComponent(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE5 + i);
 #ifdef ENGINE_OGL
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 #endif
