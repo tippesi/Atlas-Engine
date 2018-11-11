@@ -90,19 +90,32 @@ void Texture::SetData(uint8_t* data, int32_t layer) {
 
 	this->data = data;
 
-	glBindTexture(GL_TEXTURE_2D, ID);
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, data);
+	if (layerCount == 1) {
+		glBindTexture(GL_TEXTURE_2D, ID);
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, data);
 
-	if (mipmaps)
-		glGenerateMipmap(GL_TEXTURE_2D);
+		if (mipmaps)
+			glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else {
+		glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, width, height, 1, GetBaseFormat(internalFormat), dataFormat, data);
+		if (mipmaps)
+			glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+	}
 
 }
 
 uint8_t* Texture::GetData(int32_t layer) {
 
 #ifdef ENGINE_OGL
-	glBindTexture(GL_TEXTURE_2D, ID);
-	glGetTexImage(GL_TEXTURE_2D, 0, GetBaseFormat(internalFormat), GL_UNSIGNED_BYTE, this->data);
+	// We can't just read a layer of an array texture, but we could use a FBO to solve this 
+	// problem: https://stackoverflow.com/questions/32070930/copying-a-single-layer-of-a-2d-texture-array-from-gpu-to-cpu #2
+	// This would also solve the problem on mobile device or devices that use OpenGL ES
+	if (layerCount == 1) {
+		glBindTexture(GL_TEXTURE_2D, ID);
+		glGetTexImage(GL_TEXTURE_2D, 0, GetBaseFormat(internalFormat), GL_UNSIGNED_BYTE, this->data);
+	}
 #endif
 
 	// We want to return a copy of the data
@@ -121,11 +134,18 @@ void Texture::Resize(int32_t width, int32_t height) {
 	delete data;
 	data = new uint8_t[width * height * channels];
 
-	glBindTexture(GL_TEXTURE_2D, ID);
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, NULL);
-
-	if (mipmaps)
-		glGenerateMipmap(GL_TEXTURE_2D);
+	if (layerCount == 1) {
+		glBindTexture(GL_TEXTURE_2D, ID);
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, NULL);
+		if (mipmaps)
+			glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else {
+		glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
+		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layerCount);
+		if (mipmaps)
+			glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+	}
 
 }
 
@@ -151,7 +171,8 @@ void Texture::SaveToPNG(const char* filename) {
 
 Texture::~Texture() {
 
-
+	glDeleteTextures(1, &ID);
+	delete data;
 
 }
 
@@ -250,24 +271,32 @@ void Texture::GenerateTexture(GLenum dataFormat, int32_t internalFormat,
 	if (ID == 0)
 		glGenTextures(1, &ID);
 
-	glBindTexture(GL_TEXTURE_2D, ID);
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataFormat, data);
+	int32_t target = layerCount == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_ARRAY;
+
+	glBindTexture(target, ID);
+
+	if (layerCount == 1) {
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataFormat, data);
+	}
+	else {
+		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layerCount);
+	}
 
 	if (mipmaps) {
 
-		glGenerateMipmap(GL_TEXTURE_2D);
+		glGenerateMipmap(target);
 
 		if (anisotropic) {
 
 			if (anisotropyLevel) {
 
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropyLevel);
+				glTexParameteri(target, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropyLevel);
 
 			}
 			else {
 
 #ifdef ENGINE_OGL
-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, LoD);
+				glTexParameterf(target, GL_TEXTURE_LOD_BIAS, LoD);
 #endif
 
 			}
@@ -276,26 +305,26 @@ void Texture::GenerateTexture(GLenum dataFormat, int32_t internalFormat,
 		else {
 
 #ifdef ENGINE_OGL
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, LoD);
+			glTexParameterf(target, GL_TEXTURE_LOD_BIAS, LoD);
 #endif
 
 		}
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	}
 	else {
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering);
+		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, filtering);
+		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, filtering);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapping);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapping);
+		glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapping);
+		glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
 
 	}
 
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(target, 0);
 
 	switch (format) {
 
