@@ -1,33 +1,40 @@
 #include "Shadow.h"
 #include "Light.h"
 
-Shadow::Shadow(float distance, float bias, int32_t numCascades) :
-	numCascades(numCascades), distance(distance), bias(bias) {
+Shadow::Shadow(float distance, float bias, int32_t cascadeCount, float splitCorrection) : distance(distance), bias(bias) {
 
-	cascades = new ShadowCascade[numCascades];
+	cascadeCount = glm::min(cascadeCount, MAX_SHADOW_CASCADE_COUNT);
+	splitCorrection = glm::clamp(splitCorrection, 0.0f, 1.0f);
+	componentCount = cascadeCount;
+	this->splitCorrection = splitCorrection;
 
-	for (int32_t i = 0; i < numCascades; i++) {
-		cascades[i].nearDistance = (float)i * distance / (float)numCascades;
-		cascades[i].farDistance = (float)(i + 1) * distance / (float)numCascades;
-		cascades[i].map = new Framebuffer(1024, 1024);
-		cascades[i].map->AddComponent(GL_DEPTH_ATTACHMENT, GL_FLOAT, GL_DEPTH_COMPONENT32F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-	}
-
-	filtering = true;
 	sampleCount = 16;
-	sampleRange = 4;
+	sampleRange = 2;
+
+	components = new ShadowComponent[cascadeCount];
+
+}
+
+Shadow::Shadow(float distance, float bias) : distance(distance), bias(bias) {
+
+	componentCount = 1;
+	sampleCount = 16;
+	sampleRange = 2;
+	splitCorrection = 0.0f;
+
+	components = new ShadowComponent[componentCount];
 
 }
 
 void Shadow::Update(Camera* camera) {
 
-	for (int32_t i = 0; i < numCascades; i++) {
-		UpdateShadowCascade(&cascades[i], camera);
+	for (int32_t i = 0; i < componentCount; i++) {
+		UpdateShadowComponent(&components[i], camera);
 	}
 
 }
 
-void Shadow::UpdateShadowCascade(ShadowCascade* cascade, Camera* camera) {
+void Shadow::UpdateShadowComponent(ShadowComponent* cascade, Camera* camera) {
 
 	vec3 cameraLocation = camera->thirdPerson ? camera->location - camera->direction * camera->thirdPersonDistance : camera->location;
 
@@ -43,8 +50,8 @@ void Shadow::UpdateShadowCascade(ShadowCascade* cascade, Camera* camera) {
 
 	vector<vec3> corners = camera->GetFrustumCorners(cascade->nearDistance, cascade->farDistance);
 
-	vec3 maxProj = corners.at(0);
-	vec3 minProj = corners.at(0);
+	vec3 maxProj = vec3(cascade->viewMatrix * vec4(corners.at(0), 1.0f));
+	vec3 minProj = maxProj;
 
 	for (auto corner : corners) {
 		corner = vec3(cascade->viewMatrix * vec4(corner, 1.0f));

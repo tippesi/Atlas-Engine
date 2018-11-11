@@ -43,14 +43,9 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 	target->lightingFramebuffer->Bind();
 
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
 	glBindVertexArray(rectangleVAO);
 
 	directionalLightRenderer->Render(window, target, camera, scene, true);
-
-	glBindVertexArray(0);
 
 	glEnable(GL_DEPTH_TEST);
 

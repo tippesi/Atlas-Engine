@@ -19,50 +19,60 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 			continue;
 		}
 
-		Framebuffer* framebuffer = light->shadow->cascades[0].map;
+		for (int32_t i = 0; i < light->shadow->componentCount; i++) {
 
-		framebuffer->Bind();
+			ShadowComponent* component = &light->shadow->components[i];
 
-		glViewport(0, 0, framebuffer->width, framebuffer->height);
+			Framebuffer* framebuffer = component->map;
 
-		glClear(GL_DEPTH_BUFFER_BIT);
+			framebuffer->Bind();
 
-		for (auto shaderConfigBatch : shaderBatch->configBatches) {
+			glViewport(0, 0, framebuffer->width, framebuffer->height);
 
-			shaderBatch->Bind(shaderConfigBatch->ID);
+			glClear(GL_DEPTH_BUFFER_BIT);
 
-			diffuseMapUniform->SetValue(0);
+			for (auto shaderConfigBatch : shaderBatch->configBatches) {
 
-			mat4 lightSpace = light->shadow->cascades[0].projectionMatrix * light->shadow->cascades[0].viewMatrix;
+				shaderBatch->Bind(shaderConfigBatch->ID);
 
-			lightSpaceMatrixUniform->SetValue(lightSpace);
+				diffuseMapUniform->SetValue(0);
 
-			for (auto actorBatch : scene->actorBatches) {
+				mat4 lightSpace = component->projectionMatrix * component->viewMatrix;
 
-				Mesh* mesh = actorBatch->GetMesh();
-				mesh->Bind();
+				lightSpaceMatrixUniform->SetValue(lightSpace);
 
-				for (auto subData : mesh->data->subData) {
+				for (auto actorBatch : scene->actorBatches) {
 
-					Material* material = mesh->data->materials[subData->materialIndex];
+					Mesh* mesh = actorBatch->GetMesh();
+					mesh->Bind();
 
-					if (material->shadowConfig->batchID != shaderConfigBatch->ID) {
-						continue;
-					}
+					for (auto subData : mesh->data->subData) {
 
-					if (material->HasDiffuseMap())
-						material->diffuseMap->Bind(GL_TEXTURE0);
+						Material* material = mesh->data->materials[subData->materialIndex];
 
-					for (auto actor : actorBatch->actors) {
-
-						if (!actor->render) {
+						if (material->shadowConfig->batchID != shaderConfigBatch->ID) {
 							continue;
 						}
 
-						modelMatrixUniform->SetValue(actor->transformedMatrix);
 
-						glDrawElements(mesh->data->primitiveType, subData->numIndices, mesh->data->indices->GetType(),
-							(void*)(subData->indicesOffset * mesh->data->indices->GetElementSize()));
+						if (material->HasDiffuseMap()) {
+							if (material->diffuseMap->channels == 4) {
+								material->diffuseMap->Bind(GL_TEXTURE0);
+							}
+						}
+
+						for (auto actor : actorBatch->actors) {
+
+							if (!actor->castShadow) {
+								continue;
+							}
+
+							modelMatrixUniform->SetValue(actor->transformedMatrix);
+
+							glDrawElements(mesh->data->primitiveType, subData->numIndices, mesh->data->indices->GetType(),
+								(void*)(subData->indicesOffset * mesh->data->indices->GetElementSize()));
+
+						}
 
 					}
 

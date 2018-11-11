@@ -1,3 +1,12 @@
+// Shadow cascades
+struct Cascade {
+	
+	vec2 resolution;
+	float distance;
+	mat4 cascadeSpace;	
+	
+};
+
 //Shadow struct has to be implemented like this
 struct Shadow {
 	
@@ -7,6 +16,10 @@ struct Shadow {
 	int sampleCount;
 	float sampleRange;
 	float sampleRandomness;
+	
+	int cascadeCount;
+	
+	Cascade cascades[4];
 	
 };
 

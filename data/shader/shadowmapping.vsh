@@ -1,6 +1,6 @@
 layout(location=0)in vec3 vPosition;
 #ifdef ALPHA
-layout(location=1)in vec2 vTexCoord;
+layout(location=2)in vec2 vTexCoord;
 #endif
 #ifdef ANIMATION
 layout(location=4)in uvec4 vBoneIDs;

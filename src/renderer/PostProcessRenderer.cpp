@@ -80,9 +80,6 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 
 	target->lightingFramebuffer->components[0]->Bind(GL_TEXTURE0);
 
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 }

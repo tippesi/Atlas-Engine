@@ -5,10 +5,12 @@
 #include "../Camera.h"
 #include "../Framebuffer.h"
 
+#define MAX_SHADOW_CASCADE_COUNT 4
+
 // Forward declaration of light class
 class Light;
 
-typedef struct ShadowCascade {
+typedef struct ShadowComponent {
 
 	float nearDistance;
 	float farDistance;
@@ -18,31 +20,31 @@ typedef struct ShadowCascade {
 
 	Framebuffer* map;
 
-}ShadowCascade;
+}ShadowComponent;
 
 class Shadow {
 
 public:
-	Shadow(float distance, float bias, int32_t numCascades = 1);
+	Shadow(float distance, float bias, int32_t numCascades, float splitCorrection);
+
+	Shadow(float distance, float bias);
 
 	void Update(Camera* camera);
 
 	float distance;
 	float bias;
-
-	bool filtering;
+	float splitCorrection;
 
 	int32_t sampleCount;
 	float sampleRange;
 
-	ShadowCascade* cascades;
+	ShadowComponent* components;
+	int32_t componentCount;
 
 	Light* light;
 
 private:
-	void UpdateShadowCascade(ShadowCascade* cascade, Camera* camera);
-
-	int32_t numCascades;
+	void UpdateShadowComponent(ShadowComponent* cascade, Camera* camera);
 
 };
 

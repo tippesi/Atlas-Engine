@@ -38,15 +38,10 @@ void main() {
 	
 	float shadowFactor = 1.0f;
 	
-#ifdef SHADOWS
-	vec4 shadowCoords = lightSpaceMatrix * vec4(fragPos, 1.0f);
-	shadowCoords.z -= light.shadow.bias;
-	shadowCoords.xyz /= shadowCoords.w;
-	shadowCoords.w = clamp((length(fragPos) - light.shadow.distance), 0.0f, 1.0f);
-	
+#ifdef SHADOWS	
 	vec3 modelCoords = vec3(ivMatrix * vec4(fragPos, 1.0f));
 	
-	shadowFactor = CalculateShadow(light, modelCoords, shadowCoords); 
+	shadowFactor = CalculateCascadedShadow(light, modelCoords, fragPos); 
 #endif
 
 	vec3 specular = vec3(0.0f);

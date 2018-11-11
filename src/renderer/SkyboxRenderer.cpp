@@ -24,8 +24,6 @@ SkyboxRenderer::SkyboxRenderer(const char* vertexSource, const char* fragmentSou
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-	glBindVertexArray(0);
-
 }
 
 void SkyboxRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
