@@ -93,7 +93,7 @@ void Framebuffer::AddComponentLayer(int32_t attachment, Texture* texture, int32_
 	}
 
 	component->texture = texture;
-	component->internalTexture = true;
+	component->internalTexture = false;
 
 	Bind();
 

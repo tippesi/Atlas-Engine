@@ -4,6 +4,8 @@ ShaderBatch* ShadowRenderer::shaderBatch;
 
 ShadowRenderer::ShadowRenderer(const char* vertexSource, const char* fragmentSource) {
 
+	shadowFramebuffer = new Framebuffer(0, 0);
+
 	diffuseMapUniform = shaderBatch->GetUniform("diffuseMap");
 	modelMatrixUniform = shaderBatch->GetUniform("mMatrix");
 	lightSpaceMatrixUniform = shaderBatch->GetUniform("lightSpaceMatrix");
@@ -13,21 +15,22 @@ ShadowRenderer::ShadowRenderer(const char* vertexSource, const char* fragmentSou
 
 void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
+	shadowFramebuffer->Bind();
+
 	for (auto light : scene->lights) {
 
 		if (light->type != DIRECTIONAL_LIGHT || light->shadow == nullptr) {
 			continue;
 		}
 
+		// We expect every cascade to have the same resoltion
+		glViewport(0, 0, light->shadow->resolution, light->shadow->resolution);
+
 		for (int32_t i = 0; i < light->shadow->componentCount; i++) {
 
 			ShadowComponent* component = &light->shadow->components[i];
 
-			Framebuffer* framebuffer = component->map;
-
-			framebuffer->Bind();
-
-			glViewport(0, 0, framebuffer->width, framebuffer->height);
+			shadowFramebuffer->AddComponentLayer(GL_DEPTH_ATTACHMENT, light->shadow->maps, i);
 
 			glClear(GL_DEPTH_BUFFER_BIT);
 

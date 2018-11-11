@@ -1,7 +1,6 @@
 // Shadow cascades
 struct Cascade {
 	
-	vec2 resolution;
 	float distance;
 	mat4 cascadeSpace;	
 	
@@ -18,6 +17,7 @@ struct Shadow {
 	float sampleRandomness;
 	
 	int cascadeCount;
+	vec2 resolution;
 	
 	Cascade cascades[4];
 	

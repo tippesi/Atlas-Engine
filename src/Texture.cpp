@@ -142,7 +142,8 @@ void Texture::Resize(int32_t width, int32_t height) {
 	}
 	else {
 		glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
-		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layerCount);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layerCount, 0, GetBaseFormat(internalFormat)
+			, dataFormat, NULL);
 		if (mipmaps)
 			glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 	}
@@ -279,7 +280,7 @@ void Texture::GenerateTexture(GLenum dataFormat, int32_t internalFormat,
 		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataFormat, data);
 	}
 	else {
-		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layerCount);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layerCount, 0, format, dataFormat, NULL);
 	}
 
 	if (mipmaps) {

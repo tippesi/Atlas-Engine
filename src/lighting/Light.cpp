@@ -26,8 +26,6 @@ void Light::AddShadow(Shadow* shadow, Camera* camera) {
 				i, shadow->componentCount);
 			shadow->components[i].farDistance = FrustumSplitFormula(shadow->splitCorrection, camera->nearPlane, shadow->distance,
 				i + 1, shadow->componentCount);
-			shadow->components[i].map = new Framebuffer(1024, 1024);
-			shadow->components[i].map->AddComponent(GL_DEPTH_ATTACHMENT, GL_UNSIGNED_INT, GL_DEPTH_COMPONENT24, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		}
 	}
 	else if (type == POINT_LIGHT) {

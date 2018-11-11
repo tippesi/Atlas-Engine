@@ -23,6 +23,7 @@ private:
 	Uniform* materialTexture;
 	Uniform* depthTexture;
 	Uniform* aoTexture;
+	Uniform* shadowTexture;
 
 	Uniform* lightDirection;
 	Uniform* lightColor;
@@ -37,10 +38,9 @@ private:
 	Uniform* shadowSampleRange;
 	Uniform* shadowSampleRandomness;
 	Uniform* shadowCascadeCount;
+	Uniform* shadowResolution;
 
 	struct ShadowCascadeUniform {
-		Uniform* map;
-		Uniform* resolution;
 		Uniform* distance;
 		Uniform* lightSpace;
 	}cascades[MAX_SHADOW_CASCADE_COUNT];

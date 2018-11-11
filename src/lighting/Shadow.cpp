@@ -1,7 +1,8 @@
 #include "Shadow.h"
 #include "Light.h"
 
-Shadow::Shadow(float distance, float bias, int32_t cascadeCount, float splitCorrection) : distance(distance), bias(bias) {
+Shadow::Shadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection) : 
+	distance(distance), bias(bias), resolution(resolution) {
 
 	cascadeCount = glm::min(cascadeCount, MAX_SHADOW_CASCADE_COUNT);
 	splitCorrection = glm::clamp(splitCorrection, 0.0f, 1.0f);
@@ -13,9 +14,13 @@ Shadow::Shadow(float distance, float bias, int32_t cascadeCount, float splitCorr
 
 	components = new ShadowComponent[cascadeCount];
 
+	maps = new Texture(GL_UNSIGNED_INT, resolution, resolution, GL_DEPTH_COMPONENT24, 0.0f, 
+		GL_CLAMP_TO_EDGE, GL_LINEAR, false, false, cascadeCount);
+
 }
 
-Shadow::Shadow(float distance, float bias) : distance(distance), bias(bias) {
+Shadow::Shadow(float distance, float bias, int32_t resolution) :
+	distance(distance), bias(bias), resolution(resolution) {
 
 	componentCount = 1;
 	sampleCount = 16;
@@ -23,6 +28,9 @@ Shadow::Shadow(float distance, float bias) : distance(distance), bias(bias) {
 	splitCorrection = 0.0f;
 
 	components = new ShadowComponent[componentCount];
+
+	maps = new Texture(GL_UNSIGNED_INT, resolution, resolution, GL_DEPTH_COMPONENT24, 0.0f,
+		GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 }
 

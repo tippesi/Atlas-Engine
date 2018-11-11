@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
 		Light* globalLight = new Light(DIRECTIONAL_LIGHT);
 		globalLight->direction = vec3(0.0f, -1.0f, 0.0f);
 		globalLight->ambient = 0.1f;
-		globalLight->AddShadow(new Shadow(125.0f, 0.001f, 3, 0.7f), camera);		
+		globalLight->AddShadow(new Shadow(125.0f, 0.001f, 1024, 3, 0.7f), camera);		
 
         node->Add(actor);
         scene->rootNode->Add(node);

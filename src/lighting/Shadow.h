@@ -18,28 +18,30 @@ typedef struct ShadowComponent {
 	mat4 viewMatrix;
 	mat4 projectionMatrix;
 
-	Framebuffer* map;
-
 }ShadowComponent;
 
 class Shadow {
 
 public:
-	Shadow(float distance, float bias, int32_t numCascades, float splitCorrection);
+	Shadow(float distance, float bias, int32_t resolution, int32_t numCascades, float splitCorrection);
 
-	Shadow(float distance, float bias);
+	Shadow(float distance, float bias, int32_t resolution);
 
 	void Update(Camera* camera);
 
 	float distance;
 	float bias;
 	float splitCorrection;
+	
+	int32_t resolution;
 
 	int32_t sampleCount;
 	float sampleRange;
 
 	ShadowComponent* components;
 	int32_t componentCount;
+
+	Texture* maps;
 
 	Light* light;
 

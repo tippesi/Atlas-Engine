@@ -51,17 +51,17 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 		shadowSampleCount->SetValue(light->shadow->sampleCount);
 		shadowSampleRange->SetValue(light->shadow->sampleRange);
 		shadowCascadeCount->SetValue(light->shadow->componentCount);
+		shadowResolution->SetValue(vec2(light->shadow->resolution));
+
+		light->shadow->maps->Bind(GL_TEXTURE5);	
+#ifdef ENGINE_OGL
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+#endif
 
 		for (int32_t i = 0; i < light->shadow->componentCount; i++) {
 			ShadowComponent* cascade = &light->shadow->components[i];
-			Framebuffer* cascadeFramebuffer = cascade->map;
 			cascades[i].distance->SetValue(cascade->farDistance);
-			cascades[i].resolution->SetValue(vec2(cascadeFramebuffer->width, cascadeFramebuffer->height));
 			cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->inverseViewMatrix);
-			cascadeFramebuffer->GetComponent(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE5 + i);
-#ifdef ENGINE_OGL
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-#endif
 		}
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -78,6 +78,7 @@ void DirectionalLightRenderer::GetUniforms(bool deleteUniforms) {
 		delete materialTexture;
 		delete depthTexture;
 		delete aoTexture;
+		delete shadowTexture;
 		delete lightDirection;
 		delete lightColor;
 		delete lightAmbient;
@@ -89,10 +90,10 @@ void DirectionalLightRenderer::GetUniforms(bool deleteUniforms) {
 		delete shadowSampleRange;
 		delete shadowSampleRandomness;
 		delete shadowCascadeCount;
+		delete shadowResolution;
 		for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
 			delete cascades[i].distance;
-			delete cascades[i].map;
-			delete cascades[i].resolution;
+			delete cascades[i].lightSpace;
 		}
 	}
 
@@ -101,6 +102,7 @@ void DirectionalLightRenderer::GetUniforms(bool deleteUniforms) {
 	materialTexture = shader->GetUniform("materialTexture");
 	depthTexture = shader->GetUniform("depthTexture");
 	aoTexture = shader->GetUniform("aoTexture");
+	shadowTexture = shader->GetUniform("cascadeMaps");
 	lightDirection = shader->GetUniform("light.direction");
 	lightColor = shader->GetUniform("light.color");
 	lightAmbient = shader->GetUniform("light.ambient");
@@ -112,13 +114,11 @@ void DirectionalLightRenderer::GetUniforms(bool deleteUniforms) {
 	shadowSampleRange = shader->GetUniform("light.shadow.sampleRange");
 	shadowSampleRandomness = shader->GetUniform("light.shadow.sampleRandomness");
 	shadowCascadeCount = shader->GetUniform("light.shadow.cascadeCount");
+	shadowResolution = shader->GetUniform("light.shadow.resolution");
 
 	for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
-		cascades[i].map = shader->GetUniform(string("cascadeMaps[" + to_string(i) + "]").c_str());
 		cascades[i].distance = shader->GetUniform(string("light.shadow.cascades[" + to_string(i) + "].distance").c_str());
-		cascades[i].resolution = shader->GetUniform(string("light.shadow.cascades[" + to_string(i) + "].resolution").c_str());
 		cascades[i].lightSpace = shader->GetUniform(string("light.shadow.cascades[" + to_string(i) + "].cascadeSpace").c_str());
-		cascades[i].map->SetValue(5 + i);
 	}
 
 	diffuseTexture->SetValue(0);
@@ -126,9 +126,6 @@ void DirectionalLightRenderer::GetUniforms(bool deleteUniforms) {
 	materialTexture->SetValue(2);
 	depthTexture->SetValue(3);
 	aoTexture->SetValue(4);
-
-	for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
-		cascades[i].map->SetValue(5 + i);
-	}
+	shadowTexture->SetValue(5);
 
 }
