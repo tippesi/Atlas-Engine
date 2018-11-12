@@ -26,6 +26,7 @@ private:
     Uniform* lightDirection;
     Uniform* inverseProjectionMatrix;
     Uniform* sampleCount;
+	Uniform* framebufferResolution;
 
     Uniform* shadowCascadeCount;
 

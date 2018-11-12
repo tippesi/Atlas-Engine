@@ -79,6 +79,7 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 	}
 
 	target->lightingFramebuffer->GetComponent(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
+	// scene->lights[0]->volumetric->map->Bind(GL_TEXTURE0);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

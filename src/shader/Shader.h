@@ -7,6 +7,14 @@
 
 #include <vector>
 
+/*
+Proposal for better shader class:
+Store all the uniforms, allow uniforms to be returned even if they dont exist
+in the current iteration of the shader. If a shader is recompiled or compiled
+just update all the uniforms which were previously stored in a vector. Allow
+a mode to instantly see shader changes. Therefore check the source files every
+time the shader is bound and reload if needed. Activated with ENGINE_INSTANT_SHADER_RELOAD
+*/
 class Shader {
 
 public:

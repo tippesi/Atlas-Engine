@@ -5,12 +5,14 @@ in vec2 fTexCoord;
 
 uniform sampler2D depthTexture;
 uniform sampler2DArrayShadow cascadeMaps;
+
 uniform Light light;
 uniform int sampleCount;
+uniform vec2 framebufferResolution;
 
 out float foginess;
 
-float ComputeVolumetric(vec3 fragPos);
+float ComputeVolumetric(vec3 fragPos, vec2 texCoords);
 
 void main() {
 
@@ -18,7 +20,7 @@ void main() {
 
     vec3 fragPos = ConvertDepthToViewSpace(depth, fTexCoord);
 
-    foginess = ComputeVolumetric(fragPos);
+    foginess = ComputeVolumetric(fragPos, fTexCoord);
 
 }
 
@@ -32,7 +34,10 @@ float ComputeScattering(float lightDotView) {
     return result;
 }
 
-float ComputeVolumetric(vec3 fragPos) {
+const float ditherPattern[16] = float[](0.0f, 0.5f, 0.125f, 0.625f, 0.75f, 0.22f, 0.875f, 0.375f,
+		0.1875f, 0.6875f, 0.0625f, 0.5625, 0.9375f, 0.4375f, 0.8125f, 0.3125);
+
+float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 
     vec4 cascadesDistance = vec4(light.shadow.cascades[0].distance,
                                  light.shadow.cascades[1].distance,
@@ -50,8 +55,13 @@ float ComputeVolumetric(vec3 fragPos) {
     vec3 rayDirection = rayVector / rayLength;
     float stepLength = rayLength / sampleCount;
     vec3 stepVector = rayDirection * stepLength;
-    vec3 currentPosition = vec3(0.0f);
+ 
     float foginess = 0.0f;
+	
+	texCoords = (0.5f * texCoords + 0.5f) * framebufferResolution;
+	
+	float ditherValue = ditherPattern[(int(texCoords.x) % 4) * 4 + int(texCoords.y) % 4];
+	vec3 currentPosition = stepVector * ditherValue;	
 
     for (int i = 0; i < sampleCount; i++) {
         vec4 comparison = vec4(-currentPosition.z > cascadesDistance.x,

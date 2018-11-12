@@ -11,6 +11,8 @@ int main(int argc, char* argv[])
         Window* window = Engine::Init("Blue Engine", WINDOWPOSITION_UNDEFINED, WINDOWPOSITION_UNDEFINED,
                 1280, 720, WINDOW_RESIZABLE);
 
+		Engine::UnlockFramerate();
+
 		GeometryRenderer::InitShaderBatch("deferred/geometry.vsh", "deferred/geometry.fsh");
 		ShadowRenderer::InitShaderBatch("shadowmapping.vsh", "shadowmapping.fsh");
 
@@ -51,7 +53,7 @@ int main(int argc, char* argv[])
 		globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f * 3.0f;
 		globalLight->ambient = 0.05f;
 		globalLight->AddShadow(new Shadow(125.0f, 0.004f, 2048, 3, 0.7f), camera);		
-        globalLight->volumetric = new Volumetric(1920/2, 1080/2, 100);
+        globalLight->volumetric = new Volumetric(1920/2, 1080/2, 10);
 
         node->Add(actor);
         scene->rootNode->Add(node);

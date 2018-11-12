@@ -29,7 +29,7 @@ Uniform* Shader::GetUniform(const char* uniformName) {
 
 	if (!isCompiled) {
 		if (!Compile()) {
-			return NULL;
+			return nullptr;
 		}
 	}
 

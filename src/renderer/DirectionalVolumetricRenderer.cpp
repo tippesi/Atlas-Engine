@@ -43,6 +43,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
         lightDirection->SetValue(direction);
         shadowCascadeCount->SetValue(light->shadow->componentCount);
         sampleCount->SetValue(light->volumetric->sampleCount);
+		framebufferResolution->SetValue(vec2(light->volumetric->map->width, light->volumetric->map->height));
 
         light->shadow->maps->Bind(GL_TEXTURE1);
 #ifdef ENGINE_OGL
@@ -70,6 +71,7 @@ void DirectionalVolumetricRenderer::GetVolumetricUniforms(bool deleteUniforms) {
         delete inverseProjectionMatrix;
         delete sampleCount;
         delete shadowCascadeCount;
+		delete framebufferResolution;
         for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
             delete cascades[i].distance;
             delete cascades[i].lightSpace;
@@ -82,6 +84,7 @@ void DirectionalVolumetricRenderer::GetVolumetricUniforms(bool deleteUniforms) {
     inverseProjectionMatrix = volumetricShader->GetUniform("ipMatrix");
     sampleCount = volumetricShader->GetUniform("sampleCount");
     shadowCascadeCount = volumetricShader->GetUniform("light.shadow.cascadeCount");
+	framebufferResolution = volumetricShader->GetUniform("framebufferResolution");
 
     for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
         cascades[i].distance = volumetricShader->GetUniform(string("light.shadow.cascades[" + to_string(i) + "].distance").c_str());
