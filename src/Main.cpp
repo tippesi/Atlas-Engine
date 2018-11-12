@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
 		globalLight->direction = vec3(0.0f, -1.0f, 0.5f);
 		globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f * 2.0f;
 		globalLight->ambient = 0.05f;
-		globalLight->AddShadow(new Shadow(125.0f, 0.001f, 2048, 3, 0.7f), camera);		
+		globalLight->AddShadow(new Shadow(125.0f, 0.004f, 2048, 3, 0.7f), camera);		
 
         node->Add(actor);
         scene->rootNode->Add(node);
