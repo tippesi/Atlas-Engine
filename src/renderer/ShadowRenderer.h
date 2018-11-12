@@ -21,7 +21,7 @@ public:
 private:
 	static ShaderBatch* shaderBatch;
 
-	Framebuffer* shadowFramebuffer;
+	Framebuffer* framebuffer;
 
 	Uniform* diffuseMapUniform;
 	Uniform* lightSpaceMatrixUniform;

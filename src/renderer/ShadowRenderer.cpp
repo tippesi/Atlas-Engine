@@ -4,7 +4,7 @@ ShaderBatch* ShadowRenderer::shaderBatch;
 
 ShadowRenderer::ShadowRenderer(const char* vertexSource, const char* fragmentSource) {
 
-	shadowFramebuffer = new Framebuffer(0, 0);
+	framebuffer = new Framebuffer(0, 0);
 
 	diffuseMapUniform = shaderBatch->GetUniform("diffuseMap");
 	modelMatrixUniform = shaderBatch->GetUniform("mMatrix");
@@ -15,7 +15,7 @@ ShadowRenderer::ShadowRenderer(const char* vertexSource, const char* fragmentSou
 
 void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
-	shadowFramebuffer->Bind();
+	framebuffer->Bind();
 
 	for (auto light : scene->lights) {
 
@@ -30,7 +30,7 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 			ShadowComponent* component = &light->shadow->components[i];
 
-			shadowFramebuffer->AddComponentLayer(GL_DEPTH_ATTACHMENT, light->shadow->maps, i);
+			framebuffer->AddComponentLayer(GL_DEPTH_ATTACHMENT, light->shadow->maps, i);
 
 			glClear(GL_DEPTH_BUFFER_BIT);
 

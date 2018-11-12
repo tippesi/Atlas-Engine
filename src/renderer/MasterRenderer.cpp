@@ -2,6 +2,10 @@
 
 const char* MasterRenderer::shadowVertexPath = "shadowmapping.vsh";
 const char* MasterRenderer::shadowFragmentPath = "shadowmapping.fsh";
+const char* MasterRenderer::volumetricVertexPath = "volumetric.vsh";
+const char* MasterRenderer::volumetricFragmentPath = "volumetric.fsh";
+const char* MasterRenderer::bilateralBlurVertexPath = "bilateralBlur.vsh";
+const char* MasterRenderer::bilateralBlurFragmentPath = "bilateralBlur.fsh";
 const char* MasterRenderer::directionalLightVertexPath = "deferred/directional.vsh";
 const char* MasterRenderer::directionalLightFragmentPath = "deferred/directional.fsh";
 const char* MasterRenderer::skyboxVertexPath = "skybox.vsh";
@@ -16,6 +20,8 @@ MasterRenderer::MasterRenderer() {
 	geometryRenderer = new GeometryRenderer();
 
 	shadowRenderer = new ShadowRenderer(shadowVertexPath, shadowFragmentPath);
+	directionalVolumetricRenderer = new DirectionalVolumetricRenderer(volumetricVertexPath, volumetricFragmentPath,
+			bilateralBlurVertexPath, bilateralBlurFragmentPath);
 	directionalLightRenderer = new DirectionalLightRenderer(directionalLightVertexPath, directionalLightFragmentPath);
 	skyboxRenderer = new SkyboxRenderer(skyboxVertexPath, skyboxFragmentPath);
 	postProcessRenderer = new PostProcessRenderer(postProcessVertexPath, postProcessFragmentPath);
@@ -41,9 +47,11 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 
-	target->lightingFramebuffer->Bind();
-
 	glBindVertexArray(rectangleVAO);
+
+	directionalVolumetricRenderer->Render(window, target, camera, scene, true);
+
+	target->lightingFramebuffer->Bind();
 
 	directionalLightRenderer->Render(window, target, camera, scene, true);
 

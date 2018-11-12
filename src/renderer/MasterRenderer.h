@@ -5,6 +5,7 @@
 
 #include "GeometryRenderer.h"
 #include "ShadowRenderer.h"
+#include "DirectionalVolumetricRenderer.h"
 #include "DirectionalLightRenderer.h"
 #include "SkyboxRenderer.h"
 #include "PostProcessRenderer.h"
@@ -25,6 +26,7 @@ public:
 private:
 	GeometryRenderer* geometryRenderer;
 	ShadowRenderer* shadowRenderer;
+	DirectionalVolumetricRenderer* directionalVolumetricRenderer;
 	DirectionalLightRenderer* directionalLightRenderer;
 	SkyboxRenderer* skyboxRenderer;
 	PostProcessRenderer* postProcessRenderer;
@@ -33,6 +35,10 @@ private:
 
 	static const char* shadowVertexPath;
 	static const char* shadowFragmentPath;
+	static const char* volumetricVertexPath;
+	static const char* volumetricFragmentPath;
+	static const char* bilateralBlurVertexPath;
+	static const char* bilateralBlurFragmentPath;
 	static const char* directionalLightVertexPath;
 	static const char* directionalLightFragmentPath;
 	static const char* skyboxVertexPath;

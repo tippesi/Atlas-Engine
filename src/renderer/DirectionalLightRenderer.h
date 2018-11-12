@@ -23,6 +23,7 @@ private:
 	Uniform* materialTexture;
 	Uniform* depthTexture;
 	Uniform* aoTexture;
+	Uniform* volumetricTexture;
 	Uniform* shadowTexture;
 
 	Uniform* lightDirection;

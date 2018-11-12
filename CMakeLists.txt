@@ -86,7 +86,7 @@ list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*src/libraries/.*")
 
 add_executable(${PROJECT_NAME}
 ${BLUE_ENGINE_SOURCE_FILES}
-        )
+        src/renderer/DirectionalVolumetricRenderer.cpp src/renderer/DirectionalVolumetricRenderer.h)
 
 target_link_libraries(${PROJECT_NAME} GLAD ${LIBS})
 

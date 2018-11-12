@@ -53,7 +53,10 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 		shadowCascadeCount->SetValue(light->shadow->componentCount);
 		shadowResolution->SetValue(vec2(light->shadow->resolution));
 
-		light->shadow->maps->Bind(GL_TEXTURE5);	
+        glViewport(0, 0, light->volumetric->map->width, light->volumetric->map->height);
+		light->volumetric->map->Bind(GL_TEXTURE5);
+		glViewport(0, 0, target->lightingFramebuffer->width, target->lightingFramebuffer->height);
+		light->shadow->maps->Bind(GL_TEXTURE6);
 #ifdef ENGINE_OGL
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 #endif
@@ -78,6 +81,7 @@ void DirectionalLightRenderer::GetUniforms(bool deleteUniforms) {
 		delete materialTexture;
 		delete depthTexture;
 		delete aoTexture;
+		delete volumetricTexture;
 		delete shadowTexture;
 		delete lightDirection;
 		delete lightColor;
@@ -102,6 +106,7 @@ void DirectionalLightRenderer::GetUniforms(bool deleteUniforms) {
 	materialTexture = shader->GetUniform("materialTexture");
 	depthTexture = shader->GetUniform("depthTexture");
 	aoTexture = shader->GetUniform("aoTexture");
+	volumetricTexture = shader->GetUniform("volumetricTexture");
 	shadowTexture = shader->GetUniform("cascadeMaps");
 	lightDirection = shader->GetUniform("light.direction");
 	lightColor = shader->GetUniform("light.color");
@@ -126,6 +131,7 @@ void DirectionalLightRenderer::GetUniforms(bool deleteUniforms) {
 	materialTexture->SetValue(2);
 	depthTexture->SetValue(3);
 	aoTexture->SetValue(4);
-	shadowTexture->SetValue(5);
+	volumetricTexture->SetValue(5);
+	shadowTexture->SetValue(6);
 
 }
