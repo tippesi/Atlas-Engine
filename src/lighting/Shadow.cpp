@@ -10,7 +10,7 @@ Shadow::Shadow(float distance, float bias, int32_t resolution, int32_t cascadeCo
 	this->splitCorrection = splitCorrection;
 
 	sampleCount = 16;
-	sampleRange = 2;
+	sampleRange = 3;
 
 	components = new ShadowComponent[cascadeCount];
 

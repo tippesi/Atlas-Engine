@@ -11,8 +11,6 @@ int main(int argc, char* argv[])
         Window* window = Engine::Init("Blue Engine", WINDOWPOSITION_UNDEFINED, WINDOWPOSITION_UNDEFINED,
                 1280, 720, WINDOW_RESIZABLE);
 
-		Engine::UnlockFramerate();
-
 		GeometryRenderer::InitShaderBatch("deferred/geometry.vsh", "deferred/geometry.fsh");
 		ShadowRenderer::InitShaderBatch("shadowmapping.vsh", "shadowmapping.fsh");
 
@@ -49,9 +47,10 @@ int main(int argc, char* argv[])
         SceneNode* node = new SceneNode();
 
 		Light* globalLight = new Light(DIRECTIONAL_LIGHT);
-		globalLight->direction = vec3(0.0f, -1.0f, 0.0f);
-		globalLight->ambient = 0.1f;
-		globalLight->AddShadow(new Shadow(125.0f, 0.001f, 1024, 3, 0.7f), camera);		
+		globalLight->direction = vec3(0.0f, -1.0f, 0.5f);
+		globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f * 2.0f;
+		globalLight->ambient = 0.05f;
+		globalLight->AddShadow(new Shadow(125.0f, 0.001f, 2048, 3, 0.7f), camera);		
 
         node->Add(actor);
         scene->rootNode->Add(node);
