@@ -37,6 +37,8 @@ int main(int argc, char* argv[])
 
         scene->sky->skybox = new Skybox(cubemap);
 
+		scene->postProcessing->chromaticAberration = new ChromaticAberration(0.7f);
+
         Mesh* mesh = new Mesh("../data/cube.dae");
         Mesh* sponzaMesh = new Mesh("../data/sponza/sponza.dae");
 

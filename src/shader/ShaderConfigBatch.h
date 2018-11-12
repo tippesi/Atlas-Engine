@@ -20,7 +20,6 @@ public:
 
 	Shader* shader;
 	vector<ShaderConfig*> configs;
-	vector<Uniform*> uniforms;
 
 };
 

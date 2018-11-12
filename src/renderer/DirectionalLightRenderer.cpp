@@ -17,13 +17,21 @@ DirectionalLightRenderer::DirectionalLightRenderer(const char* vertexSource, con
 
 	shader->Compile();
 
-	GetUniforms(false);
+	GetUniforms();
 
 }
 
 void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
 	shader->Bind();
+
+	diffuseTexture->SetValue(0);
+	normalTexture->SetValue(1);
+	materialTexture->SetValue(2);
+	depthTexture->SetValue(3);
+	aoTexture->SetValue(4);
+	volumetricTexture->SetValue(5);
+	shadowTexture->SetValue(6);
 
 	inverseViewMatrix->SetValue(camera->inverseViewMatrix);
 	inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
@@ -73,33 +81,7 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 
 }
 
-void DirectionalLightRenderer::GetUniforms(bool deleteUniforms) {
-
-	if (deleteUniforms) {
-		delete diffuseTexture;
-		delete normalTexture;
-		delete materialTexture;
-		delete depthTexture;
-		delete aoTexture;
-		delete volumetricTexture;
-		delete shadowTexture;
-		delete lightDirection;
-		delete lightColor;
-		delete lightAmbient;
-		delete inverseViewMatrix;
-		delete inverseProjectionMatrix;
-		delete shadowDistance;
-		delete shadowBias;
-		delete shadowSampleCount;
-		delete shadowSampleRange;
-		delete shadowSampleRandomness;
-		delete shadowCascadeCount;
-		delete shadowResolution;
-		for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
-			delete cascades[i].distance;
-			delete cascades[i].lightSpace;
-		}
-	}
+void DirectionalLightRenderer::GetUniforms() {
 
 	diffuseTexture = shader->GetUniform("diffuseTexture");
 	normalTexture = shader->GetUniform("normalTexture");
@@ -125,13 +107,5 @@ void DirectionalLightRenderer::GetUniforms(bool deleteUniforms) {
 		cascades[i].distance = shader->GetUniform(string("light.shadow.cascades[" + to_string(i) + "].distance").c_str());
 		cascades[i].lightSpace = shader->GetUniform(string("light.shadow.cascades[" + to_string(i) + "].cascadeSpace").c_str());
 	}
-
-	diffuseTexture->SetValue(0);
-	normalTexture->SetValue(1);
-	materialTexture->SetValue(2);
-	depthTexture->SetValue(3);
-	aoTexture->SetValue(4);
-	volumetricTexture->SetValue(5);
-	shadowTexture->SetValue(6);
 
 }

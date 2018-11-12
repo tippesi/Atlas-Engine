@@ -18,6 +18,8 @@ public:
 
 	ShaderSource(ShaderSource* source);
 
+	bool Reload();
+
 	void AddMacro(const char* macro);
 
 	void RemoveMacro(const char* macro);
@@ -38,9 +40,13 @@ public:
 private:
 	string ReadShaderFile(const char* filename, bool mainFile);
 
+	time_t GetLastModified();
+
 	string code;
 	list<string> macros;
 	list<ShaderConstant*> constants;
+
+	time_t lastModified;
 
 	static string sourceDirectory;
 

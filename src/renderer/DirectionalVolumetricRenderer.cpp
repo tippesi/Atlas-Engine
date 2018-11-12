@@ -11,11 +11,11 @@ DirectionalVolumetricRenderer::DirectionalVolumetricRenderer(const char *volumet
 
     volumetricShader->Compile();
 
-    GetVolumetricUniforms(false);
+    GetVolumetricUniforms();
 
     bilateralBlurShader = new Shader();
 
-    GetBilateralBlurUniforms(false);
+    GetBilateralBlurUniforms();
 
 }
 
@@ -24,6 +24,9 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
     framebuffer->Bind();
 
     volumetricShader->Bind();
+
+	depthTexture->SetValue(0);
+	shadowTexture->SetValue(1);
 
     inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
     target->geometryFramebuffer->GetComponent(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
@@ -62,21 +65,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
 }
 
-void DirectionalVolumetricRenderer::GetVolumetricUniforms(bool deleteUniforms) {
-
-    if (deleteUniforms) {
-        delete depthTexture;
-        delete shadowTexture;
-        delete lightDirection;
-        delete inverseProjectionMatrix;
-        delete sampleCount;
-        delete shadowCascadeCount;
-		delete framebufferResolution;
-        for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
-            delete cascades[i].distance;
-            delete cascades[i].lightSpace;
-        }
-    }
+void DirectionalVolumetricRenderer::GetVolumetricUniforms() {
 
     depthTexture = volumetricShader->GetUniform("depthTexture");
     shadowTexture = volumetricShader->GetUniform("cascadeMaps");
@@ -91,15 +80,10 @@ void DirectionalVolumetricRenderer::GetVolumetricUniforms(bool deleteUniforms) {
         cascades[i].lightSpace = volumetricShader->GetUniform(string("light.shadow.cascades[" + to_string(i) + "].cascadeSpace").c_str());
     }
 
-    depthTexture->SetValue(0);
-    shadowTexture->SetValue(1);
-
 }
 
-void DirectionalVolumetricRenderer::GetBilateralBlurUniforms(bool deleteUniforms) {
+void DirectionalVolumetricRenderer::GetBilateralBlurUniforms() {
 
-    if (deleteUniforms) {
 
-    }
 
 }

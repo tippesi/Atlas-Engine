@@ -12,7 +12,7 @@ PostProcessRenderer::PostProcessRenderer(const char* vertexSource, const char* f
 
 	shader->Compile();
 
-	GetUniforms(false);
+	GetUniforms();
 
 }
 
@@ -57,10 +57,14 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 
 	if (shaderChanged) {
 		shader->Compile();
-		GetUniforms(true);
 	}
 
 	shader->Bind();
+
+	hdrTexture->SetValue(0);
+	bloomFirstTexture->SetValue(1);
+	bloomSecondTexture->SetValue(2);
+	bloomThirdTexture->SetValue(3);
 
 	exposure->SetValue(postProcessing->exposure);
 	saturation->SetValue(postProcessing->saturation);
@@ -85,23 +89,7 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 
 }
 
-void PostProcessRenderer::GetUniforms(bool deleteUniforms) {
-
-	if (deleteUniforms) {
-		delete hdrTexture;
-		delete bloomFirstTexture;
-		delete bloomSecondTexture;
-		delete bloomThirdTexture;
-		delete exposure;
-		delete saturation;
-		delete bloomPassses;
-		delete aberrationStrength;
-		delete aberrationReversed;
-		delete vignetteOffset;
-		delete vignettePower;
-		delete vignetteStrength;
-		delete vignetteColor;
-	}
+void PostProcessRenderer::GetUniforms() {
 
 	hdrTexture = shader->GetUniform("hdrTexture");
 	bloomFirstTexture = shader->GetUniform("bloomFirstTexture");
@@ -116,10 +104,5 @@ void PostProcessRenderer::GetUniforms(bool deleteUniforms) {
 	vignettePower = shader->GetUniform("vignettePower");
 	vignetteStrength = shader->GetUniform("vignetteStrength");
 	vignetteColor = shader->GetUniform("vignetteColor");
-
-	hdrTexture->SetValue(0);
-	bloomFirstTexture->SetValue(1);
-	bloomSecondTexture->SetValue(2);
-	bloomThirdTexture->SetValue(3);
 
 }

@@ -10,6 +10,8 @@ ShaderSource::ShaderSource(int32_t type, const char* filename) : type(type), fil
 	path += string(filename);
 
 	code = ReadShaderFile(path.c_str(), true);
+	lastModified = GetLastModified();
+
 	ID = glCreateShader(type);
 
 #ifdef ENGINE_SHOW_LOG
@@ -22,6 +24,7 @@ ShaderSource::ShaderSource(ShaderSource* source) {
 	code = source->code;
 	macros = source->macros;
 	filename = source->filename;
+	lastModified = source->lastModified;
 
 	for (list<ShaderConstant*>::iterator iterator = source->constants.begin(); iterator != source->constants.end(); iterator++) {
 		ShaderConstant* constant = new ShaderConstant((*iterator)->GetValuedString().c_str());
@@ -29,6 +32,26 @@ ShaderSource::ShaderSource(ShaderSource* source) {
 	}
 
 	ID = glCreateShader(source->type);
+
+}
+
+bool ShaderSource::Reload() {
+
+	time_t comp = GetLastModified();
+
+	if (comp == lastModified) {
+		return false;
+	}
+
+	lastModified = comp;
+
+	string path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
+	path += string(filename);
+
+	constants.clear();
+	code = ReadShaderFile(path.c_str(), true);
+
+	return true;
 
 }
 
@@ -201,5 +224,19 @@ string ShaderSource::ReadShaderFile(const char* filename, bool mainFile) {
 	}
 	
 	return shaderCode;
+
+}
+
+time_t ShaderSource::GetLastModified() {
+
+	string path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
+	path += string(filename);
+
+	struct stat result;
+	if (stat(path.c_str(), &result) == 0) {
+		auto mod_time = result.st_mtime;
+		return mod_time;
+	}
+	return 0;
 
 }

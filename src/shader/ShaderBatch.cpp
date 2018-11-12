@@ -60,8 +60,7 @@ void ShaderBatch::AddConfig(ShaderConfig* config) {
 
 	// Find the uniforms and generalize it
 	for (Uniform* uniform : uniforms) {
-		Uniform* batchUniform = shader->GetUniform(uniform->name);
-		batch->uniforms.push_back(batchUniform);
+		shader->GetUniform(uniform->name.c_str());
 	}
 
 	batch->ID = (int32_t)configBatches.size();
@@ -93,8 +92,7 @@ void ShaderBatch::RemoveConfig(ShaderConfig* config) {
 Uniform* ShaderBatch::GetUniform(const char* uniformName) {
 
 	for (ShaderConfigBatch* batch : configBatches) {
-		Uniform* uniform = batch->shader->GetUniform(uniformName);
-		batch->uniforms.push_back(uniform);
+		batch->shader->GetUniform(uniformName);
 	}
 
 	// We don't care about the shader ID because the uniform object

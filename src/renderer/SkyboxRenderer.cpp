@@ -12,8 +12,6 @@ SkyboxRenderer::SkyboxRenderer(const char* vertexSource, const char* fragmentSou
 	skyCubemap = shader->GetUniform("skyCubemap");
 	modelViewProjectionMatrix = shader->GetUniform("mvpMatrix");
 
-	skyCubemap->SetValue(0);
-
 	glGenVertexArrays(1, &skyboxVAO);
 	glBindVertexArray(skyboxVAO);
 
@@ -29,6 +27,8 @@ SkyboxRenderer::SkyboxRenderer(const char* vertexSource, const char* fragmentSou
 void SkyboxRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
 	shader->Bind();
+
+	skyCubemap->SetValue(0);
 
 	mat4 mvpMatrix = camera->projectionMatrix * glm::mat4(glm::mat3(camera->viewMatrix)) * scene->sky->skybox->matrix;
 

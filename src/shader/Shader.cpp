@@ -27,15 +27,13 @@ void Shader::AddComponent(ShaderSource* source) {
 
 Uniform* Shader::GetUniform(const char* uniformName) {
 
-	if (!isCompiled) {
-		if (!Compile()) {
-			return nullptr;
-		}
-	}
-
 	Bind();
 
-	return new Uniform(ID, uniformName);
+	Uniform* uniform = new Uniform(ID, uniformName);
+
+	uniforms.push_back(uniform);
+
+	return uniform;
 
 }
 
@@ -118,7 +116,13 @@ bool Shader::Compile() {
 #ifdef ENGINE_SHOW_LOG
 			EngineLog("Compiled shader with ID %d", ID);
 #endif
+			
+			Bind();
 
+			for (Uniform*& uniform : uniforms) {
+				uniform->Update();
+			}
+		
 			return true;
 
 		}
@@ -135,7 +139,22 @@ void Shader::Bind() {
 
 	if (!isCompiled) {
 		Compile();
+		if (!isCompiled) {
+			return;
+		}
 	}
+#ifdef ENGINE_INSTANT_SHADER_RELOAD
+	bool reloaded = false;
+	for (ShaderSource*& source : components) {
+		reloaded = source->Reload() ? true : reloaded;
+	}
+	if (reloaded) {
+		Compile();
+		if (!isCompiled) {
+			return;
+		}
+	}
+#endif
 
 	if (boundShaderID != ID) {
 		glUseProgram(ID);
