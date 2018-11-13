@@ -1,6 +1,7 @@
 #include "ShaderSource.h"
 #include <fstream>
 #include <sstream>
+#include <sys/stat.h>
 
 string ShaderSource::sourceDirectory = "";
 

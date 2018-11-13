@@ -12,6 +12,7 @@ public:
 	int32_t sampleCount;
 
     Texture* map;
+    Texture* blurMap;
 
 };
 

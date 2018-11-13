@@ -21,6 +21,7 @@ private:
     Shader* volumetricShader;
     Shader* bilateralBlurShader;
 
+    // Volumetric shader uniforms
     Uniform* depthTexture;
     Uniform* shadowTexture;
     Uniform* lightDirection;
@@ -34,6 +35,13 @@ private:
         Uniform* distance;
         Uniform* lightSpace;
     }cascades[MAX_SHADOW_CASCADE_COUNT];
+
+    // Bilateral blur shader uniforms
+    Uniform* diffuseTexture;
+    Uniform* blurDirection;
+    Uniform* offsets;
+    Uniform* weights;
+    Uniform* kernelSize;
 
 };
 

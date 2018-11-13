@@ -27,7 +27,7 @@ void main() {
 // Henyey-Greenstein phase function https://www.astro.umd.edu/~jph/HG_note.pdf
 float ComputeScattering(float lightDotView) {
     // Range [-1;1]
-    const float g = 0.0f;
+    const float g = -0.5f;
     float gSquared = g * g;
     float result = 1.0f -  gSquared;
     result /= (4.0f * 3.14f * pow(1.0f + gSquared - (2.0f * g) * lightDotView, 1.5f));
@@ -61,7 +61,7 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 	texCoords = (0.5f * texCoords + 0.5f) * framebufferResolution;
 	
 	float ditherValue = ditherPattern[(int(texCoords.x) % 4) * 4 + int(texCoords.y) % 4];
-	vec3 currentPosition = stepVector * ditherValue;	
+	vec3 currentPosition = stepVector * ditherValue;
 
     for (int i = 0; i < sampleCount; i++) {
         vec4 comparison = vec4(-currentPosition.z > cascadesDistance.x,

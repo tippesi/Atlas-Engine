@@ -14,6 +14,13 @@ DirectionalVolumetricRenderer::DirectionalVolumetricRenderer(const char *volumet
     GetVolumetricUniforms();
 
     bilateralBlurShader = new Shader();
+    bilateralBlurShader->AddComponent(VERTEX_SHADER, bilateralBlurVertex);
+    bilateralBlurShader->AddComponent(FRAGMENT_SHADER, bilateralBlurFragmet);
+
+    bilateralBlurShader->AddMacro("TEXTURE");
+    bilateralBlurShader->AddMacro("BLUR_R");
+
+    bilateralBlurShader->Compile();
 
     GetBilateralBlurUniforms();
 
@@ -37,9 +44,9 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
             continue;
         }
 
-        framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, light->volumetric->map);
-
         glViewport(0, 0, light->volumetric->map->width, light->volumetric->map->height);
+
+        framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, light->volumetric->map);
 
         vec3 direction = normalize(vec3(camera->viewMatrix * vec4(light->direction, 0.0f)));
 
@@ -58,6 +65,43 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
             cascades[i].distance->SetValue(cascade->farDistance);
             cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->inverseViewMatrix);
         }
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    }
+
+    bilateralBlurShader->Bind();
+
+    diffuseTexture->SetValue(0);
+
+    float offsetArray[] = {0, 1, 2, 3, 4};
+    float weightArray[] = {1/9.0f, 1/9.0f, 1/9.0f, 1/9.0f};
+
+    offsets->SetValue(offsetArray, 5);
+    weights->SetValue(weightArray, 5);
+    kernelSize->SetValue(5);
+
+    for (Light* light : scene->lights) {
+
+        if (light->type != DIRECTIONAL_LIGHT || light->shadow == nullptr || light->volumetric == nullptr) {
+            continue;
+        }
+
+        glViewport(0, 0, light->volumetric->map->width, light->volumetric->map->height);
+
+        framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, light->volumetric->blurMap);
+
+        light->volumetric->map->Bind(GL_TEXTURE0);
+
+        blurDirection->SetValue(vec2(1.0f / (float)light->volumetric->map->width, 0.0f));
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, light->volumetric->map);
+
+        light->volumetric->blurMap->Bind(GL_TEXTURE0);
+
+        blurDirection->SetValue(vec2(0.0f, 1.0f / (float)light->volumetric->map->height));
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -84,6 +128,10 @@ void DirectionalVolumetricRenderer::GetVolumetricUniforms() {
 
 void DirectionalVolumetricRenderer::GetBilateralBlurUniforms() {
 
-
+    diffuseTexture = bilateralBlurShader->GetUniform("diffuseTexture");
+    blurDirection = bilateralBlurShader->GetUniform("blurDirection");
+    offsets = bilateralBlurShader->GetUniform("offset");
+    weights = bilateralBlurShader->GetUniform("weight");
+    kernelSize = bilateralBlurShader->GetUniform("kernelSize");
 
 }
