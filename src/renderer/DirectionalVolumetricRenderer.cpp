@@ -75,7 +75,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
     diffuseTexture->SetValue(0);
 
     float offsetArray[] = {0, 1, 2, 3, 4};
-    float weightArray[] = {1/9.0f, 1/9.0f, 1/9.0f, 1/9.0f};
+    float weightArray[] = {1/9.0f, 1/9.0f, 1/9.0f, 1/9.0f, 1/9.0f};
 
     offsets->SetValue(offsetArray, 5);
     weights->SetValue(weightArray, 5);
