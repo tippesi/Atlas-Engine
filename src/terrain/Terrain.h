@@ -13,24 +13,27 @@
 class Terrain {
 
 public:
-	Terrain(int32_t rootNodeCount, int32_t LODCount, int32_t patchSize, int32_t terrainResolution);
-
-	void AddHeightfield(Texture* heightField, int32_t x, int32_t y);
+	Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, float terrainResolution);
 
 	void Update(Camera* camera);
+
+	void SetLoDDistance(int32_t LoD, float distance);
 
 	vector<TerrainNode*> GetNodes(int32_t x, int32_t y, int32_t width, int32_t height);
 
 	TerrainStorage* storage;
 
+	vec3 translation;
+
 private:
 	void GeneratePatchVertexBuffer();
 
 	int32_t rootNodeCount;
-	int32_t LODCount;
+	int32_t LoDCount;
 	int32_t patchSize;
 	int32_t terrainResolution;
 
+	float* LoDDistances;
 	vector<TerrainNode*> rootNodes;
 	vector<TerrainNode*> renderList;
 

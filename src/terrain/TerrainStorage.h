@@ -1,4 +1,4 @@
-#ifndef TERRAINSTORGAE_H
+#ifndef TERRAINSTORAGE_H
 #define TERRAINSTORAGE_H
 
 #include "../System.h"
@@ -13,11 +13,16 @@ typedef struct TerrainStorageCell {
 class TerrainStorage {
 
 public:
-	TerrainStorage(int32_t rootNodeCount, int32_t LODCount);
+	TerrainStorage(int32_t rootNodeCount, int32_t LoDCount);
 
-	void AddHeightfield(Texture* heightField, int32_t xSector, int32_t ySector, int32_t LOD);
+	TerrainStorageCell* GetCell(int32_t x, int32_t y, int32_t LoD);
+
+	void AddHeightfield(Texture* heightField, int32_t xSector, int32_t ySector, int32_t LoD);
 
 private:
+	int32_t LoDCount;
+	int32_t rootNodeCount;
+
 	TerrainStorageCell** cells;
 
 };

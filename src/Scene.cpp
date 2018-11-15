@@ -12,7 +12,7 @@ Scene::Scene() {
 
 void Scene::Add(Actor* actor) {
 
-	for (ActorBatch* actorBatch : actorBatches) {
+	for (ActorBatch*& actorBatch : actorBatches) {
 
 		if (actorBatch->GetMesh() == actor->mesh) {
 			actorBatch->Add(actor);
@@ -30,10 +30,29 @@ void Scene::Add(Actor* actor) {
 
 void Scene::Remove(Actor* actor) {
 
-	for (ActorBatch* actorBatch : actorBatches) {
+	for (ActorBatch*& actorBatch : actorBatches) {
 
 		if (actorBatch->GetMesh() == actor->mesh) {
 			actorBatch->Remove(actor);
+			return;
+		}
+
+	}
+
+}
+
+void Scene::Add(Terrain* terrain) {
+
+	terrains.push_back(terrain);
+
+}
+
+void Scene::Remove(Terrain* terrain) {
+
+	for (auto iterator = terrains.begin(); iterator != terrains.end(); iterator++) {
+
+		if (*iterator == terrain) {
+			terrains.erase(iterator);
 			return;
 		}
 

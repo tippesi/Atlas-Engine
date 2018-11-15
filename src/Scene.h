@@ -5,6 +5,7 @@
 #include "SceneNode.h"
 #include "mesh/Actor.h"
 #include "mesh/ActorBatch.h"
+#include "terrain/Terrain.h"
 #include "lighting/Light.h"
 #include "lighting/Sky.h"
 #include "postprocessing/PostProcessing.h"
@@ -18,6 +19,10 @@ public:
 
 	void Remove(Actor* actor);
 
+	void Add(Terrain* terrain);
+
+	void Remove(Terrain* terrain);
+
 	void Add(Light* light);
 
 	void Remove(Light* light);
@@ -30,6 +35,7 @@ public:
 
 	vector<Light*> lights;
 	vector<ActorBatch*> actorBatches;
+	vector<Terrain*> terrains;
 
 	Sky* sky;
 	PostProcessing* postProcessing;
