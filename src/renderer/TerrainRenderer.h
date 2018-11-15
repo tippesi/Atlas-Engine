@@ -1,7 +1,8 @@
 #ifndef TERRAINRENDERER_H
 #define TERRAINRENDERER_H
 
-#include "../System.h§
+#include "../System.h"
+#include "IRenderer.h"
 
 class TerrainRenderer {
 

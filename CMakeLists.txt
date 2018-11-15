@@ -2,8 +2,10 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "Prevented in-tree built. Please create a build directory outside of the source code and call cmake from there")
 endif()
 
-cmake_minimum_required(VERSION 3.5)
 project(Blue-Engine)
+cmake_minimum_required(VERSION 3.6)
+
+option(BUILD_LIBRARY "Build as library" OFF)
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 	message(FATAL_ERROR "32 bit isn't supported")
@@ -24,15 +26,15 @@ add_subdirectory(src/libraries/glad)
 
 if(MSVC)
     # for detecting Windows compiler MSVC
-	set(SDL_LIBRARY ${CMAKE_SOURCE_DIR}/lib/Windows/lib/SDL2.lib)
-	set(SDLMAIN_LIBRARY ${CMAKE_SOURCE_DIR}/lib/Windows/lib/SDL2main.lib)
-    set(ASSIMP_LIBRARY ${CMAKE_SOURCE_DIR}/lib/Windows/lib/assimp-vc140-mt.lib)
+	set(SDL_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib/SDL2.lib)
+	set(SDLMAIN_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib/SDL2main.lib)
+    set(ASSIMP_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib/assimp-vc140-mt.lib)
     set(LIBS ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} opengl32 ${ASSIMP_LIBRARY})
 endif()
 
 if(APPLE)
     # for MacOS X or iOS, watchOS, tvOS (since 3.10.3)
-	link_directories(${CMAKE_SOURCE_DIR}/lib/Mac)	
+	link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/Mac)	
     set(ASSIMP_LIBRARY assimp.4.1.0)   
 
     INCLUDE_DIRECTORIES(/System/Library/Frameworks)
@@ -48,7 +50,7 @@ endif()
 
 if(UNIX AND NOT APPLE)
     # for Linux, BSD, Solaris, Minix
-    link_directories(${CMAKE_SOURCE_DIR}/lib/Linux)
+    link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/Linux)
     set(ASSIMP_LIBRARY assimp.4.1.0)
     set(SDLMAIN_LIBRARY SDL2main)
     set(SDL_LIBRARY SDL2)    
@@ -84,15 +86,26 @@ file(GLOB_RECURSE BLUE_ENGINE_SOURCE_FILES
 		
 list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*src/libraries/.*")
 
-add_executable(${PROJECT_NAME}
-${BLUE_ENGINE_SOURCE_FILES}
-)
-
+# When the engine is just a subproject we dont want to produce an executable
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+if (BUILD_LIBRARY)
+list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*main.cpp")
+list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*main.c")
+add_library(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} GLAD ${LIBS})
-
+set(CMAKE_BUILD_TYPE Release ... FORCE)
+else()
+add_executable(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
+target_link_libraries(${PROJECT_NAME} GLAD ${LIBS})
+endif()
+else()
+list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*main.cpp")
+list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*main.c")
+add_library(${PROJECT_NAME} GLAD ${LIBS} ${BLUE_ENGINE_SOURCE_FILES})
+set(CMAKE_BUILD_TYPE Release ... FORCE)
+endif()
 
 # Postbuild stuff
-
 if(APPLE)
     # for MacOS X or iOS, watchOS, tvOS (since 3.10.3)
     add_custom_command(TARGET ${PROJECT_NAME}
@@ -106,10 +119,10 @@ endif()
 if(UNIX AND NOT APPLE)
     # for Linux, BSD, Solaris, Minix
     add_custom_command(TARGET ${PROJECT_NAME}
-            COMMAND cp -rf ${CMAKE_SOURCE_DIR}/lib/Linux/libassimp.4.1.0.so ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libassimp.so.4
+            COMMAND cp -rf ${CMAKE_CURRENT_SOURCE_DIR}/lib/Linux/libassimp.4.1.0.so ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libassimp.so.4
             )
     add_custom_command(TARGET ${PROJECT_NAME}
-            COMMAND cp -rf ${CMAKE_SOURCE_DIR}/lib/Linux/libSDL2-2.0.so.0.9.0 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libSDL2-2.0.so
+            COMMAND cp -rf ${CMAKE_CURRENT_SOURCE_DIR}/lib/Linux/libSDL2-2.0.so.0.9.0 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libSDL2-2.0.so
             )
 endif()
 
@@ -117,10 +130,10 @@ if(MSVC)
     # for detecting Windows compiler MSVC
     add_custom_command(TARGET ${PROJECT_NAME}
             COMMAND ${CMAKE_COMMAND}
-            ARGS -E copy ${CMAKE_SOURCE_DIR}/lib/Windows/dll/assimp-vc140-mt.dll "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
+            ARGS -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/dll/assimp-vc140-mt.dll "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
             )
 	add_custom_command(TARGET ${PROJECT_NAME}
             COMMAND ${CMAKE_COMMAND}
-            ARGS -E copy ${CMAKE_SOURCE_DIR}/lib/Windows/dll/SDL2.dll "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
+            ARGS -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/dll/SDL2.dll "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
             )
 endif()
