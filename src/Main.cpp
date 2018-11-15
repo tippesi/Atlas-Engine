@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
         Window* window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
                 WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
 
-		Engine::UnlockFramerate();
+		// Engine::UnlockFramerate();
 
         Camera* camera = new Camera(47.0f, 2.0f, 1.0f, 200.0f);
 		camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -53,6 +53,7 @@ int main(int argc, char* argv[])
 		Light* globalLight = new Light(DIRECTIONAL_LIGHT);
 		globalLight->direction = vec3(0.0f, -1.0f, 0.5f);
 		globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f * 3.0f;
+        // globalLight->diffuseColor = vec3(255, 255, 255) / 255.0f * 3.0f;
 		globalLight->ambient = 0.05f;
 		globalLight->AddShadow(new Shadow(125.0f, 0.004f, 2048, 3, 0.7f), camera);		
         globalLight->AddVolumetric(new Volumetric(target->width/2, target->height/2, 20));

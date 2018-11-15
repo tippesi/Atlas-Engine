@@ -2,24 +2,19 @@
 
 TerrainStorageCell::TerrainStorageCell() {
 
+	x = 0;
+	y = 0;
+	LoD = 0;
 
+	heightField = nullptr;
 
 }
 
 bool TerrainStorageCell::IsLoaded() {
 
-	return false;
+	if (heightField == nullptr)
+		return false;
 
-}
-
-void TerrainStorageCell::RemoveContent() {
-
-
-
-}
-
-TerrainStorageCell::~TerrainStorageCell() {
-
-
+	return true;
 
 }

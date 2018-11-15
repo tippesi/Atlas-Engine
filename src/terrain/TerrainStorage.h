@@ -14,6 +14,7 @@ public:
 	TerrainStorageCell* GetCell(int32_t x, int32_t y, int32_t LoD);
 
 	vector<TerrainStorageCell*> requestedCells;
+	vector<TerrainStorageCell*> unusedCells;
 
 private:
 	int32_t LoDCount;

@@ -34,6 +34,9 @@ void TerrainNode::Update(Camera* camera, vector<TerrainNode*>& renderList, float
 		if (LoDDistances[LoD + 1] > distance) {
 			DeleteChildren();
 		}
+		else {
+			UpdateChildren(camera, renderList, LoDDistances);
+		}
 	}
 	else {
 		if (LoDCount > LoD) {
@@ -99,8 +102,7 @@ void TerrainNode::DeleteChildren() {
 
 TerrainNode::~TerrainNode() {
 
-	// Clear cell? We should cache here or leave to the user to decide when to delete a storage node
-	// We could therefore create a new vector in the TerrainStorage class where we store all the unused cells
-	// cell->RemoveContent();
+	// Let the user decide what to do with unused cells
+	storage->unusedCells.push_back(cell);
 
 }
