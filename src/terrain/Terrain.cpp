@@ -1,7 +1,7 @@
 #include "Terrain.h"
 
-Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, float terrainResolution) : 
-	patchSize(patchSize), terrainResolution(terrainResolution) {
+Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, float resolution, float height) : 
+	patchSize(patchSize), resolution(resolution), height(height) {
 
 	// Just in case the input was somehow wrong
 	int32_t nodesPerSide = (int32_t)floor(sqrtf((float)rootNodeCount));
@@ -27,12 +27,14 @@ Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, flo
 
 	}
 
-	float terrainSideLength = (terrainResolution * powf(4, this->LoDCount));
-	float ratio = terrainSideLength / (float)nodesPerSide * terrainResolution;
+	float terrainSideLength = (resolution * powf(4, (float)this->LoDCount));
+	float ratio = terrainSideLength / (float)nodesPerSide * resolution;
 
 	for (int32_t i = 0; i < nodesPerSide; i++) {
 		for (int32_t j = 0; j < nodesPerSide; j++) {
-			rootNodes.push_back(new TerrainNode(vec2((float)i * ratio, (float)j * ratio), terrainResolution, 0, vec2(i, j), storage));
+			TerrainStorageCell* cell = storage->GetCell(i, j, 0);
+			rootNodes.push_back(new TerrainNode(vec2((float)i * ratio, (float)j * ratio), resolution, height, 
+				0, this->LoDCount, vec2(0, 0), vec2(i, j), storage, cell));
 		}
 	}
 

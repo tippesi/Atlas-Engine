@@ -2,13 +2,9 @@
 #define TERRAINSTORAGE_H
 
 #include "../System.h"
-#include "../Texture.h"
+#include "TerrainStorageCell.h"
 
-typedef struct TerrainStorageCell {
-
-	Texture* heightField;
-
-}TerrainStorageCell;
+#include <vector>
 
 class TerrainStorage {
 
@@ -17,11 +13,13 @@ public:
 
 	TerrainStorageCell* GetCell(int32_t x, int32_t y, int32_t LoD);
 
-	void AddHeightfield(Texture* heightField, int32_t xSector, int32_t ySector, int32_t LoD);
+	vector<TerrainStorageCell*> requestedCells;
 
 private:
 	int32_t LoDCount;
 	int32_t rootNodeCount;
+
+	int32_t* LoDSideLengths;
 
 	TerrainStorageCell** cells;
 

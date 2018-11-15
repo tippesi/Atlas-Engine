@@ -59,7 +59,7 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 		shadowSampleCount->SetValue(light->shadow->sampleCount);
 		shadowSampleRange->SetValue(light->shadow->sampleRange);
 		shadowCascadeCount->SetValue(light->shadow->componentCount);
-		shadowResolution->SetValue(vec2(light->shadow->resolution));
+		shadowResolution->SetValue(vec2((float)light->shadow->resolution));
 
         glViewport(0, 0, light->volumetric->map->width, light->volumetric->map->height);
 		light->volumetric->map->Bind(GL_TEXTURE5);

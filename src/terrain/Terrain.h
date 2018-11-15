@@ -13,13 +13,13 @@
 class Terrain {
 
 public:
-	Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, float terrainResolution);
+	Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, float resolution, float height);
 
 	void Update(Camera* camera);
 
 	void SetLoDDistance(int32_t LoD, float distance);
 
-	vector<TerrainNode*> GetNodes(int32_t x, int32_t y, int32_t width, int32_t height);
+	// vector<TerrainNode*> GetNodes(int32_t x, int32_t y, int32_t width, int32_t height);
 
 	TerrainStorage* storage;
 
@@ -31,7 +31,9 @@ private:
 	int32_t rootNodeCount;
 	int32_t LoDCount;
 	int32_t patchSize;
-	int32_t terrainResolution;
+
+	float resolution;
+	float height;
 
 	float* LoDDistances;
 	vector<TerrainNode*> rootNodes;
