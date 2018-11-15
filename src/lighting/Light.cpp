@@ -37,6 +37,24 @@ void Light::AddShadow(Shadow* shadow, Camera* camera) {
 
 }
 
+void Light::RemoveShadow() {
+
+	shadow = nullptr;
+
+}
+
+void Light::AddVolumetric(Volumetric *volumetric) {
+
+	this->volumetric = volumetric;
+
+}
+
+void Light::RemoveVolumetric() {
+
+	this->volumetric = nullptr;
+
+}
+
 float Light::FrustumSplitFormula(float correction, float near, float far, float splitIndex, float splitCount) {
 
 	return correction * near * powf(far / near, splitIndex / splitCount) +

@@ -16,7 +16,11 @@ public:
 
 	void AddShadow(Shadow* shadow, Camera* camera);
 
+	void RemoveShadow();
+
 	void AddVolumetric(Volumetric* volumetric);
+
+	void RemoveVolumetric();
 
 	int32_t type;
 

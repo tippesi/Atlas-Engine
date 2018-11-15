@@ -2,7 +2,8 @@
 
 namespace Engine {
 
-	Window* Init(const char* title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags) {
+	Window* Init(const char* shaderDirectory, const char* title, int32_t x, int32_t y,
+			int32_t width, int32_t height, int32_t flags) {
 
 		SDL_Init(SDL_INIT_EVERYTHING);
 
@@ -31,7 +32,7 @@ namespace Engine {
 
 #ifdef ENGINE_OGL
 		if (!gladLoadGL()) {
-			throw new EngineException("Error initializing OpenGL");
+			throw EngineException("Error initializing OpenGL");
 		}			
 #endif
 
@@ -63,6 +64,11 @@ namespace Engine {
 		Texture::SetAnisotropyLevel(maxAnisotropy);
 
 		LockFramerate();
+
+		ShaderSource::SetSourceDirectory(shaderDirectory);
+
+		GeometryRenderer::InitShaderBatch("deferred/geometry.vsh", "deferred/geometry.fsh");
+		ShadowRenderer::InitShaderBatch("shadowmapping.vsh", "shadowmapping.fsh");
 
 		return window;
 

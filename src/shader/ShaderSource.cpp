@@ -166,7 +166,7 @@ string ShaderSource::ReadShaderFile(const char* filename, bool mainFile) {
 #ifdef ENGINE_SHOW_LOG
 		EngineLog("Shader file %s not found", filename);
 #endif
-		throw new EngineException("Couldn't open shader file");
+		throw EngineException("Couldn't open shader file");
 	}
 
 	string filePath(filename);

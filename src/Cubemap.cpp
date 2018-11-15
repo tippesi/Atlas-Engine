@@ -50,7 +50,7 @@ Cubemap::Cubemap(const char* right, const char* left, const char* top,
 #ifdef ENGINE_SHOW_LOG
 			EngineLog("    Failed to load cubemap face %d %s", i, filenames[i]);
 #endif
-			throw new EngineException("Failed to load cubemap");
+			throw EngineException("Failed to load cubemap");
 		}
 
 	}

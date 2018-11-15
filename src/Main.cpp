@@ -5,16 +5,10 @@
 int main(int argc, char* argv[])
 {
 
-		// This has to be set before initialization
-		ShaderSource::SetSourceDirectory("../data/shader");
-
-        Window* window = Engine::Init("Blue Engine", WINDOWPOSITION_UNDEFINED, WINDOWPOSITION_UNDEFINED,
-                1280, 720, WINDOW_RESIZABLE);
+        Window* window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
+                WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE);
 
 		Engine::UnlockFramerate();
-
-		GeometryRenderer::InitShaderBatch("deferred/geometry.vsh", "deferred/geometry.fsh");
-		ShadowRenderer::InitShaderBatch("shadowmapping.vsh", "shadowmapping.fsh");
 
         Camera* camera = new Camera(47.0f, 2.0f, 1.0f, 200.0f);
 		camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -55,7 +49,7 @@ int main(int argc, char* argv[])
 		globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f * 3.0f;
 		globalLight->ambient = 0.05f;
 		globalLight->AddShadow(new Shadow(125.0f, 0.004f, 2048, 3, 0.7f), camera);		
-        globalLight->volumetric = new Volumetric(target->width/2, target->height/2, 20);
+        globalLight->AddVolumetric(new Volumetric(target->width/2, target->height/2, 20));
 
         node->Add(actor);
         scene->rootNode->Add(node);
@@ -144,4 +138,3 @@ int main(int argc, char* argv[])
     return 0;
 
 }
-

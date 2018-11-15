@@ -38,7 +38,7 @@ Texture::Texture(const char* filename, bool withoutCorrection) {
 	data = stbi_load(filename, &width, &height, &channels, 0);
 
 	if (data == NULL) {
-		throw new EngineException("Texture couldn't be loaded");
+		throw EngineException("Texture couldn't be loaded");
 	}
 
 	// OpenGL ES doesn't guarantee that mipmaps are working in sRGB color space so we better ignore gamma correction

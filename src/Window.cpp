@@ -5,7 +5,7 @@ Window::Window(const char* title, int32_t x, int32_t y, int32_t width, int32_t h
 	sdlWindow = SDL_CreateWindow(title, x, y, width, height, flags | SDL_WINDOW_OPENGL);
 
 	if (sdlWindow == NULL) {
-		throw new EngineException("Error initializing window");
+		throw EngineException("Error initializing window");
 	}
 
 	context = SDL_GL_CreateContext(sdlWindow);
