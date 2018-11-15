@@ -14,6 +14,7 @@ TerrainStorage::TerrainStorage(int32_t rootNodeCount, int32_t LoDCount) : rootNo
 			for (int32_t y = 0; y < LoDSideLengths[i]; y++) {
 				cells[i][x * LoDSideLengths[i] + y].x = x;
 				cells[i][x * LoDSideLengths[i] + y].y = y;
+				cells[i][x * LoDSideLengths[i] + y].LoD = i;
 			}
 		}
 	}

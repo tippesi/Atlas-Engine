@@ -3,6 +3,8 @@
 Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, float resolution, float height) : 
 	patchSize(patchSize), resolution(resolution), height(height) {
 
+	translation = vec3(0.0f);
+
 	// Just in case the input was somehow wrong
 	int32_t nodesPerSide = (int32_t)floor(sqrtf((float)rootNodeCount));
 	this->rootNodeCount = (int32_t)powf((float)nodesPerSide, 2.0f);
@@ -27,8 +29,8 @@ Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, flo
 
 	}
 
-	float terrainSideLength = (resolution * powf(4, (float)this->LoDCount));
-	float ratio = terrainSideLength / (float)nodesPerSide * resolution;
+	float terrainSideLength = (resolution * powf(2, (float)this->LoDCount)) * patchSize * 8.0f;
+	float ratio = terrainSideLength / (float)nodesPerSide;
 
 	for (int32_t i = 0; i < nodesPerSide; i++) {
 		for (int32_t j = 0; j < nodesPerSide; j++) {

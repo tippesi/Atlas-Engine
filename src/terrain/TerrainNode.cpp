@@ -43,6 +43,7 @@ void TerrainNode::Update(Camera* camera, vector<TerrainNode*>& renderList, float
 		}
 	}
 
+	// We just want to render leafs
 	if (children.size() == 0) {
 		renderList.push_back(this);
 	}

@@ -6,13 +6,19 @@ int main(int argc, char* argv[])
 {
 
         Window* window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
-                WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE);
+                WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
 
 		Engine::UnlockFramerate();
 
         Camera* camera = new Camera(47.0f, 2.0f, 1.0f, 200.0f);
 		camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
 		camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+
+		Terrain* terrain = new Terrain(9, 7, 16, 0.5f, 30.0f);
+
+		terrain->Update(camera);
+		terrain->Update(camera);
+		terrain->Update(camera);
 
         Texture* texture = new Texture("../data/image.png");
 
