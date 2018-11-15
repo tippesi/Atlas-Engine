@@ -72,7 +72,7 @@ void CalculateMouseHandler(MouseHandler* handler, Camera* camera, uint32_t delta
 
 				}
 
-				handler->rotation += glm::vec2(-(handler->lastMousePosition.x - mousePosition.x), handler->lastMousePosition.y - mousePosition.y) * handler->sensibility * 0.001f;
+				handler->rotation += glm::vec2(-(handler->lastMousePosition.x - mousePosition.x), -(handler->lastMousePosition.y - mousePosition.y)) * handler->sensibility * 0.001f;
 
 				handler->lastMousePosition.x = mousePosition.x;
 				handler->lastMousePosition.y = mousePosition.y;
