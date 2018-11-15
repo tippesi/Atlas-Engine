@@ -1,13 +1,13 @@
 # Blue Engine
 ![Example scene](image.png)
 ## Introduction
-A cross platform engine
+This is a cross platform engine that is available on all major platforms including Linux, Windows and MacOS.
 ## Requirements
 - OpenGL 4.3 or higher
 - OpenGL ES 3.2
 ## Installation
 The installation is done using CMake. There are two options available: Start a new project with a predefined
-main file which you can edit. The second option is two use the engine as a subproject.
+main file which you can edit. The second option is two use the engine as a subproject in an already existing project.
 >**Note:**
 >The engine is only able to compile and run in an 64 bit environment.
 #### New project using the engine
@@ -16,18 +16,18 @@ contains a main function.
 #### Excisting project using the engine
 There exist two options:
 - You can use the engine as a CMake subproject. Just go ahead and use **add_subdirectory** in the root
-CMakeList.txt of your project. You should be fine.
+CMakeLists.txt of your project. You should be fine.
 - You can compile the engine and all dependencies as a static library (note that some dependencies also have
 dynamic libraries). Therefore use the BUILD_LIBRARY option when using CMake. After compiling the libraries
 with your favourite build system you shouldn't forget to also copy all the dynamic libraries. You can find them
 in the CMake output directory. If this is not possible you can also have a look at the library files in 
-**lib/YourFavouriteSystem/**.
+**./lib/YourFavouriteSystem/**.
 ## Code Example
 This code example can also be found in the main file.
 ```c
-#include "Engine.h"
-#include "input/Mouse.h"
-#include "input/Keyboard.h"
+#include <Engine.h>
+#include <input/Mouse.h>
+#include <input/Keyboard.h>
 
 int main(int argc, char* argv[]) {
 
