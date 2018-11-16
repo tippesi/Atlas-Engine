@@ -61,7 +61,7 @@ if(UNIX AND NOT APPLE)
     find_package(X11 REQUIRED)
     # note that the order is important for setting the libs
     # use pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3) in a terminal to confirm
-    set(BLUE_ENGINE_LIBS ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} X11 Xxf86vm GL dl pthread ${ASSIMP_LIBRARY})
+    set(BLUE_ENGINE_LIBS ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} X11 Xxf86vm GL dl pthread ${ASSIMP_LIBRARY} PARENT_SCOPE)
     set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 
         # rpath settings
@@ -102,8 +102,7 @@ else()
 list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.cpp")
 list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.c")
 add_library(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} GLAD)
-set(BLUE_ENGINE_LIBS ${BLUE_ENGINE_LIBS} PARENT_SCOPE)
+target_link_libraries(${PROJECT_NAME} GLAD ${BLUE_ENGINE_LIBS})
 endif()
 
 # Postbuild stuff
