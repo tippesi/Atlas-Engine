@@ -12,9 +12,7 @@ int main(int argc, char* argv[]) {
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
-	TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 1, 3, 16);
-
-	Terrain* terrain = new Terrain(1, 3, 16, 0.5f, 30.0f);
+	Terrain* terrain = new Terrain(9, 5, 16, 0.5f, 30.0f);
 
 	terrain->Update(camera);
 	terrain->Update(camera);

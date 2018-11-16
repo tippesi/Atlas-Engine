@@ -36,16 +36,10 @@ void TerrainTool::GenerateHeightfieldLoDs(const char* heightfieldFilename, int32
 		LoDCount = (int32_t)(logf(3.0f * powf(2.0f, 16.0f) / (float)rootNodeCount + 1.0f) / logf(4.0f));
 	}
 
-	float terrainSideLength = powf(2, (float)LoDCount) * patchSize * 8.0f;
+	float terrainSideLength = (float)nodesPerSide * powf(2, (float)LoDCount) * (float)patchSize * 8.0f;
 
 	if (width != height || width != (int32_t)terrainSideLength) {
 		throw EngineException("The dimensions of the image don't match to the given arguments");
-	}
-
-	if (channels >= 3) {
-		//uint8_t* mappedData = MapToGrayscale(heightfieldData, width, height, channels);
-		//stbi_image_free(heightfieldData);
-		//heightfieldData = mappedData;
 	}
 
 	int32_t nodeSize = 8 * patchSize;
@@ -80,7 +74,7 @@ void TerrainTool::GenerateHeightfieldLoDs(const char* heightfieldFilename, int32
 					}
 				}
 
-				string filePath = dirPath + "/" + to_string(j) + "-" + to_string(k) + ".png";
+				string filePath = dirPath + "/height" + to_string(j) + "-" + to_string(k) + ".png";
 
 				stbi_write_png(filePath.c_str(), nodeSize, nodeSize, 1, subImage, nodeSize);
 
@@ -92,19 +86,5 @@ void TerrainTool::GenerateHeightfieldLoDs(const char* heightfieldFilename, int32
 	}
 
 	delete subImage;
-
-}
-
-uint8_t* TerrainTool::MapToGrayscale(uint8_t* data, int32_t width, int32_t height, int32_t channels) {
-
-	uint8_t* grayscale = new uint8_t[width * height];
-
-	for (int i = 0; i < width * height; i++) {
-
-		grayscale[i] = (uint8_t)((float)(data[i * channels] + data[i * channels + 1] + data[i * channels + 2])) / 3.0f;
-
-	}
-
-	return grayscale;
 
 }

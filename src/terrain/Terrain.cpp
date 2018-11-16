@@ -24,7 +24,7 @@ Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, flo
 	storage = new TerrainStorage(this->rootNodeCount, this->LoDCount);
 	LoDDistances = new float[LoDCount];
 
-	float terrainSideLength = (resolution * powf(2, (float)this->LoDCount)) * patchSize * 8.0f;
+	float terrainSideLength = (float)nodesPerSide * resolution * powf(2, (float)this->LoDCount) * patchSize * 8.0f;
 	float ratio = terrainSideLength / (float)nodesPerSide;
 
 	for (int32_t i = 0; i < this->LoDCount; i++) {
