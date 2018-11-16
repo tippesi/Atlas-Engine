@@ -16,7 +16,7 @@ contains a main function.
 #### Excisting project using the engine
 There exist two options:
 - You can use the engine as a CMake subproject. Just go ahead and use **add_subdirectory** in the root
-CMakeLists.txt of your project. You should be fine.
+CMakeLists.txt of your project. Afterwards add **target_link_libraries(YOUR_TARGET ... BlueEngine ${BLUE_ENGINE_LIBS})**. You should be fine.
 - You can compile the engine and all dependencies as a static library (note that some dependencies also have
 dynamic libraries). Therefore use the BUILD_LIBRARY option when using CMake. After compiling the libraries
 with your favourite build system you shouldn't forget to also copy all the dynamic libraries. You can find them
