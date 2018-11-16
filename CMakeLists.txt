@@ -1,8 +1,8 @@
-if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "Prevented in-tree built. Please create a build directory outside of the source code and call cmake from there")
 endif()
 
-project(Blue-Engine)
+project(BlueEngine)
 cmake_minimum_required(VERSION 3.6)
 
 option(BUILD_LIBRARY "Build as library" OFF)
@@ -20,7 +20,7 @@ include_directories(${OPENGL_INCLUDE_DIR})
 
 add_definitions(-DENGINE_CMAKE)
 
-add_subdirectory(src/libraries/glad)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/libraries/glad)
 
 # Setting linker flags and library stuff for the different platforms
 
@@ -73,9 +73,9 @@ endif()
 
 # include directories
 
-include_directories(src)
-include_directories(src/libraries)
-include_directories(src/libraries/glad)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/libraries)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/libraries/glad)
 
 file(GLOB_RECURSE BLUE_ENGINE_SOURCE_FILES
         "src/*.cpp"
@@ -89,8 +89,8 @@ list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*src/libraries/.*")
 # When the engine is just a subproject we dont want to produce an executable
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 if (BUILD_LIBRARY)
-list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*main.cpp")
-list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*main.c")
+list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.cpp")
+list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.c")
 add_library(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} GLAD ${LIBS})
 set(CMAKE_BUILD_TYPE Release ... FORCE)
@@ -99,9 +99,10 @@ add_executable(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} GLAD ${LIBS})
 endif()
 else()
-list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*main.cpp")
-list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*main.c")
-add_library(${PROJECT_NAME} GLAD ${LIBS} ${BLUE_ENGINE_SOURCE_FILES})
+list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.cpp")
+list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.c")
+add_library(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
+target_link_libraries(${PROJECT_NAME} GLAD ${LIBS})
 set(CMAKE_BUILD_TYPE Release ... FORCE)
 endif()
 
