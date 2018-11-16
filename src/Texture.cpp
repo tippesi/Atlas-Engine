@@ -5,6 +5,8 @@
 #include "libraries/stb/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "libraries/stb/stb_image_write.h"
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "libraries/stb/stb_image_resize.h"
 
 // Static members have to be defined in the .cpp again
 int32_t Texture::anisotropyLevel = 0;
