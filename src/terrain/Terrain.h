@@ -13,7 +13,7 @@
 class Terrain {
 
 public:
-	Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, float resolution, float height);
+	Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSizeFactor, float resolution, float height);
 
 	void Update(Camera* camera);
 
@@ -26,7 +26,9 @@ public:
 	vec3 translation;
 
 private:
-	void GeneratePatchVertexBuffer();
+	void GeneratePatchVertexBuffer(int32_t patchSizeFactor);
+
+	vec2* vertices;
 
 	int32_t rootNodeCount;
 	int32_t LoDCount;

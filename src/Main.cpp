@@ -14,10 +14,6 @@ int main(int argc, char* argv[]) {
 
 	Terrain* terrain = new Terrain(9, 5, 16, 0.5f, 30.0f);
 
-	terrain->Update(camera);
-	terrain->Update(camera);
-	terrain->Update(camera);
-
 	Texture* texture = new Texture("../data/image.png");
 
 	window->SetIcon(texture);
@@ -122,6 +118,20 @@ int main(int argc, char* argv[]) {
 
 		camera->UpdateView();
 		camera->UpdateProjection();
+
+		terrain->Update(camera);
+
+		for (TerrainStorageCell* cell : terrain->storage->requestedCells) {
+			int32_t width, height, channels;
+			string heightField("../data/terrain/LoD");
+			heightField += to_string(cell->LoD) + "/height" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
+			cell->heightField = new Texture(heightField.c_str(), true);
+			EngineLog("Loaded %s", heightField.c_str());
+		}
+
+		EngineLog("%.3f,%.3f,%.3f", camera->location.x, camera->location.y, camera->location.z);
+
+		terrain->storage->requestedCells.clear();
 
 		scene->rootNode->transformationMatrix = glm::rotate((float)time / 1000.0f, vec3(0.0f, 1.0f, 0.0f));
 		actor->modelMatrix = glm::rotate((float)time / 500.0f, vec3(0.0f, 1.0f, 0.0f));

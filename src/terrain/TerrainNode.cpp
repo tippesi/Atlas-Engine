@@ -1,8 +1,8 @@
 #include "TerrainNode.h"
 
-TerrainNode::TerrainNode(vec2 location, float resolution, float height, int32_t LoD, int32_t LoDCount,
+TerrainNode::TerrainNode(vec2 location, float resolution, float height, float sideLength, int32_t LoD, int32_t LoDCount,
 	vec2 parentIndex, vec2 relativeIndex, TerrainStorage* storage, TerrainStorageCell* cell) : 
-	location(location), resolution(resolution), height(height), LoD(LoD), 
+	location(location), resolution(resolution), height(height), sideLength(sideLength), LoD(LoD), 
 	LoDCount(LoDCount), index(relativeIndex), storage(storage), cell(cell) {
 
 	absoluteIndex = parentIndex + relativeIndex;
@@ -31,7 +31,7 @@ void TerrainNode::Update(Camera* camera, vector<TerrainNode*>& renderList, float
 		// Maybe we should use a small offset here, in case somebody is moving
 		// between two LoD distances all the time. This would reduce reloading 
 		// the terrain nodes and maybe would also reduce the number of cell deletions.
-		if (LoDDistances[LoD + 1] > distance) {
+		if (LoDDistances[LoD] <= distance) {
 			DeleteChildren();
 		}
 		else {
@@ -39,8 +39,8 @@ void TerrainNode::Update(Camera* camera, vector<TerrainNode*>& renderList, float
 		}
 	}
 	else {
-		if (LoDCount > LoD) {
-			if (LoDDistances[LoD] < distance) {
+		if (LoDCount - 1 > LoD) {
+			if (LoDDistances[LoD] > distance) {
 				CreateChildren();
 			}
 		}
@@ -75,10 +75,12 @@ void TerrainNode::CreateChildren() {
 		return;
 	}
 
+
+
 	for (int32_t i = 0; i < 2; i++) {
 		for (int32_t j = 0; j < 2; j++) {
-			// children.push_back(new TerrainNode(vec2((float)i * ratio, (float)j * ratio), resolution, height,
-				// 0, this->LoDCount, vec2(0, 0), vec2(i, j), storage, cell));
+			children.push_back(new TerrainNode(vec2(location.x + (float)i * sideLength / 2.0f, location.y + (float)j * sideLength / 2.0f), resolution, height,
+				sideLength / 2.0f, LoD + 1, this->LoDCount, vec2(0, 0), vec2(i, j), storage, childrenCells[i][j]));
 		}
 	}
 
@@ -98,11 +100,15 @@ void TerrainNode::DeleteChildren() {
 		delete node;
 	}
 
+	children.clear();
+
 }
 
 TerrainNode::~TerrainNode() {
 
 	// Let the user decide what to do with unused cells
 	storage->unusedCells.push_back(cell);
+
+	DeleteChildren();
 
 }

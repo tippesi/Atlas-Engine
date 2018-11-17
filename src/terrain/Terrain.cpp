@@ -1,9 +1,10 @@
 #include "Terrain.h"
 
-Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, float resolution, float height) : 
-	patchSize(patchSize), resolution(resolution), height(height) {
+Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSizeFactor, float resolution, float height) : 
+	resolution(resolution), height(height) {
 
 	translation = vec3(0.0f);
+	patchSize = patchSizeFactor * 4;
 
 	// Just in case the input was somehow wrong
 	int32_t nodesPerSide = (int32_t)floor(sqrtf((float)rootNodeCount));
@@ -21,20 +22,22 @@ Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, flo
 		this->LoDCount = LoDCount;
 	}
 
+	GeneratePatchVertexBuffer(patchSizeFactor);
+
 	storage = new TerrainStorage(this->rootNodeCount, this->LoDCount);
 	LoDDistances = new float[LoDCount];
 
-	float terrainSideLength = (float)nodesPerSide * resolution * powf(2, (float)this->LoDCount) * patchSize * 8.0f;
+	float terrainSideLength = (float)nodesPerSide * resolution * powf(2, (float)this->LoDCount - 1.0f) * patchSize * 8.0f;
 	float ratio = terrainSideLength / (float)nodesPerSide;
 
 	for (int32_t i = 0; i < this->LoDCount; i++) {
-		LoDDistances[i] = (float)i / this->LoDCount * terrainSideLength;
+		LoDDistances[i] = terrainSideLength - (float)i / (float)this->LoDCount * terrainSideLength;
 	}
 
 	for (int32_t i = 0; i < nodesPerSide; i++) {
 		for (int32_t j = 0; j < nodesPerSide; j++) {
 			TerrainStorageCell* cell = storage->GetCell(i, j, 0);
-			rootNodes.push_back(new TerrainNode(vec2((float)i * ratio, (float)j * ratio), resolution, height, 
+			rootNodes.push_back(new TerrainNode(vec2((float)i * ratio, (float)j * ratio), resolution, height, ratio, 
 				0, this->LoDCount, vec2(0, 0), vec2(i, j), storage, cell));
 		}
 	}
@@ -57,6 +60,40 @@ void Terrain::SetLoDDistance(int32_t LoD, float distance) {
 
 	if (LoD >= 0 && LoD < LoDCount) {
 		LoDDistances[LoD] = distance;
+	}
+
+}
+
+void Terrain::GeneratePatchVertexBuffer(int32_t patchSizeFactor) {
+
+	int32_t patchVertexCount = (int32_t)powf((float)(4 * patchSizeFactor), 2.0f);
+
+	vertices = new vec2[patchVertexCount];
+
+	int32_t index = 0;
+
+	for (int32_t x = 0; x < patchSizeFactor; x++) {
+		for (int32_t y = 0; y < patchSizeFactor; y++) {
+			vertices[index++] = vec2(0.0f, 0.0f) + vec2((float)x, (float)y);
+			vertices[index++] = vec2(0.333333f, 0.0f) + vec2((float)x, (float)y);
+			vertices[index++] = vec2(0.666666f, 0.0f) + vec2((float)x, (float)y);
+			vertices[index++] = vec2(1.0f, 0.0f) + vec2((float)x, (float)y);
+
+			vertices[index++] = vec2(0.0f, 0.333333f) + vec2((float)x, (float)y);
+			vertices[index++] = vec2(0.333333f, 0.333333f) + vec2((float)x, (float)y);
+			vertices[index++] = vec2(0.666666f, 0.333333f) + vec2((float)x, (float)y);
+			vertices[index++] = vec2(1.0f, 0.333333f) + vec2((float)x, (float)y);
+
+			vertices[index++] = vec2(0.0f, 0.666666f) + vec2((float)x, (float)y);
+			vertices[index++] = vec2(0.333333f, 0.666666f) + vec2((float)x, (float)y);
+			vertices[index++] = vec2(0.666666f, 0.666666f) + vec2((float)x, (float)y);
+			vertices[index++] = vec2(1.0f, 0.666666f) + vec2((float)x, (float)y);
+
+			vertices[index++] = vec2(0.0f, 1.0f) + vec2((float)x, (float)y);
+			vertices[index++] = vec2(0.333333f, 1.0f) + vec2((float)x, (float)y);
+			vertices[index++] = vec2(0.666666f, 1.0f) + vec2((float)x, (float)y);
+			vertices[index++] = vec2(1.0f, 1.0f) + vec2((float)x, (float)y);
+		}
 	}
 
 }
