@@ -4,6 +4,7 @@
 #include "../System.h"
 
 #include "GeometryRenderer.h"
+#include "TerrainRenderer.h"
 #include "ShadowRenderer.h"
 #include "DirectionalVolumetricRenderer.h"
 #include "DirectionalLightRenderer.h"
@@ -25,6 +26,7 @@ public:
 
 private:
 	GeometryRenderer* geometryRenderer;
+	TerrainRenderer* terrainRenderer;
 	ShadowRenderer* shadowRenderer;
 	DirectionalVolumetricRenderer* directionalVolumetricRenderer;
 	DirectionalLightRenderer* directionalLightRenderer;
@@ -33,6 +35,11 @@ private:
 
 	uint32_t rectangleVAO;
 
+	static const char* terrainVertexPath;
+	static const char* terrainTessControlPath;
+	static const char* terrainTessEvalPath;
+	static const char* terrainGeometryPath;
+	static const char* terrainFragmentPath;
 	static const char* shadowVertexPath;
 	static const char* shadowFragmentPath;
 	static const char* volumetricVertexPath;

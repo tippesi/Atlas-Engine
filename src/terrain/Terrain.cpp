@@ -1,10 +1,10 @@
 #include "Terrain.h"
 
-Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSizeFactor, float resolution, float height) : 
+Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, float resolution, float height) : 
 	resolution(resolution), height(height) {
 
 	translation = vec3(0.0f);
-	patchSize = patchSizeFactor * 4;
+	this->patchSize = patchSize;
 
 	// Just in case the input was somehow wrong
 	int32_t nodesPerSide = (int32_t)floor(sqrtf((float)rootNodeCount));
@@ -22,21 +22,22 @@ Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSizeFacto
 		this->LoDCount = LoDCount;
 	}
 
-	GeneratePatchVertexBuffer(patchSizeFactor);
+	GeneratePatchVertexBuffer(this->patchSize);
 
 	storage = new TerrainStorage(this->rootNodeCount, this->LoDCount);
 	LoDDistances = new float[LoDCount];
 
-	float terrainSideLength = (float)nodesPerSide * resolution * powf(2, (float)this->LoDCount - 1.0f) * patchSize * 8.0f;
+	float terrainSideLength = (float)nodesPerSide * resolution * powf(2, (float)this->LoDCount - 1.0f) * this->patchSize * 8.0f;
 	float ratio = terrainSideLength / (float)nodesPerSide;
 
 	for (int32_t i = 0; i < this->LoDCount; i++) {
-		LoDDistances[i] = terrainSideLength - (float)i / (float)this->LoDCount * terrainSideLength;
+		LoDDistances[i] = terrainSideLength - powf((float)i / (float)this->LoDCount, 0.25f) * terrainSideLength;
 	}
 
 	for (int32_t i = 0; i < nodesPerSide; i++) {
 		for (int32_t j = 0; j < nodesPerSide; j++) {
 			TerrainStorageCell* cell = storage->GetCell(i, j, 0);
+			storage->requestedCells.push_back(cell);
 			rootNodes.push_back(new TerrainNode(vec2((float)i * ratio, (float)j * ratio), resolution, height, ratio, 
 				0, this->LoDCount, vec2(0, 0), vec2(i, j), storage, cell));
 		}
@@ -64,9 +65,21 @@ void Terrain::SetLoDDistance(int32_t LoD, float distance) {
 
 }
 
+void Terrain::Bind() {
+
+	glBindVertexArray(vao);
+
+}
+
+void Terrain::Unbind() {
+	
+	glBindVertexArray(0);
+
+}
+
 void Terrain::GeneratePatchVertexBuffer(int32_t patchSizeFactor) {
 
-	int32_t patchVertexCount = (int32_t)powf((float)(4 * patchSizeFactor), 2.0f);
+	patchVertexCount = (int32_t)powf((float)(4 * patchSizeFactor), 2.0f);
 
 	vertices = new vec2[patchVertexCount];
 
@@ -95,5 +108,19 @@ void Terrain::GeneratePatchVertexBuffer(int32_t patchSizeFactor) {
 			vertices[index++] = vec2(1.0f, 1.0f) + vec2((float)x, (float)y);
 		}
 	}
+
+	glGenVertexArrays(1, &vao);
+	glGenBuffers(1, &vbo);
+
+	glBindVertexArray(vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);	
+	glBufferData(GL_ARRAY_BUFFER, patchVertexCount * sizeof(vec2), glm::value_ptr(vertices[0]), GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, false, sizeof(vec2), 0);
+	glPatchParameteri(GL_PATCH_VERTICES, 16);
+
+	glBindVertexArray(0);
 
 }

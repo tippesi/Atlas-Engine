@@ -74,7 +74,7 @@ void TerrainTool::GenerateHeightfieldLoDs(const char* heightfieldFilename, int32
 					}
 				}
 
-				string filePath = dirPath + "/height" + to_string(j) + "-" + to_string(k) + ".png";
+				string filePath = dirPath + "/height" + to_string(k) + "-" + to_string(j) + ".png";
 
 				stbi_write_png(filePath.c_str(), nodeSize, nodeSize, 1, subImage, nodeSize);
 

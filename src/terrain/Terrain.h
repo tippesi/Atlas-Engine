@@ -21,25 +21,34 @@ public:
 
 	// vector<TerrainNode*> GetNodes(int32_t x, int32_t y, int32_t width, int32_t height);
 
+	void Bind();
+
+	void Unbind();
+
 	TerrainStorage* storage;
 
 	vec3 translation;
+	float resolution;
+	int32_t patchVertexCount;
+	int32_t patchSize;
+
+	float height;
+
+	vector<TerrainNode*> renderList;
 
 private:
 	void GeneratePatchVertexBuffer(int32_t patchSizeFactor);
 
 	vec2* vertices;
 
+	uint32_t vao;
+	uint32_t vbo;
+
 	int32_t rootNodeCount;
 	int32_t LoDCount;
-	int32_t patchSize;
-
-	float resolution;
-	float height;
 
 	float* LoDDistances;
 	vector<TerrainNode*> rootNodes;
-	vector<TerrainNode*> renderList;
 
 };
 

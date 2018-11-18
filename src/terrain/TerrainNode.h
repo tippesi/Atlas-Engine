@@ -18,6 +18,12 @@ public:
 
 	~TerrainNode();
 
+	vec2 location;
+	float sideLength;
+	vec2 absoluteIndex;
+
+	TerrainStorageCell* cell;
+
 private:
 	void CreateChildren();
 
@@ -25,21 +31,18 @@ private:
 
 	void DeleteChildren();
 
-	vec2 location;
 	vec2 index;
-	vec2 absoluteIndex;
+
 
 	int32_t LoD;
 	int32_t LoDCount;
 
 	float resolution;
 	float height;
-	float sideLength;
 
 	vector<TerrainNode*> children;
 
 	TerrainStorage* storage;
-	TerrainStorageCell* cell;
 
 };
 

@@ -8,11 +8,19 @@ int main(int argc, char* argv[]) {
 	Window* window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
 
-	Camera* camera = new Camera(47.0f, 2.0f, 1.0f, 200.0f);
+	// Engine::UnlockFramerate();
+
+	Camera* camera = new Camera(47.0f, 2.0f, 1.0f, 4000.0f);
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
-	Terrain* terrain = new Terrain(9, 5, 16, 0.5f, 30.0f);
+	Terrain* terrain = new Terrain(9, 5, 4, 1.0f, 300.0f);
+
+	terrain->SetLoDDistance(4, 50.0f);
+	terrain->SetLoDDistance(3, 100.0f);
+	terrain->SetLoDDistance(2, 200.0f);
+	terrain->SetLoDDistance(1, 300.0f);
+	terrain->SetLoDDistance(0, 400.0f);
 
 	Texture* texture = new Texture("../data/image.png");
 
@@ -33,6 +41,8 @@ int main(int argc, char* argv[]) {
 
 	scene->postProcessing->chromaticAberration = new ChromaticAberration(0.7f);
 
+	scene->Add(terrain);
+	
 	Mesh* mesh = new Mesh("../data/cube.dae");
 	Mesh* sponzaMesh = new Mesh("../data/sponza/sponza.dae");
 
@@ -63,7 +73,7 @@ int main(int argc, char* argv[]) {
 	// We create the controller handler
 	MouseHandler* mouseHandler = CreateMouseHandler(camera, 1.5f, 0.25f);
 	mouseHandler->lock = true;
-	KeyboardHandler* keyboardHandler = CreateKeyboardHandler(camera, 7.0f, 0.3f);
+	KeyboardHandler* keyboardHandler = CreateKeyboardHandler(camera, 40.0f * 7.0f, 0.3f);
 
 	// For now we will leave the main loop here until we implement a more advanced event system
 	// Our event structure
@@ -129,7 +139,7 @@ int main(int argc, char* argv[]) {
 			EngineLog("Loaded %s", heightField.c_str());
 		}
 
-		EngineLog("%.3f,%.3f,%.3f", camera->location.x, camera->location.y, camera->location.z);
+		EngineLog("%.3f,%.3f", camera->location.x, camera->location.z);
 
 		terrain->storage->requestedCells.clear();
 

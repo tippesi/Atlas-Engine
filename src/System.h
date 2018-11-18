@@ -3,7 +3,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-//#define ENGINE_INSTANT_SHADER_RELOAD
+#define ENGINE_INSTANT_SHADER_RELOAD
 #define ENGINE_SHOW_LOG
 
 #include <stdio.h>

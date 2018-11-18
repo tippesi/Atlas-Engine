@@ -26,11 +26,11 @@ private:
 	void InitializeVAO();
 
 	uint32_t vao;
-	uint32_t indices;
-	uint32_t vertices;
-	uint32_t texCoords;
-	uint32_t normals;
-	uint32_t tangents;
+	uint32_t indicesVbo;
+	uint32_t verticesVbo;
+	uint32_t texCoordsVbo;
+	uint32_t normalsVbo;
+	uint32_t tangentsVbo;
 
 };
 

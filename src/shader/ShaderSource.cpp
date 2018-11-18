@@ -87,9 +87,9 @@ bool ShaderSource::Compile() {
 	string composedCode;
 
 #ifdef ENGINE_OGL
-	composedCode.append("#version 330 core\n\n#define ENGINE_OGL\n");
+	composedCode.append("#version 430 core\n\n#define ENGINE_OGL\n");
 #else
-	composedCode.append("#version 300 es\n\nprecision highp float;\n#define ENGINE_GLES\n")
+	composedCode.append("#version 320 es\n\nprecision highp float;\n#define ENGINE_GLES\n")
 #endif
 
 	for (list<string>::iterator iterator = macros.begin(); iterator != macros.end(); iterator++) {

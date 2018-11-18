@@ -1,0 +1,29 @@
+layout(quads, fractional_odd_spacing, cw) in;
+
+uniform sampler2D heightField;
+uniform vec2 nodeLocation;
+uniform float nodeSideLength;
+uniform float heightScale;
+
+uniform mat4 vMatrix;
+uniform mat4 pMatrix;
+
+void main(){
+
+    float u = gl_TessCoord.x;
+    float v = gl_TessCoord.y;
+	
+	// world position
+	vec4 position =
+	((1 - u) * (1 - v) * gl_in[12].gl_Position +
+	u * (1 - v) * gl_in[0].gl_Position +
+	u * v * gl_in[3].gl_Position +
+	(1 - u) * v * gl_in[15].gl_Position);
+	
+	vec2 texCoords = vec2(position.x, position.z) - nodeLocation;
+	texCoords /= nodeSideLength;
+	
+	position.y = texture(heightField, texCoords).r * heightScale;
+	
+	gl_Position = position;
+}

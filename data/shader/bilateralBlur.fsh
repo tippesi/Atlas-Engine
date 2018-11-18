@@ -49,15 +49,15 @@ void main() {
     float centerColor = sampleR(fTexCoord);
     color = centerColor * weight[0];
     for(int i = 1; i < kernelSize; i++) {
-        float sample = sampleR(fTexCoord + (vec2(offset[i]) * blurDirection));
-        float closeness = pow(1.0f - length(sample - centerColor) / length(vec3(1,1,1)), 2.0f);
-        color += sample * closeness * weight[i];
+        float texColor = sampleR(fTexCoord + (vec2(offset[i]) * blurDirection));
+        float closeness = pow(1.0f - length(texColor - centerColor) / length(vec3(1,1,1)), 2.0f);
+        color += texColor * closeness * weight[i];
     }
 
     for(int i = 1; i < kernelSize; i++) {
-        float sample = sampleR(fTexCoord - (vec2(offset[i]) * blurDirection));
-        float closeness = pow(1.0f - length(sample - centerColor) / length(vec3(1,1,1)), 2.0f);
-        color += sample * closeness * weight[i];
+        float texColor = sampleR(fTexCoord - (vec2(offset[i]) * blurDirection));
+        float closeness = pow(1.0f - length(texColor - centerColor) / length(vec3(1,1,1)), 2.0f);
+        color += texColor * closeness * weight[i];
     }
 #endif
 }

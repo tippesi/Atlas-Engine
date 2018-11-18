@@ -1,5 +1,10 @@
 #include "MasterRenderer.h"
 
+const char* MasterRenderer::terrainVertexPath = "terrain/terrain.vsh";
+const char* MasterRenderer::terrainTessControlPath = "terrain/terrain.tcsh";
+const char* MasterRenderer::terrainTessEvalPath = "terrain/terrain.tesh";
+const char* MasterRenderer::terrainGeometryPath = "terrain/terrain.gsh";
+const char* MasterRenderer::terrainFragmentPath = "terrain/terrain.fsh";
 const char* MasterRenderer::shadowVertexPath = "shadowmapping.vsh";
 const char* MasterRenderer::shadowFragmentPath = "shadowmapping.fsh";
 const char* MasterRenderer::volumetricVertexPath = "volumetric.vsh";
@@ -19,12 +24,28 @@ MasterRenderer::MasterRenderer() {
 
 	geometryRenderer = new GeometryRenderer();
 
-	shadowRenderer = new ShadowRenderer(shadowVertexPath, shadowFragmentPath);
-	directionalVolumetricRenderer = new DirectionalVolumetricRenderer(volumetricVertexPath, volumetricFragmentPath,
-			bilateralBlurVertexPath, bilateralBlurFragmentPath);
-	directionalLightRenderer = new DirectionalLightRenderer(directionalLightVertexPath, directionalLightFragmentPath);
-	skyboxRenderer = new SkyboxRenderer(skyboxVertexPath, skyboxFragmentPath);
-	postProcessRenderer = new PostProcessRenderer(postProcessVertexPath, postProcessFragmentPath);
+	terrainRenderer = new TerrainRenderer(terrainVertexPath,
+		terrainTessControlPath,
+		terrainTessEvalPath,
+		terrainGeometryPath,
+		terrainFragmentPath);
+
+	shadowRenderer = new ShadowRenderer(shadowVertexPath,
+		shadowFragmentPath);
+
+	directionalVolumetricRenderer = new DirectionalVolumetricRenderer(volumetricVertexPath, 
+		volumetricFragmentPath, 
+		bilateralBlurVertexPath, 
+		bilateralBlurFragmentPath);
+
+	directionalLightRenderer = new DirectionalLightRenderer(directionalLightVertexPath, 
+		directionalLightFragmentPath);
+
+	skyboxRenderer = new SkyboxRenderer(skyboxVertexPath,
+		skyboxFragmentPath);
+
+	postProcessRenderer = new PostProcessRenderer(postProcessVertexPath,
+		postProcessFragmentPath);
 
 }
 
@@ -41,6 +62,8 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	glViewport(0, 0, target->geometryFramebuffer->width, target->geometryFramebuffer->height);
+
+	terrainRenderer->Render(window, target, camera, scene, true);
 
 	geometryRenderer->Render(window, target, camera, scene, true);
 
