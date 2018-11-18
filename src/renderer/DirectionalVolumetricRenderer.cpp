@@ -17,7 +17,7 @@ DirectionalVolumetricRenderer::DirectionalVolumetricRenderer(const char *volumet
     bilateralBlurShader->AddComponent(VERTEX_SHADER, bilateralBlurVertex);
     bilateralBlurShader->AddComponent(FRAGMENT_SHADER, bilateralBlurFragmet);
 
-    bilateralBlurShader->AddMacro("TEXTURE");
+    bilateralBlurShader->AddMacro("BILATERAL");
     bilateralBlurShader->AddMacro("BLUR_R");
 
     bilateralBlurShader->Compile();
@@ -69,17 +69,20 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     }
-
+	
     bilateralBlurShader->Bind();
 
     diffuseTexture->SetValue(0);
+	bilateralDepthTexture->SetValue(1);
 
-    float offsetArray[] = {0, 1, 2, 3, 4};
-    float weightArray[] = {1/9.0f, 1/9.0f, 1/9.0f, 1/9.0f, 1/9.0f};
+	target->geometryFramebuffer->GetComponent(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
 
-    offsets->SetValue(offsetArray, 5);
-    weights->SetValue(weightArray, 5);
-    kernelSize->SetValue(5);
+    float offsetArray[] = {0, 1, 2, 3};
+    float weightArray[] = {1/9.0f, 1/9.0f, 1/9.0f, 1/9.0f};
+
+    offsets->SetValue(offsetArray, 4);
+    weights->SetValue(weightArray, 4);
+    kernelSize->SetValue(4);
 
     for (Light* light : scene->lights) {
 
@@ -129,6 +132,7 @@ void DirectionalVolumetricRenderer::GetVolumetricUniforms() {
 void DirectionalVolumetricRenderer::GetBilateralBlurUniforms() {
 
     diffuseTexture = bilateralBlurShader->GetUniform("diffuseTexture");
+	bilateralDepthTexture = bilateralBlurShader->GetUniform("depthTexture");
     blurDirection = bilateralBlurShader->GetUniform("blurDirection");
     offsets = bilateralBlurShader->GetUniform("offset");
     weights = bilateralBlurShader->GetUniform("weight");

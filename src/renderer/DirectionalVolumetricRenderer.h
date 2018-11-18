@@ -38,6 +38,7 @@ private:
 
     // Bilateral blur shader uniforms
     Uniform* diffuseTexture;
+	Uniform* bilateralDepthTexture;
     Uniform* blurDirection;
     Uniform* offsets;
     Uniform* weights;

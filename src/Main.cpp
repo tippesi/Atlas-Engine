@@ -3,24 +3,26 @@
 #include "input/Keyboard.h"
 #include "modules/TerrainTool.h"
 
+#include "libraries/stb/stb_image.h"
+
 int main(int argc, char* argv[]) {
 
 	Window* window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
 
-	// Engine::UnlockFramerate();
+	//Engine::UnlockFramerate();
 
 	Camera* camera = new Camera(47.0f, 2.0f, 1.0f, 4000.0f);
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
-	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+	//camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
 	Terrain* terrain = new Terrain(9, 5, 4, 1.0f, 300.0f);
 
-	terrain->SetLoDDistance(4, 50.0f);
-	terrain->SetLoDDistance(3, 100.0f);
-	terrain->SetLoDDistance(2, 200.0f);
-	terrain->SetLoDDistance(1, 300.0f);
-	terrain->SetLoDDistance(0, 400.0f);
+	terrain->SetLoDDistance(4, 25.0f);
+	terrain->SetLoDDistance(3, 50.0f);
+	terrain->SetLoDDistance(2, 100.0f);
+	terrain->SetLoDDistance(1, 200.0f);
+	terrain->SetLoDDistance(0, 300.0f);
 
 	Texture* texture = new Texture("../data/image.png");
 
@@ -44,11 +46,11 @@ int main(int argc, char* argv[]) {
 	scene->Add(terrain);
 	
 	Mesh* mesh = new Mesh("../data/cube.dae");
-	Mesh* sponzaMesh = new Mesh("../data/sponza/sponza.dae");
+	//Mesh* sponzaMesh = new Mesh("../data/sponza/sponza.dae");
 
 	Actor* actor = new Actor(mesh);
-	Actor* sponza = new Actor(sponzaMesh);
-	sponza->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
+	//Actor* sponza = new Actor(sponzaMesh);
+	//sponza->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
 
 	MasterRenderer* renderer = new MasterRenderer();
 
@@ -64,7 +66,7 @@ int main(int argc, char* argv[]) {
 	node->Add(actor);
 	scene->rootNode->Add(node);
 
-	scene->Add(sponza);
+	//scene->Add(sponza);
 
 	scene->Add(globalLight);
 
@@ -135,11 +137,11 @@ int main(int argc, char* argv[]) {
 			int32_t width, height, channels;
 			string heightField("../data/terrain/LoD");
 			heightField += to_string(cell->LoD) + "/height" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
-			cell->heightField = new Texture(heightField.c_str(), true);
+			uint8_t* data = stbi_load(heightField.c_str(), &width, &height, &channels, 1);
+			cell->heightField = new Texture(GL_UNSIGNED_BYTE, width, height, GL_R8, -0.4f, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+			cell->heightField->SetData(data);
 			EngineLog("Loaded %s", heightField.c_str());
 		}
-
-		EngineLog("%.3f,%.3f", camera->location.x, camera->location.z);
 
 		terrain->storage->requestedCells.clear();
 

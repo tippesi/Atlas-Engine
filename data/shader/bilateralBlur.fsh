@@ -1,11 +1,11 @@
 in vec2 fTexCoord;
 
-#ifdef TEXTURE
 uniform sampler2D diffuseTexture;
+
+#ifdef BILATERAL
+uniform sampler2D depthTexture;
 #endif
-#ifdef TEXTUREARRAY
-uniform sampler2DArray diffuseTexture;
-#endif
+
 uniform vec2 blurDirection;
 
 uniform float offset[80];
@@ -23,68 +23,58 @@ out vec2 color;
 out float color;
 #endif
 
-vec3 sampleRGB(vec2 texCoord);
-vec2 sampleRG(vec2 texCoord);
-float sampleR(vec2 texCoord);
-
 void main() {
 
 #ifdef BLUR_RGB
-    color = sampleRGB(fTexCoord) * weight[0];
+    color = texture(diffuseTexture, fTexCoord).rgb * weight[0];
     for(int i = 1; i < kernelSize; i++)
-        color += sampleRGB(fTexCoord + (vec2(offset[i]) * blurDirection)) * weight[i];
+        color += texture(diffuseTexture, fTexCoord + (vec2(offset[i]) * blurDirection)).rgb * weight[i];
 
     for (int i = 1; i < kernelSize; i++)
-        color += sampleRGB(fTexCoord - (vec2(offset[i]) * blurDirection)) * weight[i];
+        color += texture(diffuseTexture, fTexCoord - (vec2(offset[i]) * blurDirection)).rgb * weight[i];
 #endif
 #ifdef BLUR_RG
-    color = sampleRG(fTexCoord) * weight[0];
+    color = texture(diffuseTexture, fTexCoord).rg * weight[0];
     for(int i = 1; i < kernelSize; i++)
-        color += sampleRG(fTexCoord + (vec2(offset[i]) * blurDirection)) * weight[i];
+        color += texture(diffuseTexture, fTexCoord + (vec2(offset[i]) * blurDirection)).rg * weight[i];
 
     for (int i = 1; i < kernelSize; i++)
-        color += sampleRG(fTexCoord - (vec2(offset[i]) * blurDirection)) * weight[i];
+        color += texture(diffuseTexture, fTexCoord - (vec2(offset[i]) * blurDirection)).rg * weight[i];
 #endif
 #ifdef BLUR_R
-    float centerColor = sampleR(fTexCoord);
-    color = centerColor * weight[0];
+    float centerColor = texture(diffuseTexture, fTexCoord).r;
+#ifdef BILATERAL
+	float centerDepth = texture(depthTexture, fTexCoord).r;
+#endif
+	color = centerColor * weight[0];
+	float closeness = 1.0f;
+	float totalWeight = weight[0];
     for(int i = 1; i < kernelSize; i++) {
-        float texColor = sampleR(fTexCoord + (vec2(offset[i]) * blurDirection));
-        float closeness = pow(1.0f - length(texColor - centerColor) / length(vec3(1,1,1)), 2.0f);
-        color += texColor * closeness * weight[i];
+        float texColor = texture(diffuseTexture, fTexCoord + (vec2(offset[i]) * blurDirection)).r;
+		float currentWeight = weight[i];
+#ifdef BILATERAL
+		float depth = texture(depthTexture, fTexCoord + (vec2(offset[i]) * blurDirection)).r;
+        closeness = max(0.0f, 1.0f - 100.0f * abs(centerDepth - depth));
+		currentWeight *= closeness;
+		totalWeight += currentWeight;
+#endif
+		color += texColor * currentWeight;
     }
 
     for(int i = 1; i < kernelSize; i++) {
-        float texColor = sampleR(fTexCoord - (vec2(offset[i]) * blurDirection));
-        float closeness = pow(1.0f - length(texColor - centerColor) / length(vec3(1,1,1)), 2.0f);
-        color += texColor * closeness * weight[i];
+        float texColor = texture(diffuseTexture, fTexCoord - (vec2(offset[i]) * blurDirection)).r;
+		float currentWeight = weight[i];
+#ifdef BILATERAL
+		float depth = texture(depthTexture, fTexCoord - (vec2(offset[i]) * blurDirection)).r;
+        closeness = max(0.0f, 1.0f - 100.0f * abs(centerDepth - depth));
+		currentWeight *= closeness;
+		totalWeight += currentWeight;
+#endif
+		color += texColor * currentWeight;
     }
+#ifdef BILATERAL
+	color /= totalWeight;
 #endif
-}
+#endif
 
-vec3 sampleRGB(vec2 texCoord) {
-#ifdef TEXTURE
-    return texture(diffuseTexture, texCoord).rgb;
-#endif
-#ifdef TEXTUREARRAY
-    return texture(diffuseTexture, vec3(texCoord, 0)).rgb;
-#endif
-}
-
-vec2 sampleRG(vec2 texCoord) {
-#ifdef TEXTURE
-    return texture(diffuseTexture, texCoord).rg;
-#endif
-#ifdef TEXTUREARRAY
-    return texture(diffuseTexture, vec3(texCoord, 0)).rg;
-#endif
-}
-
-float sampleR(vec2 texCoord){
-#ifdef TEXTURE
-    return texture(diffuseTexture, texCoord).r;
-#endif
-#ifdef TEXTUREARRAY
-    return texture(diffuseTexture, vec3(texCoord, 0)).r;
-#endif
 }

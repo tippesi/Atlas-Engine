@@ -23,6 +23,8 @@ void main(){
 	vec2 texCoords = vec2(position.x, position.z) - nodeLocation;
 	texCoords /= nodeSideLength;
 	
+	texCoords = clamp(texCoords, 0.0f, 1.0f);
+	
 	position.y = texture(heightField, texCoords).r * heightScale;
 	
 	gl_Position = position;
