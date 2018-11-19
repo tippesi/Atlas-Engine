@@ -41,6 +41,7 @@
 
 #ifdef _WIN32
 #define APIENTRY __stdcall
+#include <direct.h>
 #endif
 #include "libraries/glad/glad/glad.h"
 

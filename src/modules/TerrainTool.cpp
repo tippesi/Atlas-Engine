@@ -6,7 +6,6 @@
 
 #include <string>
 #include <sys/stat.h>
-#include <direct.h>
 
 void TerrainTool::GenerateHeightfieldLoDs(const char* heightfieldFilename, int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize) {
 
@@ -51,7 +50,11 @@ void TerrainTool::GenerateHeightfieldLoDs(const char* heightfieldFilename, int32
 
 		string dirPath = directoryPath + "LoD" + to_string(i);
 
-		mkdir(dirPath.c_str());
+#ifdef _WIN32
+		_mkdir(dirPath.c_str());
+#else
+		mkdir(dirPath.c_str(), S_IROTH | S_IWOTH | S_IXOTH);
+#endif
 
 		int32_t nodeSideCount = (int32_t)powf(2.0f, (float)i);
 		int32_t newResolution = nodeSize * nodeSideCount;
