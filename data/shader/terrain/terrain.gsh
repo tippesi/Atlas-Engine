@@ -14,7 +14,11 @@ void main() {
 	}
 	
 	vec4 position = gl_in[0].gl_Position;
+#ifdef GEOMETRY_SHADER
 	gl_Position = pMatrix * vMatrix * position;
+#else
+	gl_Position = position;
+#endif
     EmitVertex();
 	
 	EndPrimitive();

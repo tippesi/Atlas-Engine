@@ -8,8 +8,10 @@ TerrainRenderer::TerrainRenderer(const char* vertexSource, const char* tessContr
 	nearShader->AddComponent(VERTEX_SHADER, vertexSource);
 	nearShader->AddComponent(TESSELATION_CONTROL_SHADER, tessControlSource);
 	nearShader->AddComponent(TESSELATION_EVALUATION_SHADER, tessEvalSource);
-	nearShader->AddComponent(GEOMETRY_SHADER, geometrySource);
+	// nearShader->AddComponent(GEOMETRY_SHADER, geometrySource);
 	nearShader->AddComponent(FRAGMENT_SHADER, fragmentSource);
+
+	// nearShader->AddMacro("GEOMETRY_SHADER");
 
 	nearShader->Compile();
 

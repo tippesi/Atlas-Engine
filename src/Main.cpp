@@ -1,7 +1,7 @@
 #include "Engine.h"
 #include "input/Mouse.h"
 #include "input/Keyboard.h"
-#include "modules/TerrainTool.h"
+#include "tools/TerrainTool.h"
 
 #include "libraries/stb/stb_image.h"
 

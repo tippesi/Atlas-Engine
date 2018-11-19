@@ -27,5 +27,9 @@ void main(){
 	
 	position.y = texture(heightField, texCoords).r * heightScale;
 	
+#ifndef GEOMETRY_SHADER
+	position = pMatrix * vMatrix * position;
+#endif
+	
 	gl_Position = position;
 }

@@ -87,14 +87,14 @@ template <class T> void DataComponent<T>::Set(T* data) {
 			dataCounter += 4;
 		}
 	}
-	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) < sizeof(T)) {
+	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(T)) {
 		int32_t dataSize = stride * size;
 		uint16_t* internalData = (uint16_t*)this->internalData;
 		for (int32_t i = 0; i < dataSize; i++) {
 			internalData[i] = (uint16_t)data[i];
 		}
 	}
-	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) < sizeof(T)) {
+	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(T)) {
 		int32_t dataSize = stride * size;
 		uint8_t* internalData = (uint8_t*)this->internalData;
 		for (int32_t i = 0; i < dataSize; i++) {
@@ -130,11 +130,11 @@ template <class T> void DataComponent<T>::SetType(int32_t componentType) {
 		delete data;
 		internalData = new uint32_t[size];
 	}
-	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) < sizeof(T)) {
+	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(T)) {
 		delete data;
 		internalData = new uint16_t[stride * size];
 	}
-	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) < sizeof(T)) {
+	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(T)) {
 		delete data;
 		internalData = new uint8_t[stride * size];
 	}
@@ -161,11 +161,11 @@ template <class T> void DataComponent<T>::SetSize(int32_t size) {
 		delete data;
 		internalData = new uint32_t[size];
 	}
-	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) < sizeof(T)) {
+	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(T)) {
 		delete data;
 		internalData = new uint16_t[stride * size];
 	}
-	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) < sizeof(T)) {
+	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(T)) {
 		delete data;
 		internalData = new uint8_t[stride * size];
 	}
@@ -208,7 +208,19 @@ template <class T> bool DataComponent<T>::ContainsData() {
 template <class T> DataComponent<T>::~DataComponent() {
 
 	delete data;
-	delete internalData;
+	
+	if (componentType == COMPONENT_HALF_FLOAT) {
+		delete (float16_t*)internalData;
+	}
+	else if (componentType == COMPONENT_PACKED_FLOAT) {
+		delete (uint32_t*)internalData;
+	}
+	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(T)) {
+		delete (uint16_t*)internalData;
+	}
+	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(T)) {
+		delete (uint8_t*)internalData;
+	}
 
 }
 
