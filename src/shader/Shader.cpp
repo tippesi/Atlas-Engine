@@ -9,13 +9,23 @@ Shader::Shader() {
 
 }
 
-ShaderSource* Shader::AddComponent(int32_t type, const char* filename) {
+void Shader::AddComponent(int32_t type, const char* filename) {
 
 	ShaderSource* source = new ShaderSource(type, filename);
 
 	components.push_back(source);
 
-	return source;
+}
+
+ShaderSource* Shader::GetComponent(int32_t type) {
+
+	for (ShaderSource*& source : components) {
+		if (source->type == type) {
+			return source;
+		}
+	}
+
+	return nullptr;
 
 }
 

@@ -43,14 +43,14 @@ int main(int argc, char* argv[]) {
 
 	scene->postProcessing->chromaticAberration = new ChromaticAberration(0.7f);
 
-	scene->Add(terrain);
+	//scene->Add(terrain);
 	
 	Mesh* mesh = new Mesh("../data/cube.dae");
-	//Mesh* sponzaMesh = new Mesh("../data/sponza/sponza.dae");
+	Mesh* sponzaMesh = new Mesh("../data/sponza/sponza.dae");
 
 	Actor* actor = new Actor(mesh);
-	//Actor* sponza = new Actor(sponzaMesh);
-	//sponza->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
+	Actor* sponza = new Actor(sponzaMesh);
+	sponza->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
 
 	MasterRenderer* renderer = new MasterRenderer();
 
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
 	node->Add(actor);
 	scene->rootNode->Add(node);
 
-	//scene->Add(sponza);
+	scene->Add(sponza);
 
 	scene->Add(globalLight);
 
@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
 		camera->UpdateView();
 		camera->UpdateProjection();
 
-		terrain->Update(camera);
+		//terrain->Update(camera);
 
 		for (TerrainStorageCell* cell : terrain->storage->requestedCells) {
 			int32_t width, height, channels;

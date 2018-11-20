@@ -46,8 +46,9 @@ ShaderConstant::ShaderConstant(const char* constantString) {
 		type = INT_ARRAY_CONSTANT;
 	}
 
+
 	size_t namePosition = line.find_first_not_of(' ', typeEndPosition);
-	size_t nameEndPosition = line.find_first_of(" ;=", namePosition);
+	size_t nameEndPosition = line.find_first_of(" [;=", namePosition);
 
 	name = line.substr(namePosition, nameEndPosition - namePosition);
 

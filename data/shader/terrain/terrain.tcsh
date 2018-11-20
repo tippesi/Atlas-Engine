@@ -18,13 +18,13 @@ void main() {
             
             int LoD = clamp(int(16.0f - distance), 1, 16);
             
-			gl_TessLevelOuter[AB] = LoD;
-			gl_TessLevelOuter[BC] = LoD;
-			gl_TessLevelOuter[CD] = LoD;
-			gl_TessLevelOuter[DA] = LoD;
+			gl_TessLevelOuter[AB] = 1;
+			gl_TessLevelOuter[BC] = 1;
+			gl_TessLevelOuter[CD] = 1;
+			gl_TessLevelOuter[DA] = 1;
 	
-			gl_TessLevelInner[0] = LoD;
-			gl_TessLevelInner[1] = LoD;	
+			gl_TessLevelInner[0] = 1;
+			gl_TessLevelInner[1] = 1;
 	}
 	
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;

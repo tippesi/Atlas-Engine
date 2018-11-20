@@ -69,7 +69,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     }
-	
+
     bilateralBlurShader->Bind();
 
     diffuseTexture->SetValue(0);
