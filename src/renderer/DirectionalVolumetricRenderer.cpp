@@ -69,7 +69,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     }
-
+	
     bilateralBlurShader->Bind();
 
     diffuseTexture->SetValue(0);
@@ -77,12 +77,12 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
 	target->geometryFramebuffer->GetComponent(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
 
-    float offsetArray[] = {0, 1, 2, 3};
-    float weightArray[] = {1/9.0f, 1/9.0f, 1/9.0f, 1/9.0f};
+    float offsetArray[] = {0, 1, 2, 3, 4};
+    float weightArray[] = {1/9.0f, 1/9.0f, 1/9.0f, 1/9.0f, 1/9.0f};
 
-    offsets->SetValue(offsetArray, 4);
-    weights->SetValue(weightArray, 4);
-    kernelSize->SetValue(4);
+    offsets->SetValue(offsetArray, 5);
+    weights->SetValue(weightArray, 5);
+    kernelSize->SetValue(5);
 
     for (Light* light : scene->lights) {
 
@@ -109,6 +109,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     }
+
 
 }
 

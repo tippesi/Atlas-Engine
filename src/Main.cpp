@@ -10,11 +10,13 @@ int main(int argc, char* argv[]) {
 	Window* window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
 
-	//Engine::UnlockFramerate();
+	Engine::UnlockFramerate();
 
 	Camera* camera = new Camera(47.0f, 2.0f, 1.0f, 4000.0f);
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
-	//camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+
+	TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 9, 5, 16);
 
 	Terrain* terrain = new Terrain(9, 5, 4, 1.0f, 300.0f);
 
@@ -43,7 +45,7 @@ int main(int argc, char* argv[]) {
 
 	scene->postProcessing->chromaticAberration = new ChromaticAberration(0.7f);
 
-	//scene->Add(terrain);
+	scene->Add(terrain);
 	
 	Mesh* mesh = new Mesh("../data/cube.dae");
 	Mesh* sponzaMesh = new Mesh("../data/sponza/sponza.dae");
@@ -131,7 +133,7 @@ int main(int argc, char* argv[]) {
 		camera->UpdateView();
 		camera->UpdateProjection();
 
-		//terrain->Update(camera);
+		terrain->Update(camera);
 
 		for (TerrainStorageCell* cell : terrain->storage->requestedCells) {
 			int32_t width, height, channels;
