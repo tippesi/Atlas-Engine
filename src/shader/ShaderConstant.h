@@ -11,6 +11,8 @@
 #define VECTOR2_CONSTANT 0x3
 #define VECTOR3_CONSTANT 0x4
 #define VECTOR4_CONSTANT 0x5
+#define FLOAT_ARRAY_CONSTANT 0x6
+#define INT_ARRAY_CONSTANT 0x7
 
 class ShaderConstant {
 
@@ -29,6 +31,10 @@ public:
 
 	void SetValue(vec4 value);
 
+	void SetValue(float* value, int32_t length);
+
+	void SetValue(int32_t* value, int32_t length);
+
 	string GetName();
 
 	string GetValuedString();
@@ -37,14 +43,6 @@ private:
 	string name;
 
 	int32_t type;
-
-	float fvalue;
-	int32_t ivalue;
-	bool bvalue;
-
-	vec2 v2value;
-	vec3 v3value;
-	vec4 v4value;
 
 	string valuedString;
 

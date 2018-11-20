@@ -13,7 +13,6 @@ TerrainNode::TerrainNode(vec2 location, float resolution, float height, float si
 
 void TerrainNode::Update(Camera* camera, vector<TerrainNode*>& renderList, float* LoDDistances) {
 
-	vec3 absoluteLocation = vec3(0.0f);
 	float nodeY = 0.0f;
 
 	if (camera->location.y > height) {

@@ -120,7 +120,18 @@ template <class T> void DataComponent<T>::SetType(int32_t componentType) {
 	// We should check if the type is compatible to T
 	this->componentType = componentType;
 
-	delete internalData;
+	if (componentType == COMPONENT_HALF_FLOAT) {
+		delete (float16_t*)internalData;
+	}
+	else if (componentType == COMPONENT_PACKED_FLOAT) {
+		delete (uint32_t*)internalData;
+	}
+	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(T)) {
+		delete (uint16_t*)internalData;
+	}
+	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(T)) {
+		delete (uint8_t*)internalData;
+	}
 
 	if (componentType == COMPONENT_HALF_FLOAT) {
 		delete data;
@@ -151,7 +162,18 @@ template <class T> void DataComponent<T>::SetSize(int32_t size) {
 
 	this->size = size;
 
-	delete internalData;
+	if (componentType == COMPONENT_HALF_FLOAT) {
+		delete (float16_t*)internalData;
+	}
+	else if (componentType == COMPONENT_PACKED_FLOAT) {
+		delete (uint32_t*)internalData;
+	}
+	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(T)) {
+		delete (uint16_t*)internalData;
+	}
+	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(T)) {
+		delete (uint8_t*)internalData;
+	}
 
 	if (componentType == COMPONENT_HALF_FLOAT) {
 		delete data;

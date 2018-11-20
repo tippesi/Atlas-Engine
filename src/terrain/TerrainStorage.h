@@ -17,8 +17,8 @@ public:
 	vector<TerrainStorageCell*> unusedCells;
 
 private:
+    int32_t rootNodeCount;
 	int32_t LoDCount;
-	int32_t rootNodeCount;
 
 	int32_t* LoDSideLengths;
 
