@@ -30,7 +30,8 @@ public:
 	/// </summary>
 	/// <param name="data">The data which should be used. Each channel should have 8 bits and should be in the following order (r, g, b, a).</param>
 	/// <param name="layer">The layer where the data should be written. For a normal texture this should be 0.</param>
-	void SetData(uint8_t* data, int32_t layer = 0);
+	/// <param name="layerCount">The number of layers which should be written to. The data has to have the size of width * height * layerCount.</param>
+	void SetData(uint8_t* data, int32_t layer = 0, int32_t layerCount = 1);
 
 	/// <summary>
 	/// Gets a copy of the data of the texture. Retrieval of the GPU data is only available for OpenGL NOT OpenGL ES

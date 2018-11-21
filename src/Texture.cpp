@@ -86,7 +86,7 @@ void Texture::Bind(uint32_t unit) {
 
 }
 
-void Texture::SetData(uint8_t* data, int32_t layer) {
+void Texture::SetData(uint8_t* data, int32_t layer, int32_t layerCount) {
 
 	delete this->data;
 
@@ -101,7 +101,7 @@ void Texture::SetData(uint8_t* data, int32_t layer) {
 	}
 	else {
 		glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, width, height, 1, GetBaseFormat(internalFormat), dataFormat, data);
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, width, height, layerCount, GetBaseFormat(internalFormat), dataFormat, data);
 		if (mipmaps)
 			glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 	}

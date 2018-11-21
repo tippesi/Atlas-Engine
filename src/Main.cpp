@@ -2,6 +2,7 @@
 #include "input/Mouse.h"
 #include "input/Keyboard.h"
 #include "tools/TerrainTool.h"
+#include "Font.h"
 
 #include "libraries/stb/stb_image.h"
 
@@ -15,6 +16,8 @@ int main(int argc, char* argv[]) {
 	Camera* camera = new Camera(47.0f, 2.0f, 1.0f, 4000.0f);
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+
+	Font* font = new Font("../data/roboto.ttf", 44, 10, 180);
 
 	/*
 	TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 9, 5, 16);

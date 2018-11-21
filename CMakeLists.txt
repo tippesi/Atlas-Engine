@@ -26,9 +26,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/libraries/glad)
 
 if(MSVC)
     # for detecting Windows compiler MSVC
-	set(SDL_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib/SDL2.lib)
-	set(SDLMAIN_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib/SDL2main.lib)
-    set(ASSIMP_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib/assimp-vc140-mt.lib)
+	find_library(SDL_LIBRARY SDL2 ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib)
+	find_library(SDLMAIN_LIBRARY SDL2main ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib)
+    find_library(ASSIMP_LIBRARY assimp-vc140-mt ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib)
     set(BLUE_ENGINE_LIBS ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} opengl32 ${ASSIMP_LIBRARY})
 endif()
 
@@ -38,14 +38,14 @@ if(APPLE)
     find_library(SDLMAIN_LIBRARY SDL2main ${CMAKE_CURRENT_SOURCE_DIR}/lib/Mac)
     find_library(SDL_LIBRARY SDL2 ${CMAKE_CURRENT_SOURCE_DIR}/lib/Mac)
 
-    INCLUDE_DIRECTORIES(/System/Library/Frameworks)
-    FIND_LIBRARY(COCOA_LIBRARY Cocoa)
-    FIND_LIBRARY(OpenGL_LIBRARY OpenGL)
-    FIND_LIBRARY(IOKit_LIBRARY IOKit)
-    FIND_LIBRARY(CoreVideo_LIBRARY CoreVideo)
-    MARK_AS_ADVANCED(COCOA_LIBRARY OpenGL_LIBRARY)
-    SET(APPLE_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
-    SET(APPLE_LIBS ${APPLE_LIBS} ${GLEW_LIBRARY} ${ASSIMP_LIBRARY})
+    include_directories(/System/Library/Frameworks)
+    find_library(COCOA_LIBRARY Cocoa)
+    find_library(OpenGL_LIBRARY OpenGL)
+    find_library(IOKit_LIBRARY IOKit)
+    find_library(CoreVideo_LIBRARY CoreVideo)
+    mark_as_advanced(COCOA_LIBRARY OpenGL_LIBRARY)
+    set(APPLE_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
+    set(APPLE_LIBS ${APPLE_LIBS} ${ASSIMP_LIBRARY} ${SDLMAIN_LIBRARY} ${SDL_LIBRARY})
     set(BLUE_ENGINE_LIBS ${APPLE_LIBS})
 endif()
 
@@ -65,10 +65,10 @@ if(UNIX AND NOT APPLE)
     set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 
         # rpath settings
-    SET(CMAKE_SKIP_BUILD_RPATH FALSE)
-    SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-    SET(CMAKE_INSTALL_RPATH "./")
-    SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    set(CMAKE_SKIP_BUILD_RPATH FALSE)
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+    set(CMAKE_INSTALL_RPATH "./")
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
 
 # include directories
@@ -109,6 +109,7 @@ endif()
 # Postbuild stuff
 if(APPLE)
     # for MacOS X or iOS, watchOS, tvOS (since 3.10.3)
+	# This should really change 
     add_custom_command(TARGET ${PROJECT_NAME}
             COMMAND install_name_tool -change /Users/corbiniangruber/Downloads/assimp-4.1.0/lib/libassimp.4.dylib @executable_path/libassimp.4.1.0.dylib ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}
             )
