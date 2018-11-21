@@ -13,7 +13,7 @@
 class ModelLoader {
 
 public:
-	static MeshData* LoadMesh(const char* filename);
+	static MeshData* LoadMesh(string filename);
 
 private:
 	static Material* LoadMaterial(aiMaterial* assimpMaterial, string directory);

@@ -7,7 +7,7 @@
 #include <string>
 #include <sys/stat.h>
 
-void TerrainTool::GenerateHeightfieldLoDs(const char* heightfieldFilename, int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize) {
+void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize) {
 
 	int32_t width, height, channels;
 
@@ -20,7 +20,7 @@ void TerrainTool::GenerateHeightfieldLoDs(const char* heightfieldFilename, int32
 	else
 		directoryPath.clear();
 
-	uint8_t* heightfieldData = stbi_load(heightfieldFilename, &width, &height, &channels, 1);
+	uint8_t* heightfieldData = stbi_load(heightfieldFilename.c_str(), &width, &height, &channels, 1);
 
 	// Just in case the input was somehow wrong
 	int32_t nodesPerSide = (int32_t)floor(sqrtf((float)rootNodeCount));

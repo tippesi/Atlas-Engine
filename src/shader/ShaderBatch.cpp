@@ -7,7 +7,7 @@ ShaderBatch::ShaderBatch() {
 
 }
 
-void ShaderBatch::AddComponent(int32_t type, const char* filename) {
+void ShaderBatch::AddComponent(int32_t type, string filename) {
 
 	ShaderSource* source = new ShaderSource(type, filename);
 
@@ -53,14 +53,14 @@ void ShaderBatch::AddConfig(ShaderConfig* config) {
 
 	// Now we set the macros
 	for (string& macro : config->macros) {
-		shader->AddMacro(macro.c_str());
+		shader->AddMacro(macro);
 	}
 
 	shader->Compile();
 
 	// Find the uniforms and generalize it
 	for (Uniform* uniform : uniforms) {
-		shader->GetUniform(uniform->name.c_str());
+		shader->GetUniform(uniform->name);
 	}
 
 	batch->ID = (int32_t)configBatches.size();
@@ -89,7 +89,7 @@ void ShaderBatch::RemoveConfig(ShaderConfig* config) {
 
 }
 
-Uniform* ShaderBatch::GetUniform(const char* uniformName) {
+Uniform* ShaderBatch::GetUniform(string uniformName) {
 
 	for (ShaderConfigBatch* batch : configBatches) {
 		batch->shader->GetUniform(uniformName);

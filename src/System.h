@@ -11,6 +11,7 @@
 #include <malloc.h>
 #include <stdint.h>
 #include <string.h>
+#include <string>
 #include <math.h>
 #include <exception>
 

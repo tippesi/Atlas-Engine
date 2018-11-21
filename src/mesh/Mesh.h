@@ -9,7 +9,7 @@ class Mesh {
 public:
 	Mesh(MeshData* data);
 
-	Mesh(const char* filename);
+	Mesh(string filename);
 
 	void UpdateData();
 

@@ -82,7 +82,7 @@ void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* came
 
 }
 
-void GeometryRenderer::InitShaderBatch(const char* vertexSource, const char* fragmentSource) {
+void GeometryRenderer::InitShaderBatch(string vertexSource, string fragmentSource) {
 
 	shaderBatch = new ShaderBatch();
 	shaderBatch->AddComponent(VERTEX_SHADER, vertexSource);

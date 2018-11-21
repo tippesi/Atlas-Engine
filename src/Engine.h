@@ -11,7 +11,7 @@
 
 namespace Engine {
 
-	Window* Init(const char* shaderDirectory, const char* windowTitle, int32_t x, int32_t y,
+	Window* Init(string shaderDirectory, string windowTitle, int32_t x, int32_t y,
 			int32_t width, int32_t height, int32_t flags = WINDOW_FULLSCREEN);
 
 	void LockFramerate();

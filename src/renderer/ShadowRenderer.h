@@ -8,11 +8,11 @@
 class ShadowRenderer : public IRenderer {
 
 public:
-	ShadowRenderer(const char* vertexSource, const char* fragmentSource);
+	ShadowRenderer(string vertexSource, string fragmentSource);
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 
-	static void InitShaderBatch(const char* vertexSource, const char* fragmentSource);
+	static void InitShaderBatch(string vertexSource, string fragmentSource);
 
 	static void AddConfig(ShaderConfig* config);
 

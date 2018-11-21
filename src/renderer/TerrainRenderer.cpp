@@ -1,7 +1,7 @@
 #include "TerrainRenderer.h"
 
-TerrainRenderer::TerrainRenderer(const char* vertexSource, const char* tessControlSource, const char* tessEvalSource,
-	const char* geometrySource, const char* fragmentSource) {
+TerrainRenderer::TerrainRenderer(string vertexSource, string tessControlSource, string tessEvalSource,
+	string geometrySource, string fragmentSource) {
 
 	nearShader = new Shader();
 

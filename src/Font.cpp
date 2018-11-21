@@ -6,7 +6,7 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "../libraries/stb/stb_truetype.h"
 
-Font::Font(const char* filename, int32_t pixelSize, int32_t padding, uint8_t edgeValue) {
+Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValue) {
 
 	stbtt_fontinfo font;
 	string fontString;
@@ -22,7 +22,7 @@ Font::Font(const char* filename, int32_t pixelSize, int32_t padding, uint8_t edg
 	}
 	else {
 #ifdef ENGINE_SHOW_LOG
-		EngineLog("Font %s not found", filename);
+		EngineLog("Font %s not found", filename.c_str());
 #endif
 		throw EngineException("Couldn't open font file");
 	}

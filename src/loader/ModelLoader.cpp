@@ -2,7 +2,7 @@
 
 #include <vector>
 
-MeshData* ModelLoader::LoadMesh(const char* filename) {
+MeshData* ModelLoader::LoadMesh(string filename) {
 
 	string directoryPath(filename);
 

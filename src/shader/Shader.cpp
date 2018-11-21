@@ -9,7 +9,7 @@ Shader::Shader() {
 
 }
 
-void Shader::AddComponent(int32_t type, const char* filename) {
+void Shader::AddComponent(int32_t type, string filename) {
 
 	ShaderSource* source = new ShaderSource(type, filename);
 
@@ -35,7 +35,7 @@ void Shader::AddComponent(ShaderSource* source) {
 
 }
 
-Uniform* Shader::GetUniform(const char* uniformName) {
+Uniform* Shader::GetUniform(string uniformName) {
 
 	Bind();
 
@@ -47,7 +47,7 @@ Uniform* Shader::GetUniform(const char* uniformName) {
 
 }
 
-void Shader::AddMacro(const char* macro) {
+void Shader::AddMacro(string macro) {
 
 	isCompiled = false;
 
@@ -55,20 +55,18 @@ void Shader::AddMacro(const char* macro) {
 		source->AddMacro(macro);
 	}
 
-	macros.push_back(string(macro));
+	macros.push_back(macro);
 
 }
 
-void Shader::RemoveMacro(const char* macro) {
+void Shader::RemoveMacro(string macro) {
 
 	for (ShaderSource* source : components) {
 		source->RemoveMacro(macro);
 	}
 
-	string macroString(macro);
-
 	for (auto iterator = macros.begin(); iterator != macros.end(); iterator++) {
-		if (macroString == *iterator) {
+		if (macro == *iterator) {
 			macros.erase(iterator);
 			isCompiled = false;
 			return;
@@ -77,12 +75,10 @@ void Shader::RemoveMacro(const char* macro) {
 
 }
 
-bool Shader::HasMacro(const char* macro) {
+bool Shader::HasMacro(string macro) {
 
-	string macroString(macro);
-
-	for (string macro : macros) {
-		if (macro == macroString) {
+	for (string compMacro : macros) {
+		if (compMacro == macro) {
 			return true;
 		}
 	}

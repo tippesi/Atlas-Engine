@@ -10,11 +10,11 @@ class ShaderConfig {
 public:
 	ShaderConfig();
 
-	void AddMacro(const char* macro);
+	void AddMacro(string macro);
 
-	void RemoveMacro(const char* macro);
+	void RemoveMacro(string macro);
 
-	bool HasMacro(const char* macro);
+	bool HasMacro(string macro);
 
 	void ClearMacros();
 

@@ -7,7 +7,7 @@
 class SkyboxRenderer : public IRenderer {
 
 public:
-	SkyboxRenderer(const char* vertexSource, const char* fragmentSource);
+	SkyboxRenderer(string vertexSource, string fragmentSource);
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 

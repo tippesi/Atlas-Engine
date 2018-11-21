@@ -23,9 +23,9 @@ public:
 	/// <summary>
 	/// Constructs a <see cref="Window"/>.
 	/// </summary>
-	Window(const char* title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags = WINDOW_FULLSCREEN);
+	Window(string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags = WINDOW_FULLSCREEN);
 
-	void SetTitle(const char* title);
+	void SetTitle(string title);
 
 	void SetIcon(Texture* icon);
 

@@ -35,23 +35,23 @@ private:
 
 	uint32_t rectangleVAO;
 
-	static const char* terrainVertexPath;
-	static const char* terrainTessControlPath;
-	static const char* terrainTessEvalPath;
-	static const char* terrainGeometryPath;
-	static const char* terrainFragmentPath;
-	static const char* shadowVertexPath;
-	static const char* shadowFragmentPath;
-	static const char* volumetricVertexPath;
-	static const char* volumetricFragmentPath;
-	static const char* bilateralBlurVertexPath;
-	static const char* bilateralBlurFragmentPath;
-	static const char* directionalLightVertexPath;
-	static const char* directionalLightFragmentPath;
-	static const char* skyboxVertexPath;
-	static const char* skyboxFragmentPath;
-	static const char* postProcessVertexPath;
-	static const char* postProcessFragmentPath;	
+	static string terrainVertexPath;
+	static string terrainTessControlPath;
+	static string terrainTessEvalPath;
+	static string terrainGeometryPath;
+	static string terrainFragmentPath;
+	static string shadowVertexPath;
+	static string shadowFragmentPath;
+	static string volumetricVertexPath;
+	static string volumetricFragmentPath;
+	static string bilateralBlurVertexPath;
+	static string bilateralBlurFragmentPath;
+	static string directionalLightVertexPath;
+	static string directionalLightFragmentPath;
+	static string skyboxVertexPath;
+	static string skyboxFragmentPath;
+	static string postProcessVertexPath;
+	static string postProcessFragmentPath;
 
 };
 

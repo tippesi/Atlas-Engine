@@ -8,7 +8,7 @@
 class PostProcessRenderer : public IRenderer {
 
 public:
-	PostProcessRenderer(const char* vertexSource, const char* fragmentSource);
+	PostProcessRenderer(string vertexSource, string fragmentSource);
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 

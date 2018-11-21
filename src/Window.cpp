@@ -1,8 +1,8 @@
 #include "Window.h"
 
-Window::Window(const char* title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags) {
+Window::Window(string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags) {
 
-	sdlWindow = SDL_CreateWindow(title, x, y, width, height, flags | SDL_WINDOW_OPENGL);
+	sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_OPENGL);
 
 	if (sdlWindow == NULL) {
 		throw EngineException("Error initializing window");
@@ -14,9 +14,9 @@ Window::Window(const char* title, int32_t x, int32_t y, int32_t width, int32_t h
 
 }
 
-void Window::SetTitle(const char* title) {
+void Window::SetTitle(string title) {
 
-	SDL_SetWindowTitle(sdlWindow, title);
+	SDL_SetWindowTitle(sdlWindow, title.c_str());
 
 }
 

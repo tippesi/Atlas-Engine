@@ -1,21 +1,19 @@
 #include "ShaderConstant.h"
 
-ShaderConstant::ShaderConstant(const char* constantString) {
+ShaderConstant::ShaderConstant(string constantString) {
 
-	string line(constantString);
+	size_t constEndPosition = constantString.find(' ');
+	size_t typePosition = constantString.find_first_not_of(' ', constEndPosition);
 
-	size_t constEndPosition = line.find(' ');
-	size_t typePosition = line.find_first_not_of(' ', constEndPosition);
+	size_t typeEndPosition = constantString.find(' ', typePosition);
 
-	size_t typeEndPosition = line.find(' ', typePosition);
-
-	string typeString = line.substr(typePosition, typeEndPosition - typePosition);
+	string typeString = constantString.substr(typePosition, typeEndPosition - typePosition);
 
 	bool isArray = false;
 
 	// Check if the constant is an array
-	size_t openRectangleBracket = line.find('[', typePosition);
-	size_t closeRectangleBracket = line.find(']', openRectangleBracket);
+	size_t openRectangleBracket = constantString.find('[', typePosition);
+	size_t closeRectangleBracket = constantString.find(']', openRectangleBracket);
 
 	if (openRectangleBracket != string::npos && closeRectangleBracket != string::npos) {
 		isArray = true;
@@ -47,12 +45,12 @@ ShaderConstant::ShaderConstant(const char* constantString) {
 	}
 
 
-	size_t namePosition = line.find_first_not_of(' ', typeEndPosition);
-	size_t nameEndPosition = line.find_first_of(" [;=", namePosition);
+	size_t namePosition = constantString.find_first_not_of(' ', typeEndPosition);
+	size_t nameEndPosition = constantString.find_first_of(" [;=", namePosition);
 
-	name = line.substr(namePosition, nameEndPosition - namePosition);
+	name = constantString.substr(namePosition, nameEndPosition - namePosition);
 
-	valuedString = line;
+	valuedString = constantString;
 
 }
 

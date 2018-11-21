@@ -2,7 +2,7 @@
 
 ShaderBatch* ShadowRenderer::shaderBatch;
 
-ShadowRenderer::ShadowRenderer(const char* vertexSource, const char* fragmentSource) {
+ShadowRenderer::ShadowRenderer(string vertexSource, string fragmentSource) {
 
 	framebuffer = new Framebuffer(0, 0);
 
@@ -89,7 +89,7 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 }
 
-void ShadowRenderer::InitShaderBatch(const char* vertexSource, const char* fragmentSource) {
+void ShadowRenderer::InitShaderBatch(string vertexSource, string fragmentSource) {
 
 	shaderBatch = new ShaderBatch();
 	shaderBatch->AddComponent(VERTEX_SHADER, vertexSource);

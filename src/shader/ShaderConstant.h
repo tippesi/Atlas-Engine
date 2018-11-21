@@ -17,7 +17,7 @@
 class ShaderConstant {
 
 public:
-	ShaderConstant(const char* constantString);
+	ShaderConstant(string constantString);
 
 	void SetValue(float value);
 

@@ -6,7 +6,7 @@
 class TerrainTool {
 
 public:
-	static void GenerateHeightfieldLoDs(const char* heightfieldFilename, int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize);
+	static void GenerateHeightfieldLoDs(string heightfieldFilename, int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize);
 
 private:
 	static void GenerateNormalData(uint8_t* heightData, uint8_t* normalData, int32_t width, int32_t height, float strength);

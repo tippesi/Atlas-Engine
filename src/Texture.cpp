@@ -27,7 +27,7 @@ Texture::Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t inter
 
 }
 
-Texture::Texture(const char* filename, bool withoutCorrection) {
+Texture::Texture(string filename, bool withoutCorrection) {
 
 	ID = 0;
 	width = 0;
@@ -37,9 +37,12 @@ Texture::Texture(const char* filename, bool withoutCorrection) {
 
 	float LoD = -0.4f;
 
-	data = stbi_load(filename, &width, &height, &channels, 0);
+	data = stbi_load(filename.c_str(), &width, &height, &channels, 0);
 
-	if (data == NULL) {
+	if (data == nullptr) {
+#ifdef ENGINE_SHOW_LOG
+		EngineLog("Failed to load texture %s", filename.c_str());
+#endif
 		throw EngineException("Texture couldn't be loaded");
 	}
 
@@ -70,6 +73,10 @@ Texture::Texture(const char* filename, bool withoutCorrection) {
 	if (channels == 1) {
 		GenerateTexture(GL_UNSIGNED_BYTE, GL_R8, GL_RED, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
 	}
+#endif
+
+#ifdef ENGINE_SHOW_LOG
+	EngineLog("Loaded texture %s", filename.c_str());
 #endif
 
 }
@@ -160,12 +167,12 @@ void Texture::FlipHorizontally() {
 
 }
 
-void Texture::SaveToPNG(const char* filename) {
+void Texture::SaveToPNG(string filename) {
 
 	uint8_t* data = GetData();
 	uint8_t* mirroredData = FlipDataHorizontally(data);
 
-	stbi_write_png(filename, width, height, channels, mirroredData, width * channels);
+	stbi_write_png(filename.c_str(), width, height, channels, mirroredData, width * channels);
 
 	delete data;
 	delete mirroredData;

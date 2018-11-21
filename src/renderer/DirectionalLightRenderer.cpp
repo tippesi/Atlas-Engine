@@ -1,7 +1,7 @@
 #include "DirectionalLightRenderer.h"
 #include "MasterRenderer.h"
 
-DirectionalLightRenderer::DirectionalLightRenderer(const char* vertexSource, const char* fragmentSource) {
+DirectionalLightRenderer::DirectionalLightRenderer(string vertexSource, string fragmentSource) {
 
 	rectangleVAO = MasterRenderer::GenerateRectangleVAO();
 
@@ -107,8 +107,8 @@ void DirectionalLightRenderer::GetUniforms() {
 	shadowResolution = shader->GetUniform("light.shadow.resolution");
 
 	for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
-		cascades[i].distance = shader->GetUniform(string("light.shadow.cascades[" + to_string(i) + "].distance").c_str());
-		cascades[i].lightSpace = shader->GetUniform(string("light.shadow.cascades[" + to_string(i) + "].cascadeSpace").c_str());
+		cascades[i].distance = shader->GetUniform("light.shadow.cascades[" + to_string(i) + "].distance");
+		cascades[i].lightSpace = shader->GetUniform("light.shadow.cascades[" + to_string(i) + "].cascadeSpace");
 	}
 
 }

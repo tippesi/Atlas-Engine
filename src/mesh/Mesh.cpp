@@ -8,7 +8,7 @@ Mesh::Mesh(MeshData* data) : data(data) {
 
 }
 
-Mesh::Mesh(const char* filename) {
+Mesh::Mesh(string filename) {
 
 	data = ModelLoader::LoadMesh(filename);
 

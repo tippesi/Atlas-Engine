@@ -26,7 +26,7 @@ typedef struct Glyph {
 class Font {
 
 public:
-	Font(const char* filename, int32_t scale, int32_t padding, uint8_t edgeValue);
+	Font(string filename, int32_t scale, int32_t padding, uint8_t edgeValue);
 
 	int32_t lineGap;
 	int32_t ascent;

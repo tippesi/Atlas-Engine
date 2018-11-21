@@ -1,7 +1,7 @@
 #include "PostProcessRenderer.h"
 #include "MasterRenderer.h"
 
-PostProcessRenderer::PostProcessRenderer(const char* vertexSource, const char* fragmentSoure) {
+PostProcessRenderer::PostProcessRenderer(string vertexSource, string fragmentSoure) {
 
 	rectangleVAO = MasterRenderer::GenerateRectangleVAO();
 

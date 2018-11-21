@@ -1,22 +1,22 @@
 #include "MasterRenderer.h"
 
-const char* MasterRenderer::terrainVertexPath = "terrain/terrain.vsh";
-const char* MasterRenderer::terrainTessControlPath = "terrain/terrain.tcsh";
-const char* MasterRenderer::terrainTessEvalPath = "terrain/terrain.tesh";
-const char* MasterRenderer::terrainGeometryPath = "terrain/terrain.gsh";
-const char* MasterRenderer::terrainFragmentPath = "terrain/terrain.fsh";
-const char* MasterRenderer::shadowVertexPath = "shadowmapping.vsh";
-const char* MasterRenderer::shadowFragmentPath = "shadowmapping.fsh";
-const char* MasterRenderer::volumetricVertexPath = "volumetric.vsh";
-const char* MasterRenderer::volumetricFragmentPath = "volumetric.fsh";
-const char* MasterRenderer::bilateralBlurVertexPath = "bilateralBlur.vsh";
-const char* MasterRenderer::bilateralBlurFragmentPath = "bilateralBlur.fsh";
-const char* MasterRenderer::directionalLightVertexPath = "deferred/directional.vsh";
-const char* MasterRenderer::directionalLightFragmentPath = "deferred/directional.fsh";
-const char* MasterRenderer::skyboxVertexPath = "skybox.vsh";
-const char* MasterRenderer::skyboxFragmentPath = "skybox.fsh";
-const char* MasterRenderer::postProcessVertexPath = "postprocessing.vsh";
-const char* MasterRenderer::postProcessFragmentPath = "postprocessing.fsh";
+string MasterRenderer::terrainVertexPath = "terrain/terrain.vsh";
+string MasterRenderer::terrainTessControlPath = "terrain/terrain.tcsh";
+string MasterRenderer::terrainTessEvalPath = "terrain/terrain.tesh";
+string MasterRenderer::terrainGeometryPath = "terrain/terrain.gsh";
+string MasterRenderer::terrainFragmentPath = "terrain/terrain.fsh";
+string MasterRenderer::shadowVertexPath = "shadowmapping.vsh";
+string MasterRenderer::shadowFragmentPath = "shadowmapping.fsh";
+string MasterRenderer::volumetricVertexPath = "volumetric.vsh";
+string MasterRenderer::volumetricFragmentPath = "volumetric.fsh";
+string MasterRenderer::bilateralBlurVertexPath = "bilateralBlur.vsh";
+string MasterRenderer::bilateralBlurFragmentPath = "bilateralBlur.fsh";
+string MasterRenderer::directionalLightVertexPath = "deferred/directional.vsh";
+string MasterRenderer::directionalLightFragmentPath = "deferred/directional.fsh";
+string MasterRenderer::skyboxVertexPath = "skybox.vsh";
+string MasterRenderer::skyboxFragmentPath = "skybox.fsh";
+string MasterRenderer::postProcessVertexPath = "postprocessing.vsh";
+string MasterRenderer::postProcessFragmentPath = "postprocessing.fsh";
 
 MasterRenderer::MasterRenderer() {
 

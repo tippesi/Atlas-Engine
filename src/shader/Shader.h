@@ -12,19 +12,19 @@ class Shader {
 public:
 	Shader();
 
-	void AddComponent(int32_t type, const char* filename);
+	void AddComponent(int32_t type, string filename);
 
 	void AddComponent(ShaderSource* source);
 
 	ShaderSource* GetComponent(int32_t type);
 
-	Uniform* GetUniform(const char* uniformName);
+	Uniform* GetUniform(string uniformName);
 
-	void AddMacro(const char* macro);
+	void AddMacro(string macro);
 
-	void RemoveMacro(const char* macro);
+	void RemoveMacro(string macro);
 
-	bool HasMacro(const char* macro);
+	bool HasMacro(string macro);
 
 	bool Compile();
 

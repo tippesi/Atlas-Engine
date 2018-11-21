@@ -1,6 +1,6 @@
 #include "BlurRenderer.h"
 
-BlurRenderer::BlurRenderer(const char *vertexSource, const char *fragmentSource, int32_t channelCount,
+BlurRenderer::BlurRenderer(string vertexSource, string fragmentSource, int32_t channelCount,
         float* kernelOffsets, float* kernelWeights, int32_t kernelSize, bool bilateral) : bilateralBlur(bilateral) {
 
     shader = new Shader();

@@ -7,8 +7,8 @@
 class DirectionalVolumetricRenderer : public IRenderer{
 
 public:
-    DirectionalVolumetricRenderer(const char* volumetricVertex, const char* volumetricFragment,
-            const char* bilateralBlurVertex, const char* bilateralBlurFragmet);
+    DirectionalVolumetricRenderer(string volumetricVertex, string volumetricFragment,
+            string bilateralBlurVertex, string bilateralBlurFragmet);
 
     virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 

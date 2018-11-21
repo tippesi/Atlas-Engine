@@ -17,7 +17,7 @@ public:
 	/// </summary>
 	/// <param name="filename">The name of the image which should be loaded.</param>
 	/// <param name="withoutCorrection">Removes gamma correction if set to true (useful for normal maps or height maps)</param>
-	Texture(const char* filename, bool withoutCorrection = false);
+	Texture(string filename, bool withoutCorrection = false);
 
 	/// <summary>
 	/// Binds the texture to a certain OpenGL texture unit
@@ -55,7 +55,7 @@ public:
 	/// Saves the texture as a portable network graphics.
 	/// </summary>
 	/// <param name="filename">The name of the file where the texture should be stored.</param>
-	void SaveToPNG(const char* filename);
+	void SaveToPNG(string filename);
 
 	/// <summary>
 	/// Gets the OpenGL texture ID.

@@ -5,7 +5,7 @@
 
 string ShaderSource::sourceDirectory = "";
 
-ShaderSource::ShaderSource(int32_t type, const char* filename) : type(type), filename(filename) {
+ShaderSource::ShaderSource(int32_t type, string filename) : type(type), filename(filename) {
 
 	string path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
 	path += string(filename);
@@ -16,7 +16,7 @@ ShaderSource::ShaderSource(int32_t type, const char* filename) : type(type), fil
 	ID = glCreateShader(type);
 
 #ifdef ENGINE_SHOW_LOG
-	EngineLog("Loaded shader file %s", filename);
+	EngineLog("Loaded shader file %s", filename.c_str());
 #endif
 }
 
@@ -47,33 +47,31 @@ bool ShaderSource::Reload() {
 	lastModified = comp;
 
 	string path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
-	path += string(filename);
+	path += filename;
 
 	constants.clear();
-	code = ReadShaderFile(path.c_str(), true);
+	code = ReadShaderFile(path, true);
 
 	return true;
 
 }
 
-void ShaderSource::AddMacro(const char* macro) {
+void ShaderSource::AddMacro(string macro) {
 
-	macros.push_back(string(macro));
-
-}
-
-void ShaderSource::RemoveMacro(const char* macro) {
-
-	macros.remove(string(macro));
+	macros.push_back(macro);
 
 }
 
-ShaderConstant* ShaderSource::GetConstant(const char* constant) {
+void ShaderSource::RemoveMacro(string macro) {
 
-	string constantString(constant);
+	macros.remove(macro);
+
+}
+
+ShaderConstant* ShaderSource::GetConstant(string constant) {
 
 	for (list<ShaderConstant*>::iterator iterator = constants.begin(); iterator != constants.end(); iterator++) {
-		if ((*iterator)->GetName() == constantString) {
+		if ((*iterator)->GetName() == constant) {
 			return *iterator;
 		}
 	}
@@ -124,7 +122,7 @@ bool ShaderSource::Compile() {
 			EngineLog("\n\nCompiling Fragmentshader failed:");
 		}
 
-		EngineLog("Compilation failed: %s\nError: %s", filename, shaderLog);
+		EngineLog("Compilation failed: %s\nError: %s", filename.c_str(), shaderLog);
 
 		delete shaderLog;
 #endif
@@ -137,9 +135,9 @@ bool ShaderSource::Compile() {
 
 }
 
-void ShaderSource::SetSourceDirectory(const char* directory) {
+void ShaderSource::SetSourceDirectory(string directory) {
 
-	sourceDirectory = string(directory);
+	sourceDirectory = directory;
 
 }
 
@@ -149,7 +147,7 @@ ShaderSource::~ShaderSource() {
 
 }
 
-string ShaderSource::ReadShaderFile(const char* filename, bool mainFile) {
+string ShaderSource::ReadShaderFile(string filename, bool mainFile) {
 
 	string shaderCode;
 	ifstream shaderFile;
@@ -164,15 +162,13 @@ string ShaderSource::ReadShaderFile(const char* filename, bool mainFile) {
 	}
 	else {
 #ifdef ENGINE_SHOW_LOG
-		EngineLog("Shader file %s not found", filename);
+		EngineLog("Shader file %s not found", filename.c_str());
 #endif
 		throw EngineException("Couldn't open shader file");
 	}
-
-	string filePath(filename);
 	
-	size_t filePathPosition = filePath.find_last_of("/");
-	filePath.erase(filePathPosition + 1, filePath.length() - 1);
+	size_t filePathPosition = filename.find_last_of("/");
+	filename.erase(filePathPosition + 1, filename.length() - 1);
 
 	// Copy all includes into the code
 	while (shaderCode.find("#include ") != string::npos) {
@@ -185,7 +181,7 @@ string ShaderSource::ReadShaderFile(const char* filename, bool mainFile) {
 
 		string includeFilename = shaderCode.substr(filenamePosition, filenameEndPosition - filenamePosition);
 
-		string includeCode = ReadShaderFile((filePath + includeFilename).c_str(), false);
+		string includeCode = ReadShaderFile((filename + includeFilename).c_str(), false);
 
 		string codeBeforeInclude = shaderCode.substr(0, includePosition);
 		string codeAfterInclude = shaderCode.substr(lineBreakPosition, shaderCode.length() - 1);

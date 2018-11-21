@@ -12,13 +12,13 @@ class ShaderBatch {
 public:
 	ShaderBatch();
 
-	void AddComponent(int32_t type, const char* filename);
+	void AddComponent(int32_t type, string filename);
 
 	void AddConfig(ShaderConfig* config);
 
 	void RemoveConfig(ShaderConfig* config);
 
-	Uniform* GetUniform(const char* uniformName);
+	Uniform* GetUniform(string uniformName);
 
 	void Bind(int32_t shaderID);
 

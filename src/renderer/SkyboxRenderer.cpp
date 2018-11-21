@@ -1,6 +1,6 @@
 #include "SkyboxRenderer.h"
 
-SkyboxRenderer::SkyboxRenderer(const char* vertexSource, const char* fragmentSource) {
+SkyboxRenderer::SkyboxRenderer(string vertexSource, string fragmentSource) {
 
 	shader = new Shader();
 

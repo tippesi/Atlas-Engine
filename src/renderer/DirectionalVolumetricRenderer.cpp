@@ -1,7 +1,7 @@
 #include "DirectionalVolumetricRenderer.h"
 
-DirectionalVolumetricRenderer::DirectionalVolumetricRenderer(const char *volumetricVertex, const char *volumetricFragment,
-        const char *bilateralBlurVertex, const char *bilateralBlurFragmet) {
+DirectionalVolumetricRenderer::DirectionalVolumetricRenderer(string volumetricVertex, string volumetricFragment,
+	string bilateralBlurVertex, string bilateralBlurFragmet) {
 
     framebuffer = new Framebuffer(0, 0);
 
@@ -124,8 +124,8 @@ void DirectionalVolumetricRenderer::GetVolumetricUniforms() {
 	framebufferResolution = volumetricShader->GetUniform("framebufferResolution");
 
     for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
-        cascades[i].distance = volumetricShader->GetUniform(string("light.shadow.cascades[" + to_string(i) + "].distance").c_str());
-        cascades[i].lightSpace = volumetricShader->GetUniform(string("light.shadow.cascades[" + to_string(i) + "].cascadeSpace").c_str());
+        cascades[i].distance = volumetricShader->GetUniform("light.shadow.cascades[" + to_string(i) + "].distance");
+        cascades[i].lightSpace = volumetricShader->GetUniform("light.shadow.cascades[" + to_string(i) + "].cascadeSpace");
     }
 
 }

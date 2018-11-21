@@ -6,8 +6,8 @@
 class Cubemap {
 
 public:
-	Cubemap(const char* right, const char* left, const char* top,
-		const char* bottom, const char* front, const char* back);
+	Cubemap(string right, string left, string top,
+		string bottom, string front, string back);
 
 	void Bind(uint32_t unit);
 

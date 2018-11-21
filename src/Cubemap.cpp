@@ -4,10 +4,10 @@
 // Declared in Texture.cpp
 #include "libraries/stb/stb_image.h"
 
-Cubemap::Cubemap(const char* right, const char* left, const char* top,
-	const char* bottom, const char* front, const char* back) {
+Cubemap::Cubemap(string right, string left, string top,
+	string bottom, string front, string back) {
 
-	const char* filenames[] = { right, left, top, bottom, front, back };
+	string filenames[] = { right, left, top, bottom, front, back };
 
 	int32_t width = 0, height = 0, channels = 0;
 
@@ -28,7 +28,7 @@ Cubemap::Cubemap(const char* right, const char* left, const char* top,
 
 	for (uint32_t i = 0; i < 6; i++) {
 
-		uint8_t* data = stbi_load(filenames[i], &width, &height, &channels, 3);
+		uint8_t* data = stbi_load(filenames[i].c_str(), &width, &height, &channels, 3);
 
 		if (data != nullptr) {
 			// OpenGL ES doesn't guarantee that mipmaps are working in sRGB color space so we better ignore gamma correction
@@ -42,13 +42,13 @@ Cubemap::Cubemap(const char* right, const char* left, const char* top,
 				GL_RGB, GL_UNSIGNED_BYTE, data);
 #endif
 #ifdef ENGINE_SHOW_LOG
-			EngineLog("    Loaded cubemap face %d %s", i, filenames[i]);
+			EngineLog("    Loaded cubemap face %d %s", i, filenames[i].c_str());
 #endif
 			delete data;
 		}
 		else {
 #ifdef ENGINE_SHOW_LOG
-			EngineLog("    Failed to load cubemap face %d %s", i, filenames[i]);
+			EngineLog("    Failed to load cubemap face %d %s", i, filenames[i].c_str());
 #endif
 			throw EngineException("Failed to load cubemap");
 		}

@@ -7,8 +7,8 @@
 class TerrainRenderer : public IRenderer {
 
 public:
-    TerrainRenderer(const char* vertexSource, const char* tessControlSource, const char* tessEvalSource, 
-		const char* geometrySource, const char* fragmentSource);
+    TerrainRenderer(string vertexSource, string tessControlSource, string tessEvalSource,
+		string geometrySource, string fragmentSource);
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 

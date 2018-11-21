@@ -9,7 +9,7 @@ class ShaderBatch;
 class Uniform {
 
 public:
-	Uniform(uint32_t shaderID, const char* uniformName, ShaderBatch* shaderBatch = nullptr, int32_t ID = 0);
+	Uniform(uint32_t shaderID, string uniformName, ShaderBatch* shaderBatch = nullptr, int32_t ID = 0);
 
 	void Update();
 

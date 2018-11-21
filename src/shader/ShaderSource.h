@@ -16,31 +16,31 @@
 class ShaderSource {
 
 public:
-	ShaderSource(int32_t type, const char* filename);
+	ShaderSource(int32_t type, string filename);
 
 	ShaderSource(ShaderSource* source);
 
 	bool Reload();
 
-	void AddMacro(const char* macro);
+	void AddMacro(string macro);
 
-	void RemoveMacro(const char* macro);
+	void RemoveMacro(string macro);
 
-	ShaderConstant* GetConstant(const char* constant);
+	ShaderConstant* GetConstant(string constant);
 
 	bool Compile();
 
-	static void SetSourceDirectory(const char* directory);
+	static void SetSourceDirectory(string directory);
 
 	~ShaderSource();
 
 	int32_t ID;
 	int32_t type;
 
-	const char* filename;
+	string filename;
 
 private:
-	string ReadShaderFile(const char* filename, bool mainFile);
+	string ReadShaderFile(string filename, bool mainFile);
 
 	time_t GetLastModified();
 
