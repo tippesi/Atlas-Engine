@@ -1,5 +1,7 @@
 layout(quads, fractional_odd_spacing, cw) in;
 
+out vec2 teTexCoords;
+
 uniform sampler2D heightField;
 uniform vec2 nodeLocation;
 uniform float nodeSideLength;
@@ -23,7 +25,7 @@ void main(){
 	vec2 texCoords = vec2(position.x, position.z) - nodeLocation;
 	texCoords /= nodeSideLength;
 	
-	texCoords = clamp(texCoords, 0.0f, 1.0f);
+	teTexCoords = texCoords;
 	
 	position.y = texture(heightField, texCoords).r * heightScale;
 	
@@ -32,4 +34,5 @@ void main(){
 #endif
 	
 	gl_Position = position;
+	
 }

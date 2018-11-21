@@ -7,12 +7,16 @@ TerrainStorageCell::TerrainStorageCell() {
 	LoD = 0;
 
 	heightField = nullptr;
+	normalMap = nullptr;
 
 }
 
 bool TerrainStorageCell::IsLoaded() {
 
 	if (heightField == nullptr)
+		return false;
+
+	if (normalMap == nullptr)
 		return false;
 
 	return true;

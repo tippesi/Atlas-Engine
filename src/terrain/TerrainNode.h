@@ -2,7 +2,6 @@
 #define TERRAINNODE_H
 
 #include "../System.h"
-#include "TerrainPatch.h"
 #include "TerrainStorage.h"
 #include "Camera.h"
 

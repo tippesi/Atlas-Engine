@@ -16,6 +16,7 @@ int main(int argc, char* argv[]) {
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
+	/*
 	TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 9, 5, 16);
 
 	Terrain* terrain = new Terrain(9, 5, 4, 1.0f, 300.0f);
@@ -25,6 +26,7 @@ int main(int argc, char* argv[]) {
 	terrain->SetLoDDistance(2, 100.0f);
 	terrain->SetLoDDistance(1, 200.0f);
 	terrain->SetLoDDistance(0, 300.0f);
+	*/
 
 	Texture* texture = new Texture("../data/image.png");
 
@@ -45,7 +47,7 @@ int main(int argc, char* argv[]) {
 
 	scene->postProcessing->chromaticAberration = new ChromaticAberration(0.7f);
 
-	scene->Add(terrain);
+	// scene->Add(terrain);
 	
 	Mesh* mesh = new Mesh("../data/cube.dae");
 	Mesh* sponzaMesh = new Mesh("../data/sponza/sponza.dae");
@@ -77,7 +79,7 @@ int main(int argc, char* argv[]) {
 	// We create the controller handler
 	MouseHandler* mouseHandler = CreateMouseHandler(camera, 1.5f, 0.25f);
 	mouseHandler->lock = true;
-	KeyboardHandler* keyboardHandler = CreateKeyboardHandler(camera, 40.0f * 7.0f, 0.3f);
+	KeyboardHandler* keyboardHandler = CreateKeyboardHandler(camera,  7.0f, 0.3f);
 
 	// For now we will leave the main loop here until we implement a more advanced event system
 	// Our event structure
@@ -133,19 +135,28 @@ int main(int argc, char* argv[]) {
 		camera->UpdateView();
 		camera->UpdateProjection();
 
+		/*
 		terrain->Update(camera);
 
 		for (TerrainStorageCell* cell : terrain->storage->requestedCells) {
 			int32_t width, height, channels;
+
 			string heightField("../data/terrain/LoD");
 			heightField += to_string(cell->LoD) + "/height" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
 			uint8_t* data = stbi_load(heightField.c_str(), &width, &height, &channels, 1);
 			cell->heightField = new Texture(GL_UNSIGNED_BYTE, width, height, GL_R8, -0.4f, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 			cell->heightField->SetData(data);
-			EngineLog("Loaded %s", heightField.c_str());
+
+			heightField = "../data/terrain/LoD";
+			heightField += to_string(cell->LoD) + "/normal" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
+			data = stbi_load(heightField.c_str(), &width, &height, &channels, 3);
+			cell->normalMap = new Texture(GL_UNSIGNED_BYTE, width, height, GL_RGB8, -0.4f, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+			cell->normalMap->SetData(data);
+			
 		}
 
 		terrain->storage->requestedCells.clear();
+		*/
 
 		scene->rootNode->transformationMatrix = glm::rotate((float)time / 1000.0f, vec3(0.0f, 1.0f, 0.0f));
 		actor->modelMatrix = glm::rotate((float)time / 500.0f, vec3(0.0f, 1.0f, 0.0f));

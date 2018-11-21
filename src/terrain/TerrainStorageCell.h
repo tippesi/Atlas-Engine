@@ -16,6 +16,7 @@ public:
 	int32_t LoD;
 
 	Texture* heightField;
+	Texture* normalMap;
 
 };
 

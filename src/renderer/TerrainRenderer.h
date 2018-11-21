@@ -20,6 +20,7 @@ private:
     Shader* farShader;
 
 	Uniform* heightField;
+	Uniform* normalMap;
 	Uniform* heightScale;
 	Uniform* offset;
 	Uniform* scale;

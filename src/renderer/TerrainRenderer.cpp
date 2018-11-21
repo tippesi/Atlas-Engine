@@ -23,6 +23,7 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 
 	nearShader->Bind();
 	heightField->SetValue(0);
+	normalMap->SetValue(1);
 
 	viewMatrix->SetValue(camera->viewMatrix);
 	projectionMatrix->SetValue(camera->projectionMatrix);
@@ -40,6 +41,8 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 			float patchScale = node->sideLength * terrain->resolution / 8.0f;
 
 			node->cell->heightField->Bind(GL_TEXTURE0);
+			node->cell->normalMap->Bind(GL_TEXTURE1);
+
 			nodeLocation->SetValue(node->location);
 			nodeSideLength->SetValue(node->sideLength);
 
@@ -64,6 +67,7 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 void TerrainRenderer::GetUniforms() {
 
 	heightField = nearShader->GetUniform("heightField");
+	normalMap = nearShader->GetUniform("normalMap");
 	heightScale = nearShader->GetUniform("heightScale");
 	offset = nearShader->GetUniform("offset");
 	scale = nearShader->GetUniform("scale");

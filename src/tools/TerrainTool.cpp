@@ -81,22 +81,22 @@ void TerrainTool::GenerateHeightfieldLoDs(const char* heightfieldFilename, int32
 
 				for (int32_t x = xOffset; x < nodeSize + xOffset; x++) {
 					for (int32_t y = yOffset; y < nodeSize + yOffset; y++) {
-						subHeightField[(x - xOffset) * nodeSize + (y - yOffset)] =
-							resizedHeightField[x * newResolution * nodesPerSide + y];
-						subNormalMap[(x - xOffset) * 3 * nodeSize + (y - yOffset) * 3] =
-							resizedNormalMap[x * 3 * newResolution * nodesPerSide + y * 3];
-						subNormalMap[(x - xOffset) * 3 * nodeSize + (y - yOffset) * 3 + 1] =
-							resizedNormalMap[x * 3 * newResolution * nodesPerSide + y * 3 + 1];
-						subNormalMap[(x - xOffset) * 3 * nodeSize + (y - yOffset) * 3 + 2] =
-							resizedNormalMap[x * 3 * newResolution * nodesPerSide + y * 3 + 2];
+						subHeightField[(y - yOffset) * nodeSize + (x - xOffset)] =
+							resizedHeightField[y * newResolution * nodesPerSide + x];
+						subNormalMap[(y - yOffset) * 3 * nodeSize + (x - xOffset) * 3] =
+							resizedNormalMap[y * 3 * newResolution * nodesPerSide + x * 3];
+						subNormalMap[(y - yOffset) * 3 * nodeSize + (x - xOffset) * 3 + 1] =
+							resizedNormalMap[y * 3 * newResolution * nodesPerSide + x * 3 + 1];
+						subNormalMap[(y - yOffset) * 3 * nodeSize + (x - xOffset) * 3 + 2] =
+							resizedNormalMap[y * 3 * newResolution * nodesPerSide + x * 3 + 2];
 					}
 				}
 
-				string filePath = dirPath + "/height" + to_string(k) + "-" + to_string(j) + ".png";
+				string filePath = dirPath + "/height" + to_string(j) + "-" + to_string(k) + ".png";
 
 				stbi_write_png(filePath.c_str(), nodeSize, nodeSize, 1, subHeightField, nodeSize);
 
-				filePath = dirPath + "/normal" + to_string(k) + "-" + to_string(j) + ".png";
+				filePath = dirPath + "/normal" + to_string(j) + "-" + to_string(k) + ".png";
 
 				stbi_write_png(filePath.c_str(), nodeSize, nodeSize, 3, subNormalMap, nodeSize * 3);
 
@@ -120,10 +120,10 @@ void TerrainTool::GenerateNormalData(uint8_t* heightData, uint8_t* normalData, i
 	for (int32_t x = 0; x < width; x++) {
 		for (int32_t y = 0; y < height; y++) {
 
-			float heightL = GetHeight(heightData, x - 1, y, width, height, strength);
-			float heightR = GetHeight(heightData, x + 1, y, width, height, strength);
-			float heightD = GetHeight(heightData, x, y - 1, width, height, strength);
-			float heightU = GetHeight(heightData, x, y + 1, width, height, strength);
+			float heightL = GetHeight(heightData, x - 10, y, width, height, strength);
+			float heightR = GetHeight(heightData, x + 10, y, width, height, strength);
+			float heightD = GetHeight(heightData, x, y - 10, width, height, strength);
+			float heightU = GetHeight(heightData, x, y + 10, width, height, strength);
 
 			glm::vec3 normal = (0.5f * glm::normalize(glm::vec3(heightL - heightR, 1.0f, heightD - heightU)) + 0.5f) * 255.0f;
 
@@ -143,6 +143,6 @@ float TerrainTool::GetHeight(uint8_t* heightData, int32_t x, int32_t y, int32_t 
 	y = y < 0 ? 0 : y;
 	y = y >= height ? height - 1 : y;
 
-	return (float)heightData[x * width + y] / 255.0f * strength;
+	return (float)heightData[y * width + x] / 255.0f * strength;
 
 }
