@@ -98,7 +98,9 @@ void Mesh::DeleteContent() {
 
 Mesh::~Mesh() {
 
-	vertexArray->DeleteContent();
+	if (vertexArray != nullptr)
+		vertexArray->DeleteContent();
+
 	delete vertexArray;
 
 }

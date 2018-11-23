@@ -67,13 +67,13 @@ void Terrain::SetLoDDistance(int32_t LoD, float distance) {
 
 void Terrain::Bind() {
 
-	glBindVertexArray(vao);
+	vertexArray->Bind();
 
 }
 
 void Terrain::Unbind() {
 	
-	glBindVertexArray(0);
+	vertexArray->Unbind();
 
 }
 
@@ -109,18 +109,9 @@ void Terrain::GeneratePatchVertexBuffer(int32_t patchSizeFactor) {
 		}
 	}
 
-	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &vbo);
-
-	glBindVertexArray(vao);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);	
-	glBufferData(GL_ARRAY_BUFFER, patchVertexCount * sizeof(vec2), &vertices[0], GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, false, sizeof(vec2), 0);
-	glPatchParameteri(GL_PATCH_VERTICES, 16);
-
-	glBindVertexArray(0);
+	vertexArray = new VertexArray();
+	VertexBuffer* vertexBuffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_FLOAT, 2);
+	vertexBuffer->SetData(vertices, patchVertexCount);
+	vertexArray->AddComponent(0, vertexBuffer);
 
 }

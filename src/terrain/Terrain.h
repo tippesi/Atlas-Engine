@@ -7,6 +7,7 @@
 
 #include "../Camera.h"
 #include "../Texture.h"
+#include "../VertexArray.h"
 
 #include <vector>
 
@@ -41,8 +42,7 @@ private:
 
 	vec2* vertices;
 
-	uint32_t vao;
-	uint32_t vbo;
+	VertexArray* vertexArray;
 
 	int32_t rootNodeCount;
 	int32_t LoDCount;

@@ -180,6 +180,9 @@ int main(int argc, char* argv[]) {
 
 	}
 
+	sponzaMesh->DeleteContent();
+	delete sponzaMesh;
+
 	return 0;
 
 }

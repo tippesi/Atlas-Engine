@@ -29,6 +29,10 @@ public:
 
 	void Update();
 
+	void ClearContent();
+
+	void DeleteContent();
+
 	~Scene();
 
 	SceneNode* rootNode;
