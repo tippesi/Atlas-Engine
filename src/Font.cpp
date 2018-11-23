@@ -7,7 +7,7 @@
 #include "../libraries/stb/stb_truetype.h"
 #include "../libraries/stb/stb_image_write.h"
 
-Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValue) {
+Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValue) : edgeValue(edgeValue) {
 
 	stbtt_fontinfo font;
 	string fontString;
@@ -32,9 +32,19 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 
 	glyphs = new Glyph[FONT_CHARACTER_COUNT];
 	characterScales = new vec2[FONT_CHARACTER_COUNT];
+	characterSizes = new vec2[FONT_CHARACTER_COUNT];
 	characterOffsets = new vec2[FONT_CHARACTER_COUNT];
 
 	int32_t resolution = pixelSize + 2 * padding;
+
+	// Compute next power of two https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+	resolution--;
+	resolution |= resolution >> 1;
+	resolution |= resolution >> 2;
+	resolution |= resolution >> 4;
+	resolution |= resolution >> 8;
+	resolution |= resolution >> 16;
+	resolution++;
 
 	glyphsTexture = new Texture(GL_UNSIGNED_BYTE, resolution, resolution, GL_R8,
 		0.0f, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false, FONT_CHARACTER_COUNT);
@@ -51,13 +61,17 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 	descent = (int32_t)((float)descent * scale);
 	lineGap = (int32_t)((float)lineGap * scale);
 
-	float pixelDistanceScale = (float)edgeValue / (float)padding;
+	pixelDistanceScale = (float)edgeValue / (float)padding;
 
 	for (int32_t i = 0; i < FONT_CHARACTER_COUNT; i++) {
 
 		auto glyph = &glyphs[i];
 
 		glyph->data = new uint8_t[resolution * resolution];
+
+		for (int32_t i = 0; i < resolution * resolution; i++) {
+			glyph->data[i] = 0;
+		}
 
 		int32_t xOffset, yOffset;
 		uint8_t* data = stbtt_GetCodepointSDF(&font, scale, i, padding, edgeValue, pixelDistanceScale,
@@ -66,11 +80,12 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 		glyph->textureScale.x = (float)glyph->width / (float)resolution;
 		glyph->textureScale.y = (float)glyph->height / (float)resolution;
 
-		glyph->textureOffset.x = (float)xOffset / (float)resolution;
-		glyph->textureOffset.y = (float)yOffset / (float)resolution;
+		glyph->offset.x = (float)xOffset;
+		glyph->offset.y = (float)yOffset;
 
 		characterScales[i] = glyph->textureScale;
-		characterOffsets[i] = glyph->textureOffset;
+		characterOffsets[i] = glyph->offset;
+		characterSizes[i] = vec2((float)glyph->width, (float)glyph->height);
 
 		for (int32_t x = 0; x < glyph->width; x++) {
 			for (int32_t y = 0; y < glyph->height; y++) {
@@ -95,10 +110,12 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 }
 
 Glyph* Font::GetGlyph(char character) {
+
 	uint8_t characterIndex = (uint8_t)character;
 
 	if (characterIndex > FONT_CHARACTER_COUNT)
 		return nullptr;
 
 	return &glyphs[characterIndex];
+
 }

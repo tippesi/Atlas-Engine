@@ -17,7 +17,13 @@ int main(int argc, char* argv[]) {
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
-	Font* font = new Font("../data/arial.ttf", 22, 5, 180);
+	Font* font = new Font("../data/roboto.ttf", 88, 5, 200);
+
+	MasterRenderer* renderer = new MasterRenderer();
+
+	renderer->textRenderer->Render(window, font, "Loading...", 230, 300, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+
+	window->Update();
 
 	/*
 	TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 9, 5, 16);
@@ -58,8 +64,6 @@ int main(int argc, char* argv[]) {
 	Actor* actor = new Actor(mesh);
 	Actor* sponza = new Actor(sponzaMesh);
 	sponza->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
-
-	MasterRenderer* renderer = new MasterRenderer();
 
 	SceneNode* node = new SceneNode();
 
@@ -170,7 +174,7 @@ int main(int argc, char* argv[]) {
 
 		renderer->RenderScene(window, target, camera, scene);
 
-		renderer->textRenderer->Render(window, font, "Hello world", 0, 0);
+		renderer->textRenderer->Render(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f/10.0f);
 
 		window->Update();
 

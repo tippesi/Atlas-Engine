@@ -31,7 +31,9 @@ void TextRenderer::Render(Window* window, RenderTarget* target, Camera* camera, 
 
 }
 
-void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, int32_t y, float scale, Framebuffer* framebuffer) {
+void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color, float scale, Framebuffer* framebuffer) {
+
+	int32_t characterCount;
 
 	shader->Bind();
 
@@ -39,7 +41,7 @@ void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, in
 		framebuffer->Bind(true);
 	}
 
-	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -47,7 +49,7 @@ void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, in
 	float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
 	float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
 
-	vec3* instances = CalculateCharacterInstances(font, text);
+	vec3* instances = CalculateCharacterInstances(font, text, &characterCount);
 
 	glyphsTexture->SetValue(0);
 
@@ -55,31 +57,36 @@ void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, in
 
 	textScale->SetValue(scale);
 	textOffset->SetValue(vec2((float)x, (float)y));
+	textColor->SetValue(color);
 
 	characterScales->SetValue(font->characterScales, FONT_CHARACTER_COUNT);
+	characterSizes->SetValue(font->characterSizes, FONT_CHARACTER_COUNT);
 	characterOffsets->SetValue(font->characterOffsets, FONT_CHARACTER_COUNT);
+	pixelDistanceScale->SetValue(font->pixelDistanceScale);
+	edgeValue->SetValue(font->edgeValue);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	if (text.length() > vboLength) {
-		vboLength = text.length();
+	if (characterCount > vboLength) {
+		vboLength = characterCount;
 		glBufferData(GL_ARRAY_BUFFER, vboLength * sizeof(vec3), glm::value_ptr(instances[0]), GL_STATIC_DRAW);
 	}
 	else {
-		glBufferSubData(GL_ARRAY_BUFFER, 0, text.length() * sizeof(vec3), glm::value_ptr(instances[0]));
+		glBufferSubData(GL_ARRAY_BUFFER, 0, characterCount * sizeof(vec3), glm::value_ptr(instances[0]));
 	}
 
 	font->glyphsTexture->Bind(GL_TEXTURE0);
 
 	glBindVertexArray(vao);
 
-	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, text.length());
+	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, characterCount);
 
-	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
+
+	glEnable(GL_CULL_FACE);
 
 }
 
-void TextRenderer::RenderOutlined(Window* window, Font* font, string text, int32_t x, int32_t y, float scale, Framebuffer* framebuffer) {
+void TextRenderer::RenderOutlined(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color, float scale, Framebuffer* framebuffer) {
 
 	shader->Bind();
 
@@ -94,13 +101,19 @@ void TextRenderer::GetUniforms() {
 	glyphsTexture = shader->GetUniform("glyphsTexture");
 	projectionMatrix = shader->GetUniform("pMatrix");
 	characterScales = shader->GetUniform("characterScales");
+	characterSizes = shader->GetUniform("characterSizes");
 	characterOffsets = shader->GetUniform("characterOffsets");
 	textOffset = shader->GetUniform("textOffset");
 	textScale = shader->GetUniform("textScale");
+	textColor = shader->GetUniform("textColor");
+	pixelDistanceScale = shader->GetUniform("pixelDistanceScale");
+	edgeValue = shader->GetUniform("edgeValue");
 
 }
 
-vec3* TextRenderer::CalculateCharacterInstances(Font* font, string text) {
+vec3* TextRenderer::CalculateCharacterInstances(Font* font, string text, int32_t* characterCount) {
+
+	*characterCount = 0;
 
 	vec3* instances = new vec3[text.length()];
 
@@ -113,14 +126,19 @@ vec3* TextRenderer::CalculateCharacterInstances(Font* font, string text) {
 		char& character = text[i];
 		Glyph* glyph = font->GetGlyph(character);
 
-		instances[index].x = xOffset;
-		instances[index].y = 0.0f;
-		instances[index].z = (float)character;
-		index++;
+		// Just visible characters should be rendered.
+		if ((uint8_t)character > 32) {
+			instances[index].x = xOffset;
+			instances[index].y = glyph->offset.y + font->ascent;
+			instances[index].z = (float)character;
+			index++;
+		}
 
 		xOffset += glyph->advance + glyph->kern[(uint8_t)text[i + 1]];
 		
 	}
+
+	*characterCount = index;
 
 	return instances;
 

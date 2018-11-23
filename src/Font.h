@@ -14,7 +14,7 @@ typedef struct Glyph {
 	int32_t height;
 
 	vec2 textureScale;
-	vec2 textureOffset;
+	vec2 offset;
 
 	uint8_t* data;
 
@@ -25,7 +25,7 @@ typedef struct Glyph {
 class Font {
 
 public:
-	Font(string filename, int32_t scale, int32_t padding, uint8_t edgeValue);
+	Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValue);
 
 	Glyph* GetGlyph(char character);
 
@@ -33,13 +33,16 @@ public:
 	int32_t ascent;
 	int32_t descent;
 
+	float pixelDistanceScale;
+	int32_t edgeValue;
+
 	vec2* characterScales;
+	vec2* characterSizes;
 	vec2* characterOffsets;
 
 	Texture* glyphsTexture;
 
 private:
-
 	Glyph* glyphs;
 
 };
