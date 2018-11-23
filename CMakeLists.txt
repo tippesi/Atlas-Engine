@@ -35,7 +35,7 @@ endif()
 if(APPLE)
     # for MacOS X or iOS, watchOS, tvOS (since 3.10.3)
     find_library(ASSIMP_LIBRARY assimp.4.1.0 ${CMAKE_CURRENT_SOURCE_DIR}/lib/Mac)
-    find_library(SDLMAIN_LIBRARY SDL2main ${CMAKE_CURRENT_SOURCE_DIR}/lib/Mac)
+    #find_library(SDLMAIN_LIBRARY SDL2main ${CMAKE_CURRENT_SOURCE_DIR}/lib/Mac)
     find_library(SDL_LIBRARY SDL2 ${CMAKE_CURRENT_SOURCE_DIR}/lib/Mac)
 
     include_directories(/System/Library/Frameworks)
@@ -45,7 +45,7 @@ if(APPLE)
     find_library(CoreVideo_LIBRARY CoreVideo)
     mark_as_advanced(COCOA_LIBRARY OpenGL_LIBRARY)
     set(APPLE_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
-    set(APPLE_LIBS ${APPLE_LIBS} ${ASSIMP_LIBRARY} ${SDLMAIN_LIBRARY} ${SDL_LIBRARY})
+    set(APPLE_LIBS ${APPLE_LIBS} ${ASSIMP_LIBRARY} ${SDL_LIBRARY})
     set(BLUE_ENGINE_LIBS ${APPLE_LIBS})
 endif()
 
@@ -109,12 +109,29 @@ endif()
 # Postbuild stuff
 if(APPLE)
     # for MacOS X or iOS, watchOS, tvOS (since 3.10.3)
-	# This should really change 
+	# RPath stuff
+    if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+        if (NOT BUILD_LIBRARY)
+
     add_custom_command(TARGET ${PROJECT_NAME}
-            COMMAND install_name_tool -change /Users/corbiniangruber/Downloads/assimp-4.1.0/lib/libassimp.4.dylib @executable_path/libassimp.4.1.0.dylib ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}
+            POST_BUILD COMMAND
+            ${CMAKE_INSTALL_NAME_TOOL} -add_rpath "@executable_path/"
+            $<TARGET_FILE:${PROJECT_NAME}>) # this is for the framework stuff
+
+    add_custom_command(TARGET ${PROJECT_NAME}
+            POST_BUILD COMMAND
+            ${CMAKE_INSTALL_NAME_TOOL} -change /Users/corbiniangruber/Downloads/assimp-4.1.0/lib/libassimp.4.dylib @executable_path/libassimp.4.1.0.dylib
+            $<TARGET_FILE:${PROJECT_NAME}>)
+
+        endif()
+    endif()
+
+    # copy libraries
+    add_custom_command(TARGET ${PROJECT_NAME}
+            COMMAND cp -rf ${CMAKE_CURRENT_SOURCE_DIR}/lib/mac/libassimp.4.1.0.dylib ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libassimp.4.1.0.dylib
             )
     add_custom_command(TARGET ${PROJECT_NAME}
-            COMMAND cp -rf ../lib/mac/libassimp.4.1.0.dylib ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libassimp.4.1.0.dylib
+            COMMAND cp -rf ${CMAKE_CURRENT_SOURCE_DIR}/lib/mac/SDL2.framework ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/SDL2.framework
             )
 endif()
 
