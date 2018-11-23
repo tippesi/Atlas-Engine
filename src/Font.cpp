@@ -103,7 +103,7 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 
 		glyphsTexture->SetData(glyph->data, i);
 
-		delete data;
+		delete[] data;
 
 	}
 

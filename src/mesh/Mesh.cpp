@@ -3,8 +3,7 @@
 
 Mesh::Mesh(MeshData* data) : data(data) {
 
-	InitializeVBO();
-	InitializeVAO();
+	InitializeVertexArray();
 
 }
 
@@ -12,107 +11,94 @@ Mesh::Mesh(string filename) {
 
 	data = ModelLoader::LoadMesh(filename);
 
-	InitializeVBO();
-	InitializeVAO();
+	InitializeVertexArray();
 
 }
 
 void Mesh::UpdateData() {
 
 	if (data->indices->ContainsData()) {
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesVbo);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)data->GetIndexCount() * data->indices->GetElementSize(),
-			data->indices->GetInternal(), GL_STATIC_DRAW);
+		vertexArray->GetIndexComponent()->SetData(data->indices->GetInternal(),
+			data->GetIndexCount(), data->indices->GetElementSize());
 	}
-
 	if (data->vertices->ContainsData()) {
-		glBindBuffer(GL_ARRAY_BUFFER, verticesVbo);
-		glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)data->GetVertexCount() * data->vertices->GetElementSize(),
-			data->vertices->GetInternal(), GL_STATIC_DRAW);
+		vertexArray->GetComponent(0)->SetData(data->vertices->GetInternal(),
+			data->GetVertexCount(), data->vertices->GetElementSize());
 	}
-
-	if (data->texCoords->ContainsData()) {
-		glBindBuffer(GL_ARRAY_BUFFER, texCoordsVbo);
-		glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)data->GetVertexCount() * data->texCoords->GetElementSize(),
-			data->texCoords->GetInternal(), GL_STATIC_DRAW);
-	}
-
 	if (data->normals->ContainsData()) {
-		glBindBuffer(GL_ARRAY_BUFFER, normalsVbo);
-		glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)data->GetVertexCount() * data->normals->GetElementSize(),
-			data->normals->GetInternal(), GL_STATIC_DRAW);
+		vertexArray->GetComponent(1)->SetData(data->normals->GetInternal(),
+			data->GetVertexCount(), data->normals->GetElementSize());
 	}
-
+	if (data->texCoords->ContainsData()) {
+		vertexArray->GetComponent(2)->SetData(data->texCoords->GetInternal(),
+			data->GetVertexCount(), data->texCoords->GetElementSize());
+	}
 	if (data->tangents->ContainsData()) {
-		glBindBuffer(GL_ARRAY_BUFFER, tangentsVbo);
-		glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)data->GetVertexCount() * data->tangents->GetElementSize(),
-			data->tangents->GetInternal(), GL_STATIC_DRAW);
+		vertexArray->GetComponent(3)->SetData(data->tangents->GetInternal(),
+			data->GetVertexCount(), data->tangents->GetElementSize());
 	}
 
 }
 
-void Mesh::InitializeVBO() {
+void Mesh::InitializeVertexArray() {
 
-	glGenBuffers(1, &indicesVbo);
-	glGenBuffers(1, &verticesVbo);
-	glGenBuffers(1, &texCoordsVbo);
-	glGenBuffers(1, &normalsVbo);
-	glGenBuffers(1, &tangentsVbo);
+	vertexArray = new VertexArray();
 
+	if (data->indices->ContainsData()) {
+		VertexBuffer* indices = new VertexBuffer(GL_ELEMENT_ARRAY_BUFFER, 
+			data->indices->GetType(), data->indices->GetStride());
+		vertexArray->AddIndexComponent(indices);
+	}
+	if (data->vertices->ContainsData()) {
+		VertexBuffer* vertices = new VertexBuffer(GL_ARRAY_BUFFER,
+			data->vertices->GetType(), data->vertices->GetStride());
+		vertexArray->AddComponent(0, vertices);
+	}
+	if (data->normals->ContainsData()) {
+		VertexBuffer* normals = new VertexBuffer(GL_ARRAY_BUFFER,
+			data->normals->GetType(), data->normals->GetStride());
+		vertexArray->AddComponent(1, normals);
+	}
+	if (data->texCoords->ContainsData()) {
+		VertexBuffer* texCoords = new VertexBuffer(GL_ARRAY_BUFFER,
+			data->texCoords->GetType(), data->texCoords->GetStride());
+		vertexArray->AddComponent(2, texCoords);
+	}
+	if (data->tangents->ContainsData()) {
+		VertexBuffer* tangents = new VertexBuffer(GL_ARRAY_BUFFER,
+			data->tangents->GetType(), data->tangents->GetStride());
+		vertexArray->AddComponent(3, tangents);;
+	}
+	
 	UpdateData();
-
-}
-
-void  Mesh::InitializeVAO() {
-
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
-	glEnableVertexAttribArray(3);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesVbo);
-
-	if (data->vertices->ContainsData()) {
-		glBindBuffer(GL_ARRAY_BUFFER, verticesVbo);
-		glVertexAttribPointer(0, data->vertices->GetStride(), data->vertices->GetType(), false, 0, NULL);
-	}
-
-	if (data->normals->ContainsData()) {
-		glBindBuffer(GL_ARRAY_BUFFER, normalsVbo);
-		glVertexAttribPointer(1, data->normals->GetStride(), data->normals->GetType(), false, 0, NULL);
-	}
-
-	if (data->texCoords->ContainsData()) {
-		glBindBuffer(GL_ARRAY_BUFFER, texCoordsVbo);
-		glVertexAttribPointer(2, data->texCoords->GetStride(), data->texCoords->GetType(), false, 0, NULL);
-	}
-
-	if (data->tangents->ContainsData()) {
-		glBindBuffer(GL_ARRAY_BUFFER, tangentsVbo);
-		glVertexAttribPointer(3, data->tangents->GetStride(), data->tangents->GetType(), false, 0, NULL);
-	}
-
-	glBindVertexArray(0);
 
 }
 
 void Mesh::Bind() {
 
-	glBindVertexArray(vao);
+	vertexArray->Bind();
 
 }
 
 void Mesh::Unbind() {
 
-	glBindVertexArray(0);
+	vertexArray->Unbind();
+
+}
+
+void Mesh::DeleteContent() {
+
+	vertexArray->DeleteContent();
+	delete vertexArray;
+	delete data;
+
+	vertexArray = nullptr;
 
 }
 
 Mesh::~Mesh() {
 
-
+	vertexArray->DeleteContent();
+	delete vertexArray;
 
 }

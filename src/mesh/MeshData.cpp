@@ -46,3 +46,13 @@ int32_t MeshData::GetVertexCount() {
 	return vertexCount;
 
 }
+
+MeshData::~MeshData() {
+
+	delete indices;
+	delete vertices;
+	delete texCoords;
+	delete normals;
+	delete tangents;
+
+}

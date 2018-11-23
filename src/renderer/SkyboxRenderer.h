@@ -3,6 +3,7 @@
 
 #include "../System.h"
 #include "IRenderer.h"
+#include "../VertexArray.h"
 
 class SkyboxRenderer : public IRenderer {
 
@@ -17,9 +18,9 @@ private:
 	Uniform* skyCubemap;
 	Uniform* modelViewProjectionMatrix;
 
-	uint32_t skyboxVAO;
+	VertexArray* vertexArray;
 
-	static const float skyboxVertices[];
+	static float skyboxVertices[];
 
 };
 

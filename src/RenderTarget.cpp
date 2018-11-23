@@ -31,6 +31,9 @@ void RenderTarget::Resize(int32_t width, int32_t height) {
 
 RenderTarget::~RenderTarget() {
 
+	geometryFramebuffer->DeleteContent();
+	lightingFramebuffer->DeleteContent();
+
 	delete geometryFramebuffer;
 	delete lightingFramebuffer;
 

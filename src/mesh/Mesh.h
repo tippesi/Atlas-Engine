@@ -3,6 +3,7 @@
 
 #include "../System.h"
 #include "MeshData.h"
+#include "VertexArray.h"
 
 class Mesh {
 
@@ -17,20 +18,16 @@ public:
 
 	void Unbind();
 
+	void DeleteContent();
+
 	~Mesh();
 
 	MeshData* data;
 
 private:
-	void InitializeVBO();
-	void InitializeVAO();
+	void InitializeVertexArray();
 
-	uint32_t vao;
-	uint32_t indicesVbo;
-	uint32_t verticesVbo;
-	uint32_t texCoordsVbo;
-	uint32_t normalsVbo;
-	uint32_t tangentsVbo;
+	VertexArray* vertexArray;
 
 };
 

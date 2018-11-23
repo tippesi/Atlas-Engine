@@ -12,15 +12,10 @@ SkyboxRenderer::SkyboxRenderer(string vertexSource, string fragmentSource) {
 	skyCubemap = shader->GetUniform("skyCubemap");
 	modelViewProjectionMatrix = shader->GetUniform("mvpMatrix");
 
-	glGenVertexArrays(1, &skyboxVAO);
-	glBindVertexArray(skyboxVAO);
-
-	uint32_t vbo;
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, 108 * sizeof(float), &skyboxVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	vertexArray = new VertexArray();
+	VertexBuffer* vertexBuffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_FLOAT, 3);
+	vertexBuffer->SetData(&skyboxVertices[0], 108);
+	vertexArray->AddComponent(0, vertexBuffer);
 
 }
 
@@ -34,7 +29,7 @@ void SkyboxRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 	modelViewProjectionMatrix->SetValue(mvpMatrix);
 
-	glBindVertexArray(skyboxVAO);	
+	vertexArray->Bind();
 
 	scene->sky->skybox->cubemap->Bind(GL_TEXTURE0);
 
@@ -42,7 +37,7 @@ void SkyboxRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 }
 
-const float SkyboxRenderer::skyboxVertices[] = {    
+float SkyboxRenderer::skyboxVertices[] = {    
 	-1.0f,  1.0f, -1.0f,
 	-1.0f, -1.0f, -1.0f,
 	1.0f, -1.0f, -1.0f,

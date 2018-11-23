@@ -5,7 +5,7 @@ TextRenderer::TextRenderer(string vertexSource, string fragmentSource) {
 
 	vertexArray = MasterRenderer::GenerateRectangleVAO();
 
-	VertexBuffer* vertexBuffer = new VertexBuffer(GL_ARRAY_BUFFER);
+	VertexBuffer* vertexBuffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_FLOAT, 3);
 	vertexArray->AddInstancedComponent(1, vertexBuffer);
 
 	shader = new Shader();
@@ -59,7 +59,7 @@ void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, in
 	pixelDistanceScale->SetValue(font->pixelDistanceScale);
 	edgeValue->SetValue(font->edgeValue);
 
-	vertexArray->GetComponent(1)->SetData(glm::value_ptr(instances[0]), characterCount);
+	vertexArray->GetComponent(1)->SetData(instances, characterCount);
 
 	font->glyphsTexture->Bind(GL_TEXTURE0);
 

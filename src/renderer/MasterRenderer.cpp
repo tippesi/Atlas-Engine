@@ -95,8 +95,6 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 	postProcessRenderer->Render(window, target, camera, scene, true);
 
-	glBindVertexArray(0);
-
 }
 
 void MasterRenderer::RenderTexture(Texture* texture) {
@@ -121,6 +119,9 @@ MasterRenderer::~MasterRenderer() {
 	delete skyboxRenderer;
 	delete postProcessRenderer;
 
+	rectangleVertexArray->DeleteContent();
+	delete rectangleVertexArray;
+
 }
 
 VertexArray* MasterRenderer::GenerateRectangleVAO() {
@@ -128,9 +129,11 @@ VertexArray* MasterRenderer::GenerateRectangleVAO() {
 	int8_t vertices[] = { -1, -1, 1, -1, -1, 1, 1, 1 };
 
 	VertexArray* vertexArray = new VertexArray();
-	VertexBuffer* buffer = new VertexBuffer(GL_ARRAY_BUFFER);
+	VertexBuffer* buffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_BYTE, 2);
 	buffer->SetData(&vertices[0], 8);
 	vertexArray->AddComponent(0, buffer);
+
+	vertexArray->Unbind();
 
 	return vertexArray;
 

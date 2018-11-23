@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
 
 		renderer->RenderScene(window, target, camera, scene);
 
-		// renderer->textRenderer->Render(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f/10.0f);
+		renderer->textRenderer->Render(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f/10.0f);
 
 		window->Update();
 

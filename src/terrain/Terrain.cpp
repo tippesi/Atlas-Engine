@@ -115,7 +115,7 @@ void Terrain::GeneratePatchVertexBuffer(int32_t patchSizeFactor) {
 	glBindVertexArray(vao);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);	
-	glBufferData(GL_ARRAY_BUFFER, patchVertexCount * sizeof(vec2), glm::value_ptr(vertices[0]), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, patchVertexCount * sizeof(vec2), &vertices[0], GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 2, GL_FLOAT, false, sizeof(vec2), 0);

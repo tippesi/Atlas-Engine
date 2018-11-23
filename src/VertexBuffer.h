@@ -6,7 +6,7 @@
 class VertexBuffer {
 
 public:
-	VertexBuffer(uint32_t type, uint32_t usage = GL_STATIC_DRAW);
+	VertexBuffer(uint32_t type,  int32_t dataType, int32_t stride, uint32_t usage = GL_STATIC_DRAW);
 
 	void SetData(uint8_t* data, int32_t length);
 
@@ -28,7 +28,7 @@ public:
 
 	void SetData(vec4* data, int32_t length);
 
-	void SetData(void* data, int32_t length, int32_t vertexSize, int32_t dataType, int32_t stride);
+	void SetData(void* data, int32_t length, int32_t elementSize);
 
 	void SetSubData(uint8_t* data, int32_t offset, int32_t length);
 
@@ -50,7 +50,7 @@ public:
 
 	void SetSubData(vec4* data, int32_t offset, int32_t length);
 
-	void SetSubData(void* data, int32_t offset, int32_t length, int32_t vertexSize, int32_t dataType, int32_t stride);
+	void SetSubData(void* data, int32_t offset, int32_t length, int32_t elementSize);
 
 	void Bind();
 
@@ -60,16 +60,14 @@ public:
 
 	int32_t GetDataType();
 
-	int32_t GetVertexSize();
-
 	int32_t GetStride();
 
 	~VertexBuffer();
 
 private:
-	void SetDataInternal(void* data, int32_t length, int32_t vertexSize, int32_t dataType, int32_t stride);
+	void SetDataInternal(void* data, int32_t length, int32_t elementSize);
 
-	void SetSubDataInternal(void* data, int32_t offset, int32_t length, int32_t vertexSize, int32_t dataType, int32_t stride);
+	void SetSubDataInternal(void* data, int32_t offset, int32_t length, int32_t elementSize);
 
 	uint32_t ID;
 
@@ -77,7 +75,6 @@ private:
 	uint32_t usage;
 
 	int32_t dataType;
-	int32_t vertexSize;
 	int32_t stride;
 
 	int32_t sizeInBytes;
