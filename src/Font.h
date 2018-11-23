@@ -10,12 +10,11 @@ typedef struct Glyph {
 
 	int32_t advance;
 
-	int32_t xOffset;
-	int32_t yOffset;
 	int32_t width;
 	int32_t height;
 
-	vec2 resolutionScale;
+	vec2 textureScale;
+	vec2 textureOffset;
 
 	uint8_t* data;
 
@@ -28,14 +27,18 @@ class Font {
 public:
 	Font(string filename, int32_t scale, int32_t padding, uint8_t edgeValue);
 
+	Glyph* GetGlyph(char character);
+
 	int32_t lineGap;
 	int32_t ascent;
 	int32_t descent;
 
-	vec2* resolutionScales;
+	vec2* characterScales;
+	vec2* characterOffsets;
+
+	Texture* glyphsTexture;
 
 private:
-	Texture* glyphsLayered;
 
 	Glyph* glyphs;
 

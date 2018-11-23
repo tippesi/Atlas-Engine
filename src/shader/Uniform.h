@@ -33,6 +33,12 @@ public:
 
 	void SetValue(float *value, int32_t length);
 
+	void SetValue(vec4* value, int32_t length);
+
+	void SetValue(vec3* value, int32_t length);
+
+	void SetValue(vec2* value, int32_t length);
+
 	string name;
 
 private:

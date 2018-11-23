@@ -21,7 +21,7 @@ public:
 
 	void Resize(int32_t width, int32_t height);
 
-	void Bind();
+	void Bind(bool resizeViewport = false);
 
 	void Unbind();
 

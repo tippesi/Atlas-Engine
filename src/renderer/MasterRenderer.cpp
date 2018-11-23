@@ -17,6 +17,8 @@ string MasterRenderer::skyboxVertexPath = "skybox.vsh";
 string MasterRenderer::skyboxFragmentPath = "skybox.fsh";
 string MasterRenderer::postProcessVertexPath = "postprocessing.vsh";
 string MasterRenderer::postProcessFragmentPath = "postprocessing.fsh";
+string MasterRenderer::textVertexPath = "text.vsh";
+string MasterRenderer::textFragmentPath = "text.fsh";
 
 MasterRenderer::MasterRenderer() {
 
@@ -47,6 +49,9 @@ MasterRenderer::MasterRenderer() {
 	postProcessRenderer = new PostProcessRenderer(postProcessVertexPath,
 		postProcessFragmentPath);
 
+	textRenderer = new TextRenderer(textVertexPath,
+		textFragmentPath);
+
 }
 
 void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
@@ -56,12 +61,10 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 	shadowRenderer->Render(window, target, camera, scene, true);
 
-	target->geometryFramebuffer->Bind();
+	target->geometryFramebuffer->Bind(true);
 
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-	glViewport(0, 0, target->geometryFramebuffer->width, target->geometryFramebuffer->height);
 
 	terrainRenderer->Render(window, target, camera, scene, true);
 

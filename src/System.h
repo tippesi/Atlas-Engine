@@ -6,15 +6,12 @@
 // #define ENGINE_INSTANT_SHADER_RELOAD
 #define ENGINE_SHOW_LOG
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <malloc.h>
 #include <stdint.h>
-#include <string.h>
 #include <string>
 #include <math.h>
 #include <exception>
 
+// GLM
 #include "libraries/glm/glm.hpp"
 #include "libraries/glm/gtc/type_ptr.hpp"
 #include "libraries/glm/gtx/common.hpp"
@@ -37,9 +34,10 @@
 
 #define EngineLog(...) __android_log_print(ANDROID_LOG_INFO, "ENGINE_LOG", __VA_ARGS__)
 
-#elif defined(_MSC_VER) || defined(__linux__)
+#elif defined(_MSC_VER) || defined(__linux__) || defined(__APPLE__)
 #define ENGINE_OGL
 
+// GLAD
 #ifdef _WIN32
 #define APIENTRY __stdcall
 #include <direct.h>

@@ -5,11 +5,12 @@
 
 #include "GeometryRenderer.h"
 #include "TerrainRenderer.h"
-#include "ShadowRenderer.h"
+#include "DirectionalShadowRenderer.h"
 #include "DirectionalVolumetricRenderer.h"
 #include "DirectionalLightRenderer.h"
 #include "SkyboxRenderer.h"
 #include "PostProcessRenderer.h"
+#include "TextRenderer.h"
 
 class MasterRenderer {
 
@@ -23,6 +24,8 @@ public:
 	void RenderRectangle(vec3 color);
 
 	static uint32_t GenerateRectangleVAO();
+
+	TextRenderer* textRenderer;
 
 private:
 	GeometryRenderer* geometryRenderer;
@@ -52,6 +55,8 @@ private:
 	static string skyboxFragmentPath;
 	static string postProcessVertexPath;
 	static string postProcessFragmentPath;
+	static string textVertexPath;
+	static string textFragmentPath;
 
 };
 

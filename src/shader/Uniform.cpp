@@ -125,6 +125,39 @@ void Uniform::SetValue(float* value, int32_t length) {
 
 }
 
+void Uniform::SetValue(vec4* value, int32_t length) {
+
+	if (shaderBatch == nullptr) {
+		glUniform4fv(ID, length, glm::value_ptr(value[0]));
+	}
+	else {
+		GetBatchUniform()->SetValue(value, length);
+	}
+
+}
+
+void Uniform::SetValue(vec3* value, int32_t length) {
+
+	if (shaderBatch == nullptr) {
+		glUniform3fv(ID, length, glm::value_ptr(value[0]));
+	}
+	else {
+		GetBatchUniform()->SetValue(value, length);
+	}
+
+}
+
+void Uniform::SetValue(vec2* value, int32_t length) {
+
+	if (shaderBatch == nullptr) {
+		glUniform2fv(ID, length, glm::value_ptr(value[0]));
+	}
+	else {
+		GetBatchUniform()->SetValue(value, length);
+	}
+
+}
+
 inline Uniform* Uniform::GetBatchUniform() {
 
 	return shaderBatch->configBatches[shaderBatch->boundShaderID]->shader->uniforms[ID];

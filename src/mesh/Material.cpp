@@ -1,6 +1,6 @@
 #include "Material.h"
 #include "renderer/GeometryRenderer.h"
-#include "renderer/ShadowRenderer.h"
+#include "renderer/DirectionalShadowRenderer.h"
 
 Material::Material() {
 

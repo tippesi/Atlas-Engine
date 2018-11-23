@@ -47,7 +47,7 @@ MeshData* ModelLoader::LoadMesh(string filename) {
 		vertexCount += mesh->mNumVertices;
 		bonesCount += mesh->mNumBones;
 
-		hasTexCoords = mesh->mNumUVComponents > 0 ? true : hasTexCoords;
+		hasTexCoords = mesh->mNumUVComponents[0] > 0 ? true : hasTexCoords;
 	}
 
 	for (uint32_t i = 0; i < scene->mNumMaterials; i++) {

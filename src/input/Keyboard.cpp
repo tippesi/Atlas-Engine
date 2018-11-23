@@ -7,7 +7,7 @@
 
 KeyboardHandler* CreateKeyboardHandler(Camera* camera, float speed, float reactivity) {
 
-	KeyboardHandler* handler = (KeyboardHandler*)malloc(sizeof(KeyboardHandler));
+	KeyboardHandler* handler = new KeyboardHandler;
 
 	if (handler != NULL) {
 		
@@ -24,14 +24,12 @@ KeyboardHandler* CreateKeyboardHandler(Camera* camera, float speed, float reacti
 
 	return NULL;
 
-
 }
 
 
 void DeleteKeyboardHandler(KeyboardHandler* handler) {
 
-	if (handler != NULL)
-		free(handler);
+	delete handler;
 
 }
 

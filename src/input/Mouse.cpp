@@ -6,7 +6,7 @@
 
 MouseHandler* CreateMouseHandler(Camera* camera, float sensibility, float reactivity) {
 
-	MouseHandler* handler = (MouseHandler*)malloc(sizeof(MouseHandler));
+	MouseHandler* handler = new MouseHandler;
 
 	if (handler != NULL) {
 
@@ -32,8 +32,7 @@ MouseHandler* CreateMouseHandler(Camera* camera, float sensibility, float reacti
 
 void DeleteMouseHandler(MouseHandler* handler) {
 
-	if (handler != NULL)
-		free(handler);
+	delete handler;
 
 }
 

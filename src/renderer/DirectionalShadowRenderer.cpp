@@ -1,4 +1,4 @@
-#include "ShadowRenderer.h"
+#include "DirectionalShadowRenderer.h"
 
 ShaderBatch* ShadowRenderer::shaderBatch;
 

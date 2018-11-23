@@ -5,45 +5,51 @@
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "../libraries/stb/stb_truetype.h"
+#include "../libraries/stb/stb_image_write.h"
 
 Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValue) {
 
 	stbtt_fontinfo font;
 	string fontString;
 	ifstream fontFile;
-	stringstream fontStream;
 
 	fontFile.open(filename, ios::in | ios::binary);
 
-	if (fontFile.is_open()) {
-		fontStream << fontFile.rdbuf();
-		fontFile.close();
-		fontString = fontStream.str();
-	}
-	else {
+	if (!fontFile.is_open()) {
 #ifdef ENGINE_SHOW_LOG
 		EngineLog("Font %s not found", filename.c_str());
 #endif
 		throw EngineException("Couldn't open font file");
 	}
+	
+	fontFile.seekg(0, fontFile.end);
+	int64_t size = fontFile.tellg();
+	fontFile.seekg(0);
+
+	char* buffer = new char[size];
+	fontFile.read(buffer, size);
+	fontFile.close();
 
 	glyphs = new Glyph[FONT_CHARACTER_COUNT];
-	resolutionScales = new vec2[FONT_CHARACTER_COUNT];
+	characterScales = new vec2[FONT_CHARACTER_COUNT];
+	characterOffsets = new vec2[FONT_CHARACTER_COUNT];
 
 	int32_t resolution = pixelSize + 2 * padding;
 
-	glyphsLayered = new Texture(GL_UNSIGNED_BYTE, resolution, resolution, GL_R8,
+	glyphsTexture = new Texture(GL_UNSIGNED_BYTE, resolution, resolution, GL_R8,
 		0.0f, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false, FONT_CHARACTER_COUNT);
 
-	stbtt_InitFont(&font, (unsigned char*)fontString.c_str(), 0);
+	if (!stbtt_InitFont(&font, (unsigned char*)buffer, 0)) {
+		new EngineException("Failed loading font");
+	}
 
 	float scale = stbtt_ScaleForPixelHeight(&font, pixelSize);
 
 	stbtt_GetFontVMetrics(&font, &ascent, &descent, &lineGap);
 
 	ascent = (int32_t)((float)ascent * scale);
-	descent = (int32_t)((float)descent * scale);;
-	lineGap = (int32_t)((float)lineGap * scale);;
+	descent = (int32_t)((float)descent * scale);
+	lineGap = (int32_t)((float)lineGap * scale);
 
 	float pixelDistanceScale = (float)edgeValue / (float)padding;
 
@@ -53,13 +59,18 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 
 		glyph->data = new uint8_t[resolution * resolution];
 
+		int32_t xOffset, yOffset;
 		uint8_t* data = stbtt_GetCodepointSDF(&font, scale, i, padding, edgeValue, pixelDistanceScale,
-			&glyph->width, &glyph->height, &glyph->xOffset, &glyph->yOffset);
+			&glyph->width, &glyph->height, &xOffset, &yOffset);
 
-		glyph->resolutionScale.x = (float)resolution / (float)glyph->width;
-		glyph->resolutionScale.y = (float)resolution / (float)glyph->height;
+		glyph->textureScale.x = (float)glyph->width / (float)resolution;
+		glyph->textureScale.y = (float)glyph->height / (float)resolution;
 
-		resolutionScales[i] = glyph->resolutionScale;
+		glyph->textureOffset.x = (float)xOffset / (float)resolution;
+		glyph->textureOffset.y = (float)yOffset / (float)resolution;
+
+		characterScales[i] = glyph->textureScale;
+		characterOffsets[i] = glyph->textureOffset;
 
 		for (int32_t x = 0; x < glyph->width; x++) {
 			for (int32_t y = 0; y < glyph->height; y++) {
@@ -75,8 +86,19 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 
 		glyph->advance *= scale;
 
-		glyphsLayered->SetData(glyph->data, i);
+		glyphsTexture->SetData(glyph->data, i);
 
 	}
 
+	delete[] buffer;
+
+}
+
+Glyph* Font::GetGlyph(char character) {
+	uint8_t characterIndex = (uint8_t)character;
+
+	if (characterIndex > FONT_CHARACTER_COUNT)
+		return nullptr;
+
+	return &glyphs[characterIndex];
 }

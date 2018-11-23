@@ -131,9 +131,14 @@ void Framebuffer::Resize(int32_t width, int32_t height) {
 
 }
 
-void Framebuffer::Bind() {
+void Framebuffer::Bind(bool resizeViewport) {
 
 	if (boundFramebufferID != ID) {
+
+		if (resizeViewport) {
+			glViewport(0, 0, width, height);
+		}
+
 		glBindFramebuffer(GL_FRAMEBUFFER, ID);
 	
 		boundFramebufferID = ID;

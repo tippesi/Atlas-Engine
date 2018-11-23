@@ -1,12 +1,11 @@
 layout (location = 0) out vec4 color;
 
-in vec2 fTexCoord;
+in vec3 fTexCoord;
 
-uniform sampler2D diffuseMap;
-uniform vec3 diffuseColor;
+uniform sampler2DArray glyphsTexture;
+uniform vec3 diffuseColor = vec3(1.0f);
 
-void main()
-{    
-    vec4 sampled = vec4(1.0, 1.0, 1.0, texture(diffuseMap, fTexCoord).r);
+void main() {    
+    vec4 sampled = vec4(1.0, 1.0, 1.0, texture(glyphsTexture, fTexCoord).r);
     color = vec4(diffuseColor, 1.0) * sampled;
 }

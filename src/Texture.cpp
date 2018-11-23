@@ -99,7 +99,7 @@ void Texture::SetData(uint8_t* data, int32_t layer, int32_t layerCount) {
 
 	this->data = data;
 
-	if (layerCount == 1) {
+	if (this->layerCount == 1) {
 		glBindTexture(GL_TEXTURE_2D, ID);
 		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, data);
 
