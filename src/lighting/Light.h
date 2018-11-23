@@ -22,6 +22,10 @@ public:
 
 	void RemoveVolumetric();
 
+	void ClearContent();
+
+	void DeleteContent();
+
 	int32_t type;
 
 	vec3 location;

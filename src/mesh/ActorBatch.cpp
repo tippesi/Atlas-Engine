@@ -30,3 +30,19 @@ Mesh* ActorBatch::GetMesh() {
 	return mesh;
 
 }
+
+void ActorBatch::ClearContent() {
+
+	actors.clear();
+
+}
+
+void ActorBatch::DeleteContent() {
+
+	for (auto& actor : actors) {
+		delete actor;
+	}
+
+	ClearContent();
+
+}

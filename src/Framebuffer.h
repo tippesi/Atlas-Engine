@@ -27,6 +27,10 @@ public:
 
 	void SetDrawBuffers(uint32_t* buffers, int32_t count);
 
+	void ClearContent();
+
+	void DeleteContent();
+
 	~Framebuffer();
 
 	int32_t width;

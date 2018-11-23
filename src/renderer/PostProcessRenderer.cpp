@@ -3,8 +3,6 @@
 
 PostProcessRenderer::PostProcessRenderer(string vertexSource, string fragmentSoure) {
 
-	rectangleVAO = MasterRenderer::GenerateRectangleVAO();
-
 	shader = new Shader();
 
 	shader->AddComponent(VERTEX_SHADER, vertexSource);

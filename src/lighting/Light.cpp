@@ -51,7 +51,23 @@ void Light::AddVolumetric(Volumetric *volumetric) {
 
 void Light::RemoveVolumetric() {
 
-	this->volumetric = nullptr;
+	volumetric = nullptr;
+
+}
+
+void Light::ClearContent() {
+
+	shadow = nullptr;
+	volumetric = nullptr;
+
+}
+
+void Light::DeleteContent() {
+
+	delete shadow;
+	delete volumetric;
+
+	ClearContent();
 
 }
 

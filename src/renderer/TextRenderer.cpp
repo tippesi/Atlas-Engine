@@ -3,16 +3,10 @@
 
 TextRenderer::TextRenderer(string vertexSource, string fragmentSource) {
 
-	vao = MasterRenderer::GenerateRectangleVAO();
+	vertexArray = MasterRenderer::GenerateRectangleVAO();
 
-	vboLength = 100;
-
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, vboLength * sizeof(vec3), NULL, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glVertexAttribDivisor(1, 1);
+	VertexBuffer* vertexBuffer = new VertexBuffer(GL_ARRAY_BUFFER);
+	vertexArray->AddInstancedComponent(1, vertexBuffer);
 
 	shader = new Shader();
 
@@ -65,18 +59,11 @@ void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, in
 	pixelDistanceScale->SetValue(font->pixelDistanceScale);
 	edgeValue->SetValue(font->edgeValue);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	if (characterCount > vboLength) {
-		vboLength = characterCount;
-		glBufferData(GL_ARRAY_BUFFER, vboLength * sizeof(vec3), glm::value_ptr(instances[0]), GL_STATIC_DRAW);
-	}
-	else {
-		glBufferSubData(GL_ARRAY_BUFFER, 0, characterCount * sizeof(vec3), glm::value_ptr(instances[0]));
-	}
+	vertexArray->GetComponent(1)->SetData(glm::value_ptr(instances[0]), characterCount);
 
 	font->glyphsTexture->Bind(GL_TEXTURE0);
 
-	glBindVertexArray(vao);
+	vertexArray->Bind();
 
 	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, characterCount);
 

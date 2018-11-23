@@ -53,7 +53,7 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 		new EngineException("Failed loading font");
 	}
 
-	float scale = stbtt_ScaleForPixelHeight(&font, pixelSize);
+	float scale = (float)stbtt_ScaleForPixelHeight(&font, pixelSize);
 
 	stbtt_GetFontVMetrics(&font, &ascent, &descent, &lineGap);
 
@@ -94,7 +94,7 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 		}
 
 		for (int32_t j = 0; j < FONT_CHARACTER_COUNT; j++) {
-			glyph->kern[j] = stbtt_GetCodepointKernAdvance(&font, i, j) * scale;
+			glyph->kern[j] = (int32_t)((float)stbtt_GetCodepointKernAdvance(&font, i, j) * scale);
 		}
 
 		stbtt_GetCodepointHMetrics(&font, i, &glyph->advance, 0);
@@ -102,6 +102,8 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 		glyph->advance *= scale;
 
 		glyphsTexture->SetData(glyph->data, i);
+
+		delete data;
 
 	}
 

@@ -2,6 +2,7 @@
 #define MASTERRENDERER_H
 
 #include "../System.h"
+#include "../VertexArray.h"
 
 #include "GeometryRenderer.h"
 #include "TerrainRenderer.h"
@@ -23,20 +24,22 @@ public:
 
 	void RenderRectangle(vec3 color);
 
-	static uint32_t GenerateRectangleVAO();
+	~MasterRenderer();
+
+	static VertexArray* GenerateRectangleVAO();
 
 	TextRenderer* textRenderer;
 
 private:
 	GeometryRenderer* geometryRenderer;
 	TerrainRenderer* terrainRenderer;
-	ShadowRenderer* shadowRenderer;
+	DirectionalShadowRenderer* directionalShadowRenderer;
 	DirectionalVolumetricRenderer* directionalVolumetricRenderer;
 	DirectionalLightRenderer* directionalLightRenderer;
 	SkyboxRenderer* skyboxRenderer;
 	PostProcessRenderer* postProcessRenderer;
 
-	uint32_t rectangleVAO;
+	VertexArray* rectangleVertexArray;
 
 	static string terrainVertexPath;
 	static string terrainTessControlPath;

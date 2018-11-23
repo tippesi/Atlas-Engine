@@ -24,7 +24,7 @@ Material::Material() {
 void Material::Update() {
 
 	GeometryRenderer::RemoveConfig(geometryConfig);
-	ShadowRenderer::RemoveConfig(shadowConfig);
+	DirectionalShadowRenderer::RemoveConfig(shadowConfig);
 
 	geometryConfig->ClearMacros();
 	shadowConfig->ClearMacros();
@@ -41,7 +41,7 @@ void Material::Update() {
 	}
 
 	GeometryRenderer::AddConfig(geometryConfig);
-	ShadowRenderer::AddConfig(shadowConfig);
+	DirectionalShadowRenderer::AddConfig(shadowConfig);
 
 }
 

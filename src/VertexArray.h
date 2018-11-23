@@ -13,9 +13,9 @@ public:
 
 	void AddIndexComponent(VertexBuffer* buffer);
 	
-	void AddComponent(int32_t attribArray, VertexBuffer* buffer);
+	void AddComponent(uint32_t attribArray, VertexBuffer* buffer, bool normalized = false);
 
-	void AddInstancedComponent(int32_t attribArray, VertexBuffer* buffer);
+	void AddInstancedComponent(uint32_t attribArray, VertexBuffer* buffer, bool normalized = false);
 
 	VertexBuffer* GetIndexComponent();
 
@@ -25,12 +25,18 @@ public:
 
 	void Unbind();
 
+	void ClearContent();
+
+	void DeleteContent();
+
+	~VertexArray();
+
 private:
 	uint32_t ID;
 
 	VertexBuffer* indexComponent;
 
-	unordered_map<int32_t, VertexBuffer*> vertexComponents;
+	unordered_map<uint32_t, VertexBuffer*> vertexComponents;
 
 	static uint32_t boundVertexArrayID;
 

@@ -20,6 +20,10 @@ public:
 
 	vector<Actor*> actors;
 
+	void ClearContent();
+
+	void DeleteContent();
+
 private:
 	Mesh* mesh;
 

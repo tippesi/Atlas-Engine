@@ -1,8 +1,8 @@
 #include "DirectionalShadowRenderer.h"
 
-ShaderBatch* ShadowRenderer::shaderBatch;
+ShaderBatch* DirectionalShadowRenderer::shaderBatch;
 
-ShadowRenderer::ShadowRenderer(string vertexSource, string fragmentSource) {
+DirectionalShadowRenderer::DirectionalShadowRenderer(string vertexSource, string fragmentSource) {
 
 	framebuffer = new Framebuffer(0, 0);
 
@@ -13,7 +13,7 @@ ShadowRenderer::ShadowRenderer(string vertexSource, string fragmentSource) {
 }
 
 
-void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
+void DirectionalShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
 	framebuffer->Bind();
 
@@ -89,7 +89,7 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 }
 
-void ShadowRenderer::InitShaderBatch(string vertexSource, string fragmentSource) {
+void DirectionalShadowRenderer::InitShaderBatch(string vertexSource, string fragmentSource) {
 
 	shaderBatch = new ShaderBatch();
 	shaderBatch->AddComponent(VERTEX_SHADER, vertexSource);
@@ -97,13 +97,13 @@ void ShadowRenderer::InitShaderBatch(string vertexSource, string fragmentSource)
 
 }
 
-void ShadowRenderer::AddConfig(ShaderConfig* config) {
+void DirectionalShadowRenderer::AddConfig(ShaderConfig* config) {
 
 	shaderBatch->AddConfig(config);
 
 }
 
-void ShadowRenderer::RemoveConfig(ShaderConfig* config) {
+void DirectionalShadowRenderer::RemoveConfig(ShaderConfig* config) {
 
 	shaderBatch->RemoveConfig(config);
 

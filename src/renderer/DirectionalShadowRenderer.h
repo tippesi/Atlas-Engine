@@ -5,10 +5,10 @@
 #include "IRenderer.h"
 #include "../shader/ShaderBatch.h"
 
-class ShadowRenderer : public IRenderer {
+class DirectionalShadowRenderer : public IRenderer {
 
 public:
-	ShadowRenderer(string vertexSource, string fragmentSource);
+	DirectionalShadowRenderer(string vertexSource, string fragmentSource);
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 

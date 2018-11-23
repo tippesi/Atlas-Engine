@@ -14,8 +14,6 @@ public:
 private:
 	void GetUniforms();
 
-	uint32_t rectangleVAO;
-
 	Shader* shader;
 
 	Uniform* diffuseTexture;

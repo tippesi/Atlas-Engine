@@ -3,8 +3,6 @@
 
 DirectionalLightRenderer::DirectionalLightRenderer(string vertexSource, string fragmentSource) {
 
-	rectangleVAO = MasterRenderer::GenerateRectangleVAO();
-
 	shader = new Shader();
 
 	shader->AddComponent(VERTEX_SHADER, vertexSource);

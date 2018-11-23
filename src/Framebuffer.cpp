@@ -162,7 +162,16 @@ void Framebuffer::SetDrawBuffers(uint32_t* drawBuffers, int32_t count) {
 
 }
 
-Framebuffer::~Framebuffer() {
+void Framebuffer::ClearContent() {
+
+	components.clear();
+	drawBuffers.clear();
+
+	drawBuffersSet = false;
+
+}
+
+void Framebuffer::DeleteContent() {
 
 	for (auto& componentKey : components) {
 		FramebufferComponent* component = componentKey.second;
@@ -171,5 +180,13 @@ Framebuffer::~Framebuffer() {
 		}
 		delete component;
 	}
+
+	ClearContent();
+
+}
+
+Framebuffer::~Framebuffer() {
+
+	glDeleteFramebuffers(1, &ID);
 
 }

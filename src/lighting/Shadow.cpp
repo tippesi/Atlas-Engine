@@ -42,6 +42,13 @@ void Shadow::Update(Camera* camera) {
 
 }
 
+Shadow::~Shadow() {
+
+	delete[] components;
+	delete maps;
+
+}
+
 void Shadow::UpdateShadowComponent(ShadowComponent* cascade, Camera* camera) {
 
 	vec3 cameraLocation = camera->thirdPerson ? camera->location - camera->direction * camera->thirdPersonDistance : camera->location;

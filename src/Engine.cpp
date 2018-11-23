@@ -68,7 +68,7 @@ namespace Engine {
 		ShaderSource::SetSourceDirectory(shaderDirectory);
 
 		GeometryRenderer::InitShaderBatch("deferred/geometry.vsh", "deferred/geometry.fsh");
-		ShadowRenderer::InitShaderBatch("shadowmapping.vsh", "shadowmapping.fsh");
+		DirectionalShadowRenderer::InitShaderBatch("shadowmapping.vsh", "shadowmapping.fsh");
 
 		return window;
 

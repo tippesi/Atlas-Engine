@@ -30,6 +30,24 @@ void VertexBuffer::SetData(uint32_t* data, int32_t length) {
 
 }
 
+void VertexBuffer::SetData(int8_t* data, int32_t length) {
+
+	SetDataInternal(data, length, sizeof(int8_t), GL_BYTE, 1);
+
+}
+
+void VertexBuffer::SetData(int16_t* data, int32_t length) {
+
+	SetDataInternal(data, length, sizeof(int16_t), GL_SHORT, 1);
+
+}
+
+void VertexBuffer::SetData(int32_t* data, int32_t length) {
+
+	SetDataInternal(data, length, sizeof(int32_t), GL_INT, 1);
+
+}
+
 void VertexBuffer::SetData(float* data, int32_t length) {
 
 	SetDataInternal(data, length, sizeof(float), GL_FLOAT, 1);
@@ -75,6 +93,24 @@ void VertexBuffer::SetSubData(uint16_t* data, int32_t offset, int32_t length) {
 void VertexBuffer::SetSubData(uint32_t* data, int32_t offset, int32_t length) {
 
 	SetSubDataInternal(data, offset, length, sizeof(uint32_t), GL_UNSIGNED_INT, 1);
+
+}
+
+void VertexBuffer::SetSubData(int8_t* data, int32_t offset, int32_t length) {
+
+	SetSubDataInternal(data, offset, length, sizeof(int8_t), GL_BYTE, 1);
+
+}
+
+void VertexBuffer::SetSubData(int16_t* data, int32_t offset, int32_t length) {
+
+	SetSubDataInternal(data, offset, length, sizeof(int16_t), GL_SHORT, 1);
+
+}
+
+void VertexBuffer::SetSubData(int32_t* data, int32_t offset, int32_t length) {
+
+	SetSubDataInternal(data, offset, length, sizeof(int32_t), GL_INT, 1);
 
 }
 
@@ -175,5 +211,11 @@ void VertexBuffer::SetSubDataInternal(void* data, int32_t offset, int32_t length
 	}
 
 	glBufferSubData(type, offset, length, data);
+
+}
+
+VertexBuffer::~VertexBuffer() {
+
+	glDeleteBuffers(1, &ID);
 
 }

@@ -22,7 +22,7 @@ string MasterRenderer::textFragmentPath = "text.fsh";
 
 MasterRenderer::MasterRenderer() {
 
-	rectangleVAO = GenerateRectangleVAO();
+	rectangleVertexArray = GenerateRectangleVAO();
 
 	geometryRenderer = new GeometryRenderer();
 
@@ -32,7 +32,7 @@ MasterRenderer::MasterRenderer() {
 		terrainGeometryPath,
 		terrainFragmentPath);
 
-	shadowRenderer = new ShadowRenderer(shadowVertexPath,
+	directionalShadowRenderer = new DirectionalShadowRenderer(shadowVertexPath,
 		shadowFragmentPath);
 
 	directionalVolumetricRenderer = new DirectionalVolumetricRenderer(volumetricVertexPath, 
@@ -59,7 +59,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
-	shadowRenderer->Render(window, target, camera, scene, true);
+	directionalShadowRenderer->Render(window, target, camera, scene, true);
 
 	target->geometryFramebuffer->Bind(true);
 
@@ -73,7 +73,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 
-	glBindVertexArray(rectangleVAO);
+	rectangleVertexArray->Bind();
 
 	directionalVolumetricRenderer->Render(window, target, camera, scene, true);
 
@@ -91,7 +91,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 	glDisable(GL_DEPTH_TEST);
 
-	glBindVertexArray(rectangleVAO);
+	rectangleVertexArray->Bind();
 
 	postProcessRenderer->Render(window, target, camera, scene, true);
 
@@ -111,22 +111,27 @@ void MasterRenderer::RenderRectangle(vec3 color) {
 
 }
 
-uint32_t MasterRenderer::GenerateRectangleVAO() {
+MasterRenderer::~MasterRenderer() {
 
-	uint32_t vao = 0;
+	delete geometryRenderer;
+	delete terrainRenderer;
+	delete directionalShadowRenderer;
+	delete directionalVolumetricRenderer;
+	delete directionalLightRenderer;
+	delete skyboxRenderer;
+	delete postProcessRenderer;
+
+}
+
+VertexArray* MasterRenderer::GenerateRectangleVAO() {
+
 	int8_t vertices[] = { -1, -1, 1, -1, -1, 1, 1, 1 };
 
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
+	VertexArray* vertexArray = new VertexArray();
+	VertexBuffer* buffer = new VertexBuffer(GL_ARRAY_BUFFER);
+	buffer->SetData(&vertices[0], 8);
+	vertexArray->AddComponent(0, buffer);
 
-	glEnableVertexAttribArray(0);
-
-	uint32_t verticesBuffer;
-	glGenBuffers(1, &verticesBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, verticesBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 2, GL_BYTE, false, 0, NULL);
-
-	return vao;
+	return vertexArray;
 
 }

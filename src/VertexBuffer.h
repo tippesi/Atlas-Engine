@@ -14,6 +14,12 @@ public:
 
 	void SetData(uint32_t* data, int32_t length);
 
+	void SetData(int8_t* data, int32_t length);
+
+	void SetData(int16_t* data, int32_t length);
+
+	void SetData(int32_t* data, int32_t length);
+
 	void SetData(float* data, int32_t length);
 
 	void SetData(vec2* data, int32_t length);
@@ -29,6 +35,12 @@ public:
 	void SetSubData(uint16_t* data, int32_t offset, int32_t length);
 
 	void SetSubData(uint32_t* data, int32_t offset, int32_t length);
+
+	void SetSubData(int8_t* data, int32_t offset, int32_t length);
+
+	void SetSubData(int16_t* data, int32_t offset, int32_t length);
+
+	void SetSubData(int32_t* data, int32_t offset, int32_t length);
 
 	void SetSubData(float* data, int32_t offset, int32_t length);
 
@@ -51,6 +63,8 @@ public:
 	int32_t GetVertexSize();
 
 	int32_t GetStride();
+
+	~VertexBuffer();
 
 private:
 	void SetDataInternal(void* data, int32_t length, int32_t vertexSize, int32_t dataType, int32_t stride);

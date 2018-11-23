@@ -5,6 +5,7 @@
 #include "IRenderer.h"
 
 #include "../Font.h"
+#include "../VertexArray.h"
 
 class TextRenderer : public IRenderer {
 
@@ -22,10 +23,7 @@ private:
 
 	vec3* CalculateCharacterInstances(Font* font, string text, int32_t* characterCount);
 
-	uint32_t vao;
-	uint32_t vbo;
-
-	uint32_t vboLength;
+	VertexArray* vertexArray;
 
 	Shader* shader;
 

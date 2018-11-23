@@ -29,6 +29,8 @@ public:
 
 	void Update(Camera* camera);
 
+	~Shadow();
+
 	float distance;
 	float bias;
 	float splitCorrection;
