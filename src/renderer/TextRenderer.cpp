@@ -1,9 +1,9 @@
 #include "TextRenderer.h"
-#include "MasterRenderer.h"
+#include "helper/GeometryHelper.h"
 
 TextRenderer::TextRenderer(string vertexSource, string fragmentSource) {
 
-	vertexArray = MasterRenderer::GenerateRectangleVAO();
+	vertexArray = GeometryHelper::GenerateRectangleVertexArray();
 
 	VertexBuffer* vertexBuffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_FLOAT, 3);
 	vertexArray->AddInstancedComponent(1, vertexBuffer);
@@ -25,11 +25,14 @@ void TextRenderer::Render(Window* window, RenderTarget* target, Camera* camera, 
 
 }
 
-void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color, float scale, Framebuffer* framebuffer) {
+void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color,
+	float scale, bool alphaBlending, Framebuffer* framebuffer) {
 
 	int32_t characterCount;
 
 	shader->Bind();
+
+	outline->SetValue(false);
 
 	if (framebuffer != nullptr) {
 		framebuffer->Bind(true);
@@ -37,8 +40,10 @@ void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, in
 
 	glDisable(GL_CULL_FACE);
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	if (alphaBlending) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
 
 	float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
 	float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
@@ -55,7 +60,6 @@ void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, in
 
 	characterScales->SetValue(font->characterScales, FONT_CHARACTER_COUNT);
 	characterSizes->SetValue(font->characterSizes, FONT_CHARACTER_COUNT);
-	characterOffsets->SetValue(font->characterOffsets, FONT_CHARACTER_COUNT);
 	pixelDistanceScale->SetValue(font->pixelDistanceScale);
 	edgeValue->SetValue(font->edgeValue);
 
@@ -67,19 +71,68 @@ void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, in
 
 	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, characterCount);
 
-	glDisable(GL_BLEND);
+	if (alphaBlending) {
+		glDisable(GL_BLEND);
+	}
 
 	glEnable(GL_CULL_FACE);
 
 }
 
-void TextRenderer::RenderOutlined(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color, float scale, Framebuffer* framebuffer) {
+void TextRenderer::RenderOutlined(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color, vec3 outlineColor, 
+	float outlineScale, float scale, bool alphaBlending, Framebuffer* framebuffer) {
+
+	int32_t characterCount;
 
 	shader->Bind();
+
+	outline->SetValue(true);
 
 	if (framebuffer != nullptr) {
 		framebuffer->Bind(true);
 	}
+
+	glDisable(GL_CULL_FACE);
+
+	if (alphaBlending) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+
+	float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
+	float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+
+	vec3* instances = CalculateCharacterInstances(font, text, &characterCount);
+
+	glyphsTexture->SetValue(0);
+
+	projectionMatrix->SetValue(glm::ortho(0.0f, width, 0.0f, height));
+
+	textScale->SetValue(scale);
+	textOffset->SetValue(vec2((float)x, (float)y));
+	textColor->SetValue(color);
+
+	this->outlineColor->SetValue(outlineColor);
+	this->outlineScale->SetValue(outlineScale);
+
+	characterScales->SetValue(font->characterScales, FONT_CHARACTER_COUNT);
+	characterSizes->SetValue(font->characterSizes, FONT_CHARACTER_COUNT);
+	pixelDistanceScale->SetValue(font->pixelDistanceScale);
+	edgeValue->SetValue(font->edgeValue);
+
+	vertexArray->GetComponent(1)->SetData(instances, characterCount);
+
+	font->glyphsTexture->Bind(GL_TEXTURE0);
+
+	vertexArray->Bind();
+
+	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, characterCount);
+
+	if (alphaBlending) {
+		glDisable(GL_BLEND);
+	}
+
+	glEnable(GL_CULL_FACE);
 
 }
 
@@ -89,10 +142,12 @@ void TextRenderer::GetUniforms() {
 	projectionMatrix = shader->GetUniform("pMatrix");
 	characterScales = shader->GetUniform("characterScales");
 	characterSizes = shader->GetUniform("characterSizes");
-	characterOffsets = shader->GetUniform("characterOffsets");
 	textOffset = shader->GetUniform("textOffset");
 	textScale = shader->GetUniform("textScale");
 	textColor = shader->GetUniform("textColor");
+	outline = shader->GetUniform("outline");
+	outlineColor = shader->GetUniform("outlineColor");
+	outlineScale = shader->GetUniform("outlineScale");
 	pixelDistanceScale = shader->GetUniform("pixelDistanceScale");
 	edgeValue = shader->GetUniform("edgeValue");
 

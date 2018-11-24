@@ -26,8 +26,6 @@ public:
 
 	~MasterRenderer();
 
-	static VertexArray* GenerateRectangleVAO();
-
 	TextRenderer* textRenderer;
 
 private:

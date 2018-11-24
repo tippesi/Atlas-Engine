@@ -1,4 +1,5 @@
 #include "MasterRenderer.h"
+#include "helper/GeometryHelper.h"
 
 string MasterRenderer::terrainVertexPath = "terrain/terrain.vsh";
 string MasterRenderer::terrainTessControlPath = "terrain/terrain.tcsh";
@@ -22,7 +23,7 @@ string MasterRenderer::textFragmentPath = "text.fsh";
 
 MasterRenderer::MasterRenderer() {
 
-	rectangleVertexArray = GenerateRectangleVAO();
+	rectangleVertexArray = GeometryHelper::GenerateRectangleVertexArray();
 
 	geometryRenderer = new GeometryRenderer();
 
@@ -121,20 +122,5 @@ MasterRenderer::~MasterRenderer() {
 
 	rectangleVertexArray->DeleteContent();
 	delete rectangleVertexArray;
-
-}
-
-VertexArray* MasterRenderer::GenerateRectangleVAO() {
-
-	int8_t vertices[] = { -1, -1, 1, -1, -1, 1, 1, 1 };
-
-	VertexArray* vertexArray = new VertexArray();
-	VertexBuffer* buffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_BYTE, 2);
-	buffer->SetData(&vertices[0], 8);
-	vertexArray->AddComponent(0, buffer);
-
-	vertexArray->Unbind();
-
-	return vertexArray;
 
 }

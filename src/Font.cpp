@@ -33,7 +33,6 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 	glyphs = new Glyph[FONT_CHARACTER_COUNT];
 	characterScales = new vec2[FONT_CHARACTER_COUNT];
 	characterSizes = new vec2[FONT_CHARACTER_COUNT];
-	characterOffsets = new vec2[FONT_CHARACTER_COUNT];
 
 	int32_t resolution = pixelSize + 2 * padding;
 
@@ -53,7 +52,7 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 		new EngineException("Failed loading font");
 	}
 
-	float scale = (float)stbtt_ScaleForPixelHeight(&font, pixelSize);
+	float scale = (float)stbtt_ScaleForPixelHeight(&font, (float)pixelSize);
 
 	stbtt_GetFontVMetrics(&font, &ascent, &descent, &lineGap);
 
@@ -84,7 +83,6 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 		glyph->offset.y = (float)yOffset;
 
 		characterScales[i] = glyph->textureScale;
-		characterOffsets[i] = glyph->offset;
 		characterSizes[i] = vec2((float)glyph->width, (float)glyph->height);
 
 		for (int32_t x = 0; x < glyph->width; x++) {
@@ -99,7 +97,7 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 
 		stbtt_GetCodepointHMetrics(&font, i, &glyph->advance, 0);
 
-		glyph->advance *= scale;
+		glyph->advance = (int32_t)((float)glyph->advance * scale);
 
 		glyphsTexture->SetData(glyph->data, i);
 
@@ -119,5 +117,32 @@ Glyph* Font::GetGlyph(char character) {
 		return nullptr;
 
 	return &glyphs[characterIndex];
+
+}
+
+void Font::ComputeDimensions(string text, float scale, int32_t* width, int32_t* height) {
+
+	*width = 0;
+	*height = 0;
+
+	for (int32_t i = 0; i < text.length(); i++) {
+
+		char& character = text[i];
+		Glyph* glyph = GetGlyph(character);
+
+		*height = (int32_t)glm::max((float)(glyph->height + glyph->offset.y + ascent) * scale, (float)*height);
+		*width += (int32_t)((float)(glyph->advance + glyph->kern[(uint8_t)text[i + 1]]) * scale);
+
+	}
+
+}
+
+Font::~Font() {
+
+	delete[] glyphs;
+	delete[] characterScales;
+	delete[] characterSizes;
+
+	delete glyphsTexture;
 
 }

@@ -21,7 +21,13 @@ int main(int argc, char* argv[]) {
 
 	MasterRenderer* renderer = new MasterRenderer();
 
-	renderer->textRenderer->Render(window, font, "Loading...", 230, 300, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+	int32_t textWidth, textHeight;
+	font->ComputeDimensions("Loading...", 2.5f, &textWidth, &textHeight);
+
+	int32_t x = 1280 / 2 - textWidth / 2;
+	int32_t y = 720 / 2 - textHeight / 2;
+
+	renderer->textRenderer->Render(window, font, "Loading...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
 	window->Update();
 
@@ -174,7 +180,7 @@ int main(int argc, char* argv[]) {
 
 		renderer->RenderScene(window, target, camera, scene);
 
-		renderer->textRenderer->Render(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f/10.0f);
+		renderer->textRenderer->RenderOutlined(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f), 2.0f, 2.5f);
 
 		window->Update();
 

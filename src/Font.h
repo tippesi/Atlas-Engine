@@ -29,6 +29,10 @@ public:
 
 	Glyph* GetGlyph(char character);
 
+	void ComputeDimensions(string text, float scale, int32_t* width, int32_t* height);
+
+	~Font();
+
 	int32_t lineGap;
 	int32_t ascent;
 	int32_t descent;
@@ -38,7 +42,6 @@ public:
 
 	vec2* characterScales;
 	vec2* characterSizes;
-	vec2* characterOffsets;
 
 	Texture* glyphsTexture;
 

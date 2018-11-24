@@ -2,6 +2,8 @@
 ![Example scene](image.png)
 ## Introduction
 This is a cross platform engine that is available on all major platforms including Linux, Windows and MacOS.
+>**Note:**
+>MacOS only supports OpenGL up to version 4.1. Some features aren't available there.
 ## Requirements
 - OpenGL 4.3 or higher
 - OpenGL ES 3.2

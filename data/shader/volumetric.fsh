@@ -62,6 +62,8 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 	
 	float ditherValue = ditherPattern[(int(texCoords.x) % 4) * 4 + int(texCoords.y) % 4];
 	vec3 currentPosition = stepVector * ditherValue;
+	
+	float scattering = ComputeScattering(dot(rayDirection, light.direction));
 
     for (int i = 0; i < sampleCount; i++) {
         vec4 comparison = vec4(-currentPosition.z > cascadesDistance.x,
@@ -76,7 +78,7 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
         cascadeSpace.xyz = cascadeSpace.xyz * 0.5f + 0.5f;
 
         float shadowValue = texture(cascadeMaps, vec4(cascadeSpace.xy, index, cascadeSpace.z));
-        foginess += ComputeScattering(dot(rayDirection, light.direction)) * shadowValue;
+        foginess += scattering * shadowValue;
 
         currentPosition += stepVector;
 
