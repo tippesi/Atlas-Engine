@@ -9,6 +9,7 @@
 #include "DirectionalShadowRenderer.h"
 #include "DirectionalVolumetricRenderer.h"
 #include "DirectionalLightRenderer.h"
+#include "PointLightRenderer.h"
 #include "SkyboxRenderer.h"
 #include "AtmosphereRenderer.h"
 #include "PostProcessRenderer.h"
@@ -35,6 +36,7 @@ private:
 	DirectionalShadowRenderer* directionalShadowRenderer;
 	DirectionalVolumetricRenderer* directionalVolumetricRenderer;
 	DirectionalLightRenderer* directionalLightRenderer;
+	PointLightRenderer* pointLightRenderer;
 	SkyboxRenderer* skyboxRenderer;
 	AtmosphereRenderer* atmosphereRenderer;
 	PostProcessRenderer* postProcessRenderer;
@@ -54,6 +56,8 @@ private:
 	static string bilateralBlurFragmentPath;
 	static string directionalLightVertexPath;
 	static string directionalLightFragmentPath;
+	static string pointLightVertexPath;
+	static string pointLightFragmentPath;
 	static string skyboxVertexPath;
 	static string skyboxFragmentPath;
 	static string atmosphereVertexPath;

@@ -29,6 +29,8 @@ VertexArray* GeometryHelper::GenerateSphereVertexArray(uint32_t rings, uint32_t 
 
 	uint32_t indexCount, vertexCount;
 
+	// The sphere is generated with triangles that are in clockwise order
+	// This helps us for both atmospheric and point light rendering
 	GenerateSphere(rings, segments, indices, vertices, &indexCount, &vertexCount);
 
 	VertexArray* vertexArray = new VertexArray();
@@ -93,16 +95,16 @@ void GeometryHelper::GenerateSphere(uint32_t rings, uint32_t segments, uint32_t*
 
 	// Indices for the upper outer ring
 	for (uint32_t i = 0; i < segments; i++) {
-		indicies[indexIndex++] = (i + 1) % segments + 1;
-		indicies[indexIndex++] = 0;
 		indicies[indexIndex++] = i + 1;
+		indicies[indexIndex++] = 0;
+		indicies[indexIndex++] = (i + 1) % segments + 1;
 	}
 	
 	// Indices for the lower outer ring
 	for (uint32_t i = 0; i < segments; i++) {
-		indicies[indexIndex++] = *vertexCount - 1 - segments + i;
-		indicies[indexIndex++] = *vertexCount - 1;
 		indicies[indexIndex++] = *vertexCount - 1 - segments + (i + 1) % segments;
+		indicies[indexIndex++] = *vertexCount - 1;
+		indicies[indexIndex++] = *vertexCount - 1 - segments + i;
 	}
 	
 	uint32_t offset = 1;
@@ -111,12 +113,12 @@ void GeometryHelper::GenerateSphere(uint32_t rings, uint32_t segments, uint32_t*
 	for (uint32_t i = 0; i < innerRings - 1; i++) {
 		offset += segments;
 		for (uint32_t j = 0; j < segments; j++) {
+			indicies[indexIndex++] = offset - segments + j;
+			indicies[indexIndex++] = offset + (j + 1) % segments;
 			indicies[indexIndex++] = offset + j;
-			indicies[indexIndex++] = offset + (j + 1) % segments;
-			indicies[indexIndex++] = offset - segments + j;
-			indicies[indexIndex++] = offset - segments + j;
-			indicies[indexIndex++] = offset + (j + 1) % segments;
 			indicies[indexIndex++] = offset - segments + (j + 1) % segments;
+			indicies[indexIndex++] = offset + (j + 1) % segments;
+			indicies[indexIndex++] = offset - segments + j;
 		}
 	}
 

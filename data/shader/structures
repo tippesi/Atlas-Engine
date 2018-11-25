@@ -26,9 +26,10 @@ struct Shadow {
 //Light struct has to be implemented like this
 struct Light {
 
-    vec3 position;
+    vec3 location;
 	vec3 direction;
     vec3 color;
+	float radius;
 	float ambient;
 	Shadow shadow;
 

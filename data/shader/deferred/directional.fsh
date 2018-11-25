@@ -4,7 +4,7 @@
 #include "convert"
 
 in vec2 fTexCoord;
-out vec3 fragColor;
+out vec4 fragColor;
 
 uniform sampler2D diffuseTexture;
 uniform sampler2D normalTexture;
@@ -61,8 +61,8 @@ void main() {
 	ambient *= occlusionFactor;
 #endif
 	
-	diffuse = max((dot(normal, lightDir) * light.color) * shadowFactor, ambient * occlusionFactor)
-		* surfaceColor;		
+	diffuse = max((dot(normal, lightDir) * light.color) * shadowFactor,
+		ambient * occlusionFactor) * surfaceColor;		
 	
 	if(specularIntensity > 0.0f && shadowFactor > 0.5f) {
 		
@@ -73,8 +73,8 @@ void main() {
 	}
 	
 	if(shadowFactor < 0.5f)
-		fragColor = diffuse + ambient + volumetric;
+		fragColor = vec4(diffuse + ambient + volumetric, 1.0f);
 	else
-		fragColor = diffuse + specular + ambient + volumetric;
+		fragColor = vec4(diffuse + specular + ambient + volumetric, 1.0f);
 
 }

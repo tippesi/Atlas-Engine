@@ -83,12 +83,37 @@ int main(int argc, char* argv[]) {
 	globalLight->AddShadow(new Shadow(125.0f, 0.004f, 2048, 3, 0.7f), camera);
 	globalLight->AddVolumetric(new Volumetric(target->width / 2, target->height / 2, 20));
 
+	Light* pointLight1 = new Light(POINT_LIGHT);
+	pointLight1->location = vec3(24.35f, 6.5f, 7.1f);
+	pointLight1->diffuseColor = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
+	pointLight1->ambient = 0.1f;
+
+	Light* pointLight2 = new Light(POINT_LIGHT);
+	pointLight2->location = vec3(24.35f, 6.5f, -11.0f);
+	pointLight2->diffuseColor = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
+	pointLight2->ambient = 0.1f;
+
+	Light* pointLight3 = new Light(POINT_LIGHT);
+	pointLight3->location = vec3(-31.0f, 6.5f, 7.1f);
+	pointLight3->diffuseColor = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
+	pointLight3->ambient = 0.1f;
+
+	Light* pointLight4 = new Light(POINT_LIGHT);
+	pointLight4->location = vec3(-31.0f, 6.5f, -11.0f);
+	pointLight4->diffuseColor = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
+	pointLight4->ambient = 0.1f;
+
+
 	node->Add(actor);
 	scene->rootNode->Add(node);
 
 	scene->Add(sponza);
 
 	scene->Add(globalLight);
+	scene->Add(pointLight1);
+	scene->Add(pointLight2);
+	scene->Add(pointLight3);
+	scene->Add(pointLight4);
 
 	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
 

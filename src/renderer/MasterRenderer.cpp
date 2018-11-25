@@ -14,6 +14,8 @@ string MasterRenderer::bilateralBlurVertexPath = "bilateralBlur.vsh";
 string MasterRenderer::bilateralBlurFragmentPath = "bilateralBlur.fsh";
 string MasterRenderer::directionalLightVertexPath = "deferred/directional.vsh";
 string MasterRenderer::directionalLightFragmentPath = "deferred/directional.fsh";
+string MasterRenderer::pointLightVertexPath = "deferred/point.vsh";
+string MasterRenderer::pointLightFragmentPath = "deferred/point.fsh";
 string MasterRenderer::skyboxVertexPath = "skybox.vsh";
 string MasterRenderer::skyboxFragmentPath = "skybox.fsh";
 string MasterRenderer::atmosphereVertexPath = "atmosphere.vsh";
@@ -45,6 +47,9 @@ MasterRenderer::MasterRenderer() {
 
 	directionalLightRenderer = new DirectionalLightRenderer(directionalLightVertexPath, 
 		directionalLightFragmentPath);
+
+	pointLightRenderer = new PointLightRenderer(pointLightVertexPath,
+		pointLightFragmentPath);
 
 	skyboxRenderer = new SkyboxRenderer(skyboxVertexPath,
 		skyboxFragmentPath);
@@ -85,8 +90,18 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 	target->lightingFramebuffer->Bind();
 
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	// Additive blending of light volumes
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
 	directionalLightRenderer->Render(window, target, camera, scene, true);
 
+	pointLightRenderer->Render(window, target, camera, scene, true);
+
+	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 
 	if (scene->sky->skybox != nullptr) {
@@ -124,7 +139,9 @@ MasterRenderer::~MasterRenderer() {
 	delete directionalShadowRenderer;
 	delete directionalVolumetricRenderer;
 	delete directionalLightRenderer;
+	delete pointLightRenderer;
 	delete skyboxRenderer;
+	delete atmosphereRenderer;
 	delete postProcessRenderer;
 
 	vertexArray->DeleteContent();

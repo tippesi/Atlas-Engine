@@ -18,7 +18,7 @@ private:
 
 	Shader* shader;
 
-	Uniform* modelViewProjectionMatrix;
+	Uniform* viewProjectionMatrix;
 
 };
 

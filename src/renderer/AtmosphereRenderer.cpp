@@ -18,23 +18,19 @@ AtmosphereRenderer::AtmosphereRenderer(string vertexSource, string fragmentSourc
 
 void AtmosphereRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
-	glDisable(GL_CULL_FACE);
-
 	shader->Bind();
 
 	vertexArray->Bind();
 
-	modelViewProjectionMatrix->SetValue(camera->projectionMatrix * glm::mat4(glm::mat3(camera->viewMatrix)));
+	viewProjectionMatrix->SetValue(camera->projectionMatrix * glm::mat4(glm::mat3(camera->viewMatrix)));
 
 	glDrawElements(GL_TRIANGLES, vertexArray->GetIndexComponent()->GetElementCount(),
 		vertexArray->GetIndexComponent()->GetDataType(), NULL);
-
-	glEnable(GL_CULL_FACE);
 
 }
 
 void AtmosphereRenderer::GetUniforms() {
 
-	modelViewProjectionMatrix = shader->GetUniform("mvpMatrix");
+	viewProjectionMatrix = shader->GetUniform("vpMatrix");
 
 }
