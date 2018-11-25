@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
 	Window* window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
 
-	Engine::UnlockFramerate();
+	// Engine::UnlockFramerate();
 
 	GeometryHelper::GenerateSphereVertexArray(10, 10);
 
@@ -103,6 +103,11 @@ int main(int argc, char* argv[]) {
 	pointLight4->diffuseColor = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight4->ambient = 0.1f;
 
+	Light* pointLight5 = new Light(POINT_LIGHT);
+	pointLight5->location = vec3(0.0f, 2.0f, 0.0f);
+	pointLight5->diffuseColor = vec3(1.0f);
+	pointLight5->ambient = 0.1f;
+
 
 	node->Add(actor);
 	scene->rootNode->Add(node);
@@ -114,6 +119,7 @@ int main(int argc, char* argv[]) {
 	scene->Add(pointLight2);
 	scene->Add(pointLight3);
 	scene->Add(pointLight4);
+	scene->Add(pointLight5);
 
 	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
 
