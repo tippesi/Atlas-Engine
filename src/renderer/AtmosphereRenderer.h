@@ -1,23 +1,23 @@
-#ifndef SKYBOXRENDERER_H
-#define SKYBOXRENDERER_H
+#ifndef ATMOSPHERERENDERER_H
+#define ATMOSPHERERENDERER_H
 
 #include "../System.h"
 #include "IRenderer.h"
-#include "../VertexArray.h"
 
-class SkyboxRenderer : public IRenderer {
+class AtmosphereRenderer : public IRenderer {
 
 public:
-	SkyboxRenderer(string vertexSource, string fragmentSource);
+	AtmosphereRenderer(string vertexSource, string fragmentSource);
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 
 private:
-	VertexArray * vertexArray;
+	void GetUniforms();
+
+	VertexArray* vertexArray;
 
 	Shader* shader;
 
-	Uniform* skyCubemap;
 	Uniform* modelViewProjectionMatrix;
 
 };

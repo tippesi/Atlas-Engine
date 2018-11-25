@@ -172,6 +172,20 @@ int32_t VertexBuffer::GetStride() {
 
 }
 
+int32_t VertexBuffer::GetElementCount() {
+
+	switch (dataType) {
+	case GL_BYTE: return sizeInBytes / stride;
+	case GL_UNSIGNED_BYTE: return sizeInBytes / stride;
+	case GL_SHORT: return sizeInBytes / (2 * stride);
+	case GL_UNSIGNED_SHORT: return sizeInBytes / (2 * stride);
+	case GL_HALF_FLOAT: return sizeInBytes / (2 * stride);
+	case GL_DOUBLE: return sizeInBytes / (8 * stride);
+	default: return sizeInBytes / (4 * stride);
+	}
+
+}
+
 void VertexBuffer::SetDataInternal(void* data, int32_t length, int32_t elementSize) {
 
 	Bind();

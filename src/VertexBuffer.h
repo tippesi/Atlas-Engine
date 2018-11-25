@@ -62,6 +62,8 @@ public:
 
 	int32_t GetStride();
 
+	int32_t GetElementCount();
+
 	~VertexBuffer();
 
 private:

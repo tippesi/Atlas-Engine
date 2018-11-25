@@ -16,6 +16,8 @@ string MasterRenderer::directionalLightVertexPath = "deferred/directional.vsh";
 string MasterRenderer::directionalLightFragmentPath = "deferred/directional.fsh";
 string MasterRenderer::skyboxVertexPath = "skybox.vsh";
 string MasterRenderer::skyboxFragmentPath = "skybox.fsh";
+string MasterRenderer::atmosphereVertexPath = "atmosphere.vsh";
+string MasterRenderer::atmosphereFragmentPath = "atmosphere.fsh";
 string MasterRenderer::postProcessVertexPath = "postprocessing.vsh";
 string MasterRenderer::postProcessFragmentPath = "postprocessing.fsh";
 string MasterRenderer::textVertexPath = "text.vsh";
@@ -23,7 +25,7 @@ string MasterRenderer::textFragmentPath = "text.fsh";
 
 MasterRenderer::MasterRenderer() {
 
-	rectangleVertexArray = GeometryHelper::GenerateRectangleVertexArray();
+	vertexArray = GeometryHelper::GenerateRectangleVertexArray();
 
 	geometryRenderer = new GeometryRenderer();
 
@@ -46,6 +48,9 @@ MasterRenderer::MasterRenderer() {
 
 	skyboxRenderer = new SkyboxRenderer(skyboxVertexPath,
 		skyboxFragmentPath);
+
+	atmosphereRenderer = new AtmosphereRenderer(atmosphereVertexPath,
+		atmosphereFragmentPath);
 
 	postProcessRenderer = new PostProcessRenderer(postProcessVertexPath,
 		postProcessFragmentPath);
@@ -74,7 +79,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 
-	rectangleVertexArray->Bind();
+	vertexArray->Bind();
 
 	directionalVolumetricRenderer->Render(window, target, camera, scene, true);
 
@@ -85,14 +90,16 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glEnable(GL_DEPTH_TEST);
 
 	if (scene->sky->skybox != nullptr) {
-		skyboxRenderer->Render(window, target, camera, scene, true);
+		//skyboxRenderer->Render(window, target, camera, scene, true);
 	}
+
+	atmosphereRenderer->Render(window, target, camera, scene, true);
 
 	target->lightingFramebuffer->Unbind();
 
 	glDisable(GL_DEPTH_TEST);
 
-	rectangleVertexArray->Bind();
+	vertexArray->Bind();
 
 	postProcessRenderer->Render(window, target, camera, scene, true);
 
@@ -120,7 +127,7 @@ MasterRenderer::~MasterRenderer() {
 	delete skyboxRenderer;
 	delete postProcessRenderer;
 
-	rectangleVertexArray->DeleteContent();
-	delete rectangleVertexArray;
+	vertexArray->DeleteContent();
+	delete vertexArray;
 
 }

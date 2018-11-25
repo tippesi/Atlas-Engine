@@ -1,4 +1,4 @@
-layout(location=0)in vec3 vPosition;//Position eines Vertex
+layout(location=0)in vec3 vPosition;
 
 uniform mat4 mvpMatrix;
 out vec3 fTexCoord;

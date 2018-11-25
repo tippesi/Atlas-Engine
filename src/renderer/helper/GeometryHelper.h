@@ -11,14 +11,15 @@ public:
 	
 	static VertexArray* GenerateCubeVertexArray();
 
-	static VertexArray* GenerateSphereVertexArray();
+	static VertexArray* GenerateSphereVertexArray(uint32_t rings, uint32_t segments);
 
 private:
+	static void GenerateSphere(uint32_t rings, uint32_t segments, uint32_t*& indicies, vec3*& vertices,
+		uint32_t* indexCount, uint32_t* vertexCount);
+
 	static int8_t rectangleVertices[];
 
 	static float cubeVertices[];
-
-	static float sphereVertices[];
 
 };
 

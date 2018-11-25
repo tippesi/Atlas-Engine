@@ -3,6 +3,7 @@
 #include "input/Keyboard.h"
 #include "tools/TerrainTool.h"
 #include "Font.h"
+#include "renderer/helper/GeometryHelper.h"
 
 #include "libraries/stb/stb_image.h"
 
@@ -12,6 +13,8 @@ int main(int argc, char* argv[]) {
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
 
 	Engine::UnlockFramerate();
+
+	GeometryHelper::GenerateSphereVertexArray(10, 10);
 
 	Camera* camera = new Camera(47.0f, 2.0f, 1.0f, 4000.0f);
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);

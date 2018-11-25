@@ -10,6 +10,7 @@
 #include "DirectionalVolumetricRenderer.h"
 #include "DirectionalLightRenderer.h"
 #include "SkyboxRenderer.h"
+#include "AtmosphereRenderer.h"
 #include "PostProcessRenderer.h"
 #include "TextRenderer.h"
 
@@ -35,9 +36,10 @@ private:
 	DirectionalVolumetricRenderer* directionalVolumetricRenderer;
 	DirectionalLightRenderer* directionalLightRenderer;
 	SkyboxRenderer* skyboxRenderer;
+	AtmosphereRenderer* atmosphereRenderer;
 	PostProcessRenderer* postProcessRenderer;
 
-	VertexArray* rectangleVertexArray;
+	VertexArray* vertexArray;
 
 	static string terrainVertexPath;
 	static string terrainTessControlPath;
@@ -54,6 +56,8 @@ private:
 	static string directionalLightFragmentPath;
 	static string skyboxVertexPath;
 	static string skyboxFragmentPath;
+	static string atmosphereVertexPath;
+	static string atmosphereFragmentPath;
 	static string postProcessVertexPath;
 	static string postProcessFragmentPath;
 	static string textVertexPath;

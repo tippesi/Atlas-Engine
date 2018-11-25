@@ -17,7 +17,7 @@ public:
 	void Render(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color, 
 		float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	void RenderOutlined(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color, vec3 outlineColor,
+	void RenderOutlined(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color, vec4 outlineColor,
 		float outlineScale, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 private:

@@ -79,7 +79,7 @@ void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, in
 
 }
 
-void TextRenderer::RenderOutlined(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color, vec3 outlineColor, 
+void TextRenderer::RenderOutlined(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color, vec4 outlineColor, 
 	float outlineScale, float scale, bool alphaBlending, Framebuffer* framebuffer) {
 
 	int32_t characterCount;
