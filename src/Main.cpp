@@ -115,11 +115,12 @@ int main(int argc, char* argv[]) {
 	scene->Add(sponza);
 
 	scene->Add(globalLight);
-	scene->Add(pointLight1);
-	scene->Add(pointLight2);
-	scene->Add(pointLight3);
-	scene->Add(pointLight4);
-	scene->Add(pointLight5);
+
+    scene->Add(pointLight1);
+    scene->Add(pointLight2);
+    scene->Add(pointLight3);
+    scene->Add(pointLight4);
+    scene->Add(pointLight5);
 
 	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
 
@@ -214,7 +215,7 @@ int main(int argc, char* argv[]) {
 
 		renderer->RenderScene(window, target, camera, scene);
 
-		renderer->textRenderer->RenderOutlined(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f), 2.0f, 2.5f);
+		// renderer->textRenderer->RenderOutlined(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f), 2.0f, 2.5f);
 
 		window->Update();
 

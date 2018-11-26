@@ -1,8 +1,7 @@
 #include "../structures"
 #include "convert"
 
-in vec2 fTexCoord;
-in vec4 gl_FragCoord;
+in vec3 fTexCoordProj;
 out vec4 fragColor;
 
 uniform sampler2D diffuseTexture;
@@ -14,20 +13,22 @@ uniform Light light;
 uniform vec3 viewSpaceLightLocation;
 
 void main() {
+
+	vec2 texCoord = ((fTexCoordProj.xy / fTexCoordProj.z) + 1.0f) / 2.0f;
 	
-	float depth = texture(depthTexture, fTexCoord).r;
+	float depth = texture(depthTexture, texCoord).r;
 	
-	vec3 fragPos = ConvertDepthToViewSpace(depth, fTexCoord);
+	vec3 fragPos = ConvertDepthToViewSpace(depth, texCoord);
+
+	if (fragPos.z  - viewSpaceLightLocation.z > light.radius)
+		discard;
 	
 	vec3 fragToLight = viewSpaceLightLocation.xyz - fragPos.xyz;
 	float fragToLightDistance = length(fragToLight);
 	
-	if (fragToLightDistance > light.radius)
-		discard;
-	
-	vec3 normal = normalize(2.0f * texture(normalTexture, fTexCoord).rgb - 1.0f);
-	vec3 surfaceColor = texture(diffuseTexture, fTexCoord).rgb;
-	vec2 material = texture(materialTexture, fTexCoord).rg;
+	vec3 normal = normalize(2.0f * texture(normalTexture, texCoord).rgb - 1.0f);
+	vec3 surfaceColor = texture(diffuseTexture, texCoord).rgb;
+	vec2 material = texture(materialTexture, texCoord).rg;
 	
 	// Material properties
 	float specularIntensity = material.r;
@@ -45,7 +46,7 @@ void main() {
 	
 	diffuse = max((dot(normal, lightDir) * light.color) * shadowFactor,
 		ambient * occlusionFactor) * surfaceColor;
-	
-	fragColor = vec4((diffuse + ambient) * (light.radius - fragToLightDistance) / light.radius, 1.0f);
-	
+
+	fragColor = max(vec4((diffuse + ambient) * (light.radius - fragToLightDistance) / light.radius, 1.0f), 0.0f);
+
 }

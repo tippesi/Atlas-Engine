@@ -41,7 +41,7 @@ void PointLightRenderer::Render(Window* window, RenderTarget* target, Camera* ca
 			continue;
 		}
 
-		float radius = 5.0f;
+		float radius = 10.0f;
 
 		viewSpaceLightLocation->SetValue(vec3(camera->viewMatrix * vec4(light->location, 1.0f)));
 		lightLocation->SetValue(light->location);
