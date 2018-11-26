@@ -22,15 +22,34 @@ public:
 
 	void RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	void RenderTexture(Texture* texture);
+	void RenderTexture(Window* window, Texture* texture, int32_t x, int32_t y, int32_t width, int32_t height, 
+		bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	void RenderRectangle(vec3 color);
+	void RenderRectangle(Window* window, vec4 color, int32_t x, int32_t y, int32_t width, int32_t height,
+		bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 	~MasterRenderer();
 
 	TextRenderer* textRenderer;
 
 private:
+	void GetUniforms();
+
+	VertexArray * vertexArray;
+
+	Shader* rectangleShader;
+	Shader* texturedRectangleShader;
+
+	Uniform* rectangleProjectionMatrix;
+	Uniform* rectangleOffset;
+	Uniform* rectangleScale;
+	Uniform* rectangleColor;
+
+	Uniform* texturedRectangleProjectionMatrix;
+	Uniform* texturedRectangleOffset;
+	Uniform* texturedRectangleScale;
+	Uniform* texturedRectangleTexture;
+
 	GeometryRenderer* geometryRenderer;
 	TerrainRenderer* terrainRenderer;
 	DirectionalShadowRenderer* directionalShadowRenderer;
@@ -40,8 +59,6 @@ private:
 	SkyboxRenderer* skyboxRenderer;
 	AtmosphereRenderer* atmosphereRenderer;
 	PostProcessRenderer* postProcessRenderer;
-
-	VertexArray* vertexArray;
 
 	static string terrainVertexPath;
 	static string terrainTessControlPath;
@@ -66,6 +83,8 @@ private:
 	static string postProcessFragmentPath;
 	static string textVertexPath;
 	static string textFragmentPath;
+	static string rectangleVertexPath;
+	static string rectangleFragmentPath;
 
 };
 

@@ -37,6 +37,9 @@ void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, in
 	if (framebuffer != nullptr) {
 		framebuffer->Bind(true);
 	}
+	else {
+		glViewport(0, 0, window->viewport->width, window->viewport->height);
+	}
 
 	glDisable(GL_CULL_FACE);
 
@@ -75,6 +78,10 @@ void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, in
 		glDisable(GL_BLEND);
 	}
 
+	if (framebuffer != nullptr) {
+		framebuffer->Unbind();
+	}
+
 	glEnable(GL_CULL_FACE);
 
 }
@@ -90,6 +97,9 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, int32
 
 	if (framebuffer != nullptr) {
 		framebuffer->Bind(true);
+	}
+	else {
+		glViewport(0, 0, window->viewport->width, window->viewport->height);
 	}
 
 	glDisable(GL_CULL_FACE);
@@ -130,6 +140,10 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, int32
 
 	if (alphaBlending) {
 		glDisable(GL_BLEND);
+	}
+
+	if (framebuffer != nullptr) {
+		framebuffer->Unbind();
 	}
 
 	glEnable(GL_CULL_FACE);

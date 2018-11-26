@@ -12,9 +12,7 @@ int main(int argc, char* argv[]) {
 	Window* window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
 
-	// Engine::UnlockFramerate();
-
-	GeometryHelper::GenerateSphereVertexArray(10, 10);
+	Engine::UnlockFramerate();
 
 	Camera* camera = new Camera(47.0f, 2.0f, 1.0f, 4000.0f);
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -108,7 +106,6 @@ int main(int argc, char* argv[]) {
 	pointLight5->diffuseColor = vec3(1.0f);
 	pointLight5->ambient = 0.1f;
 
-
 	node->Add(actor);
 	scene->rootNode->Add(node);
 
@@ -128,8 +125,6 @@ int main(int argc, char* argv[]) {
 	MouseHandler* mouseHandler = CreateMouseHandler(camera, 1.5f, 0.25f);
 	mouseHandler->lock = true;
 	KeyboardHandler* keyboardHandler = CreateKeyboardHandler(camera,  7.0f, 0.3f);
-
-	target->Resize(1280, 720);
 
 	// For now we will leave the main loop here until we implement a more advanced event system
 	// Our event structure
@@ -216,6 +211,10 @@ int main(int argc, char* argv[]) {
 		globalLight->shadow->Update(camera);
 
 		renderer->RenderScene(window, target, camera, scene);
+
+		renderer->RenderRectangle(window, vec4(1.0f), 100, 100, 200, 200);
+
+		renderer->RenderTexture(window, texture, 400, 400, 200, 200);
 
 		// renderer->textRenderer->RenderOutlined(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f), 2.0f, 2.5f);
 

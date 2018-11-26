@@ -27,7 +27,7 @@ class Font {
 
 public:
 	///
-	/// \param filename
+	/// \param filename The name of the font file.
 	/// \param pixelSize
 	/// \param padding
 	/// \param edgeValue
@@ -39,7 +39,7 @@ public:
 	Glyph* GetGlyph(char character);
 
 	///
-	/// \param text
+	/// \param text The string to compute
 	/// \param scale
 	/// \param width
 	/// \param height

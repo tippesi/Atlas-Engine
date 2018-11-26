@@ -24,10 +24,30 @@ string MasterRenderer::postProcessVertexPath = "postprocessing.vsh";
 string MasterRenderer::postProcessFragmentPath = "postprocessing.fsh";
 string MasterRenderer::textVertexPath = "text.vsh";
 string MasterRenderer::textFragmentPath = "text.fsh";
+string MasterRenderer::rectangleVertexPath = "rectangle.vsh";
+string MasterRenderer::rectangleFragmentPath = "rectangle.fsh";
 
 MasterRenderer::MasterRenderer() {
 
 	vertexArray = GeometryHelper::GenerateRectangleVertexArray();
+
+	rectangleShader = new Shader();
+
+	rectangleShader->AddComponent(VERTEX_SHADER, rectangleVertexPath);
+	rectangleShader->AddComponent(FRAGMENT_SHADER, rectangleFragmentPath);
+
+	rectangleShader->Compile();
+
+	texturedRectangleShader = new Shader();
+
+	texturedRectangleShader->AddComponent(VERTEX_SHADER, rectangleVertexPath);
+	texturedRectangleShader->AddComponent(FRAGMENT_SHADER, rectangleFragmentPath);
+
+	texturedRectangleShader->AddMacro("TEXTURE");
+
+	texturedRectangleShader->Compile();
+
+	GetUniforms();
 
 	geometryRenderer = new GeometryRenderer();
 
@@ -120,19 +140,116 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 }
 
-void MasterRenderer::RenderTexture(Texture* texture) {
+void MasterRenderer::RenderTexture(Window* window, Texture* texture, int32_t x, int32_t y, int32_t width, int32_t height,
+	bool alphaBlending, Framebuffer* framebuffer) {
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	vertexArray->Bind();
+
+	texturedRectangleShader->Bind();
+
+	glDisable(GL_CULL_FACE);
+
+	if (framebuffer != nullptr) {
+		framebuffer->Bind(true);
+	}
+	else {
+		glViewport(0, 0, window->viewport->width, window->viewport->height);
+	}
+
+	if (alphaBlending) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+
+
+	float viewportWidth = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
+	float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+
+	texturedRectangleProjectionMatrix->SetValue(glm::ortho(0.0f, (float)viewportWidth, 0.0f, (float)viewportHeight));
+	texturedRectangleOffset->SetValue(vec2((float)x, (float)y));
+	texturedRectangleScale->SetValue(vec2((float)width, (float)height));
+	texturedRectangleTexture->SetValue(0);
+
+	texture->Bind(GL_TEXTURE0);
+
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	if (alphaBlending) {
+		glDisable(GL_BLEND);
+	}
+
+	if (framebuffer != nullptr) {
+		framebuffer->Unbind();
+	}
+
+	glEnable(GL_CULL_FACE);
 
 }
 
-void MasterRenderer::RenderRectangle(vec3 color) {
+void MasterRenderer::RenderRectangle(Window* window, vec4 color, int32_t x, int32_t y, int32_t width, int32_t height,
+	bool alphaBlending, Framebuffer* framebuffer) {
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	vertexArray->Bind();
+
+	rectangleShader->Bind();
+
+	glDisable(GL_CULL_FACE);
+
+	if (framebuffer != nullptr) {
+		framebuffer->Bind(true);
+	}
+	else {
+		glViewport(0, 0, window->viewport->width, window->viewport->height);
+	}
+
+	if (alphaBlending) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+
+	float viewportWidth = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
+	float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+
+	rectangleProjectionMatrix->SetValue(glm::ortho(0.0f, (float)viewportWidth, 0.0f, (float)viewportHeight));
+	rectangleOffset->SetValue(vec2((float)x, (float)y));
+	rectangleScale->SetValue(vec2((float)width, (float)height));
+	rectangleColor->SetValue(color);
+
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	if (alphaBlending) {
+		glDisable(GL_BLEND);
+	}
+
+	if (framebuffer != nullptr) {
+		framebuffer->Unbind();
+	}
+
+	glEnable(GL_CULL_FACE);
+
+}
+
+void MasterRenderer::GetUniforms() {
+
+	rectangleProjectionMatrix = rectangleShader->GetUniform("pMatrix");
+	rectangleOffset = rectangleShader->GetUniform("rectangleOffset");
+	rectangleScale = rectangleShader->GetUniform("rectangleScale");
+	rectangleColor = rectangleShader->GetUniform("rectangleColor");
+
+	texturedRectangleProjectionMatrix = texturedRectangleShader->GetUniform("pMatrix");
+	texturedRectangleOffset = texturedRectangleShader->GetUniform("rectangleOffset");
+	texturedRectangleScale = texturedRectangleShader->GetUniform("rectangleScale");
+	texturedRectangleTexture = texturedRectangleShader->GetUniform("rectangleTexture");
 
 }
 
 MasterRenderer::~MasterRenderer() {
+
+	vertexArray->DeleteContent();
+	delete vertexArray;
+
+	delete rectangleShader;
+	delete texturedRectangleShader;
 
 	delete geometryRenderer;
 	delete terrainRenderer;
@@ -143,8 +260,5 @@ MasterRenderer::~MasterRenderer() {
 	delete skyboxRenderer;
 	delete atmosphereRenderer;
 	delete postProcessRenderer;
-
-	vertexArray->DeleteContent();
-	delete vertexArray;
 
 }
