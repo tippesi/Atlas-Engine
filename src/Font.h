@@ -22,13 +22,27 @@ typedef struct Glyph {
 
 }Glyph;
 
+
 class Font {
 
 public:
+	///
+	/// \param filename
+	/// \param pixelSize
+	/// \param padding
+	/// \param edgeValue
 	Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValue);
 
+	///
+	/// \param character
+	/// \return
 	Glyph* GetGlyph(char character);
 
+	///
+	/// \param text
+	/// \param scale
+	/// \param width
+	/// \param height
 	void ComputeDimensions(string text, float scale, int32_t* width, int32_t* height);
 
 	~Font();

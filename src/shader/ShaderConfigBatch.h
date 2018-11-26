@@ -10,10 +10,16 @@
 class ShaderConfigBatch {
 
 public:
+	///
+	/// \param shader
 	ShaderConfigBatch(Shader* shader);
 
+	///
+	/// \param config
 	void Add(ShaderConfig* config);
 
+	///
+	/// \param config
 	void Remove(ShaderConfig* config);
 
 	int32_t ID;

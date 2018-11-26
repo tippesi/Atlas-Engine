@@ -10,19 +10,29 @@
 class ActorBatch {
 
 public:
+	///
+	/// \param mesh
 	ActorBatch(Mesh* mesh);
 
+	///
+	/// \param actor
 	void Add(Actor* actor);
 
+	///
+	/// \param actor
 	void Remove(Actor* actor);
 
+	///
+	/// \return
 	Mesh* GetMesh();
 
-	vector<Actor*> actors;
-
+	///
 	void ClearContent();
 
+	///
 	void DeleteContent();
+
+	vector<Actor*> actors;
 
 private:
 	Mesh* mesh;

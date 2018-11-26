@@ -98,7 +98,7 @@ void ShaderConstant::SetValue(float* value, int32_t length) {
 		return;
 	}
 
-	int32_t modulo = 0;
+	uint32_t modulo = 0;
 
 	valuedString = "const float " + name + "[" + to_string(length) + "] = float[](" + to_string(value[0]);
 
@@ -123,7 +123,7 @@ void ShaderConstant::SetValue(int32_t *value, int32_t length) {
 		return;
 	}
 
-	int32_t modulo = 0;
+	uint32_t modulo = 0;
 
 	valuedString = "const int " + name + "[" + to_string(length) + "] = int[](" + to_string(value[0]);
 

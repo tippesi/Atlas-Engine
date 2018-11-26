@@ -9,24 +9,44 @@
 class VertexArray {
 
 public:
+	///
 	VertexArray();
 
+	///
+	/// \param buffer
 	void AddIndexComponent(VertexBuffer* buffer);
-	
+
+	///
+	/// \param attribArray
+	/// \param buffer
+	/// \param normalized
 	void AddComponent(uint32_t attribArray, VertexBuffer* buffer, bool normalized = false);
 
+	///
+	/// \param attribArray
+	/// \param buffer
+	/// \param normalized
 	void AddInstancedComponent(uint32_t attribArray, VertexBuffer* buffer, bool normalized = false);
 
+	///
+	/// \return
 	VertexBuffer* GetIndexComponent();
 
+	///
+	/// \param attribArray
+	/// \return
 	VertexBuffer* GetComponent(uint32_t attribArray);
 
+	///
 	void Bind();
 
+	///
 	void Unbind();
 
+	///
 	void ClearContent();
 
+	///
 	void DeleteContent();
 
 	~VertexArray();

@@ -8,16 +8,24 @@
 class Mesh {
 
 public:
+	///
+	/// \param data
 	Mesh(MeshData* data);
 
+	///
+	/// \param filename
 	Mesh(string filename);
 
+	///
 	void UpdateData();
 
+	///
 	void Bind();
 
+	///
 	void Unbind();
 
+	///
 	void DeleteContent();
 
 	~Mesh();

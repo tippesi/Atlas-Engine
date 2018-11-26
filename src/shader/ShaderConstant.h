@@ -17,6 +17,8 @@
 class ShaderConstant {
 
 public:
+	///
+	/// \param constantString
 	ShaderConstant(string constantString);
 
 	void SetValue(float value);

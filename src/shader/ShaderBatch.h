@@ -10,16 +10,29 @@
 class ShaderBatch {
 
 public:
+	///
 	ShaderBatch();
 
+	///
+	/// \param type
+	/// \param filename
 	void AddComponent(int32_t type, string filename);
 
+	///
+	/// \param config
 	void AddConfig(ShaderConfig* config);
 
+	///
+	/// \param config
 	void RemoveConfig(ShaderConfig* config);
 
+	///
+	/// \param uniformName
+	/// \return
 	Uniform* GetUniform(string uniformName);
 
+	///
+	/// \param shaderID
 	void Bind(int32_t shaderID);
 
 	vector<ShaderSource*> components;

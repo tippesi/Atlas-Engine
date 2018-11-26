@@ -12,24 +12,42 @@ class Scene;
 class SceneNode {
 
 public:
+	///
 	SceneNode();
 
+	///
+	/// \param node
 	void Add(SceneNode* node);
 
+	///
+	/// \param node
 	void Remove(SceneNode* node);
 
+	///
+	/// \param actor
 	void Add(Actor* actor);
 
+	///
+	/// \param actor
 	void Remove(Actor* actor);
 
+	///
+	/// \param light
 	void Add(Light* light);
 
+	///
+	/// \param light
 	void Remove(Light* light);
 
+	///
+	/// \param parentTransformation
 	void Update(mat4 parentTransformation);
 
+	///
+	/// \param scene
 	void AddToScene(Scene* scene);
 
+	///
 	void RemoveFromScene();
 
 	vector<SceneNode*> GetChildNodes();

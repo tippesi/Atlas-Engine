@@ -163,7 +163,7 @@ vec3* TextRenderer::CalculateCharacterInstances(Font* font, string text, int32_t
 
 	float xOffset = 0.0f;
 
-	for (int32_t i = 0; i < text.length(); i++) {
+	for (uint32_t i = 0; i < text.length(); i++) {
 
 		char& character = text[i];
 		Glyph* glyph = font->GetGlyph(character);

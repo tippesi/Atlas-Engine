@@ -23,14 +23,23 @@ typedef struct SubData {
 class MeshData {
 
 public:
+	///
 	MeshData();
 
+	///
+	/// \param count
 	void SetIndexCount(int32_t count);
 
+	///
+	/// \return
 	int32_t GetIndexCount();
 
+	///
+	/// \param count
 	void SetVertexCount(int32_t count);
 
+	///
+	/// \return
 	int32_t GetVertexCount();
 
 	~MeshData();

@@ -8,14 +8,23 @@
 class ShaderConfig {
 
 public:
+	///
 	ShaderConfig();
 
+	///
+	/// \param macro
 	void AddMacro(string macro);
 
+	///
+	/// \param macro
 	void RemoveMacro(string macro);
 
+	///
+	/// \param macro
+	/// \return
 	bool HasMacro(string macro);
 
+	///
 	void ClearMacros();
 
 	int32_t batchID;

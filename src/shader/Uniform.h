@@ -9,8 +9,14 @@ class ShaderBatch;
 class Uniform {
 
 public:
+	///
+	/// \param shaderID
+	/// \param uniformName
+	/// \param shaderBatch
+	/// \param ID
 	Uniform(uint32_t shaderID, string uniformName, ShaderBatch* shaderBatch = nullptr, int32_t ID = 0);
 
+	///
 	void Update();
 
 	void SetValue(int32_t value);

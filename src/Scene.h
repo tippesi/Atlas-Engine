@@ -13,24 +13,40 @@
 class Scene {
 
 public:
+	///
 	Scene();
 
+	///
+	/// \param actor
 	void Add(Actor* actor);
 
+	///
+	/// \param actor
 	void Remove(Actor* actor);
 
+	///
+	/// \param terrain
 	void Add(Terrain* terrain);
 
+	///
+	/// \param terrain
 	void Remove(Terrain* terrain);
 
+	///
+	/// \param light
 	void Add(Light* light);
 
+	///
+	/// \param light
 	void Remove(Light* light);
 
+	///
 	void Update();
 
+	///
 	void ClearContent();
 
+	///
 	void DeleteContent();
 
 	~Scene();

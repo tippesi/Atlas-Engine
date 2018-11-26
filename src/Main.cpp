@@ -129,6 +129,8 @@ int main(int argc, char* argv[]) {
 	mouseHandler->lock = true;
 	KeyboardHandler* keyboardHandler = CreateKeyboardHandler(camera,  7.0f, 0.3f);
 
+	target->Resize(1280, 720);
+
 	// For now we will leave the main loop here until we implement a more advanced event system
 	// Our event structure
 	SDL_Event event;

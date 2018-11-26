@@ -124,6 +124,9 @@ Texture* Framebuffer::GetComponent(int32_t attachment) {
 
 void Framebuffer::Resize(int32_t width, int32_t height) {
 
+	this->width = width;
+	this->height = height;
+
 	for (auto& componentKey : components) {
 		FramebufferComponent* component = componentKey.second;
 		component->texture->Resize(width, height);

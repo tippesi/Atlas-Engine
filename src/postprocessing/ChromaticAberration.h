@@ -6,6 +6,9 @@
 class ChromaticAberration {
 
 public:
+	///
+	/// \param strength
+	/// \param colorsReversed
 	ChromaticAberration(float strength, bool colorsReversed = false) : 
 		strength(strength), colorsReversed(colorsReversed) {};
 

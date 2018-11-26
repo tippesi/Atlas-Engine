@@ -16,20 +16,38 @@
 class ShaderSource {
 
 public:
+	///
+	/// \param type
+	/// \param filename
 	ShaderSource(int32_t type, string filename);
 
+	///
+	/// \param source
 	ShaderSource(ShaderSource* source);
 
+	///
+	/// \return
 	bool Reload();
 
+	///
+	/// \param macro
 	void AddMacro(string macro);
 
+	///
+	/// \param macro
 	void RemoveMacro(string macro);
 
+	///
+	/// \param constant
+	/// \return
 	ShaderConstant* GetConstant(string constant);
 
+	///
+	/// \return
 	bool Compile();
 
+	///
+	/// \param directory
 	static void SetSourceDirectory(string directory);
 
 	~ShaderSource();

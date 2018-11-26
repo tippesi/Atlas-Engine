@@ -88,7 +88,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 	directionalVolumetricRenderer->Render(window, target, camera, scene, true);
 
-	target->lightingFramebuffer->Bind();
+	target->lightingFramebuffer->Bind(true);
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);

@@ -71,13 +71,13 @@ void GeometryHelper::GenerateSphere(uint32_t rings, uint32_t segments, uint32_t*
 	float alpha = pi / (fRings - 1);
 
 	// Generate the vertices for the inner rings
-	for (int32_t i = 0; i < innerRings; i++) {
+	for (uint32_t i = 0; i < innerRings; i++) {
 
 		float ringRadius = sinf(alpha);
 		float ringHeight = cosf(alpha);
 		float beta = 0.0f;
 
-		for (int32_t j = 0; j < segments; j++) {
+		for (uint32_t j = 0; j < segments; j++) {
 
 			float x = sinf(beta) * ringRadius;
 			float z = cosf(beta) * ringRadius;

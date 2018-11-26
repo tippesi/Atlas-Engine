@@ -20,23 +20,40 @@
 class Window {
 
 public:
-	/// <summary>
-	/// Constructs a <see cref="Window"/>.
-	/// </summary>
+	///
+	/// \param title
+	/// \param x
+	/// \param y
+	/// \param width
+	/// \param height
+	/// \param flags
 	Window(string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags = WINDOW_FULLSCREEN);
 
+	///
+	/// \param title
 	void SetTitle(string title);
 
+	///
+	/// \param icon
 	void SetIcon(Texture* icon);
 
+	///
+	/// \param x
+	/// \param y
 	void SetPosition(int32_t x, int32_t y);
 
+	///
+	/// \param width
+	/// \param height
 	void SetSize(int32_t width, int32_t height);
 
+	///
 	void Show();
 
+	///
 	void Hide();
 
+	///
 	void Update();
 
 	~Window();

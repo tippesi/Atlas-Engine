@@ -6,6 +6,11 @@
 class VertexBuffer {
 
 public:
+	///
+	/// \param type
+	/// \param dataType
+	/// \param stride
+	/// \param usage
 	VertexBuffer(uint32_t type,  int32_t dataType, int32_t stride, uint32_t usage = GL_STATIC_DRAW);
 
 	void SetData(uint8_t* data, int32_t length);
@@ -52,16 +57,26 @@ public:
 
 	void SetSubData(void* data, int32_t offset, int32_t length, int32_t elementSize);
 
+	///
 	void Bind();
 
+	///
 	void Unbind();
 
+	///
+	/// \return
 	uint32_t GetType();
 
+	///
+	/// \return
 	int32_t GetDataType();
 
+	///
+	/// \return
 	int32_t GetStride();
 
+	///
+	/// \return
 	int32_t GetElementCount();
 
 	~VertexBuffer();

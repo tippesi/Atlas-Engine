@@ -16,24 +16,45 @@
 template <class T> class DataComponent {
 
 public:
+	///
+	/// \param componentType
+	/// \param stride
 	DataComponent(int32_t componentType, int32_t stride);
 
+	///
+	/// \param values
 	void Set(T* values);
 
+	///
+	/// \return
 	T* Get();
 
+	///
+	/// \param componentType
 	void SetType(int32_t componentType);
 
+	///
+	/// \return
 	int32_t GetType();
 
+	///
+	/// \param size
 	void SetSize(int32_t size);
 
+	///
+	/// \return
 	int32_t GetStride();
 
+	///
+	/// \return
 	int32_t GetElementSize();
 
+	///
+	/// \return
 	void* GetInternal();
 
+	///
+	/// \return
 	bool ContainsData();
 
 	~DataComponent();

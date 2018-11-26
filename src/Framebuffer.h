@@ -9,26 +9,56 @@
 class Framebuffer {
 
 public:
+	///
+	/// \param width
+	/// \param height
 	Framebuffer(int32_t width, int32_t height);
 
+	///
+	/// \param attachment
+	/// \param dataFormat
+	/// \param internalFormat
+	/// \param wrapping
+	/// \param filtering
 	void AddComponent(int32_t attachment, GLenum dataFormat, int32_t internalFormat, int32_t wrapping, int32_t filtering);
 
+	///
+	/// \param attachment
+	/// \param texture
 	void AddComponent(int32_t attachment, Texture* texture);
 
+	///
+	/// \param attachment
+	/// \param texture
+	/// \param layer
 	void AddComponentLayer(int32_t attachment, Texture* texture, int32_t layer);
 
+	///
+	/// \param attachment
+	/// \return
 	Texture* GetComponent(int32_t attachment);
 
+	///
+	/// \param width
+	/// \param height
 	void Resize(int32_t width, int32_t height);
 
+	///
+	/// \param resizeViewport
 	void Bind(bool resizeViewport = false);
 
+	///
 	void Unbind();
 
+	///
+	/// \param buffers
+	/// \param count
 	void SetDrawBuffers(uint32_t* buffers, int32_t count);
 
+	///
 	void ClearContent();
 
+	///
 	void DeleteContent();
 
 	~Framebuffer();

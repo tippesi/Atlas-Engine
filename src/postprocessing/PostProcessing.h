@@ -8,6 +8,7 @@
 class PostProcessing {
 
 public:
+	///
 	PostProcessing();
 
 	float exposure;

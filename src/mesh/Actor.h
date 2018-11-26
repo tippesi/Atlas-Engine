@@ -7,6 +7,8 @@
 class Actor {
 
 public:
+	///
+	/// \param mesh
 	Actor(Mesh* mesh);
 
 	mat4 modelMatrix;
