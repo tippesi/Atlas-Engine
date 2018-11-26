@@ -1,8 +1,8 @@
 #ifndef FONT_H
 #define FONT_H
 
-#include "../System.h"
-#include "../Texture.h"
+#include "System.h"
+#include "Texture.h"
 
 #define FONT_CHARACTER_COUNT 128
 
