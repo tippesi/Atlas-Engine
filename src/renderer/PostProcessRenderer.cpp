@@ -1,12 +1,15 @@
 #include "PostProcessRenderer.h"
 #include "MasterRenderer.h"
 
-PostProcessRenderer::PostProcessRenderer(string vertexSource, string fragmentSoure) {
+string PostProcessRenderer::vertexPath = "postprocessing.vsh";
+string PostProcessRenderer::fragmentPath = "postprocessing.fsh";
+
+PostProcessRenderer::PostProcessRenderer() {
 
 	shader = new Shader();
 
-	shader->AddComponent(VERTEX_SHADER, vertexSource);
-	shader->AddComponent(FRAGMENT_SHADER, fragmentSoure);
+	shader->AddComponent(VERTEX_SHADER, vertexPath);
+	shader->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
 	shader->Compile();
 

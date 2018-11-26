@@ -1,15 +1,20 @@
 #include "TerrainRenderer.h"
 
-TerrainRenderer::TerrainRenderer(string vertexSource, string tessControlSource, string tessEvalSource,
-	string geometrySource, string fragmentSource) {
+string TerrainRenderer::vertexPath = "terrain/terrain.vsh";
+string TerrainRenderer::tessControlPath = "terrain/terrain.tcsh";
+string TerrainRenderer::tessEvalPath = "terrain/terrain.tesh";
+string TerrainRenderer::geometryPath = "terrain/terrain.gsh";
+string TerrainRenderer::fragmentPath = "terrain/terrain.fsh";
+
+TerrainRenderer::TerrainRenderer() {
 
 	nearShader = new Shader();
 
-	nearShader->AddComponent(VERTEX_SHADER, vertexSource);
-	nearShader->AddComponent(TESSELATION_CONTROL_SHADER, tessControlSource);
-	nearShader->AddComponent(TESSELATION_EVALUATION_SHADER, tessEvalSource);
-	// nearShader->AddComponent(GEOMETRY_SHADER, geometrySource);
-	nearShader->AddComponent(FRAGMENT_SHADER, fragmentSource);
+	nearShader->AddComponent(VERTEX_SHADER, vertexPath);
+	nearShader->AddComponent(TESSELATION_CONTROL_SHADER, tessControlPath);
+	nearShader->AddComponent(TESSELATION_EVALUATION_SHADER, tessEvalPath);
+	// nearShader->AddComponent(GEOMETRY_SHADER, geometryPath);
+	nearShader->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
 	// nearShader->AddMacro("GEOMETRY_SHADER");
 

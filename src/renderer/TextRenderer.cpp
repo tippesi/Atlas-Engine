@@ -1,7 +1,10 @@
 #include "TextRenderer.h"
 #include "helper/GeometryHelper.h"
 
-TextRenderer::TextRenderer(string vertexSource, string fragmentSource) {
+string TextRenderer::vertexPath = "text.vsh";
+string TextRenderer::fragmentPath = "text.fsh";
+
+TextRenderer::TextRenderer() {
 
 	vertexArray = GeometryHelper::GenerateRectangleVertexArray();
 
@@ -10,8 +13,8 @@ TextRenderer::TextRenderer(string vertexSource, string fragmentSource) {
 
 	shader = new Shader();
 
-	shader->AddComponent(VERTEX_SHADER, vertexSource);
-	shader->AddComponent(FRAGMENT_SHADER, fragmentSource);
+	shader->AddComponent(VERTEX_SHADER, vertexPath);
+	shader->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
 	shader->Compile();
 
@@ -25,7 +28,7 @@ void TextRenderer::Render(Window* window, RenderTarget* target, Camera* camera, 
 
 }
 
-void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color,
+void TextRenderer::Render(Window* window, Font* font, string text, float x, float y, vec4 color,
 	float scale, bool alphaBlending, Framebuffer* framebuffer) {
 
 	int32_t characterCount;
@@ -58,7 +61,7 @@ void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, in
 	projectionMatrix->SetValue(glm::ortho(0.0f, width, 0.0f, height));
 
 	textScale->SetValue(scale);
-	textOffset->SetValue(vec2((float)x, (float)y));
+	textOffset->SetValue(vec2(x, y));
 	textColor->SetValue(color);
 
 	characterScales->SetValue(font->characterScales, FONT_CHARACTER_COUNT);
@@ -86,7 +89,7 @@ void TextRenderer::Render(Window* window, Font* font, string text, int32_t x, in
 
 }
 
-void TextRenderer::RenderOutlined(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color, vec4 outlineColor, 
+void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 outlineColor, 
 	float outlineScale, float scale, bool alphaBlending, Framebuffer* framebuffer) {
 
 	int32_t characterCount;
@@ -119,7 +122,7 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, int32
 	projectionMatrix->SetValue(glm::ortho(0.0f, width, 0.0f, height));
 
 	textScale->SetValue(scale);
-	textOffset->SetValue(vec2((float)x, (float)y));
+	textOffset->SetValue(vec2(x, y));
 	textColor->SetValue(color);
 
 	this->outlineColor->SetValue(outlineColor);

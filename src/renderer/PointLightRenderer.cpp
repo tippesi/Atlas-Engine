@@ -1,14 +1,17 @@
 #include "PointLightRenderer.h"
 #include "helper/GeometryHelper.h"
 
-PointLightRenderer::PointLightRenderer(string vertexSource, string fragmentSource) {
+string PointLightRenderer::vertexPath = "deferred/point.vsh";
+string PointLightRenderer::fragmentPath = "deferred/point.fsh";
+
+PointLightRenderer::PointLightRenderer() {
 
 	vertexArray = GeometryHelper::GenerateSphereVertexArray(16, 16);
 
 	shader = new Shader();
 
-	shader->AddComponent(VERTEX_SHADER, vertexSource);
-	shader->AddComponent(FRAGMENT_SHADER, fragmentSource);
+	shader->AddComponent(VERTEX_SHADER, vertexPath);
+	shader->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
 	shader->Compile();
 

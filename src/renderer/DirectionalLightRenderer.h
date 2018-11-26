@@ -7,9 +7,12 @@
 class DirectionalLightRenderer : public IRenderer {
 
 public:
-	DirectionalLightRenderer(string vertexSource, string fragmentSource);
+	DirectionalLightRenderer();
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
+
+	static string vertexPath;
+	static string fragmentPath;
 
 private:
 	void GetUniforms();
@@ -24,12 +27,14 @@ private:
 	Uniform* volumetricTexture;
 	Uniform* shadowTexture;
 
+	Uniform* inverseViewMatrix;
+	Uniform* inverseProjectionMatrix;
+
 	Uniform* lightDirection;
 	Uniform* lightColor;
 	Uniform* lightAmbient;
 
-	Uniform* inverseViewMatrix;
-	Uniform* inverseProjectionMatrix;
+	Uniform* scatteringFactor;
 
 	Uniform* shadowDistance;
 	Uniform* shadowBias;

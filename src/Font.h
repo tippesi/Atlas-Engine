@@ -31,7 +31,7 @@ public:
 	/// \param pixelSize
 	/// \param padding
 	/// \param edgeValue
-	Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValue);
+	Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue);
 
 	///
 	/// \param character
@@ -43,16 +43,18 @@ public:
 	/// \param scale
 	/// \param width
 	/// \param height
-	void ComputeDimensions(string text, float scale, int32_t* width, int32_t* height);
+	void ComputeDimensions(string text, float scale, float* width, float* height);
 
 	~Font();
 
-	int32_t lineGap;
-	int32_t ascent;
-	int32_t descent;
+	float lineGap;
+	float ascent;
+	float descent;
+
+	float lineHeight;
 
 	float pixelDistanceScale;
-	int32_t edgeValue;
+	uint8_t edgeValue;
 
 	vec2* characterScales;
 	vec2* characterSizes;

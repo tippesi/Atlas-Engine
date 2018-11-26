@@ -1,5 +1,8 @@
 #include "GeometryRenderer.h"
 
+string GeometryRenderer::vertexPath = "deferred/geometry.vsh";
+string GeometryRenderer::fragmentPath = "deferred/geometry.fsh";
+
 ShaderBatch* GeometryRenderer::shaderBatch;
 
 GeometryRenderer::GeometryRenderer() {
@@ -82,11 +85,11 @@ void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* came
 
 }
 
-void GeometryRenderer::InitShaderBatch(string vertexSource, string fragmentSource) {
+void GeometryRenderer::InitShaderBatch() {
 
 	shaderBatch = new ShaderBatch();
-	shaderBatch->AddComponent(VERTEX_SHADER, vertexSource);
-	shaderBatch->AddComponent(FRAGMENT_SHADER, fragmentSource);
+	shaderBatch->AddComponent(VERTEX_SHADER, vertexPath);
+	shaderBatch->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
 }
 

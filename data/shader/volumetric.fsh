@@ -8,6 +8,7 @@ uniform sampler2DArrayShadow cascadeMaps;
 
 uniform Light light;
 uniform int sampleCount;
+uniform float scattering;
 uniform vec2 framebufferResolution;
 
 out float foginess;
@@ -27,7 +28,7 @@ void main() {
 // Henyey-Greenstein phase function https://www.astro.umd.edu/~jph/HG_note.pdf
 float ComputeScattering(float lightDotView) {
     // Range [-1;1]
-    const float g = -0.5f;
+    float g = scattering;
     float gSquared = g * g;
     float result = 1.0f -  gSquared;
     result /= (4.0f * 3.14f * pow(1.0f + gSquared - (2.0f * g) * lightDotView, 1.5f));
@@ -63,7 +64,7 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 	float ditherValue = ditherPattern[(int(texCoords.x) % 4) * 4 + int(texCoords.y) % 4];
 	vec3 currentPosition = stepVector * ditherValue;
 	
-	float scattering = ComputeScattering(dot(rayDirection, light.direction));
+	float scatteringFactor = ComputeScattering(dot(rayDirection, light.direction));
 
     for (int i = 0; i < sampleCount; i++) {
         vec4 comparison = vec4(-currentPosition.z > cascadesDistance.x,
@@ -78,7 +79,7 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
         cascadeSpace.xyz = cascadeSpace.xyz * 0.5f + 0.5f;
 
         float shadowValue = texture(cascadeMaps, vec4(cascadeSpace.xy, index, cascadeSpace.z));
-        foginess += scattering * shadowValue;
+        foginess += scatteringFactor * shadowValue;
 
         currentPosition += stepVector;
 

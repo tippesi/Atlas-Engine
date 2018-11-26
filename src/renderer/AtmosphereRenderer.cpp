@@ -1,14 +1,17 @@
 #include "AtmosphereRenderer.h"
 #include "helper/GeometryHelper.h"
 
-AtmosphereRenderer::AtmosphereRenderer(string vertexSource, string fragmentSource) {
+string AtmosphereRenderer::vertexPath = "atmosphere.vsh";
+string AtmosphereRenderer::fragmentPath = "atmosphere.fsh";
+
+AtmosphereRenderer::AtmosphereRenderer() {
 
 	vertexArray = GeometryHelper::GenerateSphereVertexArray(20, 20);
 
 	shader = new Shader();
 
-	shader->AddComponent(VERTEX_SHADER, vertexSource);
-	shader->AddComponent(FRAGMENT_SHADER, fragmentSource);
+	shader->AddComponent(VERTEX_SHADER, vertexPath);
+	shader->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
 	shader->Compile();
 

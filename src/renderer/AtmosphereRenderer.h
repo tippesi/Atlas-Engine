@@ -7,9 +7,12 @@
 class AtmosphereRenderer : public IRenderer {
 
 public:
-	AtmosphereRenderer(string vertexSource, string fragmentSource);
+	AtmosphereRenderer();
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
+
+	static string vertexPath;
+	static string fragmentPath;
 
 private:
 	void GetUniforms();

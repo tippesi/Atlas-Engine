@@ -44,7 +44,7 @@ void main() {
 	
 	shadowFactor = CalculateCascadedShadow(light, modelCoords, fragPos); 
 	
-	volumetric = texture(volumetricTexture, fTexCoord).r * light.color;
+	volumetric = texture(volumetricTexture, fTexCoord).r * light.color * light.scatteringFactor;
 #endif
 
 	vec3 specular = vec3(0.0f);

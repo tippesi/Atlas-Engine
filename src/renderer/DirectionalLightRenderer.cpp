@@ -1,12 +1,15 @@
 #include "DirectionalLightRenderer.h"
 #include "MasterRenderer.h"
 
-DirectionalLightRenderer::DirectionalLightRenderer(string vertexSource, string fragmentSource) {
+string DirectionalLightRenderer::vertexPath = "deferred/directional.vsh";
+string DirectionalLightRenderer::fragmentPath = "deferred/directional.fsh";
+
+DirectionalLightRenderer::DirectionalLightRenderer() {
 
 	shader = new Shader();
 
-	shader->AddComponent(VERTEX_SHADER, vertexSource);
-	shader->AddComponent(FRAGMENT_SHADER, fragmentSource);
+	shader->AddComponent(VERTEX_SHADER, vertexPath);
+	shader->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
 	shader->AddMacro("SHADOWS");
 #ifdef ENGINE_OGL
@@ -52,6 +55,8 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 		lightColor->SetValue(light->diffuseColor);
 		lightAmbient->SetValue(light->ambient);
 
+		scatteringFactor->SetValue(light->volumetric != nullptr ? light->volumetric->scatteringFactor : 0.0f);
+
 		shadowDistance->SetValue(light->shadow->distance);
 		shadowBias->SetValue(light->shadow->bias);
 		shadowSampleCount->SetValue(light->shadow->sampleCount);
@@ -91,11 +96,16 @@ void DirectionalLightRenderer::GetUniforms() {
 	aoTexture = shader->GetUniform("aoTexture");
 	volumetricTexture = shader->GetUniform("volumetricTexture");
 	shadowTexture = shader->GetUniform("cascadeMaps");
+
+	inverseViewMatrix = shader->GetUniform("ivMatrix");
+	inverseProjectionMatrix = shader->GetUniform("ipMatrix");
+
 	lightDirection = shader->GetUniform("light.direction");
 	lightColor = shader->GetUniform("light.color");
 	lightAmbient = shader->GetUniform("light.ambient");
-	inverseViewMatrix = shader->GetUniform("ivMatrix");
-	inverseProjectionMatrix = shader->GetUniform("ipMatrix");
+
+	scatteringFactor = shader->GetUniform("light.scatteringFactor");
+
 	shadowDistance = shader->GetUniform("light.shadow.distance");
 	shadowBias = shader->GetUniform("light.shadow.bias");
 	shadowSampleCount = shader->GetUniform("light.shadow.sampleCount");

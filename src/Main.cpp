@@ -22,11 +22,13 @@ int main(int argc, char* argv[]) {
 
 	MasterRenderer* renderer = new MasterRenderer();
 
-	int32_t textWidth, textHeight;
+	float textWidth, textHeight;
 	font->ComputeDimensions("Loading...", 2.5f, &textWidth, &textHeight);
 
-	int32_t x = 1280 / 2 - textWidth / 2;
-	int32_t y = 720 / 2 - textHeight / 2;
+	float lineHeight = (float)font->lineHeight * 2.5f;
+
+	float x = 1280 / 2 - textWidth / 2;
+	float y = 720 / 2 - lineHeight / 2;
 
 	renderer->textRenderer->Render(window, font, "Loading...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
@@ -79,7 +81,7 @@ int main(int argc, char* argv[]) {
 	globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f * 3.0f;
 	globalLight->ambient = 0.05f;
 	globalLight->AddShadow(new Shadow(125.0f, 0.004f, 2048, 3, 0.7f), camera);
-	globalLight->AddVolumetric(new Volumetric(target->width / 2, target->height / 2, 20));
+	globalLight->AddVolumetric(new Volumetric(target->width / 2, target->height / 2, 20, -0.5f));
 
 	Light* pointLight1 = new Light(POINT_LIGHT);
 	pointLight1->location = vec3(24.35f, 6.5f, 7.1f);
@@ -211,10 +213,6 @@ int main(int argc, char* argv[]) {
 		globalLight->shadow->Update(camera);
 
 		renderer->RenderScene(window, target, camera, scene);
-
-		renderer->RenderRectangle(window, vec4(1.0f), 100, 100, 200, 200);
-
-		renderer->RenderTexture(window, texture, 400, 400, 200, 200);
 
 		// renderer->textRenderer->RenderOutlined(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f), 2.0f, 2.5f);
 

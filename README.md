@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
 	globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f * 3.0f;
 	globalLight->ambient = 0.05f;
 	globalLight->AddShadow(new Shadow(125.0f, 0.004f, 2048, 3, 0.7f), camera);
-	globalLight->AddVolumetric(new Volumetric(target->width / 2, target->height / 2, 20));
+	globalLight->AddVolumetric(new Volumetric(target->width / 2, target->height / 2, 20, -0.5f));
 
 	node->Add(actor);
 	scene->rootNode->Add(node);

@@ -8,9 +8,12 @@
 class SkyboxRenderer : public IRenderer {
 
 public:
-	SkyboxRenderer(string vertexSource, string fragmentSource);
+	SkyboxRenderer();
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
+
+	static string vertexPath;
+	static string fragmentPath;
 
 private:
 	VertexArray * vertexArray;

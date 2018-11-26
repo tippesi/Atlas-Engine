@@ -23,9 +23,9 @@ void Light::AddShadow(Shadow* shadow, Camera* camera) {
 		// We want cascaded shadow mapping for directional lights
 		for (int32_t i = 0; i < shadow->componentCount; i++) {
 			shadow->components[i].nearDistance = FrustumSplitFormula(shadow->splitCorrection, camera->nearPlane, shadow->distance, 
-				i, shadow->componentCount);
+				(float)i, (float)shadow->componentCount);
 			shadow->components[i].farDistance = FrustumSplitFormula(shadow->splitCorrection, camera->nearPlane, shadow->distance,
-				i + 1, shadow->componentCount);
+				(float)i + 1, (float)shadow->componentCount);
 		}
 	}
 	else if (type == POINT_LIGHT) {

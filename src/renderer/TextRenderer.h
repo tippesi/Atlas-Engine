@@ -10,15 +10,18 @@
 class TextRenderer : public IRenderer {
 
 public:
-	TextRenderer(string vertexSource, string fragmentSource);
+	TextRenderer();
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 
-	void Render(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color, 
+	void Render(Window* window, Font* font, string text, float x, float y, vec4 color, 
 		float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	void RenderOutlined(Window* window, Font* font, string text, int32_t x, int32_t y, vec4 color, vec4 outlineColor,
+	void RenderOutlined(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 outlineColor,
 		float outlineScale, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+
+	static string vertexPath;
+	static string fragmentPath;
 
 private:
 	void GetUniforms();

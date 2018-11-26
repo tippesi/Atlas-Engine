@@ -12,11 +12,14 @@ public:
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 
-	static void InitShaderBatch(string vertexSource, string fragmentSource);
+	static void InitShaderBatch();
 
 	static void AddConfig(ShaderConfig* config);
 
 	static void RemoveConfig(ShaderConfig* config);
+
+	static string vertexPath;
+	static string fragmentPath;
 
 private:
 	Uniform* diffuseMapUniform;

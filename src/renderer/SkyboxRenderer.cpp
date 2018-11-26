@@ -1,12 +1,15 @@
 #include "SkyboxRenderer.h"
 #include "helper/GeometryHelper.h"
 
-SkyboxRenderer::SkyboxRenderer(string vertexSource, string fragmentSource) {
+string SkyboxRenderer::vertexPath = "skybox.vsh";
+string SkyboxRenderer::fragmentPath = "skybox.fsh";
+
+SkyboxRenderer::SkyboxRenderer() {
 
 	shader = new Shader();
 
-	shader->AddComponent(VERTEX_SHADER, vertexSource);
-	shader->AddComponent(FRAGMENT_SHADER, fragmentSource);
+	shader->AddComponent(VERTEX_SHADER, vertexPath);
+	shader->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
 	shader->Compile();
 

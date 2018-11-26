@@ -7,12 +7,17 @@
 class TerrainRenderer : public IRenderer {
 
 public:
-    TerrainRenderer(string vertexSource, string tessControlSource, string tessEvalSource,
-		string geometrySource, string fragmentSource);
+    TerrainRenderer();
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 
 	void GetUniforms();
+
+	static string vertexPath;
+	static string tessControlPath;
+	static string tessEvalPath;
+	static string geometryPath;
+	static string fragmentPath;
 
 private:
     Shader* nearShader;

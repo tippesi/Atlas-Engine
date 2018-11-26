@@ -1,21 +1,25 @@
 #include "DirectionalVolumetricRenderer.h"
 
-DirectionalVolumetricRenderer::DirectionalVolumetricRenderer(string volumetricVertex, string volumetricFragment,
-	string bilateralBlurVertex, string bilateralBlurFragmet) {
+string DirectionalVolumetricRenderer::volumetricVertexPath = "volumetric.vsh";
+string DirectionalVolumetricRenderer::volumetricFragmentPath = "volumetric.fsh";
+string DirectionalVolumetricRenderer::bilateralBlurVertexPath = "bilateralBlur.vsh";
+string DirectionalVolumetricRenderer::bilateralBlurFragmentPath = "bilateralBlur.fsh";
+
+DirectionalVolumetricRenderer::DirectionalVolumetricRenderer() {
 
     framebuffer = new Framebuffer(0, 0);
 
     volumetricShader = new Shader();
-    volumetricShader->AddComponent(VERTEX_SHADER, volumetricVertex);
-    volumetricShader->AddComponent(FRAGMENT_SHADER, volumetricFragment);
+    volumetricShader->AddComponent(VERTEX_SHADER, volumetricVertexPath);
+    volumetricShader->AddComponent(FRAGMENT_SHADER, volumetricFragmentPath);
 
     volumetricShader->Compile();
 
     GetVolumetricUniforms();
 
     bilateralBlurShader = new Shader();
-    bilateralBlurShader->AddComponent(VERTEX_SHADER, bilateralBlurVertex);
-    bilateralBlurShader->AddComponent(FRAGMENT_SHADER, bilateralBlurFragmet);
+    bilateralBlurShader->AddComponent(VERTEX_SHADER, bilateralBlurVertexPath);
+    bilateralBlurShader->AddComponent(FRAGMENT_SHADER, bilateralBlurFragmentPath);
 
     bilateralBlurShader->AddMacro("BILATERAL");
     bilateralBlurShader->AddMacro("BLUR_R");
@@ -53,6 +57,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
         lightDirection->SetValue(direction);
         shadowCascadeCount->SetValue(light->shadow->componentCount);
         sampleCount->SetValue(light->volumetric->sampleCount);
+		scattering->SetValue(glm::clamp(light->volumetric->scattering, -1.0f, 1.0f));
 		framebufferResolution->SetValue(vec2(light->volumetric->map->width, light->volumetric->map->height));
 
         light->shadow->maps->Bind(GL_TEXTURE1);
@@ -120,6 +125,7 @@ void DirectionalVolumetricRenderer::GetVolumetricUniforms() {
     lightDirection = volumetricShader->GetUniform("light.direction");
     inverseProjectionMatrix = volumetricShader->GetUniform("ipMatrix");
     sampleCount = volumetricShader->GetUniform("sampleCount");
+	scattering = volumetricShader->GetUniform("scattering");
     shadowCascadeCount = volumetricShader->GetUniform("light.shadow.cascadeCount");
 	framebufferResolution = volumetricShader->GetUniform("framebufferResolution");
 

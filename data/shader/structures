@@ -28,9 +28,14 @@ struct Light {
 
     vec3 location;
 	vec3 direction;
+	
     vec3 color;
-	float radius;
 	float ambient;
+	
+	float scatteringFactor;
+		
+	float radius;
+
 	Shadow shadow;
 
 };

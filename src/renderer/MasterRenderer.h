@@ -22,15 +22,18 @@ public:
 
 	void RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	void RenderTexture(Window* window, Texture* texture, int32_t x, int32_t y, int32_t width, int32_t height, 
+	void RenderTexture(Window* window, Texture* texture, float x, float y, float width, float height,
 		bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	void RenderRectangle(Window* window, vec4 color, int32_t x, int32_t y, int32_t width, int32_t height,
+	void RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
 		bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 	~MasterRenderer();
 
 	TextRenderer* textRenderer;
+
+	static string rectangleVertexPath;
+	static string rectangleFragmentPath;
 
 private:
 	void GetUniforms();
@@ -59,32 +62,6 @@ private:
 	SkyboxRenderer* skyboxRenderer;
 	AtmosphereRenderer* atmosphereRenderer;
 	PostProcessRenderer* postProcessRenderer;
-
-	static string terrainVertexPath;
-	static string terrainTessControlPath;
-	static string terrainTessEvalPath;
-	static string terrainGeometryPath;
-	static string terrainFragmentPath;
-	static string shadowVertexPath;
-	static string shadowFragmentPath;
-	static string volumetricVertexPath;
-	static string volumetricFragmentPath;
-	static string bilateralBlurVertexPath;
-	static string bilateralBlurFragmentPath;
-	static string directionalLightVertexPath;
-	static string directionalLightFragmentPath;
-	static string pointLightVertexPath;
-	static string pointLightFragmentPath;
-	static string skyboxVertexPath;
-	static string skyboxFragmentPath;
-	static string atmosphereVertexPath;
-	static string atmosphereFragmentPath;
-	static string postProcessVertexPath;
-	static string postProcessFragmentPath;
-	static string textVertexPath;
-	static string textFragmentPath;
-	static string rectangleVertexPath;
-	static string rectangleFragmentPath;
 
 };
 

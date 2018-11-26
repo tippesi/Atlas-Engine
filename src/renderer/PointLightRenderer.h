@@ -7,9 +7,12 @@
 class PointLightRenderer : public IRenderer {
 
 public:
-	PointLightRenderer(string vertexSource, string fragmentSource);
+	PointLightRenderer();
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
+
+	static string vertexPath;
+	static string fragmentPath;
 
 private:
 	void GetUniforms();

@@ -7,10 +7,14 @@
 class DirectionalVolumetricRenderer : public IRenderer{
 
 public:
-    DirectionalVolumetricRenderer(string volumetricVertex, string volumetricFragment,
-            string bilateralBlurVertex, string bilateralBlurFragmet);
+    DirectionalVolumetricRenderer();
 
     virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
+
+	static string volumetricVertexPath;
+	static string volumetricFragmentPath;
+	static string bilateralBlurVertexPath;
+	static string bilateralBlurFragmentPath;
 
 private:
     void GetVolumetricUniforms();
@@ -27,6 +31,7 @@ private:
     Uniform* lightDirection;
     Uniform* inverseProjectionMatrix;
     Uniform* sampleCount;
+	Uniform* scattering;
 	Uniform* framebufferResolution;
 
     Uniform* shadowCascadeCount;

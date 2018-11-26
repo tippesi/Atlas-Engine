@@ -1,29 +1,6 @@
 #include "MasterRenderer.h"
 #include "helper/GeometryHelper.h"
 
-string MasterRenderer::terrainVertexPath = "terrain/terrain.vsh";
-string MasterRenderer::terrainTessControlPath = "terrain/terrain.tcsh";
-string MasterRenderer::terrainTessEvalPath = "terrain/terrain.tesh";
-string MasterRenderer::terrainGeometryPath = "terrain/terrain.gsh";
-string MasterRenderer::terrainFragmentPath = "terrain/terrain.fsh";
-string MasterRenderer::shadowVertexPath = "shadowmapping.vsh";
-string MasterRenderer::shadowFragmentPath = "shadowmapping.fsh";
-string MasterRenderer::volumetricVertexPath = "volumetric.vsh";
-string MasterRenderer::volumetricFragmentPath = "volumetric.fsh";
-string MasterRenderer::bilateralBlurVertexPath = "bilateralBlur.vsh";
-string MasterRenderer::bilateralBlurFragmentPath = "bilateralBlur.fsh";
-string MasterRenderer::directionalLightVertexPath = "deferred/directional.vsh";
-string MasterRenderer::directionalLightFragmentPath = "deferred/directional.fsh";
-string MasterRenderer::pointLightVertexPath = "deferred/point.vsh";
-string MasterRenderer::pointLightFragmentPath = "deferred/point.fsh";
-string MasterRenderer::skyboxVertexPath = "skybox.vsh";
-string MasterRenderer::skyboxFragmentPath = "skybox.fsh";
-string MasterRenderer::atmosphereVertexPath = "atmosphere.vsh";
-string MasterRenderer::atmosphereFragmentPath = "atmosphere.fsh";
-string MasterRenderer::postProcessVertexPath = "postprocessing.vsh";
-string MasterRenderer::postProcessFragmentPath = "postprocessing.fsh";
-string MasterRenderer::textVertexPath = "text.vsh";
-string MasterRenderer::textFragmentPath = "text.fsh";
 string MasterRenderer::rectangleVertexPath = "rectangle.vsh";
 string MasterRenderer::rectangleFragmentPath = "rectangle.fsh";
 
@@ -50,38 +27,15 @@ MasterRenderer::MasterRenderer() {
 	GetUniforms();
 
 	geometryRenderer = new GeometryRenderer();
-
-	terrainRenderer = new TerrainRenderer(terrainVertexPath,
-		terrainTessControlPath,
-		terrainTessEvalPath,
-		terrainGeometryPath,
-		terrainFragmentPath);
-
-	directionalShadowRenderer = new DirectionalShadowRenderer(shadowVertexPath,
-		shadowFragmentPath);
-
-	directionalVolumetricRenderer = new DirectionalVolumetricRenderer(volumetricVertexPath, 
-		volumetricFragmentPath, 
-		bilateralBlurVertexPath, 
-		bilateralBlurFragmentPath);
-
-	directionalLightRenderer = new DirectionalLightRenderer(directionalLightVertexPath, 
-		directionalLightFragmentPath);
-
-	pointLightRenderer = new PointLightRenderer(pointLightVertexPath,
-		pointLightFragmentPath);
-
-	skyboxRenderer = new SkyboxRenderer(skyboxVertexPath,
-		skyboxFragmentPath);
-
-	atmosphereRenderer = new AtmosphereRenderer(atmosphereVertexPath,
-		atmosphereFragmentPath);
-
-	postProcessRenderer = new PostProcessRenderer(postProcessVertexPath,
-		postProcessFragmentPath);
-
-	textRenderer = new TextRenderer(textVertexPath,
-		textFragmentPath);
+	terrainRenderer = new TerrainRenderer();
+	directionalShadowRenderer = new DirectionalShadowRenderer();
+	directionalVolumetricRenderer = new DirectionalVolumetricRenderer();
+	directionalLightRenderer = new DirectionalLightRenderer();
+	pointLightRenderer = new PointLightRenderer();
+	skyboxRenderer = new SkyboxRenderer();
+	atmosphereRenderer = new AtmosphereRenderer();
+	postProcessRenderer = new PostProcessRenderer();
+	textRenderer = new TextRenderer();
 
 }
 
@@ -140,7 +94,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 }
 
-void MasterRenderer::RenderTexture(Window* window, Texture* texture, int32_t x, int32_t y, int32_t width, int32_t height,
+void MasterRenderer::RenderTexture(Window* window, Texture* texture, float x, float y, float width, float height,
 	bool alphaBlending, Framebuffer* framebuffer) {
 
 	vertexArray->Bind();
@@ -166,8 +120,8 @@ void MasterRenderer::RenderTexture(Window* window, Texture* texture, int32_t x, 
 	float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
 
 	texturedRectangleProjectionMatrix->SetValue(glm::ortho(0.0f, (float)viewportWidth, 0.0f, (float)viewportHeight));
-	texturedRectangleOffset->SetValue(vec2((float)x, (float)y));
-	texturedRectangleScale->SetValue(vec2((float)width, (float)height));
+	texturedRectangleOffset->SetValue(vec2(x, y));
+	texturedRectangleScale->SetValue(vec2(width, height));
 	texturedRectangleTexture->SetValue(0);
 
 	texture->Bind(GL_TEXTURE0);
@@ -186,7 +140,7 @@ void MasterRenderer::RenderTexture(Window* window, Texture* texture, int32_t x, 
 
 }
 
-void MasterRenderer::RenderRectangle(Window* window, vec4 color, int32_t x, int32_t y, int32_t width, int32_t height,
+void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
 	bool alphaBlending, Framebuffer* framebuffer) {
 
 	vertexArray->Bind();
@@ -211,8 +165,8 @@ void MasterRenderer::RenderRectangle(Window* window, vec4 color, int32_t x, int3
 	float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
 
 	rectangleProjectionMatrix->SetValue(glm::ortho(0.0f, (float)viewportWidth, 0.0f, (float)viewportHeight));
-	rectangleOffset->SetValue(vec2((float)x, (float)y));
-	rectangleScale->SetValue(vec2((float)width, (float)height));
+	rectangleOffset->SetValue(vec2(x, y));
+	rectangleScale->SetValue(vec2(width, height));
 	rectangleColor->SetValue(color);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

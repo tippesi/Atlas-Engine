@@ -7,7 +7,7 @@
 #include "../libraries/stb/stb_truetype.h"
 #include "../libraries/stb/stb_image_write.h"
 
-Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValue) : edgeValue(edgeValue) {
+Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue) : edgeValue(edgeValue) {
 
 	stbtt_fontinfo font;
 	string fontString;
@@ -34,7 +34,7 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 	characterScales = new vec2[FONT_CHARACTER_COUNT];
 	characterSizes = new vec2[FONT_CHARACTER_COUNT];
 
-	int32_t resolution = pixelSize + 2 * padding;
+	int32_t resolution = (int32_t)pixelSize + 2 * padding;
 
 	// Compute next power of two https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 	resolution--;
@@ -52,13 +52,16 @@ Font::Font(string filename, int32_t pixelSize, int32_t padding, uint8_t edgeValu
 		new EngineException("Failed loading font");
 	}
 
-	float scale = (float)stbtt_ScaleForPixelHeight(&font, (float)pixelSize);
+	float scale = (float)stbtt_ScaleForPixelHeight(&font, pixelSize);
 
-	stbtt_GetFontVMetrics(&font, &ascent, &descent, &lineGap);
+	int32_t iAscent, iDescent, iLineGap;
+	stbtt_GetFontVMetrics(&font, &iAscent, &iDescent, &iLineGap);
 
-	ascent = (int32_t)((float)ascent * scale);
-	descent = (int32_t)((float)descent * scale);
-	lineGap = (int32_t)((float)lineGap * scale);
+	ascent = (float)iAscent * scale;
+	descent = (float)iDescent * scale;
+	lineGap = (float)iLineGap * scale;
+
+	lineHeight = ascent - descent + lineGap;
 
 	pixelDistanceScale = (float)edgeValue / (float)padding;
 
@@ -120,18 +123,17 @@ Glyph* Font::GetGlyph(char character) {
 
 }
 
-void Font::ComputeDimensions(string text, float scale, int32_t* width, int32_t* height) {
+void Font::ComputeDimensions(string text, float scale, float* width, float* height) {
 
 	*width = 0;
-	*height = 0;
+	*height =  lineHeight * scale;
 
 	for (int32_t i = 0; i < text.length(); i++) {
 
 		char& character = text[i];
 		Glyph* glyph = GetGlyph(character);
 
-		*height = (int32_t)glm::max((float)(glyph->height + glyph->offset.y + ascent) * scale, (float)*height);
-		*width += (int32_t)((float)(glyph->advance + glyph->kern[(uint8_t)text[i + 1]]) * scale);
+		*width += ((float)(glyph->advance + glyph->kern[(uint8_t)text[i + 1]]) * scale);
 
 	}
 

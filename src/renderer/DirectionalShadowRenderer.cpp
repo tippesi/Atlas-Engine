@@ -1,8 +1,11 @@
 #include "DirectionalShadowRenderer.h"
 
+string DirectionalShadowRenderer::vertexPath = "shadowmapping.vsh";
+string DirectionalShadowRenderer::fragmentPath = "shadowmapping.fsh";
+
 ShaderBatch* DirectionalShadowRenderer::shaderBatch;
 
-DirectionalShadowRenderer::DirectionalShadowRenderer(string vertexSource, string fragmentSource) {
+DirectionalShadowRenderer::DirectionalShadowRenderer() {
 
 	framebuffer = new Framebuffer(0, 0);
 
@@ -89,11 +92,11 @@ void DirectionalShadowRenderer::Render(Window* window, RenderTarget* target, Cam
 
 }
 
-void DirectionalShadowRenderer::InitShaderBatch(string vertexSource, string fragmentSource) {
+void DirectionalShadowRenderer::InitShaderBatch() {
 
 	shaderBatch = new ShaderBatch();
-	shaderBatch->AddComponent(VERTEX_SHADER, vertexSource);
-	shaderBatch->AddComponent(FRAGMENT_SHADER, fragmentSource);
+	shaderBatch->AddComponent(VERTEX_SHADER, vertexPath);
+	shaderBatch->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
 }
 
