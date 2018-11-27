@@ -14,7 +14,7 @@ uniform vec3 viewSpaceLightLocation;
 
 float ComputeScattering(vec3 fragPos) {
 
-	const int sampleCount = 1000;
+	const int sampleCount = 100;
 
 	vec3 rayEnd = vec3(fragPos.xy, viewSpaceLightLocation.z + light.radius);
 	vec3 rayStart = vec3(fragPos.xy, viewSpaceLightLocation.z - light.radius);
@@ -32,15 +32,16 @@ float ComputeScattering(vec3 fragPos) {
 	for (int i = 0; i < sampleCount; i++) {
 
 		// Normally we should take a shadow map into consideration
-		float shadowValue = distance(viewSpaceLightLocation, currentPosition) < light.radius ? 1.0f : 0.0f;
+		float fragToLightDistance = length(viewSpaceLightLocation - currentPosition);
+		float shadowValue = fragToLightDistance < light.radius ? 1.0f : 0.0f;
 
-		foginess += scattering * shadowValue;
+		foginess += max(scattering * shadowValue * (light.radius - fragToLightDistance) / light.radius, 0.0f);
 
 		currentPosition += stepVector;
 
 	}
 
-	return foginess / sampleCount;
+	return clamp(foginess / sampleCount, 0.0f, 1.0f);
 
 }
 
@@ -52,9 +53,10 @@ void main() {
 	
 	vec3 fragPos = ConvertDepthToViewSpace(depth, texCoord);
 
+
 	if (fragPos.z  - viewSpaceLightLocation.z > light.radius)
 		discard;
-	
+
 	vec3 fragToLight = viewSpaceLightLocation.xyz - fragPos.xyz;
 	float fragToLightDistance = length(fragToLight);
 	
@@ -71,7 +73,7 @@ void main() {
 	vec3 specular = vec3(0.0f);
 	vec3 diffuse = vec3(1.0f);
 	vec3 ambient = vec3(light.ambient * surfaceColor);
-	vec3 volumetric = vec3(0.0f);
+	vec3 volumetric = 0.0f * vec3(light.color);
 
 	float occlusionFactor = 1.0f;
 	
@@ -80,6 +82,6 @@ void main() {
 	diffuse = max((dot(normal, lightDir) * light.color) * shadowFactor,
 		ambient * occlusionFactor) * surfaceColor;
 
-	fragColor = max(vec4((diffuse + ambient) * (light.radius - fragToLightDistance) / light.radius + volumetric, 1.0f), 0.0f);
+	fragColor = vec4(max((diffuse + ambient) * (light.radius - fragToLightDistance) / light.radius, 0.0f) + volumetric, 1.0f);
 
 }

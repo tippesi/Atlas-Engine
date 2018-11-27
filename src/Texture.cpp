@@ -1,4 +1,5 @@
 #include "Texture.h"
+#include "Framebuffer.h"
 
 //STB image library is declared(only once)
 #define STB_IMAGE_IMPLEMENTATION
@@ -11,19 +12,14 @@
 // Static members have to be defined in the .cpp again
 int32_t Texture::anisotropyLevel = 0;
 
-Texture::Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t internalFormat,	float LoD, int32_t wrapping, 
+Texture::Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t internalFormat, float LoD, int32_t wrapping,
 	int32_t filtering, 	bool anisotropic, bool mipmaps, int32_t layerCount) : width(width), height(height), layerCount(layerCount) {
 
 	ID = 0;
-	data = nullptr;
 
 	int32_t format = GetBaseFormat(internalFormat);
 
 	GenerateTexture(dataFormat, internalFormat, format, LoD, wrapping, filtering, anisotropic, mipmaps);
-
-	// Even if the texture has several layers we just support storage for one layer
-	// There shouldn't be a use case where we want to store every layer of a texture.
-	data = new uint8_t[width * height * channels];
 
 }
 
@@ -37,7 +33,13 @@ Texture::Texture(string filename, bool withoutCorrection) {
 
 	float LoD = -0.4f;
 
-	data = stbi_load(filename.c_str(), &width, &height, &channels, 0);
+	uint8_t* data = stbi_load(filename.c_str(), &width, &height, &channels, 0);
+
+	auto dataVector = vector<uint8_t>();
+
+	dataVector.assign(data, data + width * height * channels);
+
+	delete[] data;
 
 	if (data == nullptr) {
 #ifdef ENGINE_SHOW_LOG
@@ -75,6 +77,8 @@ Texture::Texture(string filename, bool withoutCorrection) {
 	}
 #endif
 
+	SetData(dataVector);
+
 #ifdef ENGINE_SHOW_LOG
 	EngineLog("Loaded texture %s", filename.c_str());
 #endif
@@ -93,43 +97,38 @@ void Texture::Bind(uint32_t unit) {
 
 }
 
-void Texture::SetData(uint8_t* data, int32_t layer, int32_t layerCount) {
-
-	delete this->data;
-
-	this->data = data;
+void Texture::SetData(vector<uint8_t> data, int32_t layer, int32_t layerCount) {
 
 	if (this->layerCount == 1) {
 		glBindTexture(GL_TEXTURE_2D, ID);
-		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, data.data());
 
 		if (mipmaps)
 			glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else {
 		glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, width, height, layerCount, GetBaseFormat(internalFormat), dataFormat, data);
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, width, height, layerCount, GetBaseFormat(internalFormat), dataFormat, data.data());
 		if (mipmaps)
 			glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 	}
 
 }
 
-uint8_t* Texture::GetData(int32_t layer) {
+vector<uint8_t> Texture::GetData(int32_t layer) {
 
-#ifdef ENGINE_OGL
-	// We can't just read a layer of an array texture, but we could use a FBO to solve this 
-	// problem: https://stackoverflow.com/questions/32070930/copying-a-single-layer-of-a-2d-texture-array-from-gpu-to-cpu #2
-	// This would also solve the problem on mobile device or devices that use OpenGL ES
+	Framebuffer framebuffer = Framebuffer(width, height);
+
+	vector<uint8_t> data = vector<uint8_t>(width * height * channels);
+
 	if (layerCount == 1) {
-		glBindTexture(GL_TEXTURE_2D, ID);
-		glGetTexImage(GL_TEXTURE_2D, 0, GetBaseFormat(internalFormat), GL_UNSIGNED_BYTE, this->data);
+		framebuffer.AddComponent(GL_COLOR_ATTACHMENT0, this);
 	}
-#endif
+	else {
+		framebuffer.AddComponentLayer(GL_COLOR_ATTACHMENT0, this, layer);
+	}
 
-	// We want to return a copy of the data
-	uint8_t *data = new uint8_t[width * height* channels];
-	memcpy(data, this->data, width * height * channels);
+ 	glReadPixels(0, 0, width, height, GetBaseFormat(internalFormat), GL_UNSIGNED_BYTE, data.data());
 
 	return data;
 
@@ -139,9 +138,6 @@ void Texture::Resize(int32_t width, int32_t height) {
 
 	this->width = width;
 	this->height = height;
-
-	delete data;
-	data = new uint8_t[width * height * channels];
 
 	if (layerCount == 1) {
 		glBindTexture(GL_TEXTURE_2D, ID);
@@ -161,28 +157,24 @@ void Texture::Resize(int32_t width, int32_t height) {
 
 void Texture::FlipHorizontally() {
 
-	uint8_t* data = GetData();
-	uint8_t* mirroredData = FlipDataHorizontally(data);
+	auto data = GetData();
+	auto mirroredData = FlipDataHorizontally(data);
 	SetData(mirroredData);
 
 }
 
 void Texture::SaveToPNG(string filename) {
 
-	uint8_t* data = GetData();
-	uint8_t* mirroredData = FlipDataHorizontally(data);
+	auto data = GetData();
+	auto mirroredData = FlipDataHorizontally(data);
 
-	stbi_write_png(filename.c_str(), width, height, channels, mirroredData, width * channels);
-
-	delete data;
-	delete mirroredData;
+	stbi_write_png(filename.c_str(), width, height, channels, mirroredData.data(), width * channels);
 
 }
 
 Texture::~Texture() {
 
 	glDeleteTextures(1, &ID);
-	delete data;
 
 }
 
@@ -243,35 +235,25 @@ void Texture::UncorrectGamma(uint8_t* data, int32_t width, int32_t height, int32
 
 }
 
-uint8_t* Texture::FlipDataHorizontally(uint8_t* data) {
+vector<uint8_t> Texture::FlipDataHorizontally(vector<uint8_t> data) {
 
-	if (data != NULL) {
+	auto invertedData = vector<uint8_t>(width * height * channels);
 
-		uint8_t* invertedData = new uint8_t[width * height * channels];
+	int32_t dataIndex = width * (height + 1) * channels;
 
-		if (invertedData != NULL) {
+	for (int32_t i = 0; i < width * height * channels; i++) {
 
-			int32_t dataIndex = width * (height + 1) * channels;
-
-			for (int32_t i = 0; i < width * height * channels; i++) {
-
-				if (dataIndex % (width * channels) == 0) {
-					dataIndex = dataIndex - 2 * width * channels;
-				}
-
-				invertedData[dataIndex] = data[i];
-
-				dataIndex++;
-
-			}
-
-			return invertedData;
-
+		if (dataIndex % (width * channels) == 0) {
+			dataIndex = dataIndex - 2 * width * channels;
 		}
+
+		invertedData[dataIndex] = data[i];
+
+		dataIndex++;
 
 	}
 
-	return NULL;
+	return invertedData;
 
 }
 
@@ -286,7 +268,7 @@ void Texture::GenerateTexture(GLenum dataFormat, int32_t internalFormat,
 	glBindTexture(target, ID);
 
 	if (layerCount == 1) {
-		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataFormat, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataFormat, NULL);
 	}
 	else {
 		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layerCount, 0, format, dataFormat, NULL);

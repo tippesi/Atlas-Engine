@@ -30,10 +30,6 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 	fontFile.read(buffer, size);
 	fontFile.close();
 
-	glyphs = new Glyph[FONT_CHARACTER_COUNT];
-	characterScales = new vec2[FONT_CHARACTER_COUNT];
-	characterSizes = new vec2[FONT_CHARACTER_COUNT];
-
 	int32_t resolution = (int32_t)pixelSize + 2 * padding;
 
 	// Compute next power of two https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
@@ -69,7 +65,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 		auto glyph = &glyphs[i];
 
-		glyph->data = new uint8_t[resolution * resolution];
+		glyph->data.resize(resolution * resolution);
 
 		for (int32_t i = 0; i < resolution * resolution; i++) {
 			glyph->data[i] = 0;
@@ -140,10 +136,6 @@ void Font::ComputeDimensions(string text, float scale, float* width, float* heig
 }
 
 Font::~Font() {
-
-	delete[] glyphs;
-	delete[] characterScales;
-	delete[] characterSizes;
 
 	delete glyphsTexture;
 

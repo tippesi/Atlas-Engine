@@ -16,7 +16,7 @@ typedef struct Glyph {
 	vec2 textureScale;
 	vec2 offset;
 
-	uint8_t* data;
+	vector<uint8_t> data;
 
 	int32_t kern[FONT_CHARACTER_COUNT];
 
@@ -56,13 +56,13 @@ public:
 	float pixelDistanceScale;
 	uint8_t edgeValue;
 
-	vec2* characterScales;
-	vec2* characterSizes;
+	vec2 characterScales[FONT_CHARACTER_COUNT];
+	vec2 characterSizes[FONT_CHARACTER_COUNT];
 
 	Texture* glyphsTexture;
 
 private:
-	Glyph* glyphs;
+	Glyph glyphs[FONT_CHARACTER_COUNT];
 
 };
 

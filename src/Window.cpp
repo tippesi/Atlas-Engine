@@ -22,15 +22,14 @@ void Window::SetTitle(string title) {
 
 void Window::SetIcon(Texture* icon) {
 
-	uint8_t* data = icon->GetData();
+	auto data = icon->GetData();
 
-	SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(data, icon->width, icon->height, icon->channels * 8, icon->channels * icon->width,
+	SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(data.data(), icon->width, icon->height, icon->channels * 8, icon->channels * icon->width,
 		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 
 	SDL_SetWindowIcon(sdlWindow, surface);
 
 	SDL_FreeSurface(surface);
-	delete data;
 
 }
 

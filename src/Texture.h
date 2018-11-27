@@ -3,13 +3,15 @@
 
 #include "System.h"
 
+#include <vector>
+
 class Texture {
 
 public:
 	/// <summary>
 	/// Constructs a <see cref="Texture"/>.
 	/// </summary>
-	Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t internalFormat, float LoD,
+	Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t format, float LoD,
 		int32_t wrapping, int32_t filtering, bool anisotropic, bool mipmaps, int32_t layerCount = 1);
 
 	/// <summary>
@@ -31,13 +33,13 @@ public:
 	/// <param name="data">The data which should be used. Each channel should have 8 bits and should be in the following order (r, g, b, a).</param>
 	/// <param name="layer">The layer where the data should be written. For a normal texture this should be 0.</param>
 	/// <param name="layerCount">The number of layers which should be written to. The data has to have the size of width * height * layerCount.</param>
-	void SetData(uint8_t* data, int32_t layer = 0, int32_t layerCount = 1);
+	void SetData(vector<uint8_t> data, int32_t layer = 0, int32_t layerCount = 1);
 
 	/// <summary>
 	/// Gets a copy of the data of the texture. Retrieval of the GPU data is only available for OpenGL NOT OpenGL ES
 	/// </summary>
 	/// <return>The data where each channel as 8 bits in the following order (r, g, b, a).</return>
-	uint8_t* GetData(int32_t layer = 0);
+	vector<uint8_t> GetData(int32_t layer = 0);
 
 	/// <summary>
 	/// Resizes the texture. Results in a loss of data.
@@ -94,7 +96,7 @@ private:
 	/// </summary>
 	/// <param name="data">The data which should be used. Each channel should have 8 bits and should be in the following order (r, g, b, a).</param>
 	/// <return>The data where each channel as 8 bits in the following order (r, g, b, a).</return>
-	uint8_t* FlipDataHorizontally(uint8_t* data);
+	vector<uint8_t> FlipDataHorizontally(vector<uint8_t> data);
 
 	/// <summary>
 	/// Generates an OpenGL texture and uploads the data to the GPU
@@ -104,8 +106,6 @@ private:
 
 	/// OpenGL texture ID
 	uint32_t ID;
-
-	uint8_t* data;
 
 	GLenum dataFormat;
 	int32_t internalFormat;

@@ -10,7 +10,7 @@
 int main(int argc, char* argv[]) {
 
 	Window* window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
-		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
+		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE);
 
 	Engine::UnlockFramerate();
 
