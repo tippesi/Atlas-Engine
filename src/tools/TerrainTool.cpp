@@ -43,7 +43,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 
 	uint8_t* normalMapData = new uint8_t[width * height * 3];
 
-	GenerateNormalData(heightfieldData, normalMapData, width, height, 300.0f);
+	GenerateNormalData(heightfieldData, normalMapData, width, height, 8.0f);
 
 	int32_t nodeSize = 8 * patchSize;
 	int32_t nodeSizeSquared = (nodeSize + 1) * (nodeSize + 1);
@@ -118,34 +118,43 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 
 void TerrainTool::GenerateNormalData(uint8_t* heightData, uint8_t* normalData, int32_t width, int32_t height, float strength) {
 
-	int32_t index = 0;
-
 	for (int32_t x = 0; x < width; x++) {
 		for (int32_t y = 0; y < height; y++) {
 
-			float heightL = GetHeight(heightData, x - 1, y, width, height, strength);
-			float heightR = GetHeight(heightData, x + 1, y, width, height, strength);
-			float heightD = GetHeight(heightData, x, y - 1, width, height, strength);
-			float heightU = GetHeight(heightData, x, y + 1, width, height, strength);
+			float h0 = GetHeight(heightData, x - 1, y - 1, width, height);
+			float h1 = GetHeight(heightData, x, y - 1, width, height);
+			float h2 = GetHeight(heightData, x + 1, y - 1, width, height);
+			float h3 = GetHeight(heightData, x - 1, y, width, height);
+			float h4 = GetHeight(heightData, x + 1, y, width, height);
+			float h5 = GetHeight(heightData, x - 1, y + 1, width, height);
+			float h6 = GetHeight(heightData, x, y + 1, width, height);
+			float h7 = GetHeight(heightData, x + 1, y + 1, width, height);
 
-			glm::vec3 normal = (0.5f * glm::normalize(glm::vec3(heightL - heightR, 1.0f, heightD - heightU)) + 0.5f) * 255.0f;
+			// Sobel filter
+			vec3 normal;
 
-			normalData[index++] = (uint8_t)normal.x;
-			normalData[index++] = (uint8_t)normal.y;
-			normalData[index++] = (uint8_t)normal.z;
+			normal.z = 1.0f / strength;
+			normal.y = h0 + 2.0f * h1 + h2 - h5 - 2.0f * h6 - h7;
+			normal.x = h0 + 2.0f * h3 + h5 - h2 - 2.0f * h4 - h7;
+
+			normal = (0.5f * glm::normalize(-normal) + 0.5f) * 255.0f;
+
+			normalData[3 * y * width + 3 * x] = (uint8_t)normal.x;
+			normalData[3 * y * width + 3 * x + 1] = (uint8_t)normal.y;
+			normalData[3 * y * width + 3 * x + 2] = (uint8_t)normal.z;
 
 		}
 	}
 
 }
 
-float TerrainTool::GetHeight(uint8_t* heightData, int32_t x, int32_t y, int32_t width, int32_t height, float strength) {
+float TerrainTool::GetHeight(uint8_t* heightData, int32_t x, int32_t y, int32_t width, int32_t height) {
 
 	x = x < 0 ? 0 : x;
 	x = x >= width ? width - 1 : x;
 	y = y < 0 ? 0 : y;
 	y = y >= height ? height - 1 : y;
 
-	return (float)heightData[y * width + x] / 255.0f * strength;
+	return (float)heightData[y * width + x] / 255.0f;
 
 }

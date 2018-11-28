@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
-	Font* font = new Font("../data/roboto.ttf", 88, 5, 200);
+	Font* font = new Font("../data/roboto.ttf", 44, 5, 200);
 
 	MasterRenderer* renderer = new MasterRenderer();
 
