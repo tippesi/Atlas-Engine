@@ -44,6 +44,10 @@ Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, flo
 		}
 	}
 
+	tesselationFactor = 0.0f;
+	tesselationSlope = 1.0f;
+	tesselationShift = 0.0f;
+
 }
 
 void Terrain::Update(Camera* camera) {
@@ -63,6 +67,14 @@ void Terrain::SetLoDDistance(int32_t LoD, float distance) {
 	if (LoD >= 0 && LoD < LoDCount) {
 		LoDDistances[LoD] = distance;
 	}
+
+}
+
+void Terrain::SetTesselationFunction(float factor, float slope, float shift) {
+
+	tesselationFactor = factor;
+	tesselationSlope = slope;
+	tesselationShift = shift;
 
 }
 

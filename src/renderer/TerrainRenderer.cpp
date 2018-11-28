@@ -13,10 +13,10 @@ TerrainRenderer::TerrainRenderer() {
 	nearShader->AddComponent(VERTEX_SHADER, vertexPath);
 	nearShader->AddComponent(TESSELATION_CONTROL_SHADER, tessControlPath);
 	nearShader->AddComponent(TESSELATION_EVALUATION_SHADER, tessEvalPath);
-	nearShader->AddComponent(GEOMETRY_SHADER, geometryPath);
+	//nearShader->AddComponent(GEOMETRY_SHADER, geometryPath);
 	nearShader->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
-	nearShader->AddMacro("GEOMETRY_SHADER");
+	//nearShader->AddMacro("GEOMETRY_SHADER");
 
 	nearShader->Compile();
 
@@ -32,6 +32,7 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 
 	viewMatrix->SetValue(camera->viewMatrix);
 	projectionMatrix->SetValue(camera->projectionMatrix);
+	cameraLocation->SetValue(camera->location);
 
 	for (Terrain*& terrain : scene->terrains) {
 
@@ -41,6 +42,10 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 
 		heightScale->SetValue(terrain->height);
 		patchOffsets->SetValue(terrain->patchOffsets.data(), 64);
+
+		tesselationFactor->SetValue(terrain->tesselationFactor);
+		tesselationSlope->SetValue(terrain->tesselationSlope);
+		tesselationShift->SetValue(terrain->tesselationShift);
 
 		for (TerrainNode*& node : terrain->renderList) {
 
@@ -73,9 +78,13 @@ void TerrainRenderer::GetUniforms() {
 	modelMatrix = nearShader->GetUniform("mMatrix");
 	viewMatrix = nearShader->GetUniform("vMatrix");
 	projectionMatrix = nearShader->GetUniform("pMatrix");
+	cameraLocation = nearShader->GetUniform("cameraLocation");
 	nodeSideLength = nearShader->GetUniform("nodeSideLength");
 	nodeLocation = nearShader->GetUniform("nodeLocation");
 	patchOffsets = nearShader->GetUniform("patchOffsets");
 	patchOffsetsScale = nearShader->GetUniform("patchOffsetsScale");
+	tesselationFactor = nearShader->GetUniform("tesselationFactor");
+	tesselationSlope = nearShader->GetUniform("tesselationSlope");
+	tesselationShift = nearShader->GetUniform("tesselationShift");
 
 }

@@ -32,10 +32,14 @@ private:
 	Uniform* modelMatrix;
 	Uniform* viewMatrix;
 	Uniform* projectionMatrix;
+	Uniform* cameraLocation;
 	Uniform* nodeSideLength;
 	Uniform* nodeLocation;
 	Uniform* patchOffsets;
 	Uniform* patchOffsetsScale;
+	Uniform* tesselationFactor;
+	Uniform* tesselationSlope;
+	Uniform* tesselationShift;
 
 };
 

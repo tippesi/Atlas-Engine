@@ -38,6 +38,7 @@ int main(int argc, char* argv[]) {
 	TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 256, 1, 16);
 
 	Terrain* terrain = new Terrain(256, 1, 4, 1.0f, 300.0f);
+	terrain->SetTesselationFunction(600.0f, 1.8f, 0.0f);
 
 	Texture* texture = new Texture("../data/image.png");
 

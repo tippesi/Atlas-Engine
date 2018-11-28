@@ -20,6 +20,8 @@ public:
 
 	void SetLoDDistance(int32_t LoD, float distance);
 
+	void SetTesselationFunction(float factor, float slope, float shift);
+
 	// vector<TerrainNode*> GetNodes(int32_t x, int32_t y, int32_t width, int32_t height);
 
 	void Bind();
@@ -34,6 +36,10 @@ public:
 	int32_t patchVertexCount;
 	int32_t patchSize;
 	vector<vec2> patchOffsets;
+
+	float tesselationFactor;
+	float tesselationSlope;
+	float tesselationShift;
 
 	float height;
 
