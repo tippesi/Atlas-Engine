@@ -5,6 +5,8 @@
 #include "IRenderer.h"
 #include "../shader/ShaderBatch.h"
 
+#include <mutex>
+
 class DirectionalShadowRenderer : public IRenderer {
 
 public:
@@ -22,13 +24,14 @@ public:
 	static string fragmentPath;
 
 private:
-	static ShaderBatch* shaderBatch;
-
 	Framebuffer* framebuffer;
 
 	Uniform* diffuseMapUniform;
 	Uniform* lightSpaceMatrixUniform;
 	Uniform* modelMatrixUniform;
+
+	static ShaderBatch* shaderBatch;
+	static mutex shaderBatchMutex;
 
 };
 

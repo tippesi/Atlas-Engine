@@ -25,8 +25,14 @@ public:
 	void RenderTexture(Window* window, Texture* texture, float x, float y, float width, float height,
 		bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
+	void RenderTexture(Window* window, Texture* texture, float x, float y, float width, float height,
+		vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+
 	void RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
 		bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+
+	void RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
+		vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 	~MasterRenderer();
 
@@ -47,11 +53,15 @@ private:
 	Uniform* rectangleOffset;
 	Uniform* rectangleScale;
 	Uniform* rectangleColor;
+	Uniform* rectangleClipArea;
+	Uniform* rectangleBlendArea;
 
 	Uniform* texturedRectangleProjectionMatrix;
 	Uniform* texturedRectangleOffset;
 	Uniform* texturedRectangleScale;
 	Uniform* texturedRectangleTexture;
+	Uniform* texturedRectangleClipArea;
+	Uniform* texturedRectangleBlendArea;
 
 	GeometryRenderer* geometryRenderer;
 	TerrainRenderer* terrainRenderer;

@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
 
 	Light* globalLight = new Light(DIRECTIONAL_LIGHT);
 	globalLight->direction = vec3(0.0f, -1.0f, 0.2f);
-	globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f * 1.0f;
+	globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f;
 	globalLight->ambient = 0.05f;
 	globalLight->AddShadow(new Shadow(125.0f, 0.008f, 1024, 3, 0.7f), camera);
 	globalLight->AddVolumetric(new Volumetric(target->width / 2, target->height / 2, 20, -0.5f));

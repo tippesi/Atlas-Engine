@@ -17,8 +17,14 @@ public:
 	void Render(Window* window, Font* font, string text, float x, float y, vec4 color, 
 		float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
+	void Render(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 clipArea,
+		vec4 blendArea, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+
 	void RenderOutlined(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 outlineColor,
 		float outlineScale, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+
+	void RenderOutlined(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
+		vec4 clipArea, vec4 blendArea, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 	static string vertexPath;
 	static string fragmentPath;
@@ -44,6 +50,8 @@ private:
 	Uniform* outlineScale;
 	Uniform* pixelDistanceScale;
 	Uniform* edgeValue;
+	Uniform *clipArea;
+	Uniform *blendArea;
 
 };
 

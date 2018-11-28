@@ -4,6 +4,7 @@ string DirectionalShadowRenderer::vertexPath = "shadowmapping.vsh";
 string DirectionalShadowRenderer::fragmentPath = "shadowmapping.fsh";
 
 ShaderBatch* DirectionalShadowRenderer::shaderBatch;
+mutex DirectionalShadowRenderer::shaderBatchMutex;
 
 DirectionalShadowRenderer::DirectionalShadowRenderer() {
 
@@ -94,6 +95,8 @@ void DirectionalShadowRenderer::Render(Window* window, RenderTarget* target, Cam
 
 void DirectionalShadowRenderer::InitShaderBatch() {
 
+	lock_guard<mutex> guard(shaderBatchMutex);
+
 	shaderBatch = new ShaderBatch();
 	shaderBatch->AddComponent(VERTEX_SHADER, vertexPath);
 	shaderBatch->AddComponent(FRAGMENT_SHADER, fragmentPath);
@@ -102,11 +105,15 @@ void DirectionalShadowRenderer::InitShaderBatch() {
 
 void DirectionalShadowRenderer::AddConfig(ShaderConfig* config) {
 
+	lock_guard<mutex> guard(shaderBatchMutex);
+
 	shaderBatch->AddConfig(config);
 
 }
 
 void DirectionalShadowRenderer::RemoveConfig(ShaderConfig* config) {
+
+	lock_guard<mutex> guard(shaderBatchMutex);
 
 	shaderBatch->RemoveConfig(config);
 

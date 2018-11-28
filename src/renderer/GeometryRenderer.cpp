@@ -1,9 +1,12 @@
 #include "GeometryRenderer.h"
 
+#include <mutex>
+
 string GeometryRenderer::vertexPath = "deferred/geometry.vsh";
 string GeometryRenderer::fragmentPath = "deferred/geometry.fsh";
 
 ShaderBatch* GeometryRenderer::shaderBatch;
+mutex GeometryRenderer::shaderBatchMutex;
 
 GeometryRenderer::GeometryRenderer() {
 
@@ -87,6 +90,8 @@ void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* came
 
 void GeometryRenderer::InitShaderBatch() {
 
+	lock_guard<mutex> guard(shaderBatchMutex);
+
 	shaderBatch = new ShaderBatch();
 	shaderBatch->AddComponent(VERTEX_SHADER, vertexPath);
 	shaderBatch->AddComponent(FRAGMENT_SHADER, fragmentPath);
@@ -95,11 +100,15 @@ void GeometryRenderer::InitShaderBatch() {
 
 void GeometryRenderer::AddConfig(ShaderConfig* config) {
 
+	lock_guard<mutex> guard(shaderBatchMutex);
+
 	shaderBatch->AddConfig(config);
 
 }
 
 void GeometryRenderer::RemoveConfig(ShaderConfig* config) {
+
+	lock_guard<mutex> guard(shaderBatchMutex);
 
 	shaderBatch->RemoveConfig(config);
 

@@ -97,6 +97,19 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 void MasterRenderer::RenderTexture(Window* window, Texture* texture, float x, float y, float width, float height,
 	bool alphaBlending, Framebuffer* framebuffer) {
 
+	float viewportWidth = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
+	float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+
+	vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
+	vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
+
+	RenderTexture(window, texture, x, y, width, height, clipArea, blendArea, alphaBlending, framebuffer);
+
+}
+
+void MasterRenderer::RenderTexture(Window* window, Texture* texture, float x, float y, float width, float height,
+	vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
+
 	vertexArray->Bind();
 
 	texturedRectangleShader->Bind();
@@ -143,6 +156,19 @@ void MasterRenderer::RenderTexture(Window* window, Texture* texture, float x, fl
 void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
 	bool alphaBlending, Framebuffer* framebuffer) {
 
+	float viewportWidth = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
+	float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+
+	vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
+	vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
+
+	RenderRectangle(window, color, x, y, width, height, clipArea, blendArea, alphaBlending, framebuffer);
+
+}
+
+void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
+	vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
+
 	vertexArray->Bind();
 
 	rectangleShader->Bind();
@@ -168,6 +194,8 @@ void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float 
 	rectangleOffset->SetValue(vec2(x, y));
 	rectangleScale->SetValue(vec2(width, height));
 	rectangleColor->SetValue(color);
+	rectangleBlendArea->SetValue(blendArea);
+	rectangleClipArea->SetValue(clipArea);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -189,11 +217,15 @@ void MasterRenderer::GetUniforms() {
 	rectangleOffset = rectangleShader->GetUniform("rectangleOffset");
 	rectangleScale = rectangleShader->GetUniform("rectangleScale");
 	rectangleColor = rectangleShader->GetUniform("rectangleColor");
+	rectangleBlendArea = rectangleShader->GetUniform("rectangleBlendArea");
+	rectangleClipArea = rectangleShader->GetUniform("rectangleClipArea");
 
 	texturedRectangleProjectionMatrix = texturedRectangleShader->GetUniform("pMatrix");
 	texturedRectangleOffset = texturedRectangleShader->GetUniform("rectangleOffset");
 	texturedRectangleScale = texturedRectangleShader->GetUniform("rectangleScale");
 	texturedRectangleTexture = texturedRectangleShader->GetUniform("rectangleTexture");
+	texturedRectangleBlendArea = texturedRectangleShader->GetUniform("rectangleBlendArea");
+	texturedRectangleClipArea = texturedRectangleShader->GetUniform("rectangleClipArea");
 
 }
 

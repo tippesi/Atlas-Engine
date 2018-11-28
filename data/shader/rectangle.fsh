@@ -7,7 +7,17 @@ uniform sampler2D rectangleTexture;
 uniform vec4 rectangleColor;
 #endif
 
+in vec2 fScreenPosition;
+uniform vec4 rectangleBlendArea;
+uniform vec4 rectangleClipArea;
+
 void main() {
+
+	if (fScreenPosition.x < rectangleClipArea.x ||
+		fScreenPosition.y < rectangleClipArea.y ||
+		fScreenPosition.x > rectangleClipArea.x + rectangleClipArea.z ||
+		fScreenPosition.y > rectangleClipArea.y + rectangleClipArea.w)
+		discard;
 	
 #ifdef TEXTURE
 	color = texture(rectangleTexture, fTexCoord);

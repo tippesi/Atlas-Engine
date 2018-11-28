@@ -5,6 +5,8 @@
 #include "../shader/ShaderBatch.h"
 #include "IRenderer.h"
 
+#include <mutex>
+
 class GeometryRenderer : public IRenderer {
 
 public:
@@ -37,6 +39,7 @@ private:
 	Uniform* specularIntensityUniform;
 
 	static ShaderBatch* shaderBatch;
+	static mutex shaderBatchMutex;
 
 };
 

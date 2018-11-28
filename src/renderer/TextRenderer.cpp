@@ -31,6 +31,19 @@ void TextRenderer::Render(Window* window, RenderTarget* target, Camera* camera, 
 void TextRenderer::Render(Window* window, Font* font, string text, float x, float y, vec4 color,
 	float scale, bool alphaBlending, Framebuffer* framebuffer) {
 
+	float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
+	float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+
+	vec4 clipArea = vec4(0.0f, 0.0f, width, height);
+	vec4 blendArea = vec4(0.0f, 0.0f, width, height);
+
+	Render(window, font, text, x, y, color, clipArea, blendArea, scale, alphaBlending, framebuffer);
+
+}
+
+void TextRenderer::Render(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 clipArea,
+	vec4 blendArea, float scale, bool alphaBlending, Framebuffer* framebuffer) {
+
 	int32_t characterCount;
 
 	shader->Bind();
@@ -69,6 +82,9 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 	pixelDistanceScale->SetValue(font->pixelDistanceScale);
 	edgeValue->SetValue(font->edgeValue);
 
+	this->clipArea->SetValue(clipArea);
+	this->blendArea->SetValue(blendArea);
+
 	vertexArray->GetComponent(1)->SetData(instances, characterCount);
 
 	font->glyphsTexture->Bind(GL_TEXTURE0);
@@ -91,6 +107,20 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 
 void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 outlineColor, 
 	float outlineScale, float scale, bool alphaBlending, Framebuffer* framebuffer) {
+
+	float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
+	float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+
+	vec4 clipArea = vec4(0.0f, 0.0f, width, height);
+	vec4 blendArea = vec4(0.0f, 0.0f, width, height);
+
+	RenderOutlined(window, font, text, x, y, color, outlineColor, outlineScale, clipArea, blendArea,
+		scale, alphaBlending, framebuffer);
+
+}
+
+void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
+	vec4 clipArea, vec4 blendArea, float scale, bool alphaBlending, Framebuffer* framebuffer) {
 
 	int32_t characterCount;
 
@@ -133,6 +163,9 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 	pixelDistanceScale->SetValue(font->pixelDistanceScale);
 	edgeValue->SetValue(font->edgeValue);
 
+	this->clipArea->SetValue(clipArea);
+	this->blendArea->SetValue(blendArea);
+
 	vertexArray->GetComponent(1)->SetData(instances, characterCount);
 
 	font->glyphsTexture->Bind(GL_TEXTURE0);
@@ -167,6 +200,8 @@ void TextRenderer::GetUniforms() {
 	outlineScale = shader->GetUniform("outlineScale");
 	pixelDistanceScale = shader->GetUniform("pixelDistanceScale");
 	edgeValue = shader->GetUniform("edgeValue");
+	clipArea = shader->GetUniform("clipArea");
+	blendArea = shader->GetUniform("blendArea");
 
 }
 
