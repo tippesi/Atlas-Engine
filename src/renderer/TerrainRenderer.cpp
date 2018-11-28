@@ -13,10 +13,10 @@ TerrainRenderer::TerrainRenderer() {
 	nearShader->AddComponent(VERTEX_SHADER, vertexPath);
 	nearShader->AddComponent(TESSELATION_CONTROL_SHADER, tessControlPath);
 	nearShader->AddComponent(TESSELATION_EVALUATION_SHADER, tessEvalPath);
-	// nearShader->AddComponent(GEOMETRY_SHADER, geometryPath);
+	nearShader->AddComponent(GEOMETRY_SHADER, geometryPath);
 	nearShader->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
-	// nearShader->AddMacro("GEOMETRY_SHADER");
+	nearShader->AddMacro("GEOMETRY_SHADER");
 
 	nearShader->Compile();
 
@@ -40,6 +40,7 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 		terrain->Bind();
 
 		heightScale->SetValue(terrain->height);
+		patchOffsets->SetValue(terrain->patchOffsets.data(), 64);
 
 		for (TerrainNode*& node : terrain->renderList) {
 
@@ -48,20 +49,13 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 			node->cell->heightField->Bind(GL_TEXTURE0);
 			node->cell->normalMap->Bind(GL_TEXTURE1);
 
-			nodeLocation->SetValue(node->location);
-			nodeSideLength->SetValue(node->sideLength);
+			nodeLocation->SetValue(node->location * patchScale);
+			nodeSideLength->SetValue(node->sideLength * patchScale);
 
-			scale->SetValue(patchScale / (float)terrain->patchSize);
+			scale->SetValue(patchScale);
+			patchOffsetsScale->SetValue(patchScale);
 
-			// Batch this
-			for (int32_t x = 0; x < 8; x++) {
-				for (int32_t y = 0; y < 8; y++) {
-					
-					offset->SetValue(node->location + vec2((float)x, (float)y) * patchScale);
-					
-					glDrawArrays(GL_PATCHES, 0, terrain->patchVertexCount);
-				}
-			}
+			glDrawArraysInstanced(GL_PATCHES, 0, terrain->patchVertexCount, 64);
 
 		}
 
@@ -81,5 +75,7 @@ void TerrainRenderer::GetUniforms() {
 	projectionMatrix = nearShader->GetUniform("pMatrix");
 	nodeSideLength = nearShader->GetUniform("nodeSideLength");
 	nodeLocation = nearShader->GetUniform("nodeLocation");
+	patchOffsets = nearShader->GetUniform("patchOffsets");
+	patchOffsetsScale = nearShader->GetUniform("patchOffsetsScale");
 
 }

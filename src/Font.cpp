@@ -32,15 +32,6 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	int32_t resolution = (int32_t)pixelSize + 2 * padding;
 
-	// Compute next power of two https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-	resolution--;
-	resolution |= resolution >> 1;
-	resolution |= resolution >> 2;
-	resolution |= resolution >> 4;
-	resolution |= resolution >> 8;
-	resolution |= resolution >> 16;
-	resolution++;
-
 	glyphsTexture = new Texture(GL_UNSIGNED_BYTE, resolution, resolution, GL_R8,
 		0.0f, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false, FONT_CHARACTER_COUNT);
 

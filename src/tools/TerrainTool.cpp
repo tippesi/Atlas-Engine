@@ -43,10 +43,10 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 
 	uint8_t* normalMapData = new uint8_t[width * height * 3];
 
-	GenerateNormalData(heightfieldData, normalMapData, width, height, 60.0f);
+	GenerateNormalData(heightfieldData, normalMapData, width, height, 300.0f);
 
 	int32_t nodeSize = 8 * patchSize;
-	int32_t nodeSizeSquared = nodeSize * nodeSize;
+	int32_t nodeSizeSquared = (nodeSize + 1) * (nodeSize + 1);
 
 	uint8_t* subHeightField = new uint8_t[nodeSizeSquared];
 	uint8_t* subNormalMap = new uint8_t[nodeSizeSquared * 3];
@@ -79,26 +79,29 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 				int32_t xOffset = (int32_t)((float)j / nodeSideCount * (float)newResolution);
 				int32_t yOffset = (int32_t)((float)k / nodeSideCount * (float)newResolution);
 
-				for (int32_t x = xOffset; x < nodeSize + xOffset; x++) {
-					for (int32_t y = yOffset; y < nodeSize + yOffset; y++) {
-						subHeightField[(y - yOffset) * nodeSize + (x - xOffset)] =
+				int32_t xExtension = j != (nodeSideCount * nodesPerSide - 1) ? 1 : 0;
+				int32_t yExtension = k != (nodeSideCount * nodesPerSide - 1) ? 1 : 0;
+
+				for (int32_t x = xOffset; x < nodeSize + xOffset + xExtension; x++) {
+					for (int32_t y = yOffset; y < nodeSize + yOffset + yExtension; y++) {
+						subHeightField[(y - yOffset) * (nodeSize + xExtension) + (x - xOffset)] =
 							resizedHeightField[y * newResolution * nodesPerSide + x];
-						subNormalMap[(y - yOffset) * 3 * nodeSize + (x - xOffset) * 3] =
+						subNormalMap[(y - yOffset) * 3 * (nodeSize + xExtension) + (x - xOffset) * 3] =
 							resizedNormalMap[y * 3 * newResolution * nodesPerSide + x * 3];
-						subNormalMap[(y - yOffset) * 3 * nodeSize + (x - xOffset) * 3 + 1] =
+						subNormalMap[(y - yOffset) * 3 * (nodeSize + xExtension) + (x - xOffset) * 3 + 1] =
 							resizedNormalMap[y * 3 * newResolution * nodesPerSide + x * 3 + 1];
-						subNormalMap[(y - yOffset) * 3 * nodeSize + (x - xOffset) * 3 + 2] =
+						subNormalMap[(y - yOffset) * 3 * (nodeSize + xExtension) + (x - xOffset) * 3 + 2] =
 							resizedNormalMap[y * 3 * newResolution * nodesPerSide + x * 3 + 2];
 					}
 				}
 
 				string filePath = dirPath + "/height" + to_string(j) + "-" + to_string(k) + ".png";
 
-				stbi_write_png(filePath.c_str(), nodeSize, nodeSize, 1, subHeightField, nodeSize);
+				stbi_write_png(filePath.c_str(), nodeSize + xExtension, nodeSize + yExtension, 1, subHeightField, (nodeSize + xExtension));
 
 				filePath = dirPath + "/normal" + to_string(j) + "-" + to_string(k) + ".png";
 
-				stbi_write_png(filePath.c_str(), nodeSize, nodeSize, 3, subNormalMap, nodeSize * 3);
+				stbi_write_png(filePath.c_str(), nodeSize + xExtension, nodeSize + yExtension, 3, subNormalMap, (nodeSize + xExtension) * 3);
 
 			}
 		}

@@ -101,7 +101,7 @@ void Texture::SetData(vector<uint8_t> data, int32_t layer, int32_t layerCount) {
 
 	if (this->layerCount == 1) {
 		glBindTexture(GL_TEXTURE_2D, ID);
-		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, data.data());
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GetBaseFormat(internalFormat), dataFormat, data.data());
 
 		if (mipmaps)
 			glGenerateMipmap(GL_TEXTURE_2D);
@@ -172,7 +172,7 @@ void Texture::SaveToPNG(string filename) {
 	auto data = GetData();
 	auto mirroredData = FlipDataHorizontally(data);
 
-	stbi_write_png(filename.c_str(), width, height, channels, mirroredData.data(), width * channels);
+	stbi_write_png(filename.c_str(), width, height, channels, data.data(), width * channels);
 
 }
 

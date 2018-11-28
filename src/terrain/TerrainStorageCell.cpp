@@ -6,6 +6,8 @@ TerrainStorageCell::TerrainStorageCell() {
 	y = 0;
 	LoD = 0;
 
+	heightData = nullptr;
+
 	heightField = nullptr;
 	normalMap = nullptr;
 

@@ -6,6 +6,7 @@
 #include "renderer/helper/GeometryHelper.h"
 
 #include "libraries/stb/stb_image.h"
+#include "libraries/stb/stb_image_write.h"
 
 int main(int argc, char* argv[]) {
 
@@ -34,9 +35,9 @@ int main(int argc, char* argv[]) {
 
 	window->Update();
 	
-	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 256, 1, 16);
+	TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 256, 1, 16);
 
-	Terrain* terrain = new Terrain(256, 1, 4, 1.0f, 60.0f);
+	Terrain* terrain = new Terrain(256, 1, 4, 1.0f, 300.0f);
 
 	Texture* texture = new Texture("../data/image.png");
 
@@ -57,7 +58,7 @@ int main(int argc, char* argv[]) {
 
 	scene->postProcessing->chromaticAberration = new ChromaticAberration(0.7f);
 
-	//scene->Add(terrain);
+	scene->Add(terrain);
 	
 	Mesh* mesh = new Mesh("../data/cube.dae");
 	Mesh* sponzaMesh = new Mesh("../data/sponza/sponza.dae");
@@ -106,8 +107,8 @@ int main(int argc, char* argv[]) {
 	node->Add(actor);
 	scene->rootNode->Add(node);
 
-	scene->Add(sponza);
-	scene->Add(tree);
+	//scene->Add(sponza);
+	//scene->Add(tree);
 
 	scene->Add(globalLight);
 
@@ -122,7 +123,7 @@ int main(int argc, char* argv[]) {
 	// We create the controller handler
 	MouseHandler* mouseHandler = CreateMouseHandler(camera, 1.5f, 0.25f);
 	mouseHandler->lock = true;
-	KeyboardHandler* keyboardHandler = CreateKeyboardHandler(camera,  7.0f, 0.3f);
+	KeyboardHandler* keyboardHandler = CreateKeyboardHandler(camera,  40.0f*7.0f, 0.3f);
 
 	// For now we will leave the main loop here until we implement a more advanced event system
 	// Our event structure
@@ -202,6 +203,8 @@ int main(int argc, char* argv[]) {
 		}
 
 		terrain->storage->requestedCells.clear();
+
+		EngineLog("%.3f,.%3f", camera->location.x, camera->location.z);
 		
 
 		scene->rootNode->transformationMatrix = glm::rotate((float)time / 1000.0f, vec3(0.0f, 1.0f, 0.0f));

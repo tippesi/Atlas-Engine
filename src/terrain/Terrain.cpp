@@ -23,9 +23,10 @@ Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, flo
 	}
 
 	GeneratePatchVertexBuffer(this->patchSize);
+	GeneratePatchOffsets(this->patchSize);
 
 	storage = new TerrainStorage(this->rootNodeCount, this->LoDCount);
-	LoDDistances = new float[LoDCount];
+	LoDDistances = vector<float>(LoDCount);
 
 	float terrainSideLength = (float)nodesPerSide * resolution * powf(2, (float)this->LoDCount - 1.0f) * this->patchSize * 8.0f;
 	float ratio = terrainSideLength / (float)nodesPerSide;
@@ -50,7 +51,7 @@ void Terrain::Update(Camera* camera) {
 	renderList.clear();
 
 	for (TerrainNode*& node : rootNodes) {
-		node->Update(camera, renderList, LoDDistances);
+		node->Update(camera, renderList, LoDDistances.data());
 	}
 
 	// TODO: Sort renderlist by LoD here. Better: Have a list for each LoD
@@ -81,7 +82,7 @@ void Terrain::GeneratePatchVertexBuffer(int32_t patchSizeFactor) {
 
 	patchVertexCount = (int32_t)powf((float)(4 * patchSizeFactor), 2.0f);
 
-	vertices = new vec2[patchVertexCount];
+	vertices = vector<vec2>(patchVertexCount);
 
 	int32_t index = 0;
 
@@ -111,8 +112,22 @@ void Terrain::GeneratePatchVertexBuffer(int32_t patchSizeFactor) {
 
 	vertexArray = new VertexArray();
 	VertexBuffer* vertexBuffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_FLOAT, 2);
-	vertexBuffer->SetData(vertices, patchVertexCount);
+	vertexBuffer->SetData(vertices.data(), patchVertexCount);
 	vertexArray->AddComponent(0, vertexBuffer);
 	glPatchParameteri(GL_PATCH_VERTICES, 16);
+
+}
+
+void Terrain::GeneratePatchOffsets(int32_t patchSizeFactor) {
+
+	patchOffsets = vector<vec2>(64);
+
+	int32_t index = 0;
+
+	for (int32_t x = 0; x < 8; x++) {
+		for (int32_t y = 0; y < 8; y++) {
+			patchOffsets[index++] = vec2((float)x * patchSizeFactor, (float)y * patchSizeFactor);
+		}
+	}
 
 }

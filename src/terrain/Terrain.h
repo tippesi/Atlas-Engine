@@ -30,8 +30,10 @@ public:
 
 	vec3 translation;
 	float resolution;
+
 	int32_t patchVertexCount;
 	int32_t patchSize;
+	vector<vec2> patchOffsets;
 
 	float height;
 
@@ -40,14 +42,16 @@ public:
 private:
 	void GeneratePatchVertexBuffer(int32_t patchSizeFactor);
 
-	vec2* vertices;
+	void GeneratePatchOffsets(int32_t patchSizeFactor);
+
+	vector<vec2> vertices;
 
 	VertexArray* vertexArray;
 
 	int32_t rootNodeCount;
 	int32_t LoDCount;
 
-	float* LoDDistances;
+	vector<float> LoDDistances;
 	vector<TerrainNode*> rootNodes;
 
 };

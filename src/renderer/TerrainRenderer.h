@@ -34,6 +34,8 @@ private:
 	Uniform* projectionMatrix;
 	Uniform* nodeSideLength;
 	Uniform* nodeLocation;
+	Uniform* patchOffsets;
+	Uniform* patchOffsetsScale;
 
 };
 
