@@ -15,10 +15,12 @@ public:
 	int32_t y;
 	int32_t LoD;
 
-	uint8_t* heightData;
+	vector<uint8_t> heightData;
 
 	Texture* heightField;
 	Texture* normalMap;
+	Texture* diffuseMap;
+	Texture* displacementMap;
 
 };
 

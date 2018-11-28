@@ -6,11 +6,9 @@ TerrainStorageCell::TerrainStorageCell() {
 	y = 0;
 	LoD = 0;
 
-	heightData = nullptr;
-
 	heightField = nullptr;
 	normalMap = nullptr;
-
+	diffuseMap = nullptr;
 }
 
 bool TerrainStorageCell::IsLoaded() {
@@ -19,6 +17,12 @@ bool TerrainStorageCell::IsLoaded() {
 		return false;
 
 	if (normalMap == nullptr)
+		return false;
+
+	if (diffuseMap == nullptr)
+		return false;
+
+	if (displacementMap == nullptr)
 		return false;
 
 	return true;

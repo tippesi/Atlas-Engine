@@ -67,7 +67,7 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 	float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
 	float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
 
-	vec3* instances = CalculateCharacterInstances(font, text, &characterCount);
+	auto instances = CalculateCharacterInstances(font, text, &characterCount);
 
 	glyphsTexture->SetValue(0);
 
@@ -85,7 +85,7 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 	this->clipArea->SetValue(clipArea);
 	this->blendArea->SetValue(blendArea);
 
-	vertexArray->GetComponent(1)->SetData(instances, characterCount);
+	vertexArray->GetComponent(1)->SetData(instances.data(), characterCount);
 
 	font->glyphsTexture->Bind(GL_TEXTURE0);
 
@@ -145,7 +145,7 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 	float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
 	float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
 
-	vec3* instances = CalculateCharacterInstances(font, text, &characterCount);
+	auto instances = CalculateCharacterInstances(font, text, &characterCount);
 
 	glyphsTexture->SetValue(0);
 
@@ -166,7 +166,7 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 	this->clipArea->SetValue(clipArea);
 	this->blendArea->SetValue(blendArea);
 
-	vertexArray->GetComponent(1)->SetData(instances, characterCount);
+	vertexArray->GetComponent(1)->SetData(instances.data(), characterCount);
 
 	font->glyphsTexture->Bind(GL_TEXTURE0);
 
@@ -205,11 +205,11 @@ void TextRenderer::GetUniforms() {
 
 }
 
-vec3* TextRenderer::CalculateCharacterInstances(Font* font, string text, int32_t* characterCount) {
+vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, int32_t* characterCount) {
 
 	*characterCount = 0;
 
-	vec3* instances = new vec3[text.length()];
+	auto instances = vector<vec3>(text.length());
 
 	int32_t index = 0;
 

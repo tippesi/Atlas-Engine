@@ -35,10 +35,10 @@ int main(int argc, char* argv[]) {
 
 	window->Update();
 	
-	TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 256, 1, 16);
+	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 256, 1, 16);
 
 	Terrain* terrain = new Terrain(256, 1, 4, 1.0f, 300.0f);
-	terrain->SetTesselationFunction(600.0f, 1.8f, 0.0f);
+	terrain->SetTesselationFunction(400.0f, 2.0f, 0.0f);
 
 	Texture* texture = new Texture("../data/image.png");
 
@@ -121,10 +121,13 @@ int main(int argc, char* argv[]) {
 
 	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
 
+	Texture* terrainDiffuseMap = new Texture("../data/terrain/Ground_17_DIF.jpg");
+	Texture* terrainDisplacementMap = new Texture("../data/terrain/Ground_17_DISP.jpg");
+
 	// We create the controller handler
 	MouseHandler* mouseHandler = CreateMouseHandler(camera, 1.5f, 0.25f);
 	mouseHandler->lock = true;
-	KeyboardHandler* keyboardHandler = CreateKeyboardHandler(camera,  40.0f*7.0f, 0.3f);
+	KeyboardHandler* keyboardHandler = CreateKeyboardHandler(camera,  7.0f, 0.3f);
 
 	// For now we will leave the main loop here until we implement a more advanced event system
 	// Our event structure
@@ -200,6 +203,9 @@ int main(int argc, char* argv[]) {
 			cell->normalMap = new Texture(GL_UNSIGNED_BYTE, width, height, GL_RGB8, -0.4f, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 			dataVector.assign(data, data + width * height * 3);
 			cell->normalMap->SetData(dataVector);
+
+			cell->diffuseMap = terrainDiffuseMap;
+			cell->displacementMap = terrainDisplacementMap;
 			
 		}
 

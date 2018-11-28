@@ -26,7 +26,11 @@ private:
 
 	Uniform* heightField;
 	Uniform* normalMap;
+	Uniform* diffuseMap;
+	Uniform* displacementMap;
+
 	Uniform* heightScale;
+	Uniform* displacementScale;
 	Uniform* offset;
 	Uniform* scale;
 	Uniform* modelMatrix;
@@ -35,8 +39,10 @@ private:
 	Uniform* cameraLocation;
 	Uniform* nodeSideLength;
 	Uniform* nodeLocation;
+
 	Uniform* patchOffsets;
 	Uniform* patchOffsetsScale;
+
 	Uniform* tesselationFactor;
 	Uniform* tesselationSlope;
 	Uniform* tesselationShift;

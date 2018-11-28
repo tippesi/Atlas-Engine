@@ -32,7 +32,7 @@ public:
 private:
 	void GetUniforms();
 
-	vec3* CalculateCharacterInstances(Font* font, string text, int32_t* characterCount);
+	vector<vec3> CalculateCharacterInstances(Font* font, string text, int32_t* characterCount);
 
 	VertexArray* vertexArray;
 

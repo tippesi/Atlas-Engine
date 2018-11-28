@@ -3,9 +3,13 @@ layout(quads, fractional_odd_spacing, cw) in;
 out vec2 teTexCoords;
 
 uniform sampler2D heightField;
+uniform sampler2D displacementMap;
+
 uniform vec2 nodeLocation;
 uniform float nodeSideLength;
+
 uniform float heightScale;
+uniform float displacementScale;
 
 uniform mat4 vMatrix;
 uniform mat4 pMatrix;
@@ -27,7 +31,9 @@ void main(){
 	
 	teTexCoords = texCoords;
 	
-	position.y = texture(heightField, texCoords).r * heightScale;
+	float displacement = texture(displacementMap, texCoords * 40.0f).r * displacementScale;
+	
+	position.y = texture(heightField, texCoords).r * heightScale + displacement;
 	
 #ifndef GEOMETRY_SHADER
 	position = pMatrix * vMatrix * position;
