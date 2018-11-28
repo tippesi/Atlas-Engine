@@ -10,11 +10,11 @@ Shadow::Shadow(float distance, float bias, int32_t resolution, int32_t cascadeCo
 	this->splitCorrection = splitCorrection;
 
 	sampleCount = 16;
-	sampleRange = 3;
+	sampleRange = 2.2f;
 
 	components = new ShadowComponent[cascadeCount];
 
-	maps = new Texture(GL_UNSIGNED_INT, resolution, resolution, GL_DEPTH_COMPONENT24, 0.0f, 
+	maps = new Texture(GL_UNSIGNED_INT, resolution, resolution, GL_DEPTH_COMPONENT24, 0.0f,
 		GL_CLAMP_TO_EDGE, GL_LINEAR, false, false, cascadeCount);
 
 }

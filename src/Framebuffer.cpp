@@ -190,6 +190,8 @@ void Framebuffer::DeleteContent() {
 
 Framebuffer::~Framebuffer() {
 
+	DeleteContent();
+
 	glDeleteFramebuffers(1, &ID);
 
 }

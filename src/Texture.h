@@ -11,7 +11,7 @@ public:
 	/// <summary>
 	/// Constructs a <see cref="Texture"/>.
 	/// </summary>
-	Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t format, float LoD,
+	Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t internalFormat, float LoD,
 		int32_t wrapping, int32_t filtering, bool anisotropic, bool mipmaps, int32_t layerCount = 1);
 
 	/// <summary>

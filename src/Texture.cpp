@@ -130,6 +130,10 @@ vector<uint8_t> Texture::GetData(int32_t layer) {
 
  	glReadPixels(0, 0, width, height, GetBaseFormat(internalFormat), GL_UNSIGNED_BYTE, data.data());
 
+	framebuffer.DeleteContent();
+
+	framebuffer.Unbind();
+
 	return data;
 
 }
@@ -141,7 +145,7 @@ void Texture::Resize(int32_t width, int32_t height) {
 
 	if (layerCount == 1) {
 		glBindTexture(GL_TEXTURE_2D, ID);
-		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, nullptr);
 		if (mipmaps)
 			glGenerateMipmap(GL_TEXTURE_2D);
 	}

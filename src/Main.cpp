@@ -33,18 +33,10 @@ int main(int argc, char* argv[]) {
 	renderer->textRenderer->Render(window, font, "Loading...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
 	window->Update();
+	
+	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 256, 1, 16);
 
-	/*
-	TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 9, 5, 16);
-
-	Terrain* terrain = new Terrain(9, 5, 4, 1.0f, 300.0f);
-
-	terrain->SetLoDDistance(4, 25.0f);
-	terrain->SetLoDDistance(3, 50.0f);
-	terrain->SetLoDDistance(2, 100.0f);
-	terrain->SetLoDDistance(1, 200.0f);
-	terrain->SetLoDDistance(0, 300.0f);
-	*/
+	Terrain* terrain = new Terrain(256, 1, 4, 1.0f, 60.0f);
 
 	Texture* texture = new Texture("../data/image.png");
 
@@ -65,22 +57,25 @@ int main(int argc, char* argv[]) {
 
 	scene->postProcessing->chromaticAberration = new ChromaticAberration(0.7f);
 
-	// scene->Add(terrain);
+	//scene->Add(terrain);
 	
 	Mesh* mesh = new Mesh("../data/cube.dae");
 	Mesh* sponzaMesh = new Mesh("../data/sponza/sponza.dae");
+	Mesh* treeMesh = new Mesh("../data/tree.dae");
 
 	Actor* actor = new Actor(mesh);
+	Actor* tree = new Actor(treeMesh);
+	tree->modelMatrix = scale(mat4(1.0f), vec3(3.0f));
 	Actor* sponza = new Actor(sponzaMesh);
 	sponza->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
 
 	SceneNode* node = new SceneNode();
 
 	Light* globalLight = new Light(DIRECTIONAL_LIGHT);
-	globalLight->direction = vec3(0.0f, -1.0f, 0.5f);
-	globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f * 3.0f;
+	globalLight->direction = vec3(0.0f, -1.0f, 0.2f);
+	globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f * 1.0f;
 	globalLight->ambient = 0.05f;
-	globalLight->AddShadow(new Shadow(125.0f, 0.004f, 2048, 3, 0.7f), camera);
+	globalLight->AddShadow(new Shadow(125.0f, 0.008f, 1024, 3, 0.7f), camera);
 	globalLight->AddVolumetric(new Volumetric(target->width / 2, target->height / 2, 20, -0.5f));
 
 	Light* pointLight1 = new Light(POINT_LIGHT);
@@ -112,6 +107,7 @@ int main(int argc, char* argv[]) {
 	scene->rootNode->Add(node);
 
 	scene->Add(sponza);
+	scene->Add(tree);
 
 	scene->Add(globalLight);
 
@@ -182,7 +178,7 @@ int main(int argc, char* argv[]) {
 		camera->UpdateView();
 		camera->UpdateProjection();
 
-		/*
+		
 		terrain->Update(camera);
 
 		for (TerrainStorageCell* cell : terrain->storage->requestedCells) {
@@ -192,18 +188,21 @@ int main(int argc, char* argv[]) {
 			heightField += to_string(cell->LoD) + "/height" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
 			uint8_t* data = stbi_load(heightField.c_str(), &width, &height, &channels, 1);
 			cell->heightField = new Texture(GL_UNSIGNED_BYTE, width, height, GL_R8, -0.4f, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-			cell->heightField->SetData(data);
+			auto dataVector = vector<uint8_t>(width * height);
+			dataVector.assign(data, data + width * height);
+			cell->heightField->SetData(dataVector);
 
 			heightField = "../data/terrain/LoD";
 			heightField += to_string(cell->LoD) + "/normal" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
 			data = stbi_load(heightField.c_str(), &width, &height, &channels, 3);
 			cell->normalMap = new Texture(GL_UNSIGNED_BYTE, width, height, GL_RGB8, -0.4f, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-			cell->normalMap->SetData(data);
+			dataVector.assign(data, data + width * height * 3);
+			cell->normalMap->SetData(dataVector);
 			
 		}
 
 		terrain->storage->requestedCells.clear();
-		*/
+		
 
 		scene->rootNode->transformationMatrix = glm::rotate((float)time / 1000.0f, vec3(0.0f, 1.0f, 0.0f));
 		actor->modelMatrix = glm::rotate((float)time / 500.0f, vec3(0.0f, 1.0f, 0.0f));

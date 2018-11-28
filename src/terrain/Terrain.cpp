@@ -113,5 +113,6 @@ void Terrain::GeneratePatchVertexBuffer(int32_t patchSizeFactor) {
 	VertexBuffer* vertexBuffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_FLOAT, 2);
 	vertexBuffer->SetData(vertices, patchVertexCount);
 	vertexArray->AddComponent(0, vertexBuffer);
+	glPatchParameteri(GL_PATCH_VERTICES, 16);
 
 }

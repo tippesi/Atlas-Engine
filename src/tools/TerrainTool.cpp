@@ -35,7 +35,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 		LoDCount = (int32_t)(logf(3.0f * powf(2.0f, 16.0f) / (float)rootNodeCount + 1.0f) / logf(4.0f));
 	}
 
-	float terrainSideLength = (float)nodesPerSide * powf(2, (float)LoDCount) * (float)patchSize * 8.0f;
+	float terrainSideLength = (float)nodesPerSide * powf(2, (float)LoDCount - 1.0f) * (float)patchSize * 8.0f;
 
 	if (width != height || width != (int32_t)terrainSideLength) {
 		throw EngineException("The dimensions of the image don't match to the given arguments");
@@ -43,7 +43,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 
 	uint8_t* normalMapData = new uint8_t[width * height * 3];
 
-	GenerateNormalData(heightfieldData, normalMapData, width, height, 300.0f);
+	GenerateNormalData(heightfieldData, normalMapData, width, height, 60.0f);
 
 	int32_t nodeSize = 8 * patchSize;
 	int32_t nodeSizeSquared = nodeSize * nodeSize;
@@ -120,10 +120,10 @@ void TerrainTool::GenerateNormalData(uint8_t* heightData, uint8_t* normalData, i
 	for (int32_t x = 0; x < width; x++) {
 		for (int32_t y = 0; y < height; y++) {
 
-			float heightL = GetHeight(heightData, x - 10, y, width, height, strength);
-			float heightR = GetHeight(heightData, x + 10, y, width, height, strength);
-			float heightD = GetHeight(heightData, x, y - 10, width, height, strength);
-			float heightU = GetHeight(heightData, x, y + 10, width, height, strength);
+			float heightL = GetHeight(heightData, x - 1, y, width, height, strength);
+			float heightR = GetHeight(heightData, x + 1, y, width, height, strength);
+			float heightD = GetHeight(heightData, x, y - 1, width, height, strength);
+			float heightU = GetHeight(heightData, x, y + 1, width, height, strength);
 
 			glm::vec3 normal = (0.5f * glm::normalize(glm::vec3(heightL - heightR, 1.0f, heightD - heightU)) + 0.5f) * 255.0f;
 

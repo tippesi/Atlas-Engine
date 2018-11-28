@@ -82,12 +82,12 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
 	target->geometryFramebuffer->GetComponent(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
 
-    float offsetArray[] = {0, 1, 2, 3, 4};
-    float weightArray[] = {1/9.0f, 1/9.0f, 1/9.0f, 1/9.0f, 1/9.0f};
+    float offsetArray[] = {0, 1, 2, 3, 4, 5, 6, 7};
+    float weightArray[] = {1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f};
 
-    offsets->SetValue(offsetArray, 5);
-    weights->SetValue(weightArray, 5);
-    kernelSize->SetValue(5);
+    offsets->SetValue(offsetArray, 8);
+    weights->SetValue(weightArray, 8);
+    kernelSize->SetValue(8);
 
     for (Light* light : scene->lights) {
 
