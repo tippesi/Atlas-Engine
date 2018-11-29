@@ -27,7 +27,7 @@ GeometryRenderer::GeometryRenderer() {
 
 void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
-	for (auto shaderConfigBatch : shaderBatch->configBatches) {
+	for (auto& shaderConfigBatch : shaderBatch->configBatches) {
 
 		shaderBatch->Bind(shaderConfigBatch->ID);
 
@@ -58,8 +58,8 @@ void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* came
 					material->normalMap->Bind(GL_TEXTURE1);
 				if (material->HasSpecularMap())
 					material->specularMap->Bind(GL_TEXTURE2);
-				if (material->HasHeightMap())
-					material->heightMap->Bind(GL_TEXTURE3);
+				if (material->HasDisplacementMap())
+					material->displacementMap->Bind(GL_TEXTURE3);
 
 				diffuseColorUniform->SetValue(material->diffuseColor);
 				specularColorUniform->SetValue(material->specularColor);

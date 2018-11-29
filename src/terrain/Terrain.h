@@ -20,7 +20,9 @@ public:
 
 	void SetLoDDistance(int32_t LoD, float distance);
 
-	void SetTesselationFunction(float factor, float slope, float shift);
+	void SetTesselationFunction(float factor, float slope, float shift, int32_t maxLevel = 64);
+
+	void SetDisplacementDistance(float distance);
 
 	// vector<TerrainNode*> GetNodes(int32_t x, int32_t y, int32_t width, int32_t height);
 
@@ -40,8 +42,10 @@ public:
 	float tesselationFactor;
 	float tesselationSlope;
 	float tesselationShift;
+	int32_t maxTesselationLevel;
 
-	float height;
+	float heightScale;
+	float displacementDistance;
 
 	vector<TerrainNode*> renderList;
 

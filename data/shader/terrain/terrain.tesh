@@ -10,9 +10,13 @@ uniform float nodeSideLength;
 
 uniform float heightScale;
 uniform float displacementScale;
+uniform float displacementDistance;
 
 uniform mat4 vMatrix;
 uniform mat4 pMatrix;
+
+uniform vec3 cameraLocation;
+
 
 void main(){
 
@@ -26,12 +30,14 @@ void main(){
 	u * v * gl_in[3].gl_Position +
 	(1 - u) * v * gl_in[15].gl_Position);
 	
+	float vertexDistance = distance(position.xyz, cameraLocation);
+	
 	vec2 texCoords = vec2(position.x, position.z) - nodeLocation;
 	texCoords /= nodeSideLength;
 	
 	teTexCoords = texCoords;
 	
-	float displacement = texture(displacementMap, texCoords * 40.0f).r * displacementScale;
+	float displacement = texture(displacementMap, texCoords * 40.0f).r * displacementScale * clamp((displacementDistance - vertexDistance), 0.0f, 1.0f);
 	
 	position.y = texture(heightField, texCoords).r * heightScale + displacement;
 	

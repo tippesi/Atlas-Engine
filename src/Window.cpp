@@ -1,6 +1,7 @@
 #include "Window.h"
 
-Window::Window(string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags) {
+Window::Window(string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags) : 
+	x(x), y(y), width(width), height(height) {
 
 	sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_OPENGL);
 
@@ -37,11 +38,31 @@ void Window::SetPosition(int32_t x, int32_t y) {
 
 	SDL_SetWindowPosition(sdlWindow, x, y);
 
+	this->x = x;
+	this->y = y;
+
+}
+
+void Window::GetPosition(int32_t* x, int32_t* y) {
+
+	*x = this->x;
+	*y = this->y;
+
 }
 
 void Window::SetSize(int32_t width, int32_t height) {
 
 	SDL_SetWindowSize(sdlWindow, width, height);
+
+	this->width = width;
+	this->height = height;
+
+}
+
+void Window::GetSize(int32_t* width, int32_t* height) {
+
+	*width = this->width;
+	*height = this->height;
 
 }
 

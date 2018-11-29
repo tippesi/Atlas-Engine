@@ -2,6 +2,7 @@
 #define LIGHT_H
 
 #include "../System.h"
+#include "../mesh/Actor.h"
 #include "Shadow.h"
 #include "Volumetric.h"
 

@@ -8,12 +8,13 @@ const int DA = 1;
 uniform float tesselationFactor;
 uniform float tesselationSlope;
 uniform float tesselationShift;
+uniform int maxTesselationLevel;
 
 uniform vec3 cameraLocation;
 
 float GetTessLevel(float distance) {
 
-	return max(tesselationFactor / pow(distance, tesselationSlope) + tesselationShift, 0.0f);
+	return clamp(tesselationFactor / pow(distance, tesselationSlope) + tesselationShift, 0.0f, 1.0f);
 
 }
 		
@@ -32,10 +33,10 @@ void main() {
 			float distanceCD = distance(cameraLocation, midCD);
 			float distanceDA = distance(cameraLocation, midDA);
 			
-			gl_TessLevelOuter[AB] = mix(1, gl_MaxTessGenLevel, GetTessLevel(distanceAB));
-			gl_TessLevelOuter[BC] = mix(1, gl_MaxTessGenLevel, GetTessLevel(distanceBC));
-			gl_TessLevelOuter[CD] = mix(1, gl_MaxTessGenLevel, GetTessLevel(distanceCD));
-			gl_TessLevelOuter[DA] = mix(1, gl_MaxTessGenLevel, GetTessLevel(distanceDA));
+			gl_TessLevelOuter[AB] = mix(1, maxTesselationLevel, GetTessLevel(distanceAB));
+			gl_TessLevelOuter[BC] = mix(1, maxTesselationLevel, GetTessLevel(distanceBC));
+			gl_TessLevelOuter[CD] = mix(1, maxTesselationLevel, GetTessLevel(distanceCD));
+			gl_TessLevelOuter[DA] = mix(1, maxTesselationLevel, GetTessLevel(distanceDA));
 	
 			gl_TessLevelInner[0] = (gl_TessLevelOuter[BC] + gl_TessLevelOuter[DA])/4;
 			gl_TessLevelInner[1] = (gl_TessLevelOuter[AB] + gl_TessLevelOuter[CD])/4;

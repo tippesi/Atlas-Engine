@@ -42,12 +42,15 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 
 		terrain->Bind();
 
-		heightScale->SetValue(terrain->height);
+		heightScale->SetValue(terrain->heightScale);
 		patchOffsets->SetValue(terrain->patchOffsets.data(), 64);
 
 		tesselationFactor->SetValue(terrain->tesselationFactor);
 		tesselationSlope->SetValue(terrain->tesselationSlope);
 		tesselationShift->SetValue(terrain->tesselationShift);
+		maxTesselationLevel->SetValue(terrain->maxTesselationLevel);
+
+		displacementDistance->SetValue(terrain->displacementDistance);
 
 		for (TerrainNode*& node : terrain->renderList) {
 
@@ -58,7 +61,7 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 			node->cell->diffuseMap->Bind(GL_TEXTURE2);
 			node->cell->displacementMap->Bind(GL_TEXTURE3);
 
-			displacementScale->SetValue(.2f);
+			displacementScale->SetValue(.15f);
 
 			nodeLocation->SetValue(node->location * patchScale);
 			nodeSideLength->SetValue(node->sideLength * patchScale);
@@ -81,7 +84,7 @@ void TerrainRenderer::GetUniforms() {
 	diffuseMap = nearShader->GetUniform("diffuseMap");
 	displacementMap = nearShader->GetUniform("displacementMap");
 	heightScale = nearShader->GetUniform("heightScale");
-	displacementScale = nearShader->GetUniform("displacementScale");
+
 	offset = nearShader->GetUniform("offset");
 	scale = nearShader->GetUniform("scale");
 	modelMatrix = nearShader->GetUniform("mMatrix");
@@ -92,8 +95,13 @@ void TerrainRenderer::GetUniforms() {
 	nodeLocation = nearShader->GetUniform("nodeLocation");
 	patchOffsets = nearShader->GetUniform("patchOffsets");
 	patchOffsetsScale = nearShader->GetUniform("patchOffsetsScale");
+
 	tesselationFactor = nearShader->GetUniform("tesselationFactor");
 	tesselationSlope = nearShader->GetUniform("tesselationSlope");
 	tesselationShift = nearShader->GetUniform("tesselationShift");
+	maxTesselationLevel = nearShader->GetUniform("maxTesselationLevel");
+
+	displacementScale = nearShader->GetUniform("displacementScale");
+	displacementDistance = nearShader->GetUniform("displacementDistance");
 
 }

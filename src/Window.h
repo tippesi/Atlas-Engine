@@ -43,9 +43,15 @@ public:
 	void SetPosition(int32_t x, int32_t y);
 
 	///
+	void GetPosition(int32_t* x, int32_t* y);
+
+	///
 	/// \param width
 	/// \param height
 	void SetSize(int32_t width, int32_t height);
+
+	///
+	void GetSize(int32_t* width, int32_t* height);
 
 	///
 	void Show();
@@ -60,9 +66,16 @@ public:
 
 	Viewport* viewport;
 
+
 private:
 	SDL_Window * sdlWindow;
 	SDL_GLContext context;
+
+	int32_t x;
+	int32_t y;
+
+	int32_t width;
+	int32_t height;
 
 };
 

@@ -30,7 +30,6 @@ private:
 	Uniform* displacementMap;
 
 	Uniform* heightScale;
-	Uniform* displacementScale;
 	Uniform* offset;
 	Uniform* scale;
 	Uniform* modelMatrix;
@@ -46,6 +45,10 @@ private:
 	Uniform* tesselationFactor;
 	Uniform* tesselationSlope;
 	Uniform* tesselationShift;
+	Uniform* maxTesselationLevel;
+
+	Uniform* displacementScale;
+	Uniform* displacementDistance;
 
 };
 

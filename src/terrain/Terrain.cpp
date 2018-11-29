@@ -1,7 +1,7 @@
 #include "Terrain.h"
 
-Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, float resolution, float height) : 
-	resolution(resolution), height(height) {
+Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, float resolution, float heightScale) : 
+	resolution(resolution), heightScale(heightScale) {
 
 	translation = vec3(0.0f);
 	this->patchSize = patchSize;
@@ -39,7 +39,7 @@ Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, flo
 		for (int32_t j = 0; j < nodesPerSide; j++) {
 			TerrainStorageCell* cell = storage->GetCell(i, j, 0);
 			storage->requestedCells.push_back(cell);
-			rootNodes.push_back(new TerrainNode(vec2((float)i * ratio, (float)j * ratio), resolution, height, ratio, 
+			rootNodes.push_back(new TerrainNode(vec2((float)i * ratio, (float)j * ratio), resolution, heightScale, ratio, 
 				0, this->LoDCount, vec2(0, 0), vec2(i, j), storage, cell));
 		}
 	}
@@ -47,6 +47,9 @@ Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, flo
 	tesselationFactor = 0.0f;
 	tesselationSlope = 1.0f;
 	tesselationShift = 0.0f;
+	maxTesselationLevel = 1;
+
+	displacementDistance = 0.0f;
 
 }
 
@@ -70,11 +73,19 @@ void Terrain::SetLoDDistance(int32_t LoD, float distance) {
 
 }
 
-void Terrain::SetTesselationFunction(float factor, float slope, float shift) {
+void Terrain::SetTesselationFunction(float factor, float slope, float shift, int32_t maxLevel) {
 
 	tesselationFactor = factor;
 	tesselationSlope = slope;
 	tesselationShift = shift;
+
+	maxTesselationLevel = (maxLevel > 64 ? 64 : maxLevel) < 1 ? 1 : maxLevel;
+
+}
+
+void Terrain::SetDisplacementDistance(float distance) {
+
+	displacementDistance = distance;
 
 }
 

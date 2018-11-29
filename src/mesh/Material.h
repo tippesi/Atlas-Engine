@@ -16,14 +16,14 @@ public:
 	bool HasDiffuseMap();
 	bool HasNormalMap();
 	bool HasSpecularMap();
-	bool HasHeightMap();
+	bool HasDisplacementMap();
 
 	~Material();
 
 	Texture* diffuseMap;
 	Texture* normalMap;
 	Texture* specularMap;
-	Texture* heightMap;
+	Texture* displacementMap;
 
 	vec3 diffuseColor;
 	vec3 specularColor;
@@ -31,6 +31,8 @@ public:
 
 	float specularHardness;
 	float specularIntensity;
+
+	float displacementScale;
 
 	ShaderConfig* geometryConfig;
 	ShaderConfig* shadowConfig;

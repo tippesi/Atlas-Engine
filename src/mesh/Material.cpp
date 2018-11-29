@@ -7,7 +7,7 @@ Material::Material() {
 	diffuseMap = nullptr;
 	normalMap = nullptr;
 	specularMap = nullptr;
-	heightMap = nullptr;
+	displacementMap = nullptr;
 
 	diffuseColor = vec3(1.0f);
 	specularColor = vec3(1.0f);
@@ -15,6 +15,8 @@ Material::Material() {
 
 	specularHardness = 1.0f;
 	specularIntensity = 0.0f;
+
+	displacementScale = 1.0f;
 
 	geometryConfig = new ShaderConfig();
 	shadowConfig = new ShaderConfig();
@@ -73,9 +75,9 @@ bool Material::HasSpecularMap() {
 
 }
 
-bool Material::HasHeightMap() {
+bool Material::HasDisplacementMap() {
 
-	if (heightMap == nullptr)
+	if (displacementMap == nullptr)
 		return false;
 
 	return true;
@@ -87,6 +89,6 @@ Material::~Material() {
 	delete diffuseMap;
 	delete normalMap;
 	delete specularMap;
-	delete heightMap;
+	delete displacementMap;
 
 }

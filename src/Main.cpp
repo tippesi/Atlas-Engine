@@ -39,6 +39,7 @@ int main(int argc, char* argv[]) {
 
 	Terrain* terrain = new Terrain(256, 1, 4, 1.0f, 300.0f);
 	terrain->SetTesselationFunction(400.0f, 2.0f, 0.0f);
+	terrain->SetDisplacementDistance(15.0f);
 
 	Texture* texture = new Texture("../data/image.png");
 
@@ -75,10 +76,10 @@ int main(int argc, char* argv[]) {
 
 	Light* globalLight = new Light(DIRECTIONAL_LIGHT);
 	globalLight->direction = vec3(0.0f, -1.0f, 0.2f);
-	globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f;
+	//globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f;
 	globalLight->ambient = 0.05f;
 	globalLight->AddShadow(new Shadow(125.0f, 0.008f, 1024, 3, 0.7f), camera);
-	globalLight->AddVolumetric(new Volumetric(target->width / 2, target->height / 2, 20, -0.5f));
+	//globalLight->AddVolumetric(new Volumetric(target->width / 2, target->height / 2, 20, -0.5f));
 
 	Light* pointLight1 = new Light(POINT_LIGHT);
 	pointLight1->location = vec3(24.35f, 6.5f, 7.1f);
@@ -108,8 +109,8 @@ int main(int argc, char* argv[]) {
 	node->Add(actor);
 	scene->rootNode->Add(node);
 
-	//scene->Add(sponza);
-	//scene->Add(tree);
+	scene->Add(sponza);
+	scene->Add(tree);
 
 	scene->Add(globalLight);
 
@@ -211,9 +212,8 @@ int main(int argc, char* argv[]) {
 
 		terrain->storage->requestedCells.clear();
 
-		EngineLog("%.3f,.%3f", camera->location.x, camera->location.z);
+		// EngineLog("%.3f,.%3f", camera->location.x, camera->location.z);
 		
-
 		scene->rootNode->transformationMatrix = glm::rotate((float)time / 1000.0f, vec3(0.0f, 1.0f, 0.0f));
 		actor->modelMatrix = glm::rotate((float)time / 500.0f, vec3(0.0f, 1.0f, 0.0f));
 
