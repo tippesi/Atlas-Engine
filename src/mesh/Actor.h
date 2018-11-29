@@ -16,8 +16,9 @@ public:
 
 	Mesh* mesh;
 
-	bool render;
 	bool castShadow;
+
+	bool visible;
 
 };
 

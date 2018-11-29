@@ -8,6 +8,8 @@ Scene::Scene() {
 	sky = new Sky();
 	postProcessing = new PostProcessing();
 
+	renderList = new RenderList();
+
 }
 
 void Scene::Add(Actor* actor) {

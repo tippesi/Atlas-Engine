@@ -3,6 +3,7 @@
 
 #include "System.h"
 #include "SceneNode.h"
+#include "RenderList.h"
 #include "mesh/Actor.h"
 #include "mesh/ActorBatch.h"
 #include "terrain/Terrain.h"
@@ -59,6 +60,8 @@ public:
 
 	Sky* sky;
 	PostProcessing* postProcessing;
+
+	RenderList* renderList;
 
 };
 

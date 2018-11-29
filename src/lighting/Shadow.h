@@ -4,6 +4,7 @@
 #include "../System.h"
 #include "../Camera.h"
 #include "../Framebuffer.h"
+#include "../RenderList.h"
 
 #define MAX_SHADOW_CASCADE_COUNT 4
 
@@ -46,6 +47,8 @@ public:
 	Texture* maps;
 
 	Light* light;
+
+	RenderList* renderList;
 
 private:
 	void UpdateShadowComponent(ShadowComponent* cascade, Camera* camera);

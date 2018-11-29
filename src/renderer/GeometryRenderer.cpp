@@ -69,7 +69,7 @@ void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* came
 
 				for (auto actor : actorBatch->actors) {
 
-					if (!actor->render) {
+					if (!actor->visible) {
 						continue;
 					}
 
