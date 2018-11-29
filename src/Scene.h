@@ -42,7 +42,7 @@ public:
 	void Remove(Light* light);
 
 	///
-	void Update();
+	void Update(Camera* camera);
 
 	///
 	void ClearContent();

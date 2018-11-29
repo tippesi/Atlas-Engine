@@ -217,7 +217,7 @@ int main(int argc, char* argv[]) {
 		scene->rootNode->transformationMatrix = glm::rotate((float)time / 1000.0f, vec3(0.0f, 1.0f, 0.0f));
 		actor->modelMatrix = glm::rotate((float)time / 500.0f, vec3(0.0f, 1.0f, 0.0f));
 
-		scene->Update();
+		scene->Update(camera);
 
 		globalLight->shadow->Update(camera);
 

@@ -1,4 +1,5 @@
 #include "Scene.h"
+#include "FrustumCulling.h"
 
 Scene::Scene() {
 
@@ -27,6 +28,8 @@ void Scene::Add(Actor* actor) {
 	actorBatch->Add(actor);
 
 	actorBatches.push_back(actorBatch);
+
+	renderList->Add(actor);
 
 }
 
@@ -66,6 +69,8 @@ void Scene::Add(Light* light) {
 
 	lights.push_back(light);
 
+	renderList->Add(light);
+
 }
 
 void Scene::Remove(Light* light) {
@@ -81,7 +86,7 @@ void Scene::Remove(Light* light) {
 
 }
 
-void Scene::Update() {
+void Scene::Update(Camera* camera) {
 
 	// We have to copy the matrices because some actors might not be added
 	// to the root node. In this case the trasformedMatrix would never get updated
@@ -92,6 +97,12 @@ void Scene::Update() {
 	}
 
 	rootNode->Update(mat4(1.0f));
+
+	renderList->Clear();
+
+	FrustumCulling::CullActorsFromScene(this, camera);
+
+	FrustumCulling::CullLightsFromScene(this, camera);
 
 }
 
