@@ -59,7 +59,7 @@ public:
 	}
 
     /**
-     * Subcribes a method/function to the event channel which wants to receive the
+     * Subcribes a method/function to the event channel which wants to receive then arguments specified in Args
      * @param subcriber A method/function which has the required T and Types as parameters
      * @return A handle which can later be used to unsubscribe from the event channel
      */
@@ -100,11 +100,19 @@ public:
 	 */
 	static void Publish(const T& t) {
 
-		lock_guard<mutex> guard(eventChannelMutex);
+		unique_lock<mutex> lock(eventChannelMutex);
 
-        for (const auto& handle : eventSubscriber)
+		auto copy = vector<std::function<void(const T&)>>();
+
+		for (const auto& subscriber : eventSubscriber) {
+			copy.push_back(subscriber);
+		}
+
+		lock.unlock();
+
+        for (auto& subscriber : copy)
         {
-            handle.second(t);
+			subscriber(t);
         }
 
 	}
@@ -115,11 +123,19 @@ public:
 	 */
 	static void Publish(Args ... args) {
 
-		lock_guard<mutex> guard(eventChannelMutex);
+		unique_lock<mutex> lock(eventChannelMutex);
 
-		for (const auto& handle : argsSubscriber)
+		auto copy = vector<std::function<void(Args ...)>>();
+
+		for (const auto& subscriber : argsSubscriber) {
+			copy.push_back(subscriber);
+		}
+
+		lock.unlock();
+
+		for (auto& subscriber : copy)
 		{
-			handle.second(args ...);
+			subscriber(args);
 		}
 
 	}
@@ -159,8 +175,8 @@ private:
 
 	static std::mutex eventChannelMutex;
 
-	static std::unordered_map<uint32_t, std::function<void(const T&)>> eventSubscriber;
-	static std::unordered_map<uint32_t, std::function<void(Args ...)>> argsSubscriber;
+	static const std::unordered_map<uint32_t, std::function<void(const T&)>> eventSubscriber;
+	static const std::unordered_map<uint32_t, std::function<void(Args ...)>> argsSubscriber;
 
 };
 
