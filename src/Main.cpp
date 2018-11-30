@@ -8,6 +8,7 @@
 #include "libraries/stb/stb_image.h"
 #include "libraries/stb/stb_image_write.h"
 
+
 int main(int argc, char* argv[]) {
 
 	Window* window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,

@@ -72,7 +72,8 @@ private:
 };
 
 
-template <class T> DataComponent<T>::DataComponent(int32_t componentType, int32_t stride) : stride(stride) {
+template <class T> 
+DataComponent<T>::DataComponent(int32_t componentType, int32_t stride) : stride(stride) {
 
 	containsData = false;
 
@@ -85,7 +86,8 @@ template <class T> DataComponent<T>::DataComponent(int32_t componentType, int32_
 
 }
 
-template <class T> void DataComponent<T>::Set(T* data) {
+template <class T> 
+void DataComponent<T>::Set(T* data) {
 
 	containsData = true;
 
@@ -130,13 +132,15 @@ template <class T> void DataComponent<T>::Set(T* data) {
 
 }
 
-template <class T> T* DataComponent<T>::Get() {
+template <class T>
+T* DataComponent<T>::Get() {
 
 	return data;
 
 }
 
-template <class T> void DataComponent<T>::SetType(int32_t componentType) {
+template <class T>
+void DataComponent<T>::SetType(int32_t componentType) {
 
 	// We should check if the type is compatible to T
 	this->componentType = componentType;
@@ -173,13 +177,15 @@ template <class T> void DataComponent<T>::SetType(int32_t componentType) {
 
 }
 
-template <class T> int32_t DataComponent<T>::GetType() {
+template <class T>
+int32_t DataComponent<T>::GetType() {
 
 	return componentType;
 
 }
 
-template <class T> void DataComponent<T>::SetSize(int32_t size) {
+template <class T>
+void DataComponent<T>::SetSize(int32_t size) {
 
 	this->size = size;
 
@@ -215,13 +221,15 @@ template <class T> void DataComponent<T>::SetSize(int32_t size) {
 
 }
 
-template <class T> int32_t DataComponent<T>::GetStride() {
+template <class T> 
+int32_t DataComponent<T>::GetStride() {
 
 	return componentType != COMPONENT_PACKED_FLOAT ? stride : 4;
 
 }
 
-template <class T> int32_t DataComponent<T>::GetElementSize() {
+template <class T> 
+int32_t DataComponent<T>::GetElementSize() {
 
 	switch (componentType) {
 	case COMPONENT_UNSIGNED_INT: return sizeof(uint32_t) * stride;
@@ -236,19 +244,22 @@ template <class T> int32_t DataComponent<T>::GetElementSize() {
 
 }
 
-template <class T> void* DataComponent<T>::GetInternal() {
+template <class T> 
+void* DataComponent<T>::GetInternal() {
 
 	return internalData;
 
 }
 
-template <class T> bool DataComponent<T>::ContainsData() {
+template <class T>
+bool DataComponent<T>::ContainsData() {
 
 	return containsData;
 
 }
 
-template <class T> DataComponent<T>::~DataComponent() {
+template <class T>
+DataComponent<T>::~DataComponent() {
 
 	delete[] data;
 	

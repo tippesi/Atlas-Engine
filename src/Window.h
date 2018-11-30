@@ -5,6 +5,8 @@
 #include "Viewport.h"
 #include "Texture.h"
 
+#include "events/EventChannel.h"
+
 #include "libraries/SDL/include/SDL.h"
 
 #define WINDOWPOSITION_UNDEFINED SDL_WINDOWPOS_UNDEFINED

@@ -10,6 +10,9 @@
 #define POINT_LIGHT 1
 #define SPOT_LIGHT 2
 
+#define DYNAMIC_LIGHT 0
+#define STATIC_LIGHT 1
+
 class Light {
 
 public:
