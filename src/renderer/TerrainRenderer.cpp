@@ -45,10 +45,10 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 		heightScale->SetValue(terrain->heightScale);
 		patchOffsets->SetValue(terrain->patchOffsets.data(), 64);
 
-		tesselationFactor->SetValue(terrain->tesselationFactor);
-		tesselationSlope->SetValue(terrain->tesselationSlope);
-		tesselationShift->SetValue(terrain->tesselationShift);
-		maxTesselationLevel->SetValue(terrain->maxTesselationLevel);
+		tessellationFactor->SetValue(terrain->tessellationFactor);
+		tessellationSlope->SetValue(terrain->tessellationSlope);
+		tessellationShift->SetValue(terrain->tessellationShift);
+		maxTessellationLevel->SetValue(terrain->maxTessellationLevel);
 
 		displacementDistance->SetValue(terrain->displacementDistance);
 
@@ -96,10 +96,10 @@ void TerrainRenderer::GetUniforms() {
 	patchOffsets = nearShader->GetUniform("patchOffsets");
 	patchOffsetsScale = nearShader->GetUniform("patchOffsetsScale");
 
-	tesselationFactor = nearShader->GetUniform("tesselationFactor");
-	tesselationSlope = nearShader->GetUniform("tesselationSlope");
-	tesselationShift = nearShader->GetUniform("tesselationShift");
-	maxTesselationLevel = nearShader->GetUniform("maxTesselationLevel");
+	tessellationFactor = nearShader->GetUniform("tessellationFactor");
+	tessellationSlope = nearShader->GetUniform("tessellationSlope");
+	tessellationShift = nearShader->GetUniform("tessellationShift");
+	maxTessellationLevel = nearShader->GetUniform("maxTessellationLevel");
 
 	displacementScale = nearShader->GetUniform("displacementScale");
 	displacementDistance = nearShader->GetUniform("displacementDistance");

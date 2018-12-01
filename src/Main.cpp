@@ -131,9 +131,6 @@ int main(int argc, char* argv[]) {
 	mouseHandler->lock = true;
 	KeyboardHandler* keyboardHandler = CreateKeyboardHandler(camera,  7.0f, 0.3f);
 
-	// For now we will leave the main loop here until we implement a more advanced event system
-	// Our event structure
-	SDL_Event event;
 	bool quit = false;
 
 	// We need the time passed per frame in the rendering loop
@@ -145,39 +142,7 @@ int main(int argc, char* argv[]) {
 		unsigned int deltatime = SDL_GetTicks() - time;
 		time = SDL_GetTicks();
 
-		// Poll all the events
-		while (SDL_PollEvent(&event)) {
-
-			if (event.type == SDL_QUIT) {
-
-				// If the SDL event is telling us to quit we should do it
-				quit = true;
-
-			}
-			else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
-
-				// If the user presses escape we also want to quit
-				quit = true;
-
-			}
-			else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
-
-				// If the user presses escape we also want to quit
-				quit = true;
-
-			}
-			else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
-
-				mouseHandler->lock = false;
-
-			}
-			else if (event.type == SDL_MOUSEBUTTONUP && event.button.button == SDL_BUTTON_LEFT) {
-
-				mouseHandler->lock = true;
-
-			}
-
-		}
+		Engine::Update();		
 
 		CalculateMouseHandler(mouseHandler, camera, deltatime);
 		CalculateKeyboardHandler(keyboardHandler, camera, deltatime);

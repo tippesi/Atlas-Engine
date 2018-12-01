@@ -31,7 +31,7 @@ typedef struct EventSubscriberHandle {
  * // Normal event communication. A will receive the event structure
  * EventChannel<EventStruct>::Subscribe(A.method(EventStruct param));
  * EventChannel<EventStruct>::Publish(EventStruct event);
- * // Communication between to classes
+ * // Communication between two classes
  * EventChannel<A, string>::Subscribe(A.method(string param));
  * EventChannel<A, string>::Publish("Hello A");
  */
@@ -98,14 +98,14 @@ public:
 	 * Publishes T to all subscribers which assigned for T (event communication)
 	 * @param t The event data T
 	 */
-	static void Publish(const T& t) {
+	static void Publish(T& t) {
 
 		unique_lock<mutex> lock(eventChannelMutex);
 
 		auto copy = vector<std::function<void(const T&)>>();
 
-		for (const auto& subscriber : eventSubscriber) {
-			copy.push_back(subscriber);
+		for (const auto& subscriberKey : eventSubscriber) {
+			copy.push_back(subscriberKey.second);
 		}
 
 		lock.unlock();
@@ -114,6 +114,29 @@ public:
         {
 			subscriber(t);
         }
+
+	}
+
+	/**
+	* Publishes T to all subscribers which assigned for T (event communication)
+	* @param t The event data T
+	*/
+	static void Publish(T* t) {
+
+		unique_lock<mutex> lock(eventChannelMutex);
+
+		auto copy = vector<std::function<void(const T&)>>();
+
+		for (const auto& subscriberKey : eventSubscriber) {
+			copy.push_back(subscriberKey.second);
+		}
+
+		lock.unlock();
+
+		for (auto& subscriber : copy)
+		{
+			subscriber(*t);
+		}
 
 	}
 
@@ -127,8 +150,8 @@ public:
 
 		auto copy = vector<std::function<void(Args ...)>>();
 
-		for (const auto& subscriber : argsSubscriber) {
-			copy.push_back(subscriber);
+		for (const auto& subscriberKey : argsSubscriber) {
+			copy.push_back(subscriberKey.second);
 		}
 
 		lock.unlock();
@@ -175,8 +198,8 @@ private:
 
 	static std::mutex eventChannelMutex;
 
-	static const std::unordered_map<uint32_t, std::function<void(const T&)>> eventSubscriber;
-	static const std::unordered_map<uint32_t, std::function<void(Args ...)>> argsSubscriber;
+	static std::unordered_map<uint32_t, std::function<void(const T&)>> eventSubscriber;
+	static std::unordered_map<uint32_t, std::function<void(Args ...)>> argsSubscriber;
 
 };
 

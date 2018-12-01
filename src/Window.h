@@ -31,6 +31,8 @@ public:
 	/// \param flags
 	Window(string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags = WINDOW_FULLSCREEN);
 
+	uint32_t GetID();
+
 	///
 	/// \param title
 	void SetTitle(string title);
@@ -70,6 +72,8 @@ public:
 
 
 private:
+	uint32_t ID;
+
 	SDL_Window * sdlWindow;
 	SDL_GLContext context;
 

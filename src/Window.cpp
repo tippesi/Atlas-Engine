@@ -11,7 +11,15 @@ Window::Window(string title, int32_t x, int32_t y, int32_t width, int32_t height
 
 	context = SDL_GL_CreateContext(sdlWindow);
 
+	ID = SDL_GetWindowID(sdlWindow);
+
 	this->viewport = new Viewport(0, 0, width, height);	
+
+}
+
+uint32_t Window::GetID() {
+
+	return ID;
 
 }
 
