@@ -23,6 +23,8 @@ CMakeLists.txt of your project. Afterwards add **target_link_libraries(YOUR_TARG
 dynamic libraries). Therefore use the BUILD_LIBRARY option when using CMake. After compiling the library
 with your favourite build system you shouldn't forget to also copy all the libraries and include them to your project.
 You can find them in **./lib/YourFavouriteSystem/**.
+## Documentation
+If you want more information have a look into the [Documentation](https://tippex97.github.io/Blue-Engine/index.html)
 ## Code Example
 This code example can also be found in the main file.
 ```c
