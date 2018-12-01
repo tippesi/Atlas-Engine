@@ -42,10 +42,10 @@ private:
 	Uniform* patchOffsets;
 	Uniform* patchOffsetsScale;
 
-	Uniform* tesselationFactor;
-	Uniform* tesselationSlope;
-	Uniform* tesselationShift;
-	Uniform* maxTesselationLevel;
+	Uniform* tessellationFactor;
+	Uniform* tessellationSlope;
+	Uniform* tessellationShift;
+	Uniform* maxTessellationLevel;
 
 	Uniform* displacementScale;
 	Uniform* displacementDistance;
