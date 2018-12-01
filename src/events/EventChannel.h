@@ -23,7 +23,7 @@ typedef struct EventSubscriberHandle {
  * Handles the event/message flow between subscriber and publisher.
  * @tparam T May be the event type or a class to be addressed in case of class-class communication.
  * @tparam Types Variable amount of parameters which can be exchanged with the channel (class-class communication)
- * @example
+ * @code
  * // In pseudo code
  * class A;
  * class B;
@@ -59,8 +59,8 @@ public:
 	}
 
     /**
-     * Subcribes a method/function to the event channel which wants to receive then arguments specified in Args
-     * @param subcriber A method/function which has the required T and Types as parameters
+     * Subscribes a method/function to the event channel which wants to receive then arguments specified in Args
+     * @param subscriber A method/function which has the required T and Types as parameters
      * @return A handle which can later be used to unsubscribe from the event channel
      */
 	static EventSubscriberHandle Subscribe(std::function<void(Args ...)> subscriber) {

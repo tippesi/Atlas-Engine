@@ -38,7 +38,7 @@ public:
 	 * @param pixelSize The height of the characters in pixels
 	 * @param padding Extra pixels around the characters which are filled with the distance
 	 * @param edgeValue The value in range 0-255 where the character is reconstructed
-	 * @example Let's say you have a padding of 5 and an edgeValue of 100 with a pixelSize
+	 * @remark Let's say you have a padding of 5 and an edgeValue of 100 with a pixelSize
 	 * of 10. A character texture now has a height of about 10 + 2 * 5 pixels where the padding
 	 * is filled with the distance values to the actual character which is about 10 pixels tall.
 	 * The rendered shape of the character begins at a distance of 3 from the actual character
@@ -48,7 +48,7 @@ public:
 	Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue);
 
 	/**
-	 * @brief Returns a specific character
+	 * Returns a specific character
 	 * @param character The character which should be returned
 	 * @return A pointer to a @refitem
 	 */

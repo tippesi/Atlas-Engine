@@ -18,6 +18,7 @@
 class Terrain {
 
 public:
+
 	/**
 	 * Constructs a terrain
 	 * @param rootNodeCount The number of root nodes. Root nodes are the lowest level of detail
@@ -26,12 +27,12 @@ public:
 	 * @param resolution Like a scale in x and z direction of the terrain. Lower means more vertices per square unit.
 	 * @param height The maximum height of the terrain
 	 * @note The maximum number of nodes in a terrain is 2^16.
-	 * @example Let's assume we want 3 root nodes on each side of the terrain which leads to rootNodeCount = 3^2 = 9.
+	 * @remark Let's assume we want 3 root nodes on each side of the terrain which leads to rootNodeCount = 3^2 = 9.
 	 * We now decide that we want an LoDCount of 7. To check if we don't exceed the maximum number of nodes we calculate
 	 * rootNodeCount * (pow(4,LoDCount) - 1) / 3 = 3 * (pow(4, 7) - 1) = 49149 < 2^16 = 65536. This means that at the
 	 * maximum lod which is Lod6 we have a total of pow(4, 6) * 9 = 36864 nodes. If we have a patchSizeFactor of 4
 	 * we have 16 * 4 * 4 vertices per patch. Each node has 8 * 8 = 64 patches. This results in a maximum vertex count of
-	 * 603979776. If we take the square root we get the number of vertices per side: sqrt(603979776) = 24576. If we set
+	 * around 600 mio. If we take the square root we get the number of vertices per side: sqrt(603979776) = 24576. If we set
 	 * the resolution to 0.5 we get a total of 12288 units per terrain side. The size of map is therefore roughly
 	 * 150 kilounits^2.
 	 */
@@ -61,8 +62,8 @@ public:
 	 * @param slope
 	 * @param shift
 	 * @param maxLevel Determines the maximum level of subdivisions the tessellation uses.
-	 * @note The tessellation for a point p is calculated by:
-	 * distance = length(camera->location, p)
+	 * @note The tessellation for a point p is calculated by: \n
+	 * distance = length(camera->location, p) \n
 	 * tessLevel = mix(1, maxLevel, clamp(t(distance), 0, 1))
 	 */
 	void SetTessellationFunction(float factor, float slope, float shift, int32_t maxLevel = 64);
