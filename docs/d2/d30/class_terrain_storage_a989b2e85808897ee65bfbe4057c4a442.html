@@ -119,6 +119,18 @@ $(document).ready(function(){initNavTree('d2/d30/class_terrain_storage_a989b2e85
       </table>
 </div><div class="memdoc">
 
+<p>Finds the cell to the corresponding arguments in the storage object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">x</td><td>The x sector of the node </td></tr>
+    <tr><td class="paramname">y</td><td>The y sector of the node </td></tr>
+    <tr><td class="paramname">LoD</td><td>The level of detail of the node </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a <a class="el" href="../../de/d29/class_terrain_storage_cell.html" title="Stores the material information for a terrain node. ">TerrainStorageCell</a> </dd></dl>
+<dl class="section remark"><dt>Remarks</dt><dd>The terrain storage can be understood as a mipmap where each level of detail is represented by a mipmap level. This means y is the coordinate in z direction of the terrain. Also x and y aren't world space coordinates but are the coordinates of a specific terrain node in their level of detail. E.g at a level of detail of 5 and a rootNodeCount of 9 x and y are in range (0, 2^(5-1) * 9) </dd></dl>
+
 </div>
 </div>
 </div><!-- contents -->

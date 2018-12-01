@@ -13,6 +13,7 @@ var annotated_dup =
     [ "DirectionalVolumetricRenderer", "d4/d49/class_directional_volumetric_renderer.html", "d4/d49/class_directional_volumetric_renderer" ],
     [ "Engine", "d8/d9b/class_engine.html", "d8/d9b/class_engine" ],
     [ "EngineException", "d8/de2/class_engine_exception.html", "d8/de2/class_engine_exception" ],
+    [ "EventChannel", "df/d9e/class_event_channel.html", "df/d9e/class_event_channel" ],
     [ "EventSubscriberHandle", "d8/d1a/struct_event_subscriber_handle.html", "d8/d1a/struct_event_subscriber_handle" ],
     [ "Font", "de/d9f/class_font.html", "de/d9f/class_font" ],
     [ "Framebuffer", "dc/d38/class_framebuffer.html", "dc/d38/class_framebuffer" ],

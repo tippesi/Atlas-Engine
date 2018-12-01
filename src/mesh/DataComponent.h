@@ -13,24 +13,41 @@
 #define COMPONENT_HALF_FLOAT GL_HALF_FLOAT
 #define COMPONENT_PACKED_FLOAT GL_INT_2_10_10_10_REV
 
+/**
+ * Manage the data of the vertex buffer of a mesh
+ * @tparam T The type of the input data.
+ * @remarks DataComponent is responsible to automatically convert the the of type T
+ * into a defined component type. This makes it easy to reduce the amount of data on
+ * the GPU, while being easy to program. See {@link DataComponent.h} for the supported component types.
+ */
 template <class T> class DataComponent {
 
 public:
-	///
-	/// \param componentType
-	/// \param stride
+	/**
+	 * Constructs a DataComponent object
+	 * @param componentType The type of the component T should be converted into. See {@link DataComponent.h} for more.
+	 * @param stride The stride in elements of that specific component.
+	 */
 	DataComponent(int32_t componentType, int32_t stride);
 
-	///
-	/// \param values
+	/**
+	 * Sets the data for the component and converts it into data of component type.
+	 * @param values An array of values of type T.
+	 * @note The length of the should be exactly the same as the size set by {@link SetSize}.
+	 */
 	void Set(T* values);
 
-	///
-	/// \return
+	/**
+	 * Returns the data in type T which the components holds.
+	 * @return A pointer to the data.
+	 */
 	T* Get();
 
-	///
-	/// \param componentType
+	/**
+	 * Resets the type of the component.
+	 * @param componentType The new component type.
+	 * @note This results in the loss of all data the component contains.
+	 */
 	void SetType(int32_t componentType);
 
 	///

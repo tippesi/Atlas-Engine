@@ -120,9 +120,16 @@ Static Public Member Functions</h2></td></tr>
 <div class="textblock"><h3>template&lt;class T, class ... Args&gt;<br />
 class EventChannel&lt; T, Args &gt;</h3>
 
-<dl><dt><b>Examples: </b></dt><dd><a class="el" href="../../d7/d16/_c_1_2_users_2tippe_2_one_drive_2_dokumente_2_git_hub_2_blue-_engine_2src_2events_2_event_channel_8h-example.html#_a4">C:/Users/tippe/OneDrive/Dokumente/GitHub/Blue-Engine/src/events/EventChannel.h</a>.</dd>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td>May be the event type or a class to be addressed in case of class-class communication. </td></tr>
+    <tr><td class="paramname">Types</td><td>Variable amount of parameters which can be exchanged with the channel (class-class communication) </td></tr>
+  </table>
+  </dd>
 </dl>
-<p class="definition">Definition at line <a class="el" href="../../df/dd1/_event_channel_8h_source.html#l00038">38</a> of file <a class="el" href="../../df/dd1/_event_channel_8h_source.html">EventChannel.h</a>.</p>
+<dl class="section remark"><dt>Remarks</dt><dd>A small example in pseudo code: <div class="fragment"><div class="line"><span class="keyword">class </span>A;</div><div class="line"><span class="keyword">class </span>B;</div><div class="line"><span class="keyword">struct </span>EventStruct;</div><div class="line"><span class="comment">// Normal event communication. A will receive the event structure</span></div><div class="line"><a class="code" href="../../df/d9e/class_event_channel_a975fd1b95be036bf5c473b89d985daf6.html#a975fd1b95be036bf5c473b89d985daf6">EventChannel&lt;EventStruct&gt;::Subscribe</a>(A.method(EventStruct param));</div><div class="line"><a class="code" href="../../df/d9e/class_event_channel_a5f425b2e5fa6bd94af65fb4abd8bed9a.html#a5f425b2e5fa6bd94af65fb4abd8bed9a">EventChannel&lt;EventStruct&gt;::Publish</a>(EventStruct event);</div><div class="line"><span class="comment">// Communication between two classes</span></div><div class="line"><a class="code" href="../../df/d9e/class_event_channel_a975fd1b95be036bf5c473b89d985daf6.html#a975fd1b95be036bf5c473b89d985daf6">EventChannel&lt;A, string&gt;::Subscribe</a>(A.method(<span class="keywordtype">string</span> param));</div><div class="line"><a class="code" href="../../df/d9e/class_event_channel_a5f425b2e5fa6bd94af65fb4abd8bed9a.html#a5f425b2e5fa6bd94af65fb4abd8bed9a">EventChannel&lt;A, string&gt;::Publish</a>(<span class="stringliteral">&quot;Hello A&quot;</span>);</div></div><!-- fragment --> </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../df/dd1/_event_channel_8h_source.html#l00039">39</a> of file <a class="el" href="../../df/dd1/_event_channel_8h_source.html">EventChannel.h</a>.</p>
 </div><hr/>The documentation for this class was generated from the following file:<ul>
 <li>src/events/<a class="el" href="../../df/dd1/_event_channel_8h_source.html">EventChannel.h</a></li>
 </ul>

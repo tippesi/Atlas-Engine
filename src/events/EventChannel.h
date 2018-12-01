@@ -23,8 +23,8 @@ typedef struct EventSubscriberHandle {
  * Handles the event/message flow between subscriber and publisher.
  * @tparam T May be the event type or a class to be addressed in case of class-class communication.
  * @tparam Types Variable amount of parameters which can be exchanged with the channel (class-class communication)
- * @code
- * // In pseudo code
+ * @remarks A small example in pseudo code:
+ * {@code
  * class A;
  * class B;
  * struct EventStruct;
@@ -34,6 +34,7 @@ typedef struct EventSubscriberHandle {
  * // Communication between two classes
  * EventChannel<A, string>::Subscribe(A.method(string param));
  * EventChannel<A, string>::Publish("Hello A");
+ * }
  */
 template<class T, class ... Args> class EventChannel {
 

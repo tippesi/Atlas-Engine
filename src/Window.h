@@ -19,51 +19,84 @@
 #define WINDOW_MINIMIZED	SDL_WINDOW_MINIMIZED
 #define WINDOW_MAXIMIZED	SDL_WINDOW_MAXIMIZED
 
+/**
+ * A simple window class.
+ */
 class Window {
 
 public:
-	///
-	/// \param title
-	/// \param x
-	/// \param y
-	/// \param width
-	/// \param height
-	/// \param flags
+	/**
+	 * Creates a window object
+	 * @param title The title of the window
+	 * @param x The x position of the window on the screen in pixels
+	 * @param y The y position of the window on the screen in pixels
+	 * @param width The width of the window in pixels
+	 * @param height The height of the window in pixels
+	 * @param flags Window flags. See {@link Window.h} for more.
+	 */
 	Window(string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags = WINDOW_FULLSCREEN);
 
+	/**
+	 * Returns the ID of the window.
+	 * @return
+	 * @note The window ID is important to filter the SystemEvents which
+	 * are just generated for a specific window
+	 */
 	uint32_t GetID();
 
-	///
-	/// \param title
+	/**
+	 * Sets the title of the window.
+	 * @param title The title string
+	 */
 	void SetTitle(string title);
 
-	///
-	/// \param icon
+	/**
+	 * Sets the icon of the window.
+	 * @param icon A pointer to a Texture object
+	 */
 	void SetIcon(Texture* icon);
 
-	///
-	/// \param x
-	/// \param y
+	/**
+	 * Resets the position of the window to the given screen coordinates.
+	 * @param x The x position of the window on the screen in pixels
+	 * @param y The y position of the window on the screen in pixels
+	 */
 	void SetPosition(int32_t x, int32_t y);
 
-	///
+	/**
+	 * Returns the position of the window.
+	 * @param x A pointer to an integer where the x value will be written into
+	 * @param y A pointer to an integer where the y value will be written into
+	 */
 	void GetPosition(int32_t* x, int32_t* y);
 
-	///
-	/// \param width
-	/// \param height
+	/**
+	 * Resets the size of the window to the given values.
+	 * @param width The width of the window in pixels
+	 * @param height The height of the window in pixels
+	 */
 	void SetSize(int32_t width, int32_t height);
 
-	///
+	/**
+	 * Returns the size of the window.
+	 * @param width A pointer to an integer where the width value will be written into
+	 * @param height A pointer to an integer where the height value will be written into
+	 */
 	void GetSize(int32_t* width, int32_t* height);
 
-	///
+	/**
+	 * Shows the window if the window was hidden
+	 */
 	void Show();
 
-	///
+	/**
+	 * Hides the window if the window was shown.
+	 */
 	void Hide();
 
-	///
+	/**
+	 *
+	 */
 	void Update();
 
 	~Window();

@@ -4,6 +4,10 @@
 #include "../System.h"
 #include "../Texture.h"
 
+/**
+ * Stores the material information for a terrain node.
+ * Only LoD0 uses a splatmap and the materials
+ */
 class TerrainStorageCell {
 
 public:

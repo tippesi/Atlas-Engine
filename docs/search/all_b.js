@@ -1,7 +1,7 @@
 var searchData=
 [
   ['lastmouseposition',['lastMousePosition',['../d8/d10/struct_mouse_handler_a5dd708bc89ada14d1203446189d93f19.html#a5dd708bc89ada14d1203446189d93f19',1,'MouseHandler']]],
-  ['light',['Light',['../da/d7c/class_light.html',1,'Light'],['../da/d7c/class_light_a2ff31e69ceda311210a37483eb1d36ee.html#a2ff31e69ceda311210a37483eb1d36ee',1,'Light::Light()'],['../d2/d87/class_shadow_afea83eb492fd83d7d0c744228292f844.html#afea83eb492fd83d7d0c744228292f844',1,'Shadow::light()']]],
+  ['light',['Light',['../da/d7c/class_light.html',1,'Light'],['../d2/d87/class_shadow_afea83eb492fd83d7d0c744228292f844.html#afea83eb492fd83d7d0c744228292f844',1,'Shadow::light()'],['../da/d7c/class_light_a2ff31e69ceda311210a37483eb1d36ee.html#a2ff31e69ceda311210a37483eb1d36ee',1,'Light::Light()']]],
   ['light_2eh',['Light.h',['../d2/d46/_light_8h.html',1,'']]],
   ['lightingframebuffer',['lightingFramebuffer',['../df/d4b/class_render_target_ad4cf09c0848ad9a17b51fe1af2fd65aa.html#ad4cf09c0848ad9a17b51fe1af2fd65aa',1,'RenderTarget']]],
   ['lights',['lights',['../d0/d9c/class_render_list_ac00d70560bfa7b5d8ab7691f089439ad.html#ac00d70560bfa7b5d8ab7691f089439ad',1,'RenderList::lights()'],['../d6/db5/class_scene_a0cb559746762b88aafb3a6b5c45576bc.html#a0cb559746762b88aafb3a6b5c45576bc',1,'Scene::lights()']]],

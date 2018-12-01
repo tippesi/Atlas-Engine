@@ -62,9 +62,11 @@ public:
 	 * @param slope
 	 * @param shift
 	 * @param maxLevel Determines the maximum level of subdivisions the tessellation uses.
-	 * @note The tessellation for a point p is calculated by: \n
-	 * distance = length(camera->location, p) \n
-	 * tessLevel = mix(1, maxLevel, clamp(t(distance), 0, 1))
+	 * @remarks The tessellation for a point p is calculated by:
+	 * {@code
+	 * distance = length(camera->location, p);
+	 * tessLevel = mix(1, maxLevel, clamp(t(distance), 0, 1));
+	 * }
 	 */
 	void SetTessellationFunction(float factor, float slope, float shift, int32_t maxLevel = 64);
 

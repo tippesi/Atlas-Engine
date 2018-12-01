@@ -16,7 +16,7 @@ void SystemEventHandler::Update() {
 			SystemWindowEvent event;
 			event.windowID = e.window.windowID;
 
-			EventChannel<SystemWindowEvent>::Publish(&event);
+			EventChannel<SystemWindowEvent>::Publish(event);
 
 		}
 		else if (e.type == SDL_KEYDOWN) {

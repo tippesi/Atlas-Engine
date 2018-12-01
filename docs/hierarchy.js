@@ -9,6 +9,7 @@ var hierarchy =
     [ "DataComponent< float >", "d4/da9/class_data_component.html", null ],
     [ "DataComponent< uint32_t >", "d4/da9/class_data_component.html", null ],
     [ "Engine", "d8/d9b/class_engine.html", null ],
+    [ "EventChannel< T, Args >", "df/d9e/class_event_channel.html", null ],
     [ "EventSubscriberHandle", "d8/d1a/struct_event_subscriber_handle.html", null ],
     [ "exception", null, [
       [ "EngineException", "d8/de2/class_engine_exception.html", null ]
