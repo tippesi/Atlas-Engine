@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['light',['Light',['../da/d7c/class_light.html',1,'']]]
+  ['light',['Light',['../de/dab/a00319.html',1,'']]]
 ];
