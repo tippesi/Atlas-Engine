@@ -8,6 +8,13 @@
 #include "libraries/stb/stb_image.h"
 #include "libraries/stb/stb_image_write.h"
 
+static bool quit = false;
+
+void QuitEventHandler() {
+
+	quit = true;
+
+}
 
 int main(int argc, char* argv[]) {
 
@@ -39,7 +46,7 @@ int main(int argc, char* argv[]) {
 	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 256, 1, 16);
 
 	Terrain* terrain = new Terrain(256, 1, 4, 1.0f, 300.0f);
-	terrain->SetTesselationFunction(400.0f, 2.0f, 0.0f);
+	terrain->SetTessellationFunction(400.0f, 2.0f, 0.0f);
 	terrain->SetDisplacementDistance(15.0f);
 
 	Texture* texture = new Texture("../data/image.png");
@@ -127,11 +134,10 @@ int main(int argc, char* argv[]) {
 	Texture* terrainDisplacementMap = new Texture("../data/terrain/Ground_17_DISP.jpg");
 
 	// We create the controller handler
-	MouseHandler* mouseHandler = CreateMouseHandler(camera, 1.5f, 0.25f);
-	mouseHandler->lock = true;
+	MouseHandler* mouseHandler = new MouseHandler(camera, 1.5f, 0.015f);
 	KeyboardHandler* keyboardHandler = CreateKeyboardHandler(camera,  7.0f, 0.3f);
 
-	bool quit = false;
+	SystemEventHandler::quitEventDelegate.Subscribe(QuitEventHandler);
 
 	// We need the time passed per frame in the rendering loop
 	unsigned int time = 0;
@@ -144,7 +150,7 @@ int main(int argc, char* argv[]) {
 
 		Engine::Update();		
 
-		CalculateMouseHandler(mouseHandler, camera, deltatime);
+		mouseHandler->Update(camera, deltatime);
 		CalculateKeyboardHandler(keyboardHandler, camera, deltatime);
 
 		camera->UpdateView();

@@ -3,40 +3,86 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+MouseHandler::MouseHandler(Camera* camera, float sensibility, float reactivity, bool hideMouse) :
+	sensibility(sensibility), reactivity(reactivity), hideMouse(hideMouse) {
 
-MouseHandler* CreateMouseHandler(Camera* camera, float sensibility, float reactivity) {
+	activationButtonDown = false;
+	hideMouse = false;
+	lock = false;
+	activationButton = MOUSEBUTTON_LEFT;
+	rotation = camera->rotation;
 
-	MouseHandler* handler = new MouseHandler;
+	auto mouseMotionEventHandler = std::bind(&MouseHandler::MouseMotionEventHandler, this, std::placeholders::_1);
+	SystemEventHandler::mouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
 
-	if (handler != NULL) {
+	auto mouseButtonEventHandler = std::bind(&MouseHandler::MouseButtonEventHandler, this, std::placeholders::_1);
+	SystemEventHandler::mouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
-		handler->rotation = camera->rotation;
+}
 
-		handler->sensibility = sensibility;
-		handler->reactivity = reactivity;
+void MouseHandler::Update(Camera* camera, uint32_t deltaTime) {
 
-		handler->lock = false;
-		handler->relative = false;
+	float progress = glm::clamp(reactivity * (float)deltaTime, 0.0f, 1.0f);
 
-		handler->lastMousePosition = glm::vec2(-1.0f);
-		handler->mousePosition = glm::vec2(100.0f);
+	camera->rotation = glm::mix(camera->rotation, rotation, progress);
 
-		return handler;
-	
+}
+
+void MouseHandler::SetActivationButton(uint8_t mouseButton) {
+
+	activationButton = mouseButton;
+
+}
+
+void MouseHandler::HideMouse() {
+
+	hideMouse = true;
+	SDL_ShowCursor(0);
+
+}
+
+void MouseHandler::ShowMouse() {
+
+	hideMouse = false;
+	SDL_ShowCursor(1);
+
+}
+
+void MouseHandler::MouseMotionEventHandler(SystemMouseMotionEvent event) {
+
+	if (event.windowID == 0 || lock)
+		return;
+
+	if (hideMouse) {
+
+
+
+	}
+	else {
+
+		if (!activationButtonDown)
+			return;
+
+		rotation += glm::vec2(-((float)event.xDelta), -((float)event.yDelta)) * sensibility * 0.001f;
+
 	}
 
-	return NULL;
+}
+
+void MouseHandler::MouseButtonEventHandler(SystemMouseButtonEvent event) {
+
+	if (event.windowID == 0 || lock)
+		return;
+
+	if (event.button == activationButton && event.buttonDown)
+		activationButtonDown = true;
+
+	if (event.button == activationButton && !event.buttonDown)
+		activationButtonDown = false;
 
 }
 
-
-void DeleteMouseHandler(MouseHandler* handler) {
-
-	delete handler;
-
-}
-
-
+/*
 void CalculateMouseHandler(MouseHandler* handler, Camera* camera, uint32_t deltatime) {
 
 	if (handler != NULL && camera != NULL && deltatime > 0) {
@@ -90,10 +136,9 @@ void CalculateMouseHandler(MouseHandler* handler, Camera* camera, uint32_t delta
 
 		}
 
-		float progress = glm::clamp(handler->reactivity * ((float)deltatime / 16.0f), 0.0f, 1.0f);
 
-		camera->rotation = glm::mix(camera->rotation, handler->rotation, progress);
 
 	}
 
 }
+*/

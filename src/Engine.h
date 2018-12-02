@@ -44,9 +44,6 @@ public:
 	 */
 	static void Update();
 
-private:
-	static SystemEventHandler eventHandler;
-
 };
 
 #endif

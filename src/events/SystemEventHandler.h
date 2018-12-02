@@ -2,60 +2,23 @@
 #define SYSTEMEVENTHANDLER_H
 
 #include "../System.h"
-#include "EventChannel.h"
-
-typedef struct SystemWindowEvent {
-	uint32_t windowID;
-}SystemWindowEvent;
-
-typedef struct SystemKeyboardEvent {
-	uint32_t windowID;
-	bool keyDown;
-	bool keyRepeat;
-
-}SystemKeyboardEvent;
-
-typedef struct SystemMouseButtonEvent {
-	uint32_t windowID;
-
-}SystemMouseButtonEvent;
-
-typedef struct SystemMouseMotionEvent {
-	uint32_t windowID;
-	int32_t x;
-	int32_t y;
-	int32_t deltaX;
-	int32_t deltaY;
-}SystemMouseMotionEvent;
-
-typedef struct SystemMouseWheelEvent {
-	uint32_t windowID;
-	int32_t x;
-	int32_t y;
-};
-
-typedef struct SystemTouchEvent {
-	uint32_t windowID;
-}SystemTouchEvent;
-
-typedef struct SystemMultiGestureEvent {
-	uint32_t windowID;
-}SystemMultiGestureEvent;
-
-typedef struct SystemFileDropEvent {
-	uint32_t windowID;
-}SystemFileDropEvent;
-
-typedef struct SystemQuitEvent {
-
-}SystemQuitEvent;
+#include "SystemWindowEvent.h"
+#include "SystemKeyboardEvent.h"
+#include "SystemMouseButtonEvent.h"
+#include "SystemMouseMotionEvent.h"
+#include "SystemMouseWheelEvent.h"
 
 class SystemEventHandler {
 
 public:
-	SystemEventHandler();
+	static void Update();
 
-	void Update();
+	static EventDelegate<SystemWindowEvent> windowEventDelegate;
+	static EventDelegate<SystemKeyboardEvent> keyboardEventDelegate;
+	static EventDelegate<SystemMouseButtonEvent> mouseButtonEventDelegate;
+	static EventDelegate<SystemMouseMotionEvent> mouseMotionEventDelegate;
+	static EventDelegate<SystemMouseWheelEvent> mouseWheelEventDelegate;
+	static EventDelegate<> quitEventDelegate;
 
 };
 

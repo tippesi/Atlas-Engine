@@ -13,7 +13,22 @@ Window::Window(string title, int32_t x, int32_t y, int32_t width, int32_t height
 
 	ID = SDL_GetWindowID(sdlWindow);
 
-	this->viewport = new Viewport(0, 0, width, height);	
+	this->viewport = new Viewport(0, 0, width, height);
+
+	auto windowEventHandler = std::bind(&Window::WindowEventHandler, this, std::placeholders::_1);
+	SystemEventHandler::windowEventDelegate.Subscribe(windowEventHandler);
+
+	auto keyboardEventHandler = std::bind(&Window::KeyboardEventHandler, this, std::placeholders::_1);
+	SystemEventHandler::keyboardEventDelegate.Subscribe(keyboardEventHandler);
+
+	auto mouseButtonEventHandler = std::bind(&Window::MouseButtonEventHandler, this, std::placeholders::_1);
+	SystemEventHandler::mouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
+
+	auto mouseMotionEventHandler = std::bind(&Window::MouseMotionEventHandler, this, std::placeholders::_1);
+	SystemEventHandler::mouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
+
+	auto mouseWheelEventHandler = std::bind(&Window::MouseWheelEventHandler, this, std::placeholders::_1);
+	SystemEventHandler::mouseWheelEventDelegate.Subscribe(mouseWheelEventHandler);
 
 }
 
@@ -89,6 +104,51 @@ void Window::Hide() {
 void Window::Update() {
 
 	SDL_GL_SwapWindow(sdlWindow);
+
+}
+
+void Window::WindowEventHandler(SystemWindowEvent event) {
+
+	if (event.windowID != ID)
+		return;
+
+	windowEventDelegate.Fire(event);
+
+}
+
+void Window::KeyboardEventHandler(SystemKeyboardEvent event) {
+
+	if (event.windowID != ID)
+		return;
+
+	keyboardEventDelegate.Fire(event);
+
+}
+
+void Window::MouseButtonEventHandler(SystemMouseButtonEvent event) {
+
+	if (event.windowID != ID)
+		return;
+
+	mouseButtonEventDelegate.Fire(event);
+
+}
+
+void Window::MouseMotionEventHandler(SystemMouseMotionEvent event) {
+
+	if (event.windowID != ID)
+		return;
+
+	mouseMotionEventDelegate.Fire(event);
+
+}
+
+void Window::MouseWheelEventHandler(SystemMouseWheelEvent event) {
+
+	if (event.windowID != ID)
+		return;
+
+	mouseWheelEventDelegate.Fire(event);
 
 }
 

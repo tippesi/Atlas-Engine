@@ -5,7 +5,8 @@
 #include "Viewport.h"
 #include "Texture.h"
 
-#include "events/EventChannel.h"
+#include "events/EventDelegate.h"
+#include "events/SystemEventHandler.h"
 
 #include "libraries/SDL/include/SDL.h"
 
@@ -95,7 +96,7 @@ public:
 	void Hide();
 
 	/**
-	 *
+	 * Updates the window events and the rendering surface.
 	 */
 	void Update();
 
@@ -103,8 +104,19 @@ public:
 
 	Viewport* viewport;
 
+	EventDelegate<SystemWindowEvent> windowEventDelegate;
+	EventDelegate<SystemKeyboardEvent> keyboardEventDelegate;
+	EventDelegate<SystemMouseButtonEvent> mouseButtonEventDelegate;
+	EventDelegate<SystemMouseMotionEvent> mouseMotionEventDelegate;
+	EventDelegate<SystemMouseWheelEvent> mouseWheelEventDelegate;
 
 private:
+	void WindowEventHandler(SystemWindowEvent event);
+	void KeyboardEventHandler(SystemKeyboardEvent event);
+	void MouseButtonEventHandler(SystemMouseButtonEvent event);
+	void MouseMotionEventHandler(SystemMouseMotionEvent event);
+	void MouseWheelEventHandler(SystemMouseWheelEvent event);
+
 	uint32_t ID;
 
 	SDL_Window * sdlWindow;

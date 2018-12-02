@@ -44,10 +44,10 @@ Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, flo
 		}
 	}
 
-	tesselationFactor = 0.0f;
-	tesselationSlope = 1.0f;
-	tesselationShift = 0.0f;
-	maxTesselationLevel = 1;
+	tessellationFactor = 0.0f;
+	tessellationSlope = 1.0f;
+	tessellationShift = 0.0f;
+	maxTessellationLevel = 1;
 
 	displacementDistance = 0.0f;
 

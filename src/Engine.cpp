@@ -1,7 +1,5 @@
 #include "Engine.h"
 
-SystemEventHandler Engine::eventHandler;
-
 Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 	int32_t width, int32_t height, int32_t flags) {
 
@@ -91,6 +89,6 @@ void Engine::UnlockFramerate() {
 
 void Engine::Update() {
 
-	eventHandler.Update();
+	SystemEventHandler::Update();
 
 }
