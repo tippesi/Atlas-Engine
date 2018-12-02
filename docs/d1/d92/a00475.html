@@ -155,7 +155,8 @@ Public Attributes</h2></td></tr>
 <tr class="separator:ae65ba407f1cfa1e0d9f9cccab59a9d7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>This class uses different LoDs and tessellation to render the terrain efficiently with high detail without sacrificing too much on performance. </p>
+<div class="textblock"><p>Represents a terrain. </p>
+<p>This class uses different LoDs and tessellation to render the terrain efficiently with high detail without sacrificing too much on performance. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../d9/dd0/a00191_source.html#l00018">18</a> of file <a class="el" href="../../d9/dd0/a00191_source.html">Terrain.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
@@ -202,6 +203,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Constructs a terrain. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">rootNodeCount</td><td>The number of root nodes. Root nodes are the lowest level of detail </td></tr>
@@ -233,6 +236,8 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Binds the vertex array of the terrain. </p>
+
 </div>
 </div>
 <a id="a727428ae326d152e63cd8c7db3d2faec"></a>
@@ -250,6 +255,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Sets the distance where the displacement should start. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">distance</td><td>The distance </td></tr>
@@ -285,6 +292,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Sets the distance of a specific level of detail. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">LoD</td><td>The level of detail to be set in range of (0,LoDCount-1) </td></tr>
@@ -333,6 +342,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Sets the tessellation function t(distance) = factor / pow(distance, slope) + shift. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">factor</td><td></td></tr>
@@ -361,6 +372,8 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Unbinds the vertex array of the terrain. </p>
+
 </div>
 </div>
 <a id="ab32ffc4e25c9e9fd15dbab5b1a3e7b02"></a>
@@ -378,6 +391,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Updates the terrain and the storage queues. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">camera</td><td></td></tr>

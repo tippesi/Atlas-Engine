@@ -166,7 +166,8 @@ Public Attributes</h2></td></tr>
 <tr class="separator:a580a5120d05460de7ee699dd2b77faa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>In third person mode the camera location represents the point the camera looks at while in first person mode the camera is at the actual location. </p>
+<div class="textblock"><p>Used to represent a camera in the engine. </p>
+<p>In third person mode the camera location represents the point the camera looks at while in first person mode the camera is at the actual location. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00012">12</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
@@ -219,6 +220,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Constructs a <a class="el" href="../../de/dd2/a00207.html" title="Used to represent a camera in the engine. ">Camera</a>. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">fieldOfView</td><td>The field of view in degrees.</td></tr>
@@ -247,6 +250,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Destructs a <a class="el" href="../../de/dd2/a00207.html" title="Used to represent a camera in the engine. ">Camera</a> </p>
 
 </div>
 </div>
@@ -277,6 +282,21 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Calculates the view frustum corners in world space </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">near</td><td>The near plane where the corners should be calculated <dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">far</td><td>The far plane where the corners should be calculated <dl class="section return"><dt>Returns</dt><dd>A vector where the corners are stored </dd></dl>
+</td></tr>
+  </table>
+  </dd>
+</dl>
+</td></tr>
+  </table>
+  </dd>
+</dl>
+</p>
+
 </div>
 </div>
 <a id="a097998b222fecbdfc82266745cefdfe6"></a>
@@ -294,6 +314,8 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Calculates the perspective matrix based on the FoV, the aspect ratio and the near and far plane. </p>
+
 </div>
 </div>
 <a id="a0b31de4a23f304be6e27d53706d326c5"></a>
@@ -310,6 +332,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Calculates the view matrix based on the location and rotation of the camera. </p>
 
 </div>
 </div>

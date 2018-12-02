@@ -119,6 +119,7 @@ Public Member Functions</h2></td></tr>
 <div class="textblock"><h3>template&lt;class ... Args&gt;<br />
 class EventDelegate&lt; Args &gt;</h3>
 
+<p>Handles the event flow between subscriber and publisher. </p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">Args</td><td>Variable amount of parameters which can be exchanged with the delegate. </td></tr>
@@ -145,6 +146,8 @@ template&lt;class... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
+<p>Constructs a <a class="el" href="../../d2/d82/a00279.html" title="Handles the event flow between subscriber and publisher. ">EventDelegate</a> object. </p>
+
 <p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00052">52</a> of file <a class="el" href="../../dc/dee/a00053_source.html">EventDelegate.h</a>.</p>
 
 </div>
@@ -167,6 +170,8 @@ template&lt;class... Args&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Publishes Args arguments to the subscribers. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">args</td><td>The arguments which should be published </td></tr>
@@ -195,6 +200,8 @@ template&lt;class... Args&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Subscribes a method/function to the event delegate which wants to receive the arguments specified in Args. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">handle</td><td>A method/function which has the required Args as parameters </td></tr>
@@ -225,6 +232,8 @@ template&lt;class... Args&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Unsubscribes a method/function from the event delegate. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">subscriberID</td><td>The handle which was returned previously at the time of subscription. </td></tr>
