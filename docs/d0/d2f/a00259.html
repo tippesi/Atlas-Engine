@@ -114,13 +114,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:ae0324beba383c8987f166328837682e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the texture.  <a href="#ae0324beba383c8987f166328837682e5">More...</a><br /></td></tr>
 <tr class="separator:ae0324beba383c8987f166328837682e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba1cae511d57401fb038953eea31612b"><td class="memItemLeft" align="right" valign="top">vector&lt; uint8_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d2f/a00259.html#aba1cae511d57401fb038953eea31612b">GetData</a> (int32_t layer=0)</td></tr>
-<tr class="memdesc:aba1cae511d57401fb038953eea31612b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets a copy of the data of the texture.  <a href="#aba1cae511d57401fb038953eea31612b">More...</a><br /></td></tr>
+<tr class="memdesc:aba1cae511d57401fb038953eea31612b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets a copy of the data of the texture. Retrieval of the GPU data is only available for OpenGL NOT OpenGL ES  <a href="#aba1cae511d57401fb038953eea31612b">More...</a><br /></td></tr>
 <tr class="separator:aba1cae511d57401fb038953eea31612b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8166e72bea4b766667c10f8821997306"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d2f/a00259.html#a8166e72bea4b766667c10f8821997306">Resize</a> (int32_t <a class="el" href="../../d0/d2f/a00259.html#a05cb3d455b3f4c51a8e7529ae3ed9cbe">width</a>, int32_t <a class="el" href="../../d0/d2f/a00259.html#a4ec4bcf628c2bfff636d6aa8b57d537e">height</a>)</td></tr>
-<tr class="memdesc:a8166e72bea4b766667c10f8821997306"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resizes the texture.  <a href="#a8166e72bea4b766667c10f8821997306">More...</a><br /></td></tr>
+<tr class="memdesc:a8166e72bea4b766667c10f8821997306"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resizes the texture. Results in a loss of data.  <a href="#a8166e72bea4b766667c10f8821997306">More...</a><br /></td></tr>
 <tr class="separator:a8166e72bea4b766667c10f8821997306"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad6eb3c53b320767eb2b50ef73ae72cd8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d2f/a00259.html#ad6eb3c53b320767eb2b50ef73ae72cd8">FlipHorizontally</a> ()</td></tr>
-<tr class="memdesc:ad6eb3c53b320767eb2b50ef73ae72cd8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flips the data horizontally.  <a href="#ad6eb3c53b320767eb2b50ef73ae72cd8">More...</a><br /></td></tr>
+<tr class="memdesc:ad6eb3c53b320767eb2b50ef73ae72cd8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flips the data horizontally. OpenGL stores data upside down.  <a href="#ad6eb3c53b320767eb2b50ef73ae72cd8">More...</a><br /></td></tr>
 <tr class="separator:ad6eb3c53b320767eb2b50ef73ae72cd8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8fdc3f32ff5e4bef3854c24192ff2ffc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d2f/a00259.html#a8fdc3f32ff5e4bef3854c24192ff2ffc">SaveToPNG</a> (string filename)</td></tr>
 <tr class="memdesc:a8fdc3f32ff5e4bef3854c24192ff2ffc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves the texture as a portable network graphics.  <a href="#a8fdc3f32ff5e4bef3854c24192ff2ffc">More...</a><br /></td></tr>
@@ -330,8 +330,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Flips the data horizontally. </p>
-<p>OpenGL stores data upside down. </p>
+<p>Flips the data horizontally. OpenGL stores data upside down. </p>
 
 </div>
 </div>
@@ -351,8 +350,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Gets a copy of the data of the texture. </p>
-<p>Retrieval of the GPU data is only available for OpenGL NOT OpenGL ES </p>
+<p>Gets a copy of the data of the texture. Retrieval of the GPU data is only available for OpenGL NOT OpenGL ES </p>
 <p>&lt;return&gt;The data where each channel as 8 bits in the following order (r, g, b, a).&lt;/return&gt; </p>
 
 </div>
@@ -431,8 +429,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Resizes the texture. </p>
-<p>Results in a loss of data. </p>
+<p>Resizes the texture. Results in a loss of data. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">width</td><td>The new width of the texture.</td></tr>
