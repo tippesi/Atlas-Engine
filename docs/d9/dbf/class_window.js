@@ -12,5 +12,10 @@ var class_window =
     [ "SetTitle", "d9/dbf/class_window_a9cf4fafbfa231971d945321d45a28de3.html#a9cf4fafbfa231971d945321d45a28de3", null ],
     [ "Show", "d9/dbf/class_window_ae206b80ce3037d0b4d43ae80df9482f7.html#ae206b80ce3037d0b4d43ae80df9482f7", null ],
     [ "Update", "d9/dbf/class_window_ab8d28dce3166c70eb5744466460795df.html#ab8d28dce3166c70eb5744466460795df", null ],
-    [ "viewport", "d9/dbf/class_window_a58c6a4aeef63bc13aac05183bc1201a0.html#a58c6a4aeef63bc13aac05183bc1201a0", null ]
+    [ "keyboardEventDelegate", "d9/dbf/class_window_ad79cd767f2975640a4cbe6538cbc81af.html#ad79cd767f2975640a4cbe6538cbc81af", null ],
+    [ "mouseButtonEventDelegate", "d9/dbf/class_window_aeae87b7cb46694feb56eed2e9dfbbea6.html#aeae87b7cb46694feb56eed2e9dfbbea6", null ],
+    [ "mouseMotionEventDelegate", "d9/dbf/class_window_ad2347d051a87b3eb77eea343dba1c283.html#ad2347d051a87b3eb77eea343dba1c283", null ],
+    [ "mouseWheelEventDelegate", "d9/dbf/class_window_a43157ac7298c452ed8979027bf217ee3.html#a43157ac7298c452ed8979027bf217ee3", null ],
+    [ "viewport", "d9/dbf/class_window_a58c6a4aeef63bc13aac05183bc1201a0.html#a58c6a4aeef63bc13aac05183bc1201a0", null ],
+    [ "windowEventDelegate", "d9/dbf/class_window_ac39e0af936b48e3988ee3ce8ca547066.html#ac39e0af936b48e3988ee3ce8ca547066", null ]
 ];

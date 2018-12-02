@@ -9,5 +9,6 @@ var searchData=
   ['heightdata',['heightData',['../de/d29/class_terrain_storage_cell_aff003e7c92b7e6a6d0f318e6edb5f4d7.html#aff003e7c92b7e6a6d0f318e6edb5f4d7',1,'TerrainStorageCell']]],
   ['heightfield',['heightField',['../de/d29/class_terrain_storage_cell_af44f59262fa2a8484aed7a72e2497667.html#af44f59262fa2a8484aed7a72e2497667',1,'TerrainStorageCell']]],
   ['heightscale',['heightScale',['../d1/dee/class_terrain_ac62b5575ed431dfef9a2d1baa89492b8.html#ac62b5575ed431dfef9a2d1baa89492b8',1,'Terrain']]],
-  ['hide',['Hide',['../d9/dbf/class_window_af05f1c89263175897f4504fd47e01081.html#af05f1c89263175897f4504fd47e01081',1,'Window']]]
+  ['hide',['Hide',['../d9/dbf/class_window_af05f1c89263175897f4504fd47e01081.html#af05f1c89263175897f4504fd47e01081',1,'Window']]],
+  ['hidemouse',['hideMouse',['../df/d9c/class_mouse_handler_a6969cbb5ad9d04c3a350089f05e92ed7.html#a6969cbb5ad9d04c3a350089f05e92ed7',1,'MouseHandler::hideMouse()'],['../df/d9c/class_mouse_handler_a6440a4d4e581981a86eb53f6ed4f4855.html#a6440a4d4e581981a86eb53f6ed4f4855',1,'MouseHandler::HideMouse()']]]
 ];

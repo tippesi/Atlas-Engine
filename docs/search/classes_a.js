@@ -5,5 +5,5 @@ var searchData=
   ['mesh',['Mesh',['../dc/dbe/class_mesh.html',1,'']]],
   ['meshdata',['MeshData',['../d9/d5f/class_mesh_data.html',1,'']]],
   ['modelloader',['ModelLoader',['../df/d9c/class_model_loader.html',1,'']]],
-  ['mousehandler',['MouseHandler',['../d8/d10/struct_mouse_handler.html',1,'']]]
+  ['mousehandler',['MouseHandler',['../df/d9c/class_mouse_handler.html',1,'']]]
 ];

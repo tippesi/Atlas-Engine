@@ -50,7 +50,7 @@ public:
 	/**
 	 * Returns a specific character
 	 * @param character The character which should be returned
-	 * @return A pointer to a @refitem
+	 * @return A pointer to a {@link Glyph} object
 	 */
 	Glyph* GetGlyph(char character);
 

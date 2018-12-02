@@ -1,8 +1,6 @@
 var searchData=
 [
-  ['data',['data',['../db/db4/struct_glyph_a00d34887a9ce0661c6928256f4bf9076.html#a00d34887a9ce0661c6928256f4bf9076',1,'Glyph::data()'],['../dc/dbe/class_mesh_a15a9befd90b9006324ab9b164b53af5b.html#a15a9befd90b9006324ab9b164b53af5b',1,'Mesh::data()']]],
-  ['deltax',['deltaX',['../d6/d7e/struct_system_mouse_motion_event_a0a9bb257929bb062eef3fd4614fc384d.html#a0a9bb257929bb062eef3fd4614fc384d',1,'SystemMouseMotionEvent']]],
-  ['deltay',['deltaY',['../d6/d7e/struct_system_mouse_motion_event_ae41021d882396eae9bb932a99d112993.html#ae41021d882396eae9bb932a99d112993',1,'SystemMouseMotionEvent']]],
+  ['data',['data',['../db/db4/struct_glyph_a00d34887a9ce0661c6928256f4bf9076.html#a00d34887a9ce0661c6928256f4bf9076',1,'Glyph::data()'],['../d7/d48/class_system_window_event_a5bad76804855a328ff7a6c7340f005d4.html#a5bad76804855a328ff7a6c7340f005d4',1,'SystemWindowEvent::data()'],['../dc/dbe/class_mesh_a15a9befd90b9006324ab9b164b53af5b.html#a15a9befd90b9006324ab9b164b53af5b',1,'Mesh::data()']]],
   ['descent',['descent',['../de/d9f/class_font_aa49fc31f27e27983cedb0ac1f55637d1.html#aa49fc31f27e27983cedb0ac1f55637d1',1,'Font']]],
   ['diffusecolor',['diffuseColor',['../da/d7c/class_light_a6d86b486f1cb528c628d46efd688b862.html#a6d86b486f1cb528c628d46efd688b862',1,'Light::diffuseColor()'],['../dc/dee/class_material_af4c0867fb9aaf6a44cba78c5c3412fbf.html#af4c0867fb9aaf6a44cba78c5c3412fbf',1,'Material::diffuseColor()']]],
   ['diffusemap',['diffuseMap',['../dc/dee/class_material_a3236ad6bf5ab136c151544f27782252c.html#a3236ad6bf5ab136c151544f27782252c',1,'Material::diffuseMap()'],['../de/d29/class_terrain_storage_cell_a789f85441d74c7d5d5d8f632a64c33e5.html#a789f85441d74c7d5d5d8f632a64c33e5',1,'TerrainStorageCell::diffuseMap()']]],

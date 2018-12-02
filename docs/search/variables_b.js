@@ -9,5 +9,7 @@ var searchData=
   ['maxtessellationlevel',['maxTessellationLevel',['../d1/dee/class_terrain_a1575266ab9c6fcf3b9b431a90e31a105.html#a1575266ab9c6fcf3b9b431a90e31a105',1,'Terrain']]],
   ['mesh',['mesh',['../df/d53/class_actor_a1ce9a7dc4789cea70dc2c47b8f021684.html#a1ce9a7dc4789cea70dc2c47b8f021684',1,'Actor']]],
   ['modelmatrix',['modelMatrix',['../df/d53/class_actor_abf23b838381348bccec0d0e234d6032a.html#abf23b838381348bccec0d0e234d6032a',1,'Actor']]],
-  ['mouseposition',['mousePosition',['../d8/d10/struct_mouse_handler_a0fd6bdc7fc1f054f0d61fc5e2ae59de4.html#a0fd6bdc7fc1f054f0d61fc5e2ae59de4',1,'MouseHandler']]]
+  ['mousebuttoneventdelegate',['mouseButtonEventDelegate',['../d9/dbf/class_window_aeae87b7cb46694feb56eed2e9dfbbea6.html#aeae87b7cb46694feb56eed2e9dfbbea6',1,'Window::mouseButtonEventDelegate()'],['../d0/dbe/class_system_event_handler_a4bacb9e80fd8a94c284010829f3054d5.html#a4bacb9e80fd8a94c284010829f3054d5',1,'SystemEventHandler::mouseButtonEventDelegate()']]],
+  ['mousemotioneventdelegate',['mouseMotionEventDelegate',['../d9/dbf/class_window_ad2347d051a87b3eb77eea343dba1c283.html#ad2347d051a87b3eb77eea343dba1c283',1,'Window::mouseMotionEventDelegate()'],['../d0/dbe/class_system_event_handler_af7dd779b43f9174a8843615855cf632b.html#af7dd779b43f9174a8843615855cf632b',1,'SystemEventHandler::mouseMotionEventDelegate()']]],
+  ['mousewheeleventdelegate',['mouseWheelEventDelegate',['../d9/dbf/class_window_a43157ac7298c452ed8979027bf217ee3.html#a43157ac7298c452ed8979027bf217ee3',1,'Window::mouseWheelEventDelegate()'],['../d0/dbe/class_system_event_handler_a6af011949b9685f769b674d9aa8d6cab.html#a6af011949b9685f769b674d9aa8d6cab',1,'SystemEventHandler::mouseWheelEventDelegate()']]]
 ];

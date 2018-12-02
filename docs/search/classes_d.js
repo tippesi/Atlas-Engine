@@ -15,13 +15,9 @@ var searchData=
   ['skyboxrenderer',['SkyboxRenderer',['../d8/d8c/class_skybox_renderer.html',1,'']]],
   ['subdata',['SubData',['../d6/dde/struct_sub_data.html',1,'']]],
   ['systemeventhandler',['SystemEventHandler',['../d0/dbe/class_system_event_handler.html',1,'']]],
-  ['systemfiledropevent',['SystemFileDropEvent',['../d5/dd4/struct_system_file_drop_event.html',1,'']]],
-  ['systemkeyboardevent',['SystemKeyboardEvent',['../d4/d97/struct_system_keyboard_event.html',1,'']]],
-  ['systemmousebuttonevent',['SystemMouseButtonEvent',['../df/d43/struct_system_mouse_button_event.html',1,'']]],
-  ['systemmousemotionevent',['SystemMouseMotionEvent',['../d6/d7e/struct_system_mouse_motion_event.html',1,'']]],
-  ['systemmousewheelevent',['SystemMouseWheelEvent',['../d1/d46/struct_system_mouse_wheel_event.html',1,'']]],
-  ['systemmultigestureevent',['SystemMultiGestureEvent',['../dc/d80/struct_system_multi_gesture_event.html',1,'']]],
-  ['systemquitevent',['SystemQuitEvent',['../d7/de1/struct_system_quit_event.html',1,'']]],
-  ['systemtouchevent',['SystemTouchEvent',['../dd/d1c/struct_system_touch_event.html',1,'']]],
-  ['systemwindowevent',['SystemWindowEvent',['../d2/d58/struct_system_window_event.html',1,'']]]
+  ['systemkeyboardevent',['SystemKeyboardEvent',['../d2/dbd/class_system_keyboard_event.html',1,'']]],
+  ['systemmousebuttonevent',['SystemMouseButtonEvent',['../d5/d7d/class_system_mouse_button_event.html',1,'']]],
+  ['systemmousemotionevent',['SystemMouseMotionEvent',['../dd/db4/class_system_mouse_motion_event.html',1,'']]],
+  ['systemmousewheelevent',['SystemMouseWheelEvent',['../db/df7/class_system_mouse_wheel_event.html',1,'']]],
+  ['systemwindowevent',['SystemWindowEvent',['../d7/d48/class_system_window_event.html',1,'']]]
 ];

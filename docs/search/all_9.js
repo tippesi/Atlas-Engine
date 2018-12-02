@@ -1,7 +1,6 @@
 var searchData=
 [
-  ['id',['ID',['../d8/d1a/struct_event_subscriber_handle_a346a6cea8902160a2c780b3e14fff042.html#a346a6cea8902160a2c780b3e14fff042',1,'EventSubscriberHandle::ID()'],['../d4/dc6/class_shader_config_batch_a0ed5dc70d6918b2b95cb17c3b865ff74.html#a0ed5dc70d6918b2b95cb17c3b865ff74',1,'ShaderConfigBatch::ID()'],['../d7/d93/class_shader_source_a10000e8b7cd5f92bef5a2a7e743db3cf.html#a10000e8b7cd5f92bef5a2a7e743db3cf',1,'ShaderSource::ID()']]],
-  ['immediate_5fpublication',['IMMEDIATE_PUBLICATION',['../df/dd1/_event_channel_8h_ab407b3c12c88a0e1c235374a0dde3727.html#ab407b3c12c88a0e1c235374a0dde3727',1,'EventChannel.h']]],
+  ['id',['ID',['../d4/dc6/class_shader_config_batch_a0ed5dc70d6918b2b95cb17c3b865ff74.html#a0ed5dc70d6918b2b95cb17c3b865ff74',1,'ShaderConfigBatch::ID()'],['../d7/d93/class_shader_source_a10000e8b7cd5f92bef5a2a7e743db3cf.html#a10000e8b7cd5f92bef5a2a7e743db3cf',1,'ShaderSource::ID()']]],
   ['indices',['indices',['../d9/d5f/class_mesh_data_ab99cb225f634a2b1e45a9f9f7a665306.html#ab99cb225f634a2b1e45a9f9f7a665306',1,'MeshData']]],
   ['indicesoffset',['indicesOffset',['../d6/dde/struct_sub_data_ad44583e5721f015aed0051abddb02c69.html#ad44583e5721f015aed0051abddb02c69',1,'SubData']]],
   ['init',['Init',['../d8/d9b/class_engine_affbbd5b87c460eff83c9484de8b4eb71.html#affbbd5b87c460eff83c9484de8b4eb71',1,'Engine']]],
