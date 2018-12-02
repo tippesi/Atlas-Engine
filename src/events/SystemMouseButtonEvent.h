@@ -11,6 +11,9 @@
 #define MOUSEBUTTON_X1 SDL_BUTTON_X1
 #define MOUSEBUTTON_X2 SDL_BUTTON_X2
 
+/**
+ * A class to distribute mouse button events.
+ */
 class SystemMouseButtonEvent {
 
 public:

@@ -96,23 +96,33 @@ $(document).ready(function(){initNavTree('d1/dee/class_terrain.html','../../');}
 </div><!--header-->
 <div class="contents">
 
+<p>Represents a terrain.  
+ <a href="../../d1/dee/class_terrain.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="../../d9/d2a/_terrain_8h_source.html">Terrain.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a1c2d71ca658bf76fad007e6f5498ace7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/dee/class_terrain_a1c2d71ca658bf76fad007e6f5498ace7.html#a1c2d71ca658bf76fad007e6f5498ace7">Terrain</a> (int32_t rootNodeCount, int32_t LoDCount, int32_t patchSizeFactor, float <a class="el" href="../../d1/dee/class_terrain_aff6eb2b16e895c15f1789dfad4c15c0a.html#aff6eb2b16e895c15f1789dfad4c15c0a">resolution</a>, float height)</td></tr>
+<tr class="memdesc:a1c2d71ca658bf76fad007e6f5498ace7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a terrain.  <a href="../../d1/dee/class_terrain_a1c2d71ca658bf76fad007e6f5498ace7.html#a1c2d71ca658bf76fad007e6f5498ace7">More...</a><br /></td></tr>
 <tr class="separator:a1c2d71ca658bf76fad007e6f5498ace7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab32ffc4e25c9e9fd15dbab5b1a3e7b02"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/dee/class_terrain_ab32ffc4e25c9e9fd15dbab5b1a3e7b02.html#ab32ffc4e25c9e9fd15dbab5b1a3e7b02">Update</a> (<a class="el" href="../../da/dbb/class_camera.html">Camera</a> *camera)</td></tr>
+<tr class="memdesc:ab32ffc4e25c9e9fd15dbab5b1a3e7b02"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the terrain and the storage queues.  <a href="../../d1/dee/class_terrain_ab32ffc4e25c9e9fd15dbab5b1a3e7b02.html#ab32ffc4e25c9e9fd15dbab5b1a3e7b02">More...</a><br /></td></tr>
 <tr class="separator:ab32ffc4e25c9e9fd15dbab5b1a3e7b02"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98222f8bcb71d52972888503f14bff11"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/dee/class_terrain_a98222f8bcb71d52972888503f14bff11.html#a98222f8bcb71d52972888503f14bff11">SetLoDDistance</a> (int32_t LoD, float distance)</td></tr>
+<tr class="memdesc:a98222f8bcb71d52972888503f14bff11"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distance of a specific level of detail.  <a href="../../d1/dee/class_terrain_a98222f8bcb71d52972888503f14bff11.html#a98222f8bcb71d52972888503f14bff11">More...</a><br /></td></tr>
 <tr class="separator:a98222f8bcb71d52972888503f14bff11"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a45288f65d65a12dec0d3d6907130d9ac"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/dee/class_terrain_a45288f65d65a12dec0d3d6907130d9ac.html#a45288f65d65a12dec0d3d6907130d9ac">SetTessellationFunction</a> (float factor, float slope, float shift, int32_t maxLevel=64)</td></tr>
+<tr class="memdesc:a45288f65d65a12dec0d3d6907130d9ac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the tessellation function t(distance) = factor / pow(distance, slope) + shift.  <a href="../../d1/dee/class_terrain_a45288f65d65a12dec0d3d6907130d9ac.html#a45288f65d65a12dec0d3d6907130d9ac">More...</a><br /></td></tr>
 <tr class="separator:a45288f65d65a12dec0d3d6907130d9ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a727428ae326d152e63cd8c7db3d2faec"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/dee/class_terrain_a727428ae326d152e63cd8c7db3d2faec.html#a727428ae326d152e63cd8c7db3d2faec">SetDisplacementDistance</a> (float distance)</td></tr>
+<tr class="memdesc:a727428ae326d152e63cd8c7db3d2faec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distance where the displacement should start.  <a href="../../d1/dee/class_terrain_a727428ae326d152e63cd8c7db3d2faec.html#a727428ae326d152e63cd8c7db3d2faec">More...</a><br /></td></tr>
 <tr class="separator:a727428ae326d152e63cd8c7db3d2faec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeafdaf2be58dfe48a8b68bfd3936c340"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/dee/class_terrain_aeafdaf2be58dfe48a8b68bfd3936c340.html#aeafdaf2be58dfe48a8b68bfd3936c340">Bind</a> ()</td></tr>
+<tr class="memdesc:aeafdaf2be58dfe48a8b68bfd3936c340"><td class="mdescLeft">&#160;</td><td class="mdescRight">Binds the vertex array of the terrain.  <a href="../../d1/dee/class_terrain_aeafdaf2be58dfe48a8b68bfd3936c340.html#aeafdaf2be58dfe48a8b68bfd3936c340">More...</a><br /></td></tr>
 <tr class="separator:aeafdaf2be58dfe48a8b68bfd3936c340"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab6bc80bf0215b83c38e0a70f6c60f5cd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/dee/class_terrain_ab6bc80bf0215b83c38e0a70f6c60f5cd.html#ab6bc80bf0215b83c38e0a70f6c60f5cd">Unbind</a> ()</td></tr>
+<tr class="memdesc:ab6bc80bf0215b83c38e0a70f6c60f5cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unbinds the vertex array of the terrain.  <a href="../../d1/dee/class_terrain_ab6bc80bf0215b83c38e0a70f6c60f5cd.html#ab6bc80bf0215b83c38e0a70f6c60f5cd">More...</a><br /></td></tr>
 <tr class="separator:ab6bc80bf0215b83c38e0a70f6c60f5cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>

@@ -5,6 +5,9 @@
 #include "../libraries/SDL/include/SDL.h"
 #include "EventDelegate.h"
 
+/**
+ * A class to distribute mouse wheel events.
+ */
 class SystemMouseWheelEvent {
 
 public:

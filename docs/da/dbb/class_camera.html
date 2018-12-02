@@ -96,19 +96,40 @@ $(document).ready(function(){initNavTree('da/dbb/class_camera.html','../../');})
 </div><!--header-->
 <div class="contents">
 
+<p>Used to represent a camera in the engine. In third person mode the camera location represents the point the camera looks at while in first person mode the camera is at the actual location.  
+ <a href="../../da/dbb/class_camera.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="../../d5/d91/_camera_8h_source.html">Camera.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a63eeab0ac8fc6846688918ca70096ada"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/dbb/class_camera_a63eeab0ac8fc6846688918ca70096ada.html#a63eeab0ac8fc6846688918ca70096ada">Camera</a> (float <a class="el" href="../../da/dbb/class_camera_aa19ffd22b1a94341151f1641adc673ad.html#aa19ffd22b1a94341151f1641adc673ad">fieldOfView</a>, float <a class="el" href="../../da/dbb/class_camera_aa6f013fdb4560daaa5ca6ace1a846ca7.html#aa6f013fdb4560daaa5ca6ace1a846ca7">aspectRatio</a>, float <a class="el" href="../../da/dbb/class_camera_a78d8722a95e4f7770d79c950bda2bfdc.html#a78d8722a95e4f7770d79c950bda2bfdc">nearPlane</a>, float <a class="el" href="../../da/dbb/class_camera_a8e8436cced3a180e13bfafa0791fb82a.html#a8e8436cced3a180e13bfafa0791fb82a">farPlane</a>, glm::vec3 <a class="el" href="../../da/dbb/class_camera_aaa02acdf79c6bd7d6e620df676622148.html#aaa02acdf79c6bd7d6e620df676622148">location</a>=vec3(0.0f), vec2 rotation=vec2(0.0f))</td></tr>
+<tr class="memdesc:a63eeab0ac8fc6846688918ca70096ada"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../da/dbb/class_camera.html" title="Used to represent a camera in the engine. In third person mode the camera location represents the poi...">Camera</a>.  <a href="../../da/dbb/class_camera_a63eeab0ac8fc6846688918ca70096ada.html#a63eeab0ac8fc6846688918ca70096ada">More...</a><br /></td></tr>
 <tr class="separator:a63eeab0ac8fc6846688918ca70096ada"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b31de4a23f304be6e27d53706d326c5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/dbb/class_camera_a0b31de4a23f304be6e27d53706d326c5.html#a0b31de4a23f304be6e27d53706d326c5">UpdateView</a> ()</td></tr>
+<tr class="memdesc:a0b31de4a23f304be6e27d53706d326c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the view matrix based on the location and rotation of the camera.  <a href="../../da/dbb/class_camera_a0b31de4a23f304be6e27d53706d326c5.html#a0b31de4a23f304be6e27d53706d326c5">More...</a><br /></td></tr>
 <tr class="separator:a0b31de4a23f304be6e27d53706d326c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a097998b222fecbdfc82266745cefdfe6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/dbb/class_camera_a097998b222fecbdfc82266745cefdfe6.html#a097998b222fecbdfc82266745cefdfe6">UpdateProjection</a> ()</td></tr>
+<tr class="memdesc:a097998b222fecbdfc82266745cefdfe6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the perspective matrix based on the FoV, the aspect ratio and the near and far plane.  <a href="../../da/dbb/class_camera_a097998b222fecbdfc82266745cefdfe6.html#a097998b222fecbdfc82266745cefdfe6">More...</a><br /></td></tr>
 <tr class="separator:a097998b222fecbdfc82266745cefdfe6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa00d7ce6c7f66dc0d89ce2b875d9a03d"><td class="memItemLeft" align="right" valign="top">vector&lt; vec3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/dbb/class_camera_aa00d7ce6c7f66dc0d89ce2b875d9a03d.html#aa00d7ce6c7f66dc0d89ce2b875d9a03d">GetFrustumCorners</a> (float <a class="el" href="../../da/dbb/class_camera_a78d8722a95e4f7770d79c950bda2bfdc.html#a78d8722a95e4f7770d79c950bda2bfdc">nearPlane</a>, float <a class="el" href="../../da/dbb/class_camera_a8e8436cced3a180e13bfafa0791fb82a.html#a8e8436cced3a180e13bfafa0791fb82a">farPlane</a>)</td></tr>
+<tr class="memdesc:aa00d7ce6c7f66dc0d89ce2b875d9a03d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the view frustum corners in world space </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">near</td><td>The near plane where the corners should be calculated <dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">far</td><td>The far plane where the corners should be calculated <dl class="section return"><dt>Returns</dt><dd>A vector where the corners are stored </dd></dl>
+</td></tr>
+  </table>
+  </dd>
+</dl>
+</td></tr>
+  </table>
+  </dd>
+</dl>
+ <a href="../../da/dbb/class_camera_aa00d7ce6c7f66dc0d89ce2b875d9a03d.html#aa00d7ce6c7f66dc0d89ce2b875d9a03d">More...</a><br /></td></tr>
 <tr class="separator:aa00d7ce6c7f66dc0d89ce2b875d9a03d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad1897942d0ccf91052386388a497349f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/dbb/class_camera_ad1897942d0ccf91052386388a497349f.html#ad1897942d0ccf91052386388a497349f">~Camera</a> ()</td></tr>
+<tr class="memdesc:ad1897942d0ccf91052386388a497349f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructs a <a class="el" href="../../da/dbb/class_camera.html" title="Used to represent a camera in the engine. In third person mode the camera location represents the poi...">Camera</a>  <a href="../../da/dbb/class_camera_ad1897942d0ccf91052386388a497349f.html#ad1897942d0ccf91052386388a497349f">More...</a><br /></td></tr>
 <tr class="separator:ad1897942d0ccf91052386388a497349f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>

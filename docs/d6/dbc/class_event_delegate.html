@@ -95,17 +95,24 @@ $(document).ready(function(){initNavTree('d6/dbc/class_event_delegate.html','../
 </div><!--header-->
 <div class="contents">
 
+<p>Handles the event flow between subscriber and publisher.  
+ <a href="../../d6/dbc/class_event_delegate.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="../../d2/dce/_event_delegate_8h_source.html">EventDelegate.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a1bb5d576a30865322a2e75dbdd045a0a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dbc/class_event_delegate_a1bb5d576a30865322a2e75dbdd045a0a.html#a1bb5d576a30865322a2e75dbdd045a0a">EventDelegate</a> ()</td></tr>
+<tr class="memdesc:a1bb5d576a30865322a2e75dbdd045a0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d6/dbc/class_event_delegate.html" title="Handles the event flow between subscriber and publisher. ">EventDelegate</a> object.  <a href="../../d6/dbc/class_event_delegate_a1bb5d576a30865322a2e75dbdd045a0a.html#a1bb5d576a30865322a2e75dbdd045a0a">More...</a><br /></td></tr>
 <tr class="separator:a1bb5d576a30865322a2e75dbdd045a0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9dcb1b0832e44009f2ae6224c794b096"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dbc/class_event_delegate_a9dcb1b0832e44009f2ae6224c794b096.html#a9dcb1b0832e44009f2ae6224c794b096">Subscribe</a> (std::function&lt; void(Args ...)&gt; handle)</td></tr>
+<tr class="memdesc:a9dcb1b0832e44009f2ae6224c794b096"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subscribes a method/function to the event delegate which wants to receive the arguments specified in Args.  <a href="../../d6/dbc/class_event_delegate_a9dcb1b0832e44009f2ae6224c794b096.html#a9dcb1b0832e44009f2ae6224c794b096">More...</a><br /></td></tr>
 <tr class="separator:a9dcb1b0832e44009f2ae6224c794b096"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a029f36a3c422e07efdc7acb26c2d40f5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dbc/class_event_delegate_a029f36a3c422e07efdc7acb26c2d40f5.html#a029f36a3c422e07efdc7acb26c2d40f5">Unsubscribe</a> (uint32_t subscriberID)</td></tr>
+<tr class="memdesc:a029f36a3c422e07efdc7acb26c2d40f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unsubscribes a method/function from the event delegate.  <a href="../../d6/dbc/class_event_delegate_a029f36a3c422e07efdc7acb26c2d40f5.html#a029f36a3c422e07efdc7acb26c2d40f5">More...</a><br /></td></tr>
 <tr class="separator:a029f36a3c422e07efdc7acb26c2d40f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aadc97124f141e9b3542f2ee086e6ce9f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/dbc/class_event_delegate_aadc97124f141e9b3542f2ee086e6ce9f.html#aadc97124f141e9b3542f2ee086e6ce9f">Fire</a> (Args ... args)</td></tr>
+<tr class="memdesc:aadc97124f141e9b3542f2ee086e6ce9f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Publishes Args arguments to the subscribers.  <a href="../../d6/dbc/class_event_delegate_aadc97124f141e9b3542f2ee086e6ce9f.html#aadc97124f141e9b3542f2ee086e6ce9f">More...</a><br /></td></tr>
 <tr class="separator:aadc97124f141e9b3542f2ee086e6ce9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>

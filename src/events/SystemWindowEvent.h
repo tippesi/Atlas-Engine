@@ -19,6 +19,9 @@
 #define WINDOWEVENT_FOCUS_LOST SDL_WINDOWEVENT_FOCUS_LOST
 #define WINDOWEVENT_CLOSE SDL_WINDOWEVENT_CLOSE
 
+/**
+ * A class to distribute window events.
+ */
 class SystemWindowEvent {
 	
 public:
