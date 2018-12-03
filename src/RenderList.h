@@ -27,6 +27,11 @@ public:
 
 	void Add(Light* light);
 
+	/**
+	Can be called from the outside, like the scene might call it on their object
+	*/
+	void RemoveMesh(Mesh* mesh);
+
 	void Clear();
 	
 	vector<Light*> lights;
