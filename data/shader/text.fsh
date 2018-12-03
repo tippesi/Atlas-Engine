@@ -14,7 +14,11 @@ uniform int edgeValue;
 uniform vec4 clipArea;
 uniform vec4 blendArea;
 
+uniform float textScale;
+
 void main() {
+
+    float factor = 5.0f * textScale;
 
     if (fScreenPosition.x < clipArea.x ||
 		fScreenPosition.y < clipArea.y ||
@@ -23,16 +27,22 @@ void main() {
             discard;
 	
 	float intensity = texture(glyphsTexture, fTexCoord).r;
-	
-	if (intensity < (edgeValue - pixelDistanceScale * outlineScale) / 255.0f && outline)
+
+	float outlineDistance = (edgeValue - pixelDistanceScale * outlineScale) / 255.0f - intensity;
+	float inlineDistance = edgeValue / 255.0f - intensity;
+
+	float outlineMultiplier = clamp(0.5f - factor * outlineDistance, 0.0f, 1.0f);
+    float inlineMultiplier = clamp(0.5f - factor * inlineDistance, 0.0f, 1.0f);
+
+	if (outlineMultiplier == 0.0f && outline)
 		discard;
-	else if (intensity < edgeValue/255.0f && !outline)
+	else if (inlineMultiplier == 0.0f && !outline)
 		discard;
 	
-	if (intensity >= (edgeValue - pixelDistanceScale * outlineScale) / 255.0f && outline)
-		color = outlineColor;
+	if (outlineMultiplier >= 0.0f && outline)
+		color = outlineColor * outlineMultiplier;
 	
-	if (intensity >= edgeValue / 255.0f)
-		color = textColor;
-	
+	if (inlineMultiplier >= 0.0f)
+		color = textColor * inlineMultiplier;
+
 }
