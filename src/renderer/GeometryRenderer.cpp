@@ -27,6 +27,70 @@ GeometryRenderer::GeometryRenderer() {
 
 void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
+	for (auto& renderListBatchesKey : scene->renderList->orderedRenderBatches) {
+
+		int32_t configBatchID = renderListBatchesKey.first;
+		auto renderListBatches = renderListBatchesKey.second;
+
+		shaderBatch->Bind(configBatchID);
+
+		diffuseMapUniform->SetValue(0);
+		normalMapUniform->SetValue(1);
+		specularMapUniform->SetValue(2);
+		heightMapUniform->SetValue(3);
+
+		viewMatrixUniform->SetValue(camera->viewMatrix);
+		projectionMatrixUniform->SetValue(camera->projectionMatrix);
+
+		for (auto renderListBatch : renderListBatches) {
+
+			ActorBatch* actorBatch = renderListBatch.actorBatch;
+
+			// If there is no actor of that mesh visible we discard it.
+			if (actorBatch->GetSize() == 0) {
+				continue;
+			}
+
+			auto mesh = actorBatch->GetMesh();
+			mesh->Bind();
+
+			// Render the sub data of the mesh that use this specific shader
+			for (auto& subData : renderListBatch.subData) {
+
+				Material* material = mesh->data->materials[subData->materialIndex];
+
+				if (material->HasDiffuseMap())
+					material->diffuseMap->Bind(GL_TEXTURE0);
+				if (material->HasNormalMap())
+					material->normalMap->Bind(GL_TEXTURE1);
+				if (material->HasSpecularMap())
+					material->specularMap->Bind(GL_TEXTURE2);
+				if (material->HasDisplacementMap())
+					material->displacementMap->Bind(GL_TEXTURE3);
+
+				diffuseColorUniform->SetValue(material->diffuseColor);
+				specularColorUniform->SetValue(material->specularColor);
+				ambientColorUniform->SetValue(material->ambientColor);
+				specularHardnessUniform->SetValue(material->specularHardness);
+				specularIntensityUniform->SetValue(material->specularIntensity);
+
+				// We could also use instanced rendering here
+				for (auto& actor : actorBatch->actors) {
+
+					modelMatrixUniform->SetValue(actor->transformedMatrix);
+
+					glDrawElements(mesh->data->primitiveType, subData->numIndices, mesh->data->indices->GetType(),
+						(void*)(subData->indicesOffset * mesh->data->indices->GetElementSize()));
+
+				}
+
+			}
+
+		}
+
+	}
+
+	/*
 	for (auto& shaderConfigBatch : shaderBatch->configBatches) {
 
 		shaderBatch->Bind(shaderConfigBatch->ID);
@@ -85,6 +149,7 @@ void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* came
 		}
 
 	}
+	*/
 
 }
 

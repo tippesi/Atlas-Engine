@@ -90,7 +90,7 @@ MeshData* ModelLoader::LoadMesh(string filename) {
 
 		Material* material = LoadMaterial(scene->mMaterials[i], directoryPath);
 
-		SubData* subData = new SubData;
+		MeshSubData* subData = new MeshSubData;
 		subData->materialIndex = i;
 		subData->indicesOffset = usedFaces * 3;
 

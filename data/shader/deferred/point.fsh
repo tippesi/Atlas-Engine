@@ -16,9 +16,9 @@ float ComputeScattering(vec3 fragPos) {
 
 	const int sampleCount = 100;
 
-	vec3 rayEnd = vec3(fragPos.xy, viewSpaceLightLocation.z + light.radius);
-	vec3 rayStart = vec3(fragPos.xy, viewSpaceLightLocation.z - light.radius);
-	vec3 rayVector = fragPos;
+	vec3 rayEnd = vec3(fragPos.xyz);
+	vec3 rayStart = vec3(fragPos.xyz) - normalize(fragPos) * 2.0f * light.radius;
+	vec3 rayVector = rayEnd - rayStart;
 	float rayLength = length(rayVector);
 	vec3 rayDirection = rayVector / rayLength;
 	float stepLength = rayLength / sampleCount;
@@ -27,7 +27,7 @@ float ComputeScattering(vec3 fragPos) {
 	float foginess = 0.0f;
 	float scattering = 0.25f;
 
-	vec3 currentPosition = vec3(0.0f);
+	vec3 currentPosition = vec3(rayStart);
 
 	for (int i = 0; i < sampleCount; i++) {
 
@@ -52,7 +52,6 @@ void main() {
 	float depth = texture(depthTexture, texCoord).r;
 	
 	vec3 fragPos = ConvertDepthToViewSpace(depth, texCoord);
-
 
 	if (fragPos.z  - viewSpaceLightLocation.z > light.radius)
 		discard;

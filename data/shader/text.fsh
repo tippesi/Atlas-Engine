@@ -18,6 +18,7 @@ uniform float textScale;
 
 void main() {
 
+	color = vec4(0.0f);
     float factor = 5.0f * textScale;
 
     if (fScreenPosition.x < clipArea.x ||
@@ -40,9 +41,8 @@ void main() {
 		discard;
 	
 	if (outlineMultiplier >= 0.0f && outline)
-		color = outlineColor * outlineMultiplier;
+		color = vec4(outlineColor.rgb, outlineColor.a * outlineMultiplier);
 	
-	if (inlineMultiplier >= 0.0f)
-		color = textColor * inlineMultiplier;
+	color = mix(color, vec4(textColor.rgb, textColor.a * inlineMultiplier), inlineMultiplier);
 
 }

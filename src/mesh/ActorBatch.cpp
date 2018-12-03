@@ -31,6 +31,12 @@ Mesh* ActorBatch::GetMesh() {
 
 }
 
+int32_t ActorBatch::GetSize() {
+
+	return actors.size();
+
+}
+
 void ActorBatch::ClearContent() {
 
 	actors.clear();

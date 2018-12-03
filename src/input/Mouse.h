@@ -39,20 +39,4 @@ private:
 
 };
 
-/**
-
-*/
-MouseHandler* CreateMouseHandler(Camera* camera, float sensibility, float reactivity);
-
-/**
-
-*/
-void DeleteMouseHandler(MouseHandler* mouseHandler);
-
-/**
-
-*/
-void CalculateMouseHandler(MouseHandler*, Camera* camera, uint32_t deltatime);
-
-
 #endif

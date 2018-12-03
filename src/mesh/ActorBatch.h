@@ -26,6 +26,8 @@ public:
 	/// \return
 	Mesh* GetMesh();
 
+	int32_t GetSize();
+
 	///
 	void ClearContent();
 

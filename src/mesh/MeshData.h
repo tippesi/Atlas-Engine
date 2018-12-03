@@ -10,15 +10,11 @@
 #define PRIMITIVE_TRIANGLES GL_TRIANGLES
 #define PRIMITIVE_TRIANGLE_STRIP GL_TRIANGLE_STRIP
 
-#ifdef ENGINE_OGL
-#define PRIMITIVE_QUADS GL_QUADS
-#endif
-
-typedef struct SubData {
+typedef struct MeshSubData {
 	uint32_t indicesOffset;
 	uint32_t numIndices;
 	uint32_t materialIndex;
-}SubData;
+}MeshSubData;
 
 class MeshData {
 
@@ -52,7 +48,7 @@ public:
 	DataComponent<float>* tangents;
 
 	vector<Material*> materials;
-	vector<SubData*> subData;
+	vector<MeshSubData*> subData;
 
 	int32_t primitiveType;
 
