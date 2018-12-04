@@ -34,7 +34,7 @@ void DirectionalShadowRenderer::Render(Window* window, RenderTarget* target, Cam
 
 			ShadowComponent* component = &light->shadow->components[i];
 
-			framebuffer->AddComponentLayer(GL_DEPTH_ATTACHMENT, light->shadow->maps, i);
+			framebuffer->AddComponentTextureLayer(GL_DEPTH_ATTACHMENT, light->shadow->maps, i);
 
 			glClear(GL_DEPTH_BUFFER_BIT);
 

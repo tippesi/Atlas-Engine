@@ -32,7 +32,7 @@ public:
 	 * @param attachment
 	 * @param texture
 	 */
-	void AddComponent(int32_t attachment, Texture* texture);
+	void AddComponentTexture(int32_t attachment, Texture* texture);
 
 	/**
 	 *
@@ -40,7 +40,7 @@ public:
 	 * @param texture
 	 * @param layer
 	 */
-	void AddComponentLayer(int32_t attachment, Texture* texture, int32_t layer);
+	void AddComponentTextureLayer(int32_t attachment, Texture* texture, int32_t layer);
 
 	/**
 	 *

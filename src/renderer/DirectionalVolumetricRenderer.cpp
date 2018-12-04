@@ -53,7 +53,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
         glViewport(0, 0, directionalLight->volumetric->map->width, directionalLight->volumetric->map->height);
 
-        framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, directionalLight->volumetric->map);
+        framebuffer->AddComponentTexture(GL_COLOR_ATTACHMENT0, directionalLight->volumetric->map);
 
         vec3 direction = normalize(vec3(camera->viewMatrix * vec4(directionalLight->direction, 0.0f)));
 
@@ -103,7 +103,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
         glViewport(0, 0, directionalLight->volumetric->map->width, directionalLight->volumetric->map->height);
 
-        framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, directionalLight->volumetric->blurMap);
+        framebuffer->AddComponentTexture(GL_COLOR_ATTACHMENT0, directionalLight->volumetric->blurMap);
 
         directionalLight->volumetric->map->Bind(GL_TEXTURE0);
 
@@ -111,7 +111,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-        framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, directionalLight->volumetric->map);
+        framebuffer->AddComponentTexture(GL_COLOR_ATTACHMENT0, directionalLight->volumetric->map);
 
         directionalLight->volumetric->blurMap->Bind(GL_TEXTURE0);
 

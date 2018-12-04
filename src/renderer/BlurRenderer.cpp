@@ -59,7 +59,7 @@ void BlurRenderer::Render(Texture *texture, Texture *swapTexture, Texture* depth
 
     glViewport(0, 0, texture->width, texture->height);
 
-    framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, swapTexture);
+    framebuffer->AddComponentTexture(GL_COLOR_ATTACHMENT0, swapTexture);
 
     texture->Bind(GL_TEXTURE0);
 
@@ -67,7 +67,7 @@ void BlurRenderer::Render(Texture *texture, Texture *swapTexture, Texture* depth
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, texture);
+    framebuffer->AddComponentTexture(GL_COLOR_ATTACHMENT0, texture);
 
     swapTexture->Bind(GL_TEXTURE0);
 

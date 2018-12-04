@@ -122,10 +122,10 @@ vector<uint8_t> Texture::GetData(int32_t layer) {
 	vector<uint8_t> data = vector<uint8_t>(width * height * channels);
 
 	if (layerCount == 1) {
-		framebuffer.AddComponent(GL_COLOR_ATTACHMENT0, this);
+		framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, this);
 	}
 	else {
-		framebuffer.AddComponentLayer(GL_COLOR_ATTACHMENT0, this, layer);
+		framebuffer.AddComponentTextureLayer(GL_COLOR_ATTACHMENT0, this, layer);
 	}
 
  	glReadPixels(0, 0, width, height, GetBaseFormat(internalFormat), GL_UNSIGNED_BYTE, data.data());

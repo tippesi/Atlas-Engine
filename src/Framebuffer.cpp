@@ -44,7 +44,7 @@ void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t in
 
 }
 
-void Framebuffer::AddComponent(int32_t attachment, Texture* texture) {
+void Framebuffer::AddComponentTexture(int32_t attachment, Texture* texture) {
 
 	FramebufferComponent* component = nullptr;
 
@@ -78,7 +78,7 @@ void Framebuffer::AddComponent(int32_t attachment, Texture* texture) {
 
 }
 
-void Framebuffer::AddComponentLayer(int32_t attachment, Texture* texture, int32_t layer) {
+void Framebuffer::AddComponentTextureLayer(int32_t attachment, Texture* texture, int32_t layer) {
 
 	FramebufferComponent* component = nullptr;
 
