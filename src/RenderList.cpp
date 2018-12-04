@@ -1,6 +1,6 @@
 #include "RenderList.h"
 
-RenderList::RenderList(int32_t type) : type(type) {
+RenderList::RenderList(int32_t type, int32_t mobility) : type(type), mobility(mobility) {
 
 
 
@@ -8,7 +8,7 @@ RenderList::RenderList(int32_t type) : type(type) {
 
 void RenderList::Add(Actor* actor) {
 
-	auto& actorBatchKey = actorBatches.find(actor->mesh);
+	auto actorBatchKey = actorBatches.find(actor->mesh);
 
 	if (actorBatchKey != actorBatches.end()) {
 		actorBatchKey->second->Add(actor);
@@ -33,7 +33,7 @@ void RenderList::Add(Actor* actor) {
 				shaderConfig = actor->mesh->data->materials[subData->materialIndex]->shadowConfig;
 			}
 
-			auto& batchKey = renderListBatches.find(shaderConfig);
+			auto batchKey = renderListBatches.find(shaderConfig);
 
 			if (batchKey != renderListBatches.end()) {
 				batchKey->second.subData.push_back(subData);
@@ -56,7 +56,7 @@ void RenderList::Add(Actor* actor) {
 
 }
 
-void RenderList::Add(Light* light) {
+void RenderList::Add(ILight* light) {
 
 	lights.push_back(light);
 

@@ -4,6 +4,9 @@
 #include "System.h"
 #include "Scene.h"
 
+#include "lighting/DirectionalLight.h"
+#include "lighting/PointLight.h"
+
 class FrustumCulling {
 
 public:
@@ -11,12 +14,12 @@ public:
 
 	static void CullLightsFromScene(Scene* scene, Camera* camera);
 
-	static void CullActorsFromShadow(Light* light, Scene* scene, Camera* camera);
+	static void CullActorsFromShadow(ILight* light, Scene* scene, Camera* camera);
 
 private:
-	static void CullActorsFromPointShadow(Light* light, Scene* scene, Camera* camera);
+	static void CullActorsFromPointShadow(PointLight* light, Scene* scene, Camera* camera);
 
-	static void CullActorsFromDirectionalShadow(Light* light, Scene* scene, Camera* camera);
+	static void CullActorsFromDirectionalShadow(DirectionalLight* light, Scene* scene, Camera* camera);
 
 };
 

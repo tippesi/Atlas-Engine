@@ -1,6 +1,8 @@
 #include "DirectionalLightRenderer.h"
 #include "MasterRenderer.h"
 
+#include "../lighting/DirectionalLight.h"
+
 string DirectionalLightRenderer::vertexPath = "deferred/directional.vsh";
 string DirectionalLightRenderer::fragmentPath = "deferred/directional.fsh";
 
@@ -43,40 +45,42 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 	target->geometryFramebuffer->GetComponent(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
 
 	// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
-	for (Light* light : scene->lights) {
+	for (ILight* light : scene->lights) {
 
 		if (light->type != DIRECTIONAL_LIGHT || light->shadow == nullptr) {
 			continue;
 		}
 
-		vec3 direction = normalize(vec3(camera->viewMatrix * vec4(light->direction, 0.0f)));
+		DirectionalLight* directionalLight = (DirectionalLight*)light;
+
+		vec3 direction = normalize(vec3(camera->viewMatrix * vec4(directionalLight->direction, 0.0f)));
 
 		lightDirection->SetValue(direction);
-		lightColor->SetValue(light->diffuseColor);
-		lightAmbient->SetValue(light->ambient);
+		lightColor->SetValue(directionalLight->color);
+		lightAmbient->SetValue(directionalLight->ambient);
 
-		scatteringFactor->SetValue(light->volumetric != nullptr ? light->volumetric->scatteringFactor : 0.0f);
+		scatteringFactor->SetValue(directionalLight->volumetric != nullptr ? directionalLight->volumetric->scatteringFactor : 0.0f);
 
-		shadowDistance->SetValue(light->shadow->distance);
-		shadowBias->SetValue(light->shadow->bias);
-		shadowSampleCount->SetValue(light->shadow->sampleCount);
-		shadowSampleRange->SetValue(light->shadow->sampleRange);
-		shadowCascadeCount->SetValue(light->shadow->componentCount);
-		shadowResolution->SetValue(vec2((float)light->shadow->resolution));
+		shadowDistance->SetValue(directionalLight->shadow->distance);
+		shadowBias->SetValue(directionalLight->shadow->bias);
+		shadowSampleCount->SetValue(directionalLight->shadow->sampleCount);
+		shadowSampleRange->SetValue(directionalLight->shadow->sampleRange);
+		shadowCascadeCount->SetValue(directionalLight->shadow->componentCount);
+		shadowResolution->SetValue(vec2((float)directionalLight->shadow->resolution));
 
 		if (light->volumetric != nullptr) {
-			glViewport(0, 0, light->volumetric->map->width, light->volumetric->map->height);
-			light->volumetric->map->Bind(GL_TEXTURE5);
+			glViewport(0, 0, directionalLight->volumetric->map->width, directionalLight->volumetric->map->height);
+			directionalLight->volumetric->map->Bind(GL_TEXTURE5);
 			glViewport(0, 0, target->lightingFramebuffer->width, target->lightingFramebuffer->height);
 		}
 
-		light->shadow->maps->Bind(GL_TEXTURE6);
+		directionalLight->shadow->maps->Bind(GL_TEXTURE6);
 #ifdef ENGINE_OGL
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 #endif
 
 		for (int32_t i = 0; i < light->shadow->componentCount; i++) {
-			ShadowComponent* cascade = &light->shadow->components[i];
+			ShadowComponent* cascade = &directionalLight->shadow->components[i];
 			cascades[i].distance->SetValue(cascade->farDistance);
 			cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->inverseViewMatrix);
 		}

@@ -1,5 +1,7 @@
 #include "Shadow.h"
-#include "Light.h"
+#include "ILight.h"
+#include "DirectionalLight.h"
+#include "PointLight.h"
 
 Shadow::Shadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection) : 
 	distance(distance), bias(bias), resolution(resolution) {

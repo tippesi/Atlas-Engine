@@ -3,7 +3,7 @@
 
 #include "System.h"
 #include "mesh/Actor.h"
-#include "lighting/Light.h"
+#include "lighting/ILight.h"
 #include <vector>
 
 // Forward declaration of scene class
@@ -33,11 +33,11 @@ public:
 
 	///
 	/// \param light
-	void Add(Light* light);
+	void Add(ILight* light);
 
 	///
 	/// \param light
-	void Remove(Light* light);
+	void Remove(ILight* light);
 
 	///
 	/// \param parentTransformation
@@ -54,7 +54,7 @@ public:
 
 	vector<Actor*> GetActors();
 
-	vector<Light*> GetLights();
+	vector<ILight*> GetLights();
 
 	Scene* scene;
 
@@ -65,7 +65,7 @@ private:
 
 	vector<SceneNode*> childNodes;
 	vector<Actor*> actors;
-	vector<Light*> lights;
+	vector<ILight*> lights;
 
 };
 

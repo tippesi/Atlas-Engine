@@ -9,7 +9,7 @@ Scene::Scene() {
 	sky = new Sky();
 	postProcessing = new PostProcessing();
 
-	renderList = new RenderList(GEOMETRY_RENDERLIST);
+	renderList = new RenderList(GEOMETRY_RENDERLIST, 0);
 
 }
 
@@ -65,7 +65,7 @@ void Scene::Remove(Terrain* terrain) {
 
 }
 
-void Scene::Add(Light* light) {
+void Scene::Add(ILight* light) {
 
 	lights.push_back(light);
 
@@ -73,7 +73,7 @@ void Scene::Add(Light* light) {
 
 }
 
-void Scene::Remove(Light* light) {
+void Scene::Remove(ILight* light) {
 
 	for (auto iterator = lights.begin(); iterator != lights.end(); iterator++) {
 

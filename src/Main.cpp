@@ -82,36 +82,36 @@ int main(int argc, char* argv[]) {
 
 	SceneNode* node = new SceneNode();
 
-	Light* globalLight = new Light(DIRECTIONAL_LIGHT);
+	DirectionalLight* globalLight = new DirectionalLight(DYNAMIC_LIGHT);
 	globalLight->direction = vec3(0.0f, -1.0f, 0.2f);
 	//globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f;
 	globalLight->ambient = 0.05f;
 	globalLight->AddShadow(new Shadow(125.0f, 0.008f, 1024, 3, 0.7f), camera);
 	//globalLight->AddVolumetric(new Volumetric(target->width / 2, target->height / 2, 20, -0.5f));
 
-	Light* pointLight1 = new Light(POINT_LIGHT);
+	PointLight* pointLight1 = new PointLight(STATIC_LIGHT);
 	pointLight1->location = vec3(24.35f, 6.5f, 7.1f);
-	pointLight1->diffuseColor = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
+	pointLight1->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight1->ambient = 0.1f;
 
-	Light* pointLight2 = new Light(POINT_LIGHT);
+	PointLight* pointLight2 = new PointLight(STATIC_LIGHT);
 	pointLight2->location = vec3(24.35f, 6.5f, -11.0f);
-	pointLight2->diffuseColor = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
+	pointLight2->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight2->ambient = 0.1f;
 
-	Light* pointLight3 = new Light(POINT_LIGHT);
+	PointLight* pointLight3 = new PointLight(STATIC_LIGHT);
 	pointLight3->location = vec3(-31.0f, 6.5f, 7.1f);
-	pointLight3->diffuseColor = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
+	pointLight3->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight3->ambient = 0.1f;
 
-	Light* pointLight4 = new Light(POINT_LIGHT);
+	PointLight* pointLight4 = new PointLight(STATIC_LIGHT);
 	pointLight4->location = vec3(-31.0f, 6.5f, -11.0f);
-	pointLight4->diffuseColor = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
+	pointLight4->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight4->ambient = 0.1f;
 
-	Light* pointLight5 = new Light(POINT_LIGHT);
+	PointLight* pointLight5 = new PointLight(STATIC_LIGHT);
 	pointLight5->location = vec3(0.0f, 2.0f, 0.0f);
-	pointLight5->diffuseColor = vec3(1.0f);
+	pointLight5->color = vec3(1.0f);
 	pointLight5->ambient = 0.1f;
 
 	node->Add(actor);

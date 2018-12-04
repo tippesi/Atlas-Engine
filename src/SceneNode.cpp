@@ -62,7 +62,7 @@ void SceneNode::Remove(Actor* actor) {
 
 }
 
-void SceneNode::Add(Light* light) {
+void SceneNode::Add(ILight* light) {
 
 	if (scene != nullptr) {
 		scene->Add(light);
@@ -72,7 +72,7 @@ void SceneNode::Add(Light* light) {
 
 }
 
-void SceneNode::Remove(Light* light) {
+void SceneNode::Remove(ILight* light) {
 
 	if (scene != nullptr) {
 		scene->Remove(light);
@@ -93,11 +93,11 @@ void SceneNode::Update(mat4 parentTransformation) {
 
 	mat4 transformation = parentTransformation * transformationMatrix;
 
-	for (SceneNode* node : childNodes) {
+	for (auto& node : childNodes) {
 		node->Update(transformation);
 	}
 
-	for (Actor* actor : actors) {
+	for (auto& actor : actors) {
 		actor->transformedMatrix = transformation * actor->transformedMatrix;
 	}
 
@@ -110,15 +110,15 @@ void SceneNode::AddToScene(Scene* scene) {
 	if (sceneSet)
 		return;
 
-	for (SceneNode* node : childNodes) {
+	for (auto& node : childNodes) {
 		node->AddToScene(scene);
 	}
 
-	for (Actor* actor : actors) {
+	for (auto& actor : actors) {
 		scene->Add(actor);
 	}
 
-	for (Light* light : lights) {
+	for (auto& light : lights) {
 		scene->Add(light);
 	}
 
@@ -132,15 +132,15 @@ void SceneNode::RemoveFromScene() {
 	if (!sceneSet)
 		return;
 
-	for (SceneNode* node : childNodes) {
+	for (auto& node : childNodes) {
 		node->RemoveFromScene();
 	}
 
-	for (Actor* actor : actors) {
+	for (auto& actor : actors) {
 		scene->Remove(actor);
 	}
 
-	for (Light* light : lights) {
+	for (auto& light : lights) {
 		scene->Remove(light);
 	}
 
@@ -161,7 +161,7 @@ vector<Actor*> SceneNode::GetActors() {
 
 }
 
-vector<Light*> SceneNode::GetLights() {
+vector<ILight*> SceneNode::GetLights() {
 
 	return lights;
 

@@ -4,11 +4,12 @@
 #include "../System.h"
 #include "../Camera.h"
 #include "../Framebuffer.h"
+#include "ILight.h"
 
 #define MAX_SHADOW_CASCADE_COUNT 4
 
 // Forward declaration of classes
-class Light;
+class ILight;
 class RenderList;
 
 typedef struct ShadowComponent {
@@ -46,7 +47,7 @@ public:
 
 	Texture* maps;
 
-	Light* light;
+	ILight* light;
 
 	RenderList* renderList;
 

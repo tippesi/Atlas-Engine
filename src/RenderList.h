@@ -2,7 +2,7 @@
 #define RENDERLIST_H
 
 #include "System.h"
-#include "lighting/Light.h"
+#include "lighting/ILight.h"
 #include "mesh/ActorBatch.h"
 
 #include <map>
@@ -21,11 +21,11 @@ typedef struct RenderListBatch {
 class RenderList {
 
 public:
-	RenderList(int32_t type);
+	RenderList(int32_t type, int32_t mobility);
 
 	void Add(Actor* actor);
 
-	void Add(Light* light);
+	void Add(ILight* light);
 
 	/**
 	Can be called from the outside, like the scene might call it on their object
@@ -34,12 +34,13 @@ public:
 
 	void Clear();
 	
-	vector<Light*> lights;
+	vector<ILight*> lights;
 	map<Mesh*, ActorBatch*> actorBatches;
 	map<int32_t, vector<RenderListBatch>> orderedRenderBatches;
 
 private:
 	int32_t type;
+	int32_t mobility;
 
 };
 

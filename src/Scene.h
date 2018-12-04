@@ -7,7 +7,7 @@
 #include "mesh/Actor.h"
 #include "mesh/ActorBatch.h"
 #include "terrain/Terrain.h"
-#include "lighting/Light.h"
+#include "lighting/ILight.h"
 #include "lighting/Sky.h"
 #include "postprocessing/PostProcessing.h"
 
@@ -35,11 +35,11 @@ public:
 
 	///
 	/// \param light
-	void Add(Light* light);
+	void Add(ILight* light);
 
 	///
 	/// \param light
-	void Remove(Light* light);
+	void Remove(ILight* light);
 
 	///
 	void Update(Camera* camera);
@@ -54,7 +54,7 @@ public:
 
 	SceneNode* rootNode;
 
-	vector<Light*> lights;
+	vector<ILight*> lights;
 	vector<ActorBatch*> actorBatches;
 	vector<Terrain*> terrains;
 
