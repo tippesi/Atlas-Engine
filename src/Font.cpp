@@ -115,7 +115,7 @@ void Font::ComputeDimensions(string text, float scale, float* width, float* heig
 	*width = 0;
 	*height =  lineHeight * scale;
 
-	for (int32_t i = 0; i < text.length(); i++) {
+	for (uint32_t i = 0; i < text.length(); i++) {
 
 		char& character = text[i];
 		Glyph* glyph = GetGlyph(character);

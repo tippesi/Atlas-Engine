@@ -1,5 +1,6 @@
 #include "PointLightRenderer.h"
 #include "helper/GeometryHelper.h"
+#include "../lighting/PointLight.h"
 
 string PointLightRenderer::vertexPath = "deferred/point.vsh";
 string PointLightRenderer::fragmentPath = "deferred/point.fsh";
@@ -44,11 +45,13 @@ void PointLightRenderer::Render(Window* window, RenderTarget* target, Camera* ca
 			continue;
 		}
 
+		PointLight* pointLight = (PointLight*)light;
+
 		float radius = 5.0f;
 
-		viewSpaceLightLocation->SetValue(vec3(camera->viewMatrix * vec4(light->location, 1.0f)));
-		lightLocation->SetValue(light->location);
-		lightColor->SetValue(light->diffuseColor);
+		viewSpaceLightLocation->SetValue(vec3(camera->viewMatrix * vec4(pointLight->location, 1.0f)));
+		lightLocation->SetValue(pointLight->location);
+		lightColor->SetValue(pointLight->color);
 		lightAmbient->SetValue(light->ambient);
 		lightRadius->SetValue(radius);
 

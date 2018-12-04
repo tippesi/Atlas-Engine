@@ -8,7 +8,7 @@
 class PointLight : public ILight {
 
 public:
-    PointLight(int32_t type, int32_t mobility = DYNAMIC_LIGHT);
+    PointLight(int32_t mobility = STATIONARY_LIGHT);
 
     void AddShadow(Shadow* shadow, Camera* camera);
 
@@ -17,6 +17,8 @@ public:
     void AddVolumetric(Volumetric* volumetric);
 
     void RemoveVolumetric();
+
+    float GetRadius();
 
     vec3 location;
 

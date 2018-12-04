@@ -5,8 +5,8 @@
 #include "Shadow.h"
 #include "Volumetric.h"
 
-#define STATIC_LIGHT 0
-#define DYNAMIC_LIGHT 1
+#define STATIONARY_LIGHT 0
+#define MOVABLE_LIGHT 1
 
 #define DIRECTIONAL_LIGHT 0
 #define POINT_LIGHT 1

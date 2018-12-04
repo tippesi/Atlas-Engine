@@ -61,6 +61,42 @@ Cubemap::Cubemap(string right, string left, string top,
 
 }
 
+Cubemap::Cubemap(GLenum dataFormant, int32_t width, int32_t height, int32_t internalFormat,
+		int32_t wrapping, int32_t filtering, bool mipmaps) {
+
+	glGenTextures(1, &ID);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
+
+	if (mipmaps) {
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	}
+	else {
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, filtering);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, filtering);
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, wrapping);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, wrapping);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, wrapping);
+
+	for (uint32_t i = 0; i < 6; i++) {
+
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0,
+			Texture::GetBaseFormat(internalFormat), dataFormant, NULL);
+
+	}
+
+	if (mipmaps) {
+		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	}
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+
+}
+
 void Cubemap::Bind(uint32_t unit) {
 
 	glActiveTexture(unit);

@@ -4,7 +4,7 @@
 #include "../System.h"
 #include "../Camera.h"
 #include "../Framebuffer.h"
-#include "ILight.h"
+#include "../Cubemap.h"
 
 #define MAX_SHADOW_CASCADE_COUNT 4
 
@@ -27,7 +27,7 @@ class Shadow {
 public:
 	Shadow(float distance, float bias, int32_t resolution, int32_t numCascades, float splitCorrection);
 
-	Shadow(float distance, float bias, int32_t resolution);
+	Shadow(float distance, float bias, int32_t resolution, bool useCubemap = false);
 
 	void Update(Camera* camera);
 
@@ -46,6 +46,7 @@ public:
 	int32_t componentCount;
 
 	Texture* maps;
+	Cubemap* cubemap;
 
 	ILight* light;
 
@@ -53,6 +54,8 @@ public:
 
 private:
 	void UpdateShadowComponent(ShadowComponent* cascade, Camera* camera);
+
+	bool useCubemap;
 
 };
 

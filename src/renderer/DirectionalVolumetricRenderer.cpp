@@ -1,4 +1,5 @@
 #include "DirectionalVolumetricRenderer.h"
+#include "../lighting/DirectionalLight.h"
 
 string DirectionalVolumetricRenderer::volumetricVertexPath = "volumetric.vsh";
 string DirectionalVolumetricRenderer::volumetricFragmentPath = "volumetric.fsh";
@@ -42,23 +43,26 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
     inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
     target->geometryFramebuffer->GetComponent(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
 
-    for (Light* light : scene->lights) {
+    for (ILight* light : scene->lights) {
 
         if (light->type != DIRECTIONAL_LIGHT || light->shadow == nullptr || light->volumetric == nullptr) {
             continue;
         }
 
-        glViewport(0, 0, light->volumetric->map->width, light->volumetric->map->height);
+        DirectionalLight* directionalLight = (DirectionalLight*)light;
 
-        framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, light->volumetric->map);
+        glViewport(0, 0, directionalLight->volumetric->map->width, directionalLight->volumetric->map->height);
 
-        vec3 direction = normalize(vec3(camera->viewMatrix * vec4(light->direction, 0.0f)));
+        framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, directionalLight->volumetric->map);
+
+        vec3 direction = normalize(vec3(camera->viewMatrix * vec4(directionalLight->direction, 0.0f)));
 
         lightDirection->SetValue(direction);
-        shadowCascadeCount->SetValue(light->shadow->componentCount);
-        sampleCount->SetValue(light->volumetric->sampleCount);
-		scattering->SetValue(glm::clamp(light->volumetric->scattering, -1.0f, 1.0f));
-		framebufferResolution->SetValue(vec2(light->volumetric->map->width, light->volumetric->map->height));
+        shadowCascadeCount->SetValue(directionalLight->shadow->componentCount);
+        sampleCount->SetValue(directionalLight->volumetric->sampleCount);
+		scattering->SetValue(glm::clamp(directionalLight->volumetric->scattering, -1.0f, 1.0f));
+		framebufferResolution->SetValue(vec2(directionalLight->volumetric->map->width,
+		        directionalLight->volumetric->map->height));
 
         light->shadow->maps->Bind(GL_TEXTURE1);
 #ifdef ENGINE_OGL
@@ -66,7 +70,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 #endif
 
         for (int32_t i = 0; i < light->shadow->componentCount; i++) {
-            ShadowComponent* cascade = &light->shadow->components[i];
+            ShadowComponent* cascade = &directionalLight->shadow->components[i];
             cascades[i].distance->SetValue(cascade->farDistance);
             cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->inverseViewMatrix);
         }
@@ -89,27 +93,29 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
     weights->SetValue(weightArray, 8);
     kernelSize->SetValue(8);
 
-    for (Light* light : scene->lights) {
+    for (ILight* light : scene->lights) {
 
         if (light->type != DIRECTIONAL_LIGHT || light->shadow == nullptr || light->volumetric == nullptr) {
             continue;
         }
 
-        glViewport(0, 0, light->volumetric->map->width, light->volumetric->map->height);
+        DirectionalLight* directionalLight = (DirectionalLight*)light;
 
-        framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, light->volumetric->blurMap);
+        glViewport(0, 0, directionalLight->volumetric->map->width, directionalLight->volumetric->map->height);
 
-        light->volumetric->map->Bind(GL_TEXTURE0);
+        framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, directionalLight->volumetric->blurMap);
 
-        blurDirection->SetValue(vec2(1.0f / (float)light->volumetric->map->width, 0.0f));
+        directionalLight->volumetric->map->Bind(GL_TEXTURE0);
+
+        blurDirection->SetValue(vec2(1.0f / (float)directionalLight->volumetric->map->width, 0.0f));
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-        framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, light->volumetric->map);
+        framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, directionalLight->volumetric->map);
 
-        light->volumetric->blurMap->Bind(GL_TEXTURE0);
+        directionalLight->volumetric->blurMap->Bind(GL_TEXTURE0);
 
-        blurDirection->SetValue(vec2(0.0f, 1.0f / (float)light->volumetric->map->height));
+        blurDirection->SetValue(vec2(0.0f, 1.0f / (float)directionalLight->volumetric->map->height));
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

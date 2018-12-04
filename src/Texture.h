@@ -90,6 +90,9 @@ public:
 	/// </summary>
 	static void UncorrectGamma(uint8_t* data, int32_t width, int32_t height, int32_t channels, float gamma);
 
+	/// Returns the base format of a sized internal format
+	static int32_t GetBaseFormat(int32_t sizedFormat);
+
 private:
 	/// <summary>
 	/// Flips texture data.
@@ -117,8 +120,6 @@ private:
 	/// Static members
 	/// The current anisotropicLevel
 	static int32_t anisotropyLevel;
-	/// Returns the base format of a sized internal format
-	static int32_t GetBaseFormat(int32_t sizedFormat);
 
 };
 

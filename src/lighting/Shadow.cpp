@@ -13,6 +13,7 @@ Shadow::Shadow(float distance, float bias, int32_t resolution, int32_t cascadeCo
 
 	sampleCount = 16;
 	sampleRange = 2.2f;
+	useCubemap = false;
 
 	components = new ShadowComponent[cascadeCount];
 
@@ -21,18 +22,28 @@ Shadow::Shadow(float distance, float bias, int32_t resolution, int32_t cascadeCo
 
 }
 
-Shadow::Shadow(float distance, float bias, int32_t resolution) :
-	distance(distance), bias(bias), resolution(resolution) {
+Shadow::Shadow(float distance, float bias, int32_t resolution, bool useCubemap) :
+	distance(distance), bias(bias), resolution(resolution), useCubemap(useCubemap) {
 
-	componentCount = 1;
 	sampleCount = 16;
 	sampleRange = 2;
 	splitCorrection = 0.0f;
 
-	components = new ShadowComponent[componentCount];
+	if (cubemap) {
+	    componentCount = 6;
 
-	maps = new Texture(GL_UNSIGNED_INT, resolution, resolution, GL_DEPTH_COMPONENT24, 0.0f,
-		GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+	    cubemap  = new Cubemap(GL_UNSIGNED_INT, resolution, resolution, GL_DEPTH_COMPONENT24,
+	    		GL_CLAMP_TO_EDGE, GL_LINEAR, false);
+
+	}
+	else {
+        componentCount = 1;
+
+        maps = new Texture(GL_UNSIGNED_INT, resolution, resolution, GL_DEPTH_COMPONENT24, 0.0f,
+                           GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+    }
+
+    components = new ShadowComponent[componentCount];
 
 }
 
@@ -52,6 +63,11 @@ Shadow::~Shadow() {
 }
 
 void Shadow::UpdateShadowComponent(ShadowComponent* cascade, Camera* camera) {
+
+	if (light->type != DIRECTIONAL_LIGHT)
+		return;
+
+	DirectionalLight* light = (DirectionalLight*)this->light;
 
 	vec3 cameraLocation = camera->thirdPerson ? camera->location - camera->direction * camera->thirdPersonDistance : camera->location;
 
