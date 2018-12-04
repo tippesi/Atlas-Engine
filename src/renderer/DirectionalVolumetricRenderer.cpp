@@ -41,7 +41,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 	shadowTexture->SetValue(1);
 
     inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
-    target->geometryFramebuffer->GetComponent(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
+    target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
 
     for (ILight* light : scene->lights) {
 
@@ -84,7 +84,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
     diffuseTexture->SetValue(0);
 	bilateralDepthTexture->SetValue(1);
 
-	target->geometryFramebuffer->GetComponent(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
+	target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
 
     float offsetArray[] = {0, 1, 2, 3, 4, 5, 6, 7};
     float weightArray[] = {1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f};

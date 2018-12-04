@@ -34,10 +34,10 @@ void PointLightRenderer::Render(Window* window, RenderTarget* target, Camera* ca
 	viewProjectionMatrix->SetValue(camera->projectionMatrix * camera->viewMatrix);
 	inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
-	target->geometryFramebuffer->GetComponent(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
-	target->geometryFramebuffer->GetComponent(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
-	target->geometryFramebuffer->GetComponent(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
-	target->geometryFramebuffer->GetComponent(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
+	target->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
+	target->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
+	target->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
+	target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
 
 	for (auto light : scene->lights) {
 

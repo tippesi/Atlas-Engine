@@ -103,3 +103,9 @@ void Cubemap::Bind(uint32_t unit) {
 	glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
 
 }
+
+uint32_t Cubemap::GetID() {
+
+	return ID;
+
+}

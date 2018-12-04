@@ -37,6 +37,12 @@ public:
 	 */
 	void Bind(uint32_t unit);
 
+	/**
+	 *
+	 * @return
+	 */
+	uint32_t GetID();
+
 private:
 	uint32_t ID;
 

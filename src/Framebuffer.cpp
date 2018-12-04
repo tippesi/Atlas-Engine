@@ -28,6 +28,7 @@ void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t in
 
 	component->texture = new Texture(dataFormat, width, height, internalFormat, 0.0f, wrapping, filtering, false, false);
 	component->internalTexture = true;
+	component->useCubemap = false;
 
 	Bind();
 
@@ -61,6 +62,7 @@ void Framebuffer::AddComponent(int32_t attachment, Texture* texture) {
 
 	component->texture = texture;
 	component->internalTexture = false;
+	component->useCubemap = false;
 
 	Bind();
 
@@ -94,6 +96,7 @@ void Framebuffer::AddComponentLayer(int32_t attachment, Texture* texture, int32_
 
 	component->texture = texture;
 	component->internalTexture = false;
+	component->useCubemap = false;
 
 	Bind();
 
@@ -109,7 +112,42 @@ void Framebuffer::AddComponentLayer(int32_t attachment, Texture* texture, int32_
 
 }
 
-Texture* Framebuffer::GetComponent(int32_t attachment) {
+void Framebuffer::AddComponentCubemap(int32_t attachment, Cubemap* cubemap, int32_t face) {
+
+	FramebufferComponent* component = nullptr;
+
+	auto search = components.find(attachment);
+
+	if (search == components.end()) {
+		component = new FramebufferComponent;
+	}
+	else {
+		component = search->second;
+		// Check if the component texture was created internally
+		if (component->internalTexture)
+			delete component->texture;
+	}
+
+	component->cubemap = cubemap;
+	component->internalTexture = false;
+	component->useCubemap = true;
+
+	Bind();
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+			component->cubemap->GetID(), 0);
+
+	components[attachment] = component;
+
+	if (attachment >= GL_COLOR_ATTACHMENT0 && attachment <= GL_COLOR_ATTACHMENT15 &&
+		search == components.end() && !drawBuffersSet) {
+		drawBuffers.push_back(attachment);
+		glDrawBuffers((GLsizei)drawBuffers.size(), &drawBuffers[0]);
+	}
+
+}
+
+Texture* Framebuffer::GetComponentTexture(int32_t attachment) {
 
 	auto search = components.find(attachment);
 
@@ -117,7 +155,26 @@ Texture* Framebuffer::GetComponent(int32_t attachment) {
 		return nullptr;
 	}
 	else {
+		auto component = search->second;
+		if (component->useCubemap)
+			return nullptr;
 		return search->second->texture;
+	}
+
+}
+
+Cubemap* Framebuffer::GetComponentCubemap(int32_t attachment){
+
+	auto search = components.find(attachment);
+
+	if (search == components.end()) {
+		return nullptr;
+	}
+	else {
+		auto component = search->second;
+		if (!component->useCubemap)
+			return nullptr;
+		return search->second->cubemap;
 	}
 
 }

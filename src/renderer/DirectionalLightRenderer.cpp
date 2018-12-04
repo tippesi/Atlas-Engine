@@ -39,10 +39,10 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 	inverseViewMatrix->SetValue(camera->inverseViewMatrix);
 	inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
-	target->geometryFramebuffer->GetComponent(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
-	target->geometryFramebuffer->GetComponent(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
-	target->geometryFramebuffer->GetComponent(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
-	target->geometryFramebuffer->GetComponent(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
+	target->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
+	target->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
+	target->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
+	target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
 
 	// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
 	for (ILight* light : scene->lights) {
