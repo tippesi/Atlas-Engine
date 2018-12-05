@@ -1,12 +1,12 @@
-#include "DirectionalShadowRenderer.h"
+#include "ShadowRenderer.h"
 
-string DirectionalShadowRenderer::vertexPath = "shadowmapping.vsh";
-string DirectionalShadowRenderer::fragmentPath = "shadowmapping.fsh";
+string ShadowRenderer::vertexPath = "shadowmapping.vsh";
+string ShadowRenderer::fragmentPath = "shadowmapping.fsh";
 
-ShaderBatch* DirectionalShadowRenderer::shaderBatch;
-mutex DirectionalShadowRenderer::shaderBatchMutex;
+ShaderBatch* ShadowRenderer::shaderBatch;
+mutex ShadowRenderer::shaderBatchMutex;
 
-DirectionalShadowRenderer::DirectionalShadowRenderer() {
+ShadowRenderer::ShadowRenderer() {
 
 	framebuffer = new Framebuffer(0, 0);
 
@@ -17,24 +17,35 @@ DirectionalShadowRenderer::DirectionalShadowRenderer() {
 }
 
 
-void DirectionalShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
+void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
 	framebuffer->Bind();
 
-	for (auto light : scene->lights) {
+	for (auto& light : scene->lights) {
 
-		if (light->type != DIRECTIONAL_LIGHT || light->shadow == nullptr) {
+		if (light->GetShadow() == nullptr) {
 			continue;
 		}
 
+		if (!light->GetShadow()->update) {
+			continue;
+		}
+
+		light->GetShadow()->update = false;
+
 		// We expect every cascade to have the same resoltion
-		glViewport(0, 0, light->shadow->resolution, light->shadow->resolution);
+		glViewport(0, 0, light->GetShadow()->resolution, light->GetShadow()->resolution);
 
-		for (int32_t i = 0; i < light->shadow->componentCount; i++) {
+		for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
 
-			ShadowComponent* component = &light->shadow->components[i];
+			ShadowComponent* component = &light->GetShadow()->components[i];
 
-			framebuffer->AddComponentTextureLayer(GL_DEPTH_ATTACHMENT, light->shadow->maps, i);
+			if (light->GetShadow()->useCubemap) {
+				framebuffer->AddComponentCubemap(GL_DEPTH_ATTACHMENT, light->GetShadow()->cubemap, i);
+			}
+			else {
+				framebuffer->AddComponentTextureLayer(GL_DEPTH_ATTACHMENT, light->GetShadow()->maps, i);
+			}
 
 			glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -93,7 +104,7 @@ void DirectionalShadowRenderer::Render(Window* window, RenderTarget* target, Cam
 
 }
 
-void DirectionalShadowRenderer::InitShaderBatch() {
+void ShadowRenderer::InitShaderBatch() {
 
 	lock_guard<mutex> guard(shaderBatchMutex);
 
@@ -103,7 +114,7 @@ void DirectionalShadowRenderer::InitShaderBatch() {
 
 }
 
-void DirectionalShadowRenderer::AddConfig(ShaderConfig* config) {
+void ShadowRenderer::AddConfig(ShaderConfig* config) {
 
 	lock_guard<mutex> guard(shaderBatchMutex);
 
@@ -111,7 +122,7 @@ void DirectionalShadowRenderer::AddConfig(ShaderConfig* config) {
 
 }
 
-void DirectionalShadowRenderer::RemoveConfig(ShaderConfig* config) {
+void ShadowRenderer::RemoveConfig(ShaderConfig* config) {
 
 	lock_guard<mutex> guard(shaderBatchMutex);
 

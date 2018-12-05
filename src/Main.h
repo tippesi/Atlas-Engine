@@ -44,8 +44,6 @@ private:
 	Mesh* treeMesh;
 	Mesh* cubeMesh;
 
-	DirectionalLight* directionalLight;
-
 	Actor* cubeActor;
 	Actor* treeActor;
 	Actor* sponzaActor;

@@ -25,9 +25,13 @@ private:
 	Uniform* normalTexture;
 	Uniform* materialTexture;
 	Uniform* depthTexture;
+	Uniform* shadowCubemap;
 
-	Uniform* viewProjectionMatrix;
+	Uniform* viewMatrix;
+	Uniform* projectionMatrix;
 	Uniform* inverseProjectionMatrix;
+	Uniform* lightViewMatrix;
+	Uniform* lightProjectionMatrix;
 	Uniform* viewSpaceLightLocation;
 	Uniform* lightLocation;
 	Uniform* lightColor;

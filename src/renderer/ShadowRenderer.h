@@ -7,10 +7,10 @@
 
 #include <mutex>
 
-class DirectionalShadowRenderer : public IRenderer {
+class ShadowRenderer : public IRenderer {
 
 public:
-	DirectionalShadowRenderer();
+	ShadowRenderer();
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 

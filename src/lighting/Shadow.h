@@ -9,7 +9,6 @@
 #define MAX_SHADOW_CASCADE_COUNT 4
 
 // Forward declaration of classes
-class ILight;
 class RenderList;
 
 typedef struct ShadowComponent {
@@ -29,7 +28,7 @@ public:
 
 	Shadow(float distance, float bias, int32_t resolution, bool useCubemap = false);
 
-	void Update(Camera* camera);
+	void Update();
 
 	~Shadow();
 
@@ -48,14 +47,12 @@ public:
 	Texture* maps;
 	Cubemap* cubemap;
 
-	ILight* light;
-
 	RenderList* renderList;
 
-private:
-	void UpdateShadowComponent(ShadowComponent* cascade, Camera* camera);
-
 	bool useCubemap;
+	bool allowDynamicActors;
+	bool update;
+	
 
 };
 

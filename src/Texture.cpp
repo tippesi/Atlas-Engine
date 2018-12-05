@@ -23,13 +23,25 @@ Texture::Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t inter
 
 }
 
+Texture::Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t internalFormat, float LoD, int32_t wrapping,
+	int32_t filtering, bool anisotropic, bool mipmaps) : width(width), height(height) {
+
+	ID = 0;
+	layerCount = 0;
+
+	int32_t format = GetBaseFormat(internalFormat);
+
+	GenerateTexture(dataFormat, internalFormat, format, LoD, wrapping, filtering, anisotropic, mipmaps);
+
+}
+
 Texture::Texture(string filename, bool withoutCorrection) {
 
 	ID = 0;
 	width = 0;
 	height = 0;
 	channels = 0;
-	layerCount = 1;
+	layerCount = 0;
 
 	float LoD = -0.4f;
 
@@ -88,7 +100,7 @@ Texture::Texture(string filename, bool withoutCorrection) {
 void Texture::Bind(uint32_t unit) {
 
 	glActiveTexture(unit);
-	if (layerCount == 1) {
+	if (layerCount == 0) {
 		glBindTexture(GL_TEXTURE_2D, ID);
 	}
 	else {
@@ -99,7 +111,7 @@ void Texture::Bind(uint32_t unit) {
 
 void Texture::SetData(vector<uint8_t> data, int32_t layer, int32_t layerCount) {
 
-	if (this->layerCount == 1) {
+	if (this->layerCount == 0) {
 		glBindTexture(GL_TEXTURE_2D, ID);
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GetBaseFormat(internalFormat), dataFormat, data.data());
 
@@ -121,7 +133,7 @@ vector<uint8_t> Texture::GetData(int32_t layer) {
 
 	vector<uint8_t> data = vector<uint8_t>(width * height * channels);
 
-	if (layerCount == 1) {
+	if (layerCount == 0) {
 		framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, this);
 	}
 	else {
@@ -143,7 +155,7 @@ void Texture::Resize(int32_t width, int32_t height) {
 	this->width = width;
 	this->height = height;
 
-	if (layerCount == 1) {
+	if (layerCount == 0) {
 		glBindTexture(GL_TEXTURE_2D, ID);
 		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GetBaseFormat(internalFormat), dataFormat, nullptr);
 		if (mipmaps)
@@ -267,11 +279,11 @@ void Texture::GenerateTexture(GLenum dataFormat, int32_t internalFormat,
 	if (ID == 0)
 		glGenTextures(1, &ID);
 
-	int32_t target = layerCount == 1 ? GL_TEXTURE_2D : GL_TEXTURE_2D_ARRAY;
+	int32_t target = layerCount == 0 ? GL_TEXTURE_2D : GL_TEXTURE_2D_ARRAY;
 
 	glBindTexture(target, ID);
 
-	if (layerCount == 1) {
+	if (layerCount == 0) {
 		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataFormat, NULL);
 	}
 	else {

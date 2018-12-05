@@ -14,21 +14,28 @@
 
 class ILight {
 
-    virtual void AddShadow(Shadow* shadow, Camera* camera) = 0;
-
+public:
     virtual void RemoveShadow() = 0;
-
-    virtual void AddVolumetric(Volumetric* volumetric) = 0;
 
     virtual void RemoveVolumetric() = 0;
 
-public:
+	virtual void Update(Camera* camera) = 0;
+
+	inline Shadow * GetShadow() {
+		return shadow;
+	}
+
+	inline Volumetric* GetVolumetric() {
+		return volumetric;
+	}
+
     int32_t type;
     int32_t mobility;
 
     vec3 color;
     float ambient;
 
+protected:
     Shadow* shadow;
     Volumetric* volumetric;
 

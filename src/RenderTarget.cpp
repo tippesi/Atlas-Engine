@@ -17,6 +17,8 @@ RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height
 	lightingFramebuffer->AddComponent(GL_COLOR_ATTACHMENT0, GL_FLOAT, GL_RGB16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 	lightingFramebuffer->AddComponentTexture(GL_DEPTH_ATTACHMENT, depthTexture);
 
+	lightingFramebuffer->Unbind();
+
 }
 
 void RenderTarget::Resize(int32_t width, int32_t height) {

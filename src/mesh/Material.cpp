@@ -1,6 +1,6 @@
 #include "Material.h"
 #include "renderer/GeometryRenderer.h"
-#include "renderer/DirectionalShadowRenderer.h"
+#include "renderer/ShadowRenderer.h"
 
 Material::Material() {
 
@@ -26,7 +26,7 @@ Material::Material() {
 void Material::Update() {
 
 	GeometryRenderer::RemoveConfig(geometryConfig);
-	DirectionalShadowRenderer::RemoveConfig(shadowConfig);
+	ShadowRenderer::RemoveConfig(shadowConfig);
 
 	geometryConfig->ClearMacros();
 	shadowConfig->ClearMacros();
@@ -43,7 +43,7 @@ void Material::Update() {
 	}
 
 	GeometryRenderer::AddConfig(geometryConfig);
-	DirectionalShadowRenderer::AddConfig(shadowConfig);
+	ShadowRenderer::AddConfig(shadowConfig);
 
 }
 

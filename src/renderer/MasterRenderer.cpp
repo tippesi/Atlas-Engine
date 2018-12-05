@@ -28,7 +28,7 @@ MasterRenderer::MasterRenderer() {
 
 	geometryRenderer = new GeometryRenderer();
 	terrainRenderer = new TerrainRenderer();
-	directionalShadowRenderer = new DirectionalShadowRenderer();
+	shadowRenderer = new ShadowRenderer();
 	directionalVolumetricRenderer = new DirectionalVolumetricRenderer();
 	directionalLightRenderer = new DirectionalLightRenderer();
 	pointLightRenderer = new PointLightRenderer();
@@ -44,7 +44,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
-	directionalShadowRenderer->Render(window, target, camera, scene, true);
+	shadowRenderer->Render(window, target, camera, scene, true);
 
 	target->geometryFramebuffer->Bind(true);
 
@@ -239,7 +239,7 @@ MasterRenderer::~MasterRenderer() {
 
 	delete geometryRenderer;
 	delete terrainRenderer;
-	delete directionalShadowRenderer;
+	delete shadowRenderer;
 	delete directionalVolumetricRenderer;
 	delete directionalLightRenderer;
 	delete pointLightRenderer;

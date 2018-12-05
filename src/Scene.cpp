@@ -96,6 +96,10 @@ void Scene::Update(Camera* camera) {
 		}
 	}
 
+	for (auto& light : lights) {
+		light->Update(camera);
+	}
+
 	rootNode->Update(mat4(1.0f));
 
 	renderList->Clear();

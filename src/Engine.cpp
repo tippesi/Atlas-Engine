@@ -69,7 +69,7 @@ Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 	ShaderSource::SetSourceDirectory(shaderDirectory);
 
 	GeometryRenderer::InitShaderBatch();
-	DirectionalShadowRenderer::InitShaderBatch();
+	ShadowRenderer::InitShaderBatch();
 
 	return window;
 

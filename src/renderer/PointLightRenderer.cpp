@@ -30,8 +30,10 @@ void PointLightRenderer::Render(Window* window, RenderTarget* target, Camera* ca
 	normalTexture->SetValue(1);
 	materialTexture->SetValue(2);
 	depthTexture->SetValue(3);
+	shadowCubemap->SetValue(4);
 
-	viewProjectionMatrix->SetValue(camera->projectionMatrix * camera->viewMatrix);
+	viewMatrix->SetValue(camera->viewMatrix);
+	projectionMatrix->SetValue(camera->projectionMatrix);
 	inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
 	target->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
@@ -45,15 +47,19 @@ void PointLightRenderer::Render(Window* window, RenderTarget* target, Camera* ca
 			continue;
 		}
 
-		PointLight* pointLight = (PointLight*)light;
+		auto pointLight = (PointLight*)light;
 
-		float radius = 5.0f;
+		if (pointLight->GetShadow() != nullptr) {
+			pointLight->GetShadow()->cubemap->Bind(GL_TEXTURE4);
+			lightViewMatrix->SetValue(glm::translate(mat4(1.0f), -pointLight->location) * camera->inverseViewMatrix);
+			lightProjectionMatrix->SetValue(pointLight->GetShadow()->components[0].projectionMatrix);
+		}
 
 		viewSpaceLightLocation->SetValue(vec3(camera->viewMatrix * vec4(pointLight->location, 1.0f)));
 		lightLocation->SetValue(pointLight->location);
 		lightColor->SetValue(pointLight->color);
-		lightAmbient->SetValue(light->ambient);
-		lightRadius->SetValue(radius);
+		lightAmbient->SetValue(pointLight->ambient);
+		lightRadius->SetValue(pointLight->GetRadius());
 
 		glDrawElements(GL_TRIANGLES, vertexArray->GetIndexComponent()->GetElementCount(),
 			vertexArray->GetIndexComponent()->GetDataType(), NULL);
@@ -68,8 +74,12 @@ void PointLightRenderer::GetUniforms() {
 	normalTexture = shader->GetUniform("normalTexture");
 	materialTexture = shader->GetUniform("materialTexture");
 	depthTexture = shader->GetUniform("depthTexture");
-	viewProjectionMatrix = shader->GetUniform("vpMatrix");
+	shadowCubemap = shader->GetUniform("shadowCubemap");
+	viewMatrix = shader->GetUniform("vMatrix");
+	projectionMatrix = shader->GetUniform("pMatrix");
 	inverseProjectionMatrix = shader->GetUniform("ipMatrix");
+	lightViewMatrix = shader->GetUniform("lvMatrix");
+	lightProjectionMatrix = shader->GetUniform("lpMatrix");
 	viewSpaceLightLocation = shader->GetUniform("viewSpaceLightLocation");
 	lightLocation = shader->GetUniform("light.location");
 	lightColor = shader->GetUniform("light.color");
