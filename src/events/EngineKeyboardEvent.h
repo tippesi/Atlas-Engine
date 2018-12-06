@@ -8,10 +8,10 @@
 /**
  * A class to distribute keyboard events.
  */
-class SystemKeyboardEvent {
+class EngineKeyboardEvent {
 
 public:
-	SystemKeyboardEvent(SDL_KeyboardEvent event) {
+	EngineKeyboardEvent(SDL_KeyboardEvent event) {
 
 
 

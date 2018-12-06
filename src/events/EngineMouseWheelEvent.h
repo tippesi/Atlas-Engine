@@ -1,5 +1,5 @@
-#ifndef SYSTEMMOUSEWHEELEVENT_H
-#define SYSTEMMOUSEWHEELEVENT_H
+#ifndef ENGINEMOUSEWHEELEVENT_H
+#define ENGINEMOUSEWHEELEVENT_H
 
 #include "../System.h"
 #include "../libraries/SDL/include/SDL.h"
@@ -8,10 +8,10 @@
 /**
  * A class to distribute mouse wheel events.
  */
-class SystemMouseWheelEvent {
+class EngineMouseWheelEvent {
 
 public:
-	SystemMouseWheelEvent(SDL_MouseWheelEvent event) {
+	EngineMouseWheelEvent(SDL_MouseWheelEvent event) {
 
 		windowID = event.windowID;
 		x = event.x;

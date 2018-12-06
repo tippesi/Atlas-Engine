@@ -1,5 +1,5 @@
-#ifndef SYSTEMMOUSEBUTTONEVENT_H
-#define SYSTEMMOUSEBUTTONEVENT_H
+#ifndef ENGINEMOUSEBUTTONEVENT_H
+#define ENGINEMOUSEBUTTONEVENT_H
 
 #include "../System.h"
 #include "../libraries/SDL/include/SDL.h"
@@ -14,10 +14,10 @@
 /**
  * A class to distribute mouse button events.
  */
-class SystemMouseButtonEvent {
+class EngineMouseButtonEvent {
 
 public:
-	SystemMouseButtonEvent(SDL_MouseButtonEvent event) {
+	EngineMouseButtonEvent(SDL_MouseButtonEvent event) {
 
 		windowID = event.windowID;
 		buttonDown = event.type == SDL_MOUSEBUTTONDOWN ? true : false;

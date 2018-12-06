@@ -13,10 +13,10 @@ MouseHandler::MouseHandler(Camera* camera, float sensibility, float reactivity, 
 	rotation = camera->rotation;
 
 	auto mouseMotionEventHandler = std::bind(&MouseHandler::MouseMotionEventHandler, this, std::placeholders::_1);
-	SystemEventHandler::mouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
+	EngineEventHandler::MouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
 
 	auto mouseButtonEventHandler = std::bind(&MouseHandler::MouseButtonEventHandler, this, std::placeholders::_1);
-	SystemEventHandler::mouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
+	EngineEventHandler::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
 }
 
@@ -48,7 +48,7 @@ void MouseHandler::ShowMouse() {
 
 }
 
-void MouseHandler::MouseMotionEventHandler(SystemMouseMotionEvent event) {
+void MouseHandler::MouseMotionEventHandler(EngineMouseMotionEvent event) {
 
 	if (event.windowID == 0 || lock)
 		return;
@@ -69,7 +69,7 @@ void MouseHandler::MouseMotionEventHandler(SystemMouseMotionEvent event) {
 
 }
 
-void MouseHandler::MouseButtonEventHandler(SystemMouseButtonEvent event) {
+void MouseHandler::MouseButtonEventHandler(EngineMouseButtonEvent event) {
 
 	if (event.windowID == 0 || lock)
 		return;

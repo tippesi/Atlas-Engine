@@ -16,19 +16,19 @@ Window::Window(string title, int32_t x, int32_t y, int32_t width, int32_t height
 	this->viewport = new Viewport(0, 0, width, height);
 
 	auto windowEventHandler = std::bind(&Window::WindowEventHandler, this, std::placeholders::_1);
-	SystemEventHandler::windowEventDelegate.Subscribe(windowEventHandler);
+	EngineEventHandler::WindowEventDelegate.Subscribe(windowEventHandler);
 
 	auto keyboardEventHandler = std::bind(&Window::KeyboardEventHandler, this, std::placeholders::_1);
-	SystemEventHandler::keyboardEventDelegate.Subscribe(keyboardEventHandler);
+	EngineEventHandler::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
 
 	auto mouseButtonEventHandler = std::bind(&Window::MouseButtonEventHandler, this, std::placeholders::_1);
-	SystemEventHandler::mouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
+	EngineEventHandler::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
 	auto mouseMotionEventHandler = std::bind(&Window::MouseMotionEventHandler, this, std::placeholders::_1);
-	SystemEventHandler::mouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
+	EngineEventHandler::MouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
 
 	auto mouseWheelEventHandler = std::bind(&Window::MouseWheelEventHandler, this, std::placeholders::_1);
-	SystemEventHandler::mouseWheelEventDelegate.Subscribe(mouseWheelEventHandler);
+	EngineEventHandler::MouseWheelEventDelegate.Subscribe(mouseWheelEventHandler);
 
 }
 
@@ -107,16 +107,24 @@ void Window::Update() {
 
 }
 
-void Window::WindowEventHandler(SystemWindowEvent event) {
+void Window::WindowEventHandler(EngineWindowEvent event) {
 
 	if (event.windowID != ID)
 		return;
+
+	if (event.type == WINDOWEVENT_FOCUS_GAINED) {
+		hasFocus = true;
+	}
+
+	if (event.type == WINDOWEVENT_FOCUS_LOST) {
+		hasFocus = false;
+	}
 
 	windowEventDelegate.Fire(event);
 
 }
 
-void Window::KeyboardEventHandler(SystemKeyboardEvent event) {
+void Window::KeyboardEventHandler(EngineKeyboardEvent event) {
 
 	if (event.windowID != ID)
 		return;
@@ -125,7 +133,7 @@ void Window::KeyboardEventHandler(SystemKeyboardEvent event) {
 
 }
 
-void Window::MouseButtonEventHandler(SystemMouseButtonEvent event) {
+void Window::MouseButtonEventHandler(EngineMouseButtonEvent event) {
 
 	if (event.windowID != ID)
 		return;
@@ -134,7 +142,7 @@ void Window::MouseButtonEventHandler(SystemMouseButtonEvent event) {
 
 }
 
-void Window::MouseMotionEventHandler(SystemMouseMotionEvent event) {
+void Window::MouseMotionEventHandler(EngineMouseMotionEvent event) {
 
 	if (event.windowID != ID)
 		return;
@@ -143,12 +151,30 @@ void Window::MouseMotionEventHandler(SystemMouseMotionEvent event) {
 
 }
 
-void Window::MouseWheelEventHandler(SystemMouseWheelEvent event) {
+void Window::MouseWheelEventHandler(EngineMouseWheelEvent event) {
 
 	if (event.windowID != ID)
 		return;
 
 	mouseWheelEventDelegate.Fire(event);
+
+}
+
+void Window::ControllerAxisEventHandler(EngineControllerAxisEvent event) {
+
+	if (!hasFocus)
+		return;
+
+	controllerAxisEventDelegate.Fire(event);
+
+}
+
+void Window::ControllerButtonEventHandler(EngineControllerButtonEvent event) {
+
+	if (!hasFocus)
+		return;
+
+	controllerButtonEventDelegate.Fire(event);
 
 }
 

@@ -3,7 +3,7 @@
 
 #include "../System.h"
 #include "../Camera.h"
-#include "../events/SystemEventHandler.h"
+#include "../events/EngineEventHandler.h"
 
 class MouseHandler {
 
@@ -25,8 +25,8 @@ public:
 	bool hideMouse;
 
 private:
-	void MouseMotionEventHandler(SystemMouseMotionEvent event);
-	void MouseButtonEventHandler(SystemMouseButtonEvent event);
+	void MouseMotionEventHandler(EngineMouseMotionEvent event);
+	void MouseButtonEventHandler(EngineMouseButtonEvent event);
 
 	bool activationButtonDown;
 	uint8_t activationButton;

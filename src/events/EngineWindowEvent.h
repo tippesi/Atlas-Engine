@@ -1,5 +1,5 @@
-#ifndef SYSTEMWINDOWEVENT_H
-#define SYSTEMWINDOWEVENT_H
+#ifndef ENGINEWINDOWEVENT_H
+#define ENGINEWINDOWEVENT_H
 
 #include "../System.h"
 #include "../libraries/SDL/include/SDL.h"
@@ -22,10 +22,10 @@
 /**
  * A class to distribute window events.
  */
-class SystemWindowEvent {
+class EngineWindowEvent {
 	
 public:
-	SystemWindowEvent(SDL_WindowEvent event) {
+	EngineWindowEvent(SDL_WindowEvent event) {
 		windowID = event.windowID;
 		type = event.event;
 		data = glm::ivec2(event.data1, event.data2);

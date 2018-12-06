@@ -1,5 +1,5 @@
-#ifndef SYSTEMMOUSEMOTIONEVENT_H
-#define SYSTEMMOUSEMOTIONEVENT_H
+#ifndef ENGINEMOUSEMOTIONEVENT_H
+#define ENGINEMOUSEMOTIONEVENT_H
 
 #include "../System.h"
 #include "../libraries/SDL/include/SDL.h"
@@ -8,10 +8,10 @@
 /**
  * A class to distribute mouse motion events.
  */
-class SystemMouseMotionEvent {
+class EngineMouseMotionEvent {
 
 public:
-	SystemMouseMotionEvent(SDL_MouseMotionEvent event) {
+	EngineMouseMotionEvent(SDL_MouseMotionEvent event) {
 
 		windowID = event.windowID;
 		x = event.x;

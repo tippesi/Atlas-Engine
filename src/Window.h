@@ -6,7 +6,7 @@
 #include "Texture.h"
 
 #include "events/EventDelegate.h"
-#include "events/SystemEventHandler.h"
+#include "events/EngineEventHandler.h"
 
 #include "libraries/SDL/include/SDL.h"
 
@@ -104,18 +104,22 @@ public:
 
 	Viewport* viewport;
 
-	EventDelegate<SystemWindowEvent> windowEventDelegate;
-	EventDelegate<SystemKeyboardEvent> keyboardEventDelegate;
-	EventDelegate<SystemMouseButtonEvent> mouseButtonEventDelegate;
-	EventDelegate<SystemMouseMotionEvent> mouseMotionEventDelegate;
-	EventDelegate<SystemMouseWheelEvent> mouseWheelEventDelegate;
+	EventDelegate<EngineWindowEvent> windowEventDelegate;
+	EventDelegate<EngineKeyboardEvent> keyboardEventDelegate;
+	EventDelegate<EngineMouseButtonEvent> mouseButtonEventDelegate;
+	EventDelegate<EngineMouseMotionEvent> mouseMotionEventDelegate;
+	EventDelegate<EngineMouseWheelEvent> mouseWheelEventDelegate;
+	EventDelegate<EngineControllerAxisEvent> controllerAxisEventDelegate;
+	EventDelegate<EngineControllerButtonEvent> controllerButtonEventDelegate;
 
 private:
-	void WindowEventHandler(SystemWindowEvent event);
-	void KeyboardEventHandler(SystemKeyboardEvent event);
-	void MouseButtonEventHandler(SystemMouseButtonEvent event);
-	void MouseMotionEventHandler(SystemMouseMotionEvent event);
-	void MouseWheelEventHandler(SystemMouseWheelEvent event);
+	void WindowEventHandler(EngineWindowEvent event);
+	void KeyboardEventHandler(EngineKeyboardEvent event);
+	void MouseButtonEventHandler(EngineMouseButtonEvent event);
+	void MouseMotionEventHandler(EngineMouseMotionEvent event);
+	void MouseWheelEventHandler(EngineMouseWheelEvent event);
+	void ControllerAxisEventHandler(EngineControllerAxisEvent event);
+	void ControllerButtonEventHandler(EngineControllerButtonEvent event);
 
 	uint32_t ID;
 
@@ -127,6 +131,8 @@ private:
 
 	int32_t width;
 	int32_t height;
+
+	bool hasFocus;
 
 };
 

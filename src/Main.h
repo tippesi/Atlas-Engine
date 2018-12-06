@@ -4,6 +4,7 @@
 #include "Engine.h"
 #include "input/Mouse.h"
 #include "input/Keyboard.h"
+#include "input/Controller.h"
 
 class Main {
 
@@ -23,12 +24,15 @@ private:
 
 	void SceneSetUp();
 
-	void SystemQuitEventHandler();
+	void QuitEventHandler();
+
+	void ControllerDeviceEventHandler(EngineControllerDeviceEvent event);
 
 	Window* window;
 
 	MouseHandler* mouseHandler;
 	KeyboardHandler* keyboardHandler;
+	ControllerHandler* controllerHandler;
 
 	RenderTarget* renderTarget;
 	MasterRenderer* masterRenderer;
@@ -52,6 +56,7 @@ private:
 	Texture* terrainDisplacementMap;
 
 	bool quit;
+	bool useControllerHandler;
 
 };
 

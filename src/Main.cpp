@@ -8,15 +8,20 @@
 Main::Main(int argc, char* argv[]) {
 
 	quit = false;
+	useControllerHandler = false;
 
 	window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE);
 
-	Engine::UnlockFramerate();
+	// Engine::UnlockFramerate();
 
 	// Register quit event
-	auto quitEventHandler = std::bind(&Main::SystemQuitEventHandler, this);
-	SystemEventHandler::quitEventDelegate.Subscribe(quitEventHandler);
+	auto quitEventHandler = std::bind(&Main::QuitEventHandler, this);
+	EngineEventHandler::QuitEventDelegate.Subscribe(quitEventHandler);
+
+	auto controllerDeviceEventHandler = std::bind(&Main::ControllerDeviceEventHandler, this, std::placeholders::_1);
+	EngineEventHandler::ControllerDeviceEventDelegate.Subscribe(controllerDeviceEventHandler);
+
 
 	camera = new Camera(47.0f, 2.0f, .25f, 4000.0f);
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -24,6 +29,7 @@ Main::Main(int argc, char* argv[]) {
 
 	mouseHandler = new MouseHandler(camera, 1.5f, 0.015f);
 	keyboardHandler = CreateKeyboardHandler(camera, 7.0f, 0.3f);
+	controllerHandler = new ControllerHandler(camera, 1.5f, 7.0f, 0.2f, 5000.0f);
 
 	masterRenderer = new MasterRenderer();
 	renderTarget = new RenderTarget(1920, 1080);
@@ -52,8 +58,13 @@ Main::Main(int argc, char* argv[]) {
 
 void Main::Update(uint32_t deltaTime) {
 
-	mouseHandler->Update(camera, deltaTime);
-	CalculateKeyboardHandler(keyboardHandler, camera, deltaTime);
+	if (!useControllerHandler) {
+		mouseHandler->Update(camera, deltaTime);
+		CalculateKeyboardHandler(keyboardHandler, camera, deltaTime);
+	}
+	else {
+		controllerHandler->Update(camera, deltaTime);
+	}
 
 	camera->UpdateView();
 	camera->UpdateProjection();
@@ -77,7 +88,7 @@ void Main::Render(uint32_t deltaTime) {
 
 void Main::Stream() {
 
-	for (TerrainStorageCell* cell : terrain->storage->requestedCells) {
+	for (auto& cell : terrain->storage->requestedCells) {
 
 		int32_t width, height, channels;
 
@@ -216,15 +227,24 @@ void Main::SceneSetUp() {
 
 }
 
-void Main::SystemQuitEventHandler() {
+void Main::QuitEventHandler() {
 
 	quit = true;
 
 }
 
+void Main::ControllerDeviceEventHandler(EngineControllerDeviceEvent event) {
+
+	if (event.type == CONTROLLER_ADDED) {
+		useControllerHandler = true;
+	}
+	else if (event.type == CONTROLLER_REMOVED) {
+		useControllerHandler = false;
+	}
+
+}
 
 int main(int argc, char* argv[]) {
-
 	
 	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 256, 1, 16);
 
