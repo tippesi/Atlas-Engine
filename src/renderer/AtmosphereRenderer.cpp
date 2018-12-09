@@ -6,7 +6,7 @@ string AtmosphereRenderer::fragmentPath = "atmosphere.fsh";
 
 AtmosphereRenderer::AtmosphereRenderer() {
 
-	vertexArray = GeometryHelper::GenerateSphereVertexArray(20, 20);
+	vertexArray = GeometryHelper::GenerateSphereVertexArray(200, 200);
 
 	shader = new Shader();
 
@@ -25,7 +25,10 @@ void AtmosphereRenderer::Render(Window* window, RenderTarget* target, Camera* ca
 
 	vertexArray->Bind();
 
-	viewProjectionMatrix->SetValue(camera->projectionMatrix * glm::mat4(glm::mat3(camera->viewMatrix)));
+	viewMatrix->SetValue(camera->viewMatrix);
+	projectionMatrix->SetValue(camera->projectionMatrix);
+	cameraLocation->SetValue(vec3(camera->location));
+	sunDirection->SetValue(vec3(0.0f, -0.1f, -1.0f));
 
 	glDrawElements(GL_TRIANGLES, vertexArray->GetIndexComponent()->GetElementCount(),
 		vertexArray->GetIndexComponent()->GetDataType(), NULL);
@@ -34,6 +37,9 @@ void AtmosphereRenderer::Render(Window* window, RenderTarget* target, Camera* ca
 
 void AtmosphereRenderer::GetUniforms() {
 
-	viewProjectionMatrix = shader->GetUniform("vpMatrix");
+	viewMatrix = shader->GetUniform("vMatrix");
+	projectionMatrix = shader->GetUniform("pMatrix");
+	cameraLocation = shader->GetUniform("cameraLocation");
+	sunDirection = shader->GetUniform("sunDirection");
 
 }

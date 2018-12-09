@@ -13,7 +13,7 @@ Main::Main(int argc, char* argv[]) {
 	window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE);
 
-	// Engine::UnlockFramerate();
+	Engine::UnlockFramerate();
 
 	// Register quit event
 	auto quitEventHandler = std::bind(&Main::QuitEventHandler, this);
@@ -22,13 +22,12 @@ Main::Main(int argc, char* argv[]) {
 	auto controllerDeviceEventHandler = std::bind(&Main::ControllerDeviceEventHandler, this, std::placeholders::_1);
 	EngineEventHandler::ControllerDeviceEventDelegate.Subscribe(controllerDeviceEventHandler);
 
-
 	camera = new Camera(47.0f, 2.0f, .25f, 4000.0f);
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
 	mouseHandler = new MouseHandler(camera, 1.5f, 0.015f);
-	keyboardHandler = CreateKeyboardHandler(camera, 7.0f, 0.3f);
+	keyboardHandler = CreateKeyboardHandler(camera, 10.0f*7.0f, 0.3f);
 	controllerHandler = new ControllerHandler(camera, 1.5f, 7.0f, 0.2f, 5000.0f);
 
 	masterRenderer = new MasterRenderer();
@@ -72,9 +71,11 @@ void Main::Update(uint32_t deltaTime) {
 	terrain->Update(camera);
 
 	scene->rootNode->transformationMatrix = glm::rotate((float)SDL_GetTicks() / 1000.0f, vec3(0.0f, 1.0f, 0.0f));
-	cubeActor->modelMatrix = glm::rotate((float)SDL_GetTicks() / 500.0f, vec3(0.0f, 1.0f, 0.0f));
+	//cubeActor->modelMatrix = glm::rotate((float)SDL_GetTicks() / 500.0f, vec3(0.0f, 1.0f, 0.0f));
 
 	scene->Update(camera);
+
+	EngineLog("%.3f,%.3f,%.3f", camera->location.x, camera->location.y, camera->location.z);
 
 }
 
@@ -82,7 +83,7 @@ void Main::Render(uint32_t deltaTime) {
 
 	masterRenderer->RenderScene(window, renderTarget, camera, scene);
 
-	masterRenderer->textRenderer->Render(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 5.0f);
+	masterRenderer->textRenderer->Render(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 5.0f, true);
 
 }
 
@@ -121,7 +122,7 @@ void Main::Load() {
 	font = new Font("../data/roboto.ttf", 88, 5, 200);
 
 	DisplayLoadingScreen();
-
+	/*
 	skybox = new Cubemap("../data/cubemap/right.png",
 		"../data/cubemap/left.png",
 		"../data/cubemap/top.png",
@@ -129,9 +130,11 @@ void Main::Load() {
 		"../data/cubemap/front.png",
 		"../data/cubemap/back.png");
 
+
 	cubeMesh = new Mesh("../data/cube.dae");
 	sponzaMesh = new Mesh("../data/sponza/sponza.dae");
 	treeMesh = new Mesh("../data/tree.dae");
+	*/
 
 	terrainDiffuseMap = new Texture("../data/terrain/Ground_17_DIF.jpg");
 	terrainDisplacementMap = new Texture("../data/terrain/Ground_17_DISP.jpg");
@@ -166,14 +169,15 @@ void Main::SceneSetUp() {
 	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
 	scene->rootNode->Add(node);
 
+	/*
 	cubeActor = new Actor(cubeMesh);
 	treeActor = new Actor(treeMesh);
 	treeActor->modelMatrix = scale(mat4(1.0f), vec3(3.0f));
 	sponzaActor = new Actor(sponzaMesh);
 	sponzaActor->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
-
+	*/
 	DirectionalLight* directionalLight = new DirectionalLight(STATIONARY_LIGHT);
-	directionalLight->direction = vec3(0.0f, -1.0f, 0.2f);
+	directionalLight->direction = vec3(0.0f, -0.1f, -1.0f);
 	directionalLight->color = vec3(253, 194, 109) / 255.0f;
 	directionalLight->ambient = 0.05f;
 	// Cascaded shadow mapping
@@ -181,7 +185,8 @@ void Main::SceneSetUp() {
 	// Shadow mapping that is fixed to a point
 	mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
 	directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
-	directionalLight->AddVolumetric(new Volumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f));
+	directionalLight->GetShadow()->sampleCount = 1;
+	//directionalLight->AddVolumetric(new Volumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f));
 
 	PointLight* pointLight1 = new PointLight(STATIONARY_LIGHT);
 	pointLight1->location = vec3(24.35f, 6.5f, 7.1f);
@@ -212,11 +217,11 @@ void Main::SceneSetUp() {
 	pointLight5->color = vec3(1.0f);
 	pointLight5->ambient = 0.1f;
 	pointLight5->AddShadow(0.0f, 512);
-
+	/*
 	node->Add(cubeActor);
 	scene->Add(sponzaActor);
 	scene->Add(treeActor);
-
+	*/
 	scene->Add(directionalLight);
 
 	scene->Add(pointLight1);
@@ -224,7 +229,7 @@ void Main::SceneSetUp() {
 	scene->Add(pointLight3);
 	scene->Add(pointLight4);
 	scene->Add(pointLight5);
-
+	
 }
 
 void Main::QuitEventHandler() {

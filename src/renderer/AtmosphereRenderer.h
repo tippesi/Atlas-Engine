@@ -21,7 +21,10 @@ private:
 
 	Shader* shader;
 
-	Uniform* viewProjectionMatrix;
+	Uniform* viewMatrix;
+	Uniform* projectionMatrix;
+	Uniform* cameraLocation;
+	Uniform* sunDirection;
 
 };
 

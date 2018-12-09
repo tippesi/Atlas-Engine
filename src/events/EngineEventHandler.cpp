@@ -78,7 +78,6 @@ void EngineEventHandler::Update() {
 				device.controller = SDL_GameControllerOpen(e.cdevice.which);
 				device.haptic = SDL_HapticOpenFromJoystick(device.joystick);
 				SDL_HapticRumbleInit(device.haptic);
-				SDL_HapticRumblePlay(device.haptic, 1.0f, 1000);
 				e.cdevice.which = (int32_t)SDL_JoystickInstanceID(device.joystick);
 				controllers[e.cdevice.which] = device;
 			}

@@ -24,6 +24,7 @@ private:
 	Uniform* bloomFirstTexture;
 	Uniform* bloomSecondTexture;
 	Uniform* bloomThirdTexture;
+	Uniform* hdrTextureResolution;
 	Uniform* exposure;
 	Uniform* saturation;
 	Uniform* bloomPassses;
@@ -33,6 +34,7 @@ private:
 	Uniform* vignettePower;
 	Uniform* vignetteStrength;
 	Uniform* vignetteColor;
+	Uniform* timeInMilliseconds;
 
 };
 

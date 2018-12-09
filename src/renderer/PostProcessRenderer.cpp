@@ -67,8 +67,13 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 	bloomSecondTexture->SetValue(2);
 	bloomThirdTexture->SetValue(3);
 
+	hdrTextureResolution->SetValue(
+		vec2(target->lightingFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0)->width,
+			target->lightingFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0)->height));
+
 	exposure->SetValue(postProcessing->exposure);
 	saturation->SetValue(postProcessing->saturation);
+	timeInMilliseconds->SetValue((float)clock());
 
 	if (postProcessing->chromaticAberration != nullptr) {
 		float reversedValue = postProcessing->chromaticAberration->colorsReversed ? 1.0f : 0.0f;
@@ -95,6 +100,7 @@ void PostProcessRenderer::GetUniforms() {
 	bloomFirstTexture = shader->GetUniform("bloomFirstTexture");
 	bloomSecondTexture = shader->GetUniform("bloomSecondTexture");
 	bloomThirdTexture = shader->GetUniform("bloomThirdTexture");
+	hdrTextureResolution = shader->GetUniform("hdrTextureResolution");
 	exposure = shader->GetUniform("exposure");
 	saturation = shader->GetUniform("saturation");
 	bloomPassses = shader->GetUniform("bloomPassses");
@@ -104,5 +110,6 @@ void PostProcessRenderer::GetUniforms() {
 	vignettePower = shader->GetUniform("vignettePower");
 	vignetteStrength = shader->GetUniform("vignetteStrength");
 	vignetteColor = shader->GetUniform("vignetteColor");
+	timeInMilliseconds = shader->GetUniform("timeInMilliseconds");
 
 }
