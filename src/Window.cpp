@@ -107,6 +107,13 @@ void Window::Update() {
 
 }
 
+void Window::Clear(vec3 color) {
+
+	glClearColor(color.r, color.g, color.b, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+}
+
 void Window::WindowEventHandler(EngineWindowEvent event) {
 
 	if (event.windowID != ID)

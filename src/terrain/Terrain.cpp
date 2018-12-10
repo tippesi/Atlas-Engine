@@ -89,6 +89,12 @@ void Terrain::SetDisplacementDistance(float distance) {
 
 }
 
+float Terrain::GetHeight(float x, float z) {
+
+
+
+}
+
 void Terrain::Bind() {
 
 	vertexArray->Bind();

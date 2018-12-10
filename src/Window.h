@@ -100,6 +100,11 @@ public:
 	 */
 	void Update();
 
+	/**
+	 * Clears the rendering surface of the window.
+	 */
+	void Clear(vec3 color = vec3(0.0f));
+
 	~Window();
 
 	Viewport* viewport;

@@ -79,6 +79,9 @@ public:
 	 */
 	void SetDisplacementDistance(float distance);
 
+
+	float GetHeight(float x, float z);
+
 	/**
 	 * Binds the vertex array of the terrain
 	 */

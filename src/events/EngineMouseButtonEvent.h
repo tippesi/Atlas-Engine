@@ -20,7 +20,7 @@ public:
 	EngineMouseButtonEvent(SDL_MouseButtonEvent event) {
 
 		windowID = event.windowID;
-		buttonDown = event.type == SDL_MOUSEBUTTONDOWN ? true : false;
+		state = event.state;
 		button = event.button;
 		x = event.x;
 		y = event.y;
@@ -33,9 +33,9 @@ public:
 	uint32_t windowID;
 
 	/**
-	 * True if the button was pressed down. If false, button was released
+	 * The state of the button. Might be BUTTON_PRESSED or BUTTON_RELEASED.
 	 */
-	bool buttonDown;
+	uint8_t state;
 
 	/**
 	 * The button which was pressed. See {@link SystemMouseButtonEvent.h} for more

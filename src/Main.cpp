@@ -122,7 +122,7 @@ void Main::Load() {
 	font = new Font("../data/roboto.ttf", 88, 5, 200);
 
 	DisplayLoadingScreen();
-	/*
+
 	skybox = new Cubemap("../data/cubemap/right.png",
 		"../data/cubemap/left.png",
 		"../data/cubemap/top.png",
@@ -130,11 +130,9 @@ void Main::Load() {
 		"../data/cubemap/front.png",
 		"../data/cubemap/back.png");
 
-
 	cubeMesh = new Mesh("../data/cube.dae");
 	sponzaMesh = new Mesh("../data/sponza/sponza.dae");
 	treeMesh = new Mesh("../data/tree.dae");
-	*/
 
 	terrainDiffuseMap = new Texture("../data/terrain/Ground_17_DIF.jpg");
 	terrainDisplacementMap = new Texture("../data/terrain/Ground_17_DISP.jpg");
@@ -169,15 +167,14 @@ void Main::SceneSetUp() {
 	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
 	scene->rootNode->Add(node);
 
-	/*
 	cubeActor = new Actor(cubeMesh);
 	treeActor = new Actor(treeMesh);
 	treeActor->modelMatrix = scale(mat4(1.0f), vec3(3.0f));
 	sponzaActor = new Actor(sponzaMesh);
 	sponzaActor->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
-	*/
+
 	DirectionalLight* directionalLight = new DirectionalLight(STATIONARY_LIGHT);
-	directionalLight->direction = vec3(0.0f, -0.1f, -1.0f);
+	directionalLight->direction = vec3(0.0f, -1.0f, 0.2f);
 	directionalLight->color = vec3(253, 194, 109) / 255.0f;
 	directionalLight->ambient = 0.05f;
 	// Cascaded shadow mapping
@@ -186,7 +183,7 @@ void Main::SceneSetUp() {
 	mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
 	directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
 	directionalLight->GetShadow()->sampleCount = 1;
-	//directionalLight->AddVolumetric(new Volumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f));
+	directionalLight->AddVolumetric(new Volumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f));
 
 	PointLight* pointLight1 = new PointLight(STATIONARY_LIGHT);
 	pointLight1->location = vec3(24.35f, 6.5f, 7.1f);
@@ -217,11 +214,11 @@ void Main::SceneSetUp() {
 	pointLight5->color = vec3(1.0f);
 	pointLight5->ambient = 0.1f;
 	pointLight5->AddShadow(0.0f, 512);
-	/*
+
 	node->Add(cubeActor);
 	scene->Add(sponzaActor);
 	scene->Add(treeActor);
-	*/
+
 	scene->Add(directionalLight);
 
 	scene->Add(pointLight1);
