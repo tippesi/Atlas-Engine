@@ -52,7 +52,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	pixelDistanceScale = (float)edgeValue / (float)padding;
 
-	for (int32_t i = 0; i < FONT_CHARACTER_COUNT; i++) {
+	for (int32_t i = 32; i < FONT_CHARACTER_COUNT; i++) {
 
 		auto glyph = &glyphs[i];
 

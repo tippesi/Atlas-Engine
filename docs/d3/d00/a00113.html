@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: src/mesh/MeshData.h File Reference</title>
+<title>Blue Engine: src/lighting/Shadow.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,77 +92,59 @@ $(document).ready(function(){initNavTree('d3/d00/a00113.html','../../');});
 <a href="#define-members">Macros</a> &#124;
 <a href="#typedef-members">Typedefs</a>  </div>
   <div class="headertitle">
-<div class="title">MeshData.h File Reference</div>  </div>
+<div class="title">Shadow.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d0/dc2/a00104_source.html">DataComponent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../df/d98/a00107_source.html">Material.h</a>&quot;</code><br />
-<code>#include &lt;vector&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../dd/d32/a00041_source.html">../System.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../dd/dad/a00005_source.html">../Camera.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d4/d51/a00017_source.html">../Framebuffer.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d4/dee/a00008_source.html">../Cubemap.h</a>&quot;</code><br />
 </div>
 <p><a href="../../d3/d00/a00113_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d9b/a00363.html">SubData</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/dbf/a00393.html">ShadowComponent</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/dc2/a00367.html">MeshData</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/d93/a00397.html">Shadow</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:af6a2b7e162833d5f19dc71de5487bd81"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d00/a00113.html#af6a2b7e162833d5f19dc71de5487bd81">PRIMITIVE_TRIANGLES</a>&#160;&#160;&#160;GL_TRIANGLES</td></tr>
-<tr class="separator:af6a2b7e162833d5f19dc71de5487bd81"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9f1c3285e824753ec6c54ab10343479c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d00/a00113.html#a9f1c3285e824753ec6c54ab10343479c">PRIMITIVE_TRIANGLE_STRIP</a>&#160;&#160;&#160;GL_TRIANGLE_STRIP</td></tr>
-<tr class="separator:a9f1c3285e824753ec6c54ab10343479c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35a0656a7c36621cf5eed9278154ca72"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d00/a00113.html#a35a0656a7c36621cf5eed9278154ca72">MAX_SHADOW_CASCADE_COUNT</a>&#160;&#160;&#160;4</td></tr>
+<tr class="separator:a35a0656a7c36621cf5eed9278154ca72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a0c3b0cef9535501214283c3a1b6776c7"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../d9/d9b/a00363.html">SubData</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d00/a00113.html#a0c3b0cef9535501214283c3a1b6776c7">SubData</a></td></tr>
-<tr class="separator:a0c3b0cef9535501214283c3a1b6776c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68038034f4a01c0588973457d6d71a7d"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../da/dbf/a00393.html">ShadowComponent</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d00/a00113.html#a68038034f4a01c0588973457d6d71a7d">ShadowComponent</a></td></tr>
+<tr class="separator:a68038034f4a01c0588973457d6d71a7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="a9f1c3285e824753ec6c54ab10343479c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9f1c3285e824753ec6c54ab10343479c">&#9670;&nbsp;</a></span>PRIMITIVE_TRIANGLE_STRIP</h2>
+<a id="a35a0656a7c36621cf5eed9278154ca72"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a35a0656a7c36621cf5eed9278154ca72">&#9670;&nbsp;</a></span>MAX_SHADOW_CASCADE_COUNT</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define PRIMITIVE_TRIANGLE_STRIP&#160;&#160;&#160;GL_TRIANGLE_STRIP</td>
+          <td class="memname">#define MAX_SHADOW_CASCADE_COUNT&#160;&#160;&#160;4</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00011">11</a> of file <a class="el" href="../../d3/d00/a00113_source.html">MeshData.h</a>.</p>
-
-</div>
-</div>
-<a id="af6a2b7e162833d5f19dc71de5487bd81"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af6a2b7e162833d5f19dc71de5487bd81">&#9670;&nbsp;</a></span>PRIMITIVE_TRIANGLES</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define PRIMITIVE_TRIANGLES&#160;&#160;&#160;GL_TRIANGLES</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00010">10</a> of file <a class="el" href="../../d3/d00/a00113_source.html">MeshData.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00009">9</a> of file <a class="el" href="../../d3/d00/a00113_source.html">Shadow.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Typedef Documentation</h2>
-<a id="a0c3b0cef9535501214283c3a1b6776c7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0c3b0cef9535501214283c3a1b6776c7">&#9670;&nbsp;</a></span>SubData</h2>
+<a id="a68038034f4a01c0588973457d6d71a7d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a68038034f4a01c0588973457d6d71a7d">&#9670;&nbsp;</a></span>ShadowComponent</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">typedef struct <a class="el" href="../../d9/d9b/a00363.html">SubData</a> <a class="el" href="../../d9/d9b/a00363.html">SubData</a></td>
+          <td class="memname">typedef struct <a class="el" href="../../da/dbf/a00393.html">ShadowComponent</a> <a class="el" href="../../da/dbf/a00393.html">ShadowComponent</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -174,7 +156,7 @@ Typedefs</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../d3/d00/a00113.html">MeshData.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_21d93b4c2deba69589411e8b07614db4.html">lighting</a></li><li class="navelem"><a class="el" href="../../d3/d00/a00113.html">Shadow.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

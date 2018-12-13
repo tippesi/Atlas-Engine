@@ -23,6 +23,9 @@ TerrainStorage::TerrainStorage(int32_t rootNodeCount, int32_t LoDCount) : rootNo
 
 TerrainStorageCell* TerrainStorage::GetCell(int32_t x, int32_t y, int32_t LoD) {
 
+	if (x < 0 || x >= LoDSideLengths[LoD] || y < 0 || y >= LoDSideLengths[LoD])
+		return nullptr;
+
 	return &cells[LoD][x * LoDSideLengths[LoD] + y];
 
 }

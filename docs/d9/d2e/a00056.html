@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: src/events/SystemEventHandler.h File Reference</title>
+<title>Blue Engine: src/Window.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,31 +88,181 @@ $(document).ready(function(){initNavTree('d9/d2e/a00056.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a>  </div>
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#define-members">Macros</a>  </div>
   <div class="headertitle">
-<div class="title">SystemEventHandler.h File Reference</div>  </div>
+<div class="title">Window.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d0/d89/a00071_source.html">SystemWindowEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d3/d8b/a00059_source.html">SystemKeyboardEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../df/d03/a00062_source.html">SystemMouseButtonEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../de/de1/a00065_source.html">SystemMouseMotionEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../da/d24/a00068_source.html">SystemMouseWheelEvent.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../dd/d32/a00041_source.html">System.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../dc/dee/a00053_source.html">Viewport.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">Texture.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../db/dab/a00089_source.html">events/EventDelegate.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../da/d24/a00068_source.html">events/EngineEventHandler.h</a>&quot;</code><br />
+<code>#include &quot;libraries/SDL/include/SDL.h&quot;</code><br />
 </div>
 <p><a href="../../d9/d2e/a00056_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/dfe/a00283.html">SystemEventHandler</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/de0/a00317.html">Window</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A simple window class.  <a href="../../da/de0/a00317.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
+Macros</h2></td></tr>
+<tr class="memitem:a717d60efc5617bae5bdb324d27245cb0"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d2e/a00056.html#a717d60efc5617bae5bdb324d27245cb0">WINDOWPOSITION_UNDEFINED</a>&#160;&#160;&#160;SDL_WINDOWPOS_UNDEFINED</td></tr>
+<tr class="separator:a717d60efc5617bae5bdb324d27245cb0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1bb83bcb779fa8ec1bfb9fcb36eaebc8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d2e/a00056.html#a1bb83bcb779fa8ec1bfb9fcb36eaebc8">WINDOW_FULLSCREEN</a>&#160;&#160;&#160;SDL_WINDOW_FULLSCREEN</td></tr>
+<tr class="separator:a1bb83bcb779fa8ec1bfb9fcb36eaebc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af80754a7799e8628ef4a3bf7251466ac"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d2e/a00056.html#af80754a7799e8628ef4a3bf7251466ac">WINDOW_SHOWN</a>&#160;&#160;&#160;SDL_WINDOW_SHOWN</td></tr>
+<tr class="separator:af80754a7799e8628ef4a3bf7251466ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4a9bb8b7dac7e8849db2674ad2d7ab5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d2e/a00056.html#aa4a9bb8b7dac7e8849db2674ad2d7ab5">WINDOW_HIDDEN</a>&#160;&#160;&#160;SDL_WINDOW_HIDDEN</td></tr>
+<tr class="separator:aa4a9bb8b7dac7e8849db2674ad2d7ab5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abf28aca437922018dd60985bc9dae7a8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d2e/a00056.html#abf28aca437922018dd60985bc9dae7a8">WINDOW_BORDERLESS</a>&#160;&#160;&#160;SDL_WINDOW_BORDERLESS</td></tr>
+<tr class="separator:abf28aca437922018dd60985bc9dae7a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e44f483b0114aa13e56472f015608d8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d2e/a00056.html#a5e44f483b0114aa13e56472f015608d8">WINDOW_RESIZABLE</a>&#160;&#160;&#160;SDL_WINDOW_RESIZABLE</td></tr>
+<tr class="separator:a5e44f483b0114aa13e56472f015608d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae0b2408f4d830ebe34a1a16a7409c55f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d2e/a00056.html#ae0b2408f4d830ebe34a1a16a7409c55f">WINDOW_MINIMIZED</a>&#160;&#160;&#160;SDL_WINDOW_MINIMIZED</td></tr>
+<tr class="separator:ae0b2408f4d830ebe34a1a16a7409c55f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a204d4593b88510275ab05fc5f87cee08"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d2e/a00056.html#a204d4593b88510275ab05fc5f87cee08">WINDOW_MAXIMIZED</a>&#160;&#160;&#160;SDL_WINDOW_MAXIMIZED</td></tr>
+<tr class="separator:a204d4593b88510275ab05fc5f87cee08"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="abf28aca437922018dd60985bc9dae7a8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abf28aca437922018dd60985bc9dae7a8">&#9670;&nbsp;</a></span>WINDOW_BORDERLESS</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define WINDOW_BORDERLESS&#160;&#160;&#160;SDL_WINDOW_BORDERLESS</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00018">18</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">Window.h</a>.</p>
+
+</div>
+</div>
+<a id="a1bb83bcb779fa8ec1bfb9fcb36eaebc8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1bb83bcb779fa8ec1bfb9fcb36eaebc8">&#9670;&nbsp;</a></span>WINDOW_FULLSCREEN</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define WINDOW_FULLSCREEN&#160;&#160;&#160;SDL_WINDOW_FULLSCREEN</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00015">15</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">Window.h</a>.</p>
+
+</div>
+</div>
+<a id="aa4a9bb8b7dac7e8849db2674ad2d7ab5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa4a9bb8b7dac7e8849db2674ad2d7ab5">&#9670;&nbsp;</a></span>WINDOW_HIDDEN</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define WINDOW_HIDDEN&#160;&#160;&#160;SDL_WINDOW_HIDDEN</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00017">17</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">Window.h</a>.</p>
+
+</div>
+</div>
+<a id="a204d4593b88510275ab05fc5f87cee08"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a204d4593b88510275ab05fc5f87cee08">&#9670;&nbsp;</a></span>WINDOW_MAXIMIZED</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define WINDOW_MAXIMIZED&#160;&#160;&#160;SDL_WINDOW_MAXIMIZED</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00021">21</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">Window.h</a>.</p>
+
+</div>
+</div>
+<a id="ae0b2408f4d830ebe34a1a16a7409c55f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae0b2408f4d830ebe34a1a16a7409c55f">&#9670;&nbsp;</a></span>WINDOW_MINIMIZED</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define WINDOW_MINIMIZED&#160;&#160;&#160;SDL_WINDOW_MINIMIZED</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00020">20</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">Window.h</a>.</p>
+
+</div>
+</div>
+<a id="a5e44f483b0114aa13e56472f015608d8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5e44f483b0114aa13e56472f015608d8">&#9670;&nbsp;</a></span>WINDOW_RESIZABLE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define WINDOW_RESIZABLE&#160;&#160;&#160;SDL_WINDOW_RESIZABLE</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00019">19</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">Window.h</a>.</p>
+
+</div>
+</div>
+<a id="af80754a7799e8628ef4a3bf7251466ac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af80754a7799e8628ef4a3bf7251466ac">&#9670;&nbsp;</a></span>WINDOW_SHOWN</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define WINDOW_SHOWN&#160;&#160;&#160;SDL_WINDOW_SHOWN</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00016">16</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">Window.h</a>.</p>
+
+</div>
+</div>
+<a id="a717d60efc5617bae5bdb324d27245cb0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a717d60efc5617bae5bdb324d27245cb0">&#9670;&nbsp;</a></span>WINDOWPOSITION_UNDEFINED</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define WINDOWPOSITION_UNDEFINED&#160;&#160;&#160;SDL_WINDOWPOS_UNDEFINED</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00013">13</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">Window.h</a>.</p>
+
+</div>
+</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../d9/d2e/a00056.html">SystemEventHandler.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../d9/d2e/a00056.html">Window.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

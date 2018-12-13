@@ -32,8 +32,19 @@ public:
 
 	}
 
+	/**
+	 * The button which was pressed on the controller. See {@link EngineControllerButtonEvent.h} for more.
+	 */
 	uint8_t button;
+
+	/**
+	 * The state of the button. Might be BUTTON_PRESSED or BUTTON_RELEASED.
+	 */
 	uint8_t state;
+
+	/**
+	 * The device ID of the game controller.
+	 */
 	int32_t device;
 
 };

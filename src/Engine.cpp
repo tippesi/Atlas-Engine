@@ -12,8 +12,6 @@ Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-
 	SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
 #else
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
@@ -29,6 +27,7 @@ Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 	Window* window = new Window(title, x, y, width, height, flags);
 
 #ifdef ENGINE_OGL
+
 	if (!gladLoadGL()) {
 		throw EngineException("Error initializing OpenGL");
 	}

@@ -4,71 +4,63 @@
 #include <stdlib.h>
 #include <time.h>
 
+KeyboardHandler::KeyboardHandler(Camera* camera, float speed, float reactivity) : 
+	speed(speed), reactivity(reactivity) {
 
-KeyboardHandler* CreateKeyboardHandler(Camera* camera, float speed, float reactivity) {
+	location = camera->location;
+	movement = vec2(0.0f);
 
-	KeyboardHandler* handler = new KeyboardHandler;
+	auto keyboardEventHandler = std::bind(&KeyboardHandler::KeyboardEventHandler, this, std::placeholders::_1);
+	EngineEventHandler::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
 
-	if (handler != NULL) {
-		
-		handler->speed = speed;
-		handler->reactivity = reactivity;
+}
 
-		handler->lock = false;
+void KeyboardHandler::Update(Camera* camera, uint32_t deltaTime) {
 
-		handler->location = camera->location;
+	const float increasedSpeed = 4.0f;
+	float floatDelta = (float)deltaTime / 1000.0f;
 
-		return handler;
+	location += camera->direction * movement.x * floatDelta * (speed + increasedSpeed);
+	location += camera->right * movement.y * floatDelta * (speed + increasedSpeed);
 
+	float progress = glm::clamp(reactivity * ((float)deltaTime / 16.0f), 0.0f, 1.0f);
+
+	camera->location = glm::mix(camera->location, location, progress);
+
+}
+
+void KeyboardHandler::KeyboardEventHandler(EngineKeyboardEvent event) {
+
+	if (event.keycode == KEY_W && event.state == BUTTON_PRESSED && !event.repeat) {
+		movement.x += 1.0f;
 	}
 
-	return NULL;
+	if (event.keycode == KEY_W && event.state == BUTTON_RELEASED) {
+		movement.x -= 1.0f;
+	}
 
-}
+	if (event.keycode == KEY_S && event.state == BUTTON_PRESSED && !event.repeat) {
+		movement.x -= 1.0f;
+	}
 
+	if (event.keycode == KEY_S && event.state == BUTTON_RELEASED) {
+		movement.x += 1.0f;
+	}
 
-void DeleteKeyboardHandler(KeyboardHandler* handler) {
+	if (event.keycode == KEY_D && event.state == BUTTON_PRESSED && !event.repeat) {
+		movement.y += 1.0f;
+	}
 
-	delete handler;
+	if (event.keycode == KEY_D && event.state == BUTTON_RELEASED) {
+		movement.y -= 1.0f;
+	}
 
-}
+	if (event.keycode == KEY_A && event.state == BUTTON_PRESSED && !event.repeat) {
+		movement.y -= 1.0f;
+	}
 
-
-void CalculateKeyboardHandler(KeyboardHandler* handler, Camera* camera, uint32_t deltatime) {
-
-	if (handler != NULL && camera != NULL && deltatime > 0) {
-
-		if (handler->lock == false) {
-
-			float floatdelta = (float)deltatime / 1000.0f;
-
-			const uint8_t *state = SDL_GetKeyboardState(NULL);
-
-			float increasedSpeed = 0.0f;
-
-			//You can use the left shift key for increased speed
-			if (state[SDL_SCANCODE_LSHIFT] != 0)
-				increasedSpeed = handler->speed * 4.0f;
-
-			if (state[SDL_SCANCODE_W] != 0) {
-				handler->location += camera->direction * floatdelta * (handler->speed + increasedSpeed);
-			}
-			if (state[SDL_SCANCODE_S] != 0) {
-				handler->location -= camera->direction * floatdelta * (handler->speed + increasedSpeed);
-			}
-			if (state[SDL_SCANCODE_A] != 0) {
-				handler->location -= camera->right * floatdelta * (handler->speed + increasedSpeed);
-			}
-			if (state[SDL_SCANCODE_D] != 0) {
-				handler->location += camera->right * floatdelta * (handler->speed + increasedSpeed);
-			}
-
-		}
-
-		float progress = glm::clamp(handler->reactivity * ((float)deltatime / 16.0f), 0.0f, 1.0f);
-
-		camera->location = glm::mix(camera->location, handler->location, progress);
-
+	if (event.keycode == KEY_A && event.state == BUTTON_RELEASED) {
+		movement.y += 1.0f;
 	}
 
 }

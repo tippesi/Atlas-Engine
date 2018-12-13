@@ -20,6 +20,8 @@ public:
 
 	RayIntersection MouseRayIntersection(Viewport* viewport, Camera* camera, Terrain* terrain);
 
+	RayIntersection MouseRayTerrainIntersection(Viewport* viewport, Camera* camera, Terrain* terrain);
+
 private:
     typedef struct Ray {
         vec3 origin;

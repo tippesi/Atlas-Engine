@@ -3,36 +3,25 @@
 
 #include "../System.h"
 #include "../Camera.h"
+#include "../events/EngineEventHandler.h"
 
-#include "../libraries/SDL/include/SDL.h"
 
-/**
+class KeyboardHandler {
 
-*/
-typedef struct KeyboardHandler {
+public:
+	KeyboardHandler(Camera* camera, float speed, float reactivity);
+
+	void Update(Camera* camera, uint32_t deltaTime);
 
 	float speed;
 	float reactivity;
 
-	bool lock;
+private:
+	void KeyboardEventHandler(EngineKeyboardEvent event);
 
-	glm::vec3 location;
+	vec3 location;
+	vec2 movement;
 
-}KeyboardHandler;
-
-/**
-
-*/
-KeyboardHandler* CreateKeyboardHandler(Camera* camera, float speed, float reactivity);
-
-/**
-
-*/
-void DeleteKeyboardHandler(KeyboardHandler* handler);
-
-/**
-
-*/
-void CalculateKeyboardHandler(KeyboardHandler* handler, Camera* camera, uint32_t deltatime);
+};
 
 #endif

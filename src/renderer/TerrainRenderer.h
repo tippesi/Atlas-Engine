@@ -31,7 +31,7 @@ private:
 
 	Uniform* heightScale;
 	Uniform* offset;
-	Uniform* scale;
+	Uniform* tileScale;
 	Uniform* modelMatrix;
 	Uniform* viewMatrix;
 	Uniform* projectionMatrix;

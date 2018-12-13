@@ -43,8 +43,14 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 
 void TextRenderer::Render(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 clipArea,
 	vec4 blendArea, float scale, bool alphaBlending, Framebuffer* framebuffer) {
-
+	
 	int32_t characterCount;
+
+	float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
+	float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+
+	if (x > width || y > height)
+		return;
 
 	shader->Bind();
 
@@ -63,9 +69,6 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
-
-	float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
-	float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
 
 	auto instances = CalculateCharacterInstances(font, text, &characterCount);
 

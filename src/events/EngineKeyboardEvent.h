@@ -21,9 +21,24 @@ public:
 
 	}
 
+	/**
+	 * The ID of the window the event occurred in.
+	 */
 	uint32_t windowID;
+
+	/**
+	 * The code of the key. See {@link EngineKeycodes.h} for more.
+	 */
 	Keycode keycode;
+
+	/**
+	 * The state of the button. Might be BUTTON_PRESSED or BUTTON_RELEASED.
+	 */
 	uint8_t state;
+
+	/**
+	 * True if the key was pressed for longer. False otherwise.
+	 */
 	bool repeat;
 
 };

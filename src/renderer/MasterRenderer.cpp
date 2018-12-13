@@ -79,10 +79,11 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glEnable(GL_DEPTH_TEST);
 
 	if (scene->sky->skybox != nullptr) {
-		//skyboxRenderer->Render(window, target, camera, scene, true);
+		skyboxRenderer->Render(window, target, camera, scene, true);
 	}
-
-	atmosphereRenderer->Render(window, target, camera, scene, true);
+	else {
+		// atmosphereRenderer->Render(window, target, camera, scene, true);
+	}
 
 	target->lightingFramebuffer->Unbind();
 
@@ -159,6 +160,11 @@ void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float 
 	float viewportWidth = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
 	float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
 
+	if (x > viewportWidth || y > viewportHeight ||
+		y + height < 0 || x + width < 0) {
+		return;
+	}
+
 	vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 	vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
@@ -168,6 +174,14 @@ void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float 
 
 void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
 	vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
+
+	float viewportWidth = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
+	float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+
+	if (x > viewportWidth || y > viewportHeight ||
+		y + height < 0 || x + width < 0) {
+		return;
+	}
 
 	vertexArray->Bind();
 
@@ -186,9 +200,6 @@ void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
-
-	float viewportWidth = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
-	float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
 
 	rectangleProjectionMatrix->SetValue(glm::ortho(0.0f, (float)viewportWidth, 0.0f, (float)viewportHeight));
 	rectangleOffset->SetValue(vec2(x, y));

@@ -1,14 +1,20 @@
 var dir_21d93b4c2deba69589411e8b07614db4 =
 [
-    [ "Light.h", "d2/d1f/a00083.html", "d2/d1f/a00083" ],
-    [ "Shadow.h", "da/d2a/a00086.html", "da/d2a/a00086" ],
-    [ "Sky.h", "db/dab/a00089.html", [
-      [ "Sky", "d8/df7/a00331.html", "d8/df7/a00331" ]
+    [ "DirectionalLight.h", "d0/dc2/a00104.html", [
+      [ "DirectionalLight", "de/d08/a00381.html", "de/d08/a00381" ]
     ] ],
-    [ "Skybox.h", "d1/dc1/a00092.html", [
-      [ "Skybox", "df/d91/a00335.html", "df/d91/a00335" ]
+    [ "ILight.h", "df/d98/a00107.html", "df/d98/a00107" ],
+    [ "PointLight.h", "d4/d81/a00110.html", [
+      [ "PointLight", "dc/dc9/a00389.html", "dc/dc9/a00389" ]
     ] ],
-    [ "Volumetric.h", "d9/d77/a00095.html", [
-      [ "Volumetric", "d0/d01/a00339.html", "d0/d01/a00339" ]
+    [ "Shadow.h", "d3/d00/a00113.html", "d3/d00/a00113" ],
+    [ "Sky.h", "d4/d3e/a00116.html", [
+      [ "Sky", "d7/d00/a00401.html", "d7/d00/a00401" ]
+    ] ],
+    [ "Skybox.h", "df/d6a/a00119.html", [
+      [ "Skybox", "de/de8/a00405.html", "de/de8/a00405" ]
+    ] ],
+    [ "Volumetric.h", "df/dc8/a00122.html", [
+      [ "Volumetric", "de/d3d/a00409.html", "de/d3d/a00409" ]
     ] ]
 ];

@@ -79,8 +79,24 @@ public:
 	 */
 	void SetDisplacementDistance(float distance);
 
-
+	/**
+	* Gets the height at a specific point on the terrain.
+	* @param x The x component of the point relative to the terrain origin
+	* @param z The z component of the point relative to the terrain origin
+	* @return The height of the terrain.
+	* @note This function is computationally expensive.
+	*/
 	float GetHeight(float x, float z);
+
+	/**
+	* Gets the storage cell for a point on the terrain.
+	* @param x The x component of the point relative to the terrain origin
+	* @param z The z component of the point relative to the terrain origin
+	* @param LoD The lod level of the storage cell.
+	* @return A pointer to a TerrainStorageObject. Equals nullptr if input wasn't valid.
+	* @note For every point there exist as many storage cells as there are lod levels.
+	*/
+	TerrainStorageCell* GetStorageCell(float x, float z, int32_t LoD);
 
 	/**
 	 * Binds the vertex array of the terrain
@@ -96,6 +112,7 @@ public:
 
 	vec3 translation;
 	float resolution;
+	float sideLength;
 
 	int32_t patchVertexCount;
 	int32_t patchSize;
@@ -115,6 +132,8 @@ private:
 	void GeneratePatchVertexBuffer(int32_t patchSizeFactor);
 
 	void GeneratePatchOffsets(int32_t patchSizeFactor);
+
+	float BarryCentric(vec3 p1, vec3 p2, vec3 p3, vec2 pos);
 
 	vector<vec2> vertices;
 

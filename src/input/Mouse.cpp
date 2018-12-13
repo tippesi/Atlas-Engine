@@ -77,7 +77,7 @@ void MouseHandler::MouseButtonEventHandler(EngineMouseButtonEvent event) {
 	if (event.button == activationButton && event.state == BUTTON_PRESSED)
 		activationButtonDown = true;
 
-	if (event.button == activationButton && !event.state == BUTTON_RELEASED)
+	if (event.button == activationButton && event.state == BUTTON_RELEASED)
 		activationButtonDown = false;
 
 }

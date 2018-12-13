@@ -27,7 +27,7 @@ Main::Main(int argc, char* argv[]) {
 	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
 	mouseHandler = new MouseHandler(camera, 1.5f, 0.015f);
-	keyboardHandler = CreateKeyboardHandler(camera, 10.0f*7.0f, 0.3f);
+	keyboardHandler = new KeyboardHandler(camera, 10.0f*7.0f, 0.3f);
 	controllerHandler = new ControllerHandler(camera, 1.5f, 7.0f, 0.2f, 5000.0f);
 
 	masterRenderer = new MasterRenderer();
@@ -59,7 +59,7 @@ void Main::Update(uint32_t deltaTime) {
 
 	if (!useControllerHandler) {
 		mouseHandler->Update(camera, deltaTime);
-		CalculateKeyboardHandler(keyboardHandler, camera, deltaTime);
+		keyboardHandler->Update(camera, deltaTime);
 	}
 	else {
 		controllerHandler->Update(camera, deltaTime);

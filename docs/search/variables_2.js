@@ -1,16 +1,19 @@
 var searchData=
 [
-  ['castshadow',['castShadow',['../d0/dc5/a00343.html#a1934993167197470aa0d1cd39f00cfd1',1,'Actor']]],
-  ['cell',['cell',['../d9/d4a/a00479.html#af03fa622a3bf6cdff4a975808fcbc7ad',1,'TerrainNode']]],
-  ['channels',['channels',['../d0/d2f/a00259.html#a6d460340a2f4afd888ca147fb8ef425c',1,'Texture']]],
-  ['characterscales',['characterScales',['../dc/d28/a00223.html#af3acb62210be37fe9941d0ecb5247580',1,'Font']]],
-  ['charactersizes',['characterSizes',['../dc/d28/a00223.html#a80dd0fc5fd4458124bc5ffe0c7d58df0',1,'Font']]],
-  ['chromaticaberration',['chromaticAberration',['../d7/d5e/a00467.html#a35272475952623f22859631fff25712c',1,'PostProcessing']]],
-  ['color',['color',['../d4/d4b/a00471.html#a10b84b80d8a82e91da621bdfdf6f14d2',1,'Vignette']]],
-  ['colorsreversed',['colorsReversed',['../d3/d5d/a00463.html#a424ebf8d33bb10046c81904853ad0b86',1,'ChromaticAberration']]],
-  ['componentcount',['componentCount',['../d8/dfc/a00327.html#a7203649ca4d9aa626b7e4f7edd817bfa',1,'Shadow']]],
-  ['components',['components',['../d8/dfc/a00327.html#af6def49d6a598efcdf02a8de904309bb',1,'Shadow::components()'],['../d0/dc5/a00435.html#a9bda16524c4387f32f5d206810c8d131',1,'ShaderBatch::components()']]],
-  ['configbatches',['configBatches',['../d0/dc5/a00435.html#ab0a701f3ae0d120d797b9310a63591cb',1,'ShaderBatch']]],
-  ['configs',['configs',['../d0/dc4/a00443.html#ae0653b0b4089981011a4498d1bbe7aed',1,'ShaderConfigBatch']]],
-  ['cubemap',['cubemap',['../df/d91/a00335.html#abd1f9af780106107a77cca24fe04a15f',1,'Skybox']]]
+  ['castshadow',['castShadow',['../da/d9c/a00413.html#a1934993167197470aa0d1cd39f00cfd1',1,'Actor']]],
+  ['cell',['cell',['../d2/d50/a00561.html#af03fa622a3bf6cdff4a975808fcbc7ad',1,'TerrainNode']]],
+  ['channels',['channels',['../da/d50/a00301.html#a6d460340a2f4afd888ca147fb8ef425c',1,'Texture']]],
+  ['characterscales',['characterScales',['../d0/d3e/a00253.html#af3acb62210be37fe9941d0ecb5247580',1,'Font']]],
+  ['charactersizes',['characterSizes',['../d0/d3e/a00253.html#a80dd0fc5fd4458124bc5ffe0c7d58df0',1,'Font']]],
+  ['chromaticaberration',['chromaticAberration',['../d5/d21/a00549.html#a35272475952623f22859631fff25712c',1,'PostProcessing']]],
+  ['color',['color',['../d5/d05/a00385.html#a0a4e6dd2746b93a9c4014e4bb78c8d66',1,'ILight::color()'],['../d0/d79/a00553.html#a10b84b80d8a82e91da621bdfdf6f14d2',1,'Vignette::color()']]],
+  ['colorsreversed',['colorsReversed',['../d8/deb/a00545.html#a424ebf8d33bb10046c81904853ad0b86',1,'ChromaticAberration']]],
+  ['componentcount',['componentCount',['../d7/d93/a00397.html#a7203649ca4d9aa626b7e4f7edd817bfa',1,'Shadow']]],
+  ['components',['components',['../d7/d93/a00397.html#af6def49d6a598efcdf02a8de904309bb',1,'Shadow::components()'],['../d7/d37/a00505.html#a9bda16524c4387f32f5d206810c8d131',1,'ShaderBatch::components()']]],
+  ['configbatches',['configBatches',['../d7/d37/a00505.html#ab0a701f3ae0d120d797b9310a63591cb',1,'ShaderBatch']]],
+  ['configs',['configs',['../da/def/a00513.html#ae0653b0b4089981011a4498d1bbe7aed',1,'ShaderConfigBatch']]],
+  ['controlleraxiseventdelegate',['controllerAxisEventDelegate',['../da/de0/a00317.html#ade9945c8fef5a5eaf73d4553385696df',1,'Window::controllerAxisEventDelegate()'],['../d2/d0a/a00333.html#a03980c7faf1fce86d968c3f39c0daac9',1,'EngineEventHandler::ControllerAxisEventDelegate()']]],
+  ['controllerbuttoneventdelegate',['controllerButtonEventDelegate',['../da/de0/a00317.html#a2a51ef124f3c831a77265e507d396522',1,'Window::controllerButtonEventDelegate()'],['../d2/d0a/a00333.html#a0aa34212db1b33602fc75d3b068ecaa8',1,'EngineEventHandler::ControllerButtonEventDelegate()']]],
+  ['controllerdeviceeventdelegate',['ControllerDeviceEventDelegate',['../d2/d0a/a00333.html#aa0779f276bbb962b4e8b477800a51902',1,'EngineEventHandler']]],
+  ['cubemap',['cubemap',['../d7/d93/a00397.html#a31b40361de05da7498266f12e8a6add2',1,'Shadow::cubemap()'],['../de/de8/a00405.html#abd1f9af780106107a77cca24fe04a15f',1,'Skybox::cubemap()']]]
 ];

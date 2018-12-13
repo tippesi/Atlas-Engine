@@ -23,8 +23,19 @@ public:
 
 	}
 
+	/**
+	 * The axis which was moved on the controller. See {@link EngineControllerAxisEvent.h} for more.
+	 */
 	uint8_t axis;
-	int32_t value;
+
+	/**
+	 * The value of the axis. Ranges from -32767-32767.
+	 */
+	int16_t value;
+
+	/**
+	 * The device ID of the game controller.
+	 */
 	int32_t device;
 
 };

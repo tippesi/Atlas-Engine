@@ -38,7 +38,7 @@ public:
 	uint8_t state;
 
 	/**
-	 * The button which was pressed. See {@link SystemMouseButtonEvent.h} for more
+	 * The button which was pressed. See {@link EngineMouseButtonEvent.h} for more
 	 */
 	uint8_t button;
 

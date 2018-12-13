@@ -1,7 +1,9 @@
 var a00077 =
 [
-    [ "MouseHandler", "d1/d5d/a00311.html", "d1/d5d/a00311" ],
-    [ "CalculateMouseHandler", "d1/d09/a00077.html#ad1ccbd2a9d79e3370264df63a9913b6f", null ],
-    [ "CreateMouseHandler", "d1/d09/a00077.html#a8a2fc8437d6f255b28b4a42f33cb81be", null ],
-    [ "DeleteMouseHandler", "d1/d09/a00077.html#a9b770d6e9c06675e389b9d8e4f2755e1", null ]
+    [ "EngineMouseButtonEvent", "d9/d48/a00345.html", "d9/d48/a00345" ],
+    [ "MOUSEBUTTON_LEFT", "d1/d09/a00077.html#a423dac436e2428f0976e5deca8490d8d", null ],
+    [ "MOUSEBUTTON_MIDDLE", "d1/d09/a00077.html#a60f7b9568350914cd612bb03adc04fba", null ],
+    [ "MOUSEBUTTON_RIGHT", "d1/d09/a00077.html#a06383063b240590d65abe04c5a6bb376", null ],
+    [ "MOUSEBUTTON_X1", "d1/d09/a00077.html#a33555f10d1f0cbe0f67f696c866dd4f8", null ],
+    [ "MOUSEBUTTON_X2", "d1/d09/a00077.html#a578cb8a8284edede424e3d6a852c1d61", null ]
 ];

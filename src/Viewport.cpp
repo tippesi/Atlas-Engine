@@ -35,6 +35,8 @@ vec3 Viewport::Unproject(vec3 point, Camera* camera) {
 	point.x = 2.0f * (point.x - fX) / (fWidth - fX) - 1.0f;
 	point.y = 2.0f * (point.y - fY) / (fHeight - fY) - 1.0f;
 
+	point.y *= -1.0f;
+
 	vec4 transformed = camera->inverseViewMatrix * camera->inverseProjectionMatrix * vec4(point, 1.0f);
 
 	transformed.w = 1.0f / transformed.w;

@@ -13,10 +13,10 @@ TerrainRenderer::TerrainRenderer() {
 	nearShader->AddComponent(VERTEX_SHADER, vertexPath);
 	nearShader->AddComponent(TESSELATION_CONTROL_SHADER, tessControlPath);
 	nearShader->AddComponent(TESSELATION_EVALUATION_SHADER, tessEvalPath);
-	//nearShader->AddComponent(GEOMETRY_SHADER, geometryPath);
+	// nearShader->AddComponent(GEOMETRY_SHADER, geometryPath);
 	nearShader->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
-	//nearShader->AddMacro("GEOMETRY_SHADER");
+	// nearShader->AddMacro("GEOMETRY_SHADER");
 
 	nearShader->Compile();
 
@@ -54,7 +54,7 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 
 		for (TerrainNode*& node : terrain->renderList) {
 
-			float patchScale = node->sideLength * terrain->resolution / 8.0f;
+			float patchScale = node->sideLength / 8.0f;
 
 			node->cell->heightField->Bind(GL_TEXTURE0);
 			node->cell->normalMap->Bind(GL_TEXTURE1);
@@ -63,10 +63,10 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 
 			displacementScale->SetValue(.15f);
 
-			nodeLocation->SetValue(node->location * patchScale);
-			nodeSideLength->SetValue(node->sideLength * patchScale);
+			nodeLocation->SetValue(node->location);
+			nodeSideLength->SetValue(node->sideLength);
 
-			scale->SetValue(patchScale);
+			tileScale->SetValue(2.0f * terrain->resolution);
 			patchOffsetsScale->SetValue(patchScale);
 
 			glDrawArraysInstanced(GL_PATCHES, 0, terrain->patchVertexCount, 64);
@@ -86,7 +86,7 @@ void TerrainRenderer::GetUniforms() {
 	heightScale = nearShader->GetUniform("heightScale");
 
 	offset = nearShader->GetUniform("offset");
-	scale = nearShader->GetUniform("scale");
+	tileScale = nearShader->GetUniform("tileScale");
 	modelMatrix = nearShader->GetUniform("mMatrix");
 	viewMatrix = nearShader->GetUniform("vMatrix");
 	projectionMatrix = nearShader->GetUniform("pMatrix");

@@ -1,14 +1,12 @@
-layout(quads, fractional_odd_spacing, cw) in;
+layout(quads, fractional_even_spacing, cw) in;
 
 out vec2 teTexCoords;
 
-uniform sampler2D heightField;
 uniform sampler2D displacementMap;
 
 uniform vec2 nodeLocation;
 uniform float nodeSideLength;
 
-uniform float heightScale;
 uniform float displacementScale;
 uniform float displacementDistance;
 
@@ -23,12 +21,16 @@ void main(){
     float u = gl_TessCoord.x;
     float v = gl_TessCoord.y;
 	
+	//  vec3 pos = gl_in[0].gl_Position.xyz;
+    // pos.xz += gl_TessCoord.xy * tileSize.xz;
+	// Use barrycentric coordinates to carefully calculate the height
+	
 	// world position
 	vec4 position =
-	((1 - u) * (1 - v) * gl_in[12].gl_Position +
+	((1 - u) * (1 - v) * gl_in[3].gl_Position +
 	u * (1 - v) * gl_in[0].gl_Position +
-	u * v * gl_in[3].gl_Position +
-	(1 - u) * v * gl_in[15].gl_Position);
+	u * v * gl_in[1].gl_Position +
+	(1 - u) * v * gl_in[2].gl_Position);
 	
 	float vertexDistance = distance(position.xyz, cameraLocation);
 	
@@ -39,7 +41,7 @@ void main(){
 	
 	float displacement = texture(displacementMap, texCoords * 40.0f).r * displacementScale * clamp((displacementDistance - vertexDistance), 0.0f, 1.0f);
 	
-	position.y = texture(heightField, texCoords).r * heightScale + displacement;
+	position.y += displacement;
 	
 #ifndef GEOMETRY_SHADER
 	position = pMatrix * vMatrix * position;

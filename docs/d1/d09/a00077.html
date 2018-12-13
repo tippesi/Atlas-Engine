@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: src/input/Mouse.h File Reference</title>
+<title>Blue Engine: src/events/EngineMouseButtonEvent.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,115 +89,114 @@ $(document).ready(function(){initNavTree('d1/d09/a00077.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#define-members">Macros</a>  </div>
   <div class="headertitle">
-<div class="title">Mouse.h File Reference</div>  </div>
+<div class="title">EngineMouseButtonEvent.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../dd/dad/a00005_source.html">../Camera.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d9/d2e/a00056_source.html">../events/SystemEventHandler.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../dd/d32/a00041_source.html">../System.h</a>&quot;</code><br />
+<code>#include &quot;../libraries/SDL/include/SDL.h&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>&quot;</code><br />
 </div>
 <p><a href="../../d1/d09/a00077_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d5d/a00311.html">MouseHandler</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d48/a00345.html">EngineMouseButtonEvent</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A class to distribute mouse button events.  <a href="../../d9/d48/a00345.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
-Functions</h2></td></tr>
-<tr class="memitem:a8a2fc8437d6f255b28b4a42f33cb81be"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d1/d5d/a00311.html">MouseHandler</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d09/a00077.html#a8a2fc8437d6f255b28b4a42f33cb81be">CreateMouseHandler</a> (<a class="el" href="../../de/dd2/a00207.html">Camera</a> *camera, float sensibility, float reactivity)</td></tr>
-<tr class="separator:a8a2fc8437d6f255b28b4a42f33cb81be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9b770d6e9c06675e389b9d8e4f2755e1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d09/a00077.html#a9b770d6e9c06675e389b9d8e4f2755e1">DeleteMouseHandler</a> (<a class="el" href="../../d1/d5d/a00311.html">MouseHandler</a> *mouseHandler)</td></tr>
-<tr class="separator:a9b770d6e9c06675e389b9d8e4f2755e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1ccbd2a9d79e3370264df63a9913b6f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d09/a00077.html#ad1ccbd2a9d79e3370264df63a9913b6f">CalculateMouseHandler</a> (<a class="el" href="../../d1/d5d/a00311.html">MouseHandler</a> *, <a class="el" href="../../de/dd2/a00207.html">Camera</a> *camera, uint32_t deltatime)</td></tr>
-<tr class="separator:ad1ccbd2a9d79e3370264df63a9913b6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
+Macros</h2></td></tr>
+<tr class="memitem:a423dac436e2428f0976e5deca8490d8d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d09/a00077.html#a423dac436e2428f0976e5deca8490d8d">MOUSEBUTTON_LEFT</a>&#160;&#160;&#160;SDL_BUTTON_LEFT</td></tr>
+<tr class="separator:a423dac436e2428f0976e5deca8490d8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a60f7b9568350914cd612bb03adc04fba"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d09/a00077.html#a60f7b9568350914cd612bb03adc04fba">MOUSEBUTTON_MIDDLE</a>&#160;&#160;&#160;SDL_BUTTON_MIDDLE</td></tr>
+<tr class="separator:a60f7b9568350914cd612bb03adc04fba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06383063b240590d65abe04c5a6bb376"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d09/a00077.html#a06383063b240590d65abe04c5a6bb376">MOUSEBUTTON_RIGHT</a>&#160;&#160;&#160;SDL_BUTTON_RIGHT</td></tr>
+<tr class="separator:a06383063b240590d65abe04c5a6bb376"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a33555f10d1f0cbe0f67f696c866dd4f8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d09/a00077.html#a33555f10d1f0cbe0f67f696c866dd4f8">MOUSEBUTTON_X1</a>&#160;&#160;&#160;SDL_BUTTON_X1</td></tr>
+<tr class="separator:a33555f10d1f0cbe0f67f696c866dd4f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a578cb8a8284edede424e3d6a852c1d61"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d09/a00077.html#a578cb8a8284edede424e3d6a852c1d61">MOUSEBUTTON_X2</a>&#160;&#160;&#160;SDL_BUTTON_X2</td></tr>
+<tr class="separator:a578cb8a8284edede424e3d6a852c1d61"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Function Documentation</h2>
-<a id="ad1ccbd2a9d79e3370264df63a9913b6f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad1ccbd2a9d79e3370264df63a9913b6f">&#9670;&nbsp;</a></span>CalculateMouseHandler()</h2>
+<h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="a423dac436e2428f0976e5deca8490d8d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a423dac436e2428f0976e5deca8490d8d">&#9670;&nbsp;</a></span>MOUSEBUTTON_LEFT</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void CalculateMouseHandler </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d1/d5d/a00311.html">MouseHandler</a> *&#160;</td>
-          <td class="paramname">, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../de/dd2/a00207.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>deltatime</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
+          <td class="memname">#define MOUSEBUTTON_LEFT&#160;&#160;&#160;SDL_BUTTON_LEFT</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00008">8</a> of file <a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a>.</p>
+
 </div>
 </div>
-<a id="a8a2fc8437d6f255b28b4a42f33cb81be"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8a2fc8437d6f255b28b4a42f33cb81be">&#9670;&nbsp;</a></span>CreateMouseHandler()</h2>
+<a id="a60f7b9568350914cd612bb03adc04fba"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a60f7b9568350914cd612bb03adc04fba">&#9670;&nbsp;</a></span>MOUSEBUTTON_MIDDLE</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d1/d5d/a00311.html">MouseHandler</a>* CreateMouseHandler </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../de/dd2/a00207.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>sensibility</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>reactivity</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
+          <td class="memname">#define MOUSEBUTTON_MIDDLE&#160;&#160;&#160;SDL_BUTTON_MIDDLE</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00009">9</a> of file <a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a>.</p>
+
 </div>
 </div>
-<a id="a9b770d6e9c06675e389b9d8e4f2755e1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9b770d6e9c06675e389b9d8e4f2755e1">&#9670;&nbsp;</a></span>DeleteMouseHandler()</h2>
+<a id="a06383063b240590d65abe04c5a6bb376"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a06383063b240590d65abe04c5a6bb376">&#9670;&nbsp;</a></span>MOUSEBUTTON_RIGHT</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void DeleteMouseHandler </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d1/d5d/a00311.html">MouseHandler</a> *&#160;</td>
-          <td class="paramname"><em>mouseHandler</em></td><td>)</td>
-          <td></td>
+          <td class="memname">#define MOUSEBUTTON_RIGHT&#160;&#160;&#160;SDL_BUTTON_RIGHT</td>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00010">10</a> of file <a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="a33555f10d1f0cbe0f67f696c866dd4f8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a33555f10d1f0cbe0f67f696c866dd4f8">&#9670;&nbsp;</a></span>MOUSEBUTTON_X1</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define MOUSEBUTTON_X1&#160;&#160;&#160;SDL_BUTTON_X1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00011">11</a> of file <a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="a578cb8a8284edede424e3d6a852c1d61"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a578cb8a8284edede424e3d6a852c1d61">&#9670;&nbsp;</a></span>MOUSEBUTTON_X2</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define MOUSEBUTTON_X2&#160;&#160;&#160;SDL_BUTTON_X2</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00012">12</a> of file <a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a>.</p>
 
 </div>
 </div>
@@ -206,7 +205,7 @@ Functions</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_d365e15d984c8d0205117ee0c40d6716.html">input</a></li><li class="navelem"><a class="el" href="../../d1/d09/a00077.html">Mouse.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../d1/d09/a00077.html">EngineMouseButtonEvent.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

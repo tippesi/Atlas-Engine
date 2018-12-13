@@ -9,10 +9,36 @@ RayCasting::RayCasting() {
 
 RayIntersection RayCasting::MouseRayIntersection(Viewport* viewport, Camera* camera, Terrain* terrain) {
 
-	RayIntersection intersection;
+	auto intersection = MouseRayTerrainIntersection(viewport, camera, terrain);
+
+	return intersection;
+
+}
+
+RayIntersection RayCasting::MouseRayTerrainIntersection(Viewport* viewport, Camera* camera, Terrain* terrain) {
+
+	const float linearStepLength = 1.0f;
 
 	auto ray = CalculateRay(viewport, camera);
 
+	auto distance = linearStepLength;
+
+	vec3 position = ray.origin;
+	vec3 nextPosition;
+
+	while (distance < camera->farPlane) {
+		nextPosition = ray.origin + ray.direction * distance;
+		if (!IsUnderground(position, terrain) && IsUnderground(nextPosition, terrain)) {
+			return BinarySearch(ray, terrain, distance - linearStepLength, distance, 10);
+		}
+		position = nextPosition;
+		distance += linearStepLength;
+	}
+
+	RayIntersection intersection;
+	intersection.hasIntersected = false;
+	intersection.location = vec3(0.0f);
+	intersection.distance = 0.0f;
 	return intersection;
 
 }
@@ -24,7 +50,11 @@ RayIntersection RayCasting::BinarySearch(Ray ray, Terrain* terrain, float start,
 
 	if (count == 0) {
 		auto position = ray.origin + ray.direction * half;
-
+		RayIntersection intersection;
+		intersection.location = position;
+		intersection.distance = half;
+		intersection.hasIntersected = true;
+		return intersection;
 	}
 
 	if (IntersectionInRange(ray, terrain, start, half)) {
@@ -51,9 +81,9 @@ bool RayCasting::IntersectionInRange(Ray ray, Terrain* terrain, float start, flo
 
 bool RayCasting::IsUnderground(vec3 position, Terrain* terrain) {
 
-	//float height = 
+	float height = terrain->GetHeight(position.x, position.z);
 
-	return true;
+	return (height > position.y);
 
 }
 

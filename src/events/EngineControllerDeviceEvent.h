@@ -19,7 +19,14 @@ public:
 
 	}
 
+	/**
+	 * The type of the event. See {@link EngineControllerDeviceEvent.h} for more.
+	 */
 	uint32_t type;
+
+	/**
+	 * The device ID of the game controller.
+	 */
 	int32_t device;
 
 };

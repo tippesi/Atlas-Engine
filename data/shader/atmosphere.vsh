@@ -123,6 +123,9 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
 	if (RayIntersection(r0, r, planetCenter, rPlanet, pb.x, pb.y))
 		p.y = pb.x < 0 ? p.y : pb.x;
 	
+	if (pb.x > 0)
+		return;
+	
     float iStepSize = (p.y - p.x) / float(iSteps);
 
     // Initialize the primary ray time.

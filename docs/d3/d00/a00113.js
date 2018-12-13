@@ -1,8 +1,7 @@
 var a00113 =
 [
-    [ "SubData", "d9/d9b/a00363.html", "d9/d9b/a00363" ],
-    [ "MeshData", "df/dc2/a00367.html", "df/dc2/a00367" ],
-    [ "PRIMITIVE_TRIANGLE_STRIP", "d3/d00/a00113.html#a9f1c3285e824753ec6c54ab10343479c", null ],
-    [ "PRIMITIVE_TRIANGLES", "d3/d00/a00113.html#af6a2b7e162833d5f19dc71de5487bd81", null ],
-    [ "SubData", "d3/d00/a00113.html#a0c3b0cef9535501214283c3a1b6776c7", null ]
+    [ "ShadowComponent", "da/dbf/a00393.html", "da/dbf/a00393" ],
+    [ "Shadow", "d7/d93/a00397.html", "d7/d93/a00397" ],
+    [ "MAX_SHADOW_CASCADE_COUNT", "d3/d00/a00113.html#a35a0656a7c36621cf5eed9278154ca72", null ],
+    [ "ShadowComponent", "d3/d00/a00113.html#a68038034f4a01c0588973457d6d71a7d", null ]
 ];

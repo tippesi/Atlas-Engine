@@ -4,7 +4,7 @@ uniform sampler2D heightField;
 
 uniform float heightScale;
 
-uniform float scale;
+uniform float tileScale;
 uniform vec2 patchOffsets[64];
 uniform float patchOffsetsScale;
 
@@ -15,7 +15,7 @@ uniform mat4 mMatrix;
 
 void main() {
 	
-	vec2 localPosition = patchOffsets[gl_InstanceID] * patchOffsetsScale + scale * vPosition;
+	vec2 localPosition = patchOffsets[gl_InstanceID] * patchOffsetsScale + tileScale * vPosition;
 	vec2 position =  nodeLocation + localPosition;
 	
 	vec2 texCoords = localPosition;

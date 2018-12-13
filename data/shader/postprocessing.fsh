@@ -49,41 +49,29 @@ vec3 saturate(vec3 color, float factor) {
 	return mix(pixelLuminance, color, factor);
 }
 
-// Generate a random number using x, y and iTime as input.
-float random(vec2 fragCoord) {
-	
-    float x = fragCoord.xy.x;
-    float y = fragCoord.xy.y;
-    float w = hdrTextureResolution.x;
-    float h = hdrTextureResolution.y;    
-    
-    float f0 = sin(x / w * (65543.0 * sin((timeInMilliseconds + 7.0) * 13.0))) * 0.5 + 0.5;
-    float f1 = cos(y / h * (65449.0 * cos((timeInMilliseconds + 13.0) * 7.0))) * 0.5 + 0.5;
-    float f2 = sin(cos((timeInMilliseconds + 41.0) * sin(65557.0 * f0 * f1)) * 13.0) * 0.5 + 0.5;
-    
-    uint b0 = uint(f0 * 64063.0);
-    uint b1 = uint(f1 * 65381.0);
-    uint b2 = uint(f2 * 65447.0);
-    
-    uint s1 = 64463u;
-    uint s2 = 50273u;
-      
-    s1 = (s1 + b0) % 65521u;
-    s2 = (s1 + s2) % 65521u;
-    
-    s1 = (s1 + b1) % 65521u;
-    s2 = (s1 + s2) % 65521u;
-    
-    s1 = (s1 + b2) % 65521u;
-    s2 = (s1 + s2) % 65521u;
-    
-    return float(s2) / 65521.0;
+
+//note: uniformly distributed, normalized rand, [0;1[
+float nrand( vec2 n )
+{
+	return fract(sin(dot(n.xy, vec2(12.9898, 78.233)))* 43758.5453);
+}
+//note: remaps v to [0;1] in interval [a;b]
+float remap( float a, float b, float v )
+{
+	return clamp( (v-a) / (b-a), 0.0, 1.0 );
+}
+//note: quantizes in l levels
+float truncf( float a, float l )
+{
+	return floor(a*l)/l;
 }
 
-// Apply dithering by adding a random value smaller than
-// quantizition error.
-vec3 dither(vec3 color, vec2 fragCoord) {
-    return color + vec3((random(fragCoord) - 0.5) / 5.0f / 256.0);
+float n2rand( vec2 n )
+{
+	float t = fract(timeInMilliseconds/1000000.0f);
+	float nrnd0 = nrand( n + 0.07*t );
+	float nrnd1 = nrand( n + 0.11*t );
+	return (nrnd0+nrnd1) / 2.0;
 }
 
 void main() {
@@ -141,7 +129,7 @@ void main() {
 #ifndef ENGINE_FASTER_FRAMEBUFFERS
 	color *= exposure;
 	
-	// color = clamp(dither(color, fTexCoord), 0.0f, 1.0f);
+	color = clamp(color + n2rand(2.0f * fTexCoord - 1.0f) / 256.0f, 0.0f, 1.0f);
 	
 	// Apply the tone mapping because we want the colors to be back in
 	// normal range
