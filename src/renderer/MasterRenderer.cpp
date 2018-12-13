@@ -136,6 +136,8 @@ void MasterRenderer::RenderTexture(Window* window, Texture* texture, float x, fl
 	texturedRectangleProjectionMatrix->SetValue(glm::ortho(0.0f, (float)viewportWidth, 0.0f, (float)viewportHeight));
 	texturedRectangleOffset->SetValue(vec2(x, y));
 	texturedRectangleScale->SetValue(vec2(width, height));
+	texturedRectangleBlendArea->SetValue(blendArea);
+	texturedRectangleClipArea->SetValue(clipArea);
 	texturedRectangleTexture->SetValue(0);
 
 	texture->Bind(GL_TEXTURE0);

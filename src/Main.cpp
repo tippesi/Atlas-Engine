@@ -85,6 +85,8 @@ void Main::Render(uint32_t deltaTime) {
 
 	masterRenderer->textRenderer->Render(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 5.0f, true);
 
+	masterRenderer->RenderTexture(window, renderTarget->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT1), 0.0f, 0.0f, 1280, 720);
+
 }
 
 void Main::Stream() {
