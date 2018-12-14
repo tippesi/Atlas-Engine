@@ -2,26 +2,31 @@
 #define KERNEL_H
 
 #include "System.h"
+#include <vector>
 
 class Kernel {
 
 public:
     Kernel();
 
-    void CalculateGaussian(float sigma, int32_t size);
+    void CalculateGaussian(float sigma, uint32_t size);
 
-    void CalculateBox(int32_t size);
+    void CalculateBox(uint32_t size);
 
-    void Get(int32_t* size, float* weights, float* offsets);
+    void Get(vector<vector<float>>*& weights, vector<vector<ivec2>>*& offsets);
 
-    void GetLinearized(int32_t* size, float* weights, float* offsets);
+    void GetLinearized(vector<float>*& weights, vector<float>*& offsets);
 
 private:
-    float* weights;
-    float* offsets;
+	float Gaussian(float x, float y, float mean, float sigma);
 
-    float* weightsLinearized;
-    float* offsetsLinearized;
+    vector<vector<float>> weights;
+    vector<vector<ivec2>> offsets;
+
+    vector<float> weightsLinearized;
+    vector<float> offsetsLinearized;
+
+	bool changed;
 
 };
 

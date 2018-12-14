@@ -133,6 +133,7 @@ void Main::Load() {
 	cubeMesh = new Mesh("../data/cube.dae");
 	sponzaMesh = new Mesh("../data/sponza/sponza.dae");
 	treeMesh = new Mesh("../data/tree.dae");
+	treeMesh->cullBackFaces = false;
 
 	terrainDiffuseMap = new Texture("../data/terrain/Ground_17_DIF.jpg");
 	terrainDisplacementMap = new Texture("../data/terrain/Ground_17_DISP.jpg");

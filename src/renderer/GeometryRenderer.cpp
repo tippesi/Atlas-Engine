@@ -27,6 +27,8 @@ GeometryRenderer::GeometryRenderer() {
 
 void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
+	bool backFaceCulling = true;
+
 	for (auto& renderListBatchesKey : scene->renderList->orderedRenderBatches) {
 
 		int32_t configBatchID = renderListBatchesKey.first;
@@ -53,6 +55,15 @@ void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* came
 
 			auto mesh = actorBatch->GetMesh();
 			mesh->Bind();
+
+			if (!mesh->cullBackFaces && backFaceCulling) {
+				glDisable(GL_CULL_FACE);
+				backFaceCulling = false;
+			}
+			else if (mesh->cullBackFaces && !backFaceCulling) {
+				glEnable(GL_CULL_FACE);
+				backFaceCulling = true;
+			}
 
 			// Render the sub data of the mesh that use this specific shader
 			for (auto& subData : renderListBatch.subData) {

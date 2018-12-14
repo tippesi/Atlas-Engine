@@ -136,15 +136,14 @@ bool Shader::Compile() {
 #ifdef ENGINE_SHOW_LOG
 		int32_t programLogLength, length;
 		glGetProgramiv(ID, GL_INFO_LOG_LENGTH, &programLogLength);
-		char *programLog = new char[programLogLength];
-		glGetProgramInfoLog(ID, programLogLength, &length, programLog);
+		auto programLog = vector<char>(programLogLength);
+		glGetProgramInfoLog(ID, programLogLength, &length, programLog.data());
 
 		EngineLog("Error linking shader files:");
 		for (auto& source : components) {
 			EngineLog("%s", source->filename.c_str());
 		}
-		EngineLog("%s", programLog);
-		delete[] programLog;
+		EngineLog("%s", programLog.data());
 #endif
 
 	}

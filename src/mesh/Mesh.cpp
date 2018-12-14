@@ -5,6 +5,8 @@ Mesh::Mesh(MeshData* data) : data(data) {
 
 	InitializeVertexArray();
 
+	cullBackFaces = true;
+
 }
 
 Mesh::Mesh(string filename) {
@@ -12,6 +14,8 @@ Mesh::Mesh(string filename) {
 	data = ModelLoader::LoadMesh(filename);
 
 	InitializeVertexArray();
+
+	cullBackFaces = true;
 
 }
 

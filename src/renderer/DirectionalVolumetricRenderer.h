@@ -2,6 +2,7 @@
 #define DIRECTIONALVOLUMETRICRENDERER_H
 
 #include "../System.h"
+#include "../Kernel.h"
 #include "IRenderer.h"
 
 class DirectionalVolumetricRenderer : public IRenderer{
@@ -21,6 +22,8 @@ private:
     void GetBilateralBlurUniforms();
 
     Framebuffer* framebuffer;
+
+	Kernel* blurKernel;
 
     Shader* volumetricShader;
     Shader* bilateralBlurShader;

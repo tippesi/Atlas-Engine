@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <sys/stat.h>
+#include <vector>
 
 string ShaderSource::sourceDirectory = "";
 
@@ -114,8 +115,8 @@ bool ShaderSource::Compile() {
 #ifdef ENGINE_SHOW_LOG
 		int32_t shaderLogLength, length;
 		glGetShaderiv(ID, GL_INFO_LOG_LENGTH, &shaderLogLength);
-		char *shaderLog = new char[shaderLogLength];
-		glGetShaderInfoLog(ID, shaderLogLength, &length, shaderLog);
+		auto shaderLog = vector<char>(shaderLogLength);
+		glGetShaderInfoLog(ID, shaderLogLength, &length, shaderLog.data());
 
 		if (type == GL_VERTEX_SHADER) {
 			EngineLog("\n\nCompiling Vertexshader failed:");
@@ -124,9 +125,7 @@ bool ShaderSource::Compile() {
 			EngineLog("\n\nCompiling Fragmentshader failed:");
 		}
 
-		EngineLog("Compilation failed: %s\nError: %s", filename.c_str(), shaderLog);
-
-		delete shaderLog;
+		EngineLog("Compilation failed: %s\nError: %s", filename.c_str(), shaderLog.data());
 #endif
 
 		return false;

@@ -10,6 +10,9 @@ DirectionalVolumetricRenderer::DirectionalVolumetricRenderer() {
 
     framebuffer = new Framebuffer(0, 0);
 
+	blurKernel = new Kernel();
+	blurKernel->CalculateBox(21);
+
     volumetricShader = new Shader();
     volumetricShader->AddComponent(VERTEX_SHADER, volumetricVertexPath);
     volumetricShader->AddComponent(FRAGMENT_SHADER, volumetricFragmentPath);
@@ -83,12 +86,15 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
 	target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
 
-    float offsetArray[] = {0, 1, 2, 3, 4, 5, 6, 7};
-    float weightArray[] = {1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f, 1/15.0f};
+	vector<float>* kernelWeights;
+	vector<float>* kernelOffsets;
 
-    offsets->SetValue(offsetArray, 8);
-    weights->SetValue(weightArray, 8);
-    kernelSize->SetValue(8);
+	blurKernel->GetLinearized(kernelWeights, kernelOffsets);
+
+	weights->SetValue(kernelWeights->data(), kernelWeights->size());
+    offsets->SetValue(kernelOffsets->data(), kernelOffsets->size());
+
+    kernelSize->SetValue((int32_t)kernelWeights->size());
 
     for (ILight* light : scene->lights) {
 

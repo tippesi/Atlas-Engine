@@ -32,6 +32,8 @@ public:
 
 	MeshData* data;
 
+	bool cullBackFaces;
+
 private:
 	void InitializeVertexArray();
 

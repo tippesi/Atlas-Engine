@@ -28,7 +28,7 @@ public:
 	EngineWindowEvent(SDL_WindowEvent event) {
 		windowID = event.windowID;
 		type = event.event;
-		data = glm::ivec2(event.data1, event.data2);
+		data = ivec2(event.data1, event.data2);
 	}
 
 	/**
@@ -44,7 +44,7 @@ public:
 	/**
 	 * The data specific to the event. Represents screen space coordinates
 	 */
-	glm::ivec2 data;
+	ivec2 data;
 
 };
 

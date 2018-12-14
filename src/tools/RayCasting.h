@@ -39,7 +39,7 @@ private:
 
     void MouseEventHandler(EngineMouseMotionEvent event);
 
-    glm::ivec2 mouseLocation;
+    ivec2 mouseLocation;
 
 
 };

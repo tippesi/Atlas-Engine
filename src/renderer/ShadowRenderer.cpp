@@ -19,6 +19,8 @@ ShadowRenderer::ShadowRenderer() {
 
 void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
 
+	bool backFaceCulling = true;
+
 	framebuffer->Bind();
 
 	for (auto& light : scene->lights) {
@@ -63,6 +65,15 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 					Mesh* mesh = actorBatch->GetMesh();
 					mesh->Bind();
+
+					if (!mesh->cullBackFaces && backFaceCulling) {
+						glDisable(GL_CULL_FACE);
+						backFaceCulling = false;
+					}
+					else if (mesh->cullBackFaces && !backFaceCulling) {
+						glEnable(GL_CULL_FACE);
+						backFaceCulling = true;
+					}
 
 					for (auto subData : mesh->data->subData) {
 
