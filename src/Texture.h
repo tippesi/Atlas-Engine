@@ -94,7 +94,7 @@ public:
 	/// <summary>
 	/// Removes gamma correction of image data (sRGB to RGB)
 	/// </summary>
-	static void UncorrectGamma(uint8_t* data, int32_t width, int32_t height, int32_t channels, float gamma);
+	static void UncorrectGamma(uint8_t* data, int32_t width, int32_t height, int32_t channels);
 
 	/// Returns the base format of a sized internal format
 	static int32_t GetBaseFormat(int32_t sizedFormat);

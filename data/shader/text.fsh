@@ -29,8 +29,8 @@ void main() {
 	
 	float intensity = texture(glyphsTexture, fTexCoord).r;
 
-	float outlineDistance = (edgeValue - pixelDistanceScale * outlineScale) / 255.0f - intensity;
-	float inlineDistance = edgeValue / 255.0f - intensity;
+	float outlineDistance = (float(edgeValue) - pixelDistanceScale * outlineScale) / 255.0f - intensity;
+	float inlineDistance = float(edgeValue) / 255.0f - intensity;
 
 	float outlineMultiplier = clamp(0.5f - factor * outlineDistance, 0.0f, 1.0f);
     float inlineMultiplier = clamp(0.5f - factor * inlineDistance, 0.0f, 1.0f);

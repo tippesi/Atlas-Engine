@@ -102,13 +102,13 @@ bool Shader::Compile() {
 			ID = glCreateProgram();
 		}
 
-		for (ShaderSource* source : components) {
+		for (auto& source : components) {
 			glAttachShader(ID, source->ID);
 		}
 
 		glLinkProgram(ID);
 
-		for (ShaderSource* source : components) {
+		for (auto& source : components) {
 			glDetachShader(ID, source->ID);
 		}
 
@@ -132,6 +132,20 @@ bool Shader::Compile() {
 			return true;
 
 		}
+
+#ifdef ENGINE_SHOW_LOG
+		int32_t programLogLength, length;
+		glGetProgramiv(ID, GL_INFO_LOG_LENGTH, &programLogLength);
+		char *programLog = new char[programLogLength];
+		glGetProgramInfoLog(ID, programLogLength, &length, programLog);
+
+		EngineLog("Error linking shader files:");
+		for (auto& source : components) {
+			EngineLog("%s", source->filename.c_str());
+		}
+		EngineLog("%s", programLog);
+		delete[] programLog;
+#endif
 
 	}
 

@@ -14,9 +14,6 @@ DirectionalLightRenderer::DirectionalLightRenderer() {
 	shader->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
 	shader->AddMacro("SHADOWS");
-#ifdef ENGINE_OGL
-	shader->AddMacro("SHADOW_FILTERING");
-#endif
 
 	shader->Compile();
 

@@ -6,6 +6,7 @@ project(BlueEngine)
 cmake_minimum_required(VERSION 3.6)
 
 option(BUILD_LIBRARY "Build as library" OFF)
+option(OPENGL_ES "Use OpenGL ES instead of OpenGL" OFF)
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 	message(FATAL_ERROR "32 bit isn't supported")
@@ -25,6 +26,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/libraries/glad)
 # Setting linker flags and library stuff for the different platforms
 
 if(MSVC)
+	add_definitions(-DENGINE_WINDOWS)
     # for detecting Windows compiler MSVC
 	find_library(SDL_LIBRARY SDL2 ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib)
 	find_library(SDLMAIN_LIBRARY SDL2main ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib)
@@ -33,6 +35,7 @@ if(MSVC)
 endif()
 
 if(APPLE)
+	add_definitions(-DENGINE_OSX)
     # for MacOS X or iOS, watchOS, tvOS (since 3.10.3)
     find_library(ASSIMP_LIBRARY assimp.4.1.0 ${CMAKE_CURRENT_SOURCE_DIR}/lib/Mac)
     #find_library(SDLMAIN_LIBRARY SDL2main ${CMAKE_CURRENT_SOURCE_DIR}/lib/Mac)
@@ -50,6 +53,7 @@ if(APPLE)
 endif()
 
 if(UNIX AND NOT APPLE)
+	add_definitions(-DENGINE_LINUX)
     # for Linux, BSD, Solaris, Minix
     find_library(ASSIMP_LIBRARY assimp.4.1.0 ${CMAKE_CURRENT_SOURCE_DIR}/lib/Linux)
     find_library(SDLMAIN_LIBRARY SDL2main ${CMAKE_CURRENT_SOURCE_DIR}/lib/Linux)
@@ -85,6 +89,12 @@ file(GLOB_RECURSE BLUE_ENGINE_SOURCE_FILES
         )
 		
 list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*src/libraries/.*")
+
+if (OPENGL_ES)
+add_definitions(-DENGINE_GLES)
+else()
+add_definitions(-DENGINE_GL)
+endif()
 
 # When the engine is just a subproject we dont want to produce an executable
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)

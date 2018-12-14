@@ -84,10 +84,12 @@ bool ShaderSource::Compile() {
 
 	string composedCode;
 
-#ifdef ENGINE_OGL
-	composedCode.append("#version 410\n\n#define ENGINE_OGL\n");
-#else
-	composedCode.append("#version 320 es\n\nprecision highp float;\n#define ENGINE_GLES\n")
+#ifdef ENGINE_GL
+	composedCode.append("#version 410\n\n#define ENGINE_GL\n");
+#elif ENGINE_GLES
+	composedCode.append("#version 320 es\n\nprecision highp float;\nprecision highp sampler2D;\
+		\nprecision highp samplerCube;\nprecision highp sampler2DArrayShadow;\nprecision highp sampler2DArray;\
+		\nprecision highp samplerCubeShadow;\nprecision highp int;\n#define ENGINE_GLES\n");
 #endif
 
 	for (list<string>::iterator iterator = macros.begin(); iterator != macros.end(); iterator++) {

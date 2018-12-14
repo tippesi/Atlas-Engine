@@ -17,8 +17,7 @@
 #include "libraries/glm/gtx/common.hpp"
 #include "libraries/glm/gtx/transform.hpp"
 
-#if  defined(ANDROID)
-#define ENGINE_GLES
+#if  defined(ENGINE_ANDROID)
 
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
@@ -34,11 +33,10 @@
 
 #define EngineLog(...) __android_log_print(ANDROID_LOG_INFO, "ENGINE_LOG", __VA_ARGS__)
 
-#elif defined(_MSC_VER) || defined(__linux__) || defined(__APPLE__)
-#define ENGINE_OGL
+#elif defined(ENGINE_WINDOWS) || defined(ENGINE_LINUX) || defined(ENGINE_OSX)
 
 // GLAD
-#ifdef _WIN32
+#ifdef ENGINE_WINDOWS
 #define APIENTRY __stdcall
 #include <direct.h>
 #endif

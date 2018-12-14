@@ -82,7 +82,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 		skyboxRenderer->Render(window, target, camera, scene, true);
 	}
 	else {
-		// atmosphereRenderer->Render(window, target, camera, scene, true);
+		atmosphereRenderer->Render(window, target, camera, scene, true);
 	}
 
 	target->lightingFramebuffer->Unbind();

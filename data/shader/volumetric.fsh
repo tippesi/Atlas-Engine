@@ -54,7 +54,7 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
     vec3 rayVector = fragPos;
     float rayLength = length(rayVector);
     vec3 rayDirection = rayVector / rayLength;
-    float stepLength = rayLength / sampleCount;
+    float stepLength = rayLength / float(sampleCount);
     vec3 stepVector = rayDirection * stepLength;
  
     float foginess = 0.0f;
@@ -85,6 +85,6 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 
     }
 
-    return (foginess / sampleCount);
+    return foginess / float(sampleCount);
 
 }

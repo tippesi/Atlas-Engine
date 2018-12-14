@@ -74,13 +74,13 @@ void Terrain::SetLoDDistance(int32_t LoD, float distance) {
 
 }
 
-void Terrain::SetTessellationFunction(float factor, float slope, float shift, int32_t maxLevel) {
+void Terrain::SetTessellationFunction(float factor, float slope, float shift, float maxLevel) {
 
 	tessellationFactor = factor;
 	tessellationSlope = slope;
 	tessellationShift = shift;
 
-	maxTessellationLevel = (maxLevel > 64 ? 64 : maxLevel) < 1 ? 1 : maxLevel;
+	maxTessellationLevel = glm::clamp(maxLevel, 1.0f, 64.0f);
 
 }
 

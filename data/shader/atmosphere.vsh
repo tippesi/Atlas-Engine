@@ -21,7 +21,7 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
 
 void main() {
 	
-    vec4 pos = vec4(vPosition * 6871.0f - vec3(0.0f, 6371, 0.0f), 1.0);
+    vec4 pos = vec4(vPosition * 6871.0f - vec3(0.0f, 6371.0f, 0.0f), 1.0f);
 	fPosition = pos.xyz - cameraLocation;
 	gl_Position = (pMatrix * vMatrix * pos).xyww;
 	
@@ -29,8 +29,8 @@ void main() {
         normalize(fPosition),           // normalized ray direction
         vec3(cameraLocation),               // ray origin
         -sunDirection,                        // position of the sun
-        6371,                         // radius of the planet in meters
-        6871,                         // radius of the atmosphere in meters
+        6371.0f,                         // radius of the planet in meters
+        6871.0f,                         // radius of the atmosphere in meters
         vec3(5.5e-3, 13.0e-3, 22.4e-3), // Rayleigh scattering coefficient
         21e-3                          // Mie scattering coefficient
     );	
@@ -109,8 +109,8 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
     pSun = normalize(pSun);
     r = normalize(r);
 	
-	totalRlh = vec3(0,0,0);
-    totalMie = vec3(0,0,0);
+	totalRlh = vec3(0.0f);
+    totalMie = vec3(0.0f);
 
 	vec2 p;
 	if (!RayIntersection(r0, r, planetCenter, rAtmos, p.x, p.y))
@@ -121,9 +121,9 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
 	
 	vec2 pb;
 	if (RayIntersection(r0, r, planetCenter, rPlanet, pb.x, pb.y))
-		p.y = pb.x < 0 ? p.y : pb.x;
+		p.y = pb.x < 0.0f ? p.y : pb.x;
 	
-	if (pb.x > 0)
+	if (pb.x > 0.0f)
 		return;
 	
     float iStepSize = (p.y - p.x) / float(iSteps);
@@ -134,14 +134,14 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
     // Initialize accumulators for Rayleigh and Mie scattering.
 
     // Initialize optical depth accumulators for the primary ray.
-    float iOdRlh = 0.0;
-    float iOdMie = 0.0;
+    float iOdRlh = 0.0f;
+    float iOdMie = 0.0f;
 	
     // Sample the primary ray.
     for (int i = 0; i < iSteps; i++) {
 
         // Calculate the primary ray sample position.
-        vec3 iPos = r0 + r * (iTime + iStepSize * 0.5);
+        vec3 iPos = r0 + r * (iTime + iStepSize * 0.5f);
 
         // Calculate the height of the sample.
         float iHeight = distance(iPos, planetCenter) - rPlanet;

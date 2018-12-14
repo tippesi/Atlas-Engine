@@ -85,8 +85,6 @@ void Main::Render(uint32_t deltaTime) {
 
 	masterRenderer->textRenderer->Render(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 5.0f, true);
 
-	masterRenderer->RenderTexture(window, renderTarget->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT1), 0.0f, 0.0f, 1280, 720);
-
 }
 
 void Main::Stream() {
@@ -168,6 +166,7 @@ void Main::SceneSetUp() {
 	SceneNode* node = new SceneNode();
 	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
 	scene->rootNode->Add(node);
+	scene->sky->skybox = new Skybox(skybox);
 
 	cubeActor = new Actor(cubeMesh);
 	treeActor = new Actor(treeMesh);

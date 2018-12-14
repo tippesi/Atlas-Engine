@@ -8,9 +8,12 @@ const int DA = 1;
 uniform float tessellationFactor;
 uniform float tessellationSlope;
 uniform float tessellationShift;
-uniform int maxTessellationLevel;
+uniform float maxTessellationLevel;
 
 uniform vec3 cameraLocation;
+
+// Nvidia frustum culling
+// https://github.com/NVIDIAGameWorks/GraphicsSamples/blob/master/samples/es3aep-kepler/TerrainTessellation/assets/shaders/terrain_control.glsl
 
 float GetTessLevel(float distance) {
 
@@ -33,10 +36,10 @@ void main() {
 			float distanceCD = distance(cameraLocation, midCD);
 			float distanceDA = distance(cameraLocation, midDA);
 			
-			gl_TessLevelOuter[AB] = mix(1, maxTessellationLevel, GetTessLevel(distanceAB));
-			gl_TessLevelOuter[BC] = mix(1, maxTessellationLevel, GetTessLevel(distanceBC));
-			gl_TessLevelOuter[CD] = mix(1, maxTessellationLevel, GetTessLevel(distanceCD));
-			gl_TessLevelOuter[DA] = mix(1, maxTessellationLevel, GetTessLevel(distanceDA));
+			gl_TessLevelOuter[AB] = mix(1.0f, maxTessellationLevel, GetTessLevel(distanceAB));
+			gl_TessLevelOuter[BC] = mix(1.0f, maxTessellationLevel, GetTessLevel(distanceBC));
+			gl_TessLevelOuter[CD] = mix(1.0f, maxTessellationLevel, GetTessLevel(distanceCD));
+			gl_TessLevelOuter[DA] = mix(1.0f, maxTessellationLevel, GetTessLevel(distanceDA));
 	
 			gl_TessLevelInner[0] = (gl_TessLevelOuter[BC] + gl_TessLevelOuter[DA]) / 2.0f;
 			gl_TessLevelInner[1] = (gl_TessLevelOuter[AB] + gl_TessLevelOuter[CD]) / 2.0f;

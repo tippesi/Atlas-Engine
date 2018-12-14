@@ -65,10 +65,10 @@ public:
 	 * @remarks The tessellation for a point p is calculated by:
 	 * {@code
 	 * distance = length(camera->location, p);
-	 * tessLevel = mix(1, maxLevel, clamp(t(distance), 0, 1));
+	 * tessLevel = mix(1.0f, maxLevel, clamp(t(distance), 0.0f, 1.0f));
 	 * }
 	 */
-	void SetTessellationFunction(float factor, float slope, float shift, int32_t maxLevel = 64);
+	void SetTessellationFunction(float factor, float slope, float shift, float maxLevel = 64.0f);
 
 	/**
 	 * Sets the distance where the displacement should start
@@ -121,7 +121,7 @@ public:
 	float tessellationFactor;
 	float tessellationSlope;
 	float tessellationShift;
-	int32_t maxTessellationLevel;
+	float maxTessellationLevel;
 
 	float heightScale;
 	float displacementDistance;

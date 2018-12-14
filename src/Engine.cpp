@@ -5,7 +5,7 @@ Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 
 	SDL_Init(SDL_INIT_EVERYTHING);
 
-#ifdef ENGINE_OGL
+#ifdef ENGINE_GL
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
@@ -13,7 +13,7 @@ Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
 	SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
-#else
+#elif ENGINE_GLES
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
@@ -26,16 +26,24 @@ Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 
 	Window* window = new Window(title, x, y, width, height, flags);
 
-#ifdef ENGINE_OGL
-
+#if defined(ENGINE_WINDOWS) || defined(ENGINE_LINUX) || defined(ENGINE_OSX)
+#ifdef ENGINE_GL
 	if (!gladLoadGL()) {
 		throw EngineException("Error initializing OpenGL");
 	}
+#elif ENGINE_GLES
+	if (SDL_GL_LoadLibrary(nullptr) != 0) {
+		throw EngineException("Error initializing OpenGL ES");
+	}
+	gladLoadGLES2Loader(SDL_GL_GetProcAddress);
+	SDL_GL_UnloadLibrary();
+#endif
 #endif
 
 	int value;
 
 #ifdef ENGINE_SHOW_LOG
+	EngineLog("OpenGL Version: %s", glGetString(GL_VERSION));
 	SDL_GL_GetAttribute(SDL_GL_RED_SIZE, &value);
 	EngineLog("Native colorbuffer red component precision %d bits", value);
 	SDL_GL_GetAttribute(SDL_GL_GREEN_SIZE, &value);
@@ -56,7 +64,8 @@ Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-#ifdef ENGINE_OGL
+#ifdef ENGINE_GL
+	// Standard in OpenGL ES
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 #endif		
 

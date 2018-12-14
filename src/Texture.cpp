@@ -61,7 +61,7 @@ Texture::Texture(string filename, bool withoutCorrection) {
 	}
 
 	// OpenGL ES doesn't guarantee that mipmaps are working in sRGB color space so we better ignore gamma correction
-#ifdef ENGINE_OGL
+#ifdef ENGINE_GL
 	if (channels == 4) {
 		int32_t internalFormat = withoutCorrection ? GL_RGBA8 : GL_SRGB8_ALPHA8;
 		GenerateTexture(GL_UNSIGNED_BYTE, internalFormat, GL_RGBA, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
@@ -73,16 +73,15 @@ Texture::Texture(string filename, bool withoutCorrection) {
 	if (channels == 1) {
 		GenerateTexture(GL_UNSIGNED_BYTE, GL_R8, GL_RED, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
 	}
-#else
-	// We want to uncorrect the data ourself, when OpenGL isn't doing it for us
-	UncorrectGamma(data, width, height, channels, 2.2f);
-
+#elif ENGINE_GLES
 	// For OpenGL ES we use different texture formats
 	if (channels == 4) {
-		GenerateTexture(GL_UNSIGNED_BYTE, GL_RGBA4, GL_RGBA, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
+		UncorrectGamma(dataVector.data(), width, height, channels);
+		GenerateTexture(GL_UNSIGNED_BYTE, GL_RGBA8, GL_RGBA, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
 	}
 	if (channels == 3) {
-		GenerateTexture(GL_UNSIGNED_BYTE, GL_RGB565, GL_RGB, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
+		UncorrectGamma(dataVector.data(), width, height, channels);
+		GenerateTexture(GL_UNSIGNED_BYTE, GL_RGB8, GL_RGB, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
 	}
 	if (channels == 1) {
 		GenerateTexture(GL_UNSIGNED_BYTE, GL_R8, GL_RED, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
@@ -239,14 +238,19 @@ void Texture::SetAnisotropyLevel(int32_t anisotropyLevel) {
 
 }
 
-void Texture::UncorrectGamma(uint8_t* data, int32_t width, int32_t height, int32_t channels, float gamma) {
+void Texture::UncorrectGamma(uint8_t* data, int32_t width, int32_t height, int32_t channels) {
 
 	for (int32_t i = 0; i < width * height * channels; i++) {
 		// Don't correct the aplha values
 		if (channels == 4 && (i + 1) % 4 == 0)
 			continue;
+
+		// Using OpenGL conversion:
+		float value = (float)data[i] / 255.0f;
+		value = value <= 0.04045f ? value / 12.92f : powf((value + 0.055f) / 1.055f, 2.4f);
 		// Before we can uncorrect it we have to bring it in normalized space
-		data[i] = (uint8_t)(powf((float)data[i] / 255.0f, gamma) * 255.0f);
+		data[i] = (uint8_t)(glm::clamp(value, 0.0f, 1.0f) * 255.0f);
+
 	}
 
 }
@@ -303,7 +307,7 @@ void Texture::GenerateTexture(GLenum dataFormat, int32_t internalFormat,
 			}
 			else {
 
-#ifdef ENGINE_OGL
+#ifdef ENGINE_GL
 				glTexParameterf(target, GL_TEXTURE_LOD_BIAS, LoD);
 #endif
 
@@ -312,7 +316,7 @@ void Texture::GenerateTexture(GLenum dataFormat, int32_t internalFormat,
 		}
 		else {
 
-#ifdef ENGINE_OGL
+#ifdef ENGINE_GL
 			glTexParameterf(target, GL_TEXTURE_LOD_BIAS, LoD);
 #endif
 

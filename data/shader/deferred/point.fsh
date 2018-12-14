@@ -102,7 +102,7 @@ float ComputeScattering(vec3 fragPos) {
 		
 	float rayLength = distance(rayStart, rayEnd);
 
-	float stepLength = rayLength / sampleCount;
+	float stepLength = rayLength / float(sampleCount);
 	vec3 stepVector = rayDirection  * stepLength;
 
 	float foginess = 0.0f;
@@ -123,6 +123,6 @@ float ComputeScattering(vec3 fragPos) {
 
 	}
 
-	return clamp(foginess / sampleCount, 0.0f, 1.0f);
+	return foginess / float(sampleCount);
 
 }
