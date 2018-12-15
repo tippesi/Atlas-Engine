@@ -12,6 +12,9 @@
 #define CONTROLLERAXIS_LEFTTRIGGER SDL_CONTROLLER_AXIS_TRIGGERLEFT
 #define CONTROLLERAXIS_RIGHTTRIGGER SDL_CONTROLLER_AXIS_TRIGGERRIGHT
 
+/**
+ * A class to distribute controller axis events.
+ */
 class EngineControllerAxisEvent {
 
 public:

@@ -11,7 +11,7 @@ DirectionalVolumetricRenderer::DirectionalVolumetricRenderer() {
     framebuffer = new Framebuffer(0, 0);
 
 	blurKernel = new Kernel();
-	blurKernel->CalculateBox(21);
+	blurKernel->CalculateBoxFilter(21);
 
     volumetricShader = new Shader();
     volumetricShader->AddComponent(VERTEX_SHADER, volumetricVertexPath);
@@ -91,8 +91,8 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
 	blurKernel->GetLinearized(kernelWeights, kernelOffsets);
 
-	weights->SetValue(kernelWeights->data(), kernelWeights->size());
-    offsets->SetValue(kernelOffsets->data(), kernelOffsets->size());
+	weights->SetValue(kernelWeights->data(), (int32_t)kernelWeights->size());
+    offsets->SetValue(kernelOffsets->data(), (int32_t)kernelOffsets->size());
 
     kernelSize->SetValue((int32_t)kernelWeights->size());
 

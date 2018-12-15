@@ -9,6 +9,9 @@
 #define CONTROLLER_REMOVED SDL_CONTROLLERDEVICEREMOVED
 #define CONTROLLER_MAPPED SDL_CONTROLLERDEVICEREMAPPED
 
+/**
+ * A class to distribute controller device events.
+ */
 class EngineControllerDeviceEvent {
 
 public:

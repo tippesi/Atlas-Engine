@@ -31,9 +31,9 @@ Mesh* ActorBatch::GetMesh() {
 
 }
 
-int32_t ActorBatch::GetSize() {
+uint32_t ActorBatch::GetSize() {
 
-	return actors.size();
+	return (uint32_t)actors.size();
 
 }
 

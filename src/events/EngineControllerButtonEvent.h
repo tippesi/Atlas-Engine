@@ -21,6 +21,9 @@
 #define CONTROLLERBUTTON_GUIDE SDL_CONTROLLER_BUTTON_GUIDE
 #define CONTROLLERBUTTON_START SDL_CONTROLLER_BUTTON_START
 
+/**
+ * A class to distribute controller button events.
+ */
 class EngineControllerButtonEvent {
 
 public:

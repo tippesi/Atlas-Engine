@@ -6,7 +6,7 @@ Kernel::Kernel() {
 
 }
 
-void Kernel::CalculateGaussian(float sigma, uint32_t size) {
+void Kernel::CalculateGaussianFilter(float sigma, uint32_t size) {
 
 	if (size % 2 == 0)
 		return;
@@ -38,7 +38,7 @@ void Kernel::CalculateGaussian(float sigma, uint32_t size) {
 
 }
 
-void Kernel::CalculateBox(uint32_t size) {
+void Kernel::CalculateBoxFilter(uint32_t size) {
 
 	if (size % 2 == 0)
 		return;
@@ -78,14 +78,14 @@ void Kernel::GetLinearized(vector<float>*& weights, vector<float>*& offsets) {
 		return;
 	}
 
-	uint32_t size = this->weights.size();
+	uint32_t size = (uint32_t)this->weights.size();
 
 	vector<float> oneDimensionalWeights(size);
 	vector<float> oneDimensionalOffsets(size);
 
 	// Shrink the 2-dimensional kernel to a 1-dimensional one.
 	for (uint32_t x = 0; x < size; x++) {
-		oneDimensionalOffsets[x] = this->offsets[x][0].x;
+		oneDimensionalOffsets[x] = (float)this->offsets[x][0].x;
 		for (uint32_t y = 0; y < size; y++) {
 			oneDimensionalWeights[x] += this->weights[x][y];
 		}
@@ -119,6 +119,6 @@ void Kernel::GetLinearized(vector<float>*& weights, vector<float>*& offsets) {
 
 float Kernel::Gaussian(float x, float y, float mean, float sigma) {
 
-	return expf(-0.5 * (powf((x - mean) / sigma, 2.0f) + powf((y - mean) / sigma, 2.0f))) / (2.0f * 3.141592643f * sigma * sigma);
+	return expf(-0.5f * (powf((x - mean) / sigma, 2.0f) + powf((y - mean) / sigma, 2.0f))) / (2.0f * 3.141592643f * sigma * sigma);
 
 }

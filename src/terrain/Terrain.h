@@ -20,7 +20,7 @@ class Terrain {
 public:
 
 	/**
-	 * Constructs a terrain
+	 * Constructs a Terrain object.
 	 * @param rootNodeCount The number of root nodes. Root nodes are the lowest level of detail
 	 * @param LoDCount The number of level of detail levels. Results in LoDCount - 1 subdivisions of the root nodes.
 	 * @param patchSizeFactor Changes the size of a patch and the number of vertices in a patch.
