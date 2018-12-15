@@ -1,6 +1,6 @@
 var a00107 =
 [
-    [ "ILight", "d5/d05/a00385.html", "d5/d05/a00385" ],
+    [ "ILight", "dc/dc9/a00389.html", "dc/dc9/a00389" ],
     [ "DIRECTIONAL_LIGHT", "df/d98/a00107.html#a8c33bb342be242cfbdd43923c1abeea6", null ],
     [ "MOVABLE_LIGHT", "df/d98/a00107.html#ac4df35ec263304203c862176ec45ded1", null ],
     [ "POINT_LIGHT", "df/d98/a00107.html#a67c0f98568552ff44b7b0461fb3fdb39", null ],

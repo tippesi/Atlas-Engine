@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Material Class Reference</title>
+<title>Blue Engine: DataComponent&lt; T &gt; Class Template Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,71 +89,124 @@ $(document).ready(function(){initNavTree('dc/d2f/a00425.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../db/d43/a00422.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Material Class Reference</div>  </div>
+<div class="title">DataComponent&lt; T &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../de/d76/a00134_source.html">Material.h</a>&gt;</code></p>
+<p>Manage the data of the vertex buffer of a mesh.  
+ <a href="../../dc/d2f/a00425.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a137e987401b63eb7c6c27c3e38bc74b5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a137e987401b63eb7c6c27c3e38bc74b5">Material</a> ()</td></tr>
-<tr class="separator:a137e987401b63eb7c6c27c3e38bc74b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a29194f54f95adb35452acd85066b3b7d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a29194f54f95adb35452acd85066b3b7d">Update</a> ()</td></tr>
-<tr class="separator:a29194f54f95adb35452acd85066b3b7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0a6c4ebddfb34ca0983147df2bb18ce6"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a0a6c4ebddfb34ca0983147df2bb18ce6">HasDiffuseMap</a> ()</td></tr>
-<tr class="separator:a0a6c4ebddfb34ca0983147df2bb18ce6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2783d07c154d246ff07b6da410bc6cac"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a2783d07c154d246ff07b6da410bc6cac">HasNormalMap</a> ()</td></tr>
-<tr class="separator:a2783d07c154d246ff07b6da410bc6cac"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaf3bea92537811ed351d2fe586bf5a4c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#aaf3bea92537811ed351d2fe586bf5a4c">HasSpecularMap</a> ()</td></tr>
-<tr class="separator:aaf3bea92537811ed351d2fe586bf5a4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad175cea38b9abed95c2f93b8ef6ce526"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#ad175cea38b9abed95c2f93b8ef6ce526">HasDisplacementMap</a> ()</td></tr>
-<tr class="separator:ad175cea38b9abed95c2f93b8ef6ce526"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c19452d71f54075df8f5405b03129f4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a2c19452d71f54075df8f5405b03129f4">~Material</a> ()</td></tr>
-<tr class="separator:a2c19452d71f54075df8f5405b03129f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:a3236ad6bf5ab136c151544f27782252c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../da/d50/a00301.html">Texture</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a3236ad6bf5ab136c151544f27782252c">diffuseMap</a></td></tr>
-<tr class="separator:a3236ad6bf5ab136c151544f27782252c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a915ba1f28243cdd67be5ccc70d4073d8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../da/d50/a00301.html">Texture</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a915ba1f28243cdd67be5ccc70d4073d8">normalMap</a></td></tr>
-<tr class="separator:a915ba1f28243cdd67be5ccc70d4073d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a92ef35823205f14a4055e6c47c5635cf"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../da/d50/a00301.html">Texture</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a92ef35823205f14a4055e6c47c5635cf">specularMap</a></td></tr>
-<tr class="separator:a92ef35823205f14a4055e6c47c5635cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a76a7810cb837b06e43744e569c46edf9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../da/d50/a00301.html">Texture</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a76a7810cb837b06e43744e569c46edf9">displacementMap</a></td></tr>
-<tr class="separator:a76a7810cb837b06e43744e569c46edf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af4c0867fb9aaf6a44cba78c5c3412fbf"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#af4c0867fb9aaf6a44cba78c5c3412fbf">diffuseColor</a></td></tr>
-<tr class="separator:af4c0867fb9aaf6a44cba78c5c3412fbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abc7bd8d6c34698fdb41556876a7e9dc4"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#abc7bd8d6c34698fdb41556876a7e9dc4">specularColor</a></td></tr>
-<tr class="separator:abc7bd8d6c34698fdb41556876a7e9dc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6eef95d36b60d88b8e3d4d1ea7ba5b1d"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a6eef95d36b60d88b8e3d4d1ea7ba5b1d">ambientColor</a></td></tr>
-<tr class="separator:a6eef95d36b60d88b8e3d4d1ea7ba5b1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaea1e4f2cf655466ba2da1d15f4814e5"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#aaea1e4f2cf655466ba2da1d15f4814e5">specularHardness</a></td></tr>
-<tr class="separator:aaea1e4f2cf655466ba2da1d15f4814e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acec02940a2b6ae79fb90c866ddae8fe5"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#acec02940a2b6ae79fb90c866ddae8fe5">specularIntensity</a></td></tr>
-<tr class="separator:acec02940a2b6ae79fb90c866ddae8fe5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adc58020318cef0a00cc86703f801bb5f"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#adc58020318cef0a00cc86703f801bb5f">displacementScale</a></td></tr>
-<tr class="separator:adc58020318cef0a00cc86703f801bb5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afce7b1a37de15a55b02d540cd4b96890"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../df/db6/a00509.html">ShaderConfig</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#afce7b1a37de15a55b02d540cd4b96890">geometryConfig</a></td></tr>
-<tr class="separator:afce7b1a37de15a55b02d540cd4b96890"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8ae667831f49c92778c2a3598b958348"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../df/db6/a00509.html">ShaderConfig</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a8ae667831f49c92778c2a3598b958348">shadowConfig</a></td></tr>
-<tr class="separator:a8ae667831f49c92778c2a3598b958348"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4eef598095a5ace7bcf4918b85e6b6c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#ab4eef598095a5ace7bcf4918b85e6b6c">DataComponent</a> (int32_t componentType, int32_t stride)</td></tr>
+<tr class="memdesc:ab4eef598095a5ace7bcf4918b85e6b6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../dc/d2f/a00425.html" title="Manage the data of the vertex buffer of a mesh. ">DataComponent</a> object.  <a href="#ab4eef598095a5ace7bcf4918b85e6b6c">More...</a><br /></td></tr>
+<tr class="separator:ab4eef598095a5ace7bcf4918b85e6b6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8c5882c599d2ee4462c22168a5d97f9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#aa8c5882c599d2ee4462c22168a5d97f9">Set</a> (T *values)</td></tr>
+<tr class="memdesc:aa8c5882c599d2ee4462c22168a5d97f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data for the component and converts it into data of component type.  <a href="#aa8c5882c599d2ee4462c22168a5d97f9">More...</a><br /></td></tr>
+<tr class="separator:aa8c5882c599d2ee4462c22168a5d97f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abef965c79967218a1791e3e5ea520f5e"><td class="memItemLeft" align="right" valign="top">T *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#abef965c79967218a1791e3e5ea520f5e">Get</a> ()</td></tr>
+<tr class="memdesc:abef965c79967218a1791e3e5ea520f5e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the data in type T which the components holds.  <a href="#abef965c79967218a1791e3e5ea520f5e">More...</a><br /></td></tr>
+<tr class="separator:abef965c79967218a1791e3e5ea520f5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a473b150f8330ac5d94f15c7af401ffca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a473b150f8330ac5d94f15c7af401ffca">SetType</a> (int32_t componentType)</td></tr>
+<tr class="memdesc:a473b150f8330ac5d94f15c7af401ffca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resets the type of the component.  <a href="#a473b150f8330ac5d94f15c7af401ffca">More...</a><br /></td></tr>
+<tr class="separator:a473b150f8330ac5d94f15c7af401ffca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a423564055898852bfca40e5326270e9c"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a423564055898852bfca40e5326270e9c">GetType</a> ()</td></tr>
+<tr class="memdesc:a423564055898852bfca40e5326270e9c"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#a423564055898852bfca40e5326270e9c">More...</a><br /></td></tr>
+<tr class="separator:a423564055898852bfca40e5326270e9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae232f5a7038593048b6c5c4f6ca8aa48"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#ae232f5a7038593048b6c5c4f6ca8aa48">SetSize</a> (int32_t size)</td></tr>
+<tr class="memdesc:ae232f5a7038593048b6c5c4f6ca8aa48"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#ae232f5a7038593048b6c5c4f6ca8aa48">More...</a><br /></td></tr>
+<tr class="separator:ae232f5a7038593048b6c5c4f6ca8aa48"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a50862767f2a82398fc0f5dcb9001e28d"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a50862767f2a82398fc0f5dcb9001e28d">GetStride</a> ()</td></tr>
+<tr class="memdesc:a50862767f2a82398fc0f5dcb9001e28d"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#a50862767f2a82398fc0f5dcb9001e28d">More...</a><br /></td></tr>
+<tr class="separator:a50862767f2a82398fc0f5dcb9001e28d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4b72973aefa94cd12f10a6e020f7b7ab"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a4b72973aefa94cd12f10a6e020f7b7ab">GetElementSize</a> ()</td></tr>
+<tr class="memdesc:a4b72973aefa94cd12f10a6e020f7b7ab"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#a4b72973aefa94cd12f10a6e020f7b7ab">More...</a><br /></td></tr>
+<tr class="separator:a4b72973aefa94cd12f10a6e020f7b7ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa88a07b3a4752b06ca958d34ebc042b9"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#aa88a07b3a4752b06ca958d34ebc042b9">GetInternal</a> ()</td></tr>
+<tr class="memdesc:aa88a07b3a4752b06ca958d34ebc042b9"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#aa88a07b3a4752b06ca958d34ebc042b9">More...</a><br /></td></tr>
+<tr class="separator:aa88a07b3a4752b06ca958d34ebc042b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d4009609e19bdb22fe51833aa28cea7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#a8d4009609e19bdb22fe51833aa28cea7">ContainsData</a> ()</td></tr>
+<tr class="memdesc:a8d4009609e19bdb22fe51833aa28cea7"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#a8d4009609e19bdb22fe51833aa28cea7">More...</a><br /></td></tr>
+<tr class="separator:a8d4009609e19bdb22fe51833aa28cea7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad24251092ca1401a5cef8272fd1ee8ac"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d2f/a00425.html#ad24251092ca1401a5cef8272fd1ee8ac">~DataComponent</a> ()</td></tr>
+<tr class="separator:ad24251092ca1401a5cef8272fd1ee8ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00009">9</a> of file <a class="el" href="../../de/d76/a00134_source.html">Material.h</a>.</p>
+<div class="textblock"><h3>template&lt;class T&gt;<br />
+class DataComponent&lt; T &gt;</h3>
+
+<p>Manage the data of the vertex buffer of a mesh. </p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td>The type of the input data. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section remark"><dt>Remarks</dt><dd><a class="el" href="../../dc/d2f/a00425.html" title="Manage the data of the vertex buffer of a mesh. ">DataComponent</a> is responsible to automatically convert the the of type T into a defined component type. This makes it easy to reduce the amount of data on the GPU, while being easy to program. See <a class="el" href="../../d7/d06/a00131.html">DataComponent.h</a> for the supported component types. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00023">23</a> of file <a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a137e987401b63eb7c6c27c3e38bc74b5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a137e987401b63eb7c6c27c3e38bc74b5">&#9670;&nbsp;</a></span>Material()</h2>
+<a id="ab4eef598095a5ace7bcf4918b85e6b6c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab4eef598095a5ace7bcf4918b85e6b6c">&#9670;&nbsp;</a></span>DataComponent()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">Material::Material </td>
+          <td class="memname"><a class="el" href="../../dc/d2f/a00425.html">DataComponent</a>&lt; T &gt;::<a class="el" href="../../dc/d2f/a00425.html">DataComponent</a> </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>componentType</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>stride</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Constructs a <a class="el" href="../../dc/d2f/a00425.html" title="Manage the data of the vertex buffer of a mesh. ">DataComponent</a> object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">componentType</td><td>The type of the component T should be converted into. See <a class="el" href="../../d7/d06/a00131.html">DataComponent.h</a> for more. </td></tr>
+    <tr><td class="paramname">stride</td><td>The stride in elements of that specific component. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00093">93</a> of file <a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>.</p>
+
+</div>
+</div>
+<a id="ad24251092ca1401a5cef8272fd1ee8ac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad24251092ca1401a5cef8272fd1ee8ac">&#9670;&nbsp;</a></span>~DataComponent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../dc/d2f/a00425.html">DataComponent</a>&lt; T &gt;::~<a class="el" href="../../dc/d2f/a00425.html">DataComponent</a> </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -161,34 +214,21 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-</div>
-</div>
-<a id="a2c19452d71f54075df8f5405b03129f4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2c19452d71f54075df8f5405b03129f4">&#9670;&nbsp;</a></span>~Material()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">Material::~Material </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
+<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00279">279</a> of file <a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a0a6c4ebddfb34ca0983147df2bb18ce6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0a6c4ebddfb34ca0983147df2bb18ce6">&#9670;&nbsp;</a></span>HasDiffuseMap()</h2>
+<a id="a8d4009609e19bdb22fe51833aa28cea7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8d4009609e19bdb22fe51833aa28cea7">&#9670;&nbsp;</a></span>ContainsData()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">bool Material::HasDiffuseMap </td>
+          <td class="memname">bool <a class="el" href="../../dc/d2f/a00425.html">DataComponent</a>&lt; T &gt;::ContainsData </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -196,16 +236,24 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p><br />
+ </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00272">272</a> of file <a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>.</p>
+
 </div>
 </div>
-<a id="ad175cea38b9abed95c2f93b8ef6ce526"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad175cea38b9abed95c2f93b8ef6ce526">&#9670;&nbsp;</a></span>HasDisplacementMap()</h2>
+<a id="abef965c79967218a1791e3e5ea520f5e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abef965c79967218a1791e3e5ea520f5e">&#9670;&nbsp;</a></span>Get()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">bool Material::HasDisplacementMap </td>
+          <td class="memname">T * <a class="el" href="../../dc/d2f/a00425.html">DataComponent</a>&lt; T &gt;::Get </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -213,16 +261,23 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Returns the data in type T which the components holds. </p>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to the data. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00153">153</a> of file <a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>.</p>
+
 </div>
 </div>
-<a id="a2783d07c154d246ff07b6da410bc6cac"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2783d07c154d246ff07b6da410bc6cac">&#9670;&nbsp;</a></span>HasNormalMap()</h2>
+<a id="a4b72973aefa94cd12f10a6e020f7b7ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4b72973aefa94cd12f10a6e020f7b7ab">&#9670;&nbsp;</a></span>GetElementSize()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">bool Material::HasNormalMap </td>
+          <td class="memname">int32_t <a class="el" href="../../dc/d2f/a00425.html">DataComponent</a>&lt; T &gt;::GetElementSize </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -230,16 +285,24 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p><br />
+ </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00249">249</a> of file <a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>.</p>
+
 </div>
 </div>
-<a id="aaf3bea92537811ed351d2fe586bf5a4c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaf3bea92537811ed351d2fe586bf5a4c">&#9670;&nbsp;</a></span>HasSpecularMap()</h2>
+<a id="aa88a07b3a4752b06ca958d34ebc042b9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa88a07b3a4752b06ca958d34ebc042b9">&#9670;&nbsp;</a></span>GetInternal()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">bool Material::HasSpecularMap </td>
+          <td class="memname">void * <a class="el" href="../../dc/d2f/a00425.html">DataComponent</a>&lt; T &gt;::GetInternal </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -247,16 +310,24 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p><br />
+ </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00265">265</a> of file <a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>.</p>
+
 </div>
 </div>
-<a id="a29194f54f95adb35452acd85066b3b7d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a29194f54f95adb35452acd85066b3b7d">&#9670;&nbsp;</a></span>Update()</h2>
+<a id="a50862767f2a82398fc0f5dcb9001e28d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a50862767f2a82398fc0f5dcb9001e28d">&#9670;&nbsp;</a></span>GetStride()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">void Material::Update </td>
+          <td class="memname">int32_t <a class="el" href="../../dc/d2f/a00425.html">DataComponent</a>&lt; T &gt;::GetStride </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -264,210 +335,141 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p><br />
+ </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00242">242</a> of file <a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>.</p>
+
 </div>
 </div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="a6eef95d36b60d88b8e3d4d1ea7ba5b1d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6eef95d36b60d88b8e3d4d1ea7ba5b1d">&#9670;&nbsp;</a></span>ambientColor</h2>
+<a id="a423564055898852bfca40e5326270e9c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a423564055898852bfca40e5326270e9c">&#9670;&nbsp;</a></span>GetType()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">vec3 Material::ambientColor</td>
+          <td class="memname">int32_t <a class="el" href="../../dc/d2f/a00425.html">DataComponent</a>&lt; T &gt;::GetType </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00030">30</a> of file <a class="el" href="../../de/d76/a00134_source.html">Material.h</a>.</p>
+<p><br />
+ </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00198">198</a> of file <a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>.</p>
 
 </div>
 </div>
-<a id="af4c0867fb9aaf6a44cba78c5c3412fbf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af4c0867fb9aaf6a44cba78c5c3412fbf">&#9670;&nbsp;</a></span>diffuseColor</h2>
+<a id="aa8c5882c599d2ee4462c22168a5d97f9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa8c5882c599d2ee4462c22168a5d97f9">&#9670;&nbsp;</a></span>Set()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class T&gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">vec3 Material::diffuseColor</td>
+          <td class="memname">void <a class="el" href="../../dc/d2f/a00425.html">DataComponent</a>&lt; T &gt;::Set </td>
+          <td>(</td>
+          <td class="paramtype">T *&#160;</td>
+          <td class="paramname"><em>values</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00028">28</a> of file <a class="el" href="../../de/d76/a00134_source.html">Material.h</a>.</p>
+<p>Sets the data for the component and converts it into data of component type. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">values</td><td>An array of values of type T. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>The length of the should be exactly the same as the size set by <a class="el" href="../../dc/d2f/a00425.html#ae232f5a7038593048b6c5c4f6ca8aa48">SetSize</a>. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00107">107</a> of file <a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>.</p>
 
 </div>
 </div>
-<a id="a3236ad6bf5ab136c151544f27782252c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3236ad6bf5ab136c151544f27782252c">&#9670;&nbsp;</a></span>diffuseMap</h2>
+<a id="ae232f5a7038593048b6c5c4f6ca8aa48"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae232f5a7038593048b6c5c4f6ca8aa48">&#9670;&nbsp;</a></span>SetSize()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../da/d50/a00301.html">Texture</a>* Material::diffuseMap</td>
+          <td class="memname">void <a class="el" href="../../dc/d2f/a00425.html">DataComponent</a>&lt; T &gt;::SetSize </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>size</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00023">23</a> of file <a class="el" href="../../de/d76/a00134_source.html">Material.h</a>.</p>
+<p><br />
+ </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">size</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00205">205</a> of file <a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>.</p>
 
 </div>
 </div>
-<a id="a76a7810cb837b06e43744e569c46edf9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a76a7810cb837b06e43744e569c46edf9">&#9670;&nbsp;</a></span>displacementMap</h2>
+<a id="a473b150f8330ac5d94f15c7af401ffca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a473b150f8330ac5d94f15c7af401ffca">&#9670;&nbsp;</a></span>SetType()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../da/d50/a00301.html">Texture</a>* Material::displacementMap</td>
+          <td class="memname">void <a class="el" href="../../dc/d2f/a00425.html">DataComponent</a>&lt; T &gt;::SetType </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>componentType</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00026">26</a> of file <a class="el" href="../../de/d76/a00134_source.html">Material.h</a>.</p>
+<p>Resets the type of the component. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">componentType</td><td>The new component type. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>This results in the loss of all data the component contains. </dd></dl>
 
-</div>
-</div>
-<a id="adc58020318cef0a00cc86703f801bb5f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adc58020318cef0a00cc86703f801bb5f">&#9670;&nbsp;</a></span>displacementScale</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Material::displacementScale</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00035">35</a> of file <a class="el" href="../../de/d76/a00134_source.html">Material.h</a>.</p>
-
-</div>
-</div>
-<a id="afce7b1a37de15a55b02d540cd4b96890"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afce7b1a37de15a55b02d540cd4b96890">&#9670;&nbsp;</a></span>geometryConfig</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../df/db6/a00509.html">ShaderConfig</a>* Material::geometryConfig</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00037">37</a> of file <a class="el" href="../../de/d76/a00134_source.html">Material.h</a>.</p>
-
-</div>
-</div>
-<a id="a915ba1f28243cdd67be5ccc70d4073d8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a915ba1f28243cdd67be5ccc70d4073d8">&#9670;&nbsp;</a></span>normalMap</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../da/d50/a00301.html">Texture</a>* Material::normalMap</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00024">24</a> of file <a class="el" href="../../de/d76/a00134_source.html">Material.h</a>.</p>
-
-</div>
-</div>
-<a id="a8ae667831f49c92778c2a3598b958348"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8ae667831f49c92778c2a3598b958348">&#9670;&nbsp;</a></span>shadowConfig</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../df/db6/a00509.html">ShaderConfig</a>* Material::shadowConfig</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00038">38</a> of file <a class="el" href="../../de/d76/a00134_source.html">Material.h</a>.</p>
-
-</div>
-</div>
-<a id="abc7bd8d6c34698fdb41556876a7e9dc4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abc7bd8d6c34698fdb41556876a7e9dc4">&#9670;&nbsp;</a></span>specularColor</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vec3 Material::specularColor</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00029">29</a> of file <a class="el" href="../../de/d76/a00134_source.html">Material.h</a>.</p>
-
-</div>
-</div>
-<a id="aaea1e4f2cf655466ba2da1d15f4814e5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaea1e4f2cf655466ba2da1d15f4814e5">&#9670;&nbsp;</a></span>specularHardness</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Material::specularHardness</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00032">32</a> of file <a class="el" href="../../de/d76/a00134_source.html">Material.h</a>.</p>
-
-</div>
-</div>
-<a id="acec02940a2b6ae79fb90c866ddae8fe5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acec02940a2b6ae79fb90c866ddae8fe5">&#9670;&nbsp;</a></span>specularIntensity</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Material::specularIntensity</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00033">33</a> of file <a class="el" href="../../de/d76/a00134_source.html">Material.h</a>.</p>
-
-</div>
-</div>
-<a id="a92ef35823205f14a4055e6c47c5635cf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a92ef35823205f14a4055e6c47c5635cf">&#9670;&nbsp;</a></span>specularMap</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../da/d50/a00301.html">Texture</a>* Material::specularMap</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00025">25</a> of file <a class="el" href="../../de/d76/a00134_source.html">Material.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00160">160</a> of file <a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/mesh/<a class="el" href="../../de/d76/a00134_source.html">Material.h</a></li>
+<li>src/mesh/<a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dc/d2f/a00425.html">Material</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d2f/a00425.html">DataComponent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

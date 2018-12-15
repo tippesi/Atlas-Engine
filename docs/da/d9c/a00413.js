@@ -1,9 +1,10 @@
 var a00413 =
 [
-    [ "Actor", "da/d9c/a00413.html#abbe2b71148d8776388495825c5e512bf", null ],
-    [ "castShadow", "da/d9c/a00413.html#a1934993167197470aa0d1cd39f00cfd1", null ],
-    [ "mesh", "da/d9c/a00413.html#a1ce9a7dc4789cea70dc2c47b8f021684", null ],
-    [ "modelMatrix", "da/d9c/a00413.html#abf23b838381348bccec0d0e234d6032a", null ],
-    [ "transformedMatrix", "da/d9c/a00413.html#a39b73954ab8f0a194143f1397ae7ab9d", null ],
-    [ "visible", "da/d9c/a00413.html#a538ef2a69bd68b985eee5e96ea7ed606", null ]
+    [ "Volumetric", "da/d9c/a00413.html#a2d2ab988df7666e65b361cae74652dc7", null ],
+    [ "~Volumetric", "da/d9c/a00413.html#ad9742196b84540f3c3ff6ca2d264e8e0", null ],
+    [ "blurMap", "da/d9c/a00413.html#adc8faea4dec2ea8284eb97b21a5e7591", null ],
+    [ "map", "da/d9c/a00413.html#a130d225ed5cbdd45ce895253c18d7b2e", null ],
+    [ "sampleCount", "da/d9c/a00413.html#a83414b92d3bf4334fe627ebfe8a8356c", null ],
+    [ "scattering", "da/d9c/a00413.html#af17b2c5aa5511049c808b1dcef3783de", null ],
+    [ "scatteringFactor", "da/d9c/a00413.html#a6b7ea0ba3c3fbb77dc4dc08d7d75004c", null ]
 ];

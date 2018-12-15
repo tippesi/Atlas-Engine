@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Actor Class Reference</title>
+<title>Blue Engine: Volumetric Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,153 +92,189 @@ $(document).ready(function(){initNavTree('da/d9c/a00413.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d8/d91/a00410.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Actor Class Reference</div>  </div>
+<div class="title">Volumetric Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../dc/dfe/a00125_source.html">Actor.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../df/dc8/a00122_source.html">Volumetric.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:abbe2b71148d8776388495825c5e512bf"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/a00413.html#abbe2b71148d8776388495825c5e512bf">Actor</a> (<a class="el" href="../../d4/d53/a00429.html">Mesh</a> *<a class="el" href="../../da/d9c/a00413.html#a1ce9a7dc4789cea70dc2c47b8f021684">mesh</a>)</td></tr>
-<tr class="memdesc:abbe2b71148d8776388495825c5e512bf"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#abbe2b71148d8776388495825c5e512bf">More...</a><br /></td></tr>
-<tr class="separator:abbe2b71148d8776388495825c5e512bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d2ab988df7666e65b361cae74652dc7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/a00413.html#a2d2ab988df7666e65b361cae74652dc7">Volumetric</a> (int32_t width, int32_t height, int32_t <a class="el" href="../../da/d9c/a00413.html#a83414b92d3bf4334fe627ebfe8a8356c">sampleCount</a>, float <a class="el" href="../../da/d9c/a00413.html#af17b2c5aa5511049c808b1dcef3783de">scattering</a>, float <a class="el" href="../../da/d9c/a00413.html#a6b7ea0ba3c3fbb77dc4dc08d7d75004c">scatteringFactor</a>=1.0f)</td></tr>
+<tr class="separator:a2d2ab988df7666e65b361cae74652dc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad9742196b84540f3c3ff6ca2d264e8e0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/a00413.html#ad9742196b84540f3c3ff6ca2d264e8e0">~Volumetric</a> ()</td></tr>
+<tr class="separator:ad9742196b84540f3c3ff6ca2d264e8e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:abf23b838381348bccec0d0e234d6032a"><td class="memItemLeft" align="right" valign="top">mat4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/a00413.html#abf23b838381348bccec0d0e234d6032a">modelMatrix</a></td></tr>
-<tr class="separator:abf23b838381348bccec0d0e234d6032a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39b73954ab8f0a194143f1397ae7ab9d"><td class="memItemLeft" align="right" valign="top">mat4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/a00413.html#a39b73954ab8f0a194143f1397ae7ab9d">transformedMatrix</a></td></tr>
-<tr class="separator:a39b73954ab8f0a194143f1397ae7ab9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1ce9a7dc4789cea70dc2c47b8f021684"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d53/a00429.html">Mesh</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/a00413.html#a1ce9a7dc4789cea70dc2c47b8f021684">mesh</a></td></tr>
-<tr class="separator:a1ce9a7dc4789cea70dc2c47b8f021684"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1934993167197470aa0d1cd39f00cfd1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/a00413.html#a1934993167197470aa0d1cd39f00cfd1">castShadow</a></td></tr>
-<tr class="separator:a1934993167197470aa0d1cd39f00cfd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a538ef2a69bd68b985eee5e96ea7ed606"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/a00413.html#a538ef2a69bd68b985eee5e96ea7ed606">visible</a></td></tr>
-<tr class="separator:a538ef2a69bd68b985eee5e96ea7ed606"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83414b92d3bf4334fe627ebfe8a8356c"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/a00413.html#a83414b92d3bf4334fe627ebfe8a8356c">sampleCount</a></td></tr>
+<tr class="separator:a83414b92d3bf4334fe627ebfe8a8356c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af17b2c5aa5511049c808b1dcef3783de"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/a00413.html#af17b2c5aa5511049c808b1dcef3783de">scattering</a></td></tr>
+<tr class="separator:af17b2c5aa5511049c808b1dcef3783de"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b7ea0ba3c3fbb77dc4dc08d7d75004c"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/a00413.html#a6b7ea0ba3c3fbb77dc4dc08d7d75004c">scatteringFactor</a></td></tr>
+<tr class="separator:a6b7ea0ba3c3fbb77dc4dc08d7d75004c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a130d225ed5cbdd45ce895253c18d7b2e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/d07/a00305.html">Texture</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/a00413.html#a130d225ed5cbdd45ce895253c18d7b2e">map</a></td></tr>
+<tr class="separator:a130d225ed5cbdd45ce895253c18d7b2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc8faea4dec2ea8284eb97b21a5e7591"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/d07/a00305.html">Texture</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/d9c/a00413.html#adc8faea4dec2ea8284eb97b21a5e7591">blurMap</a></td></tr>
+<tr class="separator:adc8faea4dec2ea8284eb97b21a5e7591"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../dc/dfe/a00125_source.html#l00007">7</a> of file <a class="el" href="../../dc/dfe/a00125_source.html">Actor.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/dc8/a00122_source.html#l00007">7</a> of file <a class="el" href="../../df/dc8/a00122_source.html">Volumetric.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="abbe2b71148d8776388495825c5e512bf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abbe2b71148d8776388495825c5e512bf">&#9670;&nbsp;</a></span>Actor()</h2>
+<a id="a2d2ab988df7666e65b361cae74652dc7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2d2ab988df7666e65b361cae74652dc7">&#9670;&nbsp;</a></span>Volumetric()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Actor::Actor </td>
+          <td class="memname">Volumetric::Volumetric </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d4/d53/a00429.html">Mesh</a> *&#160;</td>
-          <td class="paramname"><em>mesh</em></td><td>)</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>sampleCount</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>scattering</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>scatteringFactor</em> = <code>1.0f</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad9742196b84540f3c3ff6ca2d264e8e0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad9742196b84540f3c3ff6ca2d264e8e0">&#9670;&nbsp;</a></span>~Volumetric()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Volumetric::~Volumetric </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p><br />
- </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">mesh</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a1934993167197470aa0d1cd39f00cfd1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1934993167197470aa0d1cd39f00cfd1">&#9670;&nbsp;</a></span>castShadow</h2>
+<a id="adc8faea4dec2ea8284eb97b21a5e7591"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adc8faea4dec2ea8284eb97b21a5e7591">&#9670;&nbsp;</a></span>blurMap</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">bool Actor::castShadow</td>
+          <td class="memname"><a class="el" href="../../d3/d07/a00305.html">Texture</a>* Volumetric::blurMap</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dfe/a00125_source.html#l00019">19</a> of file <a class="el" href="../../dc/dfe/a00125_source.html">Actor.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/dc8/a00122_source.html#l00019">19</a> of file <a class="el" href="../../df/dc8/a00122_source.html">Volumetric.h</a>.</p>
 
 </div>
 </div>
-<a id="a1ce9a7dc4789cea70dc2c47b8f021684"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1ce9a7dc4789cea70dc2c47b8f021684">&#9670;&nbsp;</a></span>mesh</h2>
+<a id="a130d225ed5cbdd45ce895253c18d7b2e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a130d225ed5cbdd45ce895253c18d7b2e">&#9670;&nbsp;</a></span>map</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d4/d53/a00429.html">Mesh</a>* Actor::mesh</td>
+          <td class="memname"><a class="el" href="../../d3/d07/a00305.html">Texture</a>* Volumetric::map</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dfe/a00125_source.html#l00017">17</a> of file <a class="el" href="../../dc/dfe/a00125_source.html">Actor.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/dc8/a00122_source.html#l00018">18</a> of file <a class="el" href="../../df/dc8/a00122_source.html">Volumetric.h</a>.</p>
 
 </div>
 </div>
-<a id="abf23b838381348bccec0d0e234d6032a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abf23b838381348bccec0d0e234d6032a">&#9670;&nbsp;</a></span>modelMatrix</h2>
+<a id="a83414b92d3bf4334fe627ebfe8a8356c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a83414b92d3bf4334fe627ebfe8a8356c">&#9670;&nbsp;</a></span>sampleCount</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">mat4 Actor::modelMatrix</td>
+          <td class="memname">int32_t Volumetric::sampleCount</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dfe/a00125_source.html#l00014">14</a> of file <a class="el" href="../../dc/dfe/a00125_source.html">Actor.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/dc8/a00122_source.html#l00014">14</a> of file <a class="el" href="../../df/dc8/a00122_source.html">Volumetric.h</a>.</p>
 
 </div>
 </div>
-<a id="a39b73954ab8f0a194143f1397ae7ab9d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a39b73954ab8f0a194143f1397ae7ab9d">&#9670;&nbsp;</a></span>transformedMatrix</h2>
+<a id="af17b2c5aa5511049c808b1dcef3783de"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af17b2c5aa5511049c808b1dcef3783de">&#9670;&nbsp;</a></span>scattering</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">mat4 Actor::transformedMatrix</td>
+          <td class="memname">float Volumetric::scattering</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dfe/a00125_source.html#l00015">15</a> of file <a class="el" href="../../dc/dfe/a00125_source.html">Actor.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/dc8/a00122_source.html#l00015">15</a> of file <a class="el" href="../../df/dc8/a00122_source.html">Volumetric.h</a>.</p>
 
 </div>
 </div>
-<a id="a538ef2a69bd68b985eee5e96ea7ed606"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a538ef2a69bd68b985eee5e96ea7ed606">&#9670;&nbsp;</a></span>visible</h2>
+<a id="a6b7ea0ba3c3fbb77dc4dc08d7d75004c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6b7ea0ba3c3fbb77dc4dc08d7d75004c">&#9670;&nbsp;</a></span>scatteringFactor</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">bool Actor::visible</td>
+          <td class="memname">float Volumetric::scatteringFactor</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dfe/a00125_source.html#l00021">21</a> of file <a class="el" href="../../dc/dfe/a00125_source.html">Actor.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/dc8/a00122_source.html#l00016">16</a> of file <a class="el" href="../../df/dc8/a00122_source.html">Volumetric.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/mesh/<a class="el" href="../../dc/dfe/a00125_source.html">Actor.h</a></li>
+<li>src/lighting/<a class="el" href="../../df/dc8/a00122_source.html">Volumetric.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../da/d9c/a00413.html">Actor</a></li>
+    <li class="navelem"><a class="el" href="../../da/d9c/a00413.html">Volumetric</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

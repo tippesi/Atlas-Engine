@@ -1,11 +1,7 @@
 var a00493 =
 [
-    [ "TerrainRenderer", "d9/da5/a00493.html#addff638360d7f665bcaad999e8119e6e", null ],
-    [ "GetUniforms", "d9/da5/a00493.html#ab75efc89e697661882557f7996af1587", null ],
-    [ "Render", "d9/da5/a00493.html#ab157880e3312e3ec63dcf43d9d157955", null ],
-    [ "fragmentPath", "d9/da5/a00493.html#a0894ad4c382261dd54691616f2da6271", null ],
-    [ "geometryPath", "d9/da5/a00493.html#ac80b20e2e83a184cd3def5806b91f88d", null ],
-    [ "tessControlPath", "d9/da5/a00493.html#a159cb4ee860123883161675f057b025a", null ],
-    [ "tessEvalPath", "d9/da5/a00493.html#a863ee658f30402d5adf2ee5ee9a4b65e", null ],
-    [ "vertexPath", "d9/da5/a00493.html#aa04ffa227b94ad06e053375a1e2ce0b0", null ]
+    [ "SkyboxRenderer", "d9/da5/a00493.html#a8db778ab8a92bd981073dacb97611f3b", null ],
+    [ "Render", "d9/da5/a00493.html#aa6c8058845f3a700e8158a4e1dae87e1", null ],
+    [ "fragmentPath", "d9/da5/a00493.html#a26e5fb64491701c66b211c1f907103b8", null ],
+    [ "vertexPath", "d9/da5/a00493.html#ad486acb996ad37b9e1f71b67a4baa139", null ]
 ];

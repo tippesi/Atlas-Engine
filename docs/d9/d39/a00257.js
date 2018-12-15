@@ -1,19 +1,16 @@
 var a00257 =
 [
-    [ "Framebuffer", "d9/d39/a00257.html#ac13f259f1458ee3056b534601222597d", null ],
-    [ "~Framebuffer", "d9/d39/a00257.html#a037bf3e17455354d5d907ceea00313dd", null ],
-    [ "AddComponent", "d9/d39/a00257.html#ad3eafc658f755ee8a25def78ad30ef9d", null ],
-    [ "AddComponentCubemap", "d9/d39/a00257.html#a469d773a4176e495d9f6371c4d3e23e2", null ],
-    [ "AddComponentTexture", "d9/d39/a00257.html#a067f80652f664f69a44c5cf649df93d1", null ],
-    [ "AddComponentTextureLayer", "d9/d39/a00257.html#ab43100ffaad653413155a3c015b301bf", null ],
-    [ "Bind", "d9/d39/a00257.html#ac4dfcb88c7a6a76c3a4554a2bbf3367a", null ],
-    [ "ClearContent", "d9/d39/a00257.html#a87774ef08d11b6d59e21c433c298f124", null ],
-    [ "DeleteContent", "d9/d39/a00257.html#ac07479ab85b6900064005af47786d869", null ],
-    [ "GetComponentCubemap", "d9/d39/a00257.html#a5842921fecaafdbbd699430a50cd4cd1", null ],
-    [ "GetComponentTexture", "d9/d39/a00257.html#a18b2810608409c0cf390d87eee40e0f8", null ],
-    [ "Resize", "d9/d39/a00257.html#a8189520451235478f05f05417ceceac7", null ],
-    [ "SetDrawBuffers", "d9/d39/a00257.html#a28c66450664e3efb36d6d924ddf0e935", null ],
-    [ "Unbind", "d9/d39/a00257.html#ab90a3724b38bd453635deb7e2d2fb619", null ],
-    [ "height", "d9/d39/a00257.html#ae7a5ba8289763dab7d57f9447d8200fe", null ],
-    [ "width", "d9/d39/a00257.html#a2ea5a7f4e17ff65fe6a0eab2bb57959f", null ]
+    [ "Font", "d9/d39/a00257.html#ac82d2615bf11f3e504b5f2a27f081c54", null ],
+    [ "~Font", "d9/d39/a00257.html#a134aaa2f78af0c12d3ce504957169768", null ],
+    [ "ComputeDimensions", "d9/d39/a00257.html#a582f179dd91c93452d4d59b67ed017ec", null ],
+    [ "GetGlyph", "d9/d39/a00257.html#a17393ba1a09f40c4b7824152d1bf8b66", null ],
+    [ "ascent", "d9/d39/a00257.html#a25cfaf7a9d178107a53e8e61740b0a55", null ],
+    [ "characterScales", "d9/d39/a00257.html#af3acb62210be37fe9941d0ecb5247580", null ],
+    [ "characterSizes", "d9/d39/a00257.html#a80dd0fc5fd4458124bc5ffe0c7d58df0", null ],
+    [ "descent", "d9/d39/a00257.html#aa49fc31f27e27983cedb0ac1f55637d1", null ],
+    [ "edgeValue", "d9/d39/a00257.html#a829eb43ecae1eb6561dd4d05d12626e8", null ],
+    [ "glyphsTexture", "d9/d39/a00257.html#a716a4377ff2598ab8bcfa387e79a2ed1", null ],
+    [ "lineGap", "d9/d39/a00257.html#a624de15d56cf648bed71801a86b63160", null ],
+    [ "lineHeight", "d9/d39/a00257.html#a2680c352e5edb4d7bd3616b58e185086", null ],
+    [ "pixelDistanceScale", "d9/d39/a00257.html#acb979ef94d3adcb857248abae8574b63", null ]
 ];

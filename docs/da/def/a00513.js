@@ -1,9 +1,11 @@
 var a00513 =
 [
-    [ "ShaderConfigBatch", "da/def/a00513.html#aab1b9cd5fd71303dea8b86db17db0554", null ],
-    [ "Add", "da/def/a00513.html#a9e2e24832cb2fb62a329585325b19248", null ],
-    [ "Remove", "da/def/a00513.html#a837aef4e7a1133448443691ac99b4a76", null ],
-    [ "configs", "da/def/a00513.html#ae0653b0b4089981011a4498d1bbe7aed", null ],
-    [ "ID", "da/def/a00513.html#a0ed5dc70d6918b2b95cb17c3b865ff74", null ],
-    [ "shader", "da/def/a00513.html#ac2724921c7376ebfded2d89da92ba841", null ]
+    [ "ShaderConfig", "da/def/a00513.html#a68cdcb8449a52c786a369f6eb1ce46c4", null ],
+    [ "AddMacro", "da/def/a00513.html#ab950440f2f6b264d367f1fb89a77d4ec", null ],
+    [ "ClearMacros", "da/def/a00513.html#af09841d3d876efcff817009bade63108", null ],
+    [ "HasMacro", "da/def/a00513.html#ab833ee5da7c3a3a100f0609b8a9ee264", null ],
+    [ "RemoveMacro", "da/def/a00513.html#aa568a735598ecdfed3b49253a4415f45", null ],
+    [ "added", "da/def/a00513.html#a4ab6c0af019482560b3d43a77a3a0bb9", null ],
+    [ "batchID", "da/def/a00513.html#ae247098b8aa5d6558d80d39ba57d25fc", null ],
+    [ "macros", "da/def/a00513.html#adcd76cb504e1072182b3bd4870d29805", null ]
 ];

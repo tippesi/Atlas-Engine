@@ -1,9 +1,6 @@
 var a00549 =
 [
-    [ "PostProcessing", "d5/d21/a00549.html#ab8e29c8517c3cebc04f0ece135318b88", null ],
-    [ "chromaticAberration", "d5/d21/a00549.html#a35272475952623f22859631fff25712c", null ],
-    [ "exposure", "d5/d21/a00549.html#a59054a309ede3557f7cf4fed71baed22", null ],
-    [ "filmicTonemapping", "d5/d21/a00549.html#a309116ac203d8582a5650816b4e1a925", null ],
-    [ "saturation", "d5/d21/a00549.html#a4ceccbd4dc38d2098956ad0302e827e6", null ],
-    [ "vignette", "d5/d21/a00549.html#afb97821a607ddf6ed752fb919dded3c7", null ]
+    [ "ChromaticAberration", "d5/d21/a00549.html#a792c4568e82d8393288561ad6573de04", null ],
+    [ "colorsReversed", "d5/d21/a00549.html#a424ebf8d33bb10046c81904853ad0b86", null ],
+    [ "strength", "d5/d21/a00549.html#a5a0119a07739363d04ac8e3956f57e91", null ]
 ];

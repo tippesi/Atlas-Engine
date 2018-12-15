@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: TerrainNode Class Reference</title>
+<title>Blue Engine: Terrain Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,47 +92,105 @@ $(document).ready(function(){initNavTree('d2/d50/a00561.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../dc/dea/a00558.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">TerrainNode Class Reference</div>  </div>
+<div class="title">Terrain Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d5/ddf/a00224_source.html">TerrainNode.h</a>&gt;</code></p>
+<p>Represents a terrain.  
+ <a href="../../d2/d50/a00561.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a20b2c7ac9dc86dc40f2ceb5d932978d5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a20b2c7ac9dc86dc40f2ceb5d932978d5">TerrainNode</a> (vec2 <a class="el" href="../../d2/d50/a00561.html#aa90ec481e21b98c25ac861f028897ad6">location</a>, float resolution, float height, float <a class="el" href="../../d2/d50/a00561.html#a4f4ab6041d8459f0b6480a09d56f3cc1">sideLength</a>, int32_t LoD, int32_t LoDCount, vec2 parentIndex, vec2 relativeIndex, <a class="el" href="../../d8/dd2/a00565.html">TerrainStorage</a> *storage, <a class="el" href="../../d4/d9e/a00569.html">TerrainStorageCell</a> *<a class="el" href="../../d2/d50/a00561.html#af03fa622a3bf6cdff4a975808fcbc7ad">cell</a>)</td></tr>
-<tr class="separator:a20b2c7ac9dc86dc40f2ceb5d932978d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a293a3a816cbc300252a9a2a3ccce42ec"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a293a3a816cbc300252a9a2a3ccce42ec">Update</a> (<a class="el" href="../../d4/d08/a00237.html">Camera</a> *camera, vector&lt; <a class="el" href="../../d2/d50/a00561.html">TerrainNode</a> *&gt; &amp;renderList, float *LoDDistances)</td></tr>
-<tr class="separator:a293a3a816cbc300252a9a2a3ccce42ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a73de69c47ba6d2a473256b6136c61c19"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a73de69c47ba6d2a473256b6136c61c19">~TerrainNode</a> ()</td></tr>
-<tr class="separator:a73de69c47ba6d2a473256b6136c61c19"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1c2d71ca658bf76fad007e6f5498ace7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a1c2d71ca658bf76fad007e6f5498ace7">Terrain</a> (int32_t rootNodeCount, int32_t LoDCount, int32_t patchSizeFactor, float <a class="el" href="../../d2/d50/a00561.html#aff6eb2b16e895c15f1789dfad4c15c0a">resolution</a>, float height)</td></tr>
+<tr class="memdesc:a1c2d71ca658bf76fad007e6f5498ace7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d2/d50/a00561.html" title="Represents a terrain. ">Terrain</a> object.  <a href="#a1c2d71ca658bf76fad007e6f5498ace7">More...</a><br /></td></tr>
+<tr class="separator:a1c2d71ca658bf76fad007e6f5498ace7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab32ffc4e25c9e9fd15dbab5b1a3e7b02"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#ab32ffc4e25c9e9fd15dbab5b1a3e7b02">Update</a> (<a class="el" href="../../d4/d08/a00237.html">Camera</a> *camera)</td></tr>
+<tr class="memdesc:ab32ffc4e25c9e9fd15dbab5b1a3e7b02"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the terrain and the storage queues.  <a href="#ab32ffc4e25c9e9fd15dbab5b1a3e7b02">More...</a><br /></td></tr>
+<tr class="separator:ab32ffc4e25c9e9fd15dbab5b1a3e7b02"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a98222f8bcb71d52972888503f14bff11"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a98222f8bcb71d52972888503f14bff11">SetLoDDistance</a> (int32_t LoD, float distance)</td></tr>
+<tr class="memdesc:a98222f8bcb71d52972888503f14bff11"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distance of a specific level of detail.  <a href="#a98222f8bcb71d52972888503f14bff11">More...</a><br /></td></tr>
+<tr class="separator:a98222f8bcb71d52972888503f14bff11"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7dd8c8eef056063ea6452231bda07b2e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a7dd8c8eef056063ea6452231bda07b2e">SetTessellationFunction</a> (float factor, float slope, float shift, float maxLevel=64.0f)</td></tr>
+<tr class="memdesc:a7dd8c8eef056063ea6452231bda07b2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the tessellation function t(distance) = factor / pow(distance, slope) + shift.  <a href="#a7dd8c8eef056063ea6452231bda07b2e">More...</a><br /></td></tr>
+<tr class="separator:a7dd8c8eef056063ea6452231bda07b2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a727428ae326d152e63cd8c7db3d2faec"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a727428ae326d152e63cd8c7db3d2faec">SetDisplacementDistance</a> (float distance)</td></tr>
+<tr class="memdesc:a727428ae326d152e63cd8c7db3d2faec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distance where the displacement should start.  <a href="#a727428ae326d152e63cd8c7db3d2faec">More...</a><br /></td></tr>
+<tr class="separator:a727428ae326d152e63cd8c7db3d2faec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a439cf76525791a8a8c5ec4df7cc85778"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a439cf76525791a8a8c5ec4df7cc85778">GetHeight</a> (float x, float z)</td></tr>
+<tr class="memdesc:a439cf76525791a8a8c5ec4df7cc85778"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the height at a specific point on the terrain.  <a href="#a439cf76525791a8a8c5ec4df7cc85778">More...</a><br /></td></tr>
+<tr class="separator:a439cf76525791a8a8c5ec4df7cc85778"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af17ae430a89f1715e24967855dc83ed7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d6/d21/a00573.html">TerrainStorageCell</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#af17ae430a89f1715e24967855dc83ed7">GetStorageCell</a> (float x, float z, int32_t LoD)</td></tr>
+<tr class="memdesc:af17ae430a89f1715e24967855dc83ed7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the storage cell for a point on the terrain.  <a href="#af17ae430a89f1715e24967855dc83ed7">More...</a><br /></td></tr>
+<tr class="separator:af17ae430a89f1715e24967855dc83ed7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeafdaf2be58dfe48a8b68bfd3936c340"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#aeafdaf2be58dfe48a8b68bfd3936c340">Bind</a> ()</td></tr>
+<tr class="memdesc:aeafdaf2be58dfe48a8b68bfd3936c340"><td class="mdescLeft">&#160;</td><td class="mdescRight">Binds the vertex array of the terrain.  <a href="#aeafdaf2be58dfe48a8b68bfd3936c340">More...</a><br /></td></tr>
+<tr class="separator:aeafdaf2be58dfe48a8b68bfd3936c340"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6bc80bf0215b83c38e0a70f6c60f5cd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#ab6bc80bf0215b83c38e0a70f6c60f5cd">Unbind</a> ()</td></tr>
+<tr class="memdesc:ab6bc80bf0215b83c38e0a70f6c60f5cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unbinds the vertex array of the terrain.  <a href="#ab6bc80bf0215b83c38e0a70f6c60f5cd">More...</a><br /></td></tr>
+<tr class="separator:ab6bc80bf0215b83c38e0a70f6c60f5cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:aa90ec481e21b98c25ac861f028897ad6"><td class="memItemLeft" align="right" valign="top">vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#aa90ec481e21b98c25ac861f028897ad6">location</a></td></tr>
-<tr class="separator:aa90ec481e21b98c25ac861f028897ad6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4f4ab6041d8459f0b6480a09d56f3cc1"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a4f4ab6041d8459f0b6480a09d56f3cc1">sideLength</a></td></tr>
-<tr class="separator:a4f4ab6041d8459f0b6480a09d56f3cc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2df41aa3d091cdd45125f35aa448d8ff"><td class="memItemLeft" align="right" valign="top">vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a2df41aa3d091cdd45125f35aa448d8ff">absoluteIndex</a></td></tr>
-<tr class="separator:a2df41aa3d091cdd45125f35aa448d8ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af03fa622a3bf6cdff4a975808fcbc7ad"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d9e/a00569.html">TerrainStorageCell</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#af03fa622a3bf6cdff4a975808fcbc7ad">cell</a></td></tr>
-<tr class="separator:af03fa622a3bf6cdff4a975808fcbc7ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a88c72408ad2046318c99bcf802f82503"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d9e/a00569.html">TerrainStorage</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a88c72408ad2046318c99bcf802f82503">storage</a></td></tr>
+<tr class="separator:a88c72408ad2046318c99bcf802f82503"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae99b2f0acbfd32bbd46c344ae7c342e4"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#ae99b2f0acbfd32bbd46c344ae7c342e4">translation</a></td></tr>
+<tr class="separator:ae99b2f0acbfd32bbd46c344ae7c342e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff6eb2b16e895c15f1789dfad4c15c0a"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#aff6eb2b16e895c15f1789dfad4c15c0a">resolution</a></td></tr>
+<tr class="separator:aff6eb2b16e895c15f1789dfad4c15c0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af8febef4634f3117b77620b68a67a6d2"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#af8febef4634f3117b77620b68a67a6d2">sideLength</a></td></tr>
+<tr class="separator:af8febef4634f3117b77620b68a67a6d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab73732b4a7d0a2c39dd92df82b8d03bf"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#ab73732b4a7d0a2c39dd92df82b8d03bf">patchVertexCount</a></td></tr>
+<tr class="separator:ab73732b4a7d0a2c39dd92df82b8d03bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a2e5559e4824975a91a50d3eabaaad1"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a5a2e5559e4824975a91a50d3eabaaad1">patchSize</a></td></tr>
+<tr class="separator:a5a2e5559e4824975a91a50d3eabaaad1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a929caa57f7cae7985a7ec64b844bb3af"><td class="memItemLeft" align="right" valign="top">vector&lt; vec2 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a929caa57f7cae7985a7ec64b844bb3af">patchOffsets</a></td></tr>
+<tr class="separator:a929caa57f7cae7985a7ec64b844bb3af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae88a3a8a383f80fcd111bf8d022b9b01"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#ae88a3a8a383f80fcd111bf8d022b9b01">tessellationFactor</a></td></tr>
+<tr class="separator:ae88a3a8a383f80fcd111bf8d022b9b01"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aacc3df2870f9866620b0573ce512c04e"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#aacc3df2870f9866620b0573ce512c04e">tessellationSlope</a></td></tr>
+<tr class="separator:aacc3df2870f9866620b0573ce512c04e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ca76942522b8f836db8221ead86fff0"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a6ca76942522b8f836db8221ead86fff0">tessellationShift</a></td></tr>
+<tr class="separator:a6ca76942522b8f836db8221ead86fff0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27a235ce27a9f98e54851ac22a71e352"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#a27a235ce27a9f98e54851ac22a71e352">maxTessellationLevel</a></td></tr>
+<tr class="separator:a27a235ce27a9f98e54851ac22a71e352"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac62b5575ed431dfef9a2d1baa89492b8"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#ac62b5575ed431dfef9a2d1baa89492b8">heightScale</a></td></tr>
+<tr class="separator:ac62b5575ed431dfef9a2d1baa89492b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa597d0bcc50a2e66ca010630c54ec5b"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#afa597d0bcc50a2e66ca010630c54ec5b">displacementDistance</a></td></tr>
+<tr class="separator:afa597d0bcc50a2e66ca010630c54ec5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae65ba407f1cfa1e0d9f9cccab59a9d7a"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../d8/dd2/a00565.html">TerrainNode</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d50/a00561.html#ae65ba407f1cfa1e0d9f9cccab59a9d7a">renderList</a></td></tr>
+<tr class="separator:ae65ba407f1cfa1e0d9f9cccab59a9d7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00010">10</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">TerrainNode.h</a>.</p>
+<div class="textblock"><p>Represents a terrain. </p>
+<p>This class uses different LoDs and tessellation to render the terrain efficiently with high detail without sacrificing too much on performance. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00018">18</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a20b2c7ac9dc86dc40f2ceb5d932978d5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a20b2c7ac9dc86dc40f2ceb5d932978d5">&#9670;&nbsp;</a></span>TerrainNode()</h2>
+<a id="a1c2d71ca658bf76fad007e6f5498ace7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1c2d71ca658bf76fad007e6f5498ace7">&#9670;&nbsp;</a></span>Terrain()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">TerrainNode::TerrainNode </td>
+          <td class="memname">Terrain::Terrain </td>
           <td>(</td>
-          <td class="paramtype">vec2&#160;</td>
-          <td class="paramname"><em>location</em>, </td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>rootNodeCount</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>LoDCount</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>patchSizeFactor</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -144,49 +202,7 @@ Public Attributes</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>sideLength</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>LoD</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>LoDCount</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec2&#160;</td>
-          <td class="paramname"><em>parentIndex</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec2&#160;</td>
-          <td class="paramname"><em>relativeIndex</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d8/dd2/a00565.html">TerrainStorage</a> *&#160;</td>
-          <td class="paramname"><em>storage</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d4/d9e/a00569.html">TerrainStorageCell</a> *&#160;</td>
-          <td class="paramname"><em>cell</em>&#160;</td>
+          <td class="paramname"><em>height</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -196,16 +212,31 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Constructs a <a class="el" href="../../d2/d50/a00561.html" title="Represents a terrain. ">Terrain</a> object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">rootNodeCount</td><td>The number of root nodes. Root nodes are the lowest level of detail </td></tr>
+    <tr><td class="paramname">LoDCount</td><td>The number of level of detail levels. Results in LoDCount - 1 subdivisions of the root nodes. </td></tr>
+    <tr><td class="paramname">patchSizeFactor</td><td>Changes the size of a patch and the number of vertices in a patch. </td></tr>
+    <tr><td class="paramname">resolution</td><td>Like a scale in x and z direction of the terrain. Lower means more vertices per square unit. </td></tr>
+    <tr><td class="paramname">height</td><td>The maximum height of the terrain </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>The maximum number of nodes in a terrain is 2^16. </dd></dl>
+<dl class="section remark"><dt>Remarks</dt><dd>Let's assume we want 3 root nodes on each side of the terrain which leads to rootNodeCount = 3^2 = 9. We now decide that we want an LoDCount of 7. To check if we don't exceed the maximum number of nodes we calculate rootNodeCount * (pow(4,LoDCount) - 1) / 3 = 3 * (pow(4, 7) - 1) = 49149 &lt; 2^16 = 65536. This means that at the maximum lod which is Lod6 we have a total of pow(4, 6) * 9 = 36864 nodes. If we have a patchSizeFactor of 4 we have 16 * 4 * 4 vertices per patch. Each node has 8 * 8 = 64 patches. This results in a maximum vertex count of around 600 mio. If we take the square root we get the number of vertices per side: sqrt(603979776) = 24576. If we set the resolution to 0.5 we get a total of 12288 units per terrain side. The size of map is therefore roughly 150 kilounits^2. </dd></dl>
+
 </div>
 </div>
-<a id="a73de69c47ba6d2a473256b6136c61c19"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a73de69c47ba6d2a473256b6136c61c19">&#9670;&nbsp;</a></span>~TerrainNode()</h2>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="aeafdaf2be58dfe48a8b68bfd3936c340"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeafdaf2be58dfe48a8b68bfd3936c340">&#9670;&nbsp;</a></span>Bind()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">TerrainNode::~TerrainNode </td>
+          <td class="memname">void Terrain::Bind </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -213,32 +244,27 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Binds the vertex array of the terrain. </p>
+
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a293a3a816cbc300252a9a2a3ccce42ec"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a293a3a816cbc300252a9a2a3ccce42ec">&#9670;&nbsp;</a></span>Update()</h2>
+<a id="a439cf76525791a8a8c5ec4df7cc85778"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a439cf76525791a8a8c5ec4df7cc85778">&#9670;&nbsp;</a></span>GetHeight()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void TerrainNode::Update </td>
+          <td class="memname">float Terrain::GetHeight </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d4/d08/a00237.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>, </td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">vector&lt; <a class="el" href="../../d2/d50/a00561.html">TerrainNode</a> *&gt; &amp;&#160;</td>
-          <td class="paramname"><em>renderList</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float *&#160;</td>
-          <td class="paramname"><em>LoDDistances</em>&#160;</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>z</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -248,82 +274,462 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Gets the height at a specific point on the terrain. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">x</td><td>The x component of the point relative to the terrain origin </td></tr>
+    <tr><td class="paramname">z</td><td>The z component of the point relative to the terrain origin </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The height of the terrain. </dd></dl>
+<dl class="section note"><dt>Note</dt><dd>This function is computationally expensive. </dd></dl>
+
+</div>
+</div>
+<a id="af17ae430a89f1715e24967855dc83ed7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af17ae430a89f1715e24967855dc83ed7">&#9670;&nbsp;</a></span>GetStorageCell()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d6/d21/a00573.html">TerrainStorageCell</a>* Terrain::GetStorageCell </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>z</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>LoD</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Gets the storage cell for a point on the terrain. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">x</td><td>The x component of the point relative to the terrain origin </td></tr>
+    <tr><td class="paramname">z</td><td>The z component of the point relative to the terrain origin </td></tr>
+    <tr><td class="paramname">LoD</td><td>The lod level of the storage cell. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a TerrainStorageObject. Equals nullptr if input wasn't valid. </dd></dl>
+<dl class="section note"><dt>Note</dt><dd>For every point there exist as many storage cells as there are lod levels. </dd></dl>
+
+</div>
+</div>
+<a id="a727428ae326d152e63cd8c7db3d2faec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a727428ae326d152e63cd8c7db3d2faec">&#9670;&nbsp;</a></span>SetDisplacementDistance()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Terrain::SetDisplacementDistance </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>distance</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the distance where the displacement should start. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">distance</td><td>The distance </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>Displacement mapping is only available if tessellation is enabled in the specified distance. The maximum distance recommended is t(distance) = 1, where t is the tessellation function. Otherwise there would be too much flickering present on screen. </dd></dl>
+
+</div>
+</div>
+<a id="a98222f8bcb71d52972888503f14bff11"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a98222f8bcb71d52972888503f14bff11">&#9670;&nbsp;</a></span>SetLoDDistance()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Terrain::SetLoDDistance </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>LoD</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>distance</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the distance of a specific level of detail. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">LoD</td><td>The level of detail to be set in range of (0,LoDCount-1) </td></tr>
+    <tr><td class="paramname">distance</td><td>The distance where the level of details should begin </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>Only the highest level of detail will render splatmaps and tessellation. </dd></dl>
+
+</div>
+</div>
+<a id="a7dd8c8eef056063ea6452231bda07b2e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7dd8c8eef056063ea6452231bda07b2e">&#9670;&nbsp;</a></span>SetTessellationFunction()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Terrain::SetTessellationFunction </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>factor</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>slope</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>shift</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>maxLevel</em> = <code>64.0f</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the tessellation function t(distance) = factor / pow(distance, slope) + shift. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">factor</td><td></td></tr>
+    <tr><td class="paramname">slope</td><td></td></tr>
+    <tr><td class="paramname">shift</td><td></td></tr>
+    <tr><td class="paramname">maxLevel</td><td>Determines the maximum level of subdivisions the tessellation uses. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section remark"><dt>Remarks</dt><dd>The tessellation for a point p is calculated by: <div class="fragment"><div class="line">distance = length(camera-&gt;location, p);</div><div class="line">tessLevel = mix(1.0f, maxLevel, clamp(t(distance), 0.0f, 1.0f));</div></div><!-- fragment --> </dd></dl>
+
+</div>
+</div>
+<a id="ab6bc80bf0215b83c38e0a70f6c60f5cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab6bc80bf0215b83c38e0a70f6c60f5cd">&#9670;&nbsp;</a></span>Unbind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Terrain::Unbind </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Unbinds the vertex array of the terrain. </p>
+
+</div>
+</div>
+<a id="ab32ffc4e25c9e9fd15dbab5b1a3e7b02"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab32ffc4e25c9e9fd15dbab5b1a3e7b02">&#9670;&nbsp;</a></span>Update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Terrain::Update </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d4/d08/a00237.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Updates the terrain and the storage queues. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">camera</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>After calling this method the storage-&gt;requestedCells list contains all the StorageCells which are needed by the terrain. If these StorageCells aren't loaded the terrain can't increase the level of detail of the specific nodes. The storage-&gt;unusedCells list contains all the cells which aren't needed any more at the moment. </dd></dl>
+
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a2df41aa3d091cdd45125f35aa448d8ff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2df41aa3d091cdd45125f35aa448d8ff">&#9670;&nbsp;</a></span>absoluteIndex</h2>
+<a id="afa597d0bcc50a2e66ca010630c54ec5b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa597d0bcc50a2e66ca010630c54ec5b">&#9670;&nbsp;</a></span>displacementDistance</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">vec2 TerrainNode::absoluteIndex</td>
+          <td class="memname">float Terrain::displacementDistance</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00022">22</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">TerrainNode.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00127">127</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
-<a id="af03fa622a3bf6cdff4a975808fcbc7ad"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af03fa622a3bf6cdff4a975808fcbc7ad">&#9670;&nbsp;</a></span>cell</h2>
+<a id="ac62b5575ed431dfef9a2d1baa89492b8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac62b5575ed431dfef9a2d1baa89492b8">&#9670;&nbsp;</a></span>heightScale</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d4/d9e/a00569.html">TerrainStorageCell</a>* TerrainNode::cell</td>
+          <td class="memname">float Terrain::heightScale</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00024">24</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">TerrainNode.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00126">126</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
-<a id="aa90ec481e21b98c25ac861f028897ad6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa90ec481e21b98c25ac861f028897ad6">&#9670;&nbsp;</a></span>location</h2>
+<a id="a27a235ce27a9f98e54851ac22a71e352"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a27a235ce27a9f98e54851ac22a71e352">&#9670;&nbsp;</a></span>maxTessellationLevel</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">vec2 TerrainNode::location</td>
+          <td class="memname">float Terrain::maxTessellationLevel</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00020">20</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">TerrainNode.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00124">124</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
-<a id="a4f4ab6041d8459f0b6480a09d56f3cc1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4f4ab6041d8459f0b6480a09d56f3cc1">&#9670;&nbsp;</a></span>sideLength</h2>
+<a id="a929caa57f7cae7985a7ec64b844bb3af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a929caa57f7cae7985a7ec64b844bb3af">&#9670;&nbsp;</a></span>patchOffsets</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float TerrainNode::sideLength</td>
+          <td class="memname">vector&lt;vec2&gt; Terrain::patchOffsets</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00021">21</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">TerrainNode.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00119">119</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="a5a2e5559e4824975a91a50d3eabaaad1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5a2e5559e4824975a91a50d3eabaaad1">&#9670;&nbsp;</a></span>patchSize</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Terrain::patchSize</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00118">118</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="ab73732b4a7d0a2c39dd92df82b8d03bf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab73732b4a7d0a2c39dd92df82b8d03bf">&#9670;&nbsp;</a></span>patchVertexCount</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Terrain::patchVertexCount</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00117">117</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="ae65ba407f1cfa1e0d9f9cccab59a9d7a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae65ba407f1cfa1e0d9f9cccab59a9d7a">&#9670;&nbsp;</a></span>renderList</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">vector&lt;<a class="el" href="../../d8/dd2/a00565.html">TerrainNode</a>*&gt; Terrain::renderList</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00129">129</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="aff6eb2b16e895c15f1789dfad4c15c0a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aff6eb2b16e895c15f1789dfad4c15c0a">&#9670;&nbsp;</a></span>resolution</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Terrain::resolution</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00114">114</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="af8febef4634f3117b77620b68a67a6d2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af8febef4634f3117b77620b68a67a6d2">&#9670;&nbsp;</a></span>sideLength</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Terrain::sideLength</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00115">115</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="a88c72408ad2046318c99bcf802f82503"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a88c72408ad2046318c99bcf802f82503">&#9670;&nbsp;</a></span>storage</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d4/d9e/a00569.html">TerrainStorage</a>* Terrain::storage</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00111">111</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="ae88a3a8a383f80fcd111bf8d022b9b01"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae88a3a8a383f80fcd111bf8d022b9b01">&#9670;&nbsp;</a></span>tessellationFactor</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Terrain::tessellationFactor</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00121">121</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="a6ca76942522b8f836db8221ead86fff0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6ca76942522b8f836db8221ead86fff0">&#9670;&nbsp;</a></span>tessellationShift</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Terrain::tessellationShift</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00123">123</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="aacc3df2870f9866620b0573ce512c04e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aacc3df2870f9866620b0573ce512c04e">&#9670;&nbsp;</a></span>tessellationSlope</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Terrain::tessellationSlope</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00122">122</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="ae99b2f0acbfd32bbd46c344ae7c342e4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae99b2f0acbfd32bbd46c344ae7c342e4">&#9670;&nbsp;</a></span>translation</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">vec3 Terrain::translation</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00113">113</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/terrain/<a class="el" href="../../d5/ddf/a00224_source.html">TerrainNode.h</a></li>
+<li>src/terrain/<a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d2/d50/a00561.html">TerrainNode</a></li>
+    <li class="navelem"><a class="el" href="../../d2/d50/a00561.html">Terrain</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

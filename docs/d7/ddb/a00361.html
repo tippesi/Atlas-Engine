@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: EventDelegate&lt; Args &gt; Class Template Reference</title>
+<title>Blue Engine: EngineWindowEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,171 +89,134 @@ $(document).ready(function(){initNavTree('d7/ddb/a00361.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../df/d73/a00358.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">EventDelegate&lt; Args &gt; Class Template Reference</div>  </div>
+<div class="title">EngineWindowEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Handles the event flow between subscriber and publisher.  
+<p>A class to distribute window events.  
  <a href="../../d7/ddb/a00361.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a1bb5d576a30865322a2e75dbdd045a0a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/ddb/a00361.html#a1bb5d576a30865322a2e75dbdd045a0a">EventDelegate</a> ()</td></tr>
-<tr class="memdesc:a1bb5d576a30865322a2e75dbdd045a0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d7/ddb/a00361.html" title="Handles the event flow between subscriber and publisher. ">EventDelegate</a> object.  <a href="#a1bb5d576a30865322a2e75dbdd045a0a">More...</a><br /></td></tr>
-<tr class="separator:a1bb5d576a30865322a2e75dbdd045a0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9dcb1b0832e44009f2ae6224c794b096"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/ddb/a00361.html#a9dcb1b0832e44009f2ae6224c794b096">Subscribe</a> (std::function&lt; void(Args ...)&gt; handle)</td></tr>
-<tr class="memdesc:a9dcb1b0832e44009f2ae6224c794b096"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subscribes a method/function to the event delegate which wants to receive the arguments specified in Args.  <a href="#a9dcb1b0832e44009f2ae6224c794b096">More...</a><br /></td></tr>
-<tr class="separator:a9dcb1b0832e44009f2ae6224c794b096"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a029f36a3c422e07efdc7acb26c2d40f5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/ddb/a00361.html#a029f36a3c422e07efdc7acb26c2d40f5">Unsubscribe</a> (uint32_t subscriberID)</td></tr>
-<tr class="memdesc:a029f36a3c422e07efdc7acb26c2d40f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unsubscribes a method/function from the event delegate.  <a href="#a029f36a3c422e07efdc7acb26c2d40f5">More...</a><br /></td></tr>
-<tr class="separator:a029f36a3c422e07efdc7acb26c2d40f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aadc97124f141e9b3542f2ee086e6ce9f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/ddb/a00361.html#aadc97124f141e9b3542f2ee086e6ce9f">Fire</a> (Args ... args)</td></tr>
-<tr class="memdesc:aadc97124f141e9b3542f2ee086e6ce9f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Publishes Args arguments to the subscribers.  <a href="#aadc97124f141e9b3542f2ee086e6ce9f">More...</a><br /></td></tr>
-<tr class="separator:aadc97124f141e9b3542f2ee086e6ce9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69c0f874503ee4c9ecdd63cc7e2e1ce3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/ddb/a00361.html#a69c0f874503ee4c9ecdd63cc7e2e1ce3">EngineWindowEvent</a> (SDL_WindowEvent event)</td></tr>
+<tr class="separator:a69c0f874503ee4c9ecdd63cc7e2e1ce3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:aadbbfd2839ccd53f2ce9785fbc5b5236"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/ddb/a00361.html#aadbbfd2839ccd53f2ce9785fbc5b5236">windowID</a></td></tr>
+<tr class="memdesc:aadbbfd2839ccd53f2ce9785fbc5b5236"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#aadbbfd2839ccd53f2ce9785fbc5b5236">More...</a><br /></td></tr>
+<tr class="separator:aadbbfd2839ccd53f2ce9785fbc5b5236"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8f3bd948d8f82764b3996e5b41e87af"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/ddb/a00361.html#ad8f3bd948d8f82764b3996e5b41e87af">type</a></td></tr>
+<tr class="memdesc:ad8f3bd948d8f82764b3996e5b41e87af"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the window event.  <a href="#ad8f3bd948d8f82764b3996e5b41e87af">More...</a><br /></td></tr>
+<tr class="separator:ad8f3bd948d8f82764b3996e5b41e87af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae7b23f82e0fab5fbdea04ab427de82d6"><td class="memItemLeft" align="right" valign="top">ivec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/ddb/a00361.html#ae7b23f82e0fab5fbdea04ab427de82d6">data</a></td></tr>
+<tr class="memdesc:ae7b23f82e0fab5fbdea04ab427de82d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The data specific to the event.  <a href="#ae7b23f82e0fab5fbdea04ab427de82d6">More...</a><br /></td></tr>
+<tr class="separator:ae7b23f82e0fab5fbdea04ab427de82d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;class ... Args&gt;<br />
-class EventDelegate&lt; Args &gt;</h3>
+<div class="textblock"><p>A class to distribute window events. </p>
 
-<p>Handles the event flow between subscriber and publisher. </p>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">Args</td><td>Variable amount of parameters which can be exchanged with the delegate. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00015">15</a> of file <a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00025">25</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a1bb5d576a30865322a2e75dbdd045a0a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1bb5d576a30865322a2e75dbdd045a0a">&#9670;&nbsp;</a></span>EventDelegate()</h2>
+<a id="a69c0f874503ee4c9ecdd63cc7e2e1ce3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a69c0f874503ee4c9ecdd63cc7e2e1ce3">&#9670;&nbsp;</a></span>EngineWindowEvent()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<div class="memtemplate">
-template&lt;class... Args&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d7/ddb/a00361.html">EventDelegate</a>&lt; Args &gt;::<a class="el" href="../../d7/ddb/a00361.html">EventDelegate</a> </td>
+          <td class="memname">EngineWindowEvent::EngineWindowEvent </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">SDL_WindowEvent&#160;</td>
+          <td class="paramname"><em>event</em></td><td>)</td>
           <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00028">28</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="ae7b23f82e0fab5fbdea04ab427de82d6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7b23f82e0fab5fbdea04ab427de82d6">&#9670;&nbsp;</a></span>data</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">ivec2 EngineWindowEvent::data</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Constructs a <a class="el" href="../../d7/ddb/a00361.html" title="Handles the event flow between subscriber and publisher. ">EventDelegate</a> object. </p>
+<p>The data specific to the event. </p>
+<p>Represents screen space coordinates </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00052">52</a> of file <a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00047">47</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a>.</p>
 
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="aadc97124f141e9b3542f2ee086e6ce9f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aadc97124f141e9b3542f2ee086e6ce9f">&#9670;&nbsp;</a></span>Fire()</h2>
+<a id="ad8f3bd948d8f82764b3996e5b41e87af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad8f3bd948d8f82764b3996e5b41e87af">&#9670;&nbsp;</a></span>type</h2>
 
 <div class="memitem">
 <div class="memproto">
-<div class="memtemplate">
-template&lt;class... Args&gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="../../d7/ddb/a00361.html">EventDelegate</a>&lt; Args &gt;::Fire </td>
-          <td>(</td>
-          <td class="paramtype">Args ...&#160;</td>
-          <td class="paramname"><em>args</em></td><td>)</td>
-          <td></td>
+          <td class="memname">uint8_t EngineWindowEvent::type</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Publishes Args arguments to the subscribers. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">args</td><td>The arguments which should be published </td></tr>
-  </table>
-  </dd>
-</dl>
+<p>The type of the window event. </p>
+<p>See <a class="el" href="../../da/d2a/a00086.html">EngineWindowEvent.h</a> for more </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00079">79</a> of file <a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00042">42</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a9dcb1b0832e44009f2ae6224c794b096"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9dcb1b0832e44009f2ae6224c794b096">&#9670;&nbsp;</a></span>Subscribe()</h2>
+<a id="aadbbfd2839ccd53f2ce9785fbc5b5236"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aadbbfd2839ccd53f2ce9785fbc5b5236">&#9670;&nbsp;</a></span>windowID</h2>
 
 <div class="memitem">
 <div class="memproto">
-<div class="memtemplate">
-template&lt;class... Args&gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">uint32_t <a class="el" href="../../d7/ddb/a00361.html">EventDelegate</a>&lt; Args &gt;::Subscribe </td>
-          <td>(</td>
-          <td class="paramtype">std::function&lt; void(Args ...)&gt;&#160;</td>
-          <td class="paramname"><em>handle</em></td><td>)</td>
-          <td></td>
+          <td class="memname">uint32_t EngineWindowEvent::windowID</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Subscribes a method/function to the event delegate which wants to receive the arguments specified in Args. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">handle</td><td>A method/function which has the required Args as parameters </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>A handle which can later be used to unsubscribe from the event delegate. </dd></dl>
-<dl class="section note"><dt>Note</dt><dd>To subscribe a method of an object to the event delegate use std::bind() </dd></dl>
+<p>The ID of the window the event occurred in. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00057">57</a> of file <a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>.</p>
-
-</div>
-</div>
-<a id="a029f36a3c422e07efdc7acb26c2d40f5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a029f36a3c422e07efdc7acb26c2d40f5">&#9670;&nbsp;</a></span>Unsubscribe()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class... Args&gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="../../d7/ddb/a00361.html">EventDelegate</a>&lt; Args &gt;::Unsubscribe </td>
-          <td>(</td>
-          <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>subscriberID</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Unsubscribes a method/function from the event delegate. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">subscriberID</td><td>The handle which was returned previously at the time of subscription. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00068">68</a> of file <a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00037">37</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a></li>
+<li>src/events/<a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d7/ddb/a00361.html">EventDelegate</a></li>
+    <li class="navelem"><a class="el" href="../../d7/ddb/a00361.html">EngineWindowEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

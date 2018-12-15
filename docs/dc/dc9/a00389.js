@@ -1,12 +1,14 @@
 var a00389 =
 [
-    [ "PointLight", "dc/dc9/a00389.html#a804acdd791386a4e21a37ae9eee2ea25", null ],
-    [ "AddShadow", "dc/dc9/a00389.html#a28671ac4426181efc4adbd346a71c249", null ],
-    [ "AddVolumetric", "dc/dc9/a00389.html#a8fc6ab5423218a52a08272ec90dcc6a8", null ],
-    [ "GetRadius", "dc/dc9/a00389.html#a20e58296d9b45a3650c4fea54939b747", null ],
-    [ "RemoveShadow", "dc/dc9/a00389.html#a41863685ce540bfa0e40be7b2c7bddd0", null ],
-    [ "RemoveVolumetric", "dc/dc9/a00389.html#a95bb4ff5a2276576bfc4ec8b5f587754", null ],
-    [ "Update", "dc/dc9/a00389.html#adac184c0f9cfc46e6539fea415d4bcf7", null ],
-    [ "attenuation", "dc/dc9/a00389.html#aed8e8d9cb5dcf43f3a063df16c3abfb4", null ],
-    [ "location", "dc/dc9/a00389.html#a8b8958be0e0b2f9649d62b9f543088ca", null ]
+    [ "GetShadow", "dc/dc9/a00389.html#a551a41ea1781cb8b7ae75f12991f4b0b", null ],
+    [ "GetVolumetric", "dc/dc9/a00389.html#afc65ba9287f5637589095400ffee5fbb", null ],
+    [ "RemoveShadow", "dc/dc9/a00389.html#ad3b927d825e3cc3aeb4999485ada7313", null ],
+    [ "RemoveVolumetric", "dc/dc9/a00389.html#a5f5f4aecb8167b459780a03f01b5fff2", null ],
+    [ "Update", "dc/dc9/a00389.html#a9f9da3df6b9b439f78ca307d3b7e98c1", null ],
+    [ "ambient", "dc/dc9/a00389.html#ad35af4e465a8c389aeaeb20777e5e61b", null ],
+    [ "color", "dc/dc9/a00389.html#a0a4e6dd2746b93a9c4014e4bb78c8d66", null ],
+    [ "mobility", "dc/dc9/a00389.html#ad8802ed5c36db33af8fe39eda477aada", null ],
+    [ "shadow", "dc/dc9/a00389.html#ad0fa9a8ad5f174c4c79570fe0e62db6e", null ],
+    [ "type", "dc/dc9/a00389.html#a8458ee4d225fe841ccd024f98be28991", null ],
+    [ "volumetric", "dc/dc9/a00389.html#a160e1a13590f7d74ba7cddb35ba3027c", null ]
 ];

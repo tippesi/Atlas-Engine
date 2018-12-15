@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Kernel Class Reference</title>
+<title>Blue Engine: FrustumCulling Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,85 +88,48 @@ $(document).ready(function(){initNavTree('d5/d42/a00269.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="../../d5/d35/a00266.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Kernel Class Reference</div>  </div>
+<div class="title">FrustumCulling Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d3/d52/a00023_source.html">Kernel.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../db/db2/a00020_source.html">FrustumCulling.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:a84dba549c0823454ecfc8089c20cf812"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d42/a00269.html#a84dba549c0823454ecfc8089c20cf812">Kernel</a> ()</td></tr>
-<tr class="separator:a84dba549c0823454ecfc8089c20cf812"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a88fefb5b20d6de995c1671d9d652ec37"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d42/a00269.html#a88fefb5b20d6de995c1671d9d652ec37">CalculateGaussian</a> (float sigma, int32_t size)</td></tr>
-<tr class="separator:a88fefb5b20d6de995c1671d9d652ec37"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a921a01afe55a2bdda18eb4ef53261f69"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d42/a00269.html#a921a01afe55a2bdda18eb4ef53261f69">CalculateBox</a> (int32_t size)</td></tr>
-<tr class="separator:a921a01afe55a2bdda18eb4ef53261f69"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad6d14d9992c5757a8f5384f357954750"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d42/a00269.html#ad6d14d9992c5757a8f5384f357954750">Get</a> (int32_t *size, float *weights, float *offsets)</td></tr>
-<tr class="separator:ad6d14d9992c5757a8f5384f357954750"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a88680441ea9e80d1accfa73c00963936"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d42/a00269.html#a88680441ea9e80d1accfa73c00963936">GetLinearized</a> (int32_t *size, float *weights, float *offsets)</td></tr>
-<tr class="separator:a88680441ea9e80d1accfa73c00963936"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a3fc2078d1fe7fbb770aa7144f317c5ab"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d42/a00269.html#a3fc2078d1fe7fbb770aa7144f317c5ab">CullActorsFromScene</a> (<a class="el" href="../../d6/d82/a00293.html">Scene</a> *scene, <a class="el" href="../../d4/d08/a00237.html">Camera</a> *camera)</td></tr>
+<tr class="separator:a3fc2078d1fe7fbb770aa7144f317c5ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac956e20b9c50e40a9852ed91d5bbd7e1"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d42/a00269.html#ac956e20b9c50e40a9852ed91d5bbd7e1">CullLightsFromScene</a> (<a class="el" href="../../d6/d82/a00293.html">Scene</a> *scene, <a class="el" href="../../d4/d08/a00237.html">Camera</a> *camera)</td></tr>
+<tr class="separator:ac956e20b9c50e40a9852ed91d5bbd7e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f6bd04892b70715cb02fc655ec44a77"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d42/a00269.html#a9f6bd04892b70715cb02fc655ec44a77">CullActorsFromShadow</a> (<a class="el" href="../../dc/dc9/a00389.html">ILight</a> *light, <a class="el" href="../../d6/d82/a00293.html">Scene</a> *scene, <a class="el" href="../../d4/d08/a00237.html">Camera</a> *camera)</td></tr>
+<tr class="separator:a9f6bd04892b70715cb02fc655ec44a77"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d3/d52/a00023_source.html#l00006">6</a> of file <a class="el" href="../../d3/d52/a00023_source.html">Kernel.h</a>.</p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a84dba549c0823454ecfc8089c20cf812"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a84dba549c0823454ecfc8089c20cf812">&#9670;&nbsp;</a></span>Kernel()</h2>
+<p class="definition">Definition at line <a class="el" href="../../db/db2/a00020_source.html#l00010">10</a> of file <a class="el" href="../../db/db2/a00020_source.html">FrustumCulling.h</a>.</p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a3fc2078d1fe7fbb770aa7144f317c5ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3fc2078d1fe7fbb770aa7144f317c5ab">&#9670;&nbsp;</a></span>CullActorsFromScene()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">Kernel::Kernel </td>
+          <td class="memname">static void FrustumCulling::CullActorsFromScene </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a921a01afe55a2bdda18eb4ef53261f69"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a921a01afe55a2bdda18eb4ef53261f69">&#9670;&nbsp;</a></span>CalculateBox()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Kernel::CalculateBox </td>
-          <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>size</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a88fefb5b20d6de995c1671d9d652ec37"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a88fefb5b20d6de995c1671d9d652ec37">&#9670;&nbsp;</a></span>CalculateGaussian()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Kernel::CalculateGaussian </td>
-          <td>(</td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>sigma</em>, </td>
+          <td class="paramtype"><a class="el" href="../../d6/d82/a00293.html">Scene</a> *&#160;</td>
+          <td class="paramname"><em>scene</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>size</em>&#160;</td>
+          <td class="paramtype"><a class="el" href="../../d4/d08/a00237.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -174,33 +137,41 @@ Public Member Functions</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a id="ad6d14d9992c5757a8f5384f357954750"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad6d14d9992c5757a8f5384f357954750">&#9670;&nbsp;</a></span>Get()</h2>
+<a id="a9f6bd04892b70715cb02fc655ec44a77"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f6bd04892b70715cb02fc655ec44a77">&#9670;&nbsp;</a></span>CullActorsFromShadow()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void Kernel::Get </td>
+          <td class="memname">static void FrustumCulling::CullActorsFromShadow </td>
           <td>(</td>
-          <td class="paramtype">int32_t *&#160;</td>
-          <td class="paramname"><em>size</em>, </td>
+          <td class="paramtype"><a class="el" href="../../dc/dc9/a00389.html">ILight</a> *&#160;</td>
+          <td class="paramname"><em>light</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">float *&#160;</td>
-          <td class="paramname"><em>weights</em>, </td>
+          <td class="paramtype"><a class="el" href="../../d6/d82/a00293.html">Scene</a> *&#160;</td>
+          <td class="paramname"><em>scene</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">float *&#160;</td>
-          <td class="paramname"><em>offsets</em>&#160;</td>
+          <td class="paramtype"><a class="el" href="../../d4/d08/a00237.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -208,33 +179,35 @@ Public Member Functions</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a id="a88680441ea9e80d1accfa73c00963936"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a88680441ea9e80d1accfa73c00963936">&#9670;&nbsp;</a></span>GetLinearized()</h2>
+<a id="ac956e20b9c50e40a9852ed91d5bbd7e1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac956e20b9c50e40a9852ed91d5bbd7e1">&#9670;&nbsp;</a></span>CullLightsFromScene()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void Kernel::GetLinearized </td>
+          <td class="memname">static void FrustumCulling::CullLightsFromScene </td>
           <td>(</td>
-          <td class="paramtype">int32_t *&#160;</td>
-          <td class="paramname"><em>size</em>, </td>
+          <td class="paramtype"><a class="el" href="../../d6/d82/a00293.html">Scene</a> *&#160;</td>
+          <td class="paramname"><em>scene</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">float *&#160;</td>
-          <td class="paramname"><em>weights</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float *&#160;</td>
-          <td class="paramname"><em>offsets</em>&#160;</td>
+          <td class="paramtype"><a class="el" href="../../d4/d08/a00237.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -242,19 +215,24 @@ Public Member Functions</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/<a class="el" href="../../d3/d52/a00023_source.html">Kernel.h</a></li>
+<li>src/<a class="el" href="../../db/db2/a00020_source.html">FrustumCulling.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d5/d42/a00269.html">Kernel</a></li>
+    <li class="navelem"><a class="el" href="../../d5/d42/a00269.html">FrustumCulling</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

@@ -1,7 +1,9 @@
 var a00353 =
 [
-    [ "EngineMouseWheelEvent", "db/ddc/a00353.html#ac8a2b257c7a24ded795961fd9a6a13e2", null ],
-    [ "windowID", "db/ddc/a00353.html#aef4fecda7ef413f8fb2b915335b16f6c", null ],
-    [ "x", "db/ddc/a00353.html#ab5a9648d0fa1b1721d80de5a7cf7395c", null ],
-    [ "y", "db/ddc/a00353.html#aaf246047bd92e8e407f29a6e7c821c81", null ]
+    [ "EngineMouseMotionEvent", "db/ddc/a00353.html#a0f5976de034fbfd40567fd159cd654ca", null ],
+    [ "windowID", "db/ddc/a00353.html#ae7b7226cfa0f9bd34994a54f2a087fcf", null ],
+    [ "x", "db/ddc/a00353.html#a44826db99c05e6cb62d27359757bc993", null ],
+    [ "xDelta", "db/ddc/a00353.html#a5083633ea1d0c44552f91275a6cb0669", null ],
+    [ "y", "db/ddc/a00353.html#a2f18996c8ba9b152cc1cd3d9a7d3444e", null ],
+    [ "yDelta", "db/ddc/a00353.html#aeb1c83de974ce48732e8c83617f818d2", null ]
 ];

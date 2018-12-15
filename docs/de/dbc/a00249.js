@@ -1,10 +1,7 @@
 var a00249 =
 [
-    [ "advance", "de/dbc/a00249.html#aaa4edd738a9a212b7ac9bd9b79b983a8", null ],
-    [ "data", "de/dbc/a00249.html#a00d34887a9ce0661c6928256f4bf9076", null ],
-    [ "height", "de/dbc/a00249.html#a2c6a219db853472acb4fba359198ce94", null ],
-    [ "kern", "de/dbc/a00249.html#a4b9573a614f61a74e1db79028a6aea9d", null ],
-    [ "offset", "de/dbc/a00249.html#ab6b212d06d86835fed83831d2ebe4e05", null ],
-    [ "textureScale", "de/dbc/a00249.html#ac45d840db992c85ed53508bcbbcf7b9b", null ],
-    [ "width", "de/dbc/a00249.html#ad9b0996e8546052fbc305da3a132c636", null ]
+    [ "Init", "de/dbc/a00249.html#affbbd5b87c460eff83c9484de8b4eb71", null ],
+    [ "LockFramerate", "de/dbc/a00249.html#a4ab14a1eea5b4d632b5ac5808779c610", null ],
+    [ "UnlockFramerate", "de/dbc/a00249.html#aad2ab367dbdc1dad426d2b6f4f258cd6", null ],
+    [ "Update", "de/dbc/a00249.html#acda4d51c0611d2db3ce644be0d32d54a", null ]
 ];

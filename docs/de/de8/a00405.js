@@ -1,6 +1,5 @@
 var a00405 =
 [
-    [ "Skybox", "de/de8/a00405.html#a7f881d622bb9bb6ce25fb399f66768dc", null ],
-    [ "cubemap", "de/de8/a00405.html#abd1f9af780106107a77cca24fe04a15f", null ],
-    [ "matrix", "de/de8/a00405.html#a24e2629c59008404461d737411121502", null ]
+    [ "Sky", "de/de8/a00405.html#a0a3f5b8e59a9971e4a7b18272305ae24", null ],
+    [ "skybox", "de/de8/a00405.html#aceebe4b84df893b670725bdbf1f5c568", null ]
 ];

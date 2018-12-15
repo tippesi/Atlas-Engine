@@ -1,11 +1,11 @@
 var a00497 =
 [
-    [ "TextRenderer", "d4/d1e/a00497.html#a2ffb5baddcc264fbaccda8fb7c660814", null ],
-    [ "Render", "d4/d1e/a00497.html#ab6f7e4c4d2ab1283db196e0e437bfd5d", null ],
-    [ "Render", "d4/d1e/a00497.html#a1f783931e4e194ada404d3f95a4e814c", null ],
-    [ "Render", "d4/d1e/a00497.html#abfd3450a0466a9a7f509bcede0ee16d7", null ],
-    [ "RenderOutlined", "d4/d1e/a00497.html#a274115742f5fd6c5305850342c1eb671", null ],
-    [ "RenderOutlined", "d4/d1e/a00497.html#a4f99b2cb4a776b6bd9d8e93d8349bed7", null ],
-    [ "fragmentPath", "d4/d1e/a00497.html#a66be214e499b96d592163ad9454cd42c", null ],
-    [ "vertexPath", "d4/d1e/a00497.html#a6d139622d0419496250f83b86d72da24", null ]
+    [ "TerrainRenderer", "d4/d1e/a00497.html#addff638360d7f665bcaad999e8119e6e", null ],
+    [ "GetUniforms", "d4/d1e/a00497.html#ab75efc89e697661882557f7996af1587", null ],
+    [ "Render", "d4/d1e/a00497.html#ab157880e3312e3ec63dcf43d9d157955", null ],
+    [ "fragmentPath", "d4/d1e/a00497.html#a0894ad4c382261dd54691616f2da6271", null ],
+    [ "geometryPath", "d4/d1e/a00497.html#ac80b20e2e83a184cd3def5806b91f88d", null ],
+    [ "tessControlPath", "d4/d1e/a00497.html#a159cb4ee860123883161675f057b025a", null ],
+    [ "tessEvalPath", "d4/d1e/a00497.html#a863ee658f30402d5adf2ee5ee9a4b65e", null ],
+    [ "vertexPath", "d4/d1e/a00497.html#aa04ffa227b94ad06e053375a1e2ce0b0", null ]
 ];

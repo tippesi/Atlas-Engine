@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Viewport Class Reference</title>
+<title>Blue Engine: VertexBuffer Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,75 +89,120 @@ $(document).ready(function(){initNavTree('dd/db3/a00313.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d1/d67/a00310.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Viewport Class Reference</div>  </div>
+<div class="title">VertexBuffer Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Represents a rectangular area inside a window where the engine renders to.  
- <a href="../../dd/db3/a00313.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="../../dc/dee/a00053_source.html">Viewport.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d5/de0/a00050_source.html">VertexBuffer.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a02109282ba6bb5c02c20a723e14455e8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a02109282ba6bb5c02c20a723e14455e8">Viewport</a> (int32_t <a class="el" href="../../dd/db3/a00313.html#ac3a9323f0278fe0b3cbe33d2a9f2cba2">x</a>, int32_t <a class="el" href="../../dd/db3/a00313.html#a50c9a8abaf814f55e83c353cde6dbad4">y</a>, int32_t <a class="el" href="../../dd/db3/a00313.html#ac69e44eacb51f86c4656505505f2fab8">width</a>, int32_t <a class="el" href="../../dd/db3/a00313.html#aa0f398d2df3bb729815766f1717d1811">height</a>)</td></tr>
-<tr class="memdesc:a02109282ba6bb5c02c20a723e14455e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a <a class="el" href="../../dd/db3/a00313.html" title="Represents a rectangular area inside a window where the engine renders to. ">Viewport</a> object.  <a href="#a02109282ba6bb5c02c20a723e14455e8">More...</a><br /></td></tr>
-<tr class="separator:a02109282ba6bb5c02c20a723e14455e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52118020afecd82443c8fcdb1fea3ee3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a52118020afecd82443c8fcdb1fea3ee3">Set</a> (int32_t <a class="el" href="../../dd/db3/a00313.html#ac3a9323f0278fe0b3cbe33d2a9f2cba2">x</a>, int32_t <a class="el" href="../../dd/db3/a00313.html#a50c9a8abaf814f55e83c353cde6dbad4">y</a>, int32_t <a class="el" href="../../dd/db3/a00313.html#ac69e44eacb51f86c4656505505f2fab8">width</a>, int32_t <a class="el" href="../../dd/db3/a00313.html#aa0f398d2df3bb729815766f1717d1811">height</a>)</td></tr>
-<tr class="memdesc:a52118020afecd82443c8fcdb1fea3ee3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resets the size of the viewport.  <a href="#a52118020afecd82443c8fcdb1fea3ee3">More...</a><br /></td></tr>
-<tr class="separator:a52118020afecd82443c8fcdb1fea3ee3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39d978527ffb3083db23e213a7f0af5d"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a39d978527ffb3083db23e213a7f0af5d">Unproject</a> (vec3 point, <a class="el" href="../../d4/d08/a00237.html">Camera</a> *camera)</td></tr>
-<tr class="memdesc:a39d978527ffb3083db23e213a7f0af5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transforms a point from screen space pixel coordinates into world space.  <a href="#a39d978527ffb3083db23e213a7f0af5d">More...</a><br /></td></tr>
-<tr class="separator:a39d978527ffb3083db23e213a7f0af5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:ac3a9323f0278fe0b3cbe33d2a9f2cba2"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#ac3a9323f0278fe0b3cbe33d2a9f2cba2">x</a></td></tr>
-<tr class="separator:ac3a9323f0278fe0b3cbe33d2a9f2cba2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a50c9a8abaf814f55e83c353cde6dbad4"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a50c9a8abaf814f55e83c353cde6dbad4">y</a></td></tr>
-<tr class="separator:a50c9a8abaf814f55e83c353cde6dbad4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac69e44eacb51f86c4656505505f2fab8"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#ac69e44eacb51f86c4656505505f2fab8">width</a></td></tr>
-<tr class="separator:ac69e44eacb51f86c4656505505f2fab8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa0f398d2df3bb729815766f1717d1811"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#aa0f398d2df3bb729815766f1717d1811">height</a></td></tr>
-<tr class="separator:aa0f398d2df3bb729815766f1717d1811"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf0062a4c5b00f32ea124cf734e70c6e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#adf0062a4c5b00f32ea124cf734e70c6e">VertexBuffer</a> (uint32_t type, int32_t dataType, int32_t stride, uint32_t usage=GL_STATIC_DRAW)</td></tr>
+<tr class="memdesc:adf0062a4c5b00f32ea124cf734e70c6e"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#adf0062a4c5b00f32ea124cf734e70c6e">More...</a><br /></td></tr>
+<tr class="separator:adf0062a4c5b00f32ea124cf734e70c6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a349d70b251a33d0daeec8dd288cf2a65"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a349d70b251a33d0daeec8dd288cf2a65">SetData</a> (uint8_t *data, int32_t length)</td></tr>
+<tr class="separator:a349d70b251a33d0daeec8dd288cf2a65"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe7288409b07cb46c4a16aecd6df1f3b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#abe7288409b07cb46c4a16aecd6df1f3b">SetData</a> (uint16_t *data, int32_t length)</td></tr>
+<tr class="separator:abe7288409b07cb46c4a16aecd6df1f3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af76ab03fa2711c6567f7311e6b55591b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#af76ab03fa2711c6567f7311e6b55591b">SetData</a> (uint32_t *data, int32_t length)</td></tr>
+<tr class="separator:af76ab03fa2711c6567f7311e6b55591b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa108ad49a708aedbd3211a0588f28c2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#afa108ad49a708aedbd3211a0588f28c2">SetData</a> (int8_t *data, int32_t length)</td></tr>
+<tr class="separator:afa108ad49a708aedbd3211a0588f28c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a201efdaf946ce85613764f26e41058b0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a201efdaf946ce85613764f26e41058b0">SetData</a> (int16_t *data, int32_t length)</td></tr>
+<tr class="separator:a201efdaf946ce85613764f26e41058b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ba41cc4e2f0218ecedddcdf6f75bd87"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a8ba41cc4e2f0218ecedddcdf6f75bd87">SetData</a> (int32_t *data, int32_t length)</td></tr>
+<tr class="separator:a8ba41cc4e2f0218ecedddcdf6f75bd87"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfc66d1e45e58c537433e38686902d20"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#acfc66d1e45e58c537433e38686902d20">SetData</a> (float *data, int32_t length)</td></tr>
+<tr class="separator:acfc66d1e45e58c537433e38686902d20"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9801c416fa041c91d7c15a73c8a6ee5f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a9801c416fa041c91d7c15a73c8a6ee5f">SetData</a> (vec2 *data, int32_t length)</td></tr>
+<tr class="separator:a9801c416fa041c91d7c15a73c8a6ee5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0aaa31d8beca44c68b64fe6ea4df77aa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a0aaa31d8beca44c68b64fe6ea4df77aa">SetData</a> (vec3 *data, int32_t length)</td></tr>
+<tr class="separator:a0aaa31d8beca44c68b64fe6ea4df77aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b0f46c5caabb1add4300aef66856dd3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a9b0f46c5caabb1add4300aef66856dd3">SetData</a> (vec4 *data, int32_t length)</td></tr>
+<tr class="separator:a9b0f46c5caabb1add4300aef66856dd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa49e4ed2991292c6df67d5755ad1d707"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#aa49e4ed2991292c6df67d5755ad1d707">SetData</a> (void *data, int32_t length, int32_t elementSize)</td></tr>
+<tr class="separator:aa49e4ed2991292c6df67d5755ad1d707"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17aabda5b72685d23e66871adeca231e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a17aabda5b72685d23e66871adeca231e">SetSubData</a> (uint8_t *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:a17aabda5b72685d23e66871adeca231e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a67013e84a661c2c3609d8d8b270bb60d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a67013e84a661c2c3609d8d8b270bb60d">SetSubData</a> (uint16_t *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:a67013e84a661c2c3609d8d8b270bb60d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9057a1b04ed617944e43ba1646047d1a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a9057a1b04ed617944e43ba1646047d1a">SetSubData</a> (uint32_t *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:a9057a1b04ed617944e43ba1646047d1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03557177d987c201bc57a66b8d5be4fb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a03557177d987c201bc57a66b8d5be4fb">SetSubData</a> (int8_t *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:a03557177d987c201bc57a66b8d5be4fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9789d1e26f09fee2f8b4225fedf46d57"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a9789d1e26f09fee2f8b4225fedf46d57">SetSubData</a> (int16_t *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:a9789d1e26f09fee2f8b4225fedf46d57"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab0e1c9b55327ab95a6cd1e84daa2405f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#ab0e1c9b55327ab95a6cd1e84daa2405f">SetSubData</a> (int32_t *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:ab0e1c9b55327ab95a6cd1e84daa2405f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d7974570210bddb146cc44ac63e0e8e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a3d7974570210bddb146cc44ac63e0e8e">SetSubData</a> (float *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:a3d7974570210bddb146cc44ac63e0e8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1e85e62444330afd15c295ed3bf95d8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#ad1e85e62444330afd15c295ed3bf95d8">SetSubData</a> (vec2 *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:ad1e85e62444330afd15c295ed3bf95d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8e78df0538bc716a1e6e79c4cdd093b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#ab8e78df0538bc716a1e6e79c4cdd093b">SetSubData</a> (vec3 *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:ab8e78df0538bc716a1e6e79c4cdd093b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af96ff68edcd909e1aa0eea8a42accb22"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#af96ff68edcd909e1aa0eea8a42accb22">SetSubData</a> (vec4 *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:af96ff68edcd909e1aa0eea8a42accb22"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a868f882898dc8abc0bf672af0d78cc39"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a868f882898dc8abc0bf672af0d78cc39">SetSubData</a> (void *data, int32_t offset, int32_t length, int32_t elementSize)</td></tr>
+<tr class="separator:a868f882898dc8abc0bf672af0d78cc39"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf162a527435e7fe8f543ffe9ff3e474"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#acf162a527435e7fe8f543ffe9ff3e474">Bind</a> ()</td></tr>
+<tr class="separator:acf162a527435e7fe8f543ffe9ff3e474"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a76029e4f3f7f4302791d4409e937719a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a76029e4f3f7f4302791d4409e937719a">Unbind</a> ()</td></tr>
+<tr class="separator:a76029e4f3f7f4302791d4409e937719a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a606ace83cd30ef8904884480e6fbed"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a7a606ace83cd30ef8904884480e6fbed">GetType</a> ()</td></tr>
+<tr class="memdesc:a7a606ace83cd30ef8904884480e6fbed"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#a7a606ace83cd30ef8904884480e6fbed">More...</a><br /></td></tr>
+<tr class="separator:a7a606ace83cd30ef8904884480e6fbed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9248738d9d4f6ad5aec6d5bee059903"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#af9248738d9d4f6ad5aec6d5bee059903">GetDataType</a> ()</td></tr>
+<tr class="memdesc:af9248738d9d4f6ad5aec6d5bee059903"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#af9248738d9d4f6ad5aec6d5bee059903">More...</a><br /></td></tr>
+<tr class="separator:af9248738d9d4f6ad5aec6d5bee059903"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b748e24506a73f0451f21e434da68d0"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a3b748e24506a73f0451f21e434da68d0">GetStride</a> ()</td></tr>
+<tr class="memdesc:a3b748e24506a73f0451f21e434da68d0"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#a3b748e24506a73f0451f21e434da68d0">More...</a><br /></td></tr>
+<tr class="separator:a3b748e24506a73f0451f21e434da68d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab49bfc5700ac08806f9bbf87750c6ebb"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#ab49bfc5700ac08806f9bbf87750c6ebb">GetElementCount</a> ()</td></tr>
+<tr class="memdesc:ab49bfc5700ac08806f9bbf87750c6ebb"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#ab49bfc5700ac08806f9bbf87750c6ebb">More...</a><br /></td></tr>
+<tr class="separator:ab49bfc5700ac08806f9bbf87750c6ebb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5216726fdd43b2ae8e1439e347717fdd"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db3/a00313.html#a5216726fdd43b2ae8e1439e347717fdd">~VertexBuffer</a> ()</td></tr>
+<tr class="separator:a5216726fdd43b2ae8e1439e347717fdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Represents a rectangular area inside a window where the engine renders to. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00010">10</a> of file <a class="el" href="../../dc/dee/a00053_source.html">Viewport.h</a>.</p>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00006">6</a> of file <a class="el" href="../../d5/de0/a00050_source.html">VertexBuffer.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a02109282ba6bb5c02c20a723e14455e8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a02109282ba6bb5c02c20a723e14455e8">&#9670;&nbsp;</a></span>Viewport()</h2>
+<a id="adf0062a4c5b00f32ea124cf734e70c6e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adf0062a4c5b00f32ea124cf734e70c6e">&#9670;&nbsp;</a></span>VertexBuffer()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Viewport::Viewport </td>
+          <td class="memname">VertexBuffer::VertexBuffer </td>
           <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>type</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
+          <td class="paramname"><em>dataType</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
+          <td class="paramname"><em>stride</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>height</em>&#160;</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>usage</em> = <code>GL_STATIC_DRAW</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -167,49 +212,156 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Creates a <a class="el" href="../../dd/db3/a00313.html" title="Represents a rectangular area inside a window where the engine renders to. ">Viewport</a> object. </p>
+<p><br />
+ </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">x</td><td>The offset in x direction to the upper left corner of the window </td></tr>
-    <tr><td class="paramname">y</td><td>The offset in y direction to the upper left corner of the window </td></tr>
-    <tr><td class="paramname">width</td><td>The width in pixels of the viewport </td></tr>
-    <tr><td class="paramname">height</td><td>The height in pixels of the viewport </td></tr>
+    <tr><td class="paramname">type</td><td></td></tr>
+    <tr><td class="paramname">dataType</td><td></td></tr>
+    <tr><td class="paramname">stride</td><td></td></tr>
+    <tr><td class="paramname">usage</td><td></td></tr>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="a5216726fdd43b2ae8e1439e347717fdd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5216726fdd43b2ae8e1439e347717fdd">&#9670;&nbsp;</a></span>~VertexBuffer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">VertexBuffer::~VertexBuffer </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a52118020afecd82443c8fcdb1fea3ee3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a52118020afecd82443c8fcdb1fea3ee3">&#9670;&nbsp;</a></span>Set()</h2>
+<a id="acf162a527435e7fe8f543ffe9ff3e474"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acf162a527435e7fe8f543ffe9ff3e474">&#9670;&nbsp;</a></span>Bind()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Viewport::Set </td>
+          <td class="memname">void VertexBuffer::Bind </td>
           <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af9248738d9d4f6ad5aec6d5bee059903"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af9248738d9d4f6ad5aec6d5bee059903">&#9670;&nbsp;</a></span>GetDataType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t VertexBuffer::GetDataType </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><br />
+ </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="ab49bfc5700ac08806f9bbf87750c6ebb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab49bfc5700ac08806f9bbf87750c6ebb">&#9670;&nbsp;</a></span>GetElementCount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t VertexBuffer::GetElementCount </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><br />
+ </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="a3b748e24506a73f0451f21e434da68d0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3b748e24506a73f0451f21e434da68d0">&#9670;&nbsp;</a></span>GetStride()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t VertexBuffer::GetStride </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><br />
+ </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="a7a606ace83cd30ef8904884480e6fbed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a606ace83cd30ef8904884480e6fbed">&#9670;&nbsp;</a></span>GetType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint32_t VertexBuffer::GetType </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><br />
+ </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="a349d70b251a33d0daeec8dd288cf2a65"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a349d70b251a33d0daeec8dd288cf2a65">&#9670;&nbsp;</a></span>SetData() <span class="overload">[1/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">uint8_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>height</em>&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -219,36 +371,25 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Resets the size of the viewport. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">x</td><td>The offset in x direction to the upper left corner of the window </td></tr>
-    <tr><td class="paramname">y</td><td>The offset in y direction to the upper left corner of the window </td></tr>
-    <tr><td class="paramname">width</td><td>The width in pixels of the viewport </td></tr>
-    <tr><td class="paramname">height</td><td>The height in pixels of the viewport </td></tr>
-  </table>
-  </dd>
-</dl>
-
 </div>
 </div>
-<a id="a39d978527ffb3083db23e213a7f0af5d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a39d978527ffb3083db23e213a7f0af5d">&#9670;&nbsp;</a></span>Unproject()</h2>
+<a id="abe7288409b07cb46c4a16aecd6df1f3b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe7288409b07cb46c4a16aecd6df1f3b">&#9670;&nbsp;</a></span>SetData() <span class="overload">[2/11]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">vec3 Viewport::Unproject </td>
+          <td class="memname">void VertexBuffer::SetData </td>
           <td>(</td>
-          <td class="paramtype">vec3&#160;</td>
-          <td class="paramname"><em>point</em>, </td>
+          <td class="paramtype">uint16_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../d4/d08/a00237.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>&#160;</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -258,93 +399,672 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Transforms a point from screen space pixel coordinates into world space. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">point</td><td>The point to be transformed. </td></tr>
-    <tr><td class="paramname">camera</td><td>A camera which is used for the transformation </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>The transformed point in world space. </dd></dl>
-<dl class="section remark"><dt>Remarks</dt><dd>The x and y components of the point are just a position in pixels relative to the window. The z component represents the depth of the later transformed point and can be in range (0-1). If z is equal to zero the point will be in the exact depth as the near plane of the camera. If z is equal to one the point will be in the exact depth as the far plane of the camera. </dd></dl>
-
 </div>
 </div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="aa0f398d2df3bb729815766f1717d1811"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa0f398d2df3bb729815766f1717d1811">&#9670;&nbsp;</a></span>height</h2>
+<a id="af76ab03fa2711c6567f7311e6b55591b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af76ab03fa2711c6567f7311e6b55591b">&#9670;&nbsp;</a></span>SetData() <span class="overload">[3/11]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t Viewport::height</td>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00047">47</a> of file <a class="el" href="../../dc/dee/a00053_source.html">Viewport.h</a>.</p>
-
 </div>
 </div>
-<a id="ac69e44eacb51f86c4656505505f2fab8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac69e44eacb51f86c4656505505f2fab8">&#9670;&nbsp;</a></span>width</h2>
+<a id="afa108ad49a708aedbd3211a0588f28c2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa108ad49a708aedbd3211a0588f28c2">&#9670;&nbsp;</a></span>SetData() <span class="overload">[4/11]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t Viewport::width</td>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">int8_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00046">46</a> of file <a class="el" href="../../dc/dee/a00053_source.html">Viewport.h</a>.</p>
-
 </div>
 </div>
-<a id="ac3a9323f0278fe0b3cbe33d2a9f2cba2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac3a9323f0278fe0b3cbe33d2a9f2cba2">&#9670;&nbsp;</a></span>x</h2>
+<a id="a201efdaf946ce85613764f26e41058b0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a201efdaf946ce85613764f26e41058b0">&#9670;&nbsp;</a></span>SetData() <span class="overload">[5/11]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t Viewport::x</td>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">int16_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00043">43</a> of file <a class="el" href="../../dc/dee/a00053_source.html">Viewport.h</a>.</p>
-
 </div>
 </div>
-<a id="a50c9a8abaf814f55e83c353cde6dbad4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a50c9a8abaf814f55e83c353cde6dbad4">&#9670;&nbsp;</a></span>y</h2>
+<a id="a8ba41cc4e2f0218ecedddcdf6f75bd87"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8ba41cc4e2f0218ecedddcdf6f75bd87">&#9670;&nbsp;</a></span>SetData() <span class="overload">[6/11]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t Viewport::y</td>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">int32_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00044">44</a> of file <a class="el" href="../../dc/dee/a00053_source.html">Viewport.h</a>.</p>
+</div>
+</div>
+<a id="acfc66d1e45e58c537433e38686902d20"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acfc66d1e45e58c537433e38686902d20">&#9670;&nbsp;</a></span>SetData() <span class="overload">[7/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">float *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9801c416fa041c91d7c15a73c8a6ee5f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9801c416fa041c91d7c15a73c8a6ee5f">&#9670;&nbsp;</a></span>SetData() <span class="overload">[8/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">vec2 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a0aaa31d8beca44c68b64fe6ea4df77aa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0aaa31d8beca44c68b64fe6ea4df77aa">&#9670;&nbsp;</a></span>SetData() <span class="overload">[9/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">vec3 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9b0f46c5caabb1add4300aef66856dd3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b0f46c5caabb1add4300aef66856dd3">&#9670;&nbsp;</a></span>SetData() <span class="overload">[10/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">vec4 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aa49e4ed2991292c6df67d5755ad1d707"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa49e4ed2991292c6df67d5755ad1d707">&#9670;&nbsp;</a></span>SetData() <span class="overload">[11/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>elementSize</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a17aabda5b72685d23e66871adeca231e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a17aabda5b72685d23e66871adeca231e">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[1/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">uint8_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a67013e84a661c2c3609d8d8b270bb60d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a67013e84a661c2c3609d8d8b270bb60d">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[2/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">uint16_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9057a1b04ed617944e43ba1646047d1a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9057a1b04ed617944e43ba1646047d1a">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[3/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a03557177d987c201bc57a66b8d5be4fb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a03557177d987c201bc57a66b8d5be4fb">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[4/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">int8_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9789d1e26f09fee2f8b4225fedf46d57"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9789d1e26f09fee2f8b4225fedf46d57">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[5/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">int16_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ab0e1c9b55327ab95a6cd1e84daa2405f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab0e1c9b55327ab95a6cd1e84daa2405f">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[6/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">int32_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3d7974570210bddb146cc44ac63e0e8e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d7974570210bddb146cc44ac63e0e8e">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[7/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">float *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad1e85e62444330afd15c295ed3bf95d8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad1e85e62444330afd15c295ed3bf95d8">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[8/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">vec2 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ab8e78df0538bc716a1e6e79c4cdd093b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab8e78df0538bc716a1e6e79c4cdd093b">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[9/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">vec3 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af96ff68edcd909e1aa0eea8a42accb22"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af96ff68edcd909e1aa0eea8a42accb22">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[10/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">vec4 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a868f882898dc8abc0bf672af0d78cc39"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a868f882898dc8abc0bf672af0d78cc39">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[11/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>elementSize</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a76029e4f3f7f4302791d4409e937719a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a76029e4f3f7f4302791d4409e937719a">&#9670;&nbsp;</a></span>Unbind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::Unbind </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/<a class="el" href="../../dc/dee/a00053_source.html">Viewport.h</a></li>
+<li>src/<a class="el" href="../../d5/de0/a00050_source.html">VertexBuffer.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dd/db3/a00313.html">Viewport</a></li>
+    <li class="navelem"><a class="el" href="../../dd/db3/a00313.html">VertexBuffer</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

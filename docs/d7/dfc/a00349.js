@@ -1,9 +1,9 @@
 var a00349 =
 [
-    [ "EngineMouseMotionEvent", "d7/dfc/a00349.html#a0f5976de034fbfd40567fd159cd654ca", null ],
-    [ "windowID", "d7/dfc/a00349.html#ae7b7226cfa0f9bd34994a54f2a087fcf", null ],
-    [ "x", "d7/dfc/a00349.html#a44826db99c05e6cb62d27359757bc993", null ],
-    [ "xDelta", "d7/dfc/a00349.html#a5083633ea1d0c44552f91275a6cb0669", null ],
-    [ "y", "d7/dfc/a00349.html#a2f18996c8ba9b152cc1cd3d9a7d3444e", null ],
-    [ "yDelta", "d7/dfc/a00349.html#aeb1c83de974ce48732e8c83617f818d2", null ]
+    [ "EngineMouseButtonEvent", "d7/dfc/a00349.html#a226f992e3de06ce33547ee44554f1aba", null ],
+    [ "button", "d7/dfc/a00349.html#a4225bc395727818bd2d5590ae425fe2f", null ],
+    [ "state", "d7/dfc/a00349.html#a7d80258f9e65e5c87e3c1e0bd3b914c6", null ],
+    [ "windowID", "d7/dfc/a00349.html#a93c9e6210a644d45c2fd9770fe3cc00a", null ],
+    [ "x", "d7/dfc/a00349.html#abe28fcbedbb1c71d8a11bdf995878265", null ],
+    [ "y", "d7/dfc/a00349.html#a69fc6fd1c7eb716e8e59f3d2a3d7b427", null ]
 ];

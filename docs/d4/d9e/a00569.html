@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: TerrainStorageCell Class Reference</title>
+<title>Blue Engine: TerrainStorage Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,220 +92,168 @@ $(document).ready(function(){initNavTree('d4/d9e/a00569.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d0/d3e/a00566.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">TerrainStorageCell Class Reference</div>  </div>
+<div class="title">TerrainStorage Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Stores the material information for a terrain node.  
+<p><a class="el" href="../../d4/d9e/a00569.html" title="TerrainStorage manages the materials and data for all terrain nodes. ">TerrainStorage</a> manages the materials and data for all terrain nodes.  
  <a href="../../d4/d9e/a00569.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../d1/da8/a00230_source.html">TerrainStorageCell.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d9/d01/a00227_source.html">TerrainStorage.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a41f327642faa772bbbb30af93351e242"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#a41f327642faa772bbbb30af93351e242">TerrainStorageCell</a> ()</td></tr>
-<tr class="separator:a41f327642faa772bbbb30af93351e242"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0849d2d721c1e72d65e4fe3ceb2d205f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#a0849d2d721c1e72d65e4fe3ceb2d205f">IsLoaded</a> ()</td></tr>
-<tr class="separator:a0849d2d721c1e72d65e4fe3ceb2d205f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb8b608994bcfc8a5e3f83b80da98437"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#acb8b608994bcfc8a5e3f83b80da98437">TerrainStorage</a> (int32_t rootNodeCount, int32_t LoDCount)</td></tr>
+<tr class="memdesc:acb8b608994bcfc8a5e3f83b80da98437"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a terrain storage object.  <a href="#acb8b608994bcfc8a5e3f83b80da98437">More...</a><br /></td></tr>
+<tr class="separator:acb8b608994bcfc8a5e3f83b80da98437"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a989b2e85808897ee65bfbe4057c4a442"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d6/d21/a00573.html">TerrainStorageCell</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#a989b2e85808897ee65bfbe4057c4a442">GetCell</a> (int32_t x, int32_t y, int32_t LoD)</td></tr>
+<tr class="memdesc:a989b2e85808897ee65bfbe4057c4a442"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the cell to the corresponding arguments in the storage object.  <a href="#a989b2e85808897ee65bfbe4057c4a442">More...</a><br /></td></tr>
+<tr class="separator:a989b2e85808897ee65bfbe4057c4a442"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a6e4989523a14b87a50bf64913192bfe8"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#a6e4989523a14b87a50bf64913192bfe8">x</a></td></tr>
-<tr class="separator:a6e4989523a14b87a50bf64913192bfe8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a91fd41335dd76dddc12430af15f1e085"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#a91fd41335dd76dddc12430af15f1e085">y</a></td></tr>
-<tr class="separator:a91fd41335dd76dddc12430af15f1e085"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab43b148eaed08151ee7c89c9cb9dd288"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#ab43b148eaed08151ee7c89c9cb9dd288">LoD</a></td></tr>
-<tr class="separator:ab43b148eaed08151ee7c89c9cb9dd288"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aff003e7c92b7e6a6d0f318e6edb5f4d7"><td class="memItemLeft" align="right" valign="top">vector&lt; uint8_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#aff003e7c92b7e6a6d0f318e6edb5f4d7">heightData</a></td></tr>
-<tr class="separator:aff003e7c92b7e6a6d0f318e6edb5f4d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af44f59262fa2a8484aed7a72e2497667"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../da/d50/a00301.html">Texture</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#af44f59262fa2a8484aed7a72e2497667">heightField</a></td></tr>
-<tr class="separator:af44f59262fa2a8484aed7a72e2497667"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8f0788d6e25ac0ff3726c0ec51127f51"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../da/d50/a00301.html">Texture</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#a8f0788d6e25ac0ff3726c0ec51127f51">normalMap</a></td></tr>
-<tr class="separator:a8f0788d6e25ac0ff3726c0ec51127f51"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a789f85441d74c7d5d5d8f632a64c33e5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../da/d50/a00301.html">Texture</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#a789f85441d74c7d5d5d8f632a64c33e5">diffuseMap</a></td></tr>
-<tr class="separator:a789f85441d74c7d5d5d8f632a64c33e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2ac413731ed2c5e54d6b3c009cf7a3d9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../da/d50/a00301.html">Texture</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#a2ac413731ed2c5e54d6b3c009cf7a3d9">displacementMap</a></td></tr>
-<tr class="separator:a2ac413731ed2c5e54d6b3c009cf7a3d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59df861d15cce51de2915f2cfa107843"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../d6/d21/a00573.html">TerrainStorageCell</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#a59df861d15cce51de2915f2cfa107843">requestedCells</a></td></tr>
+<tr class="memdesc:a59df861d15cce51de2915f2cfa107843"><td class="mdescLeft">&#160;</td><td class="mdescRight">The storage cells the terrain request to change the level of detail.  <a href="#a59df861d15cce51de2915f2cfa107843">More...</a><br /></td></tr>
+<tr class="separator:a59df861d15cce51de2915f2cfa107843"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03d71a76977ba904dc7979d78ea5d341"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../d6/d21/a00573.html">TerrainStorageCell</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9e/a00569.html#a03d71a76977ba904dc7979d78ea5d341">unusedCells</a></td></tr>
+<tr class="memdesc:a03d71a76977ba904dc7979d78ea5d341"><td class="mdescLeft">&#160;</td><td class="mdescRight">The storage cells the terrain doesn't need any more because of a change in the level of detail.  <a href="#a03d71a76977ba904dc7979d78ea5d341">More...</a><br /></td></tr>
+<tr class="separator:a03d71a76977ba904dc7979d78ea5d341"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Stores the material information for a terrain node. </p>
-<p>Only LoD0 uses a splatmap and the materials </p>
+<div class="textblock"><p><a class="el" href="../../d4/d9e/a00569.html" title="TerrainStorage manages the materials and data for all terrain nodes. ">TerrainStorage</a> manages the materials and data for all terrain nodes. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00011">11</a> of file <a class="el" href="../../d1/da8/a00230_source.html">TerrainStorageCell.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d01/a00227_source.html#l00012">12</a> of file <a class="el" href="../../d9/d01/a00227_source.html">TerrainStorage.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a41f327642faa772bbbb30af93351e242"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a41f327642faa772bbbb30af93351e242">&#9670;&nbsp;</a></span>TerrainStorageCell()</h2>
+<a id="acb8b608994bcfc8a5e3f83b80da98437"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acb8b608994bcfc8a5e3f83b80da98437">&#9670;&nbsp;</a></span>TerrainStorage()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">TerrainStorageCell::TerrainStorageCell </td>
+          <td class="memname">TerrainStorage::TerrainStorage </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>rootNodeCount</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>LoDCount</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Constructs a terrain storage object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">rootNodeCount</td><td>The root node count of the terrain </td></tr>
+    <tr><td class="paramname">LoDCount</td><td>The level of detail count of the terrain </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a0849d2d721c1e72d65e4fe3ceb2d205f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0849d2d721c1e72d65e4fe3ceb2d205f">&#9670;&nbsp;</a></span>IsLoaded()</h2>
+<a id="a989b2e85808897ee65bfbe4057c4a442"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a989b2e85808897ee65bfbe4057c4a442">&#9670;&nbsp;</a></span>GetCell()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">bool TerrainStorageCell::IsLoaded </td>
+          <td class="memname"><a class="el" href="../../d6/d21/a00573.html">TerrainStorageCell</a>* TerrainStorage::GetCell </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>LoD</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Finds the cell to the corresponding arguments in the storage object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">x</td><td>The x sector of the node </td></tr>
+    <tr><td class="paramname">y</td><td>The y sector of the node </td></tr>
+    <tr><td class="paramname">LoD</td><td>The level of detail of the node </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a <a class="el" href="../../d6/d21/a00573.html" title="Stores the material information for a terrain node. ">TerrainStorageCell</a> </dd></dl>
+<dl class="section remark"><dt>Remarks</dt><dd>The terrain storage can be understood as a mipmap where each level of detail is represented by a mipmap level. This means y is the coordinate in z direction of the terrain. Also x and y aren't world space coordinates but are the coordinates of a specific terrain node in their level of detail. E.g at a level of detail of 5 and a rootNodeCount of 9 x and y are in range (0, 2^(5-1) * 9) </dd></dl>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a789f85441d74c7d5d5d8f632a64c33e5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a789f85441d74c7d5d5d8f632a64c33e5">&#9670;&nbsp;</a></span>diffuseMap</h2>
+<a id="a59df861d15cce51de2915f2cfa107843"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a59df861d15cce51de2915f2cfa107843">&#9670;&nbsp;</a></span>requestedCells</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../da/d50/a00301.html">Texture</a>* TerrainStorageCell::diffuseMap</td>
+          <td class="memname">vector&lt;<a class="el" href="../../d6/d21/a00573.html">TerrainStorageCell</a>*&gt; TerrainStorage::requestedCells</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00026">26</a> of file <a class="el" href="../../d1/da8/a00230_source.html">TerrainStorageCell.h</a>.</p>
+<p>The storage cells the terrain request to change the level of detail. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d01/a00227_source.html#l00040">40</a> of file <a class="el" href="../../d9/d01/a00227_source.html">TerrainStorage.h</a>.</p>
 
 </div>
 </div>
-<a id="a2ac413731ed2c5e54d6b3c009cf7a3d9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2ac413731ed2c5e54d6b3c009cf7a3d9">&#9670;&nbsp;</a></span>displacementMap</h2>
+<a id="a03d71a76977ba904dc7979d78ea5d341"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a03d71a76977ba904dc7979d78ea5d341">&#9670;&nbsp;</a></span>unusedCells</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../da/d50/a00301.html">Texture</a>* TerrainStorageCell::displacementMap</td>
+          <td class="memname">vector&lt;<a class="el" href="../../d6/d21/a00573.html">TerrainStorageCell</a>*&gt; TerrainStorage::unusedCells</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00027">27</a> of file <a class="el" href="../../d1/da8/a00230_source.html">TerrainStorageCell.h</a>.</p>
+<p>The storage cells the terrain doesn't need any more because of a change in the level of detail. </p>
 
-</div>
-</div>
-<a id="aff003e7c92b7e6a6d0f318e6edb5f4d7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aff003e7c92b7e6a6d0f318e6edb5f4d7">&#9670;&nbsp;</a></span>heightData</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vector&lt;uint8_t&gt; TerrainStorageCell::heightData</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00022">22</a> of file <a class="el" href="../../d1/da8/a00230_source.html">TerrainStorageCell.h</a>.</p>
-
-</div>
-</div>
-<a id="af44f59262fa2a8484aed7a72e2497667"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af44f59262fa2a8484aed7a72e2497667">&#9670;&nbsp;</a></span>heightField</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../da/d50/a00301.html">Texture</a>* TerrainStorageCell::heightField</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00024">24</a> of file <a class="el" href="../../d1/da8/a00230_source.html">TerrainStorageCell.h</a>.</p>
-
-</div>
-</div>
-<a id="ab43b148eaed08151ee7c89c9cb9dd288"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab43b148eaed08151ee7c89c9cb9dd288">&#9670;&nbsp;</a></span>LoD</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t TerrainStorageCell::LoD</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00020">20</a> of file <a class="el" href="../../d1/da8/a00230_source.html">TerrainStorageCell.h</a>.</p>
-
-</div>
-</div>
-<a id="a8f0788d6e25ac0ff3726c0ec51127f51"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8f0788d6e25ac0ff3726c0ec51127f51">&#9670;&nbsp;</a></span>normalMap</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../da/d50/a00301.html">Texture</a>* TerrainStorageCell::normalMap</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00025">25</a> of file <a class="el" href="../../d1/da8/a00230_source.html">TerrainStorageCell.h</a>.</p>
-
-</div>
-</div>
-<a id="a6e4989523a14b87a50bf64913192bfe8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6e4989523a14b87a50bf64913192bfe8">&#9670;&nbsp;</a></span>x</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t TerrainStorageCell::x</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00018">18</a> of file <a class="el" href="../../d1/da8/a00230_source.html">TerrainStorageCell.h</a>.</p>
-
-</div>
-</div>
-<a id="a91fd41335dd76dddc12430af15f1e085"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a91fd41335dd76dddc12430af15f1e085">&#9670;&nbsp;</a></span>y</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t TerrainStorageCell::y</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00019">19</a> of file <a class="el" href="../../d1/da8/a00230_source.html">TerrainStorageCell.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d01/a00227_source.html#l00046">46</a> of file <a class="el" href="../../d9/d01/a00227_source.html">TerrainStorage.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/terrain/<a class="el" href="../../d1/da8/a00230_source.html">TerrainStorageCell.h</a></li>
+<li>src/terrain/<a class="el" href="../../d9/d01/a00227_source.html">TerrainStorage.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d4/d9e/a00569.html">TerrainStorageCell</a></li>
+    <li class="navelem"><a class="el" href="../../d4/d9e/a00569.html">TerrainStorage</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

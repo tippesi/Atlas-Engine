@@ -1,19 +1,15 @@
 var a00525 =
 [
-    [ "Uniform", "d7/db7/a00525.html#a2dafd2ea023caf0a1e6bb2c1856e5947", null ],
-    [ "SetValue", "d7/db7/a00525.html#ad57711adff4772ec74507adce39369b6", null ],
-    [ "SetValue", "d7/db7/a00525.html#a22dc3d57c46d30caf523d1f3959e33a8", null ],
-    [ "SetValue", "d7/db7/a00525.html#ac3c82b6c934f7f088f975d2037ced1ac", null ],
-    [ "SetValue", "d7/db7/a00525.html#a6115d38afe5d81b953e29f0395741722", null ],
-    [ "SetValue", "d7/db7/a00525.html#adfd6345ce912b54718d515a9973a3bba", null ],
-    [ "SetValue", "d7/db7/a00525.html#a8559c6b1ef6ba9b441adad5f59893d5f", null ],
-    [ "SetValue", "d7/db7/a00525.html#a3f34bbad0b4bf0e2b3787c142d846ee9", null ],
-    [ "SetValue", "d7/db7/a00525.html#a6bb9c0910fd2f6777c1d2ca7c577259a", null ],
-    [ "SetValue", "d7/db7/a00525.html#a85209134fe53efef614d39cc0b6d2f76", null ],
-    [ "SetValue", "d7/db7/a00525.html#af50d42567c5ae731b9d64ea65e6d19d4", null ],
-    [ "SetValue", "d7/db7/a00525.html#a184e878d584915384c9bdae1496b9cd3", null ],
-    [ "SetValue", "d7/db7/a00525.html#aa8de8c733623122369c5eef9b8e4a152", null ],
-    [ "SetValue", "d7/db7/a00525.html#a6a2758e748900f73b73c7cb75573d8fd", null ],
-    [ "Update", "d7/db7/a00525.html#a56ba9a74d6c150af743b2df5dd9ebd55", null ],
-    [ "name", "d7/db7/a00525.html#af11c6ffb10513fe0271acb942b4717f8", null ]
+    [ "ShaderSource", "d7/db7/a00525.html#a54aeb6b71a0e22fb968a8072b08e742a", null ],
+    [ "ShaderSource", "d7/db7/a00525.html#ad166f5e19f4225ef7271681955fec4e7", null ],
+    [ "~ShaderSource", "d7/db7/a00525.html#a557dc0158a89c886b444ca9fe496199b", null ],
+    [ "AddMacro", "d7/db7/a00525.html#ae1fea6a14875c1b1bc35f934e1fa43a6", null ],
+    [ "Compile", "d7/db7/a00525.html#ade3046e2bfdee1e9a6fc6684472eb90e", null ],
+    [ "GetConstant", "d7/db7/a00525.html#a528439240afc980ece252e3a973f55a1", null ],
+    [ "Reload", "d7/db7/a00525.html#a06dd8576ca485eb4cf9ba11f4ea713bb", null ],
+    [ "RemoveMacro", "d7/db7/a00525.html#a51486721ffe1c160955cd134461d2f47", null ],
+    [ "SetSourceDirectory", "d7/db7/a00525.html#aba81da59a674b7bb58ea1b091e46a16a", null ],
+    [ "filename", "d7/db7/a00525.html#a88b50e0b2c4ede56e87ee118941a17d6", null ],
+    [ "ID", "d7/db7/a00525.html#a10000e8b7cd5f92bef5a2a7e743db3cf", null ],
+    [ "type", "d7/db7/a00525.html#ab1490ec761f26b25851ab2896439e35a", null ]
 ];

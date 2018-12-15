@@ -1,12 +1,7 @@
 var a00373 =
 [
-    [ "MouseHandler", "dc/de3/a00373.html#a95b11b6ceb0cadf3779cc1bc011f9052", null ],
-    [ "HideMouse", "dc/de3/a00373.html#a6440a4d4e581981a86eb53f6ed4f4855", null ],
-    [ "SetActivationButton", "dc/de3/a00373.html#a019ca7d4d9ba978d9a649d127b86209f", null ],
-    [ "ShowMouse", "dc/de3/a00373.html#a393fc499da376cbbd12c788347fdf46b", null ],
-    [ "Update", "dc/de3/a00373.html#a8f8aa12af5a7fba4fbed7c0d8bae0e97", null ],
-    [ "hideMouse", "dc/de3/a00373.html#a6969cbb5ad9d04c3a350089f05e92ed7", null ],
-    [ "lock", "dc/de3/a00373.html#aca5824e0b5d0dd4745e1598c42838603", null ],
-    [ "reactivity", "dc/de3/a00373.html#ab4e9b69a5a6210cff4a1df3815cb3574", null ],
-    [ "sensibility", "dc/de3/a00373.html#ad92589d63a1e226d997b73431e0b26a9", null ]
+    [ "KeyboardHandler", "dc/de3/a00373.html#add78210c1a8ea926289ea618ab42543c", null ],
+    [ "Update", "dc/de3/a00373.html#aa3dda76bbf2c277fb723175bc7346d31", null ],
+    [ "reactivity", "dc/de3/a00373.html#a75eff95510571f21ba8e7a422949b269", null ],
+    [ "speed", "dc/de3/a00373.html#ab752152d5023c8254a97fb813e534a89", null ]
 ];

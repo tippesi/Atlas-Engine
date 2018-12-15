@@ -88,6 +88,8 @@ $(document).ready(function(){initNavTree('d4/d08/a00237.html','../../');});
 
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../da/d31/a00234.html">List of all members</a>  </div>
@@ -96,15 +98,25 @@ $(document).ready(function(){initNavTree('d4/d08/a00237.html','../../');});
 </div><!--header-->
 <div class="contents">
 
-<p>Used to represent a camera in the engine. In third person mode the camera location represents the point the camera looks at while in first person mode the camera is at the actual location.  
+<p>Used to represent a camera in the engine.  
  <a href="../../d4/d08/a00237.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/db6/a00241.html">Frustum</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a9af65f3762b4a7720362158d1677f263"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../d6/db6/a00241.html">Camera::Frustum</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d08/a00237.html#a9af65f3762b4a7720362158d1677f263">Frustum</a></td></tr>
+<tr class="separator:a9af65f3762b4a7720362158d1677f263"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a63eeab0ac8fc6846688918ca70096ada"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d08/a00237.html#a63eeab0ac8fc6846688918ca70096ada">Camera</a> (float <a class="el" href="../../d4/d08/a00237.html#aa19ffd22b1a94341151f1641adc673ad">fieldOfView</a>, float <a class="el" href="../../d4/d08/a00237.html#aa6f013fdb4560daaa5ca6ace1a846ca7">aspectRatio</a>, float <a class="el" href="../../d4/d08/a00237.html#a78d8722a95e4f7770d79c950bda2bfdc">nearPlane</a>, float <a class="el" href="../../d4/d08/a00237.html#a8e8436cced3a180e13bfafa0791fb82a">farPlane</a>, glm::vec3 <a class="el" href="../../d4/d08/a00237.html#aaa02acdf79c6bd7d6e620df676622148">location</a>=vec3(0.0f), vec2 rotation=vec2(0.0f))</td></tr>
-<tr class="memdesc:a63eeab0ac8fc6846688918ca70096ada"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d4/d08/a00237.html" title="Used to represent a camera in the engine. In third person mode the camera location represents the poi...">Camera</a>.  <a href="#a63eeab0ac8fc6846688918ca70096ada">More...</a><br /></td></tr>
+<tr class="memdesc:a63eeab0ac8fc6846688918ca70096ada"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d4/d08/a00237.html" title="Used to represent a camera in the engine. ">Camera</a> object.  <a href="#a63eeab0ac8fc6846688918ca70096ada">More...</a><br /></td></tr>
 <tr class="separator:a63eeab0ac8fc6846688918ca70096ada"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b31de4a23f304be6e27d53706d326c5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d08/a00237.html#a0b31de4a23f304be6e27d53706d326c5">UpdateView</a> ()</td></tr>
 <tr class="memdesc:a0b31de4a23f304be6e27d53706d326c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the view matrix based on the location and rotation of the camera.  <a href="#a0b31de4a23f304be6e27d53706d326c5">More...</a><br /></td></tr>
@@ -113,23 +125,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a097998b222fecbdfc82266745cefdfe6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the perspective matrix based on the FoV, the aspect ratio and the near and far plane.  <a href="#a097998b222fecbdfc82266745cefdfe6">More...</a><br /></td></tr>
 <tr class="separator:a097998b222fecbdfc82266745cefdfe6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa00d7ce6c7f66dc0d89ce2b875d9a03d"><td class="memItemLeft" align="right" valign="top">vector&lt; vec3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d08/a00237.html#aa00d7ce6c7f66dc0d89ce2b875d9a03d">GetFrustumCorners</a> (float <a class="el" href="../../d4/d08/a00237.html#a78d8722a95e4f7770d79c950bda2bfdc">nearPlane</a>, float <a class="el" href="../../d4/d08/a00237.html#a8e8436cced3a180e13bfafa0791fb82a">farPlane</a>)</td></tr>
-<tr class="memdesc:aa00d7ce6c7f66dc0d89ce2b875d9a03d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the view frustum corners in world space </p><dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">near</td><td>The near plane where the corners should be calculated <dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">far</td><td>The far plane where the corners should be calculated <dl class="section return"><dt>Returns</dt><dd>A vector where the corners are stored </dd></dl>
-</td></tr>
-  </table>
-  </dd>
-</dl>
-</td></tr>
-  </table>
-  </dd>
-</dl>
- <a href="#aa00d7ce6c7f66dc0d89ce2b875d9a03d">More...</a><br /></td></tr>
+<tr class="memdesc:aa00d7ce6c7f66dc0d89ce2b875d9a03d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the view frustum corners in world space.  <a href="#aa00d7ce6c7f66dc0d89ce2b875d9a03d">More...</a><br /></td></tr>
 <tr class="separator:aa00d7ce6c7f66dc0d89ce2b875d9a03d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad1897942d0ccf91052386388a497349f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d08/a00237.html#ad1897942d0ccf91052386388a497349f">~Camera</a> ()</td></tr>
-<tr class="memdesc:ad1897942d0ccf91052386388a497349f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructs a <a class="el" href="../../d4/d08/a00237.html" title="Used to represent a camera in the engine. In third person mode the camera location represents the poi...">Camera</a>  <a href="#ad1897942d0ccf91052386388a497349f">More...</a><br /></td></tr>
+<tr class="memdesc:ad1897942d0ccf91052386388a497349f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructs a <a class="el" href="../../d4/d08/a00237.html" title="Used to represent a camera in the engine. ">Camera</a> object.  <a href="#ad1897942d0ccf91052386388a497349f">More...</a><br /></td></tr>
 <tr class="separator:ad1897942d0ccf91052386388a497349f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
@@ -166,10 +165,26 @@ Public Attributes</h2></td></tr>
 <tr class="separator:a580a5120d05460de7ee699dd2b77faa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Used to represent a camera in the engine. In third person mode the camera location represents the point the camera looks at while in first person mode the camera is at the actual location. </p>
+<div class="textblock"><p>Used to represent a camera in the engine. </p>
+<p>In third person mode the camera location represents the point the camera looks at while in first person mode the camera is at the actual location. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00012">12</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+</div><h2 class="groupheader">Member Typedef Documentation</h2>
+<a id="a9af65f3762b4a7720362158d1677f263"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9af65f3762b4a7720362158d1677f263">&#9670;&nbsp;</a></span>Frustum</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="../../d6/db6/a00241.html">Camera::Frustum</a> <a class="el" href="../../d6/db6/a00241.html">Camera::Frustum</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a63eeab0ac8fc6846688918ca70096ada"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a63eeab0ac8fc6846688918ca70096ada">&#9670;&nbsp;</a></span>Camera()</h2>
 
@@ -220,15 +235,15 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Constructs a <a class="el" href="../../d4/d08/a00237.html" title="Used to represent a camera in the engine. In third person mode the camera location represents the poi...">Camera</a>. </p>
+<p>Constructs a <a class="el" href="../../d4/d08/a00237.html" title="Used to represent a camera in the engine. ">Camera</a> object. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">fieldOfView</td><td>The field of view in degrees.</td></tr>
-    <tr><td class="paramname">aspectRatio</td><td>The ratio of the image width to the image height.</td></tr>
-    <tr><td class="paramname">nearPlane</td><td>The plane where the camera starts to render.</td></tr>
-    <tr><td class="paramname">farPlane</td><td>The plane where the camera stops to render.</td></tr>
-    <tr><td class="paramname">location</td><td>The location of the camera.</td></tr>
-    <tr><td class="paramname">rotation</td><td>The rotation of the camera, where .X is the horizontal and .Y the vertical rotation.</td></tr>
+    <tr><td class="paramname">fieldOfView</td><td>The field of view in degrees. </td></tr>
+    <tr><td class="paramname">aspectRatio</td><td>The ratio of the image width to the image height. </td></tr>
+    <tr><td class="paramname">nearPlane</td><td>The plane where the camera starts to render. </td></tr>
+    <tr><td class="paramname">farPlane</td><td>The plane where the camera stops to render. </td></tr>
+    <tr><td class="paramname">location</td><td>The location of the camera. </td></tr>
+    <tr><td class="paramname">rotation</td><td>The rotation of the camera, where .X is the horizontal and .Y the vertical rotation. </td></tr>
   </table>
   </dd>
 </dl>
@@ -250,7 +265,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Destructs a <a class="el" href="../../d4/d08/a00237.html" title="Used to represent a camera in the engine. In third person mode the camera location represents the poi...">Camera</a> </p>
+<p>Destructs a <a class="el" href="../../d4/d08/a00237.html" title="Used to represent a camera in the engine. ">Camera</a> object. </p>
 
 </div>
 </div>
@@ -281,20 +296,15 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Calculates the view frustum corners in world space </p><dl class="params"><dt>Parameters</dt><dd>
+<p>Calculates the view frustum corners in world space. </p>
+<dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">near</td><td>The near plane where the corners should be calculated <dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">far</td><td>The far plane where the corners should be calculated <dl class="section return"><dt>Returns</dt><dd>A vector where the corners are stored </dd></dl>
-</td></tr>
+    <tr><td class="paramname">nearPlane</td><td>The near plane where the corners should be calculated. </td></tr>
+    <tr><td class="paramname">farPlane</td><td>The far plane where the corners should be calculated. </td></tr>
   </table>
   </dd>
 </dl>
-</td></tr>
-  </table>
-  </dd>
-</dl>
-</p>
+<dl class="section return"><dt>Returns</dt><dd>A vector where the corners are stored. </dd></dl>
 
 </div>
 </div>
@@ -349,7 +359,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00052">52</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00056">56</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -365,7 +375,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00059">59</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00063">63</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -381,7 +391,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00054">54</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00058">58</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -397,7 +407,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00051">51</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00055">55</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -413,7 +423,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00067">67</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00071">71</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -429,7 +439,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00066">66</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00070">70</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -445,7 +455,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00048">48</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00052">52</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -461,7 +471,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00053">53</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00057">57</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -477,7 +487,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00064">64</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00068">68</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -493,7 +503,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00061">61</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00065">65</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -509,7 +519,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00049">49</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00053">53</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -525,7 +535,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00056">56</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00060">60</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -541,7 +551,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00057">57</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00061">61</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -557,7 +567,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00060">60</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00064">64</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -573,7 +583,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00063">63</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00067">67</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>

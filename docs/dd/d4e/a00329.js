@@ -1,6 +1,7 @@
 var a00329 =
 [
-    [ "EngineControllerDeviceEvent", "dd/d4e/a00329.html#a8af35b2ca63471c0325955894327e19b", null ],
-    [ "device", "dd/d4e/a00329.html#a2b0195b1b8186ae8b935b5e7f75a4772", null ],
-    [ "type", "dd/d4e/a00329.html#af7ab8f7e8cce9be28d8d205327b67cb3", null ]
+    [ "EngineControllerButtonEvent", "dd/d4e/a00329.html#a5369391ea3dc87f22b22b8bda64dbb91", null ],
+    [ "button", "dd/d4e/a00329.html#af070490eef56626f09a3a0fec8c6c5ca", null ],
+    [ "device", "dd/d4e/a00329.html#a47ebdac9f67670f647c2b452499d2f29", null ],
+    [ "state", "dd/d4e/a00329.html#a7841fe8079c9427ea4cac304ab97dd6b", null ]
 ];

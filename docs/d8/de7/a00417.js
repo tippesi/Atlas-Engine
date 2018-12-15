@@ -1,11 +1,9 @@
 var a00417 =
 [
-    [ "ActorBatch", "d8/de7/a00417.html#a6d494b29263f86df1dffaca49316c1be", null ],
-    [ "Add", "d8/de7/a00417.html#ac72937e16c3c25412312edae13516d0a", null ],
-    [ "ClearContent", "d8/de7/a00417.html#a984f8076317c92b8691a1c25478f5ca7", null ],
-    [ "DeleteContent", "d8/de7/a00417.html#a9e1b1ad9ed409dd5dc59820cdfd6d48c", null ],
-    [ "GetMesh", "d8/de7/a00417.html#aa4dd7ba80c52ec3c6e038982cc03e8c9", null ],
-    [ "GetSize", "d8/de7/a00417.html#a029b2db01ac96bd98d5498929a11effa", null ],
-    [ "Remove", "d8/de7/a00417.html#a069e01b377d3768e3efcaaa9a8c83125", null ],
-    [ "actors", "d8/de7/a00417.html#afad0f165c22db0d6f0dcfa9c4e18ce9c", null ]
+    [ "Actor", "d8/de7/a00417.html#abbe2b71148d8776388495825c5e512bf", null ],
+    [ "castShadow", "d8/de7/a00417.html#a1934993167197470aa0d1cd39f00cfd1", null ],
+    [ "mesh", "d8/de7/a00417.html#a1ce9a7dc4789cea70dc2c47b8f021684", null ],
+    [ "modelMatrix", "d8/de7/a00417.html#abf23b838381348bccec0d0e234d6032a", null ],
+    [ "transformedMatrix", "d8/de7/a00417.html#a39b73954ab8f0a194143f1397ae7ab9d", null ],
+    [ "visible", "d8/de7/a00417.html#a538ef2a69bd68b985eee5e96ea7ed606", null ]
 ];

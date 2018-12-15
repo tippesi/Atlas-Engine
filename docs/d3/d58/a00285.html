@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: RenderTarget Class Reference</title>
+<title>Blue Engine: RenderList Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,57 +92,57 @@ $(document).ready(function(){initNavTree('d3/d58/a00285.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../dc/dc9/a00282.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">RenderTarget Class Reference</div>  </div>
+<div class="title">RenderList Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ac85ca65bb9d7fc94727d803562cfc993"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#ac85ca65bb9d7fc94727d803562cfc993">RenderTarget</a> (int32_t <a class="el" href="../../d3/d58/a00285.html#ad246b58a4b9668131733abc5c0aa4340">width</a>, int32_t <a class="el" href="../../d3/d58/a00285.html#a3fb2b46d7151ce4022261bafae3b4ea8">height</a>)</td></tr>
-<tr class="memdesc:ac85ca65bb9d7fc94727d803562cfc993"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#ac85ca65bb9d7fc94727d803562cfc993">More...</a><br /></td></tr>
-<tr class="separator:ac85ca65bb9d7fc94727d803562cfc993"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8b4040a4623bcfce5741ba9448b3e99c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#a8b4040a4623bcfce5741ba9448b3e99c">Resize</a> (int32_t <a class="el" href="../../d3/d58/a00285.html#ad246b58a4b9668131733abc5c0aa4340">width</a>, int32_t <a class="el" href="../../d3/d58/a00285.html#a3fb2b46d7151ce4022261bafae3b4ea8">height</a>)</td></tr>
-<tr class="memdesc:a8b4040a4623bcfce5741ba9448b3e99c"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#a8b4040a4623bcfce5741ba9448b3e99c">More...</a><br /></td></tr>
-<tr class="separator:a8b4040a4623bcfce5741ba9448b3e99c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5c8ef0f2c9e46ed80e5e3ce6e5567b8b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#a5c8ef0f2c9e46ed80e5e3ce6e5567b8b">~RenderTarget</a> ()</td></tr>
-<tr class="separator:a5c8ef0f2c9e46ed80e5e3ce6e5567b8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d04aeb2919db1b28abd0f49b647ac11"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#a7d04aeb2919db1b28abd0f49b647ac11">RenderList</a> (int32_t type, int32_t mobility)</td></tr>
+<tr class="separator:a7d04aeb2919db1b28abd0f49b647ac11"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b17824bb52eb514c294423dc83bed17"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#a6b17824bb52eb514c294423dc83bed17">Add</a> (<a class="el" href="../../d8/de7/a00417.html">Actor</a> *actor)</td></tr>
+<tr class="separator:a6b17824bb52eb514c294423dc83bed17"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad695a1ce60f6a26f8be41dca9c16c1fc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#ad695a1ce60f6a26f8be41dca9c16c1fc">Add</a> (<a class="el" href="../../dc/dc9/a00389.html">ILight</a> *light)</td></tr>
+<tr class="separator:ad695a1ce60f6a26f8be41dca9c16c1fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14bd7a585ee1158cd1d0d2673085eea4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#a14bd7a585ee1158cd1d0d2673085eea4">RemoveMesh</a> (<a class="el" href="../../dd/d07/a00433.html">Mesh</a> *mesh)</td></tr>
+<tr class="memdesc:a14bd7a585ee1158cd1d0d2673085eea4"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+Can be called from the outside, like the scene might call it on their object  <a href="#a14bd7a585ee1158cd1d0d2673085eea4">More...</a><br /></td></tr>
+<tr class="separator:a14bd7a585ee1158cd1d0d2673085eea4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f6c51af4e90aceb1ade38801f55d8a2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#a9f6c51af4e90aceb1ade38801f55d8a2">Clear</a> ()</td></tr>
+<tr class="separator:a9f6c51af4e90aceb1ade38801f55d8a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a19eb90b3fd169e548ba1d60d3e7d50f8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d9/d39/a00257.html">Framebuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#a19eb90b3fd169e548ba1d60d3e7d50f8">geometryFramebuffer</a></td></tr>
-<tr class="separator:a19eb90b3fd169e548ba1d60d3e7d50f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad4cf09c0848ad9a17b51fe1af2fd65aa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d9/d39/a00257.html">Framebuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#ad4cf09c0848ad9a17b51fe1af2fd65aa">lightingFramebuffer</a></td></tr>
-<tr class="separator:ad4cf09c0848ad9a17b51fe1af2fd65aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad246b58a4b9668131733abc5c0aa4340"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#ad246b58a4b9668131733abc5c0aa4340">width</a></td></tr>
-<tr class="separator:ad246b58a4b9668131733abc5c0aa4340"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3fb2b46d7151ce4022261bafae3b4ea8"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#a3fb2b46d7151ce4022261bafae3b4ea8">height</a></td></tr>
-<tr class="separator:a3fb2b46d7151ce4022261bafae3b4ea8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a55d8fb9a703f04688c6975ee3c1acc11"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../dc/dc9/a00389.html">ILight</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#a55d8fb9a703f04688c6975ee3c1acc11">lights</a></td></tr>
+<tr class="separator:a55d8fb9a703f04688c6975ee3c1acc11"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84030bf111e88df516a046819e2a3900"><td class="memItemLeft" align="right" valign="top">map&lt; <a class="el" href="../../dd/d07/a00433.html">Mesh</a> *, <a class="el" href="../../d2/de1/a00421.html">ActorBatch</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#a84030bf111e88df516a046819e2a3900">actorBatches</a></td></tr>
+<tr class="separator:a84030bf111e88df516a046819e2a3900"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6e4a186d93d038c7446ea9b4d9d9e2b"><td class="memItemLeft" align="right" valign="top">map&lt; int32_t, vector&lt; <a class="el" href="../../d2/d04/a00281.html">RenderListBatch</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html#ab6e4a186d93d038c7446ea9b4d9d9e2b">orderedRenderBatches</a></td></tr>
+<tr class="separator:ab6e4a186d93d038c7446ea9b4d9d9e2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00007">7</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00021">21</a> of file <a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ac85ca65bb9d7fc94727d803562cfc993"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac85ca65bb9d7fc94727d803562cfc993">&#9670;&nbsp;</a></span>RenderTarget()</h2>
+<a id="a7d04aeb2919db1b28abd0f49b647ac11"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7d04aeb2919db1b28abd0f49b647ac11">&#9670;&nbsp;</a></span>RenderList()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">RenderTarget::RenderTarget </td>
+          <td class="memname">RenderList::RenderList </td>
           <td>(</td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
+          <td class="paramname"><em>type</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>height</em>&#160;</td>
+          <td class="paramname"><em>mobility</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -152,26 +152,53 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p><br />
- </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">width</td><td></td></tr>
-    <tr><td class="paramname">height</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
 </div>
 </div>
-<a id="a5c8ef0f2c9e46ed80e5e3ce6e5567b8b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5c8ef0f2c9e46ed80e5e3ce6e5567b8b">&#9670;&nbsp;</a></span>~RenderTarget()</h2>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a6b17824bb52eb514c294423dc83bed17"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6b17824bb52eb514c294423dc83bed17">&#9670;&nbsp;</a></span>Add() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">RenderTarget::~RenderTarget </td>
+          <td class="memname">void RenderList::Add </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d8/de7/a00417.html">Actor</a> *&#160;</td>
+          <td class="paramname"><em>actor</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad695a1ce60f6a26f8be41dca9c16c1fc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad695a1ce60f6a26f8be41dca9c16c1fc">&#9670;&nbsp;</a></span>Add() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void RenderList::Add </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/dc9/a00389.html">ILight</a> *&#160;</td>
+          <td class="paramname"><em>light</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9f6c51af4e90aceb1ade38801f55d8a2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f6c51af4e90aceb1ade38801f55d8a2">&#9670;&nbsp;</a></span>Clear()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void RenderList::Clear </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -181,119 +208,85 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a8b4040a4623bcfce5741ba9448b3e99c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8b4040a4623bcfce5741ba9448b3e99c">&#9670;&nbsp;</a></span>Resize()</h2>
+<a id="a14bd7a585ee1158cd1d0d2673085eea4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a14bd7a585ee1158cd1d0d2673085eea4">&#9670;&nbsp;</a></span>RemoveMesh()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void RenderTarget::Resize </td>
+          <td class="memname">void RenderList::RemoveMesh </td>
           <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype"><a class="el" href="../../dd/d07/a00433.html">Mesh</a> *&#160;</td>
+          <td class="paramname"><em>mesh</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>height</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p><br />
- </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">width</td><td></td></tr>
-    <tr><td class="paramname">height</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
+Can be called from the outside, like the scene might call it on their object </p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a19eb90b3fd169e548ba1d60d3e7d50f8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a19eb90b3fd169e548ba1d60d3e7d50f8">&#9670;&nbsp;</a></span>geometryFramebuffer</h2>
+<a id="a84030bf111e88df516a046819e2a3900"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a84030bf111e88df516a046819e2a3900">&#9670;&nbsp;</a></span>actorBatches</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d9/d39/a00257.html">Framebuffer</a>* RenderTarget::geometryFramebuffer</td>
+          <td class="memname">map&lt;<a class="el" href="../../dd/d07/a00433.html">Mesh</a>*, <a class="el" href="../../d2/de1/a00421.html">ActorBatch</a>*&gt; RenderList::actorBatches</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00022">22</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00038">38</a> of file <a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>.</p>
 
 </div>
 </div>
-<a id="a3fb2b46d7151ce4022261bafae3b4ea8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3fb2b46d7151ce4022261bafae3b4ea8">&#9670;&nbsp;</a></span>height</h2>
+<a id="a55d8fb9a703f04688c6975ee3c1acc11"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a55d8fb9a703f04688c6975ee3c1acc11">&#9670;&nbsp;</a></span>lights</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t RenderTarget::height</td>
+          <td class="memname">vector&lt;<a class="el" href="../../dc/dc9/a00389.html">ILight</a>*&gt; RenderList::lights</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00026">26</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00037">37</a> of file <a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>.</p>
 
 </div>
 </div>
-<a id="ad4cf09c0848ad9a17b51fe1af2fd65aa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad4cf09c0848ad9a17b51fe1af2fd65aa">&#9670;&nbsp;</a></span>lightingFramebuffer</h2>
+<a id="ab6e4a186d93d038c7446ea9b4d9d9e2b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab6e4a186d93d038c7446ea9b4d9d9e2b">&#9670;&nbsp;</a></span>orderedRenderBatches</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d9/d39/a00257.html">Framebuffer</a>* RenderTarget::lightingFramebuffer</td>
+          <td class="memname">map&lt;int32_t, vector&lt;<a class="el" href="../../d2/d04/a00281.html">RenderListBatch</a>&gt; &gt; RenderList::orderedRenderBatches</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00023">23</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a>.</p>
-
-</div>
-</div>
-<a id="ad246b58a4b9668131733abc5c0aa4340"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad246b58a4b9668131733abc5c0aa4340">&#9670;&nbsp;</a></span>width</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t RenderTarget::width</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00025">25</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00039">39</a> of file <a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/<a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a></li>
+<li>src/<a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d3/d58/a00285.html">RenderTarget</a></li>
+    <li class="navelem"><a class="el" href="../../d3/d58/a00285.html">RenderList</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

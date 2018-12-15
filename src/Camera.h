@@ -45,6 +45,10 @@ public:
 	 */
 	~Camera();
 
+	typedef struct Frustum {
+
+	}Frustum;
+
 	vec3 location;
 	vec2 rotation;
 

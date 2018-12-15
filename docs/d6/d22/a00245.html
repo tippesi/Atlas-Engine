@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Engine Class Reference</title>
+<title>Blue Engine: Cubemap Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,66 +88,104 @@ $(document).ready(function(){initNavTree('d6/d22/a00245.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="../../d2/dc8/a00242.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Engine Class Reference</div>  </div>
+<div class="title">Cubemap Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../da/d45/a00011_source.html">Engine.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d4/dee/a00008_source.html">Cubemap.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
-Static Public Member Functions</h2></td></tr>
-<tr class="memitem:affbbd5b87c460eff83c9484de8b4eb71"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../da/de0/a00317.html">Window</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d22/a00245.html#affbbd5b87c460eff83c9484de8b4eb71">Init</a> (string shaderDirectory, string windowTitle, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags=<a class="el" href="../../d9/d2e/a00056.html#a1bb83bcb779fa8ec1bfb9fcb36eaebc8">WINDOW_FULLSCREEN</a>)</td></tr>
-<tr class="memdesc:affbbd5b87c460eff83c9484de8b4eb71"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the engine.  <a href="#affbbd5b87c460eff83c9484de8b4eb71">More...</a><br /></td></tr>
-<tr class="separator:affbbd5b87c460eff83c9484de8b4eb71"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4ab14a1eea5b4d632b5ac5808779c610"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d22/a00245.html#a4ab14a1eea5b4d632b5ac5808779c610">LockFramerate</a> ()</td></tr>
-<tr class="memdesc:a4ab14a1eea5b4d632b5ac5808779c610"><td class="mdescLeft">&#160;</td><td class="mdescRight">Locks the frame rate to the next available target frame rate of the monitor like min(availableTargetFramerate, possibleFramerate).  <a href="#a4ab14a1eea5b4d632b5ac5808779c610">More...</a><br /></td></tr>
-<tr class="separator:a4ab14a1eea5b4d632b5ac5808779c610"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aad2ab367dbdc1dad426d2b6f4f258cd6"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d22/a00245.html#aad2ab367dbdc1dad426d2b6f4f258cd6">UnlockFramerate</a> ()</td></tr>
-<tr class="memdesc:aad2ab367dbdc1dad426d2b6f4f258cd6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unlocks the framerate.  <a href="#aad2ab367dbdc1dad426d2b6f4f258cd6">More...</a><br /></td></tr>
-<tr class="separator:aad2ab367dbdc1dad426d2b6f4f258cd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acda4d51c0611d2db3ce644be0d32d54a"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d22/a00245.html#acda4d51c0611d2db3ce644be0d32d54a">Update</a> ()</td></tr>
-<tr class="memdesc:acda4d51c0611d2db3ce644be0d32d54a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the engine and the system events.  <a href="#acda4d51c0611d2db3ce644be0d32d54a">More...</a><br /></td></tr>
-<tr class="separator:acda4d51c0611d2db3ce644be0d32d54a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:aabc96ed8cc80c2c21235bceccce40538"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d22/a00245.html#aabc96ed8cc80c2c21235bceccce40538">Cubemap</a> (string right, string left, string top, string bottom, string front, string back)</td></tr>
+<tr class="separator:aabc96ed8cc80c2c21235bceccce40538"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf74b47741306a7c5712de67661ba4ae"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d22/a00245.html#adf74b47741306a7c5712de67661ba4ae">Cubemap</a> (GLenum dataFormant, int32_t width, int32_t height, int32_t internalFormat, int32_t wrapping, int32_t filtering, bool mipmaps)</td></tr>
+<tr class="separator:adf74b47741306a7c5712de67661ba4ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2fcc5615bf80632255b58361fa65f767"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d22/a00245.html#a2fcc5615bf80632255b58361fa65f767">Bind</a> (uint32_t unit)</td></tr>
+<tr class="separator:a2fcc5615bf80632255b58361fa65f767"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5776e568e2fba8ed01db9d182230411c"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d22/a00245.html#a5776e568e2fba8ed01db9d182230411c">GetID</a> ()</td></tr>
+<tr class="separator:a5776e568e2fba8ed01db9d182230411c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../da/d45/a00011_source.html#l00015">15</a> of file <a class="el" href="../../da/d45/a00011_source.html">Engine.h</a>.</p>
-</div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="affbbd5b87c460eff83c9484de8b4eb71"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#affbbd5b87c460eff83c9484de8b4eb71">&#9670;&nbsp;</a></span>Init()</h2>
+<p class="definition">Definition at line <a class="el" href="../../d4/dee/a00008_source.html#l00006">6</a> of file <a class="el" href="../../d4/dee/a00008_source.html">Cubemap.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="aabc96ed8cc80c2c21235bceccce40538"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aabc96ed8cc80c2c21235bceccce40538">&#9670;&nbsp;</a></span>Cubemap() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="../../da/de0/a00317.html">Window</a>* Engine::Init </td>
+          <td class="memname">Cubemap::Cubemap </td>
           <td>(</td>
           <td class="paramtype">string&#160;</td>
-          <td class="paramname"><em>shaderDirectory</em>, </td>
+          <td class="paramname"><em>right</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">string&#160;</td>
-          <td class="paramname"><em>windowTitle</em>, </td>
+          <td class="paramname"><em>left</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>top</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>bottom</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>front</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>back</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">right</td><td></td></tr>
+    <tr><td class="paramname">left</td><td></td></tr>
+    <tr><td class="paramname">top</td><td></td></tr>
+    <tr><td class="paramname">bottom</td><td></td></tr>
+    <tr><td class="paramname">front</td><td></td></tr>
+    <tr><td class="paramname">back</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="adf74b47741306a7c5712de67661ba4ae"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adf74b47741306a7c5712de67661ba4ae">&#9670;&nbsp;</a></span>Cubemap() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Cubemap::Cubemap </td>
+          <td>(</td>
+          <td class="paramtype">GLenum&#160;</td>
+          <td class="paramname"><em>dataFormant</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -165,7 +203,25 @@ Static Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>flags</em> = <code><a class="el" href="../../d9/d2e/a00056.html#a1bb83bcb779fa8ec1bfb9fcb36eaebc8">WINDOW_FULLSCREEN</a></code>&#160;</td>
+          <td class="paramname"><em>internalFormat</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>wrapping</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>filtering</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>mipmaps</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -173,121 +229,74 @@ Static Public Member Functions</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
-
-<p>Initializes the engine. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">shaderDirectory</td><td>The directory where all the shader files are located </td></tr>
-    <tr><td class="paramname">windowTitle</td><td>The title of your window </td></tr>
-    <tr><td class="paramname">x</td><td>The x position of the window on the screen in pixels </td></tr>
-    <tr><td class="paramname">y</td><td>The y position of the window on the screen in pixels </td></tr>
-    <tr><td class="paramname">width</td><td>The width of the window in pixels </td></tr>
-    <tr><td class="paramname">height</td><td>The height of the window in pixels </td></tr>
-    <tr><td class="paramname">flags</td><td><a class="el" href="../../da/de0/a00317.html" title="A simple window class. ">Window</a> flags. See <a class="el" href="../../d9/d2e/a00056.html">Window.h</a> for more. </td></tr>
+    <tr><td class="paramname">dataFormant</td><td></td></tr>
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
+    <tr><td class="paramname">internalFormat</td><td></td></tr>
+    <tr><td class="paramname">wrapping</td><td></td></tr>
+    <tr><td class="paramname">filtering</td><td></td></tr>
+    <tr><td class="paramname">mipmaps</td><td></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A pointer to a window object. </dd></dl>
 
 </div>
 </div>
-<a id="a4ab14a1eea5b4d632b5ac5808779c610"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4ab14a1eea5b4d632b5ac5808779c610">&#9670;&nbsp;</a></span>LockFramerate()</h2>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a2fcc5615bf80632255b58361fa65f767"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2fcc5615bf80632255b58361fa65f767">&#9670;&nbsp;</a></span>Bind()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void Engine::LockFramerate </td>
+          <td class="memname">void Cubemap::Bind </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>unit</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">unit</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a5776e568e2fba8ed01db9d182230411c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5776e568e2fba8ed01db9d182230411c">&#9670;&nbsp;</a></span>GetID()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint32_t Cubemap::GetID </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
-
-<p>Locks the frame rate to the next available target frame rate of the monitor like min(availableTargetFramerate, possibleFramerate). </p>
-
-</div>
-</div>
-<a id="aad2ab367dbdc1dad426d2b6f4f258cd6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aad2ab367dbdc1dad426d2b6f4f258cd6">&#9670;&nbsp;</a></span>UnlockFramerate()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static void Engine::UnlockFramerate </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Unlocks the framerate. </p>
-
-</div>
-</div>
-<a id="acda4d51c0611d2db3ce644be0d32d54a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acda4d51c0611d2db3ce644be0d32d54a">&#9670;&nbsp;</a></span>Update()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static void Engine::Update </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Updates the engine and the system events. </p>
-<p>Should be called in thread where the engine was initialized. </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/<a class="el" href="../../da/d45/a00011_source.html">Engine.h</a></li>
+<li>src/<a class="el" href="../../d4/dee/a00008_source.html">Cubemap.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d6/d22/a00245.html">Engine</a></li>
+    <li class="navelem"><a class="el" href="../../d6/d22/a00245.html">Cubemap</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>
