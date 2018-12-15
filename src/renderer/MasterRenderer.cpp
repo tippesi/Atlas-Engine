@@ -48,12 +48,16 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 	target->geometryFramebuffer->Bind(true);
 
+	glEnable(GL_CULL_FACE);
+
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	terrainRenderer->Render(window, target, camera, scene, true);
 
 	geometryRenderer->Render(window, target, camera, scene, true);
+
+	glEnable(GL_CULL_FACE);
 
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);

@@ -38,7 +38,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 	float terrainSideLength = (float)nodesPerSide * powf(2, (float)LoDCount - 1.0f) * (float)patchSize * 8.0f;
 
 	if (width != height || width != (int32_t)terrainSideLength) {
-		throw EngineException("The dimensions of the image don't match to the given arguments");
+		throw EngineException("The dimensions of the image doesn't match the given arguments");
 	}
 
 	uint8_t* normalMapData = new uint8_t[width * height * 3];
