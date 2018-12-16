@@ -6,6 +6,7 @@ var searchData=
   ['patchsize',['patchSize',['../d2/d50/a00561.html#a5a2e5559e4824975a91a50d3eabaaad1',1,'Terrain']]],
   ['patchvertexcount',['patchVertexCount',['../d2/d50/a00561.html#ab73732b4a7d0a2c39dd92df82b8d03bf',1,'Terrain']]],
   ['pixeldistancescale',['pixelDistanceScale',['../d9/d39/a00257.html#acb979ef94d3adcb857248abae8574b63',1,'Font']]],
+  ['planes',['planes',['../d6/db6/a00241.html#a79867ff367ad0ae4ee52550a238ce411',1,'Camera::Frustum']]],
   ['point_5flight',['POINT_LIGHT',['../df/d98/a00107.html#a67c0f98568552ff44b7b0461fb3fdb39',1,'ILight.h']]],
   ['pointlight',['PointLight',['../da/dbf/a00393.html',1,'PointLight'],['../da/dbf/a00393.html#a804acdd791386a4e21a37ae9eee2ea25',1,'PointLight::PointLight()']]],
   ['pointlight_2eh',['PointLight.h',['../d4/d81/a00110.html',1,'']]],

@@ -100,6 +100,7 @@ void Main::Stream() {
 		auto dataVector = vector<uint8_t>(width * height);
 		dataVector.assign(data, data + width * height);
 		cell->heightField->SetData(dataVector);
+		cell->heightData = dataVector;
 
 		heightField = "../data/terrain/LoD";
 		heightField += to_string(cell->LoD) + "/normal" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
@@ -111,6 +112,22 @@ void Main::Stream() {
 		cell->diffuseMap = terrainDiffuseMap;
 		cell->displacementMap = terrainDisplacementMap;
 
+	}
+
+	if (terrain->storage->requestedCells.size() > 0) {
+		for (int32_t i = 0; i < 10000; i++) {
+
+			float x = 1024.0f * (float)rand() / (float)RAND_MAX;
+			float z = 1024.0f * (float)rand() / (float)RAND_MAX;
+			float y = terrain->GetHeight(x, z);
+
+			auto tree = new Actor(treeMesh);
+			tree->modelMatrix = glm::translate(mat4(1.0f), vec3(x, y, z));
+			tree->modelMatrix = glm::scale(tree->modelMatrix, vec3(3.0f));
+
+			scene->Add(tree);
+
+		}
 	}
 
 	terrain->storage->requestedCells.clear();
@@ -180,9 +197,9 @@ void Main::SceneSetUp() {
 	directionalLight->color = vec3(253, 194, 109) / 255.0f;
 	directionalLight->ambient = 0.05f;
 	// Cascaded shadow mapping
-	// directionalLight->AddShadow(125.0f, 0.01f, 1024, 3, 0.7f, camera);
+	//directionalLight->AddShadow(300.0f, 0.01f, 1024, 4, 0.7f, camera);
 	// Shadow mapping that is fixed to a point
-	mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
+    mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
 	directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
 	directionalLight->GetShadow()->sampleCount = 1;
 	directionalLight->AddVolumetric(new Volumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f));

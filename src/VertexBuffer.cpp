@@ -9,6 +9,64 @@ VertexBuffer::VertexBuffer(uint32_t type, int32_t dataType, int32_t stride, uint
 
 }
 
+void VertexBuffer::Bind() {
+
+	glBindBuffer(type, ID);
+
+}
+
+void VertexBuffer::Unbind() {
+
+	glBindBuffer(type, 0);
+
+}
+
+uint32_t VertexBuffer::GetType() {
+
+	return type;
+
+}
+
+int32_t VertexBuffer::GetDataType() {
+
+	return dataType;
+
+}
+
+int32_t VertexBuffer::GetStride() {
+
+	return stride;
+
+}
+
+int32_t VertexBuffer::GetElementCount() {
+
+	switch (dataType) {
+	case GL_BYTE: return sizeInBytes / stride;
+	case GL_UNSIGNED_BYTE: return sizeInBytes / stride;
+	case GL_SHORT: return sizeInBytes / (2 * stride);
+	case GL_UNSIGNED_SHORT: return sizeInBytes / (2 * stride);
+	case GL_HALF_FLOAT: return sizeInBytes / (2 * stride);
+	case GL_DOUBLE: return sizeInBytes / (8 * stride);
+	default: return sizeInBytes / (4 * stride);
+	}
+
+}
+
+int32_t VertexBuffer::GetElementSize() {
+
+	switch (dataType) {
+	case GL_BYTE: return stride;
+	case GL_UNSIGNED_BYTE: return stride;
+	case GL_SHORT: return 2 * stride;
+	case GL_UNSIGNED_SHORT: return 2 * stride;
+	case GL_HALF_FLOAT: return 2 * stride;
+	case GL_DOUBLE: return 8 * stride;
+	default: return 4 * stride;
+	}
+
+}
+
 void VertexBuffer::SetData(uint8_t* data, int32_t length) {
 
 	SetDataInternal(data, length, sizeof(uint8_t));
@@ -66,6 +124,18 @@ void VertexBuffer::SetData(vec3* data, int32_t length) {
 void VertexBuffer::SetData(vec4* data, int32_t length) {
 
 	SetDataInternal(glm::value_ptr(data[0]), length, sizeof(vec4));
+
+}
+
+void VertexBuffer::SetData(mat3* data, int32_t length) {
+
+	SetDataInternal(glm::value_ptr(data[0]), length, sizeof(mat3));
+
+}
+
+void VertexBuffer::SetData(mat4* data, int32_t length) {
+
+	SetDataInternal(glm::value_ptr(data[0]), length, sizeof(mat4));
 
 }
 
@@ -141,54 +211,14 @@ void VertexBuffer::SetSubData(void* data, int32_t offset, int32_t length, int32_
 
 }
 
-
-void VertexBuffer::Bind() {
-
-	glBindBuffer(type, ID);
-
-}
-
-void VertexBuffer::Unbind() {
-
-	glBindBuffer(type, 0);
-
-}
-
-uint32_t VertexBuffer::GetType() {
-
-	return type;
-
-}
-
-int32_t VertexBuffer::GetDataType() {
-
-	return dataType;
-
-}
-
-int32_t VertexBuffer::GetStride() {
-
-	return stride;
-
-}
-
-int32_t VertexBuffer::GetElementCount() {
-
-	switch (dataType) {
-	case GL_BYTE: return sizeInBytes / stride;
-	case GL_UNSIGNED_BYTE: return sizeInBytes / stride;
-	case GL_SHORT: return sizeInBytes / (2 * stride);
-	case GL_UNSIGNED_SHORT: return sizeInBytes / (2 * stride);
-	case GL_HALF_FLOAT: return sizeInBytes / (2 * stride);
-	case GL_DOUBLE: return sizeInBytes / (8 * stride);
-	default: return sizeInBytes / (4 * stride);
-	}
-
-}
-
 void VertexBuffer::SetDataInternal(void* data, int32_t length, int32_t elementSize) {
 
 	Bind();
+
+	if (length * elementSize < sizeInBytes) {
+		SetSubDataInternal(data, 0, length, elementSize);
+		return;
+	}
 
 	sizeInBytes = length * elementSize;
 

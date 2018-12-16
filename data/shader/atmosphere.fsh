@@ -2,9 +2,9 @@ out vec3 fragColor;
 
 #define PI 3.141592
 
-in vec3 fPosition;
-in vec3 totalRlh;
-in vec3 totalMie;
+smooth in vec3 fPosition;
+smooth in vec3 totalRlh;
+smooth in vec3 totalMie;
 
 uniform vec3 cameraLocation;
 uniform vec3 sunDirection;

@@ -35,6 +35,7 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 	viewMatrix->SetValue(camera->viewMatrix);
 	projectionMatrix->SetValue(camera->projectionMatrix);
 	cameraLocation->SetValue(camera->location);
+	frustumPlanes->SetValue(camera->frustum.planes, 6);
 
 	for (Terrain*& terrain : scene->terrains) {
 
@@ -43,7 +44,6 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 		terrain->Bind();
 
 		heightScale->SetValue(terrain->heightScale);
-		patchOffsets->SetValue(terrain->patchOffsets.data(), 64);
 
 		tessellationFactor->SetValue(terrain->tessellationFactor);
 		tessellationSlope->SetValue(terrain->tessellationSlope);
@@ -93,7 +93,6 @@ void TerrainRenderer::GetUniforms() {
 	cameraLocation = nearShader->GetUniform("cameraLocation");
 	nodeSideLength = nearShader->GetUniform("nodeSideLength");
 	nodeLocation = nearShader->GetUniform("nodeLocation");
-	patchOffsets = nearShader->GetUniform("patchOffsets");
 	patchOffsetsScale = nearShader->GetUniform("patchOffsetsScale");
 
 	tessellationFactor = nearShader->GetUniform("tessellationFactor");
@@ -103,5 +102,7 @@ void TerrainRenderer::GetUniforms() {
 
 	displacementScale = nearShader->GetUniform("displacementScale");
 	displacementDistance = nearShader->GetUniform("displacementDistance");
+
+	frustumPlanes = nearShader->GetUniform("frustumPlanes");
 
 }

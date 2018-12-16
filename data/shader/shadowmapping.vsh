@@ -6,12 +6,12 @@ layout(location=2)in vec2 vTexCoord;
 layout(location=4)in uvec4 vBoneIDs;
 layout(location=5)in vec4 vBoneWeights;
 #endif
-#ifdef INSTANCING
+#ifdef INSTANCINGG
 layout(location=6)in mat4 mMatrix;
 #endif
 
 uniform mat4 lightSpaceMatrix;
-#ifndef INSTANCING
+#ifndef INSTANCINGG
 uniform mat4 mMatrix;
 #endif
 

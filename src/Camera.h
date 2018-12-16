@@ -10,6 +10,7 @@
  * in first person mode the camera is at the actual location.
  */
 class Camera {
+
 public:
 	/**
 	 * Constructs a Camera object.
@@ -46,7 +47,7 @@ public:
 	~Camera();
 
 	typedef struct Frustum {
-
+		vec4 planes[6];
 	}Frustum;
 
 	vec3 location;
@@ -69,6 +70,11 @@ public:
 
 	mat4 inverseViewMatrix;
 	mat4 inverseProjectionMatrix;
+
+	Frustum frustum;
+
+private:
+	void CalculateFrustum();
 
 };
 

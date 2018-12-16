@@ -40,12 +40,16 @@ void Camera::UpdateView() {
 
 	inverseViewMatrix = inverse(viewMatrix);
 
+	CalculateFrustum();
+
 }
 
 void Camera::UpdateProjection() {
 
 	projectionMatrix = glm::perspective(glm::radians(fieldOfView), aspectRatio, nearPlane, farPlane);
 	inverseProjectionMatrix = inverse(projectionMatrix);
+
+	CalculateFrustum();
 
 }
 
@@ -76,6 +80,37 @@ vector<vec3> Camera::GetFrustumCorners(float nearPlane, float farPlane) {
 	corners.push_back(near - nearHeight * up + nearWidth * right);
 
 	return corners;
+
+}
+
+void Camera::CalculateFrustum() {
+
+	vec4 rowVectors[4];
+
+	mat4 matrix = projectionMatrix * viewMatrix;
+
+	for (int32_t i = 0; i < 4; i++) {
+		rowVectors[i] = vec4(matrix[0][i], matrix[1][i],
+			matrix[2][i], matrix[3][i]);
+	}
+
+	frustum.planes[0] = rowVectors[3] + rowVectors[2];
+	frustum.planes[1] = rowVectors[3] + rowVectors[2];
+	frustum.planes[2] = rowVectors[3] + rowVectors[0];
+	frustum.planes[3] = rowVectors[3] + rowVectors[0];
+	frustum.planes[4] = rowVectors[3] + rowVectors[1];
+	frustum.planes[5] = rowVectors[3] + rowVectors[1];
+
+	frustum.planes[0][3] -= frustum.planes[0][2];
+	frustum.planes[1][3] += frustum.planes[1][2];
+	frustum.planes[2][3] += frustum.planes[2][0];
+	frustum.planes[3][3] -= frustum.planes[3][0];
+	frustum.planes[4][3] += frustum.planes[4][1];
+	frustum.planes[5][3] -= frustum.planes[5][1];
+
+	for (int32_t i = 0; i < 6; i++) {
+		frustum.planes[i] = normalize(inverseViewMatrix * frustum.planes[i]);
+	}
 
 }
 

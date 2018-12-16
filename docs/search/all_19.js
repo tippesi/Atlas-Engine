@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['_7eactorbatch',['~ActorBatch',['../d2/de1/a00421.html#a78df9d7aa50d420b12821240b3905a2a',1,'ActorBatch']]],
   ['_7ecamera',['~Camera',['../d4/d08/a00237.html#ad1897942d0ccf91052386388a497349f',1,'Camera']]],
   ['_7edatacomponent',['~DataComponent',['../dc/d2f/a00425.html#ad24251092ca1401a5cef8272fd1ee8ac',1,'DataComponent']]],
   ['_7efont',['~Font',['../d9/d39/a00257.html#a134aaa2f78af0c12d3ce504957169768',1,'Font']]],

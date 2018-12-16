@@ -9,7 +9,7 @@
 class VertexArray {
 
 public:
-	///
+	
 	VertexArray();
 
 	///
@@ -37,6 +37,8 @@ public:
 	/// \return
 	VertexBuffer* GetComponent(uint32_t attribArray);
 
+	int32_t GetMaxAttributeArrayCount();
+
 	///
 	void Bind();
 
@@ -57,6 +59,8 @@ private:
 	VertexBuffer* indexComponent;
 
 	unordered_map<uint32_t, VertexBuffer*> vertexComponents;
+
+	int32_t maxAttribArrayCount;
 
 	static uint32_t boundVertexArrayID;
 

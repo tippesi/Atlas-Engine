@@ -7,38 +7,42 @@
 
 #include <vector>
 
+/**
+ * Manages the ordering of actors
+ */
 class ActorBatch {
 
 public:
 	/**
-	 *
-	 * @param mesh
+	 * Constructs an ActorBatch object for a mesh
+	 * @param mesh A pointer to a Mesh object
 	 */
 	ActorBatch(Mesh* mesh);
 
 	/**
-	 *
-	 * @param actor
+	 * Adds an actor to the actor batch
+	 * @param actor A pointer to an Actor object
 	 */
 	void Add(Actor* actor);
 
 	/**
-	 *
-	 * @param actor
+	 * Removes an actor from the actor batch
+	 * @param actor A pointer to an Actor object
 	 */
 	void Remove(Actor* actor);
 
 	/**
-	 *
-	 * @return
+	 * Returns the mesh of the batch
+	 * @return A pointer to a Mesh object
 	 */
 	Mesh* GetMesh();
 
+
 	/**
-	 *
-	 * @return
+	 * Returns the number of actors in the batch
+	 * @return An integer with the number of actors
 	 */
-	uint32_t GetSize();
+	int32_t GetSize();
 
 	/**
 	 *
@@ -50,10 +54,14 @@ public:
 	 */
 	void DeleteContent();
 
+	ActorBatch::~ActorBatch();
+
 	vector<Actor*> actors;
 
 private:
 	Mesh* mesh;
+
+	bool changed;
 
 };
 

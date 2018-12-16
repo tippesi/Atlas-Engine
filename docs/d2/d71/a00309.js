@@ -10,5 +10,6 @@ var a00309 =
     [ "DeleteContent", "d2/d71/a00309.html#a0aab85fb671460a89145ed4f9336e352", null ],
     [ "GetComponent", "d2/d71/a00309.html#a58ec8539a7f58462726237b08220f1c7", null ],
     [ "GetIndexComponent", "d2/d71/a00309.html#af9833d5beab5da4d4c10e162c19c9210", null ],
+    [ "GetMaxAttributeArrayCount", "d2/d71/a00309.html#a1922214932c23298f648f6b0830c3ac4", null ],
     [ "Unbind", "d2/d71/a00309.html#a5fe5f1b8bbd96252381079af3e1aa47b", null ]
 ];

@@ -12,7 +12,7 @@ var dir_68267d1309a1af8e8297ef4c3efbcdba =
     [ "tools", "dir_1563a38af0d3a5e4a6330d6d45e9792a.html", "dir_1563a38af0d3a5e4a6330d6d45e9792a" ],
     [ "Camera.h", "dd/dad/a00005.html", [
       [ "Camera", "d4/d08/a00237.html", "d4/d08/a00237" ],
-      [ "Frustum", "d6/db6/a00241.html", null ]
+      [ "Frustum", "d6/db6/a00241.html", "d6/db6/a00241" ]
     ] ],
     [ "Cubemap.h", "d4/dee/a00008.html", [
       [ "Cubemap", "d6/d22/a00245.html", "d6/d22/a00245" ]

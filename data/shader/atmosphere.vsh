@@ -4,9 +4,9 @@ layout(location=0)in vec3 vPosition;
 // along the camera ray is somewhat limited due to performance concerns.
 // https://atomworld.wordpress.com/2014/12/22/flexible-physical-accurate-atmosphere-scattering-part-1/
 
-out vec3 fPosition;
-out vec3 totalRlh;
-out vec3 totalMie;
+smooth out vec3 fPosition;
+smooth out vec3 totalRlh;
+smooth out vec3 totalMie;
 
 uniform mat4 vMatrix;
 uniform mat4 pMatrix;

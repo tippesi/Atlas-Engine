@@ -298,6 +298,10 @@ void Terrain::GeneratePatchOffsets(int32_t patchSizeFactor) {
 		}
 	}
 
+	VertexBuffer* offsetBuffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_FLOAT, 2);
+	offsetBuffer->SetData(patchOffsets.data(), 64);
+	vertexArray->AddInstancedComponent(1, offsetBuffer);
+
 }
 
 float Terrain::BarryCentric(vec3 p1, vec3 p2, vec3 p3, vec2 pos) {

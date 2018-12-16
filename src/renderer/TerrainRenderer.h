@@ -39,7 +39,6 @@ private:
 	Uniform* nodeSideLength;
 	Uniform* nodeLocation;
 
-	Uniform* patchOffsets;
 	Uniform* patchOffsetsScale;
 
 	Uniform* tessellationFactor;
@@ -49,6 +48,8 @@ private:
 
 	Uniform* displacementScale;
 	Uniform* displacementDistance;
+
+	Uniform* frustumPlanes;
 
 };
 

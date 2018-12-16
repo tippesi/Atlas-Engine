@@ -19,8 +19,10 @@ void RenderList::Add(Actor* actor) {
 		ActorBatch* actorBatch = new ActorBatch(actor->mesh);
 		actorBatch->Add(actor);
 
+		actorBatches[actor->mesh] = actorBatch;
+
 		// Build up all render list batches
-		map<ShaderConfig*, RenderListBatch> renderListBatches;
+		map<int32_t, RenderListBatch> renderListBatches;
 
 		for (auto& subData : actor->mesh->data->subData) {
 
@@ -33,7 +35,7 @@ void RenderList::Add(Actor* actor) {
 				shaderConfig = actor->mesh->data->materials[subData->materialIndex]->shadowConfig;
 			}
 
-			auto batchKey = renderListBatches.find(shaderConfig);
+			auto batchKey = renderListBatches.find(shaderConfig->batchID);
 
 			if (batchKey != renderListBatches.end()) {
 				batchKey->second.subData.push_back(subData);
@@ -42,14 +44,14 @@ void RenderList::Add(Actor* actor) {
 				RenderListBatch batch;
 				batch.actorBatch = actorBatch;
 				batch.subData.push_back(subData);
-				renderListBatches[shaderConfig] = batch;
+				renderListBatches[shaderConfig->batchID] = batch;
 			}
 
 		}
 
 		// Integrate the render list batches into the ordered render batches
 		for (auto& renderListBatchKey : renderListBatches) {
-			orderedRenderBatches[renderListBatchKey.first->batchID].push_back(renderListBatchKey.second);
+			orderedRenderBatches[renderListBatchKey.first].push_back(renderListBatchKey.second);
 		}
 
 	}

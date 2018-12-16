@@ -7,7 +7,7 @@
 #include <vector>
 
 /**
- * TerrainStorage manages the materials and data for all terrain nodes.
+ * Manages the materials and data for all terrain nodes.
  */
 class TerrainStorage {
 

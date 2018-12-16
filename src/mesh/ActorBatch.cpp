@@ -2,13 +2,14 @@
 
 ActorBatch::ActorBatch(Mesh* mesh) : mesh(mesh) {
 
-
+	changed = false;
 
 }
 
 void ActorBatch::Add(Actor* actor) {
 
 	actors.push_back(actor);
+	changed = true;
 
 }
 
@@ -18,6 +19,7 @@ void ActorBatch::Remove(Actor* actor) {
 
 		if (*iterator == actor) {
 			actors.erase(iterator);
+			changed = true;
 			return;
 		}
 
@@ -31,7 +33,7 @@ Mesh* ActorBatch::GetMesh() {
 
 }
 
-uint32_t ActorBatch::GetSize() {
+int32_t ActorBatch::GetSize() {
 
 	return (uint32_t)actors.size();
 
@@ -50,5 +52,10 @@ void ActorBatch::DeleteContent() {
 	}
 
 	ClearContent();
+
+}
+
+ActorBatch::~ActorBatch() {
+
 
 }

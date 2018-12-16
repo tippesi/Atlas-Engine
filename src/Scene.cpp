@@ -19,6 +19,7 @@ void Scene::Add(Actor* actor) {
 
 		if (actorBatch->GetMesh() == actor->mesh) {
 			actorBatch->Add(actor);
+			renderList->Add(actor);
 			return;
 		}
 
@@ -90,8 +91,8 @@ void Scene::Update(Camera* camera) {
 
 	// We have to copy the matrices because some actors might not be added
 	// to the root node. In this case the trasformedMatrix would never get updated
-	for (auto actorBatch : actorBatches) {
-		for (auto actor : actorBatch->actors) {
+	for (auto& actorBatch : actorBatches) {
+		for (auto& actor : actorBatch->actors) {
 			actor->transformedMatrix = actor->modelMatrix;
 		}
 	}
@@ -102,7 +103,7 @@ void Scene::Update(Camera* camera) {
 
 	rootNode->Update(mat4(1.0f));
 
-	renderList->Clear();
+	// renderList->Clear();
 
 	FrustumCulling::CullActorsFromScene(this, camera);
 

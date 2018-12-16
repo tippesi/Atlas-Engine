@@ -1,6 +1,6 @@
 var a00237 =
 [
-    [ "Frustum", "d6/db6/a00241.html", null ],
+    [ "Frustum", "d6/db6/a00241.html", "d6/db6/a00241" ],
     [ "Frustum", "d4/d08/a00237.html#a9af65f3762b4a7720362158d1677f263", null ],
     [ "Camera", "d4/d08/a00237.html#a63eeab0ac8fc6846688918ca70096ada", null ],
     [ "~Camera", "d4/d08/a00237.html#ad1897942d0ccf91052386388a497349f", null ],
@@ -11,6 +11,7 @@ var a00237 =
     [ "direction", "d4/d08/a00237.html#a4b04b75da99b4ec63db10c1afef08ce6", null ],
     [ "farPlane", "d4/d08/a00237.html#a8e8436cced3a180e13bfafa0791fb82a", null ],
     [ "fieldOfView", "d4/d08/a00237.html#aa19ffd22b1a94341151f1641adc673ad", null ],
+    [ "frustum", "d4/d08/a00237.html#abc7a2ef0e9c8d91f393df90ffad6fe43", null ],
     [ "inverseProjectionMatrix", "d4/d08/a00237.html#a580a5120d05460de7ee699dd2b77faa8", null ],
     [ "inverseViewMatrix", "d4/d08/a00237.html#a737f7271993cb4fc161f0b46e0ddf475", null ],
     [ "location", "d4/d08/a00237.html#aaa02acdf79c6bd7d6e620df676622148", null ],
