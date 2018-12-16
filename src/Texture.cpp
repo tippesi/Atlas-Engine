@@ -303,11 +303,13 @@ void Texture::GenerateTexture(GLenum dataFormat, int32_t internalFormat,
 
 	glBindTexture(target, ID);
 
+	int32_t mipCount = mipmaps ? (int32_t)floor(log2(glm::max((float)width, (float)height))) + 1 : 1;
+
 	if (layerCount == 0) {
-		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataFormat, NULL);
+		glTexStorage2D(GL_TEXTURE_2D, mipCount, internalFormat, width, height);
 	}
 	else {
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layerCount, 0, format, dataFormat, NULL);
+		glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, internalFormat, width, height, layerCount);
 	}
 
 	if (mipmaps) {
