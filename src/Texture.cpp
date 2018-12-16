@@ -63,12 +63,14 @@ Texture::Texture(string filename, bool withoutCorrection) {
 	// OpenGL ES doesn't guarantee that mipmaps are working in sRGB color space so we better ignore gamma correction
 #ifdef ENGINE_GL
 	if (channels == 4) {
-		int32_t internalFormat = withoutCorrection ? GL_RGBA8 : GL_SRGB8_ALPHA8;
-		GenerateTexture(GL_UNSIGNED_BYTE, internalFormat, GL_RGBA, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
+		if (!withoutCorrection)
+			GammaToLinear(dataVector.data(), width, height, channels);
+		GenerateTexture(GL_UNSIGNED_BYTE, GL_RGBA8, GL_RGBA, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
 	}
 	if (channels == 3) {
-		int32_t internalFormat = withoutCorrection ? GL_RGB8 : GL_SRGB8;
-		GenerateTexture(GL_UNSIGNED_BYTE, internalFormat, GL_RGB, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
+		if (!withoutCorrection)
+			GammaToLinear(dataVector.data(), width, height, channels);
+		GenerateTexture(GL_UNSIGNED_BYTE, GL_RGB8, GL_RGB, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
 	}
 	if (channels == 1) {
 		GenerateTexture(GL_UNSIGNED_BYTE, GL_R8, GL_RED, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
@@ -76,11 +78,13 @@ Texture::Texture(string filename, bool withoutCorrection) {
 #elif ENGINE_GLES
 	// For OpenGL ES we use different texture formats
 	if (channels == 4) {
-		UncorrectGamma(dataVector.data(), width, height, channels);
+		if (!withoutCorrection)
+			GammaToLinear(dataVector.data(), width, height, channels);
 		GenerateTexture(GL_UNSIGNED_BYTE, GL_RGBA8, GL_RGBA, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
 	}
 	if (channels == 3) {
-		UncorrectGamma(dataVector.data(), width, height, channels);
+		if (!withoutCorrection)
+			GammaToLinear(dataVector.data(), width, height, channels);
 		GenerateTexture(GL_UNSIGNED_BYTE, GL_RGB8, GL_RGB, LoD, GL_CLAMP_TO_EDGE, 0, true, true);
 	}
 	if (channels == 1) {
@@ -187,15 +191,27 @@ void Texture::SaveToPNG(string filename) {
 
 }
 
-Texture::~Texture() {
-
-	glDeleteTextures(1, &ID);
-
-}
-
 uint32_t Texture::GetID() {
 
 	return ID;
+
+}
+
+uint32_t Texture::GetDataFormat() {
+
+	return dataFormat;
+
+}
+
+int32_t Texture::GetSizedDataFormat() {
+
+	return internalFormat;
+
+}
+
+Texture::~Texture() {
+
+	glDeleteTextures(1, &ID);
 
 }
 
@@ -238,7 +254,7 @@ void Texture::SetAnisotropyLevel(int32_t anisotropyLevel) {
 
 }
 
-void Texture::UncorrectGamma(uint8_t* data, int32_t width, int32_t height, int32_t channels) {
+void Texture::GammaToLinear(uint8_t* data, int32_t width, int32_t height, int32_t channels) {
 
 	for (int32_t i = 0; i < width * height * channels; i++) {
 		// Don't correct the aplha values

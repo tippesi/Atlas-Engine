@@ -2,6 +2,21 @@ layout (location = 0) out vec3 diffuse;
 layout (location = 1) out vec3 normal;
 layout (location = 2) out vec2 additional;
 
+#ifdef ARRAY_MAP
+uniform sampler2DArray arrayMap;
+#ifdef DIFFUSE_MAP
+uniform float diffuseMapIndex;
+#endif
+#ifdef NORMAL_MAP
+uniform float normalMapIndex;
+#endif
+#ifdef SPECULAR_MAP
+uniform float specularMapIndex;
+#endif
+#ifdef HEIGHT_MAP
+uniform float heightMapIndex;
+#endif
+#else
 #ifdef DIFFUSE_MAP
 uniform sampler2D diffuseMap;
 #endif
@@ -13,6 +28,7 @@ uniform sampler2D specularMap;
 #endif
 #ifdef HEIGHT_MAP
 uniform sampler2D heightMap;
+#endif
 #endif
 
 #ifdef REFLECTION
@@ -41,7 +57,11 @@ void main() {
 	vec4 textureColor = vec4(diffuseColor, 1.0f);
 	
 #ifdef DIFFUSE_MAP
+#ifdef ARRAY_MAP
+	textureColor *= texture(arrayMap, vec3(fTexCoord, diffuseMapIndex));
+#else
 	textureColor *= texture(diffuseMap, fTexCoord);
+#endif
 	
 	if (textureColor.a < 0.2f)
 		discard;
@@ -50,7 +70,12 @@ void main() {
 	normal = fNormal;
 
 #ifdef NORMAL_MAP
-	normal = normalize(toTangentSpace * (2.0f * texture(normalMap, fTexCoord).rgb - 1.0f));
+#ifdef ARRAY_MAP
+	vec3 normalColor = texture(arrayMap, vec3(fTexCoord, normalMapIndex)).rgb;
+#else
+	vec3 normalColor = texture(normalMap, fTexCoord).rgb;
+#endif
+	normal = normalize(toTangentSpace * (2.0f * normalColor - 1.0f));
 #else
 	normal = normalize(normal);
 #endif

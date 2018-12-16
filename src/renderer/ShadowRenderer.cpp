@@ -10,6 +10,7 @@ ShadowRenderer::ShadowRenderer() {
 
 	framebuffer = new Framebuffer(0, 0);
 
+	arrayMapUniform = shaderBatch->GetUniform("arrayMap");
 	diffuseMapUniform = shaderBatch->GetUniform("diffuseMap");
 	modelMatrixUniform = shaderBatch->GetUniform("mMatrix");
 	lightSpaceMatrixUniform = shaderBatch->GetUniform("lightSpaceMatrix");
@@ -55,6 +56,7 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 				shaderBatch->Bind(shaderConfigBatch->ID);
 
+				arrayMapUniform->SetValue(0);
 				diffuseMapUniform->SetValue(0);
 
 				mat4 lightSpace = component->projectionMatrix * component->viewMatrix;
@@ -85,8 +87,15 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 
 						if (material->HasDiffuseMap()) {
-							if (material->diffuseMap->channels == 4) {
-								material->diffuseMap->Bind(GL_TEXTURE0);
+							if (material->HasArrayMap()) {
+								if (material->arrayMap->channels == 4) {
+									material->arrayMap->Bind(GL_TEXTURE0);
+								}
+							}
+							else {
+								if (material->diffuseMap->channels == 4) {
+									material->diffuseMap->Bind(GL_TEXTURE0);
+								}
 							}
 						}
 

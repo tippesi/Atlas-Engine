@@ -24,10 +24,17 @@ public:
 	static string fragmentPath;
 
 private:
+	Uniform* arrayMapUniform;
 	Uniform* diffuseMapUniform;
 	Uniform* normalMapUniform;
 	Uniform* specularMapUniform;
 	Uniform* heightMapUniform;
+
+	Uniform* diffuseMapIndexUniform;
+	Uniform* normalMapIndexUniform;
+	Uniform* specularMapIndexUniform;
+	Uniform* heightMapIndexUniform;
+
 	Uniform* modelMatrixUniform;
 	Uniform* viewMatrixUniform;
 	Uniform* projectionMatrixUniform;

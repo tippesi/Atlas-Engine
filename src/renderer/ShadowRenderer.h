@@ -26,6 +26,7 @@ public:
 private:
 	Framebuffer* framebuffer;
 
+	Uniform* arrayMapUniform;
 	Uniform* diffuseMapUniform;
 	Uniform* lightSpaceMatrixUniform;
 	Uniform* modelMatrixUniform;

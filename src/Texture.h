@@ -70,6 +70,10 @@ public:
 	/// </summary>
 	uint32_t GetID();
 
+	uint32_t GetDataFormat();
+
+	int32_t GetSizedDataFormat();
+
 	~Texture();
 
 	int32_t width;
@@ -94,7 +98,7 @@ public:
 	/// <summary>
 	/// Removes gamma correction of image data (sRGB to RGB)
 	/// </summary>
-	static void UncorrectGamma(uint8_t* data, int32_t width, int32_t height, int32_t channels);
+	static void GammaToLinear(uint8_t* data, int32_t width, int32_t height, int32_t channels);
 
 	/// Returns the base format of a sized internal format
 	static int32_t GetBaseFormat(int32_t sizedFormat);
@@ -116,7 +120,7 @@ private:
 	/// OpenGL texture ID
 	uint32_t ID;
 
-	GLenum dataFormat;
+	uint32_t dataFormat;
 	int32_t internalFormat;
 
 	int32_t layerCount;

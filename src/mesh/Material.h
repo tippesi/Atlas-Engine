@@ -11,15 +11,30 @@ class Material {
 public:
 	Material();
 
-	void Update();
+	void Update(bool arrayTexture = true);
 
+	void AddDiffuseMap(Texture* texture);
+
+	void AddNormalMap(Texture* texture);
+
+	void AddSpecularMap(Texture* texture);
+
+	void AddDisplacementMap(Texture* texture);
+
+	bool HasArrayMap();
 	bool HasDiffuseMap();
 	bool HasNormalMap();
 	bool HasSpecularMap();
 	bool HasDisplacementMap();
 
+	float GetDiffuseMapIndex();
+	float GetNormalMapIndex();
+	float GetSpecularMapIndex();
+	float GetDisplacementMapIndex();
+
 	~Material();
 
+	Texture* arrayMap;
 	Texture* diffuseMap;
 	Texture* normalMap;
 	Texture* specularMap;
@@ -36,6 +51,17 @@ public:
 
 	ShaderConfig* geometryConfig;
 	ShaderConfig* shadowConfig;
+
+private:
+	bool hasDiffuseMap;
+	bool hasNormalMap;
+	bool hasSpecularMap;
+	bool hasDisplacementMap;
+
+	float diffuseMapIndex;
+	float normalMapIndex;
+	float specularMapIndex;
+	float displacementMapIndex;
 
 };
 

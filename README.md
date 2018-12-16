@@ -27,9 +27,9 @@ You can find them in **./lib/YourFavouriteSystem/**.
 If you want more information have a look into the [Documentation](https://tippex97.github.io/Blue-Engine/index.html)
 ## General performance tips
 - Use static/stationary objects and lights as often as possible
-- Use textures with the same size for each material
+- Use textures with the same size and format for each material
 - Set mesh data or any kind of data prior to rendering. More importantly: Don't create data while rendering.
-- If you are programming additional renderers or content always use the mapping feature of the vertex arrays.
+- If you are programming additional renderers or content always use the mapping feature of the vertex buffers.
   Don't use SetData() often, use SetSubData instead.
   Also try to avoid using OpenGL, use existing engine features instead
 ## Code Example

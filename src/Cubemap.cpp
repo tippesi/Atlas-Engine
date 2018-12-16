@@ -31,12 +31,11 @@ Cubemap::Cubemap(string right, string left, string top,
 		uint8_t* data = stbi_load(filenames[i].c_str(), &width, &height, &channels, 3);
 
 		if (data != nullptr) {
-			// OpenGL ES doesn't guarantee that mipmaps are working in sRGB color space so we better ignore gamma correction
 #ifdef ENGINE_GL
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB8, width, height, 0,
 				GL_RGB, GL_UNSIGNED_BYTE, data);
 #elif ENGINE_GLES
-			Texture::UncorrectGamma(data, width, height, 3);
+			Texture::GammaToLinear(data, width, height, 3);
 
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB8, width, height, 0,
 				GL_RGB, GL_UNSIGNED_BYTE, data);

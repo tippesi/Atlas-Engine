@@ -114,6 +114,7 @@ void Main::Stream() {
 
 	}
 
+	/*
 	if (terrain->storage->requestedCells.size() > 0) {
 		for (int32_t i = 0; i < 10000; i++) {
 
@@ -129,6 +130,7 @@ void Main::Stream() {
 
 		}
 	}
+	*/
 
 	terrain->storage->requestedCells.clear();
 
