@@ -387,11 +387,11 @@ void Texture::GenerateTexture(GLenum dataFormat, int32_t internalFormat,
 	}
 	else {
 
-		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, filtering);
-		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, filtering);
-
-		glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapping);
-		glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
+            glTexParameteri(target, GL_TEXTURE_MIN_FILTER, filtering);
+            glTexParameteri(target, GL_TEXTURE_MAG_FILTER, filtering);
+    
+            glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapping);
+            glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
 
 	}
 
