@@ -10,44 +10,79 @@
 #include "lighting/ILight.h"
 #include "lighting/Sky.h"
 #include "postprocessing/PostProcessing.h"
+#include "Decal.h"
 
 class Scene {
 
 public:
-	///
+
+	/**
+	 *
+	 */
 	Scene();
 
-	///
-	/// \param actor
+	/**
+	 *
+	 * @param actor
+	 */
 	void Add(Actor* actor);
 
-	///
-	/// \param actor
+	/**
+	 *
+	 * @param actor
+	 */
 	void Remove(Actor* actor);
 
-	///
-	/// \param terrain
+	/**
+	 *
+	 * @param terrain
+	 */
 	void Add(Terrain* terrain);
 
-	///
-	/// \param terrain
+	/**
+	 *
+	 * @param terrain
+	 */
 	void Remove(Terrain* terrain);
 
-	///
-	/// \param light
+	/**
+	 *
+	 * @param light
+	 */
 	void Add(ILight* light);
 
-	///
-	/// \param light
+	/**
+	 *
+	 * @param light
+	 */
 	void Remove(ILight* light);
 
-	///
+	/**
+	 *
+	 * @param decal
+	 */
+	void Add(Decal* decal);
+
+	/**
+	 *
+	 * @param decal
+	 */
+	void Remove(Decal* decal);
+
+	/**
+	 *
+	 * @param camera
+	 */
 	void Update(Camera* camera);
 
-	///
+	/**
+	 *
+	 */
 	void ClearContent();
 
-	///
+	/**
+	 *
+	 */
 	void DeleteContent();
 
 	~Scene();
@@ -57,6 +92,7 @@ public:
 	vector<ILight*> lights;
 	vector<ActorBatch*> actorBatches;
 	vector<Terrain*> terrains;
+	vector<Decal*> decals;
 
 	Sky* sky;
 	PostProcessing* postProcessing;

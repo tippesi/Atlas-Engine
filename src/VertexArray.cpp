@@ -6,7 +6,10 @@ VertexArray::VertexArray() {
 
 	glGenVertexArrays(1, &ID);
 
-	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxAttribArrayCount);
+	int32_t maxVertexAttribs;
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxVertexAttribs);
+
+	maxAttribArrayCount = (uint32_t)maxVertexAttribs;
 
 	indexComponent = nullptr;
 
@@ -94,9 +97,7 @@ void VertexArray::AddInstancedComponent(uint32_t attribArray, VertexBuffer* buff
 	}
 
 }
-/*
-void VertexArray::AddInstancedComponent(uint32_t attribArray, VertexBuffer* buffer, )
-*/
+
 VertexBuffer* VertexArray::GetIndexComponent() {
 
 	return indexComponent;

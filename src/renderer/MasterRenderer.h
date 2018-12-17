@@ -7,6 +7,7 @@
 #include "GeometryRenderer.h"
 #include "TerrainRenderer.h"
 #include "ShadowRenderer.h"
+#include "DecalRenderer.h"
 #include "DirectionalVolumetricRenderer.h"
 #include "DirectionalLightRenderer.h"
 #include "PointLightRenderer.h"
@@ -66,6 +67,7 @@ private:
 	GeometryRenderer* geometryRenderer;
 	TerrainRenderer* terrainRenderer;
 	ShadowRenderer* shadowRenderer;
+	DecalRenderer* decalRenderer;
 	DirectionalVolumetricRenderer* directionalVolumetricRenderer;
 	DirectionalLightRenderer* directionalLightRenderer;
 	PointLightRenderer* pointLightRenderer;

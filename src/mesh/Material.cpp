@@ -96,36 +96,39 @@ void Material::Update(bool arrayTexture) {
 
 	}
 
+	/*
 	if (arrayTexture && !HasArrayMap()) {
 
 		int32_t layer = 0;
-		arrayMap = new Texture(GL_UNSIGNED_BYTE, width, height, format, -0.4f, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true, layers);
+		arrayMap = new Texture(GL_UNSIGNED_BYTE, width, height, format, -0.4f, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true,
+							   layers);
 
 		if (HasDiffuseMap()) {
-			diffuseMapIndex = (float)layer;
-			arrayMap->SetData(diffuseMap->GetData(), layer++);
+			diffuseMapIndex = (float) layer;
+			arrayMap->SetData(diffuseMap, 0, layer++);
 			delete diffuseMap;
 		}
 
 		if (HasNormalMap()) {
-			normalMapIndex = (float)layer;
-			arrayMap->SetData(normalMap->GetData(), layer++);
+			normalMapIndex = (float) layer;
+			arrayMap->SetData(normalMap, 0, layer++);
 			delete normalMap;
 		}
 
 		if (HasSpecularMap()) {
-			specularMapIndex = (float)layer;
-			arrayMap->SetData(specularMap->GetData(), layer++);
+			specularMapIndex = (float) layer;
+			arrayMap->SetData(specularMap, 0, layer++);
 			delete specularMap;
 		}
 
 		if (HasDisplacementMap()) {
-			displacementMapIndex = (float)layer;
-			arrayMap->SetData(displacementMap->GetData(), layer++);
+			displacementMapIndex = (float) layer;
+			arrayMap->SetData(displacementMap, 0, layer++);
 			delete displacementMap;
 		}
 
-	}	
+	}
+	*/
 
 	if (HasArrayMap()) {
 		geometryConfig->AddMacro("ARRAY_MAP");

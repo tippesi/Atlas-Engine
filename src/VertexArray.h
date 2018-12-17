@@ -9,32 +9,45 @@
 class VertexArray {
 
 public:
-	
+
+	/**
+	 *
+	 */
 	VertexArray();
 
-	///
-	/// \param buffer
+	/**
+	 *
+	 * @param buffer
+	 */
 	void AddIndexComponent(VertexBuffer* buffer);
 
-	///
-	/// \param attribArray
-	/// \param buffer
-	/// \param normalized
+	/**
+	 *
+	 * @param attribArray
+	 * @param buffer
+	 * @param normalized
+	 */
 	void AddComponent(uint32_t attribArray, VertexBuffer* buffer, bool normalized = false);
 
-	///
-	/// \param attribArray
-	/// \param buffer
-	/// \param normalized
+	/**
+	 *
+	 * @param attribArray
+	 * @param buffer
+	 * @param normalized
+	 */
 	void AddInstancedComponent(uint32_t attribArray, VertexBuffer* buffer, bool normalized = false);
 
-	///
-	/// \return
+	/**
+	 *
+	 * @return
+	 */
 	VertexBuffer* GetIndexComponent();
 
-	///
-	/// \param attribArray
-	/// \return
+	/**
+	 *
+	 * @param attribArray
+	 * @return
+	 */
 	VertexBuffer* GetComponent(uint32_t attribArray);
 
 	int32_t GetMaxAttributeArrayCount();
@@ -60,7 +73,7 @@ private:
 
 	unordered_map<uint32_t, VertexBuffer*> vertexComponents;
 
-	int32_t maxAttribArrayCount;
+	uint32_t maxAttribArrayCount;
 
 	static uint32_t boundVertexArrayID;
 

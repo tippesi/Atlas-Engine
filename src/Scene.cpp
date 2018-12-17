@@ -87,6 +87,27 @@ void Scene::Remove(ILight* light) {
 
 }
 
+void Scene::Add(Decal* decal) {
+
+	decals.push_back(decal);
+
+	// renderList->Add(light);
+
+}
+
+void Scene::Remove(Decal* decal) {
+
+	for (auto iterator = decals.begin(); iterator != decals.end(); iterator++) {
+
+		if (*iterator == decal) {
+			decals.erase(iterator);
+			return;
+		}
+
+	}
+
+}
+
 void Scene::Update(Camera* camera) {
 
 	// We have to copy the matrices because some actors might not be added

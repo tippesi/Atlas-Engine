@@ -10,7 +10,8 @@ Framebuffer::Framebuffer(int32_t width, int32_t height) : width(width), height(h
 
 }
 
-void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t internalFormat, int32_t wrapping, int32_t filtering) {
+void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t internalFormat, int32_t wrapping,
+		int32_t filtering, uint32_t target) {
 
 	FramebufferComponent* component = nullptr;
 
@@ -32,7 +33,7 @@ void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t in
 
 	Bind();
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, component->texture->GetID(), 0);
+	glFramebufferTexture2D(target, attachment, GL_TEXTURE_2D, component->texture->GetID(), 0);
 
 	components[attachment] = component;
 
@@ -44,7 +45,7 @@ void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t in
 
 }
 
-void Framebuffer::AddComponentTexture(int32_t attachment, Texture* texture) {
+void Framebuffer::AddComponentTexture(int32_t attachment, Texture* texture, uint32_t target) {
 
 	FramebufferComponent* component = nullptr;
 
@@ -66,7 +67,7 @@ void Framebuffer::AddComponentTexture(int32_t attachment, Texture* texture) {
 
 	Bind();
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, component->texture->GetID(), 0);
+	glFramebufferTexture2D(target, attachment, GL_TEXTURE_2D, component->texture->GetID(), 0);
 
 	components[attachment] = component;
 
@@ -78,7 +79,7 @@ void Framebuffer::AddComponentTexture(int32_t attachment, Texture* texture) {
 
 }
 
-void Framebuffer::AddComponentTextureLayer(int32_t attachment, Texture* texture, int32_t layer) {
+void Framebuffer::AddComponentTextureLayer(int32_t attachment, Texture* texture, int32_t layer, uint32_t target) {
 
 	FramebufferComponent* component = nullptr;
 
@@ -100,7 +101,7 @@ void Framebuffer::AddComponentTextureLayer(int32_t attachment, Texture* texture,
 
 	Bind();
 
-	glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, texture->GetID(), 0, layer);
+	glFramebufferTextureLayer(target, attachment, texture->GetID(), 0, layer);
 
 	components[attachment] = component;
 
@@ -112,7 +113,7 @@ void Framebuffer::AddComponentTextureLayer(int32_t attachment, Texture* texture,
 
 }
 
-void Framebuffer::AddComponentCubemap(int32_t attachment, Cubemap* cubemap, int32_t face) {
+void Framebuffer::AddComponentCubemap(int32_t attachment, Cubemap* cubemap, int32_t face, uint32_t target) {
 
 	FramebufferComponent* component = nullptr;
 
@@ -134,7 +135,7 @@ void Framebuffer::AddComponentCubemap(int32_t attachment, Cubemap* cubemap, int3
 
 	Bind();
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+	glFramebufferTexture2D(target, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
 			component->cubemap->GetID(), 0);
 
 	components[attachment] = component;

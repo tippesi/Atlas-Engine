@@ -54,8 +54,6 @@ public:
 	 */
 	void DeleteContent();
 
-	ActorBatch::~ActorBatch();
-
 	vector<Actor*> actors;
 
 private:

@@ -25,14 +25,15 @@ public:
 	 * @param wrapping
 	 * @param filtering
 	 */
-	void AddComponent(int32_t attachment, GLenum dataFormat, int32_t internalFormat, int32_t wrapping, int32_t filtering);
+	void AddComponent(int32_t attachment, GLenum dataFormat, int32_t internalFormat, int32_t wrapping,
+			int32_t filtering, uint32_t target = GL_FRAMEBUFFER);
 
 	/**
 	 *
 	 * @param attachment
 	 * @param texture
 	 */
-	void AddComponentTexture(int32_t attachment, Texture* texture);
+	void AddComponentTexture(int32_t attachment, Texture* texture, uint32_t target = GL_FRAMEBUFFER);
 
 	/**
 	 *
@@ -40,7 +41,8 @@ public:
 	 * @param texture
 	 * @param layer
 	 */
-	void AddComponentTextureLayer(int32_t attachment, Texture* texture, int32_t layer);
+	void AddComponentTextureLayer(int32_t attachment, Texture* texture, int32_t layer,
+			uint32_t target = GL_FRAMEBUFFER);
 
 	/**
 	 *
@@ -48,7 +50,7 @@ public:
 	 * @param cubemap
 	 * @param face
 	 */
-	void AddComponentCubemap(int32_t attachment, Cubemap* cubemap, int32_t face);
+	void AddComponentCubemap(int32_t attachment, Cubemap* cubemap, int32_t face, uint32_t target = GL_FRAMEBUFFER);
 
 	/**
 	 *

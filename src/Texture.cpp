@@ -130,9 +130,50 @@ void Texture::SetData(vector<uint8_t> data, int32_t layer, int32_t layerCount) {
 
 }
 
+void Texture::SetData(Texture *texture, int32_t srcLayer, int32_t targetLayer) {
+
+	auto framebuffer = Framebuffer(width, height);
+
+	if (layerCount == 0) {
+		framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, this, GL_DRAW_FRAMEBUFFER);
+	}
+	else {
+		framebuffer.AddComponentTextureLayer(GL_COLOR_ATTACHMENT0, this, targetLayer, GL_DRAW_FRAMEBUFFER);
+	}
+
+	if (texture->layerCount == 0) {
+		framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, texture, GL_READ_FRAMEBUFFER);
+	}
+	else {
+		framebuffer.AddComponentTextureLayer(GL_COLOR_ATTACHMENT1, texture, srcLayer, GL_READ_FRAMEBUFFER);
+	}
+
+	uint32_t drawBuffer = { GL_COLOR_ATTACHMENT0 };
+	framebuffer.SetDrawBuffers(&drawBuffer, 1);
+
+	glBlitFramebuffer(0, 0, texture->width, texture->height, 0, 0, width, height,
+					  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+	if (this->layerCount == 0) {
+		glBindTexture(GL_TEXTURE_2D, ID);
+		if (mipmaps)
+			glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else {
+		glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
+		if (mipmaps)
+			glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+	}
+
+	framebuffer.DeleteContent();
+
+	framebuffer.Unbind();
+
+}
+
 vector<uint8_t> Texture::GetData(int32_t layer) {
 
-	Framebuffer framebuffer = Framebuffer(width, height);
+	auto framebuffer = Framebuffer(width, height);
 
 	vector<uint8_t> data = vector<uint8_t>(width * height * channels);
 

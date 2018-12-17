@@ -29,6 +29,7 @@ MasterRenderer::MasterRenderer() {
 	geometryRenderer = new GeometryRenderer();
 	terrainRenderer = new TerrainRenderer();
 	shadowRenderer = new ShadowRenderer();
+	decalRenderer = new DecalRenderer();
 	directionalVolumetricRenderer = new DirectionalVolumetricRenderer();
 	directionalLightRenderer = new DirectionalLightRenderer();
 	pointLightRenderer = new PointLightRenderer();
@@ -58,6 +59,8 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	geometryRenderer->Render(window, target, camera, scene, true);
 
 	glEnable(GL_CULL_FACE);
+
+	decalRenderer->Render(window, target, camera, scene, true);
 
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);

@@ -54,8 +54,3 @@ void ActorBatch::DeleteContent() {
 	ClearContent();
 
 }
-
-ActorBatch::~ActorBatch() {
-
-
-}

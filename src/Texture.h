@@ -8,9 +8,19 @@
 class Texture {
 
 public:
-	/// <summary>
-	/// Constructs a <see cref="Texture"/>.
-	/// </summary>
+	/**
+	 * Constructs a Texture object.
+	 * @param dataFormat
+	 * @param width
+	 * @param height
+	 * @param internalFormat
+	 * @param LoD
+	 * @param wrapping
+	 * @param filtering
+	 * @param anisotropic
+	 * @param mipmaps
+	 * @param layerCount
+	 */
 	Texture(GLenum dataFormat, int32_t width, int32_t height, int32_t internalFormat, float LoD,
 		int32_t wrapping, int32_t filtering, bool anisotropic, bool mipmaps, int32_t layerCount);
 
@@ -40,6 +50,14 @@ public:
 	/// <param name="layer">The layer where the data should be written. For a normal texture this should be 0.</param>
 	/// <param name="layerCount">The number of layers which should be written to. The data has to have the size of width * height * layerCount.</param>
 	void SetData(vector<uint8_t> data, int32_t layer = 0, int32_t layerCount = 1);
+
+	/**
+	 *
+	 * @param texture
+	 * @param srcLayer
+	 * @param targetLayer
+	 */
+	void SetData(Texture* texture, int32_t srcLayer = 0, int32_t targetLayer = 0);
 
 	/// <summary>
 	/// Gets a copy of the data of the texture. Retrieval of the GPU data is only available for OpenGL NOT OpenGL ES
