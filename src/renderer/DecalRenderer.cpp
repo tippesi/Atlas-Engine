@@ -25,6 +25,8 @@ void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera,
 
     shader->Bind();
 
+    decalTexture->SetValue(0);
+
     viewMatrix->SetValue(camera->viewMatrix);
     projectionMatrix->SetValue(camera->projectionMatrix);
 
@@ -41,8 +43,9 @@ void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera,
 
 void DecalRenderer::GetUniforms() {
 
-    modelMatrix = shader->GetUniform("modelMatrix");
-    viewMatrix = shader->GetUniform("viewMatrix");
-    projectionMatrix = shader->GetUniform("projectionMatrix");
+    decalTexture = shader->GetUniform("decalTexture");
+    modelMatrix = shader->GetUniform("mMatrix");
+    viewMatrix = shader->GetUniform("vMatrix");
+    projectionMatrix = shader->GetUniform("pMatrix");
 
 }

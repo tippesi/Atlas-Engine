@@ -2,6 +2,7 @@
 #define DECAL_H
 
 #include "System.h"
+#include "Texture.h"
 
 class Decal {
 
