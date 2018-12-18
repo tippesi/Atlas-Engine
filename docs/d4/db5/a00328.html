@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Member List</title>
+<title>Blue Engine: VertexBuffer Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('d8/df7/a00331.html','../../');});
+$(document).ready(function(){initNavTree('d4/db5/a00328.html','../../');});
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -87,22 +87,1203 @@ $(document).ready(function(){initNavTree('d8/df7/a00331.html','../../');});
 </div>
 
 <div class="header">
+  <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="../../de/dc8/a00325.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">EngineControllerAxisEvent Member List</div>  </div>
+<div class="title">VertexBuffer Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This is the complete list of members for <a class="el" href="../../d8/df7/a00331.html">EngineControllerAxisEvent</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="../../d8/df7/a00331.html#a9378a880723feb3a09aa221614122294">axis</a></td><td class="entry"><a class="el" href="../../d8/df7/a00331.html">EngineControllerAxisEvent</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d8/df7/a00331.html#abc18c5f5fb08967a64ee18ce5b48d92b">device</a></td><td class="entry"><a class="el" href="../../d8/df7/a00331.html">EngineControllerAxisEvent</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d8/df7/a00331.html#a3948b4854bf9e5201d2ebe83b064a69b">EngineControllerAxisEvent</a>(SDL_ControllerAxisEvent event)</td><td class="entry"><a class="el" href="../../d8/df7/a00331.html">EngineControllerAxisEvent</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d8/df7/a00331.html#aff3a732ce102520e813b25bf0470ef8c">value</a></td><td class="entry"><a class="el" href="../../d8/df7/a00331.html">EngineControllerAxisEvent</a></td><td class="entry"></td></tr>
-</table></div><!-- contents -->
+<p>Manages the vertex data flow between the CPU and GPU.  
+ <a href="../../d4/db5/a00328.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../d5/de0/a00050_source.html">VertexBuffer.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:adf0062a4c5b00f32ea124cf734e70c6e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#adf0062a4c5b00f32ea124cf734e70c6e">VertexBuffer</a> (uint32_t type, int32_t dataType, int32_t stride, uint32_t usage=GL_STATIC_DRAW)</td></tr>
+<tr class="memdesc:adf0062a4c5b00f32ea124cf734e70c6e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d4/db5/a00328.html" title="Manages the vertex data flow between the CPU and GPU. ">VertexBuffer</a> object.  <a href="#adf0062a4c5b00f32ea124cf734e70c6e">More...</a><br /></td></tr>
+<tr class="separator:adf0062a4c5b00f32ea124cf734e70c6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf162a527435e7fe8f543ffe9ff3e474"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#acf162a527435e7fe8f543ffe9ff3e474">Bind</a> ()</td></tr>
+<tr class="memdesc:acf162a527435e7fe8f543ffe9ff3e474"><td class="mdescLeft">&#160;</td><td class="mdescRight">Binds the OpenGL vertex buffer object.  <a href="#acf162a527435e7fe8f543ffe9ff3e474">More...</a><br /></td></tr>
+<tr class="separator:acf162a527435e7fe8f543ffe9ff3e474"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a76029e4f3f7f4302791d4409e937719a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a76029e4f3f7f4302791d4409e937719a">Unbind</a> ()</td></tr>
+<tr class="memdesc:a76029e4f3f7f4302791d4409e937719a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unbinds any OpenGL vertex buffer object.  <a href="#a76029e4f3f7f4302791d4409e937719a">More...</a><br /></td></tr>
+<tr class="separator:a76029e4f3f7f4302791d4409e937719a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a606ace83cd30ef8904884480e6fbed"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a7a606ace83cd30ef8904884480e6fbed">GetType</a> ()</td></tr>
+<tr class="memdesc:a7a606ace83cd30ef8904884480e6fbed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the type of the OpenGL vertex buffer object.  <a href="#a7a606ace83cd30ef8904884480e6fbed">More...</a><br /></td></tr>
+<tr class="separator:a7a606ace83cd30ef8904884480e6fbed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9248738d9d4f6ad5aec6d5bee059903"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#af9248738d9d4f6ad5aec6d5bee059903">GetDataType</a> ()</td></tr>
+<tr class="memdesc:af9248738d9d4f6ad5aec6d5bee059903"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the type of the data which the buffer holds.  <a href="#af9248738d9d4f6ad5aec6d5bee059903">More...</a><br /></td></tr>
+<tr class="separator:af9248738d9d4f6ad5aec6d5bee059903"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b748e24506a73f0451f21e434da68d0"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a3b748e24506a73f0451f21e434da68d0">GetStride</a> ()</td></tr>
+<tr class="memdesc:a3b748e24506a73f0451f21e434da68d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the stride of each element.  <a href="#a3b748e24506a73f0451f21e434da68d0">More...</a><br /></td></tr>
+<tr class="separator:a3b748e24506a73f0451f21e434da68d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab49bfc5700ac08806f9bbf87750c6ebb"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#ab49bfc5700ac08806f9bbf87750c6ebb">GetElementCount</a> ()</td></tr>
+<tr class="memdesc:ab49bfc5700ac08806f9bbf87750c6ebb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of elements.  <a href="#ab49bfc5700ac08806f9bbf87750c6ebb">More...</a><br /></td></tr>
+<tr class="separator:ab49bfc5700ac08806f9bbf87750c6ebb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afea2c5738b8bbf1725022b6dc2a7edb7"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#afea2c5738b8bbf1725022b6dc2a7edb7">GetElementSize</a> ()</td></tr>
+<tr class="memdesc:afea2c5738b8bbf1725022b6dc2a7edb7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the size in bytes of an element.  <a href="#afea2c5738b8bbf1725022b6dc2a7edb7">More...</a><br /></td></tr>
+<tr class="separator:afea2c5738b8bbf1725022b6dc2a7edb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a349d70b251a33d0daeec8dd288cf2a65"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a349d70b251a33d0daeec8dd288cf2a65">SetData</a> (uint8_t *data, int32_t length)</td></tr>
+<tr class="memdesc:a349d70b251a33d0daeec8dd288cf2a65"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the OpenGL vertex buffer object.  <a href="#a349d70b251a33d0daeec8dd288cf2a65">More...</a><br /></td></tr>
+<tr class="separator:a349d70b251a33d0daeec8dd288cf2a65"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe7288409b07cb46c4a16aecd6df1f3b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#abe7288409b07cb46c4a16aecd6df1f3b">SetData</a> (uint16_t *data, int32_t length)</td></tr>
+<tr class="memdesc:abe7288409b07cb46c4a16aecd6df1f3b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the OpenGL vertex buffer object.  <a href="#abe7288409b07cb46c4a16aecd6df1f3b">More...</a><br /></td></tr>
+<tr class="separator:abe7288409b07cb46c4a16aecd6df1f3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af76ab03fa2711c6567f7311e6b55591b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#af76ab03fa2711c6567f7311e6b55591b">SetData</a> (uint32_t *data, int32_t length)</td></tr>
+<tr class="memdesc:af76ab03fa2711c6567f7311e6b55591b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the OpenGL vertex buffer object.  <a href="#af76ab03fa2711c6567f7311e6b55591b">More...</a><br /></td></tr>
+<tr class="separator:af76ab03fa2711c6567f7311e6b55591b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa108ad49a708aedbd3211a0588f28c2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#afa108ad49a708aedbd3211a0588f28c2">SetData</a> (int8_t *data, int32_t length)</td></tr>
+<tr class="memdesc:afa108ad49a708aedbd3211a0588f28c2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the OpenGL vertex buffer object.  <a href="#afa108ad49a708aedbd3211a0588f28c2">More...</a><br /></td></tr>
+<tr class="separator:afa108ad49a708aedbd3211a0588f28c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a201efdaf946ce85613764f26e41058b0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a201efdaf946ce85613764f26e41058b0">SetData</a> (int16_t *data, int32_t length)</td></tr>
+<tr class="memdesc:a201efdaf946ce85613764f26e41058b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the OpenGL vertex buffer object.  <a href="#a201efdaf946ce85613764f26e41058b0">More...</a><br /></td></tr>
+<tr class="separator:a201efdaf946ce85613764f26e41058b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ba41cc4e2f0218ecedddcdf6f75bd87"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a8ba41cc4e2f0218ecedddcdf6f75bd87">SetData</a> (int32_t *data, int32_t length)</td></tr>
+<tr class="memdesc:a8ba41cc4e2f0218ecedddcdf6f75bd87"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the OpenGL vertex buffer object.  <a href="#a8ba41cc4e2f0218ecedddcdf6f75bd87">More...</a><br /></td></tr>
+<tr class="separator:a8ba41cc4e2f0218ecedddcdf6f75bd87"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfc66d1e45e58c537433e38686902d20"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#acfc66d1e45e58c537433e38686902d20">SetData</a> (float *data, int32_t length)</td></tr>
+<tr class="memdesc:acfc66d1e45e58c537433e38686902d20"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the OpenGL vertex buffer object.  <a href="#acfc66d1e45e58c537433e38686902d20">More...</a><br /></td></tr>
+<tr class="separator:acfc66d1e45e58c537433e38686902d20"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9801c416fa041c91d7c15a73c8a6ee5f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a9801c416fa041c91d7c15a73c8a6ee5f">SetData</a> (vec2 *data, int32_t length)</td></tr>
+<tr class="memdesc:a9801c416fa041c91d7c15a73c8a6ee5f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the OpenGL vertex buffer object.  <a href="#a9801c416fa041c91d7c15a73c8a6ee5f">More...</a><br /></td></tr>
+<tr class="separator:a9801c416fa041c91d7c15a73c8a6ee5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0aaa31d8beca44c68b64fe6ea4df77aa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a0aaa31d8beca44c68b64fe6ea4df77aa">SetData</a> (vec3 *data, int32_t length)</td></tr>
+<tr class="memdesc:a0aaa31d8beca44c68b64fe6ea4df77aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the OpenGL vertex buffer object.  <a href="#a0aaa31d8beca44c68b64fe6ea4df77aa">More...</a><br /></td></tr>
+<tr class="separator:a0aaa31d8beca44c68b64fe6ea4df77aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b0f46c5caabb1add4300aef66856dd3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a9b0f46c5caabb1add4300aef66856dd3">SetData</a> (vec4 *data, int32_t length)</td></tr>
+<tr class="memdesc:a9b0f46c5caabb1add4300aef66856dd3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the OpenGL vertex buffer object.  <a href="#a9b0f46c5caabb1add4300aef66856dd3">More...</a><br /></td></tr>
+<tr class="separator:a9b0f46c5caabb1add4300aef66856dd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9465f608d926864f857902deada05753"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a9465f608d926864f857902deada05753">SetData</a> (mat3 *data, int32_t length)</td></tr>
+<tr class="memdesc:a9465f608d926864f857902deada05753"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the OpenGL vertex buffer object.  <a href="#a9465f608d926864f857902deada05753">More...</a><br /></td></tr>
+<tr class="separator:a9465f608d926864f857902deada05753"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7e0c495e2581398359875e6598b421a1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a7e0c495e2581398359875e6598b421a1">SetData</a> (mat4 *data, int32_t length)</td></tr>
+<tr class="memdesc:a7e0c495e2581398359875e6598b421a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the OpenGL vertex buffer object.  <a href="#a7e0c495e2581398359875e6598b421a1">More...</a><br /></td></tr>
+<tr class="separator:a7e0c495e2581398359875e6598b421a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa49e4ed2991292c6df67d5755ad1d707"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#aa49e4ed2991292c6df67d5755ad1d707">SetData</a> (void *data, int32_t length, int32_t elementSize)</td></tr>
+<tr class="memdesc:aa49e4ed2991292c6df67d5755ad1d707"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the OpenGL vertex buffer object.  <a href="#aa49e4ed2991292c6df67d5755ad1d707">More...</a><br /></td></tr>
+<tr class="separator:aa49e4ed2991292c6df67d5755ad1d707"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17aabda5b72685d23e66871adeca231e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a17aabda5b72685d23e66871adeca231e">SetSubData</a> (uint8_t *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:a17aabda5b72685d23e66871adeca231e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a67013e84a661c2c3609d8d8b270bb60d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a67013e84a661c2c3609d8d8b270bb60d">SetSubData</a> (uint16_t *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:a67013e84a661c2c3609d8d8b270bb60d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9057a1b04ed617944e43ba1646047d1a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a9057a1b04ed617944e43ba1646047d1a">SetSubData</a> (uint32_t *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:a9057a1b04ed617944e43ba1646047d1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03557177d987c201bc57a66b8d5be4fb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a03557177d987c201bc57a66b8d5be4fb">SetSubData</a> (int8_t *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:a03557177d987c201bc57a66b8d5be4fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9789d1e26f09fee2f8b4225fedf46d57"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a9789d1e26f09fee2f8b4225fedf46d57">SetSubData</a> (int16_t *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:a9789d1e26f09fee2f8b4225fedf46d57"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab0e1c9b55327ab95a6cd1e84daa2405f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#ab0e1c9b55327ab95a6cd1e84daa2405f">SetSubData</a> (int32_t *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:ab0e1c9b55327ab95a6cd1e84daa2405f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d7974570210bddb146cc44ac63e0e8e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a3d7974570210bddb146cc44ac63e0e8e">SetSubData</a> (float *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:a3d7974570210bddb146cc44ac63e0e8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1e85e62444330afd15c295ed3bf95d8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#ad1e85e62444330afd15c295ed3bf95d8">SetSubData</a> (vec2 *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:ad1e85e62444330afd15c295ed3bf95d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8e78df0538bc716a1e6e79c4cdd093b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#ab8e78df0538bc716a1e6e79c4cdd093b">SetSubData</a> (vec3 *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:ab8e78df0538bc716a1e6e79c4cdd093b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af96ff68edcd909e1aa0eea8a42accb22"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#af96ff68edcd909e1aa0eea8a42accb22">SetSubData</a> (vec4 *data, int32_t offset, int32_t length)</td></tr>
+<tr class="separator:af96ff68edcd909e1aa0eea8a42accb22"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a868f882898dc8abc0bf672af0d78cc39"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a868f882898dc8abc0bf672af0d78cc39">SetSubData</a> (void *data, int32_t offset, int32_t length, int32_t elementSize)</td></tr>
+<tr class="separator:a868f882898dc8abc0bf672af0d78cc39"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5216726fdd43b2ae8e1439e347717fdd"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html#a5216726fdd43b2ae8e1439e347717fdd">~VertexBuffer</a> ()</td></tr>
+<tr class="separator:a5216726fdd43b2ae8e1439e347717fdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Manages the vertex data flow between the CPU and GPU. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00009">9</a> of file <a class="el" href="../../d5/de0/a00050_source.html">VertexBuffer.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="adf0062a4c5b00f32ea124cf734e70c6e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adf0062a4c5b00f32ea124cf734e70c6e">&#9670;&nbsp;</a></span>VertexBuffer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">VertexBuffer::VertexBuffer </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>dataType</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>stride</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>usage</em> = <code>GL_STATIC_DRAW</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Constructs a <a class="el" href="../../d4/db5/a00328.html" title="Manages the vertex data flow between the CPU and GPU. ">VertexBuffer</a> object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">type</td><td>The type/target of the data, e.g GL_ARRAY_BUFFER </td></tr>
+    <tr><td class="paramname">dataType</td><td>The data type of the data, e.g GL_FLOAT </td></tr>
+    <tr><td class="paramname">stride</td><td>The number of elements of dataType </td></tr>
+    <tr><td class="paramname">usage</td><td>The usage of the buffer which is GL_STATIC_DRAW by default. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>This is similar to <a href="https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBufferData.xhtml">glBufferData</a>. For all available data types see <a href="https://www.khronos.org/opengl/wiki/OpenGL_Type">Common Enums</a>. GL_FIXED is not supported. </dd></dl>
+<dl class="section remark"><dt>Remarks</dt><dd>If you want to pass a 4-component vector you would use GL_FLOAT as the data type and 4 as the stride. For a 4x4 matrix data type would also be GL_FLOAT, but stride would equal 16. This is different to all the OpenGL functions, where stride is in bytes. </dd></dl>
+
+</div>
+</div>
+<a id="a5216726fdd43b2ae8e1439e347717fdd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5216726fdd43b2ae8e1439e347717fdd">&#9670;&nbsp;</a></span>~VertexBuffer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">VertexBuffer::~VertexBuffer </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="acf162a527435e7fe8f543ffe9ff3e474"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acf162a527435e7fe8f543ffe9ff3e474">&#9670;&nbsp;</a></span>Bind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::Bind </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Binds the OpenGL vertex buffer object. </p>
+
+</div>
+</div>
+<a id="af9248738d9d4f6ad5aec6d5bee059903"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af9248738d9d4f6ad5aec6d5bee059903">&#9670;&nbsp;</a></span>GetDataType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t VertexBuffer::GetDataType </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the type of the data which the buffer holds. </p>
+<dl class="section return"><dt>Returns</dt><dd>An integer corresponding to an OpenGL data type. </dd></dl>
+<dl class="section remark"><dt>Remarks</dt><dd>For all available data types see <a href="https://www.khronos.org/opengl/wiki/OpenGL_Type">https://www.khronos.org/opengl/wiki/OpenGL_Type</a> <a href="https://www.khronos.org/opengl/wiki/OpenGL_Type">Common Enums</a>. GL_FIXED is not supported. </dd></dl>
+
+</div>
+</div>
+<a id="ab49bfc5700ac08806f9bbf87750c6ebb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab49bfc5700ac08806f9bbf87750c6ebb">&#9670;&nbsp;</a></span>GetElementCount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t VertexBuffer::GetElementCount </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the number of elements. </p>
+<dl class="section return"><dt>Returns</dt><dd>An integer which equals the number of elements. </dd></dl>
+
+</div>
+</div>
+<a id="afea2c5738b8bbf1725022b6dc2a7edb7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afea2c5738b8bbf1725022b6dc2a7edb7">&#9670;&nbsp;</a></span>GetElementSize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t VertexBuffer::GetElementSize </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the size in bytes of an element. </p>
+<dl class="section return"><dt>Returns</dt><dd>An integer which equals the size of an element. </dd></dl>
+
+</div>
+</div>
+<a id="a3b748e24506a73f0451f21e434da68d0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3b748e24506a73f0451f21e434da68d0">&#9670;&nbsp;</a></span>GetStride()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t VertexBuffer::GetStride </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the stride of each element. </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+<dl class="section note"><dt>Note</dt><dd>Stride is not in bytes but is the number of base elements of type dataType. Have a look at <a class="el" href="../../d4/db5/a00328.html#adf0062a4c5b00f32ea124cf734e70c6e">VertexBuffer()</a> for an example. </dd></dl>
+
+</div>
+</div>
+<a id="a7a606ace83cd30ef8904884480e6fbed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a606ace83cd30ef8904884480e6fbed">&#9670;&nbsp;</a></span>GetType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint32_t VertexBuffer::GetType </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the type of the OpenGL vertex buffer object. </p>
+<dl class="section return"><dt>Returns</dt><dd>An integer corresponding to an OpenGL vertex buffer type. </dd></dl>
+
+</div>
+</div>
+<a id="a349d70b251a33d0daeec8dd288cf2a65"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a349d70b251a33d0daeec8dd288cf2a65">&#9670;&nbsp;</a></span>SetData() <span class="overload">[1/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">uint8_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the data of the OpenGL vertex buffer object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The data as a pointer. </td></tr>
+    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="abe7288409b07cb46c4a16aecd6df1f3b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe7288409b07cb46c4a16aecd6df1f3b">&#9670;&nbsp;</a></span>SetData() <span class="overload">[2/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">uint16_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the data of the OpenGL vertex buffer object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The data as a pointer. </td></tr>
+    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="af76ab03fa2711c6567f7311e6b55591b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af76ab03fa2711c6567f7311e6b55591b">&#9670;&nbsp;</a></span>SetData() <span class="overload">[3/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the data of the OpenGL vertex buffer object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The data as a pointer. </td></tr>
+    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="afa108ad49a708aedbd3211a0588f28c2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa108ad49a708aedbd3211a0588f28c2">&#9670;&nbsp;</a></span>SetData() <span class="overload">[4/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">int8_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the data of the OpenGL vertex buffer object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The data as a pointer. </td></tr>
+    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a201efdaf946ce85613764f26e41058b0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a201efdaf946ce85613764f26e41058b0">&#9670;&nbsp;</a></span>SetData() <span class="overload">[5/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">int16_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the data of the OpenGL vertex buffer object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The data as a pointer. </td></tr>
+    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a8ba41cc4e2f0218ecedddcdf6f75bd87"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8ba41cc4e2f0218ecedddcdf6f75bd87">&#9670;&nbsp;</a></span>SetData() <span class="overload">[6/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">int32_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the data of the OpenGL vertex buffer object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The data as a pointer. </td></tr>
+    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="acfc66d1e45e58c537433e38686902d20"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acfc66d1e45e58c537433e38686902d20">&#9670;&nbsp;</a></span>SetData() <span class="overload">[7/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">float *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the data of the OpenGL vertex buffer object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The data as a pointer. </td></tr>
+    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a9801c416fa041c91d7c15a73c8a6ee5f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9801c416fa041c91d7c15a73c8a6ee5f">&#9670;&nbsp;</a></span>SetData() <span class="overload">[8/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">vec2 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the data of the OpenGL vertex buffer object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The data as a pointer. </td></tr>
+    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a0aaa31d8beca44c68b64fe6ea4df77aa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0aaa31d8beca44c68b64fe6ea4df77aa">&#9670;&nbsp;</a></span>SetData() <span class="overload">[9/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">vec3 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the data of the OpenGL vertex buffer object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The data as a pointer. </td></tr>
+    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a9b0f46c5caabb1add4300aef66856dd3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b0f46c5caabb1add4300aef66856dd3">&#9670;&nbsp;</a></span>SetData() <span class="overload">[10/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">vec4 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the data of the OpenGL vertex buffer object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The data as a pointer. </td></tr>
+    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a9465f608d926864f857902deada05753"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9465f608d926864f857902deada05753">&#9670;&nbsp;</a></span>SetData() <span class="overload">[11/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">mat3 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the data of the OpenGL vertex buffer object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The data as a pointer. </td></tr>
+    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a7e0c495e2581398359875e6598b421a1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7e0c495e2581398359875e6598b421a1">&#9670;&nbsp;</a></span>SetData() <span class="overload">[12/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">mat4 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the data of the OpenGL vertex buffer object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The data as a pointer. </td></tr>
+    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="aa49e4ed2991292c6df67d5755ad1d707"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa49e4ed2991292c6df67d5755ad1d707">&#9670;&nbsp;</a></span>SetData() <span class="overload">[13/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetData </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>elementSize</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the data of the OpenGL vertex buffer object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The data as a pointer. </td></tr>
+    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+    <tr><td class="paramname">elementSize</td><td>The size of each element in bytes. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>length * elementSize should equal the length in bytes of the passed data. </dd></dl>
+
+</div>
+</div>
+<a id="a17aabda5b72685d23e66871adeca231e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a17aabda5b72685d23e66871adeca231e">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[1/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">uint8_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a67013e84a661c2c3609d8d8b270bb60d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a67013e84a661c2c3609d8d8b270bb60d">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[2/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">uint16_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9057a1b04ed617944e43ba1646047d1a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9057a1b04ed617944e43ba1646047d1a">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[3/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a03557177d987c201bc57a66b8d5be4fb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a03557177d987c201bc57a66b8d5be4fb">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[4/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">int8_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9789d1e26f09fee2f8b4225fedf46d57"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9789d1e26f09fee2f8b4225fedf46d57">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[5/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">int16_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ab0e1c9b55327ab95a6cd1e84daa2405f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab0e1c9b55327ab95a6cd1e84daa2405f">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[6/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">int32_t *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3d7974570210bddb146cc44ac63e0e8e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d7974570210bddb146cc44ac63e0e8e">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[7/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">float *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad1e85e62444330afd15c295ed3bf95d8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad1e85e62444330afd15c295ed3bf95d8">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[8/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">vec2 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ab8e78df0538bc716a1e6e79c4cdd093b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab8e78df0538bc716a1e6e79c4cdd093b">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[9/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">vec3 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af96ff68edcd909e1aa0eea8a42accb22"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af96ff68edcd909e1aa0eea8a42accb22">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[10/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">vec4 *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a868f882898dc8abc0bf672af0d78cc39"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a868f882898dc8abc0bf672af0d78cc39">&#9670;&nbsp;</a></span>SetSubData() <span class="overload">[11/11]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::SetSubData </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>elementSize</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a76029e4f3f7f4302791d4409e937719a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a76029e4f3f7f4302791d4409e937719a">&#9670;&nbsp;</a></span>Unbind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void VertexBuffer::Unbind </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Unbinds any OpenGL vertex buffer object. </p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/<a class="el" href="../../d5/de0/a00050_source.html">VertexBuffer.h</a></li>
+</ul>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
+    <li class="navelem"><a class="el" href="../../d4/db5/a00328.html">VertexBuffer</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Member List</title>
+<title>Blue Engine: EngineWindowEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('d8/d95/a00379.html','../../');});
+$(document).ready(function(){initNavTree('d6/db8/a00376.html','../../');});
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -87,22 +87,136 @@ $(document).ready(function(){initNavTree('d8/d95/a00379.html','../../');});
 </div>
 
 <div class="header">
+  <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="../../dc/de3/a00373.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">KeyboardHandler Member List</div>  </div>
+<div class="title">EngineWindowEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This is the complete list of members for <a class="el" href="../../d8/d95/a00379.html">KeyboardHandler</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="../../d8/d95/a00379.html#add78210c1a8ea926289ea618ab42543c">KeyboardHandler</a>(Camera *camera, float speed, float reactivity)</td><td class="entry"><a class="el" href="../../d8/d95/a00379.html">KeyboardHandler</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d8/d95/a00379.html#a75eff95510571f21ba8e7a422949b269">reactivity</a></td><td class="entry"><a class="el" href="../../d8/d95/a00379.html">KeyboardHandler</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d8/d95/a00379.html#ab752152d5023c8254a97fb813e534a89">speed</a></td><td class="entry"><a class="el" href="../../d8/d95/a00379.html">KeyboardHandler</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d8/d95/a00379.html#aa3dda76bbf2c277fb723175bc7346d31">Update</a>(Camera *camera, uint32_t deltaTime)</td><td class="entry"><a class="el" href="../../d8/d95/a00379.html">KeyboardHandler</a></td><td class="entry"></td></tr>
-</table></div><!-- contents -->
+<p>A class to distribute window events.  
+ <a href="../../d6/db8/a00376.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a69c0f874503ee4c9ecdd63cc7e2e1ce3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/db8/a00376.html#a69c0f874503ee4c9ecdd63cc7e2e1ce3">EngineWindowEvent</a> (SDL_WindowEvent event)</td></tr>
+<tr class="separator:a69c0f874503ee4c9ecdd63cc7e2e1ce3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:aadbbfd2839ccd53f2ce9785fbc5b5236"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/db8/a00376.html#aadbbfd2839ccd53f2ce9785fbc5b5236">windowID</a></td></tr>
+<tr class="memdesc:aadbbfd2839ccd53f2ce9785fbc5b5236"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#aadbbfd2839ccd53f2ce9785fbc5b5236">More...</a><br /></td></tr>
+<tr class="separator:aadbbfd2839ccd53f2ce9785fbc5b5236"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8f3bd948d8f82764b3996e5b41e87af"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/db8/a00376.html#ad8f3bd948d8f82764b3996e5b41e87af">type</a></td></tr>
+<tr class="memdesc:ad8f3bd948d8f82764b3996e5b41e87af"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the window event.  <a href="#ad8f3bd948d8f82764b3996e5b41e87af">More...</a><br /></td></tr>
+<tr class="separator:ad8f3bd948d8f82764b3996e5b41e87af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae7b23f82e0fab5fbdea04ab427de82d6"><td class="memItemLeft" align="right" valign="top">ivec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/db8/a00376.html#ae7b23f82e0fab5fbdea04ab427de82d6">data</a></td></tr>
+<tr class="memdesc:ae7b23f82e0fab5fbdea04ab427de82d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The data specific to the event.  <a href="#ae7b23f82e0fab5fbdea04ab427de82d6">More...</a><br /></td></tr>
+<tr class="separator:ae7b23f82e0fab5fbdea04ab427de82d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>A class to distribute window events. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00025">25</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a69c0f874503ee4c9ecdd63cc7e2e1ce3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a69c0f874503ee4c9ecdd63cc7e2e1ce3">&#9670;&nbsp;</a></span>EngineWindowEvent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">EngineWindowEvent::EngineWindowEvent </td>
+          <td>(</td>
+          <td class="paramtype">SDL_WindowEvent&#160;</td>
+          <td class="paramname"><em>event</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00028">28</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="ae7b23f82e0fab5fbdea04ab427de82d6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7b23f82e0fab5fbdea04ab427de82d6">&#9670;&nbsp;</a></span>data</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">ivec2 EngineWindowEvent::data</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The data specific to the event. </p>
+<p>Represents screen space coordinates </p>
+
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00047">47</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="ad8f3bd948d8f82764b3996e5b41e87af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad8f3bd948d8f82764b3996e5b41e87af">&#9670;&nbsp;</a></span>type</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint8_t EngineWindowEvent::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The type of the window event. </p>
+<p>See <a class="el" href="../../da/d2a/a00086.html">EngineWindowEvent.h</a> for more </p>
+
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00042">42</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="aadbbfd2839ccd53f2ce9785fbc5b5236"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aadbbfd2839ccd53f2ce9785fbc5b5236">&#9670;&nbsp;</a></span>windowID</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint32_t EngineWindowEvent::windowID</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The ID of the window the event occurred in. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00037">37</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/events/<a class="el" href="../../da/d2a/a00086_source.html">EngineWindowEvent.h</a></li>
+</ul>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
+    <li class="navelem"><a class="el" href="../../d6/db8/a00376.html">EngineWindowEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

@@ -1,6 +1,6 @@
 var a00062 =
 [
-    [ "EngineControllerButtonEvent", "df/d91/a00335.html", "df/d91/a00335" ],
+    [ "EngineControllerButtonEvent", "d8/d8e/a00344.html", "d8/d8e/a00344" ],
     [ "CONTROLLERBUTTON_A", "df/d03/a00062.html#a68eac2521641524dd6a3c5144d87bb1f", null ],
     [ "CONTROLLERBUTTON_B", "df/d03/a00062.html#a5961d8d2708ef515f796376a1ca760fc", null ],
     [ "CONTROLLERBUTTON_BACK", "df/d03/a00062.html#a169bb43fbcce4518aa391f973c840a06", null ],

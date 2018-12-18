@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Member List</title>
+<title>Blue Engine: EngineMouseWheelEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('dd/dcb/a00375.html','../../');});
+$(document).ready(function(){initNavTree('db/d7e/a00372.html','../../');});
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -87,24 +87,134 @@ $(document).ready(function(){initNavTree('dd/dcb/a00375.html','../../');});
 </div>
 
 <div class="header">
+  <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="../../df/dee/a00369.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ControllerHandler Member List</div>  </div>
+<div class="title">EngineMouseWheelEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This is the complete list of members for <a class="el" href="../../dd/dcb/a00375.html">ControllerHandler</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="../../dd/dcb/a00375.html#a39a623d3399f61a694045e172edc118b">ControllerHandler</a>(Camera *camera, float sensibility, float speed, float reactivity, float threshold, int32_t device=-1)</td><td class="entry"><a class="el" href="../../dd/dcb/a00375.html">ControllerHandler</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../dd/dcb/a00375.html#abff05224ea2dc3073d4261e22b6e3ff6">reactivity</a></td><td class="entry"><a class="el" href="../../dd/dcb/a00375.html">ControllerHandler</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../dd/dcb/a00375.html#a773a71e814f37851af936b3c0202227d">sensibility</a></td><td class="entry"><a class="el" href="../../dd/dcb/a00375.html">ControllerHandler</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../dd/dcb/a00375.html#a1f95f25167a1b822b0c7a320ac46dc23">speed</a></td><td class="entry"><a class="el" href="../../dd/dcb/a00375.html">ControllerHandler</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../dd/dcb/a00375.html#a85d4a2dd0ea4df261b1b40f12f3b7f2f">threshold</a></td><td class="entry"><a class="el" href="../../dd/dcb/a00375.html">ControllerHandler</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../dd/dcb/a00375.html#a7e46f71662434c6bda5508d5c0496700">Update</a>(Camera *camera, uint32_t deltaTime)</td><td class="entry"><a class="el" href="../../dd/dcb/a00375.html">ControllerHandler</a></td><td class="entry"></td></tr>
-</table></div><!-- contents -->
+<p>A class to distribute mouse wheel events.  
+ <a href="../../db/d7e/a00372.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../d2/d1f/a00083_source.html">EngineMouseWheelEvent.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:ac8a2b257c7a24ded795961fd9a6a13e2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d7e/a00372.html#ac8a2b257c7a24ded795961fd9a6a13e2">EngineMouseWheelEvent</a> (SDL_MouseWheelEvent event)</td></tr>
+<tr class="separator:ac8a2b257c7a24ded795961fd9a6a13e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:aef4fecda7ef413f8fb2b915335b16f6c"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d7e/a00372.html#aef4fecda7ef413f8fb2b915335b16f6c">windowID</a></td></tr>
+<tr class="memdesc:aef4fecda7ef413f8fb2b915335b16f6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#aef4fecda7ef413f8fb2b915335b16f6c">More...</a><br /></td></tr>
+<tr class="separator:aef4fecda7ef413f8fb2b915335b16f6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab5a9648d0fa1b1721d80de5a7cf7395c"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d7e/a00372.html#ab5a9648d0fa1b1721d80de5a7cf7395c">x</a></td></tr>
+<tr class="memdesc:ab5a9648d0fa1b1721d80de5a7cf7395c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Horizontal scrolling, is positive when scrolling to the right and negative otherwise.  <a href="#ab5a9648d0fa1b1721d80de5a7cf7395c">More...</a><br /></td></tr>
+<tr class="separator:ab5a9648d0fa1b1721d80de5a7cf7395c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf246047bd92e8e407f29a6e7c821c81"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d7e/a00372.html#aaf246047bd92e8e407f29a6e7c821c81">y</a></td></tr>
+<tr class="memdesc:aaf246047bd92e8e407f29a6e7c821c81"><td class="mdescLeft">&#160;</td><td class="mdescRight">Vertical scrolling, is positive when scrolling to the up and negative otherwise.  <a href="#aaf246047bd92e8e407f29a6e7c821c81">More...</a><br /></td></tr>
+<tr class="separator:aaf246047bd92e8e407f29a6e7c821c81"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>A class to distribute mouse wheel events. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00011">11</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">EngineMouseWheelEvent.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="ac8a2b257c7a24ded795961fd9a6a13e2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac8a2b257c7a24ded795961fd9a6a13e2">&#9670;&nbsp;</a></span>EngineMouseWheelEvent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">EngineMouseWheelEvent::EngineMouseWheelEvent </td>
+          <td>(</td>
+          <td class="paramtype">SDL_MouseWheelEvent&#160;</td>
+          <td class="paramname"><em>event</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00014">14</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">EngineMouseWheelEvent.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="aef4fecda7ef413f8fb2b915335b16f6c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aef4fecda7ef413f8fb2b915335b16f6c">&#9670;&nbsp;</a></span>windowID</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint32_t EngineMouseWheelEvent::windowID</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The ID of the window the event occurred in. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00025">25</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">EngineMouseWheelEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="ab5a9648d0fa1b1721d80de5a7cf7395c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab5a9648d0fa1b1721d80de5a7cf7395c">&#9670;&nbsp;</a></span>x</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t EngineMouseWheelEvent::x</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Horizontal scrolling, is positive when scrolling to the right and negative otherwise. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00031">31</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">EngineMouseWheelEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="aaf246047bd92e8e407f29a6e7c821c81"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaf246047bd92e8e407f29a6e7c821c81">&#9670;&nbsp;</a></span>y</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t EngineMouseWheelEvent::y</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Vertical scrolling, is positive when scrolling to the up and negative otherwise. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00037">37</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">EngineMouseWheelEvent.h</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/events/<a class="el" href="../../d2/d1f/a00083_source.html">EngineMouseWheelEvent.h</a></li>
+</ul>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
+    <li class="navelem"><a class="el" href="../../db/d7e/a00372.html">EngineMouseWheelEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

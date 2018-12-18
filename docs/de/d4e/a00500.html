@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Member List</title>
+<title>Blue Engine: IRenderer Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('d4/de5/a00503.html','../../');});
+$(document).ready(function(){initNavTree('de/d4e/a00500.html','../../');});
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -87,23 +87,140 @@ $(document).ready(function(){initNavTree('d4/de5/a00503.html','../../');});
 </div>
 
 <div class="header">
+  <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="../../d4/d1e/a00497.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">PostProcessRenderer Member List</div>  </div>
+<div class="title">IRenderer Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This is the complete list of members for <a class="el" href="../../d4/de5/a00503.html">PostProcessRenderer</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="../../d4/de5/a00503.html#a2d5280f4b2ae3fcac235c2e76b1a1c60">fragmentPath</a></td><td class="entry"><a class="el" href="../../d4/de5/a00503.html">PostProcessRenderer</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d4/de5/a00503.html#a78af716ec346e5baade53d9f6ae4b6c0">PostProcessRenderer</a>()</td><td class="entry"><a class="el" href="../../d4/de5/a00503.html">PostProcessRenderer</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d4/de5/a00503.html#a25cf3871ea18f2b317dbb91d64391f4d">Render</a>(Window *window, RenderTarget *target, Camera *camera, Scene *scene, bool masterRenderer=false)</td><td class="entry"><a class="el" href="../../d4/de5/a00503.html">PostProcessRenderer</a></td><td class="entry"><span class="mlabel">virtual</span></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d4/de5/a00503.html#a80773529766c419a8ab045c036bbbbb9">vertexPath</a></td><td class="entry"><a class="el" href="../../d4/de5/a00503.html">PostProcessRenderer</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d6/d60/a00491.html#a366bcbc6ae52d7bd6a33752ce56378ab">~IRenderer</a>()</td><td class="entry"><a class="el" href="../../d6/d60/a00491.html">IRenderer</a></td><td class="entry"><span class="mlabel">inline</span><span class="mlabel">virtual</span></td></tr>
-</table></div><!-- contents -->
+<p><code>#include &lt;<a class="el" href="../../dc/de6/a00167_source.html">IRenderer.h</a>&gt;</code></p>
+<div class="dynheader">
+Inheritance diagram for IRenderer:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="../../de/d4e/a00500.png" usemap="#IRenderer_map" alt=""/>
+  <map id="IRenderer_map" name="IRenderer_map">
+<area href="../../df/d38/a00468.html" alt="AtmosphereRenderer" shape="rect" coords="196,56,382,80"/>
+<area href="../../d7/db5/a00472.html" alt="BlurRenderer" shape="rect" coords="196,112,382,136"/>
+<area href="../../d9/d34/a00476.html" alt="DecalRenderer" shape="rect" coords="196,168,382,192"/>
+<area href="../../d9/dc5/a00480.html" alt="DirectionalLightRenderer" shape="rect" coords="196,224,382,248"/>
+<area href="../../d4/ddf/a00488.html" alt="DirectionalVolumetricRenderer" shape="rect" coords="196,280,382,304"/>
+<area href="../../d3/dad/a00496.html" alt="GeometryRenderer" shape="rect" coords="196,336,382,360"/>
+<area href="../../dc/d30/a00508.html" alt="PointLightRenderer" shape="rect" coords="196,392,382,416"/>
+<area href="../../d4/dfb/a00512.html" alt="PostProcessRenderer" shape="rect" coords="196,448,382,472"/>
+<area href="../../d4/d40/a00516.html" alt="ShadowRenderer" shape="rect" coords="196,504,382,528"/>
+<area href="../../d2/da3/a00520.html" alt="SkyboxRenderer" shape="rect" coords="196,560,382,584"/>
+<area href="../../d9/d24/a00524.html" alt="TerrainRenderer" shape="rect" coords="196,616,382,640"/>
+<area href="../../d5/d81/a00528.html" alt="TextRenderer" shape="rect" coords="196,672,382,696"/>
+</map>
+ </div></div>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a2949949d43784868054c968e3749c511"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d4e/a00500.html#a2949949d43784868054c968e3749c511">Render</a> (<a class="el" href="../../dd/d1d/a00336.html">Window</a> *window, <a class="el" href="../../d5/d0f/a00308.html">RenderTarget</a> *target, <a class="el" href="../../dc/ded/a00252.html">Camera</a> *camera, <a class="el" href="../../d7/df2/a00312.html">Scene</a> *scene, bool masterRenderer=false)=0</td></tr>
+<tr class="separator:a2949949d43784868054c968e3749c511"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a366bcbc6ae52d7bd6a33752ce56378ab"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d4e/a00500.html#a366bcbc6ae52d7bd6a33752ce56378ab">~IRenderer</a> ()</td></tr>
+<tr class="separator:a366bcbc6ae52d7bd6a33752ce56378ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../dc/de6/a00167_source.html#l00011">11</a> of file <a class="el" href="../../dc/de6/a00167_source.html">IRenderer.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a366bcbc6ae52d7bd6a33752ce56378ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a366bcbc6ae52d7bd6a33752ce56378ab">&#9670;&nbsp;</a></span>~IRenderer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual IRenderer::~IRenderer </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dc/de6/a00167_source.html#l00015">15</a> of file <a class="el" href="../../dc/de6/a00167_source.html">IRenderer.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a2949949d43784868054c968e3749c511"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2949949d43784868054c968e3749c511">&#9670;&nbsp;</a></span>Render()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void IRenderer::Render </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dd/d1d/a00336.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d5/d0f/a00308.html">RenderTarget</a> *&#160;</td>
+          <td class="paramname"><em>target</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../dc/ded/a00252.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d7/df2/a00312.html">Scene</a> *&#160;</td>
+          <td class="paramname"><em>scene</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>masterRenderer</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implemented in <a class="el" href="../../d3/dad/a00496.html#a835dc62555b749a29f0c097adbbc65b7">GeometryRenderer</a>, <a class="el" href="../../d4/d40/a00516.html#ae0352a1b79bd75a534ea6ced04856dfe">ShadowRenderer</a>, <a class="el" href="../../d5/d81/a00528.html#ab6f7e4c4d2ab1283db196e0e437bfd5d">TextRenderer</a>, <a class="el" href="../../d7/db5/a00472.html#ad8e0abdba0d178c0ce6b69054a318230">BlurRenderer</a>, <a class="el" href="../../d4/ddf/a00488.html#a5314cb802688b18c82f3e7ec0b4b4205">DirectionalVolumetricRenderer</a>, <a class="el" href="../../d4/dfb/a00512.html#a25cf3871ea18f2b317dbb91d64391f4d">PostProcessRenderer</a>, <a class="el" href="../../d2/da3/a00520.html#aa6c8058845f3a700e8158a4e1dae87e1">SkyboxRenderer</a>, <a class="el" href="../../df/d38/a00468.html#a1de588c88ac481616885d217079e7576">AtmosphereRenderer</a>, <a class="el" href="../../d9/d34/a00476.html#af2d623d91b9f2a0f3a7c592aabc9a278">DecalRenderer</a>, <a class="el" href="../../d9/dc5/a00480.html#a7a51b2d20a0b318d657d161d9ea3b1da">DirectionalLightRenderer</a>, <a class="el" href="../../dc/d30/a00508.html#acdb579fc058300f2ea4710c146f26e40">PointLightRenderer</a>, and <a class="el" href="../../d9/d24/a00524.html#ab157880e3312e3ec63dcf43d9d157955">TerrainRenderer</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/renderer/<a class="el" href="../../dc/de6/a00167_source.html">IRenderer.h</a></li>
+</ul>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
+    <li class="navelem"><a class="el" href="../../de/d4e/a00500.html">IRenderer</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

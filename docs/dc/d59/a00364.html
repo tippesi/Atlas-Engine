@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Member List</title>
+<title>Blue Engine: EngineMouseButtonEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('df/dc2/a00367.html','../../');});
+$(document).ready(function(){initNavTree('dc/d59/a00364.html','../../');});
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -87,22 +87,178 @@ $(document).ready(function(){initNavTree('df/dc2/a00367.html','../../');});
 </div>
 
 <div class="header">
+  <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="../../d7/ddb/a00361.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">EngineWindowEvent Member List</div>  </div>
+<div class="title">EngineMouseButtonEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This is the complete list of members for <a class="el" href="../../df/dc2/a00367.html">EngineWindowEvent</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="../../df/dc2/a00367.html#ae7b23f82e0fab5fbdea04ab427de82d6">data</a></td><td class="entry"><a class="el" href="../../df/dc2/a00367.html">EngineWindowEvent</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../df/dc2/a00367.html#a69c0f874503ee4c9ecdd63cc7e2e1ce3">EngineWindowEvent</a>(SDL_WindowEvent event)</td><td class="entry"><a class="el" href="../../df/dc2/a00367.html">EngineWindowEvent</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../df/dc2/a00367.html#ad8f3bd948d8f82764b3996e5b41e87af">type</a></td><td class="entry"><a class="el" href="../../df/dc2/a00367.html">EngineWindowEvent</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../df/dc2/a00367.html#aadbbfd2839ccd53f2ce9785fbc5b5236">windowID</a></td><td class="entry"><a class="el" href="../../df/dc2/a00367.html">EngineWindowEvent</a></td><td class="entry"></td></tr>
-</table></div><!-- contents -->
+<p>A class to distribute mouse button events.  
+ <a href="../../dc/d59/a00364.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a226f992e3de06ce33547ee44554f1aba"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a226f992e3de06ce33547ee44554f1aba">EngineMouseButtonEvent</a> (SDL_MouseButtonEvent event)</td></tr>
+<tr class="separator:a226f992e3de06ce33547ee44554f1aba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a93c9e6210a644d45c2fd9770fe3cc00a"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a93c9e6210a644d45c2fd9770fe3cc00a">windowID</a></td></tr>
+<tr class="memdesc:a93c9e6210a644d45c2fd9770fe3cc00a"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#a93c9e6210a644d45c2fd9770fe3cc00a">More...</a><br /></td></tr>
+<tr class="separator:a93c9e6210a644d45c2fd9770fe3cc00a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d80258f9e65e5c87e3c1e0bd3b914c6"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a7d80258f9e65e5c87e3c1e0bd3b914c6">state</a></td></tr>
+<tr class="memdesc:a7d80258f9e65e5c87e3c1e0bd3b914c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The state of the button.  <a href="#a7d80258f9e65e5c87e3c1e0bd3b914c6">More...</a><br /></td></tr>
+<tr class="separator:a7d80258f9e65e5c87e3c1e0bd3b914c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4225bc395727818bd2d5590ae425fe2f"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a4225bc395727818bd2d5590ae425fe2f">button</a></td></tr>
+<tr class="memdesc:a4225bc395727818bd2d5590ae425fe2f"><td class="mdescLeft">&#160;</td><td class="mdescRight">The button which was pressed.  <a href="#a4225bc395727818bd2d5590ae425fe2f">More...</a><br /></td></tr>
+<tr class="separator:a4225bc395727818bd2d5590ae425fe2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe28fcbedbb1c71d8a11bdf995878265"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#abe28fcbedbb1c71d8a11bdf995878265">x</a></td></tr>
+<tr class="memdesc:abe28fcbedbb1c71d8a11bdf995878265"><td class="mdescLeft">&#160;</td><td class="mdescRight">The x coordinate relative to the window where the button event occurred.  <a href="#abe28fcbedbb1c71d8a11bdf995878265">More...</a><br /></td></tr>
+<tr class="separator:abe28fcbedbb1c71d8a11bdf995878265"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69fc6fd1c7eb716e8e59f3d2a3d7b427"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a69fc6fd1c7eb716e8e59f3d2a3d7b427">y</a></td></tr>
+<tr class="memdesc:a69fc6fd1c7eb716e8e59f3d2a3d7b427"><td class="mdescLeft">&#160;</td><td class="mdescRight">The y coordinate relative to the window where the button event occurred.  <a href="#a69fc6fd1c7eb716e8e59f3d2a3d7b427">More...</a><br /></td></tr>
+<tr class="separator:a69fc6fd1c7eb716e8e59f3d2a3d7b427"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>A class to distribute mouse button events. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00017">17</a> of file <a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a226f992e3de06ce33547ee44554f1aba"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a226f992e3de06ce33547ee44554f1aba">&#9670;&nbsp;</a></span>EngineMouseButtonEvent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">EngineMouseButtonEvent::EngineMouseButtonEvent </td>
+          <td>(</td>
+          <td class="paramtype">SDL_MouseButtonEvent&#160;</td>
+          <td class="paramname"><em>event</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00020">20</a> of file <a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a4225bc395727818bd2d5590ae425fe2f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4225bc395727818bd2d5590ae425fe2f">&#9670;&nbsp;</a></span>button</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint8_t EngineMouseButtonEvent::button</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The button which was pressed. </p>
+<p>See <a class="el" href="../../d1/d09/a00077.html">EngineMouseButtonEvent.h</a> for more </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00043">43</a> of file <a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="a7d80258f9e65e5c87e3c1e0bd3b914c6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7d80258f9e65e5c87e3c1e0bd3b914c6">&#9670;&nbsp;</a></span>state</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint8_t EngineMouseButtonEvent::state</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The state of the button. </p>
+<p>Might be BUTTON_PRESSED or BUTTON_RELEASED. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00038">38</a> of file <a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="a93c9e6210a644d45c2fd9770fe3cc00a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a93c9e6210a644d45c2fd9770fe3cc00a">&#9670;&nbsp;</a></span>windowID</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint32_t EngineMouseButtonEvent::windowID</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The ID of the window the event occurred in. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00033">33</a> of file <a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="abe28fcbedbb1c71d8a11bdf995878265"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe28fcbedbb1c71d8a11bdf995878265">&#9670;&nbsp;</a></span>x</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t EngineMouseButtonEvent::x</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The x coordinate relative to the window where the button event occurred. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00048">48</a> of file <a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="a69fc6fd1c7eb716e8e59f3d2a3d7b427"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a69fc6fd1c7eb716e8e59f3d2a3d7b427">&#9670;&nbsp;</a></span>y</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t EngineMouseButtonEvent::y</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The y coordinate relative to the window where the button event occurred. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00053">53</a> of file <a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/events/<a class="el" href="../../d1/d09/a00077_source.html">EngineMouseButtonEvent.h</a></li>
+</ul>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
+    <li class="navelem"><a class="el" href="../../dc/d59/a00364.html">EngineMouseButtonEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>
