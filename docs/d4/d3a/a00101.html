@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: src/loader/ModelLoader.h File Reference</title>
+<title>Blue Engine: src/loader/ImageLoader.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,29 +88,113 @@ $(document).ready(function(){initNavTree('d4/d3a/a00101.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a>  </div>
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#define-members">Macros</a> &#124;
+<a href="#typedef-members">Typedefs</a>  </div>
   <div class="headertitle">
-<div class="title">ModelLoader.h File Reference</div>  </div>
+<div class="title">ImageLoader.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../dd/d32/a00041_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d5/db1/a00140_source.html">../mesh/MeshData.h</a>&quot;</code><br />
-<code>#include &quot;../libraries/assimp/Importer.hpp&quot;</code><br />
-<code>#include &quot;../libraries/assimp/scene.h&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">../System.h</a>&quot;</code><br />
+<code>#include &lt;vector&gt;</code><br />
 </div>
 <p><a href="../../d4/d3a/a00101_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d08/a00381.html">ModelLoader</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db9/a00387.html">Image</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents an image.  <a href="../../db/db9/a00387.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d95/a00391.html">ImageLoader</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
+Macros</h2></td></tr>
+<tr class="memitem:ae357c55043ed26a03bfd4ad1c812e4d5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d3a/a00101.html#ae357c55043ed26a03bfd4ad1c812e4d5">IMAGE_PNG</a>&#160;&#160;&#160;0</td></tr>
+<tr class="separator:ae357c55043ed26a03bfd4ad1c812e4d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9be14758dda55f016510488ae6d52e10"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d3a/a00101.html#a9be14758dda55f016510488ae6d52e10">IMAGE_JPG</a>&#160;&#160;&#160;1</td></tr>
+<tr class="separator:a9be14758dda55f016510488ae6d52e10"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8402685d59a4f4643d41f6bc841e9ba"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d3a/a00101.html#aa8402685d59a4f4643d41f6bc841e9ba">IMAGE_BMP</a>&#160;&#160;&#160;2</td></tr>
+<tr class="separator:aa8402685d59a4f4643d41f6bc841e9ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:acf12205a65321baefe5174db248f56f6"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../db/db9/a00387.html">Image</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d3a/a00101.html#acf12205a65321baefe5174db248f56f6">Image</a></td></tr>
+<tr class="memdesc:acf12205a65321baefe5174db248f56f6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents an image.  <a href="#acf12205a65321baefe5174db248f56f6">More...</a><br /></td></tr>
+<tr class="separator:acf12205a65321baefe5174db248f56f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="aa8402685d59a4f4643d41f6bc841e9ba"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa8402685d59a4f4643d41f6bc841e9ba">&#9670;&nbsp;</a></span>IMAGE_BMP</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define IMAGE_BMP&#160;&#160;&#160;2</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d3a/a00101_source.html#l00010">10</a> of file <a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a>.</p>
+
+</div>
+</div>
+<a id="a9be14758dda55f016510488ae6d52e10"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9be14758dda55f016510488ae6d52e10">&#9670;&nbsp;</a></span>IMAGE_JPG</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define IMAGE_JPG&#160;&#160;&#160;1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d3a/a00101_source.html#l00009">9</a> of file <a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a>.</p>
+
+</div>
+</div>
+<a id="ae357c55043ed26a03bfd4ad1c812e4d5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae357c55043ed26a03bfd4ad1c812e4d5">&#9670;&nbsp;</a></span>IMAGE_PNG</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define IMAGE_PNG&#160;&#160;&#160;0</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d3a/a00101_source.html#l00008">8</a> of file <a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Typedef Documentation</h2>
+<a id="acf12205a65321baefe5174db248f56f6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acf12205a65321baefe5174db248f56f6">&#9670;&nbsp;</a></span>Image</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="../../db/db9/a00387.html">Image</a> <a class="el" href="../../db/db9/a00387.html">Image</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Represents an image. </p>
+
+</div>
+</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_1f6e0c4656fa8537bb95d4658659e347.html">loader</a></li><li class="navelem"><a class="el" href="../../d4/d3a/a00101.html">ModelLoader.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_1f6e0c4656fa8537bb95d4658659e347.html">loader</a></li><li class="navelem"><a class="el" href="../../d4/d3a/a00101.html">ImageLoader.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

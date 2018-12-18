@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: src/lighting/ILight.h File Reference</title>
+<title>Blue Engine: src/lighting/DirectionalLight.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,123 +88,27 @@ $(document).ready(function(){initNavTree('df/d98/a00107.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a> &#124;
-<a href="#define-members">Macros</a>  </div>
+<a href="#nested-classes">Classes</a>  </div>
   <div class="headertitle">
-<div class="title">ILight.h File Reference</div>  </div>
+<div class="title">DirectionalLight.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../dd/d32/a00041_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d3/d00/a00113_source.html">Shadow.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../df/dc8/a00122_source.html">Volumetric.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">../System.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d4/d81/a00110_source.html">ILight.h</a>&quot;</code><br />
 </div>
 <p><a href="../../df/d98/a00107_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dc9/a00389.html">ILight</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d53/a00399.html">DirectionalLight</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:a73dfbf4066d9f8b15c24ed1cf5ec5d00"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d98/a00107.html#a73dfbf4066d9f8b15c24ed1cf5ec5d00">STATIONARY_LIGHT</a>&#160;&#160;&#160;0</td></tr>
-<tr class="separator:a73dfbf4066d9f8b15c24ed1cf5ec5d00"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac4df35ec263304203c862176ec45ded1"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d98/a00107.html#ac4df35ec263304203c862176ec45ded1">MOVABLE_LIGHT</a>&#160;&#160;&#160;1</td></tr>
-<tr class="separator:ac4df35ec263304203c862176ec45ded1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8c33bb342be242cfbdd43923c1abeea6"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d98/a00107.html#a8c33bb342be242cfbdd43923c1abeea6">DIRECTIONAL_LIGHT</a>&#160;&#160;&#160;0</td></tr>
-<tr class="separator:a8c33bb342be242cfbdd43923c1abeea6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a67c0f98568552ff44b7b0461fb3fdb39"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d98/a00107.html#a67c0f98568552ff44b7b0461fb3fdb39">POINT_LIGHT</a>&#160;&#160;&#160;1</td></tr>
-<tr class="separator:a67c0f98568552ff44b7b0461fb3fdb39"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3acee99f6b06f7270f6ccdc0f7628582"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d98/a00107.html#a3acee99f6b06f7270f6ccdc0f7628582">SPOT_LIGHT</a>&#160;&#160;&#160;2</td></tr>
-<tr class="separator:a3acee99f6b06f7270f6ccdc0f7628582"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="a8c33bb342be242cfbdd43923c1abeea6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8c33bb342be242cfbdd43923c1abeea6">&#9670;&nbsp;</a></span>DIRECTIONAL_LIGHT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define DIRECTIONAL_LIGHT&#160;&#160;&#160;0</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00011">11</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
-
-</div>
-</div>
-<a id="ac4df35ec263304203c862176ec45ded1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac4df35ec263304203c862176ec45ded1">&#9670;&nbsp;</a></span>MOVABLE_LIGHT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define MOVABLE_LIGHT&#160;&#160;&#160;1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00009">9</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
-
-</div>
-</div>
-<a id="a67c0f98568552ff44b7b0461fb3fdb39"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a67c0f98568552ff44b7b0461fb3fdb39">&#9670;&nbsp;</a></span>POINT_LIGHT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define POINT_LIGHT&#160;&#160;&#160;1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00012">12</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
-
-</div>
-</div>
-<a id="a3acee99f6b06f7270f6ccdc0f7628582"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3acee99f6b06f7270f6ccdc0f7628582">&#9670;&nbsp;</a></span>SPOT_LIGHT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define SPOT_LIGHT&#160;&#160;&#160;2</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00013">13</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
-
-</div>
-</div>
-<a id="a73dfbf4066d9f8b15c24ed1cf5ec5d00"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a73dfbf4066d9f8b15c24ed1cf5ec5d00">&#9670;&nbsp;</a></span>STATIONARY_LIGHT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define STATIONARY_LIGHT&#160;&#160;&#160;0</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00008">8</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_21d93b4c2deba69589411e8b07614db4.html">lighting</a></li><li class="navelem"><a class="el" href="../../df/d98/a00107.html">ILight.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_21d93b4c2deba69589411e8b07614db4.html">lighting</a></li><li class="navelem"><a class="el" href="../../df/d98/a00107.html">DirectionalLight.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

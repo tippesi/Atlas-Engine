@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: src/mesh/Material.h File Reference</title>
+<title>Blue Engine: src/mesh/DataComponent.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,29 +88,142 @@ $(document).ready(function(){initNavTree('de/d76/a00134.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a>  </div>
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#define-members">Macros</a>  </div>
   <div class="headertitle">
-<div class="title">Material.h File Reference</div>  </div>
+<div class="title">DataComponent.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../dd/d32/a00041_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">../Texture.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../de/df3/a00185_source.html">../shader/Shader.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d9/dd0/a00191_source.html">../shader/ShaderConfig.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">../System.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d9/db6/a00146_source.html">Packing.h</a>&quot;</code><br />
+<code>#include &lt;type_traits&gt;</code><br />
 </div>
 <p><a href="../../de/d76/a00134_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d53/a00429.html">Material</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d3a/a00439.html">DataComponent&lt; T &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Manage the data of the vertex buffer of a mesh.  <a href="../../d9/d3a/a00439.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
+Macros</h2></td></tr>
+<tr class="memitem:ac41d4ed32ac9535d7c074ddd5f37a72e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d76/a00134.html#ac41d4ed32ac9535d7c074ddd5f37a72e">COMPONENT_UNSIGNED_INT</a>&#160;&#160;&#160;GL_UNSIGNED_INT</td></tr>
+<tr class="separator:ac41d4ed32ac9535d7c074ddd5f37a72e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae5218e44708a063f1ecb76dee509ffd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d76/a00134.html#aae5218e44708a063f1ecb76dee509ffd">COMPONENT_FLOAT</a>&#160;&#160;&#160;GL_FLOAT</td></tr>
+<tr class="separator:aae5218e44708a063f1ecb76dee509ffd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e1c5cb62c2d8eb43d488dd06c49ab70"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d76/a00134.html#a0e1c5cb62c2d8eb43d488dd06c49ab70">COMPONENT_UNSIGNED_SHORT</a>&#160;&#160;&#160;GL_UNSIGNED_SHORT</td></tr>
+<tr class="separator:a0e1c5cb62c2d8eb43d488dd06c49ab70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90c9b10e38cacf19abeb104648578ca6"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d76/a00134.html#a90c9b10e38cacf19abeb104648578ca6">COMPONENT_UNSIGNED_BYTE</a>&#160;&#160;&#160;GL_UNSIGNED_BYTE</td></tr>
+<tr class="separator:a90c9b10e38cacf19abeb104648578ca6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a70dd97c0b85ca507c74b5d7beb79f8e3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d76/a00134.html#a70dd97c0b85ca507c74b5d7beb79f8e3">COMPONENT_HALF_FLOAT</a>&#160;&#160;&#160;GL_HALF_FLOAT</td></tr>
+<tr class="separator:a70dd97c0b85ca507c74b5d7beb79f8e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0abf65a51a70b9aa7b6ea17c005af48b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d76/a00134.html#a0abf65a51a70b9aa7b6ea17c005af48b">COMPONENT_PACKED_FLOAT</a>&#160;&#160;&#160;GL_INT_2_10_10_10_REV</td></tr>
+<tr class="separator:a0abf65a51a70b9aa7b6ea17c005af48b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="aae5218e44708a063f1ecb76dee509ffd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aae5218e44708a063f1ecb76dee509ffd">&#9670;&nbsp;</a></span>COMPONENT_FLOAT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define COMPONENT_FLOAT&#160;&#160;&#160;GL_FLOAT</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00010">10</a> of file <a class="el" href="../../de/d76/a00134_source.html">DataComponent.h</a>.</p>
+
+</div>
+</div>
+<a id="a70dd97c0b85ca507c74b5d7beb79f8e3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a70dd97c0b85ca507c74b5d7beb79f8e3">&#9670;&nbsp;</a></span>COMPONENT_HALF_FLOAT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define COMPONENT_HALF_FLOAT&#160;&#160;&#160;GL_HALF_FLOAT</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00013">13</a> of file <a class="el" href="../../de/d76/a00134_source.html">DataComponent.h</a>.</p>
+
+</div>
+</div>
+<a id="a0abf65a51a70b9aa7b6ea17c005af48b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0abf65a51a70b9aa7b6ea17c005af48b">&#9670;&nbsp;</a></span>COMPONENT_PACKED_FLOAT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define COMPONENT_PACKED_FLOAT&#160;&#160;&#160;GL_INT_2_10_10_10_REV</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00014">14</a> of file <a class="el" href="../../de/d76/a00134_source.html">DataComponent.h</a>.</p>
+
+</div>
+</div>
+<a id="a90c9b10e38cacf19abeb104648578ca6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a90c9b10e38cacf19abeb104648578ca6">&#9670;&nbsp;</a></span>COMPONENT_UNSIGNED_BYTE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define COMPONENT_UNSIGNED_BYTE&#160;&#160;&#160;GL_UNSIGNED_BYTE</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00012">12</a> of file <a class="el" href="../../de/d76/a00134_source.html">DataComponent.h</a>.</p>
+
+</div>
+</div>
+<a id="ac41d4ed32ac9535d7c074ddd5f37a72e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac41d4ed32ac9535d7c074ddd5f37a72e">&#9670;&nbsp;</a></span>COMPONENT_UNSIGNED_INT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define COMPONENT_UNSIGNED_INT&#160;&#160;&#160;GL_UNSIGNED_INT</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00009">9</a> of file <a class="el" href="../../de/d76/a00134_source.html">DataComponent.h</a>.</p>
+
+</div>
+</div>
+<a id="a0e1c5cb62c2d8eb43d488dd06c49ab70"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0e1c5cb62c2d8eb43d488dd06c49ab70">&#9670;&nbsp;</a></span>COMPONENT_UNSIGNED_SHORT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define COMPONENT_UNSIGNED_SHORT&#160;&#160;&#160;GL_UNSIGNED_SHORT</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00011">11</a> of file <a class="el" href="../../de/d76/a00134_source.html">DataComponent.h</a>.</p>
+
+</div>
+</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../de/d76/a00134.html">Material.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../de/d76/a00134.html">DataComponent.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

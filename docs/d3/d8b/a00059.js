@@ -1,6 +1,6 @@
 var a00059 =
 [
-    [ "EngineControllerAxisEvent", "de/dc8/a00325.html", "de/dc8/a00325" ],
+    [ "EngineControllerAxisEvent", "d8/df7/a00331.html", "d8/df7/a00331" ],
     [ "CONTROLLERAXIS_LEFTTRIGGER", "d3/d8b/a00059.html#aa4e8da3801b4443217c738c6628ef4ee", null ],
     [ "CONTROLLERAXIS_LEFTX", "d3/d8b/a00059.html#a9bf9e09092030c4c2fea20a84ed9b38d", null ],
     [ "CONTROLLERAXIS_LEFTY", "d3/d8b/a00059.html#a94630898e38d10805db77e1b0f90bcf7", null ],

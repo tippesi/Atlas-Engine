@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: src/RenderList.h File Reference</title>
+<title>Blue Engine: src/Main.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,93 +88,29 @@ $(document).ready(function(){initNavTree('d5/d16/a00029.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a> &#124;
-<a href="#define-members">Macros</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#nested-classes">Classes</a>  </div>
   <div class="headertitle">
-<div class="title">RenderList.h File Reference</div>  </div>
+<div class="title">Main.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../dd/d32/a00041_source.html">System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../df/d98/a00107_source.html">lighting/ILight.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d1/d88/a00128_source.html">mesh/ActorBatch.h</a>&quot;</code><br />
-<code>#include &lt;map&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../d2/de7/a00014_source.html">Engine.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d1/d44/a00098_source.html">input/Mouse.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d9/d77/a00095_source.html">input/Keyboard.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d1/dc1/a00092_source.html">input/Controller.h</a>&quot;</code><br />
 </div>
 <p><a href="../../d5/d16/a00029_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d04/a00281.html">RenderListBatch</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7f/a00287.html">Main</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d58/a00285.html">RenderList</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:aa682ea0e7212daa1a05b90f0389a850b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d16/a00029.html#aa682ea0e7212daa1a05b90f0389a850b">GEOMETRY_RENDERLIST</a>&#160;&#160;&#160;0</td></tr>
-<tr class="separator:aa682ea0e7212daa1a05b90f0389a850b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a12560276bdb825e00cfe42a8e97f1f75"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d16/a00029.html#a12560276bdb825e00cfe42a8e97f1f75">SHADOW_RENDERLIST</a>&#160;&#160;&#160;1</td></tr>
-<tr class="separator:a12560276bdb825e00cfe42a8e97f1f75"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:aa2edbddfeb0c8d4bff6b0894be0063da"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../d2/d04/a00281.html">RenderListBatch</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d16/a00029.html#aa2edbddfeb0c8d4bff6b0894be0063da">RenderListBatch</a></td></tr>
-<tr class="separator:aa2edbddfeb0c8d4bff6b0894be0063da"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="aa682ea0e7212daa1a05b90f0389a850b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa682ea0e7212daa1a05b90f0389a850b">&#9670;&nbsp;</a></span>GEOMETRY_RENDERLIST</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define GEOMETRY_RENDERLIST&#160;&#160;&#160;0</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00010">10</a> of file <a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>.</p>
-
-</div>
-</div>
-<a id="a12560276bdb825e00cfe42a8e97f1f75"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a12560276bdb825e00cfe42a8e97f1f75">&#9670;&nbsp;</a></span>SHADOW_RENDERLIST</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define SHADOW_RENDERLIST&#160;&#160;&#160;1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00011">11</a> of file <a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>.</p>
-
-</div>
-</div>
-<h2 class="groupheader">Typedef Documentation</h2>
-<a id="aa2edbddfeb0c8d4bff6b0894be0063da"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa2edbddfeb0c8d4bff6b0894be0063da">&#9670;&nbsp;</a></span>RenderListBatch</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef struct <a class="el" href="../../d2/d04/a00281.html">RenderListBatch</a> <a class="el" href="../../d2/d04/a00281.html">RenderListBatch</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../d5/d16/a00029.html">RenderList.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../d5/d16/a00029.html">Main.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

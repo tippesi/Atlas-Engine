@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: src/Texture.h File Reference</title>
+<title>Blue Engine: src/System.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,27 +88,97 @@ $(document).ready(function(){initNavTree('d5/df9/a00044.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a>  </div>
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#define-members">Macros</a> &#124;
+<a href="#typedef-members">Typedefs</a>  </div>
   <div class="headertitle">
-<div class="title">Texture.h File Reference</div>  </div>
+<div class="title">System.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../dd/d32/a00041_source.html">System.h</a>&quot;</code><br />
-<code>#include &lt;vector&gt;</code><br />
+<div class="textblock"><code>#include &lt;stdint.h&gt;</code><br />
+<code>#include &lt;string&gt;</code><br />
+<code>#include &lt;math.h&gt;</code><br />
+<code>#include &lt;exception&gt;</code><br />
+<code>#include &quot;libraries/glm/glm.hpp&quot;</code><br />
+<code>#include &quot;libraries/glm/gtc/type_ptr.hpp&quot;</code><br />
+<code>#include &quot;libraries/glm/gtx/common.hpp&quot;</code><br />
+<code>#include &quot;libraries/glm/gtx/transform.hpp&quot;</code><br />
 </div>
 <p><a href="../../d5/df9/a00044_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d07/a00305.html">Texture</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d5d/a00311.html">EngineException</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
+Macros</h2></td></tr>
+<tr class="memitem:af08ec37a8c99d747fb60fa15bc28678b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/df9/a00044.html#af08ec37a8c99d747fb60fa15bc28678b">_CRT_SECURE_NO_WARNINGS</a></td></tr>
+<tr class="separator:af08ec37a8c99d747fb60fa15bc28678b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad910c186cb29254bda764baaf7636ae9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/df9/a00044.html#ad910c186cb29254bda764baaf7636ae9">ENGINE_SHOW_LOG</a></td></tr>
+<tr class="separator:ad910c186cb29254bda764baaf7636ae9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:ac1f3012c3710a19fb29baf4ff2421bab"><td class="memItemLeft" align="right" valign="top">typedef short&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/df9/a00044.html#ac1f3012c3710a19fb29baf4ff2421bab">float16_t</a></td></tr>
+<tr class="separator:ac1f3012c3710a19fb29baf4ff2421bab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="af08ec37a8c99d747fb60fa15bc28678b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af08ec37a8c99d747fb60fa15bc28678b">&#9670;&nbsp;</a></span>_CRT_SECURE_NO_WARNINGS</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define _CRT_SECURE_NO_WARNINGS</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/df9/a00044_source.html#l00004">4</a> of file <a class="el" href="../../d5/df9/a00044_source.html">System.h</a>.</p>
+
+</div>
+</div>
+<a id="ad910c186cb29254bda764baaf7636ae9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad910c186cb29254bda764baaf7636ae9">&#9670;&nbsp;</a></span>ENGINE_SHOW_LOG</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define ENGINE_SHOW_LOG</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/df9/a00044_source.html#l00007">7</a> of file <a class="el" href="../../d5/df9/a00044_source.html">System.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Typedef Documentation</h2>
+<a id="ac1f3012c3710a19fb29baf4ff2421bab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac1f3012c3710a19fb29baf4ff2421bab">&#9670;&nbsp;</a></span>float16_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef short <a class="el" href="../../d5/df9/a00044.html#ac1f3012c3710a19fb29baf4ff2421bab">float16_t</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/df9/a00044_source.html#l00059">59</a> of file <a class="el" href="../../d5/df9/a00044_source.html">System.h</a>.</p>
+
+</div>
+</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../d5/df9/a00044.html">Texture.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../d5/df9/a00044.html">System.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

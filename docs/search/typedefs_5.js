@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['shadowcomponent',['ShadowComponent',['../d3/d00/a00113.html#a68038034f4a01c0588973457d6d71a7d',1,'Shadow.h']]]
+  ['rayintersection',['RayIntersection',['../dd/dc1/a00212.html#a941433a03a3002cabf921059e59fc8da',1,'RayCasting.h']]],
+  ['renderlistbatch',['RenderListBatch',['../dc/d87/a00032.html#aa2edbddfeb0c8d4bff6b0894be0063da',1,'RenderList.h']]]
 ];
