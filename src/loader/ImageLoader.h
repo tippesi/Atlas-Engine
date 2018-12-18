@@ -3,11 +3,22 @@
 
 #include "../System.h"
 
+#include <vector>
+
+#define IMAGE_PNG 0
+#define IMAGE_JPG 1
+#define IMAGE_BMP 2
+
+/**
+ * Represents an image.
+ */
 typedef struct Image {
 
     int32_t width;
     int32_t height;
     int32_t channels;
+
+    int32_t fileFormat;
 
     vector<uint8_t> data;
 
@@ -23,7 +34,9 @@ public:
      * @param forceChannels The number of channels to be forced. Default is zero, which means no force.
      * @return An image structure with all important data.
      */
-    static Image& LoadImage(string filename, bool colorSpaceConversion, int32_t forceChannels = 0);
+    static Image LoadImage(string filename, bool colorSpaceConversion, int32_t forceChannels = 0);
+
+    static void SaveImage(string filename, Image& image);
 
 };
 
