@@ -125,6 +125,8 @@ public:
 	float heightScale;
 	float displacementDistance;
 
+	int32_t LoDCount;
+
 	vector<TerrainNode*> renderList;
 
 private:
@@ -139,7 +141,6 @@ private:
 	VertexArray* vertexArray;
 
 	int32_t rootNodeCount;
-	int32_t LoDCount;
 
 	vector<float> LoDDistances;
 	vector<TerrainNode*> rootNodes;

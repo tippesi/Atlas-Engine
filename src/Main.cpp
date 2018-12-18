@@ -15,7 +15,7 @@ Main::Main(int argc, char* argv[]) {
 
 	Engine::UnlockFramerate();
 
-	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 256, 1, 16);
+	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 16, 3, 16);
 
 	// Register quit event
 	auto quitEventHandler = std::bind(&Main::QuitEventHandler, this);
@@ -182,9 +182,13 @@ void Main::SceneSetUp() {
 
 	scene = new Scene();
 
-	terrain = new Terrain(256, 1, 4, 1.0f, 300.0f);
+	terrain = new Terrain(16, 3, 4, 1.0f, 300.0f);
 	terrain->SetTessellationFunction(400.0f, 2.0f, 0.0f, 1.0f);
 	terrain->SetDisplacementDistance(15.0f);
+
+	terrain->SetLoDDistance(0, 500.0f);
+	terrain->SetLoDDistance(1, 200.0f);
+	terrain->SetLoDDistance(2, 64.0f);
 
 	scene->Add(terrain);
 

@@ -66,7 +66,7 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 			nodeLocation->SetValue(node->location);
 			nodeSideLength->SetValue(node->sideLength);
 
-			tileScale->SetValue(2.0f * terrain->resolution);
+			tileScale->SetValue(terrain->resolution * powf(2.0f, (float)(terrain->LoDCount - node->cell->LoD)));
 			patchOffsetsScale->SetValue(patchScale);
 
 			glDrawArraysInstanced(GL_PATCHES, 0, terrain->patchVertexCount, 64);
