@@ -6,7 +6,6 @@
 #include "TerrainStorage.h"
 
 #include "../Camera.h"
-#include "../Texture.h"
 #include "../VertexArray.h"
 
 #include <vector>

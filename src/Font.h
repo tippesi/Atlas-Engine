@@ -2,7 +2,9 @@
 #define FONT_H
 
 #include "System.h"
-#include "Texture.h"
+#include "texture/Texture2DArray.h"
+
+#include <vector>
 
 #define FONT_CHARACTER_COUNT 128
 
@@ -77,7 +79,7 @@ public:
 	vec2 characterScales[FONT_CHARACTER_COUNT];
 	vec2 characterSizes[FONT_CHARACTER_COUNT];
 
-	Texture* glyphsTexture;
+	Texture2DArray* glyphsTexture;
 
 private:
 	Glyph glyphs[FONT_CHARACTER_COUNT];

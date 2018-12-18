@@ -50,28 +50,40 @@ public:
 	 */
 	void SetType(int32_t componentType);
 
-	///
-	/// \return
+	/**
+	 *
+	 * @return
+	 */
 	int32_t GetType();
 
-	///
-	/// \param size
+	/**
+	 *
+	 * @param size
+	 */
 	void SetSize(int32_t size);
 
-	///
-	/// \return
+	/**
+	 *
+	 * @return
+	 */
 	int32_t GetStride();
 
-	///
-	/// \return
+	/**
+	 *
+	 * @return
+	 */
 	int32_t GetElementSize();
 
-	///
-	/// \return
+	/**
+	 *
+	 * @return
+	 */
 	void* GetInternal();
 
-	///
-	/// \return
+	/**
+	 *
+	 * @return
+	 */
 	bool ContainsData();
 
 	~DataComponent();

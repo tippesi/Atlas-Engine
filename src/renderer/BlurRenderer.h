@@ -12,7 +12,7 @@ public:
 
     virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
 
-    void Render(Texture* texture, Texture* swapTexture, Texture* depthTexture);
+    void Render(Texture2D* texture, Texture2D* swapTexture, Texture2D* depthTexture);
 
 private:
     void GetUniforms();

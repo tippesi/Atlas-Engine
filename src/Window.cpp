@@ -44,7 +44,7 @@ void Window::SetTitle(string title) {
 
 }
 
-void Window::SetIcon(Texture* icon) {
+void Window::SetIcon(Texture2D* icon) {
 
 	auto data = icon->GetData();
 

@@ -2,7 +2,7 @@
 #define VOLUMETRIC_H
 
 #include "../System.h"
-#include "../Texture.h"
+#include "../texture/Texture2D.h"
 
 class Volumetric {
 
@@ -15,8 +15,8 @@ public:
 	float scattering;
 	float scatteringFactor;
 
-    Texture* map;
-    Texture* blurMap;
+    Texture2D* map;
+    Texture2D* blurMap;
 
 };
 

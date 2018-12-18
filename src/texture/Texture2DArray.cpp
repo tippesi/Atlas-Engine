@@ -1,9 +1,16 @@
 #include "Texture2DArray.h"
 
+#include "../Framebuffer.h"
+#include "../loader/ImageLoader.h"
+
 Texture2DArray::Texture2DArray(GLenum dataType, int32_t width, int32_t height, int32_t depth, int32_t sizedFormat,
         int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
 
-    Generate(GL_TEXTURE2D_ARRAY, dataType, sizedFormat, wrapping, filtering, anisotropicFiltering, generateMipMaps);
+    this->width = width;
+    this->height = height;
+    this->depth = depth;
+
+    Generate(GL_TEXTURE_2D_ARRAY, dataType, sizedFormat, wrapping, filtering, anisotropicFiltering, generateMipMaps);
 
 }
 
@@ -20,7 +27,7 @@ void Texture2DArray::Unbind() {
 
 }
 
-void Texture2DArray::SetData(vector <uint8_t> &data, int32_t depth, int32_t count) {
+void Texture2DArray::SetData(vector<uint8_t> &data, int32_t depth, int32_t count) {
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, width, height, count,
@@ -36,7 +43,7 @@ vector<uint8_t> Texture2DArray::GetData(int32_t depth) {
 
     vector<uint8_t> data = vector<uint8_t>(width * height * channels);
 
-    framebuffer.AddComponentTextureLayer(GL_COLOR_ATTACHMENT0, this);
+    framebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, this, depth);
 
     glReadPixels(0, 0, width, height, GetBaseFormat(sizedFormat), GL_UNSIGNED_BYTE, data.data());
 
@@ -50,18 +57,33 @@ vector<uint8_t> Texture2DArray::GetData(int32_t depth) {
 
 void Texture2DArray::Resize(int32_t width, int32_t height, int32_t depth) {
 
-
+    this->width = width;
+    this->height = height;
+    this->depth = depth;
+    
+    int32_t mipCount = mipmaps ? GetMipMapLevel() : 1;
+    
+    ReserveStorage(mipCount);
 
 }
 
 void Texture2DArray::SaveToPNG(string filename, int32_t depth) {
 
+    Image image;
 
+    image.width = width;
+    image.height = height;
+    image.fileFormat = IMAGE_PNG;
+
+    image.data = GetData(depth);
+    FlipDataHorizontally(image.data);
+
+    ImageLoader::SaveImage(filename, image);
 
 }
 
 void Texture2DArray::ReserveStorage(int32_t mipCount) {
 
-
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, sizedFormat, width, height, depth);
 
 }

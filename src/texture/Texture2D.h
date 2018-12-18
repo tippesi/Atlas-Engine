@@ -22,7 +22,7 @@ public:
               int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
 
     /**
-     * Constructs a Texture2D object from
+     * Constructs a Texture2D object from an image file.
      * @param filename
      * @param colorSpaceConversion
      * @param anisotropicFiltering

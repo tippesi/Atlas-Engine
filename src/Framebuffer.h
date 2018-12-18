@@ -2,7 +2,8 @@
 #define FRAMEBUFFER_H
 
 #include "System.h"
-#include "Texture.h"
+#include "texture/Texture2D.h"
+#include "texture/Texture2DArray.h"
 #include "Cubemap.h"
 #include <unordered_map>
 #include <vector>
@@ -33,7 +34,7 @@ public:
 	 * @param attachment
 	 * @param texture
 	 */
-	void AddComponentTexture(int32_t attachment, Texture* texture, uint32_t target = GL_FRAMEBUFFER);
+	void AddComponentTexture(int32_t attachment, Texture2D* texture, uint32_t target = GL_FRAMEBUFFER);
 
 	/**
 	 *
@@ -41,7 +42,7 @@ public:
 	 * @param texture
 	 * @param layer
 	 */
-	void AddComponentTextureLayer(int32_t attachment, Texture* texture, int32_t layer,
+	void AddComponentTextureArray(int32_t attachment, Texture2DArray* texture, int32_t layer,
 			uint32_t target = GL_FRAMEBUFFER);
 
 	/**
@@ -57,7 +58,14 @@ public:
 	 * @param attachment
 	 * @return
 	 */
-	Texture* GetComponentTexture(int32_t attachment);
+	Texture2D* GetComponentTexture(int32_t attachment);
+
+	/**
+	 *
+	 * @param attachment
+	 * @return
+	 */
+	Texture2DArray* GetComponentTextureArray(int32_t attachment);
 
 	/**
 	 *
@@ -96,10 +104,10 @@ public:
 
 private:
 	struct FramebufferComponent {
-		Texture* texture;
+		Texture2D* texture;
+		Texture2DArray* textureArray;
 		Cubemap* cubemap;
 		bool internalTexture;
-		bool useCubemap;
 	};
 
 	uint32_t ID;

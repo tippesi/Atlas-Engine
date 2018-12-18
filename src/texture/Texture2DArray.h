@@ -6,6 +6,7 @@
 
 class Texture2DArray : public Texture {
 
+public:
     /**
      * Construct a Texture2DArray object.
      * @param dataType

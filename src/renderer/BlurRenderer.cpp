@@ -46,7 +46,7 @@ void BlurRenderer::Render(Window *window, RenderTarget *target, Camera *camera, 
 
 }
 
-void BlurRenderer::Render(Texture *texture, Texture *swapTexture, Texture* depthTexture) {
+void BlurRenderer::Render(Texture2D *texture, Texture2D *swapTexture, Texture2D* depthTexture) {
 
     framebuffer->Bind();
 

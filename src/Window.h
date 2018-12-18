@@ -3,7 +3,7 @@
 
 #include "System.h"
 #include "Viewport.h"
-#include "Texture.h"
+#include "texture/Texture2D.h"
 
 #include "events/EventDelegate.h"
 #include "events/EngineEventHandler.h"
@@ -55,7 +55,7 @@ public:
 	 * Sets the icon of the window.
 	 * @param icon A pointer to a Texture object
 	 */
-	void SetIcon(Texture* icon);
+	void SetIcon(Texture2D* icon);
 
 	/**
 	 * Resets the position of the window to the given screen coordinates.

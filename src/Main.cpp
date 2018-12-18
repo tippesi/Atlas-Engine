@@ -15,6 +15,8 @@ Main::Main(int argc, char* argv[]) {
 
 	Engine::UnlockFramerate();
 
+	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 256, 1, 16);
+
 	// Register quit event
 	auto quitEventHandler = std::bind(&Main::QuitEventHandler, this);
 	EngineEventHandler::QuitEventDelegate.Subscribe(quitEventHandler);
@@ -75,7 +77,7 @@ void Main::Update(uint32_t deltaTime) {
 
 	scene->Update(camera);
 
-	EngineLog("%.3f,%.3f,%.3f", camera->location.x, camera->location.y, camera->location.z);
+	// EngineLog("%.3f,%.3f,%.3f", camera->location.x, camera->location.y, camera->location.z);
 
 }
 
@@ -83,7 +85,10 @@ void Main::Render(uint32_t deltaTime) {
 
 	masterRenderer->RenderScene(window, renderTarget, camera, scene);
 
-	masterRenderer->textRenderer->Render(window, font, "gHello World!", 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 5.0f, true);
+	string out = to_string(deltaTime);
+	out += " ms";
+
+	masterRenderer->textRenderer->Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 5.0f, true);
 
 }
 
@@ -96,7 +101,7 @@ void Main::Stream() {
 		string heightField("../data/terrain/LoD");
 		heightField += to_string(cell->LoD) + "/height" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
 		uint8_t* data = stbi_load(heightField.c_str(), &width, &height, &channels, 1);
-		cell->heightField = new Texture(GL_UNSIGNED_BYTE, width, height, GL_R8, -0.4f, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+		cell->heightField = new Texture2D(GL_UNSIGNED_BYTE, width, height, GL_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 		auto dataVector = vector<uint8_t>(width * height);
 		dataVector.assign(data, data + width * height);
 		cell->heightField->SetData(dataVector);
@@ -105,7 +110,7 @@ void Main::Stream() {
 		heightField = "../data/terrain/LoD";
 		heightField += to_string(cell->LoD) + "/normal" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
 		data = stbi_load(heightField.c_str(), &width, &height, &channels, 3);
-		cell->normalMap = new Texture(GL_UNSIGNED_BYTE, width, height, GL_RGB8, -0.4f, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+		cell->normalMap = new Texture2D(GL_UNSIGNED_BYTE, width, height, GL_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 		dataVector.assign(data, data + width * height * 3);
 		cell->normalMap->SetData(dataVector);
 
@@ -154,8 +159,8 @@ void Main::Load() {
 	treeMesh = new Mesh("../data/tree.dae");
 	treeMesh->cullBackFaces = false;
 
-	terrainDiffuseMap = new Texture("../data/terrain/Ground_17_DIF.jpg");
-	terrainDisplacementMap = new Texture("../data/terrain/Ground_17_DISP.jpg");
+	terrainDiffuseMap = new Texture2D("../data/terrain/Ground_17_DIF.jpg");
+	terrainDisplacementMap = new Texture2D("../data/terrain/Ground_17_DISP.jpg");
 
 }
 

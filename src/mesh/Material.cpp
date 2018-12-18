@@ -29,9 +29,9 @@ Material::Material() {
 
 }
 
-void Material::Update(bool arrayTexture) {
+void Material::Update() {
 
-	int32_t width = 0, height = 0, format = 0, layers = 0;
+	int32_t width = 0, height = 0, channels = 0, depth = 0;
 
 	GeometryRenderer::RemoveConfig(geometryConfig);
 	ShadowRenderer::RemoveConfig(shadowConfig);
@@ -39,96 +39,57 @@ void Material::Update(bool arrayTexture) {
 	geometryConfig->ClearMacros();
 	shadowConfig->ClearMacros();
 
-	// Check if we can build an arrayTexture
-	if (arrayTexture && !HasArrayMap()) {
+	bool useArrayMap = true;
 
-		if (HasDiffuseMap()) {
-			width = diffuseMap->width;
-			height = diffuseMap->height;
-			format = diffuseMap->GetSizedDataFormat();
-			layers++;
+	// Check if we can create an Texture2dArray for the material
+	for (auto& imageKey : images) {
+		Image* image = &imageKey.second;
+		if (channels == 0) {
+			width = image->width;
+			height = image->height;
+			channels = image->channels;
 		}
-
-		if (HasNormalMap()) {
-			if (format == 0) {
-				width = normalMap->width;
-				height = normalMap->height;
-				format = normalMap->GetSizedDataFormat();
-			}
-			
-			if (normalMap->width != width ||
-				normalMap->height != height ||
-				normalMap->GetSizedDataFormat() != format) {
-				arrayTexture = false;
-			}
-			layers++;
+		else {
+			if (image->width != width ||
+				image->height != height ||
+				image->channels != channels)
+				useArrayMap = false;
 		}
-
-		if (HasSpecularMap()) {
-			if (format == 0) {
-				width = specularMap->width;
-				height = specularMap->height;
-				format = specularMap->GetSizedDataFormat();
-			}
-
-			if (specularMap->width != width ||
-				specularMap->height != height ||
-				specularMap->GetSizedDataFormat() != format) {
-				arrayTexture = false;
-			}
-			layers++;
-		}
-
-		if (HasDisplacementMap()) {
-			if (format == 0) {
-				width = displacementMap->width;
-				height = displacementMap->height;
-				format = displacementMap->GetSizedDataFormat();
-			}
-
-			if (displacementMap->width != width ||
-				displacementMap->height != height ||
-				displacementMap->GetSizedDataFormat() != format) {
-				arrayTexture = false;
-			}
-			layers++;
-		}
-
 	}
 
-	/*
-	if (arrayTexture && !HasArrayMap()) {
-
-		int32_t layer = 0;
-		arrayMap = new Texture(GL_UNSIGNED_BYTE, width, height, format, -0.4f, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true,
-							   layers);
-
-		if (HasDiffuseMap()) {
-			diffuseMapIndex = (float) layer;
-			arrayMap->SetData(diffuseMap, 0, layer++);
-			delete diffuseMap;
-		}
-
-		if (HasNormalMap()) {
-			normalMapIndex = (float) layer;
-			arrayMap->SetData(normalMap, 0, layer++);
-			delete normalMap;
-		}
-
-		if (HasSpecularMap()) {
-			specularMapIndex = (float) layer;
-			arrayMap->SetData(specularMap, 0, layer++);
-			delete specularMap;
-		}
-
-		if (HasDisplacementMap()) {
-			displacementMapIndex = (float) layer;
-			arrayMap->SetData(displacementMap, 0, layer++);
-			delete displacementMap;
-		}
-
+	// Create the textures
+	if (useArrayMap && images.size() > 0) {
+		arrayMap = new Texture2DArray(GL_UNSIGNED_BYTE, width, height, (int32_t)images.size(), 
+			Texture::GetSuggestedFormat(channels), GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 	}
-	*/
+
+	int32_t index = 0;
+
+	for (auto& imageKey : images) {
+		Image* image = &imageKey.second;
+		int32_t map = imageKey.first;
+		if (useArrayMap) {
+			switch(map) {
+				case MATERIAL_DIFFUSE_MAP: diffuseMapIndex = (float)index; break;
+				case MATERIAL_NORMAL_MAP: normalMapIndex = (float)index; break;
+				case MATERIAL_SPECULAR_MAP: specularMapIndex = (float)index; break;
+				case MATERIAL_DISPLACEMENT_MAP: displacementMapIndex = (float)index; break;
+			}
+			arrayMap->SetData(image->data, index++);
+		} else {
+			auto texture = new Texture2D(GL_UNSIGNED_BYTE, image->width, image->height,
+					Texture::GetSuggestedFormat(image->channels), GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+			switch(map) {
+				case MATERIAL_DIFFUSE_MAP: diffuseMap = texture; break;
+				case MATERIAL_NORMAL_MAP: normalMap = texture; break;
+				case MATERIAL_SPECULAR_MAP: specularMap = texture; break;
+				case MATERIAL_DISPLACEMENT_MAP: displacementMap = texture; break;
+			}
+			texture->SetData(image->data);
+		}
+	}
+
+	images.clear();
 
 	if (HasArrayMap()) {
 		geometryConfig->AddMacro("ARRAY_MAP");
@@ -158,31 +119,31 @@ void Material::Update(bool arrayTexture) {
 
 }
 
-void Material::AddDiffuseMap(Texture* texture) {
+void Material::AddDiffuseMap(Image image) {
 
 	hasDiffuseMap = true;
-	diffuseMap = texture;
+	images[MATERIAL_DIFFUSE_MAP] = image;
 
 }
 
-void Material::AddNormalMap(Texture* texture) {
+void Material::AddNormalMap(Image image) {
 
 	hasNormalMap = true;
-	normalMap = texture;
+	images[MATERIAL_NORMAL_MAP] = image;
 
 }
 
-void Material::AddSpecularMap(Texture* texture) {
+void Material::AddSpecularMap(Image image) {
 
 	hasSpecularMap = true;
-	specularMap = texture;
+	images[MATERIAL_SPECULAR_MAP] = image;
 
 }
 
-void Material::AddDisplacementMap(Texture* texture) {
+void Material::AddDisplacementMap(Image image) {
 
 	hasDisplacementMap = true;
-	displacementMap = texture;
+	images[MATERIAL_DISPLACEMENT_MAP] = image;
 
 }
 

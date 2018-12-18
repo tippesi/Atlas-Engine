@@ -3,6 +3,8 @@
 
 #include "../System.h"
 
+#include <vector>
+
 /**
  * The base class of all texture classes.
  */
@@ -80,6 +82,13 @@ public:
      * @return The number of channels.
      */
     static int32_t GetChannelCount(int32_t baseFormat);
+
+    /**
+     * Determines a suggested sized format for the current platform.
+     * @param channelCount The number of channels of the image
+     * @return A suggested texture format, e.g GL_RGB8
+     */
+    static int32_t GetSuggestedFormat(int32_t channelCount);
 
     int32_t width;
     int32_t height;

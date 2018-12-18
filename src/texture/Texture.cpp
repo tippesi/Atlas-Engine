@@ -131,6 +131,30 @@ int32_t Texture::GetBaseFormat(int32_t sizedFormat) {
 
 }
 
+int32_t Texture::GetChannelCount(int32_t baseFormat) {
+
+    switch(baseFormat) {
+        case GL_RGBA: return 4;
+        case GL_RG: return 2;
+        case GL_RED: return 1;
+        case GL_DEPTH_COMPONENT: return 1;
+        case  GL_DEPTH_STENCIL: return 1;
+        default: return 3;
+    }
+
+}
+
+int32_t Texture::GetSuggestedFormat(int32_t channelCount) {
+
+    switch(channelCount) {
+        case 1: return GL_R8;
+        case 2: return GL_RG8;
+        case 4: return GL_RGBA8;
+        default: return GL_RGB8;
+    }
+
+}
+
 void Texture::FlipDataHorizontally(vector <uint8_t> &data) {
 
     auto invertedData = vector<uint8_t>(width * height * channels);
@@ -149,7 +173,7 @@ void Texture::FlipDataHorizontally(vector <uint8_t> &data) {
 
     }
 
-    data.assign(invertedData.size(), invertedData.data());
+    data.assign(invertedData.size(), *invertedData.data());
 
 }
 
@@ -161,6 +185,11 @@ int32_t Texture::GetMipMapLevel() {
 
 void Texture::Generate(GLenum target, GLenum dataType, int32_t sizedFormat, int32_t wrapping,
         int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
+
+	this->channels = GetChannelCount(GetBaseFormat(sizedFormat));
+	this->dataType = dataType;
+	this->sizedFormat = sizedFormat;
+	this->mipmaps = generateMipMaps;
 
     glBindTexture(target, ID);
 
@@ -177,12 +206,11 @@ void Texture::Generate(GLenum target, GLenum dataType, int32_t sizedFormat, int3
         glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
     else {
-        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
+		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, filtering);
+		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, filtering);
 
-    this->channels = GetChannelCount(GetBaseFormat(sizedFormat));
-    this->sizedFormat = sizedFormat;
-    this->mipmaps = generateMipMaps;
+		glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapping);
+		glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
+    }
 
 }

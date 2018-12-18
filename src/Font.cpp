@@ -32,8 +32,8 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	int32_t resolution = (int32_t)pixelSize + 2 * padding;
 
-	glyphsTexture = new Texture(GL_UNSIGNED_BYTE, resolution, resolution, GL_R8,
-		0.0f, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false, FONT_CHARACTER_COUNT);
+	glyphsTexture = new Texture2DArray(GL_UNSIGNED_BYTE, resolution, resolution, FONT_CHARACTER_COUNT, GL_R8,
+			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 	if (!stbtt_InitFont(&font, (unsigned char*)buffer, 0)) {
 		new EngineException("Failed loading font");

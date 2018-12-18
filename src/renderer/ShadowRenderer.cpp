@@ -47,7 +47,7 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 				framebuffer->AddComponentCubemap(GL_DEPTH_ATTACHMENT, light->GetShadow()->cubemap, i);
 			}
 			else {
-				framebuffer->AddComponentTextureLayer(GL_DEPTH_ATTACHMENT, light->GetShadow()->maps, i);
+				framebuffer->AddComponentTextureArray(GL_DEPTH_ATTACHMENT, light->GetShadow()->maps, i);
 			}
 
 			glClear(GL_DEPTH_BUFFER_BIT);

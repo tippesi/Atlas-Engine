@@ -27,9 +27,10 @@ void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t in
 			delete component->texture;
 	}
 
-	component->texture = new Texture(dataFormat, width, height, internalFormat, 0.0f, wrapping, filtering, false, false);
+	component->texture = new Texture2D(dataFormat, width, height, internalFormat, wrapping, filtering, false, false);
+	component->textureArray = nullptr;
+	component->cubemap = nullptr;
 	component->internalTexture = true;
-	component->useCubemap = false;
 
 	Bind();
 
@@ -45,7 +46,7 @@ void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t in
 
 }
 
-void Framebuffer::AddComponentTexture(int32_t attachment, Texture* texture, uint32_t target) {
+void Framebuffer::AddComponentTexture(int32_t attachment, Texture2D* texture, uint32_t target) {
 
 	FramebufferComponent* component = nullptr;
 
@@ -62,8 +63,9 @@ void Framebuffer::AddComponentTexture(int32_t attachment, Texture* texture, uint
 	}
 
 	component->texture = texture;
+	component->textureArray = nullptr;
+	component->cubemap = nullptr;
 	component->internalTexture = false;
-	component->useCubemap = false;
 
 	Bind();
 
@@ -79,7 +81,7 @@ void Framebuffer::AddComponentTexture(int32_t attachment, Texture* texture, uint
 
 }
 
-void Framebuffer::AddComponentTextureLayer(int32_t attachment, Texture* texture, int32_t layer, uint32_t target) {
+void Framebuffer::AddComponentTextureArray(int32_t attachment, Texture2DArray* texture, int32_t layer, uint32_t target) {
 
 	FramebufferComponent* component = nullptr;
 
@@ -95,9 +97,10 @@ void Framebuffer::AddComponentTextureLayer(int32_t attachment, Texture* texture,
 			delete component->texture;
 	}
 
-	component->texture = texture;
+	component->texture = nullptr;
+	component->textureArray = texture;
+	component->cubemap = nullptr;
 	component->internalTexture = false;
-	component->useCubemap = false;
 
 	Bind();
 
@@ -129,9 +132,10 @@ void Framebuffer::AddComponentCubemap(int32_t attachment, Cubemap* cubemap, int3
 			delete component->texture;
 	}
 
+	component->texture = nullptr;
+	component->textureArray = nullptr;
 	component->cubemap = cubemap;
 	component->internalTexture = false;
-	component->useCubemap = true;
 
 	Bind();
 
@@ -148,7 +152,7 @@ void Framebuffer::AddComponentCubemap(int32_t attachment, Cubemap* cubemap, int3
 
 }
 
-Texture* Framebuffer::GetComponentTexture(int32_t attachment) {
+Texture2D* Framebuffer::GetComponentTexture(int32_t attachment) {
 
 	auto search = components.find(attachment);
 
@@ -156,10 +160,20 @@ Texture* Framebuffer::GetComponentTexture(int32_t attachment) {
 		return nullptr;
 	}
 	else {
-		auto component = search->second;
-		if (component->useCubemap)
-			return nullptr;
 		return search->second->texture;
+	}
+
+}
+
+Texture2DArray* Framebuffer::GetComponentTextureArray(int32_t attachment) {
+
+	auto search = components.find(attachment);
+
+	if (search == components.end()) {
+		return nullptr;
+	}
+	else {
+		return search->second->textureArray;
 	}
 
 }
@@ -172,9 +186,6 @@ Cubemap* Framebuffer::GetComponentCubemap(int32_t attachment){
 		return nullptr;
 	}
 	else {
-		auto component = search->second;
-		if (!component->useCubemap)
-			return nullptr;
 		return search->second->cubemap;
 	}
 

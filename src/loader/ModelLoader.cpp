@@ -1,4 +1,5 @@
 #include "ModelLoader.h"
+#include "ImageLoader.h"
 
 #include <vector>
 
@@ -185,14 +186,14 @@ Material* ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, string directory
 		string path;
 		assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
 		path = directory + string(aiPath.C_Str());
-		material->AddDiffuseMap(new Texture(path.c_str()));
+		material->AddDiffuseMap(ImageLoader::LoadImage(path, true));
 	}
 	if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0) {
 		aiString aiPath;
 		string path;
 		assimpMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
 		path = directory + string(aiPath.C_Str());
-		material->AddNormalMap(new Texture(path.c_str(), true));
+		material->AddNormalMap(ImageLoader::LoadImage(path, false));
 	}
 
 	material->Update();

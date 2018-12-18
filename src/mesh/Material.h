@@ -2,24 +2,33 @@
 #define MATERIAL_H
 
 #include "../System.h"
-#include "../Texture.h"
+#include "../texture/Texture2D.h"
+#include "../texture/Texture2DArray.h"
+#include "../loader/ImageLoader.h"
 #include "../shader/Shader.h"
 #include "../shader/ShaderConfig.h"
+
+#include <unordered_map>
+
+#define MATERIAL_DIFFUSE_MAP 0
+#define MATERIAL_NORMAL_MAP 1
+#define MATERIAL_SPECULAR_MAP 2
+#define MATERIAL_DISPLACEMENT_MAP 3
 
 class Material {
 
 public:
 	Material();
 
-	void Update(bool arrayTexture = true);
+	void Update();
 
-	void AddDiffuseMap(Texture* texture);
+	void AddDiffuseMap(Image image);
 
-	void AddNormalMap(Texture* texture);
+	void AddNormalMap(Image image);
 
-	void AddSpecularMap(Texture* texture);
+	void AddSpecularMap(Image image);
 
-	void AddDisplacementMap(Texture* texture);
+	void AddDisplacementMap(Image image);
 
 	bool HasArrayMap();
 	bool HasDiffuseMap();
@@ -34,11 +43,11 @@ public:
 
 	~Material();
 
-	Texture* arrayMap;
-	Texture* diffuseMap;
-	Texture* normalMap;
-	Texture* specularMap;
-	Texture* displacementMap;
+	Texture2DArray* arrayMap;
+	Texture2D* diffuseMap;
+	Texture2D* normalMap;
+	Texture2D* specularMap;
+	Texture2D* displacementMap;
 
 	vec3 diffuseColor;
 	vec3 specularColor;
@@ -53,6 +62,8 @@ public:
 	ShaderConfig* shadowConfig;
 
 private:
+	unordered_map<int32_t, Image> images;
+
 	bool hasDiffuseMap;
 	bool hasNormalMap;
 	bool hasSpecularMap;

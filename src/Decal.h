@@ -2,14 +2,14 @@
 #define DECAL_H
 
 #include "System.h"
-#include "Texture.h"
+#include "texture/Texture2D.h"
 
 class Decal {
 
 public:
-    Decal(Texture* texture) : texture(texture) {}
+    Decal(Texture2D* texture) : texture(texture) {}
 
-    Texture* texture;
+    Texture2D* texture;
     mat4 matrix;
 
 };

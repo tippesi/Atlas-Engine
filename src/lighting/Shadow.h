@@ -5,6 +5,7 @@
 #include "../Camera.h"
 #include "../Framebuffer.h"
 #include "../Cubemap.h"
+#include "../texture/Texture2DArray.h"
 
 #define MAX_SHADOW_CASCADE_COUNT 4
 
@@ -44,7 +45,7 @@ public:
 	ShadowComponent* components;
 	int32_t componentCount;
 
-	Texture* maps;
+	Texture2DArray* maps;
 	Cubemap* cubemap;
 
 	RenderList* renderList;

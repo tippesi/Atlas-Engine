@@ -1,10 +1,14 @@
 #include "Texture2D.h"
+#include "../Framebuffer.h"
 #include "../loader/ImageLoader.h"
 
 Texture2D::Texture2D(GLenum dataType, int32_t width, int32_t height, int32_t sizedFormat, int32_t wrapping,
-        int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) : width(width), height(height) {
+        int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
 
-    Generate(GL_TEXTURE2D, dataType, sizedFormat, wrapping, filtering, anisotropicFiltering, generateMipMaps);
+    this->width = width;
+    this->height = height;
+
+    Generate(GL_TEXTURE_2D, dataType, sizedFormat, wrapping, filtering, anisotropicFiltering, generateMipMaps);
 
 }
 
@@ -26,7 +30,7 @@ Texture2D::Texture2D(string filename, bool colorSpaceConversion, bool anisotropi
     height = image.height;
     channels = image.channels;
 
-    Generate(GL_TEXTURE2D, GL_UNSIGNED_BYTE, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR,
+    Generate(GL_TEXTURE_2D, GL_UNSIGNED_BYTE, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR,
             anisotropicFiltering, generateMipMaps);
 
     SetData(image.data);
@@ -89,6 +93,8 @@ void Texture2D::SaveToPNG(string filename) {
 
     Image image;
 
+    image.width = width;
+    image.height = height;
     image.fileFormat = IMAGE_PNG;
 
     image.data = GetData();

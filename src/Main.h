@@ -52,8 +52,8 @@ private:
 	Actor* treeActor;
 	Actor* sponzaActor;
 
-	Texture* terrainDiffuseMap;
-	Texture* terrainDisplacementMap;
+	Texture2D* terrainDiffuseMap;
+	Texture2D* terrainDisplacementMap;
 
 	bool quit;
 	bool useControllerHandler;

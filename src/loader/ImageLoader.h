@@ -22,7 +22,7 @@ typedef struct Image {
 
     vector<uint8_t> data;
 
-};
+}Image;
 
 class ImageLoader {
 

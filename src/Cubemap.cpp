@@ -1,5 +1,5 @@
 #include "Cubemap.h"
-#include "Texture.h"
+#include "texture/Texture.h"
 
 // Declared in Texture.cpp
 #include "libraries/stb/stb_image.h"

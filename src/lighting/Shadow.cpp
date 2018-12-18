@@ -17,8 +17,8 @@ Shadow::Shadow(float distance, float bias, int32_t resolution, int32_t cascadeCo
 
 	components = new ShadowComponent[cascadeCount];
 
-	maps = new Texture(GL_UNSIGNED_INT, resolution, resolution, GL_DEPTH_COMPONENT24, 0.0f,
-		GL_CLAMP_TO_EDGE, GL_LINEAR, false, false, cascadeCount);
+	maps = new Texture2DArray(GL_UNSIGNED_INT, resolution, resolution, cascadeCount,
+			GL_DEPTH_COMPONENT24, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 	maps->Bind(GL_TEXTURE0);
 
@@ -49,8 +49,8 @@ Shadow::Shadow(float distance, float bias, int32_t resolution, bool useCubemap) 
 	else {
         componentCount = 1;
 
-        maps = new Texture(GL_UNSIGNED_INT, resolution, resolution, GL_DEPTH_COMPONENT24, 0.0f,
-                           GL_CLAMP_TO_EDGE, GL_LINEAR, false, false, 1);
+        maps = new Texture2DArray(GL_UNSIGNED_INT, resolution, resolution, 1,
+        		GL_DEPTH_COMPONENT24, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 		maps->Bind(GL_TEXTURE0);
 
@@ -73,5 +73,6 @@ Shadow::~Shadow() {
 
 	delete[] components;
 	delete maps;
+	delete cubemap;
 
 }

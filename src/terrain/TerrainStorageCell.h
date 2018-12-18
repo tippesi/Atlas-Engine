@@ -2,7 +2,9 @@
 #define TERRAINSTORAGECELL_H
 
 #include "../System.h"
-#include "../Texture.h"
+#include "../texture/Texture2D.h"
+
+#include <vector>
 
 /**
  * Stores the material information for a terrain node.
@@ -21,10 +23,10 @@ public:
 
 	vector<uint8_t> heightData;
 
-	Texture* heightField;
-	Texture* normalMap;
-	Texture* diffuseMap;
-	Texture* displacementMap;
+	Texture2D* heightField;
+	Texture2D* normalMap;
+	Texture2D* diffuseMap;
+	Texture2D* displacementMap;
 
 };
 
