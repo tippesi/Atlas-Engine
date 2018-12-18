@@ -63,8 +63,8 @@ void ImageLoader::SaveImage(string filename, Image &image) {
     switch(image.fileFormat) {
         case IMAGE_JPG: break;
         case IMAGE_BMP: break;
-		default: stbi_write_png(filename.c_str, image.width, image.height,
-			image.channels, image.data.data(), image.channels * image.channels); break;
+		default: stbi_write_png(filename.c_str(), image.width, image.height,
+			image.channels, image.data.data(), image.channels * image.width); break;
     }
 
 }
