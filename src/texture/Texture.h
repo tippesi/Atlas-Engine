@@ -35,7 +35,7 @@ public:
     /**
      * Binds the texture to a texture unit
      * @param unit The texture unit the texture should be bound to.
-     * @note The texture unit should be betweem GL_TEXTURE0-GL_TEXTURE_MAX
+     * @note The texture unit should be between GL_TEXTURE0-GL_TEXTURE_MAX
      */
     virtual void Bind(uint32_t unit) = 0;
 
@@ -101,6 +101,12 @@ protected:
      * @param data The data to be flipped.
      */
     void FlipDataHorizontally(vector<uint8_t>& data);
+
+    /**
+     * Determines the maximum needed mipmap level.
+     * @return The mipmap level.
+     */
+    int32_t GetMipMapLevel();
 
     void Generate(GLenum target, GLenum dataType, int32_t sizedFormat, int32_t wrapping,
             int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);

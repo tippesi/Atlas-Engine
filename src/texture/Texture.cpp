@@ -153,12 +153,18 @@ void Texture::FlipDataHorizontally(vector <uint8_t> &data) {
 
 }
 
+int32_t Texture::GetMipMapLevel() {
+
+    return (int32_t)floor(log2(glm::max((float)width, (float)height))) + 1;
+
+}
+
 void Texture::Generate(GLenum target, GLenum dataType, int32_t sizedFormat, int32_t wrapping,
         int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
 
     glBindTexture(target, ID);
 
-    int32_t mipCount = mipmaps ? (int32_t)floor(log2(glm::max((float)width, (float)height))) + 1 : 1;
+    int32_t mipCount = mipmaps ? GetMipMapLevel() : 1;
 
     ReserveStorage(mipCount);
 

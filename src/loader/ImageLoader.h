@@ -36,6 +36,11 @@ public:
      */
     static Image LoadImage(string filename, bool colorSpaceConversion, int32_t forceChannels = 0);
 
+    /**
+     *
+     * @param filename
+     * @param image
+     */
     static void SaveImage(string filename, Image& image);
 
 };

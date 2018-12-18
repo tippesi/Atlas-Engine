@@ -16,6 +16,14 @@ Image ImageLoader::LoadImage(string filename, bool colorSpaceConversion, int32_t
     Image image;
 
     auto data = stbi_load(filename.c_str(), &image.width, &image.height, &image.channels, forceChannels);
+
+    if (data == nullptr) {
+#ifdef ENGINE_SHOW_LOG
+        EngineLog("Failed to load image %s", filename.c_str());
+#endif
+        throw EngineException("Image couldn't be loaded");
+    }
+
     image.data.assign(data, data + image.width * image.height * image.channels);
     delete[] data;
 
@@ -41,6 +49,10 @@ Image ImageLoader::LoadImage(string filename, bool colorSpaceConversion, int32_t
     else if (fileFormat == "bmp") {
         image.fileFormat = IMAGE_BMP;
     }
+
+#ifdef ENGINE_SHOW_LOG
+    EngineLog("Loaded image %s", filename.c_str());
+#endif
 
     return image;
 
