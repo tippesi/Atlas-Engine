@@ -28,6 +28,8 @@ private:
 
 	void ControllerDeviceEventHandler(EngineControllerDeviceEvent event);
 
+	void MouseButtonEventHandler(EngineMouseButtonEvent event);
+
 	Window* window;
 
 	MouseHandler* mouseHandler;
@@ -54,6 +56,8 @@ private:
 
 	Texture2D* terrainDiffuseMap;
 	Texture2D* terrainDisplacementMap;
+
+	Texture2D* smileyTexture;
 
 	bool quit;
 	bool useControllerHandler;

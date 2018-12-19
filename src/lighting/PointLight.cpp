@@ -5,7 +5,7 @@ PointLight::PointLight(int32_t mobility) {
     location = vec3(0.0f, 3.0f, 0.0f);
 
     color = vec3(1.0f);
-    ambient = 0.1f;
+    ambient = 0.0f;
 	radius = 5.0f;
 
     shadow = nullptr;

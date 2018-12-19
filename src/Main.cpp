@@ -24,6 +24,9 @@ Main::Main(int argc, char* argv[]) {
 	auto controllerDeviceEventHandler = std::bind(&Main::ControllerDeviceEventHandler, this, std::placeholders::_1);
 	EngineEventHandler::ControllerDeviceEventDelegate.Subscribe(controllerDeviceEventHandler);
 
+	auto mouseButtonEventHandler = std::bind(&Main::MouseButtonEventHandler, this, std::placeholders::_1);
+	EngineEventHandler::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
+
 	camera = new Camera(47.0f, 2.0f, .25f, 4000.0f);
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
@@ -162,6 +165,8 @@ void Main::Load() {
 	terrainDiffuseMap = new Texture2D("../data/terrain/Ground_17_DIF.jpg");
 	terrainDisplacementMap = new Texture2D("../data/terrain/Ground_17_DISP.jpg");
 
+	smileyTexture = new Texture2D("../data/smiley.jpg");
+
 }
 
 void Main::DisplayLoadingScreen() {
@@ -191,6 +196,21 @@ void Main::SceneSetUp() {
 	terrain->SetLoDDistance(2, 64.0f);
 
 	scene->Add(terrain);
+
+	Decal* decal = new Decal(smileyTexture);
+
+	decal->matrix = glm::scale(mat4(1.0f), vec3(1.0f, 1.0f, 1.0f));
+
+	scene->Add(decal);
+
+	decal = new Decal(smileyTexture);
+
+	decal->matrix = glm::translate(mat4(1.0f), camera->location) * 
+		glm::rotate(mat4(1.0f) , -3.14f / 2.0f, vec3(0.0f, 0.0f, 1.0f)) * 
+		glm::rotate(mat4(1.0f), 3.14f / 2.0f, vec3(0.0f, 1.0f, 0.0f)) *
+		glm::scale(mat4(1.0f), vec3(1.0f, 1000.0f, 1.0f));
+
+	scene->Add(decal);
 
 	SceneNode* node = new SceneNode();
 	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
@@ -224,25 +244,21 @@ void Main::SceneSetUp() {
 	PointLight* pointLight2 = new PointLight(STATIONARY_LIGHT);
 	pointLight2->location = vec3(24.35f, 6.5f, -11.0f);
 	pointLight2->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
-	pointLight2->ambient = 0.1f;
 	pointLight2->AddShadow(0.0f, 512);
 
 	PointLight* pointLight3 = new PointLight(STATIONARY_LIGHT);
 	pointLight3->location = vec3(-31.0f, 6.5f, 7.1f);
 	pointLight3->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
-	pointLight3->ambient = 0.1f;
 	pointLight3->AddShadow(0.0f, 512);
 
 	PointLight* pointLight4 = new PointLight(STATIONARY_LIGHT);
 	pointLight4->location = vec3(-31.0f, 6.5f, -11.0f);
 	pointLight4->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
-	pointLight4->ambient = 0.1f;
 	pointLight4->AddShadow(0.0f, 512);
 
 	PointLight* pointLight5 = new PointLight(STATIONARY_LIGHT);
 	pointLight5->location = vec3(0.0f, 2.0f, 0.0f);
 	pointLight5->color = vec3(1.0f);
-	pointLight5->ambient = 0.1f;
 	pointLight5->AddShadow(0.0f, 512);
 
 	node->Add(cubeActor);
@@ -272,6 +288,24 @@ void Main::ControllerDeviceEventHandler(EngineControllerDeviceEvent event) {
 	}
 	else if (event.type == CONTROLLER_REMOVED) {
 		useControllerHandler = false;
+	}
+
+}
+
+void Main::MouseButtonEventHandler(EngineMouseButtonEvent event) {
+
+	if (event.button == MOUSEBUTTON_RIGHT && event.state == BUTTON_RELEASED) {
+
+		Decal* decal = new Decal(smileyTexture);
+
+		auto farPoint = camera->direction * camera->farPlane;
+
+		auto midPoint = farPoint / 2.0f;
+
+		decal->matrix =  glm::lookAt(camera->location, camera->location + camera->direction, camera->up) *  glm::scale(mat4(1.0f), vec3(1.0f, 1.0f, camera->farPlane));
+
+		scene->Add(decal);
+
 	}
 
 }

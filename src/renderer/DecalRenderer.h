@@ -21,10 +21,13 @@ private:
 
     Shader* shader;
 
+	Uniform* depthTexture;
     Uniform* decalTexture;
     Uniform* modelMatrix;
     Uniform* viewMatrix;
     Uniform* projectionMatrix;
+    Uniform* inverseViewMatrix;
+	Uniform* inverseProjectionMatrix;
 
 };
 

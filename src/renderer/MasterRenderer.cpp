@@ -59,11 +59,10 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	geometryRenderer->Render(window, target, camera, scene, true);
 
 	glEnable(GL_CULL_FACE);
+	glDepthMask(GL_FALSE);
+	glDisable(GL_DEPTH_TEST);
 
 	decalRenderer->Render(window, target, camera, scene, true);
-
-	glDisable(GL_DEPTH_TEST);
-	glDepthMask(GL_FALSE);
 
 	vertexArray->Bind();
 
