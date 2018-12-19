@@ -30,11 +30,6 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 	fontFile.read(buffer, size);
 	fontFile.close();
 
-	int32_t resolution = (int32_t)pixelSize + 2 * padding;
-
-	glyphsTexture = new Texture2DArray(GL_UNSIGNED_BYTE, resolution, resolution, FONT_CHARACTER_COUNT, GL_R8,
-			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-
 	if (!stbtt_InitFont(&font, (unsigned char*)buffer, 0)) {
 		new EngineException("Failed loading font");
 	}
@@ -52,46 +47,75 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	pixelDistanceScale = (float)edgeValue / (float)padding;
 
-	for (int32_t i = 32; i < FONT_CHARACTER_COUNT; i++) {
+	int32_t range = font.numGlyphs > FONT_CHARACTER_COUNT ? FONT_CHARACTER_COUNT : font.numGlyphs;
+	uint8_t* data[FONT_CHARACTER_COUNT];
+
+	int32_t width = 0, height = 0;
+
+	// Load the data and calculate the needed resolution for the texture
+	for (int32_t i = font.fontstart; i < range; i++) {
 
 		auto glyph = &glyphs[i];
 
-		glyph->data.resize(resolution * resolution);
-
-		for (int32_t i = 0; i < resolution * resolution; i++) {
-			glyph->data[i] = 0;
-		}
-
 		int32_t xOffset, yOffset;
-		uint8_t* data = stbtt_GetCodepointSDF(&font, scale, i, padding, edgeValue, pixelDistanceScale,
+		data[i] = stbtt_GetCodepointSDF(&font, scale, i, padding, edgeValue, pixelDistanceScale,
 			&glyph->width, &glyph->height, &xOffset, &yOffset);
 
-		glyph->textureScale.x = (float)glyph->width / (float)resolution;
-		glyph->textureScale.y = (float)glyph->height / (float)resolution;
+        for (int32_t j = 0; j < FONT_CHARACTER_COUNT; j++) {
+            glyph->kern[j] = (int32_t)((float)stbtt_GetCodepointKernAdvance(&font, i, j) * scale);
+        }
+
+        stbtt_GetCodepointHMetrics(&font, i, &glyph->advance, 0);
+        glyph->advance = (int32_t)((float)glyph->advance * scale);
+
+        if (data[i] == nullptr) {
+			glyph->height = 0;
+			glyph->width = 0;
+			glyph->offset = vec2(0.0f);
+			glyph->textureScale = vec2(0.0f);
+			continue;
+		}
 
 		glyph->offset.x = (float)xOffset;
 		glyph->offset.y = (float)yOffset;
+
+		width = glyph->width > width ? glyph->width : width;
+		height = glyph->height > height ? glyph->height : height;
+
+	}
+
+	// Create texture and process texture data
+	glyphsTexture = new Texture2DArray(GL_UNSIGNED_BYTE, width, height, range, 
+			GL_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+
+	for (int32_t i = font.fontstart; i < range; i++) {
+
+        if (data[i] == nullptr)
+            continue;
+
+		auto glyph = &glyphs[i];
+
+		glyph->data.resize(width * height);
+
+		for (int32_t i = 0; i < width * height; i++) {
+			glyph->data[i] = 0;
+		}
+
+		glyph->textureScale.x = (float)glyph->width / (float)width;
+		glyph->textureScale.y = (float)glyph->height / (float)height;
 
 		characterScales[i] = glyph->textureScale;
 		characterSizes[i] = vec2((float)glyph->width, (float)glyph->height);
 
 		for (int32_t x = 0; x < glyph->width; x++) {
 			for (int32_t y = 0; y < glyph->height; y++) {
-				glyph->data[y * resolution + x] = data[y * glyph->width + x];
+				glyph->data[y * width + x] = data[i][y * glyph->width + x];
 			}
 		}
 
-		for (int32_t j = 0; j < FONT_CHARACTER_COUNT; j++) {
-			glyph->kern[j] = (int32_t)((float)stbtt_GetCodepointKernAdvance(&font, i, j) * scale);
-		}
-
-		stbtt_GetCodepointHMetrics(&font, i, &glyph->advance, 0);
-
-		glyph->advance = (int32_t)((float)glyph->advance * scale);
-
 		glyphsTexture->SetData(glyph->data, i);
 
-		delete[] data;
+		delete[] data[i];
 
 	}
 
