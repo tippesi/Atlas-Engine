@@ -165,7 +165,7 @@ void Main::Load() {
 	terrainDiffuseMap = new Texture2D("../data/terrain/Ground_17_DIF.jpg");
 	terrainDisplacementMap = new Texture2D("../data/terrain/Ground_17_DISP.jpg");
 
-	smileyTexture = new Texture2D("../data/smiley.jpg");
+	smileyTexture = new Texture2D("../data/spritesheet.png");
 
 }
 
@@ -199,7 +199,7 @@ void Main::SceneSetUp() {
 
 	Decal* decal = new Decal(smileyTexture);
 
-	decal->matrix = glm::scale(mat4(1.0f), vec3(1.0f, 1.0f, 1.0f));
+	decal->matrix = glm::scale(mat4(1.0f), vec3(10.0f, 1.0f, 10.0f));
 
 	scene->Add(decal);
 

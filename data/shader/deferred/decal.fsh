@@ -8,11 +8,28 @@ out vec4 fragColor;
 
 uniform sampler2D depthTexture;
 uniform sampler2D decalTexture;
+uniform float alphaFactor;
 uniform mat4 ivMatrix;
+
+#ifdef ANIMATION
+uniform float timeInMilliseconds;
+uniform float animationLength;
+uniform float rowCount;
+uniform float columnCount;
+#endif
 
 // https://bartwronski.com/2015/03/12/fixing-screen-space-deferred-decals/
 // https://mtnphil.wordpress.com/2014/05/24/decals-deferred-rendering/
 // http://martindevans.me/game-development/2015/02/27/Drawing-Stuff-On-Other-Stuff-With-Deferred-Screenspace-Decals/
+
+vec2 GetOffset(float index) {
+	
+	float x = mod(index, rowCount) / rowCount;
+	float y = floor(index / rowCount) / columnCount;
+	
+	return vec2(x, y);
+	
+}
 
 void main() {
 
@@ -30,6 +47,27 @@ void main() {
 	
 	vec2 textureCoord = 0.5f * objectPos.xz + 0.5f;
 
+#ifdef ANIMATION
+	float animationFrameCount = rowCount * columnCount;
+	float time = mod(timeInMilliseconds, animationLength) / animationLength;
+	float sheetProgression = time * animationFrameCount;
+	
+	float prevFrameIndex = floor(sheetProgression);
+	float nextFrameIndex = mod(prevFrameIndex + 1, animationFrameCount);
+	
+	texCoord = GetOffset(prevFrameIndex) + textureCoord / vec2(rowCount, columnCount);
+	
+	vec4 prevFrame = texture(decalTexture, texCoord);
+	
+	texCoord = GetOffset(nextFrameIndex) + textureCoord / vec2(rowCount, columnCount);
+	
+	vec4 nextFrame = texture(decalTexture, texCoord);
+	
+	fragColor = mix(prevFrame, nextFrame, fract(sheetProgression));
+#else
 	fragColor = texture(decalTexture, textureCoord);
+#endif
+
+	fragColor *= vec4(1.0f, 1.0f, 1.0f, alphaFactor);
 
 }

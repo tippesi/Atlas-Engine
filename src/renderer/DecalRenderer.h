@@ -29,6 +29,13 @@ private:
     Uniform* inverseViewMatrix;
 	Uniform* inverseProjectionMatrix;
 
+	Uniform* alphaFactor;
+
+	Uniform* timeInMilliseconds;
+	Uniform* animationLength;
+	Uniform* rowCount;
+	Uniform* columnCount;
+
 };
 
 

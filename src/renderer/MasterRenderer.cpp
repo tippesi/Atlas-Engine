@@ -61,8 +61,12 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glEnable(GL_CULL_FACE);
 	glDepthMask(GL_FALSE);
 	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	decalRenderer->Render(window, target, camera, scene, true);
+
+	glDisable(GL_BLEND);
 
 	vertexArray->Bind();
 

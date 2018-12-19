@@ -13,6 +13,8 @@ DecalRenderer::DecalRenderer() {
     shader->AddComponent(VERTEX_SHADER, vertexPath);
     shader->AddComponent(FRAGMENT_SHADER, fragmentPath);
 
+	shader->AddMacro("ANIMATION");
+
     shader->Compile();
 
     GetUniforms();
@@ -34,6 +36,12 @@ void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera,
     projectionMatrix->SetValue(camera->projectionMatrix);
 	inverseViewMatrix->SetValue(camera->inverseViewMatrix);
 	inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
+	alphaFactor->SetValue(1.0f);
+
+	timeInMilliseconds->SetValue((float)clock());
+	animationLength->SetValue(1000.0f);
+	rowCount->SetValue(4.0f);
+	columnCount->SetValue(4.0f);
 
     for (auto& decal : scene->decals) {
 
@@ -55,5 +63,10 @@ void DecalRenderer::GetUniforms() {
     projectionMatrix = shader->GetUniform("pMatrix");
 	inverseViewMatrix = shader->GetUniform("ivMatrix");
 	inverseProjectionMatrix = shader->GetUniform("ipMatrix");
+	alphaFactor = shader->GetUniform("alphaFactor");
+	timeInMilliseconds = shader->GetUniform("timeInMilliseconds");
+	animationLength = shader->GetUniform("animationLength");
+	rowCount = shader->GetUniform("rowCount");
+	columnCount = shader->GetUniform("columnCount");
 
 }
