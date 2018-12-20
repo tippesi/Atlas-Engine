@@ -69,12 +69,16 @@ Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 #endif		
 
-	int32_t maxAnisotropy = Texture::GetMaxAnisotropyLevel();
-	Texture::SetAnisotropyLevel(maxAnisotropy);
+	// Do the setup for all the classes that need static setup
+	Texture::CheckExtensions();
+	VertexBuffer::CheckExtensions();
+	Texture::GetMaxAnisotropyLevel();
 
 	LockFramerate();
 
 	ShaderSource::SetSourceDirectory(shaderDirectory);
+
+	EngineEventHandler::Init();
 
 	GeometryRenderer::InitShaderBatch();
 	ShadowRenderer::InitShaderBatch();

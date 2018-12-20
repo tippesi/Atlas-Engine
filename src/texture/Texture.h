@@ -46,6 +46,9 @@ public:
      */
     virtual void Unbind() = 0;
 
+
+    virtual ~Texture();
+
     /**
      * Determines the maximum anisotropy level offered by the system.
      * @return The maximum anisotropy level
@@ -90,6 +93,11 @@ public:
      */
     static int32_t GetSuggestedFormat(int32_t channelCount);
 
+    /**
+     * Checks the available extensions which the class might use
+     */
+    static void CheckExtensions();
+
     int32_t width;
     int32_t height;
 
@@ -125,9 +133,15 @@ protected:
     uint32_t dataType;
     int32_t sizedFormat;
 
+    int32_t wrapping;
+    int32_t filtering;
+
+    bool anisotropicFiltering;
     bool mipmaps;
 
     static int32_t anisotropyLevel;
+
+    static bool anisotropicFilteringSupported;
 
 };
 

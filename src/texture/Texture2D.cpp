@@ -83,9 +83,10 @@ void Texture2D::Resize(int32_t width, int32_t height) {
     this->width = width;
     this->height = height;
 
-    int32_t mipCount = mipmaps ? GetMipMapLevel() : 1;
+    glDeleteTextures(1, &ID);
+    glGenTextures(1, &ID);
 
-    ReserveStorage(mipCount);
+    Generate(GL_TEXTURE_2D, dataType, sizedFormat, wrapping, filtering, anisotropicFiltering, mipmaps);
 
 }
 

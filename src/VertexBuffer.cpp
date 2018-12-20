@@ -1,5 +1,7 @@
 #include "VertexBuffer.h"
 
+bool VertexBuffer::immutableBuffersSupported = false;
+
 VertexBuffer::VertexBuffer(uint32_t type, int32_t dataType, int32_t stride, uint32_t usage) : 
 	type(type), usage(usage), dataType(dataType), stride(stride) {
 
@@ -208,6 +210,23 @@ void VertexBuffer::SetSubData(vec4* data, int32_t offset, int32_t length) {
 void VertexBuffer::SetSubData(void* data, int32_t offset, int32_t length, int32_t elementSize) {
 
 	SetSubDataInternal(data, offset, length, elementSize);
+
+}
+
+void VertexBuffer::CheckExtensions() {
+
+	int32_t extensionCount = 0;
+	glGetIntegerv(GL_NUM_EXTENSIONS, &extensionCount);
+
+	for (int32_t i = 0; i < extensionCount; i++) {
+		const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, i);
+		if (strcmp(extension, "GL_ARB_buffer_storage") == 0) {
+			immutableBuffersSupported = true;
+		}
+		if (strcmp(extension, "GL_EXT_buffer_storage") == 0) {
+			immutableBuffersSupported = true;
+		}
+	}
 
 }
 

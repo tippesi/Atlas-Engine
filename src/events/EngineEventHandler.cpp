@@ -8,10 +8,17 @@ EventDelegate<EngineMouseWheelEvent> EngineEventHandler::MouseWheelEventDelegate
 EventDelegate<EngineControllerAxisEvent> EngineEventHandler::ControllerAxisEventDelegate;
 EventDelegate<EngineControllerButtonEvent> EngineEventHandler::ControllerButtonEventDelegate;
 EventDelegate<EngineControllerDeviceEvent> EngineEventHandler::ControllerDeviceEventDelegate;
+EventDelegate<EngineTextInputEvent> EngineEventHandler::TextInputEventDelegate;
 EventDelegate<> EngineEventHandler::QuitEventDelegate;
 
 mutex EngineEventHandler::handlerMutex;
 unordered_map<int32_t, EngineEventHandler::ControllerDevice> EngineEventHandler::controllers;
+
+void EngineEventHandler::Init() {
+
+	SDL_StartTextInput();
+
+}
 
 void EngineEventHandler::Update() {
 
@@ -92,6 +99,16 @@ void EngineEventHandler::Update() {
 			EngineControllerDeviceEvent event(e.cdevice);
 
 			ControllerDeviceEventDelegate.Fire(event);
+
+		}
+		else if (e.type == SDL_TEXTINPUT) {
+
+			if (e.text.text[1] != '\0')
+				continue;
+
+			EngineTextInputEvent event(e.text);
+
+			TextInputEventDelegate.Fire(event);
 
 		}
 		else if (e.type == SDL_QUIT) {

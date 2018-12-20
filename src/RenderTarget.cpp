@@ -27,6 +27,8 @@ void RenderTarget::Resize(int32_t width, int32_t height) {
 	geometryFramebuffer->Resize(width, height);
 	lightingFramebuffer->Resize(width, height);
 
+	geometryFramebuffer->AddComponentTexture(GL_DEPTH_ATTACHMENT, lightingFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT));
+
 	this->width = width;
 	this->height = height;
 

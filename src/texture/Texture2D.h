@@ -59,7 +59,8 @@ public:
      * Resizes the texture
      * @param width The new width of the texture.
      * @param height The new height of the texture.
-     * @warning This results in a loss of texture data.
+     * @warning This results in a loss of texture data and a
+     * change of the texture id.
      */
     void Resize(int32_t width, int32_t height);
 

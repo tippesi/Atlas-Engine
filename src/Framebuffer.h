@@ -103,11 +103,16 @@ public:
 	int32_t height;
 
 private:
+	/**
+	 * Represents an added component
+	 */
 	struct FramebufferComponent {
-		Texture2D* texture;
-		Texture2DArray* textureArray;
-		Cubemap* cubemap;
-		bool internalTexture;
+		Texture2D* texture; // If the component is a Texture2D
+		Texture2DArray* textureArray; // If the component is a Texture2DArray
+		Cubemap* cubemap; // If the component is a Cubemap
+		int32_t index; // The index in the cubemap (face) or the Texture2DArray layer
+		uint32_t target; // The target to which the component was set
+		bool internalTexture; // Whether or not this is a texture that was created internally
 	};
 
 	uint32_t ID;

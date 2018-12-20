@@ -62,7 +62,8 @@ public:
     /**
      * Saves a layer of the texture to a PNG image file
      * @param filename The name of the file
-     * @param depth The depth of the layer to be saved
+     * @param depth This results in a loss of texture data and a
+     * change of the texture id.
      */
     void SaveToPNG(string filename, int32_t depth);
 

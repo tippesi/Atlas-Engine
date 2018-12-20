@@ -5,6 +5,7 @@
 #include "../libraries/stb/stb_image_resize.h"
 
 int32_t Texture::anisotropyLevel = 0;
+bool Texture::anisotropicFilteringSupported = false;
 
 Texture::Texture() {
 
@@ -39,25 +40,26 @@ int32_t Texture::GetSizedFormat() {
 
 }
 
+Texture::~Texture() {
+
+    glDeleteTextures(1, &ID);
+
+}
+
 int32_t Texture::GetMaxAnisotropyLevel() {
 
-    int32_t extensionCount = 0;
-    glGetIntegerv(GL_NUM_EXTENSIONS, &extensionCount);
+    if (anisotropicFilteringSupported) {
 
-    for (int32_t i = 0; i < extensionCount; i++) {
-        const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, i);
-        if (strcmp(extension, "GL_EXT_texture_filter_anisotropic")) {
+        float maxAnisotropy;
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
 
-            float maxAnisotropy;
-            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+        if (!anisotropyLevel)
+            anisotropyLevel = (int32_t)maxAnisotropy;
+        else
+            anisotropyLevel = glm::min(anisotropyLevel, (int32_t)maxAnisotropy);
 
-            if (!anisotropyLevel)
-                anisotropyLevel = (int32_t)maxAnisotropy;
-            else
-                anisotropyLevel = glm::min(anisotropyLevel, (int32_t)maxAnisotropy);
+        return (int32_t)maxAnisotropy;
 
-            return (int32_t)maxAnisotropy;
-        }
     }
 
     return 0;
@@ -155,6 +157,20 @@ int32_t Texture::GetSuggestedFormat(int32_t channelCount) {
 
 }
 
+void Texture::CheckExtensions() {
+
+    int32_t extensionCount = 0;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &extensionCount);
+
+    for (int32_t i = 0; i < extensionCount; i++) {
+        const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, i);
+        if (strcmp(extension, "GL_EXT_texture_filter_anisotropic") == 0) {
+            anisotropicFilteringSupported = true;
+        }
+    }
+
+}
+
 void Texture::FlipDataHorizontally(vector <uint8_t> &data) {
 
     auto invertedData = vector<uint8_t>(width * height * channels);
@@ -189,6 +205,9 @@ void Texture::Generate(GLenum target, GLenum dataType, int32_t sizedFormat, int3
 	this->channels = GetChannelCount(GetBaseFormat(sizedFormat));
 	this->dataType = dataType;
 	this->sizedFormat = sizedFormat;
+	this->wrapping = wrapping;
+	this->filtering = filtering;
+	this->anisotropicFiltering = anisotropicFiltering;
 	this->mipmaps = generateMipMaps;
 
     glBindTexture(target, ID);
@@ -198,7 +217,6 @@ void Texture::Generate(GLenum target, GLenum dataType, int32_t sizedFormat, int3
     ReserveStorage(mipCount);
 
     if (generateMipMaps) {
-        glGenerateMipmap(target);
         if (anisotropicFiltering) {
             glTexParameteri(target, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropyLevel);
         }

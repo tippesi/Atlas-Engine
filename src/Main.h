@@ -30,6 +30,8 @@ private:
 
 	void MouseButtonEventHandler(EngineMouseButtonEvent event);
 
+	void TextInputEventHandler(EngineTextInputEvent event);
+
 	Window* window;
 
 	MouseHandler* mouseHandler;
@@ -58,6 +60,8 @@ private:
 	Texture2D* terrainDisplacementMap;
 
 	Texture2D* smileyTexture;
+
+	string input;
 
 	bool quit;
 	bool useControllerHandler;

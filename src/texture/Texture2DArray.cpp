@@ -61,9 +61,10 @@ void Texture2DArray::Resize(int32_t width, int32_t height, int32_t depth) {
     this->height = height;
     this->depth = depth;
     
-    int32_t mipCount = mipmaps ? GetMipMapLevel() : 1;
-    
-    ReserveStorage(mipCount);
+    glDeleteTextures(1, &ID);
+    glGenTextures(1, &ID);
+
+    Generate(GL_TEXTURE_2D_ARRAY, dataType, sizedFormat, wrapping, filtering, anisotropicFiltering, mipmaps);
 
 }
 

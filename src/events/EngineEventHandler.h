@@ -14,6 +14,7 @@
 #include "EngineControllerAxisEvent.h"
 #include "EngineControllerButtonEvent.h"
 #include "EngineControllerDeviceEvent.h"
+#include "EngineTextInputEvent.h"
 
 #include <mutex>
 #include <unordered_map>
@@ -21,6 +22,8 @@
 class EngineEventHandler {
 
 public:
+	static void Init();
+
 	static void Update();
 
 	static EventDelegate<EngineWindowEvent> WindowEventDelegate;
@@ -31,6 +34,7 @@ public:
 	static EventDelegate<EngineControllerAxisEvent> ControllerAxisEventDelegate;
 	static EventDelegate<EngineControllerButtonEvent> ControllerButtonEventDelegate;
 	static EventDelegate<EngineControllerDeviceEvent> ControllerDeviceEventDelegate;
+	static EventDelegate<EngineTextInputEvent> TextInputEventDelegate;
 	static EventDelegate<> QuitEventDelegate;
 
 private:

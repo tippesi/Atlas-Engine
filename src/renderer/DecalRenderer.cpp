@@ -23,9 +23,13 @@ DecalRenderer::DecalRenderer() {
 
 void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene, bool masterRenderer) {
 
+    uint32_t drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+
     vertexArray->Bind();
 
     shader->Bind();
+
+    target->geometryFramebuffer->SetDrawBuffers(drawBuffers, 1);
 
 	depthTexture->SetValue(0);
     decalTexture->SetValue(1);
@@ -38,8 +42,8 @@ void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera,
 	inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 	alphaFactor->SetValue(1.0f);
 
-	timeInMilliseconds->SetValue((float)clock());
-	animationLength->SetValue(1000.0f);
+	timeInMilliseconds->SetValue((float)SDL_GetTicks());
+	animationLength->SetValue(10000.0f);
 	rowCount->SetValue(4.0f);
 	columnCount->SetValue(4.0f);
 
@@ -51,6 +55,8 @@ void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera,
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
     }
+
+    target->geometryFramebuffer->SetDrawBuffers(drawBuffers, 3);
 
 }
 

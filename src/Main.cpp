@@ -27,6 +27,9 @@ Main::Main(int argc, char* argv[]) {
 	auto mouseButtonEventHandler = std::bind(&Main::MouseButtonEventHandler, this, std::placeholders::_1);
 	EngineEventHandler::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
+	auto textInputEventHandler = std::bind(&Main::TextInputEventHandler, this, std::placeholders::_1);
+	EngineEventHandler::TextInputEventDelegate.Subscribe(textInputEventHandler);
+
 	camera = new Camera(47.0f, 2.0f, .25f, 4000.0f);
 	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
@@ -37,6 +40,8 @@ Main::Main(int argc, char* argv[]) {
 
 	masterRenderer = new MasterRenderer();
 	renderTarget = new RenderTarget(1920, 1080);
+
+	// renderTarget->Resize(1280, 720);
 
 	Load();
 	SceneSetUp();
@@ -89,7 +94,7 @@ void Main::Render(uint32_t deltaTime) {
 	masterRenderer->RenderScene(window, renderTarget, camera, scene);
 
 	string out = to_string(deltaTime);
-	out += " ms";
+	out = out + " ms" + " " + input;
 
 	masterRenderer->textRenderer->Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 5.0f, true);
 
@@ -307,6 +312,12 @@ void Main::MouseButtonEventHandler(EngineMouseButtonEvent event) {
 		scene->Add(decal);
 
 	}
+
+}
+
+void Main::TextInputEventHandler(EngineTextInputEvent event) {
+
+    input += event.character;
 
 }
 

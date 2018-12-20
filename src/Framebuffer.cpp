@@ -31,6 +31,8 @@ void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t in
 	component->textureArray = nullptr;
 	component->cubemap = nullptr;
 	component->internalTexture = true;
+	component->index = 0;
+	component->target = target;
 
 	Bind();
 
@@ -66,6 +68,8 @@ void Framebuffer::AddComponentTexture(int32_t attachment, Texture2D* texture, ui
 	component->textureArray = nullptr;
 	component->cubemap = nullptr;
 	component->internalTexture = false;
+	component->index = 0;
+    component->target = target;
 
 	Bind();
 
@@ -101,6 +105,8 @@ void Framebuffer::AddComponentTextureArray(int32_t attachment, Texture2DArray* t
 	component->textureArray = texture;
 	component->cubemap = nullptr;
 	component->internalTexture = false;
+	component->index = layer;
+    component->target = target;
 
 	Bind();
 
@@ -136,6 +142,8 @@ void Framebuffer::AddComponentCubemap(int32_t attachment, Cubemap* cubemap, int3
 	component->textureArray = nullptr;
 	component->cubemap = cubemap;
 	component->internalTexture = false;
+    component->index = face;
+    component->target = target;
 
 	Bind();
 
@@ -193,12 +201,26 @@ Cubemap* Framebuffer::GetComponentCubemap(int32_t attachment){
 
 void Framebuffer::Resize(int32_t width, int32_t height) {
 
+	Bind();
+
 	this->width = width;
 	this->height = height;
 
 	for (auto& componentKey : components) {
 		FramebufferComponent* component = componentKey.second;
-		component->texture->Resize(width, height);
+
+		if (component->texture != nullptr) {
+            component->texture->Resize(width, height);
+            glFramebufferTexture2D(component->target, componentKey.first,
+                    GL_TEXTURE_2D, component->texture->GetID(), 0);
+		}
+
+		if (component->textureArray != nullptr) {
+            component->textureArray->Resize(width, height, component->textureArray->depth);
+            glFramebufferTextureLayer(component->target, componentKey.first,
+                    component->textureArray->GetID(), 0, component->index);
+		}
+
 	}
 
 }

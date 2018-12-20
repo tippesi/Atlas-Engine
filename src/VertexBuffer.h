@@ -186,6 +186,11 @@ public:
 
 	~VertexBuffer();
 
+	/**
+	 * Checks the available extensions which the class might use
+	 */
+	static void CheckExtensions();
+
 private:
 	void SetDataInternal(void* data, int32_t length, int32_t elementSize);
 
@@ -200,6 +205,8 @@ private:
 	int32_t stride;
 
 	int32_t sizeInBytes;
+
+	static bool immutableBuffersSupported;
 
 };
 
