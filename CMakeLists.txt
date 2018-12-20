@@ -19,14 +19,14 @@ set(OpenGL_GL_PREFERENCE GLVND)
 
 include_directories(${OPENGL_INCLUDE_DIR})
 
-add_definitions(-DENGINE_CMAKE)
+set(ENGINE_COMPILE_DEFINITIONS ENGINE_CMAKE)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/libraries/glad)
 
 # Setting linker flags and library stuff for the different platforms
 
 if(MSVC)
-	add_definitions(-DENGINE_WINDOWS)
+	set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_WINDOWS)
     # for detecting Windows compiler MSVC
 	find_library(SDL_LIBRARY SDL2 ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib)
 	find_library(SDLMAIN_LIBRARY SDL2main ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib)
@@ -35,7 +35,7 @@ if(MSVC)
 endif()
 
 if(APPLE)
-	add_definitions(-DENGINE_OSX)
+	set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_OSX)
     # for MacOS X or iOS, watchOS, tvOS (since 3.10.3)
     find_library(ASSIMP_LIBRARY assimp.4.1.0 ${CMAKE_CURRENT_SOURCE_DIR}/lib/Mac)
     #find_library(SDLMAIN_LIBRARY SDL2main ${CMAKE_CURRENT_SOURCE_DIR}/lib/Mac)
@@ -53,7 +53,7 @@ if(APPLE)
 endif()
 
 if(UNIX AND NOT APPLE)
-	add_definitions(-DENGINE_LINUX)
+	set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_LINUX)
     # for Linux, BSD, Solaris, Minix
     find_library(ASSIMP_LIBRARY assimp.4.1.0 ${CMAKE_CURRENT_SOURCE_DIR}/lib/Linux)
     find_library(SDLMAIN_LIBRARY SDL2main ${CMAKE_CURRENT_SOURCE_DIR}/lib/Linux)
@@ -91,9 +91,9 @@ file(GLOB_RECURSE BLUE_ENGINE_SOURCE_FILES
 list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*src/libraries/.*")
 
 if (OPENGL_ES)
-add_definitions(-DENGINE_GLES)
+set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_GLES)
 else()
-add_definitions(-DENGINE_GL)
+set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_GL)
 endif()
 
 # When the engine is just a subproject we dont want to produce an executable
@@ -102,16 +102,19 @@ if (BUILD_LIBRARY)
     list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.cpp")
     list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.c")
     add_library(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
+	target_compile_definitions(${PROJECT_NAME} PUBLIC ${ENGINE_COMPILE_DEFINITIONS})
     target_link_libraries(${PROJECT_NAME} GLAD ${BLUE_ENGINE_LIBS})
     set(CMAKE_BUILD_TYPE Release ... FORCE)
 else()
     add_executable(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
+	target_compile_definitions(${PROJECT_NAME} PUBLIC ${ENGINE_COMPILE_DEFINITIONS})
     target_link_libraries(${PROJECT_NAME} GLAD ${BLUE_ENGINE_LIBS})
 endif()
 else()
     list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.cpp")
     list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.c")
     add_library(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
+	target_compile_definitions(${PROJECT_NAME} PUBLIC ${ENGINE_COMPILE_DEFINITIONS})
     set(BLUE_ENGINE_LIBS GLAD ${BLUE_ENGINE_LIBS} PARENT_SCOPE)
     target_link_libraries(${PROJECT_NAME} ${BLUE_ENGINE_LIBS})
 endif()

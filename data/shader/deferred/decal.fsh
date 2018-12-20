@@ -8,6 +8,7 @@ out vec4 fragColor;
 
 uniform sampler2D depthTexture;
 uniform sampler2D decalTexture;
+uniform vec2 depthTextureResolution;
 uniform float alphaFactor;
 uniform mat4 ivMatrix;
 
@@ -16,11 +17,6 @@ uniform float timeInMilliseconds;
 uniform float animationLength;
 uniform float rowCount;
 uniform float columnCount;
-#endif
-
-// https://bartwronski.com/2015/03/12/fixing-screen-space-deferred-decals/
-// https://mtnphil.wordpress.com/2014/05/24/decals-deferred-rendering/
-// http://martindevans.me/game-development/2015/02/27/Drawing-Stuff-On-Other-Stuff-With-Deferred-Screenspace-Decals/
 
 vec2 GetOffset(float index) {
 	
@@ -30,11 +26,15 @@ vec2 GetOffset(float index) {
 	return vec2(x, y);
 	
 }
+#endif
+
+// https://bartwronski.com/2015/03/12/fixing-screen-space-deferred-decals/
+// https://mtnphil.wordpress.com/2014/05/24/decals-deferred-rendering/
+// http://martindevans.me/game-development/2015/02/27/Drawing-Stuff-On-Other-Stuff-With-Deferred-Screenspace-Decals/
 
 void main() {
 
 	vec2 texCoord = ((fTexCoordProj.xy / fTexCoordProj.z) + 1.0f) / 2.0f;
-	
 	float depth = texture(depthTexture, texCoord).r;
 	
 	vec3 worldPos = vec3(ivMatrix * vec4(ConvertDepthToViewSpace(depth, texCoord), 1.0f));
