@@ -19,7 +19,7 @@ uniform float textScale;
 void main() {
 
 	color = vec4(0.0f);
-    float factor = 7.0f * sqrt(textScale);
+    float factor = 5.0f * sqrt(textScale);
 
     if (fScreenPosition.x < clipArea.x ||
 		fScreenPosition.y < clipArea.y ||

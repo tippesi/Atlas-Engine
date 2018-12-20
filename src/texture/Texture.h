@@ -70,7 +70,7 @@ public:
      * @param height The height of the data
      * @param channels The number of channels the data has
      */
-    static void GammaToLinear(vector<uint8_t>& data, int32_t width, int32_t height, int32_t channels);
+    static void GammaToLinear(uint8_t* data, int32_t width, int32_t height, int32_t channels);
 
     /**
      * Determines the base format of a sized format.

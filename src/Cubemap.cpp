@@ -1,15 +1,11 @@
 #include "Cubemap.h"
 #include "texture/Texture.h"
-
-// Declared in Texture.cpp
-#include "libraries/stb/stb_image.h"
+#include "loader/ImageLoader.h"
 
 Cubemap::Cubemap(string right, string left, string top,
 	string bottom, string front, string back) {
 
 	string filenames[] = { right, left, top, bottom, front, back };
-
-	int32_t width = 0, height = 0, channels = 0;
 
 	glGenTextures(1, &ID);
 
@@ -28,12 +24,12 @@ Cubemap::Cubemap(string right, string left, string top,
 
 	for (uint32_t i = 0; i < 6; i++) {
 
-		uint8_t* data = stbi_load(filenames[i].c_str(), &width, &height, &channels, 3);
+		auto image = ImageLoader::LoadImage(filenames[i], false);
 
-		if (data != nullptr) {
+		if (image.data.size() != 0) {
 #ifdef ENGINE_GL
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB8, width, height, 0,
-				GL_RGB, GL_UNSIGNED_BYTE, data);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB8, image.width, image.height, 0,
+				GL_RGB, GL_UNSIGNED_BYTE, image.data.data());
 #elif ENGINE_GLES
 			Texture::GammaToLinear(data, width, height, 3);
 
@@ -43,7 +39,6 @@ Cubemap::Cubemap(string right, string left, string top,
 #ifdef ENGINE_SHOW_LOG
 			EngineLog("    Loaded cubemap face %d %s", i, filenames[i].c_str());
 #endif
-			delete data;
 		}
 		else {
 #ifdef ENGINE_SHOW_LOG

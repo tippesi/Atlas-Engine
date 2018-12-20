@@ -80,18 +80,19 @@ void Texture::SetAnisotropyLevel(int32_t anisotropyLevel) {
 
 }
 
-void Texture::GammaToLinear(vector <uint8_t> &data, int32_t width, int32_t height, int32_t channels) {
+void Texture::GammaToLinear(uint8_t* data, int32_t width, int32_t height, int32_t channels) {
 
-    for (int32_t i = 0; i < width * height * channels; i++) {
+	int32_t size = width * height * channels;
+
+    for (int32_t i = 0; i < size; i++) {
         // Don't correct the alpha values
         if (channels == 4 && (i + 1) % 4 == 0)
             continue;
 
-        // Using OpenGL conversion:
         float value = (float)data[i] / 255.0f;
-        value = value <= 0.04045f ? value / 12.92f : powf((value + 0.055f) / 1.055f, 2.4f);
+		value = powf(value, 2.2f);
         // Before we can uncorrect it we have to bring it in normalized space
-        data[i] = (uint8_t)(glm::clamp(value, 0.0f, 1.0f) * 255.0f);
+        data[i] = (uint8_t)(value * 255.0f);
 
     }
 

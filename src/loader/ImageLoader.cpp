@@ -24,15 +24,15 @@ Image ImageLoader::LoadImage(string filename, bool colorSpaceConversion, int32_t
         throw EngineException("Image couldn't be loaded");
     }
 
+	if (colorSpaceConversion) {
+		Texture::GammaToLinear(data, image.width, image.height, image.channels);
+	}
+
     image.data.assign(data, data + image.width * image.height * image.channels);
     delete[] data;
 
     if (forceChannels > 0) {
         image.channels = forceChannels;
-    }
-
-    if (colorSpaceConversion) {
-        Texture::GammaToLinear(image.data, image.width, image.height, image.channels);
     }
 
     auto fileFormatPosition = filename.find_last_of('.') + 1;

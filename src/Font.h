@@ -6,7 +6,7 @@
 
 #include <vector>
 
-#define FONT_CHARACTER_COUNT 128
+#define FONT_CHARACTER_COUNT 2048
 
 /**
  * Represents a character
@@ -72,6 +72,8 @@ public:
 	float descent;
 
 	float lineHeight;
+
+	float smoothing;
 
 	float pixelDistanceScale;
 	uint8_t edgeValue;

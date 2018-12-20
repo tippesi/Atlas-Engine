@@ -34,6 +34,8 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 		new EngineException("Failed loading font");
 	}
 
+	smoothing = 5.0f;
+
 	float scale = (float)stbtt_ScaleForPixelHeight(&font, pixelSize);
 
 	int32_t iAscent, iDescent, iLineGap;
@@ -48,6 +50,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 	pixelDistanceScale = (float)edgeValue / (float)padding;
 
 	int32_t range = font.numGlyphs > FONT_CHARACTER_COUNT ? FONT_CHARACTER_COUNT : font.numGlyphs;
+
 	uint8_t* data[FONT_CHARACTER_COUNT];
 
 	int32_t width = 0, height = 0;
