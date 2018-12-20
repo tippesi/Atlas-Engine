@@ -94,7 +94,7 @@ void Main::Render(uint32_t deltaTime) {
 	masterRenderer->RenderScene(window, renderTarget, camera, scene);
 
 	string out = to_string(deltaTime);
-	out = out + " ms" + " " + input;
+	out = "ja " + out + " ms" + " " + input;
 
 	masterRenderer->textRenderer->Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 5.0f, true);
 

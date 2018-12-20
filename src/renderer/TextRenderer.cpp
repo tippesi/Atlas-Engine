@@ -223,11 +223,9 @@ vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, 
 		char& character = text[i];
 		Glyph* glyph = font->GetGlyph(character);
 
-		xOffset += glyph->offset.x;
-
 		// Just visible characters should be rendered.
 		if ((uint8_t)character > 32) {
-			instances[index].x = xOffset;
+			instances[index].x = glyph->offset.x + xOffset;
 			instances[index].y = glyph->offset.y + font->ascent;
 			instances[index].z = (float)character;
 			index++;
