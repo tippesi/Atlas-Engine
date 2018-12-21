@@ -40,12 +40,12 @@ public:
 
 	~MeshData();
 
-	DataComponent<uint32_t>* indices;
+	DataComponent<uint32_t, void>* indices;
 	
-	DataComponent<float>* vertices;
-	DataComponent<float>* texCoords;
-	DataComponent<float>* normals;
-	DataComponent<float>* tangents;
+	DataComponent<float, float>* vertices;
+	DataComponent<float, float16_t>* texCoords;
+	DataComponent<float, uint32_t>* normals;
+	DataComponent<float, uint32_t>* tangents;
 
 	vector<Material*> materials;
 	vector<MeshSubData*> subData;

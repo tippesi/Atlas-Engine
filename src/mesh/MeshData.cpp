@@ -2,12 +2,12 @@
 
 MeshData::MeshData() {
 
-	indices = new DataComponent<uint32_t>(COMPONENT_UNSIGNED_INT, 1);
+	indices = new DataComponent<uint32_t, void>(COMPONENT_UNSIGNED_INT, 1);
 
-	vertices = new DataComponent<float>(COMPONENT_FLOAT, 3);
-	texCoords = new DataComponent<float>(COMPONENT_FLOAT, 2);
-	normals = new DataComponent<float>(COMPONENT_FLOAT, 3);
-	tangents = new DataComponent<float>(COMPONENT_FLOAT, 3);
+	vertices = new DataComponent<float, float>(COMPONENT_FLOAT, 3);
+	texCoords = new DataComponent<float, float16_t>(COMPONENT_FLOAT, 2);
+	normals = new DataComponent<float, uint32_t>(COMPONENT_FLOAT, 3);
+	tangents = new DataComponent<float, uint32_t>(COMPONENT_FLOAT, 3);
 
 	indexCount = 0;
 	vertexCount = 0;

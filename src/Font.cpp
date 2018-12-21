@@ -53,7 +53,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	uint8_t* data[FONT_CHARACTER_COUNT];
 
-	int32_t width = 0, height = 0;
+	int32_t width = 0, height = 0, depth = 0;
 
 	// Load the data and calculate the needed resolution for the texture
 	for (int32_t i = font.fontstart; i < range; i++) {
@@ -76,6 +76,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 			glyph->width = 0;
 			glyph->offset = vec2(0.0f);
 			glyph->textureScale = vec2(0.0f);
+			glyph->texArrayIndex = FONT_CHARACTER_COUNT;
 			continue;
 		}
 
@@ -84,11 +85,17 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 		width = glyph->width > width ? glyph->width : width;
 		height = glyph->height > height ? glyph->height : height;
+		glyph->texArrayIndex = depth++;
 
 	}
 
+	int32_t maxDepth = 0;
+	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxDepth);
+
+	depth = maxDepth < depth ? maxDepth : depth;
+
 	// Create texture and process texture data
-	glyphsTexture = new Texture2DArray(GL_UNSIGNED_BYTE, width, height, range, 
+	glyphsTexture = new Texture2DArray(GL_UNSIGNED_BYTE, width, height, depth, 
 			GL_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 	for (int32_t i = font.fontstart; i < range; i++) {
@@ -107,16 +114,27 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 		glyph->textureScale.x = (float)glyph->width / (float)width;
 		glyph->textureScale.y = (float)glyph->height / (float)height;
 
-		characterScales[i] = glyph->textureScale;
-		characterSizes[i] = vec2((float)glyph->width, (float)glyph->height);
+		// Hard coded end. All other symbols aren't supported for now.
+		// This still supports all the latin characters of UTF-8
+		if (glyph->texArrayIndex < depth) {
 
-		for (int32_t x = 0; x < glyph->width; x++) {
-			for (int32_t y = 0; y < glyph->height; y++) {
-				glyph->data[y * width + x] = data[i][y * glyph->width + x];
+			for (int32_t x = 0; x < glyph->width; x++) {
+				for (int32_t y = 0; y < glyph->height; y++) {
+					glyph->data[y * width + x] = data[i][y * glyph->width + x];
+				}
 			}
-		}
 
-		glyphsTexture->SetData(glyph->data, i);
+			characterScales[glyph->texArrayIndex] = glyph->textureScale;
+			characterSizes[glyph->texArrayIndex] = vec2((float)glyph->width, (float)glyph->height);
+
+			glyphsTexture->SetData(glyph->data, glyph->texArrayIndex);
+
+		}
+		else {
+
+			glyph->texArrayIndex = FONT_CHARACTER_COUNT;
+
+		}
 
 		delete[] data[i];
 

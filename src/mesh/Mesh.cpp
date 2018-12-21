@@ -22,23 +22,23 @@ Mesh::Mesh(string filename) {
 void Mesh::UpdateData() {
 
 	if (data->indices->ContainsData()) {
-		vertexArray->GetIndexComponent()->SetData(data->indices->GetInternal(),
+		vertexArray->GetIndexComponent()->SetData(data->indices->GetConvertedVoid(),
 			data->GetIndexCount(), data->indices->GetElementSize());
 	}
 	if (data->vertices->ContainsData()) {
-		vertexArray->GetComponent(0)->SetData(data->vertices->GetInternal(),
+		vertexArray->GetComponent(0)->SetData(data->vertices->GetConvertedVoid(),
 			data->GetVertexCount(), data->vertices->GetElementSize());
 	}
 	if (data->normals->ContainsData()) {
-		vertexArray->GetComponent(1)->SetData(data->normals->GetInternal(),
+		vertexArray->GetComponent(1)->SetData(data->normals->GetConvertedVoid(),
 			data->GetVertexCount(), data->normals->GetElementSize());
 	}
 	if (data->texCoords->ContainsData()) {
-		vertexArray->GetComponent(2)->SetData(data->texCoords->GetInternal(),
+		vertexArray->GetComponent(2)->SetData(data->texCoords->GetConvertedVoid(),
 			data->GetVertexCount(), data->texCoords->GetElementSize());
 	}
 	if (data->tangents->ContainsData()) {
-		vertexArray->GetComponent(3)->SetData(data->tangents->GetInternal(),
+		vertexArray->GetComponent(3)->SetData(data->tangents->GetConvertedVoid(),
 			data->GetVertexCount(), data->tangents->GetElementSize());
 	}
 

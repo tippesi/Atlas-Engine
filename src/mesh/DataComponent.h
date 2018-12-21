@@ -6,42 +6,72 @@
 
 #include <type_traits>
 
+/**
+ * T should be uint32_t to support proper conversion
+ */
 #define COMPONENT_UNSIGNED_INT GL_UNSIGNED_INT
+/**
+ * T should be float to support proper conversion
+ */
 #define COMPONENT_FLOAT GL_FLOAT
+/**
+ * T should be uint16_t to support proper conversion
+ */
 #define COMPONENT_UNSIGNED_SHORT GL_UNSIGNED_SHORT
+/**
+ * T should be uint8_t to support proper conversion
+ */
 #define COMPONENT_UNSIGNED_BYTE GL_UNSIGNED_BYTE
+/**
+ * T should be float16_t to support proper conversion
+ */
 #define COMPONENT_HALF_FLOAT GL_HALF_FLOAT
+/**
+ * T should be uint32_t to support proper conversion
+ */
 #define COMPONENT_PACKED_FLOAT GL_INT_2_10_10_10_REV
 
 /**
  * Manage the data of the vertex buffer of a mesh
- * @tparam T The type of the input data.
- * @remarks DataComponent is responsible to automatically convert the the of type T
+ * @tparam S The type of the input data.
+ * @tparam T The type ouf the output data
+ * @note The converted data is internally held by a void pointer. This means that the converted
+ * data isn't converted to T, but to the component type format specified in the constructor. T just tells
+ * the class to return the void pointer as type T. As an example say component type is COMPONENT_UNSIGNED_BYTE 
+ * and T is uint32_t. Then each uint32_t would hold 4 converted S.
+ * @remarks DataComponent is responsible to automatically convert the the of type S
  * into a defined component type. This makes it easy to reduce the amount of data on
  * the GPU, while being easy to program. See {@link DataComponent.h} for the supported component types.
  */
-template <class T> class DataComponent {
+template <class S, class T> class DataComponent {
 
 public:
 	/**
 	 * Constructs a DataComponent object
-	 * @param componentType The type of the component T should be converted into. See {@link DataComponent.h} for more.
+	 * @param componentType The type of the component S should be converted into. See {@link DataComponent.h} for more.
 	 * @param stride The stride in elements of that specific component.
 	 */
 	DataComponent(int32_t componentType, int32_t stride);
 
 	/**
 	 * Sets the data for the component and converts it into data of component type.
-	 * @param values An array of values of type T.
+	 * @param values An array of values of type S.
 	 * @note The length of the should be exactly the same as the size set by {@link SetSize}.
 	 */
-	void Set(T* values);
+	void Set(S* values);
 
 	/**
-	 * Returns the data in type T which the components holds.
+	 * Returns the data in type S which the components holds.
 	 * @return A pointer to the data.
 	 */
-	T* Get();
+	S* Get();
+
+	/**
+	 * Returns data in type S which the components holds.
+	 * @param index The index to the data
+	 * @return The data S
+	 */
+	S Get(int32_t index);
 
 	/**
 	 * Resets the type of the component.
@@ -51,8 +81,9 @@ public:
 	void SetType(int32_t componentType);
 
 	/**
-	 *
+	 * Returns the type set in the constructor.
 	 * @return
+	 * @note The type is equivalent to an OpenGL type.
 	 */
 	int32_t GetType();
 
@@ -63,14 +94,14 @@ public:
 	void SetSize(int32_t size);
 
 	/**
-	 *
-	 * @return
+	 * Returns the stride set in the constructor
+	 * @return The stride as an integer
 	 */
 	int32_t GetStride();
 
 	/**
-	 *
-	 * @return
+	 * Returns the size of one converted element.
+	 * @return The size as an integer
 	 */
 	int32_t GetElementSize();
 
@@ -78,7 +109,20 @@ public:
 	 *
 	 * @return
 	 */
-	void* GetInternal();
+	T* GetConverted();
+
+	/**
+	 *
+	 * @param index
+	 * @return
+	 */
+	T GetConverted(int32_t index);
+
+	/**
+	 *
+	 * @return
+	 */
+	void* GetConvertedVoid();
 
 	/**
 	 *
@@ -95,18 +139,18 @@ private:
 	int32_t stride;
 	int32_t size;
 
-	T* data;
-	void* internalData;
+	S* data;
+	void* convertedData;
 
 };
 
 
-template <class T> 
-DataComponent<T>::DataComponent(int32_t componentType, int32_t stride) : stride(stride) {
+template <class S, class T> 
+DataComponent<S, T>::DataComponent(int32_t componentType, int32_t stride) : stride(stride) {
 
 	containsData = false;
 
-	internalData = nullptr;
+	convertedData = nullptr;
 	data = nullptr;
 
 	size = 0;
@@ -115,8 +159,8 @@ DataComponent<T>::DataComponent(int32_t componentType, int32_t stride) : stride(
 
 }
 
-template <class T> 
-void DataComponent<T>::Set(T* data) {
+template <class S, class T>
+void DataComponent<S, T>::Set(S* data) {
 
 	containsData = true;
 
@@ -124,13 +168,13 @@ void DataComponent<T>::Set(T* data) {
 
 	if (componentType == COMPONENT_HALF_FLOAT) {
 		int32_t dataSize = stride * size;
-		float16_t* internalData = (float16_t*)this->internalData;
+		float16_t* internalData = (float16_t*)this->convertedData;
 		for (int32_t i = 0; i < dataSize; i++) {
 			internalData[i] = glm::detail::toFloat16((float)data[i]);
 		}
 	}
 	else if (componentType == COMPONENT_PACKED_FLOAT) {
-		uint32_t* internalData = (uint32_t*)this->internalData;
+		uint32_t* internalData = (uint32_t*)this->convertedData;
 		int32_t dataCounter = 0;
 		for (int32_t i = 0; i < size; i++) {
 			vec4 vector = vec4(data[dataCounter], data[dataCounter + 1],
@@ -139,126 +183,124 @@ void DataComponent<T>::Set(T* data) {
 			dataCounter += 4;
 		}
 	}
-	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(T)) {
+	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
 		int32_t dataSize = stride * size;
-		uint16_t* internalData = (uint16_t*)this->internalData;
+		uint16_t* internalData = (uint16_t*)this->convertedData;
 		for (int32_t i = 0; i < dataSize; i++) {
 			internalData[i] = (uint16_t)data[i];
 		}
 	}
-	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(T)) {
+	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
 		int32_t dataSize = stride * size;
-		uint8_t* internalData = (uint8_t*)this->internalData;
+		uint8_t* internalData = (uint8_t*)this->convertedData;
 		for (int32_t i = 0; i < dataSize; i++) {
 			internalData[i] = (uint8_t)data[i];
 		}
 	}
 	else {
-		this->internalData = data;
+		this->convertedData = data;
 	}
 
 	this->data = data;
 
 }
 
-template <class T>
-T* DataComponent<T>::Get() {
+template <class S, class T>
+S* DataComponent<S, T>::Get() {
 
 	return data;
 
 }
 
-template <class T>
-void DataComponent<T>::SetType(int32_t componentType) {
+template <class S, class T>
+S DataComponent<S, T>::Get(int32_t index) {
+
+    return data[index];
+
+}
+
+template <class S, class T>
+void DataComponent<S, T>::SetType(int32_t componentType) {
+
+    if (componentType == COMPONENT_HALF_FLOAT) {
+        delete[](float16_t*)convertedData;
+    }
+    else if (componentType == COMPONENT_PACKED_FLOAT) {
+        delete[](uint32_t*)convertedData;
+    }
+    else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
+        delete[](uint16_t*)convertedData;
+    }
+    else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
+        delete[](uint8_t*)convertedData;
+    }
 
 	// We should check if the type is compatible to T
 	this->componentType = componentType;
 
 	if (componentType == COMPONENT_HALF_FLOAT) {
-		delete[](float16_t*)internalData;
-	}
-	else if (componentType == COMPONENT_PACKED_FLOAT) {
-		delete[](uint32_t*)internalData;
-	}
-	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(T)) {
-		delete[](uint16_t*)internalData;
-	}
-	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(T)) {
-		delete[](uint8_t*)internalData;
-	}
-
-	if (componentType == COMPONENT_HALF_FLOAT) {
 		delete[] data;
-		internalData = new float16_t[stride * size];
+        convertedData = new float16_t[stride * size];
 	}
 	else if (componentType == COMPONENT_PACKED_FLOAT) {
 		delete[] data;
-		internalData = new uint32_t[size];
+        convertedData = new uint32_t[size];
 	}
-	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(T)) {
+	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
 		delete[] data;
-		internalData = new uint16_t[stride * size];
+        convertedData = new uint16_t[stride * size];
 	}
-	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(T)) {
+	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
 		delete[] data;
-		internalData = new uint8_t[stride * size];
+        convertedData = new uint8_t[stride * size];
 	}
 
 }
 
-template <class T>
-int32_t DataComponent<T>::GetType() {
+template <class S, class T>
+int32_t DataComponent<S, T>::GetType() {
 
 	return componentType;
 
 }
 
-template <class T>
-void DataComponent<T>::SetSize(int32_t size) {
+template <class S, class T>
+void DataComponent<S, T>::SetSize(int32_t size) {
 
 	this->size = size;
 
 	if (componentType == COMPONENT_HALF_FLOAT) {
-		delete[] (float16_t*)internalData;
+        delete[] (float16_t*)convertedData;
+		delete[] data;
+        convertedData = new float16_t[stride * size];
 	}
 	else if (componentType == COMPONENT_PACKED_FLOAT) {
-		delete[](uint32_t*)internalData;
-	}
-	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(T)) {
-		delete[](uint16_t*)internalData;
-	}
-	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(T)) {
-		delete[](uint8_t*)internalData;
-	}
-
-	if (componentType == COMPONENT_HALF_FLOAT) {
+        delete[](uint32_t*)convertedData;
 		delete[] data;
-		internalData = new float16_t[stride * size];
+        convertedData = new uint32_t[size];
 	}
-	else if (componentType == COMPONENT_PACKED_FLOAT) {
+	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
+        delete[](uint16_t*)convertedData;
 		delete[] data;
-		internalData = new uint32_t[size];
+        convertedData = new uint16_t[stride * size];
 	}
-	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(T)) {
+	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
+        delete[](uint8_t*)convertedData;
 		delete[] data;
-		internalData = new uint16_t[stride * size];
-	}
-	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(T)) {
-		delete[] data;
-		internalData = new uint8_t[stride * size];
+        convertedData = new uint8_t[stride * size];
 	}
 
 }
 
-template <class T> 
-int32_t DataComponent<T>::GetStride() {
+template <class S, class T>
+int32_t DataComponent<S, T>::GetStride() {
 
 	return componentType != COMPONENT_PACKED_FLOAT ? stride : 4;
 
 }
 
-template <class T> 
-int32_t DataComponent<T>::GetElementSize() {
+template <class S, class T>
+int32_t DataComponent<S, T>::GetElementSize() {
 
 	switch (componentType) {
 	case COMPONENT_UNSIGNED_INT: return sizeof(uint32_t) * stride;
@@ -273,36 +315,50 @@ int32_t DataComponent<T>::GetElementSize() {
 
 }
 
-template <class T> 
-void* DataComponent<T>::GetInternal() {
+template <class S, class T>
+T* DataComponent<S, T>::GetConverted() {
 
-	return internalData;
+	return (T*)convertedData;
 
 }
 
-template <class T>
-bool DataComponent<T>::ContainsData() {
+template <class S, class T>
+T DataComponent<S, T>::GetConverted(int32_t index) {
+
+    return ((T*)convertedData)[index];
+
+}
+
+template <class S, class T>
+void* DataComponent<S, T>::GetConvertedVoid() {
+
+    return convertedData;
+
+}
+
+template <class S, class T>
+bool DataComponent<S, T>::ContainsData() {
 
 	return containsData;
 
 }
 
-template <class T>
-DataComponent<T>::~DataComponent() {
+template <class S, class T>
+DataComponent<S, T>::~DataComponent() {
 
 	delete[] data;
 	
 	if (componentType == COMPONENT_HALF_FLOAT) {
-		delete[] (float16_t*)internalData;
+		delete[] (float16_t*)convertedData;
 	}
 	else if (componentType == COMPONENT_PACKED_FLOAT) {
-		delete[] (uint32_t*)internalData;
+		delete[] (uint32_t*)convertedData;
 	}
-	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(T)) {
-		delete[] (uint16_t*)internalData;
+	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
+		delete[] (uint16_t*)convertedData;
 	}
-	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(T)) {
-		delete[] (uint8_t*)internalData;
+	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
+		delete[] (uint8_t*)convertedData;
 	}
 
 }

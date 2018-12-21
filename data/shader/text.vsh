@@ -6,9 +6,9 @@ out vec2 fScreenPosition;
 
 uniform mat4 pMatrix;
 
-uniform vec2 characterScales[128];
-uniform vec2 characterSizes[128];
-uniform vec2 characterOffsets[128];
+uniform vec2 characterScales[256];
+uniform vec2 characterSizes[256];
+uniform vec2 characterOffsets[256];
 
 uniform vec2 textOffset;
 uniform float textScale;

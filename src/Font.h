@@ -18,6 +18,8 @@ typedef struct Glyph {
 	int32_t width;
 	int32_t height;
 
+	int32_t texArrayIndex;
+
 	vec2 textureScale;
 	vec2 offset;
 

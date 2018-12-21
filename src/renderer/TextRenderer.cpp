@@ -227,7 +227,7 @@ vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, 
 		if ((uint8_t)character > 32) {
 			instances[index].x = glyph->offset.x + xOffset;
 			instances[index].y = glyph->offset.y + font->ascent;
-			instances[index].z = (float)character;
+			instances[index].z = (float)glyph->texArrayIndex;
 			index++;
 		}
 
