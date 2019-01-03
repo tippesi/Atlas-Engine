@@ -13,7 +13,7 @@ Main::Main(int argc, char* argv[]) {
 	window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE);
 
-	Engine::UnlockFramerate();
+	// Engine::UnlockFramerate();
 
 	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 16, 3, 16);
 
@@ -28,17 +28,19 @@ Main::Main(int argc, char* argv[]) {
 	EngineEventHandler::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
 	camera = new Camera(47.0f, 2.0f, .25f, 4000.0f);
-	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
-	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+	camera->location = vec3(30.0f, 25.0f, 0.0f);
+	camera->rotation = vec2(-3.14f / 2.0f, 0.0f);
 
 	mouseHandler = new MouseHandler(camera, 1.5f, 0.015f);
 	keyboardHandler = new KeyboardHandler(camera, 10.0f * 7.0f, 0.3f);
 	controllerHandler = new ControllerHandler(camera, 1.5f, 7.0f, 0.2f, 5000.0f);
 
 	masterRenderer = new MasterRenderer();
+
 	renderTarget = new RenderTarget(1920, 1080);
 
 	Load();
+
 	SceneSetUp();
 
 	uint32_t time = 0;
@@ -92,6 +94,13 @@ void Main::Render(uint32_t deltaTime) {
 	out = out + " ms";
 
 	masterRenderer->textRenderer->Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 5.0f, true);
+
+	/*
+	for (int32_t i = 0; i < 10000; i++) {
+        masterRenderer->textRenderer->Render(window, font, "This is an example text",
+                0, 100, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 5.0f, true);
+	}
+	 */
 
 }
 
@@ -158,9 +167,9 @@ void Main::Load() {
 		"../data/cubemap/back.png");
 
 	cubeMesh = new Mesh("../data/cube.dae");
-	sponzaMesh = new Mesh("../data/sponza/sponza.dae");
 	treeMesh = new Mesh("../data/tree.dae");
 	treeMesh->cullBackFaces = false;
+	sponzaMesh = new Mesh("../data/sponza/sponza.dae");
 
 	terrainDiffuseMap = new Texture2D("../data/terrain/Ground_17_DIF.jpg");
 	terrainDisplacementMap = new Texture2D("../data/terrain/Ground_17_DISP.jpg");
@@ -201,7 +210,7 @@ void Main::SceneSetUp() {
 
 	decal->matrix = glm::scale(mat4(1.0f), vec3(10.0f, 1.0f, 10.0f));
 
-	scene->Add(decal);
+	// scene->Add(decal);
 
 	decal = new Decal(smileyTexture);
 
@@ -210,7 +219,7 @@ void Main::SceneSetUp() {
 		glm::rotate(mat4(1.0f), 3.14f / 2.0f, vec3(0.0f, 1.0f, 0.0f)) *
 		glm::scale(mat4(1.0f), vec3(1.0f, 1000.0f, 1.0f));
 
-	scene->Add(decal);
+	// scene->Add(decal);
 
 	SceneNode* node = new SceneNode();
 	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
@@ -238,7 +247,6 @@ void Main::SceneSetUp() {
 	PointLight* pointLight1 = new PointLight(STATIONARY_LIGHT);
 	pointLight1->location = vec3(24.35f, 6.5f, 7.1f);
 	pointLight1->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
-	pointLight1->ambient = 0.1f;
 	pointLight1->AddShadow(0.0f, 512);
 
 	PointLight* pointLight2 = new PointLight(STATIONARY_LIGHT);

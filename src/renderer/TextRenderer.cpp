@@ -8,7 +8,10 @@ TextRenderer::TextRenderer() {
 
 	vertexArray = GeometryHelper::GenerateRectangleVertexArray();
 
-	VertexBuffer* vertexBuffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_FLOAT, 3);
+	// Hard coded maximum of 1000 character per draw call
+	VertexBuffer* vertexBuffer = new VertexBuffer(GL_FLOAT, 3, sizeof(vec3), 1000, BUFFER_DYNAMIC_STORAGE |
+		BUFFER_TRIPLE_BUFFERING | BUFFER_MAP_WRITE | BUFFER_IMMUTABLE);
+	vertexBuffer->Map();
 	vertexArray->AddInstancedComponent(1, vertexBuffer);
 
 	shader = new Shader();
@@ -88,7 +91,10 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 	this->clipArea->SetValue(clipArea);
 	this->blendArea->SetValue(blendArea);
 
-	vertexArray->GetComponent(1)->SetData(instances.data(), characterCount);
+	//vertexArray->GetComponent(1)->Bind();
+	//glBufferData(GL_ARRAY_BUFFER, instances.size() * sizeof(vec3), NULL, GL_STATIC_DRAW);
+	//glBufferSubData(GL_ARRAY_BUFFER, 0, instances.size() * sizeof(vec3), glm::value_ptr(instances[0]));
+	// vertexArray->GetComponent(1)->SetData(&instances.data()[0], 0, characterCount);
 
 	font->glyphsTexture->Bind(GL_TEXTURE0);
 
@@ -105,6 +111,8 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 	}
 
 	glEnable(GL_CULL_FACE);
+
+	vertexArray->GetComponent(1)->Increment();
 
 }
 
@@ -125,6 +133,7 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
 	vec4 clipArea, vec4 blendArea, float scale, bool alphaBlending, Framebuffer* framebuffer) {
 
+	/*
 	int32_t characterCount;
 
 	shader->Bind();
@@ -186,6 +195,7 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 	}
 
 	glEnable(GL_CULL_FACE);
+	 */
 
 }
 
@@ -228,6 +238,7 @@ vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, 
 			instances[index].x = glyph->offset.x + xOffset;
 			instances[index].y = glyph->offset.y + font->ascent;
 			instances[index].z = (float)glyph->texArrayIndex;
+			vertexArray->GetComponent(1)->SetDataMapped(&instances[index]);
 			index++;
 		}
 

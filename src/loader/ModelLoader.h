@@ -3,6 +3,7 @@
 
 #include "../System.h"
 #include "../mesh/MeshData.h"
+#include "../SceneNode.h"
 
 #include "../libraries/assimp/Importer.hpp"
 #include "../libraries/assimp/scene.h"
@@ -14,6 +15,8 @@ class ModelLoader {
 
 public:
 	static MeshData* LoadMesh(string filename);
+
+	static SceneNode* LoadSceneNode(string filename);
 
 private:
 	static Material* LoadMaterial(aiMaterial* assimpMaterial, string directory);

@@ -2,7 +2,7 @@
 #define GEOMETRYHELPER_H
 
 #include "../../System.h"
-#include "../../VertexArray.h"
+#include "buffer/VertexArray.h"
 
 class GeometryHelper {
 

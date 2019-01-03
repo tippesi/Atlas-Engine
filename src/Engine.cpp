@@ -71,7 +71,7 @@ Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 
 	// Do the setup for all the classes that need static setup
 	Texture::CheckExtensions();
-	VertexBuffer::CheckExtensions();
+	Buffer::CheckExtensions();
 	Texture::GetMaxAnisotropyLevel();
 
 	LockFramerate();

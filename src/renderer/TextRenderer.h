@@ -5,7 +5,7 @@
 #include "IRenderer.h"
 
 #include "../Font.h"
-#include "../VertexArray.h"
+#include "buffer/VertexArray.h"
 
 class TextRenderer : public IRenderer {
 

@@ -24,7 +24,7 @@ Cubemap::Cubemap(string right, string left, string top,
 
 	for (uint32_t i = 0; i < 6; i++) {
 
-		auto image = ImageLoader::LoadImage(filenames[i], false);
+		auto image = ImageLoader::LoadImage(filenames[i], false, 3);
 
 		if (image.data.size() != 0) {
 #ifdef ENGINE_GL

@@ -15,7 +15,7 @@ VertexArray::VertexArray() {
 
 }
 
-void VertexArray::AddIndexComponent(VertexBuffer* buffer) {
+void VertexArray::AddIndexComponent(IndexBuffer* buffer) {
 
 	Bind();
 	buffer->Bind();
@@ -98,7 +98,7 @@ void VertexArray::AddInstancedComponent(uint32_t attribArray, VertexBuffer* buff
 
 }
 
-VertexBuffer* VertexArray::GetIndexComponent() {
+IndexBuffer* VertexArray::GetIndexComponent() {
 
 	return indexComponent;
 

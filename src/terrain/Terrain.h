@@ -6,7 +6,7 @@
 #include "TerrainStorage.h"
 
 #include "../Camera.h"
-#include "../VertexArray.h"
+#include "buffer/VertexArray.h"
 
 #include <vector>
 
@@ -73,7 +73,7 @@ public:
 	 * Sets the distance where the displacement should start
 	 * @param distance The distance
 	 * @note Displacement mapping is only available if tessellation is enabled in the specified distance.
-	 * The maximum distance recommended is t(distance) = 1, where t is the tessellation function.
+	 * The maximum distance recommended is where t(distance) = 1, where t is the tessellation function.
 	 * Otherwise there would be too much flickering present on screen.
 	 */
 	void SetDisplacementDistance(float distance);

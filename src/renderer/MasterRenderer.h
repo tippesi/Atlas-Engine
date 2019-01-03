@@ -2,7 +2,7 @@
 #define MASTERRENDERER_H
 
 #include "../System.h"
-#include "../VertexArray.h"
+#include "buffer/VertexArray.h"
 
 #include "GeometryRenderer.h"
 #include "TerrainRenderer.h"
@@ -21,6 +21,8 @@ class MasterRenderer {
 public:
 	MasterRenderer();
 
+	~MasterRenderer();
+
 	void RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
 	void RenderTexture(Window* window, Texture* texture, float x, float y, float width, float height,
@@ -35,7 +37,7 @@ public:
 	void RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
 		vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	~MasterRenderer();
+	// void Update();
 
 	TextRenderer* textRenderer;
 

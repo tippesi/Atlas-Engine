@@ -279,8 +279,8 @@ void Terrain::GeneratePatchVertexBuffer(int32_t patchSizeFactor) {
 	}
 
 	vertexArray = new VertexArray();
-	VertexBuffer* vertexBuffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_FLOAT, 2);
-	vertexBuffer->SetData(vertices.data(), patchVertexCount);
+	VertexBuffer* vertexBuffer = new VertexBuffer(GL_FLOAT, 2, sizeof(vec2), patchVertexCount);
+	vertexBuffer->SetData(&vertices.data()[0], 0, patchVertexCount);
 	vertexArray->AddComponent(0, vertexBuffer);
 	glPatchParameteri(GL_PATCH_VERTICES, 4);
 
@@ -298,8 +298,8 @@ void Terrain::GeneratePatchOffsets(int32_t patchSizeFactor) {
 		}
 	}
 
-	VertexBuffer* offsetBuffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_FLOAT, 2);
-	offsetBuffer->SetData(patchOffsets.data(), 64);
+	VertexBuffer* offsetBuffer = new VertexBuffer(GL_FLOAT, 2, sizeof(vec2), 64);
+	offsetBuffer->SetData(&patchOffsets.data()[0], 0, 64);
 	vertexArray->AddInstancedComponent(1, offsetBuffer);
 
 }

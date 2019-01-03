@@ -3,7 +3,7 @@
 
 #include "../System.h"
 #include "IRenderer.h"
-#include "../VertexArray.h"
+#include "buffer/VertexArray.h"
 
 class SkyboxRenderer : public IRenderer {
 

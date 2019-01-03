@@ -23,23 +23,23 @@ void Mesh::UpdateData() {
 
 	if (data->indices->ContainsData()) {
 		vertexArray->GetIndexComponent()->SetData(data->indices->GetConvertedVoid(),
-			data->GetIndexCount(), data->indices->GetElementSize());
+			0, data->GetIndexCount());
 	}
 	if (data->vertices->ContainsData()) {
 		vertexArray->GetComponent(0)->SetData(data->vertices->GetConvertedVoid(),
-			data->GetVertexCount(), data->vertices->GetElementSize());
+			0, data->GetVertexCount());
 	}
 	if (data->normals->ContainsData()) {
 		vertexArray->GetComponent(1)->SetData(data->normals->GetConvertedVoid(),
-			data->GetVertexCount(), data->normals->GetElementSize());
+			0, data->GetVertexCount());
 	}
 	if (data->texCoords->ContainsData()) {
 		vertexArray->GetComponent(2)->SetData(data->texCoords->GetConvertedVoid(),
-			data->GetVertexCount(), data->texCoords->GetElementSize());
+			0, data->GetVertexCount());
 	}
 	if (data->tangents->ContainsData()) {
 		vertexArray->GetComponent(3)->SetData(data->tangents->GetConvertedVoid(),
-			data->GetVertexCount(), data->tangents->GetElementSize());
+			0, data->GetVertexCount());
 	}
 
 }
@@ -47,31 +47,32 @@ void Mesh::UpdateData() {
 void Mesh::InitializeVertexArray() {
 
 	vertexArray = new VertexArray();
+	vertexArray->Unbind();
 
 	if (data->indices->ContainsData()) {
-		VertexBuffer* indices = new VertexBuffer(GL_ELEMENT_ARRAY_BUFFER, 
-			data->indices->GetType(), data->indices->GetStride());
+		IndexBuffer* indices = new IndexBuffer(data->indices->GetType(),
+			data->indices->GetElementSize(), data->GetIndexCount());
 		vertexArray->AddIndexComponent(indices);
 	}
 	if (data->vertices->ContainsData()) {
-		VertexBuffer* vertices = new VertexBuffer(GL_ARRAY_BUFFER,
-			data->vertices->GetType(), data->vertices->GetStride());
+		VertexBuffer* vertices = new VertexBuffer(data->vertices->GetType(),
+			data->vertices->GetStride(), data->vertices->GetElementSize(), data->GetVertexCount());
 		vertexArray->AddComponent(0, vertices);
 	}
 	if (data->normals->ContainsData()) {
-		VertexBuffer* normals = new VertexBuffer(GL_ARRAY_BUFFER,
-			data->normals->GetType(), data->normals->GetStride());
+		VertexBuffer* normals = new VertexBuffer(data->normals->GetType(),
+			data->normals->GetStride(), data->normals->GetElementSize(), data->GetVertexCount());
 		vertexArray->AddComponent(1, normals);
 	}
 	if (data->texCoords->ContainsData()) {
-		VertexBuffer* texCoords = new VertexBuffer(GL_ARRAY_BUFFER,
-			data->texCoords->GetType(), data->texCoords->GetStride());
+		VertexBuffer* texCoords = new VertexBuffer(data->texCoords->GetType(),
+			data->texCoords->GetStride(), data->texCoords->GetElementSize(), data->GetVertexCount());
 		vertexArray->AddComponent(2, texCoords);
 	}
 	if (data->tangents->ContainsData()) {
-		VertexBuffer* tangents = new VertexBuffer(GL_ARRAY_BUFFER,
-			data->tangents->GetType(), data->tangents->GetStride());
-		vertexArray->AddComponent(3, tangents);;
+		VertexBuffer* tangents = new VertexBuffer(data->tangents->GetType(),
+			data->tangents->GetStride(), data->tangents->GetElementSize(), data->GetVertexCount());
+		vertexArray->AddComponent(3, tangents);
 	}
 	
 	UpdateData();

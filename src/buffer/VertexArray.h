@@ -1,7 +1,8 @@
 #ifndef VERTEXARRAY_H
 #define VERTEXARRAY_H
 
-#include "System.h"
+#include "../System.h"
+#include "IndexBuffer.h"
 #include "VertexBuffer.h"
 
 #include <unordered_map>
@@ -19,7 +20,7 @@ public:
 	 *
 	 * @param buffer
 	 */
-	void AddIndexComponent(VertexBuffer* buffer);
+	void AddIndexComponent(IndexBuffer* buffer);
 
 	/**
 	 *
@@ -41,7 +42,7 @@ public:
 	 *
 	 * @return
 	 */
-	VertexBuffer* GetIndexComponent();
+	IndexBuffer* GetIndexComponent();
 
 	/**
 	 *
@@ -69,7 +70,7 @@ public:
 private:
 	uint32_t ID;
 
-	VertexBuffer* indexComponent;
+	IndexBuffer* indexComponent;
 
 	unordered_map<uint32_t, VertexBuffer*> vertexComponents;
 

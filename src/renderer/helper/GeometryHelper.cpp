@@ -3,8 +3,8 @@
 VertexArray* GeometryHelper::GenerateRectangleVertexArray() {
 
 	VertexArray* vertexArray = new VertexArray();
-	VertexBuffer* buffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_BYTE, 2);
-	buffer->SetData(&rectangleVertices[0], 8);
+	VertexBuffer* buffer = new VertexBuffer(GL_BYTE, 2, sizeof(int8_t) * 2, 8);
+	buffer->SetData(&rectangleVertices[0], 0, 8);
 	vertexArray->AddComponent(0, buffer);
 
 	return vertexArray;
@@ -14,8 +14,8 @@ VertexArray* GeometryHelper::GenerateRectangleVertexArray() {
 VertexArray* GeometryHelper::GenerateCubeVertexArray() {
 
 	VertexArray* vertexArray = new VertexArray();
-	VertexBuffer* vertexBuffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_FLOAT, 3);
-	vertexBuffer->SetData(&cubeVertices[0], 108);
+	VertexBuffer* vertexBuffer = new VertexBuffer(GL_FLOAT, 3, sizeof(vec3), 108);
+	vertexBuffer->SetData(&cubeVertices[0], 0, 108);
 	vertexArray->AddComponent(0, vertexBuffer);
 
 	return vertexArray;
@@ -34,10 +34,10 @@ VertexArray* GeometryHelper::GenerateSphereVertexArray(uint32_t rings, uint32_t 
 	GenerateSphere(rings, segments, indices, vertices, &indexCount, &vertexCount);
 
 	VertexArray* vertexArray = new VertexArray();
-	VertexBuffer* indicesBuffer = new VertexBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_UNSIGNED_INT, 1);
-	VertexBuffer* verticesBuffer = new VertexBuffer(GL_ARRAY_BUFFER, GL_FLOAT, 3);
-	indicesBuffer->SetData(indices, indexCount);
-	verticesBuffer->SetData(vertices, vertexCount);
+	IndexBuffer* indicesBuffer = new IndexBuffer(GL_UNSIGNED_INT, sizeof(uint32_t), indexCount);
+	VertexBuffer* verticesBuffer = new VertexBuffer(GL_FLOAT, 3, sizeof(vec3), vertexCount);
+	indicesBuffer->SetData(&indices[0], 0, indexCount);
+	verticesBuffer->SetData(&vertices[0], 0, vertexCount);
 	vertexArray->AddIndexComponent(indicesBuffer);
 	vertexArray->AddComponent(0, verticesBuffer);
 

@@ -40,6 +40,26 @@ MasterRenderer::MasterRenderer() {
 
 }
 
+MasterRenderer::~MasterRenderer() {
+
+	vertexArray->DeleteContent();
+	delete vertexArray;
+
+	delete rectangleShader;
+	delete texturedRectangleShader;
+
+	delete geometryRenderer;
+	delete terrainRenderer;
+	delete shadowRenderer;
+	delete directionalVolumetricRenderer;
+	delete directionalLightRenderer;
+	delete pointLightRenderer;
+	delete skyboxRenderer;
+	delete atmosphereRenderer;
+	delete postProcessRenderer;
+
+}
+
 void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
 	glEnable(GL_DEPTH_TEST);
@@ -249,25 +269,5 @@ void MasterRenderer::GetUniforms() {
 	texturedRectangleTexture = texturedRectangleShader->GetUniform("rectangleTexture");
 	texturedRectangleBlendArea = texturedRectangleShader->GetUniform("rectangleBlendArea");
 	texturedRectangleClipArea = texturedRectangleShader->GetUniform("rectangleClipArea");
-
-}
-
-MasterRenderer::~MasterRenderer() {
-
-	vertexArray->DeleteContent();
-	delete vertexArray;
-
-	delete rectangleShader;
-	delete texturedRectangleShader;
-
-	delete geometryRenderer;
-	delete terrainRenderer;
-	delete shadowRenderer;
-	delete directionalVolumetricRenderer;
-	delete directionalLightRenderer;
-	delete pointLightRenderer;
-	delete skyboxRenderer;
-	delete atmosphereRenderer;
-	delete postProcessRenderer;
 
 }

@@ -29,9 +29,7 @@ If you want more information have a look into the [Documentation](https://tippex
 - Use static/stationary objects and lights as often as possible
 - Use textures with the same size and format for each material
 - Set mesh data or any kind of data prior to rendering. More importantly: Don't create data while rendering.
-- If you are programming additional renderers or content always use the mapping feature of the vertex buffers.
-  Don't use SetData() often, use SetSubData instead.
-  Also try to avoid using OpenGL, use existing engine features instead
+- Try to avoid using OpenGL, use existing engine features instead
 ## Code Example
 This code example can also be found in the main file.
 ```c
