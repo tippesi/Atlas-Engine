@@ -9,12 +9,10 @@ PointLightRenderer::PointLightRenderer() {
 
 	vertexArray = GeometryHelper::GenerateSphereVertexArray(16, 16);
 
-	shader = new Shader();
+	shader.AddStage(VERTEX_STAGE, vertexPath);
+	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
 
-	shader->AddStage(VERTEX_SHADER, vertexPath);
-	shader->AddStage(FRAGMENT_SHADER, fragmentPath);
-
-	shader->Compile();
+	shader.Compile();
 
 	GetUniforms();
 
@@ -22,7 +20,7 @@ PointLightRenderer::PointLightRenderer() {
 
 void PointLightRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
-	shader->Bind();
+	shader.Bind();
 
 	vertexArray->Bind();
 
@@ -70,20 +68,20 @@ void PointLightRenderer::Render(Window* window, RenderTarget* target, Camera* ca
 
 void PointLightRenderer::GetUniforms() {
 
-	diffuseTexture = shader->GetUniform("diffuseTexture");
-	normalTexture = shader->GetUniform("normalTexture");
-	materialTexture = shader->GetUniform("materialTexture");
-	depthTexture = shader->GetUniform("depthTexture");
-	shadowCubemap = shader->GetUniform("shadowCubemap");
-	viewMatrix = shader->GetUniform("vMatrix");
-	projectionMatrix = shader->GetUniform("pMatrix");
-	inverseProjectionMatrix = shader->GetUniform("ipMatrix");
-	lightViewMatrix = shader->GetUniform("lvMatrix");
-	lightProjectionMatrix = shader->GetUniform("lpMatrix");
-	viewSpaceLightLocation = shader->GetUniform("viewSpaceLightLocation");
-	lightLocation = shader->GetUniform("light.location");
-	lightColor = shader->GetUniform("light.color");
-	lightAmbient = shader->GetUniform("light.ambient");
-	lightRadius = shader->GetUniform("light.radius");
+	diffuseTexture = shader.GetUniform("diffuseTexture");
+	normalTexture = shader.GetUniform("normalTexture");
+	materialTexture = shader.GetUniform("materialTexture");
+	depthTexture = shader.GetUniform("depthTexture");
+	shadowCubemap = shader.GetUniform("shadowCubemap");
+	viewMatrix = shader.GetUniform("vMatrix");
+	projectionMatrix = shader.GetUniform("pMatrix");
+	inverseProjectionMatrix = shader.GetUniform("ipMatrix");
+	lightViewMatrix = shader.GetUniform("lvMatrix");
+	lightProjectionMatrix = shader.GetUniform("lpMatrix");
+	viewSpaceLightLocation = shader.GetUniform("viewSpaceLightLocation");
+	lightLocation = shader.GetUniform("light.location");
+	lightColor = shader.GetUniform("light.color");
+	lightAmbient = shader.GetUniform("light.ambient");
+	lightRadius = shader.GetUniform("light.radius");
 
 }

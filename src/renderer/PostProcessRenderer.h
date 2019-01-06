@@ -18,7 +18,7 @@ public:
 private:
 	void GetUniforms();
 
-	Shader* shader;
+	Shader shader;
 
 	Uniform* hdrTexture;
 	Uniform* bloomFirstTexture;

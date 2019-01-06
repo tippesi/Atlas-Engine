@@ -20,9 +20,9 @@ public:
 	static string fragmentPath;
 
 private:
-    Shader* nearShader;
-    Shader* middleShader;
-    Shader* farShader;
+    Shader nearShader;
+    Shader middleShader;
+    Shader farShader;
 
 	Uniform* heightField;
 	Uniform* normalMap;

@@ -25,7 +25,7 @@ private:
 
     Framebuffer* framebuffer;
 
-    Shader* shader;
+    Shader shader;
 
     Uniform* diffuseTexture;
     Uniform* depthTexture;

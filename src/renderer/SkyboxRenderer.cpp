@@ -6,12 +6,10 @@ string SkyboxRenderer::fragmentPath = "skybox.fsh";
 
 SkyboxRenderer::SkyboxRenderer() {
 
-	shader = new Shader();
+	shader.AddStage(VERTEX_STAGE, vertexPath);
+	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
 
-	shader->AddStage(VERTEX_SHADER, vertexPath);
-	shader->AddStage(FRAGMENT_SHADER, fragmentPath);
-
-	shader->Compile();
+	shader.Compile();
 
 	GetUniforms();
 
@@ -21,7 +19,7 @@ SkyboxRenderer::SkyboxRenderer() {
 
 void SkyboxRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
-	shader->Bind();
+	shader.Bind();
 
 	skyCubemap->SetValue(0);
 
@@ -39,7 +37,7 @@ void SkyboxRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 void SkyboxRenderer::GetUniforms() {
 
-	skyCubemap = shader->GetUniform("skyCubemap");
-	modelViewProjectionMatrix = shader->GetUniform("mvpMatrix");
+	skyCubemap = shader.GetUniform("skyCubemap");
+	modelViewProjectionMatrix = shader.GetUniform("mvpMatrix");
 
 }

@@ -23,10 +23,10 @@ private:
 
     Framebuffer* framebuffer;
 
-	Kernel* blurKernel;
+	Kernel blurKernel;
 
-    Shader* volumetricShader;
-    Shader* bilateralBlurShader;
+    Shader volumetricShader;
+    Shader bilateralBlurShader;
 
     // Volumetric shader uniforms
     Uniform* depthTexture;

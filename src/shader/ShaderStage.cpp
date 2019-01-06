@@ -104,12 +104,12 @@ bool ShaderStage::Compile() {
 		\nprecision highp samplerCubeShadow;\nprecision highp int;\n#define ENGINE_GLES\n");
 #endif
 
-	for (list<string>::iterator iterator = macros.begin(); iterator != macros.end(); iterator++) {
-		composedCode.append("#define " + *iterator + "\n");
+	for (auto& macro : macros) {
+		composedCode.append("#define " + macro + "\n");
 	}
 
-	for (list<ShaderConstant*>::iterator iterator = constants.begin(); iterator != constants.end(); iterator++) {
-		composedCode.append((*iterator)->GetValuedString() + "\n");
+	for (auto& constant : constants) {
+		composedCode.append(constant->GetValuedString() + "\n");
 	}
 
 	composedCode.append(code);
@@ -129,11 +129,20 @@ bool ShaderStage::Compile() {
 		auto shaderLog = vector<char>(shaderLogLength);
 		glGetShaderInfoLog(ID, shaderLogLength, &length, shaderLog.data());
 
-		if (type == GL_VERTEX_SHADER) {
-			EngineLog("\n\nCompiling Vertexshader failed:");
+		if (type == VERTEX_STAGE) {
+			EngineLog("\n\nCompiling vertex stage failed:");
 		}
-		else {
-			EngineLog("\n\nCompiling Fragmentshader failed:");
+		else if (type == FRAGMENT_STAGE) {
+			EngineLog("\n\nCompiling fragment stage failed:");
+		}
+		else if (type == GEOMETRY_STAGE) {
+			EngineLog("\n\nCompiling geometry stage failed:");
+		}
+		else if (type == TESSELLATION_CONTROL_STAGE) {
+			EngineLog("\n\nCompiling tessellation control stage failed:");
+		}
+		else if (type == TESSELLATION_EVALUATION_STAGE) {
+			EngineLog("\n\nCompiling tessellation evaluation stage failed:");
 		}
 
 		EngineLog("Compilation failed: %s\nError: %s", filename.c_str(), shaderLog.data());

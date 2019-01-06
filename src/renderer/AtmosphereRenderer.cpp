@@ -8,12 +8,10 @@ AtmosphereRenderer::AtmosphereRenderer() {
 
 	vertexArray = GeometryHelper::GenerateSphereVertexArray(200, 200);
 
-	shader = new Shader();
+	shader.AddStage(VERTEX_STAGE, vertexPath);
+	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
 
-	shader->AddStage(VERTEX_SHADER, vertexPath);
-	shader->AddStage(FRAGMENT_SHADER, fragmentPath);
-
-	shader->Compile();
+	shader.Compile();
 
 	GetUniforms();
 
@@ -21,7 +19,7 @@ AtmosphereRenderer::AtmosphereRenderer() {
 
 void AtmosphereRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
-	shader->Bind();
+	shader.Bind();
 
 	vertexArray->Bind();
 
@@ -37,9 +35,9 @@ void AtmosphereRenderer::Render(Window* window, RenderTarget* target, Camera* ca
 
 void AtmosphereRenderer::GetUniforms() {
 
-	viewMatrix = shader->GetUniform("vMatrix");
-	projectionMatrix = shader->GetUniform("pMatrix");
-	cameraLocation = shader->GetUniform("cameraLocation");
-	sunDirection = shader->GetUniform("sunDirection");
+	viewMatrix = shader.GetUniform("vMatrix");
+	projectionMatrix = shader.GetUniform("pMatrix");
+	cameraLocation = shader.GetUniform("cameraLocation");
+	sunDirection = shader.GetUniform("sunDirection");
 
 }

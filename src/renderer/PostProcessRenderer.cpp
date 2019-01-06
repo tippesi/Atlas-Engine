@@ -6,12 +6,10 @@ string PostProcessRenderer::fragmentPath = "postprocessing.fsh";
 
 PostProcessRenderer::PostProcessRenderer() {
 
-	shader = new Shader();
+	shader.AddStage(VERTEX_STAGE, vertexPath);
+	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
 
-	shader->AddStage(VERTEX_SHADER, vertexPath);
-	shader->AddStage(FRAGMENT_SHADER, fragmentPath);
-
-	shader->Compile();
+	shader.Compile();
 
 	GetUniforms();
 
@@ -23,44 +21,32 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 
 	PostProcessing* postProcessing = scene->postProcessing;
 
-	bool shaderChanged = false;
-
-	bool hasFilmicTonemappingMacro = shader->HasMacro("FILMIC_TONEMAPPING");
-	bool hasVignetteMacro = shader->HasMacro("VIGNETTE");
-	bool hasChromaticAberrationMacro = shader->HasMacro("CHROMATIC_ABERRATION");
+	bool hasFilmicTonemappingMacro = shader.HasMacro("FILMIC_TONEMAPPING");
+	bool hasVignetteMacro = shader.HasMacro("VIGNETTE");
+	bool hasChromaticAberrationMacro = shader.HasMacro("CHROMATIC_ABERRATION");
 
 	if (postProcessing->filmicTonemapping && !hasFilmicTonemappingMacro) {
-		shader->AddMacro("FILMIC_TONEMAPPING");
-		shaderChanged = true;
+		shader.AddMacro("FILMIC_TONEMAPPING");
 	}
 	else if (!postProcessing->filmicTonemapping && hasFilmicTonemappingMacro) {
-		shader->RemoveMacro("FILMIC_TONEMAPPING");
-		shaderChanged = true;
+		shader.RemoveMacro("FILMIC_TONEMAPPING");
 	}
 
 	if (postProcessing->vignette != nullptr && !hasVignetteMacro) {
-		shader->AddMacro("VIGNETTE");
-		shaderChanged = true;
+		shader.AddMacro("VIGNETTE");
 	}
 	else if (postProcessing->vignette == nullptr  && hasVignetteMacro) {
-		shader->RemoveMacro("VIGNETTE");
-		shaderChanged = true;
+		shader.RemoveMacro("VIGNETTE");
 	}
 
 	if (postProcessing->chromaticAberration != nullptr && !hasChromaticAberrationMacro) {
-		shader->AddMacro("CHROMATIC_ABERRATION");
-		shaderChanged = true;
+		shader.AddMacro("CHROMATIC_ABERRATION");
 	}
 	else if (postProcessing->chromaticAberration == nullptr && hasChromaticAberrationMacro) {
-		shader->RemoveMacro("CHROMATIC_ABERRATION");
-		shaderChanged = true;
+		shader.RemoveMacro("CHROMATIC_ABERRATION");
 	}
 
-	if (shaderChanged) {
-		shader->Compile();
-	}
-
-	shader->Bind();
+	shader.Bind();
 
 	hdrTexture->SetValue(0);
 	bloomFirstTexture->SetValue(1);
@@ -96,20 +82,20 @@ void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* c
 
 void PostProcessRenderer::GetUniforms() {
 
-	hdrTexture = shader->GetUniform("hdrTexture");
-	bloomFirstTexture = shader->GetUniform("bloomFirstTexture");
-	bloomSecondTexture = shader->GetUniform("bloomSecondTexture");
-	bloomThirdTexture = shader->GetUniform("bloomThirdTexture");
-	hdrTextureResolution = shader->GetUniform("hdrTextureResolution");
-	exposure = shader->GetUniform("exposure");
-	saturation = shader->GetUniform("saturation");
-	bloomPassses = shader->GetUniform("bloomPassses");
-	aberrationStrength = shader->GetUniform("aberrationStrength");
-	aberrationReversed = shader->GetUniform("aberrationReversed");
-	vignetteOffset = shader->GetUniform("vignetteOffset");
-	vignettePower = shader->GetUniform("vignettePower");
-	vignetteStrength = shader->GetUniform("vignetteStrength");
-	vignetteColor = shader->GetUniform("vignetteColor");
-	timeInMilliseconds = shader->GetUniform("timeInMilliseconds");
+	hdrTexture = shader.GetUniform("hdrTexture");
+	bloomFirstTexture = shader.GetUniform("bloomFirstTexture");
+	bloomSecondTexture = shader.GetUniform("bloomSecondTexture");
+	bloomThirdTexture = shader.GetUniform("bloomThirdTexture");
+	hdrTextureResolution = shader.GetUniform("hdrTextureResolution");
+	exposure = shader.GetUniform("exposure");
+	saturation = shader.GetUniform("saturation");
+	bloomPassses = shader.GetUniform("bloomPassses");
+	aberrationStrength = shader.GetUniform("aberrationStrength");
+	aberrationReversed = shader.GetUniform("aberrationReversed");
+	vignetteOffset = shader.GetUniform("vignetteOffset");
+	vignettePower = shader.GetUniform("vignettePower");
+	vignetteStrength = shader.GetUniform("vignetteStrength");
+	vignetteColor = shader.GetUniform("vignetteColor");
+	timeInMilliseconds = shader.GetUniform("timeInMilliseconds");
 
 }

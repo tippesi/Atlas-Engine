@@ -128,8 +128,8 @@ void ShadowRenderer::InitShaderBatch() {
 	lock_guard<mutex> guard(shaderBatchMutex);
 
 	shaderBatch = new ShaderBatch();
-	shaderBatch->AddStage(VERTEX_SHADER, vertexPath);
-	shaderBatch->AddStage(FRAGMENT_SHADER, fragmentPath);
+	shaderBatch->AddStage(VERTEX_STAGE, vertexPath);
+	shaderBatch->AddStage(FRAGMENT_STAGE, fragmentPath);
 
 }
 

@@ -14,12 +14,10 @@ TextRenderer::TextRenderer() {
 	vertexBuffer->Map();
 	vertexArray->AddInstancedComponent(1, vertexBuffer);
 
-	shader = new Shader();
+	shader.AddStage(VERTEX_STAGE, vertexPath);
+	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
 
-	shader->AddStage(VERTEX_SHADER, vertexPath);
-	shader->AddStage(FRAGMENT_SHADER, fragmentPath);
-
-	shader->Compile();
+	shader.Compile();
 
 	GetUniforms();
 
@@ -55,7 +53,7 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 	if (x > width || y > height)
 		return;
 
-	shader->Bind();
+	shader.Bind();
 
 	outline->SetValue(false);
 
@@ -136,7 +134,7 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 	/*
 	int32_t characterCount;
 
-	shader->Bind();
+	shader.Bind();
 
 	outline->SetValue(true);
 
@@ -201,20 +199,20 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 
 void TextRenderer::GetUniforms() {
 
-	glyphsTexture = shader->GetUniform("glyphsTexture");
-	projectionMatrix = shader->GetUniform("pMatrix");
-	characterScales = shader->GetUniform("characterScales");
-	characterSizes = shader->GetUniform("characterSizes");
-	textOffset = shader->GetUniform("textOffset");
-	textScale = shader->GetUniform("textScale");
-	textColor = shader->GetUniform("textColor");
-	outline = shader->GetUniform("outline");
-	outlineColor = shader->GetUniform("outlineColor");
-	outlineScale = shader->GetUniform("outlineScale");
-	pixelDistanceScale = shader->GetUniform("pixelDistanceScale");
-	edgeValue = shader->GetUniform("edgeValue");
-	clipArea = shader->GetUniform("clipArea");
-	blendArea = shader->GetUniform("blendArea");
+	glyphsTexture = shader.GetUniform("glyphsTexture");
+	projectionMatrix = shader.GetUniform("pMatrix");
+	characterScales = shader.GetUniform("characterScales");
+	characterSizes = shader.GetUniform("characterSizes");
+	textOffset = shader.GetUniform("textOffset");
+	textScale = shader.GetUniform("textScale");
+	textColor = shader.GetUniform("textColor");
+	outline = shader.GetUniform("outline");
+	outlineColor = shader.GetUniform("outlineColor");
+	outlineScale = shader.GetUniform("outlineScale");
+	pixelDistanceScale = shader.GetUniform("pixelDistanceScale");
+	edgeValue = shader.GetUniform("edgeValue");
+	clipArea = shader.GetUniform("clipArea");
+	blendArea = shader.GetUniform("blendArea");
 
 }
 

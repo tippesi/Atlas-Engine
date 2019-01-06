@@ -36,7 +36,7 @@ private:
 
 	VertexArray* vertexArray;
 
-	Shader* shader;
+	Shader shader;
 
 	Uniform* glyphsTexture;
 	Uniform* projectionMatrix;

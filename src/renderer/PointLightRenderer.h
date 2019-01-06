@@ -19,7 +19,7 @@ private:
 
 	VertexArray* vertexArray;
 
-	Shader* shader;
+	Shader shader;
 
 	Uniform* diffuseTexture;
 	Uniform* normalTexture;

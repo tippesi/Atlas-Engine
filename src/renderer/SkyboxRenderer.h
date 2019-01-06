@@ -20,7 +20,7 @@ private:
 
 	VertexArray* vertexArray;
 
-	Shader* shader;
+	Shader shader;
 
 	Uniform* skyCubemap;
 	Uniform* modelViewProjectionMatrix;

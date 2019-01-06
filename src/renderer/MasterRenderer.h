@@ -49,8 +49,8 @@ private:
 
 	VertexArray * vertexArray;
 
-	Shader* rectangleShader;
-	Shader* texturedRectangleShader;
+	Shader rectangleShader;
+	Shader texturedRectangleShader;
 
 	Uniform* rectangleProjectionMatrix;
 	Uniform* rectangleOffset;

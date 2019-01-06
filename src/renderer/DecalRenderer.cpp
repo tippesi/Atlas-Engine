@@ -8,14 +8,12 @@ DecalRenderer::DecalRenderer() {
 
     vertexArray = GeometryHelper::GenerateCubeVertexArray();
 
-    shader = new Shader();
+    shader.AddStage(VERTEX_STAGE, vertexPath);
+    shader.AddStage(FRAGMENT_STAGE, fragmentPath);
 
-    shader->AddStage(VERTEX_SHADER, vertexPath);
-    shader->AddStage(FRAGMENT_SHADER, fragmentPath);
+	shader.AddMacro("ANIMATION");
 
-	shader->AddMacro("ANIMATION");
-
-    shader->Compile();
+    shader.Compile();
 
     GetUniforms();
 
@@ -27,7 +25,7 @@ void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera,
 
     vertexArray->Bind();
 
-    shader->Bind();
+    shader.Bind();
 
     target->geometryFramebuffer->SetDrawBuffers(drawBuffers, 1);
 
@@ -62,17 +60,17 @@ void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera,
 
 void DecalRenderer::GetUniforms() {
 
-	depthTexture = shader->GetUniform("depthTexture");
-    decalTexture = shader->GetUniform("decalTexture");
-    modelMatrix = shader->GetUniform("mMatrix");
-    viewMatrix = shader->GetUniform("vMatrix");
-    projectionMatrix = shader->GetUniform("pMatrix");
-	inverseViewMatrix = shader->GetUniform("ivMatrix");
-	inverseProjectionMatrix = shader->GetUniform("ipMatrix");
-	alphaFactor = shader->GetUniform("alphaFactor");
-	timeInMilliseconds = shader->GetUniform("timeInMilliseconds");
-	animationLength = shader->GetUniform("animationLength");
-	rowCount = shader->GetUniform("rowCount");
-	columnCount = shader->GetUniform("columnCount");
+	depthTexture = shader.GetUniform("depthTexture");
+    decalTexture = shader.GetUniform("decalTexture");
+    modelMatrix = shader.GetUniform("mMatrix");
+    viewMatrix = shader.GetUniform("vMatrix");
+    projectionMatrix = shader.GetUniform("pMatrix");
+	inverseViewMatrix = shader.GetUniform("ivMatrix");
+	inverseProjectionMatrix = shader.GetUniform("ipMatrix");
+	alphaFactor = shader.GetUniform("alphaFactor");
+	timeInMilliseconds = shader.GetUniform("timeInMilliseconds");
+	animationLength = shader.GetUniform("animationLength");
+	rowCount = shader.GetUniform("rowCount");
+	columnCount = shader.GetUniform("columnCount");
 
 }

@@ -8,21 +8,17 @@ MasterRenderer::MasterRenderer() {
 
 	vertexArray = GeometryHelper::GenerateRectangleVertexArray();
 
-	rectangleShader = new Shader();
+	rectangleShader.AddStage(VERTEX_STAGE, rectangleVertexPath);
+	rectangleShader.AddStage(FRAGMENT_STAGE, rectangleFragmentPath);
 
-	rectangleShader->AddStage(VERTEX_SHADER, rectangleVertexPath);
-	rectangleShader->AddStage(FRAGMENT_SHADER, rectangleFragmentPath);
+	rectangleShader.Compile();
 
-	rectangleShader->Compile();
+	texturedRectangleShader.AddStage(VERTEX_STAGE, rectangleVertexPath);
+	texturedRectangleShader.AddStage(FRAGMENT_STAGE, rectangleFragmentPath);
 
-	texturedRectangleShader = new Shader();
+	texturedRectangleShader.AddMacro("TEXTURE");
 
-	texturedRectangleShader->AddStage(VERTEX_SHADER, rectangleVertexPath);
-	texturedRectangleShader->AddStage(FRAGMENT_SHADER, rectangleFragmentPath);
-
-	texturedRectangleShader->AddMacro("TEXTURE");
-
-	texturedRectangleShader->Compile();
+	texturedRectangleShader.Compile();
 
 	GetUniforms();
 
@@ -44,9 +40,6 @@ MasterRenderer::~MasterRenderer() {
 
 	vertexArray->DeleteContent();
 	delete vertexArray;
-
-	delete rectangleShader;
-	delete texturedRectangleShader;
 
 	delete geometryRenderer;
 	delete terrainRenderer;
@@ -143,7 +136,7 @@ void MasterRenderer::RenderTexture(Window* window, Texture* texture, float x, fl
 
 	vertexArray->Bind();
 
-	texturedRectangleShader->Bind();
+	texturedRectangleShader.Bind();
 
 	glDisable(GL_CULL_FACE);
 
@@ -217,7 +210,7 @@ void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float 
 
 	vertexArray->Bind();
 
-	rectangleShader->Bind();
+	rectangleShader.Bind();
 
 	glDisable(GL_CULL_FACE);
 
@@ -256,18 +249,18 @@ void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float 
 
 void MasterRenderer::GetUniforms() {
 
-	rectangleProjectionMatrix = rectangleShader->GetUniform("pMatrix");
-	rectangleOffset = rectangleShader->GetUniform("rectangleOffset");
-	rectangleScale = rectangleShader->GetUniform("rectangleScale");
-	rectangleColor = rectangleShader->GetUniform("rectangleColor");
-	rectangleBlendArea = rectangleShader->GetUniform("rectangleBlendArea");
-	rectangleClipArea = rectangleShader->GetUniform("rectangleClipArea");
+	rectangleProjectionMatrix = rectangleShader.GetUniform("pMatrix");
+	rectangleOffset = rectangleShader.GetUniform("rectangleOffset");
+	rectangleScale = rectangleShader.GetUniform("rectangleScale");
+	rectangleColor = rectangleShader.GetUniform("rectangleColor");
+	rectangleBlendArea = rectangleShader.GetUniform("rectangleBlendArea");
+	rectangleClipArea = rectangleShader.GetUniform("rectangleClipArea");
 
-	texturedRectangleProjectionMatrix = texturedRectangleShader->GetUniform("pMatrix");
-	texturedRectangleOffset = texturedRectangleShader->GetUniform("rectangleOffset");
-	texturedRectangleScale = texturedRectangleShader->GetUniform("rectangleScale");
-	texturedRectangleTexture = texturedRectangleShader->GetUniform("rectangleTexture");
-	texturedRectangleBlendArea = texturedRectangleShader->GetUniform("rectangleBlendArea");
-	texturedRectangleClipArea = texturedRectangleShader->GetUniform("rectangleClipArea");
+	texturedRectangleProjectionMatrix = texturedRectangleShader.GetUniform("pMatrix");
+	texturedRectangleOffset = texturedRectangleShader.GetUniform("rectangleOffset");
+	texturedRectangleScale = texturedRectangleShader.GetUniform("rectangleScale");
+	texturedRectangleTexture = texturedRectangleShader.GetUniform("rectangleTexture");
+	texturedRectangleBlendArea = texturedRectangleShader.GetUniform("rectangleBlendArea");
+	texturedRectangleClipArea = texturedRectangleShader.GetUniform("rectangleClipArea");
 
 }

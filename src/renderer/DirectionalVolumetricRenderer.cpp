@@ -10,25 +10,22 @@ DirectionalVolumetricRenderer::DirectionalVolumetricRenderer() {
 
     framebuffer = new Framebuffer(0, 0);
 
-	blurKernel = new Kernel();
-	blurKernel->CalculateBoxFilter(21);
+	blurKernel.CalculateBoxFilter(21);
 
-    volumetricShader = new Shader();
-    volumetricShader->AddStage(VERTEX_SHADER, volumetricVertexPath);
-    volumetricShader->AddStage(FRAGMENT_SHADER, volumetricFragmentPath);
+    volumetricShader.AddStage(VERTEX_STAGE, volumetricVertexPath);
+    volumetricShader.AddStage(FRAGMENT_STAGE, volumetricFragmentPath);
 
-    volumetricShader->Compile();
+    volumetricShader.Compile();
 
     GetVolumetricUniforms();
 
-    bilateralBlurShader = new Shader();
-    bilateralBlurShader->AddStage(VERTEX_SHADER, bilateralBlurVertexPath);
-    bilateralBlurShader->AddStage(FRAGMENT_SHADER, bilateralBlurFragmentPath);
+    bilateralBlurShader.AddStage(VERTEX_STAGE, bilateralBlurVertexPath);
+    bilateralBlurShader.AddStage(FRAGMENT_STAGE, bilateralBlurFragmentPath);
 
-    bilateralBlurShader->AddMacro("BILATERAL");
-    bilateralBlurShader->AddMacro("BLUR_R");
+    bilateralBlurShader.AddMacro("BILATERAL");
+    bilateralBlurShader.AddMacro("BLUR_R");
 
-    bilateralBlurShader->Compile();
+    bilateralBlurShader.Compile();
 
     GetBilateralBlurUniforms();
 
@@ -38,7 +35,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
     framebuffer->Bind();
 
-    volumetricShader->Bind();
+    volumetricShader.Bind();
 
 	depthTexture->SetValue(0);
 	shadowTexture->SetValue(1);
@@ -79,7 +76,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
     }
 	
-    bilateralBlurShader->Bind();
+    bilateralBlurShader.Bind();
 
     diffuseTexture->SetValue(0);
 	bilateralDepthTexture->SetValue(1);
@@ -89,7 +86,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 	vector<float>* kernelWeights;
 	vector<float>* kernelOffsets;
 
-	blurKernel->GetLinearized(kernelWeights, kernelOffsets);
+	blurKernel.GetLinearized(kernelWeights, kernelOffsets);
 
 	weights->SetValue(kernelWeights->data(), (int32_t)kernelWeights->size());
     offsets->SetValue(kernelOffsets->data(), (int32_t)kernelOffsets->size());
@@ -128,29 +125,29 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
 void DirectionalVolumetricRenderer::GetVolumetricUniforms() {
 
-    depthTexture = volumetricShader->GetUniform("depthTexture");
-    shadowTexture = volumetricShader->GetUniform("cascadeMaps");
-    lightDirection = volumetricShader->GetUniform("light.direction");
-    inverseProjectionMatrix = volumetricShader->GetUniform("ipMatrix");
-    sampleCount = volumetricShader->GetUniform("sampleCount");
-	scattering = volumetricShader->GetUniform("scattering");
-    shadowCascadeCount = volumetricShader->GetUniform("light.shadow.cascadeCount");
-	framebufferResolution = volumetricShader->GetUniform("framebufferResolution");
+    depthTexture = volumetricShader.GetUniform("depthTexture");
+    shadowTexture = volumetricShader.GetUniform("cascadeMaps");
+    lightDirection = volumetricShader.GetUniform("light.direction");
+    inverseProjectionMatrix = volumetricShader.GetUniform("ipMatrix");
+    sampleCount = volumetricShader.GetUniform("sampleCount");
+	scattering = volumetricShader.GetUniform("scattering");
+    shadowCascadeCount = volumetricShader.GetUniform("light.shadow.cascadeCount");
+	framebufferResolution = volumetricShader.GetUniform("framebufferResolution");
 
     for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
-        cascades[i].distance = volumetricShader->GetUniform("light.shadow.cascades[" + to_string(i) + "].distance");
-        cascades[i].lightSpace = volumetricShader->GetUniform("light.shadow.cascades[" + to_string(i) + "].cascadeSpace");
+        cascades[i].distance = volumetricShader.GetUniform("light.shadow.cascades[" + to_string(i) + "].distance");
+        cascades[i].lightSpace = volumetricShader.GetUniform("light.shadow.cascades[" + to_string(i) + "].cascadeSpace");
     }
 
 }
 
 void DirectionalVolumetricRenderer::GetBilateralBlurUniforms() {
 
-    diffuseTexture = bilateralBlurShader->GetUniform("diffuseTexture");
-	bilateralDepthTexture = bilateralBlurShader->GetUniform("depthTexture");
-    blurDirection = bilateralBlurShader->GetUniform("blurDirection");
-    offsets = bilateralBlurShader->GetUniform("offset");
-    weights = bilateralBlurShader->GetUniform("weight");
-    kernelSize = bilateralBlurShader->GetUniform("kernelSize");
+    diffuseTexture = bilateralBlurShader.GetUniform("diffuseTexture");
+	bilateralDepthTexture = bilateralBlurShader.GetUniform("depthTexture");
+    blurDirection = bilateralBlurShader.GetUniform("blurDirection");
+    offsets = bilateralBlurShader.GetUniform("offset");
+    weights = bilateralBlurShader.GetUniform("weight");
+    kernelSize = bilateralBlurShader.GetUniform("kernelSize");
 
 }

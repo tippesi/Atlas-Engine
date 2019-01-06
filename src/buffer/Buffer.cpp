@@ -115,7 +115,8 @@ void Buffer::Unmap() {
 void Buffer::Increment() {
 
     if (mapped && immutable) {
-        bufferLock.LockRange(mappedData, elementCount * elementSize);
+        bufferLock.LockRange(bufferingIndex * elementSize * elementCount,
+			elementCount * elementSize);
     }
 
     bufferingIndex = (bufferingIndex + 1) % bufferingCount;

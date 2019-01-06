@@ -17,7 +17,7 @@ public:
 private:
 	void GetUniforms();
 
-	Shader* shader;
+	Shader shader;
 
 	Uniform* diffuseTexture;
 	Uniform* normalTexture;

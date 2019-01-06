@@ -8,14 +8,12 @@ string DirectionalLightRenderer::fragmentPath = "deferred/directional.fsh";
 
 DirectionalLightRenderer::DirectionalLightRenderer() {
 
-	shader = new Shader();
+	shader.AddStage(VERTEX_STAGE, vertexPath);
+	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
 
-	shader->AddStage(VERTEX_SHADER, vertexPath);
-	shader->AddStage(FRAGMENT_SHADER, fragmentPath);
+	shader.AddMacro("SHADOWS");
 
-	shader->AddMacro("SHADOWS");
-
-	shader->Compile();
+	shader.Compile();
 
 	GetUniforms();
 
@@ -23,7 +21,7 @@ DirectionalLightRenderer::DirectionalLightRenderer() {
 
 void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
-	shader->Bind();
+	shader.Bind();
 
 	diffuseTexture->SetValue(0);
 	normalTexture->SetValue(1);
@@ -87,34 +85,34 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 
 void DirectionalLightRenderer::GetUniforms() {
 
-	diffuseTexture = shader->GetUniform("diffuseTexture");
-	normalTexture = shader->GetUniform("normalTexture");
-	materialTexture = shader->GetUniform("materialTexture");
-	depthTexture = shader->GetUniform("depthTexture");
-	aoTexture = shader->GetUniform("aoTexture");
-	volumetricTexture = shader->GetUniform("volumetricTexture");
-	shadowTexture = shader->GetUniform("cascadeMaps");
+	diffuseTexture = shader.GetUniform("diffuseTexture");
+	normalTexture = shader.GetUniform("normalTexture");
+	materialTexture = shader.GetUniform("materialTexture");
+	depthTexture = shader.GetUniform("depthTexture");
+	aoTexture = shader.GetUniform("aoTexture");
+	volumetricTexture = shader.GetUniform("volumetricTexture");
+	shadowTexture = shader.GetUniform("cascadeMaps");
 
-	inverseViewMatrix = shader->GetUniform("ivMatrix");
-	inverseProjectionMatrix = shader->GetUniform("ipMatrix");
+	inverseViewMatrix = shader.GetUniform("ivMatrix");
+	inverseProjectionMatrix = shader.GetUniform("ipMatrix");
 
-	lightDirection = shader->GetUniform("light.direction");
-	lightColor = shader->GetUniform("light.color");
-	lightAmbient = shader->GetUniform("light.ambient");
+	lightDirection = shader.GetUniform("light.direction");
+	lightColor = shader.GetUniform("light.color");
+	lightAmbient = shader.GetUniform("light.ambient");
 
-	scatteringFactor = shader->GetUniform("light.scatteringFactor");
+	scatteringFactor = shader.GetUniform("light.scatteringFactor");
 
-	shadowDistance = shader->GetUniform("light.shadow.distance");
-	shadowBias = shader->GetUniform("light.shadow.bias");
-	shadowSampleCount = shader->GetUniform("light.shadow.sampleCount");
-	shadowSampleRange = shader->GetUniform("light.shadow.sampleRange");
-	shadowSampleRandomness = shader->GetUniform("light.shadow.sampleRandomness");
-	shadowCascadeCount = shader->GetUniform("light.shadow.cascadeCount");
-	shadowResolution = shader->GetUniform("light.shadow.resolution");
+	shadowDistance = shader.GetUniform("light.shadow.distance");
+	shadowBias = shader.GetUniform("light.shadow.bias");
+	shadowSampleCount = shader.GetUniform("light.shadow.sampleCount");
+	shadowSampleRange = shader.GetUniform("light.shadow.sampleRange");
+	shadowSampleRandomness = shader.GetUniform("light.shadow.sampleRandomness");
+	shadowCascadeCount = shader.GetUniform("light.shadow.cascadeCount");
+	shadowResolution = shader.GetUniform("light.shadow.resolution");
 
 	for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
-		cascades[i].distance = shader->GetUniform("light.shadow.cascades[" + to_string(i) + "].distance");
-		cascades[i].lightSpace = shader->GetUniform("light.shadow.cascades[" + to_string(i) + "].cascadeSpace");
+		cascades[i].distance = shader.GetUniform("light.shadow.cascades[" + to_string(i) + "].distance");
+		cascades[i].lightSpace = shader.GetUniform("light.shadow.cascades[" + to_string(i) + "].cascadeSpace");
 	}
 
 }

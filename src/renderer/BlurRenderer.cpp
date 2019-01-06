@@ -3,26 +3,24 @@
 BlurRenderer::BlurRenderer(string vertexSource, string fragmentSource, int32_t channelCount,
         float* kernelOffsets, float* kernelWeights, int32_t kernelSize, bool bilateral) : bilateralBlur(bilateral) {
 
-    shader = new Shader();
-
-    shader->AddStage(VERTEX_SHADER, vertexSource);
-    shader->AddStage(FRAGMENT_SHADER, fragmentSource);
+    shader.AddStage(VERTEX_STAGE, vertexSource);
+    shader.AddStage(FRAGMENT_STAGE, fragmentSource);
 
     if (bilateral) {
-        shader->AddMacro("BILATERAL");
+        shader.AddMacro("BILATERAL");
     }
 
     if (channelCount == 1) {
-        shader->AddMacro("BLUR_R");
+        shader.AddMacro("BLUR_R");
     }
     else if (channelCount == 2) {
-        shader->AddMacro("BLUR_RG");
+        shader.AddMacro("BLUR_RG");
     }
     else if (channelCount == 3) {
-        shader->AddMacro("BLUR_RGB");
+        shader.AddMacro("BLUR_RGB");
     }
 
-    auto fragmentShaderStage = shader->GetStage(FRAGMENT_SHADER);
+    auto fragmentShaderStage = shader.GetStage(FRAGMENT_STAGE);
 
     ShaderConstant* kernelOffsetsConstant = fragmentShaderStage->GetConstant("offset");
     ShaderConstant* kernelWeightsConstant = fragmentShaderStage->GetConstant("weight");
@@ -32,7 +30,7 @@ BlurRenderer::BlurRenderer(string vertexSource, string fragmentSource, int32_t c
     kernelWeightsConstant->SetValue(kernelWeights, kernelSize);
     kernelSizeConstant->SetValue(kernelSize);
 
-    shader->Compile();
+    shader.Compile();
 
     GetUniforms();
 
@@ -79,8 +77,8 @@ void BlurRenderer::Render(Texture2D *texture, Texture2D *swapTexture, Texture2D*
 
 void BlurRenderer::GetUniforms() {
 
-    diffuseTexture = shader->GetUniform("diffuseTexture");
-    depthTexture = shader->GetUniform("depthTexture");
-    blurDirection = shader->GetUniform("blurDirection");
+    diffuseTexture = shader.GetUniform("diffuseTexture");
+    depthTexture = shader.GetUniform("depthTexture");
+    blurDirection = shader.GetUniform("blurDirection");
 
 }

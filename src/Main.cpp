@@ -13,7 +13,7 @@ Main::Main(int argc, char* argv[]) {
 	window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE);
 
-	// Engine::UnlockFramerate();
+	Engine::UnlockFramerate();
 
 	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 16, 3, 16);
 

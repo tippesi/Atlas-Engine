@@ -8,17 +8,15 @@ string TerrainRenderer::fragmentPath = "terrain/terrain.fsh";
 
 TerrainRenderer::TerrainRenderer() {
 
-	nearShader = new Shader();
+	nearShader.AddStage(VERTEX_STAGE, vertexPath);
+	nearShader.AddStage(TESSELLATION_CONTROL_STAGE, tessControlPath);
+	nearShader.AddStage(TESSELLATION_EVALUATION_STAGE, tessEvalPath);
+	// nearShader.AddStage(GEOMETRY_STAGE, geometryPath);
+	nearShader.AddStage(FRAGMENT_STAGE, fragmentPath);
 
-	nearShader->AddStage(VERTEX_SHADER, vertexPath);
-	nearShader->AddStage(TESSELATION_CONTROL_SHADER, tessControlPath);
-	nearShader->AddStage(TESSELATION_EVALUATION_SHADER, tessEvalPath);
-	// nearShader->AddStage(GEOMETRY_SHADER, geometryPath);
-	nearShader->AddStage(FRAGMENT_SHADER, fragmentPath);
+	// nearShader.AddMacro("GEOMETRY_SHADER");
 
-	// nearShader->AddMacro("GEOMETRY_SHADER");
-
-	nearShader->Compile();
+	nearShader.Compile();
 
 	GetUniforms();
 
@@ -26,7 +24,7 @@ TerrainRenderer::TerrainRenderer() {
 
 void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
-	nearShader->Bind();
+	nearShader.Bind();
 	heightField->SetValue(0);
 	normalMap->SetValue(1);
 	diffuseMap->SetValue(2);
@@ -79,30 +77,30 @@ void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camer
 
 void TerrainRenderer::GetUniforms() {
 
-	heightField = nearShader->GetUniform("heightField");
-	normalMap = nearShader->GetUniform("normalMap");
-	diffuseMap = nearShader->GetUniform("diffuseMap");
-	displacementMap = nearShader->GetUniform("displacementMap");
-	heightScale = nearShader->GetUniform("heightScale");
+	heightField = nearShader.GetUniform("heightField");
+	normalMap = nearShader.GetUniform("normalMap");
+	diffuseMap = nearShader.GetUniform("diffuseMap");
+	displacementMap = nearShader.GetUniform("displacementMap");
+	heightScale = nearShader.GetUniform("heightScale");
 
-	offset = nearShader->GetUniform("offset");
-	tileScale = nearShader->GetUniform("tileScale");
-	modelMatrix = nearShader->GetUniform("mMatrix");
-	viewMatrix = nearShader->GetUniform("vMatrix");
-	projectionMatrix = nearShader->GetUniform("pMatrix");
-	cameraLocation = nearShader->GetUniform("cameraLocation");
-	nodeSideLength = nearShader->GetUniform("nodeSideLength");
-	nodeLocation = nearShader->GetUniform("nodeLocation");
-	patchOffsetsScale = nearShader->GetUniform("patchOffsetsScale");
+	offset = nearShader.GetUniform("offset");
+	tileScale = nearShader.GetUniform("tileScale");
+	modelMatrix = nearShader.GetUniform("mMatrix");
+	viewMatrix = nearShader.GetUniform("vMatrix");
+	projectionMatrix = nearShader.GetUniform("pMatrix");
+	cameraLocation = nearShader.GetUniform("cameraLocation");
+	nodeSideLength = nearShader.GetUniform("nodeSideLength");
+	nodeLocation = nearShader.GetUniform("nodeLocation");
+	patchOffsetsScale = nearShader.GetUniform("patchOffsetsScale");
 
-	tessellationFactor = nearShader->GetUniform("tessellationFactor");
-	tessellationSlope = nearShader->GetUniform("tessellationSlope");
-	tessellationShift = nearShader->GetUniform("tessellationShift");
-	maxTessellationLevel = nearShader->GetUniform("maxTessellationLevel");
+	tessellationFactor = nearShader.GetUniform("tessellationFactor");
+	tessellationSlope = nearShader.GetUniform("tessellationSlope");
+	tessellationShift = nearShader.GetUniform("tessellationShift");
+	maxTessellationLevel = nearShader.GetUniform("maxTessellationLevel");
 
-	displacementScale = nearShader->GetUniform("displacementScale");
-	displacementDistance = nearShader->GetUniform("displacementDistance");
+	displacementScale = nearShader.GetUniform("displacementScale");
+	displacementDistance = nearShader.GetUniform("displacementDistance");
 
-	frustumPlanes = nearShader->GetUniform("frustumPlanes");
+	frustumPlanes = nearShader.GetUniform("frustumPlanes");
 
 }
