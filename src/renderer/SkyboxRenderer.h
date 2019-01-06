@@ -10,13 +10,15 @@ class SkyboxRenderer : public IRenderer {
 public:
 	SkyboxRenderer();
 
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
+	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
 	static string vertexPath;
 	static string fragmentPath;
 
 private:
-	VertexArray * vertexArray;
+	void GetUniforms();
+
+	VertexArray* vertexArray;
 
 	Shader* shader;
 

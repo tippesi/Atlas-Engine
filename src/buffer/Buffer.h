@@ -166,25 +166,25 @@ public:
 	 * Returns the type/target of the buffer
 	 * @return The type/target of the buffer as an integer
 	 */
-    virtual inline uint32_t GetType();
+    virtual uint32_t GetType();
 
 	/**
 	 * Returns the number of elements the buffer contains.
 	 * @return The number of elements.
 	 */
-    virtual inline size_t GetElementCount();
+    virtual size_t GetElementCount();
 
 	/**
 	 * Returns the size of each element in the buffer
 	 * @return The element size.
 	 */
-    virtual inline size_t GetElementSize();
+    virtual size_t GetElementSize();
 
 	/**
 	 * Returns the size in bytes of the buffer.
 	 * @return The size in bytes
 	 */
-    virtual inline size_t GetSize();
+    virtual size_t GetSize();
 
 	/**
 	 * Checks for extensions. Is being called by the engine
@@ -195,7 +195,7 @@ public:
 	 * Returns whether immutable storage and therefore persistent mapping is available.
 	 * @return True if immutable storage is supported, false otherwise
 	 */
-	static inline bool IsImmutableStorageSupported();
+	static bool IsImmutableStorageSupported();
 
 protected:
     void CreateInternal();

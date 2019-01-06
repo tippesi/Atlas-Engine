@@ -6,9 +6,15 @@ ShaderConfigBatch::ShaderConfigBatch(Shader* shader) : shader(shader) {
 
 }
 
+ShaderConfigBatch::~ShaderConfigBatch() {
+
+	delete shader;
+
+}
+
 void ShaderConfigBatch::Add(ShaderConfig* config) {
 
-	config->batchID = ID;
+	config->configBatchID = ID;
 	configs.push_back(config);
 
 }
@@ -21,5 +27,23 @@ void ShaderConfigBatch::Remove(ShaderConfig* config) {
 			return;
 		}
 	}
+
+}
+
+size_t ShaderConfigBatch::GetSize() {
+
+	return configs.size();
+
+}
+
+void ShaderConfigBatch::Bind() {
+
+	shader->Bind();
+
+}
+
+Shader* ShaderConfigBatch::GetShader() {
+
+	return shader;
 
 }

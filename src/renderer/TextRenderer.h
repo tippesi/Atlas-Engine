@@ -12,7 +12,7 @@ class TextRenderer : public IRenderer {
 public:
 	TextRenderer();
 
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
+	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
 	void Render(Window* window, Font* font, string text, float x, float y, vec4 color, 
 		float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);

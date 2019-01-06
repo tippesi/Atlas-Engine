@@ -18,7 +18,7 @@ ShadowRenderer::ShadowRenderer() {
 }
 
 
-void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
+void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
 	bool backFaceCulling = true;
 
@@ -81,10 +81,9 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 						Material* material = mesh->data->materials[subData->materialIndex];
 
-						if (material->shadowConfig->batchID != shaderConfigBatch->ID) {
+						if (material->shadowConfig.configBatchID != shaderConfigBatch->ID) {
 							continue;
 						}
-
 
 						if (material->HasDiffuseMap()) {
 							if (material->HasArrayMap()) {
@@ -129,8 +128,8 @@ void ShadowRenderer::InitShaderBatch() {
 	lock_guard<mutex> guard(shaderBatchMutex);
 
 	shaderBatch = new ShaderBatch();
-	shaderBatch->AddComponent(VERTEX_SHADER, vertexPath);
-	shaderBatch->AddComponent(FRAGMENT_SHADER, fragmentPath);
+	shaderBatch->AddStage(VERTEX_SHADER, vertexPath);
+	shaderBatch->AddStage(FRAGMENT_SHADER, fragmentPath);
 
 }
 

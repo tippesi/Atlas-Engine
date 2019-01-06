@@ -10,7 +10,7 @@ public:
     BlurRenderer(string vertexSource, string fragmentSource, int32_t channelCount, float* kernelOffsets,
             float* kernelWeights, int32_t kernelSize, bool bilateral = false);
 
-    virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
+    virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
     void Render(Texture2D* texture, Texture2D* swapTexture, Texture2D* depthTexture);
 

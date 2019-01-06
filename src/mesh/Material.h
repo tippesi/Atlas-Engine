@@ -58,8 +58,8 @@ public:
 
 	float displacementScale;
 
-	ShaderConfig* geometryConfig;
-	ShaderConfig* shadowConfig;
+	ShaderConfig geometryConfig;
+	ShaderConfig shadowConfig;
 
 private:
 	unordered_map<int32_t, Image> images;

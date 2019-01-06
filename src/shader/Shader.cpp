@@ -9,29 +9,43 @@ Shader::Shader() {
 
 }
 
-void Shader::AddComponent(int32_t type, string filename) {
+Shader::~Shader() {
 
-	ShaderSource* source = new ShaderSource(type, filename);
+	for (auto& stage : stages) {
+		delete stage;
+	}
 
-	components.push_back(source);
+	for (auto& uniform : uniforms) {
+		delete uniform;
+	}
+
+	glDeleteProgram(ID);
 
 }
 
-ShaderSource* Shader::GetComponent(int32_t type) {
+void Shader::AddStage(int32_t type, string filename) {
 
-	for (ShaderSource*& source : components) {
-		if (source->type == type) {
-			return source;
+	auto source = new ShaderStage(type, filename);
+
+	stages.push_back(source);
+
+}
+
+void Shader::AddStage(ShaderStage* source) {
+
+	stages.push_back(source);
+
+}
+
+ShaderStage* Shader::GetStage(int32_t type) {
+
+	for (auto& stage : stages) {
+		if (stage->type == type) {
+			return stage;
 		}
 	}
 
 	return nullptr;
-
-}
-
-void Shader::AddComponent(ShaderSource* source) {
-
-	components.push_back(source);
 
 }
 
@@ -51,8 +65,8 @@ void Shader::AddMacro(string macro) {
 
 	isCompiled = false;
 
-	for (ShaderSource* source : components) {
-		source->AddMacro(macro);
+	for (auto& stage : stages) {
+		stage->AddMacro(macro);
 	}
 
 	macros.push_back(macro);
@@ -61,8 +75,8 @@ void Shader::AddMacro(string macro) {
 
 void Shader::RemoveMacro(string macro) {
 
-	for (ShaderSource* source : components) {
-		source->RemoveMacro(macro);
+	for (auto& stage : stages) {
+		stage->RemoveMacro(macro);
 	}
 
 	for (auto iterator = macros.begin(); iterator != macros.end(); iterator++) {
@@ -77,7 +91,7 @@ void Shader::RemoveMacro(string macro) {
 
 bool Shader::HasMacro(string macro) {
 
-	for (string compMacro : macros) {
+	for (auto& compMacro : macros) {
 		if (compMacro == macro) {
 			return true;
 		}
@@ -91,8 +105,8 @@ bool Shader::Compile() {
 
 	bool compile = true;
 
-	for (ShaderSource* source : components) {
-		compile = compile & source->Compile();
+	for (auto& stage : stages) {
+		compile = compile & stage->Compile();
 	}
 
 	if (compile) {
@@ -102,14 +116,14 @@ bool Shader::Compile() {
 			ID = glCreateProgram();
 		}
 
-		for (auto& source : components) {
-			glAttachShader(ID, source->ID);
+		for (auto& stage : stages) {
+			glAttachShader(ID, stage->ID);
 		}
 
 		glLinkProgram(ID);
 
-		for (auto& source : components) {
-			glDetachShader(ID, source->ID);
+		for (auto& stage : stages) {
+			glDetachShader(ID, stage->ID);
 		}
 
 		int32_t isLinked = 0;
@@ -125,7 +139,7 @@ bool Shader::Compile() {
 			
 			Bind();
 
-			for (Uniform*& uniform : uniforms) {
+			for (auto& uniform : uniforms) {
 				uniform->Update();
 			}
 		
@@ -140,8 +154,8 @@ bool Shader::Compile() {
 		glGetProgramInfoLog(ID, programLogLength, &length, programLog.data());
 
 		EngineLog("Error linking shader files:");
-		for (auto& source : components) {
-			EngineLog("%s", source->filename.c_str());
+		for (auto& stage : stages) {
+			EngineLog("%s", stage->filename.c_str());
 		}
 		EngineLog("%s", programLog.data());
 #endif
@@ -151,6 +165,12 @@ bool Shader::Compile() {
 	ID = 0;
 
 	return false;
+
+}
+
+bool Shader::IsCompiled() {
+
+	return isCompiled;
 
 }
 
@@ -164,8 +184,8 @@ void Shader::Bind() {
 	}
 #ifdef ENGINE_INSTANT_SHADER_RELOAD
 	bool reloaded = false;
-	for (ShaderSource*& source : components) {
-		reloaded = source->Reload() ? true : reloaded;
+	for (auto& stage : stages) {
+		reloaded = stage->Reload() ? true : reloaded;
 	}
 	if (reloaded) {
 		Compile();
@@ -183,12 +203,9 @@ void Shader::Bind() {
 
 }
 
-Shader::~Shader() {
+void Shader::Unbind() {
 
-	glDeleteProgram(ID);
-
-	for (ShaderSource* source : components) {
-		delete source;
-	}
+	glUseProgram(0);
+	boundShaderID = 0;
 
 }

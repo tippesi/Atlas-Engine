@@ -10,8 +10,8 @@ DecalRenderer::DecalRenderer() {
 
     shader = new Shader();
 
-    shader->AddComponent(VERTEX_SHADER, vertexPath);
-    shader->AddComponent(FRAGMENT_SHADER, fragmentPath);
+    shader->AddStage(VERTEX_SHADER, vertexPath);
+    shader->AddStage(FRAGMENT_SHADER, fragmentPath);
 
 	shader->AddMacro("ANIMATION");
 
@@ -21,7 +21,7 @@ DecalRenderer::DecalRenderer() {
 
 }
 
-void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene, bool masterRenderer) {
+void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene) {
 
     uint32_t drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 

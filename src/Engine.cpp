@@ -76,7 +76,7 @@ Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 
 	LockFramerate();
 
-	ShaderSource::SetSourceDirectory(shaderDirectory);
+	ShaderStage::SetSourceDirectory(shaderDirectory);
 
 	EngineEventHandler::Init();
 

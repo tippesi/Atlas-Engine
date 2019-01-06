@@ -19,9 +19,6 @@ Material::Material() {
 
 	displacementScale = 1.0f;
 
-	geometryConfig = new ShaderConfig();
-	shadowConfig = new ShaderConfig();
-
 	hasDiffuseMap = false;
 	hasNormalMap = false;
 	hasSpecularMap = false;
@@ -33,11 +30,11 @@ void Material::Update() {
 
 	int32_t width = 0, height = 0, channels = 0, depth = 0;
 
-	GeometryRenderer::RemoveConfig(geometryConfig);
-	ShadowRenderer::RemoveConfig(shadowConfig);
+	GeometryRenderer::RemoveConfig(&geometryConfig);
+	ShadowRenderer::RemoveConfig(&shadowConfig);
 
-	geometryConfig->ClearMacros();
-	shadowConfig->ClearMacros();
+	geometryConfig.ClearMacros();
+	shadowConfig.ClearMacros();
 
 	bool useArrayMap = true;
 
@@ -92,30 +89,30 @@ void Material::Update() {
 	images.clear();
 
 	if (HasArrayMap()) {
-		geometryConfig->AddMacro("ARRAY_MAP");
-		shadowConfig->AddMacro("ARRAY_MAP");
+		geometryConfig.AddMacro("ARRAY_MAP");
+		shadowConfig.AddMacro("ARRAY_MAP");
 	}
 
 	if (HasDiffuseMap()) {
-		geometryConfig->AddMacro("DIFFUSE_MAP");
+		geometryConfig.AddMacro("DIFFUSE_MAP");
 		if (!HasArrayMap()) {
 			if (diffuseMap->channels == 4) {
-				shadowConfig->AddMacro("ALPHA");
+				shadowConfig.AddMacro("ALPHA");
 			}
 		}
 		else {
 			if (arrayMap->channels == 4) {
-				shadowConfig->AddMacro("ALPHA");
+				shadowConfig.AddMacro("ALPHA");
 			}
 		}
 	}
 	
 	if (HasNormalMap()) {
-		geometryConfig->AddMacro("NORMAL_MAP");
+		geometryConfig.AddMacro("NORMAL_MAP");
 	}
 
-	GeometryRenderer::AddConfig(geometryConfig);
-	ShadowRenderer::AddConfig(shadowConfig);
+	GeometryRenderer::AddConfig(&geometryConfig);
+	ShadowRenderer::AddConfig(&shadowConfig);
 
 }
 

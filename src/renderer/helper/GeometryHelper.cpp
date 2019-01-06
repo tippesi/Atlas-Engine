@@ -45,7 +45,7 @@ VertexArray* GeometryHelper::GenerateSphereVertexArray(uint32_t rings, uint32_t 
 
 }
 
-void GeometryHelper::GenerateSphere(uint32_t rings, uint32_t segments, uint32_t*& indicies, vec3*& vertices,
+void GeometryHelper::GenerateSphere(uint32_t rings, uint32_t segments, uint32_t*& indices, vec3*& vertices,
 	uint32_t* indexCount, uint32_t* vertexCount) {
 
 	rings = rings < 3 ? 3 : rings;
@@ -56,7 +56,7 @@ void GeometryHelper::GenerateSphere(uint32_t rings, uint32_t segments, uint32_t*
 	*indexCount = (innerRings - 1) * segments * 6 + 2 * segments * 3;
 
 	vertices = new vec3[*vertexCount];
-	indicies = new uint32_t[*indexCount];
+	indices = new uint32_t[*indexCount];
 
 	// Set the two outer rings
 	vertices[0] = vec3(0.0f, 1.0f, 0.0f);
@@ -95,16 +95,16 @@ void GeometryHelper::GenerateSphere(uint32_t rings, uint32_t segments, uint32_t*
 
 	// Indices for the upper outer ring
 	for (uint32_t i = 0; i < segments; i++) {
-		indicies[indexIndex++] = i + 1;
-		indicies[indexIndex++] = 0;
-		indicies[indexIndex++] = (i + 1) % segments + 1;
+		indices[indexIndex++] = i + 1;
+		indices[indexIndex++] = 0;
+		indices[indexIndex++] = (i + 1) % segments + 1;
 	}
 	
 	// Indices for the lower outer ring
 	for (uint32_t i = 0; i < segments; i++) {
-		indicies[indexIndex++] = *vertexCount - 1 - segments + (i + 1) % segments;
-		indicies[indexIndex++] = *vertexCount - 1;
-		indicies[indexIndex++] = *vertexCount - 1 - segments + i;
+		indices[indexIndex++] = *vertexCount - 1 - segments + (i + 1) % segments;
+		indices[indexIndex++] = *vertexCount - 1;
+		indices[indexIndex++] = *vertexCount - 1 - segments + i;
 	}
 	
 	uint32_t offset = 1;
@@ -113,12 +113,12 @@ void GeometryHelper::GenerateSphere(uint32_t rings, uint32_t segments, uint32_t*
 	for (uint32_t i = 0; i < innerRings - 1; i++) {
 		offset += segments;
 		for (uint32_t j = 0; j < segments; j++) {
-			indicies[indexIndex++] = offset - segments + j;
-			indicies[indexIndex++] = offset + (j + 1) % segments;
-			indicies[indexIndex++] = offset + j;
-			indicies[indexIndex++] = offset - segments + (j + 1) % segments;
-			indicies[indexIndex++] = offset + (j + 1) % segments;
-			indicies[indexIndex++] = offset - segments + j;
+			indices[indexIndex++] = offset - segments + j;
+			indices[indexIndex++] = offset + (j + 1) % segments;
+			indices[indexIndex++] = offset + j;
+			indices[indexIndex++] = offset - segments + (j + 1) % segments;
+			indices[indexIndex++] = offset + (j + 1) % segments;
+			indices[indexIndex++] = offset - segments + j;
 		}
 	}
 

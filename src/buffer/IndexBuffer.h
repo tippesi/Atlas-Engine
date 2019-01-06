@@ -36,7 +36,7 @@ public:
 	* @remark For all available data types see https://www.khronos.org/opengl/wiki/OpenGL_Type
 	* <a href="https://www.khronos.org/opengl/wiki/OpenGL_Type">Common Enums</a>. GL_FIXED is not supported.
 	*/
-    virtual inline uint32_t GetDataType() final;
+    uint32_t GetDataType();
 
 private:
     uint32_t dataType;

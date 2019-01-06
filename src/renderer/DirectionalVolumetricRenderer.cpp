@@ -14,16 +14,16 @@ DirectionalVolumetricRenderer::DirectionalVolumetricRenderer() {
 	blurKernel->CalculateBoxFilter(21);
 
     volumetricShader = new Shader();
-    volumetricShader->AddComponent(VERTEX_SHADER, volumetricVertexPath);
-    volumetricShader->AddComponent(FRAGMENT_SHADER, volumetricFragmentPath);
+    volumetricShader->AddStage(VERTEX_SHADER, volumetricVertexPath);
+    volumetricShader->AddStage(FRAGMENT_SHADER, volumetricFragmentPath);
 
     volumetricShader->Compile();
 
     GetVolumetricUniforms();
 
     bilateralBlurShader = new Shader();
-    bilateralBlurShader->AddComponent(VERTEX_SHADER, bilateralBlurVertexPath);
-    bilateralBlurShader->AddComponent(FRAGMENT_SHADER, bilateralBlurFragmentPath);
+    bilateralBlurShader->AddStage(VERTEX_SHADER, bilateralBlurVertexPath);
+    bilateralBlurShader->AddStage(FRAGMENT_SHADER, bilateralBlurFragmentPath);
 
     bilateralBlurShader->AddMacro("BILATERAL");
     bilateralBlurShader->AddMacro("BLUR_R");
@@ -34,7 +34,7 @@ DirectionalVolumetricRenderer::DirectionalVolumetricRenderer() {
 
 }
 
-void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene, bool masterRenderer) {
+void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene) {
 
     framebuffer->Bind();
 

@@ -2,7 +2,7 @@
 
 ShaderConfig::ShaderConfig() {
 
-	batchID = 0;
+	configBatchID = 0;
 	added = false;
 
 }

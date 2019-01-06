@@ -7,11 +7,19 @@ ShaderBatch::ShaderBatch() {
 
 }
 
-void ShaderBatch::AddComponent(int32_t type, string filename) {
+ShaderBatch::~ShaderBatch() {
 
-	ShaderSource* source = new ShaderSource(type, filename);
+	for (auto& uniform : uniforms) {
+		delete uniform;
+	}
 
-	components.push_back(source);
+}
+
+void ShaderBatch::AddStage(int32_t type, string filename){
+
+	auto source = new ShaderStage(type, filename);
+
+	stages.push_back(source);
 
 }
 
@@ -23,43 +31,43 @@ void ShaderBatch::AddConfig(ShaderConfig* config) {
 
 	std::sort(config->macros.begin(), config->macros.end());
 
-	for (ShaderConfigBatch* batch : configBatches) {
-		if (batch->shader->macros.size() != config->macros.size()) {
+	for (ShaderConfigBatch* configBatch : configBatches) {
+		if (configBatch->GetShader()->macros.size() != config->macros.size()) {
 			continue;
 		}
 		int32_t i;
 		for (i = 0; i < config->macros.size(); i++) {
-			if (config->macros.at(i) != batch->shader->macros.at(i)) {
+			if (config->macros.at(i) != configBatch->GetShader()->macros.at(i)) {
 				i = -1;
 				break;
 			}
 		}
 		if (i >= 0) {
 			// We found an existing shader
-			batch->Add(config);
+            configBatch->Add(config);
 			config->added = true;
 			return;
 		}
 	}
 
 	// No batch was found, we need to create a new shader
-	Shader* shader = new Shader();
-	ShaderConfigBatch* batch = new ShaderConfigBatch(shader);
+	auto shader = new Shader();
+	auto batch = new ShaderConfigBatch(shader);
 
-	for (ShaderSource* component : components) {
-		ShaderSource* componentCopy = new ShaderSource(component);
-		shader->AddComponent(componentCopy);
+	for (auto& stage : stages) {
+		auto componentCopy = new ShaderStage(stage);
+		shader->AddStage(componentCopy);
 	}
 
 	// Now we set the macros
-	for (string& macro : config->macros) {
+	for (auto& macro : config->macros) {
 		shader->AddMacro(macro);
 	}
 
 	shader->Compile();
 
 	// Find the uniforms and generalize it
-	for (Uniform* uniform : uniforms) {
+	for (auto& uniform : uniforms) {
 		shader->GetUniform(uniform->name);
 	}
 
@@ -77,13 +85,13 @@ void ShaderBatch::RemoveConfig(ShaderConfig* config) {
 		return;
 	}
 
-	ShaderConfigBatch* batch = configBatches[config->batchID];
+	auto batch = configBatches[config->configBatchID];
 	batch->Remove(config);
 
 	config->added = false;
 
 	// Remove empty batches
-	if (batch->configs.size() == 0) {
+	if (batch->GetSize() == 0) {
 		configBatches.erase(configBatches.begin() + batch->ID);
 	}
 
@@ -92,22 +100,23 @@ void ShaderBatch::RemoveConfig(ShaderConfig* config) {
 Uniform* ShaderBatch::GetUniform(string uniformName) {
 
 	for (ShaderConfigBatch* batch : configBatches) {
-		batch->shader->GetUniform(uniformName);
+		batch->GetShader()->GetUniform(uniformName);
 	}
 
 	// We don't care about the shader ID because the uniform object
 	// is just a layer of abstraction for the renderer unlike the create
 	// uniforms in the loop above.
-	Uniform* uniform = new Uniform(0, uniformName, this, (int32_t)uniforms.size());
+	auto uniform = new Uniform(0, uniformName, this, (int32_t)uniforms.size());
 	uniforms.push_back(uniform);
 
 	return uniform;
 
 }
 
-void ShaderBatch::Bind(int32_t shaderID) {
+void ShaderBatch::Bind(int32_t configBatchID) {
 
-	boundShaderID = shaderID;
-	configBatches.at(shaderID)->shader->Bind();
+	boundShaderID = configBatchID;
+
+	configBatches[configBatchID]->Bind();
 
 }

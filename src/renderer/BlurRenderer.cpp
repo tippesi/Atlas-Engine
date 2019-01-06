@@ -5,8 +5,8 @@ BlurRenderer::BlurRenderer(string vertexSource, string fragmentSource, int32_t c
 
     shader = new Shader();
 
-    shader->AddComponent(VERTEX_SHADER, vertexSource);
-    shader->AddComponent(FRAGMENT_SHADER, fragmentSource);
+    shader->AddStage(VERTEX_SHADER, vertexSource);
+    shader->AddStage(FRAGMENT_SHADER, fragmentSource);
 
     if (bilateral) {
         shader->AddMacro("BILATERAL");
@@ -22,11 +22,11 @@ BlurRenderer::BlurRenderer(string vertexSource, string fragmentSource, int32_t c
         shader->AddMacro("BLUR_RGB");
     }
 
-    ShaderSource* fragmentShaderSource = shader->GetComponent(FRAGMENT_SHADER);
+    auto fragmentShaderStage = shader->GetStage(FRAGMENT_SHADER);
 
-    ShaderConstant* kernelOffsetsConstant = fragmentShaderSource->GetConstant("offset");
-    ShaderConstant* kernelWeightsConstant = fragmentShaderSource->GetConstant("weight");
-    ShaderConstant* kernelSizeConstant = fragmentShaderSource->GetConstant("kernelSize");
+    ShaderConstant* kernelOffsetsConstant = fragmentShaderStage->GetConstant("offset");
+    ShaderConstant* kernelWeightsConstant = fragmentShaderStage->GetConstant("weight");
+    ShaderConstant* kernelSizeConstant = fragmentShaderStage->GetConstant("kernelSize");
 
     kernelOffsetsConstant->SetValue(kernelOffsets, kernelSize);
     kernelWeightsConstant->SetValue(kernelWeights, kernelSize);
@@ -40,7 +40,7 @@ BlurRenderer::BlurRenderer(string vertexSource, string fragmentSource, int32_t c
 
 }
 
-void BlurRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene, bool masterRenderer) {
+void BlurRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene) {
 
     return;
 

@@ -37,7 +37,7 @@ public:
 	void RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
 		vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	// void Update();
+	void Update();
 
 	TextRenderer* textRenderer;
 

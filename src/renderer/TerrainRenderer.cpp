@@ -10,11 +10,11 @@ TerrainRenderer::TerrainRenderer() {
 
 	nearShader = new Shader();
 
-	nearShader->AddComponent(VERTEX_SHADER, vertexPath);
-	nearShader->AddComponent(TESSELATION_CONTROL_SHADER, tessControlPath);
-	nearShader->AddComponent(TESSELATION_EVALUATION_SHADER, tessEvalPath);
-	// nearShader->AddComponent(GEOMETRY_SHADER, geometryPath);
-	nearShader->AddComponent(FRAGMENT_SHADER, fragmentPath);
+	nearShader->AddStage(VERTEX_SHADER, vertexPath);
+	nearShader->AddStage(TESSELATION_CONTROL_SHADER, tessControlPath);
+	nearShader->AddStage(TESSELATION_EVALUATION_SHADER, tessEvalPath);
+	// nearShader->AddStage(GEOMETRY_SHADER, geometryPath);
+	nearShader->AddStage(FRAGMENT_SHADER, fragmentPath);
 
 	// nearShader->AddMacro("GEOMETRY_SHADER");
 
@@ -24,7 +24,7 @@ TerrainRenderer::TerrainRenderer() {
 
 }
 
-void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
+void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
 	nearShader->Bind();
 	heightField->SetValue(0);

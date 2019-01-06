@@ -33,7 +33,7 @@ GeometryRenderer::GeometryRenderer() {
 
 }
 
-void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
+void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
 	bool backFaceCulling = true;
 
@@ -134,8 +134,8 @@ void GeometryRenderer::InitShaderBatch() {
 	lock_guard<mutex> guard(shaderBatchMutex);
 
 	shaderBatch = new ShaderBatch();
-	shaderBatch->AddComponent(VERTEX_SHADER, vertexPath);
-	shaderBatch->AddComponent(FRAGMENT_SHADER, fragmentPath);
+	shaderBatch->AddStage(VERTEX_SHADER, vertexPath);
+	shaderBatch->AddStage(FRAGMENT_SHADER, fragmentPath);
 
 }
 

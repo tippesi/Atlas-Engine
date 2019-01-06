@@ -1,12 +1,12 @@
-#include "ShaderSource.h"
+#include "ShaderStage.h"
 #include <fstream>
 #include <sstream>
 #include <sys/stat.h>
 #include <vector>
 
-string ShaderSource::sourceDirectory = "";
+string ShaderStage::sourceDirectory = "";
 
-ShaderSource::ShaderSource(int32_t type, string filename) : type(type), filename(filename) {
+ShaderStage::ShaderStage(int32_t type, string filename) : type(type), filename(filename) {
 
 	string path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
 	path += string(filename);
@@ -19,9 +19,10 @@ ShaderSource::ShaderSource(int32_t type, string filename) : type(type), filename
 #ifdef ENGINE_SHOW_LOG
 	EngineLog("Loaded shader file %s", filename.c_str());
 #endif
+
 }
 
-ShaderSource::ShaderSource(ShaderSource* source) {
+ShaderStage::ShaderStage(ShaderStage* source) {
 
 	code = source->code;
 	macros = source->macros;
@@ -37,7 +38,17 @@ ShaderSource::ShaderSource(ShaderSource* source) {
 
 }
 
-bool ShaderSource::Reload() {
+ShaderStage::~ShaderStage() {
+
+	for (auto& constant : constants) {
+		delete constant;
+	}
+
+	glDeleteShader(type);
+
+}
+
+bool ShaderStage::Reload() {
 
 	time_t comp = GetLastModified();
 
@@ -57,19 +68,19 @@ bool ShaderSource::Reload() {
 
 }
 
-void ShaderSource::AddMacro(string macro) {
+void ShaderStage::AddMacro(string macro) {
 
 	macros.push_back(macro);
 
 }
 
-void ShaderSource::RemoveMacro(string macro) {
+void ShaderStage::RemoveMacro(string macro) {
 
 	macros.remove(macro);
 
 }
 
-ShaderConstant* ShaderSource::GetConstant(string constant) {
+ShaderConstant* ShaderStage::GetConstant(string constant) {
 
 	for (list<ShaderConstant*>::iterator iterator = constants.begin(); iterator != constants.end(); iterator++) {
 		if ((*iterator)->GetName() == constant) {
@@ -81,7 +92,7 @@ ShaderConstant* ShaderSource::GetConstant(string constant) {
 
 }
 
-bool ShaderSource::Compile() {
+bool ShaderStage::Compile() {
 
 	string composedCode;
 
@@ -136,19 +147,13 @@ bool ShaderSource::Compile() {
 
 }
 
-void ShaderSource::SetSourceDirectory(string directory) {
+void ShaderStage::SetSourceDirectory(string directory) {
 
 	sourceDirectory = directory;
 
 }
 
-ShaderSource::~ShaderSource() {
-
-	glDeleteShader(ID);
-
-}
-
-string ShaderSource::ReadShaderFile(string filename, bool mainFile) {
+string ShaderStage::ReadShaderFile(string filename, bool mainFile) {
 
 	string shaderCode;
 	ifstream shaderFile;
@@ -225,7 +230,7 @@ string ShaderSource::ReadShaderFile(string filename, bool mainFile) {
 
 }
 
-time_t ShaderSource::GetLastModified() {
+time_t ShaderStage::GetLastModified() {
 
 	string path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
 	path += string(filename);

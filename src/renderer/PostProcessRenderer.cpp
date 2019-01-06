@@ -8,8 +8,8 @@ PostProcessRenderer::PostProcessRenderer() {
 
 	shader = new Shader();
 
-	shader->AddComponent(VERTEX_SHADER, vertexPath);
-	shader->AddComponent(FRAGMENT_SHADER, fragmentPath);
+	shader->AddStage(VERTEX_SHADER, vertexPath);
+	shader->AddStage(FRAGMENT_SHADER, fragmentPath);
 
 	shader->Compile();
 
@@ -17,7 +17,7 @@ PostProcessRenderer::PostProcessRenderer() {
 
 }
 
-void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
+void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
 	glViewport(window->viewport->x, window->viewport->y, window->viewport->width, window->viewport->height);
 

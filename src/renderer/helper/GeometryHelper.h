@@ -14,7 +14,7 @@ public:
 	static VertexArray* GenerateSphereVertexArray(uint32_t rings, uint32_t segments);
 
 private:
-	static void GenerateSphere(uint32_t rings, uint32_t segments, uint32_t*& indicies, vec3*& vertices,
+	static void GenerateSphere(uint32_t rings, uint32_t segments, uint32_t*& indices, vec3*& vertices,
 		uint32_t* indexCount, uint32_t* vertexCount);
 
 	static int8_t rectangleVertices[];

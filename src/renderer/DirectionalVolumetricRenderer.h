@@ -10,7 +10,7 @@ class DirectionalVolumetricRenderer : public IRenderer{
 public:
     DirectionalVolumetricRenderer();
 
-    virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
+    virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
 	static string volumetricVertexPath;
 	static string volumetricFragmentPath;

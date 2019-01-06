@@ -9,7 +9,7 @@ class TerrainRenderer : public IRenderer {
 public:
     TerrainRenderer();
 
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
+	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
 	void GetUniforms();
 

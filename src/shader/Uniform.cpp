@@ -160,6 +160,6 @@ void Uniform::SetValue(vec2* value, int32_t length) {
 
 inline Uniform* Uniform::GetBatchUniform() {
 
-	return shaderBatch->configBatches[shaderBatch->boundShaderID]->shader->uniforms[ID];
+	return shaderBatch->configBatches[shaderBatch->boundShaderID]->GetShader()->uniforms[ID];
 
 }

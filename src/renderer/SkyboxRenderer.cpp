@@ -8,19 +8,18 @@ SkyboxRenderer::SkyboxRenderer() {
 
 	shader = new Shader();
 
-	shader->AddComponent(VERTEX_SHADER, vertexPath);
-	shader->AddComponent(FRAGMENT_SHADER, fragmentPath);
+	shader->AddStage(VERTEX_SHADER, vertexPath);
+	shader->AddStage(FRAGMENT_SHADER, fragmentPath);
 
 	shader->Compile();
 
-	skyCubemap = shader->GetUniform("skyCubemap");
-	modelViewProjectionMatrix = shader->GetUniform("mvpMatrix");
+	GetUniforms();
 
 	vertexArray = GeometryHelper::GenerateCubeVertexArray();
 
 }
 
-void SkyboxRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
+void SkyboxRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
 	shader->Bind();
 
@@ -35,5 +34,12 @@ void SkyboxRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 	scene->sky->skybox->cubemap->Bind(GL_TEXTURE0);
 
 	glDrawArrays(GL_TRIANGLES, 0, 36);	
+
+}
+
+void SkyboxRenderer::GetUniforms() {
+
+	skyCubemap = shader->GetUniform("skyCubemap");
+	modelViewProjectionMatrix = shader->GetUniform("mvpMatrix");
 
 }

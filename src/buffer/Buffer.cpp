@@ -32,20 +32,12 @@ Buffer::Buffer(uint32_t type, size_t elementSize, uint32_t flags) : type(type), 
         bufferingCount = 1;
     }
 
-    if (flags & BUFFER_IMMUTABLE && immutableStorageSupported) {
-        immutable = true;
-    }
-    else {
-        immutable = false;
-    }
+    immutable = flags & BUFFER_IMMUTABLE && immutableStorageSupported;
 
     // Configure mapping and storage flags.
-    if (flags & BUFFER_MAP_READ) {
-        mapFlags |= GL_MAP_READ_BIT;
-    }
-    if (flags & BUFFER_MAP_WRITE) {
-        mapFlags |= GL_MAP_WRITE_BIT;
-    }
+    mapFlags |= (flags & BUFFER_MAP_READ ? GL_MAP_READ_BIT : 0);
+    mapFlags |= (flags & BUFFER_MAP_WRITE ? GL_MAP_WRITE_BIT : 0);
+
     if (flags & BUFFER_DYNAMIC_STORAGE && immutable) {
         dataFlags |= GL_DYNAMIC_STORAGE_BIT_EXT | GL_MAP_COHERENT_BIT_EXT
                 | GL_MAP_PERSISTENT_BIT_EXT | mapFlags;
@@ -136,7 +128,7 @@ void Buffer::Increment() {
 
 }
 
-int32_t Buffer::GetIncrement() {
+inline int32_t Buffer::GetIncrement() {
 
     return (int32_t)bufferingIndex;
 
@@ -211,25 +203,25 @@ void Buffer::Copy(Buffer *copyBuffer, size_t readOffset, size_t writeOffset, siz
 
 }
 
-uint32_t Buffer::GetType() {
+inline uint32_t Buffer::GetType() {
 
     return type;
 
 }
 
-size_t Buffer::GetElementCount() {
+inline size_t Buffer::GetElementCount() {
 
     return elementCount;
 
 }
 
-size_t Buffer::GetElementSize() {
+inline size_t Buffer::GetElementSize() {
 
     return elementSize;
 
 }
 
-size_t Buffer::GetSize() {
+inline size_t Buffer::GetSize() {
 
     return sizeInBytes;
 
@@ -252,7 +244,7 @@ void Buffer::CheckExtensions() {
 
 }
 
-bool Buffer::IsImmutableStorageSupported() {
+inline bool Buffer::IsImmutableStorageSupported() {
 
     return immutableStorageSupported;
 

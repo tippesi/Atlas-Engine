@@ -10,7 +10,7 @@ class PostProcessRenderer : public IRenderer {
 public:
 	PostProcessRenderer();
 
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
+	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
 	static string vertexPath;
 	static string fragmentPath;

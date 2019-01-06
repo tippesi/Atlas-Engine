@@ -5,29 +5,46 @@
 #include <vector>
 #include <string>
 
+/**
+ * A shader configuration consists of macros which configure a
+ * shader in a shader batch. Shader configs with the same macros
+ * use the same shader. A ShaderConfig always belongs to a ShaderConfigBatch
+ * in one ShaderBatch and uses the shader of this batch.
+ * @note A ShaderConfig can only be used in one ShaderBatch at a time.
+ */
 class ShaderConfig {
 
 public:
-	///
+	/**
+	 * Constructs a ShaderConfig object.
+	 */
 	ShaderConfig();
 
-	///
-	/// \param macro
+	/**
+	 * Adds a macro to the config.
+	 * @param macro The macro to be added.
+	 */
 	void AddMacro(string macro);
 
-	///
-	/// \param macro
+	/**
+	 * Removes a macro from the config.
+	 * @param macro The macro to be removed.
+	 */
 	void RemoveMacro(string macro);
 
-	///
-	/// \param macro
-	/// \return
+	/**
+	 * Checks if a macro is present in the config.
+	 * @param macro The macro to be checked.
+	 * @return True if present, false otherwise.
+	 */
 	bool HasMacro(string macro);
 
-	///
+	/**
+	 * Removes all macros from the config.
+	 */
 	void ClearMacros();
 
-	int32_t batchID;
+	int32_t configBatchID;
 	vector<string> macros;
 	
 	bool added;

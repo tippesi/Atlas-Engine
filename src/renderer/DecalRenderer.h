@@ -9,7 +9,7 @@ class DecalRenderer : public IRenderer {
 public:
     DecalRenderer();
 
-    void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer = false);
+    void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
     static string vertexPath;
     static string fragmentPath;

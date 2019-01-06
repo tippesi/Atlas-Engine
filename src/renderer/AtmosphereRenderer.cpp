@@ -10,8 +10,8 @@ AtmosphereRenderer::AtmosphereRenderer() {
 
 	shader = new Shader();
 
-	shader->AddComponent(VERTEX_SHADER, vertexPath);
-	shader->AddComponent(FRAGMENT_SHADER, fragmentPath);
+	shader->AddStage(VERTEX_SHADER, vertexPath);
+	shader->AddStage(FRAGMENT_SHADER, fragmentPath);
 
 	shader->Compile();
 
@@ -19,7 +19,7 @@ AtmosphereRenderer::AtmosphereRenderer() {
 
 }
 
-void AtmosphereRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
+void AtmosphereRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
 	shader->Bind();
 

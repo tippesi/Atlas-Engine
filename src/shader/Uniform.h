@@ -6,17 +6,24 @@
 
 class ShaderBatch;
 
+/**
+ *
+ */
 class Uniform {
 
 public:
-	///
-	/// \param shaderID
-	/// \param uniformName
-	/// \param shaderBatch
-	/// \param ID
+	/**
+	 * Constructs a Uniform object for a shader.
+	 * @param shaderID The ID of the shader.
+	 * @param uniformName The name of the uniform
+	 * @param shaderBatch The shader batch the uniform abstracts, if uniform abstracts access of a shader batch
+	 * @param ID The ID of the uniform in the shader batch, if uniform abstracts access of a shader batch
+	 */
 	Uniform(uint32_t shaderID, string uniformName, ShaderBatch* shaderBatch = nullptr, int32_t ID = 0);
 
-	///
+	/**
+	 * Updates the ID of the uniform.
+	 */
 	void Update();
 
 	void SetValue(int32_t value);

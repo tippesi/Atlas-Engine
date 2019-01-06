@@ -10,8 +10,8 @@ DirectionalLightRenderer::DirectionalLightRenderer() {
 
 	shader = new Shader();
 
-	shader->AddComponent(VERTEX_SHADER, vertexPath);
-	shader->AddComponent(FRAGMENT_SHADER, fragmentPath);
+	shader->AddStage(VERTEX_SHADER, vertexPath);
+	shader->AddStage(FRAGMENT_SHADER, fragmentPath);
 
 	shader->AddMacro("SHADOWS");
 
@@ -21,7 +21,7 @@ DirectionalLightRenderer::DirectionalLightRenderer() {
 
 }
 
-void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene, bool masterRenderer) {
+void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
 	shader->Bind();
 

@@ -10,15 +10,15 @@ MasterRenderer::MasterRenderer() {
 
 	rectangleShader = new Shader();
 
-	rectangleShader->AddComponent(VERTEX_SHADER, rectangleVertexPath);
-	rectangleShader->AddComponent(FRAGMENT_SHADER, rectangleFragmentPath);
+	rectangleShader->AddStage(VERTEX_SHADER, rectangleVertexPath);
+	rectangleShader->AddStage(FRAGMENT_SHADER, rectangleFragmentPath);
 
 	rectangleShader->Compile();
 
 	texturedRectangleShader = new Shader();
 
-	texturedRectangleShader->AddComponent(VERTEX_SHADER, rectangleVertexPath);
-	texturedRectangleShader->AddComponent(FRAGMENT_SHADER, rectangleFragmentPath);
+	texturedRectangleShader->AddStage(VERTEX_SHADER, rectangleVertexPath);
+	texturedRectangleShader->AddStage(FRAGMENT_SHADER, rectangleFragmentPath);
 
 	texturedRectangleShader->AddMacro("TEXTURE");
 
@@ -65,7 +65,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
-	shadowRenderer->Render(window, target, camera, scene, true);
+	shadowRenderer->Render(window, target, camera, scene);
 
 	target->geometryFramebuffer->Bind(true);
 
@@ -74,9 +74,9 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-	terrainRenderer->Render(window, target, camera, scene, true);
+	terrainRenderer->Render(window, target, camera, scene);
 
-	geometryRenderer->Render(window, target, camera, scene, true);
+	geometryRenderer->Render(window, target, camera, scene);
 
 	glEnable(GL_CULL_FACE);
 	glDepthMask(GL_FALSE);
@@ -84,13 +84,13 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	decalRenderer->Render(window, target, camera, scene, true);
+	decalRenderer->Render(window, target, camera, scene);
 
 	glDisable(GL_BLEND);
 
 	vertexArray->Bind();
 
-	directionalVolumetricRenderer->Render(window, target, camera, scene, true);
+	directionalVolumetricRenderer->Render(window, target, camera, scene);
 
 	target->lightingFramebuffer->Bind(true);
 
@@ -101,18 +101,18 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
-	directionalLightRenderer->Render(window, target, camera, scene, true);
+	directionalLightRenderer->Render(window, target, camera, scene);
 
-	pointLightRenderer->Render(window, target, camera, scene, true);
+	pointLightRenderer->Render(window, target, camera, scene);
 
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 
 	if (scene->sky->skybox != nullptr) {
-		skyboxRenderer->Render(window, target, camera, scene, true);
+		skyboxRenderer->Render(window, target, camera, scene);
 	}
 	else {
-		atmosphereRenderer->Render(window, target, camera, scene, true);
+		atmosphereRenderer->Render(window, target, camera, scene);
 	}
 
 	target->lightingFramebuffer->Unbind();
@@ -121,7 +121,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 	vertexArray->Bind();
 
-	postProcessRenderer->Render(window, target, camera, scene, true);
+	postProcessRenderer->Render(window, target, camera, scene);
 
 }
 

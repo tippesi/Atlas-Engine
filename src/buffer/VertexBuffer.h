@@ -42,7 +42,7 @@ public:
 	* @remark For all available data types see https://www.khronos.org/opengl/wiki/OpenGL_Type
 	* <a href="https://www.khronos.org/opengl/wiki/OpenGL_Type">Common Enums</a>. GL_FIXED is not supported.
 	*/
-	virtual inline uint32_t GetDataType() final;
+	uint32_t GetDataType();
 
 	/**
 	* Returns the stride of each element
@@ -50,7 +50,7 @@ public:
 	* @note Stride is not in bytes but is the number of base elements of type dataType. Have a look at
 	* {@link VertexBuffer()} for an example.
 	*/
-    virtual inline int32_t GetStride() final;
+    int32_t GetStride();
 
 private:
 	uint32_t dataType;

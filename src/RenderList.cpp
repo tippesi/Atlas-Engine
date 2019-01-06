@@ -29,13 +29,13 @@ void RenderList::Add(Actor* actor) {
 			ShaderConfig* shaderConfig;
 
 			if (type == GEOMETRY_RENDERLIST) {
-				shaderConfig = actor->mesh->data->materials[subData->materialIndex]->geometryConfig;
+				shaderConfig = &actor->mesh->data->materials[subData->materialIndex]->geometryConfig;
 			}
 			else {
-				shaderConfig = actor->mesh->data->materials[subData->materialIndex]->shadowConfig;
+				shaderConfig = &actor->mesh->data->materials[subData->materialIndex]->shadowConfig;
 			}
 
-			auto batchKey = renderListBatches.find(shaderConfig->batchID);
+			auto batchKey = renderListBatches.find(shaderConfig->configBatchID);
 
 			if (batchKey != renderListBatches.end()) {
 				batchKey->second.subData.push_back(subData);
@@ -44,7 +44,7 @@ void RenderList::Add(Actor* actor) {
 				RenderListBatch batch;
 				batch.actorBatch = actorBatch;
 				batch.subData.push_back(subData);
-				renderListBatches[shaderConfig->batchID] = batch;
+				renderListBatches[shaderConfig->configBatchID] = batch;
 			}
 
 		}
