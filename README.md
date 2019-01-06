@@ -24,7 +24,7 @@ dynamic libraries). Therefore use the BUILD_LIBRARY option when using CMake. Aft
 with your favourite build system you shouldn't forget to also copy all the libraries and include them to your project.
 You can find them in **./lib/YourFavouriteSystem/**.
 ## Documentation
-If you want more information have a look into the [Documentation](https://tippex97.github.io/Blue-Engine/index.html)
+If you want more information have a look into the [Documentation](https://tippesi.github.io/Blue-Engine/index.html)
 ## General performance tips
 - Use static/stationary objects and lights as often as possible
 - Use textures with the same size and format for each material
