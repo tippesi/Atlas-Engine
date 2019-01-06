@@ -1,12 +1,9 @@
 var a00392 =
 [
-    [ "MouseHandler", "d4/d27/a00392.html#a95b11b6ceb0cadf3779cc1bc011f9052", null ],
-    [ "HideMouse", "d4/d27/a00392.html#a6440a4d4e581981a86eb53f6ed4f4855", null ],
-    [ "SetActivationButton", "d4/d27/a00392.html#a019ca7d4d9ba978d9a649d127b86209f", null ],
-    [ "ShowMouse", "d4/d27/a00392.html#a393fc499da376cbbd12c788347fdf46b", null ],
-    [ "Update", "d4/d27/a00392.html#a8f8aa12af5a7fba4fbed7c0d8bae0e97", null ],
-    [ "hideMouse", "d4/d27/a00392.html#a6969cbb5ad9d04c3a350089f05e92ed7", null ],
-    [ "lock", "d4/d27/a00392.html#aca5824e0b5d0dd4745e1598c42838603", null ],
-    [ "reactivity", "d4/d27/a00392.html#ab4e9b69a5a6210cff4a1df3815cb3574", null ],
-    [ "sensibility", "d4/d27/a00392.html#ad92589d63a1e226d997b73431e0b26a9", null ]
+    [ "ControllerHandler", "d4/d27/a00392.html#a39a623d3399f61a694045e172edc118b", null ],
+    [ "Update", "d4/d27/a00392.html#a7e46f71662434c6bda5508d5c0496700", null ],
+    [ "reactivity", "d4/d27/a00392.html#abff05224ea2dc3073d4261e22b6e3ff6", null ],
+    [ "sensibility", "d4/d27/a00392.html#a773a71e814f37851af936b3c0202227d", null ],
+    [ "speed", "d4/d27/a00392.html#a1f95f25167a1b822b0c7a320ac46dc23", null ],
+    [ "threshold", "d4/d27/a00392.html#a85d4a2dd0ea4df261b1b40f12f3b7f2f", null ]
 ];

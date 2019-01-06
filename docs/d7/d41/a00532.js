@@ -1,17 +1,11 @@
 var a00532 =
 [
-    [ "Shader", "d7/d41/a00532.html#a0d654ebaca4e0555197c0724c6d30610", null ],
-    [ "~Shader", "d7/d41/a00532.html#aff01df87e8a102f270b5b135a295e59d", null ],
-    [ "AddComponent", "d7/d41/a00532.html#a2fcdbe88b5144df2651efe526878b995", null ],
-    [ "AddComponent", "d7/d41/a00532.html#a527fb61daca2600673e758adb8b592b2", null ],
-    [ "AddMacro", "d7/d41/a00532.html#ad95147f7d6c51918f5a40a41582fb34d", null ],
-    [ "Bind", "d7/d41/a00532.html#a8b5c8c4788d011a65d158ef8428d1ece", null ],
-    [ "Compile", "d7/d41/a00532.html#a2af9e1585cccc41ed65b49edaa41e690", null ],
-    [ "GetComponent", "d7/d41/a00532.html#aca8b82b8b28fd212b2ccca4a8817da8e", null ],
-    [ "GetUniform", "d7/d41/a00532.html#af34046628e41bcd8266f962781b21978", null ],
-    [ "HasMacro", "d7/d41/a00532.html#a51eec2c5b587aea7ff33c61ca4770f38", null ],
-    [ "RemoveMacro", "d7/d41/a00532.html#a146b60b44989a6e719aa4e6be681ef0b", null ],
-    [ "isCompiled", "d7/d41/a00532.html#ac72395c22736d04c3775b193eaffbbb8", null ],
-    [ "macros", "d7/d41/a00532.html#aff1f0990cc82b756b90a3047c7eb8076", null ],
-    [ "uniforms", "d7/d41/a00532.html#ac411e7630b2b6c2fca15fa57263abd30", null ]
+    [ "TerrainRenderer", "d7/d41/a00532.html#addff638360d7f665bcaad999e8119e6e", null ],
+    [ "GetUniforms", "d7/d41/a00532.html#ab75efc89e697661882557f7996af1587", null ],
+    [ "Render", "d7/d41/a00532.html#a3692f6eea8c6a784130055b8c9a86d18", null ],
+    [ "fragmentPath", "d7/d41/a00532.html#a0894ad4c382261dd54691616f2da6271", null ],
+    [ "geometryPath", "d7/d41/a00532.html#ac80b20e2e83a184cd3def5806b91f88d", null ],
+    [ "tessControlPath", "d7/d41/a00532.html#a159cb4ee860123883161675f057b025a", null ],
+    [ "tessEvalPath", "d7/d41/a00532.html#a863ee658f30402d5adf2ee5ee9a4b65e", null ],
+    [ "vertexPath", "d7/d41/a00532.html#aa04ffa227b94ad06e053375a1e2ce0b0", null ]
 ];

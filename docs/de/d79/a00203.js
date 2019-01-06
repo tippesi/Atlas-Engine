@@ -1,12 +1,9 @@
 var a00203 =
 [
-    [ "ShaderConstant", "dd/de6/a00548.html", "dd/de6/a00548" ],
-    [ "BOOLEAN_CONSTANT", "de/d79/a00203.html#a8ade6da47c8ae835c7653b17deb73e6e", null ],
-    [ "FLOAT_ARRAY_CONSTANT", "de/d79/a00203.html#ac490285126e2aaa46518fe510035e69e", null ],
-    [ "FLOAT_CONSTANT", "de/d79/a00203.html#adb5a99125222f59569f418264c282035", null ],
-    [ "INT_ARRAY_CONSTANT", "de/d79/a00203.html#a5bb153a88b5c31dc5ca46cf3c105b447", null ],
-    [ "INT_CONSTANT", "de/d79/a00203.html#ad50370168ab63d6f7266a0e81e8cc372", null ],
-    [ "VECTOR2_CONSTANT", "de/d79/a00203.html#ade2d7ae536089ceb3a3d6639f064e00e", null ],
-    [ "VECTOR3_CONSTANT", "de/d79/a00203.html#ac667af48119d0369aa76b480d6a2ac7d", null ],
-    [ "VECTOR4_CONSTANT", "de/d79/a00203.html#a629f0306d97f23fcf300ad23c6aed04f", null ]
+    [ "ShaderStage", "d9/d19/a00560.html", "d9/d19/a00560" ],
+    [ "FRAGMENT_SHADER", "de/d79/a00203.html#ae93178af30f412f0278ae46706197379", null ],
+    [ "GEOMETRY_SHADER", "de/d79/a00203.html#a72074ec6f3808a6777fccbe43e4430d2", null ],
+    [ "TESSELATION_CONTROL_SHADER", "de/d79/a00203.html#a588db04b851abaf785eefba49021abb7", null ],
+    [ "TESSELATION_EVALUATION_SHADER", "de/d79/a00203.html#a990b84689d6aa7ce63bc79364de9e92c", null ],
+    [ "VERTEX_SHADER", "de/d79/a00203.html#a61559c4b9e5fc297e461b52230ca3dac", null ]
 ];

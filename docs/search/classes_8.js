@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['kernel',['Kernel',['../d8/d0a/a00292.html',1,'']]],
-  ['keyboardhandler',['KeyboardHandler',['../d9/dc1/a00388.html',1,'']]]
+  ['kernel',['Kernel',['../d8/d17/a00304.html',1,'']]],
+  ['keyboardhandler',['KeyboardHandler',['../d9/da1/a00396.html',1,'']]]
 ];

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: MasterRenderer Class Reference</title>
+<title>Blue Engine: GeometryRenderer Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,74 +89,63 @@ $(document).ready(function(){initNavTree('dc/d1c/a00504.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="../../d8/db6/a00501.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">MasterRenderer Class Reference</div>  </div>
+<div class="title">GeometryRenderer Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d6/d7d/a00161_source.html">GeometryRenderer.h</a>&gt;</code></p>
+<div class="dynheader">
+Inheritance diagram for GeometryRenderer:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="../../dc/d1c/a00504.png" usemap="#GeometryRenderer_map" alt=""/>
+  <map id="GeometryRenderer_map" name="GeometryRenderer_map">
+<area href="../../dc/d30/a00508.html" alt="IRenderer" shape="rect" coords="0,0,119,24"/>
+</map>
+ </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8e39e44c3d33053b096f925a268af9c5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#a8e39e44c3d33053b096f925a268af9c5">MasterRenderer</a> ()</td></tr>
-<tr class="separator:a8e39e44c3d33053b096f925a268af9c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6ce245cef16be45d9f784631153a7708"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#a6ce245cef16be45d9f784631153a7708">RenderScene</a> (<a class="el" href="../../dd/d1d/a00336.html">Window</a> *window, <a class="el" href="../../d5/d0f/a00308.html">RenderTarget</a> *target, <a class="el" href="../../dc/ded/a00252.html">Camera</a> *camera, <a class="el" href="../../d7/df2/a00312.html">Scene</a> *scene)</td></tr>
-<tr class="separator:a6ce245cef16be45d9f784631153a7708"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad35908976346a0f31e5df03dca2953c6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#ad35908976346a0f31e5df03dca2953c6">RenderTexture</a> (<a class="el" href="../../dd/d1d/a00336.html">Window</a> *window, <a class="el" href="../../d6/d75/a00604.html">Texture</a> *texture, float x, float y, float width, float height, bool alphaBlending=false, <a class="el" href="../../d0/dcd/a00280.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
-<tr class="separator:ad35908976346a0f31e5df03dca2953c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a38f090ca104c0ab50c63d4754005c777"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#a38f090ca104c0ab50c63d4754005c777">RenderTexture</a> (<a class="el" href="../../dd/d1d/a00336.html">Window</a> *window, <a class="el" href="../../d6/d75/a00604.html">Texture</a> *texture, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending=false, <a class="el" href="../../d0/dcd/a00280.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
-<tr class="separator:a38f090ca104c0ab50c63d4754005c777"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a77375bec7605c5b30e3566efb3a92725"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#a77375bec7605c5b30e3566efb3a92725">RenderRectangle</a> (<a class="el" href="../../dd/d1d/a00336.html">Window</a> *window, vec4 color, float x, float y, float width, float height, bool alphaBlending=false, <a class="el" href="../../d0/dcd/a00280.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
-<tr class="separator:a77375bec7605c5b30e3566efb3a92725"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aff8e0a793372b573843c78965c4c2a2f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#aff8e0a793372b573843c78965c4c2a2f">RenderRectangle</a> (<a class="el" href="../../dd/d1d/a00336.html">Window</a> *window, vec4 color, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending=false, <a class="el" href="../../d0/dcd/a00280.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
-<tr class="separator:aff8e0a793372b573843c78965c4c2a2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a152165da6c44971c34999fdbef3e8675"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#a152165da6c44971c34999fdbef3e8675">~MasterRenderer</a> ()</td></tr>
-<tr class="separator:a152165da6c44971c34999fdbef3e8675"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a582ae3fb719fc58a42d4fb0633cb2098"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#a582ae3fb719fc58a42d4fb0633cb2098">GeometryRenderer</a> ()</td></tr>
+<tr class="separator:a582ae3fb719fc58a42d4fb0633cb2098"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2dc8b1febdc51d2e6b200c018ab5ff8a"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#a2dc8b1febdc51d2e6b200c018ab5ff8a">Render</a> (<a class="el" href="../../df/df1/a00340.html">Window</a> *window, <a class="el" href="../../dd/de2/a00320.html">RenderTarget</a> *target, <a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera, <a class="el" href="../../d4/d8f/a00324.html">Scene</a> *scene)</td></tr>
+<tr class="separator:a2dc8b1febdc51d2e6b200c018ab5ff8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_a00508"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_a00508')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../dc/d30/a00508.html">IRenderer</a></td></tr>
+<tr class="memitem:a366bcbc6ae52d7bd6a33752ce56378ab inherit pub_methods_a00508"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a366bcbc6ae52d7bd6a33752ce56378ab">~IRenderer</a> ()</td></tr>
+<tr class="separator:a366bcbc6ae52d7bd6a33752ce56378ab inherit pub_methods_a00508"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:ae0e4ca2a7d1a82fa8023c9971be1a53d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d5/d81/a00528.html">TextRenderer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#ae0e4ca2a7d1a82fa8023c9971be1a53d">textRenderer</a></td></tr>
-<tr class="separator:ae0e4ca2a7d1a82fa8023c9971be1a53d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a9e5d8fe3b3fdcd8b61e54f15a3afe5bc"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#a9e5d8fe3b3fdcd8b61e54f15a3afe5bc">InitShaderBatch</a> ()</td></tr>
+<tr class="separator:a9e5d8fe3b3fdcd8b61e54f15a3afe5bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac33503c740e543690e754b0578175937"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#ac33503c740e543690e754b0578175937">AddConfig</a> (<a class="el" href="../../dd/de6/a00548.html">ShaderConfig</a> *config)</td></tr>
+<tr class="separator:ac33503c740e543690e754b0578175937"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5889fe1c6c4bb8739aab3707e8e0b50e"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#a5889fe1c6c4bb8739aab3707e8e0b50e">RemoveConfig</a> (<a class="el" href="../../dd/de6/a00548.html">ShaderConfig</a> *config)</td></tr>
+<tr class="separator:a5889fe1c6c4bb8739aab3707e8e0b50e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:a53cd408a4960a5f1f005b9e12e61c5eb"><td class="memItemLeft" align="right" valign="top">static string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#a53cd408a4960a5f1f005b9e12e61c5eb">rectangleVertexPath</a></td></tr>
-<tr class="separator:a53cd408a4960a5f1f005b9e12e61c5eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8bf17d3270b3e538cbbfe55959e20eb3"><td class="memItemLeft" align="right" valign="top">static string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#a8bf17d3270b3e538cbbfe55959e20eb3">rectangleFragmentPath</a></td></tr>
-<tr class="separator:a8bf17d3270b3e538cbbfe55959e20eb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a11c5aac00183850adca1bfd2362f0bed"><td class="memItemLeft" align="right" valign="top">static string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#a11c5aac00183850adca1bfd2362f0bed">vertexPath</a></td></tr>
+<tr class="separator:a11c5aac00183850adca1bfd2362f0bed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17c8db670624d74a1ec7d69dd612f8c9"><td class="memItemLeft" align="right" valign="top">static string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html#a17c8db670624d74a1ec7d69dd612f8c9">fragmentPath</a></td></tr>
+<tr class="separator:a17c8db670624d74a1ec7d69dd612f8c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d5/dcb/a00170_source.html#l00019">19</a> of file <a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d7d/a00161_source.html#l00010">10</a> of file <a class="el" href="../../d6/d7d/a00161_source.html">GeometryRenderer.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a8e39e44c3d33053b096f925a268af9c5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8e39e44c3d33053b096f925a268af9c5">&#9670;&nbsp;</a></span>MasterRenderer()</h2>
+<a id="a582ae3fb719fc58a42d4fb0633cb2098"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a582ae3fb719fc58a42d4fb0633cb2098">&#9670;&nbsp;</a></span>GeometryRenderer()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">MasterRenderer::MasterRenderer </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a152165da6c44971c34999fdbef3e8675"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a152165da6c44971c34999fdbef3e8675">&#9670;&nbsp;</a></span>~MasterRenderer()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">MasterRenderer::~MasterRenderer </td>
+          <td class="memname">GeometryRenderer::GeometryRenderer </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -167,174 +156,114 @@ Static Public Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a77375bec7605c5b30e3566efb3a92725"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a77375bec7605c5b30e3566efb3a92725">&#9670;&nbsp;</a></span>RenderRectangle() <span class="overload">[1/2]</span></h2>
+<a id="ac33503c740e543690e754b0578175937"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac33503c740e543690e754b0578175937">&#9670;&nbsp;</a></span>AddConfig()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void MasterRenderer::RenderRectangle </td>
+          <td class="memname">static void GeometryRenderer::AddConfig </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dd/d1d/a00336.html">Window</a> *&#160;</td>
-          <td class="paramname"><em>window</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype"><a class="el" href="../../dd/de6/a00548.html">ShaderConfig</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>color</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d0/dcd/a00280.html">Framebuffer</a> *&#160;</td>
-          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a id="aff8e0a793372b573843c78965c4c2a2f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aff8e0a793372b573843c78965c4c2a2f">&#9670;&nbsp;</a></span>RenderRectangle() <span class="overload">[2/2]</span></h2>
+<a id="a9e5d8fe3b3fdcd8b61e54f15a3afe5bc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e5d8fe3b3fdcd8b61e54f15a3afe5bc">&#9670;&nbsp;</a></span>InitShaderBatch()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void MasterRenderer::RenderRectangle </td>
+          <td class="memname">static void GeometryRenderer::InitShaderBatch </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dd/d1d/a00336.html">Window</a> *&#160;</td>
-          <td class="paramname"><em>window</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>color</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>clipArea</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>blendArea</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d0/dcd/a00280.html">Framebuffer</a> *&#160;</td>
-          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a id="a6ce245cef16be45d9f784631153a7708"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6ce245cef16be45d9f784631153a7708">&#9670;&nbsp;</a></span>RenderScene()</h2>
+<a id="a5889fe1c6c4bb8739aab3707e8e0b50e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5889fe1c6c4bb8739aab3707e8e0b50e">&#9670;&nbsp;</a></span>RemoveConfig()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void MasterRenderer::RenderScene </td>
+          <td class="memname">static void GeometryRenderer::RemoveConfig </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dd/d1d/a00336.html">Window</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="../../dd/de6/a00548.html">ShaderConfig</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a2dc8b1febdc51d2e6b200c018ab5ff8a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2dc8b1febdc51d2e6b200c018ab5ff8a">&#9670;&nbsp;</a></span>Render()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void GeometryRenderer::Render </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../df/df1/a00340.html">Window</a> *&#160;</td>
           <td class="paramname"><em>window</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../d5/d0f/a00308.html">RenderTarget</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="../../dd/de2/a00320.html">RenderTarget</a> *&#160;</td>
           <td class="paramname"><em>target</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../dc/ded/a00252.html">Camera</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
           <td class="paramname"><em>camera</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../d7/df2/a00312.html">Scene</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="../../d4/d8f/a00324.html">Scene</a> *&#160;</td>
           <td class="paramname"><em>scene</em>&#160;</td>
         </tr>
         <tr>
@@ -343,153 +272,20 @@ Static Public Attributes</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-</div>
-</div>
-<a id="ad35908976346a0f31e5df03dca2953c6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad35908976346a0f31e5df03dca2953c6">&#9670;&nbsp;</a></span>RenderTexture() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void MasterRenderer::RenderTexture </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dd/d1d/a00336.html">Window</a> *&#160;</td>
-          <td class="paramname"><em>window</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d6/d75/a00604.html">Texture</a> *&#160;</td>
-          <td class="paramname"><em>texture</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d0/dcd/a00280.html">Framebuffer</a> *&#160;</td>
-          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a38f090ca104c0ab50c63d4754005c777"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a38f090ca104c0ab50c63d4754005c777">&#9670;&nbsp;</a></span>RenderTexture() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void MasterRenderer::RenderTexture </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dd/d1d/a00336.html">Window</a> *&#160;</td>
-          <td class="paramname"><em>window</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d6/d75/a00604.html">Texture</a> *&#160;</td>
-          <td class="paramname"><em>texture</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>clipArea</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>blendArea</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d0/dcd/a00280.html">Framebuffer</a> *&#160;</td>
-          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
+<p>Implements <a class="el" href="../../dc/d30/a00508.html#a2dc13fb7218a62ba5d0a4073413db3bb">IRenderer</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a8bf17d3270b3e538cbbfe55959e20eb3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8bf17d3270b3e538cbbfe55959e20eb3">&#9670;&nbsp;</a></span>rectangleFragmentPath</h2>
+<a id="a17c8db670624d74a1ec7d69dd612f8c9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a17c8db670624d74a1ec7d69dd612f8c9">&#9670;&nbsp;</a></span>fragmentPath</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -498,7 +294,7 @@ Static Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">string MasterRenderer::rectangleFragmentPath</td>
+          <td class="memname">string GeometryRenderer::fragmentPath</td>
         </tr>
       </table>
   </td>
@@ -508,12 +304,12 @@ Static Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/dcb/a00170_source.html#l00043">43</a> of file <a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d7d/a00161_source.html#l00024">24</a> of file <a class="el" href="../../d6/d7d/a00161_source.html">GeometryRenderer.h</a>.</p>
 
 </div>
 </div>
-<a id="a53cd408a4960a5f1f005b9e12e61c5eb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a53cd408a4960a5f1f005b9e12e61c5eb">&#9670;&nbsp;</a></span>rectangleVertexPath</h2>
+<a id="a11c5aac00183850adca1bfd2362f0bed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a11c5aac00183850adca1bfd2362f0bed">&#9670;&nbsp;</a></span>vertexPath</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -522,7 +318,7 @@ Static Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">string MasterRenderer::rectangleVertexPath</td>
+          <td class="memname">string GeometryRenderer::vertexPath</td>
         </tr>
       </table>
   </td>
@@ -532,35 +328,19 @@ Static Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/dcb/a00170_source.html#l00042">42</a> of file <a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>.</p>
-
-</div>
-</div>
-<a id="ae0e4ca2a7d1a82fa8023c9971be1a53d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae0e4ca2a7d1a82fa8023c9971be1a53d">&#9670;&nbsp;</a></span>textRenderer</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../d5/d81/a00528.html">TextRenderer</a>* MasterRenderer::textRenderer</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/dcb/a00170_source.html#l00040">40</a> of file <a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d7d/a00161_source.html#l00023">23</a> of file <a class="el" href="../../d6/d7d/a00161_source.html">GeometryRenderer.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/renderer/<a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a></li>
+<li>src/renderer/<a class="el" href="../../d6/d7d/a00161_source.html">GeometryRenderer.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dc/d1c/a00504.html">MasterRenderer</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d1c/a00504.html">GeometryRenderer</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

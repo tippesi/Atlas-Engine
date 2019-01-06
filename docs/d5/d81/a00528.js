@@ -1,11 +1,7 @@
 var a00528 =
 [
-    [ "TextRenderer", "d5/d81/a00528.html#a2ffb5baddcc264fbaccda8fb7c660814", null ],
-    [ "Render", "d5/d81/a00528.html#ab6f7e4c4d2ab1283db196e0e437bfd5d", null ],
-    [ "Render", "d5/d81/a00528.html#a1f783931e4e194ada404d3f95a4e814c", null ],
-    [ "Render", "d5/d81/a00528.html#abfd3450a0466a9a7f509bcede0ee16d7", null ],
-    [ "RenderOutlined", "d5/d81/a00528.html#a274115742f5fd6c5305850342c1eb671", null ],
-    [ "RenderOutlined", "d5/d81/a00528.html#a4f99b2cb4a776b6bd9d8e93d8349bed7", null ],
-    [ "fragmentPath", "d5/d81/a00528.html#a66be214e499b96d592163ad9454cd42c", null ],
-    [ "vertexPath", "d5/d81/a00528.html#a6d139622d0419496250f83b86d72da24", null ]
+    [ "SkyboxRenderer", "d5/d81/a00528.html#a8db778ab8a92bd981073dacb97611f3b", null ],
+    [ "Render", "d5/d81/a00528.html#aa346df84fc1cc4e29e8a9cb8cbce2d79", null ],
+    [ "fragmentPath", "d5/d81/a00528.html#a26e5fb64491701c66b211c1f907103b8", null ],
+    [ "vertexPath", "d5/d81/a00528.html#ad486acb996ad37b9e1f71b67a4baa139", null ]
 ];

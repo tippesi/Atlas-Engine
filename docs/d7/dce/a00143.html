@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: src/mesh/MeshData.h File Reference</title>
+<title>Blue Engine: src/mesh/Packing.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,84 +88,76 @@ $(document).ready(function(){initNavTree('d7/dce/a00143.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a> &#124;
-<a href="#define-members">Macros</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
-<div class="title">MeshData.h File Reference</div>  </div>
+<div class="title">Packing.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../de/d76/a00134_source.html">DataComponent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d2/df5/a00137_source.html">Material.h</a>&quot;</code><br />
-<code>#include &lt;vector&gt;</code><br />
 </div>
 <p><a href="../../d7/dce/a00143_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
-Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html">MeshSubData</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html">MeshData</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:af6a2b7e162833d5f19dc71de5487bd81"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#af6a2b7e162833d5f19dc71de5487bd81">PRIMITIVE_TRIANGLES</a>&#160;&#160;&#160;GL_TRIANGLES</td></tr>
-<tr class="separator:af6a2b7e162833d5f19dc71de5487bd81"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9f1c3285e824753ec6c54ab10343479c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#a9f1c3285e824753ec6c54ab10343479c">PRIMITIVE_TRIANGLE_STRIP</a>&#160;&#160;&#160;GL_TRIANGLE_STRIP</td></tr>
-<tr class="separator:a9f1c3285e824753ec6c54ab10343479c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:a0e4da5aded1bb94b0ab486f243ea43af"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../db/db1/a00460.html">MeshSubData</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#a0e4da5aded1bb94b0ab486f243ea43af">MeshSubData</a></td></tr>
-<tr class="separator:a0e4da5aded1bb94b0ab486f243ea43af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a3b632d6f36d4a2f897f61f5ef6022d3f"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#a3b632d6f36d4a2f897f61f5ef6022d3f">packNormalizedFloat_2_10_10_10_REV</a> (vec4 vector)</td></tr>
+<tr class="memdesc:a3b632d6f36d4a2f897f61f5ef6022d3f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Packs a vector into a 32 bit integer  <a href="#a3b632d6f36d4a2f897f61f5ef6022d3f">More...</a><br /></td></tr>
+<tr class="separator:a3b632d6f36d4a2f897f61f5ef6022d3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa58920026ce03df7273eeed5c26ab034"><td class="memItemLeft" align="right" valign="top">vec4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#aa58920026ce03df7273eeed5c26ab034">unpackNormalizedFloat_2_10_10_10_REV</a> (uint32_t packed)</td></tr>
+<tr class="memdesc:aa58920026ce03df7273eeed5c26ab034"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unpacks a vector from a 32 bit integer  <a href="#aa58920026ce03df7273eeed5c26ab034">More...</a><br /></td></tr>
+<tr class="separator:aa58920026ce03df7273eeed5c26ab034"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="a9f1c3285e824753ec6c54ab10343479c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9f1c3285e824753ec6c54ab10343479c">&#9670;&nbsp;</a></span>PRIMITIVE_TRIANGLE_STRIP</h2>
+<h2 class="groupheader">Function Documentation</h2>
+<a id="a3b632d6f36d4a2f897f61f5ef6022d3f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3b632d6f36d4a2f897f61f5ef6022d3f">&#9670;&nbsp;</a></span>packNormalizedFloat_2_10_10_10_REV()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define PRIMITIVE_TRIANGLE_STRIP&#160;&#160;&#160;GL_TRIANGLE_STRIP</td>
+          <td class="memname">uint32_t packNormalizedFloat_2_10_10_10_REV </td>
+          <td>(</td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>vector</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00011">11</a> of file <a class="el" href="../../d7/dce/a00143_source.html">MeshData.h</a>.</p>
+<p>Packs a vector into a 32 bit integer </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">vector</td><td>The vector to pack into the integer.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>&lt;return&gt;An unsigned integer including the vector.&lt;/return&gt; </p>
 
 </div>
 </div>
-<a id="af6a2b7e162833d5f19dc71de5487bd81"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af6a2b7e162833d5f19dc71de5487bd81">&#9670;&nbsp;</a></span>PRIMITIVE_TRIANGLES</h2>
+<a id="aa58920026ce03df7273eeed5c26ab034"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa58920026ce03df7273eeed5c26ab034">&#9670;&nbsp;</a></span>unpackNormalizedFloat_2_10_10_10_REV()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define PRIMITIVE_TRIANGLES&#160;&#160;&#160;GL_TRIANGLES</td>
+          <td class="memname">vec4 unpackNormalizedFloat_2_10_10_10_REV </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>packed</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00010">10</a> of file <a class="el" href="../../d7/dce/a00143_source.html">MeshData.h</a>.</p>
-
-</div>
-</div>
-<h2 class="groupheader">Typedef Documentation</h2>
-<a id="a0e4da5aded1bb94b0ab486f243ea43af"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0e4da5aded1bb94b0ab486f243ea43af">&#9670;&nbsp;</a></span>MeshSubData</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef struct <a class="el" href="../../db/db1/a00460.html">MeshSubData</a> <a class="el" href="../../db/db1/a00460.html">MeshSubData</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
+<p>Unpacks a vector from a 32 bit integer </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">packed</td><td>The integer where the vector is packed in.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>&lt;return&gt;A 4-component vector including the unpacked data.&lt;/return&gt; </p>
 
 </div>
 </div>
@@ -174,7 +166,7 @@ Typedefs</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../d7/dce/a00143.html">MeshData.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../d7/dce/a00143.html">Packing.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

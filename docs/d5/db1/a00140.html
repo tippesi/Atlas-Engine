@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: src/mesh/Mesh.h File Reference</title>
+<title>Blue Engine: src/mesh/MeshData.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,28 +88,93 @@ $(document).ready(function(){initNavTree('d5/db1/a00140.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a>  </div>
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#define-members">Macros</a> &#124;
+<a href="#typedef-members">Typedefs</a>  </div>
   <div class="headertitle">
-<div class="title">Mesh.h File Reference</div>  </div>
+<div class="title">MeshData.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d7/dce/a00143_source.html">MeshData.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d6/d2d/a00047_source.html">VertexArray.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d7/d06/a00131_source.html">DataComponent.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../de/d76/a00134_source.html">Material.h</a>&quot;</code><br />
+<code>#include &lt;vector&gt;</code><br />
 </div>
 <p><a href="../../d5/db1/a00140_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d87/a00456.html">Mesh</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html">MeshSubData</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html">MeshData</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
+Macros</h2></td></tr>
+<tr class="memitem:af6a2b7e162833d5f19dc71de5487bd81"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/db1/a00140.html#af6a2b7e162833d5f19dc71de5487bd81">PRIMITIVE_TRIANGLES</a>&#160;&#160;&#160;GL_TRIANGLES</td></tr>
+<tr class="separator:af6a2b7e162833d5f19dc71de5487bd81"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f1c3285e824753ec6c54ab10343479c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/db1/a00140.html#a9f1c3285e824753ec6c54ab10343479c">PRIMITIVE_TRIANGLE_STRIP</a>&#160;&#160;&#160;GL_TRIANGLE_STRIP</td></tr>
+<tr class="separator:a9f1c3285e824753ec6c54ab10343479c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:a0e4da5aded1bb94b0ab486f243ea43af"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../df/d38/a00468.html">MeshSubData</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/db1/a00140.html#a0e4da5aded1bb94b0ab486f243ea43af">MeshSubData</a></td></tr>
+<tr class="separator:a0e4da5aded1bb94b0ab486f243ea43af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="a9f1c3285e824753ec6c54ab10343479c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f1c3285e824753ec6c54ab10343479c">&#9670;&nbsp;</a></span>PRIMITIVE_TRIANGLE_STRIP</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define PRIMITIVE_TRIANGLE_STRIP&#160;&#160;&#160;GL_TRIANGLE_STRIP</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00011">11</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
+
+</div>
+</div>
+<a id="af6a2b7e162833d5f19dc71de5487bd81"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af6a2b7e162833d5f19dc71de5487bd81">&#9670;&nbsp;</a></span>PRIMITIVE_TRIANGLES</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define PRIMITIVE_TRIANGLES&#160;&#160;&#160;GL_TRIANGLES</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00010">10</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Typedef Documentation</h2>
+<a id="a0e4da5aded1bb94b0ab486f243ea43af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0e4da5aded1bb94b0ab486f243ea43af">&#9670;&nbsp;</a></span>MeshSubData</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="../../df/d38/a00468.html">MeshSubData</a> <a class="el" href="../../df/d38/a00468.html">MeshSubData</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../d5/db1/a00140.html">Mesh.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../d5/db1/a00140.html">MeshData.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

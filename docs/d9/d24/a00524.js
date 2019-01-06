@@ -1,11 +1,10 @@
 var a00524 =
 [
-    [ "TerrainRenderer", "d9/d24/a00524.html#addff638360d7f665bcaad999e8119e6e", null ],
-    [ "GetUniforms", "d9/d24/a00524.html#ab75efc89e697661882557f7996af1587", null ],
-    [ "Render", "d9/d24/a00524.html#ab157880e3312e3ec63dcf43d9d157955", null ],
-    [ "fragmentPath", "d9/d24/a00524.html#a0894ad4c382261dd54691616f2da6271", null ],
-    [ "geometryPath", "d9/d24/a00524.html#ac80b20e2e83a184cd3def5806b91f88d", null ],
-    [ "tessControlPath", "d9/d24/a00524.html#a159cb4ee860123883161675f057b025a", null ],
-    [ "tessEvalPath", "d9/d24/a00524.html#a863ee658f30402d5adf2ee5ee9a4b65e", null ],
-    [ "vertexPath", "d9/d24/a00524.html#aa04ffa227b94ad06e053375a1e2ce0b0", null ]
+    [ "ShadowRenderer", "d9/d24/a00524.html#a8126180212382e3c138545451daf348b", null ],
+    [ "AddConfig", "d9/d24/a00524.html#a734305a8679d9861a8329f75a53051e1", null ],
+    [ "InitShaderBatch", "d9/d24/a00524.html#a96225f490765a14a514221403cff161f", null ],
+    [ "RemoveConfig", "d9/d24/a00524.html#a2847d1a783e5a9867e5e772db26961f0", null ],
+    [ "Render", "d9/d24/a00524.html#a2522a4caea01ce1c87c804192c050b07", null ],
+    [ "fragmentPath", "d9/d24/a00524.html#ae14535fd0b0f376e16113145a20ae6aa", null ],
+    [ "vertexPath", "d9/d24/a00524.html#a420f1b904979b4cab4dea939d668d23a", null ]
 ];

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: PointLight Class Reference</title>
+<title>Blue Engine: DirectionalLight Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,82 +92,84 @@ $(document).ready(function(){initNavTree('df/d15/a00416.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../da/d9c/a00413.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">PointLight Class Reference</div>  </div>
+<div class="title">DirectionalLight Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d3/d00/a00113_source.html">PointLight.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d0/dc2/a00104_source.html">DirectionalLight.h</a>&gt;</code></p>
 <div class="dynheader">
-Inheritance diagram for PointLight:</div>
+Inheritance diagram for DirectionalLight:</div>
 <div class="dyncontent">
  <div class="center">
-  <img src="../../df/d15/a00416.png" usemap="#PointLight_map" alt=""/>
-  <map id="PointLight_map" name="PointLight_map">
-<area href="../../d9/d72/a00412.html" alt="ILight" shape="rect" coords="0,0,67,24"/>
+  <img src="../../df/d15/a00416.png" usemap="#DirectionalLight_map" alt=""/>
+  <map id="DirectionalLight_map" name="DirectionalLight_map">
+<area href="../../db/d4f/a00420.html" alt="ILight" shape="rect" coords="0,0,100,24"/>
 </map>
  </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a804acdd791386a4e21a37ae9eee2ea25"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#a804acdd791386a4e21a37ae9eee2ea25">PointLight</a> (int32_t <a class="el" href="../../d9/d72/a00412.html#ad8802ed5c36db33af8fe39eda477aada">mobility</a>=<a class="el" href="../../d4/d81/a00110.html#a73dfbf4066d9f8b15c24ed1cf5ec5d00">STATIONARY_LIGHT</a>)</td></tr>
-<tr class="separator:a804acdd791386a4e21a37ae9eee2ea25"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a28671ac4426181efc4adbd346a71c249"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#a28671ac4426181efc4adbd346a71c249">AddShadow</a> (float bias, int32_t resolution)</td></tr>
-<tr class="separator:a28671ac4426181efc4adbd346a71c249"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a41863685ce540bfa0e40be7b2c7bddd0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#a41863685ce540bfa0e40be7b2c7bddd0">RemoveShadow</a> ()</td></tr>
-<tr class="separator:a41863685ce540bfa0e40be7b2c7bddd0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8fc6ab5423218a52a08272ec90dcc6a8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#a8fc6ab5423218a52a08272ec90dcc6a8">AddVolumetric</a> (<a class="el" href="../../d4/d82/a00436.html">Volumetric</a> *<a class="el" href="../../d9/d72/a00412.html#a160e1a13590f7d74ba7cddb35ba3027c">volumetric</a>)</td></tr>
-<tr class="separator:a8fc6ab5423218a52a08272ec90dcc6a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a95bb4ff5a2276576bfc4ec8b5f587754"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#a95bb4ff5a2276576bfc4ec8b5f587754">RemoveVolumetric</a> ()</td></tr>
-<tr class="separator:a95bb4ff5a2276576bfc4ec8b5f587754"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adac184c0f9cfc46e6539fea415d4bcf7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#adac184c0f9cfc46e6539fea415d4bcf7">Update</a> (<a class="el" href="../../dc/ded/a00252.html">Camera</a> *camera)</td></tr>
-<tr class="separator:adac184c0f9cfc46e6539fea415d4bcf7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a20e58296d9b45a3650c4fea54939b747"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#a20e58296d9b45a3650c4fea54939b747">GetRadius</a> ()</td></tr>
-<tr class="separator:a20e58296d9b45a3650c4fea54939b747"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_a00412"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_a00412')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d9/d72/a00412.html">ILight</a></td></tr>
-<tr class="memitem:a551a41ea1781cb8b7ae75f12991f4b0b inherit pub_methods_a00412"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/df3/a00424.html">Shadow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#a551a41ea1781cb8b7ae75f12991f4b0b">GetShadow</a> ()</td></tr>
-<tr class="separator:a551a41ea1781cb8b7ae75f12991f4b0b inherit pub_methods_a00412"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afc65ba9287f5637589095400ffee5fbb inherit pub_methods_a00412"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d82/a00436.html">Volumetric</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#afc65ba9287f5637589095400ffee5fbb">GetVolumetric</a> ()</td></tr>
-<tr class="separator:afc65ba9287f5637589095400ffee5fbb inherit pub_methods_a00412"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6c319da56cb7d7b28baf0d5f02ecc399"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#a6c319da56cb7d7b28baf0d5f02ecc399">DirectionalLight</a> (int32_t <a class="el" href="../../db/d4f/a00420.html#ad8802ed5c36db33af8fe39eda477aada">mobility</a>=<a class="el" href="../../df/d98/a00107.html#ac4df35ec263304203c862176ec45ded1">MOVABLE_LIGHT</a>)</td></tr>
+<tr class="separator:a6c319da56cb7d7b28baf0d5f02ecc399"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed88f0ef284160f4b74dc0ecb411997d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#aed88f0ef284160f4b74dc0ecb411997d">AddShadow</a> (float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection, <a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera)</td></tr>
+<tr class="separator:aed88f0ef284160f4b74dc0ecb411997d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adfacb1d047c0098be88970f9fd2dbac5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#adfacb1d047c0098be88970f9fd2dbac5">AddShadow</a> (float distance, float bias, int32_t resolution, vec3 centerPoint, mat4 orthoProjection)</td></tr>
+<tr class="separator:adfacb1d047c0098be88970f9fd2dbac5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af256fc47de861f0839994fed69156c93"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#af256fc47de861f0839994fed69156c93">RemoveShadow</a> ()</td></tr>
+<tr class="separator:af256fc47de861f0839994fed69156c93"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac95110fb0eb3dc5691ef1de99caa2130"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#ac95110fb0eb3dc5691ef1de99caa2130">AddVolumetric</a> (<a class="el" href="../../d3/dea/a00444.html">Volumetric</a> *<a class="el" href="../../db/d4f/a00420.html#a160e1a13590f7d74ba7cddb35ba3027c">volumetric</a>)</td></tr>
+<tr class="separator:ac95110fb0eb3dc5691ef1de99caa2130"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeecad1fdfb5bc3d8490d1cce7ca0ac5e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#aeecad1fdfb5bc3d8490d1cce7ca0ac5e">RemoveVolumetric</a> ()</td></tr>
+<tr class="separator:aeecad1fdfb5bc3d8490d1cce7ca0ac5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97293ebb5029bbf1a4473a67efd60836"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#a97293ebb5029bbf1a4473a67efd60836">Update</a> (<a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera)</td></tr>
+<tr class="separator:a97293ebb5029bbf1a4473a67efd60836"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7b2f1194b2a6086fe83f9e4696518d69"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#a7b2f1194b2a6086fe83f9e4696518d69">ClearContent</a> ()</td></tr>
+<tr class="separator:a7b2f1194b2a6086fe83f9e4696518d69"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac78fcda46cf3e9abaeca7546e3a8910"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#aac78fcda46cf3e9abaeca7546e3a8910">DeleteContent</a> ()</td></tr>
+<tr class="separator:aac78fcda46cf3e9abaeca7546e3a8910"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_a00420"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_a00420')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../db/d4f/a00420.html">ILight</a></td></tr>
+<tr class="memitem:a551a41ea1781cb8b7ae75f12991f4b0b inherit pub_methods_a00420"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d9/dd5/a00432.html">Shadow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a551a41ea1781cb8b7ae75f12991f4b0b">GetShadow</a> ()</td></tr>
+<tr class="separator:a551a41ea1781cb8b7ae75f12991f4b0b inherit pub_methods_a00420"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc65ba9287f5637589095400ffee5fbb inherit pub_methods_a00420"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/dea/a00444.html">Volumetric</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#afc65ba9287f5637589095400ffee5fbb">GetVolumetric</a> ()</td></tr>
+<tr class="separator:afc65ba9287f5637589095400ffee5fbb inherit pub_methods_a00420"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a8b8958be0e0b2f9649d62b9f543088ca"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#a8b8958be0e0b2f9649d62b9f543088ca">location</a></td></tr>
-<tr class="separator:a8b8958be0e0b2f9649d62b9f543088ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aed8e8d9cb5dcf43f3a063df16c3abfb4"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#aed8e8d9cb5dcf43f3a063df16c3abfb4">attenuation</a></td></tr>
-<tr class="separator:aed8e8d9cb5dcf43f3a063df16c3abfb4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_attribs_a00412"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_a00412')"><img src="../../closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="../../d9/d72/a00412.html">ILight</a></td></tr>
-<tr class="memitem:a8458ee4d225fe841ccd024f98be28991 inherit pub_attribs_a00412"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#a8458ee4d225fe841ccd024f98be28991">type</a></td></tr>
-<tr class="separator:a8458ee4d225fe841ccd024f98be28991 inherit pub_attribs_a00412"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad8802ed5c36db33af8fe39eda477aada inherit pub_attribs_a00412"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#ad8802ed5c36db33af8fe39eda477aada">mobility</a></td></tr>
-<tr class="separator:ad8802ed5c36db33af8fe39eda477aada inherit pub_attribs_a00412"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0a4e6dd2746b93a9c4014e4bb78c8d66 inherit pub_attribs_a00412"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#a0a4e6dd2746b93a9c4014e4bb78c8d66">color</a></td></tr>
-<tr class="separator:a0a4e6dd2746b93a9c4014e4bb78c8d66 inherit pub_attribs_a00412"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad35af4e465a8c389aeaeb20777e5e61b inherit pub_attribs_a00412"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#ad35af4e465a8c389aeaeb20777e5e61b">ambient</a></td></tr>
-<tr class="separator:ad35af4e465a8c389aeaeb20777e5e61b inherit pub_attribs_a00412"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78a56aede026b50aa2606bf20c1b0871"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d15/a00416.html#a78a56aede026b50aa2606bf20c1b0871">direction</a></td></tr>
+<tr class="separator:a78a56aede026b50aa2606bf20c1b0871"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_attribs_a00420"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_a00420')"><img src="../../closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="../../db/d4f/a00420.html">ILight</a></td></tr>
+<tr class="memitem:a8458ee4d225fe841ccd024f98be28991 inherit pub_attribs_a00420"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a8458ee4d225fe841ccd024f98be28991">type</a></td></tr>
+<tr class="separator:a8458ee4d225fe841ccd024f98be28991 inherit pub_attribs_a00420"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8802ed5c36db33af8fe39eda477aada inherit pub_attribs_a00420"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#ad8802ed5c36db33af8fe39eda477aada">mobility</a></td></tr>
+<tr class="separator:ad8802ed5c36db33af8fe39eda477aada inherit pub_attribs_a00420"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0a4e6dd2746b93a9c4014e4bb78c8d66 inherit pub_attribs_a00420"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a0a4e6dd2746b93a9c4014e4bb78c8d66">color</a></td></tr>
+<tr class="separator:a0a4e6dd2746b93a9c4014e4bb78c8d66 inherit pub_attribs_a00420"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad35af4e465a8c389aeaeb20777e5e61b inherit pub_attribs_a00420"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#ad35af4e465a8c389aeaeb20777e5e61b">ambient</a></td></tr>
+<tr class="separator:ad35af4e465a8c389aeaeb20777e5e61b inherit pub_attribs_a00420"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pro_attribs_a00412"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_a00412')"><img src="../../closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="../../d9/d72/a00412.html">ILight</a></td></tr>
-<tr class="memitem:ad0fa9a8ad5f174c4c79570fe0e62db6e inherit pro_attribs_a00412"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/df3/a00424.html">Shadow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#ad0fa9a8ad5f174c4c79570fe0e62db6e">shadow</a></td></tr>
-<tr class="separator:ad0fa9a8ad5f174c4c79570fe0e62db6e inherit pro_attribs_a00412"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a160e1a13590f7d74ba7cddb35ba3027c inherit pro_attribs_a00412"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d82/a00436.html">Volumetric</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#a160e1a13590f7d74ba7cddb35ba3027c">volumetric</a></td></tr>
-<tr class="separator:a160e1a13590f7d74ba7cddb35ba3027c inherit pro_attribs_a00412"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pro_attribs_a00420"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_a00420')"><img src="../../closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="../../db/d4f/a00420.html">ILight</a></td></tr>
+<tr class="memitem:ad0fa9a8ad5f174c4c79570fe0e62db6e inherit pro_attribs_a00420"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d9/dd5/a00432.html">Shadow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#ad0fa9a8ad5f174c4c79570fe0e62db6e">shadow</a></td></tr>
+<tr class="separator:ad0fa9a8ad5f174c4c79570fe0e62db6e inherit pro_attribs_a00420"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a160e1a13590f7d74ba7cddb35ba3027c inherit pro_attribs_a00420"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/dea/a00444.html">Volumetric</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a160e1a13590f7d74ba7cddb35ba3027c">volumetric</a></td></tr>
+<tr class="separator:a160e1a13590f7d74ba7cddb35ba3027c inherit pro_attribs_a00420"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00007">7</a> of file <a class="el" href="../../d3/d00/a00113_source.html">PointLight.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dc2/a00104_source.html#l00007">7</a> of file <a class="el" href="../../d0/dc2/a00104_source.html">DirectionalLight.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a804acdd791386a4e21a37ae9eee2ea25"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a804acdd791386a4e21a37ae9eee2ea25">&#9670;&nbsp;</a></span>PointLight()</h2>
+<a id="a6c319da56cb7d7b28baf0d5f02ecc399"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6c319da56cb7d7b28baf0d5f02ecc399">&#9670;&nbsp;</a></span>DirectionalLight()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">PointLight::PointLight </td>
+          <td class="memname">DirectionalLight::DirectionalLight </td>
           <td>(</td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>mobility</em> = <code><a class="el" href="../../d4/d81/a00110.html#a73dfbf4066d9f8b15c24ed1cf5ec5d00">STATIONARY_LIGHT</a></code></td><td>)</td>
+          <td class="paramname"><em>mobility</em> = <code><a class="el" href="../../df/d98/a00107.html#ac4df35ec263304203c862176ec45ded1">MOVABLE_LIGHT</a></code></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -176,15 +178,21 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a28671ac4426181efc4adbd346a71c249"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a28671ac4426181efc4adbd346a71c249">&#9670;&nbsp;</a></span>AddShadow()</h2>
+<a id="aed88f0ef284160f4b74dc0ecb411997d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aed88f0ef284160f4b74dc0ecb411997d">&#9670;&nbsp;</a></span>AddShadow() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void PointLight::AddShadow </td>
+          <td class="memname">void DirectionalLight::AddShadow </td>
           <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>distance</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">float&#160;</td>
           <td class="paramname"><em>bias</em>, </td>
         </tr>
@@ -192,7 +200,25 @@ Additional Inherited Members</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>resolution</em>&#160;</td>
+          <td class="paramname"><em>resolution</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>cascadeCount</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>splitCorrection</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -204,16 +230,62 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a8fc6ab5423218a52a08272ec90dcc6a8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8fc6ab5423218a52a08272ec90dcc6a8">&#9670;&nbsp;</a></span>AddVolumetric()</h2>
+<a id="adfacb1d047c0098be88970f9fd2dbac5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adfacb1d047c0098be88970f9fd2dbac5">&#9670;&nbsp;</a></span>AddShadow() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void PointLight::AddVolumetric </td>
+          <td class="memname">void DirectionalLight::AddShadow </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d4/d82/a00436.html">Volumetric</a> *&#160;</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>distance</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>bias</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>resolution</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec3&#160;</td>
+          <td class="paramname"><em>centerPoint</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mat4&#160;</td>
+          <td class="paramname"><em>orthoProjection</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ac95110fb0eb3dc5691ef1de99caa2130"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac95110fb0eb3dc5691ef1de99caa2130">&#9670;&nbsp;</a></span>AddVolumetric()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void DirectionalLight::AddVolumetric </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d3/dea/a00444.html">Volumetric</a> *&#160;</td>
           <td class="paramname"><em>volumetric</em></td><td>)</td>
           <td></td>
         </tr>
@@ -222,14 +294,14 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a20e58296d9b45a3650c4fea54939b747"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a20e58296d9b45a3650c4fea54939b747">&#9670;&nbsp;</a></span>GetRadius()</h2>
+<a id="a7b2f1194b2a6086fe83f9e4696518d69"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7b2f1194b2a6086fe83f9e4696518d69">&#9670;&nbsp;</a></span>ClearContent()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float PointLight::GetRadius </td>
+          <td class="memname">void DirectionalLight::ClearContent </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -239,35 +311,25 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a41863685ce540bfa0e40be7b2c7bddd0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a41863685ce540bfa0e40be7b2c7bddd0">&#9670;&nbsp;</a></span>RemoveShadow()</h2>
+<a id="aac78fcda46cf3e9abaeca7546e3a8910"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aac78fcda46cf3e9abaeca7546e3a8910">&#9670;&nbsp;</a></span>DeleteContent()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void PointLight::RemoveShadow </td>
+          <td class="memname">void DirectionalLight::DeleteContent </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="../../d9/d72/a00412.html#ad3b927d825e3cc3aeb4999485ada7313">ILight</a>.</p>
-
 </div>
 </div>
-<a id="a95bb4ff5a2276576bfc4ec8b5f587754"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a95bb4ff5a2276576bfc4ec8b5f587754">&#9670;&nbsp;</a></span>RemoveVolumetric()</h2>
+<a id="af256fc47de861f0839994fed69156c93"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af256fc47de861f0839994fed69156c93">&#9670;&nbsp;</a></span>RemoveShadow()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -276,7 +338,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void PointLight::RemoveVolumetric </td>
+          <td class="memname">void DirectionalLight::RemoveShadow </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -289,12 +351,12 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="../../d9/d72/a00412.html#a5f5f4aecb8167b459780a03f01b5fff2">ILight</a>.</p>
+<p>Implements <a class="el" href="../../db/d4f/a00420.html#ad3b927d825e3cc3aeb4999485ada7313">ILight</a>.</p>
 
 </div>
 </div>
-<a id="adac184c0f9cfc46e6539fea415d4bcf7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adac184c0f9cfc46e6539fea415d4bcf7">&#9670;&nbsp;</a></span>Update()</h2>
+<a id="aeecad1fdfb5bc3d8490d1cce7ca0ac5e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeecad1fdfb5bc3d8490d1cce7ca0ac5e">&#9670;&nbsp;</a></span>RemoveVolumetric()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -303,9 +365,36 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void PointLight::Update </td>
+          <td class="memname">void DirectionalLight::RemoveVolumetric </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/ded/a00252.html">Camera</a> *&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="../../db/d4f/a00420.html#a5f5f4aecb8167b459780a03f01b5fff2">ILight</a>.</p>
+
+</div>
+</div>
+<a id="a97293ebb5029bbf1a4473a67efd60836"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a97293ebb5029bbf1a4473a67efd60836">&#9670;&nbsp;</a></span>Update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void DirectionalLight::Update </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
           <td class="paramname"><em>camera</em></td><td>)</td>
           <td></td>
         </tr>
@@ -317,52 +406,36 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="../../d9/d72/a00412.html#a9f9da3df6b9b439f78ca307d3b7e98c1">ILight</a>.</p>
+<p>Implements <a class="el" href="../../db/d4f/a00420.html#a9f9da3df6b9b439f78ca307d3b7e98c1">ILight</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="aed8e8d9cb5dcf43f3a063df16c3abfb4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aed8e8d9cb5dcf43f3a063df16c3abfb4">&#9670;&nbsp;</a></span>attenuation</h2>
+<a id="a78a56aede026b50aa2606bf20c1b0871"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a78a56aede026b50aa2606bf20c1b0871">&#9670;&nbsp;</a></span>direction</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float PointLight::attenuation</td>
+          <td class="memname">vec3 DirectionalLight::direction</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00026">26</a> of file <a class="el" href="../../d3/d00/a00113_source.html">PointLight.h</a>.</p>
-
-</div>
-</div>
-<a id="a8b8958be0e0b2f9649d62b9f543088ca"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8b8958be0e0b2f9649d62b9f543088ca">&#9670;&nbsp;</a></span>location</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vec3 PointLight::location</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00024">24</a> of file <a class="el" href="../../d3/d00/a00113_source.html">PointLight.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d0/dc2/a00104_source.html#l00028">28</a> of file <a class="el" href="../../d0/dc2/a00104_source.html">DirectionalLight.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/lighting/<a class="el" href="../../d3/d00/a00113_source.html">PointLight.h</a></li>
+<li>src/lighting/<a class="el" href="../../d0/dc2/a00104_source.html">DirectionalLight.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../df/d15/a00416.html">PointLight</a></li>
+    <li class="navelem"><a class="el" href="../../df/d15/a00416.html">DirectionalLight</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

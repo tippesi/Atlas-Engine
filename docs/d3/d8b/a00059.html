@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: src/events/EngineControllerAxisEvent.h File Reference</title>
+<title>Blue Engine: src/events/EngineControllerDeviceEvent.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -91,130 +91,76 @@ $(document).ready(function(){initNavTree('d3/d8b/a00059.html','../../');});
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#define-members">Macros</a>  </div>
   <div class="headertitle">
-<div class="title">EngineControllerAxisEvent.h File Reference</div>  </div>
+<div class="title">EngineControllerDeviceEvent.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">../System.h</a>&quot;</code><br />
 <code>#include &quot;../libraries/SDL/include/SDL.h&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../da/d2a/a00086_source.html">EventDelegate.h</a>&quot;</code><br />
 </div>
 <p><a href="../../d3/d8b/a00059_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/df1/a00340.html">EngineControllerAxisEvent</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A class to distribute controller axis events.  <a href="../../df/df1/a00340.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d9c/a00352.html">EngineControllerDeviceEvent</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A class to distribute controller device events.  <a href="../../d6/d9c/a00352.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:a9bf9e09092030c4c2fea20a84ed9b38d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a9bf9e09092030c4c2fea20a84ed9b38d">CONTROLLERAXIS_LEFTX</a>&#160;&#160;&#160;SDL_CONTROLLER_AXIS_LEFTX</td></tr>
-<tr class="separator:a9bf9e09092030c4c2fea20a84ed9b38d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a94630898e38d10805db77e1b0f90bcf7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a94630898e38d10805db77e1b0f90bcf7">CONTROLLERAXIS_LEFTY</a>&#160;&#160;&#160;SDL_CONTROLLER_AXIS_LEFTY</td></tr>
-<tr class="separator:a94630898e38d10805db77e1b0f90bcf7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4ea48b343996e40940342310f0ce97f8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a4ea48b343996e40940342310f0ce97f8">CONTROLLERAXIS_RIGHTX</a>&#160;&#160;&#160;SDL_CONTROLLER_AXIS_RIGHTX</td></tr>
-<tr class="separator:a4ea48b343996e40940342310f0ce97f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8e38674d9d2ba7b12a089dfa2b34a238"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a8e38674d9d2ba7b12a089dfa2b34a238">CONTROLLERAXIS_RIGHTY</a>&#160;&#160;&#160;SDL_CONTROLLER_AXIS_RIGHTY</td></tr>
-<tr class="separator:a8e38674d9d2ba7b12a089dfa2b34a238"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa4e8da3801b4443217c738c6628ef4ee"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#aa4e8da3801b4443217c738c6628ef4ee">CONTROLLERAXIS_LEFTTRIGGER</a>&#160;&#160;&#160;SDL_CONTROLLER_AXIS_TRIGGERLEFT</td></tr>
-<tr class="separator:aa4e8da3801b4443217c738c6628ef4ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4a663e2a92edbffcf836b061c1badd9d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a4a663e2a92edbffcf836b061c1badd9d">CONTROLLERAXIS_RIGHTTRIGGER</a>&#160;&#160;&#160;SDL_CONTROLLER_AXIS_TRIGGERRIGHT</td></tr>
-<tr class="separator:a4a663e2a92edbffcf836b061c1badd9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a917b698bcf32786bebd8e552e88614d2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a917b698bcf32786bebd8e552e88614d2">CONTROLLER_ADDED</a>&#160;&#160;&#160;SDL_CONTROLLERDEVICEADDED</td></tr>
+<tr class="separator:a917b698bcf32786bebd8e552e88614d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a674435952fddf1553049f40d40136f88"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a674435952fddf1553049f40d40136f88">CONTROLLER_REMOVED</a>&#160;&#160;&#160;SDL_CONTROLLERDEVICEREMOVED</td></tr>
+<tr class="separator:a674435952fddf1553049f40d40136f88"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a190df4686b6d8028acd27b69fed35dac"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a190df4686b6d8028acd27b69fed35dac">CONTROLLER_MAPPED</a>&#160;&#160;&#160;SDL_CONTROLLERDEVICEREMAPPED</td></tr>
+<tr class="separator:a190df4686b6d8028acd27b69fed35dac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="aa4e8da3801b4443217c738c6628ef4ee"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa4e8da3801b4443217c738c6628ef4ee">&#9670;&nbsp;</a></span>CONTROLLERAXIS_LEFTTRIGGER</h2>
+<a id="a917b698bcf32786bebd8e552e88614d2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a917b698bcf32786bebd8e552e88614d2">&#9670;&nbsp;</a></span>CONTROLLER_ADDED</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define CONTROLLERAXIS_LEFTTRIGGER&#160;&#160;&#160;SDL_CONTROLLER_AXIS_TRIGGERLEFT</td>
+          <td class="memname">#define CONTROLLER_ADDED&#160;&#160;&#160;SDL_CONTROLLERDEVICEADDED</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00012">12</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EngineControllerAxisEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00008">8</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EngineControllerDeviceEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a9bf9e09092030c4c2fea20a84ed9b38d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9bf9e09092030c4c2fea20a84ed9b38d">&#9670;&nbsp;</a></span>CONTROLLERAXIS_LEFTX</h2>
+<a id="a190df4686b6d8028acd27b69fed35dac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a190df4686b6d8028acd27b69fed35dac">&#9670;&nbsp;</a></span>CONTROLLER_MAPPED</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define CONTROLLERAXIS_LEFTX&#160;&#160;&#160;SDL_CONTROLLER_AXIS_LEFTX</td>
+          <td class="memname">#define CONTROLLER_MAPPED&#160;&#160;&#160;SDL_CONTROLLERDEVICEREMAPPED</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00008">8</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EngineControllerAxisEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00010">10</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EngineControllerDeviceEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a94630898e38d10805db77e1b0f90bcf7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a94630898e38d10805db77e1b0f90bcf7">&#9670;&nbsp;</a></span>CONTROLLERAXIS_LEFTY</h2>
+<a id="a674435952fddf1553049f40d40136f88"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a674435952fddf1553049f40d40136f88">&#9670;&nbsp;</a></span>CONTROLLER_REMOVED</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define CONTROLLERAXIS_LEFTY&#160;&#160;&#160;SDL_CONTROLLER_AXIS_LEFTY</td>
+          <td class="memname">#define CONTROLLER_REMOVED&#160;&#160;&#160;SDL_CONTROLLERDEVICEREMOVED</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00009">9</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EngineControllerAxisEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a4a663e2a92edbffcf836b061c1badd9d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4a663e2a92edbffcf836b061c1badd9d">&#9670;&nbsp;</a></span>CONTROLLERAXIS_RIGHTTRIGGER</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define CONTROLLERAXIS_RIGHTTRIGGER&#160;&#160;&#160;SDL_CONTROLLER_AXIS_TRIGGERRIGHT</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00013">13</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EngineControllerAxisEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a4ea48b343996e40940342310f0ce97f8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4ea48b343996e40940342310f0ce97f8">&#9670;&nbsp;</a></span>CONTROLLERAXIS_RIGHTX</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define CONTROLLERAXIS_RIGHTX&#160;&#160;&#160;SDL_CONTROLLER_AXIS_RIGHTX</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00010">10</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EngineControllerAxisEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a8e38674d9d2ba7b12a089dfa2b34a238"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8e38674d9d2ba7b12a089dfa2b34a238">&#9670;&nbsp;</a></span>CONTROLLERAXIS_RIGHTY</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define CONTROLLERAXIS_RIGHTY&#160;&#160;&#160;SDL_CONTROLLER_AXIS_RIGHTY</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00011">11</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EngineControllerAxisEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00009">9</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EngineControllerDeviceEvent.h</a>.</p>
 
 </div>
 </div>
@@ -223,7 +169,7 @@ Macros</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../d3/d8b/a00059.html">EngineControllerAxisEvent.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../d3/d8b/a00059.html">EngineControllerDeviceEvent.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

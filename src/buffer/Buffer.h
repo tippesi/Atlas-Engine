@@ -155,7 +155,7 @@ public:
 	 * Copies the data of the copy buffer to this buffer.
 	 * @param readBuffer Another buffer with of different type.
 	 * @param readOffset The offset in the readBuffer in bytes.
-	 * @param offset The offset in the buffer in bytes.
+	 * @param writeOffset The offset in the buffer in bytes.
 	 * @param length The length in bytes.
 	 * @note The read buffer should have a smaller or equal size than
 	 * the buffer.

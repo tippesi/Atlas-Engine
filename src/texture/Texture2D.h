@@ -9,10 +9,10 @@ class Texture2D : public Texture {
 public:
     /**
      * Constructs a Texture2D object.
-     * @param dataFormat
+     * @param dataType
      * @param width
      * @param height
-     * @param internalFormat
+     * @param sizedFormat
      * @param wrapping
      * @param filtering
      * @param anisotropicFiltering

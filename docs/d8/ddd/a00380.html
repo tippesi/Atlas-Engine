@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: EventDelegate&lt; Args &gt; Class Template Reference</title>
+<title>Blue Engine: EngineTextInputEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,171 +89,112 @@ $(document).ready(function(){initNavTree('d8/ddd/a00380.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d4/d13/a00377.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">EventDelegate&lt; Args &gt; Class Template Reference</div>  </div>
+<div class="title">EngineTextInputEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Handles the event flow between subscriber and publisher.  
+<p>A class to distribute text input events.  
  <a href="../../d8/ddd/a00380.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../da/dec/a00080_source.html">EngineTextInputEvent.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a1bb5d576a30865322a2e75dbdd045a0a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#a1bb5d576a30865322a2e75dbdd045a0a">EventDelegate</a> ()</td></tr>
-<tr class="memdesc:a1bb5d576a30865322a2e75dbdd045a0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d8/ddd/a00380.html" title="Handles the event flow between subscriber and publisher. ">EventDelegate</a> object.  <a href="#a1bb5d576a30865322a2e75dbdd045a0a">More...</a><br /></td></tr>
-<tr class="separator:a1bb5d576a30865322a2e75dbdd045a0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9dcb1b0832e44009f2ae6224c794b096"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#a9dcb1b0832e44009f2ae6224c794b096">Subscribe</a> (std::function&lt; void(Args ...)&gt; handle)</td></tr>
-<tr class="memdesc:a9dcb1b0832e44009f2ae6224c794b096"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subscribes a method/function to the event delegate which wants to receive the arguments specified in Args.  <a href="#a9dcb1b0832e44009f2ae6224c794b096">More...</a><br /></td></tr>
-<tr class="separator:a9dcb1b0832e44009f2ae6224c794b096"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a029f36a3c422e07efdc7acb26c2d40f5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#a029f36a3c422e07efdc7acb26c2d40f5">Unsubscribe</a> (uint32_t subscriberID)</td></tr>
-<tr class="memdesc:a029f36a3c422e07efdc7acb26c2d40f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unsubscribes a method/function from the event delegate.  <a href="#a029f36a3c422e07efdc7acb26c2d40f5">More...</a><br /></td></tr>
-<tr class="separator:a029f36a3c422e07efdc7acb26c2d40f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aadc97124f141e9b3542f2ee086e6ce9f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#aadc97124f141e9b3542f2ee086e6ce9f">Fire</a> (Args ... args)</td></tr>
-<tr class="memdesc:aadc97124f141e9b3542f2ee086e6ce9f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Publishes Args arguments to the subscribers.  <a href="#aadc97124f141e9b3542f2ee086e6ce9f">More...</a><br /></td></tr>
-<tr class="separator:aadc97124f141e9b3542f2ee086e6ce9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a140ed6e92340b1edbddfb3fca1d3a927"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#a140ed6e92340b1edbddfb3fca1d3a927">EngineTextInputEvent</a> (SDL_TextInputEvent event)</td></tr>
+<tr class="separator:a140ed6e92340b1edbddfb3fca1d3a927"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a25592e7cd0cbe8c33c1faae0652829f6"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#a25592e7cd0cbe8c33c1faae0652829f6">windowID</a></td></tr>
+<tr class="memdesc:a25592e7cd0cbe8c33c1faae0652829f6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#a25592e7cd0cbe8c33c1faae0652829f6">More...</a><br /></td></tr>
+<tr class="separator:a25592e7cd0cbe8c33c1faae0652829f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f3a169c0c5f7674f9370138505c350d"><td class="memItemLeft" align="right" valign="top">char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#a8f3a169c0c5f7674f9370138505c350d">character</a></td></tr>
+<tr class="memdesc:a8f3a169c0c5f7674f9370138505c350d"><td class="mdescLeft">&#160;</td><td class="mdescRight">The character that was typed.  <a href="#a8f3a169c0c5f7674f9370138505c350d">More...</a><br /></td></tr>
+<tr class="separator:a8f3a169c0c5f7674f9370138505c350d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;class ... Args&gt;<br />
-class EventDelegate&lt; Args &gt;</h3>
+<div class="textblock"><p>A class to distribute text input events. </p>
 
-<p>Handles the event flow between subscriber and publisher. </p>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">Args</td><td>Variable amount of parameters which can be exchanged with the delegate. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00015">15</a> of file <a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/dec/a00080_source.html#l00013">13</a> of file <a class="el" href="../../da/dec/a00080_source.html">EngineTextInputEvent.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a1bb5d576a30865322a2e75dbdd045a0a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1bb5d576a30865322a2e75dbdd045a0a">&#9670;&nbsp;</a></span>EventDelegate()</h2>
+<a id="a140ed6e92340b1edbddfb3fca1d3a927"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a140ed6e92340b1edbddfb3fca1d3a927">&#9670;&nbsp;</a></span>EngineTextInputEvent()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<div class="memtemplate">
-template&lt;class... Args&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; Args &gt;::<a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a> </td>
+          <td class="memname">EngineTextInputEvent::EngineTextInputEvent </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">SDL_TextInputEvent&#160;</td>
+          <td class="paramname"><em>event</em></td><td>)</td>
           <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../da/dec/a00080_source.html#l00016">16</a> of file <a class="el" href="../../da/dec/a00080_source.html">EngineTextInputEvent.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a8f3a169c0c5f7674f9370138505c350d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8f3a169c0c5f7674f9370138505c350d">&#9670;&nbsp;</a></span>character</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">char EngineTextInputEvent::character</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Constructs a <a class="el" href="../../d8/ddd/a00380.html" title="Handles the event flow between subscriber and publisher. ">EventDelegate</a> object. </p>
+<p>The character that was typed. </p>
+<p>Is still in ASCII. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00052">52</a> of file <a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/dec/a00080_source.html#l00031">31</a> of file <a class="el" href="../../da/dec/a00080_source.html">EngineTextInputEvent.h</a>.</p>
 
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="aadc97124f141e9b3542f2ee086e6ce9f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aadc97124f141e9b3542f2ee086e6ce9f">&#9670;&nbsp;</a></span>Fire()</h2>
+<a id="a25592e7cd0cbe8c33c1faae0652829f6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a25592e7cd0cbe8c33c1faae0652829f6">&#9670;&nbsp;</a></span>windowID</h2>
 
 <div class="memitem">
 <div class="memproto">
-<div class="memtemplate">
-template&lt;class... Args&gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; Args &gt;::Fire </td>
-          <td>(</td>
-          <td class="paramtype">Args ...&#160;</td>
-          <td class="paramname"><em>args</em></td><td>)</td>
-          <td></td>
+          <td class="memname">uint32_t EngineTextInputEvent::windowID</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Publishes Args arguments to the subscribers. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">args</td><td>The arguments which should be published </td></tr>
-  </table>
-  </dd>
-</dl>
+<p>The ID of the window the event occurred in. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00079">79</a> of file <a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>.</p>
-
-</div>
-</div>
-<a id="a9dcb1b0832e44009f2ae6224c794b096"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9dcb1b0832e44009f2ae6224c794b096">&#9670;&nbsp;</a></span>Subscribe()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class... Args&gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">uint32_t <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; Args &gt;::Subscribe </td>
-          <td>(</td>
-          <td class="paramtype">std::function&lt; void(Args ...)&gt;&#160;</td>
-          <td class="paramname"><em>handle</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subscribes a method/function to the event delegate which wants to receive the arguments specified in Args. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">handle</td><td>A method/function which has the required Args as parameters </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>A handle which can later be used to unsubscribe from the event delegate. </dd></dl>
-<dl class="section note"><dt>Note</dt><dd>To subscribe a method of an object to the event delegate use std::bind() </dd></dl>
-
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00057">57</a> of file <a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>.</p>
-
-</div>
-</div>
-<a id="a029f36a3c422e07efdc7acb26c2d40f5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a029f36a3c422e07efdc7acb26c2d40f5">&#9670;&nbsp;</a></span>Unsubscribe()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class... Args&gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; Args &gt;::Unsubscribe </td>
-          <td>(</td>
-          <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>subscriberID</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Unsubscribes a method/function from the event delegate. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">subscriberID</td><td>The handle which was returned previously at the time of subscription. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00068">68</a> of file <a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/dec/a00080_source.html#l00026">26</a> of file <a class="el" href="../../da/dec/a00080_source.html">EngineTextInputEvent.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../db/dab/a00089_source.html">EventDelegate.h</a></li>
+<li>src/events/<a class="el" href="../../da/dec/a00080_source.html">EngineTextInputEvent.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a></li>
+    <li class="navelem"><a class="el" href="../../d8/ddd/a00380.html">EngineTextInputEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: PostProcessing Class Reference</title>
+<title>Blue Engine: TerrainTool Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,145 +88,81 @@ $(document).ready(function(){initNavTree('d3/de2/a00580.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="../../d8/d9b/a00577.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">PostProcessing Class Reference</div>  </div>
+<div class="title">TerrainTool Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../dd/d52/a00221_source.html">PostProcessing.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../dd/dc1/a00212_source.html">TerrainTool.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:ab8e29c8517c3cebc04f0ece135318b88"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/de2/a00580.html#ab8e29c8517c3cebc04f0ece135318b88">PostProcessing</a> ()</td></tr>
-<tr class="separator:ab8e29c8517c3cebc04f0ece135318b88"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:a59054a309ede3557f7cf4fed71baed22"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/de2/a00580.html#a59054a309ede3557f7cf4fed71baed22">exposure</a></td></tr>
-<tr class="separator:a59054a309ede3557f7cf4fed71baed22"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4ceccbd4dc38d2098956ad0302e827e6"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/de2/a00580.html#a4ceccbd4dc38d2098956ad0302e827e6">saturation</a></td></tr>
-<tr class="separator:a4ceccbd4dc38d2098956ad0302e827e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a309116ac203d8582a5650816b4e1a925"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/de2/a00580.html#a309116ac203d8582a5650816b4e1a925">filmicTonemapping</a></td></tr>
-<tr class="separator:a309116ac203d8582a5650816b4e1a925"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afb97821a607ddf6ed752fb919dded3c7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d7/d21/a00584.html">Vignette</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/de2/a00580.html#afb97821a607ddf6ed752fb919dded3c7">vignette</a></td></tr>
-<tr class="separator:afb97821a607ddf6ed752fb919dded3c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a35272475952623f22859631fff25712c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/d7c/a00576.html">ChromaticAberration</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/de2/a00580.html#a35272475952623f22859631fff25712c">chromaticAberration</a></td></tr>
-<tr class="separator:a35272475952623f22859631fff25712c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a975f8155f0f0d4f307f3d2652f8e9a61"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/de2/a00580.html#a975f8155f0f0d4f307f3d2652f8e9a61">GenerateHeightfieldLoDs</a> (string heightfieldFilename, int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize)</td></tr>
+<tr class="separator:a975f8155f0f0d4f307f3d2652f8e9a61"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00008">8</a> of file <a class="el" href="../../dd/d52/a00221_source.html">PostProcessing.h</a>.</p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ab8e29c8517c3cebc04f0ece135318b88"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab8e29c8517c3cebc04f0ece135318b88">&#9670;&nbsp;</a></span>PostProcessing()</h2>
+<p class="definition">Definition at line <a class="el" href="../../dd/dc1/a00212_source.html#l00006">6</a> of file <a class="el" href="../../dd/dc1/a00212_source.html">TerrainTool.h</a>.</p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a975f8155f0f0d4f307f3d2652f8e9a61"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a975f8155f0f0d4f307f3d2652f8e9a61">&#9670;&nbsp;</a></span>GenerateHeightfieldLoDs()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PostProcessing::PostProcessing </td>
+          <td class="memname">static void TerrainTool::GenerateHeightfieldLoDs </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>heightfieldFilename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>rootNodeCount</em>, </td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="a35272475952623f22859631fff25712c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a35272475952623f22859631fff25712c">&#9670;&nbsp;</a></span>chromaticAberration</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../de/d7c/a00576.html">ChromaticAberration</a>* PostProcessing::chromaticAberration</td>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>LoDCount</em>, </td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00020">20</a> of file <a class="el" href="../../dd/d52/a00221_source.html">PostProcessing.h</a>.</p>
-
-</div>
-</div>
-<a id="a59054a309ede3557f7cf4fed71baed22"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a59054a309ede3557f7cf4fed71baed22">&#9670;&nbsp;</a></span>exposure</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname">float PostProcessing::exposure</td>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>patchSize</em>&#160;</td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00014">14</a> of file <a class="el" href="../../dd/d52/a00221_source.html">PostProcessing.h</a>.</p>
-
-</div>
-</div>
-<a id="a309116ac203d8582a5650816b4e1a925"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a309116ac203d8582a5650816b4e1a925">&#9670;&nbsp;</a></span>filmicTonemapping</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname">bool PostProcessing::filmicTonemapping</td>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00017">17</a> of file <a class="el" href="../../dd/d52/a00221_source.html">PostProcessing.h</a>.</p>
-
-</div>
-</div>
-<a id="a4ceccbd4dc38d2098956ad0302e827e6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4ceccbd4dc38d2098956ad0302e827e6">&#9670;&nbsp;</a></span>saturation</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float PostProcessing::saturation</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00015">15</a> of file <a class="el" href="../../dd/d52/a00221_source.html">PostProcessing.h</a>.</p>
-
-</div>
-</div>
-<a id="afb97821a607ddf6ed752fb919dded3c7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afb97821a607ddf6ed752fb919dded3c7">&#9670;&nbsp;</a></span>vignette</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../d7/d21/a00584.html">Vignette</a>* PostProcessing::vignette</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00019">19</a> of file <a class="el" href="../../dd/d52/a00221_source.html">PostProcessing.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/postprocessing/<a class="el" href="../../dd/d52/a00221_source.html">PostProcessing.h</a></li>
+<li>src/tools/<a class="el" href="../../dd/dc1/a00212_source.html">TerrainTool.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d3/de2/a00580.html">PostProcessing</a></li>
+    <li class="navelem"><a class="el" href="../../d3/de2/a00580.html">TerrainTool</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

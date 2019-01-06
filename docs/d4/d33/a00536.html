@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: ShaderBatch Class Reference</title>
+<title>Blue Engine: TextRenderer Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,63 +89,61 @@ $(document).ready(function(){initNavTree('d4/d33/a00536.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="../../db/d44/a00533.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ShaderBatch Class Reference</div>  </div>
+<div class="title">TextRenderer Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../dc/d57/a00194_source.html">ShaderBatch.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../de/df3/a00185_source.html">TextRenderer.h</a>&gt;</code></p>
+<div class="dynheader">
+Inheritance diagram for TextRenderer:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="../../d4/d33/a00536.png" usemap="#TextRenderer_map" alt=""/>
+  <map id="TextRenderer_map" name="TextRenderer_map">
+<area href="../../dc/d30/a00508.html" alt="IRenderer" shape="rect" coords="0,0,88,24"/>
+</map>
+ </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a65c623d825ce15de971de8ee79945b3c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a65c623d825ce15de971de8ee79945b3c">ShaderBatch</a> ()</td></tr>
-<tr class="separator:a65c623d825ce15de971de8ee79945b3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7c88b236799baede6a93c1e39956e183"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a7c88b236799baede6a93c1e39956e183">AddComponent</a> (int32_t type, string filename)</td></tr>
-<tr class="memdesc:a7c88b236799baede6a93c1e39956e183"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#a7c88b236799baede6a93c1e39956e183">More...</a><br /></td></tr>
-<tr class="separator:a7c88b236799baede6a93c1e39956e183"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c761c22ff201e304a90d25672ea0c29"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a2c761c22ff201e304a90d25672ea0c29">AddConfig</a> (<a class="el" href="../../d4/d79/a00540.html">ShaderConfig</a> *config)</td></tr>
-<tr class="memdesc:a2c761c22ff201e304a90d25672ea0c29"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#a2c761c22ff201e304a90d25672ea0c29">More...</a><br /></td></tr>
-<tr class="separator:a2c761c22ff201e304a90d25672ea0c29"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1d72ba2ef2258bb10303c970cb8e5649"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a1d72ba2ef2258bb10303c970cb8e5649">RemoveConfig</a> (<a class="el" href="../../d4/d79/a00540.html">ShaderConfig</a> *config)</td></tr>
-<tr class="memdesc:a1d72ba2ef2258bb10303c970cb8e5649"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#a1d72ba2ef2258bb10303c970cb8e5649">More...</a><br /></td></tr>
-<tr class="separator:a1d72ba2ef2258bb10303c970cb8e5649"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a615d832f9dd1923ca4093df8ba364b59"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d6/d95/a00556.html">Uniform</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a615d832f9dd1923ca4093df8ba364b59">GetUniform</a> (string uniformName)</td></tr>
-<tr class="memdesc:a615d832f9dd1923ca4093df8ba364b59"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#a615d832f9dd1923ca4093df8ba364b59">More...</a><br /></td></tr>
-<tr class="separator:a615d832f9dd1923ca4093df8ba364b59"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a61f15f3fc89e2d6a1b2ed5266da2de9c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a61f15f3fc89e2d6a1b2ed5266da2de9c">Bind</a> (int32_t shaderID)</td></tr>
-<tr class="memdesc:a61f15f3fc89e2d6a1b2ed5266da2de9c"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#a61f15f3fc89e2d6a1b2ed5266da2de9c">More...</a><br /></td></tr>
-<tr class="separator:a61f15f3fc89e2d6a1b2ed5266da2de9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ffb5baddcc264fbaccda8fb7c660814"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a2ffb5baddcc264fbaccda8fb7c660814">TextRenderer</a> ()</td></tr>
+<tr class="separator:a2ffb5baddcc264fbaccda8fb7c660814"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e5b16659c571a7693564f23e0a2aa81"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a8e5b16659c571a7693564f23e0a2aa81">Render</a> (<a class="el" href="../../df/df1/a00340.html">Window</a> *window, <a class="el" href="../../dd/de2/a00320.html">RenderTarget</a> *target, <a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera, <a class="el" href="../../d4/d8f/a00324.html">Scene</a> *scene)</td></tr>
+<tr class="separator:a8e5b16659c571a7693564f23e0a2aa81"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1f783931e4e194ada404d3f95a4e814c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a1f783931e4e194ada404d3f95a4e814c">Render</a> (<a class="el" href="../../df/df1/a00340.html">Window</a> *window, <a class="el" href="../../da/ddc/a00288.html">Font</a> *font, string text, float x, float y, vec4 color, float scale=1.0f, bool alphaBlending=false, Framebuffer *framebuffer=nullptr)</td></tr>
+<tr class="separator:a1f783931e4e194ada404d3f95a4e814c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abfd3450a0466a9a7f509bcede0ee16d7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#abfd3450a0466a9a7f509bcede0ee16d7">Render</a> (<a class="el" href="../../df/df1/a00340.html">Window</a> *window, <a class="el" href="../../da/ddc/a00288.html">Font</a> *font, string text, float x, float y, vec4 color, vec4 clipArea, vec4 blendArea, float scale=1.0f, bool alphaBlending=false, Framebuffer *framebuffer=nullptr)</td></tr>
+<tr class="separator:abfd3450a0466a9a7f509bcede0ee16d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a274115742f5fd6c5305850342c1eb671"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a274115742f5fd6c5305850342c1eb671">RenderOutlined</a> (<a class="el" href="../../df/df1/a00340.html">Window</a> *window, <a class="el" href="../../da/ddc/a00288.html">Font</a> *font, string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale, float scale=1.0f, bool alphaBlending=false, Framebuffer *framebuffer=nullptr)</td></tr>
+<tr class="separator:a274115742f5fd6c5305850342c1eb671"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4f99b2cb4a776b6bd9d8e93d8349bed7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a4f99b2cb4a776b6bd9d8e93d8349bed7">RenderOutlined</a> (<a class="el" href="../../df/df1/a00340.html">Window</a> *window, <a class="el" href="../../da/ddc/a00288.html">Font</a> *font, string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale, vec4 clipArea, vec4 blendArea, float scale=1.0f, bool alphaBlending=false, Framebuffer *framebuffer=nullptr)</td></tr>
+<tr class="separator:a4f99b2cb4a776b6bd9d8e93d8349bed7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_a00508"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_a00508')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../dc/d30/a00508.html">IRenderer</a></td></tr>
+<tr class="memitem:a366bcbc6ae52d7bd6a33752ce56378ab inherit pub_methods_a00508"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a366bcbc6ae52d7bd6a33752ce56378ab">~IRenderer</a> ()</td></tr>
+<tr class="separator:a366bcbc6ae52d7bd6a33752ce56378ab inherit pub_methods_a00508"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:a9bda16524c4387f32f5d206810c8d131"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../dd/de9/a00552.html">ShaderSource</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a9bda16524c4387f32f5d206810c8d131">components</a></td></tr>
-<tr class="separator:a9bda16524c4387f32f5d206810c8d131"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab0a701f3ae0d120d797b9310a63591cb"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../d2/ddf/a00544.html">ShaderConfigBatch</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#ab0a701f3ae0d120d797b9310a63591cb">configBatches</a></td></tr>
-<tr class="separator:ab0a701f3ae0d120d797b9310a63591cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a151ab0e0747c23d6571a3cd21b123e40"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../d6/d95/a00556.html">Uniform</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a151ab0e0747c23d6571a3cd21b123e40">uniforms</a></td></tr>
-<tr class="separator:a151ab0e0747c23d6571a3cd21b123e40"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaab325289ea8ee5d9b0ea70c40086f72"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#aaab325289ea8ee5d9b0ea70c40086f72">boundShaderID</a></td></tr>
-<tr class="separator:aaab325289ea8ee5d9b0ea70c40086f72"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a6d139622d0419496250f83b86d72da24"><td class="memItemLeft" align="right" valign="top">static string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a6d139622d0419496250f83b86d72da24">vertexPath</a></td></tr>
+<tr class="separator:a6d139622d0419496250f83b86d72da24"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66be214e499b96d592163ad9454cd42c"><td class="memItemLeft" align="right" valign="top">static string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d33/a00536.html#a66be214e499b96d592163ad9454cd42c">fragmentPath</a></td></tr>
+<tr class="separator:a66be214e499b96d592163ad9454cd42c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../dc/d57/a00194_source.html#l00010">10</a> of file <a class="el" href="../../dc/d57/a00194_source.html">ShaderBatch.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/df3/a00185_source.html#l00010">10</a> of file <a class="el" href="../../de/df3/a00185_source.html">TextRenderer.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a65c623d825ce15de971de8ee79945b3c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a65c623d825ce15de971de8ee79945b3c">&#9670;&nbsp;</a></span>ShaderBatch()</h2>
+<a id="a2ffb5baddcc264fbaccda8fb7c660814"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2ffb5baddcc264fbaccda8fb7c660814">&#9670;&nbsp;</a></span>TextRenderer()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">ShaderBatch::ShaderBatch </td>
+          <td class="memname">TextRenderer::TextRenderer </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -156,23 +154,115 @@ Public Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a7c88b236799baede6a93c1e39956e183"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7c88b236799baede6a93c1e39956e183">&#9670;&nbsp;</a></span>AddComponent()</h2>
+<a id="a8e5b16659c571a7693564f23e0a2aa81"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8e5b16659c571a7693564f23e0a2aa81">&#9670;&nbsp;</a></span>Render() <span class="overload">[1/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void TextRenderer::Render </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../df/df1/a00340.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../dd/de2/a00320.html">RenderTarget</a> *&#160;</td>
+          <td class="paramname"><em>target</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d4/d8f/a00324.html">Scene</a> *&#160;</td>
+          <td class="paramname"><em>scene</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="../../dc/d30/a00508.html#a2dc13fb7218a62ba5d0a4073413db3bb">IRenderer</a>.</p>
+
+</div>
+</div>
+<a id="a1f783931e4e194ada404d3f95a4e814c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1f783931e4e194ada404d3f95a4e814c">&#9670;&nbsp;</a></span>Render() <span class="overload">[2/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void ShaderBatch::AddComponent </td>
+          <td class="memname">void TextRenderer::Render </td>
           <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>type</em>, </td>
+          <td class="paramtype"><a class="el" href="../../df/df1/a00340.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Font</a> *&#160;</td>
+          <td class="paramname"><em>font</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">string&#160;</td>
-          <td class="paramname"><em>filename</em>&#160;</td>
+          <td class="paramname"><em>text</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>color</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>scale</em> = <code>1.0f</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d8/d0a/a00292.html">Framebuffer</a> *&#160;</td>
+          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -182,201 +272,324 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p><br />
- </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">type</td><td></td></tr>
-    <tr><td class="paramname">filename</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
 </div>
 </div>
-<a id="a2c761c22ff201e304a90d25672ea0c29"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2c761c22ff201e304a90d25672ea0c29">&#9670;&nbsp;</a></span>AddConfig()</h2>
+<a id="abfd3450a0466a9a7f509bcede0ee16d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abfd3450a0466a9a7f509bcede0ee16d7">&#9670;&nbsp;</a></span>Render() <span class="overload">[3/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void ShaderBatch::AddConfig </td>
+          <td class="memname">void TextRenderer::Render </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d4/d79/a00540.html">ShaderConfig</a> *&#160;</td>
-          <td class="paramname"><em>config</em></td><td>)</td>
-          <td></td>
+          <td class="paramtype"><a class="el" href="../../df/df1/a00340.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-<p><br />
- </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">config</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="a61f15f3fc89e2d6a1b2ed5266da2de9c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a61f15f3fc89e2d6a1b2ed5266da2de9c">&#9670;&nbsp;</a></span>Bind()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname">void ShaderBatch::Bind </td>
-          <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>shaderID</em></td><td>)</td>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Font</a> *&#160;</td>
+          <td class="paramname"><em>font</em>, </td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-<p><br />
- </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">shaderID</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="a615d832f9dd1923ca4093df8ba364b59"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a615d832f9dd1923ca4093df8ba364b59">&#9670;&nbsp;</a></span>GetUniform()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d6/d95/a00556.html">Uniform</a>* ShaderBatch::GetUniform </td>
-          <td>(</td>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">string&#160;</td>
-          <td class="paramname"><em>uniformName</em></td><td>)</td>
+          <td class="paramname"><em>text</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>color</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>clipArea</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>blendArea</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>scale</em> = <code>1.0f</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d8/d0a/a00292.html">Framebuffer</a> *&#160;</td>
+          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p><br />
- </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">uniformName</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd></dd></dl>
-
 </div>
 </div>
-<a id="a1d72ba2ef2258bb10303c970cb8e5649"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1d72ba2ef2258bb10303c970cb8e5649">&#9670;&nbsp;</a></span>RemoveConfig()</h2>
+<a id="a274115742f5fd6c5305850342c1eb671"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a274115742f5fd6c5305850342c1eb671">&#9670;&nbsp;</a></span>RenderOutlined() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void ShaderBatch::RemoveConfig </td>
+          <td class="memname">void TextRenderer::RenderOutlined </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d4/d79/a00540.html">ShaderConfig</a> *&#160;</td>
-          <td class="paramname"><em>config</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../df/df1/a00340.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Font</a> *&#160;</td>
+          <td class="paramname"><em>font</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>text</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>color</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>outlineColor</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>outlineScale</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>scale</em> = <code>1.0f</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d8/d0a/a00292.html">Framebuffer</a> *&#160;</td>
+          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p><br />
- </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">config</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
+</div>
+</div>
+<a id="a4f99b2cb4a776b6bd9d8e93d8349bed7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4f99b2cb4a776b6bd9d8e93d8349bed7">&#9670;&nbsp;</a></span>RenderOutlined() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void TextRenderer::RenderOutlined </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../df/df1/a00340.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Font</a> *&#160;</td>
+          <td class="paramname"><em>font</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>text</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>color</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>outlineColor</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>outlineScale</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>clipArea</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>blendArea</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>scale</em> = <code>1.0f</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d8/d0a/a00292.html">Framebuffer</a> *&#160;</td>
+          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="aaab325289ea8ee5d9b0ea70c40086f72"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaab325289ea8ee5d9b0ea70c40086f72">&#9670;&nbsp;</a></span>boundShaderID</h2>
+<a id="a66be214e499b96d592163ad9454cd42c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a66be214e499b96d592163ad9454cd42c">&#9670;&nbsp;</a></span>fragmentPath</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t ShaderBatch::boundShaderID</td>
+          <td class="memname">string TextRenderer::fragmentPath</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d57/a00194_source.html#l00042">42</a> of file <a class="el" href="../../dc/d57/a00194_source.html">ShaderBatch.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/df3/a00185_source.html#l00030">30</a> of file <a class="el" href="../../de/df3/a00185_source.html">TextRenderer.h</a>.</p>
 
 </div>
 </div>
-<a id="a9bda16524c4387f32f5d206810c8d131"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9bda16524c4387f32f5d206810c8d131">&#9670;&nbsp;</a></span>components</h2>
+<a id="a6d139622d0419496250f83b86d72da24"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6d139622d0419496250f83b86d72da24">&#9670;&nbsp;</a></span>vertexPath</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">vector&lt;<a class="el" href="../../dd/de9/a00552.html">ShaderSource</a>*&gt; ShaderBatch::components</td>
+          <td class="memname">string TextRenderer::vertexPath</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d57/a00194_source.html#l00038">38</a> of file <a class="el" href="../../dc/d57/a00194_source.html">ShaderBatch.h</a>.</p>
-
-</div>
-</div>
-<a id="ab0a701f3ae0d120d797b9310a63591cb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab0a701f3ae0d120d797b9310a63591cb">&#9670;&nbsp;</a></span>configBatches</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vector&lt;<a class="el" href="../../d2/ddf/a00544.html">ShaderConfigBatch</a>*&gt; ShaderBatch::configBatches</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/d57/a00194_source.html#l00039">39</a> of file <a class="el" href="../../dc/d57/a00194_source.html">ShaderBatch.h</a>.</p>
-
-</div>
-</div>
-<a id="a151ab0e0747c23d6571a3cd21b123e40"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a151ab0e0747c23d6571a3cd21b123e40">&#9670;&nbsp;</a></span>uniforms</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vector&lt;<a class="el" href="../../d6/d95/a00556.html">Uniform</a>*&gt; ShaderBatch::uniforms</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/d57/a00194_source.html#l00040">40</a> of file <a class="el" href="../../dc/d57/a00194_source.html">ShaderBatch.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/df3/a00185_source.html#l00029">29</a> of file <a class="el" href="../../de/df3/a00185_source.html">TextRenderer.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/shader/<a class="el" href="../../dc/d57/a00194_source.html">ShaderBatch.h</a></li>
+<li>src/renderer/<a class="el" href="../../de/df3/a00185_source.html">TextRenderer.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d4/d33/a00536.html">ShaderBatch</a></li>
+    <li class="navelem"><a class="el" href="../../d4/d33/a00536.html">TextRenderer</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

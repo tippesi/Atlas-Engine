@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: BlurRenderer Class Reference</title>
+<title>Blue Engine: MeshData Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,88 +89,89 @@ $(document).ready(function(){initNavTree('d7/db5/a00472.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../dc/ddf/a00469.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">BlurRenderer Class Reference</div>  </div>
+<div class="title">MeshData Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d7/d9a/a00152_source.html">BlurRenderer.h</a>&gt;</code></p>
-<div class="dynheader">
-Inheritance diagram for BlurRenderer:</div>
-<div class="dyncontent">
- <div class="center">
-  <img src="../../d7/db5/a00472.png" usemap="#BlurRenderer_map" alt=""/>
-  <map id="BlurRenderer_map" name="BlurRenderer_map">
-<area href="../../de/d4e/a00500.html" alt="IRenderer" shape="rect" coords="0,0,88,24"/>
-</map>
- </div></div>
+<p><code>#include &lt;<a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0a8fa14a097a89684ea59fd2c39bed5c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a0a8fa14a097a89684ea59fd2c39bed5c">BlurRenderer</a> (string vertexSource, string fragmentSource, int32_t channelCount, float *kernelOffsets, float *kernelWeights, int32_t kernelSize, bool bilateral=false)</td></tr>
-<tr class="separator:a0a8fa14a097a89684ea59fd2c39bed5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad8e0abdba0d178c0ce6b69054a318230"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#ad8e0abdba0d178c0ce6b69054a318230">Render</a> (<a class="el" href="../../dd/d1d/a00336.html">Window</a> *window, <a class="el" href="../../d5/d0f/a00308.html">RenderTarget</a> *target, <a class="el" href="../../dc/ded/a00252.html">Camera</a> *camera, <a class="el" href="../../d7/df2/a00312.html">Scene</a> *scene, bool masterRenderer=false)</td></tr>
-<tr class="separator:ad8e0abdba0d178c0ce6b69054a318230"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afe391a2647bd5bfda4c330941861a902"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#afe391a2647bd5bfda4c330941861a902">Render</a> (<a class="el" href="../../d4/d14/a00608.html">Texture2D</a> *texture, <a class="el" href="../../d4/d14/a00608.html">Texture2D</a> *swapTexture, <a class="el" href="../../d4/d14/a00608.html">Texture2D</a> *depthTexture)</td></tr>
-<tr class="separator:afe391a2647bd5bfda4c330941861a902"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9720ad61dc76530efd97affe8e94c16"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#ae9720ad61dc76530efd97affe8e94c16">MeshData</a> ()</td></tr>
+<tr class="separator:ae9720ad61dc76530efd97affe8e94c16"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad4bb315ced121ececb43010479c6d9ba"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#ad4bb315ced121ececb43010479c6d9ba">SetIndexCount</a> (int32_t count)</td></tr>
+<tr class="memdesc:ad4bb315ced121ececb43010479c6d9ba"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#ad4bb315ced121ececb43010479c6d9ba">More...</a><br /></td></tr>
+<tr class="separator:ad4bb315ced121ececb43010479c6d9ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac5c9a7c53f367746fa51e526a0f92eb5"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#ac5c9a7c53f367746fa51e526a0f92eb5">GetIndexCount</a> ()</td></tr>
+<tr class="memdesc:ac5c9a7c53f367746fa51e526a0f92eb5"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#ac5c9a7c53f367746fa51e526a0f92eb5">More...</a><br /></td></tr>
+<tr class="separator:ac5c9a7c53f367746fa51e526a0f92eb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74b543cae2e0af1426c873f1dbb47a92"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a74b543cae2e0af1426c873f1dbb47a92">SetVertexCount</a> (int32_t count)</td></tr>
+<tr class="memdesc:a74b543cae2e0af1426c873f1dbb47a92"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#a74b543cae2e0af1426c873f1dbb47a92">More...</a><br /></td></tr>
+<tr class="separator:a74b543cae2e0af1426c873f1dbb47a92"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc93d89c6de0b8d316a5374130904c15"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#adc93d89c6de0b8d316a5374130904c15">GetVertexCount</a> ()</td></tr>
+<tr class="memdesc:adc93d89c6de0b8d316a5374130904c15"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#adc93d89c6de0b8d316a5374130904c15">More...</a><br /></td></tr>
+<tr class="separator:adc93d89c6de0b8d316a5374130904c15"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f206f96b3c7ce1d33611fed471729cf"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a6f206f96b3c7ce1d33611fed471729cf">~MeshData</a> ()</td></tr>
+<tr class="separator:a6f206f96b3c7ce1d33611fed471729cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:afc1e52a9e78d8a9e6355530c6eda3564"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/d87/a00456.html">DataComponent</a>&lt; uint32_t, void &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#afc1e52a9e78d8a9e6355530c6eda3564">indices</a></td></tr>
+<tr class="separator:afc1e52a9e78d8a9e6355530c6eda3564"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b0ffd9e9d4213f407fb981218d7e066"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/d87/a00456.html">DataComponent</a>&lt; float, float &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a5b0ffd9e9d4213f407fb981218d7e066">vertices</a></td></tr>
+<tr class="separator:a5b0ffd9e9d4213f407fb981218d7e066"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a888e3a246b8b1ec3d6fca0bfb3208620"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/d87/a00456.html">DataComponent</a>&lt; float, <a class="el" href="../../d5/df9/a00044.html#ac1f3012c3710a19fb29baf4ff2421bab">float16_t</a> &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a888e3a246b8b1ec3d6fca0bfb3208620">texCoords</a></td></tr>
+<tr class="separator:a888e3a246b8b1ec3d6fca0bfb3208620"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d79319a035e3eab75ffeeaace54025e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/d87/a00456.html">DataComponent</a>&lt; float, uint32_t &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a9d79319a035e3eab75ffeeaace54025e">normals</a></td></tr>
+<tr class="separator:a9d79319a035e3eab75ffeeaace54025e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a87245f3720186f389c6a9549060a42b5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/d87/a00456.html">DataComponent</a>&lt; float, uint32_t &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a87245f3720186f389c6a9549060a42b5">tangents</a></td></tr>
+<tr class="separator:a87245f3720186f389c6a9549060a42b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acd9df1b849dc7fed053129f3aace2652"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../db/db1/a00460.html">Material</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#acd9df1b849dc7fed053129f3aace2652">materials</a></td></tr>
+<tr class="separator:acd9df1b849dc7fed053129f3aace2652"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ba551ae6d4bac2b5cbbf5adb0030dd8"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../df/d38/a00468.html">MeshSubData</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a0ba551ae6d4bac2b5cbbf5adb0030dd8">subData</a></td></tr>
+<tr class="separator:a0ba551ae6d4bac2b5cbbf5adb0030dd8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1318bcc0d5322e70f4c1761eb7c0e58f"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a1318bcc0d5322e70f4c1761eb7c0e58f">primitiveType</a></td></tr>
+<tr class="separator:a1318bcc0d5322e70f4c1761eb7c0e58f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d7/d9a/a00152_source.html#l00007">7</a> of file <a class="el" href="../../d7/d9a/a00152_source.html">BlurRenderer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00019">19</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a0a8fa14a097a89684ea59fd2c39bed5c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0a8fa14a097a89684ea59fd2c39bed5c">&#9670;&nbsp;</a></span>BlurRenderer()</h2>
+<a id="ae9720ad61dc76530efd97affe8e94c16"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae9720ad61dc76530efd97affe8e94c16">&#9670;&nbsp;</a></span>MeshData()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">BlurRenderer::BlurRenderer </td>
+          <td class="memname">MeshData::MeshData </td>
           <td>(</td>
-          <td class="paramtype">string&#160;</td>
-          <td class="paramname"><em>vertexSource</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
-          <td class="paramtype">string&#160;</td>
-          <td class="paramname"><em>fragmentSource</em>, </td>
         </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a6f206f96b3c7ce1d33611fed471729cf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6f206f96b3c7ce1d33611fed471729cf">&#9670;&nbsp;</a></span>~MeshData()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
         <tr>
-          <td class="paramkey"></td>
+          <td class="memname">MeshData::~MeshData </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>channelCount</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float *&#160;</td>
-          <td class="paramname"><em>kernelOffsets</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float *&#160;</td>
-          <td class="paramname"><em>kernelWeights</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>kernelSize</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>bilateral</em> = <code>false</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -178,105 +179,240 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ad8e0abdba0d178c0ce6b69054a318230"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad8e0abdba0d178c0ce6b69054a318230">&#9670;&nbsp;</a></span>Render() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual void BlurRenderer::Render </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dd/d1d/a00336.html">Window</a> *&#160;</td>
-          <td class="paramname"><em>window</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d5/d0f/a00308.html">RenderTarget</a> *&#160;</td>
-          <td class="paramname"><em>target</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../dc/ded/a00252.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d7/df2/a00312.html">Scene</a> *&#160;</td>
-          <td class="paramname"><em>scene</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>masterRenderer</em> = <code>false</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="../../de/d4e/a00500.html#a2949949d43784868054c968e3749c511">IRenderer</a>.</p>
-
-</div>
-</div>
-<a id="afe391a2647bd5bfda4c330941861a902"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afe391a2647bd5bfda4c330941861a902">&#9670;&nbsp;</a></span>Render() <span class="overload">[2/2]</span></h2>
+<a id="ac5c9a7c53f367746fa51e526a0f92eb5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac5c9a7c53f367746fa51e526a0f92eb5">&#9670;&nbsp;</a></span>GetIndexCount()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void BlurRenderer::Render </td>
+          <td class="memname">int32_t MeshData::GetIndexCount </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d4/d14/a00608.html">Texture2D</a> *&#160;</td>
-          <td class="paramname"><em>texture</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../d4/d14/a00608.html">Texture2D</a> *&#160;</td>
-          <td class="paramname"><em>swapTexture</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d4/d14/a00608.html">Texture2D</a> *&#160;</td>
-          <td class="paramname"><em>depthTexture</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p><br />
+ </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="adc93d89c6de0b8d316a5374130904c15"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adc93d89c6de0b8d316a5374130904c15">&#9670;&nbsp;</a></span>GetVertexCount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t MeshData::GetVertexCount </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><br />
+ </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="ad4bb315ced121ececb43010479c6d9ba"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad4bb315ced121ececb43010479c6d9ba">&#9670;&nbsp;</a></span>SetIndexCount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void MeshData::SetIndexCount </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>count</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><br />
+ </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">count</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a74b543cae2e0af1426c873f1dbb47a92"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a74b543cae2e0af1426c873f1dbb47a92">&#9670;&nbsp;</a></span>SetVertexCount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void MeshData::SetVertexCount </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>count</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><br />
+ </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">count</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="afc1e52a9e78d8a9e6355530c6eda3564"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afc1e52a9e78d8a9e6355530c6eda3564">&#9670;&nbsp;</a></span>indices</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../de/d87/a00456.html">DataComponent</a>&lt;uint32_t, void&gt;* MeshData::indices</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00043">43</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
+
+</div>
+</div>
+<a id="acd9df1b849dc7fed053129f3aace2652"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acd9df1b849dc7fed053129f3aace2652">&#9670;&nbsp;</a></span>materials</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">vector&lt;<a class="el" href="../../db/db1/a00460.html">Material</a>*&gt; MeshData::materials</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00050">50</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
+
+</div>
+</div>
+<a id="a9d79319a035e3eab75ffeeaace54025e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9d79319a035e3eab75ffeeaace54025e">&#9670;&nbsp;</a></span>normals</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../de/d87/a00456.html">DataComponent</a>&lt;float, uint32_t&gt;* MeshData::normals</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00047">47</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
+
+</div>
+</div>
+<a id="a1318bcc0d5322e70f4c1761eb7c0e58f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1318bcc0d5322e70f4c1761eb7c0e58f">&#9670;&nbsp;</a></span>primitiveType</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t MeshData::primitiveType</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00053">53</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
+
+</div>
+</div>
+<a id="a0ba551ae6d4bac2b5cbbf5adb0030dd8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ba551ae6d4bac2b5cbbf5adb0030dd8">&#9670;&nbsp;</a></span>subData</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">vector&lt;<a class="el" href="../../df/d38/a00468.html">MeshSubData</a>*&gt; MeshData::subData</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00051">51</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
+
+</div>
+</div>
+<a id="a87245f3720186f389c6a9549060a42b5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a87245f3720186f389c6a9549060a42b5">&#9670;&nbsp;</a></span>tangents</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../de/d87/a00456.html">DataComponent</a>&lt;float, uint32_t&gt;* MeshData::tangents</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00048">48</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
+
+</div>
+</div>
+<a id="a888e3a246b8b1ec3d6fca0bfb3208620"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a888e3a246b8b1ec3d6fca0bfb3208620">&#9670;&nbsp;</a></span>texCoords</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../de/d87/a00456.html">DataComponent</a>&lt;float, <a class="el" href="../../d5/df9/a00044.html#ac1f3012c3710a19fb29baf4ff2421bab">float16_t</a>&gt;* MeshData::texCoords</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00046">46</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
+
+</div>
+</div>
+<a id="a5b0ffd9e9d4213f407fb981218d7e066"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5b0ffd9e9d4213f407fb981218d7e066">&#9670;&nbsp;</a></span>vertices</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../de/d87/a00456.html">DataComponent</a>&lt;float, float&gt;* MeshData::vertices</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00045">45</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/renderer/<a class="el" href="../../d7/d9a/a00152_source.html">BlurRenderer.h</a></li>
+<li>src/mesh/<a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d7/db5/a00472.html">BlurRenderer</a></li>
+    <li class="navelem"><a class="el" href="../../d7/db5/a00472.html">MeshData</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

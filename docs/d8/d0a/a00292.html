@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Kernel Class Reference</title>
+<title>Blue Engine: Framebuffer Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,49 +88,110 @@ $(document).ready(function(){initNavTree('d8/d0a/a00292.html','../../');});
 
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d4/d66/a00289.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Kernel Class Reference</div>  </div>
+<div class="title">Framebuffer Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Manages convolution matrices.  
- <a href="../../d8/d0a/a00292.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="../../d6/d5b/a00026_source.html">Kernel.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../db/db2/a00020_source.html">Framebuffer.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a84dba549c0823454ecfc8089c20cf812"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a84dba549c0823454ecfc8089c20cf812">Kernel</a> ()</td></tr>
-<tr class="memdesc:a84dba549c0823454ecfc8089c20cf812"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d8/d0a/a00292.html" title="Manages convolution matrices. ">Kernel</a>.  <a href="#a84dba549c0823454ecfc8089c20cf812">More...</a><br /></td></tr>
-<tr class="separator:a84dba549c0823454ecfc8089c20cf812"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab040492b4208e56faba638b246ef9634"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#ab040492b4208e56faba638b246ef9634">CalculateGaussianFilter</a> (float sigma, uint32_t size)</td></tr>
-<tr class="memdesc:ab040492b4208e56faba638b246ef9634"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates a gaussian convolution matrix.  <a href="#ab040492b4208e56faba638b246ef9634">More...</a><br /></td></tr>
-<tr class="separator:ab040492b4208e56faba638b246ef9634"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adfa4a3d94ebb0be98a4e5f21b3d457ca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#adfa4a3d94ebb0be98a4e5f21b3d457ca">CalculateBoxFilter</a> (uint32_t size)</td></tr>
-<tr class="memdesc:adfa4a3d94ebb0be98a4e5f21b3d457ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates a box convolution matrix.  <a href="#adfa4a3d94ebb0be98a4e5f21b3d457ca">More...</a><br /></td></tr>
-<tr class="separator:adfa4a3d94ebb0be98a4e5f21b3d457ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4411f3544d2e6c682a178093086b93fa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a4411f3544d2e6c682a178093086b93fa">Get</a> (vector&lt; vector&lt; float &gt;&gt; *&amp;weights, vector&lt; vector&lt; ivec2 &gt;&gt; *&amp;offsets)</td></tr>
-<tr class="memdesc:a4411f3544d2e6c682a178093086b93fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the convolution matrix.  <a href="#a4411f3544d2e6c682a178093086b93fa">More...</a><br /></td></tr>
-<tr class="separator:a4411f3544d2e6c682a178093086b93fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6fb2dfeaf131fe37d77f768c4b183de1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a6fb2dfeaf131fe37d77f768c4b183de1">GetLinearized</a> (vector&lt; float &gt; *&amp;weights, vector&lt; float &gt; *&amp;offsets)</td></tr>
-<tr class="memdesc:a6fb2dfeaf131fe37d77f768c4b183de1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the linearized convolution matrix.  <a href="#a6fb2dfeaf131fe37d77f768c4b183de1">More...</a><br /></td></tr>
-<tr class="separator:a6fb2dfeaf131fe37d77f768c4b183de1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac13f259f1458ee3056b534601222597d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#ac13f259f1458ee3056b534601222597d">Framebuffer</a> (int32_t <a class="el" href="../../d8/d0a/a00292.html#a2ea5a7f4e17ff65fe6a0eab2bb57959f">width</a>, int32_t <a class="el" href="../../d8/d0a/a00292.html#ae7a5ba8289763dab7d57f9447d8200fe">height</a>)</td></tr>
+<tr class="separator:ac13f259f1458ee3056b534601222597d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a60d4e884fec811ced31e31bef7cf21ac"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a60d4e884fec811ced31e31bef7cf21ac">AddComponent</a> (int32_t attachment, GLenum dataFormat, int32_t internalFormat, int32_t wrapping, int32_t filtering, uint32_t target=GL_FRAMEBUFFER)</td></tr>
+<tr class="separator:a60d4e884fec811ced31e31bef7cf21ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a809b45117d4582d882f15a9bb0aabf77"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a809b45117d4582d882f15a9bb0aabf77">AddComponentTexture</a> (int32_t attachment, <a class="el" href="../../db/db5/a00616.html">Texture2D</a> *texture, uint32_t target=GL_FRAMEBUFFER)</td></tr>
+<tr class="separator:a809b45117d4582d882f15a9bb0aabf77"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae52aa792e61ced04d5515a9d9ab0f685"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#ae52aa792e61ced04d5515a9d9ab0f685">AddComponentTextureArray</a> (int32_t attachment, <a class="el" href="../../dc/d4d/a00620.html">Texture2DArray</a> *texture, int32_t layer, uint32_t target=GL_FRAMEBUFFER)</td></tr>
+<tr class="separator:ae52aa792e61ced04d5515a9d9ab0f685"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a187325c23366eba33b80f67587c5d764"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a187325c23366eba33b80f67587c5d764">AddComponentCubemap</a> (int32_t attachment, <a class="el" href="../../d9/dd6/a00272.html">Cubemap</a> *cubemap, int32_t face, uint32_t target=GL_FRAMEBUFFER)</td></tr>
+<tr class="separator:a187325c23366eba33b80f67587c5d764"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a13d1c8649f6582b9983064f0e786b4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../db/db5/a00616.html">Texture2D</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a2a13d1c8649f6582b9983064f0e786b4">GetComponentTexture</a> (int32_t attachment)</td></tr>
+<tr class="separator:a2a13d1c8649f6582b9983064f0e786b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74778e24d4b0fa81f9907f5f427d0a54"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d4d/a00620.html">Texture2DArray</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a74778e24d4b0fa81f9907f5f427d0a54">GetComponentTextureArray</a> (int32_t attachment)</td></tr>
+<tr class="separator:a74778e24d4b0fa81f9907f5f427d0a54"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5842921fecaafdbbd699430a50cd4cd1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d9/dd6/a00272.html">Cubemap</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a5842921fecaafdbbd699430a50cd4cd1">GetComponentCubemap</a> (int32_t attachment)</td></tr>
+<tr class="separator:a5842921fecaafdbbd699430a50cd4cd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8189520451235478f05f05417ceceac7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a8189520451235478f05f05417ceceac7">Resize</a> (int32_t <a class="el" href="../../d8/d0a/a00292.html#a2ea5a7f4e17ff65fe6a0eab2bb57959f">width</a>, int32_t <a class="el" href="../../d8/d0a/a00292.html#ae7a5ba8289763dab7d57f9447d8200fe">height</a>)</td></tr>
+<tr class="memdesc:a8189520451235478f05f05417ceceac7"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#a8189520451235478f05f05417ceceac7">More...</a><br /></td></tr>
+<tr class="separator:a8189520451235478f05f05417ceceac7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac4dfcb88c7a6a76c3a4554a2bbf3367a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#ac4dfcb88c7a6a76c3a4554a2bbf3367a">Bind</a> (bool resizeViewport=false)</td></tr>
+<tr class="memdesc:ac4dfcb88c7a6a76c3a4554a2bbf3367a"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#ac4dfcb88c7a6a76c3a4554a2bbf3367a">More...</a><br /></td></tr>
+<tr class="separator:ac4dfcb88c7a6a76c3a4554a2bbf3367a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab90a3724b38bd453635deb7e2d2fb619"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#ab90a3724b38bd453635deb7e2d2fb619">Unbind</a> ()</td></tr>
+<tr class="separator:ab90a3724b38bd453635deb7e2d2fb619"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a28c66450664e3efb36d6d924ddf0e935"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a28c66450664e3efb36d6d924ddf0e935">SetDrawBuffers</a> (uint32_t *buffers, int32_t count)</td></tr>
+<tr class="memdesc:a28c66450664e3efb36d6d924ddf0e935"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#a28c66450664e3efb36d6d924ddf0e935">More...</a><br /></td></tr>
+<tr class="separator:a28c66450664e3efb36d6d924ddf0e935"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a87774ef08d11b6d59e21c433c298f124"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a87774ef08d11b6d59e21c433c298f124">ClearContent</a> ()</td></tr>
+<tr class="separator:a87774ef08d11b6d59e21c433c298f124"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac07479ab85b6900064005af47786d869"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#ac07479ab85b6900064005af47786d869">DeleteContent</a> ()</td></tr>
+<tr class="separator:ac07479ab85b6900064005af47786d869"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a037bf3e17455354d5d907ceea00313dd"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a037bf3e17455354d5d907ceea00313dd">~Framebuffer</a> ()</td></tr>
+<tr class="separator:a037bf3e17455354d5d907ceea00313dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a2ea5a7f4e17ff65fe6a0eab2bb57959f"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#a2ea5a7f4e17ff65fe6a0eab2bb57959f">width</a></td></tr>
+<tr class="separator:a2ea5a7f4e17ff65fe6a0eab2bb57959f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae7a5ba8289763dab7d57f9447d8200fe"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#ae7a5ba8289763dab7d57f9447d8200fe">height</a></td></tr>
+<tr class="separator:ae7a5ba8289763dab7d57f9447d8200fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Manages convolution matrices. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d6/d5b/a00026_source.html#l00010">10</a> of file <a class="el" href="../../d6/d5b/a00026_source.html">Kernel.h</a>.</p>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../db/db2/a00020_source.html#l00011">11</a> of file <a class="el" href="../../db/db2/a00020_source.html">Framebuffer.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a84dba549c0823454ecfc8089c20cf812"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a84dba549c0823454ecfc8089c20cf812">&#9670;&nbsp;</a></span>Kernel()</h2>
+<a id="ac13f259f1458ee3056b534601222597d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac13f259f1458ee3056b534601222597d">&#9670;&nbsp;</a></span>Framebuffer()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Kernel::Kernel </td>
+          <td class="memname">Framebuffer::Framebuffer </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a037bf3e17455354d5d907ceea00313dd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a037bf3e17455354d5d907ceea00313dd">&#9670;&nbsp;</a></span>~Framebuffer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Framebuffer::~Framebuffer </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -138,56 +199,50 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Constructs a <a class="el" href="../../d8/d0a/a00292.html" title="Manages convolution matrices. ">Kernel</a>. </p>
-
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="adfa4a3d94ebb0be98a4e5f21b3d457ca"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adfa4a3d94ebb0be98a4e5f21b3d457ca">&#9670;&nbsp;</a></span>CalculateBoxFilter()</h2>
+<a id="a60d4e884fec811ced31e31bef7cf21ac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a60d4e884fec811ced31e31bef7cf21ac">&#9670;&nbsp;</a></span>AddComponent()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Kernel::CalculateBoxFilter </td>
+          <td class="memname">void Framebuffer::AddComponent </td>
           <td>(</td>
-          <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>size</em></td><td>)</td>
-          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em>, </td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Calculates a box convolution matrix. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">size</td><td>The diameter of the convolution matrix. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section note"><dt>Note</dt><dd>The size argument should always be an odd number, with size &gt; 1. </dd></dl>
-<dl class="section remark"><dt>Remarks</dt><dd>See <a href="https://en.wikipedia.org/wiki/Box_blur">Box blur</a> for more. </dd></dl>
-
-</div>
-</div>
-<a id="ab040492b4208e56faba638b246ef9634"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab040492b4208e56faba638b246ef9634">&#9670;&nbsp;</a></span>CalculateGaussianFilter()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname">void Kernel::CalculateGaussianFilter </td>
-          <td>(</td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>sigma</em>, </td>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">GLenum&#160;</td>
+          <td class="paramname"><em>dataFormat</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>internalFormat</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>wrapping</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>filtering</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>size</em>&#160;</td>
+          <td class="paramname"><em>target</em> = <code>GL_FRAMEBUFFER</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -196,37 +251,49 @@ Public Member Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p>Calculates a gaussian convolution matrix. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">sigma</td><td>The sigma used for the gaussian function. </td></tr>
-    <tr><td class="paramname">size</td><td>The diameter of the convolution matrix. </td></tr>
+    <tr><td class="paramname">attachment</td><td></td></tr>
+    <tr><td class="paramname">dataFormat</td><td></td></tr>
+    <tr><td class="paramname">internalFormat</td><td></td></tr>
+    <tr><td class="paramname">wrapping</td><td></td></tr>
+    <tr><td class="paramname">filtering</td><td></td></tr>
+    <tr><td class="paramname">target</td><td></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section note"><dt>Note</dt><dd>The size argument should always be an odd number, with size &gt; 1. </dd></dl>
-<dl class="section remark"><dt>Remarks</dt><dd>See <a href="https://en.wikipedia.org/wiki/Gaussian_blur">Gaussian blur</a> for more. </dd></dl>
 
 </div>
 </div>
-<a id="a4411f3544d2e6c682a178093086b93fa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4411f3544d2e6c682a178093086b93fa">&#9670;&nbsp;</a></span>Get()</h2>
+<a id="a187325c23366eba33b80f67587c5d764"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a187325c23366eba33b80f67587c5d764">&#9670;&nbsp;</a></span>AddComponentCubemap()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Kernel::Get </td>
+          <td class="memname">void Framebuffer::AddComponentCubemap </td>
           <td>(</td>
-          <td class="paramtype">vector&lt; vector&lt; float &gt;&gt; *&amp;&#160;</td>
-          <td class="paramname"><em>weights</em>, </td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">vector&lt; vector&lt; ivec2 &gt;&gt; *&amp;&#160;</td>
-          <td class="paramname"><em>offsets</em>&#160;</td>
+          <td class="paramtype"><a class="el" href="../../d9/dd6/a00272.html">Cubemap</a> *&#160;</td>
+          <td class="paramname"><em>cubemap</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>face</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>target</em> = <code>GL_FRAMEBUFFER</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -235,36 +302,262 @@ Public Member Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p>Returns the convolution matrix. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">weights</td><td>A pointer which will contain the weights. </td></tr>
-    <tr><td class="paramname">offsets</td><td>A pointer which will contain the offsets. </td></tr>
+    <tr><td class="paramname">attachment</td><td></td></tr>
+    <tr><td class="paramname">cubemap</td><td></td></tr>
+    <tr><td class="paramname">face</td><td></td></tr>
+    <tr><td class="paramname">target</td><td></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section note"><dt>Note</dt><dd>The input pointers shouldn't have anything allocated and shouldn't be deleted later on. </dd></dl>
 
 </div>
 </div>
-<a id="a6fb2dfeaf131fe37d77f768c4b183de1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6fb2dfeaf131fe37d77f768c4b183de1">&#9670;&nbsp;</a></span>GetLinearized()</h2>
+<a id="a809b45117d4582d882f15a9bb0aabf77"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a809b45117d4582d882f15a9bb0aabf77">&#9670;&nbsp;</a></span>AddComponentTexture()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Kernel::GetLinearized </td>
+          <td class="memname">void Framebuffer::AddComponentTexture </td>
           <td>(</td>
-          <td class="paramtype">vector&lt; float &gt; *&amp;&#160;</td>
-          <td class="paramname"><em>weights</em>, </td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">vector&lt; float &gt; *&amp;&#160;</td>
-          <td class="paramname"><em>offsets</em>&#160;</td>
+          <td class="paramtype"><a class="el" href="../../db/db5/a00616.html">Texture2D</a> *&#160;</td>
+          <td class="paramname"><em>texture</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>target</em> = <code>GL_FRAMEBUFFER</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attachment</td><td></td></tr>
+    <tr><td class="paramname">texture</td><td></td></tr>
+    <tr><td class="paramname">target</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ae52aa792e61ced04d5515a9d9ab0f685"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae52aa792e61ced04d5515a9d9ab0f685">&#9670;&nbsp;</a></span>AddComponentTextureArray()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Framebuffer::AddComponentTextureArray </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../dc/d4d/a00620.html">Texture2DArray</a> *&#160;</td>
+          <td class="paramname"><em>texture</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>layer</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>target</em> = <code>GL_FRAMEBUFFER</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attachment</td><td></td></tr>
+    <tr><td class="paramname">texture</td><td></td></tr>
+    <tr><td class="paramname">layer</td><td></td></tr>
+    <tr><td class="paramname">target</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ac4dfcb88c7a6a76c3a4554a2bbf3367a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac4dfcb88c7a6a76c3a4554a2bbf3367a">&#9670;&nbsp;</a></span>Bind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Framebuffer::Bind </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>resizeViewport</em> = <code>false</code></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><br />
+ </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">resizeViewport</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a87774ef08d11b6d59e21c433c298f124"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a87774ef08d11b6d59e21c433c298f124">&#9670;&nbsp;</a></span>ClearContent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Framebuffer::ClearContent </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ac07479ab85b6900064005af47786d869"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac07479ab85b6900064005af47786d869">&#9670;&nbsp;</a></span>DeleteContent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Framebuffer::DeleteContent </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a5842921fecaafdbbd699430a50cd4cd1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5842921fecaafdbbd699430a50cd4cd1">&#9670;&nbsp;</a></span>GetComponentCubemap()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d9/dd6/a00272.html">Cubemap</a>* Framebuffer::GetComponentCubemap </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attachment</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="a2a13d1c8649f6582b9983064f0e786b4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2a13d1c8649f6582b9983064f0e786b4">&#9670;&nbsp;</a></span>GetComponentTexture()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../db/db5/a00616.html">Texture2D</a>* Framebuffer::GetComponentTexture </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attachment</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="a74778e24d4b0fa81f9907f5f427d0a54"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a74778e24d4b0fa81f9907f5f427d0a54">&#9670;&nbsp;</a></span>GetComponentTextureArray()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../dc/d4d/a00620.html">Texture2DArray</a>* Framebuffer::GetComponentTextureArray </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attachment</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="a8189520451235478f05f05417ceceac7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8189520451235478f05f05417ceceac7">&#9670;&nbsp;</a></span>Resize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Framebuffer::Resize </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -274,28 +567,115 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Returns the linearized convolution matrix. </p>
+<p><br />
+ </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">weights</td><td>A pointer which will contain the weights. </td></tr>
-    <tr><td class="paramname">offsets</td><td>A pointer which will contain the offsets. </td></tr>
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section note"><dt>Note</dt><dd>The input pointers shouldn't have anything allocated and shouldn't be deleted later on. </dd></dl>
-<dl class="section remark"><dt>Remarks</dt><dd>This method should only be used if the filter is separable (explanation <a href="https://en.wikipedia.org/wiki/Separable_filter">here</a>) and if the sampling supports bilinear interpolation. Linearized means that the convolution matrix is reduced to a one dimensional array. The filter can then be applied in two passes (horizontal, vertical). Only one side of the original convolution matrix is included in the linearized matrix with the origin being at index 0. Additionally the samples of the linearized matrix are cut by half by weighting the offsets in such a way that the new samples are always between two of the original samples. </dd></dl>
+
+</div>
+</div>
+<a id="a28c66450664e3efb36d6d924ddf0e935"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a28c66450664e3efb36d6d924ddf0e935">&#9670;&nbsp;</a></span>SetDrawBuffers()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Framebuffer::SetDrawBuffers </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t *&#160;</td>
+          <td class="paramname"><em>buffers</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>count</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><br />
+ </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">buffers</td><td></td></tr>
+    <tr><td class="paramname">count</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ab90a3724b38bd453635deb7e2d2fb619"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab90a3724b38bd453635deb7e2d2fb619">&#9670;&nbsp;</a></span>Unbind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Framebuffer::Unbind </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="ae7a5ba8289763dab7d57f9447d8200fe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7a5ba8289763dab7d57f9447d8200fe">&#9670;&nbsp;</a></span>height</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Framebuffer::height</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../db/db2/a00020_source.html#l00107">107</a> of file <a class="el" href="../../db/db2/a00020_source.html">Framebuffer.h</a>.</p>
+
+</div>
+</div>
+<a id="a2ea5a7f4e17ff65fe6a0eab2bb57959f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2ea5a7f4e17ff65fe6a0eab2bb57959f">&#9670;&nbsp;</a></span>width</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Framebuffer::width</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../db/db2/a00020_source.html#l00106">106</a> of file <a class="el" href="../../db/db2/a00020_source.html">Framebuffer.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/<a class="el" href="../../d6/d5b/a00026_source.html">Kernel.h</a></li>
+<li>src/<a class="el" href="../../db/db2/a00020_source.html">Framebuffer.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d8/d0a/a00292.html">Kernel</a></li>
+    <li class="navelem"><a class="el" href="../../d8/d0a/a00292.html">Framebuffer</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

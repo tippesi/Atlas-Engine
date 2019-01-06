@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: src/shader/ShaderConstant.h File Reference</title>
+<title>Blue Engine: src/shader/ShaderStage.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -91,164 +91,113 @@ $(document).ready(function(){initNavTree('de/d79/a00203.html','../../');});
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#define-members">Macros</a>  </div>
   <div class="headertitle">
-<div class="title">ShaderConstant.h File Reference</div>  </div>
+<div class="title">ShaderStage.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">../System.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d3/db1/a00200_source.html">ShaderConstant.h</a>&quot;</code><br />
+<code>#include &lt;list&gt;</code><br />
 <code>#include &lt;string&gt;</code><br />
 </div>
 <p><a href="../../de/d79/a00203_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de6/a00548.html">ShaderConstant</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html">ShaderStage</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A shader stage is a module/stage of a shader, e.g it might be a vertex shader.  <a href="../../d9/d19/a00560.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:adb5a99125222f59569f418264c282035"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d79/a00203.html#adb5a99125222f59569f418264c282035">FLOAT_CONSTANT</a>&#160;&#160;&#160;0x0</td></tr>
-<tr class="separator:adb5a99125222f59569f418264c282035"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad50370168ab63d6f7266a0e81e8cc372"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d79/a00203.html#ad50370168ab63d6f7266a0e81e8cc372">INT_CONSTANT</a>&#160;&#160;&#160;0x1</td></tr>
-<tr class="separator:ad50370168ab63d6f7266a0e81e8cc372"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8ade6da47c8ae835c7653b17deb73e6e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d79/a00203.html#a8ade6da47c8ae835c7653b17deb73e6e">BOOLEAN_CONSTANT</a>&#160;&#160;&#160;0x2</td></tr>
-<tr class="separator:a8ade6da47c8ae835c7653b17deb73e6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ade2d7ae536089ceb3a3d6639f064e00e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d79/a00203.html#ade2d7ae536089ceb3a3d6639f064e00e">VECTOR2_CONSTANT</a>&#160;&#160;&#160;0x3</td></tr>
-<tr class="separator:ade2d7ae536089ceb3a3d6639f064e00e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac667af48119d0369aa76b480d6a2ac7d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d79/a00203.html#ac667af48119d0369aa76b480d6a2ac7d">VECTOR3_CONSTANT</a>&#160;&#160;&#160;0x4</td></tr>
-<tr class="separator:ac667af48119d0369aa76b480d6a2ac7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a629f0306d97f23fcf300ad23c6aed04f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d79/a00203.html#a629f0306d97f23fcf300ad23c6aed04f">VECTOR4_CONSTANT</a>&#160;&#160;&#160;0x5</td></tr>
-<tr class="separator:a629f0306d97f23fcf300ad23c6aed04f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac490285126e2aaa46518fe510035e69e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d79/a00203.html#ac490285126e2aaa46518fe510035e69e">FLOAT_ARRAY_CONSTANT</a>&#160;&#160;&#160;0x6</td></tr>
-<tr class="separator:ac490285126e2aaa46518fe510035e69e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5bb153a88b5c31dc5ca46cf3c105b447"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d79/a00203.html#a5bb153a88b5c31dc5ca46cf3c105b447">INT_ARRAY_CONSTANT</a>&#160;&#160;&#160;0x7</td></tr>
-<tr class="separator:a5bb153a88b5c31dc5ca46cf3c105b447"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a61559c4b9e5fc297e461b52230ca3dac"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d79/a00203.html#a61559c4b9e5fc297e461b52230ca3dac">VERTEX_SHADER</a>&#160;&#160;&#160;GL_VERTEX_SHADER</td></tr>
+<tr class="separator:a61559c4b9e5fc297e461b52230ca3dac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae93178af30f412f0278ae46706197379"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d79/a00203.html#ae93178af30f412f0278ae46706197379">FRAGMENT_SHADER</a>&#160;&#160;&#160;GL_FRAGMENT_SHADER</td></tr>
+<tr class="separator:ae93178af30f412f0278ae46706197379"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a72074ec6f3808a6777fccbe43e4430d2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d79/a00203.html#a72074ec6f3808a6777fccbe43e4430d2">GEOMETRY_SHADER</a>&#160;&#160;&#160;GL_GEOMETRY_SHADER</td></tr>
+<tr class="separator:a72074ec6f3808a6777fccbe43e4430d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a588db04b851abaf785eefba49021abb7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d79/a00203.html#a588db04b851abaf785eefba49021abb7">TESSELATION_CONTROL_SHADER</a>&#160;&#160;&#160;GL_TESS_CONTROL_SHADER</td></tr>
+<tr class="separator:a588db04b851abaf785eefba49021abb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a990b84689d6aa7ce63bc79364de9e92c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d79/a00203.html#a990b84689d6aa7ce63bc79364de9e92c">TESSELATION_EVALUATION_SHADER</a>&#160;&#160;&#160;GL_TESS_EVALUATION_SHADER</td></tr>
+<tr class="separator:a990b84689d6aa7ce63bc79364de9e92c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="a8ade6da47c8ae835c7653b17deb73e6e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8ade6da47c8ae835c7653b17deb73e6e">&#9670;&nbsp;</a></span>BOOLEAN_CONSTANT</h2>
+<a id="ae93178af30f412f0278ae46706197379"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae93178af30f412f0278ae46706197379">&#9670;&nbsp;</a></span>FRAGMENT_SHADER</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define BOOLEAN_CONSTANT&#160;&#160;&#160;0x2</td>
+          <td class="memname">#define FRAGMENT_SHADER&#160;&#160;&#160;GL_FRAGMENT_SHADER</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00010">10</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderConstant.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00011">11</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderStage.h</a>.</p>
 
 </div>
 </div>
-<a id="ac490285126e2aaa46518fe510035e69e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac490285126e2aaa46518fe510035e69e">&#9670;&nbsp;</a></span>FLOAT_ARRAY_CONSTANT</h2>
+<a id="a72074ec6f3808a6777fccbe43e4430d2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a72074ec6f3808a6777fccbe43e4430d2">&#9670;&nbsp;</a></span>GEOMETRY_SHADER</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define FLOAT_ARRAY_CONSTANT&#160;&#160;&#160;0x6</td>
+          <td class="memname">#define GEOMETRY_SHADER&#160;&#160;&#160;GL_GEOMETRY_SHADER</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00014">14</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderConstant.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00012">12</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderStage.h</a>.</p>
 
 </div>
 </div>
-<a id="adb5a99125222f59569f418264c282035"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adb5a99125222f59569f418264c282035">&#9670;&nbsp;</a></span>FLOAT_CONSTANT</h2>
+<a id="a588db04b851abaf785eefba49021abb7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a588db04b851abaf785eefba49021abb7">&#9670;&nbsp;</a></span>TESSELATION_CONTROL_SHADER</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define FLOAT_CONSTANT&#160;&#160;&#160;0x0</td>
+          <td class="memname">#define TESSELATION_CONTROL_SHADER&#160;&#160;&#160;GL_TESS_CONTROL_SHADER</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00008">8</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderConstant.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00013">13</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderStage.h</a>.</p>
 
 </div>
 </div>
-<a id="a5bb153a88b5c31dc5ca46cf3c105b447"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5bb153a88b5c31dc5ca46cf3c105b447">&#9670;&nbsp;</a></span>INT_ARRAY_CONSTANT</h2>
+<a id="a990b84689d6aa7ce63bc79364de9e92c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a990b84689d6aa7ce63bc79364de9e92c">&#9670;&nbsp;</a></span>TESSELATION_EVALUATION_SHADER</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define INT_ARRAY_CONSTANT&#160;&#160;&#160;0x7</td>
+          <td class="memname">#define TESSELATION_EVALUATION_SHADER&#160;&#160;&#160;GL_TESS_EVALUATION_SHADER</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00015">15</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderConstant.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00014">14</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderStage.h</a>.</p>
 
 </div>
 </div>
-<a id="ad50370168ab63d6f7266a0e81e8cc372"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad50370168ab63d6f7266a0e81e8cc372">&#9670;&nbsp;</a></span>INT_CONSTANT</h2>
+<a id="a61559c4b9e5fc297e461b52230ca3dac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a61559c4b9e5fc297e461b52230ca3dac">&#9670;&nbsp;</a></span>VERTEX_SHADER</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define INT_CONSTANT&#160;&#160;&#160;0x1</td>
+          <td class="memname">#define VERTEX_SHADER&#160;&#160;&#160;GL_VERTEX_SHADER</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00009">9</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderConstant.h</a>.</p>
-
-</div>
-</div>
-<a id="ade2d7ae536089ceb3a3d6639f064e00e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ade2d7ae536089ceb3a3d6639f064e00e">&#9670;&nbsp;</a></span>VECTOR2_CONSTANT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define VECTOR2_CONSTANT&#160;&#160;&#160;0x3</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00011">11</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderConstant.h</a>.</p>
-
-</div>
-</div>
-<a id="ac667af48119d0369aa76b480d6a2ac7d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac667af48119d0369aa76b480d6a2ac7d">&#9670;&nbsp;</a></span>VECTOR3_CONSTANT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define VECTOR3_CONSTANT&#160;&#160;&#160;0x4</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00012">12</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderConstant.h</a>.</p>
-
-</div>
-</div>
-<a id="a629f0306d97f23fcf300ad23c6aed04f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a629f0306d97f23fcf300ad23c6aed04f">&#9670;&nbsp;</a></span>VECTOR4_CONSTANT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define VECTOR4_CONSTANT&#160;&#160;&#160;0x5</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00013">13</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderConstant.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00010">10</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderStage.h</a>.</p>
 
 </div>
 </div>
@@ -257,7 +206,7 @@ Macros</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_9e88f1b6fa3ecf8a71537f17c04010fb.html">shader</a></li><li class="navelem"><a class="el" href="../../de/d79/a00203.html">ShaderConstant.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_9e88f1b6fa3ecf8a71537f17c04010fb.html">shader</a></li><li class="navelem"><a class="el" href="../../de/d79/a00203.html">ShaderStage.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

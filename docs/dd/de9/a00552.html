@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: ShaderSource Class Reference</title>
+<title>Blue Engine: ShaderConfigBatch Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,187 +89,135 @@ $(document).ready(function(){initNavTree('dd/de9/a00552.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d5/d21/a00549.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ShaderSource Class Reference</div>  </div>
+<div class="title">ShaderConfigBatch Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d5/df1/a00206_source.html">ShaderSource.h</a>&gt;</code></p>
+<p>A <a class="el" href="../../dd/de9/a00552.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> groups an arbitrary number of ShaderConfigs together which use the same shader.  
+ <a href="../../dd/de9/a00552.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../de/db1/a00197_source.html">ShaderConfigBatch.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a54aeb6b71a0e22fb968a8072b08e742a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a54aeb6b71a0e22fb968a8072b08e742a">ShaderSource</a> (int32_t <a class="el" href="../../dd/de9/a00552.html#ab1490ec761f26b25851ab2896439e35a">type</a>, string <a class="el" href="../../dd/de9/a00552.html#a88b50e0b2c4ede56e87ee118941a17d6">filename</a>)</td></tr>
-<tr class="memdesc:a54aeb6b71a0e22fb968a8072b08e742a"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#a54aeb6b71a0e22fb968a8072b08e742a">More...</a><br /></td></tr>
-<tr class="separator:a54aeb6b71a0e22fb968a8072b08e742a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad166f5e19f4225ef7271681955fec4e7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#ad166f5e19f4225ef7271681955fec4e7">ShaderSource</a> (<a class="el" href="../../dd/de9/a00552.html">ShaderSource</a> *source)</td></tr>
-<tr class="memdesc:ad166f5e19f4225ef7271681955fec4e7"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#ad166f5e19f4225ef7271681955fec4e7">More...</a><br /></td></tr>
-<tr class="separator:ad166f5e19f4225ef7271681955fec4e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a06dd8576ca485eb4cf9ba11f4ea713bb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a06dd8576ca485eb4cf9ba11f4ea713bb">Reload</a> ()</td></tr>
-<tr class="memdesc:a06dd8576ca485eb4cf9ba11f4ea713bb"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#a06dd8576ca485eb4cf9ba11f4ea713bb">More...</a><br /></td></tr>
-<tr class="separator:a06dd8576ca485eb4cf9ba11f4ea713bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae1fea6a14875c1b1bc35f934e1fa43a6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#ae1fea6a14875c1b1bc35f934e1fa43a6">AddMacro</a> (string macro)</td></tr>
-<tr class="memdesc:ae1fea6a14875c1b1bc35f934e1fa43a6"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#ae1fea6a14875c1b1bc35f934e1fa43a6">More...</a><br /></td></tr>
-<tr class="separator:ae1fea6a14875c1b1bc35f934e1fa43a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51486721ffe1c160955cd134461d2f47"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a51486721ffe1c160955cd134461d2f47">RemoveMacro</a> (string macro)</td></tr>
-<tr class="memdesc:a51486721ffe1c160955cd134461d2f47"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#a51486721ffe1c160955cd134461d2f47">More...</a><br /></td></tr>
-<tr class="separator:a51486721ffe1c160955cd134461d2f47"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a528439240afc980ece252e3a973f55a1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dd/de6/a00548.html">ShaderConstant</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a528439240afc980ece252e3a973f55a1">GetConstant</a> (string constant)</td></tr>
-<tr class="memdesc:a528439240afc980ece252e3a973f55a1"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#a528439240afc980ece252e3a973f55a1">More...</a><br /></td></tr>
-<tr class="separator:a528439240afc980ece252e3a973f55a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ade3046e2bfdee1e9a6fc6684472eb90e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#ade3046e2bfdee1e9a6fc6684472eb90e">Compile</a> ()</td></tr>
-<tr class="memdesc:ade3046e2bfdee1e9a6fc6684472eb90e"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#ade3046e2bfdee1e9a6fc6684472eb90e">More...</a><br /></td></tr>
-<tr class="separator:ade3046e2bfdee1e9a6fc6684472eb90e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a557dc0158a89c886b444ca9fe496199b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a557dc0158a89c886b444ca9fe496199b">~ShaderSource</a> ()</td></tr>
-<tr class="separator:a557dc0158a89c886b444ca9fe496199b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
-Static Public Member Functions</h2></td></tr>
-<tr class="memitem:aba81da59a674b7bb58ea1b091e46a16a"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#aba81da59a674b7bb58ea1b091e46a16a">SetSourceDirectory</a> (string directory)</td></tr>
-<tr class="memdesc:aba81da59a674b7bb58ea1b091e46a16a"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-  <a href="#aba81da59a674b7bb58ea1b091e46a16a">More...</a><br /></td></tr>
-<tr class="separator:aba81da59a674b7bb58ea1b091e46a16a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab1b9cd5fd71303dea8b86db17db0554"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#aab1b9cd5fd71303dea8b86db17db0554">ShaderConfigBatch</a> (<a class="el" href="../../d4/d79/a00540.html">Shader</a> *shader)</td></tr>
+<tr class="memdesc:aab1b9cd5fd71303dea8b86db17db0554"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../dd/de9/a00552.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> object.  <a href="#aab1b9cd5fd71303dea8b86db17db0554">More...</a><br /></td></tr>
+<tr class="separator:aab1b9cd5fd71303dea8b86db17db0554"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a700f2dd725f42b4fe43de83baf78cd96"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a700f2dd725f42b4fe43de83baf78cd96">~ShaderConfigBatch</a> ()</td></tr>
+<tr class="memdesc:a700f2dd725f42b4fe43de83baf78cd96"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructs a <a class="el" href="../../dd/de9/a00552.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> object.  <a href="#a700f2dd725f42b4fe43de83baf78cd96">More...</a><br /></td></tr>
+<tr class="separator:a700f2dd725f42b4fe43de83baf78cd96"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e2e24832cb2fb62a329585325b19248"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a9e2e24832cb2fb62a329585325b19248">Add</a> (<a class="el" href="../../dd/de6/a00548.html">ShaderConfig</a> *config)</td></tr>
+<tr class="memdesc:a9e2e24832cb2fb62a329585325b19248"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a shader config to the batch.  <a href="#a9e2e24832cb2fb62a329585325b19248">More...</a><br /></td></tr>
+<tr class="separator:a9e2e24832cb2fb62a329585325b19248"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a837aef4e7a1133448443691ac99b4a76"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a837aef4e7a1133448443691ac99b4a76">Remove</a> (<a class="el" href="../../dd/de6/a00548.html">ShaderConfig</a> *config)</td></tr>
+<tr class="memdesc:a837aef4e7a1133448443691ac99b4a76"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a shader config from the batch,.  <a href="#a837aef4e7a1133448443691ac99b4a76">More...</a><br /></td></tr>
+<tr class="separator:a837aef4e7a1133448443691ac99b4a76"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a256ad11d8c4de05c86ece80a51b0bc76"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a256ad11d8c4de05c86ece80a51b0bc76">GetSize</a> ()</td></tr>
+<tr class="memdesc:a256ad11d8c4de05c86ece80a51b0bc76"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of elements the batch holds.  <a href="#a256ad11d8c4de05c86ece80a51b0bc76">More...</a><br /></td></tr>
+<tr class="separator:a256ad11d8c4de05c86ece80a51b0bc76"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7e11c39b5c9c114b6d90d3a632e4ccab"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a7e11c39b5c9c114b6d90d3a632e4ccab">Bind</a> ()</td></tr>
+<tr class="memdesc:a7e11c39b5c9c114b6d90d3a632e4ccab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Binds the shader of the batch.  <a href="#a7e11c39b5c9c114b6d90d3a632e4ccab">More...</a><br /></td></tr>
+<tr class="separator:a7e11c39b5c9c114b6d90d3a632e4ccab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b4f0ea3019da0342139e08d23f0e593"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d79/a00540.html">Shader</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a1b4f0ea3019da0342139e08d23f0e593">GetShader</a> ()</td></tr>
+<tr class="memdesc:a1b4f0ea3019da0342139e08d23f0e593"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the shader of the batch.  <a href="#a1b4f0ea3019da0342139e08d23f0e593">More...</a><br /></td></tr>
+<tr class="separator:a1b4f0ea3019da0342139e08d23f0e593"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a10000e8b7cd5f92bef5a2a7e743db3cf"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a10000e8b7cd5f92bef5a2a7e743db3cf">ID</a></td></tr>
-<tr class="separator:a10000e8b7cd5f92bef5a2a7e743db3cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab1490ec761f26b25851ab2896439e35a"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#ab1490ec761f26b25851ab2896439e35a">type</a></td></tr>
-<tr class="separator:ab1490ec761f26b25851ab2896439e35a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a88b50e0b2c4ede56e87ee118941a17d6"><td class="memItemLeft" align="right" valign="top">string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a88b50e0b2c4ede56e87ee118941a17d6">filename</a></td></tr>
-<tr class="separator:a88b50e0b2c4ede56e87ee118941a17d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ed5dc70d6918b2b95cb17c3b865ff74"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a0ed5dc70d6918b2b95cb17c3b865ff74">ID</a></td></tr>
+<tr class="memdesc:a0ed5dc70d6918b2b95cb17c3b865ff74"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the batch.  <a href="#a0ed5dc70d6918b2b95cb17c3b865ff74">More...</a><br /></td></tr>
+<tr class="separator:a0ed5dc70d6918b2b95cb17c3b865ff74"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d5/df1/a00206_source.html#l00016">16</a> of file <a class="el" href="../../d5/df1/a00206_source.html">ShaderSource.h</a>.</p>
+<div class="textblock"><p>A <a class="el" href="../../dd/de9/a00552.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> groups an arbitrary number of ShaderConfigs together which use the same shader. </p>
+<p>This means all the batch only contains ShaderConfigs which have the same macros. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../de/db1/a00197_source.html#l00015">15</a> of file <a class="el" href="../../de/db1/a00197_source.html">ShaderConfigBatch.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a54aeb6b71a0e22fb968a8072b08e742a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a54aeb6b71a0e22fb968a8072b08e742a">&#9670;&nbsp;</a></span>ShaderSource() <span class="overload">[1/2]</span></h2>
+<a id="aab1b9cd5fd71303dea8b86db17db0554"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab1b9cd5fd71303dea8b86db17db0554">&#9670;&nbsp;</a></span>ShaderConfigBatch()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">ShaderSource::ShaderSource </td>
+          <td class="memname">ShaderConfigBatch::ShaderConfigBatch </td>
           <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>type</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">string&#160;</td>
-          <td class="paramname"><em>filename</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p><br />
- </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">type</td><td></td></tr>
-    <tr><td class="paramname">filename</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="ad166f5e19f4225ef7271681955fec4e7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad166f5e19f4225ef7271681955fec4e7">&#9670;&nbsp;</a></span>ShaderSource() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">ShaderSource::ShaderSource </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dd/de9/a00552.html">ShaderSource</a> *&#160;</td>
-          <td class="paramname"><em>source</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../d4/d79/a00540.html">Shader</a> *&#160;</td>
+          <td class="paramname"><em>shader</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p><br />
- </p>
+<p>Constructs a <a class="el" href="../../dd/de9/a00552.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> object. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">source</td><td></td></tr>
+    <tr><td class="paramname">shader</td><td>A pointer to a <a class="el" href="../../d4/d79/a00540.html">Shader</a> object the batch should use. </td></tr>
   </table>
   </dd>
 </dl>
+<dl class="section note"><dt>Note</dt><dd>The shader will be managed by the shader configuration batch. This means that it wiil be released from memory if the batch gets destructed. </dd></dl>
 
 </div>
 </div>
-<a id="a557dc0158a89c886b444ca9fe496199b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a557dc0158a89c886b444ca9fe496199b">&#9670;&nbsp;</a></span>~ShaderSource()</h2>
+<a id="a700f2dd725f42b4fe43de83baf78cd96"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a700f2dd725f42b4fe43de83baf78cd96">&#9670;&nbsp;</a></span>~ShaderConfigBatch()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">ShaderSource::~ShaderSource </td>
+          <td class="memname">ShaderConfigBatch::~ShaderConfigBatch </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Destructs a <a class="el" href="../../dd/de9/a00552.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> object. </p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ae1fea6a14875c1b1bc35f934e1fa43a6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae1fea6a14875c1b1bc35f934e1fa43a6">&#9670;&nbsp;</a></span>AddMacro()</h2>
+<a id="a9e2e24832cb2fb62a329585325b19248"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e2e24832cb2fb62a329585325b19248">&#9670;&nbsp;</a></span>Add()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void ShaderSource::AddMacro </td>
+          <td class="memname">void ShaderConfigBatch::Add </td>
           <td>(</td>
-          <td class="paramtype">string&#160;</td>
-          <td class="paramname"><em>macro</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../dd/de6/a00548.html">ShaderConfig</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p><br />
- </p>
+<p>Adds a shader config to the batch. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">macro</td><td></td></tr>
+    <tr><td class="paramname">config</td><td>A valid pointer to a <a class="el" href="../../dd/de6/a00548.html" title="A shader configuration consists of macros which configure a shader in a shader batch. ">ShaderConfig</a> object. </td></tr>
   </table>
   </dd>
 </dl>
 
 </div>
 </div>
-<a id="ade3046e2bfdee1e9a6fc6684472eb90e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ade3046e2bfdee1e9a6fc6684472eb90e">&#9670;&nbsp;</a></span>Compile()</h2>
+<a id="a7e11c39b5c9c114b6d90d3a632e4ccab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7e11c39b5c9c114b6d90d3a632e4ccab">&#9670;&nbsp;</a></span>Bind()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">bool ShaderSource::Compile </td>
+          <td class="memname">void ShaderConfigBatch::Bind </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -277,48 +225,18 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p><br />
- </p>
-<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+<p>Binds the shader of the batch. </p>
 
 </div>
 </div>
-<a id="a528439240afc980ece252e3a973f55a1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a528439240afc980ece252e3a973f55a1">&#9670;&nbsp;</a></span>GetConstant()</h2>
+<a id="a1b4f0ea3019da0342139e08d23f0e593"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1b4f0ea3019da0342139e08d23f0e593">&#9670;&nbsp;</a></span>GetShader()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../dd/de6/a00548.html">ShaderConstant</a>* ShaderSource::GetConstant </td>
-          <td>(</td>
-          <td class="paramtype">string&#160;</td>
-          <td class="paramname"><em>constant</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p><br />
- </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">constant</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd></dd></dl>
-
-</div>
-</div>
-<a id="a06dd8576ca485eb4cf9ba11f4ea713bb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a06dd8576ca485eb4cf9ba11f4ea713bb">&#9670;&nbsp;</a></span>Reload()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool ShaderSource::Reload </td>
+          <td class="memname"><a class="el" href="../../d4/d79/a00540.html">Shader</a>* ShaderConfigBatch::GetShader </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -326,68 +244,51 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p><br />
- </p>
-<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+<p>Returns the shader of the batch. </p>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to the shader object. </dd></dl>
 
 </div>
 </div>
-<a id="a51486721ffe1c160955cd134461d2f47"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a51486721ffe1c160955cd134461d2f47">&#9670;&nbsp;</a></span>RemoveMacro()</h2>
+<a id="a256ad11d8c4de05c86ece80a51b0bc76"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a256ad11d8c4de05c86ece80a51b0bc76">&#9670;&nbsp;</a></span>GetSize()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void ShaderSource::RemoveMacro </td>
+          <td class="memname">size_t ShaderConfigBatch::GetSize </td>
           <td>(</td>
-          <td class="paramtype">string&#160;</td>
-          <td class="paramname"><em>macro</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p><br />
- </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">macro</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
+<p>Returns the number of elements the batch holds. </p>
+<dl class="section return"><dt>Returns</dt><dd>An integer with the number of elements </dd></dl>
 
 </div>
 </div>
-<a id="aba81da59a674b7bb58ea1b091e46a16a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aba81da59a674b7bb58ea1b091e46a16a">&#9670;&nbsp;</a></span>SetSourceDirectory()</h2>
+<a id="a837aef4e7a1133448443691ac99b4a76"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a837aef4e7a1133448443691ac99b4a76">&#9670;&nbsp;</a></span>Remove()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void ShaderSource::SetSourceDirectory </td>
+          <td class="memname">void ShaderConfigBatch::Remove </td>
           <td>(</td>
-          <td class="paramtype">string&#160;</td>
-          <td class="paramname"><em>directory</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../dd/de6/a00548.html">ShaderConfig</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
-<p><br />
- </p>
+<p>Removes a shader config from the batch,. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">directory</td><td></td></tr>
+    <tr><td class="paramname">config</td><td>A valid pointer to a <a class="el" href="../../dd/de6/a00548.html" title="A shader configuration consists of macros which configure a shader in a shader batch. ">ShaderConfig</a> object. </td></tr>
   </table>
   </dd>
 </dl>
@@ -395,63 +296,33 @@ Public Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a88b50e0b2c4ede56e87ee118941a17d6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a88b50e0b2c4ede56e87ee118941a17d6">&#9670;&nbsp;</a></span>filename</h2>
+<a id="a0ed5dc70d6918b2b95cb17c3b865ff74"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ed5dc70d6918b2b95cb17c3b865ff74">&#9670;&nbsp;</a></span>ID</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">string ShaderSource::filename</td>
+          <td class="memname">int32_t ShaderConfigBatch::ID</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/df1/a00206_source.html#l00058">58</a> of file <a class="el" href="../../d5/df1/a00206_source.html">ShaderSource.h</a>.</p>
+<p>The ID of the batch. </p>
 
-</div>
-</div>
-<a id="a10000e8b7cd5f92bef5a2a7e743db3cf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a10000e8b7cd5f92bef5a2a7e743db3cf">&#9670;&nbsp;</a></span>ID</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t ShaderSource::ID</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/df1/a00206_source.html#l00055">55</a> of file <a class="el" href="../../d5/df1/a00206_source.html">ShaderSource.h</a>.</p>
-
-</div>
-</div>
-<a id="ab1490ec761f26b25851ab2896439e35a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab1490ec761f26b25851ab2896439e35a">&#9670;&nbsp;</a></span>type</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t ShaderSource::type</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/df1/a00206_source.html#l00056">56</a> of file <a class="el" href="../../d5/df1/a00206_source.html">ShaderSource.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/db1/a00197_source.html#l00063">63</a> of file <a class="el" href="../../de/db1/a00197_source.html">ShaderConfigBatch.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/shader/<a class="el" href="../../d5/df1/a00206_source.html">ShaderSource.h</a></li>
+<li>src/shader/<a class="el" href="../../de/db1/a00197_source.html">ShaderConfigBatch.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dd/de9/a00552.html">ShaderSource</a></li>
+    <li class="navelem"><a class="el" href="../../dd/de9/a00552.html">ShaderConfigBatch</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

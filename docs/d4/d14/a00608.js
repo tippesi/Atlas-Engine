@@ -1,12 +1,13 @@
 var a00608 =
 [
-    [ "Texture2D", "d4/d14/a00608.html#a5df730fff64435a17ae70545f1f19fae", null ],
-    [ "Texture2D", "d4/d14/a00608.html#a77695461c35c8d3b243bd4e455c404e8", null ],
-    [ "Bind", "d4/d14/a00608.html#a6bf1a190f4ffc8e81ebbc28bc6eebd5d", null ],
-    [ "GetData", "d4/d14/a00608.html#a16360e4a135219830a06256b6725fa01", null ],
-    [ "ReserveStorage", "d4/d14/a00608.html#af8b0af6d8e6d08f72d7ee799bf888f46", null ],
-    [ "Resize", "d4/d14/a00608.html#a64415ed65e81e7ca7cac0a0931c695b4", null ],
-    [ "SaveToPNG", "d4/d14/a00608.html#a66fc075ffe6d2f06758bfcb5bc1a3450", null ],
-    [ "SetData", "d4/d14/a00608.html#a35b681c38e48ca451ded308b82900126", null ],
-    [ "Unbind", "d4/d14/a00608.html#a3727c1289ccc00ec1854efa99c0f4a54", null ]
+    [ "TerrainStorageCell", "d4/d14/a00608.html#a41f327642faa772bbbb30af93351e242", null ],
+    [ "IsLoaded", "d4/d14/a00608.html#a0849d2d721c1e72d65e4fe3ceb2d205f", null ],
+    [ "diffuseMap", "d4/d14/a00608.html#ad38e7dc821072b283a3520a22277d0ad", null ],
+    [ "displacementMap", "d4/d14/a00608.html#a7a5fc50c1ae134e6cd8d41c5bc5baac3", null ],
+    [ "heightData", "d4/d14/a00608.html#aff003e7c92b7e6a6d0f318e6edb5f4d7", null ],
+    [ "heightField", "d4/d14/a00608.html#ac5bc70406883632bfcb4c20532a695d5", null ],
+    [ "LoD", "d4/d14/a00608.html#ab43b148eaed08151ee7c89c9cb9dd288", null ],
+    [ "normalMap", "d4/d14/a00608.html#a5acafb9093edb50a28d280b4edfb0c5a", null ],
+    [ "x", "d4/d14/a00608.html#a6e4989523a14b87a50bf64913192bfe8", null ],
+    [ "y", "d4/d14/a00608.html#a91fd41335dd76dddc12430af15f1e085", null ]
 ];

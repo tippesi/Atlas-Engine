@@ -1,9 +1,7 @@
 var a00488 =
 [
-    [ "DirectionalVolumetricRenderer", "d4/ddf/a00488.html#a729ec5bdfbccbc773be95e47d1165a8f", null ],
-    [ "Render", "d4/ddf/a00488.html#a5314cb802688b18c82f3e7ec0b4b4205", null ],
-    [ "bilateralBlurFragmentPath", "d4/ddf/a00488.html#a21d80d129cc2008e299e84d36fc568a9", null ],
-    [ "bilateralBlurVertexPath", "d4/ddf/a00488.html#a745091a06b4a8fa905f35d0f89d06a5b", null ],
-    [ "volumetricFragmentPath", "d4/ddf/a00488.html#ac260f2a959ace7c07fb19162254e6a17", null ],
-    [ "volumetricVertexPath", "d4/ddf/a00488.html#a6978343f075e2825446a74a7d924a95f", null ]
+    [ "DirectionalLightRenderer", "d4/ddf/a00488.html#afa002f0c46f4b75d434184dd0894db09", null ],
+    [ "Render", "d4/ddf/a00488.html#a222955a36b1d1c611df02247ea9e59c5", null ],
+    [ "fragmentPath", "d4/ddf/a00488.html#a6cf4489a236a59e7618a544084f452b8", null ],
+    [ "vertexPath", "d4/ddf/a00488.html#a1e8a8ee5eac47c521e8b68e8c496cd09", null ]
 ];

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: KeyboardHandler Class Reference</title>
+<title>Blue Engine: EventDelegate&lt; Args &gt; Class Template Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,138 +89,171 @@ $(document).ready(function(){initNavTree('d9/dc1/a00388.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d5/d05/a00385.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">KeyboardHandler Class Reference</div>  </div>
+<div class="title">EventDelegate&lt; Args &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d9/d77/a00095_source.html">Keyboard.h</a>&gt;</code></p>
+<p>Handles the event flow between subscriber and publisher.  
+ <a href="../../d9/dc1/a00388.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../da/d2a/a00086_source.html">EventDelegate.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:add78210c1a8ea926289ea618ab42543c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc1/a00388.html#add78210c1a8ea926289ea618ab42543c">KeyboardHandler</a> (<a class="el" href="../../dc/ded/a00252.html">Camera</a> *camera, float <a class="el" href="../../d9/dc1/a00388.html#ab752152d5023c8254a97fb813e534a89">speed</a>, float <a class="el" href="../../d9/dc1/a00388.html#a75eff95510571f21ba8e7a422949b269">reactivity</a>)</td></tr>
-<tr class="separator:add78210c1a8ea926289ea618ab42543c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa3dda76bbf2c277fb723175bc7346d31"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc1/a00388.html#aa3dda76bbf2c277fb723175bc7346d31">Update</a> (<a class="el" href="../../dc/ded/a00252.html">Camera</a> *camera, uint32_t deltaTime)</td></tr>
-<tr class="separator:aa3dda76bbf2c277fb723175bc7346d31"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:ab752152d5023c8254a97fb813e534a89"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc1/a00388.html#ab752152d5023c8254a97fb813e534a89">speed</a></td></tr>
-<tr class="separator:ab752152d5023c8254a97fb813e534a89"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a75eff95510571f21ba8e7a422949b269"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc1/a00388.html#a75eff95510571f21ba8e7a422949b269">reactivity</a></td></tr>
-<tr class="separator:a75eff95510571f21ba8e7a422949b269"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1bb5d576a30865322a2e75dbdd045a0a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc1/a00388.html#a1bb5d576a30865322a2e75dbdd045a0a">EventDelegate</a> ()</td></tr>
+<tr class="memdesc:a1bb5d576a30865322a2e75dbdd045a0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d9/dc1/a00388.html" title="Handles the event flow between subscriber and publisher. ">EventDelegate</a> object.  <a href="#a1bb5d576a30865322a2e75dbdd045a0a">More...</a><br /></td></tr>
+<tr class="separator:a1bb5d576a30865322a2e75dbdd045a0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9dcb1b0832e44009f2ae6224c794b096"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc1/a00388.html#a9dcb1b0832e44009f2ae6224c794b096">Subscribe</a> (std::function&lt; void(Args ...)&gt; handle)</td></tr>
+<tr class="memdesc:a9dcb1b0832e44009f2ae6224c794b096"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subscribes a method/function to the event delegate which wants to receive the arguments specified in Args.  <a href="#a9dcb1b0832e44009f2ae6224c794b096">More...</a><br /></td></tr>
+<tr class="separator:a9dcb1b0832e44009f2ae6224c794b096"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a029f36a3c422e07efdc7acb26c2d40f5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc1/a00388.html#a029f36a3c422e07efdc7acb26c2d40f5">Unsubscribe</a> (uint32_t subscriberID)</td></tr>
+<tr class="memdesc:a029f36a3c422e07efdc7acb26c2d40f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unsubscribes a method/function from the event delegate.  <a href="#a029f36a3c422e07efdc7acb26c2d40f5">More...</a><br /></td></tr>
+<tr class="separator:a029f36a3c422e07efdc7acb26c2d40f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aadc97124f141e9b3542f2ee086e6ce9f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc1/a00388.html#aadc97124f141e9b3542f2ee086e6ce9f">Fire</a> (Args ... args)</td></tr>
+<tr class="memdesc:aadc97124f141e9b3542f2ee086e6ce9f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Publishes Args arguments to the subscribers.  <a href="#aadc97124f141e9b3542f2ee086e6ce9f">More...</a><br /></td></tr>
+<tr class="separator:aadc97124f141e9b3542f2ee086e6ce9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d9/d77/a00095_source.html#l00009">9</a> of file <a class="el" href="../../d9/d77/a00095_source.html">Keyboard.h</a>.</p>
+<div class="textblock"><h3>template&lt;class ... Args&gt;<br />
+class EventDelegate&lt; Args &gt;</h3>
+
+<p>Handles the event flow between subscriber and publisher. </p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">Args</td><td>Variable amount of parameters which can be exchanged with the delegate. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00015">15</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EventDelegate.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="add78210c1a8ea926289ea618ab42543c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#add78210c1a8ea926289ea618ab42543c">&#9670;&nbsp;</a></span>KeyboardHandler()</h2>
+<a id="a1bb5d576a30865322a2e75dbdd045a0a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1bb5d576a30865322a2e75dbdd045a0a">&#9670;&nbsp;</a></span>EventDelegate()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class... Args&gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">KeyboardHandler::KeyboardHandler </td>
+          <td class="memname"><a class="el" href="../../d9/dc1/a00388.html">EventDelegate</a>&lt; Args &gt;::<a class="el" href="../../d9/dc1/a00388.html">EventDelegate</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/ded/a00252.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>speed</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>reactivity</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Constructs a <a class="el" href="../../d9/dc1/a00388.html" title="Handles the event flow between subscriber and publisher. ">EventDelegate</a> object. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00052">52</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EventDelegate.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="aa3dda76bbf2c277fb723175bc7346d31"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa3dda76bbf2c277fb723175bc7346d31">&#9670;&nbsp;</a></span>Update()</h2>
+<a id="aadc97124f141e9b3542f2ee086e6ce9f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aadc97124f141e9b3542f2ee086e6ce9f">&#9670;&nbsp;</a></span>Fire()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class... Args&gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">void KeyboardHandler::Update </td>
+          <td class="memname">void <a class="el" href="../../d9/dc1/a00388.html">EventDelegate</a>&lt; Args &gt;::Fire </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/ded/a00252.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype">Args ...&#160;</td>
+          <td class="paramname"><em>args</em></td><td>)</td>
           <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Publishes Args arguments to the subscribers. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">args</td><td>The arguments which should be published </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00079">79</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EventDelegate.h</a>.</p>
+
+</div>
+</div>
+<a id="a9dcb1b0832e44009f2ae6224c794b096"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9dcb1b0832e44009f2ae6224c794b096">&#9670;&nbsp;</a></span>Subscribe()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class... Args&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">uint32_t <a class="el" href="../../d9/dc1/a00388.html">EventDelegate</a>&lt; Args &gt;::Subscribe </td>
+          <td>(</td>
+          <td class="paramtype">std::function&lt; void(Args ...)&gt;&#160;</td>
+          <td class="paramname"><em>handle</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Subscribes a method/function to the event delegate which wants to receive the arguments specified in Args. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">handle</td><td>A method/function which has the required Args as parameters </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A handle which can later be used to unsubscribe from the event delegate. </dd></dl>
+<dl class="section note"><dt>Note</dt><dd>To subscribe a method of an object to the event delegate use std::bind() </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00057">57</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EventDelegate.h</a>.</p>
+
+</div>
+</div>
+<a id="a029f36a3c422e07efdc7acb26c2d40f5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a029f36a3c422e07efdc7acb26c2d40f5">&#9670;&nbsp;</a></span>Unsubscribe()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class... Args&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="../../d9/dc1/a00388.html">EventDelegate</a>&lt; Args &gt;::Unsubscribe </td>
+          <td>(</td>
           <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>deltaTime</em>&#160;</td>
-        </tr>
-        <tr>
+          <td class="paramname"><em>subscriberID</em></td><td>)</td>
           <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-</div>
-</div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="a75eff95510571f21ba8e7a422949b269"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a75eff95510571f21ba8e7a422949b269">&#9670;&nbsp;</a></span>reactivity</h2>
+<p>Unsubscribes a method/function from the event delegate. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">subscriberID</td><td>The handle which was returned previously at the time of subscription. </td></tr>
+  </table>
+  </dd>
+</dl>
 
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float KeyboardHandler::reactivity</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d9/d77/a00095_source.html#l00017">17</a> of file <a class="el" href="../../d9/d77/a00095_source.html">Keyboard.h</a>.</p>
-
-</div>
-</div>
-<a id="ab752152d5023c8254a97fb813e534a89"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab752152d5023c8254a97fb813e534a89">&#9670;&nbsp;</a></span>speed</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float KeyboardHandler::speed</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d9/d77/a00095_source.html#l00016">16</a> of file <a class="el" href="../../d9/d77/a00095_source.html">Keyboard.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00068">68</a> of file <a class="el" href="../../da/d2a/a00086_source.html">EventDelegate.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/input/<a class="el" href="../../d9/d77/a00095_source.html">Keyboard.h</a></li>
+<li>src/events/<a class="el" href="../../da/d2a/a00086_source.html">EventDelegate.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dc1/a00388.html">KeyboardHandler</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dc1/a00388.html">EventDelegate</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

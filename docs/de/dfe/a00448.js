@@ -1,14 +1,9 @@
 var a00448 =
 [
-    [ "DataComponent", "de/dfe/a00448.html#ab4eef598095a5ace7bcf4918b85e6b6c", null ],
-    [ "~DataComponent", "de/dfe/a00448.html#ad24251092ca1401a5cef8272fd1ee8ac", null ],
-    [ "ContainsData", "de/dfe/a00448.html#a8d4009609e19bdb22fe51833aa28cea7", null ],
-    [ "Get", "de/dfe/a00448.html#abef965c79967218a1791e3e5ea520f5e", null ],
-    [ "GetElementSize", "de/dfe/a00448.html#a4b72973aefa94cd12f10a6e020f7b7ab", null ],
-    [ "GetInternal", "de/dfe/a00448.html#aa88a07b3a4752b06ca958d34ebc042b9", null ],
-    [ "GetStride", "de/dfe/a00448.html#a50862767f2a82398fc0f5dcb9001e28d", null ],
-    [ "GetType", "de/dfe/a00448.html#a423564055898852bfca40e5326270e9c", null ],
-    [ "Set", "de/dfe/a00448.html#aa8c5882c599d2ee4462c22168a5d97f9", null ],
-    [ "SetSize", "de/dfe/a00448.html#ae232f5a7038593048b6c5c4f6ca8aa48", null ],
-    [ "SetType", "de/dfe/a00448.html#a473b150f8330ac5d94f15c7af401ffca", null ]
+    [ "Actor", "de/dfe/a00448.html#abbe2b71148d8776388495825c5e512bf", null ],
+    [ "castShadow", "de/dfe/a00448.html#a1934993167197470aa0d1cd39f00cfd1", null ],
+    [ "mesh", "de/dfe/a00448.html#a1ce9a7dc4789cea70dc2c47b8f021684", null ],
+    [ "modelMatrix", "de/dfe/a00448.html#abf23b838381348bccec0d0e234d6032a", null ],
+    [ "transformedMatrix", "de/dfe/a00448.html#a39b73954ab8f0a194143f1397ae7ab9d", null ],
+    [ "visible", "de/dfe/a00448.html#a538ef2a69bd68b985eee5e96ea7ed606", null ]
 ];

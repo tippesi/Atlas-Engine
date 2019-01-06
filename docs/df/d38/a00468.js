@@ -1,7 +1,6 @@
 var a00468 =
 [
-    [ "AtmosphereRenderer", "df/d38/a00468.html#a43dfde0528e5aa4ef45417fdcf41e27e", null ],
-    [ "Render", "df/d38/a00468.html#a1de588c88ac481616885d217079e7576", null ],
-    [ "fragmentPath", "df/d38/a00468.html#aa9284bb98046cca3df3f1f71022aac01", null ],
-    [ "vertexPath", "df/d38/a00468.html#a9476caf210d67b15c02a486321111cc7", null ]
+    [ "indicesOffset", "df/d38/a00468.html#a775aff9927aba8082c2b7f2efd43e477", null ],
+    [ "materialIndex", "df/d38/a00468.html#a366e9f6625789821b13f1277d3570a52", null ],
+    [ "numIndices", "df/d38/a00468.html#a90d8fcf551b77913d9e09f18b8d1cdab", null ]
 ];

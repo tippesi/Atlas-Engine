@@ -1,10 +1,9 @@
 var a00496 =
 [
-    [ "GeometryRenderer", "d3/dad/a00496.html#a582ae3fb719fc58a42d4fb0633cb2098", null ],
-    [ "AddConfig", "d3/dad/a00496.html#ac33503c740e543690e754b0578175937", null ],
-    [ "InitShaderBatch", "d3/dad/a00496.html#a9e5d8fe3b3fdcd8b61e54f15a3afe5bc", null ],
-    [ "RemoveConfig", "d3/dad/a00496.html#a5889fe1c6c4bb8739aab3707e8e0b50e", null ],
-    [ "Render", "d3/dad/a00496.html#a835dc62555b749a29f0c097adbbc65b7", null ],
-    [ "fragmentPath", "d3/dad/a00496.html#a17c8db670624d74a1ec7d69dd612f8c9", null ],
-    [ "vertexPath", "d3/dad/a00496.html#a11c5aac00183850adca1bfd2362f0bed", null ]
+    [ "DirectionalVolumetricRenderer", "d3/dad/a00496.html#a729ec5bdfbccbc773be95e47d1165a8f", null ],
+    [ "Render", "d3/dad/a00496.html#a6a67237414fc725b513f5b50e84f41d4", null ],
+    [ "bilateralBlurFragmentPath", "d3/dad/a00496.html#a21d80d129cc2008e299e84d36fc568a9", null ],
+    [ "bilateralBlurVertexPath", "d3/dad/a00496.html#a745091a06b4a8fa905f35d0f89d06a5b", null ],
+    [ "volumetricFragmentPath", "d3/dad/a00496.html#ac260f2a959ace7c07fb19162254e6a17", null ],
+    [ "volumetricVertexPath", "d3/dad/a00496.html#a6978343f075e2825446a74a7d924a95f", null ]
 ];

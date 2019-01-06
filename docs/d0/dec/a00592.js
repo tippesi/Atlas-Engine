@@ -1,10 +1,8 @@
 var a00592 =
 [
-    [ "TerrainNode", "d0/dec/a00592.html#a20b2c7ac9dc86dc40f2ceb5d932978d5", null ],
-    [ "~TerrainNode", "d0/dec/a00592.html#a73de69c47ba6d2a473256b6136c61c19", null ],
-    [ "Update", "d0/dec/a00592.html#a293a3a816cbc300252a9a2a3ccce42ec", null ],
-    [ "absoluteIndex", "d0/dec/a00592.html#a2df41aa3d091cdd45125f35aa448d8ff", null ],
-    [ "cell", "d0/dec/a00592.html#af03fa622a3bf6cdff4a975808fcbc7ad", null ],
-    [ "location", "d0/dec/a00592.html#aa90ec481e21b98c25ac861f028897ad6", null ],
-    [ "sideLength", "d0/dec/a00592.html#a4f4ab6041d8459f0b6480a09d56f3cc1", null ]
+    [ "Vignette", "d0/dec/a00592.html#ac3ab8914653096c6b083be54dca672e4", null ],
+    [ "color", "d0/dec/a00592.html#a10b84b80d8a82e91da621bdfdf6f14d2", null ],
+    [ "offset", "d0/dec/a00592.html#a4f94493889ed87a776be45b3424c5e1e", null ],
+    [ "power", "d0/dec/a00592.html#a53adcbcfb4eed8205c35745f12726180", null ],
+    [ "strength", "d0/dec/a00592.html#a17280ad2dc71ffa536dd56a465dfa905", null ]
 ];

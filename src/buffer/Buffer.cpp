@@ -203,25 +203,25 @@ void Buffer::Copy(Buffer *copyBuffer, size_t readOffset, size_t writeOffset, siz
 
 }
 
-inline uint32_t Buffer::GetType() {
+uint32_t Buffer::GetType() {
 
     return type;
 
 }
 
-inline size_t Buffer::GetElementCount() {
+size_t Buffer::GetElementCount() {
 
     return elementCount;
 
 }
 
-inline size_t Buffer::GetElementSize() {
+size_t Buffer::GetElementSize() {
 
     return elementSize;
 
 }
 
-inline size_t Buffer::GetSize() {
+size_t Buffer::GetSize() {
 
     return sizeInBytes;
 
@@ -244,7 +244,7 @@ void Buffer::CheckExtensions() {
 
 }
 
-inline bool Buffer::IsImmutableStorageSupported() {
+bool Buffer::IsImmutableStorageSupported() {
 
     return immutableStorageSupported;
 

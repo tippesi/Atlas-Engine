@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: RayIntersection Struct Reference</title>
+<title>Blue Engine: ShaderStage Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,85 +88,361 @@ $(document).ready(function(){initNavTree('d9/d19/a00560.html','../../');});
 
 <div class="header">
   <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d8/df0/a00557.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">RayIntersection Struct Reference</div>  </div>
+<div class="title">ShaderStage Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../dd/dc1/a00212_source.html">RayCasting.h</a>&gt;</code></p>
+<p>A shader stage is a module/stage of a shader, e.g it might be a vertex shader.  
+ <a href="../../d9/d19/a00560.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../de/d79/a00203_source.html">ShaderStage.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a2dc50144051360806acee6d890f3ecea"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#a2dc50144051360806acee6d890f3ecea">ShaderStage</a> (int32_t <a class="el" href="../../d9/d19/a00560.html#a8012458b18b6955e6c74ae13bc679b6f">type</a>, string <a class="el" href="../../d9/d19/a00560.html#a4e55ea4a51a3ac87db089b9ea59b11af">filename</a>)</td></tr>
+<tr class="memdesc:a2dc50144051360806acee6d890f3ecea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d9/d19/a00560.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object.  <a href="#a2dc50144051360806acee6d890f3ecea">More...</a><br /></td></tr>
+<tr class="separator:a2dc50144051360806acee6d890f3ecea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a2e74a9c253ab064ffd04dd9d7127c4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#a7a2e74a9c253ab064ffd04dd9d7127c4">ShaderStage</a> (<a class="el" href="../../d9/d19/a00560.html">ShaderStage</a> *source)</td></tr>
+<tr class="memdesc:a7a2e74a9c253ab064ffd04dd9d7127c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d9/d19/a00560.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object.  <a href="#a7a2e74a9c253ab064ffd04dd9d7127c4">More...</a><br /></td></tr>
+<tr class="separator:a7a2e74a9c253ab064ffd04dd9d7127c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5e194b41782ab91429e67a85c39b1a5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#ad5e194b41782ab91429e67a85c39b1a5">~ShaderStage</a> ()</td></tr>
+<tr class="memdesc:ad5e194b41782ab91429e67a85c39b1a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructs a <a class="el" href="../../d9/d19/a00560.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object.  <a href="#ad5e194b41782ab91429e67a85c39b1a5">More...</a><br /></td></tr>
+<tr class="separator:ad5e194b41782ab91429e67a85c39b1a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1393ba15e2b9b7f4748e42792d68686b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#a1393ba15e2b9b7f4748e42792d68686b">Reload</a> ()</td></tr>
+<tr class="memdesc:a1393ba15e2b9b7f4748e42792d68686b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads the shader stage from the disk.  <a href="#a1393ba15e2b9b7f4748e42792d68686b">More...</a><br /></td></tr>
+<tr class="separator:a1393ba15e2b9b7f4748e42792d68686b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3896d7ed1fb81855bd083009b72fd2a5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#a3896d7ed1fb81855bd083009b72fd2a5">AddMacro</a> (string macro)</td></tr>
+<tr class="memdesc:a3896d7ed1fb81855bd083009b72fd2a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a macro to the shader stage.  <a href="#a3896d7ed1fb81855bd083009b72fd2a5">More...</a><br /></td></tr>
+<tr class="separator:a3896d7ed1fb81855bd083009b72fd2a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab693061b323f5804a1144e8f0eb1655"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#aab693061b323f5804a1144e8f0eb1655">RemoveMacro</a> (string macro)</td></tr>
+<tr class="memdesc:aab693061b323f5804a1144e8f0eb1655"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a macro from the shader stage.  <a href="#aab693061b323f5804a1144e8f0eb1655">More...</a><br /></td></tr>
+<tr class="separator:aab693061b323f5804a1144e8f0eb1655"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7de5c0f43955aacdb7db0b405edd973e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d6/d95/a00556.html">ShaderConstant</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#a7de5c0f43955aacdb7db0b405edd973e">GetConstant</a> (string constant)</td></tr>
+<tr class="memdesc:a7de5c0f43955aacdb7db0b405edd973e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a <a class="el" href="../../d6/d95/a00556.html">ShaderConstant</a> object for a specific constant of the shader stage.  <a href="#a7de5c0f43955aacdb7db0b405edd973e">More...</a><br /></td></tr>
+<tr class="separator:a7de5c0f43955aacdb7db0b405edd973e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2fe5eacc5fc6b040c04908abea01fa11"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#a2fe5eacc5fc6b040c04908abea01fa11">Compile</a> ()</td></tr>
+<tr class="memdesc:a2fe5eacc5fc6b040c04908abea01fa11"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compiles the shader stage.  <a href="#a2fe5eacc5fc6b040c04908abea01fa11">More...</a><br /></td></tr>
+<tr class="separator:a2fe5eacc5fc6b040c04908abea01fa11"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a61f8a615a2c2badec051dd7d4ca5f8f9"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#a61f8a615a2c2badec051dd7d4ca5f8f9">SetSourceDirectory</a> (string directory)</td></tr>
+<tr class="memdesc:a61f8a615a2c2badec051dd7d4ca5f8f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the root shader source/binary directory for all shader files.  <a href="#a61f8a615a2c2badec051dd7d4ca5f8f9">More...</a><br /></td></tr>
+<tr class="separator:a61f8a615a2c2badec051dd7d4ca5f8f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a96aa4600bc42ca65e022776002e85392"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#a96aa4600bc42ca65e022776002e85392">location</a></td></tr>
-<tr class="separator:a96aa4600bc42ca65e022776002e85392"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a65c60342a33e33ead2c771a3d6ba864c"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#a65c60342a33e33ead2c771a3d6ba864c">distance</a></td></tr>
-<tr class="separator:a65c60342a33e33ead2c771a3d6ba864c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8658455fd9eff0e0c1e6ca4f44354a4a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#a8658455fd9eff0e0c1e6ca4f44354a4a">hasIntersected</a></td></tr>
-<tr class="separator:a8658455fd9eff0e0c1e6ca4f44354a4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac940bce47d71a101826de33b649b2537"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#ac940bce47d71a101826de33b649b2537">ID</a></td></tr>
+<tr class="separator:ac940bce47d71a101826de33b649b2537"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8012458b18b6955e6c74ae13bc679b6f"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#a8012458b18b6955e6c74ae13bc679b6f">type</a></td></tr>
+<tr class="separator:a8012458b18b6955e6c74ae13bc679b6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e55ea4a51a3ac87db089b9ea59b11af"><td class="memItemLeft" align="right" valign="top">string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d19/a00560.html#a4e55ea4a51a3ac87db089b9ea59b11af">filename</a></td></tr>
+<tr class="separator:a4e55ea4a51a3ac87db089b9ea59b11af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../dd/dc1/a00212_source.html#l00010">10</a> of file <a class="el" href="../../dd/dc1/a00212_source.html">RayCasting.h</a>.</p>
-</div><h2 class="groupheader">Member Data Documentation</h2>
-<a id="a65c60342a33e33ead2c771a3d6ba864c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a65c60342a33e33ead2c771a3d6ba864c">&#9670;&nbsp;</a></span>distance</h2>
+<div class="textblock"><p>A shader stage is a module/stage of a shader, e.g it might be a vertex shader. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00019">19</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderStage.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a2dc50144051360806acee6d890f3ecea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2dc50144051360806acee6d890f3ecea">&#9670;&nbsp;</a></span>ShaderStage() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float RayIntersection::distance</td>
+          <td class="memname">ShaderStage::ShaderStage </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>filename</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dc1/a00212_source.html#l00012">12</a> of file <a class="el" href="../../dd/dc1/a00212_source.html">RayCasting.h</a>.</p>
+<p>Constructs a <a class="el" href="../../d9/d19/a00560.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">type</td><td>The type of the stage. See <a class="el" href="../../de/d79/a00203.html">ShaderStage.h</a> for more. </td></tr>
+    <tr><td class="paramname">filename</td><td>The name of the GLSL file </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
-<a id="a8658455fd9eff0e0c1e6ca4f44354a4a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8658455fd9eff0e0c1e6ca4f44354a4a">&#9670;&nbsp;</a></span>hasIntersected</h2>
+<a id="a7a2e74a9c253ab064ffd04dd9d7127c4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a2e74a9c253ab064ffd04dd9d7127c4">&#9670;&nbsp;</a></span>ShaderStage() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">bool RayIntersection::hasIntersected</td>
+          <td class="memname">ShaderStage::ShaderStage </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d9/d19/a00560.html">ShaderStage</a> *&#160;</td>
+          <td class="paramname"><em>source</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dc1/a00212_source.html#l00013">13</a> of file <a class="el" href="../../dd/dc1/a00212_source.html">RayCasting.h</a>.</p>
+<p>Constructs a <a class="el" href="../../d9/d19/a00560.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">source</td><td>A pointer to a valid <a class="el" href="../../d9/d19/a00560.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
-<a id="a96aa4600bc42ca65e022776002e85392"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a96aa4600bc42ca65e022776002e85392">&#9670;&nbsp;</a></span>location</h2>
+<a id="ad5e194b41782ab91429e67a85c39b1a5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad5e194b41782ab91429e67a85c39b1a5">&#9670;&nbsp;</a></span>~ShaderStage()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">vec3 RayIntersection::location</td>
+          <td class="memname">ShaderStage::~ShaderStage </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/dc1/a00212_source.html#l00011">11</a> of file <a class="el" href="../../dd/dc1/a00212_source.html">RayCasting.h</a>.</p>
+<p>Destructs a <a class="el" href="../../d9/d19/a00560.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object. </p>
 
 </div>
 </div>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li>src/tools/<a class="el" href="../../dd/dc1/a00212_source.html">RayCasting.h</a></li>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a3896d7ed1fb81855bd083009b72fd2a5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3896d7ed1fb81855bd083009b72fd2a5">&#9670;&nbsp;</a></span>AddMacro()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ShaderStage::AddMacro </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>macro</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Adds a macro to the shader stage. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">macro</td><td>The macro to be added. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a2fe5eacc5fc6b040c04908abea01fa11"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2fe5eacc5fc6b040c04908abea01fa11">&#9670;&nbsp;</a></span>Compile()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool ShaderStage::Compile </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Compiles the shader stage. </p>
+<dl class="section return"><dt>Returns</dt><dd>True if successful, false otherwise. </dd></dl>
+
+</div>
+</div>
+<a id="a7de5c0f43955aacdb7db0b405edd973e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7de5c0f43955aacdb7db0b405edd973e">&#9670;&nbsp;</a></span>GetConstant()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d6/d95/a00556.html">ShaderConstant</a>* ShaderStage::GetConstant </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>constant</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns a <a class="el" href="../../d6/d95/a00556.html">ShaderConstant</a> object for a specific constant of the shader stage. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">constant</td><td>The name of the constant. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a <a class="el" href="../../d6/d95/a00556.html">ShaderConstant</a> object if valid. Nullptr otherwise. </dd></dl>
+
+</div>
+</div>
+<a id="a1393ba15e2b9b7f4748e42792d68686b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1393ba15e2b9b7f4748e42792d68686b">&#9670;&nbsp;</a></span>Reload()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool ShaderStage::Reload </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Reloads the shader stage from the disk. </p>
+<dl class="section return"><dt>Returns</dt><dd>True if it had to be reloaded (timestamp), false otherwise. </dd></dl>
+
+</div>
+</div>
+<a id="aab693061b323f5804a1144e8f0eb1655"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab693061b323f5804a1144e8f0eb1655">&#9670;&nbsp;</a></span>RemoveMacro()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ShaderStage::RemoveMacro </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>macro</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Removes a macro from the shader stage. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">macro</td><td>The macro to be removed. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a61f8a615a2c2badec051dd7d4ca5f8f9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a61f8a615a2c2badec051dd7d4ca5f8f9">&#9670;&nbsp;</a></span>SetSourceDirectory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void ShaderStage::SetSourceDirectory </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>directory</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sets the root shader source/binary directory for all shader files. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">directory</td><td>The path to the directory </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a4e55ea4a51a3ac87db089b9ea59b11af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4e55ea4a51a3ac87db089b9ea59b11af">&#9670;&nbsp;</a></span>filename</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">string ShaderStage::filename</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00080">80</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderStage.h</a>.</p>
+
+</div>
+</div>
+<a id="ac940bce47d71a101826de33b649b2537"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac940bce47d71a101826de33b649b2537">&#9670;&nbsp;</a></span>ID</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t ShaderStage::ID</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00077">77</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderStage.h</a>.</p>
+
+</div>
+</div>
+<a id="a8012458b18b6955e6c74ae13bc679b6f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8012458b18b6955e6c74ae13bc679b6f">&#9670;&nbsp;</a></span>type</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t ShaderStage::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00078">78</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderStage.h</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/shader/<a class="el" href="../../de/d79/a00203_source.html">ShaderStage.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/d19/a00560.html">RayIntersection</a></li>
+    <li class="navelem"><a class="el" href="../../d9/d19/a00560.html">ShaderStage</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: VertexArray Class Reference</title>
+<title>Blue Engine: Scene Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,53 +89,75 @@ $(document).ready(function(){initNavTree('d4/d8f/a00324.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../db/d53/a00321.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">VertexArray Class Reference</div>  </div>
+<div class="title">Scene Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d6/d2d/a00047_source.html">VertexArray.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d8/d41/a00038_source.html">Scene.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ab8a2dcce9698f96dac5f9a19c6979d03"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#ab8a2dcce9698f96dac5f9a19c6979d03">VertexArray</a> ()</td></tr>
-<tr class="separator:ab8a2dcce9698f96dac5f9a19c6979d03"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa24efe2dd09992d8de1d97ba1e71528e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#aa24efe2dd09992d8de1d97ba1e71528e">AddIndexComponent</a> (<a class="el" href="../../d4/db5/a00328.html">VertexBuffer</a> *buffer)</td></tr>
-<tr class="separator:aa24efe2dd09992d8de1d97ba1e71528e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa5459672a0ca5bc4c8ad1578dc6ab3fa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#aa5459672a0ca5bc4c8ad1578dc6ab3fa">AddComponent</a> (uint32_t attribArray, <a class="el" href="../../d4/db5/a00328.html">VertexBuffer</a> *buffer, bool normalized=false)</td></tr>
-<tr class="separator:aa5459672a0ca5bc4c8ad1578dc6ab3fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a646e9a8df452f7f42957aee0cbacc104"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a646e9a8df452f7f42957aee0cbacc104">AddInstancedComponent</a> (uint32_t attribArray, <a class="el" href="../../d4/db5/a00328.html">VertexBuffer</a> *buffer, bool normalized=false)</td></tr>
-<tr class="separator:a646e9a8df452f7f42957aee0cbacc104"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af9833d5beab5da4d4c10e162c19c9210"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/db5/a00328.html">VertexBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#af9833d5beab5da4d4c10e162c19c9210">GetIndexComponent</a> ()</td></tr>
-<tr class="separator:af9833d5beab5da4d4c10e162c19c9210"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a58ec8539a7f58462726237b08220f1c7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/db5/a00328.html">VertexBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a58ec8539a7f58462726237b08220f1c7">GetComponent</a> (uint32_t attribArray)</td></tr>
-<tr class="separator:a58ec8539a7f58462726237b08220f1c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1922214932c23298f648f6b0830c3ac4"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a1922214932c23298f648f6b0830c3ac4">GetMaxAttributeArrayCount</a> ()</td></tr>
-<tr class="separator:a1922214932c23298f648f6b0830c3ac4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0d6d25b4dc9d6cd1e2227fdb7c33dc78"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a0d6d25b4dc9d6cd1e2227fdb7c33dc78">Bind</a> ()</td></tr>
-<tr class="separator:a0d6d25b4dc9d6cd1e2227fdb7c33dc78"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5fe5f1b8bbd96252381079af3e1aa47b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a5fe5f1b8bbd96252381079af3e1aa47b">Unbind</a> ()</td></tr>
-<tr class="separator:a5fe5f1b8bbd96252381079af3e1aa47b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a091cc615d9bac581c790db78e2964485"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a091cc615d9bac581c790db78e2964485">ClearContent</a> ()</td></tr>
-<tr class="separator:a091cc615d9bac581c790db78e2964485"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0aab85fb671460a89145ed4f9336e352"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a0aab85fb671460a89145ed4f9336e352">DeleteContent</a> ()</td></tr>
-<tr class="separator:a0aab85fb671460a89145ed4f9336e352"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a82597eb9daba5ad66dd3cf898e159a95"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a82597eb9daba5ad66dd3cf898e159a95">~VertexArray</a> ()</td></tr>
-<tr class="separator:a82597eb9daba5ad66dd3cf898e159a95"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad10176d75a9cc0da56626f682d083507"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#ad10176d75a9cc0da56626f682d083507">Scene</a> ()</td></tr>
+<tr class="separator:ad10176d75a9cc0da56626f682d083507"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad05149a4e64c16db1d0c65cc83cbaeed"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#ad05149a4e64c16db1d0c65cc83cbaeed">Add</a> (<a class="el" href="../../de/dfe/a00448.html">Actor</a> *actor)</td></tr>
+<tr class="separator:ad05149a4e64c16db1d0c65cc83cbaeed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8dafd182ee6a2691512de6ba18456be"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#ab8dafd182ee6a2691512de6ba18456be">Remove</a> (<a class="el" href="../../de/dfe/a00448.html">Actor</a> *actor)</td></tr>
+<tr class="separator:ab8dafd182ee6a2691512de6ba18456be"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0df8acd744376b0b1cb953c9fd7d0db6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a0df8acd744376b0b1cb953c9fd7d0db6">Add</a> (<a class="el" href="../../dc/d25/a00596.html">Terrain</a> *terrain)</td></tr>
+<tr class="separator:a0df8acd744376b0b1cb953c9fd7d0db6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a203db5dcfaed691e925a6081de69c7b9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a203db5dcfaed691e925a6081de69c7b9">Remove</a> (<a class="el" href="../../dc/d25/a00596.html">Terrain</a> *terrain)</td></tr>
+<tr class="separator:a203db5dcfaed691e925a6081de69c7b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca849cd866435abe1936aad58e296b5c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#aca849cd866435abe1936aad58e296b5c">Add</a> (<a class="el" href="../../db/d4f/a00420.html">ILight</a> *light)</td></tr>
+<tr class="separator:aca849cd866435abe1936aad58e296b5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a612bb1056bd89f13cc4c443ba138f14e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a612bb1056bd89f13cc4c443ba138f14e">Remove</a> (<a class="el" href="../../db/d4f/a00420.html">ILight</a> *light)</td></tr>
+<tr class="separator:a612bb1056bd89f13cc4c443ba138f14e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a179e0c214a10e2de424bbd20e70d50a7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a179e0c214a10e2de424bbd20e70d50a7">Add</a> (<a class="el" href="../../dc/d28/a00276.html">Decal</a> *decal)</td></tr>
+<tr class="separator:a179e0c214a10e2de424bbd20e70d50a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17c5b38b7d5fc035371671b598b81548"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a17c5b38b7d5fc035371671b598b81548">Remove</a> (<a class="el" href="../../dc/d28/a00276.html">Decal</a> *decal)</td></tr>
+<tr class="separator:a17c5b38b7d5fc035371671b598b81548"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a367dcbed089b1a657c93b54cd0c9bee2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a367dcbed089b1a657c93b54cd0c9bee2">Update</a> (<a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera)</td></tr>
+<tr class="separator:a367dcbed089b1a657c93b54cd0c9bee2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47b8707c6bd77ea668e2da323519d383"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a47b8707c6bd77ea668e2da323519d383">ClearContent</a> ()</td></tr>
+<tr class="separator:a47b8707c6bd77ea668e2da323519d383"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a84ed892d8f621f058a75deaec56fbc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a5a84ed892d8f621f058a75deaec56fbc">DeleteContent</a> ()</td></tr>
+<tr class="separator:a5a84ed892d8f621f058a75deaec56fbc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b8cec2e32546713915f8c6303c951f1"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a3b8cec2e32546713915f8c6303c951f1">~Scene</a> ()</td></tr>
+<tr class="separator:a3b8cec2e32546713915f8c6303c951f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a99ea3ec5a38cabb8da494a7fcda6359f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/db5/a00328.html">SceneNode</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a99ea3ec5a38cabb8da494a7fcda6359f">rootNode</a></td></tr>
+<tr class="separator:a99ea3ec5a38cabb8da494a7fcda6359f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca9e4d2b66738010ca71c5d9a28941f1"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../db/d4f/a00420.html">ILight</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#aca9e4d2b66738010ca71c5d9a28941f1">lights</a></td></tr>
+<tr class="separator:aca9e4d2b66738010ca71c5d9a28941f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e3f7df40bf1533df38963b3a510c0c6"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../d1/d0b/a00452.html">ActorBatch</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a5e3f7df40bf1533df38963b3a510c0c6">actorBatches</a></td></tr>
+<tr class="separator:a5e3f7df40bf1533df38963b3a510c0c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1e215a521b56a2a8f41af09a74458d36"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../dc/d25/a00596.html">Terrain</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a1e215a521b56a2a8f41af09a74458d36">terrains</a></td></tr>
+<tr class="separator:a1e215a521b56a2a8f41af09a74458d36"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3701f44b19fcec0aeb3e1f2bb9534d7"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../dc/d28/a00276.html">Decal</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#af3701f44b19fcec0aeb3e1f2bb9534d7">decals</a></td></tr>
+<tr class="separator:af3701f44b19fcec0aeb3e1f2bb9534d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a15c6041a52f96f8f6722eae33867fb8b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d82/a00436.html">Sky</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a15c6041a52f96f8f6722eae33867fb8b">sky</a></td></tr>
+<tr class="separator:a15c6041a52f96f8f6722eae33867fb8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad6eb9556d52fe8b0fa7911e8504d776a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d2e/a00588.html">PostProcessing</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#ad6eb9556d52fe8b0fa7911e8504d776a">postProcessing</a></td></tr>
+<tr class="separator:ad6eb9556d52fe8b0fa7911e8504d776a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2823fb7926838d1a239ef134e065b94d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/db8/a00316.html">RenderList</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a2823fb7926838d1a239ef134e065b94d">renderList</a></td></tr>
+<tr class="separator:a2823fb7926838d1a239ef134e065b94d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00009">9</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">VertexArray.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d41/a00038_source.html#l00015">15</a> of file <a class="el" href="../../d8/d41/a00038_source.html">Scene.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ab8a2dcce9698f96dac5f9a19c6979d03"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab8a2dcce9698f96dac5f9a19c6979d03">&#9670;&nbsp;</a></span>VertexArray()</h2>
+<a id="ad10176d75a9cc0da56626f682d083507"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad10176d75a9cc0da56626f682d083507">&#9670;&nbsp;</a></span>Scene()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">VertexArray::VertexArray </td>
+          <td class="memname">Scene::Scene </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -145,14 +167,14 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a82597eb9daba5ad66dd3cf898e159a95"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a82597eb9daba5ad66dd3cf898e159a95">&#9670;&nbsp;</a></span>~VertexArray()</h2>
+<a id="a3b8cec2e32546713915f8c6303c951f1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3b8cec2e32546713915f8c6303c951f1">&#9670;&nbsp;</a></span>~Scene()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">VertexArray::~VertexArray </td>
+          <td class="memname">Scene::~Scene </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -163,216 +185,127 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="aa5459672a0ca5bc4c8ad1578dc6ab3fa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa5459672a0ca5bc4c8ad1578dc6ab3fa">&#9670;&nbsp;</a></span>AddComponent()</h2>
+<a id="ad05149a4e64c16db1d0c65cc83cbaeed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad05149a4e64c16db1d0c65cc83cbaeed">&#9670;&nbsp;</a></span>Add() <span class="overload">[1/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void VertexArray::AddComponent </td>
+          <td class="memname">void Scene::Add </td>
           <td>(</td>
-          <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>attribArray</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d4/db5/a00328.html">VertexBuffer</a> *&#160;</td>
-          <td class="paramname"><em>buffer</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>normalized</em> = <code>false</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">attribArray</td><td></td></tr>
-    <tr><td class="paramname">buffer</td><td></td></tr>
-    <tr><td class="paramname">normalized</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="aa24efe2dd09992d8de1d97ba1e71528e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa24efe2dd09992d8de1d97ba1e71528e">&#9670;&nbsp;</a></span>AddIndexComponent()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void VertexArray::AddIndexComponent </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d4/db5/a00328.html">VertexBuffer</a> *&#160;</td>
-          <td class="paramname"><em>buffer</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../de/dfe/a00448.html">Actor</a> *&#160;</td>
+          <td class="paramname"><em>actor</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">buffer</td><td></td></tr>
+    <tr><td class="paramname">actor</td><td></td></tr>
   </table>
   </dd>
 </dl>
 
 </div>
 </div>
-<a id="a646e9a8df452f7f42957aee0cbacc104"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a646e9a8df452f7f42957aee0cbacc104">&#9670;&nbsp;</a></span>AddInstancedComponent()</h2>
+<a id="a0df8acd744376b0b1cb953c9fd7d0db6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0df8acd744376b0b1cb953c9fd7d0db6">&#9670;&nbsp;</a></span>Add() <span class="overload">[2/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void VertexArray::AddInstancedComponent </td>
+          <td class="memname">void Scene::Add </td>
           <td>(</td>
-          <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>attribArray</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d4/db5/a00328.html">VertexBuffer</a> *&#160;</td>
-          <td class="paramname"><em>buffer</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>normalized</em> = <code>false</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">attribArray</td><td></td></tr>
-    <tr><td class="paramname">buffer</td><td></td></tr>
-    <tr><td class="paramname">normalized</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="a0d6d25b4dc9d6cd1e2227fdb7c33dc78"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0d6d25b4dc9d6cd1e2227fdb7c33dc78">&#9670;&nbsp;</a></span>Bind()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void VertexArray::Bind </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a091cc615d9bac581c790db78e2964485"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a091cc615d9bac581c790db78e2964485">&#9670;&nbsp;</a></span>ClearContent()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void VertexArray::ClearContent </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a0aab85fb671460a89145ed4f9336e352"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0aab85fb671460a89145ed4f9336e352">&#9670;&nbsp;</a></span>DeleteContent()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void VertexArray::DeleteContent </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a58ec8539a7f58462726237b08220f1c7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a58ec8539a7f58462726237b08220f1c7">&#9670;&nbsp;</a></span>GetComponent()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../d4/db5/a00328.html">VertexBuffer</a>* VertexArray::GetComponent </td>
-          <td>(</td>
-          <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>attribArray</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../dc/d25/a00596.html">Terrain</a> *&#160;</td>
+          <td class="paramname"><em>terrain</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">attribArray</td><td></td></tr>
+    <tr><td class="paramname">terrain</td><td></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd></dd></dl>
 
 </div>
 </div>
-<a id="af9833d5beab5da4d4c10e162c19c9210"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af9833d5beab5da4d4c10e162c19c9210">&#9670;&nbsp;</a></span>GetIndexComponent()</h2>
+<a id="aca849cd866435abe1936aad58e296b5c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aca849cd866435abe1936aad58e296b5c">&#9670;&nbsp;</a></span>Add() <span class="overload">[3/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d4/db5/a00328.html">VertexBuffer</a>* VertexArray::GetIndexComponent </td>
+          <td class="memname">void Scene::Add </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../db/d4f/a00420.html">ILight</a> *&#160;</td>
+          <td class="paramname"><em>light</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">light</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a179e0c214a10e2de424bbd20e70d50a7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a179e0c214a10e2de424bbd20e70d50a7">&#9670;&nbsp;</a></span>Add() <span class="overload">[4/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Scene::Add </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d28/a00276.html">Decal</a> *&#160;</td>
+          <td class="paramname"><em>decal</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">decal</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a47b8707c6bd77ea668e2da323519d383"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a47b8707c6bd77ea668e2da323519d383">&#9670;&nbsp;</a></span>ClearContent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Scene::ClearContent </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-<dl class="section return"><dt>Returns</dt><dd></dd></dl>
 
 </div>
 </div>
-<a id="a1922214932c23298f648f6b0830c3ac4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1922214932c23298f648f6b0830c3ac4">&#9670;&nbsp;</a></span>GetMaxAttributeArrayCount()</h2>
+<a id="a5a84ed892d8f621f058a75deaec56fbc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5a84ed892d8f621f058a75deaec56fbc">&#9670;&nbsp;</a></span>DeleteContent()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t VertexArray::GetMaxAttributeArrayCount </td>
+          <td class="memname">void Scene::DeleteContent </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -382,32 +315,264 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a5fe5f1b8bbd96252381079af3e1aa47b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5fe5f1b8bbd96252381079af3e1aa47b">&#9670;&nbsp;</a></span>Unbind()</h2>
+<a id="ab8dafd182ee6a2691512de6ba18456be"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab8dafd182ee6a2691512de6ba18456be">&#9670;&nbsp;</a></span>Remove() <span class="overload">[1/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void VertexArray::Unbind </td>
+          <td class="memname">void Scene::Remove </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../de/dfe/a00448.html">Actor</a> *&#160;</td>
+          <td class="paramname"><em>actor</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">actor</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a203db5dcfaed691e925a6081de69c7b9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a203db5dcfaed691e925a6081de69c7b9">&#9670;&nbsp;</a></span>Remove() <span class="overload">[2/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Scene::Remove </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d25/a00596.html">Terrain</a> *&#160;</td>
+          <td class="paramname"><em>terrain</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">terrain</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a612bb1056bd89f13cc4c443ba138f14e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a612bb1056bd89f13cc4c443ba138f14e">&#9670;&nbsp;</a></span>Remove() <span class="overload">[3/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Scene::Remove </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../db/d4f/a00420.html">ILight</a> *&#160;</td>
+          <td class="paramname"><em>light</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">light</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a17c5b38b7d5fc035371671b598b81548"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a17c5b38b7d5fc035371671b598b81548">&#9670;&nbsp;</a></span>Remove() <span class="overload">[4/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Scene::Remove </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d28/a00276.html">Decal</a> *&#160;</td>
+          <td class="paramname"><em>decal</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">decal</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a367dcbed089b1a657c93b54cd0c9bee2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a367dcbed089b1a657c93b54cd0c9bee2">&#9670;&nbsp;</a></span>Update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Scene::Update </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">camera</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a5e3f7df40bf1533df38963b3a510c0c6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5e3f7df40bf1533df38963b3a510c0c6">&#9670;&nbsp;</a></span>actorBatches</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">vector&lt;<a class="el" href="../../d1/d0b/a00452.html">ActorBatch</a>*&gt; Scene::actorBatches</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d41/a00038_source.html#l00093">93</a> of file <a class="el" href="../../d8/d41/a00038_source.html">Scene.h</a>.</p>
+
+</div>
+</div>
+<a id="af3701f44b19fcec0aeb3e1f2bb9534d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af3701f44b19fcec0aeb3e1f2bb9534d7">&#9670;&nbsp;</a></span>decals</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">vector&lt;<a class="el" href="../../dc/d28/a00276.html">Decal</a>*&gt; Scene::decals</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d41/a00038_source.html#l00095">95</a> of file <a class="el" href="../../d8/d41/a00038_source.html">Scene.h</a>.</p>
+
+</div>
+</div>
+<a id="aca9e4d2b66738010ca71c5d9a28941f1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aca9e4d2b66738010ca71c5d9a28941f1">&#9670;&nbsp;</a></span>lights</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">vector&lt;<a class="el" href="../../db/d4f/a00420.html">ILight</a>*&gt; Scene::lights</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d41/a00038_source.html#l00092">92</a> of file <a class="el" href="../../d8/d41/a00038_source.html">Scene.h</a>.</p>
+
+</div>
+</div>
+<a id="ad6eb9556d52fe8b0fa7911e8504d776a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad6eb9556d52fe8b0fa7911e8504d776a">&#9670;&nbsp;</a></span>postProcessing</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/d2e/a00588.html">PostProcessing</a>* Scene::postProcessing</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d41/a00038_source.html#l00098">98</a> of file <a class="el" href="../../d8/d41/a00038_source.html">Scene.h</a>.</p>
+
+</div>
+</div>
+<a id="a2823fb7926838d1a239ef134e065b94d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2823fb7926838d1a239ef134e065b94d">&#9670;&nbsp;</a></span>renderList</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d3/db8/a00316.html">RenderList</a>* Scene::renderList</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d41/a00038_source.html#l00100">100</a> of file <a class="el" href="../../d8/d41/a00038_source.html">Scene.h</a>.</p>
+
+</div>
+</div>
+<a id="a99ea3ec5a38cabb8da494a7fcda6359f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a99ea3ec5a38cabb8da494a7fcda6359f">&#9670;&nbsp;</a></span>rootNode</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d4/db5/a00328.html">SceneNode</a>* Scene::rootNode</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d41/a00038_source.html#l00090">90</a> of file <a class="el" href="../../d8/d41/a00038_source.html">Scene.h</a>.</p>
+
+</div>
+</div>
+<a id="a15c6041a52f96f8f6722eae33867fb8b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a15c6041a52f96f8f6722eae33867fb8b">&#9670;&nbsp;</a></span>sky</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d4/d82/a00436.html">Sky</a>* Scene::sky</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d41/a00038_source.html#l00097">97</a> of file <a class="el" href="../../d8/d41/a00038_source.html">Scene.h</a>.</p>
+
+</div>
+</div>
+<a id="a1e215a521b56a2a8f41af09a74458d36"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1e215a521b56a2a8f41af09a74458d36">&#9670;&nbsp;</a></span>terrains</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">vector&lt;<a class="el" href="../../dc/d25/a00596.html">Terrain</a>*&gt; Scene::terrains</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d41/a00038_source.html#l00094">94</a> of file <a class="el" href="../../d8/d41/a00038_source.html">Scene.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/<a class="el" href="../../d6/d2d/a00047_source.html">VertexArray.h</a></li>
+<li>src/<a class="el" href="../../d8/d41/a00038_source.html">Scene.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d4/d8f/a00324.html">VertexArray</a></li>
+    <li class="navelem"><a class="el" href="../../d4/d8f/a00324.html">Scene</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

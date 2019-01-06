@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: RenderListBatch Struct Reference</title>
+<title>Blue Engine: FrustumCulling Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,67 +88,151 @@ $(document).ready(function(){initNavTree('db/da2/a00300.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="../../d3/d4a/a00297.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">RenderListBatch Struct Reference</div>  </div>
+<div class="title">FrustumCulling Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../dc/d87/a00032_source.html">RenderList.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d3/d52/a00023_source.html">FrustumCulling.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:a5e33ba7352dc92f034cab4c7e5a17750"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/dea/a00444.html">ActorBatch</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da2/a00300.html#a5e33ba7352dc92f034cab4c7e5a17750">actorBatch</a></td></tr>
-<tr class="separator:a5e33ba7352dc92f034cab4c7e5a17750"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0e4b45412f4e82258ae2aa4749d1bf83"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../db/db1/a00460.html">MeshSubData</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da2/a00300.html#a0e4b45412f4e82258ae2aa4749d1bf83">subData</a></td></tr>
-<tr class="separator:a0e4b45412f4e82258ae2aa4749d1bf83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a3fc2078d1fe7fbb770aa7144f317c5ab"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da2/a00300.html#a3fc2078d1fe7fbb770aa7144f317c5ab">CullActorsFromScene</a> (<a class="el" href="../../d4/d8f/a00324.html">Scene</a> *scene, <a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera)</td></tr>
+<tr class="separator:a3fc2078d1fe7fbb770aa7144f317c5ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac956e20b9c50e40a9852ed91d5bbd7e1"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da2/a00300.html#ac956e20b9c50e40a9852ed91d5bbd7e1">CullLightsFromScene</a> (<a class="el" href="../../d4/d8f/a00324.html">Scene</a> *scene, <a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera)</td></tr>
+<tr class="separator:ac956e20b9c50e40a9852ed91d5bbd7e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f6bd04892b70715cb02fc655ec44a77"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da2/a00300.html#a9f6bd04892b70715cb02fc655ec44a77">CullActorsFromShadow</a> (<a class="el" href="../../db/d4f/a00420.html">ILight</a> *light, <a class="el" href="../../d4/d8f/a00324.html">Scene</a> *scene, <a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera)</td></tr>
+<tr class="separator:a9f6bd04892b70715cb02fc655ec44a77"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00013">13</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderList.h</a>.</p>
-</div><h2 class="groupheader">Member Data Documentation</h2>
-<a id="a5e33ba7352dc92f034cab4c7e5a17750"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5e33ba7352dc92f034cab4c7e5a17750">&#9670;&nbsp;</a></span>actorBatch</h2>
+<p class="definition">Definition at line <a class="el" href="../../d3/d52/a00023_source.html#l00010">10</a> of file <a class="el" href="../../d3/d52/a00023_source.html">FrustumCulling.h</a>.</p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a3fc2078d1fe7fbb770aa7144f317c5ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3fc2078d1fe7fbb770aa7144f317c5ab">&#9670;&nbsp;</a></span>CullActorsFromScene()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d3/dea/a00444.html">ActorBatch</a>* RenderListBatch::actorBatch</td>
+          <td class="memname">static void FrustumCulling::CullActorsFromScene </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d4/d8f/a00324.html">Scene</a> *&#160;</td>
+          <td class="paramname"><em>scene</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00015">15</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderList.h</a>.</p>
-
 </div>
 </div>
-<a id="a0e4b45412f4e82258ae2aa4749d1bf83"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0e4b45412f4e82258ae2aa4749d1bf83">&#9670;&nbsp;</a></span>subData</h2>
+<a id="a9f6bd04892b70715cb02fc655ec44a77"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f6bd04892b70715cb02fc655ec44a77">&#9670;&nbsp;</a></span>CullActorsFromShadow()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">vector&lt;<a class="el" href="../../db/db1/a00460.html">MeshSubData</a>*&gt; RenderListBatch::subData</td>
+          <td class="memname">static void FrustumCulling::CullActorsFromShadow </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../db/d4f/a00420.html">ILight</a> *&#160;</td>
+          <td class="paramname"><em>light</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d4/d8f/a00324.html">Scene</a> *&#160;</td>
+          <td class="paramname"><em>scene</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00016">16</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderList.h</a>.</p>
+</div>
+</div>
+<a id="ac956e20b9c50e40a9852ed91d5bbd7e1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac956e20b9c50e40a9852ed91d5bbd7e1">&#9670;&nbsp;</a></span>CullLightsFromScene()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void FrustumCulling::CullLightsFromScene </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d4/d8f/a00324.html">Scene</a> *&#160;</td>
+          <td class="paramname"><em>scene</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li>src/<a class="el" href="../../dc/d87/a00032_source.html">RenderList.h</a></li>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/<a class="el" href="../../d3/d52/a00023_source.html">FrustumCulling.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../db/da2/a00300.html">RenderListBatch</a></li>
+    <li class="navelem"><a class="el" href="../../db/da2/a00300.html">FrustumCulling</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

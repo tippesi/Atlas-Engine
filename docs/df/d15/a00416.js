@@ -1,12 +1,13 @@
 var a00416 =
 [
-    [ "PointLight", "df/d15/a00416.html#a804acdd791386a4e21a37ae9eee2ea25", null ],
-    [ "AddShadow", "df/d15/a00416.html#a28671ac4426181efc4adbd346a71c249", null ],
-    [ "AddVolumetric", "df/d15/a00416.html#a8fc6ab5423218a52a08272ec90dcc6a8", null ],
-    [ "GetRadius", "df/d15/a00416.html#a20e58296d9b45a3650c4fea54939b747", null ],
-    [ "RemoveShadow", "df/d15/a00416.html#a41863685ce540bfa0e40be7b2c7bddd0", null ],
-    [ "RemoveVolumetric", "df/d15/a00416.html#a95bb4ff5a2276576bfc4ec8b5f587754", null ],
-    [ "Update", "df/d15/a00416.html#adac184c0f9cfc46e6539fea415d4bcf7", null ],
-    [ "attenuation", "df/d15/a00416.html#aed8e8d9cb5dcf43f3a063df16c3abfb4", null ],
-    [ "location", "df/d15/a00416.html#a8b8958be0e0b2f9649d62b9f543088ca", null ]
+    [ "DirectionalLight", "df/d15/a00416.html#a6c319da56cb7d7b28baf0d5f02ecc399", null ],
+    [ "AddShadow", "df/d15/a00416.html#aed88f0ef284160f4b74dc0ecb411997d", null ],
+    [ "AddShadow", "df/d15/a00416.html#adfacb1d047c0098be88970f9fd2dbac5", null ],
+    [ "AddVolumetric", "df/d15/a00416.html#ac95110fb0eb3dc5691ef1de99caa2130", null ],
+    [ "ClearContent", "df/d15/a00416.html#a7b2f1194b2a6086fe83f9e4696518d69", null ],
+    [ "DeleteContent", "df/d15/a00416.html#aac78fcda46cf3e9abaeca7546e3a8910", null ],
+    [ "RemoveShadow", "df/d15/a00416.html#af256fc47de861f0839994fed69156c93", null ],
+    [ "RemoveVolumetric", "df/d15/a00416.html#aeecad1fdfb5bc3d8490d1cce7ca0ac5e", null ],
+    [ "Update", "df/d15/a00416.html#a97293ebb5029bbf1a4473a67efd60836", null ],
+    [ "direction", "df/d15/a00416.html#a78a56aede026b50aa2606bf20c1b0871", null ]
 ];

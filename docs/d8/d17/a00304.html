@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: RenderList Class Reference</title>
+<title>Blue Engine: Kernel Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,60 +89,105 @@ $(document).ready(function(){initNavTree('d8/d17/a00304.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../da/d50/a00301.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">RenderList Class Reference</div>  </div>
+<div class="title">Kernel Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../dc/d87/a00032_source.html">RenderList.h</a>&gt;</code></p>
+<p>Manages convolution matrices.  
+ <a href="../../d8/d17/a00304.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../d6/d5b/a00026_source.html">Kernel.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a7d04aeb2919db1b28abd0f49b647ac11"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d17/a00304.html#a7d04aeb2919db1b28abd0f49b647ac11">RenderList</a> (int32_t type, int32_t mobility)</td></tr>
-<tr class="separator:a7d04aeb2919db1b28abd0f49b647ac11"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6b17824bb52eb514c294423dc83bed17"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d17/a00304.html#a6b17824bb52eb514c294423dc83bed17">Add</a> (<a class="el" href="../../de/df8/a00440.html">Actor</a> *actor)</td></tr>
-<tr class="separator:a6b17824bb52eb514c294423dc83bed17"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad695a1ce60f6a26f8be41dca9c16c1fc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d17/a00304.html#ad695a1ce60f6a26f8be41dca9c16c1fc">Add</a> (<a class="el" href="../../d9/d72/a00412.html">ILight</a> *light)</td></tr>
-<tr class="separator:ad695a1ce60f6a26f8be41dca9c16c1fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a14bd7a585ee1158cd1d0d2673085eea4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d17/a00304.html#a14bd7a585ee1158cd1d0d2673085eea4">RemoveMesh</a> (<a class="el" href="../../de/d87/a00456.html">Mesh</a> *mesh)</td></tr>
-<tr class="memdesc:a14bd7a585ee1158cd1d0d2673085eea4"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
-Can be called from the outside, like the scene might call it on their object  <a href="#a14bd7a585ee1158cd1d0d2673085eea4">More...</a><br /></td></tr>
-<tr class="separator:a14bd7a585ee1158cd1d0d2673085eea4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9f6c51af4e90aceb1ade38801f55d8a2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d17/a00304.html#a9f6c51af4e90aceb1ade38801f55d8a2">Clear</a> ()</td></tr>
-<tr class="separator:a9f6c51af4e90aceb1ade38801f55d8a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:a55d8fb9a703f04688c6975ee3c1acc11"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../d9/d72/a00412.html">ILight</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d17/a00304.html#a55d8fb9a703f04688c6975ee3c1acc11">lights</a></td></tr>
-<tr class="separator:a55d8fb9a703f04688c6975ee3c1acc11"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a84030bf111e88df516a046819e2a3900"><td class="memItemLeft" align="right" valign="top">map&lt; <a class="el" href="../../de/d87/a00456.html">Mesh</a> *, <a class="el" href="../../d3/dea/a00444.html">ActorBatch</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d17/a00304.html#a84030bf111e88df516a046819e2a3900">actorBatches</a></td></tr>
-<tr class="separator:a84030bf111e88df516a046819e2a3900"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab6e4a186d93d038c7446ea9b4d9d9e2b"><td class="memItemLeft" align="right" valign="top">map&lt; int32_t, vector&lt; <a class="el" href="../../db/da2/a00300.html">RenderListBatch</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d17/a00304.html#ab6e4a186d93d038c7446ea9b4d9d9e2b">orderedRenderBatches</a></td></tr>
-<tr class="separator:ab6e4a186d93d038c7446ea9b4d9d9e2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84dba549c0823454ecfc8089c20cf812"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d17/a00304.html#a84dba549c0823454ecfc8089c20cf812">Kernel</a> ()</td></tr>
+<tr class="memdesc:a84dba549c0823454ecfc8089c20cf812"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d8/d17/a00304.html" title="Manages convolution matrices. ">Kernel</a>.  <a href="#a84dba549c0823454ecfc8089c20cf812">More...</a><br /></td></tr>
+<tr class="separator:a84dba549c0823454ecfc8089c20cf812"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab040492b4208e56faba638b246ef9634"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d17/a00304.html#ab040492b4208e56faba638b246ef9634">CalculateGaussianFilter</a> (float sigma, uint32_t size)</td></tr>
+<tr class="memdesc:ab040492b4208e56faba638b246ef9634"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates a gaussian convolution matrix.  <a href="#ab040492b4208e56faba638b246ef9634">More...</a><br /></td></tr>
+<tr class="separator:ab040492b4208e56faba638b246ef9634"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adfa4a3d94ebb0be98a4e5f21b3d457ca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d17/a00304.html#adfa4a3d94ebb0be98a4e5f21b3d457ca">CalculateBoxFilter</a> (uint32_t size)</td></tr>
+<tr class="memdesc:adfa4a3d94ebb0be98a4e5f21b3d457ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates a box convolution matrix.  <a href="#adfa4a3d94ebb0be98a4e5f21b3d457ca">More...</a><br /></td></tr>
+<tr class="separator:adfa4a3d94ebb0be98a4e5f21b3d457ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4411f3544d2e6c682a178093086b93fa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d17/a00304.html#a4411f3544d2e6c682a178093086b93fa">Get</a> (vector&lt; vector&lt; float &gt;&gt; *&amp;weights, vector&lt; vector&lt; ivec2 &gt;&gt; *&amp;offsets)</td></tr>
+<tr class="memdesc:a4411f3544d2e6c682a178093086b93fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the convolution matrix.  <a href="#a4411f3544d2e6c682a178093086b93fa">More...</a><br /></td></tr>
+<tr class="separator:a4411f3544d2e6c682a178093086b93fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6fb2dfeaf131fe37d77f768c4b183de1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d17/a00304.html#a6fb2dfeaf131fe37d77f768c4b183de1">GetLinearized</a> (vector&lt; float &gt; *&amp;weights, vector&lt; float &gt; *&amp;offsets)</td></tr>
+<tr class="memdesc:a6fb2dfeaf131fe37d77f768c4b183de1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the linearized convolution matrix.  <a href="#a6fb2dfeaf131fe37d77f768c4b183de1">More...</a><br /></td></tr>
+<tr class="separator:a6fb2dfeaf131fe37d77f768c4b183de1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00021">21</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderList.h</a>.</p>
+<div class="textblock"><p>Manages convolution matrices. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d5b/a00026_source.html#l00010">10</a> of file <a class="el" href="../../d6/d5b/a00026_source.html">Kernel.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a7d04aeb2919db1b28abd0f49b647ac11"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7d04aeb2919db1b28abd0f49b647ac11">&#9670;&nbsp;</a></span>RenderList()</h2>
+<a id="a84dba549c0823454ecfc8089c20cf812"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a84dba549c0823454ecfc8089c20cf812">&#9670;&nbsp;</a></span>Kernel()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">RenderList::RenderList </td>
+          <td class="memname">Kernel::Kernel </td>
           <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>type</em>, </td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Constructs a <a class="el" href="../../d8/d17/a00304.html" title="Manages convolution matrices. ">Kernel</a>. </p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="adfa4a3d94ebb0be98a4e5f21b3d457ca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adfa4a3d94ebb0be98a4e5f21b3d457ca">&#9670;&nbsp;</a></span>CalculateBoxFilter()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Kernel::CalculateBoxFilter </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>size</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Calculates a box convolution matrix. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">size</td><td>The diameter of the convolution matrix. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>The size argument should always be an odd number, with size &gt; 1. </dd></dl>
+<dl class="section remark"><dt>Remarks</dt><dd>See <a href="https://en.wikipedia.org/wiki/Box_blur">Box blur</a> for more. </dd></dl>
+
+</div>
+</div>
+<a id="ab040492b4208e56faba638b246ef9634"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab040492b4208e56faba638b246ef9634">&#9670;&nbsp;</a></span>CalculateGaussianFilter()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Kernel::CalculateGaussianFilter </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>sigma</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>mobility</em>&#160;</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>size</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -152,141 +197,105 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Calculates a gaussian convolution matrix. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">sigma</td><td>The sigma used for the gaussian function. </td></tr>
+    <tr><td class="paramname">size</td><td>The diameter of the convolution matrix. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>The size argument should always be an odd number, with size &gt; 1. </dd></dl>
+<dl class="section remark"><dt>Remarks</dt><dd>See <a href="https://en.wikipedia.org/wiki/Gaussian_blur">Gaussian blur</a> for more. </dd></dl>
+
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a6b17824bb52eb514c294423dc83bed17"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6b17824bb52eb514c294423dc83bed17">&#9670;&nbsp;</a></span>Add() <span class="overload">[1/2]</span></h2>
+<a id="a4411f3544d2e6c682a178093086b93fa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4411f3544d2e6c682a178093086b93fa">&#9670;&nbsp;</a></span>Get()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void RenderList::Add </td>
+          <td class="memname">void Kernel::Get </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../de/df8/a00440.html">Actor</a> *&#160;</td>
-          <td class="paramname"><em>actor</em></td><td>)</td>
+          <td class="paramtype">vector&lt; vector&lt; float &gt;&gt; *&amp;&#160;</td>
+          <td class="paramname"><em>weights</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">vector&lt; vector&lt; ivec2 &gt;&gt; *&amp;&#160;</td>
+          <td class="paramname"><em>offsets</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
+<p>Returns the convolution matrix. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">weights</td><td>A pointer which will contain the weights. </td></tr>
+    <tr><td class="paramname">offsets</td><td>A pointer which will contain the offsets. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>The input pointers shouldn't have anything allocated and shouldn't be deleted later on. </dd></dl>
+
 </div>
 </div>
-<a id="ad695a1ce60f6a26f8be41dca9c16c1fc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad695a1ce60f6a26f8be41dca9c16c1fc">&#9670;&nbsp;</a></span>Add() <span class="overload">[2/2]</span></h2>
+<a id="a6fb2dfeaf131fe37d77f768c4b183de1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6fb2dfeaf131fe37d77f768c4b183de1">&#9670;&nbsp;</a></span>GetLinearized()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void RenderList::Add </td>
+          <td class="memname">void Kernel::GetLinearized </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d9/d72/a00412.html">ILight</a> *&#160;</td>
-          <td class="paramname"><em>light</em></td><td>)</td>
+          <td class="paramtype">vector&lt; float &gt; *&amp;&#160;</td>
+          <td class="paramname"><em>weights</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">vector&lt; float &gt; *&amp;&#160;</td>
+          <td class="paramname"><em>offsets</em>&#160;</td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a9f6c51af4e90aceb1ade38801f55d8a2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9f6c51af4e90aceb1ade38801f55d8a2">&#9670;&nbsp;</a></span>Clear()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname">void RenderList::Clear </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
           <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-</div>
-</div>
-<a id="a14bd7a585ee1158cd1d0d2673085eea4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a14bd7a585ee1158cd1d0d2673085eea4">&#9670;&nbsp;</a></span>RemoveMesh()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void RenderList::RemoveMesh </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../de/d87/a00456.html">Mesh</a> *&#160;</td>
-          <td class="paramname"><em>mesh</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p><br />
-Can be called from the outside, like the scene might call it on their object </p>
-
-</div>
-</div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="a84030bf111e88df516a046819e2a3900"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a84030bf111e88df516a046819e2a3900">&#9670;&nbsp;</a></span>actorBatches</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">map&lt;<a class="el" href="../../de/d87/a00456.html">Mesh</a>*, <a class="el" href="../../d3/dea/a00444.html">ActorBatch</a>*&gt; RenderList::actorBatches</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00038">38</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderList.h</a>.</p>
-
-</div>
-</div>
-<a id="a55d8fb9a703f04688c6975ee3c1acc11"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a55d8fb9a703f04688c6975ee3c1acc11">&#9670;&nbsp;</a></span>lights</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vector&lt;<a class="el" href="../../d9/d72/a00412.html">ILight</a>*&gt; RenderList::lights</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00037">37</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderList.h</a>.</p>
-
-</div>
-</div>
-<a id="ab6e4a186d93d038c7446ea9b4d9d9e2b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab6e4a186d93d038c7446ea9b4d9d9e2b">&#9670;&nbsp;</a></span>orderedRenderBatches</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">map&lt;int32_t, vector&lt;<a class="el" href="../../db/da2/a00300.html">RenderListBatch</a>&gt; &gt; RenderList::orderedRenderBatches</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00039">39</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderList.h</a>.</p>
+<p>Returns the linearized convolution matrix. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">weights</td><td>A pointer which will contain the weights. </td></tr>
+    <tr><td class="paramname">offsets</td><td>A pointer which will contain the offsets. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>The input pointers shouldn't have anything allocated and shouldn't be deleted later on. </dd></dl>
+<dl class="section remark"><dt>Remarks</dt><dd>This method should only be used if the filter is separable (explanation <a href="https://en.wikipedia.org/wiki/Separable_filter">here</a>) and if the sampling supports bilinear interpolation. Linearized means that the convolution matrix is reduced to a one dimensional array. The filter can then be applied in two passes (horizontal, vertical). Only one side of the original convolution matrix is included in the linearized matrix with the origin being at index 0. Additionally the samples of the linearized matrix are cut by half by weighting the offsets in such a way that the new samples are always between two of the original samples. </dd></dl>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/<a class="el" href="../../dc/d87/a00032_source.html">RenderList.h</a></li>
+<li>src/<a class="el" href="../../d6/d5b/a00026_source.html">Kernel.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d8/d17/a00304.html">RenderList</a></li>
+    <li class="navelem"><a class="el" href="../../d8/d17/a00304.html">Kernel</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

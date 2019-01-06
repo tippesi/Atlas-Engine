@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Actor Class Reference</title>
+<title>Blue Engine: Skybox Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,148 +92,108 @@ $(document).ready(function(){initNavTree('de/df8/a00440.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d4/da8/a00437.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Actor Class Reference</div>  </div>
+<div class="title">Skybox Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d1/d88/a00128_source.html">Actor.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../df/d6a/a00119_source.html">Skybox.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:abbe2b71148d8776388495825c5e512bf"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/df8/a00440.html#abbe2b71148d8776388495825c5e512bf">Actor</a> (<a class="el" href="../../de/d87/a00456.html">Mesh</a> *<a class="el" href="../../de/df8/a00440.html#a1ce9a7dc4789cea70dc2c47b8f021684">mesh</a>)</td></tr>
-<tr class="separator:abbe2b71148d8776388495825c5e512bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7f881d622bb9bb6ce25fb399f66768dc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/df8/a00440.html#a7f881d622bb9bb6ce25fb399f66768dc">Skybox</a> (<a class="el" href="../../d9/dd6/a00272.html">Cubemap</a> *<a class="el" href="../../de/df8/a00440.html#abd1f9af780106107a77cca24fe04a15f">cubemap</a>, mat4 <a class="el" href="../../de/df8/a00440.html#a24e2629c59008404461d737411121502">matrix</a>=mat4(1.0f))</td></tr>
+<tr class="separator:a7f881d622bb9bb6ce25fb399f66768dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:abf23b838381348bccec0d0e234d6032a"><td class="memItemLeft" align="right" valign="top">mat4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/df8/a00440.html#abf23b838381348bccec0d0e234d6032a">modelMatrix</a></td></tr>
-<tr class="separator:abf23b838381348bccec0d0e234d6032a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39b73954ab8f0a194143f1397ae7ab9d"><td class="memItemLeft" align="right" valign="top">mat4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/df8/a00440.html#a39b73954ab8f0a194143f1397ae7ab9d">transformedMatrix</a></td></tr>
-<tr class="separator:a39b73954ab8f0a194143f1397ae7ab9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1ce9a7dc4789cea70dc2c47b8f021684"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/d87/a00456.html">Mesh</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/df8/a00440.html#a1ce9a7dc4789cea70dc2c47b8f021684">mesh</a></td></tr>
-<tr class="separator:a1ce9a7dc4789cea70dc2c47b8f021684"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1934993167197470aa0d1cd39f00cfd1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/df8/a00440.html#a1934993167197470aa0d1cd39f00cfd1">castShadow</a></td></tr>
-<tr class="separator:a1934993167197470aa0d1cd39f00cfd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a538ef2a69bd68b985eee5e96ea7ed606"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/df8/a00440.html#a538ef2a69bd68b985eee5e96ea7ed606">visible</a></td></tr>
-<tr class="separator:a538ef2a69bd68b985eee5e96ea7ed606"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abd1f9af780106107a77cca24fe04a15f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d9/dd6/a00272.html">Cubemap</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/df8/a00440.html#abd1f9af780106107a77cca24fe04a15f">cubemap</a></td></tr>
+<tr class="separator:abd1f9af780106107a77cca24fe04a15f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a24e2629c59008404461d737411121502"><td class="memItemLeft" align="right" valign="top">mat4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/df8/a00440.html#a24e2629c59008404461d737411121502">matrix</a></td></tr>
+<tr class="separator:a24e2629c59008404461d737411121502"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d1/d88/a00128_source.html#l00007">7</a> of file <a class="el" href="../../d1/d88/a00128_source.html">Actor.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00007">7</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Skybox.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="abbe2b71148d8776388495825c5e512bf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abbe2b71148d8776388495825c5e512bf">&#9670;&nbsp;</a></span>Actor()</h2>
+<a id="a7f881d622bb9bb6ce25fb399f66768dc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7f881d622bb9bb6ce25fb399f66768dc">&#9670;&nbsp;</a></span>Skybox()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">Actor::Actor </td>
+          <td class="memname">Skybox::Skybox </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../de/d87/a00456.html">Mesh</a> *&#160;</td>
-          <td class="paramname"><em>mesh</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../d9/dd6/a00272.html">Cubemap</a> *&#160;</td>
+          <td class="paramname"><em>cubemap</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">mat4&#160;</td>
+          <td class="paramname"><em>matrix</em> = <code>mat4(1.0f)</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">mesh</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
+
+<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00010">10</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Skybox.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a1934993167197470aa0d1cd39f00cfd1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1934993167197470aa0d1cd39f00cfd1">&#9670;&nbsp;</a></span>castShadow</h2>
+<a id="abd1f9af780106107a77cca24fe04a15f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abd1f9af780106107a77cca24fe04a15f">&#9670;&nbsp;</a></span>cubemap</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">bool Actor::castShadow</td>
+          <td class="memname"><a class="el" href="../../d9/dd6/a00272.html">Cubemap</a>* Skybox::cubemap</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d88/a00128_source.html#l00021">21</a> of file <a class="el" href="../../d1/d88/a00128_source.html">Actor.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00010">10</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Skybox.h</a>.</p>
 
 </div>
 </div>
-<a id="a1ce9a7dc4789cea70dc2c47b8f021684"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1ce9a7dc4789cea70dc2c47b8f021684">&#9670;&nbsp;</a></span>mesh</h2>
+<a id="a24e2629c59008404461d737411121502"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a24e2629c59008404461d737411121502">&#9670;&nbsp;</a></span>matrix</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../de/d87/a00456.html">Mesh</a>* Actor::mesh</td>
+          <td class="memname">mat4 Skybox::matrix</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d88/a00128_source.html#l00019">19</a> of file <a class="el" href="../../d1/d88/a00128_source.html">Actor.h</a>.</p>
-
-</div>
-</div>
-<a id="abf23b838381348bccec0d0e234d6032a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abf23b838381348bccec0d0e234d6032a">&#9670;&nbsp;</a></span>modelMatrix</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">mat4 Actor::modelMatrix</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d1/d88/a00128_source.html#l00016">16</a> of file <a class="el" href="../../d1/d88/a00128_source.html">Actor.h</a>.</p>
-
-</div>
-</div>
-<a id="a39b73954ab8f0a194143f1397ae7ab9d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a39b73954ab8f0a194143f1397ae7ab9d">&#9670;&nbsp;</a></span>transformedMatrix</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">mat4 Actor::transformedMatrix</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d1/d88/a00128_source.html#l00017">17</a> of file <a class="el" href="../../d1/d88/a00128_source.html">Actor.h</a>.</p>
-
-</div>
-</div>
-<a id="a538ef2a69bd68b985eee5e96ea7ed606"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a538ef2a69bd68b985eee5e96ea7ed606">&#9670;&nbsp;</a></span>visible</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool Actor::visible</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d1/d88/a00128_source.html#l00023">23</a> of file <a class="el" href="../../d1/d88/a00128_source.html">Actor.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00013">13</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Skybox.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/mesh/<a class="el" href="../../d1/d88/a00128_source.html">Actor.h</a></li>
+<li>src/lighting/<a class="el" href="../../df/d6a/a00119_source.html">Skybox.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../de/df8/a00440.html">Actor</a></li>
+    <li class="navelem"><a class="el" href="../../de/df8/a00440.html">Skybox</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

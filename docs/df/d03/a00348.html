@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: EngineControllerDeviceEvent Class Reference</title>
+<title>Blue Engine: EngineControllerButtonEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,36 +92,39 @@ $(document).ready(function(){initNavTree('df/d03/a00348.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d9/d48/a00345.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">EngineControllerDeviceEvent Class Reference</div>  </div>
+<div class="title">EngineControllerButtonEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>A class to distribute controller device events.  
+<p>A class to distribute controller button events.  
  <a href="../../df/d03/a00348.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../de/de1/a00065_source.html">EngineControllerDeviceEvent.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8af35b2ca63471c0325955894327e19b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a8af35b2ca63471c0325955894327e19b">EngineControllerDeviceEvent</a> (SDL_ControllerDeviceEvent event)</td></tr>
-<tr class="separator:a8af35b2ca63471c0325955894327e19b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5369391ea3dc87f22b22b8bda64dbb91"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a5369391ea3dc87f22b22b8bda64dbb91">EngineControllerButtonEvent</a> (SDL_ControllerButtonEvent event)</td></tr>
+<tr class="separator:a5369391ea3dc87f22b22b8bda64dbb91"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:af7ab8f7e8cce9be28d8d205327b67cb3"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#af7ab8f7e8cce9be28d8d205327b67cb3">type</a></td></tr>
-<tr class="memdesc:af7ab8f7e8cce9be28d8d205327b67cb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the event.  <a href="#af7ab8f7e8cce9be28d8d205327b67cb3">More...</a><br /></td></tr>
-<tr class="separator:af7ab8f7e8cce9be28d8d205327b67cb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2b0195b1b8186ae8b935b5e7f75a4772"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a2b0195b1b8186ae8b935b5e7f75a4772">device</a></td></tr>
-<tr class="memdesc:a2b0195b1b8186ae8b935b5e7f75a4772"><td class="mdescLeft">&#160;</td><td class="mdescRight">The device ID of the game controller.  <a href="#a2b0195b1b8186ae8b935b5e7f75a4772">More...</a><br /></td></tr>
-<tr class="separator:a2b0195b1b8186ae8b935b5e7f75a4772"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af070490eef56626f09a3a0fec8c6c5ca"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#af070490eef56626f09a3a0fec8c6c5ca">button</a></td></tr>
+<tr class="memdesc:af070490eef56626f09a3a0fec8c6c5ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">The button which was pressed on the controller.  <a href="#af070490eef56626f09a3a0fec8c6c5ca">More...</a><br /></td></tr>
+<tr class="separator:af070490eef56626f09a3a0fec8c6c5ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7841fe8079c9427ea4cac304ab97dd6b"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a7841fe8079c9427ea4cac304ab97dd6b">state</a></td></tr>
+<tr class="memdesc:a7841fe8079c9427ea4cac304ab97dd6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">The state of the button.  <a href="#a7841fe8079c9427ea4cac304ab97dd6b">More...</a><br /></td></tr>
+<tr class="separator:a7841fe8079c9427ea4cac304ab97dd6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47ebdac9f67670f647c2b452499d2f29"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a47ebdac9f67670f647c2b452499d2f29">device</a></td></tr>
+<tr class="memdesc:a47ebdac9f67670f647c2b452499d2f29"><td class="mdescLeft">&#160;</td><td class="mdescRight">The device ID of the game controller.  <a href="#a47ebdac9f67670f647c2b452499d2f29">More...</a><br /></td></tr>
+<tr class="separator:a47ebdac9f67670f647c2b452499d2f29"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A class to distribute controller device events. </p>
+<div class="textblock"><p>A class to distribute controller button events. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00015">15</a> of file <a class="el" href="../../de/de1/a00065_source.html">EngineControllerDeviceEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00027">27</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a8af35b2ca63471c0325955894327e19b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8af35b2ca63471c0325955894327e19b">&#9670;&nbsp;</a></span>EngineControllerDeviceEvent()</h2>
+<a id="a5369391ea3dc87f22b22b8bda64dbb91"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5369391ea3dc87f22b22b8bda64dbb91">&#9670;&nbsp;</a></span>EngineControllerButtonEvent()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -130,9 +133,9 @@ Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">EngineControllerDeviceEvent::EngineControllerDeviceEvent </td>
+          <td class="memname">EngineControllerButtonEvent::EngineControllerButtonEvent </td>
           <td>(</td>
-          <td class="paramtype">SDL_ControllerDeviceEvent&#160;</td>
+          <td class="paramtype">SDL_ControllerButtonEvent&#160;</td>
           <td class="paramname"><em>event</em></td><td>)</td>
           <td></td>
         </tr>
@@ -144,57 +147,76 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00018">18</a> of file <a class="el" href="../../de/de1/a00065_source.html">EngineControllerDeviceEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00030">30</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a2b0195b1b8186ae8b935b5e7f75a4772"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2b0195b1b8186ae8b935b5e7f75a4772">&#9670;&nbsp;</a></span>device</h2>
+<a id="af070490eef56626f09a3a0fec8c6c5ca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af070490eef56626f09a3a0fec8c6c5ca">&#9670;&nbsp;</a></span>button</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t EngineControllerDeviceEvent::device</td>
+          <td class="memname">uint8_t EngineControllerButtonEvent::button</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The button which was pressed on the controller. </p>
+<p>See <a class="el" href="../../d9/d2e/a00056.html">EngineControllerButtonEvent.h</a> for more. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00041">41</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="a47ebdac9f67670f647c2b452499d2f29"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a47ebdac9f67670f647c2b452499d2f29">&#9670;&nbsp;</a></span>device</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t EngineControllerButtonEvent::device</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>The device ID of the game controller. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00033">33</a> of file <a class="el" href="../../de/de1/a00065_source.html">EngineControllerDeviceEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00051">51</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="af7ab8f7e8cce9be28d8d205327b67cb3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af7ab8f7e8cce9be28d8d205327b67cb3">&#9670;&nbsp;</a></span>type</h2>
+<a id="a7841fe8079c9427ea4cac304ab97dd6b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7841fe8079c9427ea4cac304ab97dd6b">&#9670;&nbsp;</a></span>state</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint32_t EngineControllerDeviceEvent::type</td>
+          <td class="memname">uint8_t EngineControllerButtonEvent::state</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The type of the event. </p>
-<p>See <a class="el" href="../../de/de1/a00065.html">EngineControllerDeviceEvent.h</a> for more. </p>
+<p>The state of the button. </p>
+<p>Might be BUTTON_PRESSED or BUTTON_RELEASED. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00028">28</a> of file <a class="el" href="../../de/de1/a00065_source.html">EngineControllerDeviceEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00046">46</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../de/de1/a00065_source.html">EngineControllerDeviceEvent.h</a></li>
+<li>src/events/<a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../df/d03/a00348.html">EngineControllerDeviceEvent</a></li>
+    <li class="navelem"><a class="el" href="../../df/d03/a00348.html">EngineControllerButtonEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

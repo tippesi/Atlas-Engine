@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Glyph Struct Reference</title>
+<title>Blue Engine: Cubemap Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,161 +88,215 @@ $(document).ready(function(){initNavTree('d9/dd6/a00272.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="../../d5/d42/a00269.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Glyph Struct Reference</div>  </div>
+<div class="title">Cubemap Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Represents a character.  
- <a href="../../d9/dd6/a00272.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="../../d4/d51/a00017_source.html">Font.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d4/dee/a00008_source.html">Cubemap.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:aaa4edd738a9a212b7ac9bd9b79b983a8"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html#aaa4edd738a9a212b7ac9bd9b79b983a8">advance</a></td></tr>
-<tr class="separator:aaa4edd738a9a212b7ac9bd9b79b983a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad9b0996e8546052fbc305da3a132c636"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html#ad9b0996e8546052fbc305da3a132c636">width</a></td></tr>
-<tr class="separator:ad9b0996e8546052fbc305da3a132c636"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c6a219db853472acb4fba359198ce94"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html#a2c6a219db853472acb4fba359198ce94">height</a></td></tr>
-<tr class="separator:a2c6a219db853472acb4fba359198ce94"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac45d840db992c85ed53508bcbbcf7b9b"><td class="memItemLeft" align="right" valign="top">vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html#ac45d840db992c85ed53508bcbbcf7b9b">textureScale</a></td></tr>
-<tr class="separator:ac45d840db992c85ed53508bcbbcf7b9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab6b212d06d86835fed83831d2ebe4e05"><td class="memItemLeft" align="right" valign="top">vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html#ab6b212d06d86835fed83831d2ebe4e05">offset</a></td></tr>
-<tr class="separator:ab6b212d06d86835fed83831d2ebe4e05"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a00d34887a9ce0661c6928256f4bf9076"><td class="memItemLeft" align="right" valign="top">vector&lt; uint8_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html#a00d34887a9ce0661c6928256f4bf9076">data</a></td></tr>
-<tr class="separator:a00d34887a9ce0661c6928256f4bf9076"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b9573a614f61a74e1db79028a6aea9d"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html#a4b9573a614f61a74e1db79028a6aea9d">kern</a> [<a class="el" href="../../d4/d51/a00017.html#a5b9d1ffd32799fccb5a1206d96946ff6">FONT_CHARACTER_COUNT</a>]</td></tr>
-<tr class="separator:a4b9573a614f61a74e1db79028a6aea9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:aabc96ed8cc80c2c21235bceccce40538"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html#aabc96ed8cc80c2c21235bceccce40538">Cubemap</a> (string right, string left, string top, string bottom, string front, string back)</td></tr>
+<tr class="separator:aabc96ed8cc80c2c21235bceccce40538"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf74b47741306a7c5712de67661ba4ae"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html#adf74b47741306a7c5712de67661ba4ae">Cubemap</a> (GLenum dataFormant, int32_t width, int32_t height, int32_t internalFormat, int32_t wrapping, int32_t filtering, bool mipmaps)</td></tr>
+<tr class="separator:adf74b47741306a7c5712de67661ba4ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2fcc5615bf80632255b58361fa65f767"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html#a2fcc5615bf80632255b58361fa65f767">Bind</a> (uint32_t unit)</td></tr>
+<tr class="separator:a2fcc5615bf80632255b58361fa65f767"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5776e568e2fba8ed01db9d182230411c"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html#a5776e568e2fba8ed01db9d182230411c">GetID</a> ()</td></tr>
+<tr class="separator:a5776e568e2fba8ed01db9d182230411c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Represents a character. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d51/a00017_source.html#l00014">14</a> of file <a class="el" href="../../d4/d51/a00017_source.html">Font.h</a>.</p>
-</div><h2 class="groupheader">Member Data Documentation</h2>
-<a id="aaa4edd738a9a212b7ac9bd9b79b983a8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaa4edd738a9a212b7ac9bd9b79b983a8">&#9670;&nbsp;</a></span>advance</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Glyph::advance</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d51/a00017_source.html#l00016">16</a> of file <a class="el" href="../../d4/d51/a00017_source.html">Font.h</a>.</p>
-
-</div>
-</div>
-<a id="a00d34887a9ce0661c6928256f4bf9076"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a00d34887a9ce0661c6928256f4bf9076">&#9670;&nbsp;</a></span>data</h2>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../d4/dee/a00008_source.html#l00006">6</a> of file <a class="el" href="../../d4/dee/a00008_source.html">Cubemap.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="aabc96ed8cc80c2c21235bceccce40538"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aabc96ed8cc80c2c21235bceccce40538">&#9670;&nbsp;</a></span>Cubemap() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">vector&lt;uint8_t&gt; Glyph::data</td>
+          <td class="memname">Cubemap::Cubemap </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>right</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>left</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>top</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>bottom</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>front</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>back</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d51/a00017_source.html#l00024">24</a> of file <a class="el" href="../../d4/d51/a00017_source.html">Font.h</a>.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">right</td><td></td></tr>
+    <tr><td class="paramname">left</td><td></td></tr>
+    <tr><td class="paramname">top</td><td></td></tr>
+    <tr><td class="paramname">bottom</td><td></td></tr>
+    <tr><td class="paramname">front</td><td></td></tr>
+    <tr><td class="paramname">back</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
-<a id="a2c6a219db853472acb4fba359198ce94"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2c6a219db853472acb4fba359198ce94">&#9670;&nbsp;</a></span>height</h2>
+<a id="adf74b47741306a7c5712de67661ba4ae"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adf74b47741306a7c5712de67661ba4ae">&#9670;&nbsp;</a></span>Cubemap() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t Glyph::height</td>
+          <td class="memname">Cubemap::Cubemap </td>
+          <td>(</td>
+          <td class="paramtype">GLenum&#160;</td>
+          <td class="paramname"><em>dataFormant</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>internalFormat</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>wrapping</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>filtering</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>mipmaps</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d51/a00017_source.html#l00019">19</a> of file <a class="el" href="../../d4/d51/a00017_source.html">Font.h</a>.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dataFormant</td><td></td></tr>
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
+    <tr><td class="paramname">internalFormat</td><td></td></tr>
+    <tr><td class="paramname">wrapping</td><td></td></tr>
+    <tr><td class="paramname">filtering</td><td></td></tr>
+    <tr><td class="paramname">mipmaps</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
-<a id="a4b9573a614f61a74e1db79028a6aea9d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4b9573a614f61a74e1db79028a6aea9d">&#9670;&nbsp;</a></span>kern</h2>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a2fcc5615bf80632255b58361fa65f767"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2fcc5615bf80632255b58361fa65f767">&#9670;&nbsp;</a></span>Bind()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t Glyph::kern[<a class="el" href="../../d4/d51/a00017.html#a5b9d1ffd32799fccb5a1206d96946ff6">FONT_CHARACTER_COUNT</a>]</td>
+          <td class="memname">void Cubemap::Bind </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>unit</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d51/a00017_source.html#l00026">26</a> of file <a class="el" href="../../d4/d51/a00017_source.html">Font.h</a>.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">unit</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
-<a id="ab6b212d06d86835fed83831d2ebe4e05"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab6b212d06d86835fed83831d2ebe4e05">&#9670;&nbsp;</a></span>offset</h2>
+<a id="a5776e568e2fba8ed01db9d182230411c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5776e568e2fba8ed01db9d182230411c">&#9670;&nbsp;</a></span>GetID()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">vec2 Glyph::offset</td>
+          <td class="memname">uint32_t Cubemap::GetID </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d51/a00017_source.html#l00022">22</a> of file <a class="el" href="../../d4/d51/a00017_source.html">Font.h</a>.</p>
-
-</div>
-</div>
-<a id="ac45d840db992c85ed53508bcbbcf7b9b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac45d840db992c85ed53508bcbbcf7b9b">&#9670;&nbsp;</a></span>textureScale</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vec2 Glyph::textureScale</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d51/a00017_source.html#l00021">21</a> of file <a class="el" href="../../d4/d51/a00017_source.html">Font.h</a>.</p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
 
 </div>
 </div>
-<a id="ad9b0996e8546052fbc305da3a132c636"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad9b0996e8546052fbc305da3a132c636">&#9670;&nbsp;</a></span>width</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Glyph::width</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d51/a00017_source.html#l00018">18</a> of file <a class="el" href="../../d4/d51/a00017_source.html">Font.h</a>.</p>
-
-</div>
-</div>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li>src/<a class="el" href="../../d4/d51/a00017_source.html">Font.h</a></li>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/<a class="el" href="../../d4/dee/a00008_source.html">Cubemap.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Glyph</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Cubemap</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>
