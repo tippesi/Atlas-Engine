@@ -173,5 +173,3 @@ int main(int argc, char* argv[]) {
 As you may have seen it's pretty easy to use the engine. One thing I have to warn you is that the rendering parts of the 
 code are **not thread-safe**. So it's recommended to keep the rendering in just one thread. Loading textures, shaders and 
 vertex buffers can be safely done in another thread.
-## License
-License is not available at the moment. Just don't do dumb stuff with the code. This is really appreciated.
