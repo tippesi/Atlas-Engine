@@ -33,6 +33,14 @@ public:
     void CalculateBoxFilter(uint32_t size);
 
     /**
+     * Sets the convolution matrix.
+     * @param weights The weights for the convolution matrix.
+     * @param offsets The offsets for the convolution matrix.
+     * @note The size of the weights and the offsets should be odd in every dimension.
+     */
+    void Set(vector<vector<float>>& weights, vector<vector<ivec2>>& offsets);
+
+    /**
      * Returns the convolution matrix.
      * @param weights A pointer which will contain the weights.
      * @param offsets A pointer which will contain the offsets.

@@ -176,7 +176,7 @@ void Main::Load() {
 	terrainDiffuseMap = new Texture2D("../data/terrain/Ground_17_DIF.jpg");
 	terrainDisplacementMap = new Texture2D("../data/terrain/Ground_17_DISP.jpg");
 
-	smileyTexture = new Texture2D("../data/spritesheet.png");
+	smileyTexture = new Texture2D("../data/fire.jpg");
 
 }
 
@@ -208,13 +208,17 @@ void Main::SceneSetUp() {
 
 	scene->Add(terrain);
 
-	Decal* decal = new Decal(smileyTexture);
+	Decal* decal = new Decal(smileyTexture, 4.0f, 4.0f, 500.0f);
 
 	decal->matrix = glm::scale(mat4(1.0f), vec3(10.0f, 1.0f, 10.0f));
+	decal->matrix = glm::translate(mat4(1.0f), vec3(0.0f, 12.0f, 0.0f)) *
+					glm::rotate(mat4(1.0f) , -3.14f / 2.0f, vec3(0.0f, 0.0f, 1.0f)) *
+					glm::rotate(mat4(1.0f), 3.14f / 2.0f, vec3(0.0f, 1.0f, 0.0f)) *
+					glm::scale(mat4(1.0f), vec3(5.0f, 5.0f, 10.0f));
 
-	// scene->Add(decal);
+	scene->Add(decal);
 
-	decal = new Decal(smileyTexture);
+	decal = new Decal(smileyTexture, 4.0f, 4.0f, 500.0f);
 
 	decal->matrix = glm::translate(mat4(1.0f), camera->location) * 
 		glm::rotate(mat4(1.0f) , -3.14f / 2.0f, vec3(0.0f, 0.0f, 1.0f)) * 
@@ -239,7 +243,7 @@ void Main::SceneSetUp() {
 	directionalLight->color = vec3(253, 194, 109) / 255.0f;
 	directionalLight->ambient = 0.05f;
 	// Cascaded shadow mapping
-	//directionalLight->AddShadow(300.0f, 0.01f, 1024, 4, 0.7f, camera);
+	// directionalLight->AddShadow(300.0f, 0.01f, 1024, 4, 0.7f, camera);
 	// Shadow mapping that is fixed to a point
     mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
 	directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
@@ -306,7 +310,7 @@ void Main::MouseButtonEventHandler(EngineMouseButtonEvent event) {
 
 	if (event.button == MOUSEBUTTON_RIGHT && event.state == BUTTON_RELEASED) {
 
-		Decal* decal = new Decal(smileyTexture);
+		Decal* decal = new Decal(smileyTexture, 4.0f, 4.0f, 500.0f);
 
 		auto farPoint = camera->direction * camera->farPlane;
 

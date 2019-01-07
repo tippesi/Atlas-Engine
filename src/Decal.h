@@ -7,9 +7,15 @@
 class Decal {
 
 public:
-    Decal(Texture2D* texture) : texture(texture) {}
+    Decal(Texture2D* texture, float rowCount, float columnCount, float animationLength)
+        : texture(texture), rowCount(rowCount), columnCount(columnCount), animationLength(animationLength) {}
 
     Texture2D* texture;
+
+    float rowCount;
+    float columnCount;
+    float animationLength;
+
     mat4 matrix;
 
 };

@@ -41,11 +41,12 @@ void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera,
 	alphaFactor->SetValue(1.0f);
 
 	timeInMilliseconds->SetValue((float)SDL_GetTicks());
-	animationLength->SetValue(10000.0f);
-	rowCount->SetValue(4.0f);
-	columnCount->SetValue(4.0f);
 
     for (auto& decal : scene->decals) {
+
+        rowCount->SetValue(decal->rowCount);
+        columnCount->SetValue(decal->columnCount);
+        animationLength->SetValue(decal->animationLength);
 
         modelMatrix->SetValue(decal->matrix);
         decal->texture->Bind(GL_TEXTURE1);

@@ -62,6 +62,15 @@ void Kernel::CalculateBoxFilter(uint32_t size) {
 
 }
 
+void Kernel::Set(vector<vector<float>> &weights, vector<vector<ivec2>> &offsets) {
+
+	this->weights = weights;
+	this->offsets = offsets;
+
+	changed = true;
+
+}
+
 void Kernel::Get(vector<vector<float>>*& weights, vector<vector<ivec2>>*& offsets) {
 
 	weights = &this->weights;
