@@ -6,7 +6,7 @@ string MasterRenderer::rectangleFragmentPath = "rectangle.fsh";
 
 MasterRenderer::MasterRenderer() {
 
-	vertexArray = GeometryHelper::GenerateRectangleVertexArray();
+	GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
 	rectangleShader.AddStage(VERTEX_STAGE, rectangleVertexPath);
 	rectangleShader.AddStage(FRAGMENT_STAGE, rectangleFragmentPath);
@@ -38,8 +38,7 @@ MasterRenderer::MasterRenderer() {
 
 MasterRenderer::~MasterRenderer() {
 
-	vertexArray->DeleteContent();
-	delete vertexArray;
+	vertexArray.DeleteContent();
 
 	delete geometryRenderer;
 	delete terrainRenderer;
@@ -81,7 +80,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 	glDisable(GL_BLEND);
 
-	vertexArray->Bind();
+	vertexArray.Bind();
 
 	directionalVolumetricRenderer->Render(window, target, camera, scene);
 
@@ -112,7 +111,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 	glDisable(GL_DEPTH_TEST);
 
-	vertexArray->Bind();
+	vertexArray.Bind();
 
 	postProcessRenderer->Render(window, target, camera, scene);
 
@@ -134,7 +133,7 @@ void MasterRenderer::RenderTexture(Window* window, Texture* texture, float x, fl
 void MasterRenderer::RenderTexture(Window* window, Texture* texture, float x, float y, float width, float height,
 	vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
 
-	vertexArray->Bind();
+	vertexArray.Bind();
 
 	texturedRectangleShader.Bind();
 
@@ -208,7 +207,7 @@ void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float 
 		return;
 	}
 
-	vertexArray->Bind();
+	vertexArray.Bind();
 
 	rectangleShader.Bind();
 
@@ -244,6 +243,12 @@ void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float 
 	}
 
 	glEnable(GL_CULL_FACE);
+
+}
+
+void MasterRenderer::Update() {
+
+	textRenderer->Update();
 
 }
 

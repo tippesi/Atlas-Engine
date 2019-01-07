@@ -58,7 +58,7 @@ Main::Main(int argc, char* argv[]) {
 
 		window->Update();
 
-	}	
+	}
 
 }
 
@@ -81,6 +81,8 @@ void Main::Update(uint32_t deltaTime) {
 	//cubeActor->modelMatrix = glm::rotate((float)SDL_GetTicks() / 500.0f, vec3(0.0f, 1.0f, 0.0f));
 
 	scene->Update(camera);
+
+	masterRenderer->Update();
 
 	// EngineLog("%.3f,%.3f,%.3f", camera->location.x, camera->location.y, camera->location.z);
 

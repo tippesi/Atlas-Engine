@@ -1,7 +1,7 @@
 #include "IndexBuffer.h"
 
-IndexBuffer::IndexBuffer(uint32_t dataType, size_t elementSize, size_t elementCount) : dataType(dataType),
-    Buffer(INDEX_BUFFER, elementSize, BUFFER_IMMUTABLE) {
+IndexBuffer::IndexBuffer(uint32_t dataType, size_t elementSize, size_t elementCount) :
+    Buffer(INDEX_BUFFER, elementSize, BUFFER_IMMUTABLE), dataType(dataType) {
 
 	SetSize(elementCount);
 

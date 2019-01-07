@@ -7,11 +7,11 @@
 class GeometryHelper {
 
 public:
-	static VertexArray* GenerateRectangleVertexArray();
+	static void GenerateRectangleVertexArray(VertexArray& vertexArray);
 	
-	static VertexArray* GenerateCubeVertexArray();
+	static void GenerateCubeVertexArray(VertexArray& vertexArray);
 
-	static VertexArray* GenerateSphereVertexArray(uint32_t rings, uint32_t segments);
+	static void GenerateSphereVertexArray(VertexArray& vertexArray, uint32_t rings, uint32_t segments);
 
 private:
 	static void GenerateSphere(uint32_t rings, uint32_t segments, uint32_t*& indices, vec3*& vertices,

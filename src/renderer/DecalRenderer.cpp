@@ -6,7 +6,7 @@ string DecalRenderer::fragmentPath = "deferred/decal.fsh";
 
 DecalRenderer::DecalRenderer() {
 
-    vertexArray = GeometryHelper::GenerateCubeVertexArray();
+    GeometryHelper::GenerateCubeVertexArray(vertexArray);
 
     shader.AddStage(VERTEX_STAGE, vertexPath);
     shader.AddStage(FRAGMENT_STAGE, fragmentPath);
@@ -23,7 +23,7 @@ void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera,
 
     uint32_t drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 
-    vertexArray->Bind();
+    vertexArray.Bind();
 
     shader.Bind();
 

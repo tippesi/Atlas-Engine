@@ -7,7 +7,7 @@ string PointLightRenderer::fragmentPath = "deferred/point.fsh";
 
 PointLightRenderer::PointLightRenderer() {
 
-	vertexArray = GeometryHelper::GenerateSphereVertexArray(16, 16);
+	GeometryHelper::GenerateSphereVertexArray(vertexArray, 16, 16);
 
 	shader.AddStage(VERTEX_STAGE, vertexPath);
 	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
@@ -22,7 +22,7 @@ void PointLightRenderer::Render(Window* window, RenderTarget* target, Camera* ca
 
 	shader.Bind();
 
-	vertexArray->Bind();
+	vertexArray.Bind();
 
 	diffuseTexture->SetValue(0);
 	normalTexture->SetValue(1);
@@ -59,8 +59,8 @@ void PointLightRenderer::Render(Window* window, RenderTarget* target, Camera* ca
 		lightAmbient->SetValue(pointLight->ambient);
 		lightRadius->SetValue(pointLight->GetRadius());
 
-		glDrawElements(GL_TRIANGLES, vertexArray->GetIndexComponent()->GetElementCount(),
-			vertexArray->GetIndexComponent()->GetDataType(), NULL);
+		glDrawElements(GL_TRIANGLES, vertexArray.GetIndexComponent()->GetElementCount(),
+			vertexArray.GetIndexComponent()->GetDataType(), NULL);
 
 	}
 

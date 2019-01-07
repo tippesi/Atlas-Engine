@@ -5,35 +5,37 @@
 string GeometryRenderer::vertexPath = "deferred/geometry.vsh";
 string GeometryRenderer::fragmentPath = "deferred/geometry.fsh";
 
-ShaderBatch* GeometryRenderer::shaderBatch;
+ShaderBatch GeometryRenderer::shaderBatch;
 mutex GeometryRenderer::shaderBatchMutex;
 
 GeometryRenderer::GeometryRenderer() {
 
-	arrayMapUniform = shaderBatch->GetUniform("arrayMapUniform");
-	diffuseMapUniform = shaderBatch->GetUniform("diffuseMap");
-	specularMapUniform = shaderBatch->GetUniform("specularMap");
-	normalMapUniform = shaderBatch->GetUniform("normalMap");
-	heightMapUniform = shaderBatch->GetUniform("heightMap");
+	arrayMapUniform = shaderBatch.GetUniform("arrayMapUniform");
+	diffuseMapUniform = shaderBatch.GetUniform("diffuseMap");
+	specularMapUniform = shaderBatch.GetUniform("specularMap");
+	normalMapUniform = shaderBatch.GetUniform("normalMap");
+	heightMapUniform = shaderBatch.GetUniform("heightMap");
 
-	diffuseMapIndexUniform = shaderBatch->GetUniform("diffuseMapIndex");
-	normalMapIndexUniform = shaderBatch->GetUniform("normalMapIndex");
-	specularMapIndexUniform = shaderBatch->GetUniform("specularMapIndex");
-	heightMapIndexUniform = shaderBatch->GetUniform("heightMapIndex");
+	diffuseMapIndexUniform = shaderBatch.GetUniform("diffuseMapIndex");
+	normalMapIndexUniform = shaderBatch.GetUniform("normalMapIndex");
+	specularMapIndexUniform = shaderBatch.GetUniform("specularMapIndex");
+	heightMapIndexUniform = shaderBatch.GetUniform("heightMapIndex");
 
-	modelMatrixUniform = shaderBatch->GetUniform("mMatrix");
-	viewMatrixUniform = shaderBatch->GetUniform("vMatrix");
-	projectionMatrixUniform = shaderBatch->GetUniform("pMatrix");
+	modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
+	viewMatrixUniform = shaderBatch.GetUniform("vMatrix");
+	projectionMatrixUniform = shaderBatch.GetUniform("pMatrix");
 
-	diffuseColorUniform = shaderBatch->GetUniform("diffuseColor");
-	specularColorUniform = shaderBatch->GetUniform("specularColor");
-	ambientColorUniform = shaderBatch->GetUniform("ambientColor");
-	specularHardnessUniform = shaderBatch->GetUniform("specularHardness");
-	specularIntensityUniform = shaderBatch->GetUniform("specularIntensity");
+	diffuseColorUniform = shaderBatch.GetUniform("diffuseColor");
+	specularColorUniform = shaderBatch.GetUniform("specularColor");
+	ambientColorUniform = shaderBatch.GetUniform("ambientColor");
+	specularHardnessUniform = shaderBatch.GetUniform("specularHardness");
+	specularIntensityUniform = shaderBatch.GetUniform("specularIntensity");
 
 }
 
 void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+
+	lock_guard<mutex> guard(shaderBatchMutex);
 
 	bool backFaceCulling = true;
 
@@ -42,7 +44,7 @@ void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* came
 		int32_t configBatchID = renderListBatchesKey.first;
 		auto renderListBatches = renderListBatchesKey.second;
 
-		shaderBatch->Bind(configBatchID);
+		shaderBatch.Bind(configBatchID);
 
 		arrayMapUniform->SetValue(0);
 		diffuseMapUniform->SetValue(0);
@@ -133,9 +135,8 @@ void GeometryRenderer::InitShaderBatch() {
 
 	lock_guard<mutex> guard(shaderBatchMutex);
 
-	shaderBatch = new ShaderBatch();
-	shaderBatch->AddStage(VERTEX_STAGE, vertexPath);
-	shaderBatch->AddStage(FRAGMENT_STAGE, fragmentPath);
+	shaderBatch.AddStage(VERTEX_STAGE, vertexPath);
+	shaderBatch.AddStage(FRAGMENT_STAGE, fragmentPath);
 
 }
 
@@ -143,7 +144,7 @@ void GeometryRenderer::AddConfig(ShaderConfig* config) {
 
 	lock_guard<mutex> guard(shaderBatchMutex);
 
-	shaderBatch->AddConfig(config);
+	shaderBatch.AddConfig(config);
 
 }
 
@@ -151,6 +152,6 @@ void GeometryRenderer::RemoveConfig(ShaderConfig* config) {
 
 	lock_guard<mutex> guard(shaderBatchMutex);
 
-	shaderBatch->RemoveConfig(config);
+	shaderBatch.RemoveConfig(config);
 
 }

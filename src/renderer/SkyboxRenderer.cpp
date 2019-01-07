@@ -6,14 +6,14 @@ string SkyboxRenderer::fragmentPath = "skybox.fsh";
 
 SkyboxRenderer::SkyboxRenderer() {
 
+	GeometryHelper::GenerateCubeVertexArray(vertexArray);
+
 	shader.AddStage(VERTEX_STAGE, vertexPath);
 	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
 
 	shader.Compile();
 
 	GetUniforms();
-
-	vertexArray = GeometryHelper::GenerateCubeVertexArray();
 
 }
 
@@ -27,7 +27,7 @@ void SkyboxRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 	modelViewProjectionMatrix->SetValue(mvpMatrix);
 
-	vertexArray->Bind();
+	vertexArray.Bind();
 
 	scene->sky->skybox->cubemap->Bind(GL_TEXTURE0);
 

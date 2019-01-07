@@ -114,7 +114,7 @@ float Terrain::GetHeight(float x, float z) {
 		return 0.0f;
 	}
 
-	if (cell->heightData.size() != cell->heightField->height * cell->heightField->width) {
+	if ((int32_t)cell->heightData.size() != cell->heightField->height * cell->heightField->width) {
 		return 0.0f;
 	}
 

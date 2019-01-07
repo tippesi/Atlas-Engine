@@ -6,7 +6,7 @@ string AtmosphereRenderer::fragmentPath = "atmosphere.fsh";
 
 AtmosphereRenderer::AtmosphereRenderer() {
 
-	vertexArray = GeometryHelper::GenerateSphereVertexArray(200, 200);
+	GeometryHelper::GenerateSphereVertexArray(vertexArray, 200, 200);
 
 	shader.AddStage(VERTEX_STAGE, vertexPath);
 	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
@@ -21,15 +21,15 @@ void AtmosphereRenderer::Render(Window* window, RenderTarget* target, Camera* ca
 
 	shader.Bind();
 
-	vertexArray->Bind();
+	vertexArray.Bind();
 
 	viewMatrix->SetValue(camera->viewMatrix);
 	projectionMatrix->SetValue(camera->projectionMatrix);
 	cameraLocation->SetValue(vec3(camera->location));
 	sunDirection->SetValue(vec3(0.0f, -0.1f, -1.0f));
 
-	glDrawElements(GL_TRIANGLES, vertexArray->GetIndexComponent()->GetElementCount(),
-		vertexArray->GetIndexComponent()->GetDataType(), NULL);
+	glDrawElements(GL_TRIANGLES, vertexArray.GetIndexComponent()->GetElementCount(),
+		vertexArray.GetIndexComponent()->GetDataType(), NULL);
 
 }
 

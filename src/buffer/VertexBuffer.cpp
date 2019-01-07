@@ -1,7 +1,7 @@
 #include "VertexBuffer.h"
 
 VertexBuffer::VertexBuffer(uint32_t dataType, int32_t stride, size_t elementSize, size_t elementCount, uint32_t flags) :
-	dataType(dataType), stride(stride), Buffer(VERTEX_BUFFER, elementSize, flags) {
+	Buffer(VERTEX_BUFFER, elementSize, flags), dataType(dataType), stride(stride) {
 
 	SetSize(elementCount);
 

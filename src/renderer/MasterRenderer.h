@@ -23,20 +23,79 @@ public:
 
 	~MasterRenderer();
 
+	/**
+	 *
+	 * @param window
+	 * @param target
+	 * @param camera
+	 * @param scene
+	 */
 	void RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
+	/**
+	 *
+	 * @param window
+	 * @param texture
+	 * @param x
+	 * @param y
+	 * @param width
+	 * @param height
+	 * @param alphaBlending
+	 * @param framebuffer
+	 */
 	void RenderTexture(Window* window, Texture* texture, float x, float y, float width, float height,
 		bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
+	/**
+	 *
+	 * @param window
+	 * @param texture
+	 * @param x
+	 * @param y
+	 * @param width
+	 * @param height
+	 * @param clipArea
+	 * @param blendArea
+	 * @param alphaBlending
+	 * @param framebuffer
+	 */
 	void RenderTexture(Window* window, Texture* texture, float x, float y, float width, float height,
 		vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
+	/**
+	 *
+	 * @param window
+	 * @param color
+	 * @param x
+	 * @param y
+	 * @param width
+	 * @param height
+	 * @param alphaBlending
+	 * @param framebuffer
+	 */
 	void RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
 		bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
+	/**
+	 *
+	 * @param window
+	 * @param color
+	 * @param x
+	 * @param y
+	 * @param width
+	 * @param height
+	 * @param clipArea
+	 * @param blendArea
+	 * @param alphaBlending
+	 * @param framebuffer
+	 */
 	void RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
 		vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
+	/**
+	 * Update of the renderer
+	 * @warning Must be called every frame
+	 */
 	void Update();
 
 	TextRenderer* textRenderer;
@@ -47,7 +106,7 @@ public:
 private:
 	void GetUniforms();
 
-	VertexArray * vertexArray;
+	VertexArray vertexArray;
 
 	Shader rectangleShader;
 	Shader texturedRectangleShader;

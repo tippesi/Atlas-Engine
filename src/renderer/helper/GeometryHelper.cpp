@@ -1,28 +1,22 @@
 #include "GeometryHelper.h"
 
-VertexArray* GeometryHelper::GenerateRectangleVertexArray() {
+void GeometryHelper::GenerateRectangleVertexArray(VertexArray& vertexArray) {
 
-	VertexArray* vertexArray = new VertexArray();
 	VertexBuffer* buffer = new VertexBuffer(GL_BYTE, 2, sizeof(int8_t) * 2, 8);
 	buffer->SetData(&rectangleVertices[0], 0, 8);
-	vertexArray->AddComponent(0, buffer);
-
-	return vertexArray;
+	vertexArray.AddComponent(0, buffer);
 
 }
 
-VertexArray* GeometryHelper::GenerateCubeVertexArray() {
+void GeometryHelper::GenerateCubeVertexArray(VertexArray& vertexArray) {
 
-	VertexArray* vertexArray = new VertexArray();
 	VertexBuffer* vertexBuffer = new VertexBuffer(GL_FLOAT, 3, sizeof(vec3), 108);
 	vertexBuffer->SetData(&cubeVertices[0], 0, 108);
-	vertexArray->AddComponent(0, vertexBuffer);
-
-	return vertexArray;
+	vertexArray.AddComponent(0, vertexBuffer);
 
 }
 
-VertexArray* GeometryHelper::GenerateSphereVertexArray(uint32_t rings, uint32_t segments) {
+void GeometryHelper::GenerateSphereVertexArray(VertexArray& vertexArray, uint32_t rings, uint32_t segments) {
 
 	uint32_t* indices = nullptr;
 	vec3* vertices = nullptr;
@@ -33,15 +27,12 @@ VertexArray* GeometryHelper::GenerateSphereVertexArray(uint32_t rings, uint32_t 
 	// This helps us for both atmospheric and point light rendering
 	GenerateSphere(rings, segments, indices, vertices, &indexCount, &vertexCount);
 
-	VertexArray* vertexArray = new VertexArray();
 	IndexBuffer* indicesBuffer = new IndexBuffer(GL_UNSIGNED_INT, sizeof(uint32_t), indexCount);
 	VertexBuffer* verticesBuffer = new VertexBuffer(GL_FLOAT, 3, sizeof(vec3), vertexCount);
 	indicesBuffer->SetData(&indices[0], 0, indexCount);
 	verticesBuffer->SetData(&vertices[0], 0, vertexCount);
-	vertexArray->AddIndexComponent(indicesBuffer);
-	vertexArray->AddComponent(0, verticesBuffer);
-
-	return vertexArray;
+	vertexArray.AddIndexComponent(indicesBuffer);
+	vertexArray.AddComponent(0, verticesBuffer);
 
 }
 

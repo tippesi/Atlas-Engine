@@ -18,7 +18,7 @@ public:
 private:
 	void GetUniforms();
 
-	VertexArray* vertexArray;
+	VertexArray vertexArray;
 
 	Shader shader;
 

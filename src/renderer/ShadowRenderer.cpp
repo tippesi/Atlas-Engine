@@ -3,22 +3,24 @@
 string ShadowRenderer::vertexPath = "shadowmapping.vsh";
 string ShadowRenderer::fragmentPath = "shadowmapping.fsh";
 
-ShaderBatch* ShadowRenderer::shaderBatch;
+ShaderBatch ShadowRenderer::shaderBatch;
 mutex ShadowRenderer::shaderBatchMutex;
 
 ShadowRenderer::ShadowRenderer() {
 
 	framebuffer = new Framebuffer(0, 0);
 
-	arrayMapUniform = shaderBatch->GetUniform("arrayMap");
-	diffuseMapUniform = shaderBatch->GetUniform("diffuseMap");
-	modelMatrixUniform = shaderBatch->GetUniform("mMatrix");
-	lightSpaceMatrixUniform = shaderBatch->GetUniform("lightSpaceMatrix");
+	arrayMapUniform = shaderBatch.GetUniform("arrayMap");
+	diffuseMapUniform = shaderBatch.GetUniform("diffuseMap");
+	modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
+	lightSpaceMatrixUniform = shaderBatch.GetUniform("lightSpaceMatrix");
 
 }
 
 
 void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+
+	lock_guard<mutex> guard(shaderBatchMutex);
 
 	bool backFaceCulling = true;
 
@@ -52,9 +54,9 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 			glClear(GL_DEPTH_BUFFER_BIT);
 
-			for (auto shaderConfigBatch : shaderBatch->configBatches) {
+			for (auto shaderConfigBatch : shaderBatch.configBatches) {
 
-				shaderBatch->Bind(shaderConfigBatch->ID);
+				shaderBatch.Bind(shaderConfigBatch->ID);
 
 				arrayMapUniform->SetValue(0);
 				diffuseMapUniform->SetValue(0);
@@ -127,9 +129,8 @@ void ShadowRenderer::InitShaderBatch() {
 
 	lock_guard<mutex> guard(shaderBatchMutex);
 
-	shaderBatch = new ShaderBatch();
-	shaderBatch->AddStage(VERTEX_STAGE, vertexPath);
-	shaderBatch->AddStage(FRAGMENT_STAGE, fragmentPath);
+	shaderBatch.AddStage(VERTEX_STAGE, vertexPath);
+	shaderBatch.AddStage(FRAGMENT_STAGE, fragmentPath);
 
 }
 
@@ -137,7 +138,7 @@ void ShadowRenderer::AddConfig(ShaderConfig* config) {
 
 	lock_guard<mutex> guard(shaderBatchMutex);
 
-	shaderBatch->AddConfig(config);
+	shaderBatch.AddConfig(config);
 
 }
 
@@ -145,6 +146,6 @@ void ShadowRenderer::RemoveConfig(ShaderConfig* config) {
 
 	lock_guard<mutex> guard(shaderBatchMutex);
 
-	shaderBatch->RemoveConfig(config);
+	shaderBatch.RemoveConfig(config);
 
 }

@@ -36,7 +36,7 @@ void ShaderBatch::AddConfig(ShaderConfig* config) {
 			continue;
 		}
 		int32_t i;
-		for (i = 0; i < config->macros.size(); i++) {
+		for (i = 0; i < (int32_t)config->macros.size(); i++) {
 			if (config->macros.at(i) != configBatch->GetShader()->macros.at(i)) {
 				i = -1;
 				break;

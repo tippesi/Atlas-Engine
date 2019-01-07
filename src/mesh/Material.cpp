@@ -28,7 +28,7 @@ Material::Material() {
 
 void Material::Update() {
 
-	int32_t width = 0, height = 0, channels = 0, depth = 0;
+	int32_t width = 0, height = 0, channels = 0;
 
 	GeometryRenderer::RemoveConfig(&geometryConfig);
 	ShadowRenderer::RemoveConfig(&shadowConfig);

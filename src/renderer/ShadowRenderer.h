@@ -31,7 +31,7 @@ private:
 	Uniform* lightSpaceMatrixUniform;
 	Uniform* modelMatrixUniform;
 
-	static ShaderBatch* shaderBatch;
+	static ShaderBatch shaderBatch;
 	static mutex shaderBatchMutex;
 
 };

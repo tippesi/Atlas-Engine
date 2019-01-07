@@ -45,7 +45,7 @@ private:
 	Uniform* specularHardnessUniform;
 	Uniform* specularIntensityUniform;
 
-	static ShaderBatch* shaderBatch;
+	static ShaderBatch shaderBatch;
 	static mutex shaderBatchMutex;
 
 };

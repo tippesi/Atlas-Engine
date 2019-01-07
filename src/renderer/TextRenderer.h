@@ -26,6 +26,8 @@ public:
 	void RenderOutlined(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
 		vec4 clipArea, vec4 blendArea, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
+	void Update();
+
 	static string vertexPath;
 	static string fragmentPath;
 
@@ -34,7 +36,7 @@ private:
 
 	vector<vec3> CalculateCharacterInstances(Font* font, string text, int32_t* characterCount);
 
-	VertexArray* vertexArray;
+	VertexArray vertexArray;
 
 	Shader shader;
 

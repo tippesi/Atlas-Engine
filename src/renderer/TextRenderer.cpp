@@ -6,13 +6,13 @@ string TextRenderer::fragmentPath = "text.fsh";
 
 TextRenderer::TextRenderer() {
 
-	vertexArray = GeometryHelper::GenerateRectangleVertexArray();
+	GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
 	// Hard coded maximum of 1000 character per draw call
 	VertexBuffer* vertexBuffer = new VertexBuffer(GL_FLOAT, 3, sizeof(vec3), 1000, BUFFER_DYNAMIC_STORAGE |
 		BUFFER_TRIPLE_BUFFERING | BUFFER_MAP_WRITE | BUFFER_IMMUTABLE);
 	vertexBuffer->Map();
-	vertexArray->AddInstancedComponent(1, vertexBuffer);
+	vertexArray.AddInstancedComponent(1, vertexBuffer);
 
 	shader.AddStage(VERTEX_STAGE, vertexPath);
 	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
@@ -96,7 +96,7 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 
 	font->glyphsTexture->Bind(GL_TEXTURE0);
 
-	vertexArray->Bind();
+	vertexArray.Bind();
 
 	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, characterCount);
 
@@ -109,8 +109,6 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 	}
 
 	glEnable(GL_CULL_FACE);
-
-	vertexArray->GetComponent(1)->Increment();
 
 }
 
@@ -197,6 +195,12 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 
 }
 
+void TextRenderer::Update() {
+
+	vertexArray.GetComponent(1)->Increment();
+
+}
+
 void TextRenderer::GetUniforms() {
 
 	glyphsTexture = shader.GetUniform("glyphsTexture");
@@ -236,7 +240,7 @@ vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, 
 			instances[index].x = glyph->offset.x + xOffset;
 			instances[index].y = glyph->offset.y + font->ascent;
 			instances[index].z = (float)glyph->texArrayIndex;
-			vertexArray->GetComponent(1)->SetDataMapped(&instances[index]);
+			vertexArray.GetComponent(1)->SetDataMapped(&instances[index]);
 			index++;
 		}
 
