@@ -37,7 +37,7 @@ Main::Main(int argc, char* argv[]) {
 
 	masterRenderer = new MasterRenderer();
 
-	renderTarget = new RenderTarget(1920, 1080);
+	renderTarget = new RenderTarget(1280, 720);
 
 	Load();
 
