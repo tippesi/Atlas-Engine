@@ -233,7 +233,7 @@ vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, 
 
 	auto nextGlyph = font->GetGlyphUTF8(string);
 
-	while (*string != '\0') {
+	while (true) {
 
 		Glyph* glyph = nextGlyph;
 
@@ -245,6 +245,9 @@ vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, 
 			vertexArray.GetComponent(1)->SetDataMapped(&instances[index]);
 			index++;
 		}
+
+		if (*string == '\0')
+			break;
 
 		nextGlyph = font->GetGlyphUTF8(string);
 
