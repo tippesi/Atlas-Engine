@@ -34,6 +34,10 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 		new EngineException("Failed loading font");
 	}
 
+	glyphBuffer = new Buffer(UNIFORM_BUFFER, sizeof(GlyphInfo), BUFFER_DYNAMIC_STORAGE);
+	glyphBuffer->SetSize(GPU_CHARACTER_COUNT);
+	glyphBuffer->BindBase(0);
+
 	smoothing = 5.0f;
 
 	float scale = (float)stbtt_ScaleForPixelHeight(&font, pixelSize);
@@ -60,6 +64,8 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 		auto glyph = &glyphs[i];
 
+		glyph->codepoint = i;
+
 		int32_t xOffset, yOffset;
 		data[i] = stbtt_GetCodepointSDF(&font, scale, i, padding, edgeValue, pixelDistanceScale,
 			&glyph->width, &glyph->height, &xOffset, &yOffset);
@@ -76,7 +82,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 			glyph->width = 0;
 			glyph->offset = vec2(0.0f);
 			glyph->textureScale = vec2(0.0f);
-			glyph->texArrayIndex = FONT_CHARACTER_COUNT;
+			glyph->texArrayIndex = GPU_CHARACTER_COUNT;
 			continue;
 		}
 
@@ -89,13 +95,10 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	}
 
-	int32_t maxDepth = 0;
-	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxDepth);
-
-	depth = maxDepth < depth ? maxDepth : depth;
+	depth = GPU_CHARACTER_COUNT < depth ? GPU_CHARACTER_COUNT : depth;
 
 	// Create texture and process texture data
-	glyphsTexture = new Texture2DArray(GL_UNSIGNED_BYTE, width, height, depth, 
+	glyphTexture = new Texture2DArray(GL_UNSIGNED_BYTE, width, height, depth, 
 			GL_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 	for (int32_t i = font.fontstart; i < range; i++) {
@@ -124,21 +127,23 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 				}
 			}
 
-			characterScales[glyph->texArrayIndex] = glyph->textureScale;
-			characterSizes[glyph->texArrayIndex] = vec2((float)glyph->width, (float)glyph->height);
+			glyphInfo[glyph->texArrayIndex].scale = glyph->textureScale;
+			glyphInfo[glyph->texArrayIndex].size = vec2((float)glyph->width, (float)glyph->height);
 
-			glyphsTexture->SetData(glyph->data, glyph->texArrayIndex);
+			glyphTexture->SetData(glyph->data, glyph->texArrayIndex);
 
 		}
 		else {
 
-			glyph->texArrayIndex = FONT_CHARACTER_COUNT;
+			glyph->texArrayIndex = GPU_CHARACTER_COUNT;;
 
 		}
 
 		delete[] data[i];
 
 	}
+
+	glyphBuffer->SetData(&glyphInfo[0], 0, GPU_CHARACTER_COUNT);
 
 	delete[] buffer;
 
@@ -152,6 +157,37 @@ Glyph* Font::GetGlyph(char character) {
 		return nullptr;
 
 	return &glyphs[characterIndex];
+
+}
+
+Glyph* Font::GetGlyphUTF8(const char*& character) {
+
+	uint8_t byte = *character;
+	int8_t increments = 0;
+	uint32_t unicode = 0;
+
+	if (!(byte & 0x80)) {
+		unicode = (uint32_t)byte;
+		character += 1;
+	}
+	else if (((byte & 0xc0) == 0xc0) && !(byte & 0x20)) {
+		unicode = ((byte & 0x1f) << 6);
+		character += 1;
+		byte = *character;
+		unicode |= (byte & 0x3f);
+		character += 1;
+	}
+	else if (((byte & 0xe0) == 0xe0) && !(byte & 0x10)) {
+		character += 3;
+	}
+	else {
+		character += 4;
+	}
+
+	if (unicode > FONT_CHARACTER_COUNT)
+		return nullptr;
+
+	return &glyphs[unicode];
 
 }
 
@@ -173,6 +209,7 @@ void Font::ComputeDimensions(string text, float scale, float* width, float* heig
 
 Font::~Font() {
 
-	delete glyphsTexture;
+	delete glyphTexture;
+	delete glyphBuffer;
 
 }

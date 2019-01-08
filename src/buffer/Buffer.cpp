@@ -75,6 +75,12 @@ void Buffer::BindRange(size_t offset, size_t length) {
 
 }
 
+void Buffer::BindBase(int32_t base) {
+
+	glBindBufferBase(type, base, ID);
+
+}
+
 void Buffer::Unbind() {
 
     glBindBuffer(type, 0);

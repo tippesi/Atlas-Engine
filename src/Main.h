@@ -59,6 +59,9 @@ private:
 
 	Texture2D* smileyTexture;
 
+	uint32_t renderingStart;
+	uint32_t frameCount;
+
 	bool quit;
 	bool useControllerHandler;
 

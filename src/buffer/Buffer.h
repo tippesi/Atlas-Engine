@@ -76,6 +76,8 @@ public:
 	 */
     virtual void BindRange(size_t offset, size_t length);
 
+	virtual void BindBase(int32_t base);
+
 	/**
 	 * Unbinds any buffer from the target.
 	 */

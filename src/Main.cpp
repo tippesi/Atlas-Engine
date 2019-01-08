@@ -45,6 +45,9 @@ Main::Main(int argc, char* argv[]) {
 
 	uint32_t time = 0;
 
+	renderingStart = SDL_GetTicks();
+	frameCount = 1;
+
 	while (!quit) {
 
 		uint32_t deltaTime = SDL_GetTicks() - time;
@@ -57,6 +60,8 @@ Main::Main(int argc, char* argv[]) {
 		Render(deltaTime);
 
 		window->Update();
+
+		frameCount++;
 
 	}
 
@@ -78,13 +83,10 @@ void Main::Update(uint32_t deltaTime) {
 	terrain->Update(camera);
 
 	scene->rootNode->transformationMatrix = glm::rotate((float)SDL_GetTicks() / 1000.0f, vec3(0.0f, 1.0f, 0.0f));
-	//cubeActor->modelMatrix = glm::rotate((float)SDL_GetTicks() / 500.0f, vec3(0.0f, 1.0f, 0.0f));
 
 	scene->Update(camera);
 
 	masterRenderer->Update();
-
-	// EngineLog("%.3f,%.3f,%.3f", camera->location.x, camera->location.y, camera->location.z);
 
 }
 
@@ -92,17 +94,11 @@ void Main::Render(uint32_t deltaTime) {
 
 	masterRenderer->RenderScene(window, renderTarget, camera, scene);
 
-	string out = to_string(deltaTime);
-	out = out + " ms";
+	float averageFramerate = (float)(SDL_GetTicks() - renderingStart) / (float)frameCount;
 
-	masterRenderer->textRenderer->Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 5.0f, true);
+	string out = "Average " + to_string(averageFramerate) + " ms  Currently " + to_string(deltaTime) + " ms ";
 
-	/*
-	for (int32_t i = 0; i < 10000; i++) {
-        masterRenderer->textRenderer->Render(window, font, "This is an example text",
-                0, 100, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 5.0f, true);
-	}
-	 */
+	masterRenderer->textRenderer->Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f, true);
 
 }
 
@@ -176,7 +172,7 @@ void Main::Load() {
 	terrainDiffuseMap = new Texture2D("../data/terrain/Ground_17_DIF.jpg");
 	terrainDisplacementMap = new Texture2D("../data/terrain/Ground_17_DISP.jpg");
 
-	smileyTexture = new Texture2D("../data/fire.jpg");
+	smileyTexture = new Texture2D("../data/spritesheet.png");
 
 }
 
@@ -216,7 +212,7 @@ void Main::SceneSetUp() {
 					glm::rotate(mat4(1.0f), 3.14f / 2.0f, vec3(0.0f, 1.0f, 0.0f)) *
 					glm::scale(mat4(1.0f), vec3(5.0f, 5.0f, 10.0f));
 
-	scene->Add(decal);
+	// scene->Add(decal);
 
 	decal = new Decal(smileyTexture, 4.0f, 4.0f, 500.0f);
 
@@ -270,11 +266,6 @@ void Main::SceneSetUp() {
 	pointLight4->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight4->AddShadow(0.0f, 512);
 
-	PointLight* pointLight5 = new PointLight(STATIONARY_LIGHT);
-	pointLight5->location = vec3(0.0f, 2.0f, 0.0f);
-	pointLight5->color = vec3(1.0f);
-	pointLight5->AddShadow(0.0f, 512);
-
 	node->Add(cubeActor);
 	scene->Add(sponzaActor);
 	scene->Add(treeActor);
@@ -285,7 +276,6 @@ void Main::SceneSetUp() {
 	scene->Add(pointLight2);
 	scene->Add(pointLight3);
 	scene->Add(pointLight4);
-	scene->Add(pointLight5);
 	
 }
 
@@ -325,8 +315,6 @@ void Main::MouseButtonEventHandler(EngineMouseButtonEvent event) {
 }
 
 int main(int argc, char* argv[]) {
-	
-	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 256, 1, 16);
 
 	Main mainClass(argc, argv);
 

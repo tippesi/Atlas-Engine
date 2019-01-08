@@ -3,15 +3,19 @@
 
 #include "System.h"
 #include "texture/Texture2DArray.h"
+#include "buffer/Buffer.h"
 
 #include <vector>
 
 #define FONT_CHARACTER_COUNT 2048
+#define GPU_CHARACTER_COUNT 1024
 
 /**
  * Represents a character
  */
 typedef struct Glyph {
+
+	int32_t codepoint;
 
 	int32_t advance;
 
@@ -58,6 +62,8 @@ public:
 	 */
 	Glyph* GetGlyph(char character);
 
+	Glyph* GetGlyphUTF8(const char*& character);
+
 	/**
 	 * Computes the dimensions of a given string
 	 * @param text The string where the dimensions should be computed
@@ -80,10 +86,16 @@ public:
 	float pixelDistanceScale;
 	uint8_t edgeValue;
 
-	vec2 characterScales[FONT_CHARACTER_COUNT];
-	vec2 characterSizes[FONT_CHARACTER_COUNT];
+	/**
+	 * Will be uploaded into the uniform buffer
+	 */
+	struct GlyphInfo {
+		vec2 scale;
+		vec2 size;
+	}glyphInfo[GPU_CHARACTER_COUNT];
 
-	Texture2DArray* glyphsTexture;
+	Texture2DArray* glyphTexture;
+	Buffer* glyphBuffer;
 
 private:
 	Glyph glyphs[FONT_CHARACTER_COUNT];

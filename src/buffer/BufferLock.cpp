@@ -63,7 +63,7 @@ void BufferLock::Wait(GLsync &sync) {
 
         // Time is in nanoseconds (we might need to change the wait duration)
         waitFlags = GL_SYNC_FLUSH_COMMANDS_BIT;
-        waitDuration = 1;
+        waitDuration = 1000000000;
 
     }
 

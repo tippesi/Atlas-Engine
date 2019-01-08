@@ -81,20 +81,14 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 	textOffset->SetValue(vec2(x, y));
 	textColor->SetValue(color);
 
-	characterScales->SetValue(font->characterScales, FONT_CHARACTER_COUNT);
-	characterSizes->SetValue(font->characterSizes, FONT_CHARACTER_COUNT);
 	pixelDistanceScale->SetValue(font->pixelDistanceScale);
 	edgeValue->SetValue(font->edgeValue);
 
 	this->clipArea->SetValue(clipArea);
 	this->blendArea->SetValue(blendArea);
 
-	//vertexArray->GetComponent(1)->Bind();
-	//glBufferData(GL_ARRAY_BUFFER, instances.size() * sizeof(vec3), NULL, GL_STATIC_DRAW);
-	//glBufferSubData(GL_ARRAY_BUFFER, 0, instances.size() * sizeof(vec3), glm::value_ptr(instances[0]));
-	// vertexArray->GetComponent(1)->SetData(&instances.data()[0], 0, characterCount);
-
-	font->glyphsTexture->Bind(GL_TEXTURE0);
+	font->glyphTexture->Bind(GL_TEXTURE0);
+	font->glyphBuffer->Bind();
 
 	vertexArray.Bind();
 
@@ -107,6 +101,8 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 	if (framebuffer != nullptr) {
 		framebuffer->Unbind();
 	}
+
+	font->glyphBuffer->Unbind();
 
 	glEnable(GL_CULL_FACE);
 
@@ -226,17 +222,23 @@ vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, 
 
 	auto instances = vector<vec3>(text.length());
 
+	if (instances.size() == 0)
+		return instances;
+
 	int32_t index = 0;
 
 	float xOffset = 0.0f;
 
-	for (uint32_t i = 0; i < text.length(); i++) {
+	auto string = text.c_str();
 
-		char& character = text[i];
-		Glyph* glyph = font->GetGlyph(character);
+	auto nextGlyph = font->GetGlyphUTF8(string);
+
+	while (*string != '\0') {
+
+		Glyph* glyph = nextGlyph;
 
 		// Just visible characters should be rendered.
-		if ((uint8_t)character > 32) {
+		if (glyph->codepoint > 32) {
 			instances[index].x = glyph->offset.x + xOffset;
 			instances[index].y = glyph->offset.y + font->ascent;
 			instances[index].z = (float)glyph->texArrayIndex;
@@ -244,7 +246,9 @@ vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, 
 			index++;
 		}
 
-		xOffset += glyph->advance + glyph->kern[(uint8_t)text[i + 1]];
+		nextGlyph = font->GetGlyphUTF8(string);
+
+		xOffset += glyph->advance + glyph->kern[nextGlyph->codepoint];
 		
 	}
 
