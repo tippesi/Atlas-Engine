@@ -13,7 +13,7 @@ Main::Main(int argc, char* argv[]) {
 	window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE);
 
-	Engine::UnlockFramerate();
+	// Engine::UnlockFramerate();
 
 	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 16, 3, 16);
 
@@ -203,7 +203,7 @@ void Main::SceneSetUp() {
 	terrain->SetLoDDistance(1, 200.0f);
 	terrain->SetLoDDistance(2, 64.0f);
 
-	scene->Add(terrain);
+	// scene->Add(terrain);
 
 	Decal* decal = new Decal(smileyTexture, 4.0f, 4.0f, 500.0f);
 
@@ -235,15 +235,15 @@ void Main::SceneSetUp() {
 	sponzaActor = new Actor(sponzaMesh);
 	sponzaActor->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
 
-	DirectionalLight* directionalLight = new DirectionalLight(MOVABLE_LIGHT);
+	DirectionalLight* directionalLight = new DirectionalLight(STATIONARY_LIGHT);
 	directionalLight->direction = vec3(0.0f, -1.0f, 0.2f);
 	directionalLight->color = vec3(253, 194, 109) / 255.0f;
 	directionalLight->ambient = 0.05f;
 	// Cascaded shadow mapping
-	directionalLight->AddShadow(300.0f, 0.01f, 1024, 4, 0.7f, camera);
+	// directionalLight->AddShadow(300.0f, 0.01f, 1024, 4, 0.7f, camera);
 	// Shadow mapping that is fixed to a point
-    //mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
-	//directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
+    mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
+	directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
 	directionalLight->GetShadow()->sampleCount = 16;
 	directionalLight->AddVolumetric(new Volumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f));
 

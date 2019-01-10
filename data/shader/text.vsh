@@ -22,6 +22,7 @@ layout (std140) uniform UBO2 {
     GlyphInfo glyphs2[1024];
 };
 
+
 void main() {
 	
 	int glyphIndex = int(characterInfo.z);
