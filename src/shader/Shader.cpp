@@ -209,3 +209,9 @@ void Shader::Unbind() {
 	boundShaderID = 0;
 
 }
+
+uint32_t Shader::GetID() {
+
+	return ID;
+
+}

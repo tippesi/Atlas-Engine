@@ -7,8 +7,8 @@
 
 #include <vector>
 
-#define FONT_CHARACTER_COUNT 2048
-#define GPU_CHARACTER_COUNT 1024
+#define FONT_GLYPH_COUNT 2048
+#define GPU_GLYPH_COUNT 2048
 
 /**
  * Represents a character
@@ -29,7 +29,7 @@ typedef struct Glyph {
 
 	vector<uint8_t> data;
 
-	int32_t kern[FONT_CHARACTER_COUNT];
+	int32_t kern[FONT_GLYPH_COUNT];
 
 }Glyph;
 
@@ -46,6 +46,7 @@ public:
 	 * @param pixelSize The height of the characters in pixels
 	 * @param padding Extra pixels around the characters which are filled with the distance
 	 * @param edgeValue The value in range 0-255 where the character is reconstructed
+	 * @note Only fully supports fonts with up to 2048 glyphs.
 	 * @remark Let's say you have a padding of 5 and an edgeValue of 100 with a pixelSize
 	 * of 10. A character texture now has a height of about 10 + 2 * 5 pixels where the padding
 	 * is filled with the distance values to the actual character which is about 10 pixels tall.
@@ -56,12 +57,20 @@ public:
 	Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue);
 
 	/**
-	 * Returns a specific character
+	 * Returns the glyph of a character
 	 * @param character The character which should be returned
 	 * @return A pointer to a {@link Glyph} object
 	 */
 	Glyph* GetGlyph(char character);
 
+	/**
+	 * Returns the glyph of a character
+	 * @param character The character which should be returned (in UTF-8)
+	 * @return A pointer to a {@link Glyph} object
+	 * @note The pointer to the character will be advanced to the next character
+	 * when calling this method. This is done because UTF-8 characters have variable length,
+	 * varying from 1 to 4 bytes.
+	 */
 	Glyph* GetGlyphUTF8(const char*& character);
 
 	/**
@@ -70,6 +79,7 @@ public:
 	 * @param scale The scale of the text which is later applied for rendering
 	 * @param width A pointer to a float where the width will be written into
 	 * @param height A pointer to a float where the height will be written into
+	 * @note The text is assumed to be UTF-8 encoded.
 	 */
 	void ComputeDimensions(string text, float scale, float* width, float* height);
 
@@ -86,19 +96,19 @@ public:
 	float pixelDistanceScale;
 	uint8_t edgeValue;
 
-	/**
-	 * Will be uploaded into the uniform buffer
-	 */
 	struct GlyphInfo {
 		vec2 scale;
 		vec2 size;
-	}glyphInfo[GPU_CHARACTER_COUNT];
+	}glyphInfo[GPU_GLYPH_COUNT];
 
 	Texture2DArray* glyphTexture;
-	Buffer* glyphBuffer;
+
+	// We need two glyph buffers to store 2048 glyphs
+	Buffer* firstGlyphBuffer;
+	Buffer* secondGlyphBuffer;
 
 private:
-	Glyph glyphs[FONT_CHARACTER_COUNT];
+	Glyph glyphs[FONT_GLYPH_COUNT];
 
 };
 

@@ -94,6 +94,8 @@ public:
 	 */
 	void Unbind();
 
+	uint32_t GetID();
+
 	vector<Uniform*> uniforms;
 	vector<string> macros;
 

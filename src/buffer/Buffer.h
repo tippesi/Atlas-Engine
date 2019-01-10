@@ -76,6 +76,12 @@ public:
 	 */
     virtual void BindRange(size_t offset, size_t length);
 
+    /**
+     * Binds the buffer to a base point
+     * @param base The base point the buffer should be bound to.
+     * @note This method is equivalent to the Bind() method, except that
+     * it additionally binds the buffer to a base point.
+     */
 	virtual void BindBase(int32_t base);
 
 	/**

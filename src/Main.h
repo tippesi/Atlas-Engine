@@ -30,6 +30,8 @@ private:
 
 	void MouseButtonEventHandler(EngineMouseButtonEvent event);
 
+	void TextInputEventHandler(EngineTextInputEvent event);
+
 	Window* window;
 
 	MouseHandler* mouseHandler;
@@ -61,6 +63,8 @@ private:
 
 	uint32_t renderingStart;
 	uint32_t frameCount;
+
+	string outString;
 
 	bool quit;
 	bool useControllerHandler;

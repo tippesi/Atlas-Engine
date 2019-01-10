@@ -9,7 +9,7 @@ TextRenderer::TextRenderer() {
 	GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
 	// Hard coded maximum of 1000 character per draw call
-	VertexBuffer* vertexBuffer = new VertexBuffer(GL_FLOAT, 3, sizeof(vec3), 1000, BUFFER_DYNAMIC_STORAGE |
+	VertexBuffer* vertexBuffer = new VertexBuffer(GL_FLOAT, 3, sizeof(vec3), 10000, BUFFER_DYNAMIC_STORAGE |
 		BUFFER_TRIPLE_BUFFERING | BUFFER_MAP_WRITE | BUFFER_IMMUTABLE);
 	vertexBuffer->Map();
 	vertexArray.AddInstancedComponent(1, vertexBuffer);
@@ -88,7 +88,9 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 	this->blendArea->SetValue(blendArea);
 
 	font->glyphTexture->Bind(GL_TEXTURE0);
-	font->glyphBuffer->Bind();
+
+	font->firstGlyphBuffer->BindBase(0);
+	font->secondGlyphBuffer->BindBase(1);
 
 	vertexArray.Bind();
 
@@ -102,7 +104,8 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 		framebuffer->Unbind();
 	}
 
-	font->glyphBuffer->Unbind();
+	font->firstGlyphBuffer->Unbind();
+	font->secondGlyphBuffer->Unbind();
 
 	glEnable(GL_CULL_FACE);
 
@@ -125,7 +128,6 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
 	vec4 clipArea, vec4 blendArea, float scale, bool alphaBlending, Framebuffer* framebuffer) {
 
-	/*
 	int32_t characterCount;
 
 	shader.Bind();
@@ -162,19 +164,18 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 	this->outlineColor->SetValue(outlineColor);
 	this->outlineScale->SetValue(outlineScale);
 
-	characterScales->SetValue(font->characterScales, FONT_CHARACTER_COUNT);
-	characterSizes->SetValue(font->characterSizes, FONT_CHARACTER_COUNT);
 	pixelDistanceScale->SetValue(font->pixelDistanceScale);
 	edgeValue->SetValue(font->edgeValue);
 
 	this->clipArea->SetValue(clipArea);
 	this->blendArea->SetValue(blendArea);
 
-	vertexArray->GetComponent(1)->SetData(instances.data(), characterCount);
+	font->glyphTexture->Bind(GL_TEXTURE0);
 
-	font->glyphsTexture->Bind(GL_TEXTURE0);
+	font->firstGlyphBuffer->BindBase(0);
+	font->secondGlyphBuffer->BindBase(1);
 
-	vertexArray->Bind();
+	vertexArray.Bind();
 
 	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, characterCount);
 
@@ -186,8 +187,10 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 		framebuffer->Unbind();
 	}
 
+	font->firstGlyphBuffer->Unbind();
+	font->secondGlyphBuffer->Unbind();
+
 	glEnable(GL_CULL_FACE);
-	 */
 
 }
 
@@ -214,6 +217,13 @@ void TextRenderer::GetUniforms() {
 	clipArea = shader.GetUniform("clipArea");
 	blendArea = shader.GetUniform("blendArea");
 
+	// Can be removed later on when we raise the version requirements to 4.2
+	uint32_t firstBufferIndex = glGetUniformBlockIndex(shader.GetID(), "UBO1");
+	uint32_t secondBufferIndex = glGetUniformBlockIndex(shader.GetID(), "UBO2");
+
+	glUniformBlockBinding(shader.GetID(), firstBufferIndex, 0);
+	glUniformBlockBinding(shader.GetID(), secondBufferIndex, 1);
+
 }
 
 vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, int32_t* characterCount) {
@@ -222,23 +232,20 @@ vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, 
 
 	auto instances = vector<vec3>(text.length());
 
-	if (instances.size() == 0)
-		return instances;
-
 	int32_t index = 0;
 
 	float xOffset = 0.0f;
 
-	auto string = text.c_str();
+	auto ctext = text.c_str();
 
-	auto nextGlyph = font->GetGlyphUTF8(string);
+	auto nextGlyph = font->GetGlyphUTF8(ctext);
 
-	while (true) {
+	while (nextGlyph->codepoint) {
 
 		Glyph* glyph = nextGlyph;
 
 		// Just visible characters should be rendered.
-		if (glyph->codepoint > 32) {
+		if (glyph->codepoint > 32 && glyph->texArrayIndex < GPU_GLYPH_COUNT) {
 			instances[index].x = glyph->offset.x + xOffset;
 			instances[index].y = glyph->offset.y + font->ascent;
 			instances[index].z = (float)glyph->texArrayIndex;
@@ -246,10 +253,7 @@ vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, 
 			index++;
 		}
 
-		if (*string == '\0')
-			break;
-
-		nextGlyph = font->GetGlyphUTF8(string);
+		nextGlyph = font->GetGlyphUTF8(ctext);
 
 		xOffset += glyph->advance + glyph->kern[nextGlyph->codepoint];
 		

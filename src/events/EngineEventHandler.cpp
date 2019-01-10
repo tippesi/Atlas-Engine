@@ -103,9 +103,6 @@ void EngineEventHandler::Update() {
 		}
 		else if (e.type == SDL_TEXTINPUT) {
 
-			if (e.text.text[1] != '\0')
-				continue;
-
 			EngineTextInputEvent event(e.text);
 
 			TextInputEventDelegate.Fire(event);

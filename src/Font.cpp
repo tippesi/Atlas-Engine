@@ -34,9 +34,11 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 		new EngineException("Failed loading font");
 	}
 
-	glyphBuffer = new Buffer(UNIFORM_BUFFER, sizeof(GlyphInfo), BUFFER_DYNAMIC_STORAGE);
-	glyphBuffer->SetSize(GPU_CHARACTER_COUNT);
-	glyphBuffer->BindBase(0);
+	firstGlyphBuffer = new Buffer(UNIFORM_BUFFER, sizeof(GlyphInfo), BUFFER_DYNAMIC_STORAGE);
+	firstGlyphBuffer->SetSize(GPU_GLYPH_COUNT / 2);
+
+	secondGlyphBuffer = new Buffer(UNIFORM_BUFFER, sizeof(GlyphInfo), BUFFER_DYNAMIC_STORAGE);
+	secondGlyphBuffer->SetSize(GPU_GLYPH_COUNT / 2);
 
 	smoothing = 5.0f;
 
@@ -53,9 +55,9 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	pixelDistanceScale = (float)edgeValue / (float)padding;
 
-	int32_t range = font.numGlyphs > FONT_CHARACTER_COUNT ? FONT_CHARACTER_COUNT : font.numGlyphs;
+	int32_t range = font.numGlyphs > FONT_GLYPH_COUNT ? FONT_GLYPH_COUNT : font.numGlyphs;
 
-	uint8_t* data[FONT_CHARACTER_COUNT];
+	uint8_t* data[FONT_GLYPH_COUNT];
 
 	int32_t width = 0, height = 0, depth = 0;
 
@@ -70,7 +72,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 		data[i] = stbtt_GetCodepointSDF(&font, scale, i, padding, edgeValue, pixelDistanceScale,
 			&glyph->width, &glyph->height, &xOffset, &yOffset);
 
-        for (int32_t j = 0; j < FONT_CHARACTER_COUNT; j++) {
+        for (int32_t j = 0; j < FONT_GLYPH_COUNT; j++) {
             glyph->kern[j] = (int32_t)((float)stbtt_GetCodepointKernAdvance(&font, i, j) * scale);
         }
 
@@ -82,7 +84,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 			glyph->width = 0;
 			glyph->offset = vec2(0.0f);
 			glyph->textureScale = vec2(0.0f);
-			glyph->texArrayIndex = GPU_CHARACTER_COUNT;
+			glyph->texArrayIndex = GPU_GLYPH_COUNT;
 			continue;
 		}
 
@@ -95,7 +97,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	}
 
-	depth = GPU_CHARACTER_COUNT < depth ? GPU_CHARACTER_COUNT : depth;
+	depth = GPU_GLYPH_COUNT < depth ? GPU_GLYPH_COUNT : depth;
 
 	// Create texture and process texture data
 	glyphTexture = new Texture2DArray(GL_UNSIGNED_BYTE, width, height, depth, 
@@ -135,7 +137,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 		}
 		else {
 
-			glyph->texArrayIndex = GPU_CHARACTER_COUNT;;
+			glyph->texArrayIndex = GPU_GLYPH_COUNT;
 
 		}
 
@@ -143,7 +145,8 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	}
 
-	glyphBuffer->SetData(&glyphInfo[0], 0, GPU_CHARACTER_COUNT);
+	firstGlyphBuffer->SetData(&glyphInfo[0], 0, GPU_GLYPH_COUNT / 2);
+	secondGlyphBuffer->SetData(&glyphInfo[GPU_GLYPH_COUNT / 2], 0, GPU_GLYPH_COUNT / 2);
 
 	delete[] buffer;
 
@@ -153,7 +156,7 @@ Glyph* Font::GetGlyph(char character) {
 
 	uint8_t characterIndex = (uint8_t)character;
 
-	if (characterIndex > FONT_CHARACTER_COUNT)
+	if (characterIndex > FONT_GLYPH_COUNT)
 		return nullptr;
 
 	return &glyphs[characterIndex];
@@ -168,14 +171,14 @@ Glyph* Font::GetGlyphUTF8(const char*& character) {
 
 	if (!(byte & 0x80)) {
 		unicode = (uint32_t)byte;
-		character += 1;
+		character++;
 	}
 	else if (((byte & 0xc0) == 0xc0) && !(byte & 0x20)) {
 		unicode = ((byte & 0x1f) << 6);
-		character += 1;
+		character++;
 		byte = *character;
 		unicode |= (byte & 0x3f);
-		character += 1;
+		character++;
 	}
 	else if (((byte & 0xe0) == 0xe0) && !(byte & 0x10)) {
 		character += 3;
@@ -184,7 +187,7 @@ Glyph* Font::GetGlyphUTF8(const char*& character) {
 		character += 4;
 	}
 
-	if (unicode > FONT_CHARACTER_COUNT)
+	if (unicode > FONT_GLYPH_COUNT)
 		return nullptr;
 
 	return &glyphs[unicode];
@@ -196,12 +199,16 @@ void Font::ComputeDimensions(string text, float scale, float* width, float* heig
 	*width = 0;
 	*height =  lineHeight * scale;
 
-	for (uint32_t i = 0; i < text.length(); i++) {
+	auto ctext = text.c_str();
 
-		char& character = text[i];
-		Glyph* glyph = GetGlyph(character);
+	auto nextGlyph = GetGlyphUTF8(ctext);
 
-		*width += ((float)(glyph->advance + glyph->kern[(uint8_t)text[i + 1]]) * scale);
+	while (nextGlyph->codepoint) {
+
+		auto glyph = nextGlyph;
+		nextGlyph = GetGlyphUTF8(ctext);
+
+		*width += ((float)(glyph->advance + glyph->kern[nextGlyph->codepoint]) * scale);
 
 	}
 
@@ -210,6 +217,7 @@ void Font::ComputeDimensions(string text, float scale, float* width, float* heig
 Font::~Font() {
 
 	delete glyphTexture;
-	delete glyphBuffer;
+	delete firstGlyphBuffer;
+	delete secondGlyphBuffer;
 
 }

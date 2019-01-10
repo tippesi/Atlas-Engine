@@ -13,7 +13,7 @@ Main::Main(int argc, char* argv[]) {
 	window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE);
 
-	// Engine::UnlockFramerate();
+	Engine::UnlockFramerate();
 
 	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 16, 3, 16);
 
@@ -27,6 +27,9 @@ Main::Main(int argc, char* argv[]) {
 	auto mouseButtonEventHandler = std::bind(&Main::MouseButtonEventHandler, this, std::placeholders::_1);
 	EngineEventHandler::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
+	auto textInputEventHandler = std::bind(&Main::TextInputEventHandler, this, std::placeholders::_1);
+	EngineEventHandler::TextInputEventDelegate.Subscribe(textInputEventHandler);
+
 	camera = new Camera(47.0f, 2.0f, .25f, 4000.0f);
 	camera->location = vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = vec2(-3.14f / 2.0f, 0.0f);
@@ -37,7 +40,7 @@ Main::Main(int argc, char* argv[]) {
 
 	masterRenderer = new MasterRenderer();
 
-	renderTarget = new RenderTarget(1280, 720);
+	renderTarget = new RenderTarget(1920, 1080);
 
 	Load();
 
@@ -96,7 +99,7 @@ void Main::Render(uint32_t deltaTime) {
 
 	float averageFramerate = (float)(SDL_GetTicks() - renderingStart) / (float)frameCount;
 
-	string out = "Average " + to_string(averageFramerate) + " ms  Currently " + to_string(deltaTime) + " ms ";
+	string out = "Average " + to_string(averageFramerate) + " ms  Currently " + to_string(deltaTime) + " ms";
 
 	masterRenderer->textRenderer->Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f, true);
 
@@ -179,12 +182,12 @@ void Main::Load() {
 void Main::DisplayLoadingScreen() {
 
 	float textWidth, textHeight;
-	font->ComputeDimensions("Loading...", 2.5f, &textWidth, &textHeight);
+	font->ComputeDimensions("Lädt...", 2.5f, &textWidth, &textHeight);
 
 	float x = 1280 / 2 - textWidth / 2;
 	float y = 720 / 2 - textHeight / 2;
 
-	masterRenderer->textRenderer->Render(window, font, "Loading...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+	masterRenderer->textRenderer->Render(window, font, "Lädt...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
 	window->Update();
 
@@ -311,6 +314,12 @@ void Main::MouseButtonEventHandler(EngineMouseButtonEvent event) {
 		scene->Add(decal);
 
 	}
+
+}
+
+void Main::TextInputEventHandler(EngineTextInputEvent event) {
+
+	outString += event.character;
 
 }
 

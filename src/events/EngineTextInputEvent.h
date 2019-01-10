@@ -16,7 +16,13 @@ public:
     EngineTextInputEvent(SDL_TextInputEvent event) {
 
         windowID = event.windowID;
-        character = event.text[0];
+
+		char* text = event.text;
+
+		while (*text != '\0') {
+			character.push_back(*text);
+			text++;
+		}
 
     }
 
@@ -26,9 +32,9 @@ public:
     uint32_t windowID;
 
     /**
-     * The character that was typed. Is still in ASCII.
+     * The character that was typed in UTF-8.
      */
-    char character;
+    string character;
 
 };
 
