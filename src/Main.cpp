@@ -131,7 +131,6 @@ void Main::Stream() {
 		cell->displacementMap = terrainDisplacementMap;
 
 	}
-
 	/*
 	if (terrain->storage->requestedCells.size() > 0) {
 		for (int32_t i = 0; i < 10000; i++) {
@@ -148,8 +147,7 @@ void Main::Stream() {
 
 		}
 	}
-	*/
-
+    */
 	terrain->storage->requestedCells.clear();
 
 }
@@ -237,16 +235,16 @@ void Main::SceneSetUp() {
 	sponzaActor = new Actor(sponzaMesh);
 	sponzaActor->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
 
-	DirectionalLight* directionalLight = new DirectionalLight(STATIONARY_LIGHT);
+	DirectionalLight* directionalLight = new DirectionalLight(MOVABLE_LIGHT);
 	directionalLight->direction = vec3(0.0f, -1.0f, 0.2f);
 	directionalLight->color = vec3(253, 194, 109) / 255.0f;
 	directionalLight->ambient = 0.05f;
 	// Cascaded shadow mapping
-	// directionalLight->AddShadow(300.0f, 0.01f, 1024, 4, 0.7f, camera);
+	directionalLight->AddShadow(300.0f, 0.01f, 1024, 4, 0.7f, camera);
 	// Shadow mapping that is fixed to a point
-    mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
-	directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
-	directionalLight->GetShadow()->sampleCount = 1;
+    //mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
+	//directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
+	directionalLight->GetShadow()->sampleCount = 16;
 	directionalLight->AddVolumetric(new Volumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f));
 
 	PointLight* pointLight1 = new PointLight(STATIONARY_LIGHT);
