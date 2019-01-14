@@ -7,6 +7,7 @@
 #include <string>
 #include <sys/stat.h>
 
+/*
 void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize) {
 
 	int32_t width, height, channels;
@@ -79,6 +80,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 				int32_t xOffset = (int32_t)((float)j / nodeSideCount * (float)newResolution);
 				int32_t yOffset = (int32_t)((float)k / nodeSideCount * (float)newResolution);
 
+				// We need to change this. All terrain tiles should have an equal size
 				int32_t xExtension = j != (nodeSideCount * nodesPerSide - 1) ? 1 : 0;
 				int32_t yExtension = k != (nodeSideCount * nodesPerSide - 1) ? 1 : 0;
 
@@ -113,6 +115,140 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 
 	delete subHeightField;
 	delete subNormalMap;
+
+}
+ */
+
+Terrain* TerrainTool::GenerateTerrain(Image &heightImage, int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize) {
+
+	auto terrain = new Terrain(rootNodeCount, LoDCount, patchSize, 1.0f, 30.0f);
+
+    return terrain;
+
+}
+
+void TerrainTool::SaveTerrain(Terrain *terrain) {
+
+
+
+}
+
+void TerrainTool::BakeTerrain(Terrain *terrain) {
+
+
+
+}
+
+void TerrainTool::BrushTerrain(Terrain *terrain, Kernel *kernel, float scale, vec2 position) {
+
+	int32_t LoD = terrain->LoDCount - 1;
+
+	// Get the storage cells
+	auto middleMiddle = terrain->GetStorageCell(position.x, position.y, LoD);
+
+	if (middleMiddle == nullptr)
+		return;
+
+	auto upperLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
+	auto upperMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
+	auto upperRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
+	auto middleLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
+	auto middleRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
+	auto bottomLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
+	auto bottomMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
+	auto bottomRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
+
+	TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
+								   middleLeft, middleMiddle, middleRight,
+								   bottomLeft, bottomMiddle, bottomRight};
+
+	// Now bring all height data into one array
+	int32_t width = middleMiddle->heightField->width - 1;
+	int32_t height = middleMiddle->heightField->height - 1;
+
+	vector<float> heights;
+	heights.resize(width * height * 9);
+
+	auto data = heights.data();
+
+	for (uint32_t i = 0; i < 3; i++) {
+		for (uint32_t j = 0; j < height; j++) {
+			for (uint32_t k = 0; k < 3; k++) {
+
+				auto cell = cells[i * 3 + k];
+
+				if (cell == nullptr)
+					continue;
+
+				int32_t dataOffset = i * 3 * width * height + j * 3 * width + k * width;
+				int32_t cellOffset = (width + 1) * j;
+
+				for (uint32_t l = 0; l < width; l++) {
+
+					data[dataOffset + l] = (float)cell->heightData[cellOffset + l] * terrain->heightScale / 255.0f;
+
+				}
+			}
+		}
+	}
+
+	// Apply the kernel on the whole data
+	position -= vec2((float)middleMiddle->x, (float)middleMiddle->y);
+
+	int32_t x = (int32_t)floorf(position.x);
+	int32_t y = (int32_t)floorf(position.y);
+
+	x += width;
+	y += height;
+
+	vector<vector<float>>* weights = nullptr;
+	vector<vector<ivec2>>* offsets = nullptr;
+	
+	kernel->Get(weights, offsets);
+
+	for (uint32_t i = 0; i < weights->size(); i++) {
+		for (uint32_t j = 0; j < weights->size(); j++) {
+			int32_t xTranslated = x + (*offsets)[i][j].x;
+			int32_t yTranslated = y + (*offsets)[i][j].y;
+			int32_t index = yTranslated * width * 3 + xTranslated;
+			data[index] += scale * (*weights)[i][j];
+		}
+	}
+
+	width += 1;
+	height += 1;
+
+	// Split the data up and update the height fields
+	for (uint32_t i = 0; i < 3; i++) {
+		for (uint32_t j = 0; j < 3; j++) {
+
+			auto cell = cells[i * 3 + j];
+
+			if (cell == nullptr)
+				continue;
+
+			for (uint32_t k = 0; k < height; k++) {
+				for (uint32_t l = 0; l < width; l++) {
+					x = j * (width - 1) + l;
+					y = i * (height - 1) + k;
+					// We don't want to update the last heights of the right and bottom cells
+					if (x >= (width - 1) * 3 || y >= (height - 1) * 3)
+						continue;
+
+					int32_t dataOffset = y * 3 * (width - 1) + x;
+					int32_t cellOffset = k * width + l;
+
+					cell->heightData[cellOffset] = (uint8_t)glm::clamp(data[dataOffset] * 255.0f / terrain->heightScale, 0.0f, 255.0f);
+
+				}
+			}
+
+			cell->heightField->SetData(cell->heightData);
+
+		}
+	}
+
+	EngineLog("Finished");
 
 }
 

@@ -10,31 +10,59 @@
 #define IMAGE_BMP 2
 
 /**
- * Represents an image.
+ * Base class for the image classes.
  */
-typedef struct Image {
+class IImage {
 
-    int32_t width;
-    int32_t height;
-    int32_t channels;
+public:
+	int32_t width;
+	int32_t height;
+	int32_t channels;
 
-    int32_t fileFormat;
+	int32_t fileFormat;
 
+};
+
+/**
+ * Represents an image with 8 bits per channel.
+ */
+class Image : public IImage {
+
+public:
     vector<uint8_t> data;
 
-}Image;
+};
+
+/**
+* Represents an image with 16 bits per channel.
+*/
+class Image16 : public IImage {
+
+public:
+	vector<uint16_t> data;
+
+};
 
 class ImageLoader {
 
 public:
     /**
-     * Loads an image.
+     * Loads an image with 8 bits per channel.
      * @param filename The name of the image file.
      * @param colorSpaceConversion Whether or not gamma to linear color space conversion is needed.
      * @param forceChannels The number of channels to be forced. Default is zero, which means no force.
-     * @return An image structure with all important data.
+     * @return An Image object with all the important data.
      */
     static Image LoadImage(string filename, bool colorSpaceConversion, int32_t forceChannels = 0);
+
+	/**
+	* Loads an image with 16 bits per channel.
+	* @param filename The name of the image file.
+	* @param colorSpaceConversion Whether or not gamma to linear color space conversion is needed.
+	* @param forceChannels The number of channels to be forced. Default is zero, which means no force.
+	* @return An Image16 object with all the important data.
+	*/
+	static Image16 LoadImage16(string filename, bool colorSpaceConversion, int32_t forceChannels = 0);
 
     /**
      *

@@ -72,6 +72,15 @@ public:
      */
     static void GammaToLinear(uint8_t* data, int32_t width, int32_t height, int32_t channels);
 
+	/**
+	* Converts image data from gamma to linear color space.
+	* @param data The data to be converted
+	* @param width The width of the data
+	* @param height The height of the data
+	* @param channels The number of channels the data has
+	*/
+	static void GammaToLinear(uint16_t* data, int32_t width, int32_t height, int32_t channels);
+
     /**
      * Determines the base format of a sized format.
      * @param sizedFormat The sized format, e.g GL_RGB16F

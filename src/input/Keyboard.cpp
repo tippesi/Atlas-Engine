@@ -17,11 +17,10 @@ KeyboardHandler::KeyboardHandler(Camera* camera, float speed, float reactivity) 
 
 void KeyboardHandler::Update(Camera* camera, uint32_t deltaTime) {
 
-	const float increasedSpeed = 4.0f;
 	float floatDelta = (float)deltaTime / 1000.0f;
 
-	location += camera->direction * movement.x * floatDelta * (speed + increasedSpeed);
-	location += camera->right * movement.y * floatDelta * (speed + increasedSpeed);
+	location += camera->direction * movement.x * floatDelta * speed;
+	location += camera->right * movement.y * floatDelta * speed;
 
 	float progress = glm::clamp(reactivity * ((float)deltaTime / 16.0f), 0.0f, 1.0f);
 
