@@ -44,6 +44,15 @@ public:
     void SetData(vector<uint8_t>& data, int32_t depth, int32_t count = 1);
 
     /**
+    * Sets the data of the texture
+    * @param data A vector holding the new data.
+    * @param depth The depth where the data should be set.
+    * @param count The number of layer where the data should be written to.
+    * @note The data has to have the size of count * width * height * channels.
+    */
+    void SetData(vector<uint16_t>& data, int32_t depth, int32_t count = 1);
+
+    /**
      * Retrieves the data of the texture from the GPU.
      * @param depth The depth where the data should be retrieved.
      * @return A vector holding the data.

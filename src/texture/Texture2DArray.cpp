@@ -37,6 +37,16 @@ void Texture2DArray::SetData(vector<uint8_t> &data, int32_t depth, int32_t count
 
 }
 
+void Texture2DArray::SetData(vector<uint16_t> &data, int32_t depth, int32_t count) {
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, width, height, count,
+                    GetBaseFormat(sizedFormat), dataType, data.data());
+    if (mipmaps)
+        glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+
+}
+
 vector<uint8_t> Texture2DArray::GetData(int32_t depth) {
 
     auto framebuffer = Framebuffer(width, height);

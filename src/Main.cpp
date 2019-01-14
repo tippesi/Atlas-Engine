@@ -109,23 +109,24 @@ void Main::Stream() {
 
 	for (auto& cell : terrain->storage->requestedCells) {
 
-		int32_t width, height, channels;
+		string imagePath("../data/terrain/LoD");
+        imagePath += to_string(cell->LoD) + "/height" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
+		auto heightImage = ImageLoader::LoadImage(imagePath, false, 1);
+		cell->heightField = new Texture2D(GL_UNSIGNED_SHORT, heightImage.width, heightImage.height, GL_R8,
+		        GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+		auto shortVector = vector<uint16_t>(heightImage.width * heightImage.height);
+		for (int32_t i = 0; i < shortVector.size(); i++) {
+            shortVector[i] = (uint16_t)heightImage.data[i] * 257;
+		}
+		cell->heightField->SetData(shortVector);
+		cell->heightData = shortVector;
 
-		string heightField("../data/terrain/LoD");
-		heightField += to_string(cell->LoD) + "/height" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
-		uint8_t* data = stbi_load(heightField.c_str(), &width, &height, &channels, 1);
-		cell->heightField = new Texture2D(GL_UNSIGNED_BYTE, width, height, GL_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-		auto dataVector = vector<uint8_t>(width * height);
-		dataVector.assign(data, data + width * height);
-		cell->heightField->SetData(dataVector);
-		cell->heightData = dataVector;
-
-		heightField = "../data/terrain/LoD";
-		heightField += to_string(cell->LoD) + "/normal" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
-		data = stbi_load(heightField.c_str(), &width, &height, &channels, 3);
-		cell->normalMap = new Texture2D(GL_UNSIGNED_BYTE, width, height, GL_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-		dataVector.assign(data, data + width * height * 3);
-		cell->normalMap->SetData(dataVector);
+        imagePath = "../data/terrain/LoD";
+        imagePath += to_string(cell->LoD) + "/normal" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
+		auto normalImage = ImageLoader::LoadImage(imagePath, false, 3);
+		cell->normalMap = new Texture2D(GL_UNSIGNED_BYTE, normalImage.width, normalImage.height, GL_RGB8,
+		        GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+		cell->normalMap->SetData(normalImage.data);
 
 		cell->diffuseMap = terrainDiffuseMap;
 		cell->displacementMap = terrainDisplacementMap;
@@ -203,7 +204,7 @@ void Main::SceneSetUp() {
 	terrain->SetLoDDistance(1, 200.0f);
 	terrain->SetLoDDistance(2, 64.0f);
 
-	// scene->Add(terrain);
+	scene->Add(terrain);
 
 	Decal* decal = new Decal(smileyTexture, 4.0f, 4.0f, 500.0f);
 

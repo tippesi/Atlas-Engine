@@ -50,6 +50,12 @@ public:
     void SetData(vector<uint8_t>& data);
 
     /**
+     * Sets the data of the texture
+     * @param data A pointer to the data
+     */
+    void SetData(vector<uint16_t>& data);
+
+    /**
      * Retrieves the data of the texture from the GPU.
      * @return A vector holding the data.
      */

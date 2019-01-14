@@ -60,6 +60,16 @@ void Texture2D::SetData(vector<uint8_t> &data) {
 
 }
 
+void Texture2D::SetData(vector<uint16_t> &data) {
+
+    glBindTexture(GL_TEXTURE_2D, ID);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GetBaseFormat(sizedFormat), dataType, data.data());
+
+    if (mipmaps)
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+}
+
 vector<uint8_t> Texture2D::GetData() {
 
     auto framebuffer = Framebuffer(width, height);
