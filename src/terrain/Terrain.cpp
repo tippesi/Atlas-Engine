@@ -40,8 +40,8 @@ Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, flo
 		for (int32_t j = 0; j < nodesPerSide; j++) {
 			TerrainStorageCell* cell = storage->GetCell(i, j, 0);
 			storage->requestedCells.push_back(cell);
-			rootNodes.push_back(new TerrainNode(vec2((float)i * ratio, (float)j * ratio), resolution, heightScale, ratio, 
-				0, this->LoDCount, vec2(0, 0), vec2(i, j), storage, cell));
+			rootNodes.push_back(new TerrainNode(vec2((float)i * ratio, (float)j * ratio), resolution, heightScale, ratio,
+				0, this->LoDCount, ivec2(0, 0), ivec2(i, j), storage, cell));
 		}
 	}
 

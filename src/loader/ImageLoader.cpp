@@ -2,6 +2,8 @@
 #include "../texture/Texture.h"
 
 #include <algorithm>
+#include <iostream>
+#include <fstream>
 
 //STB image library is declared(only once)
 #define STB_IMAGE_IMPLEMENTATION
@@ -49,6 +51,9 @@ Image ImageLoader::LoadImage(string filename, bool colorSpaceConversion, int32_t
     else if (fileFormat == "bmp") {
         image.fileFormat = IMAGE_BMP;
     }
+	else if (fileFormat == "pgm") {
+		image.fileFormat = IMAGE_PGM;
+	}
 
 #ifdef ENGINE_SHOW_LOG
     EngineLog("Loaded image %s", filename.c_str());
@@ -96,6 +101,9 @@ Image16 ImageLoader::LoadImage16(string filename, bool colorSpaceConversion, int
 	else if (fileFormat == "bmp") {
 		image.fileFormat = IMAGE_BMP;
 	}
+	else if (fileFormat == "pgm") {
+		image.fileFormat = IMAGE_PGM;
+	}
 
 #ifdef ENGINE_SHOW_LOG
 	EngineLog("Loaded image %s", filename.c_str());
@@ -105,13 +113,85 @@ Image16 ImageLoader::LoadImage16(string filename, bool colorSpaceConversion, int
 
 }
 
-void ImageLoader::SaveImage(string filename, Image &image) {
+void ImageLoader::SaveImage(Image &image, string filename) {
 
     switch(image.fileFormat) {
         case IMAGE_JPG: break;
         case IMAGE_BMP: break;
-		default: stbi_write_png(filename.c_str(), image.width, image.height,
+        case IMAGE_PGM: SavePGM8(image, filename); break;
+		case IMAGE_PNG: stbi_write_png(filename.c_str(), image.width, image.height,
 			image.channels, image.data.data(), image.channels * image.width); break;
+		default: break;
     }
+
+}
+
+void ImageLoader::SaveImage16(Image16 &image, string filename) {
+
+	switch(image.fileFormat) {
+		case IMAGE_JPG: break;
+		case IMAGE_BMP: break;
+		case IMAGE_PGM: SavePGM16(image, filename); break;
+		case IMAGE_PNG: break;
+		default: break;
+	}
+
+}
+
+void ImageLoader::SavePGM8(Image &image, string filename) {
+
+	ofstream imageFile;
+	imageFile.open(filename);
+
+	if (!imageFile.is_open()) {
+		throw EngineException("Couldn't write image");
+	}
+
+	string header;
+
+	// Create image header
+	header.append("P5 ");
+	header.append(to_string(image.width) + " ");
+	header.append(to_string(image.height) + " ");
+	header.append("255\n");
+
+	imageFile << header;
+
+	for (int32_t y = 0; y < image.height; y++) {
+		for (int32_t x = 0; x < image.width; x++) {
+			imageFile << image.data[y * image.width + x];
+		}
+	}
+
+	imageFile.close();
+
+}
+
+void ImageLoader::SavePGM16(Image16 &image, string filename) {
+
+	ofstream imageFile;
+	imageFile.open(filename);
+
+	if (!imageFile.is_open()) {
+		throw EngineException("Couldn't write image");
+	}
+
+	string header;
+
+	// Create image header
+	header.append("P5 ");
+	header.append(to_string(image.width) + " ");
+	header.append(to_string(image.height) + " ");
+	header.append("65535\n");
+
+	imageFile << header;
+
+	for (int32_t y = 0; y < image.height; y++) {
+		for (int32_t x = 0; x < image.width; x++) {
+			imageFile << image.data[y * image.width + x];
+		}
+	}
+
+	imageFile.close();
 
 }

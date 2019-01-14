@@ -163,8 +163,8 @@ void TerrainTool::BrushTerrain(Terrain *terrain, Kernel *kernel, float scale, ve
 								   bottomLeft, bottomMiddle, bottomRight};
 
 	// Now bring all height data into one array
-	int32_t width = middleMiddle->heightField->width - 1;
-	int32_t height = middleMiddle->heightField->height - 1;
+	uint32_t width = (uint32_t)middleMiddle->heightField->width - 1;
+	uint32_t height = (uint32_t)middleMiddle->heightField->height - 1;
 
 	vector<float> heights;
 	heights.resize(width * height * 9);
@@ -193,7 +193,7 @@ void TerrainTool::BrushTerrain(Terrain *terrain, Kernel *kernel, float scale, ve
 	}
 
 	// Apply the kernel on the whole data
-	position -= vec2((float)middleMiddle->x, (float)middleMiddle->y);
+	position -= middleMiddle->position;
 
 	int32_t x = (int32_t)floorf(position.x);
 	int32_t y = (int32_t)floorf(position.y);

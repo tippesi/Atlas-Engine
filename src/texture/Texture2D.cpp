@@ -101,7 +101,7 @@ void Texture2D::SaveToPNG(string filename) {
     image.data = GetData();
     FlipDataHorizontally(image.data);
 
-    ImageLoader::SaveImage(filename, image);
+    ImageLoader::SaveImage(image, filename);
 
 }
 

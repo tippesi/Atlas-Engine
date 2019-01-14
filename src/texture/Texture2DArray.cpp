@@ -79,7 +79,7 @@ void Texture2DArray::SaveToPNG(string filename, int32_t depth) {
     image.data = GetData(depth);
     FlipDataHorizontally(image.data);
 
-    ImageLoader::SaveImage(filename, image);
+    ImageLoader::SaveImage(image, filename);
 
 }
 

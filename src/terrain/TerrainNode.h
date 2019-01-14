@@ -11,15 +11,15 @@ class TerrainNode {
 
 public:
 	TerrainNode(vec2 location, float resolution, float height, float sideLength, int32_t LoD, int32_t LoDCount,
-		vec2 parentIndex, vec2 relativeIndex, TerrainStorage* storage, TerrainStorageCell* cell);
-
-	void Update(Camera* camera, vector<TerrainNode*>& renderList, float* LoDDistances);
+		ivec2 parentIndex, ivec2 relativeIndex, TerrainStorage* storage, TerrainStorageCell* cell);
 
 	~TerrainNode();
 
+	void Update(Camera* camera, vector<TerrainNode*>& renderList, float* LoDDistances);
+
 	vec2 location;
 	float sideLength;
-	vec2 absoluteIndex;
+	ivec2 absoluteIndex;
 
 	TerrainStorageCell* cell;
 
@@ -30,8 +30,7 @@ private:
 
 	void DeleteChildren();
 
-	vec2 index;
-
+	ivec2 index;
 
 	int32_t LoD;
 	int32_t LoDCount;
@@ -39,7 +38,7 @@ private:
 	float resolution;
 	float height;
 
-	vector<TerrainNode*> children;
+	vector<TerrainNode> children;
 
 	TerrainStorage* storage;
 

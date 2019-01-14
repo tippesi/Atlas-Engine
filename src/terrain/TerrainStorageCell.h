@@ -21,6 +21,8 @@ public:
 	int32_t y;
 	int32_t LoD;
 
+	vec2 position;
+
 	vector<uint8_t> heightData;
 
 	Texture2D* heightField;

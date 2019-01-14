@@ -8,6 +8,7 @@
 #define IMAGE_PNG 0
 #define IMAGE_JPG 1
 #define IMAGE_BMP 2
+#define IMAGE_PGM 3
 
 /**
  * Base class for the image classes.
@@ -65,14 +66,27 @@ public:
 	static Image16 LoadImage16(string filename, bool colorSpaceConversion, int32_t forceChannels = 0);
 
     /**
-     *
-     * @param filename
-     * @param image
+     * Save an image with 8 bits per channel to the hard drive.
+     * @param image The image to be stored
+     * @param filename The filename that the image should have
+     * @note By changing the fileFormat in the Image object the output file changes as well.
      */
-    static void SaveImage(string filename, Image& image);
+    static void SaveImage(Image& image, string filename);
+
+	/**
+     * Save an image with 16 bits per channel to the hard drive.
+     * @param image The image to be stored
+     * @param filename The filename that the image should have
+     * @note By changing the fileFormat in the Image16 object the output file changes as well. Only
+     * IMAGE_PGM is supported for now.
+     */
+	static void SaveImage16(Image16& image, string filename);
+
+private:
+	static void SavePGM8(Image& image, string filename);
+
+	static void SavePGM16(Image16& image, string filename);
 
 };
-
-
 
 #endif

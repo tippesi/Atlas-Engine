@@ -166,7 +166,6 @@ Glyph* Font::GetGlyph(char character) {
 Glyph* Font::GetGlyphUTF8(const char*& character) {
 
 	uint8_t byte = *character;
-	int8_t increments = 0;
 	uint32_t unicode = 0;
 
 	if (!(byte & 0x80)) {
