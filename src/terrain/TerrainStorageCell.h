@@ -23,7 +23,7 @@ public:
 
 	vec2 position;
 
-	vector<uint16_t> heightData;
+	vector<float> heightData;
 
 	Texture2D* heightField;
 	Texture2D* normalMap;

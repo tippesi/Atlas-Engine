@@ -71,6 +71,8 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
+	int32_t baseInstance = vertexArray.GetComponent(1)->GetDataMappedAdvancement();
+
 	auto instances = CalculateCharacterInstances(font, text, &characterCount);
 
 	glyphsTexture->SetValue(0);
@@ -94,7 +96,11 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 
 	vertexArray.Bind();
 
-	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, characterCount);
+#ifdef ENGINE_GLES
+	glDrawArraysInstancedBaseInstanceEXT(GL_TRIANGLE_STRIP, 0, 4, characterCount, baseInstance);
+#else
+	glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, 0, 4, characterCount, baseInstance);
+#endif
 
 	if (alphaBlending) {
 		glDisable(GL_BLEND);
@@ -151,6 +157,8 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 	float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
 	float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
 
+	int32_t baseInstance = vertexArray.GetComponent(1)->GetDataMappedAdvancement();
+
 	auto instances = CalculateCharacterInstances(font, text, &characterCount);
 
 	glyphsTexture->SetValue(0);
@@ -177,7 +185,7 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 
 	vertexArray.Bind();
 
-	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, characterCount);
+	glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, 0, 4, characterCount, baseInstance);
 
 	if (alphaBlending) {
 		glDisable(GL_BLEND);

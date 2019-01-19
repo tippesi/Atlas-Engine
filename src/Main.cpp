@@ -13,9 +13,7 @@ Main::Main(int argc, char* argv[]) {
 	window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE);
 
-	// Engine::UnlockFramerate();
-
-	// TerrainTool::GenerateHeightfieldLoDs("../data/terrain/heightfield.png", 16, 3, 16);
+	Engine::UnlockFramerate();
 
 	// Register quit event
 	auto quitEventHandler = std::bind(&Main::QuitEventHandler, this);
@@ -109,6 +107,7 @@ void Main::Stream() {
 
 	for (auto& cell : terrain->storage->requestedCells) {
 
+		/*
 		string imagePath("../data/terrain/LoD");
         imagePath += to_string(cell->LoD) + "/height" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
 		auto heightImage = ImageLoader::LoadImage(imagePath, false, 1);
@@ -127,6 +126,7 @@ void Main::Stream() {
 		cell->normalMap = new Texture2D(GL_UNSIGNED_BYTE, normalImage.width, normalImage.height, GL_RGB8,
 		        GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 		cell->normalMap->SetData(normalImage.data);
+		*/
 
 		cell->diffuseMap = terrainDiffuseMap;
 		cell->displacementMap = terrainDisplacementMap;
@@ -245,7 +245,7 @@ void Main::SceneSetUp() {
 	// Shadow mapping that is fixed to a point
     mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
 	directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
-	directionalLight->GetShadow()->sampleCount = 16;
+	directionalLight->GetShadow()->sampleCount = 1;
 	directionalLight->AddVolumetric(new Volumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f));
 
 	PointLight* pointLight1 = new PointLight(STATIONARY_LIGHT);

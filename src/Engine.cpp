@@ -3,7 +3,9 @@
 Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 	int32_t width, int32_t height, int32_t flags) {
 
-	SDL_Init(SDL_INIT_EVERYTHING);
+    if (SDL_WasInit(SDL_INIT_EVERYTHING) != SDL_INIT_EVERYTHING) {
+        SDL_Init(SDL_INIT_EVERYTHING);
+    }
 
 #ifdef ENGINE_GL
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -84,6 +86,19 @@ Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 	ShadowRenderer::InitShaderBatch();
 
 	return window;
+
+}
+
+void Engine::GetScreenSize(int32_t* width, int32_t* height) {
+
+    if (SDL_WasInit(SDL_INIT_EVERYTHING) != SDL_INIT_EVERYTHING) {
+        SDL_Init(SDL_INIT_EVERYTHING);
+    }
+
+	SDL_DisplayMode displayMode;
+	SDL_GetCurrentDisplayMode(0, &displayMode);
+	*width = displayMode.w;
+	*height = displayMode.h;
 
 }
 

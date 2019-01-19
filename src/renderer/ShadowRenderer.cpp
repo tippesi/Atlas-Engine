@@ -38,7 +38,7 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 		light->GetShadow()->update = false;
 
-		// We expect every cascade to have the same resoltion
+		// We expect every cascade to have the same resolution
 		glViewport(0, 0, light->GetShadow()->resolution, light->GetShadow()->resolution);
 
 		for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {

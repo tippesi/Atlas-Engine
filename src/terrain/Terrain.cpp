@@ -219,15 +219,15 @@ float Terrain::GetHeight(float x, float z) {
 	}
 
 	if (xCoord > zCoord) {
-		height = BarryCentric(vec3(0.0f,  heightBottomLeft / 255.0f * heightScale, 0.0f),
-			vec3(1.0f, heightTopLeft / 255.0f * heightScale, 0.0f),
-			vec3(1.0f, heightTopRight / 255.0f * heightScale, 1.0f),
+		height = BarryCentric(vec3(0.0f,  heightBottomLeft / 65535.0f * heightScale, 0.0f),
+			vec3(1.0f, heightTopLeft / 65535.0f * heightScale, 0.0f),
+			vec3(1.0f, heightTopRight / 65535.0f * heightScale, 1.0f),
 			vec2(xCoord, zCoord));
 	}
 	else {
-		height = BarryCentric(vec3(0.0f, heightBottomLeft / 255.0f * heightScale, 0.0f),
-			vec3(1.0f, heightTopRight / 255.0f * heightScale, 1.0f),
-			vec3(0.0f,  heightBottomRight / 255.0f * heightScale, 1.0f),
+		height = BarryCentric(vec3(0.0f, heightBottomLeft / 65535.0f * heightScale, 0.0f),
+			vec3(1.0f, heightTopRight / 65535.0f * heightScale, 1.0f),
+			vec3(0.0f,  heightBottomRight / 65535.0f * heightScale, 1.0f),
 			vec2(xCoord, zCoord));
 	}
 

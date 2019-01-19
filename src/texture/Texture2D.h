@@ -73,6 +73,7 @@ public:
     /**
      * Saves the texture to a PNG image file
      * @param filename The name of the file
+     * @note Only UNSIGNED_BYTE textures are supported.
      */
     void SaveToPNG(string filename);
 

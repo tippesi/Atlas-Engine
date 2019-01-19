@@ -30,6 +30,13 @@ public:
 			int32_t width, int32_t height, int32_t flags = WINDOW_FULLSCREEN);
 
 	/**
+	 *
+	 * @param width
+	 * @param height
+	 */
+	static void GetScreenSize(int32_t* width, int32_t* height);
+
+	/**
 	 * Locks the frame rate to the next available target frame rate of the monitor
 	 * like min(availableTargetFramerate, possibleFramerate).
 	 */

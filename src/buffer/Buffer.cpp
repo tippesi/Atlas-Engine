@@ -68,9 +68,9 @@ void Buffer::Bind() {
 
 }
 
-void Buffer::BindRange(size_t offset, size_t length) {
+void Buffer::BindRange(size_t offset, size_t length, int32_t base) {
 
-    glBindBufferRange(type, 0, ID, offset * elementSize,
+    glBindBufferRange(type, base, ID, offset * elementSize,
             length * elementSize);
 
 }
@@ -197,6 +197,12 @@ void Buffer::SetDataMapped(void *data, size_t length) {
 
 }
 
+int32_t Buffer::GetDataMappedAdvancement() {
+
+    return (int32_t)(mappedData / elementSize);
+
+}
+
 void Buffer::Copy(Buffer *copyBuffer, size_t readOffset, size_t writeOffset, size_t length) {
 
 	// The type of the buffer can't be the same because we have to bind both.
@@ -264,8 +270,12 @@ void Buffer::CreateInternal() {
     Bind();
 
     if (immutable) {
-        glBufferStorage(type, sizeInBytes, nullptr, dataFlags);
-    }
+#ifdef ENGINE_GLES
+        glBufferStorageEXT(type, sizeInBytes, nullptr, dataFlags);
+#else
+		glBufferStorage(type, sizeInBytes, nullptr, dataFlags);
+#endif
+	}
     else {
         glBufferData(type, sizeInBytes, nullptr, dataFlags);
     }

@@ -2,12 +2,12 @@
 
 TerrainStorage::TerrainStorage(int32_t rootNodeCount, int32_t LoDCount) : rootNodeCount(rootNodeCount), LoDCount(LoDCount) {
 
-	cells = new TerrainStorageCell*[LoDCount];
+	cells.resize(LoDCount);
 	LoDSideLengths = new int32_t[LoDCount];
 
 	for (int32_t i = 0; i < LoDCount; i++) {
 
-		cells[i] = new TerrainStorageCell[rootNodeCount * (int32_t)powf(4, (float)i)];
+		cells[i].resize(rootNodeCount * (int32_t)powf(4, (float)i));
 		LoDSideLengths[i] = (int32_t)sqrtf((float)rootNodeCount * powf(4.0f, (float)i));
 
 		for (int32_t x = 0; x < LoDSideLengths[i]; x++) {
@@ -27,5 +27,11 @@ TerrainStorageCell* TerrainStorage::GetCell(int32_t x, int32_t y, int32_t LoD) {
 		return nullptr;
 
 	return &cells[LoD][x * LoDSideLengths[LoD] + y];
+
+}
+
+int32_t TerrainStorage::GetCellCount(int32_t LoD) {
+
+	return cells[LoD].size();
 
 }

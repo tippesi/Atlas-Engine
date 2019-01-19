@@ -73,8 +73,9 @@ public:
 	 * Binds a certain range of the buffer to the target.
      * @param offset The offset in the buffer in elements (not bytes).
      * @param length The number of elements to be bound.
+	 * @param base The base point the buffer should be bound to. Default is 0.
 	 */
-    virtual void BindRange(size_t offset, size_t length);
+    virtual void BindRange(size_t offset, size_t length, int32_t base = 0);
 
     /**
      * Binds the buffer to a base point
@@ -158,6 +159,12 @@ public:
 	 * @param length The number of elements in data. Default is 1.
 	 */
     virtual void SetDataMapped(void* data, size_t length = 1);
+
+    /**
+     * Calculates the current position in the buffer in elements.
+     * @return The number of written elements
+     */
+    virtual int32_t GetDataMappedAdvancement();
 
 	/**
 	 * Copies the data of the copy buffer to this buffer.

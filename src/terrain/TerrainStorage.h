@@ -35,6 +35,13 @@ public:
 	TerrainStorageCell* GetCell(int32_t x, int32_t y, int32_t LoD);
 
 	/**
+	 * Returns the number of cell for a specific LoD level
+	 * @param LoD The LoD level
+	 * @return An integer with the number of cells
+	 */
+	int32_t GetCellCount(int32_t LoD);
+
+	/**
 	 * The storage cells the terrain request to change the level of detail.
 	 */
 	vector<TerrainStorageCell*> requestedCells;
@@ -51,7 +58,7 @@ private:
 
 	int32_t* LoDSideLengths;
 
-	TerrainStorageCell** cells;
+	vector<vector<TerrainStorageCell>> cells;
 
 };
 

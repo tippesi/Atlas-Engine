@@ -31,10 +31,10 @@ Cubemap::Cubemap(string right, string left, string top,
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB8, image.width, image.height, 0,
 				GL_RGB, GL_UNSIGNED_BYTE, image.data.data());
 #elif ENGINE_GLES
-			Texture::GammaToLinear(data, width, height, 3);
+			Texture::GammaToLinear(image.data.data(), image.width, image.height, 3);
 
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB8, width, height, 0,
-				GL_RGB, GL_UNSIGNED_BYTE, data);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB8, image.width, image.height, 0,
+				GL_RGB, GL_UNSIGNED_BYTE, image.data.data());
 #endif
 #ifdef ENGINE_SHOW_LOG
 			EngineLog("    Loaded cubemap face %d %s", i, filenames[i].c_str());
