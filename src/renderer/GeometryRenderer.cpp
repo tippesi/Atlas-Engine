@@ -57,14 +57,14 @@ void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* came
 
 		for (auto renderListBatch : renderListBatches) {
 
-			ActorBatch* actorBatch = renderListBatch.actorBatch;
+			auto meshActorBatch = renderListBatch.meshActorBatch;
 
 			// If there is no actor of that mesh visible we discard it.
-			if (actorBatch->GetSize() == 0) {
+			if (meshActorBatch->GetSize() == 0) {
 				continue;
 			}
 
-			auto mesh = actorBatch->GetMesh();
+			auto mesh = meshActorBatch->GetMesh();
 			mesh->Bind();
 
 			if (!mesh->cullBackFaces && backFaceCulling) {
@@ -114,7 +114,7 @@ void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* came
 				specularIntensityUniform->SetValue(material->specularIntensity);
 
 				// We could also use instanced rendering here
-				for (auto& actor : actorBatch->actors) {
+				for (auto& actor : meshActorBatch->actors) {
 
 					modelMatrixUniform->SetValue(actor->transformedMatrix);
 

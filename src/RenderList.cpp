@@ -6,7 +6,7 @@ RenderList::RenderList(int32_t type, int32_t mobility) : type(type), mobility(mo
 
 }
 
-void RenderList::Add(Actor* actor) {
+void RenderList::Add(MeshActor* actor) {
 
 	auto actorBatchKey = actorBatches.find(actor->mesh);
 
@@ -16,10 +16,10 @@ void RenderList::Add(Actor* actor) {
 	else {
 
 		// Create new actorbatch
-		ActorBatch* actorBatch = new ActorBatch(actor->mesh);
-		actorBatch->Add(actor);
+		auto meshActorBatch = new MeshActorBatch(actor->mesh);
+		meshActorBatch->Add(actor);
 
-		actorBatches[actor->mesh] = actorBatch;
+		actorBatches[actor->mesh] = meshActorBatch;
 
 		// Build up all render list batches
 		map<int32_t, RenderListBatch> renderListBatches;
@@ -42,7 +42,7 @@ void RenderList::Add(Actor* actor) {
 			}
 			else {
 				RenderListBatch batch;
-				batch.actorBatch = actorBatch;
+				batch.meshActorBatch = meshActorBatch;
 				batch.subData.push_back(subData);
 				renderListBatches[shaderConfig->configBatchID] = batch;
 			}
@@ -67,7 +67,7 @@ void RenderList::Add(ILight* light) {
 void RenderList::Clear() {
 
 	for (auto& actorBatchKey : actorBatches) {
-		actorBatchKey.second->ClearContent();
+		actorBatchKey.second->Clear();
 	}
 
 	lights.clear();

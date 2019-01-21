@@ -52,9 +52,9 @@ private:
 	Mesh* treeMesh;
 	Mesh* cubeMesh;
 
-	Actor* cubeActor;
-	Actor* treeActor;
-	Actor* sponzaActor;
+	MeshActor* cubeActor;
+	MeshActor* treeActor;
+	MeshActor* sponzaActor;
 
 	Texture2D* terrainDiffuseMap;
 	Texture2D* terrainDisplacementMap;

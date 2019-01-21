@@ -35,26 +35,26 @@ void SceneNode::Remove(SceneNode* node) {
 
 }
 
-void SceneNode::Add(Actor* actor) {
+void SceneNode::Add(MeshActor* actor) {
 
 	if (scene != nullptr) {
 		scene->Add(actor);
 	}
 
-	actors.push_back(actor);
+	meshActors.push_back(actor);
 
 }
 
-void SceneNode::Remove(Actor* actor) {
+void SceneNode::Remove(MeshActor* actor) {
 
 	if (scene != nullptr) {
 		scene->Remove(actor);
 	}
 
-	for (auto iterator = actors.begin(); iterator != actors.end(); iterator++) {
+	for (auto iterator = meshActors.begin(); iterator != meshActors.end(); iterator++) {
 
 		if (*iterator == actor) {
-			actors.erase(iterator);
+			meshActors.erase(iterator);
 			return;
 		}
 
@@ -97,8 +97,8 @@ void SceneNode::Update(mat4 parentTransformation) {
 		node->Update(transformation);
 	}
 
-	for (auto& actor : actors) {
-		actor->transformedMatrix = transformation * actor->transformedMatrix;
+	for (auto& meshActor : meshActors) {
+		meshActor->transformedMatrix = transformation * meshActor->transformedMatrix;
 	}
 
 	// Lights should be calculated here
@@ -114,8 +114,8 @@ void SceneNode::AddToScene(Scene* scene) {
 		node->AddToScene(scene);
 	}
 
-	for (auto& actor : actors) {
-		scene->Add(actor);
+	for (auto& meshActor : meshActors) {
+		scene->Add(meshActor);
 	}
 
 	for (auto& light : lights) {
@@ -136,8 +136,8 @@ void SceneNode::RemoveFromScene() {
 		node->RemoveFromScene();
 	}
 
-	for (auto& actor : actors) {
-		scene->Remove(actor);
+	for (auto& meshActor : meshActors) {
+		scene->Remove(meshActor);
 	}
 
 	for (auto& light : lights) {
@@ -155,9 +155,9 @@ vector<SceneNode*> SceneNode::GetChildNodes() {
 
 }
 
-vector<Actor*> SceneNode::GetActors() {
+vector<MeshActor*> SceneNode::GetMeshActors() {
 
-	return actors;
+	return meshActors;
 
 }
 

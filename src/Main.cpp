@@ -10,8 +10,11 @@ Main::Main(int argc, char* argv[]) {
 	quit = false;
 	useControllerHandler = false;
 
+	int32_t width, height;
+	Engine::GetScreenSize(&width, &height);
+
 	window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
-		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE);
+		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE | WINDOW_HIGH_DPI);
 
 	Engine::UnlockFramerate();
 
@@ -38,7 +41,7 @@ Main::Main(int argc, char* argv[]) {
 
 	masterRenderer = new MasterRenderer();
 
-	renderTarget = new RenderTarget(1920, 1080);
+	renderTarget = new RenderTarget(1280, 720);
 
 	Load();
 
@@ -140,7 +143,7 @@ void Main::Stream() {
 			float z = 1024.0f * (float)rand() / (float)RAND_MAX;
 			float y = terrain->GetHeight(x, z);
 
-			auto tree = new Actor(treeMesh);
+			auto tree = new MeshActor(treeMesh);
 			tree->modelMatrix = glm::translate(mat4(1.0f), vec3(x, y, z));
 			tree->modelMatrix = glm::scale(tree->modelMatrix, vec3(3.0f));
 
@@ -230,10 +233,10 @@ void Main::SceneSetUp() {
 	scene->rootNode->Add(node);
 	scene->sky->skybox = new Skybox(skybox);
 
-	cubeActor = new Actor(cubeMesh);
-	treeActor = new Actor(treeMesh);
+	cubeActor = new MeshActor(cubeMesh);
+	treeActor = new MeshActor(treeMesh);
 	treeActor->modelMatrix = scale(mat4(1.0f), vec3(3.0f));
-	sponzaActor = new Actor(sponzaMesh);
+	sponzaActor = new MeshActor(sponzaMesh);
 	sponzaActor->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
 
 	DirectionalLight* directionalLight = new DirectionalLight(STATIONARY_LIGHT);

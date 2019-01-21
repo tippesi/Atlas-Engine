@@ -65,9 +65,9 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 				lightSpaceMatrixUniform->SetValue(lightSpace);
 
-				for (auto actorBatch : scene->actorBatches) {
+				for (auto& meshActorBatch : scene->meshActorBatches) {
 
-					Mesh* mesh = actorBatch->GetMesh();
+					Mesh* mesh = meshActorBatch->GetMesh();
 					mesh->Bind();
 
 					if (!mesh->cullBackFaces && backFaceCulling) {
@@ -100,7 +100,7 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 							}
 						}
 
-						for (auto actor : actorBatch->actors) {
+						for (auto actor : meshActorBatch->actors) {
 
 							if (!actor->castShadow) {
 								continue;

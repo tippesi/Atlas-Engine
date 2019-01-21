@@ -4,8 +4,8 @@
 #include "System.h"
 #include "SceneNode.h"
 #include "RenderList.h"
-#include "mesh/Actor.h"
-#include "mesh/ActorBatch.h"
+#include "mesh/MeshActor.h"
+#include "mesh/MeshActorBatch.h"
 #include "terrain/Terrain.h"
 #include "lighting/ILight.h"
 #include "lighting/Sky.h"
@@ -21,17 +21,19 @@ public:
 	 */
 	Scene();
 
-	/**
-	 *
-	 * @param actor
-	 */
-	void Add(Actor* actor);
+	~Scene();
 
 	/**
 	 *
 	 * @param actor
 	 */
-	void Remove(Actor* actor);
+	void Add(MeshActor* actor);
+
+	/**
+	 *
+	 * @param actor
+	 */
+	void Remove(MeshActor* actor);
 
 	/**
 	 *
@@ -85,12 +87,10 @@ public:
 	 */
 	void DeleteContent();
 
-	~Scene();
-
 	SceneNode* rootNode;
 
 	vector<ILight*> lights;
-	vector<ActorBatch*> actorBatches;
+	vector<MeshActorBatch*> meshActorBatches;
 	vector<Terrain*> terrains;
 	vector<Decal*> decals;
 

@@ -40,16 +40,6 @@ const float ditherPattern[16] = float[](0.0f, 0.5f, 0.125f, 0.625f, 0.75f, 0.22f
 
 float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 
-    vec4 cascadesDistance = vec4(light.shadow.cascades[0].distance,
-                                 light.shadow.cascades[1].distance,
-                                 light.shadow.cascades[2].distance,
-                                 light.shadow.cascades[3].distance);
-
-    vec4 cascadeCount = vec4(light.shadow.cascadeCount > 0,
-                             light.shadow.cascadeCount > 1,
-                             light.shadow.cascadeCount > 2,
-                             light.shadow.cascadeCount > 3);
-
     // We compute this in view space
     vec3 rayVector = fragPos;
     float rayLength = length(rayVector);
@@ -66,19 +56,30 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 	
 	float scatteringFactor = ComputeScattering(dot(rayDirection, light.direction));
 
+	int cascadeIndex = 0;
+	mat4 cascadeMatrix = light.shadow.cascades[0].cascadeSpace;
+	int cascadeCount = light.shadow.cascadeCount - 1;
+
     for (int i = 0; i < sampleCount; i++) {
-        vec4 comparison = vec4(-currentPosition.z > cascadesDistance.x,
-                               -currentPosition.z > cascadesDistance.y,
-                               -currentPosition.z > cascadesDistance.z,
-                               -currentPosition.z > cascadesDistance.w);
-        float fIndex = dot(cascadeCount, comparison);
-        int index = int(fIndex);
-        vec4 cascadeSpace = light.shadow.cascades[index].cascadeSpace * vec4(currentPosition, 1.0f);
+        
+		float distance = -currentPosition.z;
+		
+		// We can leave out the zero index, because if the cascade increases, it won't ever decrease anymore
+		cascadeIndex = distance > light.shadow.cascades[0].distance ? 1 : cascadeIndex;
+		cascadeIndex = distance > light.shadow.cascades[1].distance ? 2 : cascadeIndex;
+		cascadeIndex = distance > light.shadow.cascades[2].distance ? 3 : cascadeIndex;
+		cascadeIndex = min(cascadeCount, cascadeIndex);
+
+		cascadeMatrix = cascadeIndex > 0 ? light.shadow.cascades[1].cascadeSpace : cascadeMatrix;
+		cascadeMatrix = cascadeIndex > 1 ? light.shadow.cascades[2].cascadeSpace : cascadeMatrix;
+		cascadeMatrix = cascadeIndex > 2 ? light.shadow.cascades[3].cascadeSpace : cascadeMatrix;
+		
+        vec4 cascadeSpace = cascadeMatrix * vec4(currentPosition, 1.0f);
         cascadeSpace.xyz /= cascadeSpace.w;
 
         cascadeSpace.xyz = cascadeSpace.xyz * 0.5f + 0.5f;
 
-        float shadowValue = texture(cascadeMaps, vec4(cascadeSpace.xy, index, cascadeSpace.z));
+        float shadowValue = texture(cascadeMaps, vec4(cascadeSpace.xy, cascadeIndex, cascadeSpace.z));
         foginess += scatteringFactor * shadowValue;
 
         currentPosition += stepVector;

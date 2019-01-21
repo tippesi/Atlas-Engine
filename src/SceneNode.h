@@ -2,7 +2,7 @@
 #define SCENENODE_H
 
 #include "System.h"
-#include "mesh/Actor.h"
+#include "mesh/MeshActor.h"
 #include "lighting/ILight.h"
 #include <vector>
 
@@ -12,7 +12,9 @@ class Scene;
 class SceneNode {
 
 public:
-	///
+	/**
+	 *
+	 */
 	SceneNode();
 
 	///
@@ -25,11 +27,11 @@ public:
 
 	///
 	/// \param actor
-	void Add(Actor* actor);
+	void Add(MeshActor* actor);
 
 	///
 	/// \param actor
-	void Remove(Actor* actor);
+	void Remove(MeshActor* actor);
 
 	///
 	/// \param light
@@ -52,7 +54,7 @@ public:
 
 	vector<SceneNode*> GetChildNodes();
 
-	vector<Actor*> GetActors();
+	vector<MeshActor*> GetMeshActors();
 
 	vector<ILight*> GetLights();
 
@@ -64,7 +66,7 @@ private:
 	bool sceneSet;
 
 	vector<SceneNode*> childNodes;
-	vector<Actor*> actors;
+	vector<MeshActor*> meshActors;
 	vector<ILight*> lights;
 
 };
