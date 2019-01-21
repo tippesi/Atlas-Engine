@@ -15,6 +15,13 @@ DirectionalLight::DirectionalLight(int32_t mobility) {
 
 }
 
+DirectionalLight::~DirectionalLight() {
+
+	delete shadow;
+	delete volumetric;
+
+}
+
 void DirectionalLight::AddShadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection, Camera* camera) {
 
 	this->shadow = new Shadow(distance, bias, resolution, cascadeCount, splitCorrection);
@@ -33,7 +40,7 @@ void DirectionalLight::AddShadow(float distance, float bias, int32_t resolution,
 
 void DirectionalLight::AddShadow(float distance, float bias, int32_t resolution, vec3 centerPoint, mat4 orthoProjection) {
 
-	this->shadow = new Shadow(distance, bias, resolution, 1, 1.0f);
+	shadow = new Shadow(distance, bias, resolution, 1, 1.0f);
 
 	useShadowCenter = true;
 
@@ -46,18 +53,20 @@ void DirectionalLight::AddShadow(float distance, float bias, int32_t resolution,
 
 void DirectionalLight::RemoveShadow() {
 
+	delete shadow;
 	shadow = nullptr;
 
 }
 
-void DirectionalLight::AddVolumetric(Volumetric *volumetric) {
+void DirectionalLight::AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor) {
 
-	this->volumetric = volumetric;
+	volumetric = new Volumetric(width, height, sampleCount, scattering, scatteringFactor);
 
 }
 
 void DirectionalLight::RemoveVolumetric() {
 
+	delete volumetric;
 	volumetric = nullptr;
 
 }
@@ -79,22 +88,6 @@ void DirectionalLight::Update(Camera* camera) {
 		}
 	
 	}
-
-}
-
-void DirectionalLight::ClearContent() {
-
-	shadow = nullptr;
-	volumetric = nullptr;
-
-}
-
-void DirectionalLight::DeleteContent() {
-
-	delete shadow;
-	delete volumetric;
-
-	ClearContent();
 
 }
 

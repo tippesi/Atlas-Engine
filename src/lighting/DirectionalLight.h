@@ -9,21 +9,19 @@ class DirectionalLight : public ILight {
 public:
 	DirectionalLight(int32_t mobility = MOVABLE_LIGHT);
 
+	~DirectionalLight();
+
 	void AddShadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection, Camera* camera);
 
 	void AddShadow(float distance, float bias, int32_t resolution, vec3 centerPoint, mat4 orthoProjection);
 
 	void RemoveShadow();
 
-	void AddVolumetric(Volumetric* volumetric);
+	void AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor = 1.0f);
 
 	void RemoveVolumetric();
 
 	void Update(Camera* camera);
-
-	void ClearContent();
-
-	void DeleteContent();
 
 	vec3 direction;
 

@@ -16,9 +16,16 @@ PointLight::PointLight(int32_t mobility) {
 
 }
 
+PointLight::~PointLight() {
+
+	delete shadow;
+	delete volumetric;
+
+}
+
 void PointLight::AddShadow(float bias, int32_t resolution) {
 
-    this->shadow = new Shadow(0.0f, bias, resolution, true);
+    shadow = new Shadow(0.0f, bias, resolution, true);
 
 	mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, radius);
 	vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
@@ -38,18 +45,20 @@ void PointLight::AddShadow(float bias, int32_t resolution) {
 
 void PointLight::RemoveShadow() {
 
+	delete shadow;
     shadow = nullptr;
 
 }
 
-void PointLight::AddVolumetric(Volumetric *volumetric) {
+void PointLight::AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor) {
 
-    this->volumetric = volumetric;
+    volumetric = new Volumetric(width, height, sampleCount, scattering, scatteringFactor);
 
 }
 
 void PointLight::RemoveVolumetric() {
 
+	delete volumetric;
     volumetric = nullptr;
 
 }

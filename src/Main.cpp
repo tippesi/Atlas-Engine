@@ -33,7 +33,7 @@ Main::Main(int argc, char* argv[]) {
 	camera->rotation = vec2(-3.14f / 2.0f, 0.0f);
 
 	mouseHandler = new MouseHandler(camera, 1.5f, 0.015f);
-	keyboardHandler = new KeyboardHandler(camera, 10.0f * 7.0f, 0.3f);
+	keyboardHandler = new KeyboardHandler(camera, 7.0f, 0.3f);
 	controllerHandler = new ControllerHandler(camera, 1.5f, 7.0f, 0.2f, 5000.0f);
 
 	masterRenderer = new MasterRenderer();
@@ -246,7 +246,7 @@ void Main::SceneSetUp() {
     mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
 	directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
 	directionalLight->GetShadow()->sampleCount = 1;
-	directionalLight->AddVolumetric(new Volumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f));
+	directionalLight->AddVolumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f);
 
 	PointLight* pointLight1 = new PointLight(STATIONARY_LIGHT);
 	pointLight1->location = vec3(24.35f, 6.5f, 7.1f);

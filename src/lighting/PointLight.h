@@ -9,11 +9,13 @@ class PointLight : public ILight {
 public:
     PointLight(int32_t mobility = STATIONARY_LIGHT);
 
+	~PointLight();
+
     void AddShadow(float bias, int32_t resolution);
 
     void RemoveShadow();
 
-    void AddVolumetric(Volumetric* volumetric);
+    void AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor = 1.0f);
 
     void RemoveVolumetric();
 
