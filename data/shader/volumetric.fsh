@@ -57,22 +57,31 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 	float scatteringFactor = ComputeScattering(dot(rayDirection, light.direction));
 
 	int cascadeIndex = 0;
+	int lastCascadeIndex = 0;
 	mat4 cascadeMatrix = light.shadow.cascades[0].cascadeSpace;
-	int cascadeCount = light.shadow.cascadeCount - 1;
 
     for (int i = 0; i < sampleCount; i++) {
         
 		float distance = -currentPosition.z;
 		
 		// We can leave out the zero index, because if the cascade increases, it won't ever decrease anymore
-		cascadeIndex = distance > light.shadow.cascades[0].distance ? 1 : cascadeIndex;
-		cascadeIndex = distance > light.shadow.cascades[1].distance ? 2 : cascadeIndex;
-		cascadeIndex = distance > light.shadow.cascades[2].distance ? 3 : cascadeIndex;
-		cascadeIndex = min(cascadeCount, cascadeIndex);
+		if (distance > light.shadow.cascades[0].distance)
+			cascadeIndex = 1;
+		if (distance > light.shadow.cascades[1].distance)
+			cascadeIndex = 2;
+		if (distance > light.shadow.cascades[2].distance)
+			cascadeIndex = 3;
 
-		cascadeMatrix = cascadeIndex > 0 ? light.shadow.cascades[1].cascadeSpace : cascadeMatrix;
-		cascadeMatrix = cascadeIndex > 1 ? light.shadow.cascades[2].cascadeSpace : cascadeMatrix;
-		cascadeMatrix = cascadeIndex > 2 ? light.shadow.cascades[3].cascadeSpace : cascadeMatrix;
+		if (lastCascadeIndex != cascadeIndex) {
+		if (cascadeIndex > 0)
+			cascadeMatrix = light.shadow.cascades[1].cascadeSpace;
+		if (cascadeIndex > 1)
+			cascadeMatrix = light.shadow.cascades[2].cascadeSpace;
+		if (cascadeIndex > 2)
+			cascadeMatrix = light.shadow.cascades[3].cascadeSpace;
+		}
+		
+		lastCascadeIndex = cascadeIndex;
 		
         vec4 cascadeSpace = cascadeMatrix * vec4(currentPosition, 1.0f);
         cascadeSpace.xyz /= cascadeSpace.w;

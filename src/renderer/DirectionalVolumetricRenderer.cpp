@@ -66,10 +66,16 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
         light->GetShadow()->maps->Bind(GL_TEXTURE1);
 
-        for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
+        for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
             ShadowComponent* cascade = &directionalLight->GetShadow()->components[i];
-            cascades[i].distance->SetValue(cascade->farDistance);
-            cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->inverseViewMatrix);
+			if (i < light->GetShadow()->componentCount) {
+				cascades[i].distance->SetValue(cascade->farDistance);
+				cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->inverseViewMatrix);
+			}
+			else {
+				cascades[i].distance->SetValue(camera->farPlane);
+				cascades[i].lightSpace->SetValue(mat4(1.0f));
+			}
         }
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
