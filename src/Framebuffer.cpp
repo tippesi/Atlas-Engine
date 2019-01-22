@@ -10,33 +10,43 @@ Framebuffer::Framebuffer(int32_t width, int32_t height) : width(width), height(h
 
 }
 
+Framebuffer::~Framebuffer() {
+
+	for (auto& componentKey : components) {
+		if (componentKey.second.internalTexture) {
+			delete componentKey.second.texture;
+		}
+	}
+
+	glDeleteFramebuffers(1, &ID);
+
+}
+
 void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t internalFormat, int32_t wrapping,
 		int32_t filtering, uint32_t target) {
 
-	FramebufferComponent* component = nullptr;
+	FramebufferComponent component;
 
 	auto search = components.find(attachment);
 
-	if (search == components.end()) {
-		component = new FramebufferComponent;
-	}
-	else {
+
+	if (search != components.end()) {
 		component = search->second;
 		// Check if the component texture was created internally
-		if (component->internalTexture)
-			delete component->texture;
+		if (component.internalTexture)
+			delete component.texture;
 	}
 
-	component->texture = new Texture2D(dataFormat, width, height, internalFormat, wrapping, filtering, false, false);
-	component->textureArray = nullptr;
-	component->cubemap = nullptr;
-	component->internalTexture = true;
-	component->index = 0;
-	component->target = target;
+	component.texture = new Texture2D(dataFormat, width, height, internalFormat, wrapping, filtering, false, false);
+	component.textureArray = nullptr;
+	component.cubemap = nullptr;
+	component.internalTexture = true;
+	component.index = 0;
+	component.target = target;
 
 	Bind();
 
-	glFramebufferTexture2D(target, attachment, GL_TEXTURE_2D, component->texture->GetID(), 0);
+	glFramebufferTexture2D(target, attachment, GL_TEXTURE_2D, component.texture->GetID(), 0);
 
 	components[attachment] = component;
 
@@ -50,30 +60,27 @@ void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t in
 
 void Framebuffer::AddComponentTexture(int32_t attachment, Texture2D* texture, uint32_t target) {
 
-	FramebufferComponent* component = nullptr;
+	FramebufferComponent component;
 
 	auto search = components.find(attachment);
 
-	if (search == components.end()) {
-		component = new FramebufferComponent;
-	}
-	else {
+	if (search != components.end()) {
 		component = search->second;
 		// Check if the component texture was created internally
-		if (component->internalTexture)
-			delete component->texture;
+		if (component.internalTexture)
+			delete component.texture;
 	}
 
-	component->texture = texture;
-	component->textureArray = nullptr;
-	component->cubemap = nullptr;
-	component->internalTexture = false;
-	component->index = 0;
-    component->target = target;
+	component.texture = texture;
+	component.textureArray = nullptr;
+	component.cubemap = nullptr;
+	component.internalTexture = false;
+	component.index = 0;
+    component.target = target;
 
 	Bind();
 
-	glFramebufferTexture2D(target, attachment, GL_TEXTURE_2D, component->texture->GetID(), 0);
+	glFramebufferTexture2D(target, attachment, GL_TEXTURE_2D, component.texture->GetID(), 0);
 
 	components[attachment] = component;
 
@@ -87,26 +94,23 @@ void Framebuffer::AddComponentTexture(int32_t attachment, Texture2D* texture, ui
 
 void Framebuffer::AddComponentTextureArray(int32_t attachment, Texture2DArray* texture, int32_t layer, uint32_t target) {
 
-	FramebufferComponent* component = nullptr;
+	FramebufferComponent component;
 
 	auto search = components.find(attachment);
 
-	if (search == components.end()) {
-		component = new FramebufferComponent;
-	}
-	else {
+	if (search != components.end()) {
 		component = search->second;
 		// Check if the component texture was created internally
-		if (component->internalTexture)
-			delete component->texture;
+		if (component.internalTexture)
+			delete component.texture;
 	}
 
-	component->texture = nullptr;
-	component->textureArray = texture;
-	component->cubemap = nullptr;
-	component->internalTexture = false;
-	component->index = layer;
-    component->target = target;
+	component.texture = nullptr;
+	component.textureArray = texture;
+	component.cubemap = nullptr;
+	component.internalTexture = false;
+	component.index = layer;
+	component.target = target;
 
 	Bind();
 
@@ -124,31 +128,27 @@ void Framebuffer::AddComponentTextureArray(int32_t attachment, Texture2DArray* t
 
 void Framebuffer::AddComponentCubemap(int32_t attachment, Cubemap* cubemap, int32_t face, uint32_t target) {
 
-	FramebufferComponent* component = nullptr;
+	FramebufferComponent component;
 
 	auto search = components.find(attachment);
 
-	if (search == components.end()) {
-		component = new FramebufferComponent;
-	}
-	else {
+	if (search != components.end()) {
 		component = search->second;
 		// Check if the component texture was created internally
-		if (component->internalTexture)
-			delete component->texture;
+		if (component.internalTexture)
+			delete component.texture;
 	}
 
-	component->texture = nullptr;
-	component->textureArray = nullptr;
-	component->cubemap = cubemap;
-	component->internalTexture = false;
-    component->index = face;
-    component->target = target;
+	component.texture = nullptr;
+	component.textureArray = nullptr;
+	component.cubemap = cubemap;
+	component.internalTexture = false;
+	component.index = 0;
+	component.target = target;
 
 	Bind();
 
-	glFramebufferTexture2D(target, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
-			component->cubemap->GetID(), 0);
+	glFramebufferTexture2D(target, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, cubemap->GetID(), 0);
 
 	components[attachment] = component;
 
@@ -164,12 +164,11 @@ Texture2D* Framebuffer::GetComponentTexture(int32_t attachment) {
 
 	auto search = components.find(attachment);
 
-	if (search == components.end()) {
-		return nullptr;
+	if (search != components.end()) {
+		return search->second.texture;
 	}
-	else {
-		return search->second->texture;
-	}
+
+	return nullptr;
 
 }
 
@@ -177,12 +176,11 @@ Texture2DArray* Framebuffer::GetComponentTextureArray(int32_t attachment) {
 
 	auto search = components.find(attachment);
 
-	if (search == components.end()) {
-		return nullptr;
+	if (search != components.end()) {
+		return search->second.textureArray;
 	}
-	else {
-		return search->second->textureArray;
-	}
+
+	return nullptr;
 
 }
 
@@ -190,12 +188,11 @@ Cubemap* Framebuffer::GetComponentCubemap(int32_t attachment){
 
 	auto search = components.find(attachment);
 
-	if (search == components.end()) {
-		return nullptr;
+	if (search != components.end()) {
+		return search->second.cubemap;
 	}
-	else {
-		return search->second->cubemap;
-	}
+
+	return nullptr;
 
 }
 
@@ -207,18 +204,18 @@ void Framebuffer::Resize(int32_t width, int32_t height) {
 	this->height = height;
 
 	for (auto& componentKey : components) {
-		FramebufferComponent* component = componentKey.second;
+		FramebufferComponent& component = componentKey.second;
 
-		if (component->texture != nullptr) {
-            component->texture->Resize(width, height);
-            glFramebufferTexture2D(component->target, componentKey.first,
-                    GL_TEXTURE_2D, component->texture->GetID(), 0);
+		if (component.texture != nullptr) {
+            component.texture->Resize(width, height);
+            glFramebufferTexture2D(component.target, componentKey.first,
+                    GL_TEXTURE_2D, component.texture->GetID(), 0);
 		}
 
-		if (component->textureArray != nullptr) {
-            component->textureArray->Resize(width, height, component->textureArray->depth);
-            glFramebufferTextureLayer(component->target, componentKey.first,
-                    component->textureArray->GetID(), 0, component->index);
+		if (component.textureArray != nullptr) {
+            component.textureArray->Resize(width, height, component.textureArray->depth);
+            glFramebufferTextureLayer(component.target, componentKey.first,
+                    component.textureArray->GetID(), 0, component.index);
 		}
 
 	}
@@ -253,36 +250,5 @@ void Framebuffer::SetDrawBuffers(uint32_t* drawBuffers, int32_t count) {
 	glDrawBuffers(count, drawBuffers);
 
 	drawBuffersSet = true;
-
-}
-
-void Framebuffer::ClearContent() {
-
-	components.clear();
-	drawBuffers.clear();
-
-	drawBuffersSet = false;
-
-}
-
-void Framebuffer::DeleteContent() {
-
-	for (auto& componentKey : components) {
-		FramebufferComponent* component = componentKey.second;
-		if (component->internalTexture) {
-			delete component->texture;
-		}
-		delete component;
-	}
-
-	ClearContent();
-
-}
-
-Framebuffer::~Framebuffer() {
-
-	DeleteContent();
-
-	glDeleteFramebuffers(1, &ID);
 
 }

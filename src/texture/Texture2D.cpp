@@ -80,8 +80,6 @@ vector<uint8_t> Texture2D::GetData() {
 
     glReadPixels(0, 0, width, height, GetBaseFormat(sizedFormat), GL_UNSIGNED_BYTE, data.data());
 
-    framebuffer.DeleteContent();
-
     framebuffer.Unbind();
 
     return data;

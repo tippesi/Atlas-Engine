@@ -22,6 +22,12 @@ Texture::Texture() {
 
 }
 
+Texture::~Texture() {
+
+	glDeleteTextures(1, &ID);
+
+}
+
 uint32_t Texture::GetID() {
 
     return ID;
@@ -37,12 +43,6 @@ uint32_t Texture::GetDataType() {
 int32_t Texture::GetSizedFormat() {
 
     return sizedFormat;
-
-}
-
-Texture::~Texture() {
-
-    glDeleteTextures(1, &ID);
 
 }
 

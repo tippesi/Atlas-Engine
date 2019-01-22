@@ -16,6 +16,11 @@ public:
      */
     Texture();
 
+	/**
+	 * Destructs the Texture object.
+	 */
+	virtual ~Texture();
+
     /**
      * Returns the ID of the texture object.
      * @return The ID of the texture object.
@@ -45,9 +50,6 @@ public:
      * Unbinds any texture.
      */
     virtual void Unbind() = 0;
-
-
-    virtual ~Texture();
 
     /**
      * Determines the maximum anisotropy level offered by the system.

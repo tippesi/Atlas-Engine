@@ -22,33 +22,11 @@ MasterRenderer::MasterRenderer() {
 
 	GetUniforms();
 
-	geometryRenderer = new GeometryRenderer();
-	terrainRenderer = new TerrainRenderer();
-	shadowRenderer = new ShadowRenderer();
-	decalRenderer = new DecalRenderer();
-	directionalVolumetricRenderer = new DirectionalVolumetricRenderer();
-	directionalLightRenderer = new DirectionalLightRenderer();
-	pointLightRenderer = new PointLightRenderer();
-	skyboxRenderer = new SkyboxRenderer();
-	atmosphereRenderer = new AtmosphereRenderer();
-	postProcessRenderer = new PostProcessRenderer();
-	textRenderer = new TextRenderer();
-
 }
 
 MasterRenderer::~MasterRenderer() {
 
 	vertexArray.DeleteContent();
-
-	delete geometryRenderer;
-	delete terrainRenderer;
-	delete shadowRenderer;
-	delete directionalVolumetricRenderer;
-	delete directionalLightRenderer;
-	delete pointLightRenderer;
-	delete skyboxRenderer;
-	delete atmosphereRenderer;
-	delete postProcessRenderer;
 
 }
 
@@ -57,7 +35,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
-	shadowRenderer->Render(window, target, camera, scene);
+	shadowRenderer.Render(window, target, camera, scene);
 
 	target->geometryFramebuffer->Bind(true);
 
@@ -65,9 +43,9 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	terrainRenderer->Render(window, target, camera, scene);
+	terrainRenderer.Render(window, target, camera, scene);
 
-	geometryRenderer->Render(window, target, camera, scene);
+	geometryRenderer.Render(window, target, camera, scene);
 
 	glEnable(GL_CULL_FACE);
 	glDepthMask(GL_FALSE);
@@ -75,13 +53,13 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	decalRenderer->Render(window, target, camera, scene);
+	decalRenderer.Render(window, target, camera, scene);
 
 	glDisable(GL_BLEND);
 
 	vertexArray.Bind();
 
-	directionalVolumetricRenderer->Render(window, target, camera, scene);
+	directionalVolumetricRenderer.Render(window, target, camera, scene);
 
 	target->lightingFramebuffer->Bind(true);
 
@@ -92,18 +70,18 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
-	directionalLightRenderer->Render(window, target, camera, scene);
+	directionalLightRenderer.Render(window, target, camera, scene);
 
-	pointLightRenderer->Render(window, target, camera, scene);
+	pointLightRenderer.Render(window, target, camera, scene);
 
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 
 	if (scene->sky->skybox != nullptr) {
-		skyboxRenderer->Render(window, target, camera, scene);
+		skyboxRenderer.Render(window, target, camera, scene);
 	}
 	else {
-		atmosphereRenderer->Render(window, target, camera, scene);
+		atmosphereRenderer.Render(window, target, camera, scene);
 	}
 
 	target->lightingFramebuffer->Unbind();
@@ -112,7 +90,7 @@ void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* c
 
 	vertexArray.Bind();
 
-	postProcessRenderer->Render(window, target, camera, scene);
+	postProcessRenderer.Render(window, target, camera, scene);
 
 }
 
@@ -247,7 +225,7 @@ void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float 
 
 void MasterRenderer::Update() {
 
-	textRenderer->Update();
+	textRenderer.Update();
 
 }
 

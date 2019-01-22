@@ -91,6 +91,12 @@ Cubemap::Cubemap(GLenum dataFormant, int32_t width, int32_t height, int32_t inte
 
 }
 
+Cubemap::~Cubemap() {
+
+	glDeleteTextures(1, &ID);
+
+}
+
 void Cubemap::Bind(uint32_t unit) {
 
 	glActiveTexture(unit);

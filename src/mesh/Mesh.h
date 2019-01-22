@@ -16,6 +16,9 @@ public:
 	/// \param filename
 	Mesh(string filename);
 
+
+	~Mesh();
+
 	///
 	void UpdateData();
 
@@ -28,16 +31,14 @@ public:
 	///
 	void DeleteContent();
 
-	~Mesh();
-
 	MeshData* data;
 
-	bool cullBackFaces;
+	bool cullBackFaces = true;
 
 private:
 	void InitializeVertexArray();
 
-	VertexArray* vertexArray;
+	VertexArray vertexArray;
 
 };
 

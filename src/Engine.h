@@ -30,7 +30,7 @@ public:
 			int32_t width, int32_t height, int32_t flags = WINDOW_FULLSCREEN);
 
 	/**
-	 *
+	 * 
 	 * @param width
 	 * @param height
 	 */
@@ -48,7 +48,7 @@ public:
 	static void UnlockFramerate();
 
 	/**
-	 * Updates the engine and the system events. Should be called in thread
+	 * Updates the engine and the system events. Must be called in thread
 	 * where the engine was initialized.
 	 */
 	static void Update();

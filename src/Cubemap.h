@@ -31,6 +31,8 @@ public:
 	Cubemap(GLenum dataFormant, int32_t width, int32_t height, int32_t internalFormat,
 			int32_t wrapping, int32_t filtering, bool mipmaps);
 
+	~Cubemap();
+
 	/**
 	 *
 	 * @param unit

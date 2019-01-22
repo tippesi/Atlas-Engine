@@ -24,6 +24,11 @@ public:
 	Camera(float fieldOfView, float aspectRatio, float nearPlane, float farPlane, glm::vec3 location = vec3(0.0f), vec2 rotation = vec2(0.0f));
 
 	/**
+	* Destructs a Camera object.
+	*/
+	~Camera();
+
+	/**
 	 * Calculates the view matrix based on the location and rotation of the camera.
 	 */
 	void UpdateView();
@@ -40,11 +45,6 @@ public:
 	 * @return A vector where the corners are stored.
 	 */
 	vector<vec3> GetFrustumCorners(float nearPlane, float farPlane);
-
-	/**
-	 * Destructs a Camera object.
-	 */
-	~Camera();
 
 	typedef struct Frustum {
 		vec4 planes[6];

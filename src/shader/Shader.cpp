@@ -31,9 +31,9 @@ void Shader::AddStage(int32_t type, string filename) {
 
 }
 
-void Shader::AddStage(ShaderStage* source) {
+void Shader::AddStage(ShaderStage* stage) {
 
-	stages.push_back(source);
+	stages.push_back(stage);
 
 }
 

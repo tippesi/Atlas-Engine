@@ -56,6 +56,8 @@ public:
 	 */
 	Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue);
 
+	~Font();
+
 	/**
 	 * Returns the glyph of a character
 	 * @param character The character which should be returned
@@ -82,8 +84,6 @@ public:
 	 * @note The text is assumed to be UTF-8 encoded.
 	 */
 	void ComputeDimensions(string text, float scale, float* width, float* height);
-
-	~Font();
 
 	float lineGap;
 	float ascent;

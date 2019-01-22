@@ -98,7 +98,7 @@ public:
 	 */
 	void Update();
 
-	TextRenderer* textRenderer;
+	TextRenderer textRenderer;
 
 	static string rectangleVertexPath;
 	static string rectangleFragmentPath;
@@ -125,16 +125,16 @@ private:
 	Uniform* texturedRectangleClipArea;
 	Uniform* texturedRectangleBlendArea;
 
-	GeometryRenderer* geometryRenderer;
-	TerrainRenderer* terrainRenderer;
-	ShadowRenderer* shadowRenderer;
-	DecalRenderer* decalRenderer;
-	DirectionalVolumetricRenderer* directionalVolumetricRenderer;
-	DirectionalLightRenderer* directionalLightRenderer;
-	PointLightRenderer* pointLightRenderer;
-	SkyboxRenderer* skyboxRenderer;
-	AtmosphereRenderer* atmosphereRenderer;
-	PostProcessRenderer* postProcessRenderer;
+	GeometryRenderer geometryRenderer;
+	TerrainRenderer terrainRenderer;
+	ShadowRenderer shadowRenderer;
+	DecalRenderer decalRenderer;
+	DirectionalVolumetricRenderer directionalVolumetricRenderer;
+	DirectionalLightRenderer directionalLightRenderer;
+	PointLightRenderer pointLightRenderer;
+	SkyboxRenderer skyboxRenderer;
+	AtmosphereRenderer atmosphereRenderer;
+	PostProcessRenderer postProcessRenderer;
 
 };
 

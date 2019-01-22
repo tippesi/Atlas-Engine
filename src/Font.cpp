@@ -152,6 +152,14 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 }
 
+Font::~Font() {
+
+	delete glyphTexture;
+	delete firstGlyphBuffer;
+	delete secondGlyphBuffer;
+
+}
+
 Glyph* Font::GetGlyph(char character) {
 
 	uint8_t characterIndex = (uint8_t)character;
@@ -210,13 +218,5 @@ void Font::ComputeDimensions(string text, float scale, float* width, float* heig
 		*width += ((float)(glyph->advance + glyph->kern[nextGlyph->codepoint]) * scale);
 
 	}
-
-}
-
-Font::~Font() {
-
-	delete glyphTexture;
-	delete firstGlyphBuffer;
-	delete secondGlyphBuffer;
 
 }

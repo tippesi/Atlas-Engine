@@ -20,6 +20,8 @@ class Material {
 public:
 	Material();
 
+	~Material();
+
 	void Update();
 
 	void AddDiffuseMap(Image image);
@@ -40,8 +42,6 @@ public:
 	float GetNormalMapIndex();
 	float GetSpecularMapIndex();
 	float GetDisplacementMapIndex();
-
-	~Material();
 
 	Texture2DArray* arrayMap;
 	Texture2D* diffuseMap;

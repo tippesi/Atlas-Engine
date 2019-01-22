@@ -18,6 +18,8 @@ public:
 	 */
 	Framebuffer(int32_t width, int32_t height);
 
+	~Framebuffer();
+
 	/**
 	 *
 	 * @param attachment
@@ -90,18 +92,8 @@ public:
 	///
 	void Unbind();
 
-	///
-	/// \param buffers
-	/// \param count
+
 	void SetDrawBuffers(uint32_t* buffers, int32_t count);
-
-	///
-	void ClearContent();
-
-	///
-	void DeleteContent();
-
-	~Framebuffer();
 
 	int32_t width;
 	int32_t height;
@@ -123,7 +115,7 @@ private:
 
 	bool drawBuffersSet;
 
-	unordered_map<int32_t, FramebufferComponent*> components;
+	unordered_map<int32_t, FramebufferComponent> components;
 	vector<uint32_t> drawBuffers;
 
 	static uint32_t boundFramebufferID;

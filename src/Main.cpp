@@ -102,7 +102,7 @@ void Main::Render(uint32_t deltaTime) {
 
 	string out = "Average " + to_string(averageFramerate) + " ms  Currently " + to_string(deltaTime) + " ms";
 
-	masterRenderer->textRenderer->Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f, true);
+	masterRenderer->textRenderer.Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f, true);
 
 }
 
@@ -189,7 +189,7 @@ void Main::DisplayLoadingScreen() {
 	float x = 1280 / 2 - textWidth / 2;
 	float y = 720 / 2 - textHeight / 2;
 
-	masterRenderer->textRenderer->Render(window, font, "Lädt...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+	masterRenderer->textRenderer.Render(window, font, "Lädt...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
 	window->Update();
 

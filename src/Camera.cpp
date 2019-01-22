@@ -19,6 +19,12 @@ Camera::Camera(float fieldOfView, float aspectRatio, float nearPlane, float farP
 
 }
 
+Camera::~Camera() {
+
+
+
+}
+
 void Camera::UpdateView() {
 
 	direction = normalize(vec3(cos(rotation.y) * sin(rotation.x), sin(rotation.y), cos(rotation.y) * cos(rotation.x)));
@@ -111,11 +117,5 @@ void Camera::CalculateFrustum() {
 	for (int32_t i = 0; i < 6; i++) {
 		frustum.planes[i] = normalize(inverseViewMatrix * frustum.planes[i]);
 	}
-
-}
-
-Camera::~Camera() {
-
-
 
 }

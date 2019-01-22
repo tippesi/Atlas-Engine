@@ -26,6 +26,15 @@ Material::Material() {
 
 }
 
+Material::~Material() {
+
+	delete diffuseMap;
+	delete normalMap;
+	delete specularMap;
+	delete displacementMap;
+
+}
+
 void Material::Update() {
 
 	int32_t width = 0, height = 0, channels = 0;
@@ -198,14 +207,5 @@ float Material::GetSpecularMapIndex() {
 float Material::GetDisplacementMapIndex() {
 
 	return displacementMapIndex;
-
-}
-
-Material::~Material() {
-
-	delete diffuseMap;
-	delete normalMap;
-	delete specularMap;
-	delete displacementMap;
 
 }

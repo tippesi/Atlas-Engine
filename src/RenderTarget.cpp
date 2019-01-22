@@ -3,7 +3,7 @@
 RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height(height) {
 
 	// We want a shared depth texture across the geometry and lighting framebuffers
-	Texture2D* depthTexture = new Texture2D(GL_UNSIGNED_INT, width, height, GL_DEPTH_COMPONENT24,
+	auto depthTexture = new Texture2D(GL_UNSIGNED_INT, width, height, GL_DEPTH_COMPONENT24,
 			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 	geometryFramebuffer = new Framebuffer(width, height);
@@ -37,9 +37,6 @@ void RenderTarget::Resize(int32_t width, int32_t height) {
 }
 
 RenderTarget::~RenderTarget() {
-
-	geometryFramebuffer->DeleteContent();
-	lightingFramebuffer->DeleteContent();
 
 	delete geometryFramebuffer;
 	delete lightingFramebuffer;
