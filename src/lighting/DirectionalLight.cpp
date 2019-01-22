@@ -1,6 +1,6 @@
 #include "DirectionalLight.h"
 
-DirectionalLight::DirectionalLight(int32_t mobility) {
+DirectionalLight::DirectionalLight(int32_t mobility) : ILight(DIRECTIONAL_LIGHT, mobility) {
 
 	direction = vec3(0.0f, -1.0f, 0.0f);
 
@@ -9,9 +9,6 @@ DirectionalLight::DirectionalLight(int32_t mobility) {
 
 	shadow = nullptr;
 	volumetric = nullptr;
-
-	type = DIRECTIONAL_LIGHT;
-	this->mobility = mobility;
 
 }
 

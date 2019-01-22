@@ -1,6 +1,6 @@
 #include "PointLight.h"
 
-PointLight::PointLight(int32_t mobility) {
+PointLight::PointLight(int32_t mobility) : ILight(POINT_LIGHT, mobility) {
 
     location = vec3(0.0f, 3.0f, 0.0f);
 
@@ -10,9 +10,6 @@ PointLight::PointLight(int32_t mobility) {
 
     shadow = nullptr;
     volumetric = nullptr;
-
-    type = POINT_LIGHT;
-    this->mobility = mobility;
 
 }
 

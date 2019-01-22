@@ -5,16 +5,19 @@
 #include "MeshData.h"
 #include "buffer/VertexArray.h"
 
+#define STATIONARY_MESH 0
+#define MOVABLE_MESH 1
+
 class Mesh {
 
 public:
 	///
 	/// \param data
-	Mesh(MeshData* data);
+	Mesh(MeshData* data, int32_t mobility = STATIONARY_MESH);
 
 	///
 	/// \param filename
-	Mesh(string filename);
+	Mesh(string filename, int32_t mobility = STATIONARY_MESH);
 
 
 	~Mesh();
@@ -31,9 +34,11 @@ public:
 	///
 	void DeleteContent();
 
-	MeshData* data;
+	MeshData* const data;
 
 	bool cullBackFaces = true;
+
+	const int32_t mobility;
 
 private:
 	void InitializeVertexArray();

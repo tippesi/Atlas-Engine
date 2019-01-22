@@ -1,15 +1,13 @@
 #include "Mesh.h"
 #include "../loader/ModelLoader.h"
 
-Mesh::Mesh(MeshData* data) : data(data) {
+Mesh::Mesh(MeshData* data, int32_t mobility) : data(data), mobility(mobility) {
 
 	InitializeVertexArray();
 
 }
 
-Mesh::Mesh(string filename) {
-
-	data = ModelLoader::LoadMesh(filename);
+Mesh::Mesh(string filename, int32_t mobility) : data(ModelLoader::LoadMesh(filename)), mobility(mobility) {
 
 	InitializeVertexArray();
 

@@ -29,13 +29,15 @@ public:
 		return volumetric;
 	}
 
-    int32_t type;
-    int32_t mobility;
+    const int32_t type;
+    const int32_t mobility;
 
     vec3 color;
     float ambient;
 
 protected:
+	ILight(int32_t type, int32_t mobility) : type(type), mobility(mobility) {}
+
     Shadow* shadow;
     Volumetric* volumetric;
 
