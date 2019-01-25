@@ -1,5 +1,5 @@
-#ifndef ACTOR_H
-#define ACTOR_H
+#ifndef MESHACTOR_H
+#define MESHACTOR_H
 
 #include "../System.h"
 #include "Mesh.h"
@@ -7,16 +7,19 @@
 class MeshActor {
 
 public:
+
 	/**
 	 *
 	 * @param mesh
 	 */
 	MeshActor(Mesh* mesh);
 
+	void Update();
+
 	mat4 modelMatrix;
 	mat4 transformedMatrix;
 
-	Mesh* mesh;
+	Mesh* const mesh;
 
 	bool castShadow;
 

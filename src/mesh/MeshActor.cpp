@@ -9,3 +9,9 @@ MeshActor::MeshActor(Mesh* mesh) : mesh(mesh) {
 	visible = true;
 
 }
+
+void MeshActor::Update() {
+
+
+
+}
