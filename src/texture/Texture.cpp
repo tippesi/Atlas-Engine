@@ -116,42 +116,6 @@ void Texture::GammaToLinear(uint16_t* data, int32_t width, int32_t height, int32
 
 }
 
-int32_t Texture::GetBaseFormat(int32_t sizedFormat) {
-
-    // See https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
-    switch (sizedFormat) {
-        case GL_R8: return GL_RED;
-        case GL_R8_SNORM: return GL_RED;
-        case GL_R16: return GL_RED;
-        case GL_R16_SNORM: return GL_RED;
-        case GL_RG8: return GL_RG;
-        case GL_RG8_SNORM: return GL_RG;
-        case GL_RG16: return GL_RG;
-        case GL_RG16_SNORM: return GL_RG;
-        case GL_RGB5_A1: return GL_RGBA;
-        case GL_RGBA8: return GL_RGBA;
-        case GL_RGBA8_SNORM: return GL_RGBA;
-        case GL_RGB10_A2: return GL_RGBA;
-        case GL_RGB10_A2UI: return GL_RGBA;
-        case GL_RGBA12: return GL_RGBA;
-        case GL_RGBA16: return GL_RGBA;
-        case GL_SRGB8_ALPHA8: return GL_RGBA;
-        case GL_R16F: return GL_RED;
-        case GL_RG16F: return GL_RG;
-        case GL_RGBA16F: return GL_RGBA;
-        case GL_R32F: return GL_RED;
-        case GL_RG32F: return GL_RG;
-        case GL_RGBA32F: return GL_RGBA;
-        case GL_DEPTH_COMPONENT16: return GL_DEPTH_COMPONENT;
-        case GL_DEPTH_COMPONENT24: return GL_DEPTH_COMPONENT;
-        case GL_DEPTH_COMPONENT32F: return GL_DEPTH_COMPONENT;
-        case GL_DEPTH24_STENCIL8: return GL_DEPTH_STENCIL;
-        case GL_DEPTH32F_STENCIL8: return GL_DEPTH_STENCIL;
-        default: return GL_RGB;
-    }
-
-}
-
 int32_t Texture::GetChannelCount(int32_t baseFormat) {
 
     switch(baseFormat) {
@@ -221,7 +185,7 @@ int32_t Texture::GetMipMapLevel() {
 void Texture::Generate(GLenum target, GLenum dataType, int32_t sizedFormat, int32_t wrapping,
         int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
 
-	this->channels = GetChannelCount(GetBaseFormat(sizedFormat));
+	this->channels = GetChannelCount(TextureFormat::GetBaseFormat(sizedFormat));
 	this->dataType = dataType;
 	this->sizedFormat = sizedFormat;
 	this->wrapping = wrapping;

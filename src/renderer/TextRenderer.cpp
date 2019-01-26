@@ -187,13 +187,13 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 
 	vertexArray.Bind();
 
-#ifndef ENGINE_ANDROID
-	#ifdef ENGINE_GLES
+	/*
+#ifdef ENGINE_GLES
 	glDrawArraysInstancedBaseInstanceEXT(GL_TRIANGLE_STRIP, 0, 4, characterCount, baseInstance);
 #else
 	glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, 0, 4, characterCount, baseInstance);
 #endif
-#endif
+	*/
 
 	if (alphaBlending) {
 		glDisable(GL_BLEND);

@@ -118,7 +118,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 
 }
  */
-
+/*
 Terrain* TerrainTool::GenerateTerrain(Image16 &heightImage, int32_t rootNodeCount, int32_t LoDCount, 
 	int32_t patchSize, float resolution, float height) {
 
@@ -627,3 +627,4 @@ float TerrainTool::GetHeight(vector<uint16_t>& heightData, int32_t dataWidth,
 	return (float)heightData[y * dataWidth + x] / 65535.0f;
 
 }
+ */

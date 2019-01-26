@@ -269,6 +269,7 @@ void Buffer::CreateInternal() {
 
     Bind();
 
+#ifndef ENGINE_ANDROID
     if (immutable) {
 #ifdef ENGINE_GLES
         glBufferStorageEXT(type, sizeInBytes, nullptr, dataFlags);
@@ -279,6 +280,9 @@ void Buffer::CreateInternal() {
     else {
         glBufferData(type, sizeInBytes, nullptr, dataFlags);
     }
+#else
+    glBufferData(type, sizeInBytes, nullptr, dataFlags);
+#endif
 
 }
 

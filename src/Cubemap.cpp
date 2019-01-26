@@ -78,7 +78,7 @@ Cubemap::Cubemap(GLenum dataFormant, int32_t width, int32_t height, int32_t inte
 	for (uint32_t i = 0; i < 6; i++) {
 
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0,
-			Texture::GetBaseFormat(internalFormat), dataFormant, NULL);
+			TextureFormat::GetBaseFormat(internalFormat), dataFormant, NULL);
 
 	}
 

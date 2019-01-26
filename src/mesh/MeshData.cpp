@@ -5,7 +5,7 @@ MeshData::MeshData() {
 	indices = new DataComponent<uint32_t, void>(COMPONENT_UNSIGNED_INT, 1);
 
 	vertices = new DataComponent<float, float>(COMPONENT_FLOAT, 3);
-	texCoords = new DataComponent<float, float16_t>(COMPONENT_FLOAT, 2);
+	texCoords = new DataComponent<float, float16>(COMPONENT_FLOAT, 2);
 	normals = new DataComponent<float, uint32_t>(COMPONENT_FLOAT, 3);
 	tangents = new DataComponent<float, uint32_t>(COMPONENT_FLOAT, 3);
 

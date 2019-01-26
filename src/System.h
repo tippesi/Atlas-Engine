@@ -19,23 +19,11 @@
 
 #if  defined(ENGINE_ANDROID)
 
+#define GL_GLEXT_PROTOTYPES
+
 #include <EGL/egl.h>
 #include <GLES3/gl32.h>
-#include <GLES3/gl3ext.h>
 #include <GLES2/gl2ext.h>
-#include <GLES3/gl3platform.h>
-
-// This extension is not declared in gl3ext.h, only in gl2ext.h which we can't include.
-// This means we have to declare these extension by ourselves
-#ifndef GL_EXT_texture_filter_anisotropic
-#define GL_TEXTURE_MAX_ANISOTROPY_EXT                           0x84FE
-#define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT                       0x84FF
-#endif
-
-// We don't want to define GL_GLEXT_PROTOTYPES which we would need to do in order
-// to retrieve this function from gl2ext.h
-GL_APICALL void GL_APIENTRY glBufferStorageEXT (GLenum target, GLsizeiptr size,
-        const void *data, GLbitfield flags);
 
 #include <android/log.h>
 
@@ -64,7 +52,7 @@ using glm::mat4;
 using glm::mat3;
 using namespace std;
 
-typedef short float16_t;
+typedef short float16;
 
 class EngineException : public std::exception {
 
