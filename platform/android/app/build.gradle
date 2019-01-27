@@ -23,13 +23,15 @@ android {
 
         externalNativeBuild {
             cmake {
-
+                // Exporting has to many bugs right now
+                arguments "-DASSIMP_BUILD_TESTS=OFF",
+                    "-DASSIMP_NO_EXPORT=ON"
             }
         }
 
         ndk {
             //abiFilters "armeabi", "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
-            abiFilters 'armeabi-v7a'
+            abiFilters "armeabi-v7a"
         }
     }
     buildTypes {
