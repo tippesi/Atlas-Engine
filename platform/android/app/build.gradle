@@ -11,7 +11,7 @@ android {
     compileSdkVersion 26
     defaultConfig {
         if (buildAsApplication) {
-            applicationId "org.blueengine.app"
+            applicationId "org.libsdl.app"
         }
         minSdkVersion 24
         targetSdkVersion 26
@@ -51,7 +51,7 @@ android {
             variant.outputs.each { output ->
                 def outputFile = output.outputFile
                 if (outputFile != null && outputFile.name.endsWith(".aar")) {
-                    def fileName = "org.blueengine.app.aar";
+                    def fileName = "org.libsdl.app.aar";
                     output.outputFile = new File(outputFile.parent, fileName);
                 }
             }

@@ -7,4 +7,5 @@ dependencies/SDL
 .idea
 .gradle
 .externalNativeBuild
-local.properties
+
+platform/android/local.properties
