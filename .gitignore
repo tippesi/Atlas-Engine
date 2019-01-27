@@ -10,3 +10,4 @@ dependencies/SDL
 
 platform/android/local.properties
 platform/android/app/app.iml
+platform/android/android.iml
