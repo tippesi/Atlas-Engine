@@ -9,3 +9,4 @@ dependencies/SDL
 .externalNativeBuild
 
 platform/android/local.properties
+platform/android/app/app.iml
