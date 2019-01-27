@@ -11,3 +11,4 @@ dependencies/Assimp
 platform/android/local.properties
 platform/android/app/app.iml
 platform/android/android.iml
+platform/android/local.properties
