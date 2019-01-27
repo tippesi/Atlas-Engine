@@ -57,9 +57,9 @@ endif()
 if(ANDROID)
 	set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_ANDROID)
 	find_library(ASSIMP_LIBRARY assimp ${CMAKE_CURRENT_SOURCE_DIR}/platform/android)
-    find_library(SDLMAIN_LIBRARY SDL2main ${CMAKE_CURRENT_SOURCE_DIR}/platform/android)
-    find_library(SDL_LIBRARY SDL2 ${CMAKE_CURRENT_SOURCE_DIR}/platform/android)
-	set(BLUE_ENGINE_LIBS ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} ${ASSIMP_LIBRARY})
+    # find_library(SDLMAIN_LIBRARY SDL2main ${CMAKE_CURRENT_SOURCE_DIR}/platform/android)
+    # find_library(SDL_LIBRARY SDL2 ${CMAKE_CURRENT_SOURCE_DIR}/platform/android)
+	set(BLUE_ENGINE_LIBS ${ASSIMP_LIBRARY})
 	set(BLUE_ENGINE_LIBS ${BLUE_ENGINE_LIBS} android log EGL GLESv3 m)
 endif()
 
@@ -109,7 +109,7 @@ endif()
 
 # For Android we have to always generate a shared library
 if(ANDROID)
-	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/SDL)
+	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/SDL EXCLUDE_FROM_ALL)
 	set(BLUE_ENGINE_LIBS  ${BLUE_ENGINE_LIBS} SDL2main SDL2)
     add_library(${PROJECT_NAME} SHARED ${BLUE_ENGINE_SOURCE_FILES})
 	target_compile_definitions(${PROJECT_NAME} PUBLIC ${ENGINE_COMPILE_DEFINITIONS})
@@ -171,7 +171,7 @@ if(APPLE)
             )
 endif()
 
-if(UNIX AND NOT APPLE)
+if(UNIX AND NOT APPLE AND NOT ANDROID)
     # for Linux, BSD, Solaris, Minix
     add_custom_command(TARGET ${PROJECT_NAME}
             COMMAND cp -rf ${CMAKE_CURRENT_SOURCE_DIR}/lib/Linux/libassimp.4.1.0.so ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libassimp.so.4
