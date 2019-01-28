@@ -23,7 +23,7 @@ $zip_file = (new-object -com shell.application).namespace("$location\$file")
 $destination = (new-object -com shell.application).namespace("$location")
 $items = $zip_file.items()
 $destination.Copyhere($items)
-rename-item "SDL2-2.0.9" "SDL2"
+rename-item "SDL2-2.0.9" "SDL"
 
 $file = "Assimp.zip"
 
