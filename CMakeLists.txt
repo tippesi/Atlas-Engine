@@ -5,6 +5,7 @@ endif()
 project(BlueEngine)
 cmake_minimum_required(VERSION 3.7)
 
+# Options and compiler settings ###################################################################
 option(BUILD_LIBRARY "Build as library" OFF)
 option(OPENGL_ES "Use OpenGL ES instead of OpenGL" OFF)
 
@@ -22,33 +23,25 @@ find_package(OpenGL REQUIRED)
 set(OpenGL_GL_PREFERENCE GLVND)
 endif()
 
-include_directories(${OPENGL_INCLUDE_DIR})
-
-set(ENGINE_COMPILE_DEFINITIONS ENGINE_CMAKE)
-
 # Add dependencies ################################################################################
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Assimp EXCLUDE_FROM_ALL)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/SDL EXCLUDE_FROM_ALL)
 if (ANDROID)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Hidapi EXCLUDE_FROM_ALL)
 else()
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/libraries/glad)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Glad EXCLUDE_FROM_ALL)
 endif()
 
 # Configure platform specific stuff ###############################################################
 if(MSVC)
-	set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_WINDOWS)
-    # for detecting Windows compiler MSVC
-	set(BLUE_ENGINE_LIBS assimp SDL2main SDL2)
-    # find_library(ASSIMP_LIBRARY assimp-vc140-mt ${CMAKE_CURRENT_SOURCE_DIR}/lib/Windows/lib)
-    set(BLUE_ENGINE_LIBS ${BLUE_ENGINE_LIBS} opengl32)
+	set(ENGINE_COMPILE_DEFINITIONS ENGINE_WINDOWS)
+
+	set(BLUE_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
+    set(BLUE_ENGINE_SYSTEM_LIBS opengl32)
 endif()
 
 if(APPLE)
-	set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_OSX)
-    # for MacOS X or iOS, watchOS, tvOS (since 3.10.3)
-
-	set(BLUE_ENGINE_LIBS assimp SDL2main SDL2)
+	set(ENGINE_COMPILE_DEFINITIONS ENGINE_OSX)
 
     include_directories(/System/Library/Frameworks)
     find_library(COCOA_LIBRARY Cocoa)
@@ -56,43 +49,42 @@ if(APPLE)
     find_library(IOKit_LIBRARY IOKit)
     find_library(CoreVideo_LIBRARY CoreVideo)
     mark_as_advanced(COCOA_LIBRARY OpenGL_LIBRARY)
-    set(APPLE_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
-    set(APPLE_LIBS ${APPLE_LIBS} ${ASSIMP_LIBRARY} ${SDL_LIBRARY})
-    set(BLUE_ENGINE_LIBS ${BLUE_ENGINE_LIBS} ${APPLE_LIBS})
+	
+	set(BLUE_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
+    set(BLUE_ENGINE_SYSTEM_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
 endif()
 
 if(ANDROID)
-	set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_ANDROID)
+	set(ENGINE_COMPILE_DEFINITIONS ENGINE_ANDROID)
+	
 	set(BLUE_ENGINE_LIBS assimp SDL2main SDL2 hidapi)	
-	set(BLUE_ENGINE_LIBS ${BLUE_ENGINE_LIBS} android EGL GLESv3 m)
+	set(BLUE_ENGINE_SYSTEM_LIBS android EGL GLESv3 m)
 endif()
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
-	set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_LINUX)
-    # for Linux, BSD, Solaris, Minix
-	
-    set(BLUE_ENGINE_LIBS assimp SDL2main SDL2)
-
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
+	set(ENGINE_COMPILE_DEFINITIONS ENGINE_LINUX)
 	
     add_definitions(${OPENGL_DEFINITIONS})
     find_package(X11 REQUIRED)
-    # note that the order is important for setting the libs
-    # use pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3) in a terminal to confirm
-    set(BLUE_ENGINE_LIBS ${BLUE_ENGINE_LIBS} X11 Xxf86vm GL dl pthread)
+	
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
     set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 
-        # rpath settings
     set(CMAKE_SKIP_BUILD_RPATH FALSE)
     set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
     set(CMAKE_INSTALL_RPATH "./")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+	
+	set(BLUE_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
+	set(BLUE_ENGINE_SYSTEM_LIBS X11 Xxf86vm GL dl pthread)
 endif()
 
 # Include directories #############################################################################
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/libraries)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/libraries/glad)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Assimp/include)
+include_directories(${CMAKE_BINARY_DIR}/dependencies/Assimp/include)
 
 # Add source files ################################################################################
 file(GLOB_RECURSE BLUE_ENGINE_SOURCE_FILES
@@ -102,7 +94,7 @@ file(GLOB_RECURSE BLUE_ENGINE_SOURCE_FILES
 		"src/*.hpp"
         )
 		
-list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX ".*src/libraries/.*")
+list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/libraries\/")
 
 if (OPENGL_ES)
 set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_GLES)
@@ -110,37 +102,26 @@ else()
 set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_GL)
 endif()
 
-# Use LINK_PUBLIC to also let other libraries link to it
-# Link libraries and executables ##################################################################
-# For Android we have to always generate a shared library
+# Configure linking ###############################################################################
 if(ANDROID)	
     add_library(${PROJECT_NAME} SHARED ${BLUE_ENGINE_SOURCE_FILES})
-	target_compile_definitions(${PROJECT_NAME} PUBLIC ${ENGINE_COMPILE_DEFINITIONS})
-if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    set(BLUE_ENGINE_LIBS  ${BLUE_ENGINE_LIBS})
-endif()
-    target_link_libraries(${PROJECT_NAME} ${BLUE_ENGINE_LIBS})
 else()
-# When the engine is just a subproject we dont want to produce an executable
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 if (BUILD_LIBRARY)
-    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.cpp")
-    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.c")
+    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/main.cpp")
+    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/main.c")
     add_library(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
-	target_compile_definitions(${PROJECT_NAME} PUBLIC ${ENGINE_COMPILE_DEFINITIONS})
-    target_link_libraries(${PROJECT_NAME} GLAD ${BLUE_ENGINE_LIBS})
     set(CMAKE_BUILD_TYPE Release ... FORCE)
 else()
     add_executable(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
-	target_compile_definitions(${PROJECT_NAME} PUBLIC ${ENGINE_COMPILE_DEFINITIONS})
-    target_link_libraries(${PROJECT_NAME} GLAD ${BLUE_ENGINE_LIBS})
 endif()
 else()
-    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.cpp")
-    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "./src/main.c")
+    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/main.cpp")
+    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/main.c")
     add_library(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
-	target_compile_definitions(${PROJECT_NAME} PUBLIC ${ENGINE_COMPILE_DEFINITIONS})
-    set(BLUE_ENGINE_LIBS GLAD ${BLUE_ENGINE_LIBS})
-    target_link_libraries(${PROJECT_NAME} ${BLUE_ENGINE_LIBS})
 endif()
 endif()
+
+# Link libraries ##################################################################################
+target_compile_definitions(${PROJECT_NAME} PUBLIC ${ENGINE_COMPILE_DEFINITIONS})
+target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${BLUE_ENGINE_LIBS} LINK_PRIVATE ${BLUE_ENGINE_SYSTEM_LIBS})

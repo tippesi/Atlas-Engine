@@ -5,11 +5,10 @@
 #include "../mesh/MeshData.h"
 #include "../SceneNode.h"
 
-#include "../libraries/assimp/Importer.hpp"
-#include "../libraries/assimp/scene.h"
-#include "../libraries/assimp/postprocess.h"
-#include "../libraries/assimp/types.h"
-#include "../libraries/assimp/config.h"
+#include <Assimp/include/assimp/Importer.hpp>
+#include <Assimp/include/assimp/scene.h>
+#include <Assimp/include/assimp/postprocess.h>
+#include <Assimp/include/assimp/types.h>
 
 class ModelLoader {
 

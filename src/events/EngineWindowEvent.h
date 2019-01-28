@@ -2,8 +2,9 @@
 #define ENGINEWINDOWEVENT_H
 
 #include "../System.h"
-#include "../libraries/SDL/include/SDL.h"
 #include "EventDelegate.h"
+
+#include <SDL/include/SDL.h>
 
 #define WINDOWEVENT_SHOWN SDL_WINDOWEVENT_SHOWN
 #define WINDOWEVENT_HIDDEN SDL_WINDOWEVENT_HIDDEN

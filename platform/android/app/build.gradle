@@ -28,9 +28,6 @@ android {
         }
 
         ndk {
-            //abiFilters "armeabi", "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
-            // It somehow generates an error when we have more than one filters
-            // (OPENGL_INCLUDE_DIRECTORY). There might be a naming collision
             abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
         }
     }
@@ -42,6 +39,7 @@ android {
     }
     externalNativeBuild {
         cmake {
+            version "3.10.2"
             path "../../../CMakeLists.txt"
         }
     }

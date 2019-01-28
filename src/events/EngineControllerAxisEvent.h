@@ -2,8 +2,9 @@
 #define SYSTEMCONTROLLERAXISEVENT_H
 
 #include "../System.h"
-#include "../libraries/SDL/include/SDL.h"
 #include "EventDelegate.h"
+
+#include <SDL/include/SDL.h>
 
 #define CONTROLLERAXIS_LEFTX SDL_CONTROLLER_AXIS_LEFTX
 #define CONTROLLERAXIS_LEFTY SDL_CONTROLLER_AXIS_LEFTY

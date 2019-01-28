@@ -2,8 +2,9 @@
 #define ENGINECONTROLLERDEVICEEVENT_H
 
 #include "../System.h"
-#include "../libraries/SDL/include/SDL.h"
 #include "EventDelegate.h"
+
+#include <SDL/include/SDL.h>
 
 #define CONTROLLER_ADDED SDL_CONTROLLERDEVICEADDED
 #define CONTROLLER_REMOVED SDL_CONTROLLERDEVICEREMOVED

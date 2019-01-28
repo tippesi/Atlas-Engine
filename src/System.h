@@ -36,7 +36,7 @@
 #define APIENTRY __stdcall
 #include <direct.h>
 #endif
-#include "libraries/glad/glad/glad.h"
+#include <Glad/glad/glad.h>
 
 #define EngineLog(...) printf(__VA_ARGS__); printf("\n");
 

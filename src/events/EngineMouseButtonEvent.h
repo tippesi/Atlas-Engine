@@ -2,8 +2,9 @@
 #define ENGINEMOUSEBUTTONEVENT_H
 
 #include "../System.h"
-#include "../libraries/SDL/include/SDL.h"
 #include "EventDelegate.h"
+
+#include <SDL/include/SDL.h>
 
 #define MOUSEBUTTON_LEFT SDL_BUTTON_LEFT
 #define MOUSEBUTTON_MIDDLE SDL_BUTTON_MIDDLE

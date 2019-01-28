@@ -2,8 +2,9 @@
 #define ENGINECONTROLLERBUTTONEVENT_H
 
 #include "../System.h"
-#include "../libraries/SDL/include/SDL.h"
 #include "EventDelegate.h"
+
+#include <SDL/include/SDL.h>
 
 #define CONTROLLERBUTTON_A SDL_CONTROLLER_BUTTON_A
 #define CONTROLLERBUTTON_B SDL_CONTROLLER_BUTTON_B
