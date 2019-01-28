@@ -2,6 +2,7 @@
 #define TEXTURE_H
 
 #include "../System.h"
+#include "TextureFormat.h"
 
 #include <vector>
 
@@ -82,13 +83,6 @@ public:
 	* @param channels The number of channels the data has
 	*/
 	static void GammaToLinear(uint16_t* data, int32_t width, int32_t height, int32_t channels);
-
-    /**
-     * Determines the base format of a sized format.
-     * @param sizedFormat The sized format, e.g GL_RGB16F
-     * @return The base format as an integer, e.g GL_RGB
-     */
-    static int32_t GetBaseFormat(int32_t sizedFormat);
 
     /**
      * Determines the number of channels for a given base format.

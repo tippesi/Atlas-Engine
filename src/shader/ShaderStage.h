@@ -12,6 +12,7 @@
 #define GEOMETRY_STAGE GL_GEOMETRY_SHADER
 #define TESSELLATION_CONTROL_STAGE GL_TESS_CONTROL_SHADER
 #define TESSELLATION_EVALUATION_STAGE GL_TESS_EVALUATION_SHADER
+#define COMPUTE_STAGE GL_COMPUTE_SHADER
 
 /**
  * A shader stage is a module/stage of a shader, e.g it might be a vertex shader.

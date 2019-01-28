@@ -1,28 +1,43 @@
 # Blue Engine
 ![Example scene](image.png)
 ## Introduction
-This is a cross platform engine that is available on all major platforms including Linux, Windows and MacOS.
+This is a cross platform engine that is available on all major platforms including Linux, Windows, MacOS and Android.
 >**Note:**
 >MacOS only supports OpenGL up to version 4.1. Some features aren't available there.
 ## Requirements
 - OpenGL 4.3 or higher
 - OpenGL ES 3.2
 ## Installation
+Before you start compiling make sure to download the dependencies into **./dependencies**. You can either do
+this manually or use one of the available scripts. Building the engine is really convenient: You can use your
+source code and project across all supported platforms. The only thing that differs are the build tools. 
+### Linux, Windows and MacOS
 The installation is done using CMake. There are two options available: Start a new project with a predefined
 main file which you can edit. The second option is two use the engine as a subproject in an already existing project.
->**Note:**
->The engine is only able to compile and run in an 64 bit environment.
 #### New project using the engine
 After running CMake you can find the main file at **./src/main.cpp**. Just start your project there, it already
 contains a main function.
 #### Excisting project using the engine
 There exist two options:
 - You can use the engine as a CMake subproject. Just go ahead and use **add_subdirectory** in the root
-CMakeLists.txt of your project. Afterwards add **target_link_libraries(YOUR_TARGET ... BlueEngine ${BLUE_ENGINE_LIBS})**. You should be fine.
+CMakeLists.txt of your project. Afterwards add **target_link_libraries(YOUR_TARGET ... BlueEngine)**. You should be fine.
 - You can compile the engine and all dependencies as a static library (note that some dependencies also have
-dynamic libraries). Therefore use the BUILD_LIBRARY option when using CMake. After compiling the library
+dynamic libraries). Therefore use the **BUILD_LIBRARY** option when using CMake. After compiling the library
 with your favourite build system you shouldn't forget to also copy all the libraries and include them to your project.
 You can find them in **./lib/YourFavouriteSystem/**.
+### Android
+The installation for Android is done differently. You can compile it using Gradle either with or without AndroidStudio.
+The Gradle project can be found in **./platform/android**. Open it before you proceed.
+There are also two options available: Start a new project with a predefined
+main file which you can edit. The second option is two use the engine as a subproject in an already existing project.
+#### New project using the engine
+You can find the main file at **./src/main.cpp**. Just start your project there, it already
+contains a main function. 
+#### Excisting project using the engine
+There exist two options:
+- You can use the engine as a Gradle subproject.
+- You can compile the engine and all dependencies as a static library (note that some dependencies also have
+dynamic libraries). Therefore set the project property to **BUILD_LIBRARY**.
 ## Documentation
 If you want more information have a look into the [Documentation](https://tippesi.github.io/Blue-Engine/index.html)
 ## General performance tips

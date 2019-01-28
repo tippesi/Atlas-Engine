@@ -1,5 +1,5 @@
-#ifndef ACTORBATCH_H
-#define ACTORBATCH_H
+#ifndef MESHACTORBATCH_H
+#define MESHACTORBATCH_H
 
 #include "../System.h"
 #include "MeshActor.h"
@@ -52,7 +52,7 @@ public:
 	vector<MeshActor*> actors;
 
 private:
-	Mesh* mesh;
+	Mesh* const mesh;
 
 	bool changed;
 

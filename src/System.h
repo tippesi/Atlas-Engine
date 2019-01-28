@@ -19,15 +19,11 @@
 
 #if  defined(ENGINE_ANDROID)
 
+#define GL_GLEXT_PROTOTYPES
+
 #include <EGL/egl.h>
-#include <GLES3/gl3.h>
-#include <GLES3/gl3ext.h>
-// This extension is not declared in gl3ext.h, only in gl2ext.h which we can't include.
-// This means we have to declare these extension by ourselves
-#ifndef GL_EXT_texture_filter_anisotropic
-#define GL_TEXTURE_MAX_ANISOTROPY_EXT                           0x84FE
-#define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT                       0x84FF
-#endif
+#include <GLES3/gl32.h>
+#include <GLES2/gl2ext.h>
 
 #include <android/log.h>
 
@@ -40,7 +36,7 @@
 #define APIENTRY __stdcall
 #include <direct.h>
 #endif
-#include "libraries/glad/glad/glad.h"
+#include <Glad/glad/glad.h>
 
 #define EngineLog(...) printf(__VA_ARGS__); printf("\n");
 
@@ -56,7 +52,7 @@ using glm::mat4;
 using glm::mat3;
 using namespace std;
 
-typedef short float16_t;
+typedef short float16;
 
 class EngineException : public std::exception {
 

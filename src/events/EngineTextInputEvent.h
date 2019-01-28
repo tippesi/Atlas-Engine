@@ -3,9 +3,10 @@
 
 
 #include "../System.h"
-#include "../libraries/SDL/include/SDL.h"
 #include "EventDelegate.h"
 #include "EngineKeycodes.h"
+
+#include <SDL/include/SDL.h>
 
 /**
  * A class to distribute text input events.

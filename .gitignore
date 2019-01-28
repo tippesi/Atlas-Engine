@@ -1,6 +1,13 @@
+local.properties
 vsbuild
 build
 cmake-build-debug
 cmake-build-release
 cmake-build-debug-visual-studio
+dependencies/SDL
+dependencies/Assimp
 .idea
+.gradle
+.externalNativeBuild
+platform/android/app/app.iml
+platform/android/android.iml

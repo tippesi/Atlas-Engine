@@ -2,11 +2,12 @@
 #define ENGINEKEYCODES_H
 
 #include "../System.h"
-#include "../libraries/SDL/include/SDL.h"
+
+#include <SDL/include/SDL.h>
 
 typedef int32_t Keycode;
 
-#define SCANCODE_MASK (1<<30)
+#define SCANCODE_MASK (1 << 30)
 #define SCANCODE_TO_KEYCODE(X)  (X | SCANCODE_MASK)
 
 enum {

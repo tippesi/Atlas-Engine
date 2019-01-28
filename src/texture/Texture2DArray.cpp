@@ -10,7 +10,8 @@ Texture2DArray::Texture2DArray(GLenum dataType, int32_t width, int32_t height, i
     this->height = height;
     this->depth = depth;
 
-    Generate(GL_TEXTURE_2D_ARRAY, dataType, sizedFormat, wrapping, filtering, anisotropicFiltering, generateMipMaps);
+    Generate(GL_TEXTURE_2D_ARRAY, dataType, sizedFormat, wrapping, filtering,
+            anisotropicFiltering, generateMipMaps);
 
 }
 
@@ -31,7 +32,7 @@ void Texture2DArray::SetData(vector<uint8_t> &data, int32_t depth, int32_t count
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, width, height, count,
-            GetBaseFormat(sizedFormat), dataType, data.data());
+            TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
     if (mipmaps)
         glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
@@ -41,7 +42,7 @@ void Texture2DArray::SetData(vector<uint16_t> &data, int32_t depth, int32_t coun
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, width, height, count,
-                    GetBaseFormat(sizedFormat), dataType, data.data());
+            TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
     if (mipmaps)
         glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
@@ -55,7 +56,8 @@ vector<uint8_t> Texture2DArray::GetData(int32_t depth) {
 
     framebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, this, depth);
 
-    glReadPixels(0, 0, width, height, GetBaseFormat(sizedFormat), GL_UNSIGNED_BYTE, data.data());
+    glReadPixels(0, 0, width, height,
+            TextureFormat::GetBaseFormat(sizedFormat), GL_UNSIGNED_BYTE, data.data());
 
     framebuffer.Unbind();
 
@@ -72,7 +74,8 @@ void Texture2DArray::Resize(int32_t width, int32_t height, int32_t depth) {
     glDeleteTextures(1, &ID);
     glGenTextures(1, &ID);
 
-    Generate(GL_TEXTURE_2D_ARRAY, dataType, sizedFormat, wrapping, filtering, anisotropicFiltering, mipmaps);
+    Generate(GL_TEXTURE_2D_ARRAY, dataType, sizedFormat, wrapping,
+            filtering, anisotropicFiltering, mipmaps);
 
 }
 

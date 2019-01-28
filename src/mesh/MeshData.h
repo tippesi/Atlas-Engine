@@ -43,7 +43,7 @@ public:
 	DataComponent<uint32_t, void>* indices;
 	
 	DataComponent<float, float>* vertices;
-	DataComponent<float, float16_t>* texCoords;
+	DataComponent<float, float16>* texCoords;
 	DataComponent<float, uint32_t>* normals;
 	DataComponent<float, uint32_t>* tangents;
 

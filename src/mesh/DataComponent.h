@@ -23,7 +23,7 @@
  */
 #define COMPONENT_UNSIGNED_BYTE GL_UNSIGNED_BYTE
 /**
- * T should be float16_t to support proper conversion
+ * T should be float16 to support proper conversion
  */
 #define COMPONENT_HALF_FLOAT GL_HALF_FLOAT
 /**
@@ -168,7 +168,7 @@ void DataComponent<S, T>::Set(S* data) {
 
 	if (componentType == COMPONENT_HALF_FLOAT) {
 		int32_t dataSize = stride * size;
-		float16_t* internalData = (float16_t*)this->convertedData;
+		float16* internalData = (float16*)this->convertedData;
 		for (int32_t i = 0; i < dataSize; i++) {
 			internalData[i] = glm::detail::toFloat16((float)data[i]);
 		}
@@ -223,7 +223,7 @@ template <class S, class T>
 void DataComponent<S, T>::SetType(int32_t componentType) {
 
     if (componentType == COMPONENT_HALF_FLOAT) {
-        delete[](float16_t*)convertedData;
+        delete[](float16*)convertedData;
     }
     else if (componentType == COMPONENT_PACKED_FLOAT) {
         delete[](uint32_t*)convertedData;
@@ -240,7 +240,7 @@ void DataComponent<S, T>::SetType(int32_t componentType) {
 
 	if (componentType == COMPONENT_HALF_FLOAT) {
 		delete[] data;
-        convertedData = new float16_t[stride * size];
+        convertedData = new float16[stride * size];
 	}
 	else if (componentType == COMPONENT_PACKED_FLOAT) {
 		delete[] data;
@@ -270,9 +270,9 @@ void DataComponent<S, T>::SetSize(int32_t size) {
 	this->size = size;
 
 	if (componentType == COMPONENT_HALF_FLOAT) {
-        delete[] (float16_t*)convertedData;
+        delete[] (float16*)convertedData;
 		delete[] data;
-        convertedData = new float16_t[stride * size];
+        convertedData = new float16[stride * size];
 	}
 	else if (componentType == COMPONENT_PACKED_FLOAT) {
         delete[](uint32_t*)convertedData;
@@ -307,7 +307,7 @@ int32_t DataComponent<S, T>::GetElementSize() {
 	case COMPONENT_UNSIGNED_SHORT: return sizeof(uint16_t) * stride;
 	case COMPONENT_UNSIGNED_BYTE: return sizeof(uint8_t) * stride;
 	case COMPONENT_FLOAT: return sizeof(float) * stride;
-	case COMPONENT_HALF_FLOAT: return sizeof(float16_t) * stride;
+	case COMPONENT_HALF_FLOAT: return sizeof(float16) * stride;
 	case COMPONENT_PACKED_FLOAT: return sizeof(uint32_t);
 	}
 
@@ -349,7 +349,7 @@ DataComponent<S, T>::~DataComponent() {
 	delete[] data;
 	
 	if (componentType == COMPONENT_HALF_FLOAT) {
-		delete[] (float16_t*)convertedData;
+		delete[] (float16*)convertedData;
 	}
 	else if (componentType == COMPONENT_PACKED_FLOAT) {
 		delete[] (uint32_t*)convertedData;
