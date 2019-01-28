@@ -1,4 +1,4 @@
-def buildAsLibrary = project.hasProperty('BUILD_AS_LIBRARY');
+def buildAsLibrary = project.hasProperty('BUILD_LIBRARY');
 def buildAsApplication = !buildAsLibrary
 if (buildAsApplication) {
     apply plugin: 'com.android.application'
@@ -18,14 +18,22 @@ android {
         versionCode 1
         versionName "1.0"
 
-        //https://stackoverflow.com/questions/49666372/assimp-android-ndk-toolchain
-
-        externalNativeBuild {
-            cmake {
-                arguments '-DASSIMP_BUILD_ZLIB=ON', '-DASSIMP_BUILD_TESTS=OFF'
-                cppFlags '-fexceptions -frtti -std=c++11'
-            }
-        }
+		if (buildAsApplication) {
+			externalNativeBuild {
+				cmake {
+					arguments '-DASSIMP_BUILD_ZLIB=ON', '-DASSIMP_BUILD_TESTS=OFF'
+					cppFlags '-fexceptions -frtti -std=c++11'
+				}
+			}
+		}
+		else {
+			externalNativeBuild {
+				cmake {
+					arguments '-DASSIMP_BUILD_ZLIB=ON', '-DASSIMP_BUILD_TESTS=OFF', '-DBUILD_LIBRARY=ON'
+					cppFlags '-fexceptions -frtti -std=c++11'
+				}
+			}			
+		}
 
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
