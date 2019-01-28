@@ -18,24 +18,24 @@ $file = "SDL.zip"
 Invoke-WebRequest -Uri "https://www.libsdl.org/release/SDL2-2.0.9.zip" -OutFile $file -TimeoutSec 5
 
 # Unzip the file to specified location
-mkdir "SDL"
 $location = Get-Location
 $zip_file = (new-object -com shell.application).namespace("$location\$file") 
-$destination = (new-object -com shell.application).namespace("$location\SDL")
+$destination = (new-object -com shell.application).namespace("$location")
 $items = $zip_file.items()
 $destination.Copyhere($items)
+rename-item "SDL2-2.0.9" "SDL2"
 
 $file = "Assimp.zip"
 
 Invoke-WebRequest -Uri "https://www.github.com/assimp/assimp/archive/v4.1.0.zip" -OutFile $file -TimeoutSec 5
 
 # Unzip the file to specified location
-mkdir "Assimp"
 $location = Get-Location
 $zip_file = (new-object -com shell.application).namespace("$location\$file") 
-$destination = (new-object -com shell.application).namespace("$location\Assimp")
+$destination = (new-object -com shell.application).namespace("$location")
 $items = $zip_file.items()
 $destination.Copyhere($items)
+rename-item "assimp-4.1.0" "Assimp"
 
-Remove-Item SDL.zip
-Remove-Item Assimp.zip
+remove-item SDL.zip
+remove-item Assimp.zip
