@@ -9,9 +9,7 @@ TextRenderer::TextRenderer() {
 	GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
 	// Hard coded maximum of 1000 character per draw call
-	VertexBuffer* vertexBuffer = new VertexBuffer(GL_FLOAT, 3, sizeof(vec3), 10000, BUFFER_DYNAMIC_STORAGE |
-		BUFFER_TRIPLE_BUFFERING | BUFFER_MAP_WRITE | BUFFER_IMMUTABLE);
-	vertexBuffer->Map();
+	VertexBuffer* vertexBuffer = new VertexBuffer(GL_FLOAT, 3, sizeof(vec3), 5000);
 	vertexArray.AddInstancedComponent(1, vertexBuffer);
 
 	shader.AddStage(VERTEX_STAGE, vertexPath);
@@ -67,13 +65,12 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 	glDisable(GL_CULL_FACE);
 
 	if (alphaBlending) {
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}
-
-	int32_t baseInstance = vertexArray.GetComponent(1)->GetDataMappedAdvancement();
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
 
 	auto instances = CalculateCharacterInstances(font, text, &characterCount);
+	vertexArray.GetComponent(1)->SetData(instances.data(), 0, instances.size());
 
 	glyphsTexture->SetValue(0);
 
@@ -96,13 +93,7 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 
 	vertexArray.Bind();
 
-#ifndef ENGINE_ANDROID
-	#ifdef ENGINE_GLES
-	glDrawArraysInstancedBaseInstanceEXT(GL_TRIANGLE_STRIP, 0, 4, characterCount, baseInstance);
-#else
-	glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, 0, 4, characterCount, baseInstance);
-#endif
-#endif
+	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, characterCount);
 
 	if (alphaBlending) {
 		glDisable(GL_BLEND);
@@ -159,9 +150,8 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 	float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
 	float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
 
-	int32_t baseInstance = vertexArray.GetComponent(1)->GetDataMappedAdvancement();
-
 	auto instances = CalculateCharacterInstances(font, text, &characterCount);
+    vertexArray.GetComponent(1)->SetData(instances.data(), 0, instances.size());
 
 	glyphsTexture->SetValue(0);
 
@@ -187,13 +177,7 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 
 	vertexArray.Bind();
 
-	/*
-#ifdef ENGINE_GLES
-	glDrawArraysInstancedBaseInstanceEXT(GL_TRIANGLE_STRIP, 0, 4, characterCount, baseInstance);
-#else
-	glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, 0, 4, characterCount, baseInstance);
-#endif
-	*/
+	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, characterCount);
 
 	if (alphaBlending) {
 		glDisable(GL_BLEND);
@@ -212,7 +196,7 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 
 void TextRenderer::Update() {
 
-	vertexArray.GetComponent(1)->Increment();
+
 
 }
 
@@ -265,7 +249,6 @@ vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, 
 			instances[index].x = glyph->offset.x + xOffset;
 			instances[index].y = glyph->offset.y + font->ascent;
 			instances[index].z = (float)glyph->texArrayIndex;
-			vertexArray.GetComponent(1)->SetDataMapped(&instances[index]);
 			index++;
 		}
 
