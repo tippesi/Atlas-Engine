@@ -79,13 +79,6 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
 	set(BLUE_ENGINE_SYSTEM_LIBS X11 Xxf86vm GL dl pthread)
 endif()
 
-# Include directories #############################################################################
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/libraries)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Assimp/include)
-include_directories(${CMAKE_BINARY_DIR}/dependencies/Assimp/include)
-
 # Add source files ################################################################################
 file(GLOB_RECURSE BLUE_ENGINE_SOURCE_FILES
         "src/*.cpp"
@@ -108,20 +101,27 @@ if(ANDROID)
 else()
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 if (BUILD_LIBRARY)
-    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/main.cpp")
-    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/main.c")
-    add_library(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
-    set(CMAKE_BUILD_TYPE Release ... FORCE)
+    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/[Mm]ain.c(pp)?")
+    add_library(${PROJECT_NAME} STATIC ${BLUE_ENGINE_SOURCE_FILES})
 else()
     add_executable(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
 endif()
 else()
-    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/main.cpp")
-    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/main.c")
-    add_library(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
+    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/[Mm]ain.c(pp)?")
+    add_library(${PROJECT_NAME} STATIC ${BLUE_ENGINE_SOURCE_FILES})
 endif()
 endif()
 
-# Link libraries ##################################################################################
+# Include directories and definitions #############################################################
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ENGINE_COMPILE_DEFINITIONS})
+target_include_directories(${PROJECT_NAME} 
+	PUBLIC
+	${CMAKE_CURRENT_SOURCE_DIR}/dependencies
+	${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Assimp/include
+	${CMAKE_CURRENT_BINARY_DIR}/dependencies/Assimp/include
+	PRIVATE
+	${CMAKE_CURRENT_SOURCE_DIR}/src
+	${CMAKE_CURRENT_SOURCE_DIR}/src/libraries)
+
+# Link libraries ##################################################################################
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${BLUE_ENGINE_LIBS} LINK_PRIVATE ${BLUE_ENGINE_SYSTEM_LIBS})
