@@ -8,6 +8,24 @@ cmake_minimum_required(VERSION 3.7)
 # Options and compiler settings ###################################################################
 option(BUILD_LIBRARY "Build as library" OFF)
 option(OPENGL_ES "Use OpenGL ES instead of OpenGL" OFF)
+option(FORCE_RELEASE "Forces the project and dependencies to build in release mode" OFF)
+option(FORCE_DEPENDENCIES_RELEASE "Forces the dependencies to build in release mode" ON)
+
+# Check for muli-config generator #################################################################
+if (CMAKE_CONFIGURATION_TYPES)
+set(MULTI_CONFIG 1)
+else()
+set(MULTI_CONFIG 0)
+endif()
+
+# Force release mode if enabled ###################################################################
+if (FORCE_RELEASE)
+if (MULTI_CONFIG)
+set(CMAKE_CONFIGURATION_TYPES "Release")
+else()
+set(CMAKE_BUILD_TYPE "Release")
+endif()
+endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -23,6 +41,17 @@ find_package(OpenGL REQUIRED)
 set(OpenGL_GL_PREFERENCE GLVND)
 endif()
 
+# Force release mode on dependencies ##############################################################
+if(FORCE_DEPENDENCIES_RELEASE AND NOT FORCE_RELEASE)
+if(MULTI_CONFIG)
+set(CMAKE_CONFIGURATION_TYPES_SAVED ${CMAKE_CONFIGURATION_TYPES})
+set(CMAKE_CONFIGURATION_TYPES "Release")
+else()
+set(CMAKE_BUILD_TYPE_SAVED ${CMAKE_BUILD_TYPE})
+set(CMAKE_BUILD_TYPE "Release")
+endif()
+endif()
+
 # Add dependencies ################################################################################
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Assimp EXCLUDE_FROM_ALL)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/SDL EXCLUDE_FROM_ALL)
@@ -30,6 +59,15 @@ if (ANDROID)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Hidapi EXCLUDE_FROM_ALL)
 else()
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Glad EXCLUDE_FROM_ALL)
+endif()
+
+# Reset configuration types if necessary ##########################################################
+if(FORCE_DEPENDENCIES_RELEASE AND NOT FORCE_RELEASE)
+if(MULTI_CONFIG)
+set(CMAKE_CONFIGURATION_TYPES ${CMAKE_CONFIGURATION_TYPES_SAVED})
+else()
+set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE_SAVED})
+endif()
 endif()
 
 # Configure platform specific stuff ###############################################################
