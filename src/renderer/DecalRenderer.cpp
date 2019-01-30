@@ -38,7 +38,6 @@ void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera,
     projectionMatrix->SetValue(camera->projectionMatrix);
 	inverseViewMatrix->SetValue(camera->inverseViewMatrix);
 	inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
-	alphaFactor->SetValue(1.0f);
 
 	timeInMilliseconds->SetValue((float)SDL_GetTicks());
 
@@ -49,6 +48,9 @@ void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera,
         animationLength->SetValue(decal->animationLength);
 
         modelMatrix->SetValue(decal->matrix);
+
+		color->SetValue(decal->color);
+
         decal->texture->Bind(GL_TEXTURE1);
 
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -68,10 +70,10 @@ void DecalRenderer::GetUniforms() {
     projectionMatrix = shader.GetUniform("pMatrix");
 	inverseViewMatrix = shader.GetUniform("ivMatrix");
 	inverseProjectionMatrix = shader.GetUniform("ipMatrix");
-	alphaFactor = shader.GetUniform("alphaFactor");
 	timeInMilliseconds = shader.GetUniform("timeInMilliseconds");
 	animationLength = shader.GetUniform("animationLength");
 	rowCount = shader.GetUniform("rowCount");
 	columnCount = shader.GetUniform("columnCount");
+	color = shader.GetUniform("color");
 
 }

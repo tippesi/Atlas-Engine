@@ -29,7 +29,7 @@ private:
     Uniform* inverseViewMatrix;
 	Uniform* inverseProjectionMatrix;
 
-	Uniform* alphaFactor;
+	Uniform* color;
 
 	Uniform* timeInMilliseconds;
 	Uniform* animationLength;

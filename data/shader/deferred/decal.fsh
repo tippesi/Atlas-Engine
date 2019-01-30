@@ -9,8 +9,9 @@ out vec4 fragColor;
 uniform sampler2D depthTexture;
 uniform sampler2D decalTexture;
 uniform vec2 depthTextureResolution;
-uniform float alphaFactor;
 uniform mat4 ivMatrix;
+
+uniform vec4 color;
 
 #ifdef ANIMATION
 uniform float timeInMilliseconds;
@@ -68,6 +69,6 @@ void main() {
 	fragColor = texture(decalTexture, textureCoord);
 #endif
 
-	fragColor *= vec4(1.0f, 1.0f, 1.0f, alphaFactor);
+	fragColor *= color;
 
 }
