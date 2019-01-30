@@ -8,38 +8,6 @@ cmake_minimum_required(VERSION 3.7)
 # Options and compiler settings ###################################################################
 option(BUILD_LIBRARY "Build as library" OFF)
 option(OPENGL_ES "Use OpenGL ES instead of OpenGL" OFF)
-option(FORCE_RELEASE "Forces the project and dependencies to build in release mode" ON)
-
-# Check for muli-config generator #################################################################
-if (CMAKE_CONFIGURATION_TYPES)
-set(MULTI_CONFIG 1)
-else()
-set(MULTI_CONFIG 0)
-endif()
-
-if (FORCE_RELEASE)
-if (NOT MULTI_CONFIG)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-else()
-foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
-    string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_BINARY_DIR})
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_CURRENT_BINARY_DIR}/lib)
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_CURRENT_BINARY_DIR}/lib)
-endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
-endif()
-endif()
-
-# Force release mode if enabled ###################################################################
-if (FORCE_RELEASE)
-if (MULTI_CONFIG)
-set(CMAKE_CONFIGURATION_TYPES "Release")
-else()
-set(CMAKE_BUILD_TYPE "Release")
-endif()
-endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})

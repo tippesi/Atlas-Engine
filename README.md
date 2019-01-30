@@ -11,6 +11,8 @@ This is a cross platform engine that is available on all major platforms includi
 Before you start compiling make sure to download the dependencies into **./dependencies**. You can either do
 this manually or use one of the available scripts. Building the engine is really convenient: You can use your
 source code and project across all supported platforms. The only thing that differs are the build tools. 
+>**Note:**
+>Debugging the resulting application in a debug configuration will result in poor performance. 
 ### Linux, Windows and MacOS
 The installation is done using CMake. There are two options available: Start a new project with a predefined
 main file which you can edit. The second option is two use the engine as a subproject in an already existing project.
