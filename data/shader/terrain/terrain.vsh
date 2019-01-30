@@ -1,7 +1,7 @@
 layout (location = 0) in vec2 vPosition;
 layout (location = 1) in vec2 vPatchOffset;
 
-uniform sampler2D heightField;
+uniform usampler2D heightField;
 
 uniform float heightScale;
 
@@ -22,7 +22,7 @@ void main() {
 	vec2 texCoords = localPosition;
 	texCoords /= nodeSideLength;
 	
-	float height = texture(heightField, texCoords).r * heightScale;
+	float height = float(texture(heightField, texCoords).r) / 65535.0f * heightScale;
 					
 	gl_Position =  mMatrix * vec4(position.x, height, position.y, 1.0f);
 	

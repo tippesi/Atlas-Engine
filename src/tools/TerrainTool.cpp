@@ -118,7 +118,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 
 }
  */
-/*
+
 Terrain* TerrainTool::GenerateTerrain(Image16 &heightImage, int32_t rootNodeCount, int32_t LoDCount, 
 	int32_t patchSize, float resolution, float height) {
 
@@ -136,8 +136,21 @@ Terrain* TerrainTool::GenerateTerrain(Image16 &heightImage, int32_t rootNodeCoun
 
 	auto terrain = new Terrain(rootNodeCount, LoDCount, patchSize, resolution, height);
 
-	// Split the image up into small tiles
-	int32_t tileResolution = heightImage.width / maxNodesPerSide + 1;
+	// Calculate the number of vertices per tile and resize the height data to map 1:1
+	int32_t tileResolution = 16 * patchSize;
+
+	int32_t totalResolution = tileResolution * maxNodesPerSide;
+
+	vector<uint16_t> heightData(totalResolution * totalResolution);
+
+	stbir_resize_uint16_generic(heightImage.data.data(), heightImage.width, heightImage.height,
+		heightImage.width * 2, heightData.data(), totalResolution,
+		totalResolution, totalResolution * 2, 1, -1, 0,
+		STBIR_EDGE_CLAMP,
+		STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+
+	// We need some room in the bottom and right for overlapping vertices
+	tileResolution += 1;
 	int32_t tileResolutionSquared = tileResolution * tileResolution;
 
 	auto storage = terrain->storage;
@@ -152,7 +165,7 @@ Terrain* TerrainTool::GenerateTerrain(Image16 &heightImage, int32_t rootNodeCoun
 			// Create the data structures for the cell
 			cell->heightData.resize(tileResolutionSquared);
 			cell->heightField = new Texture2D(GL_UNSIGNED_SHORT, tileResolution,
-				tileResolution, GL_R16, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+				tileResolution, GL_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
 			cell->normalMap = new Texture2D(GL_UNSIGNED_BYTE, tileResolution,
 				tileResolution, GL_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
@@ -166,20 +179,20 @@ Terrain* TerrainTool::GenerateTerrain(Image16 &heightImage, int32_t rootNodeCoun
 					int32_t xImage = i * (tileResolution - 1) + x;
 					int32_t yImage = j * (tileResolution - 1) + y;
 					int32_t imageOffset = 0;
-					if (xImage >= heightImage.width && yImage >= heightImage.width) {
-						imageOffset = (heightImage.width - 1) * heightImage.width + heightImage.width - 1;
+					if (xImage >= totalResolution && yImage >= totalResolution) {
+						imageOffset = (totalResolution - 1) * totalResolution + totalResolution - 1;
 					}
-					else if (yImage >= heightImage.width) {
-						imageOffset = (heightImage.width - 1) * heightImage.width + xImage;
+					else if (yImage >= totalResolution) {
+						imageOffset = (totalResolution - 1) * totalResolution + xImage;
 					}
-					else if (xImage >= heightImage.width) {
-						imageOffset = yImage * heightImage.width + heightImage.width - 1;
+					else if (xImage >= totalResolution) {
+						imageOffset = yImage * totalResolution + totalResolution - 1;
 					}
 					else {
-						imageOffset = yImage * heightImage.width + xImage;
+						imageOffset = yImage * totalResolution + xImage;
 					}
-					cell->heightData[cellOffset] = (float)heightImage.data[imageOffset];
-					cellHeightData[cellOffset] = heightImage.data[imageOffset];
+					cell->heightData[cellOffset] = (float)heightData[imageOffset];
+					cellHeightData[cellOffset] = heightData[imageOffset];
 				}
 			}
 
@@ -369,8 +382,8 @@ void TerrainTool::BrushHeight(Terrain *terrain, Kernel *kernel, float scale, vec
 	// Apply the kernel on the whole data
 	position -= middleMiddle->position;
 
-	int32_t x = (int32_t)floorf(position.x);
-	int32_t y = (int32_t)floorf(position.y);
+    int32_t x = (int32_t)floorf(position.x / terrain->resolution);
+    int32_t y = (int32_t)floorf(position.y / terrain->resolution);
 
 	x += width;
 	y += height;
@@ -430,6 +443,7 @@ void TerrainTool::BrushHeight(Terrain *terrain, Kernel *kernel, float scale, vec
 			cell->heightField->SetData(cellHeightData);
 
 		}
+
 	}
 
 }
@@ -498,8 +512,8 @@ void TerrainTool::SmoothHeight(Terrain *terrain, int32_t size, int32_t contribut
 	// Apply the kernel on the whole data
 	position -= middleMiddle->position;
 
-	int32_t x = (int32_t)floorf(position.x);
-	int32_t y = (int32_t)floorf(position.y);
+    int32_t x = (int32_t)floorf(position.x / terrain->resolution);
+    int32_t y = (int32_t)floorf(position.y / terrain->resolution);
 
 	x += width;
 	y += height;
@@ -627,4 +641,3 @@ float TerrainTool::GetHeight(vector<uint16_t>& heightData, int32_t dataWidth,
 	return (float)heightData[y * dataWidth + x] / 65535.0f;
 
 }
- */

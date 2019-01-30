@@ -199,13 +199,23 @@ void Main::SceneSetUp() {
 
 	scene = new Scene();
 
-	terrain = new Terrain(16, 3, 4, 1.0f, 300.0f);
-	terrain->SetTessellationFunction(400.0f, 2.0f, 0.0f, 1.0f);
-	terrain->SetDisplacementDistance(15.0f);
+	Image image = ImageLoader::LoadImage("../data/terrain/heightfield.png", false, 1);
 
-	terrain->SetLoDDistance(0, 500.0f);
-	terrain->SetLoDDistance(1, 200.0f);
-	terrain->SetLoDDistance(2, 64.0f);
+	Image16 image16;
+	image16.width = image.width;
+	image16.height = image.height;
+	image16.channels = image.channels;
+
+	image16.data.resize(image.data.size());
+
+	for (int32_t i = 0; i < image.data.size(); i++) {
+		image16.data[i] = (uint16_t)((float)image.data[i] / 255.0f * 65535.0f);
+	}
+
+	terrain = TerrainTool::GenerateTerrain(image16, 256, 1, 4, 2.0f, 300.0f);
+	// terrain = new Terrain(256, 1, 4, 2.0f, 300.0f);
+	terrain->SetTessellationFunction(8000.0f, 3.0f, 0.0f);
+	terrain->SetDisplacementDistance(20.0f);
 
 	scene->Add(terrain);
 
@@ -240,9 +250,9 @@ void Main::SceneSetUp() {
 	sponzaActor->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
 
 	DirectionalLight* directionalLight = new DirectionalLight(STATIONARY_LIGHT);
-	directionalLight->direction = vec3(0.0f, -1.0f, 0.2f);
+	directionalLight->direction = vec3(0.0f, -1.0f, 0.5f);
 	directionalLight->color = vec3(253, 194, 109) / 255.0f;
-	directionalLight->ambient = 0.05f;
+	directionalLight->ambient = 0.005f;
 	// Cascaded shadow mapping
 	// directionalLight->AddShadow(300.0f, 0.01f, 1024, 4, 0.7f, camera);
 	// Shadow mapping that is fixed to a point

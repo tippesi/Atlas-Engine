@@ -22,15 +22,16 @@ public:
 	 * Constructs a Terrain object.
 	 * @param rootNodeCount The number of root nodes. Root nodes are the lowest level of detail
 	 * @param LoDCount The number of level of detail levels. Results in LoDCount - 1 subdivisions of the root nodes.
-	 * @param patchSizeFactor Changes the size of a patch and the number of vertices in a patch.
+	 * @param patchSizeFactor Changes the size of a patch and the number of vertices in a patch, e.g 
 	 * @param resolution Like a scale in x and z direction of the terrain. Lower means more vertices per square unit.
 	 * @param height The maximum height of the terrain
-	 * @note The maximum number of nodes in a terrain is 2^16.
+	 * @note The maximum number of nodes in a terrain is 2^16. A node has 8 * 8 = 64 patches.
+	 * The number of vertices per patch corresponds to 4 * pow(2 * patchSizeFactor, 2). 
 	 * @remark Let's assume we want 3 root nodes on each side of the terrain which leads to rootNodeCount = 3^2 = 9.
 	 * We now decide that we want an LoDCount of 7. To check if we don't exceed the maximum number of nodes we calculate
 	 * rootNodeCount * (pow(4,LoDCount) - 1) / 3 = 3 * (pow(4, 7) - 1) = 49149 < 2^16 = 65536. This means that at the
 	 * maximum lod which is Lod6 we have a total of pow(4, 6) * 9 = 36864 nodes. If we have a patchSizeFactor of 4
-	 * we have 16 * 4 * 4 vertices per patch. Each node has 8 * 8 = 64 patches. This results in a maximum vertex count of
+	 * we have 4 * pow(2 * 4, 2) = 64 vertices per patch. This results in a maximum vertex count of
 	 * around 600 mio. If we take the square root we get the number of vertices per side: sqrt(603979776) = 24576. If we set
 	 * the resolution to 0.5 we get a total of 12288 units per terrain side. The size of map is therefore roughly
 	 * 150 kilounits^2.
