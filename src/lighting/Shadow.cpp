@@ -23,6 +23,7 @@ Shadow::Shadow(float distance, float bias, int32_t resolution, int32_t cascadeCo
 	maps->Bind(GL_TEXTURE0);
 
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
 	Update();
 
@@ -45,6 +46,8 @@ Shadow::Shadow(float distance, float bias, int32_t resolution, bool useCubemap) 
 		cubemap->Bind(GL_TEXTURE0);
 
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+
 	}
 	else {
         componentCount = 1;
@@ -54,8 +57,10 @@ Shadow::Shadow(float distance, float bias, int32_t resolution, bool useCubemap) 
 
 		maps->Bind(GL_TEXTURE0);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-    }
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+
+	}
 
     components = new ShadowComponent[componentCount];
 

@@ -61,6 +61,8 @@ private:
 
 	Texture2D* smileyTexture;
 
+	DirectionalLight* directionalLight;
+
 	uint32_t renderingStart;
 	uint32_t frameCount;
 

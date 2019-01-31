@@ -18,7 +18,7 @@ Main::Main(int argc, char* argv[]) {
 #ifndef ENGINE_ANDROID
 	assetDirectory = "../data";
 	width = 1280;
-	height = 1720;
+	height = 720;
 	flags = WINDOW_RESIZABLE | WINDOW_HIGH_DPI;
 #else
 	flags = WINDOW_FULLSCREEN;
@@ -82,8 +82,6 @@ Main::Main(int argc, char* argv[]) {
 		window->Update();
 
 		frameCount++;
-
-		EngineLog("Frame %d", frameCount);
 
 	}
 
@@ -208,12 +206,12 @@ void Main::DisplayLoadingScreen() {
 
     window->Clear();
 
-    int32_t width, height, flags;
+    int32_t width, height;
     Engine::GetScreenSize(&width, &height);
 
 #ifndef ENGINE_ANDROID
     width = 1280;
-	height = 1720;
+	height = 720;
 #endif
 
 	float x = width / 2 - textWidth / 2;
@@ -281,10 +279,10 @@ void Main::SceneSetUp() {
 	sponzaActor = new MeshActor(sponzaMesh);
 	sponzaActor->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
 
-	DirectionalLight* directionalLight = new DirectionalLight(STATIONARY_LIGHT);
-	directionalLight->direction = vec3(0.0f, -1.0f, 0.5f);
+	directionalLight = new DirectionalLight(STATIONARY_LIGHT);
+	directionalLight->direction = vec3(0.0f, -1.0f, 0.1f);
 	directionalLight->color = vec3(253, 194, 109) / 255.0f;
-	directionalLight->ambient = 0.005f;
+	directionalLight->ambient = 0.05f;
 	// Cascaded shadow mapping
 	// directionalLight->AddShadow(300.0f, 0.01f, 1024, 4, 0.7f, camera);
 	// Shadow mapping that is fixed to a point
@@ -314,7 +312,7 @@ void Main::SceneSetUp() {
 	pointLight4->AddShadow(0.0f, 512);
 
 	node->Add(cubeActor);
-	// scene->Add(sponzaActor);
+	scene->Add(sponzaActor);
 	scene->Add(treeActor);
 
 	scene->Add(directionalLight);

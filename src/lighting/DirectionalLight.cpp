@@ -37,7 +37,7 @@ void DirectionalLight::AddShadow(float distance, float bias, int32_t resolution,
 
 void DirectionalLight::AddShadow(float distance, float bias, int32_t resolution, vec3 centerPoint, mat4 orthoProjection) {
 
-	shadow = new Shadow(distance, bias, resolution, 1, 1.0f);
+	shadow = new Shadow(distance, bias, resolution);
 
 	useShadowCenter = true;
 
