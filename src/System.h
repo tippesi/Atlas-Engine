@@ -25,7 +25,10 @@
 #include <GLES3/gl32.h>
 #include <GLES2/gl2ext.h>
 
+#include <jni.h>
 #include <android/log.h>
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
 
 #define EngineLog(...) __android_log_print(ANDROID_LOG_INFO, "ENGINE_LOG", __VA_ARGS__)
 

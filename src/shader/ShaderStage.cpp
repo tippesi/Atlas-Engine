@@ -11,7 +11,7 @@ ShaderStage::ShaderStage(int32_t type, string filename) : type(type), filename(f
 	string path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
 	path += string(filename);
 
-	code = ReadShaderFile(path.c_str(), true);
+	code = ReadShaderFile(path, true);
 	lastModified = GetLastModified();
 
 	ID = glCreateShader(type);

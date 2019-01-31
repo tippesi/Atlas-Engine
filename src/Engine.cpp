@@ -81,6 +81,7 @@ Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 	ShaderStage::SetSourceDirectory(shaderDirectory);
 
 	EngineEventHandler::Init();
+	AssetLoader::Init();
 
 	GeometryRenderer::InitShaderBatch();
 	ShadowRenderer::InitShaderBatch();

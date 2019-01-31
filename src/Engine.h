@@ -11,6 +11,7 @@
 #include "events/EngineEventHandler.h"
 #include "lighting/DirectionalLight.h"
 #include "lighting/PointLight.h"
+#include "loader/AssetLoader.h"
 
 class Engine {
 
