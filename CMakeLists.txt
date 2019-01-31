@@ -33,7 +33,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Glad EXCLUDE_FROM_ALL)
 endif()
 
 # Configure platform specific stuff ###############################################################
-if(MSVC)
+if(WIN32)
 	set(ENGINE_COMPILE_DEFINITIONS ENGINE_WINDOWS)
 
 	set(BLUE_ENGINE_LIBS assimp SDL2main SDL2 GLAD)

@@ -15,9 +15,9 @@ public:
 
     static void SetAssetDirectory(string directory);
 
-    static ifstream ReadFile(string filename);
+    static ifstream ReadFile(string filename, ios_base::openmode mode);
 
-    static ofstream WriteFile(string filename);
+    static ofstream WriteFile(string filename, ios_base::openmode mode);
 
     static void UnpackFile(string filename);
 

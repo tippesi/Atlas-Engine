@@ -6,6 +6,10 @@ string AssetLoader::dataDirectory;
 
 mutex AssetLoader::assetLoaderMutex;
 
+#ifdef ENGINE_ANDROID
+
+#endif
+
 void AssetLoader::Init() {
 
 #ifdef ENGINE_ANDROID
@@ -44,19 +48,41 @@ void AssetLoader::SetAssetDirectory(string directory) {
 
 }
 
-ifstream AssetLoader::ReadFile(string filename) {
+ifstream AssetLoader::ReadFile(string filename, ios_base::openmode mode) {
 
+	ifstream file;
 
+	string path = GetFullPath(filename);
+
+	file.open(path, mode);
+
+	// It might be that the file is not unpacked
+#ifdef ENGINE_ANDROID
+	if (!file.is_open()) {
+		UnpackFile(filename);
+		file.open(path, mode);
+	}
+#endif
+
+	return file;
 
 }
 
-ofstream AssetLoader::WriteFile(string filename) {
+ofstream AssetLoader::WriteFile(string filename, ios_base::openmode mode) {
 
+	ofstream file;
 
+	string path = GetFullPath(filename);
+
+	file.open(path, mode);
+
+	return file;
 
 }
 
 void AssetLoader::UnpackFile(string filename) {
+
+	lock_guard<mutex> guard(assetLoaderMutex);
 
 
 
@@ -64,6 +90,12 @@ void AssetLoader::UnpackFile(string filename) {
 
 void AssetLoader::UnpackDirectory(string directory) {
 
+	lock_guard<mutex> guard(assetLoaderMutex);
 
+}
+
+string AssetLoader::GetFullPath(string path) {
+	
+	return dataDirectory + "/" + path;
 
 }
