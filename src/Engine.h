@@ -18,7 +18,8 @@ class Engine {
 public:
 	/**
 	 * Initializes the engine
-	 * @param shaderDirectory The directory where all the shader files are located
+	 * @param assetDirectory The directory where all assets are located
+	 * @param shaderDirectory The directory where all the shader files are located relative to the asset directory
 	 * @param windowTitle The title of your window
 	 * @param x The x position of the window on the screen in pixels
 	 * @param y The y position of the window on the screen in pixels
@@ -26,8 +27,9 @@ public:
 	 * @param height The height of the window in pixels
 	 * @param flags Window flags. See {@link Window.h} for more.
 	 * @return A pointer to a window object.
+	 * @note All file paths handed over to the engine should be relative the asset directory
 	 */
-	static Window* Init(string shaderDirectory, string windowTitle, int32_t x, int32_t y,
+	static Window* Init(string assetDirectory, string shaderDirectory, string windowTitle, int32_t x, int32_t y,
 			int32_t width, int32_t height, int32_t flags = WINDOW_FULLSCREEN);
 
 	/**

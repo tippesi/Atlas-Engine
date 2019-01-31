@@ -1,7 +1,7 @@
 #include "Engine.h"
 
-Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
-	int32_t width, int32_t height, int32_t flags) {
+Window* Engine::Init(string assetDirectory, string shaderDirectory, string title,
+	int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags) {
 
     if (SDL_WasInit(SDL_INIT_EVERYTHING) != SDL_INIT_EVERYTHING) {
         SDL_Init(SDL_INIT_EVERYTHING);
@@ -78,10 +78,10 @@ Window* Engine::Init(string shaderDirectory, string title, int32_t x, int32_t y,
 
 	LockFramerate();
 
-	ShaderStage::SetSourceDirectory(shaderDirectory);
-
-	EngineEventHandler::Init();
 	AssetLoader::Init();
+
+	AssetLoader::SetAssetDirectory(assetDirectory);
+	ShaderStage::SetSourceDirectory(shaderDirectory);
 
 	GeometryRenderer::InitShaderBatch();
 	ShadowRenderer::InitShaderBatch();

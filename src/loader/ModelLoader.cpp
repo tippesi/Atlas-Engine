@@ -1,5 +1,6 @@
 #include "ModelLoader.h"
 #include "ImageLoader.h"
+#include "AssetLoader.h"
 
 #include <vector>
 
@@ -14,10 +15,23 @@ MeshData* ModelLoader::LoadMesh(string filename) {
 	else
 		directoryPath.clear();
 
+	auto fileStream = AssetLoader::ReadFile(filename, ios::in | ios::binary);
+
+	if (!fileStream.is_open()) {
+#ifdef ENGINE_SHOW_LOG
+		EngineLog("Failed to load mddel %s", filename.c_str());
+#endif
+		throw EngineException("Model couldn't be loaded");
+	}
+
+	auto buffer = AssetLoader::GetFileContent(fileStream);
+
+	fileStream.close();
+
 	Assimp::Importer importer;
 	importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
 
-	const aiScene* scene = importer.ReadFile(filename,
+	const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(),
 		aiProcess_CalcTangentSpace |
 		aiProcess_JoinIdenticalVertices |
 		aiProcess_Triangulate |

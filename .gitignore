@@ -11,3 +11,4 @@ dependencies/Assimp
 .externalNativeBuild
 platform/android/app/app.iml
 platform/android/android.iml
+assets

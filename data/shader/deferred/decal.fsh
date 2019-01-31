@@ -54,7 +54,7 @@ void main() {
 	float sheetProgression = time * animationFrameCount;
 	
 	float prevFrameIndex = floor(sheetProgression);
-	float nextFrameIndex = mod(prevFrameIndex + 1, animationFrameCount);
+	float nextFrameIndex = mod(prevFrameIndex + 1.0f, animationFrameCount);
 	
 	texCoord = GetOffset(prevFrameIndex) + textureCoord / vec2(rowCount, columnCount);
 	

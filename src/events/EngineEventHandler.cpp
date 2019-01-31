@@ -14,12 +14,6 @@ EventDelegate<> EngineEventHandler::QuitEventDelegate;
 mutex EngineEventHandler::handlerMutex;
 unordered_map<int32_t, EngineEventHandler::ControllerDevice> EngineEventHandler::controllers;
 
-void EngineEventHandler::Init() {
-
-	SDL_StartTextInput();
-
-}
-
 void EngineEventHandler::Update() {
 
 	lock_guard<mutex> guard(handlerMutex);
@@ -115,5 +109,17 @@ void EngineEventHandler::Update() {
 		}
 
 	}
+
+}
+
+void EngineEventHandler::EnableTextInput(){
+
+	SDL_StartTextInput();
+
+}
+
+void EngineEventHandler::DisableTextInput(){
+
+	SDL_StopTextInput();
 
 }

@@ -22,11 +22,19 @@ layout (std140) uniform UBO2 {
     GlyphInfo glyphs2[1024];
 };
 
-
 void main() {
 	
 	int glyphIndex = int(characterInfo.z);
+	
+#ifdef ENGINE_GLES
+	GlyphInfo glyph = glyphs1[glyphIndex];
+	if (glyphIndex > 1023) {
+		glyphIndex -= 1024;
+		glyph = glyphs2[glyphIndex];
+	}
+#else
 	GlyphInfo glyph = glyphIndex > 1023 ? glyphs2[glyphIndex - 1024] : glyphs1[glyphIndex];
+#endif
 	
 	vec2 position = (vPosition + 1.0) / 2.0;
 	fScreenPosition = position * glyph.size * textScale + characterInfo.xy * textScale + textOffset;

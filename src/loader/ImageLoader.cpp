@@ -1,4 +1,5 @@
 #include "ImageLoader.h"
+#include "AssetLoader.h"
 #include "../texture/Texture.h"
 
 #include <algorithm>
@@ -17,14 +18,21 @@ Image ImageLoader::LoadImage(string filename, bool colorSpaceConversion, int32_t
 
     Image image;
 
-    auto data = stbi_load(filename.c_str(), &image.width, &image.height, &image.channels, forceChannels);
+	auto fileStream = AssetLoader::ReadFile(filename, ios::in | ios::binary);
 
-    if (data == nullptr) {
+	if (!fileStream.is_open()) {
 #ifdef ENGINE_SHOW_LOG
-        EngineLog("Failed to load image %s", filename.c_str());
+		EngineLog("Failed to load image %s", filename.c_str());
 #endif
-        throw EngineException("Image couldn't be loaded");
-    }
+		throw EngineException("Image couldn't be loaded");
+	}
+
+	auto buffer = AssetLoader::GetFileContent(fileStream);
+
+	fileStream.close();
+
+	auto data = stbi_load_from_memory((unsigned char*)buffer.data(), buffer.size(),
+		&image.width, &image.height, &image.channels, forceChannels);
 
     if (forceChannels > 0) {
         image.channels = forceChannels;
@@ -67,14 +75,21 @@ Image16 ImageLoader::LoadImage16(string filename, bool colorSpaceConversion, int
 
 	Image16 image;
 
-	auto data = stbi_load_16(filename.c_str(), &image.width, &image.height, &image.channels, forceChannels);
+	auto fileStream = AssetLoader::ReadFile(filename, ios::in | ios::binary);
 
-	if (data == nullptr) {
+	if (!fileStream.is_open()) {
 #ifdef ENGINE_SHOW_LOG
 		EngineLog("Failed to load image %s", filename.c_str());
 #endif
 		throw EngineException("Image couldn't be loaded");
 	}
+
+	auto buffer = AssetLoader::GetFileContent(fileStream);
+
+	fileStream.close();
+
+	auto data = stbi_load_16_from_memory((unsigned char*)buffer.data(), buffer.size(),
+		&image.width, &image.height, &image.channels, forceChannels);
 
 	if (forceChannels > 0) {
 		image.channels = forceChannels;

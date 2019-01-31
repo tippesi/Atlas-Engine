@@ -1,5 +1,7 @@
 #include "Font.h"
 
+#include "loader/AssetLoader.h"
+
 #include <fstream>
 #include <sstream>
 
@@ -11,9 +13,8 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	stbtt_fontinfo font;
 	string fontString;
-	ifstream fontFile;
 
-	fontFile.open(filename, ios::in | ios::binary);
+	auto fontFile = AssetLoader::ReadFile(filename, ios::in | ios::binary);
 
 	if (!fontFile.is_open()) {
 #ifdef ENGINE_SHOW_LOG
@@ -22,15 +23,11 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 		throw EngineException("Couldn't open font file");
 	}
 	
-	fontFile.seekg(0, fontFile.end);
-	int64_t size = fontFile.tellg();
-	fontFile.seekg(0);
+	auto buffer = AssetLoader::GetFileContent(fontFile);
 
-	char* buffer = new char[size];
-	fontFile.read(buffer, size);
 	fontFile.close();
 
-	if (!stbtt_InitFont(&font, (unsigned char*)buffer, 0)) {
+	if (!stbtt_InitFont(&font, (unsigned char*)buffer.data(), 0)) {
 		new EngineException("Failed loading font");
 	}
 
@@ -147,8 +144,6 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	firstGlyphBuffer->SetData(&glyphInfo[0], 0, GPU_GLYPH_COUNT / 2);
 	secondGlyphBuffer->SetData(&glyphInfo[GPU_GLYPH_COUNT / 2], 0, GPU_GLYPH_COUNT / 2);
-
-	delete[] buffer;
 
 }
 

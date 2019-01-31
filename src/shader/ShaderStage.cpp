@@ -1,4 +1,6 @@
 #include "ShaderStage.h"
+#include "../loader/AssetLoader.h"
+
 #include <fstream>
 #include <sstream>
 #include <sys/stat.h>
@@ -12,6 +14,7 @@ ShaderStage::ShaderStage(int32_t type, string filename) : type(type), filename(f
 	path += string(filename);
 
 	code = ReadShaderFile(path, true);
+
 	lastModified = GetLastModified();
 
 	ID = glCreateShader(type);
@@ -168,20 +171,19 @@ string ShaderStage::ReadShaderFile(string filename, bool mainFile) {
 	ifstream shaderFile;
 	stringstream shaderStream;
 
-	shaderFile.open(filename, ios::in);
+	shaderFile = AssetLoader::ReadFile(filename, ios::in);
 
-	if (shaderFile.is_open()) {	
-		shaderStream << shaderFile.rdbuf();
-		shaderFile.close();
-		shaderCode = shaderStream.str();
-	}
-	else {
+	if (!shaderFile.is_open()) {
 #ifdef ENGINE_SHOW_LOG
 		EngineLog("Shader file %s not found", filename.c_str());
 #endif
 		throw EngineException("Couldn't open shader file");
 	}
-	
+
+	shaderStream << shaderFile.rdbuf();
+	shaderFile.close();
+	shaderCode = shaderStream.str();
+
 	size_t filePathPosition = filename.find_last_of("/");
 	filename.erase(filePathPosition + 1, filename.length() - 1);
 

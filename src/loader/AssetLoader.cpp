@@ -1,13 +1,21 @@
 #include "AssetLoader.h"
 #include <SDL/include/SDL.h>
 
+#include <vector>
+
+#ifdef ENGINE_WINDOWS
+#include <direct.h>
+#else
+#include <sys/stat.h>
+#endif
+
 string AssetLoader::assetDirectory;
 string AssetLoader::dataDirectory;
 
 mutex AssetLoader::assetLoaderMutex;
 
 #ifdef ENGINE_ANDROID
-
+AAssetManager* AssetLoader::manager;
 #endif
 
 void AssetLoader::Init() {
@@ -76,7 +84,61 @@ ofstream AssetLoader::WriteFile(string filename, ios_base::openmode mode) {
 
 	file.open(path, mode);
 
+	// If file couldn't be opened we try again after we created the 
+	// directories which point to that file
+	if (!file.is_open()) {
+		size_t directoryPosition = filename.find_last_of("/");
+		if (directoryPosition != string::npos) {
+			MakeDirectory(filename.substr(0, directoryPosition));
+			file.open(path, mode);
+		}
+	}
+
 	return file;
+
+}
+
+size_t AssetLoader::GetFileSize(ifstream& stream) {
+
+	stream.seekg(0, stream.end);
+	auto size = stream.tellg();
+	stream.seekg(0);
+
+	return size - stream.tellg();
+
+}
+
+vector<char> AssetLoader::GetFileContent(ifstream& stream) {
+
+	auto size = AssetLoader::GetFileSize(stream);
+
+	vector<char> buffer(size);
+
+	if (!stream.read(buffer.data(), size)) {
+		buffer.resize(0);
+	}
+
+	return buffer;
+
+}
+
+void AssetLoader::MakeDirectory(string directory) {
+
+    directory = GetAbsolutePath(directory);
+
+    directory += "/";
+
+	for (int32_t i = 0; i < directory.length(); i++) {
+		if (directory[i] == '/') {
+			auto subPath = directory.substr(0, i);
+			auto path = GetFullPath(subPath);
+#ifdef ENGINE_WINDOWS
+			_mkdir(path.c_str());
+#else
+			mkdir(path.c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
+#endif
+		}
+	}
 
 }
 
@@ -84,7 +146,38 @@ void AssetLoader::UnpackFile(string filename) {
 
 	lock_guard<mutex> guard(assetLoaderMutex);
 
+#ifdef ENGINE_ANDROID
+	auto assetPath = GetAssetPath(filename);
+	assetPath = GetAbsolutePath(assetPath);
 
+	auto asset = AAssetManager_open(manager, assetPath.c_str(), AASSET_MODE_UNKNOWN);
+
+	if (!asset) {
+	    EngineLog("Asset not found: %s", assetPath.c_str());
+        return;
+    }
+
+	auto stream = WriteFile(filename, ios::out);
+
+	if (!stream.is_open()) {
+		AAsset_close(asset);
+		EngineLog("Couldn't open stream file");
+		return;
+	}
+
+	int32_t assetLength = AAsset_getLength(asset);
+
+	vector<char> buffer(assetLength);
+
+	int32_t readLength = 0;
+
+	while ((readLength = AAsset_read(asset, buffer.data(), assetLength)) > 0)
+		stream.write(buffer.data(), readLength);
+
+	stream.close();
+
+	AAsset_close(asset);
+#endif
 
 }
 
@@ -97,5 +190,32 @@ void AssetLoader::UnpackDirectory(string directory) {
 string AssetLoader::GetFullPath(string path) {
 	
 	return dataDirectory + "/" + path;
+
+}
+
+string AssetLoader::GetAssetPath(string path) {
+
+    if (assetDirectory.length() > 0)
+        return assetDirectory + "/" + path;
+
+    return path;
+
+}
+
+string AssetLoader::GetAbsolutePath(string path) {
+
+    size_t backPosition;
+
+    while ((backPosition = path.find("/..")) != string::npos) {
+        auto parentPath = path.substr(0, backPosition);
+        auto childPath = path.substr(backPosition + 3, path.length());
+        size_t parentBackPostion = parentPath.find_last_of('/');
+        if (parentBackPostion == string::npos) {
+            throw EngineException("Trying to access data outside the assets folder");
+        }
+        path = parentPath.substr(0, parentBackPostion) + childPath;
+    }
+
+    return path;
 
 }

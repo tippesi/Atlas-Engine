@@ -255,6 +255,10 @@ void Buffer::CheckExtensions() {
         }
     }
 
+#ifdef ENGINE_ANDROID
+    immutableStorageSupported = false;
+#endif
+
 }
 
 bool Buffer::IsImmutableStorageSupported() {
@@ -269,20 +273,18 @@ void Buffer::CreateInternal() {
 
     Bind();
 
-#ifndef ENGINE_ANDROID
     if (immutable) {
+#ifndef ENGINE_ANDROID
 #ifdef ENGINE_GLES
         glBufferStorageEXT(type, sizeInBytes, nullptr, dataFlags);
 #else
 		glBufferStorage(type, sizeInBytes, nullptr, dataFlags);
 #endif
+#endif
 	}
     else {
         glBufferData(type, sizeInBytes, nullptr, dataFlags);
     }
-#else
-    glBufferData(type, sizeInBytes, nullptr, dataFlags);
-#endif
 
 }
 

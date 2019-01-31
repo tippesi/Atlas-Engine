@@ -10,13 +10,26 @@ Main::Main(int argc, char* argv[]) {
 	quit = false;
 	useControllerHandler = false;
 
-	int32_t width, height;
+	int32_t width, height, flags;
 	Engine::GetScreenSize(&width, &height);
 
-	window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
-		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE | WINDOW_HIGH_DPI);
+	string assetDirectory = "data";
+
+#ifndef ENGINE_ANDROID
+	assetDirectory = "../data";
+	width = 1280;
+	height = 1720;
+	flags = WINDOW_RESIZABLE | WINDOW_HIGH_DPI;
+#else
+	flags = WINDOW_FULLSCREEN;
+#endif
+
+	window = Engine::Init(assetDirectory, "shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
+	        WINDOWPOSITION_UNDEFINED, width, height, flags);
 
 	Engine::UnlockFramerate();
+
+	window->Update();
 
 	// Register quit event
 	auto quitEventHandler = std::bind(&Main::QuitEventHandler, this);
@@ -41,8 +54,11 @@ Main::Main(int argc, char* argv[]) {
 
 	masterRenderer = new MasterRenderer();
 
+#ifndef ENGINE_ANDROID
 	renderTarget = new RenderTarget(1920, 1080);
-
+#else
+    renderTarget = new RenderTarget(1280, 720);
+#endif
 	Load();
 
 	SceneSetUp();
@@ -67,6 +83,8 @@ Main::Main(int argc, char* argv[]) {
 
 		frameCount++;
 
+		EngineLog("Frame %d", frameCount);
+
 	}
 
 }
@@ -84,7 +102,7 @@ void Main::Update(uint32_t deltaTime) {
 	camera->UpdateView();
 	camera->UpdateProjection();
 
-	terrain->Update(camera);
+	// terrain->Update(camera);
 
 	scene->rootNode->transformationMatrix = glm::rotate((float)SDL_GetTicks() / 1000.0f, vec3(0.0f, 1.0f, 0.0f));
 
@@ -108,6 +126,7 @@ void Main::Render(uint32_t deltaTime) {
 
 void Main::Stream() {
 
+    /*
 	for (auto& cell : terrain->storage->requestedCells) {
 
 		/*
@@ -129,12 +148,13 @@ void Main::Stream() {
 		cell->normalMap = new Texture2D(GL_UNSIGNED_BYTE, normalImage.width, normalImage.height, GL_RGB8,
 		        GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 		cell->normalMap->SetData(normalImage.data);
-		*/
+
 
 		cell->diffuseMap = terrainDiffuseMap;
 		cell->displacementMap = terrainDisplacementMap;
 
 	}
+     */
 	/*
 	if (terrain->storage->requestedCells.size() > 0) {
 		for (int32_t i = 0; i < 10000; i++) {
@@ -152,32 +172,32 @@ void Main::Stream() {
 		}
 	}
     */
-	terrain->storage->requestedCells.clear();
+	// terrain->storage->requestedCells.clear();
 
 }
 
 void Main::Load() {
 
-	font = new Font("../data/roboto.ttf", 88, 5, 200);
+	font = new Font("roboto.ttf", 88, 5, 200);
 
 	DisplayLoadingScreen();
 
-	skybox = new Cubemap("../data/cubemap/right.png",
-		"../data/cubemap/left.png",
-		"../data/cubemap/top.png",
-		"../data/cubemap/bottom.png",
-		"../data/cubemap/front.png",
-		"../data/cubemap/back.png");
+	skybox = new Cubemap("cubemap/right.png",
+		"cubemap/left.png",
+		"cubemap/top.png",
+		"cubemap/bottom.png",
+		"cubemap/front.png",
+		"cubemap/back.png");
 
-	cubeMesh = new Mesh("../data/cube.dae");
-	treeMesh = new Mesh("../data/tree.dae");
+	cubeMesh = new Mesh("cube.dae");
+	treeMesh = new Mesh("tree.dae");
 	treeMesh->cullBackFaces = false;
-	sponzaMesh = new Mesh("../data/sponza/sponza.dae");
+	sponzaMesh = new Mesh("sponza/sponza.dae");
 
-	terrainDiffuseMap = new Texture2D("../data/terrain/Ground_17_DIF.jpg");
-	terrainDisplacementMap = new Texture2D("../data/terrain/Ground_17_DISP.jpg");
+	//terrainDiffuseMap = new Texture2D("terrain/Ground_17_DIF.jpg");
+	//terrainDisplacementMap = new Texture2D("terrain/Ground_17_DISP.jpg");
 
-	smileyTexture = new Texture2D("../data/spritesheet.png");
+	smileyTexture = new Texture2D("spritesheet.png");
 
 }
 
@@ -186,8 +206,18 @@ void Main::DisplayLoadingScreen() {
 	float textWidth, textHeight;
 	font->ComputeDimensions("Lädt...", 2.5f, &textWidth, &textHeight);
 
-	float x = 1280 / 2 - textWidth / 2;
-	float y = 720 / 2 - textHeight / 2;
+    window->Clear();
+
+    int32_t width, height, flags;
+    Engine::GetScreenSize(&width, &height);
+
+#ifndef ENGINE_ANDROID
+    width = 1280;
+	height = 1720;
+#endif
+
+	float x = width / 2 - textWidth / 2;
+	float y = height / 2 - textHeight / 2;
 
 	masterRenderer->textRenderer.Render(window, font, "Lädt...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
@@ -199,7 +229,8 @@ void Main::SceneSetUp() {
 
 	scene = new Scene();
 
-	Image image = ImageLoader::LoadImage("../data/terrain/heightfield.png", false, 1);
+	/*
+	Image image = ImageLoader::LoadImage("terrain/heightfield.png", false, 1);
 
 	Image16 image16;
 	image16.width = image.width;
@@ -218,6 +249,7 @@ void Main::SceneSetUp() {
 	terrain->SetDisplacementDistance(20.0f);
 
 	scene->Add(terrain);
+	*/
 
 	Decal* decal = new Decal(smileyTexture, 4.0f, 4.0f, 500.0f);
 
@@ -282,7 +314,7 @@ void Main::SceneSetUp() {
 	pointLight4->AddShadow(0.0f, 512);
 
 	node->Add(cubeActor);
-	scene->Add(sponzaActor);
+	// scene->Add(sponzaActor);
 	scene->Add(treeActor);
 
 	scene->Add(directionalLight);

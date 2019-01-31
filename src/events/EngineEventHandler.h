@@ -22,9 +22,11 @@
 class EngineEventHandler {
 
 public:
-	static void Init();
-
 	static void Update();
+
+	static void EnableTextInput();
+
+	static void DisableTextInput();
 
 	static EventDelegate<EngineWindowEvent> WindowEventDelegate;
 	static EventDelegate<EngineKeyboardEvent> KeyboardEventDelegate;
