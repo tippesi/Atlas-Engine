@@ -1,4 +1,4 @@
-# Blue Engine
+# Atlas Engine
 ![Example scene](image.png)
 ## Introduction
 This is a cross platform engine that is available on all major platforms including Linux, Windows, MacOS and Android.
@@ -22,7 +22,7 @@ contains a main function.
 #### Excisting project using the engine
 There exist two options:
 - You can use the engine as a CMake subproject. Just go ahead and use **add_subdirectory** in the root
-CMakeLists.txt of your project. Afterwards add **target_link_libraries(YOUR_TARGET ... BlueEngine)**. You should be fine.
+CMakeLists.txt of your project. Afterwards add **target_link_libraries(YOUR_TARGET ... AtlasEngine)**. You should be fine.
 - You can compile the engine and all dependencies as a static library (note that some dependencies also have
 dynamic libraries). Therefore use the **BUILD_LIBRARY** option when using CMake. After compiling the library
 with your favourite build system you shouldn't forget to also copy all the libraries and include them to your project.
@@ -41,7 +41,7 @@ There exist two options:
 - You can compile the engine and all dependencies as a static library (note that some dependencies also have
 dynamic libraries). Therefore set the project property to **BUILD_LIBRARY**.
 ## Documentation
-If you want more information have a look into the [Documentation](https://tippesi.github.io/Blue-Engine/index.html)
+If you want more information have a look into the [Documentation](https://tippesi.github.io/Atlas-Engine/index.html)
 ## General performance tips
 - Use static/stationary objects and lights as often as possible
 - Use textures with the same size and format for each material
@@ -56,7 +56,7 @@ This code example can also be found in the main file.
 
 int main(int argc, char* argv[]) {
 
-	Window* window = Engine::Init("../data/shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
+	Window* window = Engine::Init("../data/shader", "Atlas Engine", WINDOWPOSITION_UNDEFINED,
 		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
 
 	Camera* camera = new Camera(47.0f, 2.0f, 1.0f, 200.0f);
