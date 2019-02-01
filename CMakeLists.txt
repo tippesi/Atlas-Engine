@@ -11,6 +11,7 @@ option(OPENGL_ES "Use OpenGL ES instead of OpenGL" OFF)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "Override Assimp settings")
 
 # Find OpenGL #####################################################################################
