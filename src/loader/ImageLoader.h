@@ -5,10 +5,10 @@
 
 #include <vector>
 
-#define IMAGE_PNG 0
-#define IMAGE_JPG 1
-#define IMAGE_BMP 2
-#define IMAGE_PGM 3
+#define AE_IMAGE_PNG 0
+#define AE_IMAGE_JPG 1
+#define AE_IMAGE_BMP 2
+#define AE_IMAGE_PGM 3
 
 /**
  * Base class for the image classes.

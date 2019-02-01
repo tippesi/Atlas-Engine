@@ -5,19 +5,19 @@
 #include "MeshData.h"
 #include "buffer/VertexArray.h"
 
-#define STATIONARY_MESH 0
-#define MOVABLE_MESH 1
+#define AE_STATIONARY_MESH 0
+#define AE_MOVABLE_MESH 1
 
 class Mesh {
 
 public:
 	///
 	/// \param data
-	Mesh(MeshData* data, int32_t mobility = STATIONARY_MESH);
+	Mesh(MeshData* data, int32_t mobility = AE_STATIONARY_MESH);
 
 	///
 	/// \param filename
-	Mesh(string filename, int32_t mobility = STATIONARY_MESH);
+	Mesh(string filename, int32_t mobility = AE_STATIONARY_MESH);
 
 
 	~Mesh();

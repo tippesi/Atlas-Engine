@@ -56,19 +56,19 @@ void ControllerHandler::ControllerAxisEventHandler(EngineControllerAxisEvent eve
 	if (event.device != controllerDevice)
 		return;
 
-	if (event.axis == CONTROLLERAXIS_LEFTX) {
+	if (event.axis == AE_CONTROLLERAXIS_LEFTX) {
 		leftStick.x = abs(event.value) > threshold ? (float)event.value / 32766.0f : 0.0f;
 	}
-	else if (event.axis == CONTROLLERAXIS_LEFTY) {
+	else if (event.axis == AE_CONTROLLERAXIS_LEFTY) {
 		leftStick.y = abs(event.value) > threshold ? (float)event.value / 32766.0f : 0.0f;
 	}
-	if (event.axis == CONTROLLERAXIS_RIGHTX) {
+	if (event.axis == AE_CONTROLLERAXIS_RIGHTX) {
 		rightStick.x = abs(event.value) > threshold ? (float)event.value / 32766.0f : 0.0f;
 	}
-	else if (event.axis == CONTROLLERAXIS_RIGHTY) {
+	else if (event.axis == AE_CONTROLLERAXIS_RIGHTY) {
 		rightStick.y = abs(event.value) > threshold ? (float)event.value / 32766.0f : 0.0f;
 	}
-	else if (event.axis == CONTROLLERAXIS_RIGHTTRIGGER) {
+	else if (event.axis == AE_CONTROLLERAXIS_RIGHTTRIGGER) {
 		speedIncrease = 100.0f * (float)event.value / 32766.0f;
 	}
 
@@ -85,22 +85,19 @@ void ControllerHandler::ControllerButtonEventHandler(EngineControllerButtonEvent
 
 void ControllerHandler::ControllerDeviceEventHandler(EngineControllerDeviceEvent event) {
 
-	if (event.type == CONTROLLER_ADDED) {
+	if (event.type == AE_CONTROLLER_ADDED) {
 		
 		if (controllerDevice == -1) {
 			controllerDevice = event.device;
 		}
 
 	}
-	else if (event.type == CONTROLLER_REMOVED) {
+	else if (event.type == AE_CONTROLLER_REMOVED) {
 		
 		if (controllerDevice == event.device) {
 			controllerDevice = -1;
 		}
 
-	}
-	else if (event.type == CONTROLLER_MAPPED) {
-		EngineLog("Device mapped");
 	}
 
 }

@@ -12,8 +12,8 @@ TextRenderer::TextRenderer() {
 	VertexBuffer* vertexBuffer = new VertexBuffer(GL_FLOAT, 3, sizeof(vec3), 5000);
 	vertexArray.AddInstancedComponent(1, vertexBuffer);
 
-	shader.AddStage(VERTEX_STAGE, vertexPath);
-	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
+	shader.AddStage(AE_VERTEX_STAGE, vertexPath);
+	shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
 	shader.Compile();
 
@@ -245,7 +245,7 @@ vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, 
 		Glyph* glyph = nextGlyph;
 
 		// Just visible characters should be rendered.
-		if (glyph->codepoint > 32 && glyph->texArrayIndex < GPU_GLYPH_COUNT) {
+		if (glyph->codepoint > 32 && glyph->texArrayIndex < AE_GPU_GLYPH_COUNT) {
 			instances[index].x = glyph->offset.x + xOffset;
 			instances[index].y = glyph->offset.y + font->ascent;
 			instances[index].z = (float)glyph->texArrayIndex;

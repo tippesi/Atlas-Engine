@@ -8,8 +8,8 @@ AtmosphereRenderer::AtmosphereRenderer() {
 
 	GeometryHelper::GenerateSphereVertexArray(vertexArray, 200, 200);
 
-	shader.AddStage(VERTEX_STAGE, vertexPath);
-	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
+	shader.AddStage(AE_VERTEX_STAGE, vertexPath);
+	shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
 	shader.Compile();
 

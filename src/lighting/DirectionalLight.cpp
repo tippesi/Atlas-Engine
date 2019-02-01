@@ -1,6 +1,6 @@
 #include "DirectionalLight.h"
 
-DirectionalLight::DirectionalLight(int32_t mobility) : ILight(DIRECTIONAL_LIGHT, mobility) {
+DirectionalLight::DirectionalLight(int32_t mobility) : ILight(AE_DIRECTIONAL_LIGHT, mobility) {
 
 	direction = vec3(0.0f, -1.0f, 0.0f);
 
@@ -80,7 +80,7 @@ void DirectionalLight::Update(Camera* camera) {
 
 		}
 	
-		if (mobility == MOVABLE_LIGHT) {
+		if (mobility == AE_MOVABLE_LIGHT) {
 			shadow->Update();
 		}
 	

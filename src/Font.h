@@ -7,8 +7,8 @@
 
 #include <vector>
 
-#define FONT_GLYPH_COUNT 2048
-#define GPU_GLYPH_COUNT 2048
+#define AE_FONT_GLYPH_COUNT 2048
+#define AE_GPU_GLYPH_COUNT 2048
 
 /**
  * Represents a character
@@ -29,7 +29,7 @@ typedef struct Glyph {
 
 	vector<uint8_t> data;
 
-	int32_t kern[FONT_GLYPH_COUNT];
+	int32_t kern[AE_FONT_GLYPH_COUNT];
 
 }Glyph;
 
@@ -99,7 +99,7 @@ public:
 	struct GlyphInfo {
 		vec2 scale;
 		vec2 size;
-	}glyphInfo[GPU_GLYPH_COUNT];
+	}glyphInfo[AE_GPU_GLYPH_COUNT];
 
 	Texture2DArray* glyphTexture;
 
@@ -108,7 +108,7 @@ public:
 	Buffer* secondGlyphBuffer;
 
 private:
-	Glyph glyphs[FONT_GLYPH_COUNT];
+	Glyph glyphs[AE_FONT_GLYPH_COUNT];
 
 };
 

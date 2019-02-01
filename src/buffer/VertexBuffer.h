@@ -24,7 +24,7 @@ public:
 	 * and perform storage access by using a staging buffer.
 	 */
 	VertexBuffer(uint32_t dataType, int32_t stride, size_t elementSize, size_t elementCount,
-			uint32_t flags = BUFFER_IMMUTABLE);
+			uint32_t flags = AE_BUFFER_IMMUTABLE);
 
 	~VertexBuffer();
 

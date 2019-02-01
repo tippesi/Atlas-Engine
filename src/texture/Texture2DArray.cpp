@@ -85,7 +85,7 @@ void Texture2DArray::SaveToPNG(string filename, int32_t depth) {
 
     image.width = width;
     image.height = height;
-    image.fileFormat = IMAGE_PNG;
+    image.fileFormat = AE_IMAGE_PNG;
 
     image.data = GetData(depth);
     FlipDataHorizontally(image.data);

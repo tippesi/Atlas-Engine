@@ -19,7 +19,7 @@ ShaderStage::ShaderStage(int32_t type, string filename) : type(type), filename(f
 
 	ID = glCreateShader(type);
 
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 	EngineLog("Loaded shader file %s", filename.c_str());
 #endif
 
@@ -99,9 +99,9 @@ bool ShaderStage::Compile() {
 
 	string composedCode;
 
-#ifdef ENGINE_GL
+#ifdef AE_API_GL
 	composedCode.append("#version 410\n\n#define ENGINE_GL\n");
-#elif ENGINE_GLES
+#elif AE_API_GLES
 	composedCode.append("#version 320 es\n\nprecision highp float;\nprecision highp sampler2D;\
 		\nprecision highp samplerCube;\nprecision highp sampler2DArrayShadow;\nprecision highp sampler2DArray;\
 		\nprecision highp samplerCubeShadow;\nprecision highp int;\n#define ENGINE_GLES\n");
@@ -126,26 +126,29 @@ bool ShaderStage::Compile() {
 	glGetShaderiv(ID, GL_COMPILE_STATUS, &compiled);
 
 	if (!compiled) {
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 		int32_t shaderLogLength, length;
 		glGetShaderiv(ID, GL_INFO_LOG_LENGTH, &shaderLogLength);
 		auto shaderLog = vector<char>(shaderLogLength);
 		glGetShaderInfoLog(ID, shaderLogLength, &length, shaderLog.data());
 
-		if (type == VERTEX_STAGE) {
+		if (type == AE_VERTEX_STAGE) {
 			EngineLog("\n\nCompiling vertex stage failed:");
 		}
-		else if (type == FRAGMENT_STAGE) {
+		else if (type == AE_FRAGMENT_STAGE) {
 			EngineLog("\n\nCompiling fragment stage failed:");
 		}
-		else if (type == GEOMETRY_STAGE) {
+		else if (type == AE_GEOMETRY_STAGE) {
 			EngineLog("\n\nCompiling geometry stage failed:");
 		}
-		else if (type == TESSELLATION_CONTROL_STAGE) {
+		else if (type == AE_TESSELLATION_CONTROL_STAGE) {
 			EngineLog("\n\nCompiling tessellation control stage failed:");
 		}
-		else if (type == TESSELLATION_EVALUATION_STAGE) {
+		else if (type == AE_TESSELLATION_EVALUATION_STAGE) {
 			EngineLog("\n\nCompiling tessellation evaluation stage failed:");
+		}
+		else if (type == AE_COMPUTE_STAGE) {
+			EngineLog("\n\nCompiling compute stage failed: ")
 		}
 
 		EngineLog("Compilation failed: %s\nError: %s", filename.c_str(), shaderLog.data());
@@ -174,7 +177,7 @@ string ShaderStage::ReadShaderFile(string filename, bool mainFile) {
 	shaderFile = AssetLoader::ReadFile(filename, ios::in);
 
 	if (!shaderFile.is_open()) {
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 		EngineLog("Shader file %s not found", filename.c_str());
 #endif
 		throw EngineException("Couldn't open shader file");

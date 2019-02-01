@@ -3,8 +3,8 @@
 BlurRenderer::BlurRenderer(string vertexSource, string fragmentSource, int32_t channelCount,
         float* kernelOffsets, float* kernelWeights, int32_t kernelSize, bool bilateral) : bilateralBlur(bilateral) {
 
-    shader.AddStage(VERTEX_STAGE, vertexSource);
-    shader.AddStage(FRAGMENT_STAGE, fragmentSource);
+    shader.AddStage(AE_VERTEX_STAGE, vertexSource);
+    shader.AddStage(AE_FRAGMENT_STAGE, fragmentSource);
 
     if (bilateral) {
         shader.AddMacro("BILATERAL");
@@ -20,7 +20,7 @@ BlurRenderer::BlurRenderer(string vertexSource, string fragmentSource, int32_t c
         shader.AddMacro("BLUR_RGB");
     }
 
-    auto fragmentShaderStage = shader.GetStage(FRAGMENT_STAGE);
+    auto fragmentShaderStage = shader.GetStage(AE_FRAGMENT_STAGE);
 
     ShaderConstant* kernelOffsetsConstant = fragmentShaderStage->GetConstant("offset");
     ShaderConstant* kernelWeightsConstant = fragmentShaderStage->GetConstant("weight");

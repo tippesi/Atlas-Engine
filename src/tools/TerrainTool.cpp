@@ -165,9 +165,9 @@ Terrain* TerrainTool::GenerateTerrain(Image16 &heightImage, int32_t rootNodeCoun
 			// Create the data structures for the cell
 			cell->heightData.resize(tileResolutionSquared);
 			cell->heightField = new Texture2D(GL_UNSIGNED_SHORT, tileResolution,
-				tileResolution, GL_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+				tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
 			cell->normalMap = new Texture2D(GL_UNSIGNED_BYTE, tileResolution,
-				tileResolution, GL_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+				tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 			// Now copy a tile of the original image
 			// We make sure that every tile has the same size

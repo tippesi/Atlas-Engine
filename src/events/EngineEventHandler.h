@@ -1,8 +1,8 @@
 #ifndef ENGINEEVENTHANDLER_H
 #define ENGINEEVENTHANDLER_H
 
-#define BUTTON_RELEASED 0
-#define BUTTON_PRESSED 1
+#define AE_BUTTON_RELEASED 0
+#define AE_BUTTON_PRESSED 1
 
 #include "../System.h"
 

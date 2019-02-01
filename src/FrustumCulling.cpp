@@ -15,8 +15,8 @@ void FrustumCulling::CullLightsFromScene(Scene* scene, Camera* camera) {
 void FrustumCulling::CullActorsFromShadow(ILight* light, Scene* scene, Camera* camera) {
 
 	switch (light->type) {
-	case DIRECTIONAL_LIGHT: CullActorsFromDirectionalShadow((DirectionalLight*)light, scene, camera); break;
-	case POINT_LIGHT: CullActorsFromPointShadow((PointLight*)light, scene, camera); break;
+	case AE_DIRECTIONAL_LIGHT: CullActorsFromDirectionalShadow((DirectionalLight*)light, scene, camera); break;
+	case AE_POINT_LIGHT: CullActorsFromPointShadow((PointLight*)light, scene, camera); break;
 	}
 
 }

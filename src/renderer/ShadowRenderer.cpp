@@ -129,8 +129,8 @@ void ShadowRenderer::InitShaderBatch() {
 
 	lock_guard<mutex> guard(shaderBatchMutex);
 
-	shaderBatch.AddStage(VERTEX_STAGE, vertexPath);
-	shaderBatch.AddStage(FRAGMENT_STAGE, fragmentPath);
+	shaderBatch.AddStage(AE_VERTEX_STAGE, vertexPath);
+	shaderBatch.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
 }
 

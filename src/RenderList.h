@@ -7,8 +7,8 @@
 
 #include <map>
 
-#define GEOMETRY_RENDERLIST 0
-#define SHADOW_RENDERLIST  1
+#define AE_GEOMETRY_RENDERLIST 0
+#define AE_SHADOW_RENDERLIST  1
 
 typedef struct RenderListBatch {
 

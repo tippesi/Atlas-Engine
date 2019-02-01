@@ -4,7 +4,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 // #define ENGINE_INSTANT_SHADER_RELOAD
-#define ENGINE_SHOW_LOG
+#define AE_SHOW_LOG
 
 #include <stdint.h>
 #include <string>
@@ -17,7 +17,7 @@
 #include "libraries/glm/gtx/common.hpp"
 #include "libraries/glm/gtx/transform.hpp"
 
-#if  defined(ENGINE_ANDROID)
+#if  defined(AE_OS_ANDROID)
 
 #define GL_GLEXT_PROTOTYPES
 
@@ -32,10 +32,10 @@
 
 #define EngineLog(...) __android_log_print(ANDROID_LOG_INFO, "ENGINE_LOG", __VA_ARGS__)
 
-#elif defined(ENGINE_WINDOWS) || defined(ENGINE_LINUX) || defined(ENGINE_OSX)
+#elif defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
 
 // GLAD
-#ifdef ENGINE_WINDOWS
+#ifdef AE_OS_WINDOWS
 #define APIENTRY __stdcall
 #include <direct.h>
 #endif

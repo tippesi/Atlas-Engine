@@ -8,8 +8,8 @@ string DirectionalLightRenderer::fragmentPath = "deferred/directional.fsh";
 
 DirectionalLightRenderer::DirectionalLightRenderer() {
 
-	shader.AddStage(VERTEX_STAGE, vertexPath);
-	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
+	shader.AddStage(AE_VERTEX_STAGE, vertexPath);
+	shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
 	shader.AddMacro("SHADOWS");
 
@@ -42,7 +42,7 @@ void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Came
 	// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
 	for (ILight* light : scene->lights) {
 
-		if (light->type != DIRECTIONAL_LIGHT || light->GetShadow() == nullptr) {
+		if (light->type != AE_DIRECTIONAL_LIGHT || light->GetShadow() == nullptr) {
 			continue;
 		}
 

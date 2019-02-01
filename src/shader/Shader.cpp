@@ -133,7 +133,7 @@ bool Shader::Compile() {
 
 			isCompiled = true;
 
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 			EngineLog("Compiled shader with ID %d", ID);
 #endif
 			
@@ -147,7 +147,7 @@ bool Shader::Compile() {
 
 		}
 
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 		int32_t programLogLength, length;
 		glGetProgramiv(ID, GL_INFO_LOG_LENGTH, &programLogLength);
 		auto programLog = vector<char>(programLogLength);
@@ -182,7 +182,7 @@ void Shader::Bind() {
 			return;
 		}
 	}
-#ifdef ENGINE_INSTANT_SHADER_RELOAD
+#ifdef AE_INSTANT_SHADER_RELOAD
 	bool reloaded = false;
 	for (auto& stage : stages) {
 		reloaded = stage->Reload() ? true : reloaded;

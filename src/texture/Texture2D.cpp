@@ -107,7 +107,7 @@ void Texture2D::SaveToPNG(string filename) {
 
     image.width = width;
     image.height = height;
-    image.fileFormat = IMAGE_PNG;
+    image.fileFormat = AE_IMAGE_PNG;
 
     image.data = GetData();
     FlipDataHorizontally(image.data);

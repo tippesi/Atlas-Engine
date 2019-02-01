@@ -7,7 +7,7 @@
 class PointLight : public ILight {
 
 public:
-    PointLight(int32_t mobility = STATIONARY_LIGHT);
+    PointLight(int32_t mobility = AE_STATIONARY_LIGHT);
 
 	~PointLight();
 

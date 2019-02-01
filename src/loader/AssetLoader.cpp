@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#ifdef ENGINE_WINDOWS
+#ifdef AE_OS_WINDOWS
 #include <direct.h>
 #else
 #include <sys/stat.h>
@@ -14,13 +14,13 @@ string AssetLoader::dataDirectory;
 
 mutex AssetLoader::assetLoaderMutex;
 
-#ifdef ENGINE_ANDROID
+#ifdef AE_OS_ANDROID
 AAssetManager* AssetLoader::manager;
 #endif
 
 void AssetLoader::Init() {
 
-#ifdef ENGINE_ANDROID
+#ifdef AE_OS_ANDROID
     auto interface = (JNIEnv*)SDL_AndroidGetJNIEnv();
 
     JNIEnv* env = interface;
@@ -50,7 +50,7 @@ void AssetLoader::SetAssetDirectory(string directory) {
 
     assetDirectory = directory;
 
-#ifndef ENGINE_ANDROID
+#ifndef AE_OS_ANDROID
     dataDirectory = directory;
 #endif
 
@@ -65,7 +65,7 @@ ifstream AssetLoader::ReadFile(string filename, ios_base::openmode mode) {
 	file.open(path, mode);
 
 	// It might be that the file is not unpacked
-#ifdef ENGINE_ANDROID
+#ifdef AE_OS_ANDROID
 	if (!file.is_open()) {
 		UnpackFile(filename);
 		file.open(path, mode);
@@ -132,7 +132,7 @@ void AssetLoader::MakeDirectory(string directory) {
 		if (directory[i] == '/') {
 			auto subPath = directory.substr(0, i);
 			auto path = GetFullPath(subPath);
-#ifdef ENGINE_WINDOWS
+#ifdef AE_OS_WINDOWS
 			_mkdir(path.c_str());
 #else
 			mkdir(path.c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
@@ -146,7 +146,7 @@ void AssetLoader::UnpackFile(string filename) {
 
 	lock_guard<mutex> guard(assetLoaderMutex);
 
-#ifdef ENGINE_ANDROID
+#ifdef AE_OS_ANDROID
 	auto assetPath = GetAssetPath(filename);
 	assetPath = GetAbsolutePath(assetPath);
 

@@ -8,8 +8,8 @@ DecalRenderer::DecalRenderer() {
 
     GeometryHelper::GenerateCubeVertexArray(vertexArray);
 
-    shader.AddStage(VERTEX_STAGE, vertexPath);
-    shader.AddStage(FRAGMENT_STAGE, fragmentPath);
+    shader.AddStage(AE_VERTEX_STAGE, vertexPath);
+    shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
 	shader.AddMacro("ANIMATION");
 

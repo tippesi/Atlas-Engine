@@ -21,7 +21,7 @@ Image ImageLoader::LoadImage(string filename, bool colorSpaceConversion, int32_t
 	auto fileStream = AssetLoader::ReadFile(filename, ios::in | ios::binary);
 
 	if (!fileStream.is_open()) {
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 		EngineLog("Failed to load image %s", filename.c_str());
 #endif
 		throw EngineException("Image couldn't be loaded");
@@ -51,19 +51,19 @@ Image ImageLoader::LoadImage(string filename, bool colorSpaceConversion, int32_t
     std::transform(fileFormat.begin(), fileFormat.end(), fileFormat.begin(), ::tolower);
 
     if (fileFormat == "png") {
-        image.fileFormat = IMAGE_PNG;
+        image.fileFormat = AE_IMAGE_PNG;
     }
     else if (fileFormat == "jpg" || fileFormat == "jpeg") {
-        image.fileFormat = IMAGE_JPG;
+        image.fileFormat = AE_IMAGE_JPG;
     }
     else if (fileFormat == "bmp") {
-        image.fileFormat = IMAGE_BMP;
+        image.fileFormat = AE_IMAGE_BMP;
     }
 	else if (fileFormat == "pgm") {
-		image.fileFormat = IMAGE_PGM;
+		image.fileFormat = AE_IMAGE_PGM;
 	}
 
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
     EngineLog("Loaded image %s", filename.c_str());
 #endif
 
@@ -78,7 +78,7 @@ Image16 ImageLoader::LoadImage16(string filename, bool colorSpaceConversion, int
 	auto fileStream = AssetLoader::ReadFile(filename, ios::in | ios::binary);
 
 	if (!fileStream.is_open()) {
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 		EngineLog("Failed to load image %s", filename.c_str());
 #endif
 		throw EngineException("Image couldn't be loaded");
@@ -108,19 +108,19 @@ Image16 ImageLoader::LoadImage16(string filename, bool colorSpaceConversion, int
 	std::transform(fileFormat.begin(), fileFormat.end(), fileFormat.begin(), ::tolower);
 
 	if (fileFormat == "png") {
-		image.fileFormat = IMAGE_PNG;
+		image.fileFormat = AE_IMAGE_PNG;
 	}
 	else if (fileFormat == "jpg" || fileFormat == "jpeg") {
-		image.fileFormat = IMAGE_JPG;
+		image.fileFormat = AE_IMAGE_JPG;
 	}
 	else if (fileFormat == "bmp") {
-		image.fileFormat = IMAGE_BMP;
+		image.fileFormat = AE_IMAGE_BMP;
 	}
 	else if (fileFormat == "pgm") {
-		image.fileFormat = IMAGE_PGM;
+		image.fileFormat = AE_IMAGE_PGM;
 	}
 
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 	EngineLog("Loaded image %s", filename.c_str());
 #endif
 
@@ -131,10 +131,10 @@ Image16 ImageLoader::LoadImage16(string filename, bool colorSpaceConversion, int
 void ImageLoader::SaveImage(Image &image, string filename) {
 
     switch(image.fileFormat) {
-        case IMAGE_JPG: break;
-        case IMAGE_BMP: break;
-        case IMAGE_PGM: SavePGM8(image, filename); break;
-		case IMAGE_PNG: stbi_write_png(filename.c_str(), image.width, image.height,
+        case AE_IMAGE_JPG: break;
+        case AE_IMAGE_BMP: break;
+        case AE_IMAGE_PGM: SavePGM8(image, filename); break;
+		case AE_IMAGE_PNG: stbi_write_png(filename.c_str(), image.width, image.height,
 			image.channels, image.data.data(), image.channels * image.width); break;
 		default: break;
     }
@@ -144,10 +144,10 @@ void ImageLoader::SaveImage(Image &image, string filename) {
 void ImageLoader::SaveImage16(Image16 &image, string filename) {
 
 	switch(image.fileFormat) {
-		case IMAGE_JPG: break;
-		case IMAGE_BMP: break;
-		case IMAGE_PGM: SavePGM16(image, filename); break;
-		case IMAGE_PNG: break;
+		case AE_IMAGE_JPG: break;
+		case AE_IMAGE_BMP: break;
+		case AE_IMAGE_PGM: SavePGM16(image, filename); break;
+		case AE_IMAGE_PNG: break;
 		default: break;
 	}
 

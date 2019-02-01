@@ -31,11 +31,11 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 		new EngineException("Failed loading font");
 	}
 
-	firstGlyphBuffer = new Buffer(UNIFORM_BUFFER, sizeof(GlyphInfo), BUFFER_DYNAMIC_STORAGE);
-	firstGlyphBuffer->SetSize(GPU_GLYPH_COUNT / 2);
+	firstGlyphBuffer = new Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
+	firstGlyphBuffer->SetSize(AE_GPU_GLYPH_COUNT / 2);
 
-	secondGlyphBuffer = new Buffer(UNIFORM_BUFFER, sizeof(GlyphInfo), BUFFER_DYNAMIC_STORAGE);
-	secondGlyphBuffer->SetSize(GPU_GLYPH_COUNT / 2);
+	secondGlyphBuffer = new Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
+	secondGlyphBuffer->SetSize(AE_GPU_GLYPH_COUNT / 2);
 
 	smoothing = 5.0f;
 
@@ -52,9 +52,9 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	pixelDistanceScale = (float)edgeValue / (float)padding;
 
-	int32_t range = font.numGlyphs > FONT_GLYPH_COUNT ? FONT_GLYPH_COUNT : font.numGlyphs;
+	int32_t range = font.numGlyphs > AE_FONT_GLYPH_COUNT ? AE_FONT_GLYPH_COUNT : font.numGlyphs;
 
-	uint8_t* data[FONT_GLYPH_COUNT];
+	uint8_t* data[AE_FONT_GLYPH_COUNT];
 
 	int32_t width = 0, height = 0, depth = 0;
 
@@ -69,7 +69,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 		data[i] = stbtt_GetCodepointSDF(&font, scale, i, padding, edgeValue, pixelDistanceScale,
 			&glyph->width, &glyph->height, &xOffset, &yOffset);
 
-        for (int32_t j = 0; j < FONT_GLYPH_COUNT; j++) {
+        for (int32_t j = 0; j < AE_FONT_GLYPH_COUNT; j++) {
             glyph->kern[j] = (int32_t)((float)stbtt_GetCodepointKernAdvance(&font, i, j) * scale);
         }
 
@@ -81,7 +81,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 			glyph->width = 0;
 			glyph->offset = vec2(0.0f);
 			glyph->textureScale = vec2(0.0f);
-			glyph->texArrayIndex = GPU_GLYPH_COUNT;
+			glyph->texArrayIndex = AE_GPU_GLYPH_COUNT;
 			continue;
 		}
 
@@ -94,7 +94,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	}
 
-	depth = GPU_GLYPH_COUNT < depth ? GPU_GLYPH_COUNT : depth;
+	depth = AE_GPU_GLYPH_COUNT < depth ? AE_GPU_GLYPH_COUNT : depth;
 
 	// Create texture and process texture data
 	glyphTexture = new Texture2DArray(GL_UNSIGNED_BYTE, width, height, depth, 
@@ -134,7 +134,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 		}
 		else {
 
-			glyph->texArrayIndex = GPU_GLYPH_COUNT;
+			glyph->texArrayIndex = AE_GPU_GLYPH_COUNT;
 
 		}
 
@@ -142,8 +142,8 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 
 	}
 
-	firstGlyphBuffer->SetData(&glyphInfo[0], 0, GPU_GLYPH_COUNT / 2);
-	secondGlyphBuffer->SetData(&glyphInfo[GPU_GLYPH_COUNT / 2], 0, GPU_GLYPH_COUNT / 2);
+	firstGlyphBuffer->SetData(&glyphInfo[0], 0, AE_GPU_GLYPH_COUNT / 2);
+	secondGlyphBuffer->SetData(&glyphInfo[AE_GPU_GLYPH_COUNT / 2], 0, AE_GPU_GLYPH_COUNT / 2);
 
 }
 
@@ -159,7 +159,7 @@ Glyph* Font::GetGlyph(char character) {
 
 	uint8_t characterIndex = (uint8_t)character;
 
-	if (characterIndex > FONT_GLYPH_COUNT)
+	if (characterIndex > AE_FONT_GLYPH_COUNT)
 		return nullptr;
 
 	return &glyphs[characterIndex];
@@ -189,7 +189,7 @@ Glyph* Font::GetGlyphUTF8(const char*& character) {
 		character += 4;
 	}
 
-	if (unicode > FONT_GLYPH_COUNT)
+	if (unicode > AE_FONT_GLYPH_COUNT)
 		return nullptr;
 
 	return &glyphs[unicode];

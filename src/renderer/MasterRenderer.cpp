@@ -8,13 +8,13 @@ MasterRenderer::MasterRenderer() {
 
 	GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
-	rectangleShader.AddStage(VERTEX_STAGE, rectangleVertexPath);
-	rectangleShader.AddStage(FRAGMENT_STAGE, rectangleFragmentPath);
+	rectangleShader.AddStage(AE_VERTEX_STAGE, rectangleVertexPath);
+	rectangleShader.AddStage(AE_FRAGMENT_STAGE, rectangleFragmentPath);
 
 	rectangleShader.Compile();
 
-	texturedRectangleShader.AddStage(VERTEX_STAGE, rectangleVertexPath);
-	texturedRectangleShader.AddStage(FRAGMENT_STAGE, rectangleFragmentPath);
+	texturedRectangleShader.AddStage(AE_VERTEX_STAGE, rectangleVertexPath);
+	texturedRectangleShader.AddStage(AE_FRAGMENT_STAGE, rectangleFragmentPath);
 
 	texturedRectangleShader.AddMacro("TEXTURE");
 

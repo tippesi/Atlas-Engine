@@ -5,12 +5,12 @@
 #include "Shadow.h"
 #include "Volumetric.h"
 
-#define STATIONARY_LIGHT 0
-#define MOVABLE_LIGHT 1
+#define AE_STATIONARY_LIGHT 0
+#define AE_MOVABLE_LIGHT 1
 
-#define DIRECTIONAL_LIGHT 0
-#define POINT_LIGHT 1
-#define SPOT_LIGHT 2
+#define AE_DIRECTIONAL_LIGHT 0
+#define AE_POINT_LIGHT 1
+#define AE_SPOT_LIGHT 2
 
 class ILight {
 

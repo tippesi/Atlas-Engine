@@ -19,34 +19,34 @@ Buffer::Buffer(uint32_t type, size_t elementSize, uint32_t flags) : type(type), 
 
     mapped = false;
     immutable = false;
-    dynamicStorage = flags & BUFFER_DYNAMIC_STORAGE ? true : false;
+    dynamicStorage = flags & AE_BUFFER_DYNAMIC_STORAGE ? true : false;
 
     // Check flags.
-    if (flags & BUFFER_DOUBLE_BUFFERING) {
+    if (flags & AE_BUFFER_DOUBLE_BUFFERING) {
         bufferingCount = 2;
     }
-    else if (flags & BUFFER_TRIPLE_BUFFERING) {
+    else if (flags & AE_BUFFER_TRIPLE_BUFFERING) {
         bufferingCount = 3;
     }
     else {
         bufferingCount = 1;
     }
 
-    immutable = flags & BUFFER_IMMUTABLE && immutableStorageSupported;
+    immutable = flags & AE_BUFFER_IMMUTABLE && immutableStorageSupported;
 
     // Configure mapping and storage flags.
-    mapFlags |= (flags & BUFFER_MAP_READ ? GL_MAP_READ_BIT : 0);
-    mapFlags |= (flags & BUFFER_MAP_WRITE ? GL_MAP_WRITE_BIT : 0);
+    mapFlags |= (flags & AE_BUFFER_MAP_READ ? GL_MAP_READ_BIT : 0);
+    mapFlags |= (flags & AE_BUFFER_MAP_WRITE ? GL_MAP_WRITE_BIT : 0);
 
-    if (flags & BUFFER_DYNAMIC_STORAGE && immutable) {
+    if (flags & AE_BUFFER_DYNAMIC_STORAGE && immutable) {
         dataFlags |= GL_DYNAMIC_STORAGE_BIT_EXT | GL_MAP_COHERENT_BIT_EXT
                 | GL_MAP_PERSISTENT_BIT_EXT | mapFlags;
         mapFlags |= GL_MAP_PERSISTENT_BIT_EXT | GL_MAP_COHERENT_BIT_EXT;
     }
-    else if (flags & BUFFER_DYNAMIC_STORAGE && !immutable) {
+    else if (flags & AE_BUFFER_DYNAMIC_STORAGE && !immutable) {
         dataFlags |= GL_STREAM_DRAW;
     }
-    else if (!(flags & BUFFER_DYNAMIC_STORAGE) && !immutable) {
+    else if (!(flags & AE_BUFFER_DYNAMIC_STORAGE) && !immutable) {
         dataFlags |= GL_STATIC_DRAW;
     }
 
@@ -255,7 +255,7 @@ void Buffer::CheckExtensions() {
         }
     }
 
-#ifdef ENGINE_ANDROID
+#ifdef AE_OS_ANDROID
     immutableStorageSupported = false;
 #endif
 
@@ -274,8 +274,8 @@ void Buffer::CreateInternal() {
     Bind();
 
     if (immutable) {
-#ifndef ENGINE_ANDROID
-#ifdef ENGINE_GLES
+#ifndef AE_OS_ANDROID
+#ifdef AE_API_GLES
         glBufferStorageEXT(type, sizeInBytes, nullptr, dataFlags);
 #else
 		glBufferStorage(type, sizeInBytes, nullptr, dataFlags);

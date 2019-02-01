@@ -9,27 +9,27 @@
 /**
  * T should be uint32_t to support proper conversion
  */
-#define COMPONENT_UNSIGNED_INT GL_UNSIGNED_INT
+#define AE_COMPONENT_UNSIGNED_INT GL_UNSIGNED_INT
 /**
  * T should be float to support proper conversion
  */
-#define COMPONENT_FLOAT GL_FLOAT
+#define AE_COMPONENT_FLOAT GL_FLOAT
 /**
  * T should be uint16_t to support proper conversion
  */
-#define COMPONENT_UNSIGNED_SHORT GL_UNSIGNED_SHORT
+#define AE_COMPONENT_UNSIGNED_SHORT GL_UNSIGNED_SHORT
 /**
  * T should be uint8_t to support proper conversion
  */
-#define COMPONENT_UNSIGNED_BYTE GL_UNSIGNED_BYTE
+#define AE_COMPONENT_UNSIGNED_BYTE GL_UNSIGNED_BYTE
 /**
  * T should be float16 to support proper conversion
  */
-#define COMPONENT_HALF_FLOAT GL_HALF_FLOAT
+#define AE_COMPONENT_HALF_FLOAT GL_HALF_FLOAT
 /**
  * T should be uint32_t to support proper conversion
  */
-#define COMPONENT_PACKED_FLOAT GL_INT_2_10_10_10_REV
+#define AE_COMPONENT_PACKED_FLOAT GL_INT_2_10_10_10_REV
 
 /**
  * Manage the data of the vertex buffer of a mesh
@@ -166,14 +166,14 @@ void DataComponent<S, T>::Set(S* data) {
 
 	delete[] this->data;
 
-	if (componentType == COMPONENT_HALF_FLOAT) {
+	if (componentType == AE_COMPONENT_HALF_FLOAT) {
 		int32_t dataSize = stride * size;
 		float16* internalData = (float16*)this->convertedData;
 		for (int32_t i = 0; i < dataSize; i++) {
 			internalData[i] = glm::detail::toFloat16((float)data[i]);
 		}
 	}
-	else if (componentType == COMPONENT_PACKED_FLOAT) {
+	else if (componentType == AE_COMPONENT_PACKED_FLOAT) {
 		uint32_t* internalData = (uint32_t*)this->convertedData;
 		int32_t dataCounter = 0;
 		for (int32_t i = 0; i < size; i++) {
@@ -183,14 +183,14 @@ void DataComponent<S, T>::Set(S* data) {
 			dataCounter += 4;
 		}
 	}
-	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
+	else if (componentType == AE_COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
 		int32_t dataSize = stride * size;
 		uint16_t* internalData = (uint16_t*)this->convertedData;
 		for (int32_t i = 0; i < dataSize; i++) {
 			internalData[i] = (uint16_t)data[i];
 		}
 	}
-	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
+	else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
 		int32_t dataSize = stride * size;
 		uint8_t* internalData = (uint8_t*)this->convertedData;
 		for (int32_t i = 0; i < dataSize; i++) {
@@ -222,35 +222,35 @@ S DataComponent<S, T>::Get(int32_t index) {
 template <class S, class T>
 void DataComponent<S, T>::SetType(int32_t componentType) {
 
-    if (componentType == COMPONENT_HALF_FLOAT) {
+    if (componentType == AE_COMPONENT_HALF_FLOAT) {
         delete[](float16*)convertedData;
     }
-    else if (componentType == COMPONENT_PACKED_FLOAT) {
+    else if (componentType == AE_COMPONENT_PACKED_FLOAT) {
         delete[](uint32_t*)convertedData;
     }
-    else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
+    else if (componentType == AE_COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
         delete[](uint16_t*)convertedData;
     }
-    else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
+    else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
         delete[](uint8_t*)convertedData;
     }
 
 	// We should check if the type is compatible to T
 	this->componentType = componentType;
 
-	if (componentType == COMPONENT_HALF_FLOAT) {
+	if (componentType == AE_COMPONENT_HALF_FLOAT) {
 		delete[] data;
         convertedData = new float16[stride * size];
 	}
-	else if (componentType == COMPONENT_PACKED_FLOAT) {
+	else if (componentType == AE_COMPONENT_PACKED_FLOAT) {
 		delete[] data;
         convertedData = new uint32_t[size];
 	}
-	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
+	else if (componentType == AE_COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
 		delete[] data;
         convertedData = new uint16_t[stride * size];
 	}
-	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
+	else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
 		delete[] data;
         convertedData = new uint8_t[stride * size];
 	}
@@ -269,22 +269,22 @@ void DataComponent<S, T>::SetSize(int32_t size) {
 
 	this->size = size;
 
-	if (componentType == COMPONENT_HALF_FLOAT) {
+	if (componentType == AE_COMPONENT_HALF_FLOAT) {
         delete[] (float16*)convertedData;
 		delete[] data;
         convertedData = new float16[stride * size];
 	}
-	else if (componentType == COMPONENT_PACKED_FLOAT) {
+	else if (componentType == AE_COMPONENT_PACKED_FLOAT) {
         delete[](uint32_t*)convertedData;
 		delete[] data;
         convertedData = new uint32_t[size];
 	}
-	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
+	else if (componentType == AE_COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
         delete[](uint16_t*)convertedData;
 		delete[] data;
         convertedData = new uint16_t[stride * size];
 	}
-	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
+	else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
         delete[](uint8_t*)convertedData;
 		delete[] data;
         convertedData = new uint8_t[stride * size];
@@ -295,7 +295,7 @@ void DataComponent<S, T>::SetSize(int32_t size) {
 template <class S, class T>
 int32_t DataComponent<S, T>::GetStride() {
 
-	return componentType != COMPONENT_PACKED_FLOAT ? stride : 4;
+	return componentType != AE_COMPONENT_PACKED_FLOAT ? stride : 4;
 
 }
 
@@ -303,12 +303,12 @@ template <class S, class T>
 int32_t DataComponent<S, T>::GetElementSize() {
 
 	switch (componentType) {
-	case COMPONENT_UNSIGNED_INT: return sizeof(uint32_t) * stride;
-	case COMPONENT_UNSIGNED_SHORT: return sizeof(uint16_t) * stride;
-	case COMPONENT_UNSIGNED_BYTE: return sizeof(uint8_t) * stride;
-	case COMPONENT_FLOAT: return sizeof(float) * stride;
-	case COMPONENT_HALF_FLOAT: return sizeof(float16) * stride;
-	case COMPONENT_PACKED_FLOAT: return sizeof(uint32_t);
+	case AE_COMPONENT_UNSIGNED_INT: return sizeof(uint32_t) * stride;
+	case AE_COMPONENT_UNSIGNED_SHORT: return sizeof(uint16_t) * stride;
+	case AE_COMPONENT_UNSIGNED_BYTE: return sizeof(uint8_t) * stride;
+	case AE_COMPONENT_FLOAT: return sizeof(float) * stride;
+	case AE_COMPONENT_HALF_FLOAT: return sizeof(float16) * stride;
+	case AE_COMPONENT_PACKED_FLOAT: return sizeof(uint32_t);
 	}
 
 	return 0;
@@ -348,16 +348,16 @@ DataComponent<S, T>::~DataComponent() {
 
 	delete[] data;
 	
-	if (componentType == COMPONENT_HALF_FLOAT) {
+	if (componentType == AE_COMPONENT_HALF_FLOAT) {
 		delete[] (float16*)convertedData;
 	}
-	else if (componentType == COMPONENT_PACKED_FLOAT) {
+	else if (componentType == AE_COMPONENT_PACKED_FLOAT) {
 		delete[] (uint32_t*)convertedData;
 	}
-	else if (componentType == COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
+	else if (componentType == AE_COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
 		delete[] (uint16_t*)convertedData;
 	}
-	else if (componentType == COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
+	else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
 		delete[] (uint8_t*)convertedData;
 	}
 

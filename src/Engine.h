@@ -30,7 +30,7 @@ public:
 	 * @note All file paths handed over to the engine should be relative the asset directory
 	 */
 	static Window* Init(string assetDirectory, string shaderDirectory, string windowTitle, int32_t x, int32_t y,
-			int32_t width, int32_t height, int32_t flags = WINDOW_FULLSCREEN);
+			int32_t width, int32_t height, int32_t flags = AE_WINDOW_FULLSCREEN);
 
 	/**
 	 * 

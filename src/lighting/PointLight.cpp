@@ -1,6 +1,6 @@
 #include "PointLight.h"
 
-PointLight::PointLight(int32_t mobility) : ILight(POINT_LIGHT, mobility) {
+PointLight::PointLight(int32_t mobility) : ILight(AE_POINT_LIGHT, mobility) {
 
     location = vec3(0.0f, 3.0f, 0.0f);
 
@@ -62,7 +62,7 @@ void PointLight::RemoveVolumetric() {
 
 void PointLight::Update(Camera* camera) {
 
-	if (mobility == MOVABLE_LIGHT && shadow != nullptr) {
+	if (mobility == AE_MOVABLE_LIGHT && shadow != nullptr) {
 		shadow->Update();
 	}
 

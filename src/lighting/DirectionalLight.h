@@ -7,7 +7,7 @@
 class DirectionalLight : public ILight {
 
 public:
-	DirectionalLight(int32_t mobility = MOVABLE_LIGHT);
+	DirectionalLight(int32_t mobility = AE_MOVABLE_LIGHT);
 
 	~DirectionalLight();
 

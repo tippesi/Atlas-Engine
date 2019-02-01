@@ -6,8 +6,8 @@ string PostProcessRenderer::fragmentPath = "postprocessing.fsh";
 
 PostProcessRenderer::PostProcessRenderer() {
 
-	shader.AddStage(VERTEX_STAGE, vertexPath);
-	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
+	shader.AddStage(AE_VERTEX_STAGE, vertexPath);
+	shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
 	shader.Compile();
 

@@ -30,35 +30,35 @@ void KeyboardHandler::Update(Camera* camera, uint32_t deltaTime) {
 
 void KeyboardHandler::KeyboardEventHandler(EngineKeyboardEvent event) {
 
-	if (event.keycode == KEY_W && event.state == BUTTON_PRESSED && !event.repeat) {
+	if (event.keycode == AE_KEY_W && event.state == AE_BUTTON_PRESSED && !event.repeat) {
 		movement.x += 1.0f;
 	}
 
-	if (event.keycode == KEY_W && event.state == BUTTON_RELEASED) {
+	if (event.keycode == AE_KEY_W && event.state == AE_BUTTON_RELEASED) {
 		movement.x -= 1.0f;
 	}
 
-	if (event.keycode == KEY_S && event.state == BUTTON_PRESSED && !event.repeat) {
+	if (event.keycode == AE_KEY_S && event.state == AE_BUTTON_PRESSED && !event.repeat) {
 		movement.x -= 1.0f;
 	}
 
-	if (event.keycode == KEY_S && event.state == BUTTON_RELEASED) {
+	if (event.keycode == AE_KEY_S && event.state == AE_BUTTON_RELEASED) {
 		movement.x += 1.0f;
 	}
 
-	if (event.keycode == KEY_D && event.state == BUTTON_PRESSED && !event.repeat) {
+	if (event.keycode == AE_KEY_D && event.state == AE_BUTTON_PRESSED && !event.repeat) {
 		movement.y += 1.0f;
 	}
 
-	if (event.keycode == KEY_D && event.state == BUTTON_RELEASED) {
+	if (event.keycode == AE_KEY_D && event.state == AE_BUTTON_RELEASED) {
 		movement.y -= 1.0f;
 	}
 
-	if (event.keycode == KEY_A && event.state == BUTTON_PRESSED && !event.repeat) {
+	if (event.keycode == AE_KEY_A && event.state == AE_BUTTON_PRESSED && !event.repeat) {
 		movement.y -= 1.0f;
 	}
 
-	if (event.keycode == KEY_A && event.state == BUTTON_RELEASED) {
+	if (event.keycode == AE_KEY_A && event.state == AE_BUTTON_RELEASED) {
 		movement.y += 1.0f;
 	}
 

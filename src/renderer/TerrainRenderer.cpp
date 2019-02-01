@@ -8,11 +8,11 @@ string TerrainRenderer::fragmentPath = "terrain/terrain.fsh";
 
 TerrainRenderer::TerrainRenderer() {
 
-	nearShader.AddStage(VERTEX_STAGE, vertexPath);
-	nearShader.AddStage(TESSELLATION_CONTROL_STAGE, tessControlPath);
-	nearShader.AddStage(TESSELLATION_EVALUATION_STAGE, tessEvalPath);
-	// nearShader.AddStage(GEOMETRY_STAGE, geometryPath);
-	nearShader.AddStage(FRAGMENT_STAGE, fragmentPath);
+	nearShader.AddStage(AE_VERTEX_STAGE, vertexPath);
+	nearShader.AddStage(AE_TESSELLATION_CONTROL_STAGE, tessControlPath);
+	nearShader.AddStage(AE_TESSELLATION_EVALUATION_STAGE, tessEvalPath);
+	// nearShader.AddStage(AE_GEOMETRY_STAGE, geometryPath);
+	nearShader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
 	// nearShader.AddMacro("GEOMETRY_SHADER");
 

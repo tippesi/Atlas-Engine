@@ -9,7 +9,7 @@ Scene::Scene() {
 	sky = new Sky();
 	postProcessing = new PostProcessing();
 
-	renderList = new RenderList(GEOMETRY_RENDERLIST, 0);
+	renderList = new RenderList(AE_GEOMETRY_RENDERLIST, 0);
 
 }
 

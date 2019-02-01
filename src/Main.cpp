@@ -15,17 +15,17 @@ Main::Main(int argc, char* argv[]) {
 
 	string assetDirectory = "data";
 
-#ifndef ENGINE_ANDROID
+#ifndef AE_OS_ANDROID
 	assetDirectory = "../data";
 	width = 1280;
 	height = 720;
-	flags = WINDOW_RESIZABLE | WINDOW_HIGH_DPI;
+	flags = AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI;
 #else
-	flags = WINDOW_FULLSCREEN;
+	flags = AE_WINDOW_FULLSCREEN;
 #endif
 
-	window = Engine::Init(assetDirectory, "shader", "Blue Engine", WINDOWPOSITION_UNDEFINED,
-	        WINDOWPOSITION_UNDEFINED, width, height, flags);
+	window = Engine::Init(assetDirectory, "shader", "Blue Engine",AE_WINDOWPOSITION_UNDEFINED,
+			AE_WINDOWPOSITION_UNDEFINED, width, height, flags);
 
 	Engine::UnlockFramerate();
 
@@ -54,7 +54,7 @@ Main::Main(int argc, char* argv[]) {
 
 	masterRenderer = new MasterRenderer();
 
-#ifndef ENGINE_ANDROID
+#ifndef AE_OS_ANDROID
 	renderTarget = new RenderTarget(1920, 1080);
 #else
     renderTarget = new RenderTarget(1280, 720);
@@ -209,7 +209,7 @@ void Main::DisplayLoadingScreen() {
     int32_t width, height;
     Engine::GetScreenSize(&width, &height);
 
-#ifndef ENGINE_ANDROID
+#ifndef AE_OS_ANDROID
     width = 1280;
 	height = 720;
 #endif
@@ -279,7 +279,7 @@ void Main::SceneSetUp() {
 	sponzaActor = new MeshActor(sponzaMesh);
 	sponzaActor->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
 
-	directionalLight = new DirectionalLight(STATIONARY_LIGHT);
+	directionalLight = new DirectionalLight(AE_STATIONARY_LIGHT);
 	directionalLight->direction = vec3(0.0f, -1.0f, 0.1f);
 	directionalLight->color = vec3(253, 194, 109) / 255.0f;
 	directionalLight->ambient = 0.05f;
@@ -291,22 +291,22 @@ void Main::SceneSetUp() {
 	directionalLight->GetShadow()->sampleCount = 1;
 	directionalLight->AddVolumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f);
 
-	PointLight* pointLight1 = new PointLight(STATIONARY_LIGHT);
+	PointLight* pointLight1 = new PointLight(AE_STATIONARY_LIGHT);
 	pointLight1->location = vec3(24.35f, 6.5f, 7.1f);
 	pointLight1->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight1->AddShadow(0.0f, 512);
 
-	PointLight* pointLight2 = new PointLight(STATIONARY_LIGHT);
+	PointLight* pointLight2 = new PointLight(AE_STATIONARY_LIGHT);
 	pointLight2->location = vec3(24.35f, 6.5f, -11.0f);
 	pointLight2->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight2->AddShadow(0.0f, 512);
 
-	PointLight* pointLight3 = new PointLight(STATIONARY_LIGHT);
+	PointLight* pointLight3 = new PointLight(AE_STATIONARY_LIGHT);
 	pointLight3->location = vec3(-31.0f, 6.5f, 7.1f);
 	pointLight3->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight3->AddShadow(0.0f, 512);
 
-	PointLight* pointLight4 = new PointLight(STATIONARY_LIGHT);
+	PointLight* pointLight4 = new PointLight(AE_STATIONARY_LIGHT);
 	pointLight4->location = vec3(-31.0f, 6.5f, -11.0f);
 	pointLight4->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight4->AddShadow(0.0f, 512);
@@ -332,10 +332,10 @@ void Main::QuitEventHandler() {
 
 void Main::ControllerDeviceEventHandler(EngineControllerDeviceEvent event) {
 
-	if (event.type == CONTROLLER_ADDED) {
+	if (event.type == AE_CONTROLLER_ADDED) {
 		useControllerHandler = true;
 	}
-	else if (event.type == CONTROLLER_REMOVED) {
+	else if (event.type == AE_CONTROLLER_REMOVED) {
 		useControllerHandler = false;
 	}
 
@@ -343,7 +343,7 @@ void Main::ControllerDeviceEventHandler(EngineControllerDeviceEvent event) {
 
 void Main::MouseButtonEventHandler(EngineMouseButtonEvent event) {
 
-	if (event.button == MOUSEBUTTON_RIGHT && event.state == BUTTON_RELEASED) {
+	if (event.button == AE_MOUSEBUTTON_RIGHT && event.state == AE_BUTTON_RELEASED) {
 
 		Decal* decal = new Decal(smileyTexture, 4.0f, 4.0f, 500.0f);
 

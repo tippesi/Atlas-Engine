@@ -2,7 +2,7 @@ if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "Prevented in-tree built. Please create a build directory outside of the source code and call cmake from there")
 endif()
 
-project(BlueEngine)
+project(AtlasEngine)
 cmake_minimum_required(VERSION 3.7)
 
 # Options and compiler settings ###################################################################
@@ -35,14 +35,14 @@ endif()
 
 # Configure platform specific stuff ###############################################################
 if(WIN32)
-	set(ENGINE_COMPILE_DEFINITIONS ENGINE_WINDOWS)
+	set(ATLAS_ENGINE_COMPILE_DEFINITIONS AE_OS_WINDOWS)
 
-	set(BLUE_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
-    set(BLUE_ENGINE_SYSTEM_LIBS opengl32)
+	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
+    set(ATLAS_ENGINE_SYSTEM_LIBS opengl32)
 endif()
 
 if(APPLE)
-	set(ENGINE_COMPILE_DEFINITIONS ENGINE_OSX)
+	set(ATLAS_ENGINE_COMPILE_DEFINITIONS AE_OS_MACOS)
 
     include_directories(/System/Library/Frameworks)
     find_library(COCOA_LIBRARY Cocoa)
@@ -51,19 +51,19 @@ if(APPLE)
     find_library(CoreVideo_LIBRARY CoreVideo)
     mark_as_advanced(COCOA_LIBRARY OpenGL_LIBRARY)
 	
-	set(BLUE_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
-    set(BLUE_ENGINE_SYSTEM_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
+	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
+    set(ATLAS_ENGINE_SYSTEM_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
 endif()
 
 if(ANDROID)
-	set(ENGINE_COMPILE_DEFINITIONS ENGINE_ANDROID)
+	set(ATLAS_ENGINE_COMPILE_DEFINITIONS AE_OS_ANDROID)
 	
-	set(BLUE_ENGINE_LIBS assimp SDL2main SDL2 hidapi)	
-	set(BLUE_ENGINE_SYSTEM_LIBS android EGL GLESv3 m)
+	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 hidapi)
+	set(ATLAS_ENGINE_SYSTEM_LIBS android EGL GLESv3 m)
 endif()
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
-	set(ENGINE_COMPILE_DEFINITIONS ENGINE_LINUX)
+	set(ATLAS_ENGINE_COMPILE_DEFINITIONS AE_OS_LINUX)
 	
     add_definitions(${OPENGL_DEFINITIONS})
     find_package(X11 REQUIRED)
@@ -76,45 +76,45 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(CMAKE_INSTALL_RPATH "./")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	
-	set(BLUE_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
-	set(BLUE_ENGINE_SYSTEM_LIBS X11 Xxf86vm GL dl pthread)
+	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
+	set(ATLAS_ENGINE_SYSTEM_LIBS X11 Xxf86vm GL dl pthread)
 endif()
 
 # Add source files ################################################################################
-file(GLOB_RECURSE BLUE_ENGINE_SOURCE_FILES
+file(GLOB_RECURSE ATLAS_ENGINE_SOURCE_FILES
         "src/*.cpp"
         "src/*.c"
 		"src/*.h"
 		"src/*.hpp"
         )
 		
-list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/libraries\/")
+list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/libraries\/")
 
 if (OPENGL_ES)
-set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_GLES)
+set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_API_GLES)
 else()
-set(ENGINE_COMPILE_DEFINITIONS ${ENGINE_COMPILE_DEFINITIONS} ENGINE_GL)
+set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_API_GL)
 endif()
 
 # Configure linking ###############################################################################
 if(ANDROID)	
-    add_library(${PROJECT_NAME} SHARED ${BLUE_ENGINE_SOURCE_FILES})
+    add_library(${PROJECT_NAME} SHARED ${ATLAS_ENGINE_SOURCE_FILES})
 else()
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 if (BUILD_LIBRARY)
-    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/[Mm]ain.c(pp)?")
-    add_library(${PROJECT_NAME} STATIC ${BLUE_ENGINE_SOURCE_FILES})
+    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/[Mm]ain.c(pp)?")
+    add_library(${PROJECT_NAME} STATIC ${ATLAS_ENGINE_SOURCE_FILES})
 else()
-    add_executable(${PROJECT_NAME} ${BLUE_ENGINE_SOURCE_FILES})
+    add_executable(${PROJECT_NAME} ${ATLAS_ENGINE_SOURCE_FILES})
 endif()
 else()
-    list(FILTER BLUE_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/[Mm]ain.c(pp)?")
-    add_library(${PROJECT_NAME} STATIC ${BLUE_ENGINE_SOURCE_FILES})
+    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/[Mm]ain.c(pp)?")
+    add_library(${PROJECT_NAME} STATIC ${ATLAS_ENGINE_SOURCE_FILES})
 endif()
 endif()
 
 # Include directories and definitions #############################################################
-target_compile_definitions(${PROJECT_NAME} PUBLIC ${ENGINE_COMPILE_DEFINITIONS})
+target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/dependencies
@@ -125,4 +125,4 @@ target_include_directories(${PROJECT_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/libraries)
 
 # Link libraries ##################################################################################
-target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${BLUE_ENGINE_LIBS} LINK_PRIVATE ${BLUE_ENGINE_SYSTEM_LIBS})
+target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${ATLAS_ENGINE_LIBS} LINK_PRIVATE ${ATLAS_ENGINE_SYSTEM_LIBS})

@@ -27,21 +27,21 @@ Cubemap::Cubemap(string right, string left, string top,
 		auto image = ImageLoader::LoadImage(filenames[i], false, 3);
 
 		if (image.data.size() != 0) {
-#ifdef ENGINE_GL
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB8, image.width, image.height, 0,
+#ifdef AE_API_GL
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, AE_SRGB8, image.width, image.height, 0,
 				GL_RGB, GL_UNSIGNED_BYTE, image.data.data());
-#elif ENGINE_GLES
+#elif AE_API_GLES
 			Texture::GammaToLinear(image.data.data(), image.width, image.height, 3);
 
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB8, image.width, image.height, 0,
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, AE_RGB8, image.width, image.height, 0,
 				GL_RGB, GL_UNSIGNED_BYTE, image.data.data());
 #endif
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 			EngineLog("    Loaded cubemap face %d %s", i, filenames[i].c_str());
 #endif
 		}
 		else {
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 			EngineLog("    Failed to load cubemap face %d %s", i, filenames[i].c_str());
 #endif
 			throw EngineException("Failed to load cubemap");

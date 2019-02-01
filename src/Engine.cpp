@@ -7,7 +7,7 @@ Window* Engine::Init(string assetDirectory, string shaderDirectory, string title
         SDL_Init(SDL_INIT_EVERYTHING);
     }
 
-#ifdef ENGINE_GL
+#ifdef AE_API_GL
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
@@ -15,7 +15,7 @@ Window* Engine::Init(string assetDirectory, string shaderDirectory, string title
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
 	SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
-#elif ENGINE_GLES
+#elif AE_API_GLES
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
@@ -28,12 +28,12 @@ Window* Engine::Init(string assetDirectory, string shaderDirectory, string title
 
 	Window* window = new Window(title, x, y, width, height, flags);
 
-#if defined(ENGINE_WINDOWS) || defined(ENGINE_LINUX) || defined(ENGINE_OSX)
-#ifdef ENGINE_GL
+#if defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
+#ifdef AE_API_GL
 	if (!gladLoadGL()) {
 		throw EngineException("Error initializing OpenGL");
 	}
-#elif ENGINE_GLES
+#elif AE_API_GLES
 	if (SDL_GL_LoadLibrary(nullptr) != 0) {
 		throw EngineException("Error initializing OpenGL ES");
 	}
@@ -44,7 +44,7 @@ Window* Engine::Init(string assetDirectory, string shaderDirectory, string title
 
 	int value;
 
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 	EngineLog("OpenGL Version: %s", glGetString(GL_VERSION));
 	SDL_GL_GetAttribute(SDL_GL_RED_SIZE, &value);
 	EngineLog("Native colorbuffer red component precision %d bits", value);
@@ -66,7 +66,7 @@ Window* Engine::Init(string assetDirectory, string shaderDirectory, string title
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-#ifdef ENGINE_GL
+#ifdef AE_API_GL
 	// Standard in OpenGL ES
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 #endif		

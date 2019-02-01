@@ -12,15 +12,15 @@ DirectionalVolumetricRenderer::DirectionalVolumetricRenderer() {
 
 	blurKernel.CalculateBoxFilter(21);
 
-    volumetricShader.AddStage(VERTEX_STAGE, volumetricVertexPath);
-    volumetricShader.AddStage(FRAGMENT_STAGE, volumetricFragmentPath);
+    volumetricShader.AddStage(AE_VERTEX_STAGE, volumetricVertexPath);
+    volumetricShader.AddStage(AE_FRAGMENT_STAGE, volumetricFragmentPath);
 
     volumetricShader.Compile();
 
     GetVolumetricUniforms();
 
-    bilateralBlurShader.AddStage(VERTEX_STAGE, bilateralBlurVertexPath);
-    bilateralBlurShader.AddStage(FRAGMENT_STAGE, bilateralBlurFragmentPath);
+    bilateralBlurShader.AddStage(AE_VERTEX_STAGE, bilateralBlurVertexPath);
+    bilateralBlurShader.AddStage(AE_FRAGMENT_STAGE, bilateralBlurFragmentPath);
 
     bilateralBlurShader.AddMacro("BILATERAL");
     bilateralBlurShader.AddMacro("BLUR_R");
@@ -45,7 +45,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
     for (ILight* light : scene->lights) {
 
-        if (light->type != DIRECTIONAL_LIGHT || light->GetShadow() == nullptr || light->GetVolumetric() == nullptr) {
+        if (light->type != AE_DIRECTIONAL_LIGHT || light->GetShadow() == nullptr || light->GetVolumetric() == nullptr) {
             continue;
         }
 
@@ -101,7 +101,7 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
     for (ILight* light : scene->lights) {
 
-        if (light->type != DIRECTIONAL_LIGHT || light->GetShadow() == nullptr || light->GetVolumetric() == nullptr) {
+        if (light->type != AE_DIRECTIONAL_LIGHT || light->GetShadow() == nullptr || light->GetVolumetric() == nullptr) {
             continue;
         }
 

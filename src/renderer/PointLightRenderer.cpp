@@ -9,8 +9,8 @@ PointLightRenderer::PointLightRenderer() {
 
 	GeometryHelper::GenerateSphereVertexArray(vertexArray, 16, 16);
 
-	shader.AddStage(VERTEX_STAGE, vertexPath);
-	shader.AddStage(FRAGMENT_STAGE, fragmentPath);
+	shader.AddStage(AE_VERTEX_STAGE, vertexPath);
+	shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
 	shader.Compile();
 
@@ -41,7 +41,7 @@ void PointLightRenderer::Render(Window* window, RenderTarget* target, Camera* ca
 
 	for (auto light : scene->lights) {
 
-		if (light->type != POINT_LIGHT) {
+		if (light->type != AE_POINT_LIGHT) {
 			continue;
 		}
 

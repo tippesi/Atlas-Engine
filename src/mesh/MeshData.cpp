@@ -2,17 +2,17 @@
 
 MeshData::MeshData() {
 
-	indices = new DataComponent<uint32_t, void>(COMPONENT_UNSIGNED_INT, 1);
+	indices = new DataComponent<uint32_t, void>(AE_COMPONENT_UNSIGNED_INT, 1);
 
-	vertices = new DataComponent<float, float>(COMPONENT_FLOAT, 3);
-	texCoords = new DataComponent<float, float16>(COMPONENT_FLOAT, 2);
-	normals = new DataComponent<float, uint32_t>(COMPONENT_FLOAT, 3);
-	tangents = new DataComponent<float, uint32_t>(COMPONENT_FLOAT, 3);
+	vertices = new DataComponent<float, float>(AE_COMPONENT_FLOAT, 3);
+	texCoords = new DataComponent<float, float16>(AE_COMPONENT_FLOAT, 2);
+	normals = new DataComponent<float, uint32_t>(AE_COMPONENT_FLOAT, 3);
+	tangents = new DataComponent<float, uint32_t>(AE_COMPONENT_FLOAT, 3);
 
 	indexCount = 0;
 	vertexCount = 0;
 
-	primitiveType = PRIMITIVE_TRIANGLES;
+	primitiveType = AE_PRIMITIVE_TRIANGLES;
 
 }
 

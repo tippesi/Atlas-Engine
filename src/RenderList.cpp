@@ -28,7 +28,7 @@ void RenderList::Add(MeshActor* actor) {
 
 			ShaderConfig* shaderConfig;
 
-			if (type == GEOMETRY_RENDERLIST) {
+			if (type == AE_GEOMETRY_RENDERLIST) {
 				shaderConfig = &actor->mesh->data->materials[subData->materialIndex]->geometryConfig;
 			}
 			else {

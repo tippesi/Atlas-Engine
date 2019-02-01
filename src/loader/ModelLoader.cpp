@@ -18,7 +18,7 @@ MeshData* ModelLoader::LoadMesh(string filename) {
 	auto fileStream = AssetLoader::ReadFile(filename, ios::in | ios::binary);
 
 	if (!fileStream.is_open()) {
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 		EngineLog("Failed to load mddel %s", filename.c_str());
 #endif
 		throw EngineException("Model couldn't be loaded");
@@ -71,16 +71,16 @@ MeshData* ModelLoader::LoadMesh(string filename) {
 	}
 
 	if (indexCount > 65535) {
-		meshData->indices->SetType(COMPONENT_UNSIGNED_INT);
+		meshData->indices->SetType(AE_COMPONENT_UNSIGNED_INT);
 	}
 	else {
-		meshData->indices->SetType(COMPONENT_UNSIGNED_SHORT);
+		meshData->indices->SetType(AE_COMPONENT_UNSIGNED_SHORT);
 	}
 
-	meshData->vertices->SetType(COMPONENT_FLOAT);
-	meshData->normals->SetType(COMPONENT_PACKED_FLOAT);
-	meshData->texCoords->SetType(COMPONENT_HALF_FLOAT);
-	meshData->tangents->SetType(COMPONENT_PACKED_FLOAT);
+	meshData->vertices->SetType(AE_COMPONENT_FLOAT);
+	meshData->normals->SetType(AE_COMPONENT_PACKED_FLOAT);
+	meshData->texCoords->SetType(AE_COMPONENT_HALF_FLOAT);
+	meshData->tangents->SetType(AE_COMPONENT_PACKED_FLOAT);
 
 	meshData->SetIndexCount(indexCount);
 	meshData->SetVertexCount(vertexCount);

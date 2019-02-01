@@ -76,20 +76,20 @@ void Material::Update() {
 		int32_t map = imageKey.first;
 		if (useArrayMap) {
 			switch(map) {
-				case MATERIAL_DIFFUSE_MAP: diffuseMapIndex = (float)index; break;
-				case MATERIAL_NORMAL_MAP: normalMapIndex = (float)index; break;
-				case MATERIAL_SPECULAR_MAP: specularMapIndex = (float)index; break;
-				case MATERIAL_DISPLACEMENT_MAP: displacementMapIndex = (float)index; break;
+				case AE_MATERIAL_DIFFUSE_MAP: diffuseMapIndex = (float)index; break;
+				case AE_MATERIAL_NORMAL_MAP: normalMapIndex = (float)index; break;
+				case AE_MATERIAL_SPECULAR_MAP: specularMapIndex = (float)index; break;
+				case AE_MATERIAL_DISPLACEMENT_MAP: displacementMapIndex = (float)index; break;
 			}
 			arrayMap->SetData(image->data, index++);
 		} else {
 			auto texture = new Texture2D(GL_UNSIGNED_BYTE, image->width, image->height,
 					Texture::GetSuggestedFormat(image->channels), GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 			switch(map) {
-				case MATERIAL_DIFFUSE_MAP: diffuseMap = texture; break;
-				case MATERIAL_NORMAL_MAP: normalMap = texture; break;
-				case MATERIAL_SPECULAR_MAP: specularMap = texture; break;
-				case MATERIAL_DISPLACEMENT_MAP: displacementMap = texture; break;
+				case AE_MATERIAL_DIFFUSE_MAP: diffuseMap = texture; break;
+				case AE_MATERIAL_NORMAL_MAP: normalMap = texture; break;
+				case AE_MATERIAL_SPECULAR_MAP: specularMap = texture; break;
+				case AE_MATERIAL_DISPLACEMENT_MAP: displacementMap = texture; break;
 			}
 			texture->SetData(image->data);
 		}
@@ -128,28 +128,28 @@ void Material::Update() {
 void Material::AddDiffuseMap(Image image) {
 
 	hasDiffuseMap = true;
-	images[MATERIAL_DIFFUSE_MAP] = image;
+	images[AE_MATERIAL_DIFFUSE_MAP] = image;
 
 }
 
 void Material::AddNormalMap(Image image) {
 
 	hasNormalMap = true;
-	images[MATERIAL_NORMAL_MAP] = image;
+	images[AE_MATERIAL_NORMAL_MAP] = image;
 
 }
 
 void Material::AddSpecularMap(Image image) {
 
 	hasSpecularMap = true;
-	images[MATERIAL_SPECULAR_MAP] = image;
+	images[AE_MATERIAL_SPECULAR_MAP] = image;
 
 }
 
 void Material::AddDisplacementMap(Image image) {
 
 	hasDisplacementMap = true;
-	images[MATERIAL_DISPLACEMENT_MAP] = image;
+	images[AE_MATERIAL_DISPLACEMENT_MAP] = image;
 
 }
 

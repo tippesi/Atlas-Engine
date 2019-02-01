@@ -8,12 +8,12 @@
  * If this bit is set the buffer will use double buffering. Use
  * Increment() to switch to the next part of the buffer.
  */
-#define BUFFER_DOUBLE_BUFFERING 2
+#define AE_BUFFER_DOUBLE_BUFFERING 2
 /**
  * If this bit is set the buffer will use triple buffering. Use
  * Increment() to switch to the next part of the buffer.
  */
-#define BUFFER_TRIPLE_BUFFERING 4
+#define AE_BUFFER_TRIPLE_BUFFERING 4
 /**
  * If this bit is set the buffer will use immutable storage
  * in case the system supports it. If this is the case persistent
@@ -22,30 +22,30 @@
  * been called. Persistent mapped storage is only available if Map()
  * has been called on such a buffer and the BUFFER_DYNAMIC_STORAGE bit is set.
  */
-#define BUFFER_IMMUTABLE        8
+#define AE_BUFFER_IMMUTABLE        8
 /**
  * If this bit is set the buffer can be read when it is mapped.
  * @note This bit only affects the buffer if the BUFFER_DYNAMIC_STORAGE bit is set.
  */
-#define BUFFER_MAP_READ         16
+#define AE_BUFFER_MAP_READ         16
 /**
  * If this bit is set you can write to the buffer when it is mapped.
  * @note This bit only affects the buffer if the BUFFER_DYNAMIC_STORAGE bit is set.
  */
-#define BUFFER_MAP_WRITE        32
+#define AE_BUFFER_MAP_WRITE        32
 /**
  * If this bit is set you can access the buffer from clients side.
  * This means you can use SetData() and SetDataMapped() on the buffer.
  * If this isn't the case you can only access the buffer by copying something
  * from another buffer. You therefore use staging buffers.
  */
-#define BUFFER_DYNAMIC_STORAGE  64
+#define AE_BUFFER_DYNAMIC_STORAGE  64
 
-#define VERTEX_BUFFER	GL_ARRAY_BUFFER
-#define INDEX_BUFFER	GL_ELEMENT_ARRAY_BUFFER
-#define UNIFORM_BUFFER	GL_UNIFORM_BUFFER
-#define COMMAND_BUFFER	GL_DRAW_INDIRECT_BUFFER
-#define STAGING_BUFFER	GL_COPY_READ_BUFFER
+#define AE_VERTEX_BUFFER	GL_ARRAY_BUFFER
+#define AE_INDEX_BUFFER		GL_ELEMENT_ARRAY_BUFFER
+#define AE_UNIFORM_BUFFER	GL_UNIFORM_BUFFER
+#define AE_COMMAND_BUFFER	GL_DRAW_INDIRECT_BUFFER
+#define AE_STAGING_BUFFER	GL_COPY_READ_BUFFER
 
 /**
  * Base class for all other buffer classes. Can be used as standalone class.

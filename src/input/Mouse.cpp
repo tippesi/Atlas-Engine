@@ -9,7 +9,7 @@ MouseHandler::MouseHandler(Camera* camera, float sensibility, float reactivity, 
 	activationButtonDown = false;
 	hideMouse = false;
 	lock = false;
-	activationButton = MOUSEBUTTON_LEFT;
+	activationButton = AE_MOUSEBUTTON_LEFT;
 	rotation = camera->rotation;
 
 	auto mouseMotionEventHandler = std::bind(&MouseHandler::MouseMotionEventHandler, this, std::placeholders::_1);
@@ -74,71 +74,10 @@ void MouseHandler::MouseButtonEventHandler(EngineMouseButtonEvent event) {
 	if (event.windowID == 0 || lock)
 		return;
 
-	if (event.button == activationButton && event.state == BUTTON_PRESSED)
+	if (event.button == activationButton && event.state == AE_BUTTON_PRESSED)
 		activationButtonDown = true;
 
-	if (event.button == activationButton && event.state == BUTTON_RELEASED)
+	if (event.button == activationButton && event.state == AE_BUTTON_RELEASED)
 		activationButtonDown = false;
 
 }
-
-/*
-void CalculateMouseHandler(MouseHandler* handler, Camera* camera, uint32_t deltatime) {
-
-	if (handler != NULL && camera != NULL && deltatime > 0) {
-
-		if (handler->lock == false) {
-
-			int x, y;
-
-			SDL_GetGlobalMouseState(&x, &y);
-
-			glm::vec2 mousePosition = glm::vec2((float)x, (float)y);
-
-			if (handler->relative) {
-
-				// First time in relative mode, reset the mouse position and return
-				if (handler->lastMousePosition == glm::vec2(-1.0f)) {
-					SDL_ShowCursor(0);
-					SDL_WarpMouseGlobal((int)handler->mousePosition.x, (int)handler->mousePosition.y);
-					handler->lastMousePosition = glm::vec2(1.0f);
-					return;
-				}
-
-				handler->rotation += glm::vec2(-(handler->mousePosition.x - mousePosition.x), handler->mousePosition.y - mousePosition.y) * handler->sensibility * 0.001f;
-
-				SDL_WarpMouseGlobal((int)handler->mousePosition.x, (int)handler->mousePosition.y);
-			}
-			else {
-				if (handler->lastMousePosition == glm::vec2(-1.0f)) {
-
-					handler->lastMousePosition.x = mousePosition.x;
-					handler->lastMousePosition.y = mousePosition.y;
-
-				}
-
-				handler->rotation += glm::vec2(-(handler->lastMousePosition.x - mousePosition.x), -(handler->lastMousePosition.y - mousePosition.y)) * handler->sensibility * 0.001f;
-
-				handler->lastMousePosition.x = mousePosition.x;
-				handler->lastMousePosition.y = mousePosition.y;
-			}
-
-		}
-		else {
-
-			if (handler->relative) {
-				SDL_WarpMouseGlobal((int)handler->mousePosition.x, (int)handler->mousePosition.y);
-			}
-			else {
-				if (handler->lastMousePosition != glm::vec2(-1.0f))
-					handler->lastMousePosition = glm::vec2(-1.0f);
-			}
-
-		}
-
-
-
-	}
-
-}
-*/

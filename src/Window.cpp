@@ -119,11 +119,11 @@ void Window::WindowEventHandler(EngineWindowEvent event) {
 	if (event.windowID != ID)
 		return;
 
-	if (event.type == WINDOWEVENT_FOCUS_GAINED) {
+	if (event.type == AE_WINDOWEVENT_FOCUS_GAINED) {
 		hasFocus = true;
 	}
 
-	if (event.type == WINDOWEVENT_FOCUS_LOST) {
+	if (event.type == AE_WINDOWEVENT_FOCUS_LOST) {
 		hasFocus = false;
 	}
 
