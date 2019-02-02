@@ -7,7 +7,7 @@
 class BlurRenderer : IRenderer {
 
 public:
-    BlurRenderer(string vertexSource, string fragmentSource, int32_t channelCount, float* kernelOffsets,
+    BlurRenderer(std::string vertexSource, std::string fragmentSource, int32_t channelCount, float* kernelOffsets,
             float* kernelWeights, int32_t kernelSize, bool bilateral = false);
 
     virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);

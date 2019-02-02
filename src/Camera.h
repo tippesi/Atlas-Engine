@@ -44,7 +44,7 @@ public:
 	 * @param farPlane The far plane where the corners should be calculated.
 	 * @return A vector where the corners are stored.
 	 */
-	vector<vec3> GetFrustumCorners(float nearPlane, float farPlane);
+	std::vector<vec3> GetFrustumCorners(float nearPlane, float farPlane);
 
 	typedef struct Frustum {
 		vec4 planes[6];

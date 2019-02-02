@@ -27,7 +27,7 @@ typedef struct Glyph {
 	vec2 textureScale;
 	vec2 offset;
 
-	vector<uint8_t> data;
+	std::vector<uint8_t> data;
 
 	int32_t kern[AE_FONT_GLYPH_COUNT];
 
@@ -54,7 +54,7 @@ public:
 	 * because 5 - 5 * 100/255 is approximately 3. Everything outside this area can be used
 	 * as the outline.
 	 */
-	Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue);
+	Font(std::string filename, float pixelSize, int32_t padding, uint8_t edgeValue);
 
 	~Font();
 
@@ -83,7 +83,7 @@ public:
 	 * @param height A pointer to a float where the height will be written into
 	 * @note The text is assumed to be UTF-8 encoded.
 	 */
-	void ComputeDimensions(string text, float scale, float* width, float* height);
+	void ComputeDimensions(std::string text, float scale, float* width, float* height);
 
 	float lineGap;
 	float ascent;

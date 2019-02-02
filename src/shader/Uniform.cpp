@@ -1,7 +1,7 @@
 #include "Uniform.h"
 #include "ShaderBatch.h"
 
-Uniform::Uniform(uint32_t shaderID, string uniformName, ShaderBatch* shaderBatch, int32_t ID) : ID(ID), shaderID(shaderID), shaderBatch(shaderBatch) {
+Uniform::Uniform(uint32_t shaderID, std::string uniformName, ShaderBatch* shaderBatch, int32_t ID) : ID(ID), shaderID(shaderID), shaderBatch(shaderBatch) {
 
 	name = uniformName;
 

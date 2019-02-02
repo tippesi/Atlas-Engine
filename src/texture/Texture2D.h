@@ -28,7 +28,7 @@ public:
      * @param anisotropicFiltering
      * @param generateMipMaps
      */
-    Texture2D(string filename, bool colorSpaceConversion = true, bool anisotropicFiltering = true,
+    Texture2D(std::string filename, bool colorSpaceConversion = true, bool anisotropicFiltering = true,
             bool generateMipMaps = true);
 
     /**
@@ -47,19 +47,19 @@ public:
      * Sets the data of the texture
      * @param data A vector holding the new data.
      */
-    void SetData(vector<uint8_t>& data);
+    void SetData(std::vector<uint8_t>& data);
 
     /**
      * Sets the data of the texture
      * @param data A pointer to the data
      */
-    void SetData(vector<uint16_t>& data);
+    void SetData(std::vector<uint16_t>& data);
 
     /**
      * Retrieves the data of the texture from the GPU.
      * @return A vector holding the data.
      */
-    vector<uint8_t> GetData();
+	std::vector<uint8_t> GetData();
 
     /**
      * Resizes the texture
@@ -75,7 +75,7 @@ public:
      * @param filename The name of the file
      * @note Only UNSIGNED_BYTE textures are supported.
      */
-    void SaveToPNG(string filename);
+    void SaveToPNG(std::string filename);
 
 protected:
     void ReserveStorage(int32_t mipCount);

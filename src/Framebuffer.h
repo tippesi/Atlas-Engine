@@ -93,7 +93,7 @@ public:
 	void Unbind();
 
 
-	void SetDrawBuffers(uint32_t* buffers, int32_t count);
+	void SetDrawBuffers(std::vector<uint32_t> drawBuffers);
 
 	int32_t width;
 	int32_t height;
@@ -115,8 +115,8 @@ private:
 
 	bool drawBuffersSet;
 
-	unordered_map<int32_t, FramebufferComponent> components;
-	vector<uint32_t> drawBuffers;
+	std::unordered_map<int32_t, FramebufferComponent> components;
+	std::vector<uint32_t> drawBuffers;
 
 	static uint32_t boundFramebufferID;
 

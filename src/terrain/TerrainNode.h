@@ -15,7 +15,7 @@ public:
 
 	~TerrainNode();
 
-	void Update(Camera* camera, vector<TerrainNode*>& renderList, float* LoDDistances);
+	void Update(Camera* camera, std::vector<TerrainNode*>& renderList, float* LoDDistances);
 
 	vec2 location;
 	float sideLength;
@@ -26,7 +26,7 @@ public:
 private:
 	void CreateChildren();
 
-	void UpdateChildren(Camera* camera, vector<TerrainNode*>& renderList, float* LoDDistances);
+	void UpdateChildren(Camera* camera, std::vector<TerrainNode*>& renderList, float* LoDDistances);
 
 	void DeleteChildren();
 
@@ -38,7 +38,7 @@ private:
 	float resolution;
 	float height;
 
-	vector<TerrainNode> children;
+	std::vector<TerrainNode> children;
 
 	TerrainStorage* storage;
 

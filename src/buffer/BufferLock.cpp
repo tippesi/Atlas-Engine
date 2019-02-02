@@ -19,7 +19,7 @@ void BufferLock::WaitForLockedRange(size_t offset, size_t length) {
 
     struct LockRange lockRange = { offset, length };
 
-    vector<Lock> swapLocks;
+	std::vector<Lock> swapLocks;
 
     for (auto& lock : locks) {
         if(lockRange.Overlaps(lock.range)) {

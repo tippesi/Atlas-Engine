@@ -12,7 +12,7 @@ Texture2D::Texture2D(GLenum dataType, int32_t width, int32_t height, int32_t siz
 
 }
 
-Texture2D::Texture2D(string filename, bool colorSpaceConversion, bool anisotropicFiltering,
+Texture2D::Texture2D(std::string filename, bool colorSpaceConversion, bool anisotropicFiltering,
         bool generateMipMaps) {
 
     Image image = ImageLoader::LoadImage(filename, colorSpaceConversion);
@@ -50,7 +50,7 @@ void Texture2D::Unbind() {
 
 }
 
-void Texture2D::SetData(vector<uint8_t> &data) {
+void Texture2D::SetData(std::vector<uint8_t> &data) {
 
     glBindTexture(GL_TEXTURE_2D, ID);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
@@ -61,7 +61,7 @@ void Texture2D::SetData(vector<uint8_t> &data) {
 
 }
 
-void Texture2D::SetData(vector<uint16_t> &data) {
+void Texture2D::SetData(std::vector<uint16_t> &data) {
 
     glBindTexture(GL_TEXTURE_2D, ID);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
@@ -72,11 +72,11 @@ void Texture2D::SetData(vector<uint16_t> &data) {
 
 }
 
-vector<uint8_t> Texture2D::GetData() {
+std::vector<uint8_t> Texture2D::GetData() {
 
     auto framebuffer = Framebuffer(width, height);
 
-    vector<uint8_t> data = vector<uint8_t>(width * height * channels);
+	std::vector<uint8_t> data(width * height * channels);
 
     framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, this);
 
@@ -101,7 +101,7 @@ void Texture2D::Resize(int32_t width, int32_t height) {
 
 }
 
-void Texture2D::SaveToPNG(string filename) {
+void Texture2D::SaveToPNG(std::string filename) {
 
     Image image;
 

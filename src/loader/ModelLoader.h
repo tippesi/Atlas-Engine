@@ -13,12 +13,12 @@
 class ModelLoader {
 
 public:
-	static MeshData* LoadMesh(string filename);
+	static MeshData* LoadMesh(std::string filename);
 
-	static SceneNode* LoadSceneNode(string filename);
+	static SceneNode* LoadSceneNode(std::string filename);
 
 private:
-	static Material* LoadMaterial(aiMaterial* assimpMaterial, string directory);
+	static Material* LoadMaterial(aiMaterial* assimpMaterial, std::string directory);
 
 };
 

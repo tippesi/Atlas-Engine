@@ -14,34 +14,34 @@ class AssetLoader {
 public:
     static void Init();
 
-    static void SetAssetDirectory(string directory);
+    static void SetAssetDirectory(std::string directory);
 
-    static ifstream ReadFile(string filename, ios_base::openmode mode);
+    static std::ifstream ReadFile(std::string filename, std::ios_base::openmode mode);
 
-    static ofstream WriteFile(string filename, ios_base::openmode mode);
+    static std::ofstream WriteFile(std::string filename, std::ios_base::openmode mode);
 
-	static size_t GetFileSize(ifstream& stream);
+	static size_t GetFileSize(std::ifstream& stream);
 
-	static vector<char> GetFileContent(ifstream& stream);
+	static std::vector<char> GetFileContent(std::ifstream& stream);
 
-	static void MakeDirectory(string directory);
+	static void MakeDirectory(std::string directory);
 	
-	static void UnpackFile(string filename);
+	static void UnpackFile(std::string filename);
 
-    static void UnpackDirectory(string directory);
+    static void UnpackDirectory(std::string directory);
 
-	static string GetFullPath(string path);
+	static std::string GetFullPath(std::string path);
 
 private:
-    static string GetAssetPath(string path);
+    static std::string GetAssetPath(std::string path);
 
-    static string GetAbsolutePath(string path);
+    static std::string GetAbsolutePath(std::string path);
 
-    static string assetDirectory;
+    static std::string assetDirectory;
 
-    static string dataDirectory;
+    static std::string dataDirectory;
 
-    static mutex assetLoaderMutex;
+    static std::mutex assetLoaderMutex;
 
 #ifdef AE_OS_ANDROID
     static AAssetManager* manager;

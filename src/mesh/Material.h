@@ -62,7 +62,7 @@ public:
 	ShaderConfig shadowConfig;
 
 private:
-	unordered_map<int32_t, Image> images;
+	std::unordered_map<int32_t, Image> images;
 
 	bool hasDiffuseMap;
 	bool hasNormalMap;

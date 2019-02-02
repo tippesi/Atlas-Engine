@@ -13,7 +13,7 @@ Main::Main(int argc, char* argv[]) {
 	int32_t width, height, flags;
 	Engine::GetScreenSize(&width, &height);
 
-	string assetDirectory = "data";
+	std::string assetDirectory = "data";
 
 #ifndef AE_OS_ANDROID
 	assetDirectory = "../data";
@@ -40,9 +40,6 @@ Main::Main(int argc, char* argv[]) {
 
 	auto mouseButtonEventHandler = std::bind(&Main::MouseButtonEventHandler, this, std::placeholders::_1);
 	EngineEventHandler::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
-
-	auto textInputEventHandler = std::bind(&Main::TextInputEventHandler, this, std::placeholders::_1);
-	EngineEventHandler::TextInputEventDelegate.Subscribe(textInputEventHandler);
 
 	camera = new Camera(47.0f, 2.0f, .25f, 4000.0f);
 	camera->location = vec3(30.0f, 25.0f, 0.0f);
@@ -116,7 +113,7 @@ void Main::Render(uint32_t deltaTime) {
 
 	float averageFramerate = (float)(SDL_GetTicks() - renderingStart) / (float)frameCount;
 
-	string out = "Average " + to_string(averageFramerate) + " ms  Currently " + to_string(deltaTime) + " ms";
+	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms";
 
 	masterRenderer->textRenderer.Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f, true);
 
@@ -356,12 +353,6 @@ void Main::MouseButtonEventHandler(EngineMouseButtonEvent event) {
 		scene->Add(decal);
 
 	}
-
-}
-
-void Main::TextInputEventHandler(EngineTextInputEvent event) {
-
-	outString += event.character;
 
 }
 

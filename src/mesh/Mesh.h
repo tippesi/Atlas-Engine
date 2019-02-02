@@ -17,7 +17,7 @@ public:
 
 	///
 	/// \param filename
-	Mesh(string filename, int32_t mobility = AE_STATIONARY_MESH);
+	Mesh(std::string filename, int32_t mobility = AE_STATIONARY_MESH);
 
 
 	~Mesh();

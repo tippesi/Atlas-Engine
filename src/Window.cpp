@@ -1,6 +1,6 @@
 #include "Window.h"
 
-Window::Window(string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags) : 
+Window::Window(std::string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags) :
 	x(x), y(y), width(width), height(height) {
 
 	sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_OPENGL);
@@ -38,7 +38,7 @@ uint32_t Window::GetID() {
 
 }
 
-void Window::SetTitle(string title) {
+void Window::SetTitle(std::string title) {
 
 	SDL_SetWindowTitle(sdlWindow, title.c_str());
 

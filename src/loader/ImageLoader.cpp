@@ -14,11 +14,11 @@
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "libraries/stb/stb_image_resize.h"
 
-Image ImageLoader::LoadImage(string filename, bool colorSpaceConversion, int32_t forceChannels) {
+Image ImageLoader::LoadImage(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {
 
     Image image;
 
-	auto fileStream = AssetLoader::ReadFile(filename, ios::in | ios::binary);
+	auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
 	if (!fileStream.is_open()) {
 #ifdef AE_SHOW_LOG
@@ -71,11 +71,11 @@ Image ImageLoader::LoadImage(string filename, bool colorSpaceConversion, int32_t
 
 }
 
-Image16 ImageLoader::LoadImage16(string filename, bool colorSpaceConversion, int32_t forceChannels) {
+Image16 ImageLoader::LoadImage16(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {
 
 	Image16 image;
 
-	auto fileStream = AssetLoader::ReadFile(filename, ios::in | ios::binary);
+	auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
 	if (!fileStream.is_open()) {
 #ifdef AE_SHOW_LOG
@@ -128,7 +128,7 @@ Image16 ImageLoader::LoadImage16(string filename, bool colorSpaceConversion, int
 
 }
 
-void ImageLoader::SaveImage(Image &image, string filename) {
+void ImageLoader::SaveImage(Image &image, std::string filename) {
 
     switch(image.fileFormat) {
         case AE_IMAGE_JPG: break;
@@ -141,7 +141,7 @@ void ImageLoader::SaveImage(Image &image, string filename) {
 
 }
 
-void ImageLoader::SaveImage16(Image16 &image, string filename) {
+void ImageLoader::SaveImage16(Image16 &image, std::string filename) {
 
 	switch(image.fileFormat) {
 		case AE_IMAGE_JPG: break;
@@ -153,21 +153,21 @@ void ImageLoader::SaveImage16(Image16 &image, string filename) {
 
 }
 
-void ImageLoader::SavePGM8(Image &image, string filename) {
+void ImageLoader::SavePGM8(Image &image, std::string filename) {
 
-	ofstream imageFile;
+	std::ofstream imageFile;
 	imageFile.open(filename);
 
 	if (!imageFile.is_open()) {
 		throw EngineException("Couldn't write image");
 	}
 
-	string header;
+	std::string header;
 
 	// Create image header
 	header.append("P5 ");
-	header.append(to_string(image.width) + " ");
-	header.append(to_string(image.height) + " ");
+	header.append(std::to_string(image.width) + " ");
+	header.append(std::to_string(image.height) + " ");
 	header.append("255\n");
 
 	imageFile << header;
@@ -182,21 +182,21 @@ void ImageLoader::SavePGM8(Image &image, string filename) {
 
 }
 
-void ImageLoader::SavePGM16(Image16 &image, string filename) {
+void ImageLoader::SavePGM16(Image16 &image, std::string filename) {
 
-	ofstream imageFile;
+	std::ofstream imageFile;
 	imageFile.open(filename);
 
 	if (!imageFile.is_open()) {
 		throw EngineException("Couldn't write image");
 	}
 
-	string header;
+	std::string header;
 
 	// Create image header
 	header.append("P5 ");
-	header.append(to_string(image.width) + " ");
-	header.append(to_string(image.height) + " ");
+	header.append(std::to_string(image.width) + " ");
+	header.append(std::to_string(image.height) + " ");
 	header.append("65535\n");
 
 	imageFile << header;

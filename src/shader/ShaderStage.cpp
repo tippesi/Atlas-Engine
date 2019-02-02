@@ -6,12 +6,12 @@
 #include <sys/stat.h>
 #include <vector>
 
-string ShaderStage::sourceDirectory = "";
+std::string ShaderStage::sourceDirectory = "";
 
-ShaderStage::ShaderStage(int32_t type, string filename) : type(type), filename(filename) {
+ShaderStage::ShaderStage(int32_t type, std::string filename) : type(type), filename(filename) {
 
-	string path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
-	path += string(filename);
+	auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
+	path += filename;
 
 	code = ReadShaderFile(path, true);
 
@@ -32,7 +32,7 @@ ShaderStage::ShaderStage(ShaderStage* source) {
 	filename = source->filename;
 	lastModified = source->lastModified;
 
-	for (list<ShaderConstant*>::iterator iterator = source->constants.begin(); iterator != source->constants.end(); iterator++) {
+	for (std::list<ShaderConstant*>::iterator iterator = source->constants.begin(); iterator != source->constants.end(); iterator++) {
 		ShaderConstant* constant = new ShaderConstant((*iterator)->GetValuedString().c_str());
 		constants.push_back(constant);
 	}
@@ -61,7 +61,7 @@ bool ShaderStage::Reload() {
 
 	lastModified = comp;
 
-	string path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
+	auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
 	path += filename;
 
 	constants.clear();
@@ -71,21 +71,21 @@ bool ShaderStage::Reload() {
 
 }
 
-void ShaderStage::AddMacro(string macro) {
+void ShaderStage::AddMacro(std::string macro) {
 
 	macros.push_back(macro);
 
 }
 
-void ShaderStage::RemoveMacro(string macro) {
+void ShaderStage::RemoveMacro(std::string macro) {
 
 	macros.remove(macro);
 
 }
 
-ShaderConstant* ShaderStage::GetConstant(string constant) {
+ShaderConstant* ShaderStage::GetConstant(std::string constant) {
 
-	for (list<ShaderConstant*>::iterator iterator = constants.begin(); iterator != constants.end(); iterator++) {
+	for (std::list<ShaderConstant*>::iterator iterator = constants.begin(); iterator != constants.end(); iterator++) {
 		if ((*iterator)->GetName() == constant) {
 			return *iterator;
 		}
@@ -97,7 +97,7 @@ ShaderConstant* ShaderStage::GetConstant(string constant) {
 
 bool ShaderStage::Compile() {
 
-	string composedCode;
+	std::string composedCode;
 
 #ifdef AE_API_GL
 	composedCode.append("#version 410\n\n#define ENGINE_GL\n");
@@ -129,7 +129,7 @@ bool ShaderStage::Compile() {
 #ifdef AE_SHOW_LOG
 		int32_t shaderLogLength, length;
 		glGetShaderiv(ID, GL_INFO_LOG_LENGTH, &shaderLogLength);
-		auto shaderLog = vector<char>(shaderLogLength);
+		auto shaderLog = std::vector<char>(shaderLogLength);
 		glGetShaderInfoLog(ID, shaderLogLength, &length, shaderLog.data());
 
 		if (type == AE_VERTEX_STAGE) {
@@ -151,7 +151,7 @@ bool ShaderStage::Compile() {
 			EngineLog("\n\nCompiling compute stage failed:");
 		}
 
-		EngineLog("Compilation failed: %s\nError: %s", filename.c_str(), shaderLog.data());
+		EngineLog("Compilation failed: %s\nError: %s\nCode: %s", filename.c_str(), shaderLog.data(), convertedCode);
 #endif
 
 		return false;
@@ -162,19 +162,19 @@ bool ShaderStage::Compile() {
 
 }
 
-void ShaderStage::SetSourceDirectory(string directory) {
+void ShaderStage::SetSourceDirectory(std::string directory) {
 
 	sourceDirectory = directory;
 
 }
 
-string ShaderStage::ReadShaderFile(string filename, bool mainFile) {
+std::string ShaderStage::ReadShaderFile(std::string filename, bool mainFile) {
 
-	string shaderCode;
-	ifstream shaderFile;
-	stringstream shaderStream;
+	std::string shaderCode;
+	std::ifstream shaderFile;
+	std::stringstream shaderStream;
 
-	shaderFile = AssetLoader::ReadFile(filename, ios::in);
+	shaderFile = AssetLoader::ReadFile(filename, std::ios::in);
 
 	if (!shaderFile.is_open()) {
 #ifdef AE_SHOW_LOG
@@ -191,7 +191,7 @@ string ShaderStage::ReadShaderFile(string filename, bool mainFile) {
 	filename.erase(filePathPosition + 1, filename.length() - 1);
 
 	// Copy all includes into the code
-	while (shaderCode.find("#include ") != string::npos) {
+	while (shaderCode.find("#include ") != std::string::npos) {
 
 		size_t includePosition = shaderCode.find("#include ");
 		size_t lineBreakPosition = shaderCode.find("\n", includePosition);
@@ -199,12 +199,12 @@ string ShaderStage::ReadShaderFile(string filename, bool mainFile) {
 		size_t filenamePosition = shaderCode.find_first_of("\"<", includePosition) + 1;
 		size_t filenameEndPosition = shaderCode.find_first_of("\">", filenamePosition);
 
-		string includeFilename = shaderCode.substr(filenamePosition, filenameEndPosition - filenamePosition);
+		auto includeFilename = shaderCode.substr(filenamePosition, filenameEndPosition - filenamePosition);
 
-		string includeCode = ReadShaderFile((filename + includeFilename).c_str(), false);
+		auto includeCode = ReadShaderFile(filename + includeFilename, false);
 
-		string codeBeforeInclude = shaderCode.substr(0, includePosition);
-		string codeAfterInclude = shaderCode.substr(lineBreakPosition, shaderCode.length() - 1);
+		auto codeBeforeInclude = shaderCode.substr(0, includePosition);
+		auto codeAfterInclude = shaderCode.substr(lineBreakPosition, shaderCode.length() - 1);
 
 		shaderCode = codeBeforeInclude + includeCode + codeAfterInclude;
 	
@@ -228,8 +228,8 @@ string ShaderStage::ReadShaderFile(string filename, bool mainFile) {
 				if (position == i) {
 					// Create a new constant
 					size_t constantEndPosition = shaderCode.find(";", i);
-					string constantString = shaderCode.substr(i, constantEndPosition - i + 1);
-					ShaderConstant* constant = new ShaderConstant(constantString.c_str());
+					auto constantString = shaderCode.substr(i, constantEndPosition - i + 1);
+					ShaderConstant* constant = new ShaderConstant(constantString);
 					constants.push_back(constant);
 					// Remove the constant expression from the code and reduce i
 					shaderCode.erase(i, constantEndPosition - i + 1);
@@ -246,8 +246,8 @@ string ShaderStage::ReadShaderFile(string filename, bool mainFile) {
 
 time_t ShaderStage::GetLastModified() {
 
-	string path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
-	path += string(filename);
+	auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
+	path += filename;
 
 	struct stat result;
 	if (stat(path.c_str(), &result) == 0) {

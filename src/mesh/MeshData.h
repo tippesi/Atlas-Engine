@@ -47,8 +47,8 @@ public:
 	DataComponent<float, uint32_t>* normals;
 	DataComponent<float, uint32_t>* tangents;
 
-	vector<Material*> materials;
-	vector<MeshSubData*> subData;
+	std::vector<Material*> materials;
+	std::vector<MeshSubData*> subData;
 
 	int32_t primitiveType;
 

@@ -122,7 +122,7 @@ protected:
      * Flips texture data horizontally.
      * @param data The data to be flipped.
      */
-    void FlipDataHorizontally(vector<uint8_t>& data);
+    void FlipDataHorizontally(std::vector<uint8_t>& data);
 
     /**
      * Determines the maximum needed mipmap level.

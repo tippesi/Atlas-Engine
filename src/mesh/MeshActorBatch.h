@@ -49,7 +49,7 @@ public:
 	 */
 	void Clear();
 
-	vector<MeshActor*> actors;
+	std::vector<MeshActor*> actors;
 
 private:
 	Mesh* const mesh;

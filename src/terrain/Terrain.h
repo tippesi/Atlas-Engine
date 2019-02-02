@@ -116,7 +116,7 @@ public:
 
 	int32_t patchVertexCount;
 	int32_t patchSize;
-	vector<vec2> patchOffsets;
+	std::vector<vec2> patchOffsets;
 
 	float tessellationFactor;
 	float tessellationSlope;
@@ -128,7 +128,7 @@ public:
 
 	int32_t LoDCount;
 
-	vector<TerrainNode*> renderList;
+	std::vector<TerrainNode*> renderList;
 
 private:
 	void GeneratePatchVertexBuffer(int32_t patchSizeFactor);
@@ -137,14 +137,14 @@ private:
 
 	float BarryCentric(vec3 p1, vec3 p2, vec3 p3, vec2 pos);
 
-	vector<vec2> vertices;
+	std::vector<vec2> vertices;
 
 	VertexArray* vertexArray;
 
 	int32_t rootNodeCount;
 
-	vector<float> LoDDistances;
-	vector<TerrainNode*> rootNodes;
+	std::vector<float> LoDDistances;
+	std::vector<TerrainNode*> rootNodes;
 
 };
 

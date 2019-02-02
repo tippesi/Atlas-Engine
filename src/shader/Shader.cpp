@@ -23,7 +23,7 @@ Shader::~Shader() {
 
 }
 
-void Shader::AddStage(int32_t type, string filename) {
+void Shader::AddStage(int32_t type, std::string filename) {
 
 	auto source = new ShaderStage(type, filename);
 
@@ -49,7 +49,7 @@ ShaderStage* Shader::GetStage(int32_t type) {
 
 }
 
-Uniform* Shader::GetUniform(string uniformName) {
+Uniform* Shader::GetUniform(std::string uniformName) {
 
 	Bind();
 
@@ -61,7 +61,7 @@ Uniform* Shader::GetUniform(string uniformName) {
 
 }
 
-void Shader::AddMacro(string macro) {
+void Shader::AddMacro(std::string macro) {
 
 	isCompiled = false;
 
@@ -73,7 +73,7 @@ void Shader::AddMacro(string macro) {
 
 }
 
-void Shader::RemoveMacro(string macro) {
+void Shader::RemoveMacro(std::string macro) {
 
 	for (auto& stage : stages) {
 		stage->RemoveMacro(macro);
@@ -89,7 +89,7 @@ void Shader::RemoveMacro(string macro) {
 
 }
 
-bool Shader::HasMacro(string macro) {
+bool Shader::HasMacro(std::string macro) {
 
 	for (auto& compMacro : macros) {
 		if (compMacro == macro) {
@@ -150,7 +150,7 @@ bool Shader::Compile() {
 #ifdef AE_SHOW_LOG
 		int32_t programLogLength, length;
 		glGetProgramiv(ID, GL_INFO_LOG_LENGTH, &programLogLength);
-		auto programLog = vector<char>(programLogLength);
+		auto programLog = std::vector<char>(programLogLength);
 		glGetProgramInfoLog(ID, programLogLength, &length, programLog.data());
 
 		EngineLog("Error linking shader files:");

@@ -1,13 +1,13 @@
 #include "ShaderConstant.h"
 
-ShaderConstant::ShaderConstant(string constantString) {
+ShaderConstant::ShaderConstant(std::string constantString) {
 
 	size_t constEndPosition = constantString.find(' ');
 	size_t typePosition = constantString.find_first_not_of(' ', constEndPosition);
 
 	size_t typeEndPosition = constantString.find(' ', typePosition);
 
-	string typeString = constantString.substr(typePosition, typeEndPosition - typePosition);
+	std::string typeString = constantString.substr(typePosition, typeEndPosition - typePosition);
 
 	bool isArray = false;
 
@@ -15,7 +15,7 @@ ShaderConstant::ShaderConstant(string constantString) {
 	size_t openRectangleBracket = constantString.find('[', typePosition);
 	size_t closeRectangleBracket = constantString.find(']', openRectangleBracket);
 
-	if (openRectangleBracket != string::npos && closeRectangleBracket != string::npos) {
+	if (openRectangleBracket != std::string::npos && closeRectangleBracket != std::string::npos) {
 		isArray = true;
 	}
 
@@ -56,39 +56,39 @@ ShaderConstant::ShaderConstant(string constantString) {
 
 void ShaderConstant::SetValue(float value) {
 
-	valuedString = "const float " + name + " = " + to_string(value) + ";";
+	valuedString = "const float " + name + " = " + std::to_string(value) + ";";
 
 }
 
 void ShaderConstant::SetValue(int32_t value) {
 
-	valuedString = "const int " + name + " = " + to_string(value) + ";";
+	valuedString = "const int " + name + " = " + std::to_string(value) + ";";
 
 }
 
 void ShaderConstant::SetValue(bool value) {
 
-	valuedString = "const bool " + name + " = " + to_string(value) + ";";
+	valuedString = "const bool " + name + " = " + std::to_string(value) + ";";
 
 }
 
 void ShaderConstant::SetValue(vec2 value) {
 
-	valuedString = "const vec2 " + name + " = vec2(" + to_string(value.x) + "," + to_string(value.y) + ");";
+	valuedString = "const vec2 " + name + " = vec2(" + std::to_string(value.x) + "," + std::to_string(value.y) + ");";
 
 }
 
 void ShaderConstant::SetValue(vec3 value) {
 
-	valuedString = "const vec3 " + name + " = vec3(" + to_string(value.x) + "," + to_string(value.y) 
-		+ "," + to_string(value.z) + ");";
+	valuedString = "const vec3 " + name + " = vec3(" + std::to_string(value.x) + "," + std::to_string(value.y)
+		+ "," + std::to_string(value.z) + ");";
 
 }
 
 void ShaderConstant::SetValue(vec4 value) {
 
-	valuedString = "const vec4 " + name + " = vec4(" + to_string(value.x) + "," + to_string(value.y)
-		+ "," + to_string(value.z) + "," + to_string(value.w) + ");";
+	valuedString = "const vec4 " + name + " = vec4(" + std::to_string(value.x) + "," + std::to_string(value.y)
+		+ "," + std::to_string(value.z) + "," + std::to_string(value.w) + ");";
 
 }
 
@@ -100,7 +100,7 @@ void ShaderConstant::SetValue(float* value, int32_t length) {
 
 	uint32_t modulo = 0;
 
-	valuedString = "const float " + name + "[" + to_string(length) + "] = float[](" + to_string(value[0]);
+	valuedString = "const float " + name + "[" + std::to_string(length) + "] = float[](" + std::to_string(value[0]);
 
 	for (int32_t i = 1; i < length; i++) {
 
@@ -109,7 +109,7 @@ void ShaderConstant::SetValue(float* value, int32_t length) {
 			modulo = valuedString.length() % 80;
 		}
 
-		valuedString += ", " + to_string(value[i]);
+		valuedString += ", " + std::to_string(value[i]);
 	}
 
 	valuedString += ");";
@@ -125,7 +125,7 @@ void ShaderConstant::SetValue(int32_t *value, int32_t length) {
 
 	uint32_t modulo = 0;
 
-	valuedString = "const int " + name + "[" + to_string(length) + "] = int[](" + to_string(value[0]);
+	valuedString = "const int " + name + "[" + std::to_string(length) + "] = int[](" + std::to_string(value[0]);
 
 	for (int32_t i = 1; i < length; i++) {
 
@@ -134,20 +134,20 @@ void ShaderConstant::SetValue(int32_t *value, int32_t length) {
 			modulo = valuedString.length() % 80;
 		}
 
-		valuedString += ", " + to_string(value[i]);
+		valuedString += ", " + std::to_string(value[i]);
 	}
 
 	valuedString += ");";
 
 }
 
-string ShaderConstant::GetName() {
+std::string ShaderConstant::GetName() {
 
 	return name;
 
 }
 
-string ShaderConstant::GetValuedString() {
+std::string ShaderConstant::GetValuedString() {
 
 	return valuedString;
 

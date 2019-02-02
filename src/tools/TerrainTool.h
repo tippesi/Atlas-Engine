@@ -29,7 +29,7 @@ public:
 	 * @param directory
 	 * @warning All storage cells of the terrain must be loaded.
 	 */
-	static void SaveTerrain(Terrain* terrain, string directory);
+	static void SaveTerrain(Terrain* terrain, std::string directory);
 
 	/**
 	 *
@@ -55,10 +55,10 @@ public:
 			float strength, vec2 position);
 
 private:
-	static void GenerateNormalData(vector<uint16_t>& heightData, vector<uint8_t>& normalData, int32_t width,
-		int32_t height, float strength);
+	static void GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData,
+		int32_t width, int32_t height, float strength);
 
-	static float GetHeight(vector<uint16_t>& heightData, int32_t dataWidth,
+	static float GetHeight(std::vector<uint16_t>& heightData, int32_t dataWidth,
 	        int32_t x, int32_t y, int32_t width, int32_t height);
 
 };

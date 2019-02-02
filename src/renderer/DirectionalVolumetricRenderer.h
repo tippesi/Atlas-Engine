@@ -12,10 +12,10 @@ public:
 
     virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	static string volumetricVertexPath;
-	static string volumetricFragmentPath;
-	static string bilateralBlurVertexPath;
-	static string bilateralBlurFragmentPath;
+	static std::string volumetricVertexPath;
+	static std::string volumetricFragmentPath;
+	static std::string bilateralBlurVertexPath;
+	static std::string bilateralBlurFragmentPath;
 
 private:
     void GetVolumetricUniforms();

@@ -15,8 +15,8 @@ public:
 	 * @param front
 	 * @param back
 	 */
-	Cubemap(string right, string left, string top,
-		string bottom, string front, string back);
+	Cubemap(std::string right, std::string left, std::string top,
+		std::string bottom, std::string front, std::string back);
 
 	/**
 	 *

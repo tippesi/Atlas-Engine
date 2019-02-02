@@ -36,7 +36,7 @@ public:
 	 * @param height The height of the window in pixels
 	 * @param flags Window flags. See {@link Window.h} for more.
 	 */
-	Window(string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags = AE_WINDOW_FULLSCREEN);
+	Window(std::string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags = AE_WINDOW_FULLSCREEN);
 
 	/**
 	 * Returns the ID of the window.
@@ -50,7 +50,7 @@ public:
 	 * Sets the title of the window.
 	 * @param title The title string
 	 */
-	void SetTitle(string title);
+	void SetTitle(std::string title);
 
 	/**
 	 * Sets the icon of the window.

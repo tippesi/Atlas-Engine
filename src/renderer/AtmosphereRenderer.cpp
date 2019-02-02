@@ -1,8 +1,8 @@
 #include "AtmosphereRenderer.h"
 #include "helper/GeometryHelper.h"
 
-string AtmosphereRenderer::vertexPath = "atmosphere.vsh";
-string AtmosphereRenderer::fragmentPath = "atmosphere.fsh";
+std::string AtmosphereRenderer::vertexPath = "atmosphere.vsh";
+std::string AtmosphereRenderer::fragmentPath = "atmosphere.fsh";
 
 AtmosphereRenderer::AtmosphereRenderer() {
 

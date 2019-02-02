@@ -35,7 +35,7 @@ public:
     /**
      * The character that was typed in UTF-8.
      */
-    string character;
+    std::string character;
 
 };
 

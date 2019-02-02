@@ -72,7 +72,7 @@ private:
 
 	IndexBuffer* indexComponent;
 
-	unordered_map<uint32_t, VertexBuffer*> vertexComponents;
+	std::unordered_map<uint32_t, VertexBuffer*> vertexComponents;
 
 	uint32_t maxAttribArrayCount;
 

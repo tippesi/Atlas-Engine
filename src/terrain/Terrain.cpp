@@ -26,7 +26,7 @@ Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, flo
 	GeneratePatchOffsets(this->patchSize);
 
 	storage = new TerrainStorage(this->rootNodeCount, this->LoDCount);
-	LoDDistances = vector<float>(LoDCount);
+	LoDDistances = std::vector<float>(LoDCount);
 
 	// 2.0f time because we generate 2 * patchSize vertices. 8.0f because we have 8 * 8 patches per node.
 	sideLength = (float)nodesPerSide * resolution * powf(2, (float)this->LoDCount - 1.0f) * 2.0f * this->patchSize * 8.0f;
@@ -265,7 +265,7 @@ void Terrain::GeneratePatchVertexBuffer(int32_t patchSizeFactor) {
 
 	patchVertexCount = 4 * (int32_t)powf((float)(patchSizeFactor), 2.0f);
 
-	vertices = vector<vec2>(patchVertexCount);
+	vertices = std::vector<vec2>(patchVertexCount);
 
 	int32_t index = 0;
 
@@ -288,7 +288,7 @@ void Terrain::GeneratePatchVertexBuffer(int32_t patchSizeFactor) {
 
 void Terrain::GeneratePatchOffsets(int32_t patchSizeFactor) {
 
-	patchOffsets = vector<vec2>(64);
+	patchOffsets = std::vector<vec2>(64);
 
 	int32_t index = 0;
 

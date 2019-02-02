@@ -141,7 +141,7 @@ Terrain* TerrainTool::GenerateTerrain(Image16 &heightImage, int32_t rootNodeCoun
 
 	int32_t totalResolution = tileResolution * maxNodesPerSide;
 
-	vector<uint16_t> heightData(totalResolution * totalResolution);
+	std::vector<uint16_t> heightData(totalResolution * totalResolution);
 
 	stbir_resize_uint16_generic(heightImage.data.data(), heightImage.width, heightImage.height,
 		heightImage.width * 2, heightData.data(), totalResolution,
@@ -155,7 +155,7 @@ Terrain* TerrainTool::GenerateTerrain(Image16 &heightImage, int32_t rootNodeCoun
 
 	auto storage = terrain->storage;
 
-	vector<uint16_t> cellHeightData(tileResolutionSquared);
+	std::vector<uint16_t> cellHeightData(tileResolutionSquared);
 
 	// i is in x direction, j in y direction
 	for (int32_t i = 0; i < maxNodesPerSide; i++) {
@@ -207,7 +207,7 @@ Terrain* TerrainTool::GenerateTerrain(Image16 &heightImage, int32_t rootNodeCoun
 
 }
 
-void TerrainTool::SaveTerrain(Terrain *terrain, string directory) {
+void TerrainTool::SaveTerrain(Terrain *terrain, std::string directory) {
 
 	// Iterate over all LoD level
 
@@ -223,7 +223,7 @@ void TerrainTool::BakeTerrain(Terrain *terrain) {
 
 	int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
 
-	auto heightData = vector<uint16_t>(tileCount * tileResolution * tileResolution);
+	auto heightData = std::vector<uint16_t>(tileCount * tileResolution * tileResolution);
 
 	int32_t heightDataResolution = (int32_t)sqrtf((float)heightData.size());
 
@@ -248,15 +248,15 @@ void TerrainTool::BakeTerrain(Terrain *terrain) {
     }
 
 	// Calculate the normals
-	auto normalData = vector<uint8_t>(heightData.size() * 3);
+	auto normalData = std::vector<uint8_t>(heightData.size() * 3);
 
 	GenerateNormalData(heightData, normalData, (tileResolution - 1) * tileSideCount + 1,
 					   (tileResolution - 1) * tileSideCount + 1, 8.0f);
 
     // Iterate through all the LoD level and resize images according to the tile size
 
-    vector<uint16_t> tileHeightData(tileResolution * tileResolution);
-    vector<uint8_t> tileNormalData(tileHeightData.size() * 3);
+	std::vector<uint16_t> tileHeightData(tileResolution * tileResolution);
+	std::vector<uint8_t> tileNormalData(tileHeightData.size() * 3);
 
     for (int32_t k = 0; k < terrain->LoDCount; k++) {
 
@@ -265,8 +265,8 @@ void TerrainTool::BakeTerrain(Terrain *terrain) {
         int32_t tileSideCountLod = tileSideCount / (int32_t)powf(2.0f, (float)k);
         int32_t tileCountLod = terrain->storage->GetCellCount(Lod);
 
-        vector<uint16_t> resizedHeightData(tileSideCountLod * tileSideCountLod * tileResolutionSquared);
-        vector<uint8_t> resizedNormalData(resizedHeightData.size() * 3);
+		std::vector<uint16_t> resizedHeightData(tileSideCountLod * tileSideCountLod * tileResolutionSquared);
+		std::vector<uint8_t> resizedNormalData(resizedHeightData.size() * 3);
 
 		int32_t resizedHeightDataResolution = (int32_t)sqrtf((float)resizedHeightData.size());
 
@@ -348,7 +348,7 @@ void TerrainTool::BrushHeight(Terrain *terrain, Kernel *kernel, float scale, vec
 	int32_t width = middleMiddle->heightField->width - 1;
 	int32_t height = middleMiddle->heightField->height - 1;
 
-	vector<float> heights(width * height * 9);
+	std::vector<float> heights(width * height * 9);
 
 	auto data = heights.data();
 
@@ -388,8 +388,8 @@ void TerrainTool::BrushHeight(Terrain *terrain, Kernel *kernel, float scale, vec
 	x += width;
 	y += height;
 
-	vector<vector<float>>* weights = nullptr;
-	vector<vector<ivec2>>* offsets = nullptr;
+	std::vector<std::vector<float>>* weights = nullptr;
+	std::vector<std::vector<ivec2>>* offsets = nullptr;
 	
 	kernel->Get(weights, offsets);
 
@@ -406,7 +406,7 @@ void TerrainTool::BrushHeight(Terrain *terrain, Kernel *kernel, float scale, vec
 	width += 1;
 	height += 1;
 
-	vector<uint16_t> cellHeightData(width * height);
+	std::vector<uint16_t> cellHeightData(width * height);
 
 	// Split the data up and update the height fields
 	for (int32_t i = 0; i < 3; i++) {
@@ -476,7 +476,7 @@ void TerrainTool::SmoothHeight(Terrain *terrain, int32_t size, int32_t contribut
 	int32_t width = middleMiddle->heightField->width - 1;
 	int32_t height = middleMiddle->heightField->height - 1;
 
-	vector<float> heights(width * height * 9);
+	std::vector<float> heights(width * height * 9);
 
 	std::fill(heights.begin(), heights.end(), -1.0f);
 
@@ -518,7 +518,7 @@ void TerrainTool::SmoothHeight(Terrain *terrain, int32_t size, int32_t contribut
 	x += width;
 	y += height;
 
-	vector<float> heightsCopy(heights);
+	std::vector<float> heightsCopy(heights);
 
 	int32_t sizeRadius = (size - 1) / 2;
 
@@ -555,7 +555,7 @@ void TerrainTool::SmoothHeight(Terrain *terrain, int32_t size, int32_t contribut
 	width += 1;
 	height += 1;
 
-	vector<uint16_t> cellHeightData(width * height);
+	std::vector<uint16_t> cellHeightData(width * height);
 
 	// Split the data up and update the height fields
 	for (int32_t i = 0; i < 3; i++) {
@@ -596,7 +596,7 @@ void TerrainTool::SmoothHeight(Terrain *terrain, int32_t size, int32_t contribut
 
 }
 
-void TerrainTool::GenerateNormalData(vector<uint16_t>& heightData, vector<uint8_t>& normalData, int32_t width, int32_t height, float strength) {
+void TerrainTool::GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData, int32_t width, int32_t height, float strength) {
 
 	int32_t dataWidth = (int32_t)sqrtf((float)heightData.size());
 
@@ -630,7 +630,7 @@ void TerrainTool::GenerateNormalData(vector<uint16_t>& heightData, vector<uint8_
 
 }
 
-float TerrainTool::GetHeight(vector<uint16_t>& heightData, int32_t dataWidth,
+float TerrainTool::GetHeight(std::vector<uint16_t>& heightData, int32_t dataWidth,
 		int32_t x, int32_t y, int32_t width, int32_t height) {
 
 	x = x < 0 ? 0 : x;

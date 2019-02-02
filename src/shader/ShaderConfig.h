@@ -24,20 +24,20 @@ public:
 	 * Adds a macro to the config.
 	 * @param macro The macro to be added.
 	 */
-	void AddMacro(string macro);
+	void AddMacro(std::string macro);
 
 	/**
 	 * Removes a macro from the config.
 	 * @param macro The macro to be removed.
 	 */
-	void RemoveMacro(string macro);
+	void RemoveMacro(std::string macro);
 
 	/**
 	 * Checks if a macro is present in the config.
 	 * @param macro The macro to be checked.
 	 * @return True if present, false otherwise.
 	 */
-	bool HasMacro(string macro);
+	bool HasMacro(std::string macro);
 
 	/**
 	 * Removes all macros from the config.
@@ -45,7 +45,7 @@ public:
 	void ClearMacros();
 
 	int32_t configBatchID;
-	vector<string> macros;
+	std::vector<std::string> macros;
 	
 	bool added;
 

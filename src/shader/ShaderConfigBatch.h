@@ -64,7 +64,7 @@ public:
 
 private:
 	Shader* shader;
-	vector<ShaderConfig*> configs;
+	std::vector<ShaderConfig*> configs;
 
 };
 

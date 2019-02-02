@@ -27,7 +27,7 @@ public:
      * @note All components are managed by the shader. This means that they
      * get released from memory if the shader gets destructed.
      */
-	void AddStage(int32_t type, string filename);
+	void AddStage(int32_t type, std::string filename);
 
 	/**
 	 * Adds a shader config to the batch.
@@ -48,7 +48,7 @@ public:
 	 * @note All uniforms are managed by the shader batch. This means that
 	 * they get released from memory if the shader batch gets destructed.
 	 */
-	Uniform* GetUniform(string uniformName);
+	Uniform* GetUniform(std::string uniformName);
 
 	/**
 	 * Binds the shader of a config batch.
@@ -56,9 +56,9 @@ public:
 	 */
 	void Bind(int32_t configBatchID);
 
-	vector<ShaderStage*> stages;
-	vector<ShaderConfigBatch*> configBatches;
-	vector<Uniform*> uniforms;	
+	std::vector<ShaderStage*> stages;
+	std::vector<ShaderConfigBatch*> configBatches;
+	std::vector<Uniform*> uniforms;
 
 	int32_t boundShaderID;
 

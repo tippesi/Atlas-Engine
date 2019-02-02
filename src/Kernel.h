@@ -38,7 +38,7 @@ public:
      * @param offsets The offsets for the convolution matrix.
      * @note The size of the weights and the offsets should be odd in every dimension.
      */
-    void Set(vector<vector<float>>& weights, vector<vector<ivec2>>& offsets);
+    void Set(std::vector<std::vector<float>>& weights, std::vector<std::vector<ivec2>>& offsets);
 
     /**
      * Returns the convolution matrix.
@@ -46,7 +46,7 @@ public:
      * @param offsets A pointer which will contain the offsets.
      * @note The input pointers shouldn't have anything allocated and shouldn't be deleted later on.
      */
-    void Get(vector<vector<float>>*& weights, vector<vector<ivec2>>*& offsets);
+    void Get(std::vector<std::vector<float>>*& weights, std::vector<std::vector<ivec2>>*& offsets);
 
     /**
      * Returns the linearized convolution matrix.
@@ -61,16 +61,16 @@ public:
      * Additionally the samples of the linearized matrix are cut by half by weighting the offsets in such a
      * way that the new samples are always between two of the original samples.
      */
-    void GetLinearized(vector<float>*& weights, vector<float>*& offsets);
+    void GetLinearized(std::vector<float>*& weights, std::vector<float>*& offsets);
 
 private:
 	float Gaussian(float x, float y, float mean, float sigma);
 
-    vector<vector<float>> weights;
-    vector<vector<ivec2>> offsets;
+    std::vector<std::vector<float>> weights;
+    std::vector<std::vector<ivec2>> offsets;
 
-    vector<float> weightsLinearized;
-    vector<float> offsetsLinearized;
+	std::vector<float> weightsLinearized;
+	std::vector<float> offsetsLinearized;
 
 	bool changed;
 

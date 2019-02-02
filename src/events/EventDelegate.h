@@ -56,7 +56,7 @@ EventDelegate<Args...>::EventDelegate() {
 template<class... Args>
 uint32_t EventDelegate<Args...>::Subscribe(std::function<void(Args ...)> handle) {
 
-	lock_guard<std::mutex> guard(mutex);
+	std::lock_guard<std::mutex> guard(mutex);
 
     auto id = count++;
     handler[id] = handle;
@@ -67,7 +67,7 @@ uint32_t EventDelegate<Args...>::Subscribe(std::function<void(Args ...)> handle)
 template<class... Args>
 void EventDelegate<Args...>::Unsubscribe(uint32_t subscriberID) {
 
-	lock_guard<std::mutex> guard(mutex);
+	std::lock_guard<std::mutex> guard(mutex);
 
 	if (handler.find(subscriberID) != handler.end()) {
 		handler.erase(subscriberID);
@@ -78,9 +78,9 @@ void EventDelegate<Args...>::Unsubscribe(uint32_t subscriberID) {
 template<class... Args>
 void EventDelegate<Args...>::Fire(Args ... args) {
 
-	unique_lock<std::mutex> lock(mutex);
+	std::unique_lock<std::mutex> lock(mutex);
 
-	auto copy = vector<std::function<void(Args ...)>>();
+	auto copy = std::vector<std::function<void(Args ...)>>();
 
 	for (const auto& handleKey : handler) {
 		copy.push_back(handleKey.second);

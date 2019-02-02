@@ -69,7 +69,7 @@ private:
      */
     void Cleanup(Lock& lock);
 
-    vector<Lock> locks;
+    std::vector<Lock> locks;
 
 };
 

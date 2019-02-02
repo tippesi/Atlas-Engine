@@ -20,8 +20,8 @@ public:
 
 	static void RemoveConfig(ShaderConfig* config);
 
-	static string vertexPath;
-	static string fragmentPath;
+	static std::string vertexPath;
+	static std::string fragmentPath;
 
 private:
 	Uniform* arrayMapUniform;
@@ -46,7 +46,7 @@ private:
 	Uniform* specularIntensityUniform;
 
 	static ShaderBatch shaderBatch;
-	static mutex shaderBatchMutex;
+	static std::mutex shaderBatchMutex;
 
 };
 

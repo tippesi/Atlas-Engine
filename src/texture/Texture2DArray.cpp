@@ -28,7 +28,7 @@ void Texture2DArray::Unbind() {
 
 }
 
-void Texture2DArray::SetData(vector<uint8_t> &data, int32_t depth, int32_t count) {
+void Texture2DArray::SetData(std::vector<uint8_t> &data, int32_t depth, int32_t count) {
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, width, height, count,
@@ -38,7 +38,7 @@ void Texture2DArray::SetData(vector<uint8_t> &data, int32_t depth, int32_t count
 
 }
 
-void Texture2DArray::SetData(vector<uint16_t> &data, int32_t depth, int32_t count) {
+void Texture2DArray::SetData(std::vector<uint16_t> &data, int32_t depth, int32_t count) {
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, width, height, count,
@@ -48,11 +48,11 @@ void Texture2DArray::SetData(vector<uint16_t> &data, int32_t depth, int32_t coun
 
 }
 
-vector<uint8_t> Texture2DArray::GetData(int32_t depth) {
+std::vector<uint8_t> Texture2DArray::GetData(int32_t depth) {
 
     auto framebuffer = Framebuffer(width, height);
 
-    vector<uint8_t> data = vector<uint8_t>(width * height * channels);
+	std::vector<uint8_t> data(width * height * channels);
 
     framebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, this, depth);
 
@@ -79,7 +79,7 @@ void Texture2DArray::Resize(int32_t width, int32_t height, int32_t depth) {
 
 }
 
-void Texture2DArray::SaveToPNG(string filename, int32_t depth) {
+void Texture2DArray::SaveToPNG(std::string filename, int32_t depth) {
 
     Image image;
 

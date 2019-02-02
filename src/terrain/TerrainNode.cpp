@@ -22,7 +22,7 @@ TerrainNode::~TerrainNode() {
 
 }
 
-void TerrainNode::Update(Camera* camera, vector<TerrainNode*>& renderList, float* LoDDistances) {
+void TerrainNode::Update(Camera* camera, std::vector<TerrainNode*>& renderList, float* LoDDistances) {
 
 	float nodeY = 0.0f;
 
@@ -106,7 +106,7 @@ void TerrainNode::CreateChildren() {
 
 }
 
-void TerrainNode::UpdateChildren(Camera* camera, vector<TerrainNode*>& renderList, float* LoDDistances) {
+void TerrainNode::UpdateChildren(Camera* camera, std::vector<TerrainNode*>& renderList, float* LoDDistances) {
 
 	for (TerrainNode& node : children) {
 		node.Update(camera, renderList, LoDDistances);

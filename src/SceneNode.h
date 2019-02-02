@@ -52,11 +52,11 @@ public:
 	///
 	void RemoveFromScene();
 
-	vector<SceneNode*> GetChildNodes();
+	std::vector<SceneNode*> GetChildNodes();
 
-	vector<MeshActor*> GetMeshActors();
+	std::vector<MeshActor*> GetMeshActors();
 
-	vector<ILight*> GetLights();
+	std::vector<ILight*> GetLights();
 
 	Scene* scene;
 
@@ -65,9 +65,9 @@ public:
 private:
 	bool sceneSet;
 
-	vector<SceneNode*> childNodes;
-	vector<MeshActor*> meshActors;
-	vector<ILight*> lights;
+	std::vector<SceneNode*> childNodes;
+	std::vector<MeshActor*> meshActors;
+	std::vector<ILight*> lights;
 
 };
 

@@ -59,9 +59,9 @@ void Camera::UpdateProjection() {
 
 }
 
-vector<vec3> Camera::GetFrustumCorners(float nearPlane, float farPlane) {
+std::vector<vec3> Camera::GetFrustumCorners(float nearPlane, float farPlane) {
 
-	vector<vec3> corners;
+	std::vector<vec3> corners;
 
 	float radians = glm::radians(fieldOfView) / 2.0f;
 	float tang = tanf(radians);

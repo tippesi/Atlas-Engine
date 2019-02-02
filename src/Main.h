@@ -66,8 +66,6 @@ private:
 	uint32_t renderingStart;
 	uint32_t frameCount;
 
-	string outString;
-
 	bool quit;
 	bool useControllerHandler;
 

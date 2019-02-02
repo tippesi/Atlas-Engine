@@ -2,11 +2,11 @@
 
 #include <mutex>
 
-string GeometryRenderer::vertexPath = "deferred/geometry.vsh";
-string GeometryRenderer::fragmentPath = "deferred/geometry.fsh";
+std::string GeometryRenderer::vertexPath = "deferred/geometry.vsh";
+std::string GeometryRenderer::fragmentPath = "deferred/geometry.fsh";
 
 ShaderBatch GeometryRenderer::shaderBatch;
-mutex GeometryRenderer::shaderBatchMutex;
+std::mutex GeometryRenderer::shaderBatchMutex;
 
 GeometryRenderer::GeometryRenderer() {
 
@@ -35,7 +35,7 @@ GeometryRenderer::GeometryRenderer() {
 
 void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
-	lock_guard<mutex> guard(shaderBatchMutex);
+	std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 	bool backFaceCulling = true;
 
@@ -133,7 +133,7 @@ void GeometryRenderer::Render(Window* window, RenderTarget* target, Camera* came
 
 void GeometryRenderer::InitShaderBatch() {
 
-	lock_guard<mutex> guard(shaderBatchMutex);
+	std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 	shaderBatch.AddStage(AE_VERTEX_STAGE, vertexPath);
 	shaderBatch.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
@@ -142,7 +142,7 @@ void GeometryRenderer::InitShaderBatch() {
 
 void GeometryRenderer::AddConfig(ShaderConfig* config) {
 
-	lock_guard<mutex> guard(shaderBatchMutex);
+	std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 	shaderBatch.AddConfig(config);
 
@@ -150,7 +150,7 @@ void GeometryRenderer::AddConfig(ShaderConfig* config) {
 
 void GeometryRenderer::RemoveConfig(ShaderConfig* config) {
 
-	lock_guard<mutex> guard(shaderBatchMutex);
+	std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 	shaderBatch.RemoveConfig(config);
 

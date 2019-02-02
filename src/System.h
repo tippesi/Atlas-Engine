@@ -53,7 +53,6 @@ using glm::ivec2;
 
 using glm::mat4;
 using glm::mat3;
-using namespace std;
 
 typedef short float16;
 

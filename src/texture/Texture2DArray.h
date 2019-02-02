@@ -41,7 +41,7 @@ public:
      * @param count The number of layer where the data should be written to.
      * @note The data has to have the size of count * width * height * channels.
      */
-    void SetData(vector<uint8_t>& data, int32_t depth, int32_t count = 1);
+    void SetData(std::vector<uint8_t>& data, int32_t depth, int32_t count = 1);
 
     /**
     * Sets the data of the texture
@@ -50,14 +50,14 @@ public:
     * @param count The number of layer where the data should be written to.
     * @note The data has to have the size of count * width * height * channels.
     */
-    void SetData(vector<uint16_t>& data, int32_t depth, int32_t count = 1);
+    void SetData(std::vector<uint16_t>& data, int32_t depth, int32_t count = 1);
 
     /**
      * Retrieves the data of the texture from the GPU.
      * @param depth The depth where the data should be retrieved.
      * @return A vector holding the data.
      */
-    vector<uint8_t> GetData(int32_t depth);
+	std::vector<uint8_t> GetData(int32_t depth);
 
     /**
      * Resizes the texture
@@ -74,7 +74,7 @@ public:
      * @param depth This results in a loss of texture data and a
      * change of the texture id.
      */
-    void SaveToPNG(string filename, int32_t depth);
+    void SaveToPNG(std::string filename, int32_t depth);
 
 protected:
     void ReserveStorage(int32_t mipCount);

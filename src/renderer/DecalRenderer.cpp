@@ -1,8 +1,8 @@
 #include "DecalRenderer.h"
 #include "helper/GeometryHelper.h"
 
-string DecalRenderer::vertexPath = "deferred/decal.vsh";
-string DecalRenderer::fragmentPath = "deferred/decal.fsh";
+std::string DecalRenderer::vertexPath = "deferred/decal.vsh";
+std::string DecalRenderer::fragmentPath = "deferred/decal.fsh";
 
 DecalRenderer::DecalRenderer() {
 
@@ -21,13 +21,13 @@ DecalRenderer::DecalRenderer() {
 
 void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene) {
 
-    uint32_t drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+    std::vector<uint32_t> drawBuffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 
     vertexArray.Bind();
 
     shader.Bind();
 
-    target->geometryFramebuffer->SetDrawBuffers(drawBuffers, 1);
+    target->geometryFramebuffer->SetDrawBuffers(drawBuffers);
 
 	depthTexture->SetValue(0);
     decalTexture->SetValue(1);
@@ -57,7 +57,7 @@ void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera,
 
     }
 
-    target->geometryFramebuffer->SetDrawBuffers(drawBuffers, 3);
+    target->geometryFramebuffer->SetDrawBuffers(drawBuffers);
 
 }
 

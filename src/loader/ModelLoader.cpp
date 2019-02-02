@@ -4,18 +4,18 @@
 
 #include <vector>
 
-MeshData* ModelLoader::LoadMesh(string filename) {
+MeshData* ModelLoader::LoadMesh(std::string filename) {
 
-	string directoryPath(filename);
+	std::string directoryPath(filename);
 
 	size_t directoryPathEnd = directoryPath.find_last_of("/\\");
 
-	if (directoryPath.find_last_of("/\\") != string::npos)
+	if (directoryPath.find_last_of("/\\") != std::string::npos)
 		directoryPath = directoryPath.substr(0, directoryPathEnd + 1);
 	else
 		directoryPath.clear();
 
-	auto fileStream = AssetLoader::ReadFile(filename, ios::in | ios::binary);
+	auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
 	if (!fileStream.is_open()) {
 #ifdef AE_SHOW_LOG
@@ -51,7 +51,7 @@ MeshData* ModelLoader::LoadMesh(string filename) {
 	bool hasTangents = false;
 	bool hasTexCoords = false;
 
-	vector<vector<aiMesh*>> meshSorted(scene->mNumMaterials);
+	std::vector<std::vector<aiMesh*>> meshSorted(scene->mNumMaterials);
 
 	for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
 		auto mesh = scene->mMeshes[i];
@@ -177,7 +177,7 @@ MeshData* ModelLoader::LoadMesh(string filename) {
 
 }
 
-Material* ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, string directory) {
+Material* ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, std::string directory) {
 
 	Material* material = new Material();
 
@@ -197,16 +197,14 @@ Material* ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, string directory
 
 	if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 		aiString aiPath;
-		string path;
 		assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
-		path = directory + string(aiPath.C_Str());
+		auto path = directory + std::string(aiPath.C_Str());
 		material->AddDiffuseMap(ImageLoader::LoadImage(path, true));
 	}
 	if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0) {
 		aiString aiPath;
-		string path;
 		assimpMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
-		path = directory + string(aiPath.C_Str());
+		auto path = directory + std::string(aiPath.C_Str());
 		material->AddNormalMap(ImageLoader::LoadImage(path, false));
 	}
 

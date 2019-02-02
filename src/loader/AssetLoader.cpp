@@ -9,10 +9,10 @@
 #include <sys/stat.h>
 #endif
 
-string AssetLoader::assetDirectory;
-string AssetLoader::dataDirectory;
+std::string AssetLoader::assetDirectory;
+std::string AssetLoader::dataDirectory;
 
-mutex AssetLoader::assetLoaderMutex;
+std::mutex AssetLoader::assetLoaderMutex;
 
 #ifdef AE_OS_ANDROID
 AAssetManager* AssetLoader::manager;
@@ -41,12 +41,12 @@ void AssetLoader::Init() {
 
     manager = AAssetManager_fromJava(interface, assetManager);
 
-    dataDirectory = string(SDL_AndroidGetInternalStoragePath());
+    dataDirectory = std::string(SDL_AndroidGetInternalStoragePath());
 #endif
 
 }
 
-void AssetLoader::SetAssetDirectory(string directory) {
+void AssetLoader::SetAssetDirectory(std::string directory) {
 
     assetDirectory = directory;
 
@@ -56,49 +56,49 @@ void AssetLoader::SetAssetDirectory(string directory) {
 
 }
 
-ifstream AssetLoader::ReadFile(string filename, ios_base::openmode mode) {
+std::ifstream AssetLoader::ReadFile(std::string filename, std::ios_base::openmode mode) {
 
-	ifstream file;
+	std::ifstream stream;
 
-	string path = GetFullPath(filename);
+	std::string path = GetFullPath(filename);
 
-	file.open(path, mode);
+	stream.open(path, mode);
 
 	// It might be that the file is not unpacked
 #ifdef AE_OS_ANDROID
 	if (!file.is_open()) {
 		UnpackFile(filename);
-		file.open(path, mode);
+		stream.open(path, mode);
 	}
 #endif
 
-	return file;
+	return stream;
 
 }
 
-ofstream AssetLoader::WriteFile(string filename, ios_base::openmode mode) {
+std::ofstream AssetLoader::WriteFile(std::string filename, std::ios_base::openmode mode) {
 
-	ofstream file;
+	std::ofstream stream;
 
-	string path = GetFullPath(filename);
+	std::string path = GetFullPath(filename);
 
-	file.open(path, mode);
+	stream.open(path, mode);
 
 	// If file couldn't be opened we try again after we created the 
 	// directories which point to that file
-	if (!file.is_open()) {
+	if (!stream.is_open()) {
 		size_t directoryPosition = filename.find_last_of("/");
-		if (directoryPosition != string::npos) {
+		if (directoryPosition != std::string::npos) {
 			MakeDirectory(filename.substr(0, directoryPosition));
-			file.open(path, mode);
+			stream.open(path, mode);
 		}
 	}
 
-	return file;
+	return stream;
 
 }
 
-size_t AssetLoader::GetFileSize(ifstream& stream) {
+size_t AssetLoader::GetFileSize(std::ifstream& stream) {
 
 	stream.seekg(0, stream.end);
 	auto size = stream.tellg();
@@ -108,11 +108,11 @@ size_t AssetLoader::GetFileSize(ifstream& stream) {
 
 }
 
-vector<char> AssetLoader::GetFileContent(ifstream& stream) {
+std::vector<char> AssetLoader::GetFileContent(std::ifstream& stream) {
 
 	auto size = AssetLoader::GetFileSize(stream);
 
-	vector<char> buffer(size);
+	std::vector<char> buffer(size);
 
 	if (!stream.read(buffer.data(), size)) {
 		buffer.resize(0);
@@ -122,7 +122,7 @@ vector<char> AssetLoader::GetFileContent(ifstream& stream) {
 
 }
 
-void AssetLoader::MakeDirectory(string directory) {
+void AssetLoader::MakeDirectory(std::string directory) {
 
     directory = GetAbsolutePath(directory);
 
@@ -142,9 +142,9 @@ void AssetLoader::MakeDirectory(string directory) {
 
 }
 
-void AssetLoader::UnpackFile(string filename) {
+void AssetLoader::UnpackFile(std::string filename) {
 
-	lock_guard<mutex> guard(assetLoaderMutex);
+	std::lock_guard<std::mutex> guard(assetLoaderMutex);
 
 #ifdef AE_OS_ANDROID
 	auto assetPath = GetAssetPath(filename);
@@ -167,7 +167,7 @@ void AssetLoader::UnpackFile(string filename) {
 
 	int32_t assetLength = AAsset_getLength(asset);
 
-	vector<char> buffer(assetLength);
+	std::vector<char> buffer(assetLength);
 
 	int32_t readLength = 0;
 
@@ -181,19 +181,19 @@ void AssetLoader::UnpackFile(string filename) {
 
 }
 
-void AssetLoader::UnpackDirectory(string directory) {
+void AssetLoader::UnpackDirectory(std::string directory) {
 
-	lock_guard<mutex> guard(assetLoaderMutex);
+	std::lock_guard<std::mutex> guard(assetLoaderMutex);
 
 }
 
-string AssetLoader::GetFullPath(string path) {
+std::string AssetLoader::GetFullPath(std::string path) {
 	
 	return dataDirectory + "/" + path;
 
 }
 
-string AssetLoader::GetAssetPath(string path) {
+std::string AssetLoader::GetAssetPath(std::string path) {
 
     if (assetDirectory.length() > 0)
         return assetDirectory + "/" + path;
@@ -202,15 +202,15 @@ string AssetLoader::GetAssetPath(string path) {
 
 }
 
-string AssetLoader::GetAbsolutePath(string path) {
+std::string AssetLoader::GetAbsolutePath(std::string path) {
 
     size_t backPosition;
 
-    while ((backPosition = path.find("/..")) != string::npos) {
+    while ((backPosition = path.find("/..")) != std::string::npos) {
         auto parentPath = path.substr(0, backPosition);
         auto childPath = path.substr(backPosition + 3, path.length());
         size_t parentBackPostion = parentPath.find_last_of('/');
-        if (parentBackPostion == string::npos) {
+        if (parentBackPostion == std::string::npos) {
             throw EngineException("Trying to access data outside the assets folder");
         }
         path = parentPath.substr(0, parentBackPostion) + childPath;

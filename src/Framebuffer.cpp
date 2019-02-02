@@ -243,11 +243,11 @@ void Framebuffer::Unbind() {
 
 }
 
-void Framebuffer::SetDrawBuffers(uint32_t* drawBuffers, int32_t count) {
+void Framebuffer::SetDrawBuffers(std::vector<uint32_t> drawBuffers) {
 
 	Bind();
 
-	glDrawBuffers(count, drawBuffers);
+	glDrawBuffers(drawBuffers.size(), drawBuffers.data());
 
 	drawBuffersSet = true;
 

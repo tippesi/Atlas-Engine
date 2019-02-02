@@ -20,8 +20,8 @@ public:
 
 	static void RemoveConfig(ShaderConfig* config);
 
-	static string vertexPath;
-	static string fragmentPath;
+	static std::string vertexPath;
+	static std::string fragmentPath;
 
 private:
 	Framebuffer* framebuffer;
@@ -32,7 +32,7 @@ private:
 	Uniform* modelMatrixUniform;
 
 	static ShaderBatch shaderBatch;
-	static mutex shaderBatchMutex;
+	static std::mutex shaderBatchMutex;
 
 };
 

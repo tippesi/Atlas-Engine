@@ -1,10 +1,10 @@
 #include "DirectionalVolumetricRenderer.h"
 #include "../lighting/DirectionalLight.h"
 
-string DirectionalVolumetricRenderer::volumetricVertexPath = "volumetric.vsh";
-string DirectionalVolumetricRenderer::volumetricFragmentPath = "volumetric.fsh";
-string DirectionalVolumetricRenderer::bilateralBlurVertexPath = "bilateralBlur.vsh";
-string DirectionalVolumetricRenderer::bilateralBlurFragmentPath = "bilateralBlur.fsh";
+std::string DirectionalVolumetricRenderer::volumetricVertexPath = "volumetric.vsh";
+std::string DirectionalVolumetricRenderer::volumetricFragmentPath = "volumetric.fsh";
+std::string DirectionalVolumetricRenderer::bilateralBlurVertexPath = "bilateralBlur.vsh";
+std::string DirectionalVolumetricRenderer::bilateralBlurFragmentPath = "bilateralBlur.fsh";
 
 DirectionalVolumetricRenderer::DirectionalVolumetricRenderer() {
 
@@ -89,8 +89,8 @@ void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
 
 	target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
 
-	vector<float>* kernelWeights;
-	vector<float>* kernelOffsets;
+	std::vector<float>* kernelWeights;
+	std::vector<float>* kernelOffsets;
 
 	blurKernel.GetLinearized(kernelWeights, kernelOffsets);
 
@@ -141,8 +141,8 @@ void DirectionalVolumetricRenderer::GetVolumetricUniforms() {
 	framebufferResolution = volumetricShader.GetUniform("framebufferResolution");
 
     for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
-        cascades[i].distance = volumetricShader.GetUniform("light.shadow.cascades[" + to_string(i) + "].distance");
-        cascades[i].lightSpace = volumetricShader.GetUniform("light.shadow.cascades[" + to_string(i) + "].cascadeSpace");
+        cascades[i].distance = volumetricShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].distance");
+        cascades[i].lightSpace = volumetricShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].cascadeSpace");
     }
 
 }

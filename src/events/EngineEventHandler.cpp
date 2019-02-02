@@ -11,12 +11,12 @@ EventDelegate<EngineControllerDeviceEvent> EngineEventHandler::ControllerDeviceE
 EventDelegate<EngineTextInputEvent> EngineEventHandler::TextInputEventDelegate;
 EventDelegate<> EngineEventHandler::QuitEventDelegate;
 
-mutex EngineEventHandler::handlerMutex;
-unordered_map<int32_t, EngineEventHandler::ControllerDevice> EngineEventHandler::controllers;
+std::mutex EngineEventHandler::handlerMutex;
+std::unordered_map<int32_t, EngineEventHandler::ControllerDevice> EngineEventHandler::controllers;
 
 void EngineEventHandler::Update() {
 
-	lock_guard<mutex> guard(handlerMutex);
+	std::lock_guard<std::mutex> guard(handlerMutex);
 
 	SDL_Event e;
 

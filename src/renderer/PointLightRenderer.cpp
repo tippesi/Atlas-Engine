@@ -2,8 +2,8 @@
 #include "helper/GeometryHelper.h"
 #include "../lighting/PointLight.h"
 
-string PointLightRenderer::vertexPath = "deferred/point.vsh";
-string PointLightRenderer::fragmentPath = "deferred/point.fsh";
+std::string PointLightRenderer::vertexPath = "deferred/point.vsh";
+std::string PointLightRenderer::fragmentPath = "deferred/point.fsh";
 
 PointLightRenderer::PointLightRenderer() {
 

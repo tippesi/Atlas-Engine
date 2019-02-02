@@ -1,8 +1,8 @@
 #include "SkyboxRenderer.h"
 #include "helper/GeometryHelper.h"
 
-string SkyboxRenderer::vertexPath = "skybox.vsh";
-string SkyboxRenderer::fragmentPath = "skybox.fsh";
+std::string SkyboxRenderer::vertexPath = "skybox.vsh";
+std::string SkyboxRenderer::fragmentPath = "skybox.fsh";
 
 SkyboxRenderer::SkyboxRenderer() {
 

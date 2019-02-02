@@ -1,8 +1,8 @@
 #include "TextRenderer.h"
 #include "helper/GeometryHelper.h"
 
-string TextRenderer::vertexPath = "text.vsh";
-string TextRenderer::fragmentPath = "text.fsh";
+std::string TextRenderer::vertexPath = "text.vsh";
+std::string TextRenderer::fragmentPath = "text.fsh";
 
 TextRenderer::TextRenderer() {
 
@@ -27,7 +27,7 @@ void TextRenderer::Render(Window* window, RenderTarget* target, Camera* camera, 
 
 }
 
-void TextRenderer::Render(Window* window, Font* font, string text, float x, float y, vec4 color,
+void TextRenderer::Render(Window* window, Font* font, std::string text, float x, float y, vec4 color,
 	float scale, bool alphaBlending, Framebuffer* framebuffer) {
 
 	float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
@@ -40,7 +40,7 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 
 }
 
-void TextRenderer::Render(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 clipArea,
+void TextRenderer::Render(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 clipArea,
 	vec4 blendArea, float scale, bool alphaBlending, Framebuffer* framebuffer) {
 	
 	int32_t characterCount;
@@ -110,7 +110,7 @@ void TextRenderer::Render(Window* window, Font* font, string text, float x, floa
 
 }
 
-void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 outlineColor, 
+void TextRenderer::RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor,
 	float outlineScale, float scale, bool alphaBlending, Framebuffer* framebuffer) {
 
 	float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
@@ -124,7 +124,7 @@ void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float
 
 }
 
-void TextRenderer::RenderOutlined(Window* window, Font* font, string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
+void TextRenderer::RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
 	vec4 clipArea, vec4 blendArea, float scale, bool alphaBlending, Framebuffer* framebuffer) {
 
 	int32_t characterCount;
@@ -226,11 +226,11 @@ void TextRenderer::GetUniforms() {
 
 }
 
-vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, string text, int32_t* characterCount) {
+std::vector<vec3> TextRenderer::CalculateCharacterInstances(Font* font, std::string text, int32_t* characterCount) {
 
 	*characterCount = 0;
 
-	auto instances = vector<vec3>(text.length());
+	auto instances = std::vector<vec3>(text.length());
 
 	int32_t index = 0;
 

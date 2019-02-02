@@ -27,7 +27,7 @@ public:
 	 * @note All stages are managed by the shader. This means that they
 	 * get released from memory if the shader gets destructed.
 	 */
-	void AddStage(int32_t type, string filename);
+	void AddStage(int32_t type, std::string filename);
 
 	/**
 	 * Adds a shader stage to the shader (e.g the vertex shader)
@@ -51,26 +51,26 @@ public:
 	 * @note All uniforms are managed by the shader. This means that
 	 * they get released from memory if the shader gets destructed.
 	 */
-	Uniform* GetUniform(string uniformName);
+	Uniform* GetUniform(std::string uniformName);
 
 	/**
 	 * Adds a macro to the shader.
 	 * @param macro The macro to be added.
 	 */
-	void AddMacro(string macro);
+	void AddMacro(std::string macro);
 
 	/**
 	 * Removes a macro from the shader.
 	 * @param macro The macro to be removed.
 	 */
-	void RemoveMacro(string macro);
+	void RemoveMacro(std::string macro);
 
 	/**
 	 * Checks if a macro is present in the shader.
 	 * @param macro The macro to be checked.
 	 * @return True if present, false otherwise.
 	 */
-	bool HasMacro(string macro);
+	bool HasMacro(std::string macro);
 
 	/**
 	 * Compiles all shader stages and links them
@@ -96,13 +96,13 @@ public:
 
 	uint32_t GetID();
 
-	vector<Uniform*> uniforms;
-	vector<string> macros;
+	std::vector<Uniform*> uniforms;
+	std::vector<std::string> macros;
 
 private:
 	uint32_t ID;
 
-	vector<ShaderStage*> stages;
+	std::vector<ShaderStage*> stages;
 
 	bool isCompiled;
 

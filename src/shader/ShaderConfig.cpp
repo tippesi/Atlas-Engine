@@ -7,13 +7,13 @@ ShaderConfig::ShaderConfig() {
 
 }
 
-void ShaderConfig::AddMacro(string macro) {
+void ShaderConfig::AddMacro(std::string macro) {
 
 	macros.push_back(macro);
 
 }
 
-void ShaderConfig::RemoveMacro(string macro) {
+void ShaderConfig::RemoveMacro(std::string macro) {
 
 	for (auto iterator = macros.begin(); iterator != macros.end(); iterator++) {
 		if (macro == *iterator) {
@@ -24,9 +24,9 @@ void ShaderConfig::RemoveMacro(string macro) {
 
 }
 
-bool ShaderConfig::HasMacro(string macro) {
+bool ShaderConfig::HasMacro(std::string macro) {
 
-	for (string compMacro : macros) {
+	for (auto& compMacro : macros) {
 		if (compMacro == macro) {
 			return true;
 		}

@@ -1,8 +1,8 @@
 #include "PostProcessRenderer.h"
 #include "MasterRenderer.h"
 
-string PostProcessRenderer::vertexPath = "postprocessing.vsh";
-string PostProcessRenderer::fragmentPath = "postprocessing.fsh";
+std::string PostProcessRenderer::vertexPath = "postprocessing.vsh";
+std::string PostProcessRenderer::fragmentPath = "postprocessing.fsh";
 
 PostProcessRenderer::PostProcessRenderer() {
 

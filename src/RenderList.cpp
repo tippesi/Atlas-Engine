@@ -22,7 +22,7 @@ void RenderList::Add(MeshActor* actor) {
 		actorBatches[actor->mesh] = meshActorBatch;
 
 		// Build up all render list batches
-		map<int32_t, RenderListBatch> renderListBatches;
+		std::map<int32_t, RenderListBatch> renderListBatches;
 
 		for (auto& subData : actor->mesh->data->subData) {
 

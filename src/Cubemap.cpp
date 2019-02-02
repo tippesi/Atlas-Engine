@@ -2,10 +2,10 @@
 #include "texture/Texture.h"
 #include "loader/ImageLoader.h"
 
-Cubemap::Cubemap(string right, string left, string top,
-	string bottom, string front, string back) {
+Cubemap::Cubemap(std::string right, std::string left, std::string top,
+	std::string bottom, std::string front, std::string back) {
 
-	string filenames[] = { right, left, top, bottom, front, back };
+	std::string filenames[] = { right, left, top, bottom, front, back };
 
 	glGenTextures(1, &ID);
 

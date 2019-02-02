@@ -25,7 +25,7 @@ public:
 	 * @param type The type of the stage. See {@link ShaderStage.h} for more.
 	 * @param filename The name of the GLSL file
 	 */
-	ShaderStage(int32_t type, string filename);
+	ShaderStage(int32_t type, std::string filename);
 
 	/**
 	 * Constructs a ShaderStage object.
@@ -48,20 +48,20 @@ public:
      * Adds a macro to the shader stage.
      * @param macro The macro to be added.
      */
-	void AddMacro(string macro);
+	void AddMacro(std::string macro);
 
     /**
      * Removes a macro from the shader stage.
      * @param macro The macro to be removed.
      */
-	void RemoveMacro(string macro);
+	void RemoveMacro(std::string macro);
 
 	/**
 	 * Returns a ShaderConstant object for a specific constant of the shader stage.
 	 * @param constant The name of the constant.
 	 * @return A pointer to a ShaderConstant object if valid. Nullptr otherwise.
 	 */
-	ShaderConstant* GetConstant(string constant);
+	ShaderConstant* GetConstant(std::string constant);
 
 	/**
     * Compiles the shader stage.
@@ -73,25 +73,25 @@ public:
 	 * Sets the root shader source/binary directory for all shader files.
 	 * @param directory The path to the directory
 	 */
-	static void SetSourceDirectory(string directory);
+	static void SetSourceDirectory(std::string directory);
 
 	int32_t ID;
 	int32_t type;
 
-	string filename;
+	std::string filename;
 
 private:
-	string ReadShaderFile(string filename, bool mainFile);
+	std::string ReadShaderFile(std::string filename, bool mainFile);
 
 	time_t GetLastModified();
 
-	string code;
-	list<string> macros;
-	list<ShaderConstant*> constants;
+	std::string code;
+	std::list<std::string> macros;
+	std::list<ShaderConstant*> constants;
 
 	time_t lastModified;
 
-	static string sourceDirectory;
+	static std::string sourceDirectory;
 
 };
 

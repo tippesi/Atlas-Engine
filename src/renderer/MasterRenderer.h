@@ -107,8 +107,8 @@ public:
 
 	TextRenderer textRenderer;
 
-	static string rectangleVertexPath;
-	static string rectangleFragmentPath;
+	static std::string vertexPath;
+	static std::string fragmentPath;
 
 private:
 	void GetUniforms();

@@ -46,8 +46,8 @@ private:
 		SDL_Haptic* haptic;
 	};
 
-	static mutex handlerMutex;
-	static unordered_map<int32_t, ControllerDevice> controllers;
+	static std::mutex handlerMutex;
+	static std::unordered_map<int32_t, ControllerDevice> controllers;
 
 };
 

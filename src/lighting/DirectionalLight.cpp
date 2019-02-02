@@ -102,7 +102,7 @@ void DirectionalLight::UpdateShadowCascade(ShadowComponent* cascade, Camera* cam
 	vec3 up = glm::vec3(0.0000000000000001f, 1.0f, 0.0000000000000001f);
 	cascade->viewMatrix = lookAt(cascadeCenter, cascadeCenter + lightDirection, up);
 
-	vector<vec3> corners = camera->GetFrustumCorners(cascade->nearDistance, cascade->farDistance);
+	std::vector<vec3> corners = camera->GetFrustumCorners(cascade->nearDistance, cascade->farDistance);
 
 	vec3 maxProj = vec3(cascade->viewMatrix * vec4(corners.at(0), 1.0f));
 	vec3 minProj = maxProj;

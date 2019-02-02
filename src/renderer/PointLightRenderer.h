@@ -11,8 +11,8 @@ public:
 
 	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	static string vertexPath;
-	static string fragmentPath;
+	static std::string vertexPath;
+	static std::string fragmentPath;
 
 private:
 	void GetUniforms();

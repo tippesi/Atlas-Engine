@@ -62,7 +62,7 @@ void Kernel::CalculateBoxFilter(uint32_t size) {
 
 }
 
-void Kernel::Set(vector<vector<float>> &weights, vector<vector<ivec2>> &offsets) {
+void Kernel::Set(std::vector<std::vector<float>> &weights, std::vector<std::vector<ivec2>> &offsets) {
 
 	this->weights = weights;
 	this->offsets = offsets;
@@ -71,14 +71,14 @@ void Kernel::Set(vector<vector<float>> &weights, vector<vector<ivec2>> &offsets)
 
 }
 
-void Kernel::Get(vector<vector<float>>*& weights, vector<vector<ivec2>>*& offsets) {
+void Kernel::Get(std::vector<std::vector<float>>*& weights, std::vector<std::vector<ivec2>>*& offsets) {
 
 	weights = &this->weights;
 	offsets = &this->offsets;
 
 }
 
-void Kernel::GetLinearized(vector<float>*& weights, vector<float>*& offsets) {
+void Kernel::GetLinearized(std::vector<float>*& weights, std::vector<float>*& offsets) {
 
 	weights = &weightsLinearized;
 	offsets = &offsetsLinearized;
@@ -89,8 +89,8 @@ void Kernel::GetLinearized(vector<float>*& weights, vector<float>*& offsets) {
 
 	uint32_t size = (uint32_t)this->weights.size();
 
-	vector<float> oneDimensionalWeights(size);
-	vector<float> oneDimensionalOffsets(size);
+	std::vector<float> oneDimensionalWeights(size);
+	std::vector<float> oneDimensionalOffsets(size);
 
 	// Shrink the 2-dimensional kernel to a 1-dimensional one.
 	for (uint32_t x = 0; x < size; x++) {

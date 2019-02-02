@@ -3,8 +3,8 @@
 
 #include "../lighting/DirectionalLight.h"
 
-string DirectionalLightRenderer::vertexPath = "deferred/directional.vsh";
-string DirectionalLightRenderer::fragmentPath = "deferred/directional.fsh";
+std::string DirectionalLightRenderer::vertexPath = "deferred/directional.vsh";
+std::string DirectionalLightRenderer::fragmentPath = "deferred/directional.fsh";
 
 DirectionalLightRenderer::DirectionalLightRenderer() {
 
@@ -111,8 +111,8 @@ void DirectionalLightRenderer::GetUniforms() {
 	shadowResolution = shader.GetUniform("light.shadow.resolution");
 
 	for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
-		cascades[i].distance = shader.GetUniform("light.shadow.cascades[" + to_string(i) + "].distance");
-		cascades[i].lightSpace = shader.GetUniform("light.shadow.cascades[" + to_string(i) + "].cascadeSpace");
+		cascades[i].distance = shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].distance");
+		cascades[i].lightSpace = shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].cascadeSpace");
 	}
 
 }

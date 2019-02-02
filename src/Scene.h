@@ -89,10 +89,10 @@ public:
 
 	SceneNode* rootNode;
 
-	vector<ILight*> lights;
-	vector<MeshActorBatch*> meshActorBatches;
-	vector<Terrain*> terrains;
-	vector<Decal*> decals;
+	std::vector<ILight*> lights;
+	std::vector<MeshActorBatch*> meshActorBatches;
+	std::vector<Terrain*> terrains;
+	std::vector<Decal*> decals;
 
 	Sky* sky;
 	PostProcessing* postProcessing;

@@ -15,7 +15,7 @@ ShaderBatch::~ShaderBatch() {
 
 }
 
-void ShaderBatch::AddStage(int32_t type, string filename){
+void ShaderBatch::AddStage(int32_t type, std::string filename){
 
 	auto source = new ShaderStage(type, filename);
 
@@ -97,7 +97,7 @@ void ShaderBatch::RemoveConfig(ShaderConfig* config) {
 
 }
 
-Uniform* ShaderBatch::GetUniform(string uniformName) {
+Uniform* ShaderBatch::GetUniform(std::string uniformName) {
 
 	for (ShaderConfigBatch* batch : configBatches) {
 		batch->GetShader()->GetUniform(uniformName);

@@ -13,7 +13,7 @@
 typedef struct RenderListBatch {
 
 	MeshActorBatch* meshActorBatch;
-	vector<MeshSubData*> subData;
+	std::vector<MeshSubData*> subData;
 
 }RenderListBatch;
 
@@ -31,9 +31,9 @@ public:
 
 	void Clear();
 	
-	vector<ILight*> lights;
-	map<Mesh*, MeshActorBatch*> actorBatches;
-	map<int32_t, vector<RenderListBatch>> orderedRenderBatches;
+	std::vector<ILight*> lights;
+	std::map<Mesh*, MeshActorBatch*> actorBatches;
+	std::map<int32_t, std::vector<RenderListBatch>> orderedRenderBatches;
 
 private:
 	int32_t type;

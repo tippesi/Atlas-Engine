@@ -154,9 +154,9 @@ void Texture::CheckExtensions() {
 
 }
 
-void Texture::FlipDataHorizontally(vector <uint8_t> &data) {
+void Texture::FlipDataHorizontally(std::vector <uint8_t> &data) {
 
-    auto invertedData = vector<uint8_t>(width * height * channels);
+    auto invertedData = std::vector<uint8_t>(width * height * channels);
 
     int32_t dataIndex = width * (height + 1) * channels;
 

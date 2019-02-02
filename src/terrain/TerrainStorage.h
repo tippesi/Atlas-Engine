@@ -44,13 +44,13 @@ public:
 	/**
 	 * The storage cells the terrain request to change the level of detail.
 	 */
-	vector<TerrainStorageCell*> requestedCells;
+	std::vector<TerrainStorageCell*> requestedCells;
 
 	/**
 	 * The storage cells the terrain doesn't need any more because of a change
 	 * in the level of detail.
 	 */
-	vector<TerrainStorageCell*> unusedCells;
+	std::vector<TerrainStorageCell*> unusedCells;
 
 private:
     int32_t rootNodeCount;
@@ -58,7 +58,7 @@ private:
 
 	int32_t* LoDSideLengths;
 
-	vector<vector<TerrainStorageCell>> cells;
+	std::vector<std::vector<TerrainStorageCell>> cells;
 
 };
 

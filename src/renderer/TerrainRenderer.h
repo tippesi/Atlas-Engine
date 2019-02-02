@@ -13,11 +13,11 @@ public:
 
 	void GetUniforms();
 
-	static string vertexPath;
-	static string tessControlPath;
-	static string tessEvalPath;
-	static string geometryPath;
-	static string fragmentPath;
+	static std::string vertexPath;
+	static std::string tessControlPath;
+	static std::string tessEvalPath;
+	static std::string geometryPath;
+	static std::string fragmentPath;
 
 private:
     Shader nearShader;

@@ -1,10 +1,10 @@
 #include "TerrainRenderer.h"
 
-string TerrainRenderer::vertexPath = "terrain/terrain.vsh";
-string TerrainRenderer::tessControlPath = "terrain/terrain.tcsh";
-string TerrainRenderer::tessEvalPath = "terrain/terrain.tesh";
-string TerrainRenderer::geometryPath = "terrain/terrain.gsh";
-string TerrainRenderer::fragmentPath = "terrain/terrain.fsh";
+std::string TerrainRenderer::vertexPath = "terrain/terrain.vsh";
+std::string TerrainRenderer::tessControlPath = "terrain/terrain.tcsh";
+std::string TerrainRenderer::tessEvalPath = "terrain/terrain.tesh";
+std::string TerrainRenderer::geometryPath = "terrain/terrain.gsh";
+std::string TerrainRenderer::fragmentPath = "terrain/terrain.fsh";
 
 TerrainRenderer::TerrainRenderer() {
 

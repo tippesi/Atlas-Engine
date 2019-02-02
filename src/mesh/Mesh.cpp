@@ -7,7 +7,7 @@ Mesh::Mesh(MeshData* data, int32_t mobility) : data(data), mobility(mobility) {
 
 }
 
-Mesh::Mesh(string filename, int32_t mobility) : data(ModelLoader::LoadMesh(filename)), mobility(mobility) {
+Mesh::Mesh(std::string filename, int32_t mobility) : data(ModelLoader::LoadMesh(filename)), mobility(mobility) {
 
 	InitializeVertexArray();
 

@@ -1,27 +1,27 @@
 #include "MasterRenderer.h"
 #include "helper/GeometryHelper.h"
 
-string MasterRenderer::rectangleVertexPath = "rectangle.vsh";
-string MasterRenderer::rectangleFragmentPath = "rectangle.fsh";
+std::string MasterRenderer::vertexPath = "rectangle.vsh";
+std::string MasterRenderer::fragmentPath = "rectangle.fsh";
 
 MasterRenderer::MasterRenderer() {
 
 	GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
-	rectangleShader.AddStage(AE_VERTEX_STAGE, rectangleVertexPath);
-	rectangleShader.AddStage(AE_FRAGMENT_STAGE, rectangleFragmentPath);
+	rectangleShader.AddStage(AE_VERTEX_STAGE, vertexPath);
+	rectangleShader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
 	rectangleShader.Compile();
 
-	texture2DShader.AddStage(AE_VERTEX_STAGE, rectangleVertexPath);
-	texture2DShader.AddStage(AE_FRAGMENT_STAGE, rectangleFragmentPath);
+	texture2DShader.AddStage(AE_VERTEX_STAGE, vertexPath);
+	texture2DShader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
 	texture2DShader.AddMacro("TEXTURE2D");
 
 	texture2DShader.Compile();
 
-	texture2DArrayShader.AddStage(AE_VERTEX_STAGE, rectangleVertexPath);
-	texture2DArrayShader.AddStage(AE_FRAGMENT_STAGE, rectangleFragmentPath);
+	texture2DArrayShader.AddStage(AE_VERTEX_STAGE, vertexPath);
+	texture2DArrayShader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
 	texture2DArrayShader.AddMacro("TEXTURE2D_ARRAY");
 

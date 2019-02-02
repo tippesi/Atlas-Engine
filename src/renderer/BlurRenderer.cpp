@@ -1,6 +1,6 @@
 #include "BlurRenderer.h"
 
-BlurRenderer::BlurRenderer(string vertexSource, string fragmentSource, int32_t channelCount,
+BlurRenderer::BlurRenderer(std::string vertexSource, std::string fragmentSource, int32_t channelCount,
         float* kernelOffsets, float* kernelWeights, int32_t kernelSize, bool bilateral) : bilateralBlur(bilateral) {
 
     shader.AddStage(AE_VERTEX_STAGE, vertexSource);

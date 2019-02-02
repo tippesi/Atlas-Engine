@@ -9,12 +9,12 @@
 #include "../libraries/stb/stb_truetype.h"
 #include "../libraries/stb/stb_image_write.h"
 
-Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue) : edgeValue(edgeValue) {
+Font::Font(std::string filename, float pixelSize, int32_t padding, uint8_t edgeValue) : edgeValue(edgeValue) {
 
 	stbtt_fontinfo font;
-	string fontString;
+	std::string fontString;
 
-	auto fontFile = AssetLoader::ReadFile(filename, ios::in | ios::binary);
+	auto fontFile = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
 	if (!fontFile.is_open()) {
 #ifdef AE_SHOW_LOG
@@ -196,7 +196,7 @@ Glyph* Font::GetGlyphUTF8(const char*& character) {
 
 }
 
-void Font::ComputeDimensions(string text, float scale, float* width, float* height) {
+void Font::ComputeDimensions(std::string text, float scale, float* width, float* height) {
 
 	*width = 0;
 	*height =  lineHeight * scale;

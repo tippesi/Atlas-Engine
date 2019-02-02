@@ -1,10 +1,10 @@
 #include "ShadowRenderer.h"
 
-string ShadowRenderer::vertexPath = "shadowmapping.vsh";
-string ShadowRenderer::fragmentPath = "shadowmapping.fsh";
+std::string ShadowRenderer::vertexPath = "shadowmapping.vsh";
+std::string ShadowRenderer::fragmentPath = "shadowmapping.fsh";
 
 ShaderBatch ShadowRenderer::shaderBatch;
-mutex ShadowRenderer::shaderBatchMutex;
+std::mutex ShadowRenderer::shaderBatchMutex;
 
 ShadowRenderer::ShadowRenderer() {
 
@@ -20,7 +20,7 @@ ShadowRenderer::ShadowRenderer() {
 
 void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
-	lock_guard<mutex> guard(shaderBatchMutex);
+	std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 	bool backFaceCulling = true;
 
@@ -127,7 +127,7 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 void ShadowRenderer::InitShaderBatch() {
 
-	lock_guard<mutex> guard(shaderBatchMutex);
+	std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 	shaderBatch.AddStage(AE_VERTEX_STAGE, vertexPath);
 	shaderBatch.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
@@ -136,7 +136,7 @@ void ShadowRenderer::InitShaderBatch() {
 
 void ShadowRenderer::AddConfig(ShaderConfig* config) {
 
-	lock_guard<mutex> guard(shaderBatchMutex);
+	std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 	shaderBatch.AddConfig(config);
 
@@ -144,7 +144,7 @@ void ShadowRenderer::AddConfig(ShaderConfig* config) {
 
 void ShadowRenderer::RemoveConfig(ShaderConfig* config) {
 
-	lock_guard<mutex> guard(shaderBatchMutex);
+	std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 	shaderBatch.RemoveConfig(config);
 

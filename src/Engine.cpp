@@ -1,6 +1,6 @@
 #include "Engine.h"
 
-Window* Engine::Init(string assetDirectory, string shaderDirectory, string title,
+Window* Engine::Init(std::string assetDirectory, std::string shaderDirectory, std::string title,
 	int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags) {
 
     if (SDL_WasInit(SDL_INIT_EVERYTHING) != SDL_INIT_EVERYTHING) {

@@ -19,7 +19,7 @@ class ShaderConstant {
 public:
 	///
 	/// \param constantString
-	ShaderConstant(string constantString);
+	ShaderConstant(std::string constantString);
 
 	void SetValue(float value);
 
@@ -37,16 +37,16 @@ public:
 
 	void SetValue(int32_t* value, int32_t length);
 
-	string GetName();
+	std::string GetName();
 
-	string GetValuedString();
+	std::string GetValuedString();
 
 private:
-	string name;
+	std::string name;
 
 	int32_t type;
 
-	string valuedString;
+	std::string valuedString;
 
 };
 

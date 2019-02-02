@@ -149,19 +149,19 @@ void SceneNode::RemoveFromScene() {
 
 }
 
-vector<SceneNode*> SceneNode::GetChildNodes() {
+std::vector<SceneNode*> SceneNode::GetChildNodes() {
 
 	return childNodes;
 
 }
 
-vector<MeshActor*> SceneNode::GetMeshActors() {
+std::vector<MeshActor*> SceneNode::GetMeshActors() {
 
 	return meshActors;
 
 }
 
-vector<ILight*> SceneNode::GetLights() {
+std::vector<ILight*> SceneNode::GetLights() {
 
 	return lights;
 
