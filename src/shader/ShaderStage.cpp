@@ -148,7 +148,7 @@ bool ShaderStage::Compile() {
 			EngineLog("\n\nCompiling tessellation evaluation stage failed:");
 		}
 		else if (type == AE_COMPUTE_STAGE) {
-			EngineLog("\n\nCompiling compute stage failed: ")
+			EngineLog("\n\nCompiling compute stage failed:");
 		}
 
 		EngineLog("Compilation failed: %s\nError: %s", filename.c_str(), shaderLog.data());

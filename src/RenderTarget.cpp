@@ -4,7 +4,7 @@ RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height
 
 	// We want a shared depth texture across the geometry and lighting framebuffers
 	auto depthTexture = new Texture2D(GL_UNSIGNED_INT, width, height, GL_DEPTH_COMPONENT24,
-			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
 
 	geometryFramebuffer = new Framebuffer(width, height);
 

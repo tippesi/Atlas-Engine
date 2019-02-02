@@ -43,7 +43,7 @@ public:
 	 * @param alphaBlending
 	 * @param framebuffer
 	 */
-	void RenderTexture(Window* window, Texture* texture, float x, float y, float width, float height,
+	void RenderTexture(Window* window, Texture2D* texture, float x, float y, float width, float height,
 		bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 	/**
@@ -59,8 +59,15 @@ public:
 	 * @param alphaBlending
 	 * @param framebuffer
 	 */
-	void RenderTexture(Window* window, Texture* texture, float x, float y, float width, float height,
+	void RenderTexture(Window* window, Texture2D* texture, float x, float y, float width, float height,
 		vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+
+	void RenderTexture(Window* window, Texture2DArray* texture, int32_t depth, float x, float y,
+		float width, float height, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+
+	void RenderTexture(Window* window, Texture2DArray* texture, int32_t depth, float x, float y,
+		float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending = false,
+		Framebuffer* framebuffer = nullptr);
 
 	/**
 	 *
@@ -109,7 +116,8 @@ private:
 	VertexArray vertexArray;
 
 	Shader rectangleShader;
-	Shader texturedRectangleShader;
+	Shader texture2DShader;
+	Shader texture2DArrayShader;
 
 	Uniform* rectangleProjectionMatrix;
 	Uniform* rectangleOffset;
@@ -118,12 +126,20 @@ private:
 	Uniform* rectangleClipArea;
 	Uniform* rectangleBlendArea;
 
-	Uniform* texturedRectangleProjectionMatrix;
-	Uniform* texturedRectangleOffset;
-	Uniform* texturedRectangleScale;
-	Uniform* texturedRectangleTexture;
-	Uniform* texturedRectangleClipArea;
-	Uniform* texturedRectangleBlendArea;
+	Uniform* texture2DProjectionMatrix;
+	Uniform* texture2DOffset;
+	Uniform* texture2DScale;
+	Uniform* texture2DTexture;
+	Uniform* texture2DClipArea;
+	Uniform* texture2DBlendArea;
+
+	Uniform* texture2DArrayProjectionMatrix;
+	Uniform* texture2DArrayOffset;
+	Uniform* texture2DArrayScale;
+	Uniform* texture2DArrayTexture;
+	Uniform* texture2DArrayClipArea;
+	Uniform* texture2DArrayBlendArea;
+	Uniform* texture2DArrayDepth;
 
 	GeometryRenderer geometryRenderer;
 	TerrainRenderer terrainRenderer;

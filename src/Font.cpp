@@ -17,7 +17,7 @@ Font::Font(string filename, float pixelSize, int32_t padding, uint8_t edgeValue)
 	auto fontFile = AssetLoader::ReadFile(filename, ios::in | ios::binary);
 
 	if (!fontFile.is_open()) {
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 		EngineLog("Font %s not found", filename.c_str());
 #endif
 		throw EngineException("Couldn't open font file");

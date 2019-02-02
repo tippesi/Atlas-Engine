@@ -1,6 +1,6 @@
 layout(location=0)in vec2 vPosition;
 
-#ifdef TEXTURE
+#if defined(TEXTURE2D) || defined(TEXTURE2D_ARRAY)
 out vec2 fTexCoord;
 #endif
 
@@ -18,7 +18,7 @@ void main() {
     gl_Position = pMatrix * vec4(fScreenPosition, 0.0, 1.0);
 	gl_Position.y *= -1.0f;
 	
-#ifdef TEXTURE
+#if defined(TEXTURE2D) || defined(TEXTURE2D_ARRAY)
 	fTexCoord = position;
 #endif
 	

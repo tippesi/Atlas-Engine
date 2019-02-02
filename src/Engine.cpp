@@ -60,6 +60,8 @@ Window* Engine::Init(string assetDirectory, string shaderDirectory, string title
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_CULL_FACE);
 
+	glClearDepthf(1.0f);
+
 	// If the textures aren't working as expected this line should be changed
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 

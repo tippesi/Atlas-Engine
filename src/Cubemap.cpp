@@ -18,7 +18,7 @@ Cubemap::Cubemap(string right, string left, string top,
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-#ifdef ENGINE_SHOW_LOG
+#ifdef AE_SHOW_LOG
 	EngineLog("Loading cubemap with ID %d", ID);
 #endif
 

@@ -43,7 +43,7 @@ private:
 
     static mutex assetLoaderMutex;
 
-#ifdef ENGINE_ANDROID
+#ifdef AE_OS_ANDROID
     static AAssetManager* manager;
 #endif
 

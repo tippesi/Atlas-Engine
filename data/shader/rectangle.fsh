@@ -1,8 +1,12 @@
 layout (location = 0) out vec4 color;
 
-#ifdef TEXTURE
+#ifdef TEXTURE2D
 in vec2 fTexCoord;
 uniform sampler2D rectangleTexture;
+#elif defined(TEXTURE2D_ARRAY)
+in vec2 fTexCoord;
+uniform sampler2DArray rectangleTexture;
+uniform float textureDepth;
 #else
 uniform vec4 rectangleColor;
 #endif
@@ -19,8 +23,10 @@ void main() {
 		fScreenPosition.y > rectangleClipArea.y + rectangleClipArea.w)
 		discard;
 	
-#ifdef TEXTURE
+#ifdef TEXTURE2D
 	color = texture(rectangleTexture, fTexCoord);
+#elif defined(TEXTURE2D_ARRAY)
+	color = texture(rectangleTexture, vec3(fTexCoord, textureDepth));
 #else
 	color = rectangleColor;
 #endif

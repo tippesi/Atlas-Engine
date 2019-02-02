@@ -24,7 +24,7 @@ Main::Main(int argc, char* argv[]) {
 	flags = AE_WINDOW_FULLSCREEN;
 #endif
 
-	window = Engine::Init(assetDirectory, "shader", "Blue Engine",AE_WINDOWPOSITION_UNDEFINED,
+	window = Engine::Init(assetDirectory, "shader", "Atlas Engine",AE_WINDOWPOSITION_UNDEFINED,
 			AE_WINDOWPOSITION_UNDEFINED, width, height, flags);
 
 	Engine::UnlockFramerate();
