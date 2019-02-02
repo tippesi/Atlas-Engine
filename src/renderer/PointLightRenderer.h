@@ -1,5 +1,5 @@
-#ifndef POINTLIGHTRENDERER_H
-#define POINTLIGHTRENDERER_H
+#ifndef AE_POINTLIGHTRENDERER_H
+#define AE_POINTLIGHTRENDERER_H
 
 #include "../System.h"
 #include "IRenderer.h"

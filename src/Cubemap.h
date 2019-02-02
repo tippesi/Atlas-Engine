@@ -1,5 +1,5 @@
-#ifndef CUBEMAP_H
-#define CUBEMAP_H
+#ifndef AE_CUBEMAP_H
+#define AE_CUBEMAP_H
 
 #include "System.h"
 

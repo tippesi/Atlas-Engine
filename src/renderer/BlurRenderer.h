@@ -1,5 +1,5 @@
-#ifndef BLURRENDERER_H
-#define BLURRENDERER_H
+#ifndef AE_BLURRENDERER_H
+#define AE_BLURRENDERER_H
 
 #include "../System.h"
 #include "IRenderer.h"

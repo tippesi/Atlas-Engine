@@ -1,5 +1,5 @@
-#ifndef SHADER_H
-#define SHADER_H
+#ifndef AE_SHADER_H
+#define AE_SHADER_H
 
 #include "../System.h"
 #include "ShaderStage.h"

@@ -1,5 +1,5 @@
-#ifndef POINTLIGHT_H
-#define POINTLIGHT_H
+#ifndef AE_POINTLIGHT_H
+#define AE_POINTLIGHT_H
 
 #include "../System.h"
 #include "ILight.h"

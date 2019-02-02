@@ -1,5 +1,5 @@
-#ifndef ENGINE_H
-#define ENGINE_H
+#ifndef AE_ENGINE_H
+#define AE_ENGINE_H
 
 #include "System.h"
 #include "Window.h"

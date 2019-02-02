@@ -1,5 +1,5 @@
-#ifndef SHADOW_H
-#define SHADOW_H
+#ifndef AE_SHADOW_H
+#define AE_SHADOW_H
 
 #include "../System.h"
 #include "../Camera.h"

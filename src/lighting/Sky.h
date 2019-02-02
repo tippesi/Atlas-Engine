@@ -1,5 +1,5 @@
-#ifndef SKY_H
-#define SKY_H
+#ifndef AE_SKY_H
+#define AE_SKY_H
 
 #include "../System.h"
 #include "Skybox.h"

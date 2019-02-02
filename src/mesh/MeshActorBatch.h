@@ -1,5 +1,5 @@
-#ifndef MESHACTORBATCH_H
-#define MESHACTORBATCH_H
+#ifndef AE_MESHACTORBATCH_H
+#define AE_MESHACTORBATCH_H
 
 #include "../System.h"
 #include "MeshActor.h"

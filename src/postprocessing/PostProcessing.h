@@ -1,5 +1,5 @@
-#ifndef POSTPROCESSING_H
-#define POSTPROCESSING_H
+#ifndef AE_POSTPROCESSING_H
+#define AE_POSTPROCESSING_H
 
 #include "../System.h"
 #include "Vignette.h"

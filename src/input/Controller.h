@@ -1,5 +1,5 @@
-#ifndef CONTROLLER_H
-#define CONTROLLER_H
+#ifndef AE_CONTROLLER_H
+#define AE_CONTROLLER_H
 
 #include "../System.h"
 #include "../Camera.h"

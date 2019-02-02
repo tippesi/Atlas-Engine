@@ -1,5 +1,5 @@
-#ifndef DECALRENDERER_H
-#define DECALRENDERER_H
+#ifndef AE_DECALRENDERER_H
+#define AE_DECALRENDERER_H
 
 #include "../System.h"
 #include "IRenderer.h"

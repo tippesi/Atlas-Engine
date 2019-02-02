@@ -1,5 +1,5 @@
-#ifndef ENGINEWINDOWEVENT_H
-#define ENGINEWINDOWEVENT_H
+#ifndef AE_WINDOWEVENT_H
+#define AE_WINDOWEVENT_H
 
 #include "../System.h"
 #include "EventDelegate.h"

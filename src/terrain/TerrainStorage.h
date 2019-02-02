@@ -1,5 +1,5 @@
-#ifndef TERRAINSTORAGE_H
-#define TERRAINSTORAGE_H
+#ifndef AE_TERRAINSTORAGE_H
+#define AE_TERRAINSTORAGE_H
 
 #include "../System.h"
 #include "TerrainStorageCell.h"

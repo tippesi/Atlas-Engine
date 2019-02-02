@@ -1,5 +1,5 @@
-#ifndef IRENDERER_H
-#define IRENDERER_H
+#ifndef AE_IRENDERER_H
+#define AE_IRENDERER_H
 
 #include "../System.h"
 #include "../RenderTarget.h"

@@ -1,5 +1,5 @@
-#ifndef TERRAINSTORAGECELL_H
-#define TERRAINSTORAGECELL_H
+#ifndef AE_TERRAINSTORAGECELL_H
+#define AE_TERRAINSTORAGECELL_H
 
 #include "../System.h"
 #include "../texture/Texture2D.h"

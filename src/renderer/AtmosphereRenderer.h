@@ -1,5 +1,5 @@
-#ifndef ATMOSPHERERENDERER_H
-#define ATMOSPHERERENDERER_H
+#ifndef AE_ATMOSPHERERENDERER_H
+#define AE_ATMOSPHERERENDERER_H
 
 #include "../System.h"
 #include "IRenderer.h"

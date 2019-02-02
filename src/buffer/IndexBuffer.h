@@ -1,5 +1,5 @@
-#ifndef INDEXBUFFER_H
-#define INDEXBUFFER_H
+#ifndef AE_INDEXBUFFER_H
+#define AE_INDEXBUFFER_H
 
 #include "../System.h"
 #include "Buffer.h"

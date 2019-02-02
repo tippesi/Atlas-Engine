@@ -1,5 +1,5 @@
-#ifndef RAYCASTING_H
-#define RAYCASTING_H
+#ifndef AE_RAYCASTING_H
+#define AE_RAYCASTING_H
 
 #include "../System.h"
 #include "../Viewport.h"

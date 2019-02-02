@@ -1,5 +1,5 @@
-#ifndef TEXTURE2D_H
-#define TEXTURE2D_H
+#ifndef AE_TEXTURE2D_H
+#define AE_TEXTURE2D_H
 
 #include "../System.h"
 #include "Texture.h"

@@ -1,5 +1,5 @@
-#ifndef DIRECTIONALLIGHT_H
-#define DIRECTIONALLIGHT_H
+#ifndef AE_DIRECTIONALLIGHT_H
+#define AE_DIRECTIONALLIGHT_H
 
 #include "../System.h"
 #include "ILight.h"

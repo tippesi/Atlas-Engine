@@ -1,5 +1,5 @@
-#ifndef MESHACTOR_H
-#define MESHACTOR_H
+#ifndef AE_MESHACTOR_H
+#define AE_MESHACTOR_H
 
 #include "../System.h"
 #include "Mesh.h"

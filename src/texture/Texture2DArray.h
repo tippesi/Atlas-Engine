@@ -1,5 +1,5 @@
-#ifndef TEXTURE2DARRAY_H
-#define TEXTURE2DARRAY_H
+#ifndef AE_TEXTURE2DARRAY_H
+#define AE_TEXTURE2DARRAY_H
 
 #include "../System.h"
 #include "Texture.h"

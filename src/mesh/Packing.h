@@ -1,5 +1,5 @@
-#ifndef PACKING_H
-#define PACKING_H
+#ifndef AE_PACKING_H
+#define AE_PACKING_H
 
 #include "../System.h"
 

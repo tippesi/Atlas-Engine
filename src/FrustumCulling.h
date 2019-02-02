@@ -1,5 +1,5 @@
-#ifndef FRUSTUMCULLING_H
-#define FRUSTUMCULLING_H
+#ifndef AE_FRUSTUMCULLING_H
+#define AE_FRUSTUMCULLING_H
 
 #include "System.h"
 #include "Scene.h"

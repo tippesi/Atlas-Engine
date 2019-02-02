@@ -1,5 +1,5 @@
-#ifndef IMAGELOADER_H
-#define IMAGELOADER_H
+#ifndef AE_IMAGELOADER_H
+#define AE_IMAGELOADER_H
 
 #include "../System.h"
 

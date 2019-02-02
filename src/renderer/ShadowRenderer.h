@@ -1,5 +1,5 @@
-#ifndef SHADOWRENDERER_H
-#define SHADOWRENDERER_H
+#ifndef AE_SHADOWRENDERER_H
+#define AE_SHADOWRENDERER_H
 
 #include "../System.h"
 #include "IRenderer.h"

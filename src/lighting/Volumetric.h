@@ -1,5 +1,5 @@
-#ifndef VOLUMETRIC_H
-#define VOLUMETRIC_H
+#ifndef AE_VOLUMETRIC_H
+#define AE_VOLUMETRIC_H
 
 #include "../System.h"
 #include "../texture/Texture2D.h"

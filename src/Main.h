@@ -1,5 +1,5 @@
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef AE_MAIN_H
+#define AE_MAIN_H
 
 #include "Engine.h"
 #include "input/Mouse.h"

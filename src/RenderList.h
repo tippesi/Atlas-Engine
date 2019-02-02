@@ -1,5 +1,5 @@
-#ifndef RENDERLIST_H
-#define RENDERLIST_H
+#ifndef AE_RENDERLIST_H
+#define AE_RENDERLIST_H
 
 #include "System.h"
 #include "lighting/ILight.h"

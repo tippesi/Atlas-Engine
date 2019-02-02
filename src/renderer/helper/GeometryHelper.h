@@ -1,5 +1,5 @@
-#ifndef GEOMETRYHELPER_H
-#define GEOMETRYHELPER_H
+#ifndef AE_GEOMETRYHELPER_H
+#define AE_GEOMETRYHELPER_H
 
 #include "../../System.h"
 #include "buffer/VertexArray.h"

@@ -1,5 +1,5 @@
-#ifndef VERTEXARRAY_H
-#define VERTEXARRAY_H
+#ifndef AE_VERTEXARRAY_H
+#define AE_VERTEXARRAY_H
 
 #include "../System.h"
 #include "IndexBuffer.h"

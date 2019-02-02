@@ -1,5 +1,5 @@
-#ifndef VERTEXBUFFER_H
-#define VERTEXBUFFER_H
+#ifndef AE_VERTEXBUFFER_H
+#define AE_VERTEXBUFFER_H
 
 #include "../System.h"
 #include "Buffer.h"

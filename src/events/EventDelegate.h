@@ -1,5 +1,5 @@
-#ifndef EVENTDELEGATE_H
-#define EVENTDELEGATE_H
+#ifndef AE_EVENTDELEGATE_H
+#define AE_EVENTDELEGATE_H
 
 #include "../System.h"
 #include <functional>

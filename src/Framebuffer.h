@@ -1,5 +1,5 @@
-#ifndef FRAMEBUFFER_H
-#define FRAMEBUFFER_H
+#ifndef AE_FRAMEBUFFER_H
+#define AE_FRAMEBUFFER_H
 
 #include "System.h"
 #include "texture/Texture2D.h"

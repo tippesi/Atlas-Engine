@@ -1,5 +1,5 @@
-#ifndef GEOMETRYRENDERER_H
-#define GEOMETRYRENDERER_H
+#ifndef AE_GEOMETRYRENDERER_H
+#define AE_GEOMETRYRENDERER_H
 
 #include "../System.h"
 #include "../shader/ShaderBatch.h"

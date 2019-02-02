@@ -1,5 +1,5 @@
-#ifndef VIEWPORT_H
-#define VIEWPORT_H
+#ifndef AE_VIEWPORT_H
+#define AE_VIEWPORT_H
 
 #include "System.h"
 #include "Camera.h"

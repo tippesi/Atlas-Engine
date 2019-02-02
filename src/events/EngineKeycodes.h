@@ -1,5 +1,5 @@
-#ifndef ENGINEKEYCODES_H
-#define ENGINEKEYCODES_H
+#ifndef AE_KEYCODES_H
+#define AE_KEYCODES_H
 
 #include "../System.h"
 

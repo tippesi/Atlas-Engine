@@ -1,5 +1,5 @@
-#ifndef SHADERCONFIGBATCH_H
-#define SHADERCONFIGBATCH_H
+#ifndef AE_SHADERCONFIGBATCH_H
+#define AE_SHADERCONFIGBATCH_H
 
 #include "../System.h"
 #include "ShaderConfig.h"

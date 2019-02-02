@@ -1,5 +1,5 @@
-#ifndef SKYBOX_H
-#define SKYBOX_H
+#ifndef AE_SKYBOX_H
+#define AE_SKYBOX_H
 
 #include "../System.h"
 #include "../Cubemap.h"

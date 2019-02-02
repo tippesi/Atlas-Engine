@@ -1,5 +1,5 @@
-#ifndef DATACOMPONENT_H
-#define DATACOMPONENT_H
+#ifndef AE_DATACOMPONENT_H
+#define AE_DATACOMPONENT_H
 
 #include "../System.h"
 #include "Packing.h"

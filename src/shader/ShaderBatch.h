@@ -1,5 +1,5 @@
-#ifndef SHADERBATCH_H
-#define SHADERBATCH_H
+#ifndef AE_SHADERBATCH_H
+#define AE_SHADERBATCH_H
 
 #include "../System.h"
 #include "Shader.h"

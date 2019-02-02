@@ -1,5 +1,5 @@
-#ifndef MESHDATA_H
-#define MESHDATA_H
+#ifndef AE_MESHDATA_H
+#define AE_MESHDATA_H
 
 #include "../System.h"
 #include "DataComponent.h"

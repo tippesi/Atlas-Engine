@@ -1,5 +1,5 @@
-#ifndef ILIGHT_H
-#define ILIGHT_H
+#ifndef AE_ILIGHT_H
+#define AE_ILIGHT_H
 
 #include "../System.h"
 #include "Shadow.h"

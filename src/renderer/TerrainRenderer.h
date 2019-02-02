@@ -1,5 +1,5 @@
-#ifndef TERRAINRENDERER_H
-#define TERRAINRENDERER_H
+#ifndef AE_TERRAINRENDERER_H
+#define AE_TERRAINRENDERER_H
 
 #include "../System.h"
 #include "IRenderer.h"

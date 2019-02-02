@@ -1,5 +1,5 @@
-#ifndef SHADERSOURCE_H
-#define SHADERSOURCE_H
+#ifndef AE_SHADERSOURCE_H
+#define AE_SHADERSOURCE_H
 
 #include "../System.h"
 #include "ShaderConstant.h"

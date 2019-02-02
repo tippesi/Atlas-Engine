@@ -1,5 +1,5 @@
-#ifndef SCENENODE_H
-#define SCENENODE_H
+#ifndef AE_SCENENODE_H
+#define AE_SCENENODE_H
 
 #include "System.h"
 #include "mesh/MeshActor.h"

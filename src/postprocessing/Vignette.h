@@ -1,5 +1,5 @@
-#ifndef VIGNETTE_H
-#define VIGNETTE_H
+#ifndef AE_VIGNETTE_H
+#define AE_VIGNETTE_H
 
 #include "../System.h"
 

@@ -1,5 +1,5 @@
-#ifndef MATERIAL_H
-#define MATERIAL_H
+#ifndef AE_MATERIAL_H
+#define AE_MATERIAL_H
 
 #include "../System.h"
 #include "../texture/Texture2D.h"

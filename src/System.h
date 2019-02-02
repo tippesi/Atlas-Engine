@@ -1,5 +1,5 @@
-#ifndef SYSTEM_H
-#define SYSTEM_H
+#ifndef AE_SYSTEM_H
+#define AE_SYSTEM_H
 
 #define _CRT_SECURE_NO_WARNINGS
 

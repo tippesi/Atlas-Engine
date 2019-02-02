@@ -1,5 +1,5 @@
-#ifndef SHADERCONFIG_H
-#define SHADERCONFIG_H
+#ifndef AE_SHADERCONFIG_H
+#define AE_SHADERCONFIG_H
 
 #include "../System.h"
 #include <vector>

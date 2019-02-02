@@ -1,5 +1,5 @@
-#ifndef SKYBOXRENDERER_H
-#define SKYBOXRENDERER_H
+#ifndef AE_SKYBOXRENDERER_H
+#define AE_SKYBOXRENDERER_H
 
 #include "../System.h"
 #include "IRenderer.h"

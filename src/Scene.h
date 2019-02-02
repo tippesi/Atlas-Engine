@@ -1,5 +1,5 @@
-#ifndef SCENE_H
-#define SCENE_H
+#ifndef AE_SCENE_H
+#define AE_SCENE_H
 
 #include "System.h"
 #include "SceneNode.h"

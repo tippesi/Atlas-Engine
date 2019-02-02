@@ -1,5 +1,5 @@
-#ifndef POSTPROCESSRENDERER_H
-#define POSTPROCESSRENDERER_H
+#ifndef AE_POSTPROCESSRENDERER_H
+#define AE_POSTPROCESSRENDERER_H
 
 #include "../System.h"
 #include "IRenderer.h"

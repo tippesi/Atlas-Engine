@@ -1,5 +1,5 @@
-#ifndef MASTERRENDERER_H
-#define MASTERRENDERER_H
+#ifndef AE_MASTERRENDERER_H
+#define AE_MASTERRENDERER_H
 
 #include "../System.h"
 #include "buffer/VertexArray.h"

@@ -1,5 +1,5 @@
-#ifndef KEYBOARD_H
-#define KEYBOARD_H
+#ifndef AE_KEYBOARD_H
+#define AE_KEYBOARD_H
 
 #include "../System.h"
 #include "../Camera.h"

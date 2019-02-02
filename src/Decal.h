@@ -1,5 +1,5 @@
-#ifndef DECAL_H
-#define DECAL_H
+#ifndef AE_DECAL_H
+#define AE_DECAL_H
 
 #include "System.h"
 #include "texture/Texture2D.h"

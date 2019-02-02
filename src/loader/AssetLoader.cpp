@@ -66,7 +66,7 @@ std::ifstream AssetLoader::ReadFile(std::string filename, std::ios_base::openmod
 
 	// It might be that the file is not unpacked
 #ifdef AE_OS_ANDROID
-	if (!file.is_open()) {
+	if (!stream.is_open()) {
 		UnpackFile(filename);
 		stream.open(path, mode);
 	}
@@ -157,7 +157,7 @@ void AssetLoader::UnpackFile(std::string filename) {
         return;
     }
 
-	auto stream = WriteFile(filename, ios::out);
+	auto stream = WriteFile(filename, std::ios::out);
 
 	if (!stream.is_open()) {
 		AAsset_close(asset);

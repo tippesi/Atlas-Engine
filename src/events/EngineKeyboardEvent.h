@@ -1,5 +1,5 @@
-#ifndef SYSTEMKEYBOARDEVENT_H
-#define SYSTEMKEYBOARDEVENT_H
+#ifndef AE_KEYBOARDEVENT_H
+#define AE_KEYBOARDEVENT_H
 
 #include "../System.h"
 #include "EventDelegate.h"

@@ -1,5 +1,5 @@
-#ifndef RENDERTARGET_H
-#define RENDERTARGET_H
+#ifndef AE_RENDERTARGET_H
+#define AE_RENDERTARGET_H
 
 #include "System.h"
 #include "Framebuffer.h"

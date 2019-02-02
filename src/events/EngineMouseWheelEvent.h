@@ -1,5 +1,5 @@
-#ifndef ENGINEMOUSEWHEELEVENT_H
-#define ENGINEMOUSEWHEELEVENT_H
+#ifndef AE_MOUSEWHEELEVENT_H
+#define AE_MOUSEWHEELEVENT_H
 
 #include "../System.h"
 #include "EventDelegate.h"

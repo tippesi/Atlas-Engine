@@ -1,5 +1,5 @@
-#ifndef KERNEL_H
-#define KERNEL_H
+#ifndef AE_KERNEL_H
+#define AE_KERNEL_H
 
 #include "System.h"
 #include <vector>

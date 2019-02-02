@@ -1,5 +1,5 @@
-#ifndef MESH_H
-#define MESH_H
+#ifndef AE_MESH_H
+#define AE_MESH_H
 
 #include "../System.h"
 #include "MeshData.h"

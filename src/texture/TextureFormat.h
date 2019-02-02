@@ -1,5 +1,5 @@
-#ifndef TEXTUREFORMAT_H
-#define TEXTUREFORMAT_H
+#ifndef AE_TEXTUREFORMAT_H
+#define AE_TEXTUREFORMAT_H
 
 // This file defines texture formats independently from
 // the graphics API that is used.

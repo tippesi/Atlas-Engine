@@ -1,5 +1,5 @@
-#ifndef TEXTURE_H
-#define TEXTURE_H
+#ifndef AE_TEXTURE_H
+#define AE_TEXTURE_H
 
 #include "../System.h"
 #include "TextureFormat.h"

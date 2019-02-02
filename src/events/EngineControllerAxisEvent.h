@@ -1,5 +1,5 @@
-#ifndef SYSTEMCONTROLLERAXISEVENT_H
-#define SYSTEMCONTROLLERAXISEVENT_H
+#ifndef AE_CONTROLLERAXISEVENT_H
+#define AE_CONTROLLERAXISEVENT_H
 
 #include "../System.h"
 #include "EventDelegate.h"

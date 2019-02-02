@@ -1,5 +1,5 @@
-#ifndef TERRAINTOOL_H
-#define TERRAINTOOL_H
+#ifndef AE_TERRAINTOOL_H
+#define AE_TERRAINTOOL_H
 
 #include "../System.h"
 #include "../terrain/Terrain.h"

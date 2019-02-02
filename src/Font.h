@@ -1,5 +1,5 @@
-#ifndef FONT_H
-#define FONT_H
+#ifndef AE_FONT_H
+#define AE_FONT_H
 
 #include "System.h"
 #include "texture/Texture2DArray.h"

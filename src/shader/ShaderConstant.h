@@ -1,5 +1,5 @@
-#ifndef SHADERCONSTANT_H
-#define SHADERCONSTANT_H
+#ifndef AE_SHADERCONSTANT_H
+#define AE_SHADERCONSTANT_H
 
 #include "../System.h"
 

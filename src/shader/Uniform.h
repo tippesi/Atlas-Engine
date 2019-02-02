@@ -1,5 +1,5 @@
-#ifndef UNIFORM_H
-#define UNIFORM_H
+#ifndef AE_UNIFORM_H
+#define AE_UNIFORM_H
 
 #include "../System.h"
 #include <string>

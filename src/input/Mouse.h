@@ -1,5 +1,5 @@
-#ifndef MOUSE_H
-#define MOUSE_H
+#ifndef AE_MOUSE_H
+#define AE_MOUSE_H
 
 #include "../System.h"
 #include "../Camera.h"

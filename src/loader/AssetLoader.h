@@ -1,5 +1,5 @@
-#ifndef ASSETLOADER_H
-#define ASSETLOADER_H
+#ifndef AE_ASSETLOADER_H
+#define AE_ASSETLOADER_H
 
 #include "../System.h"
 

@@ -1,5 +1,5 @@
-#ifndef ENGINETEXTINPUTEVENT_H
-#define ENGINETEXTINPUTEVENT_H
+#ifndef AE_TEXTINPUTEVENT_H
+#define AE_TEXTINPUTEVENT_H
 
 
 #include "../System.h"

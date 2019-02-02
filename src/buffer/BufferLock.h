@@ -1,5 +1,5 @@
-#ifndef BUFFERLOCK_H
-#define BUFFERLOCK_H
+#ifndef AE_BUFFERLOCK_H
+#define AE_BUFFERLOCK_H
 
 #include "../System.h"
 

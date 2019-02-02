@@ -1,5 +1,5 @@
-#ifndef TERRAIN_H
-#define TERRAIN_H
+#ifndef AE_TERRAIN_H
+#define AE_TERRAIN_H
 
 #include "../System.h"
 #include "TerrainNode.h"

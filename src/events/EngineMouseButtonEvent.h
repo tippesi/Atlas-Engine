@@ -1,5 +1,5 @@
-#ifndef ENGINEMOUSEBUTTONEVENT_H
-#define ENGINEMOUSEBUTTONEVENT_H
+#ifndef AE_MOUSEBUTTONEVENT_H
+#define AE_MOUSEBUTTONEVENT_H
 
 #include "../System.h"
 #include "EventDelegate.h"

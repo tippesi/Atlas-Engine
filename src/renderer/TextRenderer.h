@@ -1,5 +1,5 @@
-#ifndef TEXTRENDERER_H
-#define TEXTRENDERER_H
+#ifndef AE_TEXTRENDERER_H
+#define AE_TEXTRENDERER_H
 
 #include "../System.h"
 #include "IRenderer.h"
