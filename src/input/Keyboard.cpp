@@ -11,7 +11,7 @@ KeyboardHandler::KeyboardHandler(Camera* camera, float speed, float reactivity) 
 	movement = vec2(0.0f);
 
 	auto keyboardEventHandler = std::bind(&KeyboardHandler::KeyboardEventHandler, this, std::placeholders::_1);
-	EngineEventHandler::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
+	Events::EventHandler::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
 
 }
 
@@ -28,7 +28,7 @@ void KeyboardHandler::Update(Camera* camera, uint32_t deltaTime) {
 
 }
 
-void KeyboardHandler::KeyboardEventHandler(EngineKeyboardEvent event) {
+void KeyboardHandler::KeyboardEventHandler(Events::KeyboardEvent event) {
 
 	if (event.keycode == AE_KEY_W && event.state == AE_BUTTON_PRESSED && !event.repeat) {
 		movement.x += 1.0f;

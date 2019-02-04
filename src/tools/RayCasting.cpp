@@ -3,7 +3,7 @@
 RayCasting::RayCasting() {
 
     auto mouseEventHandler = std::bind(&RayCasting::MouseEventHandler, this, std::placeholders::_1);
-    EngineEventHandler::MouseMotionEventDelegate.Subscribe(mouseEventHandler);
+    Events::EventHandler::MouseMotionEventDelegate.Subscribe(mouseEventHandler);
 
 }
 
@@ -101,7 +101,7 @@ RayCasting::Ray RayCasting::CalculateRay(Viewport *viewport, Camera *camera) {
 
 }
 
-void RayCasting::MouseEventHandler(EngineMouseMotionEvent event) {
+void RayCasting::MouseEventHandler(Events::MouseMotionEvent event) {
 
     mouseLocation = glm::vec2((float)event.x, (float)event.y);
 

@@ -6,15 +6,15 @@ ControllerHandler::ControllerHandler(Camera* camera, float sensibility, float sp
 
 	auto controllerAxisEventHandler = std::bind(&ControllerHandler::ControllerAxisEventHandler, 
 		this, std::placeholders::_1);
-	EngineEventHandler::ControllerAxisEventDelegate.Subscribe(controllerAxisEventHandler);
+	Events::EventHandler::ControllerAxisEventDelegate.Subscribe(controllerAxisEventHandler);
 
 	auto controllerButtonEventHandler = std::bind(&ControllerHandler::ControllerButtonEventHandler,
 		this, std::placeholders::_1);
-	EngineEventHandler::ControllerButtonEventDelegate.Subscribe(controllerButtonEventHandler);
+	Events::EventHandler::ControllerButtonEventDelegate.Subscribe(controllerButtonEventHandler);
 
 	auto controllerDeviceEventHandler = std::bind(&ControllerHandler::ControllerDeviceEventHandler,
 		this, std::placeholders::_1);
-	EngineEventHandler::ControllerDeviceEventDelegate.Subscribe(controllerDeviceEventHandler);
+	Events::EventHandler::ControllerDeviceEventDelegate.Subscribe(controllerDeviceEventHandler);
 
 	location = camera->location;
 	rotation = camera->rotation;
@@ -51,7 +51,7 @@ void ControllerHandler::Update(Camera* camera, uint32_t deltaTime) {
 
 }
 
-void ControllerHandler::ControllerAxisEventHandler(EngineControllerAxisEvent event) {
+void ControllerHandler::ControllerAxisEventHandler(Events::ControllerAxisEvent event) {
 
 	if (event.device != controllerDevice)
 		return;
@@ -74,7 +74,7 @@ void ControllerHandler::ControllerAxisEventHandler(EngineControllerAxisEvent eve
 
 }
 
-void ControllerHandler::ControllerButtonEventHandler(EngineControllerButtonEvent event) {
+void ControllerHandler::ControllerButtonEventHandler(Events::ControllerButtonEvent event) {
 
 	if (event.device != controllerDevice)
 		return;
@@ -83,7 +83,7 @@ void ControllerHandler::ControllerButtonEventHandler(EngineControllerButtonEvent
 
 }
 
-void ControllerHandler::ControllerDeviceEventHandler(EngineControllerDeviceEvent event) {
+void ControllerHandler::ControllerDeviceEventHandler(Events::ControllerDeviceEvent event) {
 
 	if (event.type == AE_CONTROLLER_ADDED) {
 		

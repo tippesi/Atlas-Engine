@@ -5,7 +5,7 @@
 #include "../Viewport.h"
 #include "mesh/MeshActor.h"
 #include "../terrain/Terrain.h"
-#include "../events/EngineEventHandler.h"
+#include "../events/EventHandler.h"
 
 typedef struct RayIntersection {
 	vec3 location;
@@ -37,7 +37,7 @@ private:
 
     Ray CalculateRay(Viewport* viewport, Camera* camera);
 
-    void MouseEventHandler(EngineMouseMotionEvent event);
+    void MouseEventHandler(Events::MouseMotionEvent event);
 
     ivec2 mouseLocation;
 

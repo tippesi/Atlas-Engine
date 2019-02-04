@@ -33,13 +33,13 @@ Main::Main(int argc, char* argv[]) {
 
 	// Register quit event
 	auto quitEventHandler = std::bind(&Main::QuitEventHandler, this);
-	EngineEventHandler::QuitEventDelegate.Subscribe(quitEventHandler);
+    Events::EventHandler::QuitEventDelegate.Subscribe(quitEventHandler);
 
 	auto controllerDeviceEventHandler = std::bind(&Main::ControllerDeviceEventHandler, this, std::placeholders::_1);
-	EngineEventHandler::ControllerDeviceEventDelegate.Subscribe(controllerDeviceEventHandler);
+    Events::EventHandler::ControllerDeviceEventDelegate.Subscribe(controllerDeviceEventHandler);
 
 	auto mouseButtonEventHandler = std::bind(&Main::MouseButtonEventHandler, this, std::placeholders::_1);
-	EngineEventHandler::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
+    Events::EventHandler::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
 	camera = new Camera(47.0f, 2.0f, .25f, 4000.0f);
 	camera->location = vec3(30.0f, 25.0f, 0.0f);
@@ -333,7 +333,7 @@ void Main::QuitEventHandler() {
 
 }
 
-void Main::ControllerDeviceEventHandler(EngineControllerDeviceEvent event) {
+void Main::ControllerDeviceEventHandler(Events::ControllerDeviceEvent event) {
 
 	if (event.type == AE_CONTROLLER_ADDED) {
 		useControllerHandler = true;
@@ -344,7 +344,7 @@ void Main::ControllerDeviceEventHandler(EngineControllerDeviceEvent event) {
 
 }
 
-void Main::MouseButtonEventHandler(EngineMouseButtonEvent event) {
+void Main::MouseButtonEventHandler(Events::MouseButtonEvent event) {
 
 	if (event.button == AE_MOUSEBUTTON_RIGHT && event.state == AE_BUTTON_RELEASED) {
 

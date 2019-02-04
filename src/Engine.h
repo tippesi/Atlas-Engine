@@ -8,7 +8,7 @@
 #include "RenderTarget.h"
 #include "shader/Shader.h"
 #include "renderer/MasterRenderer.h"
-#include "events/EngineEventHandler.h"
+#include "events/EventHandler.h"
 #include "lighting/DirectionalLight.h"
 #include "lighting/PointLight.h"
 #include "loader/AssetLoader.h"

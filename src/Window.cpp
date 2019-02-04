@@ -16,19 +16,19 @@ Window::Window(std::string title, int32_t x, int32_t y, int32_t width, int32_t h
 	this->viewport = new Viewport(0, 0, width, height);
 
 	auto windowEventHandler = std::bind(&Window::WindowEventHandler, this, std::placeholders::_1);
-	EngineEventHandler::WindowEventDelegate.Subscribe(windowEventHandler);
+	Events::EventHandler::WindowEventDelegate.Subscribe(windowEventHandler);
 
 	auto keyboardEventHandler = std::bind(&Window::KeyboardEventHandler, this, std::placeholders::_1);
-	EngineEventHandler::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
+	Events::EventHandler::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
 
 	auto mouseButtonEventHandler = std::bind(&Window::MouseButtonEventHandler, this, std::placeholders::_1);
-	EngineEventHandler::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
+	Events::EventHandler::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
 	auto mouseMotionEventHandler = std::bind(&Window::MouseMotionEventHandler, this, std::placeholders::_1);
-	EngineEventHandler::MouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
+	Events::EventHandler::MouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
 
 	auto mouseWheelEventHandler = std::bind(&Window::MouseWheelEventHandler, this, std::placeholders::_1);
-	EngineEventHandler::MouseWheelEventDelegate.Subscribe(mouseWheelEventHandler);
+	Events::EventHandler::MouseWheelEventDelegate.Subscribe(mouseWheelEventHandler);
 
 }
 
@@ -114,7 +114,7 @@ void Window::Clear(vec3 color) {
 
 }
 
-void Window::WindowEventHandler(EngineWindowEvent event) {
+void Window::WindowEventHandler(Events::WindowEvent event) {
 
 	if (event.windowID != ID)
 		return;
@@ -131,7 +131,7 @@ void Window::WindowEventHandler(EngineWindowEvent event) {
 
 }
 
-void Window::KeyboardEventHandler(EngineKeyboardEvent event) {
+void Window::KeyboardEventHandler(Events::KeyboardEvent event) {
 
 	if (event.windowID != ID)
 		return;
@@ -140,7 +140,7 @@ void Window::KeyboardEventHandler(EngineKeyboardEvent event) {
 
 }
 
-void Window::MouseButtonEventHandler(EngineMouseButtonEvent event) {
+void Window::MouseButtonEventHandler(Events::MouseButtonEvent event) {
 
 	if (event.windowID != ID)
 		return;
@@ -149,7 +149,7 @@ void Window::MouseButtonEventHandler(EngineMouseButtonEvent event) {
 
 }
 
-void Window::MouseMotionEventHandler(EngineMouseMotionEvent event) {
+void Window::MouseMotionEventHandler(Events::MouseMotionEvent event) {
 
 	if (event.windowID != ID)
 		return;
@@ -158,7 +158,7 @@ void Window::MouseMotionEventHandler(EngineMouseMotionEvent event) {
 
 }
 
-void Window::MouseWheelEventHandler(EngineMouseWheelEvent event) {
+void Window::MouseWheelEventHandler(Events::MouseWheelEvent event) {
 
 	if (event.windowID != ID)
 		return;
@@ -167,7 +167,7 @@ void Window::MouseWheelEventHandler(EngineMouseWheelEvent event) {
 
 }
 
-void Window::ControllerAxisEventHandler(EngineControllerAxisEvent event) {
+void Window::ControllerAxisEventHandler(Events::ControllerAxisEvent event) {
 
 	if (!hasFocus)
 		return;
@@ -176,7 +176,7 @@ void Window::ControllerAxisEventHandler(EngineControllerAxisEvent event) {
 
 }
 
-void Window::ControllerButtonEventHandler(EngineControllerButtonEvent event) {
+void Window::ControllerButtonEventHandler(Events::ControllerButtonEvent event) {
 
 	if (!hasFocus)
 		return;

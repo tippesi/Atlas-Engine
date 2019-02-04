@@ -119,6 +119,6 @@ void Engine::UnlockFramerate() {
 
 void Engine::Update() {
 
-	EngineEventHandler::Update();
+	Events::EventHandler::Update();
 
 }

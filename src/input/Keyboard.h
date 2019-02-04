@@ -3,7 +3,7 @@
 
 #include "../System.h"
 #include "../Camera.h"
-#include "../events/EngineEventHandler.h"
+#include "../events/EventHandler.h"
 
 
 class KeyboardHandler {
@@ -17,7 +17,7 @@ public:
 	float reactivity;
 
 private:
-	void KeyboardEventHandler(EngineKeyboardEvent event);
+	void KeyboardEventHandler(Events::KeyboardEvent event);
 
 	vec3 location;
 	vec2 movement;

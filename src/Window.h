@@ -6,19 +6,19 @@
 #include "texture/Texture2D.h"
 
 #include "events/EventDelegate.h"
-#include "events/EngineEventHandler.h"
+#include "events/EventHandler.h"
 
 #include <SDL/include/SDL.h>
 
 #define AE_WINDOWPOSITION_UNDEFINED SDL_WINDOWPOS_UNDEFINED
 
 #define AE_WINDOW_FULLSCREEN	SDL_WINDOW_FULLSCREEN
-#define AE_WINDOW_SHOWN		SDL_WINDOW_SHOWN
+#define AE_WINDOW_SHOWN			SDL_WINDOW_SHOWN
 #define AE_WINDOW_HIDDEN		SDL_WINDOW_HIDDEN
 #define AE_WINDOW_BORDERLESS	SDL_WINDOW_BORDERLESS
-#define AE_WINDOW_RESIZABLE	SDL_WINDOW_RESIZABLE
-#define AE_WINDOW_MINIMIZED	SDL_WINDOW_MINIMIZED
-#define AE_WINDOW_MAXIMIZED	SDL_WINDOW_MAXIMIZED
+#define AE_WINDOW_RESIZABLE		SDL_WINDOW_RESIZABLE
+#define AE_WINDOW_MINIMIZED		SDL_WINDOW_MINIMIZED
+#define AE_WINDOW_MAXIMIZED		SDL_WINDOW_MAXIMIZED
 #define AE_WINDOW_HIGH_DPI		SDL_WINDOW_ALLOW_HIGHDPI
 
 /**
@@ -110,22 +110,22 @@ public:
 
 	Viewport* viewport;
 
-	EventDelegate<EngineWindowEvent> windowEventDelegate;
-	EventDelegate<EngineKeyboardEvent> keyboardEventDelegate;
-	EventDelegate<EngineMouseButtonEvent> mouseButtonEventDelegate;
-	EventDelegate<EngineMouseMotionEvent> mouseMotionEventDelegate;
-	EventDelegate<EngineMouseWheelEvent> mouseWheelEventDelegate;
-	EventDelegate<EngineControllerAxisEvent> controllerAxisEventDelegate;
-	EventDelegate<EngineControllerButtonEvent> controllerButtonEventDelegate;
+	Events::EventDelegate<Events::WindowEvent> windowEventDelegate;
+	Events::EventDelegate<Events::KeyboardEvent> keyboardEventDelegate;
+	Events::EventDelegate<Events::MouseButtonEvent> mouseButtonEventDelegate;
+	Events::EventDelegate<Events::MouseMotionEvent> mouseMotionEventDelegate;
+	Events::EventDelegate<Events::MouseWheelEvent> mouseWheelEventDelegate;
+	Events::EventDelegate<Events::ControllerAxisEvent> controllerAxisEventDelegate;
+	Events::EventDelegate<Events::ControllerButtonEvent> controllerButtonEventDelegate;
 
 private:
-	void WindowEventHandler(EngineWindowEvent event);
-	void KeyboardEventHandler(EngineKeyboardEvent event);
-	void MouseButtonEventHandler(EngineMouseButtonEvent event);
-	void MouseMotionEventHandler(EngineMouseMotionEvent event);
-	void MouseWheelEventHandler(EngineMouseWheelEvent event);
-	void ControllerAxisEventHandler(EngineControllerAxisEvent event);
-	void ControllerButtonEventHandler(EngineControllerButtonEvent event);
+	void WindowEventHandler(Events::WindowEvent event);
+	void KeyboardEventHandler(Events::KeyboardEvent event);
+	void MouseButtonEventHandler(Events::MouseButtonEvent event);
+	void MouseMotionEventHandler(Events::MouseMotionEvent event);
+	void MouseWheelEventHandler(Events::MouseWheelEvent event);
+	void ControllerAxisEventHandler(Events::ControllerAxisEvent event);
+	void ControllerButtonEventHandler(Events::ControllerButtonEvent event);
 
 	uint32_t ID;
 

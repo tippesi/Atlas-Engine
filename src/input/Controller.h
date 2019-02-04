@@ -3,7 +3,7 @@
 
 #include "../System.h"
 #include "../Camera.h"
-#include "../events/EngineEventHandler.h"
+#include "../events/EventHandler.h"
 
 class ControllerHandler {
 
@@ -18,9 +18,9 @@ public:
 	float threshold;
 
 private:
-	void ControllerAxisEventHandler(EngineControllerAxisEvent event);
-	void ControllerButtonEventHandler(EngineControllerButtonEvent event);
-	void ControllerDeviceEventHandler(EngineControllerDeviceEvent event);
+	void ControllerAxisEventHandler(Events::ControllerAxisEvent event);
+	void ControllerButtonEventHandler(Events::ControllerButtonEvent event);
+	void ControllerDeviceEventHandler(Events::ControllerDeviceEvent event);
 
 	vec2 leftStick;
 	vec2 rightStick;

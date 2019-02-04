@@ -26,11 +26,11 @@ private:
 
 	void QuitEventHandler();
 
-	void ControllerDeviceEventHandler(EngineControllerDeviceEvent event);
+	void ControllerDeviceEventHandler(Events::ControllerDeviceEvent event);
 
-	void MouseButtonEventHandler(EngineMouseButtonEvent event);
+	void MouseButtonEventHandler(Events::MouseButtonEvent event);
 
-	void TextInputEventHandler(EngineTextInputEvent event);
+	void TextInputEventHandler(Events::TextInputEvent event);
 
 	Window* window;
 
