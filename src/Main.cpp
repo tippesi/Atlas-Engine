@@ -277,9 +277,15 @@ void Main::SceneSetUp() {
 	sponzaActor->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
 
 	directionalLight = new DirectionalLight(AE_STATIONARY_LIGHT);
-	directionalLight->direction = vec3(0.0f, -1.0f, 0.1f);
+#ifdef AE_OS_ANDROID
+	directionalLight->direction = vec3(0.0f, -1.0f, 0.5f);
+    directionalLight->ambient = 0.005f;
+#else
+    directionalLight->direction = vec3(0.0f, -1.0f, 0.1f);
+    directionalLight->ambient = 0.05f;
+#endif
 	directionalLight->color = vec3(253, 194, 109) / 255.0f;
-	directionalLight->ambient = 0.05f;
+
 	// Cascaded shadow mapping
 	// directionalLight->AddShadow(300.0f, 0.01f, 1024, 4, 0.7f, camera);
 	// Shadow mapping that is fixed to a point

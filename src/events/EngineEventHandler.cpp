@@ -95,6 +95,13 @@ void EngineEventHandler::Update() {
 			ControllerDeviceEventDelegate.Fire(event);
 
 		}
+		else if (e.type == SDL_FINGERMOTION || e.type == SDL_FINGERDOWN || e.type == SDL_FINGERUP) {
+
+		    TouchEvent event(e.tfinger);
+
+		    TouchEventDelegate.Fire(event);
+
+		}
 		else if (e.type == SDL_TEXTINPUT) {
 
 			EngineTextInputEvent event(e.text);

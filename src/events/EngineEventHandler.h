@@ -14,6 +14,7 @@
 #include "EngineControllerAxisEvent.h"
 #include "EngineControllerButtonEvent.h"
 #include "EngineControllerDeviceEvent.h"
+#include "TouchEvent.h"
 #include "EngineTextInputEvent.h"
 
 #include <mutex>
@@ -36,6 +37,7 @@ public:
 	static EventDelegate<EngineControllerAxisEvent> ControllerAxisEventDelegate;
 	static EventDelegate<EngineControllerButtonEvent> ControllerButtonEventDelegate;
 	static EventDelegate<EngineControllerDeviceEvent> ControllerDeviceEventDelegate;
+	static EventDelegate<TouchEvent> TouchEventDelegate;
 	static EventDelegate<EngineTextInputEvent> TextInputEventDelegate;
 	static EventDelegate<> QuitEventDelegate;
 
