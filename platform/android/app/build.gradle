@@ -21,16 +21,18 @@ android {
 		if (buildAsApplication) {
 			externalNativeBuild {
 				cmake {
-					arguments '-DASSIMP_BUILD_ZLIB=ON', '-DASSIMP_BUILD_TESTS=OFF'
-					cppFlags '-fexceptions -frtti -std=c++11'
+					arguments '-DASSIMP_BUILD_ZLIB=ON', '-DASSIMP_BUILD_TESTS=OFF', 
+						'-DANDROID_ARM_NEON=TRUE'
+					cppFlags '-fexceptions -frtti -std=c++11 -O3'
 				}
 			}
 		}
 		else {
 			externalNativeBuild {
 				cmake {
-					arguments '-DASSIMP_BUILD_ZLIB=ON', '-DASSIMP_BUILD_TESTS=OFF', '-DBUILD_LIBRARY=ON'
-					cppFlags '-fexceptions -frtti -std=c++11'
+					arguments '-DASSIMP_BUILD_ZLIB=ON', '-DASSIMP_BUILD_TESTS=OFF', '-DBUILD_LIBRARY=ON',
+						'-DANDROID_ARM_NEON=TRUE'
+					cppFlags '-fexceptions -frtti -std=c++11 -O3'
 				}
 			}			
 		}
