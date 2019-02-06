@@ -21,8 +21,9 @@ android {
 		if (buildAsApplication) {
 			externalNativeBuild {
 				cmake {
-					arguments '-DASSIMP_BUILD_ZLIB=ON', '-DASSIMP_BUILD_TESTS=OFF', 
-						'-DANDROID_ARM_NEON=TRUE'
+					arguments '-DASSIMP_BUILD_ZLIB=ON', '-DASSIMP_BUILD_TESTS=OFF',
+                            '-DASSIMP_NO_EXPORT=ON', '-DASSIMP_BUILD_ASSIMP_TOOLS=OFF',
+						    '-DANDROID_ARM_NEON=TRUE', '-DCMAKE_BUILD_TYPE=Release'
 					cppFlags '-fexceptions -frtti -std=c++11 -O3'
 				}
 			}
@@ -30,8 +31,10 @@ android {
 		else {
 			externalNativeBuild {
 				cmake {
-					arguments '-DASSIMP_BUILD_ZLIB=ON', '-DASSIMP_BUILD_TESTS=OFF', '-DBUILD_LIBRARY=ON',
-						'-DANDROID_ARM_NEON=TRUE'
+					arguments '-DASSIMP_BUILD_ZLIB=ON', '-DASSIMP_BUILD_TESTS=OFF',
+                            '-DASSIMP_NO_EXPORT=ON', '-DASSIMP_BUILD_ASSIMP_TOOLS=OFF',
+                            '-DBUILD_LIBRARY=ON', '-DANDROID_ARM_NEON=TRUE',
+                            '-DCMAKE_BUILD_TYPE=Release'
 					cppFlags '-fexceptions -frtti -std=c++11 -O3'
 				}
 			}			
