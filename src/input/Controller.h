@@ -3,35 +3,44 @@
 
 #include "../System.h"
 #include "../Camera.h"
-#include "../events/EventHandler.h"
+#include "events/EventManager.h"
 
-class ControllerHandler {
+namespace Atlas {
 
-public:
-	ControllerHandler(Camera* camera, float sensibility, float speed, float reactivity, float threshold, int32_t device = -1);
+	namespace Input {
 
-	void Update(Camera* camera, uint32_t deltaTime);
+		class ControllerHandler {
 
-	float sensibility;
-	float speed;
-	float reactivity;
-	float threshold;
+		public:
+			ControllerHandler(Camera* camera, float sensibility, float speed, float reactivity,
+					float threshold, int32_t device = -1);
 
-private:
-	void ControllerAxisEventHandler(Events::ControllerAxisEvent event);
-	void ControllerButtonEventHandler(Events::ControllerButtonEvent event);
-	void ControllerDeviceEventHandler(Events::ControllerDeviceEvent event);
+			void Update(Camera* camera, uint32_t deltaTime);
 
-	vec2 leftStick;
-	vec2 rightStick;
+			float sensibility;
+			float speed;
+			float reactivity;
+			float threshold;
 
-	float speedIncrease;
+		private:
+			void ControllerAxisEventHandler(Events::ControllerAxisEvent event);
+			void ControllerButtonEventHandler(Events::ControllerButtonEvent event);
+			void ControllerDeviceEventHandler(Events::ControllerDeviceEvent event);
 
-	vec3 location;
-	vec2 rotation;
+			vec2 leftStick;
+			vec2 rightStick;
 
-	int32_t controllerDevice;
+			float speedIncrease;
 
-};
+			vec3 location;
+			vec2 rotation;
+
+			int32_t controllerDevice;
+
+		};
+
+	}
+
+}
 
 #endif

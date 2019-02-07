@@ -3,25 +3,32 @@
 
 #include "../System.h"
 #include "../Camera.h"
-#include "../events/EventHandler.h"
+#include "events/EventManager.h"
 
+namespace Atlas {
 
-class KeyboardHandler {
+	namespace Input {
 
-public:
-	KeyboardHandler(Camera* camera, float speed, float reactivity);
+		class KeyboardHandler {
 
-	void Update(Camera* camera, uint32_t deltaTime);
+		public:
+			KeyboardHandler(Camera* camera, float speed, float reactivity);
 
-	float speed;
-	float reactivity;
+			void Update(Camera* camera, uint32_t deltaTime);
 
-private:
-	void KeyboardEventHandler(Events::KeyboardEvent event);
+			float speed;
+			float reactivity;
 
-	vec3 location;
-	vec2 movement;
+		private:
+			void KeyboardEventHandler(Events::KeyboardEvent event);
 
-};
+			vec3 location;
+			vec2 movement;
+
+		};
+
+	}
+
+}
 
 #endif

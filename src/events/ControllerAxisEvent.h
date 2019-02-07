@@ -13,38 +13,42 @@
 #define AE_CONTROLLERAXIS_LEFTTRIGGER 	SDL_CONTROLLER_AXIS_TRIGGERLEFT
 #define AE_CONTROLLERAXIS_RIGHTTRIGGER SDL_CONTROLLER_AXIS_TRIGGERRIGHT
 
-namespace Events {
+namespace Atlas {
 
-	/**
- 	 * A class to distribute controller axis events.
-	 */
-	class ControllerAxisEvent {
-
-	public:
-		ControllerAxisEvent(SDL_ControllerAxisEvent event) {
-
-			axis = event.axis;
-			value = event.value;
-			device = event.which;
-
-		}
+	namespace Events {
 
 		/**
-         * The axis which was moved on the controller. See {@link EngineControllerAxisEvent.h} for more.
+          * A class to distribute controller axis events.
          */
-		uint8_t axis;
+		class ControllerAxisEvent {
 
-		/**
-         * The value of the axis. Ranges from -32767-32767.
-         */
-		int16_t value;
+		public:
+			ControllerAxisEvent(SDL_ControllerAxisEvent event) {
 
-		/**
-         * The device ID of the game controller.
-         */
-		int32_t device;
+				axis = event.axis;
+				value = event.value;
+				device = event.which;
 
-	};
+			}
+
+			/**
+             * The axis which was moved on the controller. See {@link EngineControllerAxisEvent.h} for more.
+             */
+			uint8_t axis;
+
+			/**
+             * The value of the axis. Ranges from -32767-32767.
+             */
+			int16_t value;
+
+			/**
+             * The device ID of the game controller.
+             */
+			int32_t device;
+
+		};
+
+	}
 
 }
 

@@ -22,38 +22,42 @@
 #define AE_CONTROLLERBUTTON_GUIDE 			SDL_CONTROLLER_BUTTON_GUIDE
 #define AE_CONTROLLERBUTTON_START 			SDL_CONTROLLER_BUTTON_START
 
-namespace Events {
+namespace Atlas {
 
-	/**
-	 * A class to distribute controller button events.
-	 */
-	class ControllerButtonEvent {
-
-	public:
-		ControllerButtonEvent(SDL_ControllerButtonEvent event) {
-
-			button = event.button;
-			state = event.state;
-			device = event.which;
-
-		}
+	namespace Events {
 
 		/**
-         * The button which was pressed on the controller. See {@link EngineControllerButtonEvent.h} for more.
+         * A class to distribute controller button events.
          */
-		uint8_t button;
+		class ControllerButtonEvent {
 
-		/**
-         * The state of the button. Might be BUTTON_PRESSED or BUTTON_RELEASED.
-         */
-		uint8_t state;
+		public:
+			ControllerButtonEvent(SDL_ControllerButtonEvent event) {
 
-		/**
-         * The device ID of the game controller.
-         */
-		int32_t device;
+				button = event.button;
+				state = event.state;
+				device = event.which;
 
-	};
+			}
+
+			/**
+             * The button which was pressed on the controller. See {@link EngineControllerButtonEvent.h} for more.
+             */
+			uint8_t button;
+
+			/**
+             * The state of the button. Might be BUTTON_PRESSED or BUTTON_RELEASED.
+             */
+			uint8_t state;
+
+			/**
+             * The device ID of the game controller.
+             */
+			int32_t device;
+
+		};
+
+	}
 
 }
 

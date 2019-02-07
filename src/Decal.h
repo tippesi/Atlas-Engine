@@ -4,23 +4,26 @@
 #include "System.h"
 #include "texture/Texture2D.h"
 
-class Decal {
+namespace Atlas {
 
-public:
-    Decal(Texture2D* texture, float rowCount = 1.0f, float columnCount = 1.0f, float animationLength = 1.0f)
-        : texture(texture), rowCount(rowCount), columnCount(columnCount), animationLength(animationLength) {}
+	class Decal {
 
-    Texture2D* texture;
+	public:
+		Decal(Texture2D *texture, float rowCount = 1.0f, float columnCount = 1.0f, float animationLength = 1.0f)
+				: texture(texture), rowCount(rowCount), columnCount(columnCount), animationLength(animationLength) {}
 
-    float rowCount;
-    float columnCount;
-    float animationLength;
+		Texture2D *texture;
 
-    mat4 matrix;
+		float rowCount;
+		float columnCount;
+		float animationLength;
 
-	vec4 color = vec4(1.0f);
+		mat4 matrix;
 
-};
+		vec4 color = vec4(1.0f);
 
+	};
+
+}
 
 #endif

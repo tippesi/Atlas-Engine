@@ -10,36 +10,39 @@
 #define AE_GEOMETRY_RENDERLIST 0
 #define AE_SHADOW_RENDERLIST  1
 
-typedef struct RenderListBatch {
+namespace Atlas {
 
-	MeshActorBatch* meshActorBatch;
-	std::vector<MeshSubData*> subData;
+	typedef struct RenderListBatch {
 
-}RenderListBatch;
+		MeshActorBatch *meshActorBatch;
+		std::vector<MeshSubData *> subData;
+
+	} RenderListBatch;
 
 
-class RenderList {
+	class RenderList {
 
-public:
-	RenderList(int32_t type, int32_t mobility);
+	public:
+		RenderList(int32_t type, int32_t mobility);
 
-	void Add(MeshActor* actor);
+		void Add(MeshActor *actor);
 
-	void Add(ILight* light);
+		void Add(ILight *light);
 
-	void RemoveMesh(Mesh* mesh);
+		void RemoveMesh(Mesh *mesh);
 
-	void Clear();
-	
-	std::vector<ILight*> lights;
-	std::map<Mesh*, MeshActorBatch*> actorBatches;
-	std::map<int32_t, std::vector<RenderListBatch>> orderedRenderBatches;
+		void Clear();
 
-private:
-	int32_t type;
-	int32_t mobility;
+		std::vector<ILight *> lights;
+		std::map<Mesh *, MeshActorBatch *> actorBatches;
+		std::map<int32_t, std::vector<RenderListBatch>> orderedRenderBatches;
 
-};
+	private:
+		int32_t type;
+		int32_t mobility;
 
+	};
+
+}
 
 #endif

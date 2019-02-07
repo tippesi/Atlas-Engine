@@ -6,40 +6,44 @@
 
 #include <SDL/include/SDL.h>
 
-namespace Events {
+namespace Atlas {
 
-	/**
-	 * A class to distribute mouse wheel events.
-	 */
-	class MouseWheelEvent {
-
-	public:
-		MouseWheelEvent(SDL_MouseWheelEvent event) {
-
-			windowID = event.windowID;
-			x = event.x;
-			y = event.y;
-
-		}
+	namespace Events {
 
 		/**
-         * The ID of the window the event occurred in
+         * A class to distribute mouse wheel events.
          */
-		uint32_t windowID;
+		class MouseWheelEvent {
 
-		/**
-         * Horizontal scrolling, is positive when scrolling to
-         * the right and negative otherwise
-         */
-		int32_t x;
+		public:
+			MouseWheelEvent(SDL_MouseWheelEvent event) {
 
-		/**
-         * Vertical scrolling, is positive when scrolling to
-         * the up and negative otherwise
-         */
-		int32_t y;
+				windowID = event.windowID;
+				x = event.x;
+				y = event.y;
 
-	};
+			}
+
+			/**
+             * The ID of the window the event occurred in
+             */
+			uint32_t windowID;
+
+			/**
+             * Horizontal scrolling, is positive when scrolling to
+             * the right and negative otherwise
+             */
+			int32_t x;
+
+			/**
+             * Vertical scrolling, is positive when scrolling to
+             * the up and negative otherwise
+             */
+			int32_t y;
+
+		};
+
+	}
 
 }
 

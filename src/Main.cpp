@@ -33,26 +33,26 @@ Main::Main(int argc, char* argv[]) {
 
 	// Register quit event
 	auto quitEventHandler = std::bind(&Main::QuitEventHandler, this);
-    Events::EventHandler::QuitEventDelegate.Subscribe(quitEventHandler);
+    Atlas::Events::EventManager::QuitEventDelegate.Subscribe(quitEventHandler);
 
 	auto controllerDeviceEventHandler = std::bind(&Main::ControllerDeviceEventHandler, this, std::placeholders::_1);
-    Events::EventHandler::ControllerDeviceEventDelegate.Subscribe(controllerDeviceEventHandler);
+    Atlas::Events::EventManager::ControllerDeviceEventDelegate.Subscribe(controllerDeviceEventHandler);
 
 	auto mouseButtonEventHandler = std::bind(&Main::MouseButtonEventHandler, this, std::placeholders::_1);
-    Events::EventHandler::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
+    Atlas::Events::EventManager::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
 	camera = new Camera(47.0f, 2.0f, .25f, 4000.0f);
 	camera->location = vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = vec2(-3.14f / 2.0f, 0.0f);
 
-	mouseHandler = new MouseHandler(camera, 1.5f, 0.015f);
-	keyboardHandler = new KeyboardHandler(camera, 7.0f, 0.3f);
-	controllerHandler = new ControllerHandler(camera, 1.5f, 7.0f, 0.2f, 5000.0f);
+	mouseHandler = new Atlas::Input::MouseHandler(camera, 1.5f, 0.015f);
+	keyboardHandler = new Atlas::Input::KeyboardHandler(camera, 7.0f, 0.3f);
+	controllerHandler = new Atlas::Input::ControllerHandler(camera, 1.5f, 7.0f, 0.2f, 5000.0f);
 
 	masterRenderer = new MasterRenderer();
 
 #ifndef AE_OS_ANDROID
-	renderTarget = new RenderTarget(1920, 1080);
+	renderTarget = new Atlas::RenderTarget(1920, 1080);
 #else
     renderTarget = new RenderTarget(1280, 720);
 #endif
@@ -222,7 +222,7 @@ void Main::DisplayLoadingScreen() {
 
 void Main::SceneSetUp() {
 
-	scene = new Scene();
+	scene = new Atlas::Scene();
 
 	/*
 	Image image = ImageLoader::LoadImage("terrain/heightfield.png", false, 1);
@@ -265,7 +265,7 @@ void Main::SceneSetUp() {
 
 	// scene->Add(decal);
 
-	SceneNode* node = new SceneNode();
+	auto node = new Atlas::SceneNode();
 	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
 	scene->rootNode->Add(node);
 	scene->sky->skybox = new Skybox(skybox);
@@ -333,7 +333,7 @@ void Main::QuitEventHandler() {
 
 }
 
-void Main::ControllerDeviceEventHandler(Events::ControllerDeviceEvent event) {
+void Main::ControllerDeviceEventHandler(Atlas::Events::ControllerDeviceEvent event) {
 
 	if (event.type == AE_CONTROLLER_ADDED) {
 		useControllerHandler = true;
@@ -344,7 +344,7 @@ void Main::ControllerDeviceEventHandler(Events::ControllerDeviceEvent event) {
 
 }
 
-void Main::MouseButtonEventHandler(Events::MouseButtonEvent event) {
+void Main::MouseButtonEventHandler(Atlas::Events::MouseButtonEvent event) {
 
 	if (event.button == AE_MOUSEBUTTON_RIGHT && event.state == AE_BUTTON_RELEASED) {
 

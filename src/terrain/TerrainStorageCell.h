@@ -6,30 +6,38 @@
 
 #include <vector>
 
-/**
- * Stores the material information for a terrain node.
- * Only LoD0 uses a splatmap and the materials
- */
-class TerrainStorageCell {
+namespace Atlas {
 
-public:
-	TerrainStorageCell();
+	namespace Terrain {
 
-	bool IsLoaded();
+		/**
+		 * Stores the material information for a terrain node.
+		 * Only LoD0 uses a splatmap and the materials
+		 */
+		class TerrainStorageCell {
 
-	int32_t x;
-	int32_t y;
-	int32_t LoD;
+		public:
+			TerrainStorageCell();
 
-	vec2 position;
+			bool IsLoaded();
 
-	std::vector<float> heightData;
+			int32_t x;
+			int32_t y;
+			int32_t LoD;
 
-	Texture2D* heightField;
-	Texture2D* normalMap;
-	Texture2D* diffuseMap;
-	Texture2D* displacementMap;
+			vec2 position;
 
-};
+			std::vector<float> heightData;
+
+			Texture::Texture2D* heightField;
+			Texture::Texture2D* normalMap;
+			Texture::Texture2D* diffuseMap;
+			Texture::Texture2D* displacementMap;
+
+		};
+
+	}
+
+}
 
 #endif

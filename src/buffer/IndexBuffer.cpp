@@ -1,32 +1,40 @@
 #include "IndexBuffer.h"
 
-IndexBuffer::IndexBuffer(uint32_t dataType, size_t elementSize, size_t elementCount) :
-    Buffer(AE_INDEX_BUFFER, elementSize, AE_BUFFER_IMMUTABLE), dataType(dataType) {
+namespace Atlas {
 
-	SetSize(elementCount);
+    namespace Buffer {
 
-}
+        IndexBuffer::IndexBuffer(uint32_t dataType, size_t elementSize, size_t elementCount) :
+                Buffer(AE_INDEX_BUFFER, elementSize, AE_BUFFER_IMMUTABLE), dataType(dataType) {
 
-IndexBuffer::~IndexBuffer() {
+            SetSize(elementCount);
+
+        }
+
+        IndexBuffer::~IndexBuffer() {
 
 
 
-}
+        }
 
-void IndexBuffer::SetData(void *data, size_t offset, size_t length) {
+        void IndexBuffer::SetData(void *data, size_t offset, size_t length) {
 
-    auto stagingBuffer = Buffer(AE_STAGING_BUFFER, elementSize, AE_BUFFER_DYNAMIC_STORAGE);
-    stagingBuffer.SetSize(length);
+            auto stagingBuffer = Buffer(AE_STAGING_BUFFER, elementSize, AE_BUFFER_DYNAMIC_STORAGE);
+            stagingBuffer.SetSize(length);
 
-    // We don't need to bind because it is already bound by previous operations
-    stagingBuffer.SetData(data, 0, length);
+            // We don't need to bind because it is already bound by previous operations
+            stagingBuffer.SetData(data, 0, length);
 
-    Copy(&stagingBuffer, 0, offset * elementSize, length * elementSize);
+            Copy(&stagingBuffer, 0, offset * elementSize, length * elementSize);
 
-}
+        }
 
-uint32_t IndexBuffer::GetDataType() {
+        uint32_t IndexBuffer::GetDataType() {
 
-    return dataType;
+            return dataType;
+
+        }
+
+    }
 
 }

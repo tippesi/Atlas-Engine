@@ -3,40 +3,48 @@
 
 #include "../System.h"
 #include "../Camera.h"
-#include "../events/EventHandler.h"
+#include "events/EventManager.h"
 
-class MouseHandler {
+namespace Atlas {
 
-public:
-	MouseHandler(Camera* camera, float sensibility, float reactivity, bool hideMouse = false);
+	namespace Input {
 
-	void Update(Camera* camera, uint32_t deltaTime);
+		class MouseHandler {
 
-	void SetActivationButton(uint8_t mouseButton);
+		public:
+			MouseHandler(Camera* camera, float sensibility, float reactivity, bool hideMouse = false);
 
-	void HideMouse();
+			void Update(Camera* camera, uint32_t deltaTime);
 
-	void ShowMouse();
+			void SetActivationButton(uint8_t mouseButton);
 
-	float sensibility;
-	float reactivity;
+			void HideMouse();
 
-	bool lock;
-	bool hideMouse;
+			void ShowMouse();
 
-private:
-	void MouseMotionEventHandler(Events::MouseMotionEvent event);
-	void MouseButtonEventHandler(Events::MouseButtonEvent event);
+			float sensibility;
+			float reactivity;
 
-	bool activationButtonDown;
-	uint8_t activationButton;
+			bool lock;
+			bool hideMouse;
 
-	//If the camera gets changed, the rotation should be updated by the user
-	glm::vec2 rotation;
+		private:
+			void MouseMotionEventHandler(Events::MouseMotionEvent event);
+			void MouseButtonEventHandler(Events::MouseButtonEvent event);
 
-	glm::vec2 lastMousePosition;
-	glm::vec2 mousePosition;
+			bool activationButtonDown;
+			uint8_t activationButton;
 
-};
+			//If the camera gets changed, the rotation should be updated by the user
+			glm::vec2 rotation;
+
+			glm::vec2 lastMousePosition;
+			glm::vec2 mousePosition;
+
+		};
+
+	}
+
+}
 
 #endif

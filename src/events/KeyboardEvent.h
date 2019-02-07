@@ -7,44 +7,48 @@
 
 #include <SDL/include/SDL.h>
 
-namespace Events {
+namespace Atlas {
 
-	/**
-	 * A class to distribute keyboard events.
-	 */
-	class KeyboardEvent {
-
-	public:
-		KeyboardEvent(SDL_KeyboardEvent event) {
-
-			windowID = event.windowID;
-			keycode = event.keysym.sym;
-			state = event.state;
-			repeat = event.repeat > 0 ? true : false;
-
-		}
+	namespace Events {
 
 		/**
-         * The ID of the window the event occurred in.
+         * A class to distribute keyboard events.
          */
-		uint32_t windowID;
+		class KeyboardEvent {
 
-		/**
-         * The code of the key. See {@link EngineKeycodes.h} for more.
-         */
-		Keycode keycode;
+		public:
+			KeyboardEvent(SDL_KeyboardEvent event) {
 
-		/**
-         * The state of the button. Might be BUTTON_PRESSED or BUTTON_RELEASED.
-         */
-		uint8_t state;
+				windowID = event.windowID;
+				keycode = event.keysym.sym;
+				state = event.state;
+				repeat = event.repeat > 0 ? true : false;
 
-		/**
-         * True if the key was pressed for longer. False otherwise.
-         */
-		bool repeat;
+			}
 
-	};
+			/**
+             * The ID of the window the event occurred in.
+             */
+			uint32_t windowID;
+
+			/**
+             * The code of the key. See {@link EngineKeycodes.h} for more.
+             */
+			Keycode keycode;
+
+			/**
+             * The state of the button. Might be BUTTON_PRESSED or BUTTON_RELEASED.
+             */
+			uint8_t state;
+
+			/**
+             * True if the key was pressed for longer. False otherwise.
+             */
+			bool repeat;
+
+		};
+
+	}
 
 }
 

@@ -64,62 +64,70 @@
 #define AE_DEPTH32F GL_DEPTH_COMPONENT32F
 #endif
 
-class TextureFormat {
+namespace Atlas {
 
-public:
+    namespace Texture {
 
-    /**
-     * Determines the base format of a sized format.
-     * @param sizedFormat The sized format, e.g GL_RGB16F
-     * @return The base format as an integer, e.g GL_RGB
-     */
-    static int32_t GetBaseFormat(int32_t sizedFormat) {
-        switch (sizedFormat) {
-            case AE_R8: return AE_R;
-            case AE_R8I: return AE_R_INT;
-            case AE_R8UI: return AE_R_INT;
-            case AE_R16F: return AE_R;
-            case AE_R16I: return AE_R_INT;
-            case AE_R16UI: return AE_R_INT;
-            case AE_R32F: return AE_R;
-            case AE_R32I: return AE_R_INT;
-            case AE_R32UI: return AE_R_INT;
-            case AE_RG8: return AE_RG;
-            case AE_RG8I: return AE_RG_INT;
-            case AE_RG8UI: return AE_RG_INT;
-            case AE_RG16F: return AE_RG;
-            case AE_RG16I: return AE_RG_INT;
-            case AE_RG16UI: return AE_RG_INT;
-            case AE_RG32F: return AE_RG;
-            case AE_RG32I: return AE_RG_INT;
-            case AE_RG32UI: return AE_RG_INT;
-            case AE_RGB8: return AE_RGB;
-            case AE_RGB8I: return AE_RGB_INT;
-            case AE_RGB8UI: return AE_RGB_INT;
-            case AE_RGB16F: return AE_RGB;
-            case AE_RGB16I: return AE_RGB_INT;
-            case AE_RGB16UI: return AE_RGB_INT;
-            case AE_RGB32F: return AE_RGB;
-            case AE_RGB32I: return AE_RGB_INT;
-            case AE_RGB32UI: return AE_RGB_INT;
-            case AE_SRGB8: return AE_RGB;
-            case AE_RGBA8: return AE_RGBA;
-            case AE_RGBA8I: return AE_RGBA_INT;
-            case AE_RGBA8UI: return AE_RGBA_INT;
-            case AE_RGBA16F: return AE_RGBA;
-            case AE_RGBA16I: return AE_RGBA_INT;
-            case AE_RGBA16UI: return AE_RGBA_INT;
-            case AE_RGBA32F: return AE_RGBA;
-            case AE_RGBA32I: return AE_RGBA_INT;
-            case AE_RGBA32UI: return AE_RGBA_INT;
-            case AE_SRGBA8: return AE_RGBA;
-            case AE_DEPTH16: return AE_DEPTH;
-            case AE_DEPTH24: return AE_DEPTH;
-            case AE_DEPTH32F: return AE_DEPTH;
-            default: return AE_RGB;
-        }
+        class TextureFormat {
+
+        public:
+
+            /**
+             * Determines the base format of a sized format.
+             * @param sizedFormat The sized format, e.g GL_RGB16F
+             * @return The base format as an integer, e.g GL_RGB
+             */
+            static int32_t GetBaseFormat(int32_t sizedFormat) {
+                switch (sizedFormat) {
+                    case AE_R8: return AE_R;
+                    case AE_R8I: return AE_R_INT;
+                    case AE_R8UI: return AE_R_INT;
+                    case AE_R16F: return AE_R;
+                    case AE_R16I: return AE_R_INT;
+                    case AE_R16UI: return AE_R_INT;
+                    case AE_R32F: return AE_R;
+                    case AE_R32I: return AE_R_INT;
+                    case AE_R32UI: return AE_R_INT;
+                    case AE_RG8: return AE_RG;
+                    case AE_RG8I: return AE_RG_INT;
+                    case AE_RG8UI: return AE_RG_INT;
+                    case AE_RG16F: return AE_RG;
+                    case AE_RG16I: return AE_RG_INT;
+                    case AE_RG16UI: return AE_RG_INT;
+                    case AE_RG32F: return AE_RG;
+                    case AE_RG32I: return AE_RG_INT;
+                    case AE_RG32UI: return AE_RG_INT;
+                    case AE_RGB8: return AE_RGB;
+                    case AE_RGB8I: return AE_RGB_INT;
+                    case AE_RGB8UI: return AE_RGB_INT;
+                    case AE_RGB16F: return AE_RGB;
+                    case AE_RGB16I: return AE_RGB_INT;
+                    case AE_RGB16UI: return AE_RGB_INT;
+                    case AE_RGB32F: return AE_RGB;
+                    case AE_RGB32I: return AE_RGB_INT;
+                    case AE_RGB32UI: return AE_RGB_INT;
+                    case AE_SRGB8: return AE_RGB;
+                    case AE_RGBA8: return AE_RGBA;
+                    case AE_RGBA8I: return AE_RGBA_INT;
+                    case AE_RGBA8UI: return AE_RGBA_INT;
+                    case AE_RGBA16F: return AE_RGBA;
+                    case AE_RGBA16I: return AE_RGBA_INT;
+                    case AE_RGBA16UI: return AE_RGBA_INT;
+                    case AE_RGBA32F: return AE_RGBA;
+                    case AE_RGBA32I: return AE_RGBA_INT;
+                    case AE_RGBA32UI: return AE_RGBA_INT;
+                    case AE_SRGBA8: return AE_RGBA;
+                    case AE_DEPTH16: return AE_DEPTH;
+                    case AE_DEPTH24: return AE_DEPTH;
+                    case AE_DEPTH32F: return AE_DEPTH;
+                    default: return AE_RGB;
+                }
+            }
+
+        };
+
     }
 
-};
+}
 
 #endif

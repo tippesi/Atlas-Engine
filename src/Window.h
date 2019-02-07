@@ -6,7 +6,7 @@
 #include "texture/Texture2D.h"
 
 #include "events/EventDelegate.h"
-#include "events/EventHandler.h"
+#include "events/EventManager.h"
 
 #include <SDL/include/SDL.h>
 
@@ -21,125 +21,136 @@
 #define AE_WINDOW_MAXIMIZED		SDL_WINDOW_MAXIMIZED
 #define AE_WINDOW_HIGH_DPI		SDL_WINDOW_ALLOW_HIGHDPI
 
-/**
- * A simple window class.
- */
-class Window {
-
-public:
-	/**
-	 * Creates a window object
-	 * @param title The title of the window
-	 * @param x The x position of the window on the screen in pixels
-	 * @param y The y position of the window on the screen in pixels
-	 * @param width The width of the window in pixels
-	 * @param height The height of the window in pixels
-	 * @param flags Window flags. See {@link Window.h} for more.
-	 */
-	Window(std::string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags = AE_WINDOW_FULLSCREEN);
+namespace Atlas {
 
 	/**
-	 * Returns the ID of the window.
-	 * @return
-	 * @note The window ID is important to filter the SystemEvents which
-	 * are just generated for a specific window
+ 	 * A simple window class.
 	 */
-	uint32_t GetID();
+	class Window {
 
-	/**
-	 * Sets the title of the window.
-	 * @param title The title string
-	 */
-	void SetTitle(std::string title);
+	public:
+		/**
+         * Creates a window object
+         * @param title The title of the window
+         * @param x The x position of the window on the screen in pixels
+         * @param y The y position of the window on the screen in pixels
+         * @param width The width of the window in pixels
+         * @param height The height of the window in pixels
+         * @param flags Window flags. See {@link Window.h} for more.
+         */
+		Window(std::string title, int32_t x, int32_t y, int32_t width, int32_t height,
+			   int32_t flags = AE_WINDOW_FULLSCREEN);
 
-	/**
-	 * Sets the icon of the window.
-	 * @param icon A pointer to a Texture object
-	 */
-	void SetIcon(Texture2D* icon);
+		/**
+         * Returns the ID of the window.
+         * @return
+         * @note The window ID is important to filter the SystemEvents which
+         * are just generated for a specific window
+         */
+		uint32_t GetID();
 
-	/**
-	 * Resets the position of the window to the given screen coordinates.
-	 * @param x The x position of the window on the screen in pixels
-	 * @param y The y position of the window on the screen in pixels
-	 */
-	void SetPosition(int32_t x, int32_t y);
+		/**
+         * Sets the title of the window.
+         * @param title The title string
+         */
+		void SetTitle(std::string title);
 
-	/**
-	 * Returns the position of the window.
-	 * @param x A pointer to an integer where the x value will be written into
-	 * @param y A pointer to an integer where the y value will be written into
-	 */
-	void GetPosition(int32_t* x, int32_t* y);
+		/**
+         * Sets the icon of the window.
+         * @param icon A pointer to a Texture object
+         */
+		void SetIcon(Texture2D *icon);
 
-	/**
-	 * Resets the size of the window to the given values.
-	 * @param width The width of the window in pixels
-	 * @param height The height of the window in pixels
-	 */
-	void SetSize(int32_t width, int32_t height);
+		/**
+         * Resets the position of the window to the given screen coordinates.
+         * @param x The x position of the window on the screen in pixels
+         * @param y The y position of the window on the screen in pixels
+         */
+		void SetPosition(int32_t x, int32_t y);
 
-	/**
-	 * Returns the size of the window.
-	 * @param width A pointer to an integer where the width value will be written into
-	 * @param height A pointer to an integer where the height value will be written into
-	 */
-	void GetSize(int32_t* width, int32_t* height);
+		/**
+         * Returns the position of the window.
+         * @param x A pointer to an integer where the x value will be written into
+         * @param y A pointer to an integer where the y value will be written into
+         */
+		void GetPosition(int32_t *x, int32_t *y);
 
-	/**
-	 * Shows the window if the window was hidden
-	 */
-	void Show();
+		/**
+         * Resets the size of the window to the given values.
+         * @param width The width of the window in pixels
+         * @param height The height of the window in pixels
+         */
+		void SetSize(int32_t width, int32_t height);
 
-	/**
-	 * Hides the window if the window was shown.
-	 */
-	void Hide();
+		/**
+         * Returns the size of the window.
+         * @param width A pointer to an integer where the width value will be written into
+         * @param height A pointer to an integer where the height value will be written into
+         */
+		void GetSize(int32_t *width, int32_t *height);
 
-	/**
-	 * Updates the window events and the rendering surface.
-	 */
-	void Update();
+		/**
+         * Shows the window if the window was hidden
+         */
+		void Show();
 
-	/**
-	 * Clears the rendering surface of the window.
-	 */
-	void Clear(vec3 color = vec3(0.0f));
+		/**
+         * Hides the window if the window was shown.
+         */
+		void Hide();
 
-	~Window();
+		/**
+         * Updates the window events and the rendering surface.
+         */
+		void Update();
 
-	Viewport* viewport;
+		/**
+         * Clears the rendering surface of the window.
+         */
+		void Clear(vec3 color = vec3(0.0f));
 
-	Events::EventDelegate<Events::WindowEvent> windowEventDelegate;
-	Events::EventDelegate<Events::KeyboardEvent> keyboardEventDelegate;
-	Events::EventDelegate<Events::MouseButtonEvent> mouseButtonEventDelegate;
-	Events::EventDelegate<Events::MouseMotionEvent> mouseMotionEventDelegate;
-	Events::EventDelegate<Events::MouseWheelEvent> mouseWheelEventDelegate;
-	Events::EventDelegate<Events::ControllerAxisEvent> controllerAxisEventDelegate;
-	Events::EventDelegate<Events::ControllerButtonEvent> controllerButtonEventDelegate;
+		~Window();
 
-private:
-	void WindowEventHandler(Events::WindowEvent event);
-	void KeyboardEventHandler(Events::KeyboardEvent event);
-	void MouseButtonEventHandler(Events::MouseButtonEvent event);
-	void MouseMotionEventHandler(Events::MouseMotionEvent event);
-	void MouseWheelEventHandler(Events::MouseWheelEvent event);
-	void ControllerAxisEventHandler(Events::ControllerAxisEvent event);
-	void ControllerButtonEventHandler(Events::ControllerButtonEvent event);
+		Viewport *viewport;
 
-	uint32_t ID;
+		Events::EventDelegate<Events::WindowEvent> windowEventDelegate;
+		Events::EventDelegate<Events::KeyboardEvent> keyboardEventDelegate;
+		Events::EventDelegate<Events::MouseButtonEvent> mouseButtonEventDelegate;
+		Events::EventDelegate<Events::MouseMotionEvent> mouseMotionEventDelegate;
+		Events::EventDelegate<Events::MouseWheelEvent> mouseWheelEventDelegate;
+		Events::EventDelegate<Events::ControllerAxisEvent> controllerAxisEventDelegate;
+		Events::EventDelegate<Events::ControllerButtonEvent> controllerButtonEventDelegate;
 
-	SDL_Window * sdlWindow;
-	SDL_GLContext context;
+	private:
+		void WindowEventHandler(Events::WindowEvent event);
 
-	int32_t x;
-	int32_t y;
+		void KeyboardEventHandler(Events::KeyboardEvent event);
 
-	int32_t width;
-	int32_t height;
+		void MouseButtonEventHandler(Events::MouseButtonEvent event);
 
-	bool hasFocus;
+		void MouseMotionEventHandler(Events::MouseMotionEvent event);
 
-};
+		void MouseWheelEventHandler(Events::MouseWheelEvent event);
+
+		void ControllerAxisEventHandler(Events::ControllerAxisEvent event);
+
+		void ControllerButtonEventHandler(Events::ControllerButtonEvent event);
+
+		uint32_t ID;
+
+		SDL_Window *sdlWindow;
+		SDL_GLContext context;
+
+		int32_t x;
+		int32_t y;
+
+		int32_t width;
+		int32_t height;
+
+		bool hasFocus;
+
+	};
+
+}
 
 #endif

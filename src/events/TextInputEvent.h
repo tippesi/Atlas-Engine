@@ -8,38 +8,42 @@
 
 #include <SDL/include/SDL.h>
 
-namespace Events {
+namespace Atlas {
 
-	/**
-	 * A class to distribute text input events.
-	 */
-	class TextInputEvent {
+	namespace Events {
 
-	public:
-		TextInputEvent(SDL_TextInputEvent event) {
+		/**
+         * A class to distribute text input events.
+         */
+		class TextInputEvent {
 
-			windowID = event.windowID;
+		public:
+			TextInputEvent(SDL_TextInputEvent event) {
 
-			char *text = event.text;
+				windowID = event.windowID;
 
-			while (*text != '\0') {
-				character.push_back(*text);
-				text++;
+				char *text = event.text;
+
+				while (*text != '\0') {
+					character.push_back(*text);
+					text++;
+				}
+
 			}
 
-		}
+			/**
+             * The ID of the window the event occurred in.
+             */
+			uint32_t windowID;
 
-		/**
-         * The ID of the window the event occurred in.
-         */
-		uint32_t windowID;
+			/**
+             * The character that was typed in UTF-8.
+             */
+			std::string character;
 
-		/**
-         * The character that was typed in UTF-8.
-         */
-		std::string character;
+		};
 
-	};
+	}
 
 }
 

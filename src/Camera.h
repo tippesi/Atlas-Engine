@@ -4,78 +4,83 @@
 #include "System.h"
 #include <vector>
 
-/**
- * Used to represent a camera in the engine.
- * In third person mode the camera location represents the point the camera looks at while
- * in first person mode the camera is at the actual location.
- */
-class Camera {
+namespace Atlas {
 
-public:
 	/**
-	 * Constructs a Camera object.
-	 * @param fieldOfView The field of view in degrees.
-	 * @param aspectRatio The ratio of the image width to the image height.
-	 * @param nearPlane The plane where the camera starts to render.
-	 * @param farPlane The plane where the camera stops to render.
-	 * @param location The location of the camera.
-	 * @param rotation The rotation of the camera, where .X is the horizontal and .Y the vertical rotation.
+	 * Used to represent a camera in the engine.
+	 * In third person mode the camera location represents the point the camera looks at while
+	 * in first person mode the camera is at the actual location.
 	 */
-	Camera(float fieldOfView, float aspectRatio, float nearPlane, float farPlane, glm::vec3 location = vec3(0.0f), vec2 rotation = vec2(0.0f));
+	class Camera {
 
-	/**
-	* Destructs a Camera object.
-	*/
-	~Camera();
+	public:
+		/**
+         * Constructs a Camera object.
+         * @param fieldOfView The field of view in degrees.
+         * @param aspectRatio The ratio of the image width to the image height.
+         * @param nearPlane The plane where the camera starts to render.
+         * @param farPlane The plane where the camera stops to render.
+         * @param location The location of the camera.
+         * @param rotation The rotation of the camera, where .X is the horizontal and .Y the vertical rotation.
+         */
+		Camera(float fieldOfView, float aspectRatio, float nearPlane, float farPlane, glm::vec3 location = vec3(0.0f),
+			   vec2 rotation = vec2(0.0f));
 
-	/**
-	 * Calculates the view matrix based on the location and rotation of the camera.
-	 */
-	void UpdateView();
+		/**
+        * Destructs a Camera object.
+        */
+		~Camera();
 
-	/**
-	 * Calculates the perspective matrix based on the FoV, the aspect ratio and the near and far plane.
-	 */
-	void UpdateProjection();
+		/**
+         * Calculates the view matrix based on the location and rotation of the camera.
+         */
+		void UpdateView();
 
-	/**
-	 * Calculates the view frustum corners in world space.
-	 * @param nearPlane The near plane where the corners should be calculated.
-	 * @param farPlane The far plane where the corners should be calculated.
-	 * @return A vector where the corners are stored.
-	 */
-	std::vector<vec3> GetFrustumCorners(float nearPlane, float farPlane);
+		/**
+         * Calculates the perspective matrix based on the FoV, the aspect ratio and the near and far plane.
+         */
+		void UpdateProjection();
 
-	typedef struct Frustum {
-		vec4 planes[6];
-	}Frustum;
+		/**
+         * Calculates the view frustum corners in world space.
+         * @param nearPlane The near plane where the corners should be calculated.
+         * @param farPlane The far plane where the corners should be calculated.
+         * @return A vector where the corners are stored.
+         */
+		std::vector<vec3> GetFrustumCorners(float nearPlane, float farPlane);
 
-	vec3 location;
-	vec2 rotation;
+		typedef struct Frustum {
+			vec4 planes[6];
+		} Frustum;
 
-	float fieldOfView;
-	float aspectRatio;
-	float nearPlane;
-	float farPlane;
+		vec3 location;
+		vec2 rotation;
 
-	bool thirdPerson;
-	float thirdPersonDistance;
+		float fieldOfView;
+		float aspectRatio;
+		float nearPlane;
+		float farPlane;
 
-	vec3 direction;
-	vec3 up;
-	vec3 right;
+		bool thirdPerson;
+		float thirdPersonDistance;
 
-	mat4 viewMatrix;
-	mat4 projectionMatrix;
+		vec3 direction;
+		vec3 up;
+		vec3 right;
 
-	mat4 inverseViewMatrix;
-	mat4 inverseProjectionMatrix;
+		mat4 viewMatrix;
+		mat4 projectionMatrix;
 
-	Frustum frustum;
+		mat4 inverseViewMatrix;
+		mat4 inverseProjectionMatrix;
 
-private:
-	void CalculateFrustum();
+		Frustum frustum;
 
-};
+	private:
+		void CalculateFrustum();
+
+	};
+
+}
 
 #endif

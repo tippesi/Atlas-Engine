@@ -5,73 +5,80 @@
 
 #include <vector>
 
-/**
- * Manages the memory safety of shared memory between driver and engine.
- * Thanks to John McDonald: https://github.com/nvMcJohn/apitest
- */
-class BufferLock {
+namespace Atlas {
 
-public:
-    BufferLock();
+    namespace Buffer {
 
-    /**
-     * Waits until the range is free to use again.
-     * @param offset The offset in bytes
-     * @param length The length in bytes
-     * @note To improve this use multiple buffering
-     */
-    void WaitForLockedRange(size_t offset, size_t length);
+        /**
+         * Manages the memory safety of shared memory between driver and engine.
+         * Thanks to John McDonald: https://github.com/nvMcJohn/apitest
+         */
+        class BufferLock {
 
-    /**
-     * Locks the range
-     * @param offset The offset in bytes
-     * @param length The length in bytes
-     */
-    void LockRange(size_t offset, size_t length);
+        public:
+            BufferLock();
 
-    ~BufferLock();
+            /**
+             * Waits until the range is free to use again.
+             * @param offset The offset in bytes
+             * @param length The length in bytes
+             * @note To improve this use multiple buffering
+             */
+            void WaitForLockedRange(size_t offset, size_t length);
 
-private:
-    /**
-     * Represents a part of the memory which is locked
-     */
-    struct LockRange {
+            /**
+             * Locks the range
+             * @param offset The offset in bytes
+             * @param length The length in bytes
+             */
+            void LockRange(size_t offset, size_t length);
 
-        size_t offset;
-        size_t length;
+            ~BufferLock();
 
-        bool Overlaps(LockRange& range) {
-            return offset < range.offset + range.length
-                   && range.offset < offset + length;
-        }
+        private:
+            /**
+             * Represents a part of the memory which is locked
+             */
+            struct LockRange {
 
-    };
+                size_t offset;
+                size_t length;
 
-    /**
-     * A lock for a specific range
-     */
-    struct Lock {
+                bool Overlaps(LockRange& range) {
+                    return offset < range.offset + range.length
+                           && range.offset < offset + length;
+                }
 
-        struct LockRange range;
-        GLsync sync;
+            };
 
-    };
+            /**
+             * A lock for a specific range
+             */
+            struct Lock {
 
-    /**
-     * Waits until the fence is reached by the driver
-     * @param sync The OpenGL sync object.
-     */
-    void Wait(GLsync& sync);
+                struct LockRange range;
+                GLsync sync;
 
-    /**
-     * Cleans up the lock and fence.
-     * @param lock The lock to be cleaned up
-     */
-    void Cleanup(Lock& lock);
+            };
 
-    std::vector<Lock> locks;
+            /**
+             * Waits until the fence is reached by the driver
+             * @param sync The OpenGL sync object.
+             */
+            void Wait(GLsync& sync);
 
-};
+            /**
+             * Cleans up the lock and fence.
+             * @param lock The lock to be cleaned up
+             */
+            void Cleanup(Lock& lock);
 
+            std::vector<Lock> locks;
+
+        };
+
+    }
+
+}
 
 #endif

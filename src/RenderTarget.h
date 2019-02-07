@@ -4,28 +4,32 @@
 #include "System.h"
 #include "Framebuffer.h"
 
-class RenderTarget {
+namespace Atlas {
 
-public:
-	///
-	/// \param width
-	/// \param height
-	RenderTarget(int32_t width, int32_t height);
+	class RenderTarget {
 
-	///
-	/// \param width
-	/// \param height
-	void Resize(int32_t width, int32_t height);
+	public:
+		///
+		/// \param width
+		/// \param height
+		RenderTarget(int32_t width, int32_t height);
 
-	~RenderTarget();
+		///
+		/// \param width
+		/// \param height
+		void Resize(int32_t width, int32_t height);
 
-	Framebuffer* geometryFramebuffer;
-	Framebuffer* lightingFramebuffer;
+		~RenderTarget();
 
-	int32_t width;
-	int32_t height;
+		Framebuffer *geometryFramebuffer;
+		Framebuffer *lightingFramebuffer;
 
-};
+		int32_t width;
+		int32_t height;
+
+	};
+
+}
 
 
 #endif

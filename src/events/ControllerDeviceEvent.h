@@ -10,32 +10,36 @@
 #define AE_CONTROLLER_REMOVED SDL_CONTROLLERDEVICEREMOVED
 #define AE_CONTROLLER_MAPPED SDL_CONTROLLERDEVICEREMAPPED
 
-namespace Events {
+namespace Atlas {
 
-	/**
-	 * A class to distribute controller device events.
-	 */
-	class ControllerDeviceEvent {
-
-	public:
-		ControllerDeviceEvent(SDL_ControllerDeviceEvent event) {
-
-			type = event.type;
-			device = event.which;
-
-		}
+	namespace Events {
 
 		/**
-         * The type of the event. See {@link EngineControllerDeviceEvent.h} for more.
+         * A class to distribute controller device events.
          */
-		uint32_t type;
+		class ControllerDeviceEvent {
 
-		/**
-         * The device ID of the game controller.
-         */
-		int32_t device;
+		public:
+			ControllerDeviceEvent(SDL_ControllerDeviceEvent event) {
 
-	};
+				type = event.type;
+				device = event.which;
+
+			}
+
+			/**
+             * The type of the event. See {@link EngineControllerDeviceEvent.h} for more.
+             */
+			uint32_t type;
+
+			/**
+             * The device ID of the game controller.
+             */
+			int32_t device;
+
+		};
+
+	}
 
 }
 

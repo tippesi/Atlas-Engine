@@ -7,41 +7,49 @@
 
 #include <vector>
 
-class TerrainNode {
+namespace Atlas {
 
-public:
-	TerrainNode(vec2 location, float resolution, float height, float sideLength, int32_t LoD, int32_t LoDCount,
-		ivec2 parentIndex, ivec2 relativeIndex, TerrainStorage* storage, TerrainStorageCell* cell);
+	namespace Terrain {
 
-	~TerrainNode();
+		class TerrainNode {
 
-	void Update(Camera* camera, std::vector<TerrainNode*>& renderList, float* LoDDistances);
+		public:
+			TerrainNode(vec2 location, float resolution, float height, float sideLength, int32_t LoD, int32_t LoDCount,
+						ivec2 parentIndex, ivec2 relativeIndex, TerrainStorage* storage, TerrainStorageCell* cell);
 
-	vec2 location;
-	float sideLength;
-	ivec2 absoluteIndex;
+			~TerrainNode();
 
-	TerrainStorageCell* cell;
+			void Update(Camera* camera, std::vector<TerrainNode*>& renderList, float* LoDDistances);
 
-private:
-	void CreateChildren();
+			vec2 location;
+			float sideLength;
+			ivec2 absoluteIndex;
 
-	void UpdateChildren(Camera* camera, std::vector<TerrainNode*>& renderList, float* LoDDistances);
+			TerrainStorageCell* cell;
 
-	void DeleteChildren();
+		private:
+			void CreateChildren();
 
-	ivec2 index;
+			void UpdateChildren(Camera* camera, std::vector<TerrainNode*>& renderList, float* LoDDistances);
 
-	int32_t LoD;
-	int32_t LoDCount;
+			void DeleteChildren();
 
-	float resolution;
-	float height;
+			ivec2 index;
 
-	std::vector<TerrainNode> children;
+			int32_t LoD;
+			int32_t LoDCount;
 
-	TerrainStorage* storage;
+			float resolution;
+			float height;
 
-};
+			std::vector<TerrainNode> children;
+
+			TerrainStorage* storage;
+
+		};
+
+	}
+
+}
 
 #endif

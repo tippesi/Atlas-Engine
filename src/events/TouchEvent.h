@@ -11,66 +11,70 @@
 #define AE_FINGERDOWN   SDL_FINGERDOWN
 #define AE_FINGERUP     SDL_FINGERUP
 
-namespace Events {
+namespace Atlas {
 
-    /**
-     * A class to distribute touchscreen events.
-     */
-    class TouchEvent {
-
-    public:
-        TouchEvent(SDL_TouchFingerEvent event) {
-
-            finger = event.fingerId;
-
-            type = event.type;
-
-            x = event.x;
-            y = event.y;
-
-            xDelta = event.dx;
-            yDelta = event.dy;
-
-            pressure = event.pressure;
-
-        }
+    namespace Events {
 
         /**
-         * The ID of the finger
+         * A class to distribute touchscreen events.
          */
-        int64_t finger;
+        class TouchEvent {
 
-        /**
-         * The type of the touch event. See {@link TouchEvent.h} for more.
-         */
-        uint32_t type;
+        public:
+            TouchEvent(SDL_TouchFingerEvent event) {
 
-        /**
-         * The x-axis location of the finger, normalized (0, 1)
-         */
-        float x;
+                finger = event.fingerId;
 
-        /**
-         * The y-axis location of the finger, normalized (0, 1)
-         */
-        float y;
+                type = event.type;
 
-        /**
-         * The distance moved on the x-axis, normalized (-1, 1)
-         */
-        float xDelta;
+                x = event.x;
+                y = event.y;
 
-        /**
-         * The distance moved on the y-axis, normalized (-1, 1)
-         */
-        float yDelta;
+                xDelta = event.dx;
+                yDelta = event.dy;
 
-        /**
-         * The pressure applied by the finger, normalized (0, 1)
-         */
-        float pressure;
+                pressure = event.pressure;
 
-    };
+            }
+
+            /**
+             * The ID of the finger
+             */
+            int64_t finger;
+
+            /**
+             * The type of the touch event. See {@link TouchEvent.h} for more.
+             */
+            uint32_t type;
+
+            /**
+             * The x-axis location of the finger, normalized (0, 1)
+             */
+            float x;
+
+            /**
+             * The y-axis location of the finger, normalized (0, 1)
+             */
+            float y;
+
+            /**
+             * The distance moved on the x-axis, normalized (-1, 1)
+             */
+            float xDelta;
+
+            /**
+             * The distance moved on the y-axis, normalized (-1, 1)
+             */
+            float yDelta;
+
+            /**
+             * The pressure applied by the finger, normalized (0, 1)
+             */
+            float pressure;
+
+        };
+
+    }
 
 }
 

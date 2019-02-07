@@ -12,93 +12,97 @@
 #include "postprocessing/PostProcessing.h"
 #include "Decal.h"
 
-class Scene {
+namespace Atlas {
 
-public:
+	class Scene {
 
-	/**
-	 *
-	 */
-	Scene();
+	public:
 
-	~Scene();
+		/**
+         *
+         */
+		Scene();
 
-	/**
-	 *
-	 * @param actor
-	 */
-	void Add(MeshActor* actor);
+		~Scene();
 
-	/**
-	 *
-	 * @param actor
-	 */
-	void Remove(MeshActor* actor);
+		/**
+         *
+         * @param actor
+         */
+		void Add(MeshActor *actor);
 
-	/**
-	 *
-	 * @param terrain
-	 */
-	void Add(Terrain* terrain);
+		/**
+         *
+         * @param actor
+         */
+		void Remove(MeshActor *actor);
 
-	/**
-	 *
-	 * @param terrain
-	 */
-	void Remove(Terrain* terrain);
+		/**
+         *
+         * @param terrain
+         */
+		void Add(Terrain *terrain);
 
-	/**
-	 *
-	 * @param light
-	 */
-	void Add(ILight* light);
+		/**
+         *
+         * @param terrain
+         */
+		void Remove(Terrain *terrain);
 
-	/**
-	 *
-	 * @param light
-	 */
-	void Remove(ILight* light);
+		/**
+         *
+         * @param light
+         */
+		void Add(ILight *light);
 
-	/**
-	 *
-	 * @param decal
-	 */
-	void Add(Decal* decal);
+		/**
+         *
+         * @param light
+         */
+		void Remove(ILight *light);
 
-	/**
-	 *
-	 * @param decal
-	 */
-	void Remove(Decal* decal);
+		/**
+         *
+         * @param decal
+         */
+		void Add(Decal *decal);
 
-	/**
-	 *
-	 * @param camera
-	 */
-	void Update(Camera* camera);
+		/**
+         *
+         * @param decal
+         */
+		void Remove(Decal *decal);
 
-	/**
-	 *
-	 */
-	void ClearContent();
+		/**
+         *
+         * @param camera
+         */
+		void Update(Camera *camera);
 
-	/**
-	 *
-	 */
-	void DeleteContent();
+		/**
+         *
+         */
+		void ClearContent();
 
-	SceneNode* rootNode;
+		/**
+         *
+         */
+		void DeleteContent();
 
-	std::vector<ILight*> lights;
-	std::vector<MeshActorBatch*> meshActorBatches;
-	std::vector<Terrain*> terrains;
-	std::vector<Decal*> decals;
+		SceneNode *rootNode;
 
-	Sky* sky;
-	PostProcessing* postProcessing;
+		std::vector<ILight *> lights;
+		std::vector<MeshActorBatch *> meshActorBatches;
+		std::vector<Terrain *> terrains;
+		std::vector<Decal *> decals;
 
-	RenderList* renderList;
+		Sky *sky;
+		PostProcessing *postProcessing;
 
-};
+		RenderList *renderList;
+
+	};
+
+}
 
 #endif

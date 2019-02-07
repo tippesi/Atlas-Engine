@@ -1,30 +1,38 @@
 #include "TerrainStorageCell.h"
 
-TerrainStorageCell::TerrainStorageCell() {
+namespace Atlas {
 
-	x = 0;
-	y = 0;
-	LoD = 0;
+	namespace Terrain {
 
-	heightField = nullptr;
-	normalMap = nullptr;
-	diffuseMap = nullptr;
-}
+		TerrainStorageCell::TerrainStorageCell() {
 
-bool TerrainStorageCell::IsLoaded() {
+			x = 0;
+			y = 0;
+			LoD = 0;
 
-	if (heightField == nullptr)
-		return false;
+			heightField = nullptr;
+			normalMap = nullptr;
+			diffuseMap = nullptr;
+		}
 
-	if (normalMap == nullptr)
-		return false;
+		bool TerrainStorageCell::IsLoaded() {
 
-	if (diffuseMap == nullptr)
-		return false;
+			if (heightField == nullptr)
+				return false;
 
-	if (displacementMap == nullptr)
-		return false;
+			if (normalMap == nullptr)
+				return false;
 
-	return true;
+			if (diffuseMap == nullptr)
+				return false;
+
+			if (displacementMap == nullptr)
+				return false;
+
+			return true;
+
+		}
+
+	}
 
 }

@@ -4,7 +4,7 @@
 #include "../System.h"
 #include "../Camera.h"
 #include "../Framebuffer.h"
-#include "../Cubemap.h"
+#include "../../texture/Cubemap.h"
 #include "../texture/Texture2DArray.h"
 
 #define MAX_SHADOW_CASCADE_COUNT 4

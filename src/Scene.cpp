@@ -1,141 +1,145 @@
 #include "Scene.h"
 #include "FrustumCulling.h"
 
-Scene::Scene() {
+namespace Atlas {
 
-	rootNode = new SceneNode();
-	rootNode->AddToScene(this);
+	Scene::Scene() {
 
-	sky = new Sky();
-	postProcessing = new PostProcessing();
+		rootNode = new SceneNode();
+		rootNode->AddToScene(this);
 
-	renderList = new RenderList(AE_GEOMETRY_RENDERLIST, 0);
+		sky = new Sky();
+		postProcessing = new PostProcessing();
 
-}
+		renderList = new RenderList(AE_GEOMETRY_RENDERLIST, 0);
 
-Scene::~Scene() {
+	}
 
-	delete rootNode;
-	delete sky;
-	delete postProcessing;
+	Scene::~Scene() {
 
-}
+		delete rootNode;
+		delete sky;
+		delete postProcessing;
 
-void Scene::Add(MeshActor* actor) {
+	}
 
-	for (auto& meshActorBatch : meshActorBatches) {
+	void Scene::Add(MeshActor *actor) {
 
-		if (meshActorBatch->GetMesh() == actor->mesh) {
-			meshActorBatch->Add(actor);
-			renderList->Add(actor);
-			return;
+		for (auto &meshActorBatch : meshActorBatches) {
+
+			if (meshActorBatch->GetMesh() == actor->mesh) {
+				meshActorBatch->Add(actor);
+				renderList->Add(actor);
+				return;
+			}
+
+		}
+
+		auto meshActorBatch = new MeshActorBatch(actor->mesh);
+		meshActorBatch->Add(actor);
+
+		meshActorBatches.push_back(meshActorBatch);
+
+		renderList->Add(actor);
+
+	}
+
+	void Scene::Remove(MeshActor *actor) {
+
+		for (auto &meshActorBatch : meshActorBatches) {
+
+			if (meshActorBatch->GetMesh() == actor->mesh) {
+				meshActorBatch->Remove(actor);
+				return;
+			}
+
 		}
 
 	}
 
-	auto meshActorBatch = new MeshActorBatch(actor->mesh);
-	meshActorBatch->Add(actor);
+	void Scene::Add(Terrain *terrain) {
 
-	meshActorBatches.push_back(meshActorBatch);
+		terrains.push_back(terrain);
 
-	renderList->Add(actor);
+	}
 
-}
+	void Scene::Remove(Terrain *terrain) {
 
-void Scene::Remove(MeshActor* actor) {
+		for (auto iterator = terrains.begin(); iterator != terrains.end(); iterator++) {
 
-	for (auto& meshActorBatch : meshActorBatches) {
+			if (*iterator == terrain) {
+				terrains.erase(iterator);
+				return;
+			}
 
-		if (meshActorBatch->GetMesh() == actor->mesh) {
-			meshActorBatch->Remove(actor);
-			return;
 		}
 
 	}
 
-}
+	void Scene::Add(ILight *light) {
 
-void Scene::Add(Terrain* terrain) {
+		lights.push_back(light);
 
-	terrains.push_back(terrain);
+		renderList->Add(light);
 
-}
+	}
 
-void Scene::Remove(Terrain* terrain) {
+	void Scene::Remove(ILight *light) {
 
-	for (auto iterator = terrains.begin(); iterator != terrains.end(); iterator++) {
+		for (auto iterator = lights.begin(); iterator != lights.end(); iterator++) {
 
-		if (*iterator == terrain) {
-			terrains.erase(iterator);
-			return;
+			if (*iterator == light) {
+				lights.erase(iterator);
+				return;
+			}
+
 		}
 
 	}
 
-}
+	void Scene::Add(Decal *decal) {
 
-void Scene::Add(ILight* light) {
+		decals.push_back(decal);
 
-	lights.push_back(light);
+		// renderList->Add(light);
 
-	renderList->Add(light);
+	}
 
-}
+	void Scene::Remove(Decal *decal) {
 
-void Scene::Remove(ILight* light) {
+		for (auto iterator = decals.begin(); iterator != decals.end(); iterator++) {
 
-	for (auto iterator = lights.begin(); iterator != lights.end(); iterator++) {
+			if (*iterator == decal) {
+				decals.erase(iterator);
+				return;
+			}
 
-		if (*iterator == light) {
-			lights.erase(iterator);
-			return;
 		}
 
 	}
 
-}
+	void Scene::Update(Camera *camera) {
 
-void Scene::Add(Decal* decal) {
-
-	decals.push_back(decal);
-
-	// renderList->Add(light);
-
-}
-
-void Scene::Remove(Decal* decal) {
-
-	for (auto iterator = decals.begin(); iterator != decals.end(); iterator++) {
-
-		if (*iterator == decal) {
-			decals.erase(iterator);
-			return;
+		// We have to copy the matrices because some actors might not be added
+		// to the root node. In this case the trasformedMatrix would never get updated
+		for (auto &meshActorBatch : meshActorBatches) {
+			for (auto &actor : meshActorBatch->actors) {
+				actor->transformedMatrix = actor->modelMatrix;
+			}
 		}
 
-	}
-
-}
-
-void Scene::Update(Camera* camera) {
-
-	// We have to copy the matrices because some actors might not be added
-	// to the root node. In this case the trasformedMatrix would never get updated
-	for (auto& meshActorBatch : meshActorBatches) {
-		for (auto& actor : meshActorBatch->actors) {
-			actor->transformedMatrix = actor->modelMatrix;
+		for (auto &light : lights) {
+			light->Update(camera);
 		}
+
+		rootNode->Update(mat4(1.0f));
+
+		// renderList->Clear();
+
+		FrustumCulling::CullActorsFromScene(this, camera);
+
+		FrustumCulling::CullLightsFromScene(this, camera);
+
 	}
-
-	for (auto& light : lights) {
-		light->Update(camera);
-	}
-
-	rootNode->Update(mat4(1.0f));
-
-	// renderList->Clear();
-
-	FrustumCulling::CullActorsFromScene(this, camera);
-
-	FrustumCulling::CullLightsFromScene(this, camera);
 
 }

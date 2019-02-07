@@ -10,106 +10,110 @@
 #define AE_FONT_GLYPH_COUNT 2048
 #define AE_GPU_GLYPH_COUNT 2048
 
-/**
- * Represents a character
- */
-typedef struct Glyph {
-
-	int32_t codepoint;
-
-	int32_t advance;
-
-	int32_t width;
-	int32_t height;
-
-	int32_t texArrayIndex;
-
-	vec2 textureScale;
-	vec2 offset;
-
-	std::vector<uint8_t> data;
-
-	int32_t kern[AE_FONT_GLYPH_COUNT];
-
-}Glyph;
-
-/**
- * Handles the font loading and management of characters.
- */
-class Font {
-
-public:
+namespace Atlas {
 
 	/**
-	 * Loads a true type font from a file.
-	 * @param filename The file path to the true type font
-	 * @param pixelSize The height of the characters in pixels
-	 * @param padding Extra pixels around the characters which are filled with the distance
-	 * @param edgeValue The value in range 0-255 where the character is reconstructed
-	 * @note Only fully supports fonts with up to 2048 glyphs.
-	 * @remark Let's say you have a padding of 5 and an edgeValue of 100 with a pixelSize
-	 * of 10. A character texture now has a height of about 10 + 2 * 5 pixels where the padding
-	 * is filled with the distance values to the actual character which is about 10 pixels tall.
-	 * The rendered shape of the character begins at a distance of 3 from the actual character
-	 * because 5 - 5 * 100/255 is approximately 3. Everything outside this area can be used
-	 * as the outline.
+	 * Represents a character
 	 */
-	Font(std::string filename, float pixelSize, int32_t padding, uint8_t edgeValue);
+	typedef struct Glyph {
 
-	~Font();
+		int32_t codepoint;
+
+		int32_t advance;
+
+		int32_t width;
+		int32_t height;
+
+		int32_t texArrayIndex;
+
+		vec2 textureScale;
+		vec2 offset;
+
+		std::vector<uint8_t> data;
+
+		int32_t kern[AE_FONT_GLYPH_COUNT];
+
+	} Glyph;
 
 	/**
-	 * Returns the glyph of a character
-	 * @param character The character which should be returned
-	 * @return A pointer to a {@link Glyph} object
+	 * Handles the font loading and management of characters.
 	 */
-	Glyph* GetGlyph(char character);
+	class Font {
 
-	/**
-	 * Returns the glyph of a character
-	 * @param character The character which should be returned (in UTF-8)
-	 * @return A pointer to a {@link Glyph} object
-	 * @note The pointer to the character will be advanced to the next character
-	 * when calling this method. This is done because UTF-8 characters have variable length,
-	 * varying from 1 to 4 bytes.
-	 */
-	Glyph* GetGlyphUTF8(const char*& character);
+	public:
 
-	/**
-	 * Computes the dimensions of a given string
-	 * @param text The string where the dimensions should be computed
-	 * @param scale The scale of the text which is later applied for rendering
-	 * @param width A pointer to a float where the width will be written into
-	 * @param height A pointer to a float where the height will be written into
-	 * @note The text is assumed to be UTF-8 encoded.
-	 */
-	void ComputeDimensions(std::string text, float scale, float* width, float* height);
+		/**
+         * Loads a true type font from a file.
+         * @param filename The file path to the true type font
+         * @param pixelSize The height of the characters in pixels
+         * @param padding Extra pixels around the characters which are filled with the distance
+         * @param edgeValue The value in range 0-255 where the character is reconstructed
+         * @note Only fully supports fonts with up to 2048 glyphs.
+         * @remark Let's say you have a padding of 5 and an edgeValue of 100 with a pixelSize
+         * of 10. A character texture now has a height of about 10 + 2 * 5 pixels where the padding
+         * is filled with the distance values to the actual character which is about 10 pixels tall.
+         * The rendered shape of the character begins at a distance of 3 from the actual character
+         * because 5 - 5 * 100/255 is approximately 3. Everything outside this area can be used
+         * as the outline.
+         */
+		Font(std::string filename, float pixelSize, int32_t padding, uint8_t edgeValue);
 
-	float lineGap;
-	float ascent;
-	float descent;
+		~Font();
 
-	float lineHeight;
+		/**
+         * Returns the glyph of a character
+         * @param character The character which should be returned
+         * @return A pointer to a {@link Glyph} object
+         */
+		Glyph *GetGlyph(char character);
 
-	float smoothing;
+		/**
+         * Returns the glyph of a character
+         * @param character The character which should be returned (in UTF-8)
+         * @return A pointer to a {@link Glyph} object
+         * @note The pointer to the character will be advanced to the next character
+         * when calling this method. This is done because UTF-8 characters have variable length,
+         * varying from 1 to 4 bytes.
+         */
+		Glyph *GetGlyphUTF8(const char *&character);
 
-	float pixelDistanceScale;
-	uint8_t edgeValue;
+		/**
+         * Computes the dimensions of a given string
+         * @param text The string where the dimensions should be computed
+         * @param scale The scale of the text which is later applied for rendering
+         * @param width A pointer to a float where the width will be written into
+         * @param height A pointer to a float where the height will be written into
+         * @note The text is assumed to be UTF-8 encoded.
+         */
+		void ComputeDimensions(std::string text, float scale, float *width, float *height);
 
-	struct GlyphInfo {
-		vec2 scale;
-		vec2 size;
-	}glyphInfo[AE_GPU_GLYPH_COUNT];
+		float lineGap;
+		float ascent;
+		float descent;
 
-	Texture2DArray* glyphTexture;
+		float lineHeight;
 
-	// We need two glyph buffers to store 2048 glyphs
-	Buffer* firstGlyphBuffer;
-	Buffer* secondGlyphBuffer;
+		float smoothing;
 
-private:
-	Glyph glyphs[AE_FONT_GLYPH_COUNT];
+		float pixelDistanceScale;
+		uint8_t edgeValue;
 
-};
+		struct GlyphInfo {
+			vec2 scale;
+			vec2 size;
+		} glyphInfo[AE_GPU_GLYPH_COUNT];
+
+		Texture2DArray *glyphTexture;
+
+		// We need two glyph buffers to store 2048 glyphs
+		Buffer *firstGlyphBuffer;
+		Buffer *secondGlyphBuffer;
+
+	private:
+		Glyph glyphs[AE_FONT_GLYPH_COUNT];
+
+	};
+
+}
 
 #endif

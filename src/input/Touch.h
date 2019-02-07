@@ -2,17 +2,24 @@
 #define AE_TOUCH_H
 
 #include "../System.h"
-#include "../events/EventHandler.h"
+#include "events/EventManager.h"
 
-class TouchHandler {
+namespace Atlas {
 
-public:
+    namespace Input {
+
+        class TouchHandler {
+
+        public:
 
 
-private:
-    void TouchEventHandler(Events::TouchEvent event);
+        private:
+            void TouchEventHandler(Events::TouchEvent event);
 
-};
+        };
 
+    }
+
+}
 
 #endif

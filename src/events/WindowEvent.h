@@ -20,38 +20,41 @@
 #define AE_WINDOWEVENT_FOCUS_LOST 		SDL_WINDOWEVENT_FOCUS_LOST
 #define AE_WINDOWEVENT_CLOSE 			SDL_WINDOWEVENT_CLOSE
 
-namespace Events {
+namespace Atlas {
 
-	/**
-	 * A class to distribute window events.
-	 */
-	class WindowEvent {
-
-	public:
-		WindowEvent(SDL_WindowEvent event) {
-			windowID = event.windowID;
-			type = event.event;
-			data = ivec2(event.data1, event.data2);
-		}
+	namespace Events {
 
 		/**
-         * The ID of the window the event occurred in
+         * A class to distribute window events.
          */
-		uint32_t windowID;
+		class WindowEvent {
 
-		/**
-         * The type of the window event. See {@link EngineWindowEvent.h} for more
-         */
-		uint8_t type;
+		public:
+			WindowEvent(SDL_WindowEvent event) {
+				windowID = event.windowID;
+				type = event.event;
+				data = ivec2(event.data1, event.data2);
+			}
 
-		/**
-         * The data specific to the event. Represents screen space coordinates
-         */
-		ivec2 data;
+			/**
+             * The ID of the window the event occurred in
+             */
+			uint32_t windowID;
 
-	};
+			/**
+             * The type of the window event. See {@link EngineWindowEvent.h} for more
+             */
+			uint8_t type;
+
+			/**
+             * The data specific to the event. Represents screen space coordinates
+             */
+			ivec2 data;
+
+		};
+
+	}
 
 }
-
 
 #endif

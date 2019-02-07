@@ -3,99 +3,107 @@
 #include "../Framebuffer.h"
 #include "../loader/ImageLoader.h"
 
-Texture2DArray::Texture2DArray(GLenum dataType, int32_t width, int32_t height, int32_t depth, int32_t sizedFormat,
-        int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
+namespace Atlas {
 
-    this->width = width;
-    this->height = height;
-    this->depth = depth;
+    namespace Texture {
 
-    Generate(GL_TEXTURE_2D_ARRAY, dataType, sizedFormat, wrapping, filtering,
-            anisotropicFiltering, generateMipMaps);
+        Texture2DArray::Texture2DArray(GLenum dataType, int32_t width, int32_t height, int32_t depth, int32_t sizedFormat,
+                                       int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
 
-}
+            this->width = width;
+            this->height = height;
+            this->depth = depth;
 
-void Texture2DArray::Bind(uint32_t unit) {
+            Generate(GL_TEXTURE_2D_ARRAY, dataType, sizedFormat, wrapping, filtering,
+                     anisotropicFiltering, generateMipMaps);
 
-    glActiveTexture(unit);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
+        }
 
-}
+        void Texture2DArray::Bind(uint32_t unit) {
 
-void Texture2DArray::Unbind() {
+            glActiveTexture(unit);
+            glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
 
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+        }
 
-}
+        void Texture2DArray::Unbind() {
 
-void Texture2DArray::SetData(std::vector<uint8_t> &data, int32_t depth, int32_t count) {
+            glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
-    glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
-    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, width, height, count,
-            TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
-    if (mipmaps)
-        glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+        }
 
-}
+        void Texture2DArray::SetData(std::vector<uint8_t> &data, int32_t depth, int32_t count) {
 
-void Texture2DArray::SetData(std::vector<uint16_t> &data, int32_t depth, int32_t count) {
+            glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
+            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, width, height, count,
+                            TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
+            if (mipmaps)
+                glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
-    glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
-    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, width, height, count,
-            TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
-    if (mipmaps)
-        glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+        }
 
-}
+        void Texture2DArray::SetData(std::vector<uint16_t> &data, int32_t depth, int32_t count) {
 
-std::vector<uint8_t> Texture2DArray::GetData(int32_t depth) {
+            glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
+            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, width, height, count,
+                            TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
+            if (mipmaps)
+                glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
-    auto framebuffer = Framebuffer(width, height);
+        }
 
-	std::vector<uint8_t> data(width * height * channels);
+        std::vector<uint8_t> Texture2DArray::GetData(int32_t depth) {
 
-    framebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, this, depth);
+            auto framebuffer = Framebuffer(width, height);
 
-    glReadPixels(0, 0, width, height,
-            TextureFormat::GetBaseFormat(sizedFormat), GL_UNSIGNED_BYTE, data.data());
+            std::vector<uint8_t> data(width * height * channels);
 
-    framebuffer.Unbind();
+            framebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, this, depth);
 
-    return data;
+            glReadPixels(0, 0, width, height,
+                         TextureFormat::GetBaseFormat(sizedFormat), GL_UNSIGNED_BYTE, data.data());
 
-}
+            framebuffer.Unbind();
 
-void Texture2DArray::Resize(int32_t width, int32_t height, int32_t depth) {
+            return data;
 
-    this->width = width;
-    this->height = height;
-    this->depth = depth;
-    
-    glDeleteTextures(1, &ID);
-    glGenTextures(1, &ID);
+        }
 
-    Generate(GL_TEXTURE_2D_ARRAY, dataType, sizedFormat, wrapping,
-            filtering, anisotropicFiltering, mipmaps);
+        void Texture2DArray::Resize(int32_t width, int32_t height, int32_t depth) {
 
-}
+            this->width = width;
+            this->height = height;
+            this->depth = depth;
 
-void Texture2DArray::SaveToPNG(std::string filename, int32_t depth) {
+            glDeleteTextures(1, &ID);
+            glGenTextures(1, &ID);
 
-    Image image;
+            Generate(GL_TEXTURE_2D_ARRAY, dataType, sizedFormat, wrapping,
+                     filtering, anisotropicFiltering, mipmaps);
 
-    image.width = width;
-    image.height = height;
-    image.fileFormat = AE_IMAGE_PNG;
+        }
 
-    image.data = GetData(depth);
-    FlipDataHorizontally(image.data);
+        void Texture2DArray::SaveToPNG(std::string filename, int32_t depth) {
 
-    ImageLoader::SaveImage(image, filename);
+            Loader::Image image;
 
-}
+            image.width = width;
+            image.height = height;
+            image.fileFormat = AE_IMAGE_PNG;
 
-void Texture2DArray::ReserveStorage(int32_t mipCount) {
+            image.data = GetData(depth);
+            FlipDataHorizontally(image.data);
 
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, sizedFormat, width, height, depth);
+            Loader::ImageLoader::SaveImage(image, filename);
+
+        }
+
+        void Texture2DArray::ReserveStorage(int32_t mipCount) {
+
+            glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, sizedFormat, width, height, depth);
+
+        }
+
+    }
 
 }

@@ -5,43 +5,51 @@
 #include "../Viewport.h"
 #include "mesh/MeshActor.h"
 #include "../terrain/Terrain.h"
-#include "../events/EventHandler.h"
+#include "events/EventManager.h"
 
-typedef struct RayIntersection {
-	vec3 location;
-	float distance;
-	bool hasIntersected;
-}RayIntersection;
+namespace Atlas {
 
-class RayCasting {
+	namespace Tools {
 
-public:
-    RayCasting();
+		typedef struct RayIntersection {
+			vec3 location;
+			float distance;
+			bool hasIntersected;
+		} RayIntersection;
 
-	RayIntersection MouseRayIntersection(Viewport* viewport, Camera* camera, Terrain* terrain);
+		class RayCasting {
 
-	RayIntersection MouseRayTerrainIntersection(Viewport* viewport, Camera* camera, Terrain* terrain);
+		public:
+			RayCasting();
 
-private:
-    typedef struct Ray {
-        vec3 origin;
-        vec3 direction;
-    }Ray;
+			RayIntersection MouseRayIntersection(Viewport *viewport, Camera *camera, Terrain *terrain);
 
-	RayIntersection BinarySearch(Ray ray, Terrain* terrain, float start, 
-		float finish, int count);
+			RayIntersection MouseRayTerrainIntersection(Viewport *viewport, Camera *camera, Terrain *terrain);
 
-	bool IntersectionInRange(Ray ray, Terrain* terrin, float start, float finish);
+		private:
+			typedef struct Ray {
+				vec3 origin;
+				vec3 direction;
+			} Ray;
 
-	bool IsUnderground(vec3 position, Terrain* terrain);
+			RayIntersection BinarySearch(Ray ray, Terrain *terrain, float start,
+										 float finish, int count);
 
-    Ray CalculateRay(Viewport* viewport, Camera* camera);
+			bool IntersectionInRange(Ray ray, Terrain *terrin, float start, float finish);
 
-    void MouseEventHandler(Events::MouseMotionEvent event);
+			bool IsUnderground(vec3 position, Terrain *terrain);
 
-    ivec2 mouseLocation;
+			Ray CalculateRay(Viewport *viewport, Camera *camera);
+
+			void MouseEventHandler(Events::MouseMotionEvent event);
+
+			ivec2 mouseLocation;
 
 
-};
+		};
+
+	}
+
+}
 
 #endif

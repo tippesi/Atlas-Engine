@@ -1,5 +1,15 @@
 #include "DirectionalLight.h"
 
+namespace Atlas {
+
+	namespace Light {
+
+
+
+	}
+
+}
+
 DirectionalLight::DirectionalLight(int32_t mobility) : ILight(AE_DIRECTIONAL_LIGHT, mobility) {
 
 	direction = vec3(0.0f, -1.0f, 0.0f);

@@ -1,75 +1,75 @@
 #include "RenderList.h"
 
-RenderList::RenderList(int32_t type, int32_t mobility) : type(type), mobility(mobility) {
+namespace Atlas {
+
+	RenderList::RenderList(int32_t type, int32_t mobility) : type(type), mobility(mobility) {
 
 
-
-}
-
-void RenderList::Add(MeshActor* actor) {
-
-	auto actorBatchKey = actorBatches.find(actor->mesh);
-
-	if (actorBatchKey != actorBatches.end()) {
-		actorBatchKey->second->Add(actor);
 	}
-	else {
 
-		// Create new actorbatch
-		auto meshActorBatch = new MeshActorBatch(actor->mesh);
-		meshActorBatch->Add(actor);
+	void RenderList::Add(MeshActor *actor) {
 
-		actorBatches[actor->mesh] = meshActorBatch;
+		auto actorBatchKey = actorBatches.find(actor->mesh);
 
-		// Build up all render list batches
-		std::map<int32_t, RenderListBatch> renderListBatches;
+		if (actorBatchKey != actorBatches.end()) {
+			actorBatchKey->second->Add(actor);
+		} else {
 
-		for (auto& subData : actor->mesh->data->subData) {
+			// Create new actorbatch
+			auto meshActorBatch = new MeshActorBatch(actor->mesh);
+			meshActorBatch->Add(actor);
 
-			ShaderConfig* shaderConfig;
+			actorBatches[actor->mesh] = meshActorBatch;
 
-			if (type == AE_GEOMETRY_RENDERLIST) {
-				shaderConfig = &actor->mesh->data->materials[subData->materialIndex]->geometryConfig;
+			// Build up all render list batches
+			std::map<int32_t, RenderListBatch> renderListBatches;
+
+			for (auto &subData : actor->mesh->data->subData) {
+
+				ShaderConfig *shaderConfig;
+
+				if (type == AE_GEOMETRY_RENDERLIST) {
+					shaderConfig = &actor->mesh->data->materials[subData->materialIndex]->geometryConfig;
+				} else {
+					shaderConfig = &actor->mesh->data->materials[subData->materialIndex]->shadowConfig;
+				}
+
+				auto batchKey = renderListBatches.find(shaderConfig->configBatchID);
+
+				if (batchKey != renderListBatches.end()) {
+					batchKey->second.subData.push_back(subData);
+				} else {
+					RenderListBatch batch;
+					batch.meshActorBatch = meshActorBatch;
+					batch.subData.push_back(subData);
+					renderListBatches[shaderConfig->configBatchID] = batch;
+				}
+
 			}
-			else {
-				shaderConfig = &actor->mesh->data->materials[subData->materialIndex]->shadowConfig;
-			}
 
-			auto batchKey = renderListBatches.find(shaderConfig->configBatchID);
-
-			if (batchKey != renderListBatches.end()) {
-				batchKey->second.subData.push_back(subData);
-			}
-			else {
-				RenderListBatch batch;
-				batch.meshActorBatch = meshActorBatch;
-				batch.subData.push_back(subData);
-				renderListBatches[shaderConfig->configBatchID] = batch;
+			// Integrate the render list batches into the ordered render batches
+			for (auto &renderListBatchKey : renderListBatches) {
+				orderedRenderBatches[renderListBatchKey.first].push_back(renderListBatchKey.second);
 			}
 
 		}
 
-		// Integrate the render list batches into the ordered render batches
-		for (auto& renderListBatchKey : renderListBatches) {
-			orderedRenderBatches[renderListBatchKey.first].push_back(renderListBatchKey.second);
+	}
+
+	void RenderList::Add(ILight *light) {
+
+		lights.push_back(light);
+
+	}
+
+	void RenderList::Clear() {
+
+		for (auto &actorBatchKey : actorBatches) {
+			actorBatchKey.second->Clear();
 		}
 
+		lights.clear();
+
 	}
-
-}
-
-void RenderList::Add(ILight* light) {
-
-	lights.push_back(light);
-
-}
-
-void RenderList::Clear() {
-
-	for (auto& actorBatchKey : actorBatches) {
-		actorBatchKey.second->Clear();
-	}
-
-	lights.clear();
 
 }

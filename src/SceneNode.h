@@ -6,69 +6,73 @@
 #include "lighting/ILight.h"
 #include <vector>
 
-// Forward declaration of scene class
-class Scene;
+namespace Atlas {
 
-class SceneNode {
+	// Forward declaration of scene class
+	class Scene;
 
-public:
-	/**
-	 *
-	 */
-	SceneNode();
+	class SceneNode {
 
-	///
-	/// \param node
-	void Add(SceneNode* node);
+	public:
+		/**
+         *
+         */
+		SceneNode();
 
-	///
-	/// \param node
-	void Remove(SceneNode* node);
+		///
+		/// \param node
+		void Add(SceneNode *node);
 
-	///
-	/// \param actor
-	void Add(MeshActor* actor);
+		///
+		/// \param node
+		void Remove(SceneNode *node);
 
-	///
-	/// \param actor
-	void Remove(MeshActor* actor);
+		///
+		/// \param actor
+		void Add(MeshActor *actor);
 
-	///
-	/// \param light
-	void Add(ILight* light);
+		///
+		/// \param actor
+		void Remove(MeshActor *actor);
 
-	///
-	/// \param light
-	void Remove(ILight* light);
+		///
+		/// \param light
+		void Add(ILight *light);
 
-	///
-	/// \param parentTransformation
-	void Update(mat4 parentTransformation);
+		///
+		/// \param light
+		void Remove(ILight *light);
 
-	///
-	/// \param scene
-	void AddToScene(Scene* scene);
+		///
+		/// \param parentTransformation
+		void Update(mat4 parentTransformation);
 
-	///
-	void RemoveFromScene();
+		///
+		/// \param scene
+		void AddToScene(Scene *scene);
 
-	std::vector<SceneNode*> GetChildNodes();
+		///
+		void RemoveFromScene();
 
-	std::vector<MeshActor*> GetMeshActors();
+		std::vector<SceneNode *> GetChildNodes();
 
-	std::vector<ILight*> GetLights();
+		std::vector<MeshActor *> GetMeshActors();
 
-	Scene* scene;
+		std::vector<ILight *> GetLights();
 
-	mat4 transformationMatrix;
+		Scene *scene;
 
-private:
-	bool sceneSet;
+		mat4 transformationMatrix;
 
-	std::vector<SceneNode*> childNodes;
-	std::vector<MeshActor*> meshActors;
-	std::vector<ILight*> lights;
+	private:
+		bool sceneSet;
 
-};
+		std::vector<SceneNode *> childNodes;
+		std::vector<MeshActor *> meshActors;
+		std::vector<ILight *> lights;
+
+	};
+
+}
 
 #endif

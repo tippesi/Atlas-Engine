@@ -10,17 +10,24 @@
 #include <Assimp/include/assimp/postprocess.h>
 #include <Assimp/include/assimp/types.h>
 
-class ModelLoader {
+namespace Atlas {
 
-public:
-	static MeshData* LoadMesh(std::string filename);
+	namespace Loader {
 
-	static SceneNode* LoadSceneNode(std::string filename);
+		class ModelLoader {
 
-private:
-	static Material* LoadMaterial(aiMaterial* assimpMaterial, std::string directory);
+		public:
+			static MeshData* LoadMesh(std::string filename);
 
-};
+			static SceneNode* LoadSceneNode(std::string filename);
 
+		private:
+			static Material* LoadMaterial(aiMaterial* assimpMaterial, std::string directory);
+
+		};
+
+	}
+
+}
 
 #endif

@@ -6,62 +6,69 @@
 #include "../loader/ImageLoader.h"
 #include "../Kernel.h"
 
-class TerrainTool {
+namespace Atlas {
 
-public:
-	/**
-	 * Generates a terrain from an image with height data
-	 * @param heightImage
-	 * @param rootNodeCount
-	 * @param LoDCount
-	 * @param patchSize
-	 * @param resolution
-	 * @param height
-	 * @return A pointer to a Terrain object.
-	 * @warning The input should correspond to the terrain specifications
-	 */
-	static Terrain* GenerateTerrain(Image16& heightImage, int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, 
-		float resolution, float height);
+	namespace Tools {
 
-	/**
-	 * Stores the terrain in a directory on the hard drive
-	 * @param terrain
-	 * @param directory
-	 * @warning All storage cells of the terrain must be loaded.
-	 */
-	static void SaveTerrain(Terrain* terrain, std::string directory);
+		class TerrainTool {
 
-	/**
-	 *
-	 * @param terrain
-	 * @warning All storage cells of the terrain and their heightData member must be loaded.
-	 * It is assumed that all cells have textures of the same resolution.
-	 */
-	static void BakeTerrain(Terrain* terrain);
+		public:
+			/**
+             * Generates a terrain from an image with height data
+             * @param heightImage
+             * @param rootNodeCount
+             * @param LoDCount
+             * @param patchSize
+             * @param resolution
+             * @param height
+             * @return A pointer to a Terrain object.
+             * @warning The input should correspond to the terrain specifications
+             */
+			static Terrain* GenerateTerrain(Loader::Image16& heightImage, int32_t rootNodeCount, int32_t LoDCount,
+					int32_t patchSize, float resolution, float height);
 
-	/**
-	 *
-	 * @param terrain
-	 * @param kernel
-	 * @param strength
-	 * @param position
-	 * @warning All max LoD storage cells of the terrain and their heightData member
-	 * must be loaded. It is assumed that all cells have textures of the same resolution.
-	 * @note The kernel size needs to be smaller than 2 times the edge of a cell
-	 */
-	static void BrushHeight(Terrain* terrain, Kernel* kernel, float strength, vec2 position);
+			/**
+             * Stores the terrain in a directory on the hard drive
+             * @param terrain
+             * @param directory
+             * @warning All storage cells of the terrain must be loaded.
+             */
+			static void SaveTerrain(Terrain* terrain, std::string directory);
 
-	static void SmoothHeight(Terrain* terrain, int32_t size, int32_t contributingRadius,
-			float strength, vec2 position);
+			/**
+             *
+             * @param terrain
+             * @warning All storage cells of the terrain and their heightData member must be loaded.
+             * It is assumed that all cells have textures of the same resolution.
+             */
+			static void BakeTerrain(Terrain* terrain);
 
-private:
-	static void GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData,
-		int32_t width, int32_t height, float strength);
+			/**
+             *
+             * @param terrain
+             * @param kernel
+             * @param strength
+             * @param position
+             * @warning All max LoD storage cells of the terrain and their heightData member
+             * must be loaded. It is assumed that all cells have textures of the same resolution.
+             * @note The kernel size needs to be smaller than 2 times the edge of a cell
+             */
+			static void BrushHeight(Terrain* terrain, Kernel* kernel, float strength, vec2 position);
 
-	static float GetHeight(std::vector<uint16_t>& heightData, int32_t dataWidth,
-	        int32_t x, int32_t y, int32_t width, int32_t height);
+			static void SmoothHeight(Terrain* terrain, int32_t size, int32_t contributingRadius,
+					float strength, vec2 position);
 
-};
+		private:
+			static void GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData,
+										   int32_t width, int32_t height, float strength);
 
+			static float GetHeight(std::vector<uint16_t>& heightData, int32_t dataWidth,
+					int32_t x, int32_t y, int32_t width, int32_t height);
+
+		};
+
+	}
+
+}
 
 #endif
