@@ -155,7 +155,7 @@ namespace Atlas {
                     EngineLog("\n\nCompiling compute stage failed:");
                 }
 
-                EngineLog("Compilation failed: %s\nError: %s\nCode: %s", filename.c_str(), shaderLog.data(), convertedCode);
+                EngineLog("Compilation failed: %s\nError: %s", filename.c_str(), shaderLog.data());
 #endif
 
                 return false;

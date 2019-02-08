@@ -270,7 +270,7 @@ void Main::SceneSetUp() {
 	auto node = new Atlas::SceneNode();
 	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
 	scene->rootNode->Add(node);
-	scene->sky->skybox = new Lighting::Skybox(skybox);
+	// scene->sky->skybox = new Lighting::Skybox(skybox);
 
 	cubeActor = new Mesh::MeshActor(cubeMesh);
 	treeActor = new Mesh::MeshActor(treeMesh);

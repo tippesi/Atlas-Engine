@@ -30,7 +30,7 @@ namespace Atlas {
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
 			cameraLocation->SetValue(vec3(camera->location));
-			sunDirection->SetValue(vec3(0.0f, -0.1f, -1.0f));
+			sunDirection->SetValue(vec3(0.0f, -0.4f, -1.0f));
 
 			glDrawElements(GL_TRIANGLES, vertexArray.GetIndexComponent()->GetElementCount(),
 						   vertexArray.GetIndexComponent()->GetDataType(), NULL);
