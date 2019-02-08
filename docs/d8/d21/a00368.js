@@ -1,9 +1,7 @@
 var a00368 =
 [
-    [ "EngineMouseButtonEvent", "d8/d21/a00368.html#a226f992e3de06ce33547ee44554f1aba", null ],
-    [ "button", "d8/d21/a00368.html#a4225bc395727818bd2d5590ae425fe2f", null ],
-    [ "state", "d8/d21/a00368.html#a7d80258f9e65e5c87e3c1e0bd3b914c6", null ],
-    [ "windowID", "d8/d21/a00368.html#a93c9e6210a644d45c2fd9770fe3cc00a", null ],
-    [ "x", "d8/d21/a00368.html#abe28fcbedbb1c71d8a11bdf995878265", null ],
-    [ "y", "d8/d21/a00368.html#a69fc6fd1c7eb716e8e59f3d2a3d7b427", null ]
+    [ "ControllerAxisEvent", "d8/d21/a00368.html#af79ef2ef34f767b0f46d8a2ce0d6a12f", null ],
+    [ "axis", "d8/d21/a00368.html#a7a84e82ce9df9780782f2d8a20f07009", null ],
+    [ "device", "d8/d21/a00368.html#ab2b11c5512bb4dd825c4657439d6e1eb", null ],
+    [ "value", "d8/d21/a00368.html#ada48f1a208d01294ada155d91a0329da", null ]
 ];

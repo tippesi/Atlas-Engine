@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: IndexBuffer Class Reference</title>
+<title>Atlas Engine: Atlas::Terrain::Terrain Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -89,161 +89,122 @@ $(document).ready(function(){initNavTree('dc/d62/a00640.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../de/dbb/a00637.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">IndexBuffer Class Reference</div>  </div>
+<div class="title">Atlas::Terrain::Terrain Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d3/d1a/a00251_source.html">IndexBuffer.h</a>&gt;</code></p>
-<div class="dynheader">
-Inheritance diagram for IndexBuffer:</div>
-<div class="dyncontent">
- <div class="center">
-  <img src="../../dc/d62/a00640.png" usemap="#IndexBuffer_map" alt=""/>
-  <map id="IndexBuffer_map" name="IndexBuffer_map">
-<area href="../../d3/dd6/a00624.html" title="Base class for all other buffer classes. " alt="Buffer" shape="rect" coords="0,0,77,24"/>
-</map>
- </div></div>
+<p>Represents a terrain.  
+ <a href="../../dc/d62/a00640.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:abe72323134d281b5e140b03e1dc50c93"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#abe72323134d281b5e140b03e1dc50c93">IndexBuffer</a> (uint32_t dataType, size_t <a class="el" href="../../d3/dd6/a00624.html#aae0201af6200e104956a3cf224affe94">elementSize</a>, size_t <a class="el" href="../../d3/dd6/a00624.html#a34d3d7f4d4f677eb66b7b9882a1b4527">elementCount</a>)</td></tr>
-<tr class="memdesc:abe72323134d281b5e140b03e1dc50c93"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs an <a class="el" href="../../dc/d62/a00640.html">IndexBuffer</a> object.  <a href="#abe72323134d281b5e140b03e1dc50c93">More...</a><br /></td></tr>
-<tr class="separator:abe72323134d281b5e140b03e1dc50c93"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a348889936f378b7942c1e01d83e42866"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a348889936f378b7942c1e01d83e42866">~IndexBuffer</a> ()</td></tr>
-<tr class="separator:a348889936f378b7942c1e01d83e42866"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7bf0270d74102d89fc6e30076a90a3c7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a7bf0270d74102d89fc6e30076a90a3c7">SetData</a> (void *data, size_t offset, size_t length) override</td></tr>
-<tr class="memdesc:a7bf0270d74102d89fc6e30076a90a3c7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of a buffer if it isn't mapped.  <a href="#a7bf0270d74102d89fc6e30076a90a3c7">More...</a><br /></td></tr>
-<tr class="separator:a7bf0270d74102d89fc6e30076a90a3c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae40bd23e23e1c4b83921de414c53369"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#aae40bd23e23e1c4b83921de414c53369">GetDataType</a> ()</td></tr>
-<tr class="memdesc:aae40bd23e23e1c4b83921de414c53369"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the type of the data which the buffer holds.  <a href="#aae40bd23e23e1c4b83921de414c53369">More...</a><br /></td></tr>
-<tr class="separator:aae40bd23e23e1c4b83921de414c53369"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_a00624"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_a00624')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d3/dd6/a00624.html">Buffer</a></td></tr>
-<tr class="memitem:a66ab65d9716696cb0f2e2cdf483ecd32 inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a66ab65d9716696cb0f2e2cdf483ecd32">Buffer</a> (uint32_t <a class="el" href="../../d3/dd6/a00624.html#ab9bfb937c1170740d24d2f0019cbe605">type</a>, size_t <a class="el" href="../../d3/dd6/a00624.html#aae0201af6200e104956a3cf224affe94">elementSize</a>, uint32_t flags)</td></tr>
-<tr class="memdesc:a66ab65d9716696cb0f2e2cdf483ecd32 inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d3/dd6/a00624.html" title="Base class for all other buffer classes. ">Buffer</a> object.  <a href="../../d3/dd6/a00624.html#a66ab65d9716696cb0f2e2cdf483ecd32">More...</a><br /></td></tr>
-<tr class="separator:a66ab65d9716696cb0f2e2cdf483ecd32 inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a781aa3047b5dc0b48777138a54b5f562 inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a781aa3047b5dc0b48777138a54b5f562">~Buffer</a> ()</td></tr>
-<tr class="separator:a781aa3047b5dc0b48777138a54b5f562 inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa0a70cd2d923e378514450363d0a2e38 inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#aa0a70cd2d923e378514450363d0a2e38">Bind</a> ()</td></tr>
-<tr class="memdesc:aa0a70cd2d923e378514450363d0a2e38 inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Binds the buffer to the target specified in the constructor.  <a href="../../d3/dd6/a00624.html#aa0a70cd2d923e378514450363d0a2e38">More...</a><br /></td></tr>
-<tr class="separator:aa0a70cd2d923e378514450363d0a2e38 inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa406b3f50d88e980c20deede2deae919 inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#aa406b3f50d88e980c20deede2deae919">BindRange</a> (size_t offset, size_t length)</td></tr>
-<tr class="memdesc:aa406b3f50d88e980c20deede2deae919 inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Binds a certain range of the buffer to the target.  <a href="../../d3/dd6/a00624.html#aa406b3f50d88e980c20deede2deae919">More...</a><br /></td></tr>
-<tr class="separator:aa406b3f50d88e980c20deede2deae919 inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa90efacdf3ac98e2d098493ef28e607e inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#aa90efacdf3ac98e2d098493ef28e607e">Unbind</a> ()</td></tr>
-<tr class="memdesc:aa90efacdf3ac98e2d098493ef28e607e inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unbinds any buffer from the target.  <a href="../../d3/dd6/a00624.html#aa90efacdf3ac98e2d098493ef28e607e">More...</a><br /></td></tr>
-<tr class="separator:aa90efacdf3ac98e2d098493ef28e607e inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adb91ba32b871edf2e8cf553f1eedf7c4 inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#adb91ba32b871edf2e8cf553f1eedf7c4">Map</a> ()</td></tr>
-<tr class="memdesc:adb91ba32b871edf2e8cf553f1eedf7c4 inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maps the data of the buffer into the memory.  <a href="../../d3/dd6/a00624.html#adb91ba32b871edf2e8cf553f1eedf7c4">More...</a><br /></td></tr>
-<tr class="separator:adb91ba32b871edf2e8cf553f1eedf7c4 inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a49db90ba3e47cc945e3842a93c86436d inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a49db90ba3e47cc945e3842a93c86436d">Unmap</a> ()</td></tr>
-<tr class="memdesc:a49db90ba3e47cc945e3842a93c86436d inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unmaps the data of the buffer.  <a href="../../d3/dd6/a00624.html#a49db90ba3e47cc945e3842a93c86436d">More...</a><br /></td></tr>
-<tr class="separator:a49db90ba3e47cc945e3842a93c86436d inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a338309d4cb6539f2a11327fd5e0e1873 inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a338309d4cb6539f2a11327fd5e0e1873">Increment</a> ()</td></tr>
-<tr class="memdesc:a338309d4cb6539f2a11327fd5e0e1873 inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">If the buffer has the BUFFER_DOUBLE_BUFFERING or BUFFER_TRIPLE_BUFFERING flags the data will be incremented.  <a href="../../d3/dd6/a00624.html#a338309d4cb6539f2a11327fd5e0e1873">More...</a><br /></td></tr>
-<tr class="separator:a338309d4cb6539f2a11327fd5e0e1873 inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5740ab0c7dd33094ec8c45078e99636f inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a5740ab0c7dd33094ec8c45078e99636f">GetIncrement</a> ()</td></tr>
-<tr class="memdesc:a5740ab0c7dd33094ec8c45078e99636f inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the index of the current increment.  <a href="../../d3/dd6/a00624.html#a5740ab0c7dd33094ec8c45078e99636f">More...</a><br /></td></tr>
-<tr class="separator:a5740ab0c7dd33094ec8c45078e99636f inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5de114dd60136ed252a64d866b1d7c92 inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a5de114dd60136ed252a64d866b1d7c92">SetSize</a> (size_t <a class="el" href="../../d3/dd6/a00624.html#a34d3d7f4d4f677eb66b7b9882a1b4527">elementCount</a>)</td></tr>
-<tr class="memdesc:a5de114dd60136ed252a64d866b1d7c92 inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the size of the buffer.  <a href="../../d3/dd6/a00624.html#a5de114dd60136ed252a64d866b1d7c92">More...</a><br /></td></tr>
-<tr class="separator:a5de114dd60136ed252a64d866b1d7c92 inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1d8dc835aeb3b37000e7109e36226710 inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a1d8dc835aeb3b37000e7109e36226710">SetDataMapped</a> (void *data, size_t length=1)</td></tr>
-<tr class="memdesc:a1d8dc835aeb3b37000e7109e36226710 inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the data of the buffer if it is mapped.  <a href="../../d3/dd6/a00624.html#a1d8dc835aeb3b37000e7109e36226710">More...</a><br /></td></tr>
-<tr class="separator:a1d8dc835aeb3b37000e7109e36226710 inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abb25f26db68d3c88def3e004ae665974 inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#abb25f26db68d3c88def3e004ae665974">Copy</a> (<a class="el" href="../../d3/dd6/a00624.html">Buffer</a> *readBuffer, size_t readOffset, size_t writeOffset, size_t length)</td></tr>
-<tr class="memdesc:abb25f26db68d3c88def3e004ae665974 inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copies the data of the copy buffer to this buffer.  <a href="../../d3/dd6/a00624.html#abb25f26db68d3c88def3e004ae665974">More...</a><br /></td></tr>
-<tr class="separator:abb25f26db68d3c88def3e004ae665974 inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4a62e21f25ef3e827c59c26721196303 inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a4a62e21f25ef3e827c59c26721196303">GetType</a> ()</td></tr>
-<tr class="memdesc:a4a62e21f25ef3e827c59c26721196303 inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the type/target of the buffer.  <a href="../../d3/dd6/a00624.html#a4a62e21f25ef3e827c59c26721196303">More...</a><br /></td></tr>
-<tr class="separator:a4a62e21f25ef3e827c59c26721196303 inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8282e596cc63abd06f0ad622769791e4 inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a8282e596cc63abd06f0ad622769791e4">GetElementCount</a> ()</td></tr>
-<tr class="memdesc:a8282e596cc63abd06f0ad622769791e4 inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of elements the buffer contains.  <a href="../../d3/dd6/a00624.html#a8282e596cc63abd06f0ad622769791e4">More...</a><br /></td></tr>
-<tr class="separator:a8282e596cc63abd06f0ad622769791e4 inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af51fa0793cd2c80cc217a56e175bfd96 inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#af51fa0793cd2c80cc217a56e175bfd96">GetElementSize</a> ()</td></tr>
-<tr class="memdesc:af51fa0793cd2c80cc217a56e175bfd96 inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the size of each element in the buffer.  <a href="../../d3/dd6/a00624.html#af51fa0793cd2c80cc217a56e175bfd96">More...</a><br /></td></tr>
-<tr class="separator:af51fa0793cd2c80cc217a56e175bfd96 inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abec33c21a14057f530268ff3562e484a inherit pub_methods_a00624"><td class="memItemLeft" align="right" valign="top">virtual size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#abec33c21a14057f530268ff3562e484a">GetSize</a> ()</td></tr>
-<tr class="memdesc:abec33c21a14057f530268ff3562e484a inherit pub_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the size in bytes of the buffer.  <a href="../../d3/dd6/a00624.html#abec33c21a14057f530268ff3562e484a">More...</a><br /></td></tr>
-<tr class="separator:abec33c21a14057f530268ff3562e484a inherit pub_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9403516ab2906e652493517fcb2e3d3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ae9403516ab2906e652493517fcb2e3d3">Terrain</a> (int32_t rootNodeCount, int32_t <a class="el" href="../../dc/d62/a00640.html#ab2c01446effc76a9887a946ec1583547">LoDCount</a>, int32_t patchSizeFactor, float <a class="el" href="../../dc/d62/a00640.html#a373075ebf9e0e471a161967c2aebc031">resolution</a>, float height)</td></tr>
+<tr class="memdesc:ae9403516ab2906e652493517fcb2e3d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../dc/d62/a00640.html" title="Represents a terrain. ">Terrain</a> object.  <a href="#ae9403516ab2906e652493517fcb2e3d3">More...</a><br /></td></tr>
+<tr class="separator:ae9403516ab2906e652493517fcb2e3d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaac2161297e69c7635cde83f1baad4f6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#aaac2161297e69c7635cde83f1baad4f6">Update</a> (<a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera)</td></tr>
+<tr class="memdesc:aaac2161297e69c7635cde83f1baad4f6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the terrain and the storage queues.  <a href="#aaac2161297e69c7635cde83f1baad4f6">More...</a><br /></td></tr>
+<tr class="separator:aaac2161297e69c7635cde83f1baad4f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac0994588971b704a6110061c87089b03"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ac0994588971b704a6110061c87089b03">SetLoDDistance</a> (int32_t LoD, float distance)</td></tr>
+<tr class="memdesc:ac0994588971b704a6110061c87089b03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distance of a specific level of detail.  <a href="#ac0994588971b704a6110061c87089b03">More...</a><br /></td></tr>
+<tr class="separator:ac0994588971b704a6110061c87089b03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf8f3cfe13ae70102ef1c3aabda28159"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#adf8f3cfe13ae70102ef1c3aabda28159">SetTessellationFunction</a> (float factor, float slope, float shift, float maxLevel=64.0f)</td></tr>
+<tr class="memdesc:adf8f3cfe13ae70102ef1c3aabda28159"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the tessellation function t(distance) = factor / pow(distance, slope) + shift.  <a href="#adf8f3cfe13ae70102ef1c3aabda28159">More...</a><br /></td></tr>
+<tr class="separator:adf8f3cfe13ae70102ef1c3aabda28159"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0caf724beec1b6ffe35daca8793c5c67"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a0caf724beec1b6ffe35daca8793c5c67">SetDisplacementDistance</a> (float distance)</td></tr>
+<tr class="memdesc:a0caf724beec1b6ffe35daca8793c5c67"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distance where the displacement should start.  <a href="#a0caf724beec1b6ffe35daca8793c5c67">More...</a><br /></td></tr>
+<tr class="separator:a0caf724beec1b6ffe35daca8793c5c67"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa1a0773b1db1565f91f1eb2fc052c04a"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#aa1a0773b1db1565f91f1eb2fc052c04a">GetHeight</a> (float x, float z)</td></tr>
+<tr class="memdesc:aa1a0773b1db1565f91f1eb2fc052c04a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the height at a specific point on the terrain.  <a href="#aa1a0773b1db1565f91f1eb2fc052c04a">More...</a><br /></td></tr>
+<tr class="separator:aa1a0773b1db1565f91f1eb2fc052c04a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23b58e0f937eaf5f544e93c45e253f58"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../df/d37/a00652.html">TerrainStorageCell</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a23b58e0f937eaf5f544e93c45e253f58">GetStorageCell</a> (float x, float z, int32_t LoD)</td></tr>
+<tr class="memdesc:a23b58e0f937eaf5f544e93c45e253f58"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the storage cell for a point on the terrain.  <a href="#a23b58e0f937eaf5f544e93c45e253f58">More...</a><br /></td></tr>
+<tr class="separator:a23b58e0f937eaf5f544e93c45e253f58"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae1a81349fcf181cce19f784071e53bca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ae1a81349fcf181cce19f784071e53bca">Bind</a> ()</td></tr>
+<tr class="memdesc:ae1a81349fcf181cce19f784071e53bca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Binds the vertex array of the terrain.  <a href="#ae1a81349fcf181cce19f784071e53bca">More...</a><br /></td></tr>
+<tr class="separator:ae1a81349fcf181cce19f784071e53bca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc73230d605865b38b05e5f14d305308"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#abc73230d605865b38b05e5f14d305308">Unbind</a> ()</td></tr>
+<tr class="memdesc:abc73230d605865b38b05e5f14d305308"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unbinds the vertex array of the terrain.  <a href="#abc73230d605865b38b05e5f14d305308">More...</a><br /></td></tr>
+<tr class="separator:abc73230d605865b38b05e5f14d305308"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
-Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pub_static_methods_a00624"><td colspan="2" onclick="javascript:toggleInherit('pub_static_methods_a00624')"><img src="../../closed.png" alt="-"/>&#160;Static Public Member Functions inherited from <a class="el" href="../../d3/dd6/a00624.html">Buffer</a></td></tr>
-<tr class="memitem:aeefd2652eb6a6522ddf97cdef769d410 inherit pub_static_methods_a00624"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#aeefd2652eb6a6522ddf97cdef769d410">CheckExtensions</a> ()</td></tr>
-<tr class="memdesc:aeefd2652eb6a6522ddf97cdef769d410 inherit pub_static_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks for extensions.  <a href="../../d3/dd6/a00624.html#aeefd2652eb6a6522ddf97cdef769d410">More...</a><br /></td></tr>
-<tr class="separator:aeefd2652eb6a6522ddf97cdef769d410 inherit pub_static_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a294adc8fc5a00e7074ff69ad35d43050 inherit pub_static_methods_a00624"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a294adc8fc5a00e7074ff69ad35d43050">IsImmutableStorageSupported</a> ()</td></tr>
-<tr class="memdesc:a294adc8fc5a00e7074ff69ad35d43050 inherit pub_static_methods_a00624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether immutable storage and therefore persistent mapping is available.  <a href="../../d3/dd6/a00624.html#a294adc8fc5a00e7074ff69ad35d43050">More...</a><br /></td></tr>
-<tr class="separator:a294adc8fc5a00e7074ff69ad35d43050 inherit pub_static_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pro_methods_a00624"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_a00624')"><img src="../../closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="../../d3/dd6/a00624.html">Buffer</a></td></tr>
-<tr class="memitem:a6130ff67352bcd9f11c3d3a0112b8f80 inherit pro_methods_a00624"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a6130ff67352bcd9f11c3d3a0112b8f80">CreateInternal</a> ()</td></tr>
-<tr class="separator:a6130ff67352bcd9f11c3d3a0112b8f80 inherit pro_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5cf0fdb37d2a598779396735fe71b72e inherit pro_methods_a00624"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a5cf0fdb37d2a598779396735fe71b72e">DestroyInternal</a> ()</td></tr>
-<tr class="separator:a5cf0fdb37d2a598779396735fe71b72e inherit pro_methods_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pro_attribs_a00624"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_a00624')"><img src="../../closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="../../d3/dd6/a00624.html">Buffer</a></td></tr>
-<tr class="memitem:a5d58cb5423fea6debfcb3bbed9082164 inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a5d58cb5423fea6debfcb3bbed9082164">ID</a></td></tr>
-<tr class="separator:a5d58cb5423fea6debfcb3bbed9082164 inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab9bfb937c1170740d24d2f0019cbe605 inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#ab9bfb937c1170740d24d2f0019cbe605">type</a></td></tr>
-<tr class="separator:ab9bfb937c1170740d24d2f0019cbe605 inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae0201af6200e104956a3cf224affe94 inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#aae0201af6200e104956a3cf224affe94">elementSize</a></td></tr>
-<tr class="separator:aae0201af6200e104956a3cf224affe94 inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a34d3d7f4d4f677eb66b7b9882a1b4527 inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a34d3d7f4d4f677eb66b7b9882a1b4527">elementCount</a></td></tr>
-<tr class="separator:a34d3d7f4d4f677eb66b7b9882a1b4527 inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aba7be07ca31685b07bc9a71d12bf8333 inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#aba7be07ca31685b07bc9a71d12bf8333">sizeInBytes</a></td></tr>
-<tr class="separator:aba7be07ca31685b07bc9a71d12bf8333 inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ba08a998320193cb66c8f1f5b14e52a inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a7ba08a998320193cb66c8f1f5b14e52a">mapFlags</a></td></tr>
-<tr class="separator:a7ba08a998320193cb66c8f1f5b14e52a inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7610852f653211ba0ddad7f1bc3d0adf inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a7610852f653211ba0ddad7f1bc3d0adf">dataFlags</a></td></tr>
-<tr class="separator:a7610852f653211ba0ddad7f1bc3d0adf inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acb4249fa54be5b5f5b4e89a2694758a3 inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#acb4249fa54be5b5f5b4e89a2694758a3">mappedData</a></td></tr>
-<tr class="separator:acb4249fa54be5b5f5b4e89a2694758a3 inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a014e8528d3d35f2d3d5bffecd31d0e11 inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a014e8528d3d35f2d3d5bffecd31d0e11">mappedDataOffset</a></td></tr>
-<tr class="separator:a014e8528d3d35f2d3d5bffecd31d0e11 inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5d1bd5fc9eced2af8fa351bc4e5ca986 inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a5d1bd5fc9eced2af8fa351bc4e5ca986">immutable</a></td></tr>
-<tr class="separator:a5d1bd5fc9eced2af8fa351bc4e5ca986 inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a000d51a210f48a064afc1e2b4db1482b inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a000d51a210f48a064afc1e2b4db1482b">mapped</a></td></tr>
-<tr class="separator:a000d51a210f48a064afc1e2b4db1482b inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6c42874720ca1a4336fbf5e0a3bd815c inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a6c42874720ca1a4336fbf5e0a3bd815c">dynamicStorage</a></td></tr>
-<tr class="separator:a6c42874720ca1a4336fbf5e0a3bd815c inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aad7e791ad0912f7697b392703a15fee7 inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#aad7e791ad0912f7697b392703a15fee7">bufferingCount</a></td></tr>
-<tr class="separator:aad7e791ad0912f7697b392703a15fee7 inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a20c95d69a746fe025f0a676c821bccb6 inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a20c95d69a746fe025f0a676c821bccb6">bufferingIndex</a></td></tr>
-<tr class="separator:a20c95d69a746fe025f0a676c821bccb6 inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a16fc73ca0c2745f53415c2b750449b9f inherit pro_attribs_a00624"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d1/d51/a00628.html">BufferLock</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a16fc73ca0c2745f53415c2b750449b9f">bufferLock</a></td></tr>
-<tr class="separator:a16fc73ca0c2745f53415c2b750449b9f inherit pro_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pro_static_attribs_a00624"><td colspan="2" onclick="javascript:toggleInherit('pro_static_attribs_a00624')"><img src="../../closed.png" alt="-"/>&#160;Static Protected Attributes inherited from <a class="el" href="../../d3/dd6/a00624.html">Buffer</a></td></tr>
-<tr class="memitem:a73536cc9b4da818e966a86860f33528c inherit pro_static_attribs_a00624"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a73536cc9b4da818e966a86860f33528c">immutableStorageSupported</a></td></tr>
-<tr class="separator:a73536cc9b4da818e966a86860f33528c inherit pro_static_attribs_a00624"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a529b3eb839336db7d5a29c1205622e08"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dd/d1f/a00648.html">TerrainStorage</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a529b3eb839336db7d5a29c1205622e08">storage</a></td></tr>
+<tr class="separator:a529b3eb839336db7d5a29c1205622e08"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74699741953d8de0666e5cc0d2d673a4"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a74699741953d8de0666e5cc0d2d673a4">translation</a></td></tr>
+<tr class="separator:a74699741953d8de0666e5cc0d2d673a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a373075ebf9e0e471a161967c2aebc031"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a373075ebf9e0e471a161967c2aebc031">resolution</a></td></tr>
+<tr class="separator:a373075ebf9e0e471a161967c2aebc031"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae72f366dae00975b264990d944640787"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ae72f366dae00975b264990d944640787">sideLength</a></td></tr>
+<tr class="separator:ae72f366dae00975b264990d944640787"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b53e39dd8da91dc3ba3abf090e8c64f"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a6b53e39dd8da91dc3ba3abf090e8c64f">patchVertexCount</a></td></tr>
+<tr class="separator:a6b53e39dd8da91dc3ba3abf090e8c64f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae3d67493f6ac308f2ff1f7af0265bfca"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ae3d67493f6ac308f2ff1f7af0265bfca">patchSize</a></td></tr>
+<tr class="separator:ae3d67493f6ac308f2ff1f7af0265bfca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a0b1098ef8e7e3a87dc0169b763aeed"><td class="memItemLeft" align="right" valign="top">std::vector&lt; vec2 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a2a0b1098ef8e7e3a87dc0169b763aeed">patchOffsets</a></td></tr>
+<tr class="separator:a2a0b1098ef8e7e3a87dc0169b763aeed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1fc63472861edad0f926e7e007a8e533"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a1fc63472861edad0f926e7e007a8e533">tessellationFactor</a></td></tr>
+<tr class="separator:a1fc63472861edad0f926e7e007a8e533"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afba3eb3d1d9519b9997bac768444ba6b"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#afba3eb3d1d9519b9997bac768444ba6b">tessellationSlope</a></td></tr>
+<tr class="separator:afba3eb3d1d9519b9997bac768444ba6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae4c1027e79b94b79234ba4c7962ddfe0"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ae4c1027e79b94b79234ba4c7962ddfe0">tessellationShift</a></td></tr>
+<tr class="separator:ae4c1027e79b94b79234ba4c7962ddfe0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18a016b121b306b57ab0f6a6768ea62a"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a18a016b121b306b57ab0f6a6768ea62a">maxTessellationLevel</a></td></tr>
+<tr class="separator:a18a016b121b306b57ab0f6a6768ea62a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a345119cd59eb21be53d71b6f34af46f7"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a345119cd59eb21be53d71b6f34af46f7">heightScale</a></td></tr>
+<tr class="separator:a345119cd59eb21be53d71b6f34af46f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac54318466aaa8269c4b85f126e141d02"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ac54318466aaa8269c4b85f126e141d02">displacementDistance</a></td></tr>
+<tr class="separator:ac54318466aaa8269c4b85f126e141d02"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2c01446effc76a9887a946ec1583547"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ab2c01446effc76a9887a946ec1583547">LoDCount</a></td></tr>
+<tr class="separator:ab2c01446effc76a9887a946ec1583547"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa1213282c3a744230053b0d3e57e743"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d9/d0f/a00644.html">TerrainNode</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#aaa1213282c3a744230053b0d3e57e743">renderList</a></td></tr>
+<tr class="separator:aaa1213282c3a744230053b0d3e57e743"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d3/d1a/a00251_source.html#l00007">7</a> of file <a class="el" href="../../d3/d1a/a00251_source.html">IndexBuffer.h</a>.</p>
+<div class="textblock"><p>Represents a terrain. </p>
+<p>This class uses different LoDs and tessellation to render the terrain efficiently with high detail without sacrificing too much on performance. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00021">21</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="abe72323134d281b5e140b03e1dc50c93"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abe72323134d281b5e140b03e1dc50c93">&#9670;&nbsp;</a></span>IndexBuffer()</h2>
+<a id="ae9403516ab2906e652493517fcb2e3d3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae9403516ab2906e652493517fcb2e3d3">&#9670;&nbsp;</a></span>Terrain()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">IndexBuffer::IndexBuffer </td>
+          <td class="memname">Atlas::Terrain::Terrain::Terrain </td>
           <td>(</td>
-          <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>dataType</em>, </td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>rootNodeCount</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>elementSize</em>, </td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>LoDCount</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>elementCount</em>&#160;</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>patchSizeFactor</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>resolution</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>height</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -253,45 +214,31 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Constructs an <a class="el" href="../../dc/d62/a00640.html">IndexBuffer</a> object. </p>
+<p>Constructs a <a class="el" href="../../dc/d62/a00640.html" title="Represents a terrain. ">Terrain</a> object. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">dataType</td><td>The data type of the data, e.g GL_FLOAT </td></tr>
-    <tr><td class="paramname">elementSize</td><td>The size of each element in bytes </td></tr>
-    <tr><td class="paramname">elementCount</td><td>The number of elements in the vertex buffer will be filled with </td></tr>
+    <tr><td class="paramname">rootNodeCount</td><td>The number of root nodes. Root nodes are the lowest level of detail </td></tr>
+    <tr><td class="paramname">LoDCount</td><td>The number of level of detail levels. Results in LoDCount - 1 subdivisions of the root nodes. </td></tr>
+    <tr><td class="paramname">patchSizeFactor</td><td>Changes the size of a patch and the number of vertices in a patch, e.g </td></tr>
+    <tr><td class="paramname">resolution</td><td>Like a scale in x and z direction of the terrain. Lower means more vertices per square unit. </td></tr>
+    <tr><td class="paramname">height</td><td>The maximum height of the terrain </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section note"><dt>Note</dt><dd>This is similar to <a href="https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBufferData.xhtml">glBufferData</a>. For all available data types see <a href="https://www.khronos.org/opengl/wiki/OpenGL_Type">Common Enums</a>. GL_FIXED is not supported. Note that every vertex buffers don't support dynamic storage and perform storage access by using a staging buffer. </dd></dl>
-
-</div>
-</div>
-<a id="a348889936f378b7942c1e01d83e42866"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a348889936f378b7942c1e01d83e42866">&#9670;&nbsp;</a></span>~IndexBuffer()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">IndexBuffer::~IndexBuffer </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
+<dl class="section note"><dt>Note</dt><dd>The maximum number of nodes in a terrain is 2^16. A node has 8 * 8 = 64 patches. The number of vertices per patch corresponds to 4 * pow(2 * patchSizeFactor, 2). </dd></dl>
+<dl class="section remark"><dt>Remarks</dt><dd>Let's assume we want 3 root nodes on each side of the terrain which leads to rootNodeCount = 3^2 = 9. We now decide that we want an LoDCount of 7. To check if we don't exceed the maximum number of nodes we calculate rootNodeCount * (pow(4,LoDCount) - 1) / 3 = 3 * (pow(4, 7) - 1) = 49149 &lt; 2^16 = 65536. This means that at the maximum lod which is Lod6 we have a total of pow(4, 6) * 9 = 36864 nodes. If we have a patchSizeFactor of 4 we have 4 * pow(2 * 4, 2) = 64 vertices per patch. This results in a maximum vertex count of around 600 mio. If we take the square root we get the number of vertices per side: sqrt(603979776) = 24576. If we set the resolution to 0.5 we get a total of 12288 units per terrain side. The size of map is therefore roughly 150 kilounits^2. </dd></dl>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="aae40bd23e23e1c4b83921de414c53369"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aae40bd23e23e1c4b83921de414c53369">&#9670;&nbsp;</a></span>GetDataType()</h2>
+<a id="ae1a81349fcf181cce19f784071e53bca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae1a81349fcf181cce19f784071e53bca">&#9670;&nbsp;</a></span>Bind()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint32_t IndexBuffer::GetDataType </td>
+          <td class="memname">void Atlas::Terrain::Terrain::Bind </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -299,38 +246,27 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Returns the type of the data which the buffer holds. </p>
-<dl class="section return"><dt>Returns</dt><dd>An integer corresponding to an OpenGL data type. </dd></dl>
-<dl class="section remark"><dt>Remarks</dt><dd>For all available data types see <a href="https://www.khronos.org/opengl/wiki/OpenGL_Type">https://www.khronos.org/opengl/wiki/OpenGL_Type</a> <a href="https://www.khronos.org/opengl/wiki/OpenGL_Type">Common Enums</a>. GL_FIXED is not supported. </dd></dl>
+<p>Binds the vertex array of the terrain. </p>
 
 </div>
 </div>
-<a id="a7bf0270d74102d89fc6e30076a90a3c7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7bf0270d74102d89fc6e30076a90a3c7">&#9670;&nbsp;</a></span>SetData()</h2>
+<a id="aa1a0773b1db1565f91f1eb2fc052c04a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa1a0773b1db1565f91f1eb2fc052c04a">&#9670;&nbsp;</a></span>GetHeight()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void IndexBuffer::SetData </td>
+          <td class="memname">float Atlas::Terrain::Terrain::GetHeight </td>
           <td>(</td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>data</em>, </td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>offset</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>length</em>&#160;</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>z</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -338,36 +274,480 @@ Additional Inherited Members</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
-<p>Sets the data of a buffer if it isn't mapped. </p>
+<p>Gets the height at a specific point on the terrain. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">data</td><td>A pointer to the data. </td></tr>
-    <tr><td class="paramname">offset</td><td>The offset in the buffer in elements (not bytes). </td></tr>
-    <tr><td class="paramname">length</td><td>The number of elements in data. </td></tr>
+    <tr><td class="paramname">x</td><td>The x component of the point relative to the terrain origin </td></tr>
+    <tr><td class="paramname">z</td><td>The z component of the point relative to the terrain origin </td></tr>
   </table>
   </dd>
 </dl>
+<dl class="section return"><dt>Returns</dt><dd>The height of the terrain. </dd></dl>
+<dl class="section note"><dt>Note</dt><dd>This function is computationally expensive. </dd></dl>
 
-<p>Reimplemented from <a class="el" href="../../d3/dd6/a00624.html#a030ccd05c95ff14864efdf1bf8266df4">Buffer</a>.</p>
+</div>
+</div>
+<a id="a23b58e0f937eaf5f544e93c45e253f58"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a23b58e0f937eaf5f544e93c45e253f58">&#9670;&nbsp;</a></span>GetStorageCell()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../df/d37/a00652.html">TerrainStorageCell</a>* Atlas::Terrain::Terrain::GetStorageCell </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>z</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>LoD</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Gets the storage cell for a point on the terrain. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">x</td><td>The x component of the point relative to the terrain origin </td></tr>
+    <tr><td class="paramname">z</td><td>The z component of the point relative to the terrain origin </td></tr>
+    <tr><td class="paramname">LoD</td><td>The lod level of the storage cell. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a TerrainStorageObject. Equals nullptr if input wasn't valid. </dd></dl>
+<dl class="section note"><dt>Note</dt><dd>For every point there exist as many storage cells as there are lod levels. </dd></dl>
+
+</div>
+</div>
+<a id="a0caf724beec1b6ffe35daca8793c5c67"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0caf724beec1b6ffe35daca8793c5c67">&#9670;&nbsp;</a></span>SetDisplacementDistance()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Terrain::Terrain::SetDisplacementDistance </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>distance</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the distance where the displacement should start. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">distance</td><td>The distance </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>Displacement mapping is only available if tessellation is enabled in the specified distance. The maximum distance recommended is where t(distance) = 1, where t is the tessellation function. Otherwise there would be too much flickering present on screen. </dd></dl>
+
+</div>
+</div>
+<a id="ac0994588971b704a6110061c87089b03"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac0994588971b704a6110061c87089b03">&#9670;&nbsp;</a></span>SetLoDDistance()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Terrain::Terrain::SetLoDDistance </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>LoD</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>distance</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the distance of a specific level of detail. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">LoD</td><td>The level of detail to be set in range of (0,LoDCount-1) </td></tr>
+    <tr><td class="paramname">distance</td><td>The distance where the level of details should begin </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>Only the highest level of detail will render splatmaps and tessellation. </dd></dl>
+
+</div>
+</div>
+<a id="adf8f3cfe13ae70102ef1c3aabda28159"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adf8f3cfe13ae70102ef1c3aabda28159">&#9670;&nbsp;</a></span>SetTessellationFunction()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Terrain::Terrain::SetTessellationFunction </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>factor</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>slope</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>shift</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>maxLevel</em> = <code>64.0f</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the tessellation function t(distance) = factor / pow(distance, slope) + shift. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">factor</td><td></td></tr>
+    <tr><td class="paramname">slope</td><td></td></tr>
+    <tr><td class="paramname">shift</td><td></td></tr>
+    <tr><td class="paramname">maxLevel</td><td>Determines the maximum level of subdivisions the tessellation uses. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section remark"><dt>Remarks</dt><dd>The tessellation for a point p is calculated by: <div class="fragment"><div class="line">distance = length(camera-&gt;location, p);</div><div class="line">tessLevel = mix(1.0f, maxLevel, clamp(t(distance), 0.0f, 1.0f));</div></div><!-- fragment --> </dd></dl>
+
+</div>
+</div>
+<a id="abc73230d605865b38b05e5f14d305308"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abc73230d605865b38b05e5f14d305308">&#9670;&nbsp;</a></span>Unbind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Terrain::Terrain::Unbind </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Unbinds the vertex array of the terrain. </p>
+
+</div>
+</div>
+<a id="aaac2161297e69c7635cde83f1baad4f6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaac2161297e69c7635cde83f1baad4f6">&#9670;&nbsp;</a></span>Update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Terrain::Terrain::Update </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Updates the terrain and the storage queues. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">camera</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>After calling this method the storage-&gt;requestedCells list contains all the StorageCells which are needed by the terrain. If these StorageCells aren't loaded the terrain can't increase the level of detail of the specific nodes. The storage-&gt;unusedCells list contains all the cells which aren't needed any more at the moment. </dd></dl>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="ac54318466aaa8269c4b85f126e141d02"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac54318466aaa8269c4b85f126e141d02">&#9670;&nbsp;</a></span>displacementDistance</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Terrain::Terrain::displacementDistance</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00131">131</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="a345119cd59eb21be53d71b6f34af46f7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a345119cd59eb21be53d71b6f34af46f7">&#9670;&nbsp;</a></span>heightScale</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Terrain::Terrain::heightScale</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00130">130</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="ab2c01446effc76a9887a946ec1583547"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2c01446effc76a9887a946ec1583547">&#9670;&nbsp;</a></span>LoDCount</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::Terrain::Terrain::LoDCount</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00133">133</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="a18a016b121b306b57ab0f6a6768ea62a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a18a016b121b306b57ab0f6a6768ea62a">&#9670;&nbsp;</a></span>maxTessellationLevel</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Terrain::Terrain::maxTessellationLevel</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00128">128</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="a2a0b1098ef8e7e3a87dc0169b763aeed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2a0b1098ef8e7e3a87dc0169b763aeed">&#9670;&nbsp;</a></span>patchOffsets</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;vec2&gt; Atlas::Terrain::Terrain::patchOffsets</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00123">123</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="ae3d67493f6ac308f2ff1f7af0265bfca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae3d67493f6ac308f2ff1f7af0265bfca">&#9670;&nbsp;</a></span>patchSize</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::Terrain::Terrain::patchSize</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00122">122</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="a6b53e39dd8da91dc3ba3abf090e8c64f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6b53e39dd8da91dc3ba3abf090e8c64f">&#9670;&nbsp;</a></span>patchVertexCount</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::Terrain::Terrain::patchVertexCount</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00121">121</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="aaa1213282c3a744230053b0d3e57e743"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaa1213282c3a744230053b0d3e57e743">&#9670;&nbsp;</a></span>renderList</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;<a class="el" href="../../d9/d0f/a00644.html">TerrainNode</a>*&gt; Atlas::Terrain::Terrain::renderList</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00135">135</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="a373075ebf9e0e471a161967c2aebc031"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a373075ebf9e0e471a161967c2aebc031">&#9670;&nbsp;</a></span>resolution</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Terrain::Terrain::resolution</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00118">118</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="ae72f366dae00975b264990d944640787"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae72f366dae00975b264990d944640787">&#9670;&nbsp;</a></span>sideLength</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Terrain::Terrain::sideLength</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00119">119</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="a529b3eb839336db7d5a29c1205622e08"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a529b3eb839336db7d5a29c1205622e08">&#9670;&nbsp;</a></span>storage</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../dd/d1f/a00648.html">TerrainStorage</a>* Atlas::Terrain::Terrain::storage</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00115">115</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="a1fc63472861edad0f926e7e007a8e533"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1fc63472861edad0f926e7e007a8e533">&#9670;&nbsp;</a></span>tessellationFactor</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Terrain::Terrain::tessellationFactor</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00125">125</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="ae4c1027e79b94b79234ba4c7962ddfe0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae4c1027e79b94b79234ba4c7962ddfe0">&#9670;&nbsp;</a></span>tessellationShift</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Terrain::Terrain::tessellationShift</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00127">127</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="afba3eb3d1d9519b9997bac768444ba6b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afba3eb3d1d9519b9997bac768444ba6b">&#9670;&nbsp;</a></span>tessellationSlope</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Terrain::Terrain::tessellationSlope</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00126">126</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="a74699741953d8de0666e5cc0d2d673a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a74699741953d8de0666e5cc0d2d673a4">&#9670;&nbsp;</a></span>translation</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">vec3 Atlas::Terrain::Terrain::translation</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00117">117</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/buffer/<a class="el" href="../../d3/d1a/a00251_source.html">IndexBuffer.h</a></li>
+<li>src/terrain/<a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dc/d62/a00640.html">IndexBuffer</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dc/dc9/a00282.html">Terrain</a></li><li class="navelem"><a class="el" href="../../dc/d62/a00640.html">Terrain</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

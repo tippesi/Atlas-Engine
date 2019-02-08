@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: TerrainStorage Class Reference</title>
+<title>Atlas Engine: Atlas::Shader::ShaderStage Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -89,58 +89,83 @@ $(document).ready(function(){initNavTree('d6/d75/a00604.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d6/db2/a00601.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">TerrainStorage Class Reference</div>  </div>
+<div class="title">Atlas::Shader::ShaderStage Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Manages the materials and data for all terrain nodes.  
+<p>A shader stage is a module/stage of a shader, e.g it might be a vertex shader.  
  <a href="../../d6/d75/a00604.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../d1/da8/a00230_source.html">TerrainStorage.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d3/de5/a00209_source.html">ShaderStage.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:acb8b608994bcfc8a5e3f83b80da98437"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#acb8b608994bcfc8a5e3f83b80da98437">TerrainStorage</a> (int32_t rootNodeCount, int32_t LoDCount)</td></tr>
-<tr class="memdesc:acb8b608994bcfc8a5e3f83b80da98437"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a terrain storage object.  <a href="#acb8b608994bcfc8a5e3f83b80da98437">More...</a><br /></td></tr>
-<tr class="separator:acb8b608994bcfc8a5e3f83b80da98437"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a989b2e85808897ee65bfbe4057c4a442"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d14/a00608.html">TerrainStorageCell</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#a989b2e85808897ee65bfbe4057c4a442">GetCell</a> (int32_t x, int32_t y, int32_t LoD)</td></tr>
-<tr class="memdesc:a989b2e85808897ee65bfbe4057c4a442"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the cell to the corresponding arguments in the storage object.  <a href="#a989b2e85808897ee65bfbe4057c4a442">More...</a><br /></td></tr>
-<tr class="separator:a989b2e85808897ee65bfbe4057c4a442"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa9eba5ab32f35811c9e998d1ced3671"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#afa9eba5ab32f35811c9e998d1ced3671">ShaderStage</a> (int32_t <a class="el" href="../../d6/d75/a00604.html#adf76d0ec0afc1192226c9235bc77e7ca">type</a>, std::string <a class="el" href="../../d6/d75/a00604.html#afed49a1955027b9b32ba495462a6e60f">filename</a>)</td></tr>
+<tr class="memdesc:afa9eba5ab32f35811c9e998d1ced3671"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d6/d75/a00604.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object.  <a href="#afa9eba5ab32f35811c9e998d1ced3671">More...</a><br /></td></tr>
+<tr class="separator:afa9eba5ab32f35811c9e998d1ced3671"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a744f24222f11061e771de569fc109d03"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#a744f24222f11061e771de569fc109d03">ShaderStage</a> (<a class="el" href="../../d6/d75/a00604.html">ShaderStage</a> *source)</td></tr>
+<tr class="memdesc:a744f24222f11061e771de569fc109d03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d6/d75/a00604.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object.  <a href="#a744f24222f11061e771de569fc109d03">More...</a><br /></td></tr>
+<tr class="separator:a744f24222f11061e771de569fc109d03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade68cce71a2e14030d7e8632f157406b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#ade68cce71a2e14030d7e8632f157406b">~ShaderStage</a> ()</td></tr>
+<tr class="memdesc:ade68cce71a2e14030d7e8632f157406b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructs a <a class="el" href="../../d6/d75/a00604.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object.  <a href="#ade68cce71a2e14030d7e8632f157406b">More...</a><br /></td></tr>
+<tr class="separator:ade68cce71a2e14030d7e8632f157406b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9fbf412379420ae25cd07d7746cdf2d4"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#a9fbf412379420ae25cd07d7746cdf2d4">Reload</a> ()</td></tr>
+<tr class="memdesc:a9fbf412379420ae25cd07d7746cdf2d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads the shader stage from the disk.  <a href="#a9fbf412379420ae25cd07d7746cdf2d4">More...</a><br /></td></tr>
+<tr class="separator:a9fbf412379420ae25cd07d7746cdf2d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a169e702f970e2582d561e6aff321ea5d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#a169e702f970e2582d561e6aff321ea5d">AddMacro</a> (std::string macro)</td></tr>
+<tr class="memdesc:a169e702f970e2582d561e6aff321ea5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a macro to the shader stage.  <a href="#a169e702f970e2582d561e6aff321ea5d">More...</a><br /></td></tr>
+<tr class="separator:a169e702f970e2582d561e6aff321ea5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a987807194461624786a98d94b5b635c2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#a987807194461624786a98d94b5b635c2">RemoveMacro</a> (std::string macro)</td></tr>
+<tr class="memdesc:a987807194461624786a98d94b5b635c2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a macro from the shader stage.  <a href="#a987807194461624786a98d94b5b635c2">More...</a><br /></td></tr>
+<tr class="separator:a987807194461624786a98d94b5b635c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af85708e10947457e55b9eca2f2d2882c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d1/d8c/a00600.html">ShaderConstant</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#af85708e10947457e55b9eca2f2d2882c">GetConstant</a> (std::string constant)</td></tr>
+<tr class="memdesc:af85708e10947457e55b9eca2f2d2882c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a <a class="el" href="../../d1/d8c/a00600.html">ShaderConstant</a> object for a specific constant of the shader stage.  <a href="#af85708e10947457e55b9eca2f2d2882c">More...</a><br /></td></tr>
+<tr class="separator:af85708e10947457e55b9eca2f2d2882c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3bd56ba55a5e388d3dd9ea354dbedd03"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#a3bd56ba55a5e388d3dd9ea354dbedd03">Compile</a> ()</td></tr>
+<tr class="memdesc:a3bd56ba55a5e388d3dd9ea354dbedd03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compiles the shader stage.  <a href="#a3bd56ba55a5e388d3dd9ea354dbedd03">More...</a><br /></td></tr>
+<tr class="separator:a3bd56ba55a5e388d3dd9ea354dbedd03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:afc990d8e003c3b687b1f014d8253fe17"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#afc990d8e003c3b687b1f014d8253fe17">SetSourceDirectory</a> (std::string directory)</td></tr>
+<tr class="memdesc:afc990d8e003c3b687b1f014d8253fe17"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the root shader source/binary directory for all shader files.  <a href="#afc990d8e003c3b687b1f014d8253fe17">More...</a><br /></td></tr>
+<tr class="separator:afc990d8e003c3b687b1f014d8253fe17"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a59df861d15cce51de2915f2cfa107843"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../d4/d14/a00608.html">TerrainStorageCell</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#a59df861d15cce51de2915f2cfa107843">requestedCells</a></td></tr>
-<tr class="memdesc:a59df861d15cce51de2915f2cfa107843"><td class="mdescLeft">&#160;</td><td class="mdescRight">The storage cells the terrain request to change the level of detail.  <a href="#a59df861d15cce51de2915f2cfa107843">More...</a><br /></td></tr>
-<tr class="separator:a59df861d15cce51de2915f2cfa107843"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a03d71a76977ba904dc7979d78ea5d341"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../d4/d14/a00608.html">TerrainStorageCell</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#a03d71a76977ba904dc7979d78ea5d341">unusedCells</a></td></tr>
-<tr class="memdesc:a03d71a76977ba904dc7979d78ea5d341"><td class="mdescLeft">&#160;</td><td class="mdescRight">The storage cells the terrain doesn't need any more because of a change in the level of detail.  <a href="#a03d71a76977ba904dc7979d78ea5d341">More...</a><br /></td></tr>
-<tr class="separator:a03d71a76977ba904dc7979d78ea5d341"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8803f77f0ab7738331af7d12ce38fd09"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#a8803f77f0ab7738331af7d12ce38fd09">ID</a></td></tr>
+<tr class="separator:a8803f77f0ab7738331af7d12ce38fd09"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf76d0ec0afc1192226c9235bc77e7ca"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#adf76d0ec0afc1192226c9235bc77e7ca">type</a></td></tr>
+<tr class="separator:adf76d0ec0afc1192226c9235bc77e7ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afed49a1955027b9b32ba495462a6e60f"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/a00604.html#afed49a1955027b9b32ba495462a6e60f">filename</a></td></tr>
+<tr class="separator:afed49a1955027b9b32ba495462a6e60f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Manages the materials and data for all terrain nodes. </p>
+<div class="textblock"><p>A shader stage is a module/stage of a shader, e.g it might be a vertex shader. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00012">12</a> of file <a class="el" href="../../d1/da8/a00230_source.html">TerrainStorage.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/de5/a00209_source.html#l00024">24</a> of file <a class="el" href="../../d3/de5/a00209_source.html">ShaderStage.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="acb8b608994bcfc8a5e3f83b80da98437"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acb8b608994bcfc8a5e3f83b80da98437">&#9670;&nbsp;</a></span>TerrainStorage()</h2>
+<a id="afa9eba5ab32f35811c9e998d1ced3671"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa9eba5ab32f35811c9e998d1ced3671">&#9670;&nbsp;</a></span>ShaderStage() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">TerrainStorage::TerrainStorage </td>
+          <td class="memname">Atlas::Shader::ShaderStage::ShaderStage </td>
           <td>(</td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>rootNodeCount</em>, </td>
+          <td class="paramname"><em>type</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>LoDCount</em>&#160;</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -150,110 +175,274 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Constructs a terrain storage object. </p>
+<p>Constructs a <a class="el" href="../../d6/d75/a00604.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">rootNodeCount</td><td>The root node count of the terrain </td></tr>
-    <tr><td class="paramname">LoDCount</td><td>The level of detail count of the terrain </td></tr>
+    <tr><td class="paramname">type</td><td>The type of the stage. See <a class="el" href="../../d3/de5/a00209.html">ShaderStage.h</a> for more. </td></tr>
+    <tr><td class="paramname">filename</td><td>The name of the GLSL file </td></tr>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="a744f24222f11061e771de569fc109d03"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a744f24222f11061e771de569fc109d03">&#9670;&nbsp;</a></span>ShaderStage() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Shader::ShaderStage::ShaderStage </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d6/d75/a00604.html">ShaderStage</a> *&#160;</td>
+          <td class="paramname"><em>source</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Constructs a <a class="el" href="../../d6/d75/a00604.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">source</td><td>A pointer to a valid <a class="el" href="../../d6/d75/a00604.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ade68cce71a2e14030d7e8632f157406b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade68cce71a2e14030d7e8632f157406b">&#9670;&nbsp;</a></span>~ShaderStage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Shader::ShaderStage::~ShaderStage </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Destructs a <a class="el" href="../../d6/d75/a00604.html" title="A shader stage is a module/stage of a shader, e.g it might be a vertex shader. ">ShaderStage</a> object. </p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a989b2e85808897ee65bfbe4057c4a442"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a989b2e85808897ee65bfbe4057c4a442">&#9670;&nbsp;</a></span>GetCell()</h2>
+<a id="a169e702f970e2582d561e6aff321ea5d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a169e702f970e2582d561e6aff321ea5d">&#9670;&nbsp;</a></span>AddMacro()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d4/d14/a00608.html">TerrainStorageCell</a>* TerrainStorage::GetCell </td>
+          <td class="memname">void Atlas::Shader::ShaderStage::AddMacro </td>
           <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>macro</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>LoD</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Finds the cell to the corresponding arguments in the storage object. </p>
+<p>Adds a macro to the shader stage. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">x</td><td>The x sector of the node </td></tr>
-    <tr><td class="paramname">y</td><td>The y sector of the node </td></tr>
-    <tr><td class="paramname">LoD</td><td>The level of detail of the node </td></tr>
+    <tr><td class="paramname">macro</td><td>The macro to be added. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A pointer to a <a class="el" href="../../d4/d14/a00608.html" title="Stores the material information for a terrain node. ">TerrainStorageCell</a> </dd></dl>
-<dl class="section remark"><dt>Remarks</dt><dd>The terrain storage can be understood as a mipmap where each level of detail is represented by a mipmap level. This means y is the coordinate in z direction of the terrain. Also x and y aren't world space coordinates but are the coordinates of a specific terrain node in their level of detail. E.g at a level of detail of 5 and a rootNodeCount of 9 x and y are in range (0, 2^(5-1) * 9) </dd></dl>
+
+</div>
+</div>
+<a id="a3bd56ba55a5e388d3dd9ea354dbedd03"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3bd56ba55a5e388d3dd9ea354dbedd03">&#9670;&nbsp;</a></span>Compile()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Atlas::Shader::ShaderStage::Compile </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Compiles the shader stage. </p>
+<dl class="section return"><dt>Returns</dt><dd>True if successful, false otherwise. </dd></dl>
+
+</div>
+</div>
+<a id="af85708e10947457e55b9eca2f2d2882c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af85708e10947457e55b9eca2f2d2882c">&#9670;&nbsp;</a></span>GetConstant()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d1/d8c/a00600.html">ShaderConstant</a>* Atlas::Shader::ShaderStage::GetConstant </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>constant</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns a <a class="el" href="../../d1/d8c/a00600.html">ShaderConstant</a> object for a specific constant of the shader stage. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">constant</td><td>The name of the constant. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a <a class="el" href="../../d1/d8c/a00600.html">ShaderConstant</a> object if valid. Nullptr otherwise. </dd></dl>
+
+</div>
+</div>
+<a id="a9fbf412379420ae25cd07d7746cdf2d4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9fbf412379420ae25cd07d7746cdf2d4">&#9670;&nbsp;</a></span>Reload()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Atlas::Shader::ShaderStage::Reload </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Reloads the shader stage from the disk. </p>
+<dl class="section return"><dt>Returns</dt><dd>True if it had to be reloaded (timestamp), false otherwise. </dd></dl>
+
+</div>
+</div>
+<a id="a987807194461624786a98d94b5b635c2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a987807194461624786a98d94b5b635c2">&#9670;&nbsp;</a></span>RemoveMacro()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderStage::RemoveMacro </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>macro</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Removes a macro from the shader stage. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">macro</td><td>The macro to be removed. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="afc990d8e003c3b687b1f014d8253fe17"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afc990d8e003c3b687b1f014d8253fe17">&#9670;&nbsp;</a></span>SetSourceDirectory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void Atlas::Shader::ShaderStage::SetSourceDirectory </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>directory</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sets the root shader source/binary directory for all shader files. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">directory</td><td>The path to the directory </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a59df861d15cce51de2915f2cfa107843"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a59df861d15cce51de2915f2cfa107843">&#9670;&nbsp;</a></span>requestedCells</h2>
+<a id="afed49a1955027b9b32ba495462a6e60f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afed49a1955027b9b32ba495462a6e60f">&#9670;&nbsp;</a></span>filename</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">vector&lt;<a class="el" href="../../d4/d14/a00608.html">TerrainStorageCell</a>*&gt; TerrainStorage::requestedCells</td>
+          <td class="memname">std::string Atlas::Shader::ShaderStage::filename</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The storage cells the terrain request to change the level of detail. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00040">40</a> of file <a class="el" href="../../d1/da8/a00230_source.html">TerrainStorage.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/de5/a00209_source.html#l00085">85</a> of file <a class="el" href="../../d3/de5/a00209_source.html">ShaderStage.h</a>.</p>
 
 </div>
 </div>
-<a id="a03d71a76977ba904dc7979d78ea5d341"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a03d71a76977ba904dc7979d78ea5d341">&#9670;&nbsp;</a></span>unusedCells</h2>
+<a id="a8803f77f0ab7738331af7d12ce38fd09"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8803f77f0ab7738331af7d12ce38fd09">&#9670;&nbsp;</a></span>ID</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">vector&lt;<a class="el" href="../../d4/d14/a00608.html">TerrainStorageCell</a>*&gt; TerrainStorage::unusedCells</td>
+          <td class="memname">int32_t Atlas::Shader::ShaderStage::ID</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The storage cells the terrain doesn't need any more because of a change in the level of detail. </p>
+<p class="definition">Definition at line <a class="el" href="../../d3/de5/a00209_source.html#l00082">82</a> of file <a class="el" href="../../d3/de5/a00209_source.html">ShaderStage.h</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00046">46</a> of file <a class="el" href="../../d1/da8/a00230_source.html">TerrainStorage.h</a>.</p>
+</div>
+</div>
+<a id="adf76d0ec0afc1192226c9235bc77e7ca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adf76d0ec0afc1192226c9235bc77e7ca">&#9670;&nbsp;</a></span>type</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::Shader::ShaderStage::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d3/de5/a00209_source.html#l00083">83</a> of file <a class="el" href="../../d3/de5/a00209_source.html">ShaderStage.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/terrain/<a class="el" href="../../d1/da8/a00230_source.html">TerrainStorage.h</a></li>
+<li>src/shader/<a class="el" href="../../d3/de5/a00209_source.html">ShaderStage.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d6/d75/a00604.html">TerrainStorage</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d82/a00279.html">Shader</a></li><li class="navelem"><a class="el" href="../../d6/d75/a00604.html">ShaderStage</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

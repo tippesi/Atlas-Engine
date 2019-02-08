@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: EngineControllerButtonEvent Class Reference</title>
+<title>Atlas Engine: Atlas::Scene Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -92,131 +92,487 @@ $(document).ready(function(){initNavTree('df/d03/a00348.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d9/d48/a00345.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">EngineControllerButtonEvent Class Reference</div>  </div>
+<div class="title">Atlas::Scene Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>A class to distribute controller button events.  
- <a href="../../df/d03/a00348.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d4/d8c/a00035_source.html">Scene.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a5369391ea3dc87f22b22b8bda64dbb91"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a5369391ea3dc87f22b22b8bda64dbb91">EngineControllerButtonEvent</a> (SDL_ControllerButtonEvent event)</td></tr>
-<tr class="separator:a5369391ea3dc87f22b22b8bda64dbb91"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40b5dcd79b055f5f6adb8b94a658229d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a40b5dcd79b055f5f6adb8b94a658229d">Scene</a> ()</td></tr>
+<tr class="separator:a40b5dcd79b055f5f6adb8b94a658229d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a641882403a41f368c781aa2d73ec445d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a641882403a41f368c781aa2d73ec445d">~Scene</a> ()</td></tr>
+<tr class="separator:a641882403a41f368c781aa2d73ec445d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab59147c477e7e3cfb3a80f0300803655"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#ab59147c477e7e3cfb3a80f0300803655">Add</a> (<a class="el" href="../../dc/d1c/a00504.html">Mesh::MeshActor</a> *actor)</td></tr>
+<tr class="separator:ab59147c477e7e3cfb3a80f0300803655"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad94cfb396a0e4dfcac4deefc9817b3ed"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#ad94cfb396a0e4dfcac4deefc9817b3ed">Remove</a> (<a class="el" href="../../dc/d1c/a00504.html">Mesh::MeshActor</a> *actor)</td></tr>
+<tr class="separator:ad94cfb396a0e4dfcac4deefc9817b3ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d11fe7978ce0cf4fe22b0ad93ee8e94"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a9d11fe7978ce0cf4fe22b0ad93ee8e94">Add</a> (<a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *terrain)</td></tr>
+<tr class="separator:a9d11fe7978ce0cf4fe22b0ad93ee8e94"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab06923aeba6bdde86a4776efe4002de7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#ab06923aeba6bdde86a4776efe4002de7">Remove</a> (<a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *terrain)</td></tr>
+<tr class="separator:ab06923aeba6bdde86a4776efe4002de7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aedc3b4b3a97319060df18a61c30e95f6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#aedc3b4b3a97319060df18a61c30e95f6">Add</a> (<a class="el" href="../../d2/d9d/a00464.html">Lighting::ILight</a> *light)</td></tr>
+<tr class="separator:aedc3b4b3a97319060df18a61c30e95f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab69b986cd6b02a89d32f9231bba66472"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#ab69b986cd6b02a89d32f9231bba66472">Remove</a> (<a class="el" href="../../d2/d9d/a00464.html">Lighting::ILight</a> *light)</td></tr>
+<tr class="separator:ab69b986cd6b02a89d32f9231bba66472"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a684b00109214e75fa4cff24a07b79f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a5a684b00109214e75fa4cff24a07b79f">Add</a> (<a class="el" href="../../db/d7b/a00296.html">Decal</a> *decal)</td></tr>
+<tr class="separator:a5a684b00109214e75fa4cff24a07b79f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a900c815d8101076504669d5af8a9a437"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a900c815d8101076504669d5af8a9a437">Remove</a> (<a class="el" href="../../db/d7b/a00296.html">Decal</a> *decal)</td></tr>
+<tr class="separator:a900c815d8101076504669d5af8a9a437"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab99314b1b0f1bcdba91ef0a5baca1613"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#ab99314b1b0f1bcdba91ef0a5baca1613">Update</a> (<a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera)</td></tr>
+<tr class="separator:ab99314b1b0f1bcdba91ef0a5baca1613"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b871e473e4f986c972939d147ff3818"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a8b871e473e4f986c972939d147ff3818">ClearContent</a> ()</td></tr>
+<tr class="separator:a8b871e473e4f986c972939d147ff3818"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af87a44e5fea51b9a81e9193a21068b55"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#af87a44e5fea51b9a81e9193a21068b55">DeleteContent</a> ()</td></tr>
+<tr class="separator:af87a44e5fea51b9a81e9193a21068b55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:af070490eef56626f09a3a0fec8c6c5ca"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#af070490eef56626f09a3a0fec8c6c5ca">button</a></td></tr>
-<tr class="memdesc:af070490eef56626f09a3a0fec8c6c5ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">The button which was pressed on the controller.  <a href="#af070490eef56626f09a3a0fec8c6c5ca">More...</a><br /></td></tr>
-<tr class="separator:af070490eef56626f09a3a0fec8c6c5ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7841fe8079c9427ea4cac304ab97dd6b"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a7841fe8079c9427ea4cac304ab97dd6b">state</a></td></tr>
-<tr class="memdesc:a7841fe8079c9427ea4cac304ab97dd6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">The state of the button.  <a href="#a7841fe8079c9427ea4cac304ab97dd6b">More...</a><br /></td></tr>
-<tr class="separator:a7841fe8079c9427ea4cac304ab97dd6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a47ebdac9f67670f647c2b452499d2f29"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a47ebdac9f67670f647c2b452499d2f29">device</a></td></tr>
-<tr class="memdesc:a47ebdac9f67670f647c2b452499d2f29"><td class="mdescLeft">&#160;</td><td class="mdescRight">The device ID of the game controller.  <a href="#a47ebdac9f67670f647c2b452499d2f29">More...</a><br /></td></tr>
-<tr class="separator:a47ebdac9f67670f647c2b452499d2f29"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf37f4d1069f6889f1ed749d6e08c516"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d6/d9c/a00352.html">SceneNode</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#aaf37f4d1069f6889f1ed749d6e08c516">rootNode</a></td></tr>
+<tr class="separator:aaf37f4d1069f6889f1ed749d6e08c516"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3913c5779ba70d89a06ea34917116252"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d2/d9d/a00464.html">Lighting::ILight</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a3913c5779ba70d89a06ea34917116252">lights</a></td></tr>
+<tr class="separator:a3913c5779ba70d89a06ea34917116252"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa167e6549b04aba6c5e13449d55e00b0"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../dc/d30/a00508.html">Mesh::MeshActorBatch</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#aa167e6549b04aba6c5e13449d55e00b0">meshActorBatches</a></td></tr>
+<tr class="separator:aa167e6549b04aba6c5e13449d55e00b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a986a542ccbc9cb2052a2b1f37a5f1990"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a986a542ccbc9cb2052a2b1f37a5f1990">terrains</a></td></tr>
+<tr class="separator:a986a542ccbc9cb2052a2b1f37a5f1990"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a744a4c7212dadfbad4236f4ba602e630"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../db/d7b/a00296.html">Decal</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a744a4c7212dadfbad4236f4ba602e630">decals</a></td></tr>
+<tr class="separator:a744a4c7212dadfbad4236f4ba602e630"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a398d5779dc6da9676c668d2b37aaa5cd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d9/dc5/a00480.html">Lighting::Sky</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a398d5779dc6da9676c668d2b37aaa5cd">sky</a></td></tr>
+<tr class="separator:a398d5779dc6da9676c668d2b37aaa5cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a206dc543de4444b4131eb7e8614e9852"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d2a/a00632.html">PostProcessing::PostProcessing</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a206dc543de4444b4131eb7e8614e9852">postProcessing</a></td></tr>
+<tr class="separator:a206dc543de4444b4131eb7e8614e9852"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a729e2a14c8d094ba44cc95427c679617"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../df/df1/a00340.html">RenderList</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d03/a00348.html#a729e2a14c8d094ba44cc95427c679617">renderList</a></td></tr>
+<tr class="separator:a729e2a14c8d094ba44cc95427c679617"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A class to distribute controller button events. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00027">27</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a>.</p>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00017">17</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">Scene.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a5369391ea3dc87f22b22b8bda64dbb91"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5369391ea3dc87f22b22b8bda64dbb91">&#9670;&nbsp;</a></span>EngineControllerButtonEvent()</h2>
+<a id="a40b5dcd79b055f5f6adb8b94a658229d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a40b5dcd79b055f5f6adb8b94a658229d">&#9670;&nbsp;</a></span>Scene()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">EngineControllerButtonEvent::EngineControllerButtonEvent </td>
+          <td class="memname">Atlas::Scene::Scene </td>
           <td>(</td>
-          <td class="paramtype">SDL_ControllerButtonEvent&#160;</td>
-          <td class="paramname"><em>event</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00030">30</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a>.</p>
+</div>
+</div>
+<a id="a641882403a41f368c781aa2d73ec445d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a641882403a41f368c781aa2d73ec445d">&#9670;&nbsp;</a></span>~Scene()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Scene::~Scene </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="ab59147c477e7e3cfb3a80f0300803655"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab59147c477e7e3cfb3a80f0300803655">&#9670;&nbsp;</a></span>Add() <span class="overload">[1/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Scene::Add </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d1c/a00504.html">Mesh::MeshActor</a> *&#160;</td>
+          <td class="paramname"><em>actor</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">actor</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a9d11fe7978ce0cf4fe22b0ad93ee8e94"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9d11fe7978ce0cf4fe22b0ad93ee8e94">&#9670;&nbsp;</a></span>Add() <span class="overload">[2/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Scene::Add </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *&#160;</td>
+          <td class="paramname"><em>terrain</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">terrain</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="aedc3b4b3a97319060df18a61c30e95f6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aedc3b4b3a97319060df18a61c30e95f6">&#9670;&nbsp;</a></span>Add() <span class="overload">[3/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Scene::Add </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d2/d9d/a00464.html">Lighting::ILight</a> *&#160;</td>
+          <td class="paramname"><em>light</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">light</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a5a684b00109214e75fa4cff24a07b79f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5a684b00109214e75fa4cff24a07b79f">&#9670;&nbsp;</a></span>Add() <span class="overload">[4/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Scene::Add </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../db/d7b/a00296.html">Decal</a> *&#160;</td>
+          <td class="paramname"><em>decal</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">decal</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a8b871e473e4f986c972939d147ff3818"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8b871e473e4f986c972939d147ff3818">&#9670;&nbsp;</a></span>ClearContent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Scene::ClearContent </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af87a44e5fea51b9a81e9193a21068b55"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af87a44e5fea51b9a81e9193a21068b55">&#9670;&nbsp;</a></span>DeleteContent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Scene::DeleteContent </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad94cfb396a0e4dfcac4deefc9817b3ed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad94cfb396a0e4dfcac4deefc9817b3ed">&#9670;&nbsp;</a></span>Remove() <span class="overload">[1/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Scene::Remove </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d1c/a00504.html">Mesh::MeshActor</a> *&#160;</td>
+          <td class="paramname"><em>actor</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">actor</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ab06923aeba6bdde86a4776efe4002de7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab06923aeba6bdde86a4776efe4002de7">&#9670;&nbsp;</a></span>Remove() <span class="overload">[2/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Scene::Remove </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *&#160;</td>
+          <td class="paramname"><em>terrain</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">terrain</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ab69b986cd6b02a89d32f9231bba66472"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab69b986cd6b02a89d32f9231bba66472">&#9670;&nbsp;</a></span>Remove() <span class="overload">[3/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Scene::Remove </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d2/d9d/a00464.html">Lighting::ILight</a> *&#160;</td>
+          <td class="paramname"><em>light</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">light</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a900c815d8101076504669d5af8a9a437"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a900c815d8101076504669d5af8a9a437">&#9670;&nbsp;</a></span>Remove() <span class="overload">[4/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Scene::Remove </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../db/d7b/a00296.html">Decal</a> *&#160;</td>
+          <td class="paramname"><em>decal</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">decal</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ab99314b1b0f1bcdba91ef0a5baca1613"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab99314b1b0f1bcdba91ef0a5baca1613">&#9670;&nbsp;</a></span>Update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Scene::Update </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">camera</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="af070490eef56626f09a3a0fec8c6c5ca"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af070490eef56626f09a3a0fec8c6c5ca">&#9670;&nbsp;</a></span>button</h2>
+<a id="a744a4c7212dadfbad4236f4ba602e630"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a744a4c7212dadfbad4236f4ba602e630">&#9670;&nbsp;</a></span>decals</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint8_t EngineControllerButtonEvent::button</td>
+          <td class="memname">std::vector&lt;<a class="el" href="../../db/d7b/a00296.html">Decal</a> *&gt; Atlas::Scene::decals</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The button which was pressed on the controller. </p>
-<p>See <a class="el" href="../../d9/d2e/a00056.html">EngineControllerButtonEvent.h</a> for more. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00041">41</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00097">97</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">Scene.h</a>.</p>
 
 </div>
 </div>
-<a id="a47ebdac9f67670f647c2b452499d2f29"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a47ebdac9f67670f647c2b452499d2f29">&#9670;&nbsp;</a></span>device</h2>
+<a id="a3913c5779ba70d89a06ea34917116252"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3913c5779ba70d89a06ea34917116252">&#9670;&nbsp;</a></span>lights</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t EngineControllerButtonEvent::device</td>
+          <td class="memname">std::vector&lt;<a class="el" href="../../d2/d9d/a00464.html">Lighting::ILight</a> *&gt; Atlas::Scene::lights</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The device ID of the game controller. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00051">51</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00094">94</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">Scene.h</a>.</p>
 
 </div>
 </div>
-<a id="a7841fe8079c9427ea4cac304ab97dd6b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7841fe8079c9427ea4cac304ab97dd6b">&#9670;&nbsp;</a></span>state</h2>
+<a id="aa167e6549b04aba6c5e13449d55e00b0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa167e6549b04aba6c5e13449d55e00b0">&#9670;&nbsp;</a></span>meshActorBatches</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint8_t EngineControllerButtonEvent::state</td>
+          <td class="memname">std::vector&lt;<a class="el" href="../../dc/d30/a00508.html">Mesh::MeshActorBatch</a> *&gt; Atlas::Scene::meshActorBatches</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The state of the button. </p>
-<p>Might be BUTTON_PRESSED or BUTTON_RELEASED. </p>
+<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00095">95</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">Scene.h</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00046">46</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a>.</p>
+</div>
+</div>
+<a id="a206dc543de4444b4131eb7e8614e9852"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a206dc543de4444b4131eb7e8614e9852">&#9670;&nbsp;</a></span>postProcessing</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d4/d2a/a00632.html">PostProcessing::PostProcessing</a>* Atlas::Scene::postProcessing</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00100">100</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">Scene.h</a>.</p>
+
+</div>
+</div>
+<a id="a729e2a14c8d094ba44cc95427c679617"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a729e2a14c8d094ba44cc95427c679617">&#9670;&nbsp;</a></span>renderList</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../df/df1/a00340.html">RenderList</a>* Atlas::Scene::renderList</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00102">102</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">Scene.h</a>.</p>
+
+</div>
+</div>
+<a id="aaf37f4d1069f6889f1ed749d6e08c516"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaf37f4d1069f6889f1ed749d6e08c516">&#9670;&nbsp;</a></span>rootNode</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d6/d9c/a00352.html">SceneNode</a>* Atlas::Scene::rootNode</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00092">92</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">Scene.h</a>.</p>
+
+</div>
+</div>
+<a id="a398d5779dc6da9676c668d2b37aaa5cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a398d5779dc6da9676c668d2b37aaa5cd">&#9670;&nbsp;</a></span>sky</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d9/dc5/a00480.html">Lighting::Sky</a>* Atlas::Scene::sky</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00099">99</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">Scene.h</a>.</p>
+
+</div>
+</div>
+<a id="a986a542ccbc9cb2052a2b1f37a5f1990"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a986a542ccbc9cb2052a2b1f37a5f1990">&#9670;&nbsp;</a></span>terrains</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;<a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *&gt; Atlas::Scene::terrains</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00096">96</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">Scene.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../d9/d2e/a00056_source.html">EngineControllerButtonEvent.h</a></li>
+<li>src/<a class="el" href="../../d4/d8c/a00035_source.html">Scene.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../df/d03/a00348.html">EngineControllerButtonEvent</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../df/d03/a00348.html">Scene</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

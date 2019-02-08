@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['geometryrenderer',['GeometryRenderer',['../dc/d1c/a00504.html',1,'']]],
-  ['glyph',['Glyph',['../db/dc3/a00284.html',1,'']]]
+  ['glyph',['Glyph',['../d8/d17/a00304.html',1,'Atlas']]],
+  ['glyphinfo',['GlyphInfo',['../d7/df2/a00312.html',1,'Atlas::Font']]]
 ];

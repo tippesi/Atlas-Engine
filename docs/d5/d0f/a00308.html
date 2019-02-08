@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Main Class Reference</title>
+<title>Atlas Engine: Atlas::Font Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -88,41 +88,101 @@ $(document).ready(function(){initNavTree('d5/d0f/a00308.html','../../');});
 
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d3/d07/a00305.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Main Class Reference</div>  </div>
+<div class="title">Atlas::Font Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d5/d16/a00029_source.html">Main.h</a>&gt;</code></p>
+<p>Handles the font loading and management of characters.  
+ <a href="../../d5/d0f/a00308.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/df2/a00312.html">GlyphInfo</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:acc391d6153cc59664b50095bc2ad294d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#acc391d6153cc59664b50095bc2ad294d">Main</a> (int argc, char *argv[])</td></tr>
-<tr class="separator:acc391d6153cc59664b50095bc2ad294d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a171a471c4950ddb0f27cb9f8629a7fb7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#a171a471c4950ddb0f27cb9f8629a7fb7">Font</a> (std::string filename, float pixelSize, int32_t padding, uint8_t <a class="el" href="../../d5/d0f/a00308.html#ae8d89f4487e4de060675fd3b94a1a7cd">edgeValue</a>)</td></tr>
+<tr class="memdesc:a171a471c4950ddb0f27cb9f8629a7fb7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads a true type font from a file.  <a href="#a171a471c4950ddb0f27cb9f8629a7fb7">More...</a><br /></td></tr>
+<tr class="separator:a171a471c4950ddb0f27cb9f8629a7fb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b1aaa37f1ea163a69207115bf49b205"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#a9b1aaa37f1ea163a69207115bf49b205">~Font</a> ()</td></tr>
+<tr class="separator:a9b1aaa37f1ea163a69207115bf49b205"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec907513b451c610889c81d9bf4a8922"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d17/a00304.html">Glyph</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#aec907513b451c610889c81d9bf4a8922">GetGlyph</a> (char character)</td></tr>
+<tr class="memdesc:aec907513b451c610889c81d9bf4a8922"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the glyph of a character.  <a href="#aec907513b451c610889c81d9bf4a8922">More...</a><br /></td></tr>
+<tr class="separator:aec907513b451c610889c81d9bf4a8922"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ca64d05a3cc88d0abca22f00cbeb422"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d17/a00304.html">Glyph</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#a5ca64d05a3cc88d0abca22f00cbeb422">GetGlyphUTF8</a> (const char *&amp;character)</td></tr>
+<tr class="memdesc:a5ca64d05a3cc88d0abca22f00cbeb422"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the glyph of a character.  <a href="#a5ca64d05a3cc88d0abca22f00cbeb422">More...</a><br /></td></tr>
+<tr class="separator:a5ca64d05a3cc88d0abca22f00cbeb422"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af508e33cc1304b7d0538214bf89a4125"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#af508e33cc1304b7d0538214bf89a4125">ComputeDimensions</a> (std::string text, float scale, float *width, float *height)</td></tr>
+<tr class="memdesc:af508e33cc1304b7d0538214bf89a4125"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the dimensions of a given string.  <a href="#af508e33cc1304b7d0538214bf89a4125">More...</a><br /></td></tr>
+<tr class="separator:af508e33cc1304b7d0538214bf89a4125"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a3c8631b204d1c703104bd03894e36655"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#a3c8631b204d1c703104bd03894e36655">lineGap</a></td></tr>
+<tr class="separator:a3c8631b204d1c703104bd03894e36655"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ef56677117a2ed93dc810bcc80a4286"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#a6ef56677117a2ed93dc810bcc80a4286">ascent</a></td></tr>
+<tr class="separator:a6ef56677117a2ed93dc810bcc80a4286"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab26410c04548fe6a73f1ed2968cfe37c"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#ab26410c04548fe6a73f1ed2968cfe37c">descent</a></td></tr>
+<tr class="separator:ab26410c04548fe6a73f1ed2968cfe37c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4a97a142d91e7bb5891273fade17fada"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#a4a97a142d91e7bb5891273fade17fada">lineHeight</a></td></tr>
+<tr class="separator:a4a97a142d91e7bb5891273fade17fada"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8994133680d48a2d8ba2f9ca2a5526fb"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#a8994133680d48a2d8ba2f9ca2a5526fb">smoothing</a></td></tr>
+<tr class="separator:a8994133680d48a2d8ba2f9ca2a5526fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba43cdb15d92a75eac976f00fd1402d2"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#aba43cdb15d92a75eac976f00fd1402d2">pixelDistanceScale</a></td></tr>
+<tr class="separator:aba43cdb15d92a75eac976f00fd1402d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8d89f4487e4de060675fd3b94a1a7cd"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#ae8d89f4487e4de060675fd3b94a1a7cd">edgeValue</a></td></tr>
+<tr class="separator:ae8d89f4487e4de060675fd3b94a1a7cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aefba35b43bc098f69321549f1c33c02e"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="../../d7/df2/a00312.html">Atlas::Font::GlyphInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#aefba35b43bc098f69321549f1c33c02e">glyphInfo</a> [<a class="el" href="../../d2/de7/a00014.html#ab64c11424f4dd87b68a1e317a6896796">AE_GPU_GLYPH_COUNT</a>]</td></tr>
+<tr class="separator:aefba35b43bc098f69321549f1c33c02e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af25985e64a0f64e060c0f878a292da45"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#af25985e64a0f64e060c0f878a292da45">glyphTexture</a></td></tr>
+<tr class="separator:af25985e64a0f64e060c0f878a292da45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade9283795d2ba8c1e2a105e488dd5d0c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d5/d39/a00676.html">Buffer::Buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#ade9283795d2ba8c1e2a105e488dd5d0c">firstGlyphBuffer</a></td></tr>
+<tr class="separator:ade9283795d2ba8c1e2a105e488dd5d0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1cb887e659118ea55377bd5390d390e6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d5/d39/a00676.html">Buffer::Buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d0f/a00308.html#a1cb887e659118ea55377bd5390d390e6">secondGlyphBuffer</a></td></tr>
+<tr class="separator:a1cb887e659118ea55377bd5390d390e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00009">9</a> of file <a class="el" href="../../d5/d16/a00029_source.html">Main.h</a>.</p>
+<div class="textblock"><p>Handles the font loading and management of characters. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00041">41</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="acc391d6153cc59664b50095bc2ad294d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acc391d6153cc59664b50095bc2ad294d">&#9670;&nbsp;</a></span>Main()</h2>
+<a id="a171a471c4950ddb0f27cb9f8629a7fb7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a171a471c4950ddb0f27cb9f8629a7fb7">&#9670;&nbsp;</a></span>Font()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Main::Main </td>
+          <td class="memname">Atlas::Font::Font </td>
           <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>argc</em>, </td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">char *&#160;</td>
-          <td class="paramname"><em>argv</em>[]&#160;</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>pixelSize</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>padding</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint8_t&#160;</td>
+          <td class="paramname"><em>edgeValue</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -132,17 +192,330 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Loads a true type font from a file. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">filename</td><td>The file path to the true type font </td></tr>
+    <tr><td class="paramname">pixelSize</td><td>The height of the characters in pixels </td></tr>
+    <tr><td class="paramname">padding</td><td>Extra pixels around the characters which are filled with the distance </td></tr>
+    <tr><td class="paramname">edgeValue</td><td>The value in range 0-255 where the character is reconstructed </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>Only fully supports fonts with up to 2048 glyphs. </dd></dl>
+<dl class="section remark"><dt>Remarks</dt><dd>Let's say you have a padding of 5 and an edgeValue of 100 with a pixelSize of 10. A character texture now has a height of about 10 + 2 * 5 pixels where the padding is filled with the distance values to the actual character which is about 10 pixels tall. The rendered shape of the character begins at a distance of 3 from the actual character because 5 - 5 * 100/255 is approximately 3. Everything outside this area can be used as the outline. </dd></dl>
+
+</div>
+</div>
+<a id="a9b1aaa37f1ea163a69207115bf49b205"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b1aaa37f1ea163a69207115bf49b205">&#9670;&nbsp;</a></span>~Font()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Font::~Font </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="af508e33cc1304b7d0538214bf89a4125"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af508e33cc1304b7d0538214bf89a4125">&#9670;&nbsp;</a></span>ComputeDimensions()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Font::ComputeDimensions </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>text</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>scale</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float *&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float *&#160;</td>
+          <td class="paramname"><em>height</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Computes the dimensions of a given string. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">text</td><td>The string where the dimensions should be computed </td></tr>
+    <tr><td class="paramname">scale</td><td>The scale of the text which is later applied for rendering </td></tr>
+    <tr><td class="paramname">width</td><td>A pointer to a float where the width will be written into </td></tr>
+    <tr><td class="paramname">height</td><td>A pointer to a float where the height will be written into </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>The text is assumed to be UTF-8 encoded. </dd></dl>
+
+</div>
+</div>
+<a id="aec907513b451c610889c81d9bf4a8922"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aec907513b451c610889c81d9bf4a8922">&#9670;&nbsp;</a></span>GetGlyph()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/d17/a00304.html">Glyph</a>* Atlas::Font::GetGlyph </td>
+          <td>(</td>
+          <td class="paramtype">char&#160;</td>
+          <td class="paramname"><em>character</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the glyph of a character. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">character</td><td>The character which should be returned </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a <a class="el" href="../../d8/d17/a00304.html">Glyph</a> object </dd></dl>
+
+</div>
+</div>
+<a id="a5ca64d05a3cc88d0abca22f00cbeb422"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5ca64d05a3cc88d0abca22f00cbeb422">&#9670;&nbsp;</a></span>GetGlyphUTF8()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/d17/a00304.html">Glyph</a>* Atlas::Font::GetGlyphUTF8 </td>
+          <td>(</td>
+          <td class="paramtype">const char *&amp;&#160;</td>
+          <td class="paramname"><em>character</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the glyph of a character. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">character</td><td>The character which should be returned (in UTF-8) </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a <a class="el" href="../../d8/d17/a00304.html">Glyph</a> object </dd></dl>
+<dl class="section note"><dt>Note</dt><dd>The pointer to the character will be advanced to the next character when calling this method. This is done because UTF-8 characters have variable length, varying from 1 to 4 bytes. </dd></dl>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a6ef56677117a2ed93dc810bcc80a4286"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6ef56677117a2ed93dc810bcc80a4286">&#9670;&nbsp;</a></span>ascent</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Font::ascent</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00091">91</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
+
+</div>
+</div>
+<a id="ab26410c04548fe6a73f1ed2968cfe37c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab26410c04548fe6a73f1ed2968cfe37c">&#9670;&nbsp;</a></span>descent</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Font::descent</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00092">92</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
+
+</div>
+</div>
+<a id="ae8d89f4487e4de060675fd3b94a1a7cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae8d89f4487e4de060675fd3b94a1a7cd">&#9670;&nbsp;</a></span>edgeValue</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint8_t Atlas::Font::edgeValue</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00099">99</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
+
+</div>
+</div>
+<a id="ade9283795d2ba8c1e2a105e488dd5d0c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade9283795d2ba8c1e2a105e488dd5d0c">&#9670;&nbsp;</a></span>firstGlyphBuffer</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d5/d39/a00676.html">Buffer::Buffer</a>* Atlas::Font::firstGlyphBuffer</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00109">109</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
+
+</div>
+</div>
+<a id="aefba35b43bc098f69321549f1c33c02e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aefba35b43bc098f69321549f1c33c02e">&#9670;&nbsp;</a></span>glyphInfo</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">struct <a class="el" href="../../d7/df2/a00312.html">Atlas::Font::GlyphInfo</a>  Atlas::Font::glyphInfo[<a class="el" href="../../d2/de7/a00014.html#ab64c11424f4dd87b68a1e317a6896796">AE_GPU_GLYPH_COUNT</a>]</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af25985e64a0f64e060c0f878a292da45"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af25985e64a0f64e060c0f878a292da45">&#9670;&nbsp;</a></span>glyphTexture</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a>* Atlas::Font::glyphTexture</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00106">106</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
+
+</div>
+</div>
+<a id="a3c8631b204d1c703104bd03894e36655"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3c8631b204d1c703104bd03894e36655">&#9670;&nbsp;</a></span>lineGap</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Font::lineGap</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00090">90</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
+
+</div>
+</div>
+<a id="a4a97a142d91e7bb5891273fade17fada"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4a97a142d91e7bb5891273fade17fada">&#9670;&nbsp;</a></span>lineHeight</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Font::lineHeight</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00094">94</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
+
+</div>
+</div>
+<a id="aba43cdb15d92a75eac976f00fd1402d2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aba43cdb15d92a75eac976f00fd1402d2">&#9670;&nbsp;</a></span>pixelDistanceScale</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Font::pixelDistanceScale</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00098">98</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
+
+</div>
+</div>
+<a id="a1cb887e659118ea55377bd5390d390e6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1cb887e659118ea55377bd5390d390e6">&#9670;&nbsp;</a></span>secondGlyphBuffer</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d5/d39/a00676.html">Buffer::Buffer</a>* Atlas::Font::secondGlyphBuffer</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00110">110</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
+
+</div>
+</div>
+<a id="a8994133680d48a2d8ba2f9ca2a5526fb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8994133680d48a2d8ba2f9ca2a5526fb">&#9670;&nbsp;</a></span>smoothing</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Font::smoothing</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00096">96</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
+
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/<a class="el" href="../../d5/d16/a00029_source.html">Main.h</a></li>
+<li>src/<a class="el" href="../../d2/de7/a00014_source.html">Font.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d5/d0f/a00308.html">Main</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d5/d0f/a00308.html">Font</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

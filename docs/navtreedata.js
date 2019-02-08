@@ -23,7 +23,15 @@ for the JavaScript code in this file
 */
 var NAVTREE =
 [
-  [ "Blue Engine", "index.html", [
+  [ "Atlas Engine", "index.html", [
+    [ "Namespaces", "namespaces.html", [
+      [ "Namespace List", "namespaces.html", "namespaces_dup" ],
+      [ "Namespace Members", "namespacemembers.html", [
+        [ "All", "namespacemembers.html", null ],
+        [ "Functions", "namespacemembers_func.html", null ],
+        [ "Typedefs", "namespacemembers_type.html", null ]
+      ] ]
+    ] ],
     [ "Classes", "annotated.html", [
       [ "Class List", "annotated.html", "annotated_dup" ],
       [ "Class Index", "classes.html", null ],
@@ -39,7 +47,6 @@ var NAVTREE =
       [ "File List", "files.html", "files_dup" ],
       [ "File Members", "globals.html", [
         [ "All", "globals.html", "globals_dup" ],
-        [ "Functions", "globals_func.html", null ],
         [ "Typedefs", "globals_type.html", null ],
         [ "Enumerator", "globals_eval.html", "globals_eval" ],
         [ "Macros", "globals_defs.html", null ]
@@ -51,11 +58,12 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"d3/dd6/a00624.html#a8282e596cc63abd06f0ad622769791e4",
-"d6/de1/a00356.html#a994204661725ccb51354e22f023961ff",
-"da/d24/a00068.html#a06fc87d81c62e9abb8790b6e5713c55ba0a4c7291c92b7fc84da27a363dc53fa6",
-"da/ddc/a00288.html#a829eb43ecae1eb6561dd4d05d12626e8",
-"de/d79/a00203.html#a61559c4b9e5fc297e461b52230ca3dac"
+"d4/d14/a00608.html#a18a5953cdd14e4758b77b0c1402346c0",
+"d6/d2d/a00047.html#a5edf7e134ca9cd4e767dccd76d07d9dc",
+"d9/dc5/a00480.html#afac908d7aa6076df1a14d73e88b288da",
+"da/d24/a00068.html#a06fc87d81c62e9abb8790b6e5713c55baf81b440475f99c213ff559351f4b7cf4",
+"dc/df3/a00424.html#af3f8b2e1310827b1218f9aa3e0402f7c",
+"functions_type.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

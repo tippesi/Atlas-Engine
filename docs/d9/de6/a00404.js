@@ -1,8 +1,7 @@
 var a00404 =
 [
-    [ "channels", "d9/de6/a00404.html#a32f69f087bfad03ee63be8c5bec0f8eb", null ],
-    [ "data", "d9/de6/a00404.html#a13398bcf76c4b8763eb9ef6170e72ae4", null ],
-    [ "fileFormat", "d9/de6/a00404.html#a3011add4d35edd02b2c30c021819bd63", null ],
-    [ "height", "d9/de6/a00404.html#ad1e7626ccaf74da3cb0af0b9e8168037", null ],
-    [ "width", "d9/de6/a00404.html#ab4feba090735404bc00a4ee4bc80f50a", null ]
+    [ "MouseWheelEvent", "d9/de6/a00404.html#aced8aa55709465c537ec5a3d29fc7836", null ],
+    [ "windowID", "d9/de6/a00404.html#a6122965cd1988da32c7c7b934f4393f2", null ],
+    [ "x", "d9/de6/a00404.html#ae71e27d6a94513bd7aa024e9cbc74a5a", null ],
+    [ "y", "d9/de6/a00404.html#aa5ed5164f12482ac0af550ccaf401f5c", null ]
 ];

@@ -1,10 +1,14 @@
 var a00600 =
 [
-    [ "TerrainNode", "d1/d8c/a00600.html#a20b2c7ac9dc86dc40f2ceb5d932978d5", null ],
-    [ "~TerrainNode", "d1/d8c/a00600.html#a73de69c47ba6d2a473256b6136c61c19", null ],
-    [ "Update", "d1/d8c/a00600.html#a293a3a816cbc300252a9a2a3ccce42ec", null ],
-    [ "absoluteIndex", "d1/d8c/a00600.html#a2df41aa3d091cdd45125f35aa448d8ff", null ],
-    [ "cell", "d1/d8c/a00600.html#af03fa622a3bf6cdff4a975808fcbc7ad", null ],
-    [ "location", "d1/d8c/a00600.html#aa90ec481e21b98c25ac861f028897ad6", null ],
-    [ "sideLength", "d1/d8c/a00600.html#a4f4ab6041d8459f0b6480a09d56f3cc1", null ]
+    [ "ShaderConstant", "d1/d8c/a00600.html#aedce412dbcd90f0241c6d37ffb3794ad", null ],
+    [ "GetName", "d1/d8c/a00600.html#ab982aad238451c60cecc4c277aa078fc", null ],
+    [ "GetValuedString", "d1/d8c/a00600.html#a2ec2cc320a74f03f2bf1097bd98491aa", null ],
+    [ "SetValue", "d1/d8c/a00600.html#a37851a7e42ad40a1b95f05ddebe6d3db", null ],
+    [ "SetValue", "d1/d8c/a00600.html#acb20a9765ea0305759a8f3bd6c2f73f8", null ],
+    [ "SetValue", "d1/d8c/a00600.html#a51e239ef0062f2df5d9ff504d3347adc", null ],
+    [ "SetValue", "d1/d8c/a00600.html#a241e2b71f7f0edfc520c09a23b1999af", null ],
+    [ "SetValue", "d1/d8c/a00600.html#acf59da92cc56d09d20078c7e01910a62", null ],
+    [ "SetValue", "d1/d8c/a00600.html#ae5c7042edd2e97629b1835cf4ef91312", null ],
+    [ "SetValue", "d1/d8c/a00600.html#ae401dcd5c39ffd2bb1b8412d134687e6", null ],
+    [ "SetValue", "d1/d8c/a00600.html#a4bba80efd9afd2c591233f4579160eb4", null ]
 ];

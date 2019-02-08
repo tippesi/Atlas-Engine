@@ -1,7 +1,27 @@
 var a00640 =
 [
-    [ "IndexBuffer", "dc/d62/a00640.html#abe72323134d281b5e140b03e1dc50c93", null ],
-    [ "~IndexBuffer", "dc/d62/a00640.html#a348889936f378b7942c1e01d83e42866", null ],
-    [ "GetDataType", "dc/d62/a00640.html#aae40bd23e23e1c4b83921de414c53369", null ],
-    [ "SetData", "dc/d62/a00640.html#a7bf0270d74102d89fc6e30076a90a3c7", null ]
+    [ "Terrain", "dc/d62/a00640.html#ae9403516ab2906e652493517fcb2e3d3", null ],
+    [ "Bind", "dc/d62/a00640.html#ae1a81349fcf181cce19f784071e53bca", null ],
+    [ "GetHeight", "dc/d62/a00640.html#aa1a0773b1db1565f91f1eb2fc052c04a", null ],
+    [ "GetStorageCell", "dc/d62/a00640.html#a23b58e0f937eaf5f544e93c45e253f58", null ],
+    [ "SetDisplacementDistance", "dc/d62/a00640.html#a0caf724beec1b6ffe35daca8793c5c67", null ],
+    [ "SetLoDDistance", "dc/d62/a00640.html#ac0994588971b704a6110061c87089b03", null ],
+    [ "SetTessellationFunction", "dc/d62/a00640.html#adf8f3cfe13ae70102ef1c3aabda28159", null ],
+    [ "Unbind", "dc/d62/a00640.html#abc73230d605865b38b05e5f14d305308", null ],
+    [ "Update", "dc/d62/a00640.html#aaac2161297e69c7635cde83f1baad4f6", null ],
+    [ "displacementDistance", "dc/d62/a00640.html#ac54318466aaa8269c4b85f126e141d02", null ],
+    [ "heightScale", "dc/d62/a00640.html#a345119cd59eb21be53d71b6f34af46f7", null ],
+    [ "LoDCount", "dc/d62/a00640.html#ab2c01446effc76a9887a946ec1583547", null ],
+    [ "maxTessellationLevel", "dc/d62/a00640.html#a18a016b121b306b57ab0f6a6768ea62a", null ],
+    [ "patchOffsets", "dc/d62/a00640.html#a2a0b1098ef8e7e3a87dc0169b763aeed", null ],
+    [ "patchSize", "dc/d62/a00640.html#ae3d67493f6ac308f2ff1f7af0265bfca", null ],
+    [ "patchVertexCount", "dc/d62/a00640.html#a6b53e39dd8da91dc3ba3abf090e8c64f", null ],
+    [ "renderList", "dc/d62/a00640.html#aaa1213282c3a744230053b0d3e57e743", null ],
+    [ "resolution", "dc/d62/a00640.html#a373075ebf9e0e471a161967c2aebc031", null ],
+    [ "sideLength", "dc/d62/a00640.html#ae72f366dae00975b264990d944640787", null ],
+    [ "storage", "dc/d62/a00640.html#a529b3eb839336db7d5a29c1205622e08", null ],
+    [ "tessellationFactor", "dc/d62/a00640.html#a1fc63472861edad0f926e7e007a8e533", null ],
+    [ "tessellationShift", "dc/d62/a00640.html#ae4c1027e79b94b79234ba4c7962ddfe0", null ],
+    [ "tessellationSlope", "dc/d62/a00640.html#afba3eb3d1d9519b9997bac768444ba6b", null ],
+    [ "translation", "dc/d62/a00640.html#a74699741953d8de0666e5cc0d2d673a4", null ]
 ];

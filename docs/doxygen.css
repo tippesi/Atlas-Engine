@@ -22,8 +22,8 @@ h1.groupheader {
 }
 
 h2.groupheader {
-	border-bottom: 1px solid #737FCE;
-	color: #283273;
+	border-bottom: 1px solid #7F8F9D;
+	color: #303940;
 	font-size: 150%;
 	font-weight: normal;
 	margin-top: 1.75em;
@@ -97,8 +97,8 @@ h3.version {
 }
 
 div.qindex, div.navtab{
-	background-color: #E8EAF7;
-	border: 1px solid #939DD9;
+	background-color: #E9EBEE;
+	border: 1px solid #9BA8B2;
 	text-align: center;
 }
 
@@ -114,13 +114,13 @@ div.navtab {
 /* @group Link Styling */
 
 a {
-	color: #2E3A85;
+	color: #3A444D;
 	font-weight: normal;
 	text-decoration: none;
 }
 
 .contents a:visited {
-	color: #36449C;
+	color: #48545E;
 }
 
 a:hover {
@@ -133,9 +133,9 @@ a.qindex {
 
 a.qindexHL {
 	font-weight: bold;
-	background-color: #8B95D6;
+	background-color: #94A1AD;
 	color: #ffffff;
-	border: 1px double #727ECD;
+	border: 1px double #7E8E9C;
 }
 
 .contents a.qindexHL:visited {
@@ -179,8 +179,8 @@ pre.fragment {
 div.fragment {
         padding: 0px;
         margin: 4px 8px 4px 2px;
-	background-color: #FAFBFD;
-	border: 1px solid #BAC0E6;
+	background-color: #FBFBFC;
+	border: 1px solid #BEC6CD;
 }
 
 div.line {
@@ -296,9 +296,9 @@ div.contents {
 }
 
 td.indexkey {
-	background-color: #E8EAF7;
+	background-color: #E9EBEE;
 	font-weight: bold;
-	border: 1px solid #BAC0E6;
+	border: 1px solid #BEC6CD;
 	margin: 2px 0px 2px 0;
 	padding: 2px 10px;
         white-space: nowrap;
@@ -306,14 +306,14 @@ td.indexkey {
 }
 
 td.indexvalue {
-	background-color: #E8EAF7;
-	border: 1px solid #BAC0E6;
+	background-color: #E9EBEE;
+	border: 1px solid #BEC6CD;
 	padding: 2px 10px;
 	margin: 2px 0px;
 }
 
 tr.memlist {
-	background-color: #EAECF7;
+	background-color: #EBEEF0;
 }
 
 p.formulaDsp {
@@ -396,8 +396,8 @@ span.vhdllogic {
 }
 
 blockquote {
-        background-color: #F5F6FB;
-        border-left: 2px solid #8B95D6;
+        background-color: #F5F7F8;
+        border-left: 2px solid #94A1AD;
         margin: 0 24px 0 4px;
         padding: 0 12px 0 16px;
 }
@@ -430,18 +430,18 @@ td.tiny {
 .dirtab {
 	padding: 4px;
 	border-collapse: collapse;
-	border: 1px solid #939DD9;
+	border: 1px solid #9BA8B2;
 }
 
 th.dirtab {
-	background: #E8EAF7;
+	background: #E9EBEE;
 	font-weight: bold;
 }
 
 hr {
 	height: 0px;
 	border: none;
-	border-top: 1px solid #3948A5;
+	border-top: 1px solid #4D5A65;
 }
 
 hr.footer {
@@ -476,7 +476,7 @@ table.memberdecls {
 .mdescLeft, .mdescRight,
 .memItemLeft, .memItemRight,
 .memTemplItemLeft, .memTemplItemRight, .memTemplParams {
-	background-color: #F8F8FC;
+	background-color: #F8F9FA;
 	border: none;
 	margin: 4px;
 	padding: 1px 0 0 8px;
@@ -503,7 +503,7 @@ table.memberdecls {
 }
 
 .memTemplParams {
-	color: #36449C;
+	color: #48545E;
         white-space: nowrap;
 	font-size: 80%;
 }
@@ -516,15 +516,15 @@ table.memberdecls {
 
 .memtitle {
 	padding: 8px;
-	border-top: 1px solid #99A2DB;
-	border-left: 1px solid #99A2DB;
-	border-right: 1px solid #99A2DB;
+	border-top: 1px solid #A0ACB6;
+	border-left: 1px solid #A0ACB6;
+	border-right: 1px solid #A0ACB6;
 	border-top-right-radius: 4px;
 	border-top-left-radius: 4px;
 	margin-bottom: -1px;
 	background-image: url('nav_f.png');
 	background-repeat: repeat-x;
-	background-color: #DDE0F3;
+	background-color: #DEE3E6;
 	line-height: 1.25;
 	font-weight: 300;
 	float:left;
@@ -539,14 +539,14 @@ table.memberdecls {
 
 .memtemplate {
 	font-size: 80%;
-	color: #36449C;
+	color: #48545E;
 	font-weight: normal;
 	margin-left: 9px;
 }
 
 .memnav {
-	background-color: #E8EAF7;
-	border: 1px solid #939DD9;
+	background-color: #E9EBEE;
+	border: 1px solid #9BA8B2;
 	text-align: center;
 	margin: 2px;
 	margin-right: 15px;
@@ -584,14 +584,14 @@ table.memberdecls {
 }
 
 .memproto, dl.reflist dt {
-        border-top: 1px solid #99A2DB;
-        border-left: 1px solid #99A2DB;
-        border-right: 1px solid #99A2DB;
+        border-top: 1px solid #A0ACB6;
+        border-left: 1px solid #A0ACB6;
+        border-right: 1px solid #A0ACB6;
         padding: 6px 0px 6px 0px;
-        color: #1A214C;
+        color: #1D2125;
         font-weight: bold;
         text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.9);
-        background-color: #D9DCF1;
+        background-color: #DBDFE3;
         /* opera specific markup */
         box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.15);
         border-top-right-radius: 4px;
@@ -610,11 +610,11 @@ table.memberdecls {
 }
 
 .memdoc, dl.reflist dd {
-        border-bottom: 1px solid #99A2DB;      
-        border-left: 1px solid #99A2DB;      
-        border-right: 1px solid #99A2DB; 
+        border-bottom: 1px solid #A0ACB6;      
+        border-left: 1px solid #A0ACB6;      
+        border-right: 1px solid #A0ACB6; 
         padding: 6px 10px 2px 10px;
-        background-color: #FAFBFD;
+        background-color: #FBFBFC;
         border-top-width: 0;
         background-image:url('nav_g.png');
         background-repeat:repeat-x;
@@ -701,11 +701,11 @@ span.mlabels {
 }
 
 span.mlabel {
-        background-color: #5B69C5;
-        border-top:1px solid #3E4EB4;
-        border-left:1px solid #3E4EB4;
-        border-right:1px solid #BAC0E6;
-        border-bottom:1px solid #BAC0E6;
+        background-color: #6B7E8D;
+        border-top:1px solid #566571;
+        border-left:1px solid #566571;
+        border-right:1px solid #BEC6CD;
+        border-bottom:1px solid #BEC6CD;
 	text-shadow: none;
 	color: white;
 	margin-right: 4px;
@@ -724,8 +724,8 @@ span.mlabel {
 
 div.directory {
         margin: 10px 0px;
-        border-top: 1px solid #8B95D6;
-        border-bottom: 1px solid #8B95D6;
+        border-top: 1px solid #94A1AD;
+        border-bottom: 1px solid #94A1AD;
         width: 100%;
 }
 
@@ -763,7 +763,7 @@ div.directory {
 
 .directory tr.even {
 	padding-left: 6px;
-	background-color: #F5F6FB;
+	background-color: #F5F7F8;
 }
 
 .directory img {
@@ -781,11 +781,11 @@ div.directory {
         cursor: pointer;
         padding-left: 2px;
         padding-right: 2px;
-	color: #2E3A85;
+	color: #3A444D;
 }
 
 .arrow {
-    color: #8B95D6;
+    color: #94A1AD;
     -webkit-user-select: none;
     -khtml-user-select: none;
     -moz-user-select: none;
@@ -805,7 +805,7 @@ div.directory {
     height: 14px;
     width: 16px;
     display: inline-block;
-    background-color: #5B69C5;
+    background-color: #6B7E8D;
     color: white;
     text-align: center;
     border-radius: 4px;
@@ -870,7 +870,7 @@ div.dynheader {
 
 address {
 	font-style: normal;
-	color: #1F2658;
+	color: #23292E;
 }
 
 table.doxtable caption {
@@ -884,12 +884,12 @@ table.doxtable {
 }
 
 table.doxtable td, table.doxtable th {
-	border: 1px solid #21295F;
+	border: 1px solid #262C32;
 	padding: 3px 7px 2px;
 }
 
 table.doxtable th {
-	background-color: #293477;
+	background-color: #333C43;
 	color: #FFFFFF;
 	font-size: 110%;
 	padding-bottom: 4px;
@@ -899,7 +899,7 @@ table.doxtable th {
 table.fieldtable {
         /*width: 100%;*/
         margin-bottom: 10px;
-        border: 1px solid #99A2DB;
+        border: 1px solid #A0ACB6;
         border-spacing: 0px;
         -moz-border-radius: 4px;
         -webkit-border-radius: 4px;
@@ -915,8 +915,8 @@ table.fieldtable {
 
 .fieldtable td.fieldtype, .fieldtable td.fieldname {
         white-space: nowrap;
-        border-right: 1px solid #99A2DB;
-        border-bottom: 1px solid #99A2DB;
+        border-right: 1px solid #A0ACB6;
+        border-bottom: 1px solid #A0ACB6;
         vertical-align: top;
 }
 
@@ -925,7 +925,7 @@ table.fieldtable {
 }
 
 .fieldtable td.fielddoc {
-        border-bottom: 1px solid #99A2DB;
+        border-bottom: 1px solid #A0ACB6;
         /*width: 100%;*/
 }
 
@@ -944,9 +944,9 @@ table.fieldtable {
 .fieldtable th {
         background-image:url('nav_f.png');
         background-repeat:repeat-x;
-        background-color: #DDE0F3;
+        background-color: #DEE3E6;
         font-size: 90%;
-        color: #1A214C;
+        color: #1D2125;
         padding-bottom: 4px;
         padding-top: 5px;
         text-align:left;
@@ -957,7 +957,7 @@ table.fieldtable {
         -webkit-border-top-right-radius: 4px;
         border-top-left-radius: 4px;
         border-top-right-radius: 4px;
-        border-bottom: 1px solid #99A2DB;
+        border-bottom: 1px solid #A0ACB6;
 }
 
 
@@ -979,8 +979,8 @@ table.fieldtable {
 	background-position: 0 -5px;
 	height:30px;
 	line-height:30px;
-	color:#7682CF;
-	border:solid 1px #B7BDE6;
+	color:#81929F;
+	border:solid 1px #BBC4CB;
 	overflow:hidden;
 	margin:0px;
 	padding:0px;
@@ -995,7 +995,7 @@ table.fieldtable {
 	background-image:url('bc_s.png');
 	background-repeat:no-repeat;
 	background-position:right;
-	color:#283274;
+	color:#313A41;
 }
 
 .navpath li.navelem a
@@ -1004,7 +1004,7 @@ table.fieldtable {
 	display:block;
 	text-decoration: none;
 	outline: none;
-	color: #1D2454;
+	color: #20262B;
 	font-family: 'Lucida Grande',Geneva,Helvetica,Arial,sans-serif;
 	text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.9);
 	text-decoration: none;        
@@ -1012,7 +1012,7 @@ table.fieldtable {
 
 .navpath li.navelem a:hover
 {
-	color:#505FC1;
+	color:#647583;
 }
 
 .navpath li.footer
@@ -1024,7 +1024,7 @@ table.fieldtable {
         background-image:none;
         background-repeat:no-repeat;
         background-position:right;
-        color:#283274;
+        color:#313A41;
         font-size: 8pt;
 }
 
@@ -1071,9 +1071,9 @@ div.header
 {
         background-image:url('nav_h.png');
         background-repeat:repeat-x;
-	background-color: #F8F8FC;
+	background-color: #F8F9FA;
 	margin:  0px;
-	border-bottom: 1px solid #BAC0E6;
+	border-bottom: 1px solid #BEC6CD;
 }
 
 div.headertitle
@@ -1197,7 +1197,7 @@ dl.section dd {
 	padding: 0px;
 	margin: 0px;
 	width: 100%;
-	border-bottom: 1px solid #3E4EB4;
+	border-bottom: 1px solid #566571;
 }
 
 .image
@@ -1232,7 +1232,7 @@ dl.section dd {
 
 div.zoom
 {
-	border: 1px solid #7D88D1;
+	border: 1px solid #8797A3;
 }
 
 dl.citelist {
@@ -1240,7 +1240,7 @@ dl.citelist {
 }
 
 dl.citelist dt {
-        color:#262F6C;
+        color:#2D353B;
         float:left;
         font-weight:bold;
         margin-right:10px;
@@ -1254,8 +1254,8 @@ dl.citelist dd {
 
 div.toc {
         padding: 14px 25px;
-        background-color: #F2F4FA;
-        border: 1px solid #D1D5EF;
+        background-color: #F3F4F6;
+        border: 1px solid #D3D9DD;
         border-radius: 7px 7px 7px 7px;
         float: right;
         height: auto;
@@ -1273,7 +1273,7 @@ div.toc li {
 
 div.toc h3 {
         font: bold 12px/1.2 Arial,FreeSans,sans-serif;
-	color: #36449C;
+	color: #48545E;
         border-bottom: 0 none;
         margin: 0;
 }
@@ -1525,7 +1525,7 @@ table.markdownTable {
 }
 
 table.markdownTable td, table.markdownTable th {
-	border: 1px solid #21295F;
+	border: 1px solid #262C32;
 	padding: 3px 7px 2px;
 }
 
@@ -1533,12 +1533,12 @@ table.markdownTableHead tr {
 }
 
 table.markdownTableBodyLeft td, table.markdownTable th {
-	border: 1px solid #21295F;
+	border: 1px solid #262C32;
 	padding: 3px 7px 2px;
 }
 
 th.markdownTableHeadLeft th.markdownTableHeadRight th.markdownTableHeadCenter th.markdownTableHeadNone {
-	background-color: #293477;
+	background-color: #333C43;
 	color: #FFFFFF;
 	font-size: 110%;
 	padding-bottom: 4px;
@@ -1565,7 +1565,7 @@ table.markdownTable {
 }
 
 table.markdownTable td, table.markdownTable th {
-	border: 1px solid #21295F;
+	border: 1px solid #262C32;
 	padding: 3px 7px 2px;
 }
 

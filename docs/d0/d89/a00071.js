@@ -1,9 +1,9 @@
 var a00071 =
 [
-    [ "EngineMouseButtonEvent", "d8/d21/a00368.html", "d8/d21/a00368" ],
-    [ "MOUSEBUTTON_LEFT", "d0/d89/a00071.html#a423dac436e2428f0976e5deca8490d8d", null ],
-    [ "MOUSEBUTTON_MIDDLE", "d0/d89/a00071.html#a60f7b9568350914cd612bb03adc04fba", null ],
-    [ "MOUSEBUTTON_RIGHT", "d0/d89/a00071.html#a06383063b240590d65abe04c5a6bb376", null ],
-    [ "MOUSEBUTTON_X1", "d0/d89/a00071.html#a33555f10d1f0cbe0f67f696c866dd4f8", null ],
-    [ "MOUSEBUTTON_X2", "d0/d89/a00071.html#a578cb8a8284edede424e3d6a852c1d61", null ]
+    [ "MouseButtonEvent", "d9/da1/a00396.html", "d9/da1/a00396" ],
+    [ "AE_MOUSEBUTTON_LEFT", "d0/d89/a00071.html#ad6103689017f48d0cbb99d4a6d4a0eae", null ],
+    [ "AE_MOUSEBUTTON_MIDDLE", "d0/d89/a00071.html#ae42ee7f0afb125303767266526517261", null ],
+    [ "AE_MOUSEBUTTON_RIGHT", "d0/d89/a00071.html#a77bd599cfea5e3479cce697eb1442aa3", null ],
+    [ "AE_MOUSEBUTTON_X1", "d0/d89/a00071.html#a52055d7d0ac097e26f638783b301ff65", null ],
+    [ "AE_MOUSEBUTTON_X2", "d0/d89/a00071.html#aa1e23c9e2fc999b3d819c6b8f9ac4828", null ]
 ];

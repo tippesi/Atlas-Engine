@@ -1,5 +1,7 @@
 var searchData=
 [
-  ['offset',['offset',['../db/dc3/a00284.html#ab6b212d06d86835fed83831d2ebe4e05',1,'Glyph::offset()'],['../d0/dec/a00592.html#a4f94493889ed87a776be45b3424c5e1e',1,'Vignette::offset()']]],
-  ['orderedrenderbatches',['orderedRenderBatches',['../d3/db8/a00316.html#ab6e4a186d93d038c7446ea9b4d9d9e2b',1,'RenderList']]]
+  ['offset',['offset',['../d8/d17/a00304.html#afbcd5431fa91452c8e3008cd288b0f97',1,'Atlas::Glyph::offset()'],['../db/ddc/a00636.html#a0841a34353cf9ccda19d5a10c781212c',1,'Atlas::PostProcessing::Vignette::offset()']]],
+  ['opaquerenderer',['OpaqueRenderer',['../d6/d95/a00556.html',1,'Atlas::Renderer::OpaqueRenderer'],['../d6/d95/a00556.html#a7dbb430e3a818e2ca3acba2fbe20114a',1,'Atlas::Renderer::OpaqueRenderer::OpaqueRenderer()']]],
+  ['opaquerenderer_2eh',['OpaqueRenderer.h',['../d7/d3f/a00173.html',1,'']]],
+  ['orderedrenderbatches',['orderedRenderBatches',['../df/df1/a00340.html#a3b466b8ee3fb865d03d00dc7a16bfd27',1,'Atlas::RenderList']]]
 ];

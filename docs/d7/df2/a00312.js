@@ -1,5 +1,5 @@
 var a00312 =
 [
-    [ "actorBatch", "d7/df2/a00312.html#a5e33ba7352dc92f034cab4c7e5a17750", null ],
-    [ "subData", "d7/df2/a00312.html#a0e4b45412f4e82258ae2aa4749d1bf83", null ]
+    [ "scale", "d7/df2/a00312.html#a31b64104d5016aa6c180e4745fbffa11", null ],
+    [ "size", "d7/df2/a00312.html#ada6d066dfd57a67a6b9414ee36d9d497", null ]
 ];

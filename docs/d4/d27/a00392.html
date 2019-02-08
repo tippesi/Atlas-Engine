@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: ControllerHandler Class Reference</title>
+<title>Atlas Engine: Atlas::Events::KeyboardEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -92,189 +92,153 @@ $(document).ready(function(){initNavTree('d4/d27/a00392.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../dc/dc9/a00389.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ControllerHandler Class Reference</div>  </div>
+<div class="title">Atlas::Events::KeyboardEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>&gt;</code></p>
+<p>A class to distribute keyboard events.  
+ <a href="../../d4/d27/a00392.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../de/de1/a00065_source.html">KeyboardEvent.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a39a623d3399f61a694045e172edc118b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d27/a00392.html#a39a623d3399f61a694045e172edc118b">ControllerHandler</a> (<a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera, float <a class="el" href="../../d4/d27/a00392.html#a773a71e814f37851af936b3c0202227d">sensibility</a>, float <a class="el" href="../../d4/d27/a00392.html#a1f95f25167a1b822b0c7a320ac46dc23">speed</a>, float <a class="el" href="../../d4/d27/a00392.html#abff05224ea2dc3073d4261e22b6e3ff6">reactivity</a>, float <a class="el" href="../../d4/d27/a00392.html#a85d4a2dd0ea4df261b1b40f12f3b7f2f">threshold</a>, int32_t device=-1)</td></tr>
-<tr class="separator:a39a623d3399f61a694045e172edc118b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e46f71662434c6bda5508d5c0496700"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d27/a00392.html#a7e46f71662434c6bda5508d5c0496700">Update</a> (<a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera, uint32_t deltaTime)</td></tr>
-<tr class="separator:a7e46f71662434c6bda5508d5c0496700"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adefd7b4b7cca8db7e1ebca094f48e570"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d27/a00392.html#adefd7b4b7cca8db7e1ebca094f48e570">KeyboardEvent</a> (SDL_KeyboardEvent event)</td></tr>
+<tr class="separator:adefd7b4b7cca8db7e1ebca094f48e570"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a773a71e814f37851af936b3c0202227d"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d27/a00392.html#a773a71e814f37851af936b3c0202227d">sensibility</a></td></tr>
-<tr class="separator:a773a71e814f37851af936b3c0202227d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1f95f25167a1b822b0c7a320ac46dc23"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d27/a00392.html#a1f95f25167a1b822b0c7a320ac46dc23">speed</a></td></tr>
-<tr class="separator:a1f95f25167a1b822b0c7a320ac46dc23"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abff05224ea2dc3073d4261e22b6e3ff6"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d27/a00392.html#abff05224ea2dc3073d4261e22b6e3ff6">reactivity</a></td></tr>
-<tr class="separator:abff05224ea2dc3073d4261e22b6e3ff6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a85d4a2dd0ea4df261b1b40f12f3b7f2f"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d27/a00392.html#a85d4a2dd0ea4df261b1b40f12f3b7f2f">threshold</a></td></tr>
-<tr class="separator:a85d4a2dd0ea4df261b1b40f12f3b7f2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3090cda62ac49ac1c0747080be94d955"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d27/a00392.html#a3090cda62ac49ac1c0747080be94d955">windowID</a></td></tr>
+<tr class="memdesc:a3090cda62ac49ac1c0747080be94d955"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#a3090cda62ac49ac1c0747080be94d955">More...</a><br /></td></tr>
+<tr class="separator:a3090cda62ac49ac1c0747080be94d955"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a012478caaa8c4b0d7537e8eac3589c43"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../da/d24/a00068.html#a4922ee8137e19b9e693ee1d28f079ca1">Keycode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d27/a00392.html#a012478caaa8c4b0d7537e8eac3589c43">keycode</a></td></tr>
+<tr class="memdesc:a012478caaa8c4b0d7537e8eac3589c43"><td class="mdescLeft">&#160;</td><td class="mdescRight">The code of the key.  <a href="#a012478caaa8c4b0d7537e8eac3589c43">More...</a><br /></td></tr>
+<tr class="separator:a012478caaa8c4b0d7537e8eac3589c43"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84c42594b1fff002f6972e242a4cca96"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d27/a00392.html#a84c42594b1fff002f6972e242a4cca96">state</a></td></tr>
+<tr class="memdesc:a84c42594b1fff002f6972e242a4cca96"><td class="mdescLeft">&#160;</td><td class="mdescRight">The state of the button.  <a href="#a84c42594b1fff002f6972e242a4cca96">More...</a><br /></td></tr>
+<tr class="separator:a84c42594b1fff002f6972e242a4cca96"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca7f0f27ca17dfc4a531ea16e43f91db"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d27/a00392.html#aca7f0f27ca17dfc4a531ea16e43f91db">repeat</a></td></tr>
+<tr class="memdesc:aca7f0f27ca17dfc4a531ea16e43f91db"><td class="mdescLeft">&#160;</td><td class="mdescRight">True if the key was pressed for longer.  <a href="#aca7f0f27ca17dfc4a531ea16e43f91db">More...</a><br /></td></tr>
+<tr class="separator:aca7f0f27ca17dfc4a531ea16e43f91db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00008">8</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
+<div class="textblock"><p>A class to distribute keyboard events. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00017">17</a> of file <a class="el" href="../../de/de1/a00065_source.html">KeyboardEvent.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a39a623d3399f61a694045e172edc118b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a39a623d3399f61a694045e172edc118b">&#9670;&nbsp;</a></span>ControllerHandler()</h2>
+<a id="adefd7b4b7cca8db7e1ebca094f48e570"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adefd7b4b7cca8db7e1ebca094f48e570">&#9670;&nbsp;</a></span>KeyboardEvent()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">ControllerHandler::ControllerHandler </td>
+          <td class="memname">Atlas::Events::KeyboardEvent::KeyboardEvent </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype">SDL_KeyboardEvent&#160;</td>
+          <td class="paramname"><em>event</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>sensibility</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>speed</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>reactivity</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>threshold</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>device</em> = <code>-1</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a7e46f71662434c6bda5508d5c0496700"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7e46f71662434c6bda5508d5c0496700">&#9670;&nbsp;</a></span>Update()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void ControllerHandler::Update </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>deltaTime</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
+<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00020">20</a> of file <a class="el" href="../../de/de1/a00065_source.html">KeyboardEvent.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="abff05224ea2dc3073d4261e22b6e3ff6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abff05224ea2dc3073d4261e22b6e3ff6">&#9670;&nbsp;</a></span>reactivity</h2>
+<a id="a012478caaa8c4b0d7537e8eac3589c43"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a012478caaa8c4b0d7537e8eac3589c43">&#9670;&nbsp;</a></span>keycode</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float ControllerHandler::reactivity</td>
+          <td class="memname"><a class="el" href="../../da/d24/a00068.html#a4922ee8137e19b9e693ee1d28f079ca1">Keycode</a> Atlas::Events::KeyboardEvent::keycode</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00017">17</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
+<p>The code of the key. </p>
+<p>See <a class="el" href="../../">EngineKeycodes.h</a> for more. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00037">37</a> of file <a class="el" href="../../de/de1/a00065_source.html">KeyboardEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a773a71e814f37851af936b3c0202227d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a773a71e814f37851af936b3c0202227d">&#9670;&nbsp;</a></span>sensibility</h2>
+<a id="aca7f0f27ca17dfc4a531ea16e43f91db"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aca7f0f27ca17dfc4a531ea16e43f91db">&#9670;&nbsp;</a></span>repeat</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float ControllerHandler::sensibility</td>
+          <td class="memname">bool Atlas::Events::KeyboardEvent::repeat</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00015">15</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
+<p>True if the key was pressed for longer. </p>
+<p>False otherwise. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00047">47</a> of file <a class="el" href="../../de/de1/a00065_source.html">KeyboardEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a1f95f25167a1b822b0c7a320ac46dc23"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1f95f25167a1b822b0c7a320ac46dc23">&#9670;&nbsp;</a></span>speed</h2>
+<a id="a84c42594b1fff002f6972e242a4cca96"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a84c42594b1fff002f6972e242a4cca96">&#9670;&nbsp;</a></span>state</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float ControllerHandler::speed</td>
+          <td class="memname">uint8_t Atlas::Events::KeyboardEvent::state</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00016">16</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
+<p>The state of the button. </p>
+<p>Might be BUTTON_PRESSED or BUTTON_RELEASED. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00042">42</a> of file <a class="el" href="../../de/de1/a00065_source.html">KeyboardEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a85d4a2dd0ea4df261b1b40f12f3b7f2f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a85d4a2dd0ea4df261b1b40f12f3b7f2f">&#9670;&nbsp;</a></span>threshold</h2>
+<a id="a3090cda62ac49ac1c0747080be94d955"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3090cda62ac49ac1c0747080be94d955">&#9670;&nbsp;</a></span>windowID</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float ControllerHandler::threshold</td>
+          <td class="memname">uint32_t Atlas::Events::KeyboardEvent::windowID</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00018">18</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
+<p>The ID of the window the event occurred in. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00032">32</a> of file <a class="el" href="../../de/de1/a00065_source.html">KeyboardEvent.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/input/<a class="el" href="../../db/dab/a00089_source.html">Controller.h</a></li>
+<li>src/events/<a class="el" href="../../de/de1/a00065_source.html">KeyboardEvent.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d4/d27/a00392.html">ControllerHandler</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d0/d19/a00273.html">Events</a></li><li class="navelem"><a class="el" href="../../d4/d27/a00392.html">KeyboardEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

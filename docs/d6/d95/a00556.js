@@ -1,14 +1,10 @@
 var a00556 =
 [
-    [ "ShaderConstant", "d6/d95/a00556.html#af353d0ec1fa0fc3da08ab908d37d0c67", null ],
-    [ "GetName", "d6/d95/a00556.html#ac7cfb7a334ac4210fc36f30fb92c18d5", null ],
-    [ "GetValuedString", "d6/d95/a00556.html#a72044e3f154132d0f2dbfae70764dfdc", null ],
-    [ "SetValue", "d6/d95/a00556.html#a3d31f5eb7b6fa695de769573e8e891a5", null ],
-    [ "SetValue", "d6/d95/a00556.html#ad32b334eb99f502e7b8a32c6f406c30b", null ],
-    [ "SetValue", "d6/d95/a00556.html#a61208903d42733a4c504ca515ec8cc78", null ],
-    [ "SetValue", "d6/d95/a00556.html#af15cfeb2ed859d2eb1a21ec6e20b990c", null ],
-    [ "SetValue", "d6/d95/a00556.html#a21b4cc75e15b147e03035db0142f0d2e", null ],
-    [ "SetValue", "d6/d95/a00556.html#a3872885a68cf2234d85fd0689fc65d5e", null ],
-    [ "SetValue", "d6/d95/a00556.html#a271700ac29a8aa46e3108fdf4a02e68f", null ],
-    [ "SetValue", "d6/d95/a00556.html#adca9de858dbec1ae13054c9b4f492c3c", null ]
+    [ "OpaqueRenderer", "d6/d95/a00556.html#a7dbb430e3a818e2ca3acba2fbe20114a", null ],
+    [ "AddConfig", "d6/d95/a00556.html#a4528f7d0ecbda756d57a478b599d042d", null ],
+    [ "InitShaderBatch", "d6/d95/a00556.html#a677aa591a11cdc9d6201979a3f9dc5c9", null ],
+    [ "RemoveConfig", "d6/d95/a00556.html#a5dca4d8a45f45d97cba38d428e8fd777", null ],
+    [ "Render", "d6/d95/a00556.html#a7e4fad56d3ddf51269a9431e67ea9e97", null ],
+    [ "fragmentPath", "d6/d95/a00556.html#ac89864a8da815b9b6e70533f82c05998", null ],
+    [ "vertexPath", "d6/d95/a00556.html#a618dede2d087006cdb414ca7ff05fbd7", null ]
 ];

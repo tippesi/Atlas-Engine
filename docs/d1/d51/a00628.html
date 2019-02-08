@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: BufferLock Class Reference</title>
+<title>Atlas Engine: Atlas::PostProcessing::ChromaticAberration Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -88,90 +88,54 @@ $(document).ready(function(){initNavTree('d1/d51/a00628.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d2/d34/a00625.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">BufferLock Class Reference</div>  </div>
+<div class="title">Atlas::PostProcessing::ChromaticAberration Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Manages the memory safety of shared memory between driver and engine.  
- <a href="../../d1/d51/a00628.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="../../dd/dd7/a00248_source.html">BufferLock.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../dd/d52/a00221_source.html">ChromaticAberration.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:af7b67dccb5c926df9284b34fc9c745b1"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d51/a00628.html#af7b67dccb5c926df9284b34fc9c745b1">BufferLock</a> ()</td></tr>
-<tr class="separator:af7b67dccb5c926df9284b34fc9c745b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a33b9966ce113ad492b0f1716693daa69"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d51/a00628.html#a33b9966ce113ad492b0f1716693daa69">WaitForLockedRange</a> (size_t offset, size_t length)</td></tr>
-<tr class="memdesc:a33b9966ce113ad492b0f1716693daa69"><td class="mdescLeft">&#160;</td><td class="mdescRight">Waits until the range is free to use again.  <a href="#a33b9966ce113ad492b0f1716693daa69">More...</a><br /></td></tr>
-<tr class="separator:a33b9966ce113ad492b0f1716693daa69"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a864fa69f15c22097ea5518b700fb5ace"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d51/a00628.html#a864fa69f15c22097ea5518b700fb5ace">LockRange</a> (size_t offset, size_t length)</td></tr>
-<tr class="memdesc:a864fa69f15c22097ea5518b700fb5ace"><td class="mdescLeft">&#160;</td><td class="mdescRight">Locks the range.  <a href="#a864fa69f15c22097ea5518b700fb5ace">More...</a><br /></td></tr>
-<tr class="separator:a864fa69f15c22097ea5518b700fb5ace"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a93f6d2a0553aee6df33aef6c73e8feff"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d51/a00628.html#a93f6d2a0553aee6df33aef6c73e8feff">~BufferLock</a> ()</td></tr>
-<tr class="separator:a93f6d2a0553aee6df33aef6c73e8feff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe48e3c45eee610e07f886169fe28387"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d51/a00628.html#afe48e3c45eee610e07f886169fe28387">ChromaticAberration</a> (float <a class="el" href="../../d1/d51/a00628.html#a4b9aaf9561f1dcc6d2e473b0dce0d113">strength</a>, bool <a class="el" href="../../d1/d51/a00628.html#a45c6db252822a0bb554c258678810ce1">colorsReversed</a>=false)</td></tr>
+<tr class="memdesc:afe48e3c45eee610e07f886169fe28387"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#afe48e3c45eee610e07f886169fe28387">More...</a><br /></td></tr>
+<tr class="separator:afe48e3c45eee610e07f886169fe28387"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a4b9aaf9561f1dcc6d2e473b0dce0d113"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d51/a00628.html#a4b9aaf9561f1dcc6d2e473b0dce0d113">strength</a></td></tr>
+<tr class="separator:a4b9aaf9561f1dcc6d2e473b0dce0d113"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a45c6db252822a0bb554c258678810ce1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d51/a00628.html#a45c6db252822a0bb554c258678810ce1">colorsReversed</a></td></tr>
+<tr class="separator:a45c6db252822a0bb554c258678810ce1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Manages the memory safety of shared memory between driver and engine. </p>
-<p>Thanks to John McDonald: <a href="https://github.com/nvMcJohn/apitest">https://github.com/nvMcJohn/apitest</a> </p>
-
-<p class="definition">Definition at line <a class="el" href="../../dd/dd7/a00248_source.html#l00012">12</a> of file <a class="el" href="../../dd/dd7/a00248_source.html">BufferLock.h</a>.</p>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00010">10</a> of file <a class="el" href="../../dd/d52/a00221_source.html">ChromaticAberration.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="af7b67dccb5c926df9284b34fc9c745b1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af7b67dccb5c926df9284b34fc9c745b1">&#9670;&nbsp;</a></span>BufferLock()</h2>
+<a id="afe48e3c45eee610e07f886169fe28387"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afe48e3c45eee610e07f886169fe28387">&#9670;&nbsp;</a></span>ChromaticAberration()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">BufferLock::BufferLock </td>
+          <td class="memname">Atlas::PostProcessing::ChromaticAberration::ChromaticAberration </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a93f6d2a0553aee6df33aef6c73e8feff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a93f6d2a0553aee6df33aef6c73e8feff">&#9670;&nbsp;</a></span>~BufferLock()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">BufferLock::~BufferLock </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a864fa69f15c22097ea5518b700fb5ace"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a864fa69f15c22097ea5518b700fb5ace">&#9670;&nbsp;</a></span>LockRange()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void BufferLock::LockRange </td>
-          <td>(</td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>offset</em>, </td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>strength</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>length</em>&#160;</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>colorsReversed</em> = <code>false</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -179,66 +143,69 @@ Public Member Functions</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p>Locks the range. </p>
+<p><br />
+ </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">offset</td><td>The offset in bytes </td></tr>
-    <tr><td class="paramname">length</td><td>The length in bytes </td></tr>
+    <tr><td class="paramname">strength</td><td></td></tr>
+    <tr><td class="paramname">colorsReversed</td><td></td></tr>
   </table>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00016">16</a> of file <a class="el" href="../../dd/d52/a00221_source.html">ChromaticAberration.h</a>.</p>
+
 </div>
 </div>
-<a id="a33b9966ce113ad492b0f1716693daa69"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a33b9966ce113ad492b0f1716693daa69">&#9670;&nbsp;</a></span>WaitForLockedRange()</h2>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a45c6db252822a0bb554c258678810ce1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a45c6db252822a0bb554c258678810ce1">&#9670;&nbsp;</a></span>colorsReversed</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void BufferLock::WaitForLockedRange </td>
-          <td>(</td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>offset</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>length</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
+          <td class="memname">bool Atlas::PostProcessing::ChromaticAberration::colorsReversed</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Waits until the range is free to use again. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">offset</td><td>The offset in bytes </td></tr>
-    <tr><td class="paramname">length</td><td>The length in bytes </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section note"><dt>Note</dt><dd>To improve this use multiple buffering </dd></dl>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00020">20</a> of file <a class="el" href="../../dd/d52/a00221_source.html">ChromaticAberration.h</a>.</p>
+
+</div>
+</div>
+<a id="a4b9aaf9561f1dcc6d2e473b0dce0d113"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4b9aaf9561f1dcc6d2e473b0dce0d113">&#9670;&nbsp;</a></span>strength</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::PostProcessing::ChromaticAberration::strength</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00017">17</a> of file <a class="el" href="../../dd/d52/a00221_source.html">ChromaticAberration.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/buffer/<a class="el" href="../../dd/dd7/a00248_source.html">BufferLock.h</a></li>
+<li>src/postprocessing/<a class="el" href="../../dd/d52/a00221_source.html">ChromaticAberration.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d1/d51/a00628.html">BufferLock</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d04/a00281.html">PostProcessing</a></li><li class="navelem"><a class="el" href="../../d1/d51/a00628.html">ChromaticAberration</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

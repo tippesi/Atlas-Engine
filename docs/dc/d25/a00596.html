@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Terrain Class Reference</title>
+<title>Atlas Engine: Atlas::Shader::ShaderConfigBatch Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -92,153 +92,132 @@ $(document).ready(function(){initNavTree('dc/d25/a00596.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d2/da3/a00593.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Terrain Class Reference</div>  </div>
+<div class="title">Atlas::Shader::ShaderConfigBatch Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Represents a terrain.  
+<p>A <a class="el" href="../../dc/d25/a00596.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> groups an arbitrary number of ShaderConfigs together which use the same shader.  
  <a href="../../dc/d25/a00596.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../de/d79/a00203_source.html">ShaderConfigBatch.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a1c2d71ca658bf76fad007e6f5498ace7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a1c2d71ca658bf76fad007e6f5498ace7">Terrain</a> (int32_t rootNodeCount, int32_t <a class="el" href="../../dc/d25/a00596.html#a45179e63c0bd55aca87608d0cb9a0b23">LoDCount</a>, int32_t patchSizeFactor, float <a class="el" href="../../dc/d25/a00596.html#aff6eb2b16e895c15f1789dfad4c15c0a">resolution</a>, float height)</td></tr>
-<tr class="memdesc:a1c2d71ca658bf76fad007e6f5498ace7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../dc/d25/a00596.html" title="Represents a terrain. ">Terrain</a> object.  <a href="#a1c2d71ca658bf76fad007e6f5498ace7">More...</a><br /></td></tr>
-<tr class="separator:a1c2d71ca658bf76fad007e6f5498ace7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab32ffc4e25c9e9fd15dbab5b1a3e7b02"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#ab32ffc4e25c9e9fd15dbab5b1a3e7b02">Update</a> (<a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera)</td></tr>
-<tr class="memdesc:ab32ffc4e25c9e9fd15dbab5b1a3e7b02"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the terrain and the storage queues.  <a href="#ab32ffc4e25c9e9fd15dbab5b1a3e7b02">More...</a><br /></td></tr>
-<tr class="separator:ab32ffc4e25c9e9fd15dbab5b1a3e7b02"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a98222f8bcb71d52972888503f14bff11"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a98222f8bcb71d52972888503f14bff11">SetLoDDistance</a> (int32_t LoD, float distance)</td></tr>
-<tr class="memdesc:a98222f8bcb71d52972888503f14bff11"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distance of a specific level of detail.  <a href="#a98222f8bcb71d52972888503f14bff11">More...</a><br /></td></tr>
-<tr class="separator:a98222f8bcb71d52972888503f14bff11"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7dd8c8eef056063ea6452231bda07b2e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a7dd8c8eef056063ea6452231bda07b2e">SetTessellationFunction</a> (float factor, float slope, float shift, float maxLevel=64.0f)</td></tr>
-<tr class="memdesc:a7dd8c8eef056063ea6452231bda07b2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the tessellation function t(distance) = factor / pow(distance, slope) + shift.  <a href="#a7dd8c8eef056063ea6452231bda07b2e">More...</a><br /></td></tr>
-<tr class="separator:a7dd8c8eef056063ea6452231bda07b2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a727428ae326d152e63cd8c7db3d2faec"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a727428ae326d152e63cd8c7db3d2faec">SetDisplacementDistance</a> (float distance)</td></tr>
-<tr class="memdesc:a727428ae326d152e63cd8c7db3d2faec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distance where the displacement should start.  <a href="#a727428ae326d152e63cd8c7db3d2faec">More...</a><br /></td></tr>
-<tr class="separator:a727428ae326d152e63cd8c7db3d2faec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a439cf76525791a8a8c5ec4df7cc85778"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a439cf76525791a8a8c5ec4df7cc85778">GetHeight</a> (float x, float z)</td></tr>
-<tr class="memdesc:a439cf76525791a8a8c5ec4df7cc85778"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the height at a specific point on the terrain.  <a href="#a439cf76525791a8a8c5ec4df7cc85778">More...</a><br /></td></tr>
-<tr class="separator:a439cf76525791a8a8c5ec4df7cc85778"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af17ae430a89f1715e24967855dc83ed7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d14/a00608.html">TerrainStorageCell</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#af17ae430a89f1715e24967855dc83ed7">GetStorageCell</a> (float x, float z, int32_t LoD)</td></tr>
-<tr class="memdesc:af17ae430a89f1715e24967855dc83ed7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the storage cell for a point on the terrain.  <a href="#af17ae430a89f1715e24967855dc83ed7">More...</a><br /></td></tr>
-<tr class="separator:af17ae430a89f1715e24967855dc83ed7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeafdaf2be58dfe48a8b68bfd3936c340"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#aeafdaf2be58dfe48a8b68bfd3936c340">Bind</a> ()</td></tr>
-<tr class="memdesc:aeafdaf2be58dfe48a8b68bfd3936c340"><td class="mdescLeft">&#160;</td><td class="mdescRight">Binds the vertex array of the terrain.  <a href="#aeafdaf2be58dfe48a8b68bfd3936c340">More...</a><br /></td></tr>
-<tr class="separator:aeafdaf2be58dfe48a8b68bfd3936c340"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab6bc80bf0215b83c38e0a70f6c60f5cd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#ab6bc80bf0215b83c38e0a70f6c60f5cd">Unbind</a> ()</td></tr>
-<tr class="memdesc:ab6bc80bf0215b83c38e0a70f6c60f5cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unbinds the vertex array of the terrain.  <a href="#ab6bc80bf0215b83c38e0a70f6c60f5cd">More...</a><br /></td></tr>
-<tr class="separator:ab6bc80bf0215b83c38e0a70f6c60f5cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6fec305617e3606477f03c3b4da44991"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a6fec305617e3606477f03c3b4da44991">ShaderConfigBatch</a> (<a class="el" href="../../d7/d21/a00584.html">Shader</a> *shader)</td></tr>
+<tr class="memdesc:a6fec305617e3606477f03c3b4da44991"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../dc/d25/a00596.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> object.  <a href="#a6fec305617e3606477f03c3b4da44991">More...</a><br /></td></tr>
+<tr class="separator:a6fec305617e3606477f03c3b4da44991"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaea2c4e899bfe3f364f9a66d721d9c22"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#aaea2c4e899bfe3f364f9a66d721d9c22">~ShaderConfigBatch</a> ()</td></tr>
+<tr class="memdesc:aaea2c4e899bfe3f364f9a66d721d9c22"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructs a <a class="el" href="../../dc/d25/a00596.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> object.  <a href="#aaea2c4e899bfe3f364f9a66d721d9c22">More...</a><br /></td></tr>
+<tr class="separator:aaea2c4e899bfe3f364f9a66d721d9c22"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a28fd9c364a806b132f7d1d89894fce89"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a28fd9c364a806b132f7d1d89894fce89">Add</a> (<a class="el" href="../../d0/dec/a00592.html">ShaderConfig</a> *config)</td></tr>
+<tr class="memdesc:a28fd9c364a806b132f7d1d89894fce89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a shader config to the batch.  <a href="#a28fd9c364a806b132f7d1d89894fce89">More...</a><br /></td></tr>
+<tr class="separator:a28fd9c364a806b132f7d1d89894fce89"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a343caa25ab1cf7a5c8ec37602f5850e6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a343caa25ab1cf7a5c8ec37602f5850e6">Remove</a> (<a class="el" href="../../d0/dec/a00592.html">ShaderConfig</a> *config)</td></tr>
+<tr class="memdesc:a343caa25ab1cf7a5c8ec37602f5850e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a shader config from the batch,.  <a href="#a343caa25ab1cf7a5c8ec37602f5850e6">More...</a><br /></td></tr>
+<tr class="separator:a343caa25ab1cf7a5c8ec37602f5850e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af5b46f1939b6c4a4903127e8ce1e9b19"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#af5b46f1939b6c4a4903127e8ce1e9b19">GetSize</a> ()</td></tr>
+<tr class="memdesc:af5b46f1939b6c4a4903127e8ce1e9b19"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of elements the batch holds.  <a href="#af5b46f1939b6c4a4903127e8ce1e9b19">More...</a><br /></td></tr>
+<tr class="separator:af5b46f1939b6c4a4903127e8ce1e9b19"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5515ab680fc1f20ddce2bad9465214f9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a5515ab680fc1f20ddce2bad9465214f9">Bind</a> ()</td></tr>
+<tr class="memdesc:a5515ab680fc1f20ddce2bad9465214f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Binds the shader of the batch.  <a href="#a5515ab680fc1f20ddce2bad9465214f9">More...</a><br /></td></tr>
+<tr class="separator:a5515ab680fc1f20ddce2bad9465214f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe480556d31fd2f2fdba5cc38d586deb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d7/d21/a00584.html">Shader</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#afe480556d31fd2f2fdba5cc38d586deb">GetShader</a> ()</td></tr>
+<tr class="memdesc:afe480556d31fd2f2fdba5cc38d586deb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the shader of the batch.  <a href="#afe480556d31fd2f2fdba5cc38d586deb">More...</a><br /></td></tr>
+<tr class="separator:afe480556d31fd2f2fdba5cc38d586deb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a88c72408ad2046318c99bcf802f82503"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d6/d75/a00604.html">TerrainStorage</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a88c72408ad2046318c99bcf802f82503">storage</a></td></tr>
-<tr class="separator:a88c72408ad2046318c99bcf802f82503"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae99b2f0acbfd32bbd46c344ae7c342e4"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#ae99b2f0acbfd32bbd46c344ae7c342e4">translation</a></td></tr>
-<tr class="separator:ae99b2f0acbfd32bbd46c344ae7c342e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aff6eb2b16e895c15f1789dfad4c15c0a"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#aff6eb2b16e895c15f1789dfad4c15c0a">resolution</a></td></tr>
-<tr class="separator:aff6eb2b16e895c15f1789dfad4c15c0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af8febef4634f3117b77620b68a67a6d2"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#af8febef4634f3117b77620b68a67a6d2">sideLength</a></td></tr>
-<tr class="separator:af8febef4634f3117b77620b68a67a6d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab73732b4a7d0a2c39dd92df82b8d03bf"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#ab73732b4a7d0a2c39dd92df82b8d03bf">patchVertexCount</a></td></tr>
-<tr class="separator:ab73732b4a7d0a2c39dd92df82b8d03bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5a2e5559e4824975a91a50d3eabaaad1"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a5a2e5559e4824975a91a50d3eabaaad1">patchSize</a></td></tr>
-<tr class="separator:a5a2e5559e4824975a91a50d3eabaaad1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a929caa57f7cae7985a7ec64b844bb3af"><td class="memItemLeft" align="right" valign="top">vector&lt; vec2 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a929caa57f7cae7985a7ec64b844bb3af">patchOffsets</a></td></tr>
-<tr class="separator:a929caa57f7cae7985a7ec64b844bb3af"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae88a3a8a383f80fcd111bf8d022b9b01"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#ae88a3a8a383f80fcd111bf8d022b9b01">tessellationFactor</a></td></tr>
-<tr class="separator:ae88a3a8a383f80fcd111bf8d022b9b01"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aacc3df2870f9866620b0573ce512c04e"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#aacc3df2870f9866620b0573ce512c04e">tessellationSlope</a></td></tr>
-<tr class="separator:aacc3df2870f9866620b0573ce512c04e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6ca76942522b8f836db8221ead86fff0"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a6ca76942522b8f836db8221ead86fff0">tessellationShift</a></td></tr>
-<tr class="separator:a6ca76942522b8f836db8221ead86fff0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a27a235ce27a9f98e54851ac22a71e352"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a27a235ce27a9f98e54851ac22a71e352">maxTessellationLevel</a></td></tr>
-<tr class="separator:a27a235ce27a9f98e54851ac22a71e352"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac62b5575ed431dfef9a2d1baa89492b8"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#ac62b5575ed431dfef9a2d1baa89492b8">heightScale</a></td></tr>
-<tr class="separator:ac62b5575ed431dfef9a2d1baa89492b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afa597d0bcc50a2e66ca010630c54ec5b"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#afa597d0bcc50a2e66ca010630c54ec5b">displacementDistance</a></td></tr>
-<tr class="separator:afa597d0bcc50a2e66ca010630c54ec5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a45179e63c0bd55aca87608d0cb9a0b23"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#a45179e63c0bd55aca87608d0cb9a0b23">LoDCount</a></td></tr>
-<tr class="separator:a45179e63c0bd55aca87608d0cb9a0b23"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae65ba407f1cfa1e0d9f9cccab59a9d7a"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../d1/d8c/a00600.html">TerrainNode</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#ae65ba407f1cfa1e0d9f9cccab59a9d7a">renderList</a></td></tr>
-<tr class="separator:ae65ba407f1cfa1e0d9f9cccab59a9d7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acef137337b2de530fc649d6d68b83879"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d25/a00596.html#acef137337b2de530fc649d6d68b83879">ID</a></td></tr>
+<tr class="memdesc:acef137337b2de530fc649d6d68b83879"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the batch.  <a href="#acef137337b2de530fc649d6d68b83879">More...</a><br /></td></tr>
+<tr class="separator:acef137337b2de530fc649d6d68b83879"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Represents a terrain. </p>
-<p>This class uses different LoDs and tessellation to render the terrain efficiently with high detail without sacrificing too much on performance. </p>
+<div class="textblock"><p>A <a class="el" href="../../dc/d25/a00596.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> groups an arbitrary number of ShaderConfigs together which use the same shader. </p>
+<p>This means all the batch only contains ShaderConfigs which have the same macros. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00017">17</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00019">19</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderConfigBatch.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a1c2d71ca658bf76fad007e6f5498ace7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1c2d71ca658bf76fad007e6f5498ace7">&#9670;&nbsp;</a></span>Terrain()</h2>
+<a id="a6fec305617e3606477f03c3b4da44991"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6fec305617e3606477f03c3b4da44991">&#9670;&nbsp;</a></span>ShaderConfigBatch()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Terrain::Terrain </td>
+          <td class="memname">Atlas::Shader::ShaderConfigBatch::ShaderConfigBatch </td>
           <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>rootNodeCount</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype"><a class="el" href="../../d7/d21/a00584.html">Shader</a> *&#160;</td>
+          <td class="paramname"><em>shader</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>LoDCount</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>patchSizeFactor</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>resolution</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>height</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Constructs a <a class="el" href="../../dc/d25/a00596.html" title="Represents a terrain. ">Terrain</a> object. </p>
+<p>Constructs a <a class="el" href="../../dc/d25/a00596.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> object. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">rootNodeCount</td><td>The number of root nodes. Root nodes are the lowest level of detail </td></tr>
-    <tr><td class="paramname">LoDCount</td><td>The number of level of detail levels. Results in LoDCount - 1 subdivisions of the root nodes. </td></tr>
-    <tr><td class="paramname">patchSizeFactor</td><td>Changes the size of a patch and the number of vertices in a patch. </td></tr>
-    <tr><td class="paramname">resolution</td><td>Like a scale in x and z direction of the terrain. Lower means more vertices per square unit. </td></tr>
-    <tr><td class="paramname">height</td><td>The maximum height of the terrain </td></tr>
+    <tr><td class="paramname">shader</td><td>A pointer to a <a class="el" href="../../d7/d21/a00584.html">Shader</a> object the batch should use. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section note"><dt>Note</dt><dd>The maximum number of nodes in a terrain is 2^16. </dd></dl>
-<dl class="section remark"><dt>Remarks</dt><dd>Let's assume we want 3 root nodes on each side of the terrain which leads to rootNodeCount = 3^2 = 9. We now decide that we want an LoDCount of 7. To check if we don't exceed the maximum number of nodes we calculate rootNodeCount * (pow(4,LoDCount) - 1) / 3 = 3 * (pow(4, 7) - 1) = 49149 &lt; 2^16 = 65536. This means that at the maximum lod which is Lod6 we have a total of pow(4, 6) * 9 = 36864 nodes. If we have a patchSizeFactor of 4 we have 16 * 4 * 4 vertices per patch. Each node has 8 * 8 = 64 patches. This results in a maximum vertex count of around 600 mio. If we take the square root we get the number of vertices per side: sqrt(603979776) = 24576. If we set the resolution to 0.5 we get a total of 12288 units per terrain side. The size of map is therefore roughly 150 kilounits^2. </dd></dl>
+<dl class="section note"><dt>Note</dt><dd>The shader will be managed by the shader configuration batch. This means that it wiil be released from memory if the batch gets destructed. </dd></dl>
+
+</div>
+</div>
+<a id="aaea2c4e899bfe3f364f9a66d721d9c22"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaea2c4e899bfe3f364f9a66d721d9c22">&#9670;&nbsp;</a></span>~ShaderConfigBatch()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Shader::ShaderConfigBatch::~ShaderConfigBatch </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Destructs a <a class="el" href="../../dc/d25/a00596.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> object. </p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="aeafdaf2be58dfe48a8b68bfd3936c340"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aeafdaf2be58dfe48a8b68bfd3936c340">&#9670;&nbsp;</a></span>Bind()</h2>
+<a id="a28fd9c364a806b132f7d1d89894fce89"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a28fd9c364a806b132f7d1d89894fce89">&#9670;&nbsp;</a></span>Add()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Terrain::Bind </td>
+          <td class="memname">void Atlas::Shader::ShaderConfigBatch::Add </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d0/dec/a00592.html">ShaderConfig</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Adds a shader config to the batch. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">config</td><td>A valid pointer to a <a class="el" href="../../d0/dec/a00592.html" title="A shader configuration consists of macros which configure a shader in a shader batch. ">ShaderConfig</a> object. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a5515ab680fc1f20ddce2bad9465214f9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5515ab680fc1f20ddce2bad9465214f9">&#9670;&nbsp;</a></span>Bind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConfigBatch::Bind </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -246,220 +225,18 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Binds the vertex array of the terrain. </p>
+<p>Binds the shader of the batch. </p>
 
 </div>
 </div>
-<a id="a439cf76525791a8a8c5ec4df7cc85778"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a439cf76525791a8a8c5ec4df7cc85778">&#9670;&nbsp;</a></span>GetHeight()</h2>
+<a id="afe480556d31fd2f2fdba5cc38d586deb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afe480556d31fd2f2fdba5cc38d586deb">&#9670;&nbsp;</a></span>GetShader()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float Terrain::GetHeight </td>
-          <td>(</td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>z</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Gets the height at a specific point on the terrain. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">x</td><td>The x component of the point relative to the terrain origin </td></tr>
-    <tr><td class="paramname">z</td><td>The z component of the point relative to the terrain origin </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>The height of the terrain. </dd></dl>
-<dl class="section note"><dt>Note</dt><dd>This function is computationally expensive. </dd></dl>
-
-</div>
-</div>
-<a id="af17ae430a89f1715e24967855dc83ed7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af17ae430a89f1715e24967855dc83ed7">&#9670;&nbsp;</a></span>GetStorageCell()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../d4/d14/a00608.html">TerrainStorageCell</a>* Terrain::GetStorageCell </td>
-          <td>(</td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>z</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>LoD</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Gets the storage cell for a point on the terrain. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">x</td><td>The x component of the point relative to the terrain origin </td></tr>
-    <tr><td class="paramname">z</td><td>The z component of the point relative to the terrain origin </td></tr>
-    <tr><td class="paramname">LoD</td><td>The lod level of the storage cell. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>A pointer to a TerrainStorageObject. Equals nullptr if input wasn't valid. </dd></dl>
-<dl class="section note"><dt>Note</dt><dd>For every point there exist as many storage cells as there are lod levels. </dd></dl>
-
-</div>
-</div>
-<a id="a727428ae326d152e63cd8c7db3d2faec"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a727428ae326d152e63cd8c7db3d2faec">&#9670;&nbsp;</a></span>SetDisplacementDistance()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Terrain::SetDisplacementDistance </td>
-          <td>(</td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>distance</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Sets the distance where the displacement should start. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">distance</td><td>The distance </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section note"><dt>Note</dt><dd>Displacement mapping is only available if tessellation is enabled in the specified distance. The maximum distance recommended is where t(distance) = 1, where t is the tessellation function. Otherwise there would be too much flickering present on screen. </dd></dl>
-
-</div>
-</div>
-<a id="a98222f8bcb71d52972888503f14bff11"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a98222f8bcb71d52972888503f14bff11">&#9670;&nbsp;</a></span>SetLoDDistance()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Terrain::SetLoDDistance </td>
-          <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>LoD</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>distance</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Sets the distance of a specific level of detail. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">LoD</td><td>The level of detail to be set in range of (0,LoDCount-1) </td></tr>
-    <tr><td class="paramname">distance</td><td>The distance where the level of details should begin </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section note"><dt>Note</dt><dd>Only the highest level of detail will render splatmaps and tessellation. </dd></dl>
-
-</div>
-</div>
-<a id="a7dd8c8eef056063ea6452231bda07b2e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7dd8c8eef056063ea6452231bda07b2e">&#9670;&nbsp;</a></span>SetTessellationFunction()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Terrain::SetTessellationFunction </td>
-          <td>(</td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>factor</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>slope</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>shift</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>maxLevel</em> = <code>64.0f</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Sets the tessellation function t(distance) = factor / pow(distance, slope) + shift. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">factor</td><td></td></tr>
-    <tr><td class="paramname">slope</td><td></td></tr>
-    <tr><td class="paramname">shift</td><td></td></tr>
-    <tr><td class="paramname">maxLevel</td><td>Determines the maximum level of subdivisions the tessellation uses. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section remark"><dt>Remarks</dt><dd>The tessellation for a point p is calculated by: <div class="fragment"><div class="line">distance = length(camera-&gt;location, p);</div><div class="line">tessLevel = mix(1.0f, maxLevel, clamp(t(distance), 0.0f, 1.0f));</div></div><!-- fragment --> </dd></dl>
-
-</div>
-</div>
-<a id="ab6bc80bf0215b83c38e0a70f6c60f5cd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab6bc80bf0215b83c38e0a70f6c60f5cd">&#9670;&nbsp;</a></span>Unbind()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Terrain::Unbind </td>
+          <td class="memname"><a class="el" href="../../d7/d21/a00584.html">Shader</a>* Atlas::Shader::ShaderConfigBatch::GetShader </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -467,287 +244,85 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Unbinds the vertex array of the terrain. </p>
+<p>Returns the shader of the batch. </p>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to the shader object. </dd></dl>
 
 </div>
 </div>
-<a id="ab32ffc4e25c9e9fd15dbab5b1a3e7b02"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab32ffc4e25c9e9fd15dbab5b1a3e7b02">&#9670;&nbsp;</a></span>Update()</h2>
+<a id="af5b46f1939b6c4a4903127e8ce1e9b19"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af5b46f1939b6c4a4903127e8ce1e9b19">&#9670;&nbsp;</a></span>GetSize()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Terrain::Update </td>
+          <td class="memname">size_t Atlas::Shader::ShaderConfigBatch::GetSize </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Updates the terrain and the storage queues. </p>
+<p>Returns the number of elements the batch holds. </p>
+<dl class="section return"><dt>Returns</dt><dd>An integer with the number of elements </dd></dl>
+
+</div>
+</div>
+<a id="a343caa25ab1cf7a5c8ec37602f5850e6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a343caa25ab1cf7a5c8ec37602f5850e6">&#9670;&nbsp;</a></span>Remove()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConfigBatch::Remove </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d0/dec/a00592.html">ShaderConfig</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Removes a shader config from the batch,. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">camera</td><td></td></tr>
+    <tr><td class="paramname">config</td><td>A valid pointer to a <a class="el" href="../../d0/dec/a00592.html" title="A shader configuration consists of macros which configure a shader in a shader batch. ">ShaderConfig</a> object. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section note"><dt>Note</dt><dd>After calling this method the storage-&gt;requestedCells list contains all the StorageCells which are needed by the terrain. If these StorageCells aren't loaded the terrain can't increase the level of detail of the specific nodes. The storage-&gt;unusedCells list contains all the cells which aren't needed any more at the moment. </dd></dl>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="afa597d0bcc50a2e66ca010630c54ec5b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afa597d0bcc50a2e66ca010630c54ec5b">&#9670;&nbsp;</a></span>displacementDistance</h2>
+<a id="acef137337b2de530fc649d6d68b83879"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acef137337b2de530fc649d6d68b83879">&#9670;&nbsp;</a></span>ID</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float Terrain::displacementDistance</td>
+          <td class="memname">int32_t Atlas::Shader::ShaderConfigBatch::ID</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00126">126</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
+<p>The ID of the batch. </p>
 
-</div>
-</div>
-<a id="ac62b5575ed431dfef9a2d1baa89492b8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac62b5575ed431dfef9a2d1baa89492b8">&#9670;&nbsp;</a></span>heightScale</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Terrain::heightScale</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00125">125</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="a45179e63c0bd55aca87608d0cb9a0b23"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a45179e63c0bd55aca87608d0cb9a0b23">&#9670;&nbsp;</a></span>LoDCount</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Terrain::LoDCount</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00128">128</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="a27a235ce27a9f98e54851ac22a71e352"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a27a235ce27a9f98e54851ac22a71e352">&#9670;&nbsp;</a></span>maxTessellationLevel</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Terrain::maxTessellationLevel</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00123">123</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="a929caa57f7cae7985a7ec64b844bb3af"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a929caa57f7cae7985a7ec64b844bb3af">&#9670;&nbsp;</a></span>patchOffsets</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vector&lt;vec2&gt; Terrain::patchOffsets</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00118">118</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="a5a2e5559e4824975a91a50d3eabaaad1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5a2e5559e4824975a91a50d3eabaaad1">&#9670;&nbsp;</a></span>patchSize</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Terrain::patchSize</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00117">117</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="ab73732b4a7d0a2c39dd92df82b8d03bf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab73732b4a7d0a2c39dd92df82b8d03bf">&#9670;&nbsp;</a></span>patchVertexCount</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Terrain::patchVertexCount</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00116">116</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="ae65ba407f1cfa1e0d9f9cccab59a9d7a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae65ba407f1cfa1e0d9f9cccab59a9d7a">&#9670;&nbsp;</a></span>renderList</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vector&lt;<a class="el" href="../../d1/d8c/a00600.html">TerrainNode</a>*&gt; Terrain::renderList</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00130">130</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="aff6eb2b16e895c15f1789dfad4c15c0a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aff6eb2b16e895c15f1789dfad4c15c0a">&#9670;&nbsp;</a></span>resolution</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Terrain::resolution</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00113">113</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="af8febef4634f3117b77620b68a67a6d2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af8febef4634f3117b77620b68a67a6d2">&#9670;&nbsp;</a></span>sideLength</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Terrain::sideLength</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00114">114</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="a88c72408ad2046318c99bcf802f82503"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a88c72408ad2046318c99bcf802f82503">&#9670;&nbsp;</a></span>storage</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../d6/d75/a00604.html">TerrainStorage</a>* Terrain::storage</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00110">110</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="ae88a3a8a383f80fcd111bf8d022b9b01"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae88a3a8a383f80fcd111bf8d022b9b01">&#9670;&nbsp;</a></span>tessellationFactor</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Terrain::tessellationFactor</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00120">120</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="a6ca76942522b8f836db8221ead86fff0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6ca76942522b8f836db8221ead86fff0">&#9670;&nbsp;</a></span>tessellationShift</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Terrain::tessellationShift</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00122">122</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="aacc3df2870f9866620b0573ce512c04e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aacc3df2870f9866620b0573ce512c04e">&#9670;&nbsp;</a></span>tessellationSlope</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Terrain::tessellationSlope</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00121">121</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="ae99b2f0acbfd32bbd46c344ae7c342e4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae99b2f0acbfd32bbd46c344ae7c342e4">&#9670;&nbsp;</a></span>translation</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vec3 Terrain::translation</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/ddf/a00224_source.html#l00112">112</a> of file <a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00067">67</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderConfigBatch.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/terrain/<a class="el" href="../../d5/ddf/a00224_source.html">Terrain.h</a></li>
+<li>src/shader/<a class="el" href="../../de/d79/a00203_source.html">ShaderConfigBatch.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dc/d25/a00596.html">Terrain</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d82/a00279.html">Shader</a></li><li class="navelem"><a class="el" href="../../dc/d25/a00596.html">ShaderConfigBatch</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

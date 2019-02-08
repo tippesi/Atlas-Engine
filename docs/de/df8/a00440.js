@@ -1,6 +1,7 @@
 var a00440 =
 [
-    [ "Skybox", "de/df8/a00440.html#a7f881d622bb9bb6ce25fb399f66768dc", null ],
-    [ "cubemap", "de/df8/a00440.html#abd1f9af780106107a77cca24fe04a15f", null ],
-    [ "matrix", "de/df8/a00440.html#a24e2629c59008404461d737411121502", null ]
+    [ "channels", "de/df8/a00440.html#a1e07cda302b5f1b8882631bbddaebd7c", null ],
+    [ "fileFormat", "de/df8/a00440.html#a10a60db1bab786d829d49356292cafac", null ],
+    [ "height", "de/df8/a00440.html#a9efc25365ae3c2ea80720b9bdf05f60d", null ],
+    [ "width", "de/df8/a00440.html#adab64b40e7641c7d9448aca392529d5d", null ]
 ];

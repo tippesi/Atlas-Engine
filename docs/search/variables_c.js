@@ -1,9 +1,9 @@
 var searchData=
 [
-  ['name',['name',['../d0/dc2/a00564.html#af11c6ffb10513fe0271acb942b4717f8',1,'Uniform']]],
-  ['neardistance',['nearDistance',['../d4/dd3/a00428.html#add3b873b3b66e49edb0399f88cbcfbc1',1,'ShadowComponent']]],
-  ['nearplane',['nearPlane',['../d3/dcc/a00264.html#a78d8722a95e4f7770d79c950bda2bfdc',1,'Camera']]],
-  ['normalmap',['normalMap',['../db/db1/a00460.html#a1c2d5fec8840157358e23d78ebecaec0',1,'Material::normalMap()'],['../d4/d14/a00608.html#a5acafb9093edb50a28d280b4edfb0c5a',1,'TerrainStorageCell::normalMap()']]],
-  ['normals',['normals',['../d7/db5/a00472.html#a9d79319a035e3eab75ffeeaace54025e',1,'MeshData']]],
-  ['numindices',['numIndices',['../df/d38/a00468.html#a90d8fcf551b77913d9e09f18b8d1cdab',1,'MeshSubData']]]
+  ['name',['name',['../d4/d14/a00608.html#a0909de7a13ae48aa18c3f167aefaba43',1,'Atlas::Shader::Uniform']]],
+  ['neardistance',['nearDistance',['../d7/db5/a00472.html#a356df37f50f86b97f4a38d6ee9f9a59c',1,'Atlas::Lighting::ShadowComponent']]],
+  ['nearplane',['nearPlane',['../da/ddc/a00288.html#a6f4bb655114a55ed57a9dffcb8c8ba80',1,'Atlas::Camera']]],
+  ['normalmap',['normalMap',['../d3/dad/a00496.html#af659874375170c40eafdcbcf29a1767f',1,'Atlas::Mesh::Material::normalMap()'],['../df/d37/a00652.html#a27dac2abe2c5bfdde225b4c994537547',1,'Atlas::Terrain::TerrainStorageCell::normalMap()']]],
+  ['normals',['normals',['../d4/d40/a00516.html#a5836c0806d38dccd0444f20b1c394d92',1,'Atlas::Mesh::MeshData']]],
+  ['numindices',['numIndices',['../d4/dfb/a00512.html#ad8258a2f7903a2ec6468e5b14f94925a',1,'Atlas::Mesh::MeshSubData']]]
 ];

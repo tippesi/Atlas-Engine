@@ -1,10 +1,10 @@
 var a00504 =
 [
-    [ "GeometryRenderer", "dc/d1c/a00504.html#a582ae3fb719fc58a42d4fb0633cb2098", null ],
-    [ "AddConfig", "dc/d1c/a00504.html#ac33503c740e543690e754b0578175937", null ],
-    [ "InitShaderBatch", "dc/d1c/a00504.html#a9e5d8fe3b3fdcd8b61e54f15a3afe5bc", null ],
-    [ "RemoveConfig", "dc/d1c/a00504.html#a5889fe1c6c4bb8739aab3707e8e0b50e", null ],
-    [ "Render", "dc/d1c/a00504.html#a2dc8b1febdc51d2e6b200c018ab5ff8a", null ],
-    [ "fragmentPath", "dc/d1c/a00504.html#a17c8db670624d74a1ec7d69dd612f8c9", null ],
-    [ "vertexPath", "dc/d1c/a00504.html#a11c5aac00183850adca1bfd2362f0bed", null ]
+    [ "MeshActor", "dc/d1c/a00504.html#a67f2e6ad58a2053a4e6931e1c8fc2103", null ],
+    [ "Update", "dc/d1c/a00504.html#ad08d14c6926972702ea1d15ed5ba0285", null ],
+    [ "castShadow", "dc/d1c/a00504.html#a605db74555ccaa918bb141c4d14b58e3", null ],
+    [ "mesh", "dc/d1c/a00504.html#a695fe0d922abe6dc3218d99aa3282602", null ],
+    [ "modelMatrix", "dc/d1c/a00504.html#a7a7f2d7b3d71da91f20e7d5912871afd", null ],
+    [ "transformedMatrix", "dc/d1c/a00504.html#a48b69ec264bd7adda4d5b3e408278a5f", null ],
+    [ "visible", "dc/d1c/a00504.html#a04380f722bf8e114f878ee5dae115efa", null ]
 ];

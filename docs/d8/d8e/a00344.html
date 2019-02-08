@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: EngineControllerAxisEvent Class Reference</title>
+<title>Atlas Engine: Atlas::RenderTarget Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -92,131 +92,198 @@ $(document).ready(function(){initNavTree('d8/d8e/a00344.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d3/d93/a00341.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">EngineControllerAxisEvent Class Reference</div>  </div>
+<div class="title">Atlas::RenderTarget Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>A class to distribute controller axis events.  
- <a href="../../d8/d8e/a00344.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="../../dc/dee/a00053_source.html">EngineControllerAxisEvent.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a3948b4854bf9e5201d2ebe83b064a69b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/a00344.html#a3948b4854bf9e5201d2ebe83b064a69b">EngineControllerAxisEvent</a> (SDL_ControllerAxisEvent event)</td></tr>
-<tr class="separator:a3948b4854bf9e5201d2ebe83b064a69b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aafe71eb5f130283a5496a46b68a8c8b8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/a00344.html#aafe71eb5f130283a5496a46b68a8c8b8">RenderTarget</a> (int32_t <a class="el" href="../../d8/d8e/a00344.html#ad1e6a69a450b5d8f8b5c49b6c615e7e0">width</a>, int32_t <a class="el" href="../../d8/d8e/a00344.html#a9b1b81545fdb22160ff0c15192f01aca">height</a>)</td></tr>
+<tr class="separator:aafe71eb5f130283a5496a46b68a8c8b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4ab3407aa69aaee7faf367dc75bccfa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/a00344.html#aa4ab3407aa69aaee7faf367dc75bccfa">Resize</a> (int32_t <a class="el" href="../../d8/d8e/a00344.html#ad1e6a69a450b5d8f8b5c49b6c615e7e0">width</a>, int32_t <a class="el" href="../../d8/d8e/a00344.html#a9b1b81545fdb22160ff0c15192f01aca">height</a>)</td></tr>
+<tr class="separator:aa4ab3407aa69aaee7faf367dc75bccfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af569ff9acb5fb80459eea8c228dc197e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/a00344.html#af569ff9acb5fb80459eea8c228dc197e">~RenderTarget</a> ()</td></tr>
+<tr class="separator:af569ff9acb5fb80459eea8c228dc197e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a9378a880723feb3a09aa221614122294"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/a00344.html#a9378a880723feb3a09aa221614122294">axis</a></td></tr>
-<tr class="memdesc:a9378a880723feb3a09aa221614122294"><td class="mdescLeft">&#160;</td><td class="mdescRight">The axis which was moved on the controller.  <a href="#a9378a880723feb3a09aa221614122294">More...</a><br /></td></tr>
-<tr class="separator:a9378a880723feb3a09aa221614122294"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aff3a732ce102520e813b25bf0470ef8c"><td class="memItemLeft" align="right" valign="top">int16_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/a00344.html#aff3a732ce102520e813b25bf0470ef8c">value</a></td></tr>
-<tr class="memdesc:aff3a732ce102520e813b25bf0470ef8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The value of the axis.  <a href="#aff3a732ce102520e813b25bf0470ef8c">More...</a><br /></td></tr>
-<tr class="separator:aff3a732ce102520e813b25bf0470ef8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abc18c5f5fb08967a64ee18ce5b48d92b"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/a00344.html#abc18c5f5fb08967a64ee18ce5b48d92b">device</a></td></tr>
-<tr class="memdesc:abc18c5f5fb08967a64ee18ce5b48d92b"><td class="mdescLeft">&#160;</td><td class="mdescRight">The device ID of the game controller.  <a href="#abc18c5f5fb08967a64ee18ce5b48d92b">More...</a><br /></td></tr>
-<tr class="separator:abc18c5f5fb08967a64ee18ce5b48d92b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a609e9ef8314c83105787d5cc1ded1e39"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/a00344.html#a609e9ef8314c83105787d5cc1ded1e39">geometryFramebuffer</a></td></tr>
+<tr class="separator:a609e9ef8314c83105787d5cc1ded1e39"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0db17bdc1e4732cdf13ff262a0405996"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/a00344.html#a0db17bdc1e4732cdf13ff262a0405996">lightingFramebuffer</a></td></tr>
+<tr class="separator:a0db17bdc1e4732cdf13ff262a0405996"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1e6a69a450b5d8f8b5c49b6c615e7e0"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/a00344.html#ad1e6a69a450b5d8f8b5c49b6c615e7e0">width</a></td></tr>
+<tr class="separator:ad1e6a69a450b5d8f8b5c49b6c615e7e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b1b81545fdb22160ff0c15192f01aca"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d8e/a00344.html#a9b1b81545fdb22160ff0c15192f01aca">height</a></td></tr>
+<tr class="separator:a9b1b81545fdb22160ff0c15192f01aca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A class to distribute controller axis events. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00018">18</a> of file <a class="el" href="../../dc/dee/a00053_source.html">EngineControllerAxisEvent.h</a>.</p>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00009">9</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a3948b4854bf9e5201d2ebe83b064a69b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3948b4854bf9e5201d2ebe83b064a69b">&#9670;&nbsp;</a></span>EngineControllerAxisEvent()</h2>
+<a id="aafe71eb5f130283a5496a46b68a8c8b8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aafe71eb5f130283a5496a46b68a8c8b8">&#9670;&nbsp;</a></span>RenderTarget()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">EngineControllerAxisEvent::EngineControllerAxisEvent </td>
+          <td class="memname">Atlas::RenderTarget::RenderTarget </td>
           <td>(</td>
-          <td class="paramtype">SDL_ControllerAxisEvent&#160;</td>
-          <td class="paramname"><em>event</em></td><td>)</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="af569ff9acb5fb80459eea8c228dc197e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af569ff9acb5fb80459eea8c228dc197e">&#9670;&nbsp;</a></span>~RenderTarget()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::RenderTarget::~RenderTarget </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00021">21</a> of file <a class="el" href="../../dc/dee/a00053_source.html">EngineControllerAxisEvent.h</a>.</p>
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="aa4ab3407aa69aaee7faf367dc75bccfa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa4ab3407aa69aaee7faf367dc75bccfa">&#9670;&nbsp;</a></span>Resize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::RenderTarget::Resize </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a9378a880723feb3a09aa221614122294"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9378a880723feb3a09aa221614122294">&#9670;&nbsp;</a></span>axis</h2>
+<a id="a609e9ef8314c83105787d5cc1ded1e39"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a609e9ef8314c83105787d5cc1ded1e39">&#9670;&nbsp;</a></span>geometryFramebuffer</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint8_t EngineControllerAxisEvent::axis</td>
+          <td class="memname"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a>* Atlas::RenderTarget::geometryFramebuffer</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The axis which was moved on the controller. </p>
-<p>See <a class="el" href="../../dc/dee/a00053.html">EngineControllerAxisEvent.h</a> for more. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00032">32</a> of file <a class="el" href="../../dc/dee/a00053_source.html">EngineControllerAxisEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00028">28</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a>.</p>
 
 </div>
 </div>
-<a id="abc18c5f5fb08967a64ee18ce5b48d92b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abc18c5f5fb08967a64ee18ce5b48d92b">&#9670;&nbsp;</a></span>device</h2>
+<a id="a9b1b81545fdb22160ff0c15192f01aca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b1b81545fdb22160ff0c15192f01aca">&#9670;&nbsp;</a></span>height</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t EngineControllerAxisEvent::device</td>
+          <td class="memname">int32_t Atlas::RenderTarget::height</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The device ID of the game controller. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00042">42</a> of file <a class="el" href="../../dc/dee/a00053_source.html">EngineControllerAxisEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00032">32</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a>.</p>
 
 </div>
 </div>
-<a id="aff3a732ce102520e813b25bf0470ef8c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aff3a732ce102520e813b25bf0470ef8c">&#9670;&nbsp;</a></span>value</h2>
+<a id="a0db17bdc1e4732cdf13ff262a0405996"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0db17bdc1e4732cdf13ff262a0405996">&#9670;&nbsp;</a></span>lightingFramebuffer</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int16_t EngineControllerAxisEvent::value</td>
+          <td class="memname"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a>* Atlas::RenderTarget::lightingFramebuffer</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The value of the axis. </p>
-<p>Ranges from -32767-32767. </p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00029">29</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00037">37</a> of file <a class="el" href="../../dc/dee/a00053_source.html">EngineControllerAxisEvent.h</a>.</p>
+</div>
+</div>
+<a id="ad1e6a69a450b5d8f8b5c49b6c615e7e0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad1e6a69a450b5d8f8b5c49b6c615e7e0">&#9670;&nbsp;</a></span>width</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::RenderTarget::width</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dc/d87/a00032_source.html#l00031">31</a> of file <a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../dc/dee/a00053_source.html">EngineControllerAxisEvent.h</a></li>
+<li>src/<a class="el" href="../../dc/d87/a00032_source.html">RenderTarget.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d8/d8e/a00344.html">EngineControllerAxisEvent</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d8/d8e/a00344.html">RenderTarget</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

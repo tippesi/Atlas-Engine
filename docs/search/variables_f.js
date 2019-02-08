@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['quiteventdelegate',['QuitEventDelegate',['../d6/de1/a00356.html#a08f07d467c685531e84e158f96b83e7f',1,'EngineEventHandler']]]
+  ['quiteventdelegate',['QuitEventDelegate',['../d2/d56/a00384.html#a2aaa97c45b181f99d52b3276a8838ad2',1,'Atlas::Events::EventManager']]]
 ];

@@ -1,15 +1,5 @@
 var a00356 =
 [
-    [ "Init", "d6/de1/a00356.html#a96efce9adb06e89d3090fa6fb34aa5dc", null ],
-    [ "Update", "d6/de1/a00356.html#a265f02907b17beb9b64779829d97996e", null ],
-    [ "ControllerAxisEventDelegate", "d6/de1/a00356.html#a03980c7faf1fce86d968c3f39c0daac9", null ],
-    [ "ControllerButtonEventDelegate", "d6/de1/a00356.html#a0aa34212db1b33602fc75d3b068ecaa8", null ],
-    [ "ControllerDeviceEventDelegate", "d6/de1/a00356.html#aa0779f276bbb962b4e8b477800a51902", null ],
-    [ "KeyboardEventDelegate", "d6/de1/a00356.html#a994204661725ccb51354e22f023961ff", null ],
-    [ "MouseButtonEventDelegate", "d6/de1/a00356.html#ab5539ebf2cc939bfcd48711793cfe941", null ],
-    [ "MouseMotionEventDelegate", "d6/de1/a00356.html#ad71f33fe0ef77d711c26d94c26ea4220", null ],
-    [ "MouseWheelEventDelegate", "d6/de1/a00356.html#af17d8d05dc9524f9c3dbfbc128ef898d", null ],
-    [ "QuitEventDelegate", "d6/de1/a00356.html#a08f07d467c685531e84e158f96b83e7f", null ],
-    [ "TextInputEventDelegate", "d6/de1/a00356.html#ac2597c45934fd618b7ad0543c382ffc5", null ],
-    [ "WindowEventDelegate", "d6/de1/a00356.html#ad62d09966ac1bd73e4ffc2c1a6490508", null ]
+    [ "EngineException", "d6/de1/a00356.html#a9363db7bc02df9cdf078b79575c76dad", null ],
+    [ "what", "d6/de1/a00356.html#a01a78813780f07f5a370c4d9b65bec0a", null ]
 ];

@@ -1,7 +1,6 @@
 var a00628 =
 [
-    [ "BufferLock", "d1/d51/a00628.html#af7b67dccb5c926df9284b34fc9c745b1", null ],
-    [ "~BufferLock", "d1/d51/a00628.html#a93f6d2a0553aee6df33aef6c73e8feff", null ],
-    [ "LockRange", "d1/d51/a00628.html#a864fa69f15c22097ea5518b700fb5ace", null ],
-    [ "WaitForLockedRange", "d1/d51/a00628.html#a33b9966ce113ad492b0f1716693daa69", null ]
+    [ "ChromaticAberration", "d1/d51/a00628.html#afe48e3c45eee610e07f886169fe28387", null ],
+    [ "colorsReversed", "d1/d51/a00628.html#a45c6db252822a0bb554c258678810ce1", null ],
+    [ "strength", "d1/d51/a00628.html#a4b9aaf9561f1dcc6d2e473b0dce0d113", null ]
 ];

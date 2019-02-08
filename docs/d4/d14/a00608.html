@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: TerrainStorageCell Class Reference</title>
+<title>Atlas Engine: Atlas::Shader::Uniform Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -92,75 +92,123 @@ $(document).ready(function(){initNavTree('d4/d14/a00608.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d0/d1c/a00605.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">TerrainStorageCell Class Reference</div>  </div>
+<div class="title">Atlas::Shader::Uniform Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Stores the material information for a terrain node.  
+<p>Manages shader uniforms.  
  <a href="../../d4/d14/a00608.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../d6/de1/a00233_source.html">TerrainStorageCell.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../dd/dc1/a00212_source.html">Uniform.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a41f327642faa772bbbb30af93351e242"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a41f327642faa772bbbb30af93351e242">TerrainStorageCell</a> ()</td></tr>
-<tr class="separator:a41f327642faa772bbbb30af93351e242"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0849d2d721c1e72d65e4fe3ceb2d205f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a0849d2d721c1e72d65e4fe3ceb2d205f">IsLoaded</a> ()</td></tr>
-<tr class="separator:a0849d2d721c1e72d65e4fe3ceb2d205f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae91073f34045d5bf85f4c2645d43c5e3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#ae91073f34045d5bf85f4c2645d43c5e3">Uniform</a> (uint32_t shaderID, std::string uniformName, <a class="el" href="../../d8/d2e/a00588.html">ShaderBatch</a> *shaderBatch=nullptr, int32_t ID=0)</td></tr>
+<tr class="memdesc:ae91073f34045d5bf85f4c2645d43c5e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d4/d14/a00608.html" title="Manages shader uniforms. ">Uniform</a> object for a shader.  <a href="#ae91073f34045d5bf85f4c2645d43c5e3">More...</a><br /></td></tr>
+<tr class="separator:ae91073f34045d5bf85f4c2645d43c5e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe1dc523822f0d1127d37186a5a18a40"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#abe1dc523822f0d1127d37186a5a18a40">Update</a> ()</td></tr>
+<tr class="memdesc:abe1dc523822f0d1127d37186a5a18a40"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the ID of the uniform.  <a href="#abe1dc523822f0d1127d37186a5a18a40">More...</a><br /></td></tr>
+<tr class="separator:abe1dc523822f0d1127d37186a5a18a40"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa9b6f56d882222d11b193e04dfa2b344"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#aa9b6f56d882222d11b193e04dfa2b344">SetValue</a> (int32_t value)</td></tr>
+<tr class="separator:aa9b6f56d882222d11b193e04dfa2b344"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0aea55de548dac1d0b0e43e9a655464b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a0aea55de548dac1d0b0e43e9a655464b">SetValue</a> (float value)</td></tr>
+<tr class="separator:a0aea55de548dac1d0b0e43e9a655464b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3351682625fcec69331e668da69f7c46"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a3351682625fcec69331e668da69f7c46">SetValue</a> (bool value)</td></tr>
+<tr class="separator:a3351682625fcec69331e668da69f7c46"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a26efc250eeaa17eef247427691947307"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a26efc250eeaa17eef247427691947307">SetValue</a> (mat4 value)</td></tr>
+<tr class="separator:a26efc250eeaa17eef247427691947307"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a758d75888206a966514c7687aed919d5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a758d75888206a966514c7687aed919d5">SetValue</a> (mat3 value)</td></tr>
+<tr class="separator:a758d75888206a966514c7687aed919d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a512597b974504930395c013a29ebd0fe"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a512597b974504930395c013a29ebd0fe">SetValue</a> (vec4 value)</td></tr>
+<tr class="separator:a512597b974504930395c013a29ebd0fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ad29878a1156110f1c28d1ef2ae56bf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a3ad29878a1156110f1c28d1ef2ae56bf">SetValue</a> (vec3 value)</td></tr>
+<tr class="separator:a3ad29878a1156110f1c28d1ef2ae56bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d46d3aa488648caad26ea1d7f86e141"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a0d46d3aa488648caad26ea1d7f86e141">SetValue</a> (vec2 value)</td></tr>
+<tr class="separator:a0d46d3aa488648caad26ea1d7f86e141"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2b51f8884675cf3e7ef5c685998b1813"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a2b51f8884675cf3e7ef5c685998b1813">SetValue</a> (int32_t *value, int32_t length)</td></tr>
+<tr class="separator:a2b51f8884675cf3e7ef5c685998b1813"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7eb471ec584502c68e3097ba159c1665"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a7eb471ec584502c68e3097ba159c1665">SetValue</a> (float *value, int32_t length)</td></tr>
+<tr class="separator:a7eb471ec584502c68e3097ba159c1665"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a537eba8c10d6fbc30ebd981a68c597e2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a537eba8c10d6fbc30ebd981a68c597e2">SetValue</a> (vec4 *value, int32_t length)</td></tr>
+<tr class="separator:a537eba8c10d6fbc30ebd981a68c597e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18a5953cdd14e4758b77b0c1402346c0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a18a5953cdd14e4758b77b0c1402346c0">SetValue</a> (vec3 *value, int32_t length)</td></tr>
+<tr class="separator:a18a5953cdd14e4758b77b0c1402346c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3c8b7c907596f8af470a3c5f89a1209"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#ab3c8b7c907596f8af470a3c5f89a1209">SetValue</a> (vec2 *value, int32_t length)</td></tr>
+<tr class="separator:ab3c8b7c907596f8af470a3c5f89a1209"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a6e4989523a14b87a50bf64913192bfe8"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a6e4989523a14b87a50bf64913192bfe8">x</a></td></tr>
-<tr class="separator:a6e4989523a14b87a50bf64913192bfe8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a91fd41335dd76dddc12430af15f1e085"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a91fd41335dd76dddc12430af15f1e085">y</a></td></tr>
-<tr class="separator:a91fd41335dd76dddc12430af15f1e085"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab43b148eaed08151ee7c89c9cb9dd288"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#ab43b148eaed08151ee7c89c9cb9dd288">LoD</a></td></tr>
-<tr class="separator:ab43b148eaed08151ee7c89c9cb9dd288"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aff003e7c92b7e6a6d0f318e6edb5f4d7"><td class="memItemLeft" align="right" valign="top">vector&lt; uint8_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#aff003e7c92b7e6a6d0f318e6edb5f4d7">heightData</a></td></tr>
-<tr class="separator:aff003e7c92b7e6a6d0f318e6edb5f4d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac5bc70406883632bfcb4c20532a695d5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../db/db5/a00616.html">Texture2D</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#ac5bc70406883632bfcb4c20532a695d5">heightField</a></td></tr>
-<tr class="separator:ac5bc70406883632bfcb4c20532a695d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5acafb9093edb50a28d280b4edfb0c5a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../db/db5/a00616.html">Texture2D</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a5acafb9093edb50a28d280b4edfb0c5a">normalMap</a></td></tr>
-<tr class="separator:a5acafb9093edb50a28d280b4edfb0c5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad38e7dc821072b283a3520a22277d0ad"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../db/db5/a00616.html">Texture2D</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#ad38e7dc821072b283a3520a22277d0ad">diffuseMap</a></td></tr>
-<tr class="separator:ad38e7dc821072b283a3520a22277d0ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7a5fc50c1ae134e6cd8d41c5bc5baac3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../db/db5/a00616.html">Texture2D</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a7a5fc50c1ae134e6cd8d41c5bc5baac3">displacementMap</a></td></tr>
-<tr class="separator:a7a5fc50c1ae134e6cd8d41c5bc5baac3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0909de7a13ae48aa18c3f167aefaba43"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d14/a00608.html#a0909de7a13ae48aa18c3f167aefaba43">name</a></td></tr>
+<tr class="separator:a0909de7a13ae48aa18c3f167aefaba43"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Stores the material information for a terrain node. </p>
-<p>Only LoD0 uses a splatmap and the materials </p>
+<div class="textblock"><p>Manages shader uniforms. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d6/de1/a00233_source.html#l00013">13</a> of file <a class="el" href="../../d6/de1/a00233_source.html">TerrainStorageCell.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dc1/a00212_source.html#l00016">16</a> of file <a class="el" href="../../dd/dc1/a00212_source.html">Uniform.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a41f327642faa772bbbb30af93351e242"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a41f327642faa772bbbb30af93351e242">&#9670;&nbsp;</a></span>TerrainStorageCell()</h2>
+<a id="ae91073f34045d5bf85f4c2645d43c5e3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae91073f34045d5bf85f4c2645d43c5e3">&#9670;&nbsp;</a></span>Uniform()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">TerrainStorageCell::TerrainStorageCell </td>
+          <td class="memname">Atlas::Shader::Uniform::Uniform </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>shaderID</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>uniformName</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d8/d2e/a00588.html">ShaderBatch</a> *&#160;</td>
+          <td class="paramname"><em>shaderBatch</em> = <code>nullptr</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>ID</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Constructs a <a class="el" href="../../d4/d14/a00608.html" title="Manages shader uniforms. ">Uniform</a> object for a shader. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">shaderID</td><td>The ID of the shader. </td></tr>
+    <tr><td class="paramname">uniformName</td><td>The name of the uniform </td></tr>
+    <tr><td class="paramname">shaderBatch</td><td>The shader batch the uniform abstracts, if uniform abstracts access of a shader batch </td></tr>
+    <tr><td class="paramname">ID</td><td>The ID of the uniform in the shader batch, if uniform abstracts access of a shader batch </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a0849d2d721c1e72d65e4fe3ceb2d205f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0849d2d721c1e72d65e4fe3ceb2d205f">&#9670;&nbsp;</a></span>IsLoaded()</h2>
+<a id="aa9b6f56d882222d11b193e04dfa2b344"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa9b6f56d882222d11b193e04dfa2b344">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[1/13]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">bool TerrainStorageCell::IsLoaded </td>
+          <td class="memname">void Atlas::Shader::Uniform::SetValue </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -168,144 +216,317 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="a0aea55de548dac1d0b0e43e9a655464b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0aea55de548dac1d0b0e43e9a655464b">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[2/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::Uniform::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3351682625fcec69331e668da69f7c46"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3351682625fcec69331e668da69f7c46">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[3/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::Uniform::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a26efc250eeaa17eef247427691947307"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a26efc250eeaa17eef247427691947307">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[4/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::Uniform::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">mat4&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a758d75888206a966514c7687aed919d5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a758d75888206a966514c7687aed919d5">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[5/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::Uniform::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">mat3&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a512597b974504930395c013a29ebd0fe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a512597b974504930395c013a29ebd0fe">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[6/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::Uniform::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3ad29878a1156110f1c28d1ef2ae56bf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3ad29878a1156110f1c28d1ef2ae56bf">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[7/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::Uniform::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">vec3&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a0d46d3aa488648caad26ea1d7f86e141"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0d46d3aa488648caad26ea1d7f86e141">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[8/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::Uniform::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">vec2&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a2b51f8884675cf3e7ef5c685998b1813"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2b51f8884675cf3e7ef5c685998b1813">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[9/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::Uniform::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">int32_t *&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a7eb471ec584502c68e3097ba159c1665"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7eb471ec584502c68e3097ba159c1665">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[10/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::Uniform::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">float *&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a537eba8c10d6fbc30ebd981a68c597e2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a537eba8c10d6fbc30ebd981a68c597e2">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[11/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::Uniform::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">vec4 *&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a18a5953cdd14e4758b77b0c1402346c0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a18a5953cdd14e4758b77b0c1402346c0">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[12/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::Uniform::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">vec3 *&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ab3c8b7c907596f8af470a3c5f89a1209"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab3c8b7c907596f8af470a3c5f89a1209">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[13/13]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::Uniform::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">vec2 *&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="abe1dc523822f0d1127d37186a5a18a40"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe1dc523822f0d1127d37186a5a18a40">&#9670;&nbsp;</a></span>Update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::Uniform::Update </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Updates the ID of the uniform. </p>
+
+</div>
+</div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="ad38e7dc821072b283a3520a22277d0ad"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad38e7dc821072b283a3520a22277d0ad">&#9670;&nbsp;</a></span>diffuseMap</h2>
+<a id="a0909de7a13ae48aa18c3f167aefaba43"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0909de7a13ae48aa18c3f167aefaba43">&#9670;&nbsp;</a></span>name</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../db/db5/a00616.html">Texture2D</a>* TerrainStorageCell::diffuseMap</td>
+          <td class="memname">std::string Atlas::Shader::Uniform::name</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d6/de1/a00233_source.html#l00028">28</a> of file <a class="el" href="../../d6/de1/a00233_source.html">TerrainStorageCell.h</a>.</p>
-
-</div>
-</div>
-<a id="a7a5fc50c1ae134e6cd8d41c5bc5baac3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7a5fc50c1ae134e6cd8d41c5bc5baac3">&#9670;&nbsp;</a></span>displacementMap</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../db/db5/a00616.html">Texture2D</a>* TerrainStorageCell::displacementMap</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d6/de1/a00233_source.html#l00029">29</a> of file <a class="el" href="../../d6/de1/a00233_source.html">TerrainStorageCell.h</a>.</p>
-
-</div>
-</div>
-<a id="aff003e7c92b7e6a6d0f318e6edb5f4d7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aff003e7c92b7e6a6d0f318e6edb5f4d7">&#9670;&nbsp;</a></span>heightData</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vector&lt;uint8_t&gt; TerrainStorageCell::heightData</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d6/de1/a00233_source.html#l00024">24</a> of file <a class="el" href="../../d6/de1/a00233_source.html">TerrainStorageCell.h</a>.</p>
-
-</div>
-</div>
-<a id="ac5bc70406883632bfcb4c20532a695d5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac5bc70406883632bfcb4c20532a695d5">&#9670;&nbsp;</a></span>heightField</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../db/db5/a00616.html">Texture2D</a>* TerrainStorageCell::heightField</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d6/de1/a00233_source.html#l00026">26</a> of file <a class="el" href="../../d6/de1/a00233_source.html">TerrainStorageCell.h</a>.</p>
-
-</div>
-</div>
-<a id="ab43b148eaed08151ee7c89c9cb9dd288"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab43b148eaed08151ee7c89c9cb9dd288">&#9670;&nbsp;</a></span>LoD</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t TerrainStorageCell::LoD</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d6/de1/a00233_source.html#l00022">22</a> of file <a class="el" href="../../d6/de1/a00233_source.html">TerrainStorageCell.h</a>.</p>
-
-</div>
-</div>
-<a id="a5acafb9093edb50a28d280b4edfb0c5a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5acafb9093edb50a28d280b4edfb0c5a">&#9670;&nbsp;</a></span>normalMap</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../db/db5/a00616.html">Texture2D</a>* TerrainStorageCell::normalMap</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d6/de1/a00233_source.html#l00027">27</a> of file <a class="el" href="../../d6/de1/a00233_source.html">TerrainStorageCell.h</a>.</p>
-
-</div>
-</div>
-<a id="a6e4989523a14b87a50bf64913192bfe8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6e4989523a14b87a50bf64913192bfe8">&#9670;&nbsp;</a></span>x</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t TerrainStorageCell::x</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d6/de1/a00233_source.html#l00020">20</a> of file <a class="el" href="../../d6/de1/a00233_source.html">TerrainStorageCell.h</a>.</p>
-
-</div>
-</div>
-<a id="a91fd41335dd76dddc12430af15f1e085"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a91fd41335dd76dddc12430af15f1e085">&#9670;&nbsp;</a></span>y</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t TerrainStorageCell::y</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d6/de1/a00233_source.html#l00021">21</a> of file <a class="el" href="../../d6/de1/a00233_source.html">TerrainStorageCell.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dc1/a00212_source.html#l00059">59</a> of file <a class="el" href="../../dd/dc1/a00212_source.html">Uniform.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/terrain/<a class="el" href="../../d6/de1/a00233_source.html">TerrainStorageCell.h</a></li>
+<li>src/shader/<a class="el" href="../../dd/dc1/a00212_source.html">Uniform.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d4/d14/a00608.html">TerrainStorageCell</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d82/a00279.html">Shader</a></li><li class="navelem"><a class="el" href="../../d4/d14/a00608.html">Uniform</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

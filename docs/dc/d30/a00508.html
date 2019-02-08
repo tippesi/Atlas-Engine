@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: IRenderer Class Reference</title>
+<title>Atlas Engine: Atlas::Mesh::MeshActorBatch Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -89,132 +89,213 @@ $(document).ready(function(){initNavTree('dc/d30/a00508.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d7/d37/a00505.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">IRenderer Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
+<div class="title">Atlas::Mesh::MeshActorBatch Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../db/ddf/a00164_source.html">IRenderer.h</a>&gt;</code></p>
-<div class="dynheader">
-Inheritance diagram for IRenderer:</div>
-<div class="dyncontent">
- <div class="center">
-  <img src="../../dc/d30/a00508.png" usemap="#IRenderer_map" alt=""/>
-  <map id="IRenderer_map" name="IRenderer_map">
-<area href="../../d9/d34/a00476.html" alt="AtmosphereRenderer" shape="rect" coords="196,56,382,80"/>
-<area href="../../d9/dc5/a00480.html" alt="BlurRenderer" shape="rect" coords="196,112,382,136"/>
-<area href="../../d8/d89/a00484.html" alt="DecalRenderer" shape="rect" coords="196,168,382,192"/>
-<area href="../../d4/ddf/a00488.html" alt="DirectionalLightRenderer" shape="rect" coords="196,224,382,248"/>
-<area href="../../d3/dad/a00496.html" alt="DirectionalVolumetricRenderer" shape="rect" coords="196,280,382,304"/>
-<area href="../../dc/d1c/a00504.html" alt="GeometryRenderer" shape="rect" coords="196,336,382,360"/>
-<area href="../../d4/d40/a00516.html" alt="PointLightRenderer" shape="rect" coords="196,392,382,416"/>
-<area href="../../d2/da3/a00520.html" alt="PostProcessRenderer" shape="rect" coords="196,448,382,472"/>
-<area href="../../d9/d24/a00524.html" alt="ShadowRenderer" shape="rect" coords="196,504,382,528"/>
-<area href="../../d5/d81/a00528.html" alt="SkyboxRenderer" shape="rect" coords="196,560,382,584"/>
-<area href="../../d7/d41/a00532.html" alt="TerrainRenderer" shape="rect" coords="196,616,382,640"/>
-<area href="../../d4/d33/a00536.html" alt="TextRenderer" shape="rect" coords="196,672,382,696"/>
-</map>
- </div></div>
+<p>Manages the ordering of mesh actors.  
+ <a href="../../dc/d30/a00508.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../d7/dce/a00143_source.html">MeshActorBatch.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a2dc13fb7218a62ba5d0a4073413db3bb"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a2dc13fb7218a62ba5d0a4073413db3bb">Render</a> (<a class="el" href="../../df/df1/a00340.html">Window</a> *window, <a class="el" href="../../dd/de2/a00320.html">RenderTarget</a> *target, <a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera, <a class="el" href="../../d4/d8f/a00324.html">Scene</a> *scene)=0</td></tr>
-<tr class="separator:a2dc13fb7218a62ba5d0a4073413db3bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a366bcbc6ae52d7bd6a33752ce56378ab"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a366bcbc6ae52d7bd6a33752ce56378ab">~IRenderer</a> ()</td></tr>
-<tr class="separator:a366bcbc6ae52d7bd6a33752ce56378ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af99201d29727b0d5e5d8a89e2b848303"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#af99201d29727b0d5e5d8a89e2b848303">MeshActorBatch</a> (<a class="el" href="../../de/d4e/a00500.html">Mesh</a> *mesh)</td></tr>
+<tr class="memdesc:af99201d29727b0d5e5d8a89e2b848303"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs an <a class="el" href="../../dc/d30/a00508.html" title="Manages the ordering of mesh actors. ">MeshActorBatch</a> object for a mesh.  <a href="#af99201d29727b0d5e5d8a89e2b848303">More...</a><br /></td></tr>
+<tr class="separator:af99201d29727b0d5e5d8a89e2b848303"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a8b563313128b3eeea995b1ea76fbf8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a1a8b563313128b3eeea995b1ea76fbf8">Add</a> (<a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> *actor)</td></tr>
+<tr class="memdesc:a1a8b563313128b3eeea995b1ea76fbf8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a mesh actor to the batch.  <a href="#a1a8b563313128b3eeea995b1ea76fbf8">More...</a><br /></td></tr>
+<tr class="separator:a1a8b563313128b3eeea995b1ea76fbf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8c52f75cfc8b965bfa181a5abab8f86"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#ad8c52f75cfc8b965bfa181a5abab8f86">Remove</a> (<a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> *actor)</td></tr>
+<tr class="memdesc:ad8c52f75cfc8b965bfa181a5abab8f86"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a mesh actor from the actor batch.  <a href="#ad8c52f75cfc8b965bfa181a5abab8f86">More...</a><br /></td></tr>
+<tr class="separator:ad8c52f75cfc8b965bfa181a5abab8f86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83121c937f0e1a08e6061d67aeab39aa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/d4e/a00500.html">Mesh</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a83121c937f0e1a08e6061d67aeab39aa">GetMesh</a> ()</td></tr>
+<tr class="memdesc:a83121c937f0e1a08e6061d67aeab39aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the mesh of the batch.  <a href="#a83121c937f0e1a08e6061d67aeab39aa">More...</a><br /></td></tr>
+<tr class="separator:a83121c937f0e1a08e6061d67aeab39aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a250426a7195cd4adf1fcfaa4cd2f3a62"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a250426a7195cd4adf1fcfaa4cd2f3a62">GetSize</a> ()</td></tr>
+<tr class="memdesc:a250426a7195cd4adf1fcfaa4cd2f3a62"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of mesh actors in the batch.  <a href="#a250426a7195cd4adf1fcfaa4cd2f3a62">More...</a><br /></td></tr>
+<tr class="separator:a250426a7195cd4adf1fcfaa4cd2f3a62"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a369b33f6810149a055209f675e1fa66f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a369b33f6810149a055209f675e1fa66f">Clear</a> ()</td></tr>
+<tr class="memdesc:a369b33f6810149a055209f675e1fa66f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes all mesh actors from the batch.  <a href="#a369b33f6810149a055209f675e1fa66f">More...</a><br /></td></tr>
+<tr class="separator:a369b33f6810149a055209f675e1fa66f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a5e436ed4e4bd6687a45b9971543d5101"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a5e436ed4e4bd6687a45b9971543d5101">actors</a></td></tr>
+<tr class="separator:a5e436ed4e4bd6687a45b9971543d5101"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../db/ddf/a00164_source.html#l00011">11</a> of file <a class="el" href="../../db/ddf/a00164_source.html">IRenderer.h</a>.</p>
+<div class="textblock"><p>Manages the ordering of mesh actors. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00017">17</a> of file <a class="el" href="../../d7/dce/a00143_source.html">MeshActorBatch.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a366bcbc6ae52d7bd6a33752ce56378ab"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a366bcbc6ae52d7bd6a33752ce56378ab">&#9670;&nbsp;</a></span>~IRenderer()</h2>
+<a id="af99201d29727b0d5e5d8a89e2b848303"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af99201d29727b0d5e5d8a89e2b848303">&#9670;&nbsp;</a></span>MeshActorBatch()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual IRenderer::~IRenderer </td>
+          <td class="memname">Atlas::Mesh::MeshActorBatch::MeshActorBatch </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../de/d4e/a00500.html">Mesh</a> *&#160;</td>
+          <td class="paramname"><em>mesh</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Constructs an <a class="el" href="../../dc/d30/a00508.html" title="Manages the ordering of mesh actors. ">MeshActorBatch</a> object for a mesh. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">mesh</td><td>A pointer to a <a class="el" href="../../de/d4e/a00500.html">Mesh</a> object </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a1a8b563313128b3eeea995b1ea76fbf8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1a8b563313128b3eeea995b1ea76fbf8">&#9670;&nbsp;</a></span>Add()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Mesh::MeshActorBatch::Add </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> *&#160;</td>
+          <td class="paramname"><em>actor</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Adds a mesh actor to the batch. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">actor</td><td>A pointer to an <a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> object </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a369b33f6810149a055209f675e1fa66f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a369b33f6810149a055209f675e1fa66f">&#9670;&nbsp;</a></span>Clear()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Mesh::MeshActorBatch::Clear </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/ddf/a00164_source.html#l00015">15</a> of file <a class="el" href="../../db/ddf/a00164_source.html">IRenderer.h</a>.</p>
+<p>Removes all mesh actors from the batch. </p>
 
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a2dc13fb7218a62ba5d0a4073413db3bb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2dc13fb7218a62ba5d0a4073413db3bb">&#9670;&nbsp;</a></span>Render()</h2>
+<a id="a83121c937f0e1a08e6061d67aeab39aa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a83121c937f0e1a08e6061d67aeab39aa">&#9670;&nbsp;</a></span>GetMesh()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void IRenderer::Render </td>
+          <td class="memname"><a class="el" href="../../de/d4e/a00500.html">Mesh</a>* Atlas::Mesh::MeshActorBatch::GetMesh </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../df/df1/a00340.html">Window</a> *&#160;</td>
-          <td class="paramname"><em>window</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../dd/de2/a00320.html">RenderTarget</a> *&#160;</td>
-          <td class="paramname"><em>target</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d4/d8f/a00324.html">Scene</a> *&#160;</td>
-          <td class="paramname"><em>scene</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
-<p>Implemented in <a class="el" href="../../dc/d1c/a00504.html#a2dc8b1febdc51d2e6b200c018ab5ff8a">GeometryRenderer</a>, <a class="el" href="../../d9/d24/a00524.html#a2522a4caea01ce1c87c804192c050b07">ShadowRenderer</a>, <a class="el" href="../../d4/d33/a00536.html#a8e5b16659c571a7693564f23e0a2aa81">TextRenderer</a>, <a class="el" href="../../d9/dc5/a00480.html#ac846a6a482ead061a19fdedb1e5ad48c">BlurRenderer</a>, <a class="el" href="../../d3/dad/a00496.html#a6a67237414fc725b513f5b50e84f41d4">DirectionalVolumetricRenderer</a>, <a class="el" href="../../d2/da3/a00520.html#af0d49e96c14345703ae33f838c8874f9">PostProcessRenderer</a>, <a class="el" href="../../d5/d81/a00528.html#aa346df84fc1cc4e29e8a9cb8cbce2d79">SkyboxRenderer</a>, <a class="el" href="../../d9/d34/a00476.html#a3de976f1825ad97bf8fe566613580576">AtmosphereRenderer</a>, <a class="el" href="../../d8/d89/a00484.html#a7b46d821439aa2653516101ad07d8ef3">DecalRenderer</a>, <a class="el" href="../../d4/ddf/a00488.html#a222955a36b1d1c611df02247ea9e59c5">DirectionalLightRenderer</a>, <a class="el" href="../../d4/d40/a00516.html#a493653f1497868a54fff24c0d7df4586">PointLightRenderer</a>, and <a class="el" href="../../d7/d41/a00532.html#a3692f6eea8c6a784130055b8c9a86d18">TerrainRenderer</a>.</p>
+<p>Returns the mesh of the batch. </p>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a <a class="el" href="../../de/d4e/a00500.html">Mesh</a> object </dd></dl>
+
+</div>
+</div>
+<a id="a250426a7195cd4adf1fcfaa4cd2f3a62"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a250426a7195cd4adf1fcfaa4cd2f3a62">&#9670;&nbsp;</a></span>GetSize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::Mesh::MeshActorBatch::GetSize </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the number of mesh actors in the batch. </p>
+<dl class="section return"><dt>Returns</dt><dd>An integer with the number of mesh actors </dd></dl>
+
+</div>
+</div>
+<a id="ad8c52f75cfc8b965bfa181a5abab8f86"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad8c52f75cfc8b965bfa181a5abab8f86">&#9670;&nbsp;</a></span>Remove()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Mesh::MeshActorBatch::Remove </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> *&#160;</td>
+          <td class="paramname"><em>actor</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Removes a mesh actor from the actor batch. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">actor</td><td>A pointer to an <a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> object </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a5e436ed4e4bd6687a45b9971543d5101"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5e436ed4e4bd6687a45b9971543d5101">&#9670;&nbsp;</a></span>actors</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;<a class="el" href="../../dc/d1c/a00504.html">MeshActor</a>*&gt; Atlas::Mesh::MeshActorBatch::actors</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00056">56</a> of file <a class="el" href="../../d7/dce/a00143_source.html">MeshActorBatch.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/renderer/<a class="el" href="../../db/ddf/a00164_source.html">IRenderer.h</a></li>
+<li>src/mesh/<a class="el" href="../../d7/dce/a00143_source.html">MeshActorBatch.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dc/d30/a00508.html">IRenderer</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d6/d4b/a00277.html">Mesh</a></li><li class="navelem"><a class="el" href="../../dc/d30/a00508.html">MeshActorBatch</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

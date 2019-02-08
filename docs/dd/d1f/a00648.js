@@ -1,8 +1,8 @@
 var a00648 =
 [
-    [ "VertexBuffer", "dd/d1f/a00648.html#a6f29d692b7d328e2600c2a565e314094", null ],
-    [ "~VertexBuffer", "dd/d1f/a00648.html#a5216726fdd43b2ae8e1439e347717fdd", null ],
-    [ "GetDataType", "dd/d1f/a00648.html#a3a53a0b01d9b243dcf52cc7b371459a4", null ],
-    [ "GetStride", "dd/d1f/a00648.html#a3b748e24506a73f0451f21e434da68d0", null ],
-    [ "SetData", "dd/d1f/a00648.html#abf5ad8138216e799301229acc2f3ee22", null ]
+    [ "TerrainStorage", "dd/d1f/a00648.html#a5a20de93f7d7e378b4cd78bf8355fbb8", null ],
+    [ "GetCell", "dd/d1f/a00648.html#a81c056bb5570e00d54bf39a1a77c40aa", null ],
+    [ "GetCellCount", "dd/d1f/a00648.html#a160c960142cfd89aca7f3157f8bbd5d6", null ],
+    [ "requestedCells", "dd/d1f/a00648.html#a736546297237e9a06e1cd1c119a083fa", null ],
+    [ "unusedCells", "dd/d1f/a00648.html#ad8bc7c02771e8cc6a66c279dce3151e7", null ]
 ];

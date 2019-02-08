@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: ActorBatch Class Reference</title>
+<title>Atlas Engine: Atlas::Loader::ImageLoader Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -88,230 +88,241 @@ $(document).ready(function(){initNavTree('d1/d0b/a00452.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="../../d9/d10/a00449.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ActorBatch Class Reference</div>  </div>
+<div class="title">Atlas::Loader::ImageLoader Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Manages the ordering of actors.  
- <a href="../../d1/d0b/a00452.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="../../d1/d88/a00128_source.html">ActorBatch.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d0/dc2/a00104_source.html">ImageLoader.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:a6d494b29263f86df1dffaca49316c1be"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#a6d494b29263f86df1dffaca49316c1be">ActorBatch</a> (<a class="el" href="../../d2/d9d/a00464.html">Mesh</a> *mesh)</td></tr>
-<tr class="memdesc:a6d494b29263f86df1dffaca49316c1be"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs an <a class="el" href="../../d1/d0b/a00452.html" title="Manages the ordering of actors. ">ActorBatch</a> object for a mesh.  <a href="#a6d494b29263f86df1dffaca49316c1be">More...</a><br /></td></tr>
-<tr class="separator:a6d494b29263f86df1dffaca49316c1be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac72937e16c3c25412312edae13516d0a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#ac72937e16c3c25412312edae13516d0a">Add</a> (<a class="el" href="../../de/dfe/a00448.html">Actor</a> *actor)</td></tr>
-<tr class="memdesc:ac72937e16c3c25412312edae13516d0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds an actor to the actor batch.  <a href="#ac72937e16c3c25412312edae13516d0a">More...</a><br /></td></tr>
-<tr class="separator:ac72937e16c3c25412312edae13516d0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a069e01b377d3768e3efcaaa9a8c83125"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#a069e01b377d3768e3efcaaa9a8c83125">Remove</a> (<a class="el" href="../../de/dfe/a00448.html">Actor</a> *actor)</td></tr>
-<tr class="memdesc:a069e01b377d3768e3efcaaa9a8c83125"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes an actor from the actor batch.  <a href="#a069e01b377d3768e3efcaaa9a8c83125">More...</a><br /></td></tr>
-<tr class="separator:a069e01b377d3768e3efcaaa9a8c83125"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa4dd7ba80c52ec3c6e038982cc03e8c9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d2/d9d/a00464.html">Mesh</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#aa4dd7ba80c52ec3c6e038982cc03e8c9">GetMesh</a> ()</td></tr>
-<tr class="memdesc:aa4dd7ba80c52ec3c6e038982cc03e8c9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the mesh of the batch.  <a href="#aa4dd7ba80c52ec3c6e038982cc03e8c9">More...</a><br /></td></tr>
-<tr class="separator:aa4dd7ba80c52ec3c6e038982cc03e8c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a029b2db01ac96bd98d5498929a11effa"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#a029b2db01ac96bd98d5498929a11effa">GetSize</a> ()</td></tr>
-<tr class="memdesc:a029b2db01ac96bd98d5498929a11effa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of actors in the batch.  <a href="#a029b2db01ac96bd98d5498929a11effa">More...</a><br /></td></tr>
-<tr class="separator:a029b2db01ac96bd98d5498929a11effa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a984f8076317c92b8691a1c25478f5ca7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#a984f8076317c92b8691a1c25478f5ca7">ClearContent</a> ()</td></tr>
-<tr class="separator:a984f8076317c92b8691a1c25478f5ca7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9e1b1ad9ed409dd5dc59820cdfd6d48c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#a9e1b1ad9ed409dd5dc59820cdfd6d48c">DeleteContent</a> ()</td></tr>
-<tr class="separator:a9e1b1ad9ed409dd5dc59820cdfd6d48c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:afad0f165c22db0d6f0dcfa9c4e18ce9c"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="../../de/dfe/a00448.html">Actor</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#afad0f165c22db0d6f0dcfa9c4e18ce9c">actors</a></td></tr>
-<tr class="separator:afad0f165c22db0d6f0dcfa9c4e18ce9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:ae27f24102685e9647c0e738a93462c4a"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d3/dea/a00444.html">Image</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#ae27f24102685e9647c0e738a93462c4a">LoadImage</a> (std::string filename, bool colorSpaceConversion, int32_t forceChannels=0)</td></tr>
+<tr class="memdesc:ae27f24102685e9647c0e738a93462c4a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads an image with 8 bits per channel.  <a href="#ae27f24102685e9647c0e738a93462c4a">More...</a><br /></td></tr>
+<tr class="separator:ae27f24102685e9647c0e738a93462c4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3670971622e82e58f3d3de2461ed129"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../de/dfe/a00448.html">Image16</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#af3670971622e82e58f3d3de2461ed129">LoadImage16</a> (std::string filename, bool colorSpaceConversion, int32_t forceChannels=0)</td></tr>
+<tr class="memdesc:af3670971622e82e58f3d3de2461ed129"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads an image with 16 bits per channel.  <a href="#af3670971622e82e58f3d3de2461ed129">More...</a><br /></td></tr>
+<tr class="separator:af3670971622e82e58f3d3de2461ed129"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85645875a42e53663e7f6326f1ff377a"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#a85645875a42e53663e7f6326f1ff377a">SaveImage</a> (<a class="el" href="../../d3/dea/a00444.html">Image</a> &amp;image, std::string filename)</td></tr>
+<tr class="memdesc:a85645875a42e53663e7f6326f1ff377a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Save an image with 8 bits per channel to the hard drive.  <a href="#a85645875a42e53663e7f6326f1ff377a">More...</a><br /></td></tr>
+<tr class="separator:a85645875a42e53663e7f6326f1ff377a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab085fabede337f4f1f124b5090934751"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#ab085fabede337f4f1f124b5090934751">SaveImage16</a> (<a class="el" href="../../de/dfe/a00448.html">Image16</a> &amp;image, std::string filename)</td></tr>
+<tr class="memdesc:ab085fabede337f4f1f124b5090934751"><td class="mdescLeft">&#160;</td><td class="mdescRight">Save an image with 16 bits per channel to the hard drive.  <a href="#ab085fabede337f4f1f124b5090934751">More...</a><br /></td></tr>
+<tr class="separator:ab085fabede337f4f1f124b5090934751"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Manages the ordering of actors. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d1/d88/a00128_source.html#l00013">13</a> of file <a class="el" href="../../d1/d88/a00128_source.html">ActorBatch.h</a>.</p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a6d494b29263f86df1dffaca49316c1be"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6d494b29263f86df1dffaca49316c1be">&#9670;&nbsp;</a></span>ActorBatch()</h2>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../d0/dc2/a00104_source.html#l00051">51</a> of file <a class="el" href="../../d0/dc2/a00104_source.html">ImageLoader.h</a>.</p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="ae27f24102685e9647c0e738a93462c4a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae27f24102685e9647c0e738a93462c4a">&#9670;&nbsp;</a></span>LoadImage()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">ActorBatch::ActorBatch </td>
+          <td class="memname">static <a class="el" href="../../d3/dea/a00444.html">Image</a> Atlas::Loader::ImageLoader::LoadImage </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d2/d9d/a00464.html">Mesh</a> *&#160;</td>
-          <td class="paramname"><em>mesh</em></td><td>)</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>colorSpaceConversion</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>forceChannels</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p>Constructs an <a class="el" href="../../d1/d0b/a00452.html" title="Manages the ordering of actors. ">ActorBatch</a> object for a mesh. </p>
+<p>Loads an image with 8 bits per channel. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">mesh</td><td>A pointer to a <a class="el" href="../../d2/d9d/a00464.html">Mesh</a> object </td></tr>
+    <tr><td class="paramname">filename</td><td>The name of the image file. </td></tr>
+    <tr><td class="paramname">colorSpaceConversion</td><td>Whether or not gamma to linear color space conversion is needed. </td></tr>
+    <tr><td class="paramname">forceChannels</td><td>The number of channels to be forced. Default is zero, which means no force. </td></tr>
   </table>
   </dd>
 </dl>
+<dl class="section return"><dt>Returns</dt><dd>An <a class="el" href="../../d3/dea/a00444.html" title="Represents an image with 8 bits per channel. ">Image</a> object with all the important data. </dd></dl>
 
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="ac72937e16c3c25412312edae13516d0a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac72937e16c3c25412312edae13516d0a">&#9670;&nbsp;</a></span>Add()</h2>
+<a id="af3670971622e82e58f3d3de2461ed129"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af3670971622e82e58f3d3de2461ed129">&#9670;&nbsp;</a></span>LoadImage16()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void ActorBatch::Add </td>
+          <td class="memname">static <a class="el" href="../../de/dfe/a00448.html">Image16</a> Atlas::Loader::ImageLoader::LoadImage16 </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../de/dfe/a00448.html">Actor</a> *&#160;</td>
-          <td class="paramname"><em>actor</em></td><td>)</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>colorSpaceConversion</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>forceChannels</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p>Adds an actor to the actor batch. </p>
+<p>Loads an image with 16 bits per channel. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">actor</td><td>A pointer to an <a class="el" href="../../de/dfe/a00448.html">Actor</a> object </td></tr>
+    <tr><td class="paramname">filename</td><td>The name of the image file. </td></tr>
+    <tr><td class="paramname">colorSpaceConversion</td><td>Whether or not gamma to linear color space conversion is needed. </td></tr>
+    <tr><td class="paramname">forceChannels</td><td>The number of channels to be forced. Default is zero, which means no force. </td></tr>
   </table>
   </dd>
 </dl>
+<dl class="section return"><dt>Returns</dt><dd>An <a class="el" href="../../de/dfe/a00448.html" title="Represents an image with 16 bits per channel. ">Image16</a> object with all the important data. </dd></dl>
 
 </div>
 </div>
-<a id="a984f8076317c92b8691a1c25478f5ca7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a984f8076317c92b8691a1c25478f5ca7">&#9670;&nbsp;</a></span>ClearContent()</h2>
+<a id="a85645875a42e53663e7f6326f1ff377a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85645875a42e53663e7f6326f1ff377a">&#9670;&nbsp;</a></span>SaveImage()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void ActorBatch::ClearContent </td>
+          <td class="memname">static void Atlas::Loader::ImageLoader::SaveImage </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
+          <td class="paramtype"><a class="el" href="../../d3/dea/a00444.html">Image</a> &amp;&#160;</td>
+          <td class="paramname"><em>image</em>, </td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a9e1b1ad9ed409dd5dc59820cdfd6d48c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9e1b1ad9ed409dd5dc59820cdfd6d48c">&#9670;&nbsp;</a></span>DeleteContent()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname">void ActorBatch::DeleteContent </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>&#160;</td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aa4dd7ba80c52ec3c6e038982cc03e8c9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa4dd7ba80c52ec3c6e038982cc03e8c9">&#9670;&nbsp;</a></span>GetMesh()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d2/d9d/a00464.html">Mesh</a>* ActorBatch::GetMesh </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
           <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p>Returns the mesh of the batch. </p>
-<dl class="section return"><dt>Returns</dt><dd>A pointer to a <a class="el" href="../../d2/d9d/a00464.html">Mesh</a> object </dd></dl>
-
-</div>
-</div>
-<a id="a029b2db01ac96bd98d5498929a11effa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a029b2db01ac96bd98d5498929a11effa">&#9670;&nbsp;</a></span>GetSize()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t ActorBatch::GetSize </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Returns the number of actors in the batch. </p>
-<dl class="section return"><dt>Returns</dt><dd>An integer with the number of actors </dd></dl>
-
-</div>
-</div>
-<a id="a069e01b377d3768e3efcaaa9a8c83125"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a069e01b377d3768e3efcaaa9a8c83125">&#9670;&nbsp;</a></span>Remove()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void ActorBatch::Remove </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../de/dfe/a00448.html">Actor</a> *&#160;</td>
-          <td class="paramname"><em>actor</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Removes an actor from the actor batch. </p>
+<p>Save an image with 8 bits per channel to the hard drive. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">actor</td><td>A pointer to an <a class="el" href="../../de/dfe/a00448.html">Actor</a> object </td></tr>
+    <tr><td class="paramname">image</td><td>The image to be stored </td></tr>
+    <tr><td class="paramname">filename</td><td>The filename that the image should have </td></tr>
   </table>
   </dd>
 </dl>
+<dl class="section note"><dt>Note</dt><dd>By changing the fileFormat in the <a class="el" href="../../d3/dea/a00444.html" title="Represents an image with 8 bits per channel. ">Image</a> object the output file changes as well. </dd></dl>
 
 </div>
 </div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="afad0f165c22db0d6f0dcfa9c4e18ce9c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afad0f165c22db0d6f0dcfa9c4e18ce9c">&#9670;&nbsp;</a></span>actors</h2>
+<a id="ab085fabede337f4f1f124b5090934751"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab085fabede337f4f1f124b5090934751">&#9670;&nbsp;</a></span>SaveImage16()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">vector&lt;<a class="el" href="../../de/dfe/a00448.html">Actor</a>*&gt; ActorBatch::actors</td>
+          <td class="memname">static void Atlas::Loader::ImageLoader::SaveImage16 </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../de/dfe/a00448.html">Image16</a> &amp;&#160;</td>
+          <td class="paramname"><em>image</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/d88/a00128_source.html#l00057">57</a> of file <a class="el" href="../../d1/d88/a00128_source.html">ActorBatch.h</a>.</p>
+<p>Save an image with 16 bits per channel to the hard drive. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">image</td><td>The image to be stored </td></tr>
+    <tr><td class="paramname">filename</td><td>The filename that the image should have </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>By changing the fileFormat in the <a class="el" href="../../de/dfe/a00448.html" title="Represents an image with 16 bits per channel. ">Image16</a> object the output file changes as well. Only IMAGE_PGM is supported for now. </dd></dl>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/mesh/<a class="el" href="../../d1/d88/a00128_source.html">ActorBatch.h</a></li>
+<li>src/loader/<a class="el" href="../../d0/dc2/a00104_source.html">ImageLoader.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d1/d0b/a00452.html">ActorBatch</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d3/d5e/a00275.html">Loader</a></li><li class="navelem"><a class="el" href="../../d1/d0b/a00452.html">ImageLoader</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

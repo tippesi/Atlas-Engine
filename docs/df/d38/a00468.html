@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: MeshSubData Struct Reference</title>
+<title>Atlas Engine: Atlas::Lighting::PointLight Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -88,85 +88,331 @@ $(document).ready(function(){initNavTree('df/d38/a00468.html','../../');});
 
 <div class="header">
   <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../db/de0/a00465.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">MeshSubData Struct Reference</div>  </div>
+<div class="title">Atlas::Lighting::PointLight Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d4/d3e/a00116_source.html">PointLight.h</a>&gt;</code></p>
+<div class="dynheader">
+Inheritance diagram for Atlas::Lighting::PointLight:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="../../df/d38/a00468.png" usemap="#Atlas::Lighting::PointLight_map" alt=""/>
+  <map id="Atlas::Lighting::PointLight_map" name="Atlas::Lighting::PointLight_map">
+<area href="../../d2/d9d/a00464.html" alt="Atlas::Lighting::ILight" shape="rect" coords="0,0,151,24"/>
+</map>
+ </div></div>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a225a2af908973bb67e04eef634b12053"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html#a225a2af908973bb67e04eef634b12053">PointLight</a> (int32_t <a class="el" href="../../d2/d9d/a00464.html#abebef03d6816cb5ee27229dd4518429f">mobility</a>=<a class="el" href="../../d3/d00/a00113.html#a0c47343b7929f66f59ed14286415ece1">AE_STATIONARY_LIGHT</a>)</td></tr>
+<tr class="separator:a225a2af908973bb67e04eef634b12053"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a19746bb55707e90cc72f6769fe542014"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html#a19746bb55707e90cc72f6769fe542014">~PointLight</a> ()</td></tr>
+<tr class="separator:a19746bb55707e90cc72f6769fe542014"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af4023854b5ee8b6461f5e3b9041352dc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html#af4023854b5ee8b6461f5e3b9041352dc">AddShadow</a> (float bias, int32_t resolution)</td></tr>
+<tr class="separator:af4023854b5ee8b6461f5e3b9041352dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d9c8fe74b6890776750adb82349a60d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html#a9d9c8fe74b6890776750adb82349a60d">RemoveShadow</a> ()</td></tr>
+<tr class="separator:a9d9c8fe74b6890776750adb82349a60d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8892745e08f7295ea2af412a97a1e32f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html#a8892745e08f7295ea2af412a97a1e32f">AddVolumetric</a> (int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor=1.0f)</td></tr>
+<tr class="separator:a8892745e08f7295ea2af412a97a1e32f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2edb8b0f741e9d52024f09aadd462084"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html#a2edb8b0f741e9d52024f09aadd462084">RemoveVolumetric</a> ()</td></tr>
+<tr class="separator:a2edb8b0f741e9d52024f09aadd462084"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0012c9eb13b85e1bfb4f868dcb1b8c61"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html#a0012c9eb13b85e1bfb4f868dcb1b8c61">Update</a> (<a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera)</td></tr>
+<tr class="separator:a0012c9eb13b85e1bfb4f868dcb1b8c61"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab372268938899b485a59004dd089e54b"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html#ab372268938899b485a59004dd089e54b">GetRadius</a> ()</td></tr>
+<tr class="separator:ab372268938899b485a59004dd089e54b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_a00464"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_a00464')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d2/d9d/a00464.html">Atlas::Lighting::ILight</a></td></tr>
+<tr class="memitem:abc92e225c3c05a2f3e93beb983143530 inherit pub_methods_a00464"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d9/d34/a00476.html">Shadow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#abc92e225c3c05a2f3e93beb983143530">GetShadow</a> ()</td></tr>
+<tr class="separator:abc92e225c3c05a2f3e93beb983143530 inherit pub_methods_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1741ae658c0682c7469bdabad64ec9c inherit pub_methods_a00464"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/ddf/a00488.html">Volumetric</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#ab1741ae658c0682c7469bdabad64ec9c">GetVolumetric</a> ()</td></tr>
+<tr class="separator:ab1741ae658c0682c7469bdabad64ec9c inherit pub_methods_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a775aff9927aba8082c2b7f2efd43e477"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html#a775aff9927aba8082c2b7f2efd43e477">indicesOffset</a></td></tr>
-<tr class="separator:a775aff9927aba8082c2b7f2efd43e477"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a90d8fcf551b77913d9e09f18b8d1cdab"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html#a90d8fcf551b77913d9e09f18b8d1cdab">numIndices</a></td></tr>
-<tr class="separator:a90d8fcf551b77913d9e09f18b8d1cdab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a366e9f6625789821b13f1277d3570a52"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html#a366e9f6625789821b13f1277d3570a52">materialIndex</a></td></tr>
-<tr class="separator:a366e9f6625789821b13f1277d3570a52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0feb1d9530285c5651e9cd81c1b60f96"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html#a0feb1d9530285c5651e9cd81c1b60f96">location</a></td></tr>
+<tr class="separator:a0feb1d9530285c5651e9cd81c1b60f96"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a189e74fc5a590f3e2913f8e35bceacff"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d38/a00468.html#a189e74fc5a590f3e2913f8e35bceacff">attenuation</a></td></tr>
+<tr class="separator:a189e74fc5a590f3e2913f8e35bceacff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_attribs_a00464"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_a00464')"><img src="../../closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="../../d2/d9d/a00464.html">Atlas::Lighting::ILight</a></td></tr>
+<tr class="memitem:a605293fcb8e8b59014dea4d6a2944992 inherit pub_attribs_a00464"><td class="memItemLeft" align="right" valign="top">const int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#a605293fcb8e8b59014dea4d6a2944992">type</a></td></tr>
+<tr class="separator:a605293fcb8e8b59014dea4d6a2944992 inherit pub_attribs_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abebef03d6816cb5ee27229dd4518429f inherit pub_attribs_a00464"><td class="memItemLeft" align="right" valign="top">const int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#abebef03d6816cb5ee27229dd4518429f">mobility</a></td></tr>
+<tr class="separator:abebef03d6816cb5ee27229dd4518429f inherit pub_attribs_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a941ab116d253baf15b6c51cc78523aef inherit pub_attribs_a00464"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#a941ab116d253baf15b6c51cc78523aef">color</a></td></tr>
+<tr class="separator:a941ab116d253baf15b6c51cc78523aef inherit pub_attribs_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4507dced8f27142bd97357577572d8f5 inherit pub_attribs_a00464"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#a4507dced8f27142bd97357577572d8f5">ambient</a></td></tr>
+<tr class="separator:a4507dced8f27142bd97357577572d8f5 inherit pub_attribs_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pro_methods_a00464"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_a00464')"><img src="../../closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="../../d2/d9d/a00464.html">Atlas::Lighting::ILight</a></td></tr>
+<tr class="memitem:a74253cdc387cc5732a30ebffc70d22cc inherit pro_methods_a00464"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#a74253cdc387cc5732a30ebffc70d22cc">ILight</a> (int32_t <a class="el" href="../../d2/d9d/a00464.html#a605293fcb8e8b59014dea4d6a2944992">type</a>, int32_t <a class="el" href="../../d2/d9d/a00464.html#abebef03d6816cb5ee27229dd4518429f">mobility</a>)</td></tr>
+<tr class="separator:a74253cdc387cc5732a30ebffc70d22cc inherit pro_methods_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pro_attribs_a00464"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_a00464')"><img src="../../closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="../../d2/d9d/a00464.html">Atlas::Lighting::ILight</a></td></tr>
+<tr class="memitem:a0e8ae67f43a27b356df91da81814b201 inherit pro_attribs_a00464"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d9/d34/a00476.html">Shadow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#a0e8ae67f43a27b356df91da81814b201">shadow</a></td></tr>
+<tr class="separator:a0e8ae67f43a27b356df91da81814b201 inherit pro_attribs_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1f4dbefe5847f9411320d243ae137d9a inherit pro_attribs_a00464"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/ddf/a00488.html">Volumetric</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#a1f4dbefe5847f9411320d243ae137d9a">volumetric</a></td></tr>
+<tr class="separator:a1f4dbefe5847f9411320d243ae137d9a inherit pro_attribs_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00013">13</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
-</div><h2 class="groupheader">Member Data Documentation</h2>
-<a id="a775aff9927aba8082c2b7f2efd43e477"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a775aff9927aba8082c2b7f2efd43e477">&#9670;&nbsp;</a></span>indicesOffset</h2>
+<p class="definition">Definition at line <a class="el" href="../../d4/d3e/a00116_source.html#l00011">11</a> of file <a class="el" href="../../d4/d3e/a00116_source.html">PointLight.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a225a2af908973bb67e04eef634b12053"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a225a2af908973bb67e04eef634b12053">&#9670;&nbsp;</a></span>PointLight()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint32_t MeshSubData::indicesOffset</td>
+          <td class="memname">Atlas::Lighting::PointLight::PointLight </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>mobility</em> = <code><a class="el" href="../../d3/d00/a00113.html#a0c47343b7929f66f59ed14286415ece1">AE_STATIONARY_LIGHT</a></code></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00014">14</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
-
 </div>
 </div>
-<a id="a366e9f6625789821b13f1277d3570a52"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a366e9f6625789821b13f1277d3570a52">&#9670;&nbsp;</a></span>materialIndex</h2>
+<a id="a19746bb55707e90cc72f6769fe542014"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a19746bb55707e90cc72f6769fe542014">&#9670;&nbsp;</a></span>~PointLight()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint32_t MeshSubData::materialIndex</td>
+          <td class="memname">Atlas::Lighting::PointLight::~PointLight </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00016">16</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
-
 </div>
 </div>
-<a id="a90d8fcf551b77913d9e09f18b8d1cdab"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a90d8fcf551b77913d9e09f18b8d1cdab">&#9670;&nbsp;</a></span>numIndices</h2>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="af4023854b5ee8b6461f5e3b9041352dc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af4023854b5ee8b6461f5e3b9041352dc">&#9670;&nbsp;</a></span>AddShadow()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint32_t MeshSubData::numIndices</td>
+          <td class="memname">void Atlas::Lighting::PointLight::AddShadow </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>bias</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>resolution</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00015">15</a> of file <a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a>.</p>
+</div>
+</div>
+<a id="a8892745e08f7295ea2af412a97a1e32f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8892745e08f7295ea2af412a97a1e32f">&#9670;&nbsp;</a></span>AddVolumetric()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Lighting::PointLight::AddVolumetric </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>sampleCount</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>scattering</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>scatteringFactor</em> = <code>1.0f</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li>src/mesh/<a class="el" href="../../d5/db1/a00140_source.html">MeshData.h</a></li>
+<a id="ab372268938899b485a59004dd089e54b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab372268938899b485a59004dd089e54b">&#9670;&nbsp;</a></span>GetRadius()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Lighting::PointLight::GetRadius </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9d9c8fe74b6890776750adb82349a60d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9d9c8fe74b6890776750adb82349a60d">&#9670;&nbsp;</a></span>RemoveShadow()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Lighting::PointLight::RemoveShadow </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="../../d2/d9d/a00464.html#aa179461a0235c74b7f9c505e81e49813">Atlas::Lighting::ILight</a>.</p>
+
+</div>
+</div>
+<a id="a2edb8b0f741e9d52024f09aadd462084"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2edb8b0f741e9d52024f09aadd462084">&#9670;&nbsp;</a></span>RemoveVolumetric()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Lighting::PointLight::RemoveVolumetric </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="../../d2/d9d/a00464.html#a4e2216ada56a6a65384ca92d57cdaa0f">Atlas::Lighting::ILight</a>.</p>
+
+</div>
+</div>
+<a id="a0012c9eb13b85e1bfb4f868dcb1b8c61"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0012c9eb13b85e1bfb4f868dcb1b8c61">&#9670;&nbsp;</a></span>Update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Lighting::PointLight::Update </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="../../d2/d9d/a00464.html#af3031dcc6bcbb9bc187ed0859805cb65">Atlas::Lighting::ILight</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a189e74fc5a590f3e2913f8e35bceacff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a189e74fc5a590f3e2913f8e35bceacff">&#9670;&nbsp;</a></span>attenuation</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Lighting::PointLight::attenuation</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d3e/a00116_source.html#l00032">32</a> of file <a class="el" href="../../d4/d3e/a00116_source.html">PointLight.h</a>.</p>
+
+</div>
+</div>
+<a id="a0feb1d9530285c5651e9cd81c1b60f96"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0feb1d9530285c5651e9cd81c1b60f96">&#9670;&nbsp;</a></span>location</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">vec3 Atlas::Lighting::PointLight::location</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d3e/a00116_source.html#l00030">30</a> of file <a class="el" href="../../d4/d3e/a00116_source.html">PointLight.h</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/lighting/<a class="el" href="../../d4/d3e/a00116_source.html">PointLight.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../df/d38/a00468.html">MeshSubData</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dc/d28/a00276.html">Lighting</a></li><li class="navelem"><a class="el" href="../../df/d38/a00468.html">PointLight</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

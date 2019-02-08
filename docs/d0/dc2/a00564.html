@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Uniform Class Reference</title>
+<title>Atlas Engine: Atlas::Renderer::PostProcessRenderer Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -89,403 +89,53 @@ $(document).ready(function(){initNavTree('d0/dc2/a00564.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="../../d2/d50/a00561.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Uniform Class Reference</div>  </div>
+<div class="title">Atlas::Renderer::PostProcessRenderer Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d5/df1/a00206_source.html">Uniform.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../db/dd9/a00179_source.html">PostProcessRenderer.h</a>&gt;</code></p>
+<div class="dynheader">
+Inheritance diagram for Atlas::Renderer::PostProcessRenderer:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="../../d0/dc2/a00564.png" usemap="#Atlas::Renderer::PostProcessRenderer_map" alt=""/>
+  <map id="Atlas::Renderer::PostProcessRenderer_map" name="Atlas::Renderer::PostProcessRenderer_map">
+<area href="../../dd/de6/a00548.html" alt="Atlas::Renderer::IRenderer" shape="rect" coords="0,0,228,24"/>
+</map>
+ </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a2dafd2ea023caf0a1e6bb2c1856e5947"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#a2dafd2ea023caf0a1e6bb2c1856e5947">Uniform</a> (uint32_t shaderID, string uniformName, <a class="el" href="../../d2/ddf/a00544.html">ShaderBatch</a> *shaderBatch=nullptr, int32_t ID=0)</td></tr>
-<tr class="memdesc:a2dafd2ea023caf0a1e6bb2c1856e5947"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d0/dc2/a00564.html">Uniform</a> object for a shader.  <a href="#a2dafd2ea023caf0a1e6bb2c1856e5947">More...</a><br /></td></tr>
-<tr class="separator:a2dafd2ea023caf0a1e6bb2c1856e5947"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a56ba9a74d6c150af743b2df5dd9ebd55"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#a56ba9a74d6c150af743b2df5dd9ebd55">Update</a> ()</td></tr>
-<tr class="memdesc:a56ba9a74d6c150af743b2df5dd9ebd55"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the ID of the uniform.  <a href="#a56ba9a74d6c150af743b2df5dd9ebd55">More...</a><br /></td></tr>
-<tr class="separator:a56ba9a74d6c150af743b2df5dd9ebd55"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad57711adff4772ec74507adce39369b6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#ad57711adff4772ec74507adce39369b6">SetValue</a> (int32_t value)</td></tr>
-<tr class="separator:ad57711adff4772ec74507adce39369b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a22dc3d57c46d30caf523d1f3959e33a8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#a22dc3d57c46d30caf523d1f3959e33a8">SetValue</a> (float value)</td></tr>
-<tr class="separator:a22dc3d57c46d30caf523d1f3959e33a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac3c82b6c934f7f088f975d2037ced1ac"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#ac3c82b6c934f7f088f975d2037ced1ac">SetValue</a> (bool value)</td></tr>
-<tr class="separator:ac3c82b6c934f7f088f975d2037ced1ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6115d38afe5d81b953e29f0395741722"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#a6115d38afe5d81b953e29f0395741722">SetValue</a> (mat4 value)</td></tr>
-<tr class="separator:a6115d38afe5d81b953e29f0395741722"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adfd6345ce912b54718d515a9973a3bba"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#adfd6345ce912b54718d515a9973a3bba">SetValue</a> (mat3 value)</td></tr>
-<tr class="separator:adfd6345ce912b54718d515a9973a3bba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8559c6b1ef6ba9b441adad5f59893d5f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#a8559c6b1ef6ba9b441adad5f59893d5f">SetValue</a> (vec4 value)</td></tr>
-<tr class="separator:a8559c6b1ef6ba9b441adad5f59893d5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3f34bbad0b4bf0e2b3787c142d846ee9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#a3f34bbad0b4bf0e2b3787c142d846ee9">SetValue</a> (vec3 value)</td></tr>
-<tr class="separator:a3f34bbad0b4bf0e2b3787c142d846ee9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6bb9c0910fd2f6777c1d2ca7c577259a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#a6bb9c0910fd2f6777c1d2ca7c577259a">SetValue</a> (vec2 value)</td></tr>
-<tr class="separator:a6bb9c0910fd2f6777c1d2ca7c577259a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a85209134fe53efef614d39cc0b6d2f76"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#a85209134fe53efef614d39cc0b6d2f76">SetValue</a> (int32_t *value, int32_t length)</td></tr>
-<tr class="separator:a85209134fe53efef614d39cc0b6d2f76"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af50d42567c5ae731b9d64ea65e6d19d4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#af50d42567c5ae731b9d64ea65e6d19d4">SetValue</a> (float *value, int32_t length)</td></tr>
-<tr class="separator:af50d42567c5ae731b9d64ea65e6d19d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a184e878d584915384c9bdae1496b9cd3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#a184e878d584915384c9bdae1496b9cd3">SetValue</a> (vec4 *value, int32_t length)</td></tr>
-<tr class="separator:a184e878d584915384c9bdae1496b9cd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa8de8c733623122369c5eef9b8e4a152"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#aa8de8c733623122369c5eef9b8e4a152">SetValue</a> (vec3 *value, int32_t length)</td></tr>
-<tr class="separator:aa8de8c733623122369c5eef9b8e4a152"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6a2758e748900f73b73c7cb75573d8fd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#a6a2758e748900f73b73c7cb75573d8fd">SetValue</a> (vec2 *value, int32_t length)</td></tr>
-<tr class="separator:a6a2758e748900f73b73c7cb75573d8fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa3c563e94f1489d2d059d055c2324e8c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#aa3c563e94f1489d2d059d055c2324e8c">PostProcessRenderer</a> ()</td></tr>
+<tr class="separator:aa3c563e94f1489d2d059d055c2324e8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa587ddc43acb736327c4e80e38efd2a5"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#aa587ddc43acb736327c4e80e38efd2a5">Render</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, <a class="el" href="../../d8/d8e/a00344.html">RenderTarget</a> *target, <a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera, <a class="el" href="../../df/d03/a00348.html">Scene</a> *scene)</td></tr>
+<tr class="separator:aa587ddc43acb736327c4e80e38efd2a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_a00548"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_a00548')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../dd/de6/a00548.html">Atlas::Renderer::IRenderer</a></td></tr>
+<tr class="memitem:a967cf123292d2ba8c0f27478e024b756 inherit pub_methods_a00548"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de6/a00548.html#a967cf123292d2ba8c0f27478e024b756">~IRenderer</a> ()</td></tr>
+<tr class="separator:a967cf123292d2ba8c0f27478e024b756 inherit pub_methods_a00548"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:af11c6ffb10513fe0271acb942b4717f8"><td class="memItemLeft" align="right" valign="top">string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#af11c6ffb10513fe0271acb942b4717f8">name</a></td></tr>
-<tr class="separator:af11c6ffb10513fe0271acb942b4717f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a706dc8b7b620973dd6ae6db15c4f07dd"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#a706dc8b7b620973dd6ae6db15c4f07dd">vertexPath</a></td></tr>
+<tr class="separator:a706dc8b7b620973dd6ae6db15c4f07dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aacb77e169e75d970c3f6bbe31f3e6a98"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#aacb77e169e75d970c3f6bbe31f3e6a98">fragmentPath</a></td></tr>
+<tr class="separator:aacb77e169e75d970c3f6bbe31f3e6a98"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d5/df1/a00206_source.html#l00012">12</a> of file <a class="el" href="../../d5/df1/a00206_source.html">Uniform.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/dd9/a00179_source.html#l00012">12</a> of file <a class="el" href="../../db/dd9/a00179_source.html">PostProcessRenderer.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a2dafd2ea023caf0a1e6bb2c1856e5947"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2dafd2ea023caf0a1e6bb2c1856e5947">&#9670;&nbsp;</a></span>Uniform()</h2>
+<a id="aa3c563e94f1489d2d059d055c2324e8c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa3c563e94f1489d2d059d055c2324e8c">&#9670;&nbsp;</a></span>PostProcessRenderer()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Uniform::Uniform </td>
-          <td>(</td>
-          <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>shaderID</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">string&#160;</td>
-          <td class="paramname"><em>uniformName</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d2/ddf/a00544.html">ShaderBatch</a> *&#160;</td>
-          <td class="paramname"><em>shaderBatch</em> = <code>nullptr</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>ID</em> = <code>0</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Constructs a <a class="el" href="../../d0/dc2/a00564.html">Uniform</a> object for a shader. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">shaderID</td><td>The ID of the shader. </td></tr>
-    <tr><td class="paramname">uniformName</td><td>The name of the uniform </td></tr>
-    <tr><td class="paramname">shaderBatch</td><td>The shader batch the uniform abstracts, if uniform abstracts access of a shader batch </td></tr>
-    <tr><td class="paramname">ID</td><td>The ID of the uniform in the shader batch, if uniform abstracts access of a shader batch </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="ad57711adff4772ec74507adce39369b6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad57711adff4772ec74507adce39369b6">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[1/13]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::SetValue </td>
-          <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>value</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a22dc3d57c46d30caf523d1f3959e33a8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a22dc3d57c46d30caf523d1f3959e33a8">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[2/13]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::SetValue </td>
-          <td>(</td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>value</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ac3c82b6c934f7f088f975d2037ced1ac"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac3c82b6c934f7f088f975d2037ced1ac">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[3/13]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::SetValue </td>
-          <td>(</td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>value</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a6115d38afe5d81b953e29f0395741722"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6115d38afe5d81b953e29f0395741722">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[4/13]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::SetValue </td>
-          <td>(</td>
-          <td class="paramtype">mat4&#160;</td>
-          <td class="paramname"><em>value</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="adfd6345ce912b54718d515a9973a3bba"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adfd6345ce912b54718d515a9973a3bba">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[5/13]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::SetValue </td>
-          <td>(</td>
-          <td class="paramtype">mat3&#160;</td>
-          <td class="paramname"><em>value</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a8559c6b1ef6ba9b441adad5f59893d5f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8559c6b1ef6ba9b441adad5f59893d5f">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[6/13]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::SetValue </td>
-          <td>(</td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>value</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a3f34bbad0b4bf0e2b3787c142d846ee9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3f34bbad0b4bf0e2b3787c142d846ee9">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[7/13]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::SetValue </td>
-          <td>(</td>
-          <td class="paramtype">vec3&#160;</td>
-          <td class="paramname"><em>value</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a6bb9c0910fd2f6777c1d2ca7c577259a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6bb9c0910fd2f6777c1d2ca7c577259a">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[8/13]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::SetValue </td>
-          <td>(</td>
-          <td class="paramtype">vec2&#160;</td>
-          <td class="paramname"><em>value</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a85209134fe53efef614d39cc0b6d2f76"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a85209134fe53efef614d39cc0b6d2f76">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[9/13]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::SetValue </td>
-          <td>(</td>
-          <td class="paramtype">int32_t *&#160;</td>
-          <td class="paramname"><em>value</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>length</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="af50d42567c5ae731b9d64ea65e6d19d4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af50d42567c5ae731b9d64ea65e6d19d4">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[10/13]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::SetValue </td>
-          <td>(</td>
-          <td class="paramtype">float *&#160;</td>
-          <td class="paramname"><em>value</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>length</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a184e878d584915384c9bdae1496b9cd3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a184e878d584915384c9bdae1496b9cd3">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[11/13]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::SetValue </td>
-          <td>(</td>
-          <td class="paramtype">vec4 *&#160;</td>
-          <td class="paramname"><em>value</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>length</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aa8de8c733623122369c5eef9b8e4a152"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa8de8c733623122369c5eef9b8e4a152">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[12/13]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::SetValue </td>
-          <td>(</td>
-          <td class="paramtype">vec3 *&#160;</td>
-          <td class="paramname"><em>value</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>length</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a6a2758e748900f73b73c7cb75573d8fd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6a2758e748900f73b73c7cb75573d8fd">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[13/13]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::SetValue </td>
-          <td>(</td>
-          <td class="paramtype">vec2 *&#160;</td>
-          <td class="paramname"><em>value</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>length</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a56ba9a74d6c150af743b2df5dd9ebd55"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a56ba9a74d6c150af743b2df5dd9ebd55">&#9670;&nbsp;</a></span>Update()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Uniform::Update </td>
+          <td class="memname">Atlas::Renderer::PostProcessRenderer::PostProcessRenderer </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -493,36 +143,117 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Updates the ID of the uniform. </p>
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="aa587ddc43acb736327c4e80e38efd2a5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa587ddc43acb736327c4e80e38efd2a5">&#9670;&nbsp;</a></span>Render()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void Atlas::Renderer::PostProcessRenderer::Render </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d8/d8e/a00344.html">RenderTarget</a> *&#160;</td>
+          <td class="paramname"><em>target</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../df/d03/a00348.html">Scene</a> *&#160;</td>
+          <td class="paramname"><em>scene</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="../../dd/de6/a00548.html#a8c86b7ae126a7a3841de0694e71d64de">Atlas::Renderer::IRenderer</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="af11c6ffb10513fe0271acb942b4717f8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af11c6ffb10513fe0271acb942b4717f8">&#9670;&nbsp;</a></span>name</h2>
+<a id="aacb77e169e75d970c3f6bbe31f3e6a98"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aacb77e169e75d970c3f6bbe31f3e6a98">&#9670;&nbsp;</a></span>fragmentPath</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">string Uniform::name</td>
+          <td class="memname">std::string Atlas::Renderer::PostProcessRenderer::fragmentPath</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/df1/a00206_source.html#l00055">55</a> of file <a class="el" href="../../d5/df1/a00206_source.html">Uniform.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/dd9/a00179_source.html#l00020">20</a> of file <a class="el" href="../../db/dd9/a00179_source.html">PostProcessRenderer.h</a>.</p>
+
+</div>
+</div>
+<a id="a706dc8b7b620973dd6ae6db15c4f07dd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a706dc8b7b620973dd6ae6db15c4f07dd">&#9670;&nbsp;</a></span>vertexPath</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string Atlas::Renderer::PostProcessRenderer::vertexPath</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../db/dd9/a00179_source.html#l00019">19</a> of file <a class="el" href="../../db/dd9/a00179_source.html">PostProcessRenderer.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/shader/<a class="el" href="../../d5/df1/a00206_source.html">Uniform.h</a></li>
+<li>src/renderer/<a class="el" href="../../db/dd9/a00179_source.html">PostProcessRenderer.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d0/dc2/a00564.html">Uniform</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Renderer</a></li><li class="navelem"><a class="el" href="../../d0/dc2/a00564.html">PostProcessRenderer</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Viewport Class Reference</title>
+<title>Atlas Engine: Atlas::RenderListBatch Struct Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -88,263 +88,67 @@ $(document).ready(function(){initNavTree('dd/d1d/a00336.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d2/d0a/a00333.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Viewport Class Reference</div>  </div>
+<div class="title">Atlas::RenderListBatch Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Represents a rectangular area inside a window where the engine renders to.  
- <a href="../../dd/d1d/a00336.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="../../d6/d2d/a00047_source.html">Viewport.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:a02109282ba6bb5c02c20a723e14455e8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d1d/a00336.html#a02109282ba6bb5c02c20a723e14455e8">Viewport</a> (int32_t <a class="el" href="../../dd/d1d/a00336.html#ac3a9323f0278fe0b3cbe33d2a9f2cba2">x</a>, int32_t <a class="el" href="../../dd/d1d/a00336.html#a50c9a8abaf814f55e83c353cde6dbad4">y</a>, int32_t <a class="el" href="../../dd/d1d/a00336.html#ac69e44eacb51f86c4656505505f2fab8">width</a>, int32_t <a class="el" href="../../dd/d1d/a00336.html#aa0f398d2df3bb729815766f1717d1811">height</a>)</td></tr>
-<tr class="memdesc:a02109282ba6bb5c02c20a723e14455e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a <a class="el" href="../../dd/d1d/a00336.html" title="Represents a rectangular area inside a window where the engine renders to. ">Viewport</a> object.  <a href="#a02109282ba6bb5c02c20a723e14455e8">More...</a><br /></td></tr>
-<tr class="separator:a02109282ba6bb5c02c20a723e14455e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52118020afecd82443c8fcdb1fea3ee3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d1d/a00336.html#a52118020afecd82443c8fcdb1fea3ee3">Set</a> (int32_t <a class="el" href="../../dd/d1d/a00336.html#ac3a9323f0278fe0b3cbe33d2a9f2cba2">x</a>, int32_t <a class="el" href="../../dd/d1d/a00336.html#a50c9a8abaf814f55e83c353cde6dbad4">y</a>, int32_t <a class="el" href="../../dd/d1d/a00336.html#ac69e44eacb51f86c4656505505f2fab8">width</a>, int32_t <a class="el" href="../../dd/d1d/a00336.html#aa0f398d2df3bb729815766f1717d1811">height</a>)</td></tr>
-<tr class="memdesc:a52118020afecd82443c8fcdb1fea3ee3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resets the size of the viewport.  <a href="#a52118020afecd82443c8fcdb1fea3ee3">More...</a><br /></td></tr>
-<tr class="separator:a52118020afecd82443c8fcdb1fea3ee3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39d978527ffb3083db23e213a7f0af5d"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d1d/a00336.html#a39d978527ffb3083db23e213a7f0af5d">Unproject</a> (vec3 point, <a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera)</td></tr>
-<tr class="memdesc:a39d978527ffb3083db23e213a7f0af5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transforms a point from screen space pixel coordinates into world space.  <a href="#a39d978527ffb3083db23e213a7f0af5d">More...</a><br /></td></tr>
-<tr class="separator:a39d978527ffb3083db23e213a7f0af5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:ac3a9323f0278fe0b3cbe33d2a9f2cba2"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d1d/a00336.html#ac3a9323f0278fe0b3cbe33d2a9f2cba2">x</a></td></tr>
-<tr class="separator:ac3a9323f0278fe0b3cbe33d2a9f2cba2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a50c9a8abaf814f55e83c353cde6dbad4"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d1d/a00336.html#a50c9a8abaf814f55e83c353cde6dbad4">y</a></td></tr>
-<tr class="separator:a50c9a8abaf814f55e83c353cde6dbad4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac69e44eacb51f86c4656505505f2fab8"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d1d/a00336.html#ac69e44eacb51f86c4656505505f2fab8">width</a></td></tr>
-<tr class="separator:ac69e44eacb51f86c4656505505f2fab8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa0f398d2df3bb729815766f1717d1811"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d1d/a00336.html#aa0f398d2df3bb729815766f1717d1811">height</a></td></tr>
-<tr class="separator:aa0f398d2df3bb729815766f1717d1811"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f60c5bb873c37f5eaec0be235765d7d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d30/a00508.html">Mesh::MeshActorBatch</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d1d/a00336.html#a0f60c5bb873c37f5eaec0be235765d7d">meshActorBatch</a></td></tr>
+<tr class="separator:a0f60c5bb873c37f5eaec0be235765d7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3889705dce6d4b81c04827019598ad1a"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d4/dfb/a00512.html">Mesh::MeshSubData</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d1d/a00336.html#a3889705dce6d4b81c04827019598ad1a">subData</a></td></tr>
+<tr class="separator:a3889705dce6d4b81c04827019598ad1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Represents a rectangular area inside a window where the engine renders to. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00010">10</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Viewport.h</a>.</p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a02109282ba6bb5c02c20a723e14455e8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a02109282ba6bb5c02c20a723e14455e8">&#9670;&nbsp;</a></span>Viewport()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">Viewport::Viewport </td>
-          <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>height</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Creates a <a class="el" href="../../dd/d1d/a00336.html" title="Represents a rectangular area inside a window where the engine renders to. ">Viewport</a> object. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">x</td><td>The offset in x direction to the upper left corner of the window </td></tr>
-    <tr><td class="paramname">y</td><td>The offset in y direction to the upper left corner of the window </td></tr>
-    <tr><td class="paramname">width</td><td>The width in pixels of the viewport </td></tr>
-    <tr><td class="paramname">height</td><td>The height in pixels of the viewport </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a52118020afecd82443c8fcdb1fea3ee3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a52118020afecd82443c8fcdb1fea3ee3">&#9670;&nbsp;</a></span>Set()</h2>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00015">15</a> of file <a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>.</p>
+</div><h2 class="groupheader">Member Data Documentation</h2>
+<a id="a0f60c5bb873c37f5eaec0be235765d7d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0f60c5bb873c37f5eaec0be235765d7d">&#9670;&nbsp;</a></span>meshActorBatch</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Viewport::Set </td>
-          <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>height</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
+          <td class="memname"><a class="el" href="../../dc/d30/a00508.html">Mesh::MeshActorBatch</a>* Atlas::RenderListBatch::meshActorBatch</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Resets the size of the viewport. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">x</td><td>The offset in x direction to the upper left corner of the window </td></tr>
-    <tr><td class="paramname">y</td><td>The offset in y direction to the upper left corner of the window </td></tr>
-    <tr><td class="paramname">width</td><td>The width in pixels of the viewport </td></tr>
-    <tr><td class="paramname">height</td><td>The height in pixels of the viewport </td></tr>
-  </table>
-  </dd>
-</dl>
+<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00017">17</a> of file <a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>.</p>
 
 </div>
 </div>
-<a id="a39d978527ffb3083db23e213a7f0af5d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a39d978527ffb3083db23e213a7f0af5d">&#9670;&nbsp;</a></span>Unproject()</h2>
+<a id="a3889705dce6d4b81c04827019598ad1a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3889705dce6d4b81c04827019598ad1a">&#9670;&nbsp;</a></span>subData</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">vec3 Viewport::Unproject </td>
-          <td>(</td>
-          <td class="paramtype">vec3&#160;</td>
-          <td class="paramname"><em>point</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
+          <td class="memname">std::vector&lt;<a class="el" href="../../d4/dfb/a00512.html">Mesh::MeshSubData</a> *&gt; Atlas::RenderListBatch::subData</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Transforms a point from screen space pixel coordinates into world space. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">point</td><td>The point to be transformed. </td></tr>
-    <tr><td class="paramname">camera</td><td>A camera which is used for the transformation </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>The transformed point in world space. </dd></dl>
-<dl class="section remark"><dt>Remarks</dt><dd>The x and y components of the point are just a position in pixels relative to the window. The z component represents the depth of the later transformed point and can be in range (0-1). If z is equal to zero the point will be in the exact depth as the near plane of the camera. If z is equal to one the point will be in the exact depth as the far plane of the camera. </dd></dl>
+<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00018">18</a> of file <a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>.</p>
 
 </div>
 </div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="aa0f398d2df3bb729815766f1717d1811"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa0f398d2df3bb729815766f1717d1811">&#9670;&nbsp;</a></span>height</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Viewport::height</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00047">47</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Viewport.h</a>.</p>
-
-</div>
-</div>
-<a id="ac69e44eacb51f86c4656505505f2fab8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac69e44eacb51f86c4656505505f2fab8">&#9670;&nbsp;</a></span>width</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Viewport::width</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00046">46</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Viewport.h</a>.</p>
-
-</div>
-</div>
-<a id="ac3a9323f0278fe0b3cbe33d2a9f2cba2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac3a9323f0278fe0b3cbe33d2a9f2cba2">&#9670;&nbsp;</a></span>x</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Viewport::x</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00043">43</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Viewport.h</a>.</p>
-
-</div>
-</div>
-<a id="a50c9a8abaf814f55e83c353cde6dbad4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a50c9a8abaf814f55e83c353cde6dbad4">&#9670;&nbsp;</a></span>y</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Viewport::y</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00044">44</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Viewport.h</a>.</p>
-
-</div>
-</div>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/<a class="el" href="../../d6/d2d/a00047_source.html">Viewport.h</a></li>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>src/<a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dd/d1d/a00336.html">Viewport</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dd/d1d/a00336.html">RenderListBatch</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

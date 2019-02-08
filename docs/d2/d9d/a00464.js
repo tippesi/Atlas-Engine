@@ -1,12 +1,15 @@
 var a00464 =
 [
-    [ "Mesh", "d2/d9d/a00464.html#aac41a5945fcf1faeb43c127eca212b58", null ],
-    [ "Mesh", "d2/d9d/a00464.html#a2b99ded1cc7aa67f48e93dcb38acdfbf", null ],
-    [ "~Mesh", "d2/d9d/a00464.html#a5efe4da1a4c0971cfb037bd70304c303", null ],
-    [ "Bind", "d2/d9d/a00464.html#a6c37ab09659e87f2c77b04571a6db264", null ],
-    [ "DeleteContent", "d2/d9d/a00464.html#a0b8353d0ba4a4a5ef89897aaf190c801", null ],
-    [ "Unbind", "d2/d9d/a00464.html#a3967159b14011d7c2ea2f844b4391da7", null ],
-    [ "UpdateData", "d2/d9d/a00464.html#ac50356f56396998d3ec06fee6c19cc23", null ],
-    [ "cullBackFaces", "d2/d9d/a00464.html#a77cfb138bfd4f43684301862da13525f", null ],
-    [ "data", "d2/d9d/a00464.html#a15a9befd90b9006324ab9b164b53af5b", null ]
+    [ "ILight", "d2/d9d/a00464.html#a74253cdc387cc5732a30ebffc70d22cc", null ],
+    [ "GetShadow", "d2/d9d/a00464.html#abc92e225c3c05a2f3e93beb983143530", null ],
+    [ "GetVolumetric", "d2/d9d/a00464.html#ab1741ae658c0682c7469bdabad64ec9c", null ],
+    [ "RemoveShadow", "d2/d9d/a00464.html#aa179461a0235c74b7f9c505e81e49813", null ],
+    [ "RemoveVolumetric", "d2/d9d/a00464.html#a4e2216ada56a6a65384ca92d57cdaa0f", null ],
+    [ "Update", "d2/d9d/a00464.html#af3031dcc6bcbb9bc187ed0859805cb65", null ],
+    [ "ambient", "d2/d9d/a00464.html#a4507dced8f27142bd97357577572d8f5", null ],
+    [ "color", "d2/d9d/a00464.html#a941ab116d253baf15b6c51cc78523aef", null ],
+    [ "mobility", "d2/d9d/a00464.html#abebef03d6816cb5ee27229dd4518429f", null ],
+    [ "shadow", "d2/d9d/a00464.html#a0e8ae67f43a27b356df91da81814b201", null ],
+    [ "type", "d2/d9d/a00464.html#a605293fcb8e8b59014dea4d6a2944992", null ],
+    [ "volumetric", "d2/d9d/a00464.html#a1f4dbefe5847f9411320d243ae137d9a", null ]
 ];

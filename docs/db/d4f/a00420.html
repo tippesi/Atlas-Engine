@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: ILight Class Reference</title>
+<title>Atlas Engine: Atlas::Input::ControllerHandler Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -90,318 +90,191 @@ $(document).ready(function(){initNavTree('db/d4f/a00420.html','../../');});
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
-<a href="#pro-attribs">Protected Attributes</a> &#124;
 <a href="../../d8/de7/a00417.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ILight Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
+<div class="title">Atlas::Input::ControllerHandler Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>&gt;</code></p>
-<div class="dynheader">
-Inheritance diagram for ILight:</div>
-<div class="dyncontent">
- <div class="center">
-  <img src="../../db/d4f/a00420.png" usemap="#ILight_map" alt=""/>
-  <map id="ILight_map" name="ILight_map">
-<area href="../../df/d15/a00416.html" alt="DirectionalLight" shape="rect" coords="0,56,100,80"/>
-<area href="../../dc/df3/a00424.html" alt="PointLight" shape="rect" coords="110,56,210,80"/>
-</map>
- </div></div>
+<p><code>#include &lt;<a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ad3b927d825e3cc3aeb4999485ada7313"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#ad3b927d825e3cc3aeb4999485ada7313">RemoveShadow</a> ()=0</td></tr>
-<tr class="separator:ad3b927d825e3cc3aeb4999485ada7313"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5f5f4aecb8167b459780a03f01b5fff2"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a5f5f4aecb8167b459780a03f01b5fff2">RemoveVolumetric</a> ()=0</td></tr>
-<tr class="separator:a5f5f4aecb8167b459780a03f01b5fff2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9f9da3df6b9b439f78ca307d3b7e98c1"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a9f9da3df6b9b439f78ca307d3b7e98c1">Update</a> (<a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera)=0</td></tr>
-<tr class="separator:a9f9da3df6b9b439f78ca307d3b7e98c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a551a41ea1781cb8b7ae75f12991f4b0b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d9/dd5/a00432.html">Shadow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a551a41ea1781cb8b7ae75f12991f4b0b">GetShadow</a> ()</td></tr>
-<tr class="separator:a551a41ea1781cb8b7ae75f12991f4b0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afc65ba9287f5637589095400ffee5fbb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/dea/a00444.html">Volumetric</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#afc65ba9287f5637589095400ffee5fbb">GetVolumetric</a> ()</td></tr>
-<tr class="separator:afc65ba9287f5637589095400ffee5fbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac017c479d50bec25192df804ec5f75f0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#ac017c479d50bec25192df804ec5f75f0">ControllerHandler</a> (<a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera, float <a class="el" href="../../db/d4f/a00420.html#ace02017fa3ff7ce7442854faa72b9445">sensibility</a>, float <a class="el" href="../../db/d4f/a00420.html#a394342a91fe7ad54874d9e1c45268378">speed</a>, float <a class="el" href="../../db/d4f/a00420.html#a00ad701e8fc231d58818337b8e898eec">reactivity</a>, float <a class="el" href="../../db/d4f/a00420.html#a06adde57666893cdcc710b664b5d0ba2">threshold</a>, int32_t device=-1)</td></tr>
+<tr class="separator:ac017c479d50bec25192df804ec5f75f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f4f010f9058e6e5aaf54d5542721698"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a2f4f010f9058e6e5aaf54d5542721698">Update</a> (<a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera, uint32_t deltaTime)</td></tr>
+<tr class="separator:a2f4f010f9058e6e5aaf54d5542721698"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a8458ee4d225fe841ccd024f98be28991"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a8458ee4d225fe841ccd024f98be28991">type</a></td></tr>
-<tr class="separator:a8458ee4d225fe841ccd024f98be28991"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad8802ed5c36db33af8fe39eda477aada"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#ad8802ed5c36db33af8fe39eda477aada">mobility</a></td></tr>
-<tr class="separator:ad8802ed5c36db33af8fe39eda477aada"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0a4e6dd2746b93a9c4014e4bb78c8d66"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a0a4e6dd2746b93a9c4014e4bb78c8d66">color</a></td></tr>
-<tr class="separator:a0a4e6dd2746b93a9c4014e4bb78c8d66"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad35af4e465a8c389aeaeb20777e5e61b"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#ad35af4e465a8c389aeaeb20777e5e61b">ambient</a></td></tr>
-<tr class="separator:ad35af4e465a8c389aeaeb20777e5e61b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
-Protected Attributes</h2></td></tr>
-<tr class="memitem:ad0fa9a8ad5f174c4c79570fe0e62db6e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d9/dd5/a00432.html">Shadow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#ad0fa9a8ad5f174c4c79570fe0e62db6e">shadow</a></td></tr>
-<tr class="separator:ad0fa9a8ad5f174c4c79570fe0e62db6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a160e1a13590f7d74ba7cddb35ba3027c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/dea/a00444.html">Volumetric</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a160e1a13590f7d74ba7cddb35ba3027c">volumetric</a></td></tr>
-<tr class="separator:a160e1a13590f7d74ba7cddb35ba3027c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace02017fa3ff7ce7442854faa72b9445"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#ace02017fa3ff7ce7442854faa72b9445">sensibility</a></td></tr>
+<tr class="separator:ace02017fa3ff7ce7442854faa72b9445"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a394342a91fe7ad54874d9e1c45268378"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a394342a91fe7ad54874d9e1c45268378">speed</a></td></tr>
+<tr class="separator:a394342a91fe7ad54874d9e1c45268378"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a00ad701e8fc231d58818337b8e898eec"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a00ad701e8fc231d58818337b8e898eec">reactivity</a></td></tr>
+<tr class="separator:a00ad701e8fc231d58818337b8e898eec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06adde57666893cdcc710b664b5d0ba2"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a06adde57666893cdcc710b664b5d0ba2">threshold</a></td></tr>
+<tr class="separator:a06adde57666893cdcc710b664b5d0ba2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00015">15</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
-</div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="a551a41ea1781cb8b7ae75f12991f4b0b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a551a41ea1781cb8b7ae75f12991f4b0b">&#9670;&nbsp;</a></span>GetShadow()</h2>
+<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00012">12</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="ac017c479d50bec25192df804ec5f75f0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac017c479d50bec25192df804ec5f75f0">&#9670;&nbsp;</a></span>ControllerHandler()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d9/dd5/a00432.html">Shadow</a>* ILight::GetShadow </td>
+          <td class="memname">Atlas::Input::ControllerHandler::ControllerHandler </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>sensibility</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>speed</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>reactivity</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>threshold</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>device</em> = <code>-1</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00024">24</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
-
 </div>
 </div>
-<a id="afc65ba9287f5637589095400ffee5fbb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afc65ba9287f5637589095400ffee5fbb">&#9670;&nbsp;</a></span>GetVolumetric()</h2>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a2f4f010f9058e6e5aaf54d5542721698"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2f4f010f9058e6e5aaf54d5542721698">&#9670;&nbsp;</a></span>Update()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d3/dea/a00444.html">Volumetric</a>* ILight::GetVolumetric </td>
+          <td class="memname">void Atlas::Input::ControllerHandler::Update </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>, </td>
         </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00028">28</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
-
-</div>
-</div>
-<a id="ad3b927d825e3cc3aeb4999485ada7313"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad3b927d825e3cc3aeb4999485ada7313">&#9670;&nbsp;</a></span>RemoveShadow()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
         <tr>
-          <td class="memname">virtual void ILight::RemoveShadow </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>deltaTime</em>&#160;</td>
         </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implemented in <a class="el" href="../../df/d15/a00416.html#af256fc47de861f0839994fed69156c93">DirectionalLight</a>, and <a class="el" href="../../dc/df3/a00424.html#a41863685ce540bfa0e40be7b2c7bddd0">PointLight</a>.</p>
-
-</div>
-</div>
-<a id="a5f5f4aecb8167b459780a03f01b5fff2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5f5f4aecb8167b459780a03f01b5fff2">&#9670;&nbsp;</a></span>RemoveVolumetric()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
         <tr>
-          <td class="memname">virtual void ILight::RemoveVolumetric </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
           <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
-
-<p>Implemented in <a class="el" href="../../df/d15/a00416.html#aeecad1fdfb5bc3d8490d1cce7ca0ac5e">DirectionalLight</a>, and <a class="el" href="../../dc/df3/a00424.html#a95bb4ff5a2276576bfc4ec8b5f587754">PointLight</a>.</p>
-
-</div>
-</div>
-<a id="a9f9da3df6b9b439f78ca307d3b7e98c1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9f9da3df6b9b439f78ca307d3b7e98c1">&#9670;&nbsp;</a></span>Update()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual void ILight::Update </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implemented in <a class="el" href="../../df/d15/a00416.html#a97293ebb5029bbf1a4473a67efd60836">DirectionalLight</a>, and <a class="el" href="../../dc/df3/a00424.html#adac184c0f9cfc46e6539fea415d4bcf7">PointLight</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="ad35af4e465a8c389aeaeb20777e5e61b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad35af4e465a8c389aeaeb20777e5e61b">&#9670;&nbsp;</a></span>ambient</h2>
+<a id="a00ad701e8fc231d58818337b8e898eec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a00ad701e8fc231d58818337b8e898eec">&#9670;&nbsp;</a></span>reactivity</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float ILight::ambient</td>
+          <td class="memname">float Atlas::Input::ControllerHandler::reactivity</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00036">36</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00022">22</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
 
 </div>
 </div>
-<a id="a0a4e6dd2746b93a9c4014e4bb78c8d66"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0a4e6dd2746b93a9c4014e4bb78c8d66">&#9670;&nbsp;</a></span>color</h2>
+<a id="ace02017fa3ff7ce7442854faa72b9445"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ace02017fa3ff7ce7442854faa72b9445">&#9670;&nbsp;</a></span>sensibility</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">vec3 ILight::color</td>
+          <td class="memname">float Atlas::Input::ControllerHandler::sensibility</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00035">35</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00020">20</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
 
 </div>
 </div>
-<a id="ad8802ed5c36db33af8fe39eda477aada"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad8802ed5c36db33af8fe39eda477aada">&#9670;&nbsp;</a></span>mobility</h2>
+<a id="a394342a91fe7ad54874d9e1c45268378"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a394342a91fe7ad54874d9e1c45268378">&#9670;&nbsp;</a></span>speed</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t ILight::mobility</td>
+          <td class="memname">float Atlas::Input::ControllerHandler::speed</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00033">33</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00021">21</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
 
 </div>
 </div>
-<a id="ad0fa9a8ad5f174c4c79570fe0e62db6e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad0fa9a8ad5f174c4c79570fe0e62db6e">&#9670;&nbsp;</a></span>shadow</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../d9/dd5/a00432.html">Shadow</a>* ILight::shadow</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00039">39</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
-
-</div>
-</div>
-<a id="a8458ee4d225fe841ccd024f98be28991"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8458ee4d225fe841ccd024f98be28991">&#9670;&nbsp;</a></span>type</h2>
+<a id="a06adde57666893cdcc710b664b5d0ba2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a06adde57666893cdcc710b664b5d0ba2">&#9670;&nbsp;</a></span>threshold</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t ILight::type</td>
+          <td class="memname">float Atlas::Input::ControllerHandler::threshold</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00032">32</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
-
-</div>
-</div>
-<a id="a160e1a13590f7d74ba7cddb35ba3027c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a160e1a13590f7d74ba7cddb35ba3027c">&#9670;&nbsp;</a></span>volumetric</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../d3/dea/a00444.html">Volumetric</a>* ILight::volumetric</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d98/a00107_source.html#l00040">40</a> of file <a class="el" href="../../df/d98/a00107_source.html">ILight.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00023">23</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/lighting/<a class="el" href="../../df/d98/a00107_source.html">ILight.h</a></li>
+<li>src/input/<a class="el" href="../../db/dab/a00089_source.html">Controller.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../db/d4f/a00420.html">ILight</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dd/d56/a00274.html">Input</a></li><li class="navelem"><a class="el" href="../../db/d4f/a00420.html">ControllerHandler</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

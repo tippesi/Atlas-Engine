@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: src/mesh/Packing.h File Reference</title>
+<title>Atlas Engine: src/mesh/MeshActorBatch.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -88,85 +88,38 @@ $(document).ready(function(){initNavTree('d7/dce/a00143.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#func-members">Functions</a>  </div>
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">Packing.h File Reference</div>  </div>
+<div class="title">MeshActorBatch.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">../System.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../dd/d32/a00041_source.html">../System.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d5/db1/a00140_source.html">MeshActor.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d2/df5/a00137_source.html">Mesh.h</a>&quot;</code><br />
+<code>#include &lt;vector&gt;</code><br />
 </div>
 <p><a href="../../d7/dce/a00143_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
-Functions</h2></td></tr>
-<tr class="memitem:a3b632d6f36d4a2f897f61f5ef6022d3f"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#a3b632d6f36d4a2f897f61f5ef6022d3f">packNormalizedFloat_2_10_10_10_REV</a> (vec4 vector)</td></tr>
-<tr class="memdesc:a3b632d6f36d4a2f897f61f5ef6022d3f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Packs a vector into a 32 bit integer  <a href="#a3b632d6f36d4a2f897f61f5ef6022d3f">More...</a><br /></td></tr>
-<tr class="separator:a3b632d6f36d4a2f897f61f5ef6022d3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa58920026ce03df7273eeed5c26ab034"><td class="memItemLeft" align="right" valign="top">vec4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#aa58920026ce03df7273eeed5c26ab034">unpackNormalizedFloat_2_10_10_10_REV</a> (uint32_t packed)</td></tr>
-<tr class="memdesc:aa58920026ce03df7273eeed5c26ab034"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unpacks a vector from a 32 bit integer  <a href="#aa58920026ce03df7273eeed5c26ab034">More...</a><br /></td></tr>
-<tr class="separator:aa58920026ce03df7273eeed5c26ab034"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html">Atlas::Mesh::MeshActorBatch</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Manages the ordering of mesh actors.  <a href="../../dc/d30/a00508.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:d9/dd6/a00272"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:d6/d4b/a00277"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d4b/a00277.html">Atlas::Mesh</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Function Documentation</h2>
-<a id="a3b632d6f36d4a2f897f61f5ef6022d3f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3b632d6f36d4a2f897f61f5ef6022d3f">&#9670;&nbsp;</a></span>packNormalizedFloat_2_10_10_10_REV()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">uint32_t packNormalizedFloat_2_10_10_10_REV </td>
-          <td>(</td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>vector</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Packs a vector into a 32 bit integer </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">vector</td><td>The vector to pack into the integer.</td></tr>
-  </table>
-  </dd>
-</dl>
-<p>&lt;return&gt;An unsigned integer including the vector.&lt;/return&gt; </p>
-
-</div>
-</div>
-<a id="aa58920026ce03df7273eeed5c26ab034"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa58920026ce03df7273eeed5c26ab034">&#9670;&nbsp;</a></span>unpackNormalizedFloat_2_10_10_10_REV()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vec4 unpackNormalizedFloat_2_10_10_10_REV </td>
-          <td>(</td>
-          <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>packed</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Unpacks a vector from a 32 bit integer </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">packed</td><td>The integer where the vector is packed in.</td></tr>
-  </table>
-  </dd>
-</dl>
-<p>&lt;return&gt;A 4-component vector including the unpacked data.&lt;/return&gt; </p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../d7/dce/a00143.html">Packing.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../d7/dce/a00143.html">MeshActorBatch.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

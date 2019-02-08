@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: EngineMouseButtonEvent Class Reference</title>
+<title>Atlas Engine: Atlas::Events::ControllerAxisEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -92,45 +92,39 @@ $(document).ready(function(){initNavTree('d8/d21/a00368.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../dd/db5/a00365.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">EngineMouseButtonEvent Class Reference</div>  </div>
+<div class="title">Atlas::Events::ControllerAxisEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>A class to distribute mouse button events.  
+<p>A class to distribute controller axis events.  
  <a href="../../d8/d21/a00368.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../d0/d89/a00071_source.html">EngineMouseButtonEvent.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a226f992e3de06ce33547ee44554f1aba"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#a226f992e3de06ce33547ee44554f1aba">EngineMouseButtonEvent</a> (SDL_MouseButtonEvent event)</td></tr>
-<tr class="separator:a226f992e3de06ce33547ee44554f1aba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af79ef2ef34f767b0f46d8a2ce0d6a12f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#af79ef2ef34f767b0f46d8a2ce0d6a12f">ControllerAxisEvent</a> (SDL_ControllerAxisEvent event)</td></tr>
+<tr class="separator:af79ef2ef34f767b0f46d8a2ce0d6a12f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a93c9e6210a644d45c2fd9770fe3cc00a"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#a93c9e6210a644d45c2fd9770fe3cc00a">windowID</a></td></tr>
-<tr class="memdesc:a93c9e6210a644d45c2fd9770fe3cc00a"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#a93c9e6210a644d45c2fd9770fe3cc00a">More...</a><br /></td></tr>
-<tr class="separator:a93c9e6210a644d45c2fd9770fe3cc00a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7d80258f9e65e5c87e3c1e0bd3b914c6"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#a7d80258f9e65e5c87e3c1e0bd3b914c6">state</a></td></tr>
-<tr class="memdesc:a7d80258f9e65e5c87e3c1e0bd3b914c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The state of the button.  <a href="#a7d80258f9e65e5c87e3c1e0bd3b914c6">More...</a><br /></td></tr>
-<tr class="separator:a7d80258f9e65e5c87e3c1e0bd3b914c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4225bc395727818bd2d5590ae425fe2f"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#a4225bc395727818bd2d5590ae425fe2f">button</a></td></tr>
-<tr class="memdesc:a4225bc395727818bd2d5590ae425fe2f"><td class="mdescLeft">&#160;</td><td class="mdescRight">The button which was pressed.  <a href="#a4225bc395727818bd2d5590ae425fe2f">More...</a><br /></td></tr>
-<tr class="separator:a4225bc395727818bd2d5590ae425fe2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abe28fcbedbb1c71d8a11bdf995878265"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#abe28fcbedbb1c71d8a11bdf995878265">x</a></td></tr>
-<tr class="memdesc:abe28fcbedbb1c71d8a11bdf995878265"><td class="mdescLeft">&#160;</td><td class="mdescRight">The x coordinate relative to the window where the button event occurred.  <a href="#abe28fcbedbb1c71d8a11bdf995878265">More...</a><br /></td></tr>
-<tr class="separator:abe28fcbedbb1c71d8a11bdf995878265"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a69fc6fd1c7eb716e8e59f3d2a3d7b427"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#a69fc6fd1c7eb716e8e59f3d2a3d7b427">y</a></td></tr>
-<tr class="memdesc:a69fc6fd1c7eb716e8e59f3d2a3d7b427"><td class="mdescLeft">&#160;</td><td class="mdescRight">The y coordinate relative to the window where the button event occurred.  <a href="#a69fc6fd1c7eb716e8e59f3d2a3d7b427">More...</a><br /></td></tr>
-<tr class="separator:a69fc6fd1c7eb716e8e59f3d2a3d7b427"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a84e82ce9df9780782f2d8a20f07009"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#a7a84e82ce9df9780782f2d8a20f07009">axis</a></td></tr>
+<tr class="memdesc:a7a84e82ce9df9780782f2d8a20f07009"><td class="mdescLeft">&#160;</td><td class="mdescRight">The axis which was moved on the controller.  <a href="#a7a84e82ce9df9780782f2d8a20f07009">More...</a><br /></td></tr>
+<tr class="separator:a7a84e82ce9df9780782f2d8a20f07009"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ada48f1a208d01294ada155d91a0329da"><td class="memItemLeft" align="right" valign="top">int16_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#ada48f1a208d01294ada155d91a0329da">value</a></td></tr>
+<tr class="memdesc:ada48f1a208d01294ada155d91a0329da"><td class="mdescLeft">&#160;</td><td class="mdescRight">The value of the axis.  <a href="#ada48f1a208d01294ada155d91a0329da">More...</a><br /></td></tr>
+<tr class="separator:ada48f1a208d01294ada155d91a0329da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2b11c5512bb4dd825c4657439d6e1eb"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#ab2b11c5512bb4dd825c4657439d6e1eb">device</a></td></tr>
+<tr class="memdesc:ab2b11c5512bb4dd825c4657439d6e1eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">The device ID of the game controller.  <a href="#ab2b11c5512bb4dd825c4657439d6e1eb">More...</a><br /></td></tr>
+<tr class="separator:ab2b11c5512bb4dd825c4657439d6e1eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A class to distribute mouse button events. </p>
+<div class="textblock"><p>A class to distribute controller axis events. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00017">17</a> of file <a class="el" href="../../d0/d89/a00071_source.html">EngineMouseButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00023">23</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a226f992e3de06ce33547ee44554f1aba"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a226f992e3de06ce33547ee44554f1aba">&#9670;&nbsp;</a></span>EngineMouseButtonEvent()</h2>
+<a id="af79ef2ef34f767b0f46d8a2ce0d6a12f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af79ef2ef34f767b0f46d8a2ce0d6a12f">&#9670;&nbsp;</a></span>ControllerAxisEvent()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -139,9 +133,9 @@ Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">EngineMouseButtonEvent::EngineMouseButtonEvent </td>
+          <td class="memname">Atlas::Events::ControllerAxisEvent::ControllerAxisEvent </td>
           <td>(</td>
-          <td class="paramtype">SDL_MouseButtonEvent&#160;</td>
+          <td class="paramtype">SDL_ControllerAxisEvent&#160;</td>
           <td class="paramname"><em>event</em></td><td>)</td>
           <td></td>
         </tr>
@@ -153,112 +147,76 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00020">20</a> of file <a class="el" href="../../d0/d89/a00071_source.html">EngineMouseButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00026">26</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a4225bc395727818bd2d5590ae425fe2f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4225bc395727818bd2d5590ae425fe2f">&#9670;&nbsp;</a></span>button</h2>
+<a id="a7a84e82ce9df9780782f2d8a20f07009"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a84e82ce9df9780782f2d8a20f07009">&#9670;&nbsp;</a></span>axis</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint8_t EngineMouseButtonEvent::button</td>
+          <td class="memname">uint8_t Atlas::Events::ControllerAxisEvent::axis</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The button which was pressed. </p>
-<p>See <a class="el" href="../../d0/d89/a00071.html">EngineMouseButtonEvent.h</a> for more </p>
+<p>The axis which was moved on the controller. </p>
+<p>See <a class="el" href="../../">EngineControllerAxisEvent.h</a> for more. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00043">43</a> of file <a class="el" href="../../d0/d89/a00071_source.html">EngineMouseButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00037">37</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a7d80258f9e65e5c87e3c1e0bd3b914c6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7d80258f9e65e5c87e3c1e0bd3b914c6">&#9670;&nbsp;</a></span>state</h2>
+<a id="ab2b11c5512bb4dd825c4657439d6e1eb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2b11c5512bb4dd825c4657439d6e1eb">&#9670;&nbsp;</a></span>device</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint8_t EngineMouseButtonEvent::state</td>
+          <td class="memname">int32_t Atlas::Events::ControllerAxisEvent::device</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The state of the button. </p>
-<p>Might be BUTTON_PRESSED or BUTTON_RELEASED. </p>
+<p>The device ID of the game controller. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00038">38</a> of file <a class="el" href="../../d0/d89/a00071_source.html">EngineMouseButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00047">47</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a93c9e6210a644d45c2fd9770fe3cc00a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a93c9e6210a644d45c2fd9770fe3cc00a">&#9670;&nbsp;</a></span>windowID</h2>
+<a id="ada48f1a208d01294ada155d91a0329da"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ada48f1a208d01294ada155d91a0329da">&#9670;&nbsp;</a></span>value</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint32_t EngineMouseButtonEvent::windowID</td>
+          <td class="memname">int16_t Atlas::Events::ControllerAxisEvent::value</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The ID of the window the event occurred in. </p>
+<p>The value of the axis. </p>
+<p>Ranges from -32767-32767. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00033">33</a> of file <a class="el" href="../../d0/d89/a00071_source.html">EngineMouseButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="abe28fcbedbb1c71d8a11bdf995878265"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abe28fcbedbb1c71d8a11bdf995878265">&#9670;&nbsp;</a></span>x</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t EngineMouseButtonEvent::x</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The x coordinate relative to the window where the button event occurred. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00048">48</a> of file <a class="el" href="../../d0/d89/a00071_source.html">EngineMouseButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a69fc6fd1c7eb716e8e59f3d2a3d7b427"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a69fc6fd1c7eb716e8e59f3d2a3d7b427">&#9670;&nbsp;</a></span>y</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t EngineMouseButtonEvent::y</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The y coordinate relative to the window where the button event occurred. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00053">53</a> of file <a class="el" href="../../d0/d89/a00071_source.html">EngineMouseButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00042">42</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../d0/d89/a00071_source.html">EngineMouseButtonEvent.h</a></li>
+<li>src/events/<a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d8/d21/a00368.html">EngineMouseButtonEvent</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d0/d19/a00273.html">Events</a></li><li class="navelem"><a class="el" href="../../d8/d21/a00368.html">ControllerAxisEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

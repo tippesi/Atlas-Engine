@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: RayIntersection Struct Reference</title>
+<title>Atlas Engine: Atlas::Renderer::ShadowRenderer Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -88,85 +88,259 @@ $(document).ready(function(){initNavTree('dc/d40/a00568.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="../../d8/dd2/a00565.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">RayIntersection Struct Reference</div>  </div>
+<div class="title">Atlas::Renderer::ShadowRenderer Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d3/de5/a00209_source.html">RayCasting.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d7/d25/a00182_source.html">ShadowRenderer.h</a>&gt;</code></p>
+<div class="dynheader">
+Inheritance diagram for Atlas::Renderer::ShadowRenderer:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="../../dc/d40/a00568.png" usemap="#Atlas::Renderer::ShadowRenderer_map" alt=""/>
+  <map id="Atlas::Renderer::ShadowRenderer_map" name="Atlas::Renderer::ShadowRenderer_map">
+<area href="../../dd/de6/a00548.html" alt="Atlas::Renderer::IRenderer" shape="rect" coords="0,0,203,24"/>
+</map>
+ </div></div>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:a96aa4600bc42ca65e022776002e85392"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d40/a00568.html#a96aa4600bc42ca65e022776002e85392">location</a></td></tr>
-<tr class="separator:a96aa4600bc42ca65e022776002e85392"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a65c60342a33e33ead2c771a3d6ba864c"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d40/a00568.html#a65c60342a33e33ead2c771a3d6ba864c">distance</a></td></tr>
-<tr class="separator:a65c60342a33e33ead2c771a3d6ba864c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8658455fd9eff0e0c1e6ca4f44354a4a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d40/a00568.html#a8658455fd9eff0e0c1e6ca4f44354a4a">hasIntersected</a></td></tr>
-<tr class="separator:a8658455fd9eff0e0c1e6ca4f44354a4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a30ea69b6197d665bad97c07229e69250"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d40/a00568.html#a30ea69b6197d665bad97c07229e69250">ShadowRenderer</a> ()</td></tr>
+<tr class="separator:a30ea69b6197d665bad97c07229e69250"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c4464f41e869e14531c95fe7e33be53"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d40/a00568.html#a3c4464f41e869e14531c95fe7e33be53">Render</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, <a class="el" href="../../d8/d8e/a00344.html">RenderTarget</a> *target, <a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera, <a class="el" href="../../df/d03/a00348.html">Scene</a> *scene)</td></tr>
+<tr class="separator:a3c4464f41e869e14531c95fe7e33be53"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_a00548"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_a00548')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../dd/de6/a00548.html">Atlas::Renderer::IRenderer</a></td></tr>
+<tr class="memitem:a967cf123292d2ba8c0f27478e024b756 inherit pub_methods_a00548"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de6/a00548.html#a967cf123292d2ba8c0f27478e024b756">~IRenderer</a> ()</td></tr>
+<tr class="separator:a967cf123292d2ba8c0f27478e024b756 inherit pub_methods_a00548"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:af8ff6199e5b81258347732b5dbc5cbb8"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d40/a00568.html#af8ff6199e5b81258347732b5dbc5cbb8">InitShaderBatch</a> ()</td></tr>
+<tr class="separator:af8ff6199e5b81258347732b5dbc5cbb8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2154b456eeb971957920701abc111ab0"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d40/a00568.html#a2154b456eeb971957920701abc111ab0">AddConfig</a> (<a class="el" href="../../d0/dec/a00592.html">Shader::ShaderConfig</a> *config)</td></tr>
+<tr class="separator:a2154b456eeb971957920701abc111ab0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a764b08b451d58f803bc1b7bfe54d7263"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d40/a00568.html#a764b08b451d58f803bc1b7bfe54d7263">RemoveConfig</a> (<a class="el" href="../../d0/dec/a00592.html">Shader::ShaderConfig</a> *config)</td></tr>
+<tr class="separator:a764b08b451d58f803bc1b7bfe54d7263"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a70dd0d3309b5efaa22c92e029c5e6121"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d40/a00568.html#a70dd0d3309b5efaa22c92e029c5e6121">vertexPath</a></td></tr>
+<tr class="separator:a70dd0d3309b5efaa22c92e029c5e6121"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a53c2059610dc9bc852ab6b8264039bfc"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d40/a00568.html#a53c2059610dc9bc852ab6b8264039bfc">fragmentPath</a></td></tr>
+<tr class="separator:a53c2059610dc9bc852ab6b8264039bfc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d3/de5/a00209_source.html#l00010">10</a> of file <a class="el" href="../../d3/de5/a00209_source.html">RayCasting.h</a>.</p>
-</div><h2 class="groupheader">Member Data Documentation</h2>
-<a id="a65c60342a33e33ead2c771a3d6ba864c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a65c60342a33e33ead2c771a3d6ba864c">&#9670;&nbsp;</a></span>distance</h2>
+<p class="definition">Definition at line <a class="el" href="../../d7/d25/a00182_source.html#l00014">14</a> of file <a class="el" href="../../d7/d25/a00182_source.html">ShadowRenderer.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a30ea69b6197d665bad97c07229e69250"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a30ea69b6197d665bad97c07229e69250">&#9670;&nbsp;</a></span>ShadowRenderer()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float RayIntersection::distance</td>
+          <td class="memname">Atlas::Renderer::ShadowRenderer::ShadowRenderer </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/de5/a00209_source.html#l00012">12</a> of file <a class="el" href="../../d3/de5/a00209_source.html">RayCasting.h</a>.</p>
-
 </div>
 </div>
-<a id="a8658455fd9eff0e0c1e6ca4f44354a4a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8658455fd9eff0e0c1e6ca4f44354a4a">&#9670;&nbsp;</a></span>hasIntersected</h2>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a2154b456eeb971957920701abc111ab0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2154b456eeb971957920701abc111ab0">&#9670;&nbsp;</a></span>AddConfig()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool RayIntersection::hasIntersected</td>
+          <td class="memname">static void Atlas::Renderer::ShadowRenderer::AddConfig </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d0/dec/a00592.html">Shader::ShaderConfig</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/de5/a00209_source.html#l00013">13</a> of file <a class="el" href="../../d3/de5/a00209_source.html">RayCasting.h</a>.</p>
-
 </div>
 </div>
-<a id="a96aa4600bc42ca65e022776002e85392"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a96aa4600bc42ca65e022776002e85392">&#9670;&nbsp;</a></span>location</h2>
+<a id="af8ff6199e5b81258347732b5dbc5cbb8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af8ff6199e5b81258347732b5dbc5cbb8">&#9670;&nbsp;</a></span>InitShaderBatch()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">vec3 RayIntersection::location</td>
+          <td class="memname">static void Atlas::Renderer::ShadowRenderer::InitShaderBatch </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/de5/a00209_source.html#l00011">11</a> of file <a class="el" href="../../d3/de5/a00209_source.html">RayCasting.h</a>.</p>
+</div>
+</div>
+<a id="a764b08b451d58f803bc1b7bfe54d7263"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a764b08b451d58f803bc1b7bfe54d7263">&#9670;&nbsp;</a></span>RemoveConfig()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void Atlas::Renderer::ShadowRenderer::RemoveConfig </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d0/dec/a00592.html">Shader::ShaderConfig</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li>src/tools/<a class="el" href="../../d3/de5/a00209_source.html">RayCasting.h</a></li>
+<a id="a3c4464f41e869e14531c95fe7e33be53"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3c4464f41e869e14531c95fe7e33be53">&#9670;&nbsp;</a></span>Render()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void Atlas::Renderer::ShadowRenderer::Render </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d8/d8e/a00344.html">RenderTarget</a> *&#160;</td>
+          <td class="paramname"><em>target</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../df/d03/a00348.html">Scene</a> *&#160;</td>
+          <td class="paramname"><em>scene</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="../../dd/de6/a00548.html#a8c86b7ae126a7a3841de0694e71d64de">Atlas::Renderer::IRenderer</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a53c2059610dc9bc852ab6b8264039bfc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a53c2059610dc9bc852ab6b8264039bfc">&#9670;&nbsp;</a></span>fragmentPath</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string Atlas::Renderer::ShadowRenderer::fragmentPath</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d25/a00182_source.html#l00028">28</a> of file <a class="el" href="../../d7/d25/a00182_source.html">ShadowRenderer.h</a>.</p>
+
+</div>
+</div>
+<a id="a70dd0d3309b5efaa22c92e029c5e6121"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a70dd0d3309b5efaa22c92e029c5e6121">&#9670;&nbsp;</a></span>vertexPath</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string Atlas::Renderer::ShadowRenderer::vertexPath</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d7/d25/a00182_source.html#l00027">27</a> of file <a class="el" href="../../d7/d25/a00182_source.html">ShadowRenderer.h</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/renderer/<a class="el" href="../../d7/d25/a00182_source.html">ShadowRenderer.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dc/d40/a00568.html">RayIntersection</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Renderer</a></li><li class="navelem"><a class="el" href="../../dc/d40/a00568.html">ShadowRenderer</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

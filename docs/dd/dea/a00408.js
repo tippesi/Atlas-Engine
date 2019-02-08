@@ -1,5 +1,6 @@
 var a00408 =
 [
-    [ "LoadImage", "dd/dea/a00408.html#ac612204cb0c4552cc67ca1cf454e0c3f", null ],
-    [ "SaveImage", "dd/dea/a00408.html#a586a9bdba2d2fcc7181fbdde206c6370", null ]
+    [ "TextInputEvent", "dd/dea/a00408.html#ae8d0e0815b469344ed5810ac576eaf7d", null ],
+    [ "character", "dd/dea/a00408.html#af82a2a68df25382bd4ad33a3aece37c4", null ],
+    [ "windowID", "dd/dea/a00408.html#a29d5afbad7f5015245258bdf012f630e", null ]
 ];

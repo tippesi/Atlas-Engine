@@ -1,8 +1,11 @@
 var a00592 =
 [
-    [ "Vignette", "d0/dec/a00592.html#ac3ab8914653096c6b083be54dca672e4", null ],
-    [ "color", "d0/dec/a00592.html#a10b84b80d8a82e91da621bdfdf6f14d2", null ],
-    [ "offset", "d0/dec/a00592.html#a4f94493889ed87a776be45b3424c5e1e", null ],
-    [ "power", "d0/dec/a00592.html#a53adcbcfb4eed8205c35745f12726180", null ],
-    [ "strength", "d0/dec/a00592.html#a17280ad2dc71ffa536dd56a465dfa905", null ]
+    [ "ShaderConfig", "d0/dec/a00592.html#aab367ded924a58a13d590f596023dc39", null ],
+    [ "AddMacro", "d0/dec/a00592.html#a8ca0e8e1dee4f24140aa78bb6fa5decb", null ],
+    [ "ClearMacros", "d0/dec/a00592.html#a22d0d37391e6bcc74797e6729849ee51", null ],
+    [ "HasMacro", "d0/dec/a00592.html#aca61bd2faa4055f58678f66079a57a87", null ],
+    [ "RemoveMacro", "d0/dec/a00592.html#ae38008f3e2d3d9962b347efeab7f290b", null ],
+    [ "added", "d0/dec/a00592.html#a6a455fd6b663402337528c08def69c9c", null ],
+    [ "configBatchID", "d0/dec/a00592.html#aa5e20a31dcebee96cbddca9f5bb338eb", null ],
+    [ "macros", "d0/dec/a00592.html#a714a099c55f43161bd86591a4c0ca1a4", null ]
 ];

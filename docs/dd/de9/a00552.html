@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: ShaderConfigBatch Class Reference</title>
+<title>Atlas Engine: Atlas::Renderer::MasterRenderer Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -90,88 +90,63 @@ $(document).ready(function(){initNavTree('dd/de9/a00552.html','../../');});
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="../../d5/d21/a00549.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ShaderConfigBatch Class Reference</div>  </div>
+<div class="title">Atlas::Renderer::MasterRenderer Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>A <a class="el" href="../../dd/de9/a00552.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> groups an arbitrary number of ShaderConfigs together which use the same shader.  
- <a href="../../dd/de9/a00552.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="../../de/db1/a00197_source.html">ShaderConfigBatch.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aab1b9cd5fd71303dea8b86db17db0554"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#aab1b9cd5fd71303dea8b86db17db0554">ShaderConfigBatch</a> (<a class="el" href="../../d4/d79/a00540.html">Shader</a> *shader)</td></tr>
-<tr class="memdesc:aab1b9cd5fd71303dea8b86db17db0554"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../dd/de9/a00552.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> object.  <a href="#aab1b9cd5fd71303dea8b86db17db0554">More...</a><br /></td></tr>
-<tr class="separator:aab1b9cd5fd71303dea8b86db17db0554"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a700f2dd725f42b4fe43de83baf78cd96"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a700f2dd725f42b4fe43de83baf78cd96">~ShaderConfigBatch</a> ()</td></tr>
-<tr class="memdesc:a700f2dd725f42b4fe43de83baf78cd96"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructs a <a class="el" href="../../dd/de9/a00552.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> object.  <a href="#a700f2dd725f42b4fe43de83baf78cd96">More...</a><br /></td></tr>
-<tr class="separator:a700f2dd725f42b4fe43de83baf78cd96"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9e2e24832cb2fb62a329585325b19248"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a9e2e24832cb2fb62a329585325b19248">Add</a> (<a class="el" href="../../dd/de6/a00548.html">ShaderConfig</a> *config)</td></tr>
-<tr class="memdesc:a9e2e24832cb2fb62a329585325b19248"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a shader config to the batch.  <a href="#a9e2e24832cb2fb62a329585325b19248">More...</a><br /></td></tr>
-<tr class="separator:a9e2e24832cb2fb62a329585325b19248"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a837aef4e7a1133448443691ac99b4a76"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a837aef4e7a1133448443691ac99b4a76">Remove</a> (<a class="el" href="../../dd/de6/a00548.html">ShaderConfig</a> *config)</td></tr>
-<tr class="memdesc:a837aef4e7a1133448443691ac99b4a76"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a shader config from the batch,.  <a href="#a837aef4e7a1133448443691ac99b4a76">More...</a><br /></td></tr>
-<tr class="separator:a837aef4e7a1133448443691ac99b4a76"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a256ad11d8c4de05c86ece80a51b0bc76"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a256ad11d8c4de05c86ece80a51b0bc76">GetSize</a> ()</td></tr>
-<tr class="memdesc:a256ad11d8c4de05c86ece80a51b0bc76"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of elements the batch holds.  <a href="#a256ad11d8c4de05c86ece80a51b0bc76">More...</a><br /></td></tr>
-<tr class="separator:a256ad11d8c4de05c86ece80a51b0bc76"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e11c39b5c9c114b6d90d3a632e4ccab"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a7e11c39b5c9c114b6d90d3a632e4ccab">Bind</a> ()</td></tr>
-<tr class="memdesc:a7e11c39b5c9c114b6d90d3a632e4ccab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Binds the shader of the batch.  <a href="#a7e11c39b5c9c114b6d90d3a632e4ccab">More...</a><br /></td></tr>
-<tr class="separator:a7e11c39b5c9c114b6d90d3a632e4ccab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1b4f0ea3019da0342139e08d23f0e593"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d79/a00540.html">Shader</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a1b4f0ea3019da0342139e08d23f0e593">GetShader</a> ()</td></tr>
-<tr class="memdesc:a1b4f0ea3019da0342139e08d23f0e593"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the shader of the batch.  <a href="#a1b4f0ea3019da0342139e08d23f0e593">More...</a><br /></td></tr>
-<tr class="separator:a1b4f0ea3019da0342139e08d23f0e593"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90eccd7df972c66bc44e108412355a0b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a90eccd7df972c66bc44e108412355a0b">MasterRenderer</a> ()</td></tr>
+<tr class="separator:a90eccd7df972c66bc44e108412355a0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f941be740d75858c6f9a0b3d1a82f14"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a5f941be740d75858c6f9a0b3d1a82f14">~MasterRenderer</a> ()</td></tr>
+<tr class="separator:a5f941be740d75858c6f9a0b3d1a82f14"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a801b9bf53334750fd6074c874d772202"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a801b9bf53334750fd6074c874d772202">RenderScene</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, <a class="el" href="../../d8/d8e/a00344.html">RenderTarget</a> *target, <a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera, <a class="el" href="../../df/d03/a00348.html">Scene</a> *scene)</td></tr>
+<tr class="separator:a801b9bf53334750fd6074c874d772202"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aabde6e89e2323a33193c0fdd1787e2ee"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#aabde6e89e2323a33193c0fdd1787e2ee">RenderTexture</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, <a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a> *texture, float x, float y, float width, float height, bool alphaBlending=false, <a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
+<tr class="separator:aabde6e89e2323a33193c0fdd1787e2ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad281884be034d8d9d3d02b3129c218ed"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#ad281884be034d8d9d3d02b3129c218ed">RenderTexture</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, <a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a> *texture, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending=false, <a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
+<tr class="separator:ad281884be034d8d9d3d02b3129c218ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae4a2c75f7f7117a39abf978e885cf1f5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#ae4a2c75f7f7117a39abf978e885cf1f5">RenderTexture</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, <a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a> *texture, int32_t depth, float x, float y, float width, float height, bool alphaBlending=false, <a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
+<tr class="separator:ae4a2c75f7f7117a39abf978e885cf1f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ea4304b29cb02a6f472c382eb760312"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a4ea4304b29cb02a6f472c382eb760312">RenderTexture</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, <a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a> *texture, int32_t depth, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending=false, <a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
+<tr class="separator:a4ea4304b29cb02a6f472c382eb760312"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af8dc23193d4d2fc01e0a4e05bb646a61"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#af8dc23193d4d2fc01e0a4e05bb646a61">RenderRectangle</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, vec4 color, float x, float y, float width, float height, bool alphaBlending=false, <a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
+<tr class="separator:af8dc23193d4d2fc01e0a4e05bb646a61"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ebfdc75036387990db756360b815637"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a0ebfdc75036387990db756360b815637">RenderRectangle</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, vec4 color, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending=false, <a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
+<tr class="separator:a0ebfdc75036387990db756360b815637"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af04d5479b2b3d7b513992740f5a95b74"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#af04d5479b2b3d7b513992740f5a95b74">Update</a> ()</td></tr>
+<tr class="memdesc:af04d5479b2b3d7b513992740f5a95b74"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update of the renderer.  <a href="#af04d5479b2b3d7b513992740f5a95b74">More...</a><br /></td></tr>
+<tr class="separator:af04d5479b2b3d7b513992740f5a95b74"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a0ed5dc70d6918b2b95cb17c3b865ff74"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a0ed5dc70d6918b2b95cb17c3b865ff74">ID</a></td></tr>
-<tr class="memdesc:a0ed5dc70d6918b2b95cb17c3b865ff74"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the batch.  <a href="#a0ed5dc70d6918b2b95cb17c3b865ff74">More...</a><br /></td></tr>
-<tr class="separator:a0ed5dc70d6918b2b95cb17c3b865ff74"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a65fca8d75556ea84ba27e3df4c8cf0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/de2/a00580.html">TextRenderer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a7a65fca8d75556ea84ba27e3df4c8cf0">textRenderer</a></td></tr>
+<tr class="separator:a7a65fca8d75556ea84ba27e3df4c8cf0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a30deaa58cfe19a1e754da591934a2ee6"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a30deaa58cfe19a1e754da591934a2ee6">vertexPath</a></td></tr>
+<tr class="separator:a30deaa58cfe19a1e754da591934a2ee6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb92eb323fb751d86869a93605f3da42"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#abb92eb323fb751d86869a93605f3da42">fragmentPath</a></td></tr>
+<tr class="separator:abb92eb323fb751d86869a93605f3da42"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A <a class="el" href="../../dd/de9/a00552.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> groups an arbitrary number of ShaderConfigs together which use the same shader. </p>
-<p>This means all the batch only contains ShaderConfigs which have the same macros. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../de/db1/a00197_source.html#l00015">15</a> of file <a class="el" href="../../de/db1/a00197_source.html">ShaderConfigBatch.h</a>.</p>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../d5/dcb/a00170_source.html#l00023">23</a> of file <a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="aab1b9cd5fd71303dea8b86db17db0554"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aab1b9cd5fd71303dea8b86db17db0554">&#9670;&nbsp;</a></span>ShaderConfigBatch()</h2>
+<a id="a90eccd7df972c66bc44e108412355a0b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a90eccd7df972c66bc44e108412355a0b">&#9670;&nbsp;</a></span>MasterRenderer()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">ShaderConfigBatch::ShaderConfigBatch </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d4/d79/a00540.html">Shader</a> *&#160;</td>
-          <td class="paramname"><em>shader</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Constructs a <a class="el" href="../../dd/de9/a00552.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> object. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">shader</td><td>A pointer to a <a class="el" href="../../d4/d79/a00540.html">Shader</a> object the batch should use. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section note"><dt>Note</dt><dd>The shader will be managed by the shader configuration batch. This means that it wiil be released from memory if the batch gets destructed. </dd></dl>
-
-</div>
-</div>
-<a id="a700f2dd725f42b4fe43de83baf78cd96"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a700f2dd725f42b4fe43de83baf78cd96">&#9670;&nbsp;</a></span>~ShaderConfigBatch()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">ShaderConfigBatch::~ShaderConfigBatch </td>
+          <td class="memname">Atlas::Renderer::MasterRenderer::MasterRenderer </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -179,150 +154,687 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Destructs a <a class="el" href="../../dd/de9/a00552.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> object. </p>
+</div>
+</div>
+<a id="a5f941be740d75858c6f9a0b3d1a82f14"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5f941be740d75858c6f9a0b3d1a82f14">&#9670;&nbsp;</a></span>~MasterRenderer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Renderer::MasterRenderer::~MasterRenderer </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a9e2e24832cb2fb62a329585325b19248"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9e2e24832cb2fb62a329585325b19248">&#9670;&nbsp;</a></span>Add()</h2>
+<a id="af8dc23193d4d2fc01e0a4e05bb646a61"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af8dc23193d4d2fc01e0a4e05bb646a61">&#9670;&nbsp;</a></span>RenderRectangle() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void ShaderConfigBatch::Add </td>
+          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderRectangle </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dd/de6/a00548.html">ShaderConfig</a> *&#160;</td>
-          <td class="paramname"><em>config</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>color</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td>
+          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p>Adds a shader config to the batch. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">config</td><td>A valid pointer to a <a class="el" href="../../dd/de6/a00548.html" title="A shader configuration consists of macros which configure a shader in a shader batch. ">ShaderConfig</a> object. </td></tr>
+    <tr><td class="paramname">window</td><td></td></tr>
+    <tr><td class="paramname">color</td><td></td></tr>
+    <tr><td class="paramname">x</td><td></td></tr>
+    <tr><td class="paramname">y</td><td></td></tr>
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
+    <tr><td class="paramname">alphaBlending</td><td></td></tr>
+    <tr><td class="paramname">framebuffer</td><td></td></tr>
   </table>
   </dd>
 </dl>
 
 </div>
 </div>
-<a id="a7e11c39b5c9c114b6d90d3a632e4ccab"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7e11c39b5c9c114b6d90d3a632e4ccab">&#9670;&nbsp;</a></span>Bind()</h2>
+<a id="a0ebfdc75036387990db756360b815637"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ebfdc75036387990db756360b815637">&#9670;&nbsp;</a></span>RenderRectangle() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void ShaderConfigBatch::Bind </td>
+          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderRectangle </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
+          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Binds the shader of the batch. </p>
-
-</div>
-</div>
-<a id="a1b4f0ea3019da0342139e08d23f0e593"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1b4f0ea3019da0342139e08d23f0e593">&#9670;&nbsp;</a></span>GetShader()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d4/d79/a00540.html">Shader</a>* ShaderConfigBatch::GetShader </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>color</em>, </td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Returns the shader of the batch. </p>
-<dl class="section return"><dt>Returns</dt><dd>A pointer to the shader object. </dd></dl>
-
-</div>
-</div>
-<a id="a256ad11d8c4de05c86ece80a51b0bc76"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a256ad11d8c4de05c86ece80a51b0bc76">&#9670;&nbsp;</a></span>GetSize()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname">size_t ShaderConfigBatch::GetSize </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Returns the number of elements the batch holds. </p>
-<dl class="section return"><dt>Returns</dt><dd>An integer with the number of elements </dd></dl>
-
-</div>
-</div>
-<a id="a837aef4e7a1133448443691ac99b4a76"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a837aef4e7a1133448443691ac99b4a76">&#9670;&nbsp;</a></span>Remove()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname">void ShaderConfigBatch::Remove </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dd/de6/a00548.html">ShaderConfig</a> *&#160;</td>
-          <td class="paramname"><em>config</em></td><td>)</td>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>clipArea</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>blendArea</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td>
+          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p>Removes a shader config from the batch,. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">config</td><td>A valid pointer to a <a class="el" href="../../dd/de6/a00548.html" title="A shader configuration consists of macros which configure a shader in a shader batch. ">ShaderConfig</a> object. </td></tr>
+    <tr><td class="paramname">window</td><td></td></tr>
+    <tr><td class="paramname">color</td><td></td></tr>
+    <tr><td class="paramname">x</td><td></td></tr>
+    <tr><td class="paramname">y</td><td></td></tr>
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
+    <tr><td class="paramname">clipArea</td><td></td></tr>
+    <tr><td class="paramname">blendArea</td><td></td></tr>
+    <tr><td class="paramname">alphaBlending</td><td></td></tr>
+    <tr><td class="paramname">framebuffer</td><td></td></tr>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="a801b9bf53334750fd6074c874d772202"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a801b9bf53334750fd6074c874d772202">&#9670;&nbsp;</a></span>RenderScene()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderScene </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d8/d8e/a00344.html">RenderTarget</a> *&#160;</td>
+          <td class="paramname"><em>target</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../df/d03/a00348.html">Scene</a> *&#160;</td>
+          <td class="paramname"><em>scene</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">window</td><td></td></tr>
+    <tr><td class="paramname">target</td><td></td></tr>
+    <tr><td class="paramname">camera</td><td></td></tr>
+    <tr><td class="paramname">scene</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="aabde6e89e2323a33193c0fdd1787e2ee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aabde6e89e2323a33193c0fdd1787e2ee">&#9670;&nbsp;</a></span>RenderTexture() <span class="overload">[1/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderTexture </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a> *&#160;</td>
+          <td class="paramname"><em>texture</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td>
+          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">window</td><td></td></tr>
+    <tr><td class="paramname">texture</td><td></td></tr>
+    <tr><td class="paramname">x</td><td></td></tr>
+    <tr><td class="paramname">y</td><td></td></tr>
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
+    <tr><td class="paramname">alphaBlending</td><td></td></tr>
+    <tr><td class="paramname">framebuffer</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ad281884be034d8d9d3d02b3129c218ed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad281884be034d8d9d3d02b3129c218ed">&#9670;&nbsp;</a></span>RenderTexture() <span class="overload">[2/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderTexture </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a> *&#160;</td>
+          <td class="paramname"><em>texture</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>clipArea</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>blendArea</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td>
+          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">window</td><td></td></tr>
+    <tr><td class="paramname">texture</td><td></td></tr>
+    <tr><td class="paramname">x</td><td></td></tr>
+    <tr><td class="paramname">y</td><td></td></tr>
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
+    <tr><td class="paramname">clipArea</td><td></td></tr>
+    <tr><td class="paramname">blendArea</td><td></td></tr>
+    <tr><td class="paramname">alphaBlending</td><td></td></tr>
+    <tr><td class="paramname">framebuffer</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ae4a2c75f7f7117a39abf978e885cf1f5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae4a2c75f7f7117a39abf978e885cf1f5">&#9670;&nbsp;</a></span>RenderTexture() <span class="overload">[3/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderTexture </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a> *&#160;</td>
+          <td class="paramname"><em>texture</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>depth</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td>
+          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">window</td><td></td></tr>
+    <tr><td class="paramname">texture</td><td></td></tr>
+    <tr><td class="paramname">depth</td><td></td></tr>
+    <tr><td class="paramname">x</td><td></td></tr>
+    <tr><td class="paramname">y</td><td></td></tr>
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
+    <tr><td class="paramname">alphaBlending</td><td></td></tr>
+    <tr><td class="paramname">framebuffer</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a4ea4304b29cb02a6f472c382eb760312"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4ea4304b29cb02a6f472c382eb760312">&#9670;&nbsp;</a></span>RenderTexture() <span class="overload">[4/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderTexture </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a> *&#160;</td>
+          <td class="paramname"><em>texture</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>depth</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>clipArea</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>blendArea</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td>
+          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">window</td><td></td></tr>
+    <tr><td class="paramname">texture</td><td></td></tr>
+    <tr><td class="paramname">depth</td><td></td></tr>
+    <tr><td class="paramname">x</td><td></td></tr>
+    <tr><td class="paramname">y</td><td></td></tr>
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
+    <tr><td class="paramname">clipArea</td><td></td></tr>
+    <tr><td class="paramname">blendArea</td><td></td></tr>
+    <tr><td class="paramname">alphaBlending</td><td></td></tr>
+    <tr><td class="paramname">framebuffer</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="af04d5479b2b3d7b513992740f5a95b74"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af04d5479b2b3d7b513992740f5a95b74">&#9670;&nbsp;</a></span>Update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Renderer::MasterRenderer::Update </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Update of the renderer. </p>
+<dl class="section warning"><dt>Warning</dt><dd>Must be called every frame </dd></dl>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a0ed5dc70d6918b2b95cb17c3b865ff74"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0ed5dc70d6918b2b95cb17c3b865ff74">&#9670;&nbsp;</a></span>ID</h2>
+<a id="abb92eb323fb751d86869a93605f3da42"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abb92eb323fb751d86869a93605f3da42">&#9670;&nbsp;</a></span>fragmentPath</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string Atlas::Renderer::MasterRenderer::fragmentPath</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/dcb/a00170_source.html#l00141">141</a> of file <a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>.</p>
+
+</div>
+</div>
+<a id="a7a65fca8d75556ea84ba27e3df4c8cf0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a65fca8d75556ea84ba27e3df4c8cf0">&#9670;&nbsp;</a></span>textRenderer</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t ShaderConfigBatch::ID</td>
+          <td class="memname"><a class="el" href="../../d3/de2/a00580.html">TextRenderer</a> Atlas::Renderer::MasterRenderer::textRenderer</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The ID of the batch. </p>
+<p class="definition">Definition at line <a class="el" href="../../d5/dcb/a00170_source.html#l00138">138</a> of file <a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/db1/a00197_source.html#l00063">63</a> of file <a class="el" href="../../de/db1/a00197_source.html">ShaderConfigBatch.h</a>.</p>
+</div>
+</div>
+<a id="a30deaa58cfe19a1e754da591934a2ee6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a30deaa58cfe19a1e754da591934a2ee6">&#9670;&nbsp;</a></span>vertexPath</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string Atlas::Renderer::MasterRenderer::vertexPath</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/dcb/a00170_source.html#l00140">140</a> of file <a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/shader/<a class="el" href="../../de/db1/a00197_source.html">ShaderConfigBatch.h</a></li>
+<li>src/renderer/<a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dd/de9/a00552.html">ShaderConfigBatch</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Renderer</a></li><li class="navelem"><a class="el" href="../../dd/de9/a00552.html">MasterRenderer</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

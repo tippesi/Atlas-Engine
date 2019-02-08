@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: EngineWindowEvent Class Reference</title>
+<title>Atlas Engine: Atlas::Events::EventManager Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -88,43 +88,57 @@ $(document).ready(function(){initNavTree('d2/d56/a00384.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="../../de/d08/a00381.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">EngineWindowEvent Class Reference</div>  </div>
+<div class="title">Atlas::Events::EventManager Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>A class to distribute window events.  
- <a href="../../d2/d56/a00384.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="../../d2/d1f/a00083_source.html">EngineWindowEvent.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:a69c0f874503ee4c9ecdd63cc7e2e1ce3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#a69c0f874503ee4c9ecdd63cc7e2e1ce3">EngineWindowEvent</a> (SDL_WindowEvent event)</td></tr>
-<tr class="separator:a69c0f874503ee4c9ecdd63cc7e2e1ce3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:ae0ed55bf2da0e56c7d05e6789e23ccdd"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#ae0ed55bf2da0e56c7d05e6789e23ccdd">Update</a> ()</td></tr>
+<tr class="separator:ae0ed55bf2da0e56c7d05e6789e23ccdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66531178842388afaaedee1619b43d97"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#a66531178842388afaaedee1619b43d97">EnableTextInput</a> ()</td></tr>
+<tr class="separator:a66531178842388afaaedee1619b43d97"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae677daa50391eef456e18d3e7b6e3e57"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#ae677daa50391eef456e18d3e7b6e3e57">DisableTextInput</a> ()</td></tr>
+<tr class="separator:ae677daa50391eef456e18d3e7b6e3e57"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:aadbbfd2839ccd53f2ce9785fbc5b5236"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#aadbbfd2839ccd53f2ce9785fbc5b5236">windowID</a></td></tr>
-<tr class="memdesc:aadbbfd2839ccd53f2ce9785fbc5b5236"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#aadbbfd2839ccd53f2ce9785fbc5b5236">More...</a><br /></td></tr>
-<tr class="separator:aadbbfd2839ccd53f2ce9785fbc5b5236"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad8f3bd948d8f82764b3996e5b41e87af"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#ad8f3bd948d8f82764b3996e5b41e87af">type</a></td></tr>
-<tr class="memdesc:ad8f3bd948d8f82764b3996e5b41e87af"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the window event.  <a href="#ad8f3bd948d8f82764b3996e5b41e87af">More...</a><br /></td></tr>
-<tr class="separator:ad8f3bd948d8f82764b3996e5b41e87af"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7b23f82e0fab5fbdea04ab427de82d6"><td class="memItemLeft" align="right" valign="top">ivec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#ae7b23f82e0fab5fbdea04ab427de82d6">data</a></td></tr>
-<tr class="memdesc:ae7b23f82e0fab5fbdea04ab427de82d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The data specific to the event.  <a href="#ae7b23f82e0fab5fbdea04ab427de82d6">More...</a><br /></td></tr>
-<tr class="separator:ae7b23f82e0fab5fbdea04ab427de82d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:ad2e71815859056964697b2a147c4e4a4"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; <a class="el" href="../../df/d15/a00416.html">WindowEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#ad2e71815859056964697b2a147c4e4a4">WindowEventDelegate</a></td></tr>
+<tr class="separator:ad2e71815859056964697b2a147c4e4a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c3d9f544154e14a6afe35e8860890ff"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; <a class="el" href="../../d4/d27/a00392.html">KeyboardEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#a3c3d9f544154e14a6afe35e8860890ff">KeyboardEventDelegate</a></td></tr>
+<tr class="separator:a3c3d9f544154e14a6afe35e8860890ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac21ef3dcea98d204286b877ef7639acb"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; <a class="el" href="../../d9/da1/a00396.html">MouseButtonEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#ac21ef3dcea98d204286b877ef7639acb">MouseButtonEventDelegate</a></td></tr>
+<tr class="separator:ac21ef3dcea98d204286b877ef7639acb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a325820ea3e2d6f01d629feb35f188d3b"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; <a class="el" href="../../d9/d95/a00400.html">MouseMotionEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#a325820ea3e2d6f01d629feb35f188d3b">MouseMotionEventDelegate</a></td></tr>
+<tr class="separator:a325820ea3e2d6f01d629feb35f188d3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a974ed5bfdf5a7b8a8517c01946d7ee8f"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; <a class="el" href="../../d9/de6/a00404.html">MouseWheelEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#a974ed5bfdf5a7b8a8517c01946d7ee8f">MouseWheelEventDelegate</a></td></tr>
+<tr class="separator:a974ed5bfdf5a7b8a8517c01946d7ee8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4320b861eb3caec0d5d726e3f91e26c3"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; <a class="el" href="../../d8/d21/a00368.html">ControllerAxisEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#a4320b861eb3caec0d5d726e3f91e26c3">ControllerAxisEventDelegate</a></td></tr>
+<tr class="separator:a4320b861eb3caec0d5d726e3f91e26c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a19110f3fc044aa6cf5ba5d7e3d0e31f6"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; <a class="el" href="../../db/d7e/a00372.html">ControllerButtonEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#a19110f3fc044aa6cf5ba5d7e3d0e31f6">ControllerButtonEventDelegate</a></td></tr>
+<tr class="separator:a19110f3fc044aa6cf5ba5d7e3d0e31f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a666d8f97ac7a51fc22408eba2d2eeb64"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; <a class="el" href="../../d6/db8/a00376.html">ControllerDeviceEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#a666d8f97ac7a51fc22408eba2d2eeb64">ControllerDeviceEventDelegate</a></td></tr>
+<tr class="separator:a666d8f97ac7a51fc22408eba2d2eeb64"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a501accc1c32dafc05263cde1163b1e25"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; <a class="el" href="../../d9/d72/a00412.html">TouchEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#a501accc1c32dafc05263cde1163b1e25">TouchEventDelegate</a></td></tr>
+<tr class="separator:a501accc1c32dafc05263cde1163b1e25"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41703d52980ad7ae0df5a63d0e42e86e"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt; <a class="el" href="../../dd/dea/a00408.html">TextInputEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#a41703d52980ad7ae0df5a63d0e42e86e">TextInputEventDelegate</a></td></tr>
+<tr class="separator:a41703d52980ad7ae0df5a63d0e42e86e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2aaa97c45b181f99d52b3276a8838ad2"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d56/a00384.html#a2aaa97c45b181f99d52b3276a8838ad2">QuitEventDelegate</a></td></tr>
+<tr class="separator:a2aaa97c45b181f99d52b3276a8838ad2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A class to distribute window events. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00025">25</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">EngineWindowEvent.h</a>.</p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a69c0f874503ee4c9ecdd63cc7e2e1ce3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a69c0f874503ee4c9ecdd63cc7e2e1ce3">&#9670;&nbsp;</a></span>EngineWindowEvent()</h2>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00027">27</a> of file <a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a>.</p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="ae677daa50391eef456e18d3e7b6e3e57"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae677daa50391eef456e18d3e7b6e3e57">&#9670;&nbsp;</a></span>DisableTextInput()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -133,90 +147,345 @@ Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">EngineWindowEvent::EngineWindowEvent </td>
+          <td class="memname">static void Atlas::Events::EventManager::DisableTextInput </td>
           <td>(</td>
-          <td class="paramtype">SDL_WindowEvent&#160;</td>
-          <td class="paramname"><em>event</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00028">28</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">EngineWindowEvent.h</a>.</p>
+</div>
+</div>
+<a id="a66531178842388afaaedee1619b43d97"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a66531178842388afaaedee1619b43d97">&#9670;&nbsp;</a></span>EnableTextInput()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void Atlas::Events::EventManager::EnableTextInput </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ae0ed55bf2da0e56c7d05e6789e23ccdd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae0ed55bf2da0e56c7d05e6789e23ccdd">&#9670;&nbsp;</a></span>Update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void Atlas::Events::EventManager::Update </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="ae7b23f82e0fab5fbdea04ab427de82d6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae7b23f82e0fab5fbdea04ab427de82d6">&#9670;&nbsp;</a></span>data</h2>
+<a id="a4320b861eb3caec0d5d726e3f91e26c3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4320b861eb3caec0d5d726e3f91e26c3">&#9670;&nbsp;</a></span>ControllerAxisEventDelegate</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">ivec2 EngineWindowEvent::data</td>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt;<a class="el" href="../../d8/d21/a00368.html">ControllerAxisEvent</a>&gt; Atlas::Events::EventManager::ControllerAxisEventDelegate</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p>The data specific to the event. </p>
-<p>Represents screen space coordinates </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00047">47</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">EngineWindowEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00041">41</a> of file <a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a>.</p>
 
 </div>
 </div>
-<a id="ad8f3bd948d8f82764b3996e5b41e87af"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad8f3bd948d8f82764b3996e5b41e87af">&#9670;&nbsp;</a></span>type</h2>
+<a id="a19110f3fc044aa6cf5ba5d7e3d0e31f6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a19110f3fc044aa6cf5ba5d7e3d0e31f6">&#9670;&nbsp;</a></span>ControllerButtonEventDelegate</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">uint8_t EngineWindowEvent::type</td>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt;<a class="el" href="../../db/d7e/a00372.html">ControllerButtonEvent</a>&gt; Atlas::Events::EventManager::ControllerButtonEventDelegate</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p>The type of the window event. </p>
-<p>See <a class="el" href="../../d2/d1f/a00083.html">EngineWindowEvent.h</a> for more </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00042">42</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">EngineWindowEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00042">42</a> of file <a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a>.</p>
 
 </div>
 </div>
-<a id="aadbbfd2839ccd53f2ce9785fbc5b5236"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aadbbfd2839ccd53f2ce9785fbc5b5236">&#9670;&nbsp;</a></span>windowID</h2>
+<a id="a666d8f97ac7a51fc22408eba2d2eeb64"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a666d8f97ac7a51fc22408eba2d2eeb64">&#9670;&nbsp;</a></span>ControllerDeviceEventDelegate</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">uint32_t EngineWindowEvent::windowID</td>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt;<a class="el" href="../../d6/db8/a00376.html">ControllerDeviceEvent</a>&gt; Atlas::Events::EventManager::ControllerDeviceEventDelegate</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p>The ID of the window the event occurred in. </p>
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00043">43</a> of file <a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00037">37</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">EngineWindowEvent.h</a>.</p>
+</div>
+</div>
+<a id="a3c3d9f544154e14a6afe35e8860890ff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3c3d9f544154e14a6afe35e8860890ff">&#9670;&nbsp;</a></span>KeyboardEventDelegate</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt;<a class="el" href="../../d4/d27/a00392.html">KeyboardEvent</a>&gt; Atlas::Events::EventManager::KeyboardEventDelegate</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00037">37</a> of file <a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a>.</p>
+
+</div>
+</div>
+<a id="ac21ef3dcea98d204286b877ef7639acb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac21ef3dcea98d204286b877ef7639acb">&#9670;&nbsp;</a></span>MouseButtonEventDelegate</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt;<a class="el" href="../../d9/da1/a00396.html">MouseButtonEvent</a>&gt; Atlas::Events::EventManager::MouseButtonEventDelegate</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00038">38</a> of file <a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a>.</p>
+
+</div>
+</div>
+<a id="a325820ea3e2d6f01d629feb35f188d3b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a325820ea3e2d6f01d629feb35f188d3b">&#9670;&nbsp;</a></span>MouseMotionEventDelegate</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt;<a class="el" href="../../d9/d95/a00400.html">MouseMotionEvent</a>&gt; Atlas::Events::EventManager::MouseMotionEventDelegate</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00039">39</a> of file <a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a>.</p>
+
+</div>
+</div>
+<a id="a974ed5bfdf5a7b8a8517c01946d7ee8f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a974ed5bfdf5a7b8a8517c01946d7ee8f">&#9670;&nbsp;</a></span>MouseWheelEventDelegate</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt;<a class="el" href="../../d9/de6/a00404.html">MouseWheelEvent</a>&gt; Atlas::Events::EventManager::MouseWheelEventDelegate</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00040">40</a> of file <a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a>.</p>
+
+</div>
+</div>
+<a id="a2aaa97c45b181f99d52b3276a8838ad2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2aaa97c45b181f99d52b3276a8838ad2">&#9670;&nbsp;</a></span>QuitEventDelegate</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a> Atlas::Events::EventManager::QuitEventDelegate</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00046">46</a> of file <a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a>.</p>
+
+</div>
+</div>
+<a id="a41703d52980ad7ae0df5a63d0e42e86e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a41703d52980ad7ae0df5a63d0e42e86e">&#9670;&nbsp;</a></span>TextInputEventDelegate</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt;<a class="el" href="../../dd/dea/a00408.html">TextInputEvent</a>&gt; Atlas::Events::EventManager::TextInputEventDelegate</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00045">45</a> of file <a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a>.</p>
+
+</div>
+</div>
+<a id="a501accc1c32dafc05263cde1163b1e25"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a501accc1c32dafc05263cde1163b1e25">&#9670;&nbsp;</a></span>TouchEventDelegate</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt;<a class="el" href="../../d9/d72/a00412.html">TouchEvent</a>&gt; Atlas::Events::EventManager::TouchEventDelegate</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00044">44</a> of file <a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a>.</p>
+
+</div>
+</div>
+<a id="ad2e71815859056964697b2a147c4e4a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad2e71815859056964697b2a147c4e4a4">&#9670;&nbsp;</a></span>WindowEventDelegate</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a>&lt;<a class="el" href="../../df/d15/a00416.html">WindowEvent</a>&gt; Atlas::Events::EventManager::WindowEventDelegate</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00036">36</a> of file <a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../d2/d1f/a00083_source.html">EngineWindowEvent.h</a></li>
+<li>src/events/<a class="el" href="../../df/d03/a00062_source.html">EventManager.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d2/d56/a00384.html">EngineWindowEvent</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d0/d19/a00273.html">Events</a></li><li class="navelem"><a class="el" href="../../d2/d56/a00384.html">EventManager</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

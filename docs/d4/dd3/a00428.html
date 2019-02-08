@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: ShadowComponent Struct Reference</title>
+<title>Atlas Engine: Atlas::Input::MouseHandler Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -88,103 +88,239 @@ $(document).ready(function(){initNavTree('d4/dd3/a00428.html','../../');});
 
 <div class="header">
   <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../dc/d2f/a00425.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ShadowComponent Struct Reference</div>  </div>
+<div class="title">Atlas::Input::MouseHandler Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d3/d00/a00113_source.html">Shadow.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d9/d77/a00095_source.html">Mouse.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a307665538c1174d9dfae29f5478aa7fb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dd3/a00428.html#a307665538c1174d9dfae29f5478aa7fb">MouseHandler</a> (<a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera, float <a class="el" href="../../d4/dd3/a00428.html#a243625bb82f914662aa9bc6e262c6ca1">sensibility</a>, float <a class="el" href="../../d4/dd3/a00428.html#a1ed45220a0552f95e418e5c84e088344">reactivity</a>, bool <a class="el" href="../../d4/dd3/a00428.html#a5fcbc705e18586eafc1ca3fbd0ba56c6">hideMouse</a>=false)</td></tr>
+<tr class="separator:a307665538c1174d9dfae29f5478aa7fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab945398ca04e062f35eeec4c773b3877"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dd3/a00428.html#ab945398ca04e062f35eeec4c773b3877">Update</a> (<a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera, uint32_t deltaTime)</td></tr>
+<tr class="separator:ab945398ca04e062f35eeec4c773b3877"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac50b875250a44057d3a3f040ec35cbbd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dd3/a00428.html#ac50b875250a44057d3a3f040ec35cbbd">SetActivationButton</a> (uint8_t mouseButton)</td></tr>
+<tr class="separator:ac50b875250a44057d3a3f040ec35cbbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a53cdbe4455de136201e757035041ef70"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dd3/a00428.html#a53cdbe4455de136201e757035041ef70">HideMouse</a> ()</td></tr>
+<tr class="separator:a53cdbe4455de136201e757035041ef70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1c851a1ce420529b18f0e42c22c7f7bc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dd3/a00428.html#a1c851a1ce420529b18f0e42c22c7f7bc">ShowMouse</a> ()</td></tr>
+<tr class="separator:a1c851a1ce420529b18f0e42c22c7f7bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:add3b873b3b66e49edb0399f88cbcfbc1"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dd3/a00428.html#add3b873b3b66e49edb0399f88cbcfbc1">nearDistance</a></td></tr>
-<tr class="separator:add3b873b3b66e49edb0399f88cbcfbc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a71cb53282ce79573e254df894e968235"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dd3/a00428.html#a71cb53282ce79573e254df894e968235">farDistance</a></td></tr>
-<tr class="separator:a71cb53282ce79573e254df894e968235"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1cce56e4597395939904eea2113b422"><td class="memItemLeft" align="right" valign="top">mat4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dd3/a00428.html#ad1cce56e4597395939904eea2113b422">viewMatrix</a></td></tr>
-<tr class="separator:ad1cce56e4597395939904eea2113b422"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a514808b87020956c032538208cbfae49"><td class="memItemLeft" align="right" valign="top">mat4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dd3/a00428.html#a514808b87020956c032538208cbfae49">projectionMatrix</a></td></tr>
-<tr class="separator:a514808b87020956c032538208cbfae49"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a243625bb82f914662aa9bc6e262c6ca1"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dd3/a00428.html#a243625bb82f914662aa9bc6e262c6ca1">sensibility</a></td></tr>
+<tr class="separator:a243625bb82f914662aa9bc6e262c6ca1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1ed45220a0552f95e418e5c84e088344"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dd3/a00428.html#a1ed45220a0552f95e418e5c84e088344">reactivity</a></td></tr>
+<tr class="separator:a1ed45220a0552f95e418e5c84e088344"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac321194579ceb10b97fbc3f9fc7a7012"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dd3/a00428.html#ac321194579ceb10b97fbc3f9fc7a7012">lock</a></td></tr>
+<tr class="separator:ac321194579ceb10b97fbc3f9fc7a7012"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5fcbc705e18586eafc1ca3fbd0ba56c6"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dd3/a00428.html#a5fcbc705e18586eafc1ca3fbd0ba56c6">hideMouse</a></td></tr>
+<tr class="separator:a5fcbc705e18586eafc1ca3fbd0ba56c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00015">15</a> of file <a class="el" href="../../d3/d00/a00113_source.html">Shadow.h</a>.</p>
-</div><h2 class="groupheader">Member Data Documentation</h2>
-<a id="a71cb53282ce79573e254df894e968235"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a71cb53282ce79573e254df894e968235">&#9670;&nbsp;</a></span>farDistance</h2>
+<p class="definition">Definition at line <a class="el" href="../../d9/d77/a00095_source.html#l00012">12</a> of file <a class="el" href="../../d9/d77/a00095_source.html">Mouse.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a307665538c1174d9dfae29f5478aa7fb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a307665538c1174d9dfae29f5478aa7fb">&#9670;&nbsp;</a></span>MouseHandler()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float ShadowComponent::farDistance</td>
+          <td class="memname">Atlas::Input::MouseHandler::MouseHandler </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>sensibility</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>reactivity</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>hideMouse</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00018">18</a> of file <a class="el" href="../../d3/d00/a00113_source.html">Shadow.h</a>.</p>
-
 </div>
 </div>
-<a id="add3b873b3b66e49edb0399f88cbcfbc1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#add3b873b3b66e49edb0399f88cbcfbc1">&#9670;&nbsp;</a></span>nearDistance</h2>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a53cdbe4455de136201e757035041ef70"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a53cdbe4455de136201e757035041ef70">&#9670;&nbsp;</a></span>HideMouse()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float ShadowComponent::nearDistance</td>
+          <td class="memname">void Atlas::Input::MouseHandler::HideMouse </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00017">17</a> of file <a class="el" href="../../d3/d00/a00113_source.html">Shadow.h</a>.</p>
-
 </div>
 </div>
-<a id="a514808b87020956c032538208cbfae49"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a514808b87020956c032538208cbfae49">&#9670;&nbsp;</a></span>projectionMatrix</h2>
+<a id="ac50b875250a44057d3a3f040ec35cbbd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac50b875250a44057d3a3f040ec35cbbd">&#9670;&nbsp;</a></span>SetActivationButton()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">mat4 ShadowComponent::projectionMatrix</td>
+          <td class="memname">void Atlas::Input::MouseHandler::SetActivationButton </td>
+          <td>(</td>
+          <td class="paramtype">uint8_t&#160;</td>
+          <td class="paramname"><em>mouseButton</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00021">21</a> of file <a class="el" href="../../d3/d00/a00113_source.html">Shadow.h</a>.</p>
-
 </div>
 </div>
-<a id="ad1cce56e4597395939904eea2113b422"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad1cce56e4597395939904eea2113b422">&#9670;&nbsp;</a></span>viewMatrix</h2>
+<a id="a1c851a1ce420529b18f0e42c22c7f7bc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1c851a1ce420529b18f0e42c22c7f7bc">&#9670;&nbsp;</a></span>ShowMouse()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">mat4 ShadowComponent::viewMatrix</td>
+          <td class="memname">void Atlas::Input::MouseHandler::ShowMouse </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00020">20</a> of file <a class="el" href="../../d3/d00/a00113_source.html">Shadow.h</a>.</p>
+</div>
+</div>
+<a id="ab945398ca04e062f35eeec4c773b3877"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab945398ca04e062f35eeec4c773b3877">&#9670;&nbsp;</a></span>Update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Input::MouseHandler::Update </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>deltaTime</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li>src/lighting/<a class="el" href="../../d3/d00/a00113_source.html">Shadow.h</a></li>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a5fcbc705e18586eafc1ca3fbd0ba56c6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5fcbc705e18586eafc1ca3fbd0ba56c6">&#9670;&nbsp;</a></span>hideMouse</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Atlas::Input::MouseHandler::hideMouse</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d77/a00095_source.html#l00029">29</a> of file <a class="el" href="../../d9/d77/a00095_source.html">Mouse.h</a>.</p>
+
+</div>
+</div>
+<a id="ac321194579ceb10b97fbc3f9fc7a7012"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac321194579ceb10b97fbc3f9fc7a7012">&#9670;&nbsp;</a></span>lock</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Atlas::Input::MouseHandler::lock</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d77/a00095_source.html#l00028">28</a> of file <a class="el" href="../../d9/d77/a00095_source.html">Mouse.h</a>.</p>
+
+</div>
+</div>
+<a id="a1ed45220a0552f95e418e5c84e088344"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1ed45220a0552f95e418e5c84e088344">&#9670;&nbsp;</a></span>reactivity</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Input::MouseHandler::reactivity</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d77/a00095_source.html#l00026">26</a> of file <a class="el" href="../../d9/d77/a00095_source.html">Mouse.h</a>.</p>
+
+</div>
+</div>
+<a id="a243625bb82f914662aa9bc6e262c6ca1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a243625bb82f914662aa9bc6e262c6ca1">&#9670;&nbsp;</a></span>sensibility</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Input::MouseHandler::sensibility</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d77/a00095_source.html#l00025">25</a> of file <a class="el" href="../../d9/d77/a00095_source.html">Mouse.h</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/input/<a class="el" href="../../d9/d77/a00095_source.html">Mouse.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d4/dd3/a00428.html">ShadowComponent</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dd/d56/a00274.html">Input</a></li><li class="navelem"><a class="el" href="../../d4/dd3/a00428.html">MouseHandler</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: EngineKeyboardEvent Class Reference</title>
+<title>Atlas Engine: Atlas::Window Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -92,153 +92,599 @@ $(document).ready(function(){initNavTree('dc/d59/a00364.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d7/ddb/a00361.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">EngineKeyboardEvent Class Reference</div>  </div>
+<div class="title">Atlas::Window Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>A class to distribute keyboard events.  
+<p>A simple window class.  
  <a href="../../dc/d59/a00364.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../de/de1/a00065_source.html">EngineKeyboardEvent.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d6/d2d/a00047_source.html">Window.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a1594d17ee23e2cbf4317583aa2815da9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a1594d17ee23e2cbf4317583aa2815da9">EngineKeyboardEvent</a> (SDL_KeyboardEvent event)</td></tr>
-<tr class="separator:a1594d17ee23e2cbf4317583aa2815da9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad6ea6e2fc92fd6134c4e989793c05fc2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#ad6ea6e2fc92fd6134c4e989793c05fc2">Window</a> (std::string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags=<a class="el" href="../../d6/d2d/a00047.html#aeea5cdf704297f8221fb0eefccf3c014">AE_WINDOW_FULLSCREEN</a>)</td></tr>
+<tr class="memdesc:ad6ea6e2fc92fd6134c4e989793c05fc2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a window object.  <a href="#ad6ea6e2fc92fd6134c4e989793c05fc2">More...</a><br /></td></tr>
+<tr class="separator:ad6ea6e2fc92fd6134c4e989793c05fc2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7aa74f354f73b8ffe001f41a9b476b4c"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a7aa74f354f73b8ffe001f41a9b476b4c">GetID</a> ()</td></tr>
+<tr class="memdesc:a7aa74f354f73b8ffe001f41a9b476b4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the ID of the window.  <a href="#a7aa74f354f73b8ffe001f41a9b476b4c">More...</a><br /></td></tr>
+<tr class="separator:a7aa74f354f73b8ffe001f41a9b476b4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a549dbf040f3fa809147f40ea6e078fb7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a549dbf040f3fa809147f40ea6e078fb7">SetTitle</a> (std::string title)</td></tr>
+<tr class="memdesc:a549dbf040f3fa809147f40ea6e078fb7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the title of the window.  <a href="#a549dbf040f3fa809147f40ea6e078fb7">More...</a><br /></td></tr>
+<tr class="separator:a549dbf040f3fa809147f40ea6e078fb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2637c29511eeaec298e2428ef6e8c7a2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a2637c29511eeaec298e2428ef6e8c7a2">SetIcon</a> (<a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a> *icon)</td></tr>
+<tr class="memdesc:a2637c29511eeaec298e2428ef6e8c7a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the icon of the window.  <a href="#a2637c29511eeaec298e2428ef6e8c7a2">More...</a><br /></td></tr>
+<tr class="separator:a2637c29511eeaec298e2428ef6e8c7a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af38ad649a931efbb20b69e8794da2fd9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#af38ad649a931efbb20b69e8794da2fd9">SetPosition</a> (int32_t x, int32_t y)</td></tr>
+<tr class="memdesc:af38ad649a931efbb20b69e8794da2fd9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resets the position of the window to the given screen coordinates.  <a href="#af38ad649a931efbb20b69e8794da2fd9">More...</a><br /></td></tr>
+<tr class="separator:af38ad649a931efbb20b69e8794da2fd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a499cc5c7a541ce5b1946ad9408b4792d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a499cc5c7a541ce5b1946ad9408b4792d">GetPosition</a> (int32_t *x, int32_t *y)</td></tr>
+<tr class="memdesc:a499cc5c7a541ce5b1946ad9408b4792d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the position of the window.  <a href="#a499cc5c7a541ce5b1946ad9408b4792d">More...</a><br /></td></tr>
+<tr class="separator:a499cc5c7a541ce5b1946ad9408b4792d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a420bfa931d69d11958aec92e456af50f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a420bfa931d69d11958aec92e456af50f">SetSize</a> (int32_t width, int32_t height)</td></tr>
+<tr class="memdesc:a420bfa931d69d11958aec92e456af50f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resets the size of the window to the given values.  <a href="#a420bfa931d69d11958aec92e456af50f">More...</a><br /></td></tr>
+<tr class="separator:a420bfa931d69d11958aec92e456af50f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2635ddef3bf51ff5673e1d4b479069e3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a2635ddef3bf51ff5673e1d4b479069e3">GetSize</a> (int32_t *width, int32_t *height)</td></tr>
+<tr class="memdesc:a2635ddef3bf51ff5673e1d4b479069e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the size of the window.  <a href="#a2635ddef3bf51ff5673e1d4b479069e3">More...</a><br /></td></tr>
+<tr class="separator:a2635ddef3bf51ff5673e1d4b479069e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b1fb90208f3581204fcc50b4a770c74"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a1b1fb90208f3581204fcc50b4a770c74">Show</a> ()</td></tr>
+<tr class="memdesc:a1b1fb90208f3581204fcc50b4a770c74"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shows the window if the window was hidden.  <a href="#a1b1fb90208f3581204fcc50b4a770c74">More...</a><br /></td></tr>
+<tr class="separator:a1b1fb90208f3581204fcc50b4a770c74"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe410f2ebdb6d4821119433552d4bfd7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#afe410f2ebdb6d4821119433552d4bfd7">Hide</a> ()</td></tr>
+<tr class="memdesc:afe410f2ebdb6d4821119433552d4bfd7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Hides the window if the window was shown.  <a href="#afe410f2ebdb6d4821119433552d4bfd7">More...</a><br /></td></tr>
+<tr class="separator:afe410f2ebdb6d4821119433552d4bfd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8207cdabddab363825612086e6ea624"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#ad8207cdabddab363825612086e6ea624">Update</a> ()</td></tr>
+<tr class="memdesc:ad8207cdabddab363825612086e6ea624"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the window events and the rendering surface.  <a href="#ad8207cdabddab363825612086e6ea624">More...</a><br /></td></tr>
+<tr class="separator:ad8207cdabddab363825612086e6ea624"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8bba97e86c5952196526c018c1a542d8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a8bba97e86c5952196526c018c1a542d8">Clear</a> (vec3 color=vec3(0.0f))</td></tr>
+<tr class="memdesc:a8bba97e86c5952196526c018c1a542d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears the rendering surface of the window.  <a href="#a8bba97e86c5952196526c018c1a542d8">More...</a><br /></td></tr>
+<tr class="separator:a8bba97e86c5952196526c018c1a542d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4afa9a32bef0bc15f922f41ddb387b4e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a4afa9a32bef0bc15f922f41ddb387b4e">~Window</a> ()</td></tr>
+<tr class="separator:a4afa9a32bef0bc15f922f41ddb387b4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a9dd166adb9c9bacc3de8eed81a442f84"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a9dd166adb9c9bacc3de8eed81a442f84">windowID</a></td></tr>
-<tr class="memdesc:a9dd166adb9c9bacc3de8eed81a442f84"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#a9dd166adb9c9bacc3de8eed81a442f84">More...</a><br /></td></tr>
-<tr class="separator:a9dd166adb9c9bacc3de8eed81a442f84"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a01bfdffc846a3139507f038dd2c9aa30"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../da/d24/a00068.html#a4922ee8137e19b9e693ee1d28f079ca1">Keycode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a01bfdffc846a3139507f038dd2c9aa30">keycode</a></td></tr>
-<tr class="memdesc:a01bfdffc846a3139507f038dd2c9aa30"><td class="mdescLeft">&#160;</td><td class="mdescRight">The code of the key.  <a href="#a01bfdffc846a3139507f038dd2c9aa30">More...</a><br /></td></tr>
-<tr class="separator:a01bfdffc846a3139507f038dd2c9aa30"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab90470493887c64baafd99913636b39c"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#ab90470493887c64baafd99913636b39c">state</a></td></tr>
-<tr class="memdesc:ab90470493887c64baafd99913636b39c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The state of the button.  <a href="#ab90470493887c64baafd99913636b39c">More...</a><br /></td></tr>
-<tr class="separator:ab90470493887c64baafd99913636b39c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afed5cd8b4e43c7c52ce0cfeaba507679"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#afed5cd8b4e43c7c52ce0cfeaba507679">repeat</a></td></tr>
-<tr class="memdesc:afed5cd8b4e43c7c52ce0cfeaba507679"><td class="mdescLeft">&#160;</td><td class="mdescRight">True if the key was pressed for longer.  <a href="#afed5cd8b4e43c7c52ce0cfeaba507679">More...</a><br /></td></tr>
-<tr class="separator:afed5cd8b4e43c7c52ce0cfeaba507679"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b4cade64bf839ca92514b5de80f0331"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d0/d65/a00360.html">Viewport</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a9b4cade64bf839ca92514b5de80f0331">viewport</a></td></tr>
+<tr class="separator:a9b4cade64bf839ca92514b5de80f0331"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae12a2fbd14539176923acefd1a6c29ac"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt; <a class="el" href="../../df/d15/a00416.html">Events::WindowEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#ae12a2fbd14539176923acefd1a6c29ac">windowEventDelegate</a></td></tr>
+<tr class="separator:ae12a2fbd14539176923acefd1a6c29ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f9c0d0e617751b165f09285f025aafb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt; <a class="el" href="../../d4/d27/a00392.html">Events::KeyboardEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a5f9c0d0e617751b165f09285f025aafb">keyboardEventDelegate</a></td></tr>
+<tr class="separator:a5f9c0d0e617751b165f09285f025aafb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad14ceacb2b7cf16af09a1cf2edc25800"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt; <a class="el" href="../../d9/da1/a00396.html">Events::MouseButtonEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#ad14ceacb2b7cf16af09a1cf2edc25800">mouseButtonEventDelegate</a></td></tr>
+<tr class="separator:ad14ceacb2b7cf16af09a1cf2edc25800"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af610c82808690f5d2ae6fdf733d7253e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt; <a class="el" href="../../d9/d95/a00400.html">Events::MouseMotionEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#af610c82808690f5d2ae6fdf733d7253e">mouseMotionEventDelegate</a></td></tr>
+<tr class="separator:af610c82808690f5d2ae6fdf733d7253e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a87b035c9147fc542c5f69f3ad0cca2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt; <a class="el" href="../../d9/de6/a00404.html">Events::MouseWheelEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a1a87b035c9147fc542c5f69f3ad0cca2">mouseWheelEventDelegate</a></td></tr>
+<tr class="separator:a1a87b035c9147fc542c5f69f3ad0cca2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a554d9413c8f55b7e4c721f3b733ea16c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt; <a class="el" href="../../d8/d21/a00368.html">Events::ControllerAxisEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a554d9413c8f55b7e4c721f3b733ea16c">controllerAxisEventDelegate</a></td></tr>
+<tr class="separator:a554d9413c8f55b7e4c721f3b733ea16c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a51e63f3426b9e80c991376e911d0cc8b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt; <a class="el" href="../../db/d7e/a00372.html">Events::ControllerButtonEvent</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d59/a00364.html#a51e63f3426b9e80c991376e911d0cc8b">controllerButtonEventDelegate</a></td></tr>
+<tr class="separator:a51e63f3426b9e80c991376e911d0cc8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A class to distribute keyboard events. </p>
+<div class="textblock"><p>A simple window class. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00012">12</a> of file <a class="el" href="../../de/de1/a00065_source.html">EngineKeyboardEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00029">29</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Window.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a1594d17ee23e2cbf4317583aa2815da9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1594d17ee23e2cbf4317583aa2815da9">&#9670;&nbsp;</a></span>EngineKeyboardEvent()</h2>
+<a id="ad6ea6e2fc92fd6134c4e989793c05fc2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad6ea6e2fc92fd6134c4e989793c05fc2">&#9670;&nbsp;</a></span>Window()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">EngineKeyboardEvent::EngineKeyboardEvent </td>
+          <td class="memname">Atlas::Window::Window </td>
           <td>(</td>
-          <td class="paramtype">SDL_KeyboardEvent&#160;</td>
-          <td class="paramname"><em>event</em></td><td>)</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>title</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>flags</em> = <code><a class="el" href="../../d6/d2d/a00047.html#aeea5cdf704297f8221fb0eefccf3c014">AE_WINDOW_FULLSCREEN</a></code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a window object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">title</td><td>The title of the window </td></tr>
+    <tr><td class="paramname">x</td><td>The x position of the window on the screen in pixels </td></tr>
+    <tr><td class="paramname">y</td><td>The y position of the window on the screen in pixels </td></tr>
+    <tr><td class="paramname">width</td><td>The width of the window in pixels </td></tr>
+    <tr><td class="paramname">height</td><td>The height of the window in pixels </td></tr>
+    <tr><td class="paramname">flags</td><td><a class="el" href="../../dc/d59/a00364.html" title="A simple window class. ">Window</a> flags. See <a class="el" href="../../d6/d2d/a00047.html">Window.h</a> for more. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a4afa9a32bef0bc15f922f41ddb387b4e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4afa9a32bef0bc15f922f41ddb387b4e">&#9670;&nbsp;</a></span>~Window()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Window::~Window </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00015">15</a> of file <a class="el" href="../../de/de1/a00065_source.html">EngineKeyboardEvent.h</a>.</p>
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a8bba97e86c5952196526c018c1a542d8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8bba97e86c5952196526c018c1a542d8">&#9670;&nbsp;</a></span>Clear()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Window::Clear </td>
+          <td>(</td>
+          <td class="paramtype">vec3&#160;</td>
+          <td class="paramname"><em>color</em> = <code>vec3(0.0f)</code></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Clears the rendering surface of the window. </p>
+
+</div>
+</div>
+<a id="a7aa74f354f73b8ffe001f41a9b476b4c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7aa74f354f73b8ffe001f41a9b476b4c">&#9670;&nbsp;</a></span>GetID()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint32_t Atlas::Window::GetID </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the ID of the window. </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+<dl class="section note"><dt>Note</dt><dd>The window ID is important to filter the SystemEvents which are just generated for a specific window </dd></dl>
+
+</div>
+</div>
+<a id="a499cc5c7a541ce5b1946ad9408b4792d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a499cc5c7a541ce5b1946ad9408b4792d">&#9670;&nbsp;</a></span>GetPosition()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Window::GetPosition </td>
+          <td>(</td>
+          <td class="paramtype">int32_t *&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t *&#160;</td>
+          <td class="paramname"><em>y</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the position of the window. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">x</td><td>A pointer to an integer where the x value will be written into </td></tr>
+    <tr><td class="paramname">y</td><td>A pointer to an integer where the y value will be written into </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a2635ddef3bf51ff5673e1d4b479069e3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2635ddef3bf51ff5673e1d4b479069e3">&#9670;&nbsp;</a></span>GetSize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Window::GetSize </td>
+          <td>(</td>
+          <td class="paramtype">int32_t *&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t *&#160;</td>
+          <td class="paramname"><em>height</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the size of the window. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">width</td><td>A pointer to an integer where the width value will be written into </td></tr>
+    <tr><td class="paramname">height</td><td>A pointer to an integer where the height value will be written into </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="afe410f2ebdb6d4821119433552d4bfd7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afe410f2ebdb6d4821119433552d4bfd7">&#9670;&nbsp;</a></span>Hide()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Window::Hide </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Hides the window if the window was shown. </p>
+
+</div>
+</div>
+<a id="a2637c29511eeaec298e2428ef6e8c7a2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2637c29511eeaec298e2428ef6e8c7a2">&#9670;&nbsp;</a></span>SetIcon()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Window::SetIcon </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a> *&#160;</td>
+          <td class="paramname"><em>icon</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the icon of the window. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">icon</td><td>A pointer to a <a class="el" href="../../dd/dfe/a00283.html">Texture</a> object </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="af38ad649a931efbb20b69e8794da2fd9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af38ad649a931efbb20b69e8794da2fd9">&#9670;&nbsp;</a></span>SetPosition()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Window::SetPosition </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>y</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Resets the position of the window to the given screen coordinates. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">x</td><td>The x position of the window on the screen in pixels </td></tr>
+    <tr><td class="paramname">y</td><td>The y position of the window on the screen in pixels </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a420bfa931d69d11958aec92e456af50f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a420bfa931d69d11958aec92e456af50f">&#9670;&nbsp;</a></span>SetSize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Window::SetSize </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Resets the size of the window to the given values. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">width</td><td>The width of the window in pixels </td></tr>
+    <tr><td class="paramname">height</td><td>The height of the window in pixels </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a549dbf040f3fa809147f40ea6e078fb7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a549dbf040f3fa809147f40ea6e078fb7">&#9670;&nbsp;</a></span>SetTitle()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Window::SetTitle </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>title</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the title of the window. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">title</td><td>The title string </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a1b1fb90208f3581204fcc50b4a770c74"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1b1fb90208f3581204fcc50b4a770c74">&#9670;&nbsp;</a></span>Show()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Window::Show </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Shows the window if the window was hidden. </p>
+
+</div>
+</div>
+<a id="ad8207cdabddab363825612086e6ea624"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad8207cdabddab363825612086e6ea624">&#9670;&nbsp;</a></span>Update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Window::Update </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Updates the window events and the rendering surface. </p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a01bfdffc846a3139507f038dd2c9aa30"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a01bfdffc846a3139507f038dd2c9aa30">&#9670;&nbsp;</a></span>keycode</h2>
+<a id="a554d9413c8f55b7e4c721f3b733ea16c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a554d9413c8f55b7e4c721f3b733ea16c">&#9670;&nbsp;</a></span>controllerAxisEventDelegate</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../da/d24/a00068.html#a4922ee8137e19b9e693ee1d28f079ca1">Keycode</a> EngineKeyboardEvent::keycode</td>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt;<a class="el" href="../../d8/d21/a00368.html">Events::ControllerAxisEvent</a>&gt; Atlas::Window::controllerAxisEventDelegate</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The code of the key. </p>
-<p>See <a class="el" href="../../da/d24/a00068.html">EngineKeycodes.h</a> for more. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00032">32</a> of file <a class="el" href="../../de/de1/a00065_source.html">EngineKeyboardEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00121">121</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Window.h</a>.</p>
 
 </div>
 </div>
-<a id="afed5cd8b4e43c7c52ce0cfeaba507679"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afed5cd8b4e43c7c52ce0cfeaba507679">&#9670;&nbsp;</a></span>repeat</h2>
+<a id="a51e63f3426b9e80c991376e911d0cc8b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a51e63f3426b9e80c991376e911d0cc8b">&#9670;&nbsp;</a></span>controllerButtonEventDelegate</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">bool EngineKeyboardEvent::repeat</td>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt;<a class="el" href="../../db/d7e/a00372.html">Events::ControllerButtonEvent</a>&gt; Atlas::Window::controllerButtonEventDelegate</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>True if the key was pressed for longer. </p>
-<p>False otherwise. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00042">42</a> of file <a class="el" href="../../de/de1/a00065_source.html">EngineKeyboardEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00122">122</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Window.h</a>.</p>
 
 </div>
 </div>
-<a id="ab90470493887c64baafd99913636b39c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab90470493887c64baafd99913636b39c">&#9670;&nbsp;</a></span>state</h2>
+<a id="a5f9c0d0e617751b165f09285f025aafb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5f9c0d0e617751b165f09285f025aafb">&#9670;&nbsp;</a></span>keyboardEventDelegate</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint8_t EngineKeyboardEvent::state</td>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt;<a class="el" href="../../d4/d27/a00392.html">Events::KeyboardEvent</a>&gt; Atlas::Window::keyboardEventDelegate</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The state of the button. </p>
-<p>Might be BUTTON_PRESSED or BUTTON_RELEASED. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00037">37</a> of file <a class="el" href="../../de/de1/a00065_source.html">EngineKeyboardEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00117">117</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Window.h</a>.</p>
 
 </div>
 </div>
-<a id="a9dd166adb9c9bacc3de8eed81a442f84"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9dd166adb9c9bacc3de8eed81a442f84">&#9670;&nbsp;</a></span>windowID</h2>
+<a id="ad14ceacb2b7cf16af09a1cf2edc25800"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad14ceacb2b7cf16af09a1cf2edc25800">&#9670;&nbsp;</a></span>mouseButtonEventDelegate</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint32_t EngineKeyboardEvent::windowID</td>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt;<a class="el" href="../../d9/da1/a00396.html">Events::MouseButtonEvent</a>&gt; Atlas::Window::mouseButtonEventDelegate</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The ID of the window the event occurred in. </p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00118">118</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Window.h</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00027">27</a> of file <a class="el" href="../../de/de1/a00065_source.html">EngineKeyboardEvent.h</a>.</p>
+</div>
+</div>
+<a id="af610c82808690f5d2ae6fdf733d7253e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af610c82808690f5d2ae6fdf733d7253e">&#9670;&nbsp;</a></span>mouseMotionEventDelegate</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt;<a class="el" href="../../d9/d95/a00400.html">Events::MouseMotionEvent</a>&gt; Atlas::Window::mouseMotionEventDelegate</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00119">119</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Window.h</a>.</p>
+
+</div>
+</div>
+<a id="a1a87b035c9147fc542c5f69f3ad0cca2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1a87b035c9147fc542c5f69f3ad0cca2">&#9670;&nbsp;</a></span>mouseWheelEventDelegate</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt;<a class="el" href="../../d9/de6/a00404.html">Events::MouseWheelEvent</a>&gt; Atlas::Window::mouseWheelEventDelegate</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00120">120</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Window.h</a>.</p>
+
+</div>
+</div>
+<a id="a9b4cade64bf839ca92514b5de80f0331"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b4cade64bf839ca92514b5de80f0331">&#9670;&nbsp;</a></span>viewport</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d0/d65/a00360.html">Viewport</a>* Atlas::Window::viewport</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00114">114</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Window.h</a>.</p>
+
+</div>
+</div>
+<a id="ae12a2fbd14539176923acefd1a6c29ac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae12a2fbd14539176923acefd1a6c29ac">&#9670;&nbsp;</a></span>windowEventDelegate</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">Events::EventDelegate</a>&lt;<a class="el" href="../../df/d15/a00416.html">Events::WindowEvent</a>&gt; Atlas::Window::windowEventDelegate</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d6/d2d/a00047_source.html#l00116">116</a> of file <a class="el" href="../../d6/d2d/a00047_source.html">Window.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../de/de1/a00065_source.html">EngineKeyboardEvent.h</a></li>
+<li>src/<a class="el" href="../../d6/d2d/a00047_source.html">Window.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dc/d59/a00364.html">EngineKeyboardEvent</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dc/d59/a00364.html">Window</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

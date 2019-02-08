@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: Sky Class Reference</title>
+<title>Atlas Engine: Atlas::Loader::AssetLoader Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -88,73 +88,330 @@ $(document).ready(function(){initNavTree('d4/d82/a00436.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="../../dd/d07/a00433.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Sky Class Reference</div>  </div>
+<div class="title">Atlas::Loader::AssetLoader Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d4/d3e/a00116_source.html">Sky.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d4/d3a/a00101_source.html">AssetLoader.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:a0a3f5b8e59a9971e4a7b18272305ae24"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d82/a00436.html#a0a3f5b8e59a9971e4a7b18272305ae24">Sky</a> ()</td></tr>
-<tr class="separator:a0a3f5b8e59a9971e4a7b18272305ae24"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:aceebe4b84df893b670725bdbf1f5c568"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/df8/a00440.html">Skybox</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d82/a00436.html#aceebe4b84df893b670725bdbf1f5c568">skybox</a></td></tr>
-<tr class="separator:aceebe4b84df893b670725bdbf1f5c568"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a07fea178008cf9b53bfbee51ed27dfdb"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d82/a00436.html#a07fea178008cf9b53bfbee51ed27dfdb">Init</a> ()</td></tr>
+<tr class="separator:a07fea178008cf9b53bfbee51ed27dfdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa80a8ecbf3dc3b5c0a59e535d09cc0f4"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d82/a00436.html#aa80a8ecbf3dc3b5c0a59e535d09cc0f4">SetAssetDirectory</a> (std::string directory)</td></tr>
+<tr class="separator:aa80a8ecbf3dc3b5c0a59e535d09cc0f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7b03aa21aafbf70f193efe0ec116233d"><td class="memItemLeft" align="right" valign="top">static std::ifstream&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d82/a00436.html#a7b03aa21aafbf70f193efe0ec116233d">ReadFile</a> (std::string filename, std::ios_base::openmode mode)</td></tr>
+<tr class="separator:a7b03aa21aafbf70f193efe0ec116233d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8080d6c8d80b4255bcb50debfd9af89c"><td class="memItemLeft" align="right" valign="top">static std::ofstream&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d82/a00436.html#a8080d6c8d80b4255bcb50debfd9af89c">WriteFile</a> (std::string filename, std::ios_base::openmode mode)</td></tr>
+<tr class="separator:a8080d6c8d80b4255bcb50debfd9af89c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2be0b2887102dad415b005beca1abd84"><td class="memItemLeft" align="right" valign="top">static size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d82/a00436.html#a2be0b2887102dad415b005beca1abd84">GetFileSize</a> (std::ifstream &amp;stream)</td></tr>
+<tr class="separator:a2be0b2887102dad415b005beca1abd84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f4e736b0c8126092b48d5485fc330fe"><td class="memItemLeft" align="right" valign="top">static std::vector&lt; char &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d82/a00436.html#a0f4e736b0c8126092b48d5485fc330fe">GetFileContent</a> (std::ifstream &amp;stream)</td></tr>
+<tr class="separator:a0f4e736b0c8126092b48d5485fc330fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e1630b33b337683dc8beec371d47566"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d82/a00436.html#a9e1630b33b337683dc8beec371d47566">MakeDirectory</a> (std::string directory)</td></tr>
+<tr class="separator:a9e1630b33b337683dc8beec371d47566"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18aaa6062fd15716da2d39fe0b30d383"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d82/a00436.html#a18aaa6062fd15716da2d39fe0b30d383">UnpackFile</a> (std::string filename)</td></tr>
+<tr class="separator:a18aaa6062fd15716da2d39fe0b30d383"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a633e4b825779f473063c470b13b7c8e9"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d82/a00436.html#a633e4b825779f473063c470b13b7c8e9">UnpackDirectory</a> (std::string directory)</td></tr>
+<tr class="separator:a633e4b825779f473063c470b13b7c8e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17d4b429762284a5591f6d967120e700"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d82/a00436.html#a17d4b429762284a5591f6d967120e700">GetFullPath</a> (std::string path)</td></tr>
+<tr class="separator:a17d4b429762284a5591f6d967120e700"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d4/d3e/a00116_source.html#l00007">7</a> of file <a class="el" href="../../d4/d3e/a00116_source.html">Sky.h</a>.</p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a0a3f5b8e59a9971e4a7b18272305ae24"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0a3f5b8e59a9971e4a7b18272305ae24">&#9670;&nbsp;</a></span>Sky()</h2>
+<p class="definition">Definition at line <a class="el" href="../../d4/d3a/a00101_source.html#l00016">16</a> of file <a class="el" href="../../d4/d3a/a00101_source.html">AssetLoader.h</a>.</p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a0f4e736b0c8126092b48d5485fc330fe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0f4e736b0c8126092b48d5485fc330fe">&#9670;&nbsp;</a></span>GetFileContent()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">Sky::Sky </td>
+          <td class="memname">static std::vector&lt;char&gt; Atlas::Loader::AssetLoader::GetFileContent </td>
+          <td>(</td>
+          <td class="paramtype">std::ifstream &amp;&#160;</td>
+          <td class="paramname"><em>stream</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a2be0b2887102dad415b005beca1abd84"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2be0b2887102dad415b005beca1abd84">&#9670;&nbsp;</a></span>GetFileSize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static size_t Atlas::Loader::AssetLoader::GetFileSize </td>
+          <td>(</td>
+          <td class="paramtype">std::ifstream &amp;&#160;</td>
+          <td class="paramname"><em>stream</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a17d4b429762284a5591f6d967120e700"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a17d4b429762284a5591f6d967120e700">&#9670;&nbsp;</a></span>GetFullPath()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static std::string Atlas::Loader::AssetLoader::GetFullPath </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>path</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a07fea178008cf9b53bfbee51ed27dfdb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a07fea178008cf9b53bfbee51ed27dfdb">&#9670;&nbsp;</a></span>Init()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void Atlas::Loader::AssetLoader::Init </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="aceebe4b84df893b670725bdbf1f5c568"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aceebe4b84df893b670725bdbf1f5c568">&#9670;&nbsp;</a></span>skybox</h2>
+<a id="a9e1630b33b337683dc8beec371d47566"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e1630b33b337683dc8beec371d47566">&#9670;&nbsp;</a></span>MakeDirectory()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../de/df8/a00440.html">Skybox</a>* Sky::skybox</td>
+          <td class="memname">static void Atlas::Loader::AssetLoader::MakeDirectory </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>directory</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d4/d3e/a00116_source.html#l00012">12</a> of file <a class="el" href="../../d4/d3e/a00116_source.html">Sky.h</a>.</p>
+</div>
+</div>
+<a id="a7b03aa21aafbf70f193efe0ec116233d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7b03aa21aafbf70f193efe0ec116233d">&#9670;&nbsp;</a></span>ReadFile()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static std::ifstream Atlas::Loader::AssetLoader::ReadFile </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::ios_base::openmode&#160;</td>
+          <td class="paramname"><em>mode</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aa80a8ecbf3dc3b5c0a59e535d09cc0f4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa80a8ecbf3dc3b5c0a59e535d09cc0f4">&#9670;&nbsp;</a></span>SetAssetDirectory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void Atlas::Loader::AssetLoader::SetAssetDirectory </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>directory</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a633e4b825779f473063c470b13b7c8e9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a633e4b825779f473063c470b13b7c8e9">&#9670;&nbsp;</a></span>UnpackDirectory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void Atlas::Loader::AssetLoader::UnpackDirectory </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>directory</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a18aaa6062fd15716da2d39fe0b30d383"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a18aaa6062fd15716da2d39fe0b30d383">&#9670;&nbsp;</a></span>UnpackFile()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void Atlas::Loader::AssetLoader::UnpackFile </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a8080d6c8d80b4255bcb50debfd9af89c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8080d6c8d80b4255bcb50debfd9af89c">&#9670;&nbsp;</a></span>WriteFile()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static std::ofstream Atlas::Loader::AssetLoader::WriteFile </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::ios_base::openmode&#160;</td>
+          <td class="paramname"><em>mode</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/lighting/<a class="el" href="../../d4/d3e/a00116_source.html">Sky.h</a></li>
+<li>src/loader/<a class="el" href="../../d4/d3a/a00101_source.html">AssetLoader.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d4/d82/a00436.html">Sky</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d3/d5e/a00275.html">Loader</a></li><li class="navelem"><a class="el" href="../../d4/d82/a00436.html">AssetLoader</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

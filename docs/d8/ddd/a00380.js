@@ -1,6 +1,7 @@
 var a00380 =
 [
-    [ "EngineTextInputEvent", "d8/ddd/a00380.html#a140ed6e92340b1edbddfb3fca1d3a927", null ],
-    [ "character", "d8/ddd/a00380.html#a8f3a169c0c5f7674f9370138505c350d", null ],
-    [ "windowID", "d8/ddd/a00380.html#a25592e7cd0cbe8c33c1faae0652829f6", null ]
+    [ "EventDelegate", "d8/ddd/a00380.html#ae64eb0fbb527d7121e400a0e01a8a91f", null ],
+    [ "Fire", "d8/ddd/a00380.html#a851c8f9778b088b20dac759000732256", null ],
+    [ "Subscribe", "d8/ddd/a00380.html#a3b9ca815f00b2d7915e7ada41d8e0bf5", null ],
+    [ "Unsubscribe", "d8/ddd/a00380.html#a1b72168e6c15c2499be4c93b54b7d10e", null ]
 ];

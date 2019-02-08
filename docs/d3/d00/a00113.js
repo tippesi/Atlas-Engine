@@ -1,7 +1,9 @@
 var a00113 =
 [
-    [ "ShadowComponent", "d4/dd3/a00428.html", "d4/dd3/a00428" ],
-    [ "Shadow", "d9/dd5/a00432.html", "d9/dd5/a00432" ],
-    [ "MAX_SHADOW_CASCADE_COUNT", "d3/d00/a00113.html#a35a0656a7c36621cf5eed9278154ca72", null ],
-    [ "ShadowComponent", "d3/d00/a00113.html#a68038034f4a01c0588973457d6d71a7d", null ]
+    [ "ILight", "d2/d9d/a00464.html", "d2/d9d/a00464" ],
+    [ "AE_DIRECTIONAL_LIGHT", "d3/d00/a00113.html#af2b76a00e5758a67d5f1196b3e2e9db2", null ],
+    [ "AE_MOVABLE_LIGHT", "d3/d00/a00113.html#a9c366764bb5b82fc7596f5c91f084761", null ],
+    [ "AE_POINT_LIGHT", "d3/d00/a00113.html#a289bd6cbecb4a1fe25214e242411aeba", null ],
+    [ "AE_SPOT_LIGHT", "d3/d00/a00113.html#a93066e99652ae09a8222c00d0de4c689", null ],
+    [ "AE_STATIONARY_LIGHT", "d3/d00/a00113.html#a0c47343b7929f66f59ed14286415ece1", null ]
 ];

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Blue Engine: TerrainNode Class Reference</title>
+<title>Atlas Engine: Atlas::Shader::ShaderConstant Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -29,7 +29,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Blue Engine
+   <div id="projectname">Atlas Engine
    &#160;<span id="projectnumber">Detailed documentation</span>
    </div>
    <div id="projectbrief">A cross-platform engine</div>
@@ -89,123 +89,81 @@ $(document).ready(function(){initNavTree('d1/d8c/a00600.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d8/dbd/a00597.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">TerrainNode Class Reference</div>  </div>
+<div class="title">Atlas::Shader::ShaderConstant Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d9/d01/a00227_source.html">TerrainNode.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d5/df1/a00206_source.html">ShaderConstant.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a20b2c7ac9dc86dc40f2ceb5d932978d5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#a20b2c7ac9dc86dc40f2ceb5d932978d5">TerrainNode</a> (vec2 <a class="el" href="../../d1/d8c/a00600.html#aa90ec481e21b98c25ac861f028897ad6">location</a>, float resolution, float height, float <a class="el" href="../../d1/d8c/a00600.html#a4f4ab6041d8459f0b6480a09d56f3cc1">sideLength</a>, int32_t LoD, int32_t LoDCount, vec2 parentIndex, vec2 relativeIndex, <a class="el" href="../../d6/d75/a00604.html">TerrainStorage</a> *storage, <a class="el" href="../../d4/d14/a00608.html">TerrainStorageCell</a> *<a class="el" href="../../d1/d8c/a00600.html#af03fa622a3bf6cdff4a975808fcbc7ad">cell</a>)</td></tr>
-<tr class="separator:a20b2c7ac9dc86dc40f2ceb5d932978d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a293a3a816cbc300252a9a2a3ccce42ec"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#a293a3a816cbc300252a9a2a3ccce42ec">Update</a> (<a class="el" href="../../d3/dcc/a00264.html">Camera</a> *camera, vector&lt; <a class="el" href="../../d1/d8c/a00600.html">TerrainNode</a> *&gt; &amp;renderList, float *LoDDistances)</td></tr>
-<tr class="separator:a293a3a816cbc300252a9a2a3ccce42ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a73de69c47ba6d2a473256b6136c61c19"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#a73de69c47ba6d2a473256b6136c61c19">~TerrainNode</a> ()</td></tr>
-<tr class="separator:a73de69c47ba6d2a473256b6136c61c19"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:aa90ec481e21b98c25ac861f028897ad6"><td class="memItemLeft" align="right" valign="top">vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#aa90ec481e21b98c25ac861f028897ad6">location</a></td></tr>
-<tr class="separator:aa90ec481e21b98c25ac861f028897ad6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4f4ab6041d8459f0b6480a09d56f3cc1"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#a4f4ab6041d8459f0b6480a09d56f3cc1">sideLength</a></td></tr>
-<tr class="separator:a4f4ab6041d8459f0b6480a09d56f3cc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2df41aa3d091cdd45125f35aa448d8ff"><td class="memItemLeft" align="right" valign="top">vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#a2df41aa3d091cdd45125f35aa448d8ff">absoluteIndex</a></td></tr>
-<tr class="separator:a2df41aa3d091cdd45125f35aa448d8ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af03fa622a3bf6cdff4a975808fcbc7ad"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d14/a00608.html">TerrainStorageCell</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#af03fa622a3bf6cdff4a975808fcbc7ad">cell</a></td></tr>
-<tr class="separator:af03fa622a3bf6cdff4a975808fcbc7ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aedce412dbcd90f0241c6d37ffb3794ad"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#aedce412dbcd90f0241c6d37ffb3794ad">ShaderConstant</a> (std::string constantString)</td></tr>
+<tr class="memdesc:aedce412dbcd90f0241c6d37ffb3794ad"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#aedce412dbcd90f0241c6d37ffb3794ad">More...</a><br /></td></tr>
+<tr class="separator:aedce412dbcd90f0241c6d37ffb3794ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37851a7e42ad40a1b95f05ddebe6d3db"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#a37851a7e42ad40a1b95f05ddebe6d3db">SetValue</a> (float value)</td></tr>
+<tr class="separator:a37851a7e42ad40a1b95f05ddebe6d3db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb20a9765ea0305759a8f3bd6c2f73f8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#acb20a9765ea0305759a8f3bd6c2f73f8">SetValue</a> (int32_t value)</td></tr>
+<tr class="separator:acb20a9765ea0305759a8f3bd6c2f73f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a51e239ef0062f2df5d9ff504d3347adc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#a51e239ef0062f2df5d9ff504d3347adc">SetValue</a> (bool value)</td></tr>
+<tr class="separator:a51e239ef0062f2df5d9ff504d3347adc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a241e2b71f7f0edfc520c09a23b1999af"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#a241e2b71f7f0edfc520c09a23b1999af">SetValue</a> (vec2 value)</td></tr>
+<tr class="separator:a241e2b71f7f0edfc520c09a23b1999af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf59da92cc56d09d20078c7e01910a62"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#acf59da92cc56d09d20078c7e01910a62">SetValue</a> (vec3 value)</td></tr>
+<tr class="separator:acf59da92cc56d09d20078c7e01910a62"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5c7042edd2e97629b1835cf4ef91312"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#ae5c7042edd2e97629b1835cf4ef91312">SetValue</a> (vec4 value)</td></tr>
+<tr class="separator:ae5c7042edd2e97629b1835cf4ef91312"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae401dcd5c39ffd2bb1b8412d134687e6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#ae401dcd5c39ffd2bb1b8412d134687e6">SetValue</a> (float *value, int32_t length)</td></tr>
+<tr class="separator:ae401dcd5c39ffd2bb1b8412d134687e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4bba80efd9afd2c591233f4579160eb4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#a4bba80efd9afd2c591233f4579160eb4">SetValue</a> (int32_t *value, int32_t length)</td></tr>
+<tr class="separator:a4bba80efd9afd2c591233f4579160eb4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab982aad238451c60cecc4c277aa078fc"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#ab982aad238451c60cecc4c277aa078fc">GetName</a> ()</td></tr>
+<tr class="separator:ab982aad238451c60cecc4c277aa078fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ec2cc320a74f03f2bf1097bd98491aa"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d8c/a00600.html#a2ec2cc320a74f03f2bf1097bd98491aa">GetValuedString</a> ()</td></tr>
+<tr class="separator:a2ec2cc320a74f03f2bf1097bd98491aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d9/d01/a00227_source.html#l00010">10</a> of file <a class="el" href="../../d9/d01/a00227_source.html">TerrainNode.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/df1/a00206_source.html#l00021">21</a> of file <a class="el" href="../../d5/df1/a00206_source.html">ShaderConstant.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a20b2c7ac9dc86dc40f2ceb5d932978d5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a20b2c7ac9dc86dc40f2ceb5d932978d5">&#9670;&nbsp;</a></span>TerrainNode()</h2>
+<a id="aedce412dbcd90f0241c6d37ffb3794ad"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aedce412dbcd90f0241c6d37ffb3794ad">&#9670;&nbsp;</a></span>ShaderConstant()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">TerrainNode::TerrainNode </td>
+          <td class="memname">Atlas::Shader::ShaderConstant::ShaderConstant </td>
           <td>(</td>
-          <td class="paramtype">vec2&#160;</td>
-          <td class="paramname"><em>location</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>constantString</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>resolution</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>sideLength</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>LoD</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>LoDCount</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec2&#160;</td>
-          <td class="paramname"><em>parentIndex</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec2&#160;</td>
-          <td class="paramname"><em>relativeIndex</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d6/d75/a00604.html">TerrainStorage</a> *&#160;</td>
-          <td class="paramname"><em>storage</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d4/d14/a00608.html">TerrainStorageCell</a> *&#160;</td>
-          <td class="paramname"><em>cell</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
+<p><br />
+ </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">constantString</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
-<a id="a73de69c47ba6d2a473256b6136c61c19"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a73de69c47ba6d2a473256b6136c61c19">&#9670;&nbsp;</a></span>~TerrainNode()</h2>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="ab982aad238451c60cecc4c277aa078fc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab982aad238451c60cecc4c277aa078fc">&#9670;&nbsp;</a></span>GetName()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">TerrainNode::~TerrainNode </td>
+          <td class="memname">std::string Atlas::Shader::ShaderConstant::GetName </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -215,30 +173,148 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a293a3a816cbc300252a9a2a3ccce42ec"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a293a3a816cbc300252a9a2a3ccce42ec">&#9670;&nbsp;</a></span>Update()</h2>
+<a id="a2ec2cc320a74f03f2bf1097bd98491aa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2ec2cc320a74f03f2bf1097bd98491aa">&#9670;&nbsp;</a></span>GetValuedString()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void TerrainNode::Update </td>
+          <td class="memname">std::string Atlas::Shader::ShaderConstant::GetValuedString </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d3/dcc/a00264.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
-          <td class="paramtype">vector&lt; <a class="el" href="../../d1/d8c/a00600.html">TerrainNode</a> *&gt; &amp;&#160;</td>
-          <td class="paramname"><em>renderList</em>, </td>
         </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a37851a7e42ad40a1b95f05ddebe6d3db"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a37851a7e42ad40a1b95f05ddebe6d3db">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[1/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
         <tr>
-          <td class="paramkey"></td>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
           <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="acb20a9765ea0305759a8f3bd6c2f73f8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acb20a9765ea0305759a8f3bd6c2f73f8">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[2/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a51e239ef0062f2df5d9ff504d3347adc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a51e239ef0062f2df5d9ff504d3347adc">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[3/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a241e2b71f7f0edfc520c09a23b1999af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a241e2b71f7f0edfc520c09a23b1999af">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[4/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">vec2&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="acf59da92cc56d09d20078c7e01910a62"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acf59da92cc56d09d20078c7e01910a62">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[5/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">vec3&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ae5c7042edd2e97629b1835cf4ef91312"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae5c7042edd2e97629b1835cf4ef91312">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[6/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ae401dcd5c39ffd2bb1b8412d134687e6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae401dcd5c39ffd2bb1b8412d134687e6">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[7/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
           <td class="paramtype">float *&#160;</td>
-          <td class="paramname"><em>LoDDistances</em>&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -250,80 +326,43 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="a2df41aa3d091cdd45125f35aa448d8ff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2df41aa3d091cdd45125f35aa448d8ff">&#9670;&nbsp;</a></span>absoluteIndex</h2>
+<a id="a4bba80efd9afd2c591233f4579160eb4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4bba80efd9afd2c591233f4579160eb4">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[8/8]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">vec2 TerrainNode::absoluteIndex</td>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">int32_t *&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d9/d01/a00227_source.html#l00022">22</a> of file <a class="el" href="../../d9/d01/a00227_source.html">TerrainNode.h</a>.</p>
-
-</div>
-</div>
-<a id="af03fa622a3bf6cdff4a975808fcbc7ad"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af03fa622a3bf6cdff4a975808fcbc7ad">&#9670;&nbsp;</a></span>cell</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d4/d14/a00608.html">TerrainStorageCell</a>* TerrainNode::cell</td>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d9/d01/a00227_source.html#l00024">24</a> of file <a class="el" href="../../d9/d01/a00227_source.html">TerrainNode.h</a>.</p>
-
-</div>
-</div>
-<a id="aa90ec481e21b98c25ac861f028897ad6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa90ec481e21b98c25ac861f028897ad6">&#9670;&nbsp;</a></span>location</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname">vec2 TerrainNode::location</td>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d9/d01/a00227_source.html#l00020">20</a> of file <a class="el" href="../../d9/d01/a00227_source.html">TerrainNode.h</a>.</p>
-
-</div>
-</div>
-<a id="a4f4ab6041d8459f0b6480a09d56f3cc1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4f4ab6041d8459f0b6480a09d56f3cc1">&#9670;&nbsp;</a></span>sideLength</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float TerrainNode::sideLength</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d9/d01/a00227_source.html#l00021">21</a> of file <a class="el" href="../../d9/d01/a00227_source.html">TerrainNode.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/terrain/<a class="el" href="../../d9/d01/a00227_source.html">TerrainNode.h</a></li>
+<li>src/shader/<a class="el" href="../../d5/df1/a00206_source.html">ShaderConstant.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d1/d8c/a00600.html">TerrainNode</a></li>
+    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d82/a00279.html">Shader</a></li><li class="navelem"><a class="el" href="../../d1/d8c/a00600.html">ShaderConstant</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>
