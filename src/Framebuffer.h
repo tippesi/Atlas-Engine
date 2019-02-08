@@ -4,7 +4,7 @@
 #include "System.h"
 #include "texture/Texture2D.h"
 #include "texture/Texture2DArray.h"
-#include "../texture/Cubemap.h"
+#include "texture/Cubemap.h"
 #include <unordered_map>
 #include <vector>
 
