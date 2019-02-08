@@ -92,10 +92,10 @@ int main(int argc, char* argv[]) {
 	auto cubeActor = Atlas::Mesh::MeshActor(&cubeMesh);
 
 	// We want to scale our tree because it isn't large enough
-	treeActor.modelMatrix = scale(mat4(1.0f), vec3(3.0f));
+	treeActor.modelMatrix = glm::scale(mat4(1.0f), vec3(3.0f));
 
 	// We also want to scale the sponza model
-	sponzaActor.modelMatrix = scale(mat4(1.0f), vec3(0.05f)) * sponzaActor.modelMatrix;
+	sponzaActor.modelMatrix = glm::scale(mat4(1.0f), vec3(0.05f));
 
 	// We create a scene node, which we can later move around.
 	// The concept is really easy to understand: All actors of all the different types
