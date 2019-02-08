@@ -4,7 +4,7 @@
 #include "../System.h"
 #include "buffer/VertexArray.h"
 
-#include "GeometryRenderer.h"
+#include "OpaqueRenderer.h"
 #include "TerrainRenderer.h"
 #include "ShadowRenderer.h"
 #include "DecalRenderer.h"
@@ -16,142 +16,176 @@
 #include "PostProcessRenderer.h"
 #include "TextRenderer.h"
 
-class MasterRenderer {
+namespace Atlas {
 
-public:
-	MasterRenderer();
+	namespace Renderer {
 
-	~MasterRenderer();
+		class MasterRenderer {
 
-	/**
-	 *
-	 * @param window
-	 * @param target
-	 * @param camera
-	 * @param scene
-	 */
-	void RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+		public:
+			MasterRenderer();
 
-	/**
-	 *
-	 * @param window
-	 * @param texture
-	 * @param x
-	 * @param y
-	 * @param width
-	 * @param height
-	 * @param alphaBlending
-	 * @param framebuffer
-	 */
-	void RenderTexture(Window* window, Texture2D* texture, float x, float y, float width, float height,
-		bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+			~MasterRenderer();
 
-	/**
-	 *
-	 * @param window
-	 * @param texture
-	 * @param x
-	 * @param y
-	 * @param width
-	 * @param height
-	 * @param clipArea
-	 * @param blendArea
-	 * @param alphaBlending
-	 * @param framebuffer
-	 */
-	void RenderTexture(Window* window, Texture2D* texture, float x, float y, float width, float height,
-		vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+			/**
+             *
+             * @param window
+             * @param target
+             * @param camera
+             * @param scene
+             */
+			void RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	void RenderTexture(Window* window, Texture2DArray* texture, int32_t depth, float x, float y,
-		float width, float height, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+			/**
+             *
+             * @param window
+             * @param texture
+             * @param x
+             * @param y
+             * @param width
+             * @param height
+             * @param alphaBlending
+             * @param framebuffer
+             */
+			void RenderTexture(Window* window, Texture::Texture2D* texture, float x, float y, float width, float height,
+							   bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	void RenderTexture(Window* window, Texture2DArray* texture, int32_t depth, float x, float y,
-		float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending = false,
-		Framebuffer* framebuffer = nullptr);
+			/**
+             *
+             * @param window
+             * @param texture
+             * @param x
+             * @param y
+             * @param width
+             * @param height
+             * @param clipArea
+             * @param blendArea
+             * @param alphaBlending
+             * @param framebuffer
+             */
+			void RenderTexture(Window* window, Texture::Texture2D* texture, float x, float y, float width, float height,
+							   vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	/**
-	 *
-	 * @param window
-	 * @param color
-	 * @param x
-	 * @param y
-	 * @param width
-	 * @param height
-	 * @param alphaBlending
-	 * @param framebuffer
-	 */
-	void RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
-		bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+			/**
+			 *
+			 * @param window
+			 * @param texture
+			 * @param depth
+			 * @param x
+			 * @param y
+			 * @param width
+			 * @param height
+			 * @param alphaBlending
+			 * @param framebuffer
+			 */
+			void RenderTexture(Window* window, Texture::Texture2DArray* texture, int32_t depth, float x, float y,
+							   float width, float height, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	/**
-	 *
-	 * @param window
-	 * @param color
-	 * @param x
-	 * @param y
-	 * @param width
-	 * @param height
-	 * @param clipArea
-	 * @param blendArea
-	 * @param alphaBlending
-	 * @param framebuffer
-	 */
-	void RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
-		vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+			/**
+			 *
+			 * @param window
+			 * @param texture
+			 * @param depth
+			 * @param x
+			 * @param y
+			 * @param width
+			 * @param height
+			 * @param clipArea
+			 * @param blendArea
+			 * @param alphaBlending
+			 * @param framebuffer
+			 */
+			void RenderTexture(Window* window, Texture::Texture2DArray* texture, int32_t depth, float x, float y,
+							   float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending = false,
+							   Framebuffer* framebuffer = nullptr);
 
-	/**
-	 * Update of the renderer
-	 * @warning Must be called every frame
-	 */
-	void Update();
+			/**
+             *
+             * @param window
+             * @param color
+             * @param x
+             * @param y
+             * @param width
+             * @param height
+             * @param alphaBlending
+             * @param framebuffer
+             */
+			void RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
+								 bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	TextRenderer textRenderer;
+			/**
+             *
+             * @param window
+             * @param color
+             * @param x
+             * @param y
+             * @param width
+             * @param height
+             * @param clipArea
+             * @param blendArea
+             * @param alphaBlending
+             * @param framebuffer
+             */
+			void RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
+								 vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	static std::string vertexPath;
-	static std::string fragmentPath;
+			/**
+             * Update of the renderer
+             * @warning Must be called every frame
+             */
+			void Update();
 
-private:
-	void GetUniforms();
+			TextRenderer textRenderer;
 
-	VertexArray vertexArray;
+			static std::string vertexPath;
+			static std::string fragmentPath;
 
-	Shader rectangleShader;
-	Shader texture2DShader;
-	Shader texture2DArrayShader;
+		private:
+			void GetUniforms();
 
-	Uniform* rectangleProjectionMatrix;
-	Uniform* rectangleOffset;
-	Uniform* rectangleScale;
-	Uniform* rectangleColor;
-	Uniform* rectangleClipArea;
-	Uniform* rectangleBlendArea;
+			Buffer::VertexArray vertexArray;
 
-	Uniform* texture2DProjectionMatrix;
-	Uniform* texture2DOffset;
-	Uniform* texture2DScale;
-	Uniform* texture2DTexture;
-	Uniform* texture2DClipArea;
-	Uniform* texture2DBlendArea;
+			Shader::Shader rectangleShader;
+			Shader::Shader texture2DShader;
+			Shader::Shader texture2DArrayShader;
 
-	Uniform* texture2DArrayProjectionMatrix;
-	Uniform* texture2DArrayOffset;
-	Uniform* texture2DArrayScale;
-	Uniform* texture2DArrayTexture;
-	Uniform* texture2DArrayClipArea;
-	Uniform* texture2DArrayBlendArea;
-	Uniform* texture2DArrayDepth;
+			Shader::Uniform* rectangleProjectionMatrix;
+			Shader::Uniform* rectangleOffset;
+			Shader::Uniform* rectangleScale;
+			Shader::Uniform* rectangleColor;
+			Shader::Uniform* rectangleClipArea;
+			Shader::Uniform* rectangleBlendArea;
 
-	GeometryRenderer geometryRenderer;
-	TerrainRenderer terrainRenderer;
-	ShadowRenderer shadowRenderer;
-	DecalRenderer decalRenderer;
-	DirectionalVolumetricRenderer directionalVolumetricRenderer;
-	DirectionalLightRenderer directionalLightRenderer;
-	PointLightRenderer pointLightRenderer;
-	SkyboxRenderer skyboxRenderer;
-	AtmosphereRenderer atmosphereRenderer;
-	PostProcessRenderer postProcessRenderer;
+			Shader::Uniform* texture2DProjectionMatrix;
+			Shader::Uniform* texture2DOffset;
+			Shader::Uniform* texture2DScale;
+			Shader::Uniform* texture2DTexture;
+			Shader::Uniform* texture2DClipArea;
+			Shader::Uniform* texture2DBlendArea;
 
-};
+			Shader::Uniform* texture2DArrayProjectionMatrix;
+			Shader::Uniform* texture2DArrayOffset;
+			Shader::Uniform* texture2DArrayScale;
+			Shader::Uniform* texture2DArrayTexture;
+			Shader::Uniform* texture2DArrayClipArea;
+			Shader::Uniform* texture2DArrayBlendArea;
+			Shader::Uniform* texture2DArrayDepth;
+
+			OpaqueRenderer opaqueRenderer;
+			TerrainRenderer terrainRenderer;
+			ShadowRenderer shadowRenderer;
+			DecalRenderer decalRenderer;
+			DirectionalVolumetricRenderer directionalVolumetricRenderer;
+			DirectionalLightRenderer directionalLightRenderer;
+			PointLightRenderer pointLightRenderer;
+			SkyboxRenderer skyboxRenderer;
+			AtmosphereRenderer atmosphereRenderer;
+			PostProcessRenderer postProcessRenderer;
+
+		};
+
+	}
+
+}
 
 #endif

@@ -4,28 +4,37 @@
 #include "../System.h"
 #include "IRenderer.h"
 
-class AtmosphereRenderer : public IRenderer {
+namespace Atlas {
 
-public:
-	AtmosphereRenderer();
+	namespace Renderer {
 
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	static std::string vertexPath;
-	static std::string fragmentPath;
+		class AtmosphereRenderer : public IRenderer {
 
-private:
-	void GetUniforms();
+		public:
+			AtmosphereRenderer();
 
-	VertexArray vertexArray;
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	Shader shader;
+			static std::string vertexPath;
+			static std::string fragmentPath;
 
-	Uniform* viewMatrix;
-	Uniform* projectionMatrix;
-	Uniform* cameraLocation;
-	Uniform* sunDirection;
+		private:
+			void GetUniforms();
 
-};
+			Buffer::VertexArray vertexArray;
+
+			Shader::Shader shader;
+
+			Shader::Uniform* viewMatrix;
+			Shader::Uniform* projectionMatrix;
+			Shader::Uniform* cameraLocation;
+			Shader::Uniform* sunDirection;
+
+		};
+
+	}
+
+}
 
 #endif

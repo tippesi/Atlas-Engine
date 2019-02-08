@@ -5,37 +5,45 @@
 #include "IRenderer.h"
 #include "../shader/Shader.h"
 
-class PostProcessRenderer : public IRenderer {
+namespace Atlas {
 
-public:
-	PostProcessRenderer();
+	namespace Renderer {
 
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+		class PostProcessRenderer : public IRenderer {
 
-	static std::string vertexPath;
-	static std::string fragmentPath;
+		public:
+			PostProcessRenderer();
 
-private:
-	void GetUniforms();
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	Shader shader;
+			static std::string vertexPath;
+			static std::string fragmentPath;
 
-	Uniform* hdrTexture;
-	Uniform* bloomFirstTexture;
-	Uniform* bloomSecondTexture;
-	Uniform* bloomThirdTexture;
-	Uniform* hdrTextureResolution;
-	Uniform* exposure;
-	Uniform* saturation;
-	Uniform* bloomPassses;
-	Uniform* aberrationStrength;
-	Uniform* aberrationReversed;
-	Uniform* vignetteOffset;
-	Uniform* vignettePower;
-	Uniform* vignetteStrength;
-	Uniform* vignetteColor;
-	Uniform* timeInMilliseconds;
+		private:
+			void GetUniforms();
 
-};
+			Shader::Shader shader;
+
+			Shader::Uniform* hdrTexture;
+			Shader::Uniform* bloomFirstTexture;
+			Shader::Uniform* bloomSecondTexture;
+			Shader::Uniform* bloomThirdTexture;
+			Shader::Uniform* hdrTextureResolution;
+			Shader::Uniform* exposure;
+			Shader::Uniform* saturation;
+			Shader::Uniform* bloomPassses;
+			Shader::Uniform* aberrationStrength;
+			Shader::Uniform* aberrationReversed;
+			Shader::Uniform* vignetteOffset;
+			Shader::Uniform* vignettePower;
+			Shader::Uniform* vignetteStrength;
+			Shader::Uniform* vignetteColor;
+			Shader::Uniform* timeInMilliseconds;
+
+		};
+
+	}
+
+}
 
 #endif

@@ -9,10 +9,10 @@ namespace Atlas {
 	class Decal {
 
 	public:
-		Decal(Texture2D *texture, float rowCount = 1.0f, float columnCount = 1.0f, float animationLength = 1.0f)
+		Decal(Texture::Texture2D *texture, float rowCount = 1.0f, float columnCount = 1.0f, float animationLength = 1.0f)
 				: texture(texture), rowCount(rowCount), columnCount(columnCount), animationLength(animationLength) {}
 
-		Texture2D *texture;
+		Texture::Texture2D *texture;
 
 		float rowCount;
 		float columnCount;

@@ -4,33 +4,41 @@
 #include "../System.h"
 #include "ILight.h"
 
-class PointLight : public ILight {
+namespace Atlas {
 
-public:
-    PointLight(int32_t mobility = AE_STATIONARY_LIGHT);
+	namespace Lighting {
 
-	~PointLight();
+		class PointLight : public ILight {
 
-    void AddShadow(float bias, int32_t resolution);
+		public:
+			PointLight(int32_t mobility = AE_STATIONARY_LIGHT);
 
-    void RemoveShadow();
+			~PointLight();
 
-    void AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor = 1.0f);
+			void AddShadow(float bias, int32_t resolution);
 
-    void RemoveVolumetric();
+			void RemoveShadow();
 
-	void Update(Camera* camera);
+			void AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor = 1.0f);
 
-    float GetRadius();
+			void RemoveVolumetric();
 
-    vec3 location;
+			void Update(Camera* camera);
 
-    float attenuation;
+			float GetRadius();
 
-private:
-    float radius;
+			vec3 location;
 
-};
+			float attenuation;
 
+		private:
+			float radius;
+
+		};
+
+
+	}
+
+}
 
 #endif

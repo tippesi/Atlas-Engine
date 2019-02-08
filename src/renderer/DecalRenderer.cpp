@@ -1,79 +1,87 @@
 #include "DecalRenderer.h"
 #include "helper/GeometryHelper.h"
 
-std::string DecalRenderer::vertexPath = "deferred/decal.vsh";
-std::string DecalRenderer::fragmentPath = "deferred/decal.fsh";
+namespace Atlas {
 
-DecalRenderer::DecalRenderer() {
+    namespace Renderer {
 
-    GeometryHelper::GenerateCubeVertexArray(vertexArray);
+        std::string DecalRenderer::vertexPath = "deferred/decal.vsh";
+        std::string DecalRenderer::fragmentPath = "deferred/decal.fsh";
 
-    shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-    shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+        DecalRenderer::DecalRenderer() {
 
-	shader.AddMacro("ANIMATION");
+            Helper::GeometryHelper::GenerateCubeVertexArray(vertexArray);
 
-    shader.Compile();
+            shader.AddStage(AE_VERTEX_STAGE, vertexPath);
+            shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
-    GetUniforms();
+            shader.AddMacro("ANIMATION");
 
-}
+            shader.Compile();
 
-void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene) {
+            GetUniforms();
 
-    std::vector<uint32_t> drawBuffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+        }
 
-    vertexArray.Bind();
+        void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene) {
 
-    shader.Bind();
+            std::vector<uint32_t> drawBuffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 
-    target->geometryFramebuffer->SetDrawBuffers(drawBuffers);
+            vertexArray.Bind();
 
-	depthTexture->SetValue(0);
-    decalTexture->SetValue(1);
+            shader.Bind();
 
-	target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
+            target->geometryFramebuffer->SetDrawBuffers(drawBuffers);
 
-    viewMatrix->SetValue(camera->viewMatrix);
-    projectionMatrix->SetValue(camera->projectionMatrix);
-	inverseViewMatrix->SetValue(camera->inverseViewMatrix);
-	inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
+            depthTexture->SetValue(0);
+            decalTexture->SetValue(1);
 
-	timeInMilliseconds->SetValue((float)SDL_GetTicks());
+            target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
 
-    for (auto& decal : scene->decals) {
+            viewMatrix->SetValue(camera->viewMatrix);
+            projectionMatrix->SetValue(camera->projectionMatrix);
+            inverseViewMatrix->SetValue(camera->inverseViewMatrix);
+            inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
-        rowCount->SetValue(decal->rowCount);
-        columnCount->SetValue(decal->columnCount);
-        animationLength->SetValue(decal->animationLength);
+            timeInMilliseconds->SetValue((float)SDL_GetTicks());
 
-        modelMatrix->SetValue(decal->matrix);
+            for (auto& decal : scene->decals) {
 
-		color->SetValue(decal->color);
+                rowCount->SetValue(decal->rowCount);
+                columnCount->SetValue(decal->columnCount);
+                animationLength->SetValue(decal->animationLength);
 
-        decal->texture->Bind(GL_TEXTURE1);
+                modelMatrix->SetValue(decal->matrix);
 
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+                color->SetValue(decal->color);
+
+                decal->texture->Bind(GL_TEXTURE1);
+
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            }
+
+            target->geometryFramebuffer->SetDrawBuffers(drawBuffers);
+
+        }
+
+        void DecalRenderer::GetUniforms() {
+
+            depthTexture = shader.GetUniform("depthTexture");
+            decalTexture = shader.GetUniform("decalTexture");
+            modelMatrix = shader.GetUniform("mMatrix");
+            viewMatrix = shader.GetUniform("vMatrix");
+            projectionMatrix = shader.GetUniform("pMatrix");
+            inverseViewMatrix = shader.GetUniform("ivMatrix");
+            inverseProjectionMatrix = shader.GetUniform("ipMatrix");
+            timeInMilliseconds = shader.GetUniform("timeInMilliseconds");
+            animationLength = shader.GetUniform("animationLength");
+            rowCount = shader.GetUniform("rowCount");
+            columnCount = shader.GetUniform("columnCount");
+            color = shader.GetUniform("color");
+
+        }
 
     }
-
-    target->geometryFramebuffer->SetDrawBuffers(drawBuffers);
-
-}
-
-void DecalRenderer::GetUniforms() {
-
-	depthTexture = shader.GetUniform("depthTexture");
-    decalTexture = shader.GetUniform("decalTexture");
-    modelMatrix = shader.GetUniform("mMatrix");
-    viewMatrix = shader.GetUniform("vMatrix");
-    projectionMatrix = shader.GetUniform("pMatrix");
-	inverseViewMatrix = shader.GetUniform("ivMatrix");
-	inverseProjectionMatrix = shader.GetUniform("ipMatrix");
-	timeInMilliseconds = shader.GetUniform("timeInMilliseconds");
-	animationLength = shader.GetUniform("animationLength");
-	rowCount = shader.GetUniform("rowCount");
-	columnCount = shader.GetUniform("columnCount");
-	color = shader.GetUniform("color");
 
 }

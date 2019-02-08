@@ -7,55 +7,63 @@
 
 #include <vector>
 
-/**
- * Manages the ordering of mesh actors
- */
-class MeshActorBatch {
+namespace Atlas {
 
-public:
-	/**
-	 * Constructs an MeshActorBatch object for a mesh
-	 * @param mesh A pointer to a Mesh object
-	 */
-	MeshActorBatch(Mesh* mesh);
+	namespace Mesh {
 
-	/**
-	 * Adds a mesh actor to the batch
-	 * @param actor A pointer to an MeshActor object
-	 */
-	void Add(MeshActor* actor);
+		/**
+		 * Manages the ordering of mesh actors
+   		 */
+		class MeshActorBatch {
 
-	/**
-	 * Removes a mesh actor from the actor batch
-	 * @param actor A pointer to an MeshActor object
-	 */
-	void Remove(MeshActor* actor);
+		public:
+			/**
+             * Constructs an MeshActorBatch object for a mesh
+             * @param mesh A pointer to a Mesh object
+             */
+			MeshActorBatch(Mesh* mesh);
 
-	/**
-	 * Returns the mesh of the batch
-	 * @return A pointer to a Mesh object
-	 */
-	Mesh* GetMesh();
+			/**
+             * Adds a mesh actor to the batch
+             * @param actor A pointer to an MeshActor object
+             */
+			void Add(MeshActor* actor);
+
+			/**
+             * Removes a mesh actor from the actor batch
+             * @param actor A pointer to an MeshActor object
+             */
+			void Remove(MeshActor* actor);
+
+			/**
+             * Returns the mesh of the batch
+             * @return A pointer to a Mesh object
+             */
+			Mesh* GetMesh();
 
 
-	/**
-	 * Returns the number of mesh actors in the batch
-	 * @return An integer with the number of mesh actors
-	 */
-	int32_t GetSize();
+			/**
+             * Returns the number of mesh actors in the batch
+             * @return An integer with the number of mesh actors
+             */
+			int32_t GetSize();
 
-	/**
-	 * Removes all mesh actors from the batch.
-	 */
-	void Clear();
+			/**
+             * Removes all mesh actors from the batch.
+             */
+			void Clear();
 
-	std::vector<MeshActor*> actors;
+			std::vector<MeshActor*> actors;
 
-private:
-	Mesh* const mesh;
+		private:
+			Mesh* const mesh;
 
-	bool changed;
+			bool changed;
 
-};
+		};
+
+	}
+
+}
 
 #endif

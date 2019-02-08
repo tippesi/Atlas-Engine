@@ -11,7 +11,7 @@ namespace Atlas {
 
 		}
 
-		RayIntersection RayCasting::MouseRayIntersection(Viewport* viewport, Camera* camera, Terrain* terrain) {
+		RayIntersection RayCasting::MouseRayIntersection(Viewport* viewport, Camera* camera, Terrain::Terrain* terrain) {
 
 			auto intersection = MouseRayTerrainIntersection(viewport, camera, terrain);
 
@@ -19,7 +19,8 @@ namespace Atlas {
 
 		}
 
-		RayIntersection RayCasting::MouseRayTerrainIntersection(Viewport* viewport, Camera* camera, Terrain* terrain) {
+		RayIntersection RayCasting::MouseRayTerrainIntersection(Viewport* viewport, Camera* camera,
+				Terrain::Terrain* terrain) {
 
 			const float linearStepLength = 1.0f;
 
@@ -47,8 +48,8 @@ namespace Atlas {
 
 		}
 
-		RayIntersection RayCasting::BinarySearch(Ray ray, Terrain* terrain, float start,
-												 float finish, int count) {
+		RayIntersection RayCasting::BinarySearch(Ray ray, Terrain::Terrain* terrain, float start,
+				float finish, int count) {
 
 			float half = start + (finish - start) / 2.0f;
 
@@ -70,7 +71,7 @@ namespace Atlas {
 
 		}
 
-		bool RayCasting::IntersectionInRange(Ray ray, Terrain* terrain, float start, float finish) {
+		bool RayCasting::IntersectionInRange(Ray ray, Terrain::Terrain* terrain, float start, float finish) {
 
 			auto startPosition = ray.origin + ray.direction * start;
 			auto finishPosition = ray.origin + ray.direction * finish;
@@ -83,7 +84,7 @@ namespace Atlas {
 
 		}
 
-		bool RayCasting::IsUnderground(vec3 position, Terrain* terrain) {
+		bool RayCasting::IsUnderground(vec3 position, Terrain::Terrain* terrain) {
 
 			float height = terrain->GetHeight(position.x, position.z);
 

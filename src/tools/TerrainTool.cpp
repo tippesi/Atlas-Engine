@@ -123,7 +123,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 }
  */
 
-		Terrain* TerrainTool::GenerateTerrain(Loader::Image16 &heightImage, int32_t rootNodeCount, int32_t LoDCount,
+		Terrain::Terrain* TerrainTool::GenerateTerrain(Loader::Image16 &heightImage, int32_t rootNodeCount, int32_t LoDCount,
 											  int32_t patchSize, float resolution, float height) {
 
 			// Just in case the input was somehow wrong
@@ -138,7 +138,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 				throw EngineException("Some input value wasn't following the specifications");
 			}
 
-			auto terrain = new Terrain(rootNodeCount, LoDCount, patchSize, resolution, height);
+			auto terrain = new Terrain::Terrain(rootNodeCount, LoDCount, patchSize, resolution, height);
 
 			// Calculate the number of vertices per tile and resize the height data to map 1:1
 			int32_t tileResolution = 16 * patchSize;
@@ -168,9 +168,9 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 
 					// Create the data structures for the cell
 					cell->heightData.resize(tileResolutionSquared);
-					cell->heightField = new Texture2D(GL_UNSIGNED_SHORT, tileResolution,
+					cell->heightField = new Texture::Texture2D(GL_UNSIGNED_SHORT, tileResolution,
 													  tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-					cell->normalMap = new Texture2D(GL_UNSIGNED_BYTE, tileResolution,
+					cell->normalMap = new Texture::Texture2D(GL_UNSIGNED_BYTE, tileResolution,
 													tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 					// Now copy a tile of the original image
@@ -211,14 +211,14 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 
 		}
 
-		void TerrainTool::SaveTerrain(Terrain *terrain, std::string directory) {
+		void TerrainTool::SaveTerrain(Terrain::Terrain *terrain, std::string directory) {
 
 			// Iterate over all LoD level
 
 
 		}
 
-		void TerrainTool::BakeTerrain(Terrain *terrain) {
+		void TerrainTool::BakeTerrain(Terrain::Terrain *terrain) {
 
 			// Generate one large heightmap (assumes all tiles have the same size)
 			int32_t tileResolution = terrain->storage->GetCell(0, 0, terrain->LoDCount - 1)->heightField->width;
@@ -325,7 +325,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 
 		}
 
-		void TerrainTool::BrushHeight(Terrain *terrain, Kernel *kernel, float scale, vec2 position) {
+		void TerrainTool::BrushHeight(Terrain::Terrain *terrain, Kernel *kernel, float scale, vec2 position) {
 
 			int32_t LoD = terrain->LoDCount - 1;
 
@@ -344,7 +344,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 			auto bottomMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
 			auto bottomRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
 
-			TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
+			Terrain::TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
 										   middleLeft, middleMiddle, middleRight,
 										   bottomLeft, bottomMiddle, bottomRight};
 
@@ -452,7 +452,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 
 		}
 
-		void TerrainTool::SmoothHeight(Terrain *terrain, int32_t size, int32_t contributingRadius,
+		void TerrainTool::SmoothHeight(Terrain::Terrain *terrain, int32_t size, int32_t contributingRadius,
 									   float strength, vec2 position) {
 
 			int32_t LoD = terrain->LoDCount - 1;
@@ -472,7 +472,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 			auto bottomMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
 			auto bottomRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
 
-			TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
+			Terrain::TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
 										   middleLeft, middleMiddle, middleRight,
 										   bottomLeft, bottomMiddle, bottomRight};
 

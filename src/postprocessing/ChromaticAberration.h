@@ -3,19 +3,27 @@
 
 #include "../System.h"
 
-class ChromaticAberration {
+namespace Atlas {
 
-public:
-	///
-	/// \param strength
-	/// \param colorsReversed
-	ChromaticAberration(float strength, bool colorsReversed = false) : 
-		strength(strength), colorsReversed(colorsReversed) {};
+	namespace PostProcessing {
 
-	float strength;
-	bool colorsReversed;
+		class ChromaticAberration {
 
-};
+		public:
+			///
+			/// \param strength
+			/// \param colorsReversed
+			ChromaticAberration(float strength, bool colorsReversed = false) :
+					strength(strength), colorsReversed(colorsReversed) {};
+
+			float strength;
+			bool colorsReversed;
+
+		};
+
+	}
+
+}
 
 
 #endif

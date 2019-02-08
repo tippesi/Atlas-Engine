@@ -9,53 +9,61 @@
 
 #define MAX_SHADOW_CASCADE_COUNT 4
 
-// Forward declaration of classes
-class RenderList;
+namespace Atlas {
 
-typedef struct ShadowComponent {
+	namespace Lighting {
 
-	float nearDistance;
-	float farDistance;
+		// Forward declaration of classes
+		class RenderList;
 
-	mat4 viewMatrix;
-	mat4 projectionMatrix;
+		typedef struct ShadowComponent {
 
-}ShadowComponent;
+			float nearDistance;
+			float farDistance;
 
-class Shadow {
+			mat4 viewMatrix;
+			mat4 projectionMatrix;
 
-public:
-	Shadow(float distance, float bias, int32_t resolution, int32_t numCascades, float splitCorrection);
+		}ShadowComponent;
 
-	Shadow(float distance, float bias, int32_t resolution, bool useCubemap = false);
+		class Shadow {
 
-	void Update();
+		public:
+			Shadow(float distance, float bias, int32_t resolution, int32_t numCascades, float splitCorrection);
 
-	~Shadow();
+			Shadow(float distance, float bias, int32_t resolution, bool useCubemap = false);
 
-	float distance;
-	float bias;
-	float splitCorrection;
-	
-	int32_t resolution;
+			void Update();
 
-	int32_t sampleCount;
-	float sampleRange;
+			~Shadow();
 
-	ShadowComponent* components;
-	int32_t componentCount;
+			float distance;
+			float bias;
+			float splitCorrection;
 
-	Texture2DArray* maps;
-	Cubemap* cubemap;
+			int32_t resolution;
 
-	RenderList* renderList;
+			int32_t sampleCount;
+			float sampleRange;
 
-	bool useCubemap;
-	bool allowDynamicActors;
-	bool update;
-	
+			ShadowComponent* components;
+			int32_t componentCount;
 
-};
+			Texture::Texture2DArray* maps;
+			Texture::Cubemap* cubemap;
+
+			RenderList* renderList;
+
+			bool useCubemap;
+			bool allowDynamicActors;
+			bool update;
+
+
+		};
+
+	}
+
+}
 
 
 #endif

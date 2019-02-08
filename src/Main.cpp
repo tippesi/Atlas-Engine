@@ -5,6 +5,8 @@
 #include "libraries/stb/stb_image.h"
 #include "libraries/stb/stb_image_write.h"
 
+using namespace Atlas;
+
 Main::Main(int argc, char* argv[]) {
 
 	quit = false;
@@ -49,7 +51,7 @@ Main::Main(int argc, char* argv[]) {
 	keyboardHandler = new Atlas::Input::KeyboardHandler(camera, 7.0f, 0.3f);
 	controllerHandler = new Atlas::Input::ControllerHandler(camera, 1.5f, 7.0f, 0.2f, 5000.0f);
 
-	masterRenderer = new MasterRenderer();
+	masterRenderer = new Renderer::MasterRenderer();
 
 #ifndef AE_OS_ANDROID
 	renderTarget = new Atlas::RenderTarget(1920, 1080);
@@ -177,22 +179,22 @@ void Main::Load() {
 
 	DisplayLoadingScreen();
 
-	skybox = new Cubemap("cubemap/right.png",
+	skybox = new Texture::Cubemap("cubemap/right.png",
 		"cubemap/left.png",
 		"cubemap/top.png",
 		"cubemap/bottom.png",
 		"cubemap/front.png",
 		"cubemap/back.png");
 
-	cubeMesh = new Mesh("cube.dae");
-	treeMesh = new Mesh("tree.dae");
+	cubeMesh = new Mesh::Mesh("cube.dae");
+	treeMesh = new Mesh::Mesh("tree.dae");
 	treeMesh->cullBackFaces = false;
-	sponzaMesh = new Mesh("sponza/sponza.dae");
+	sponzaMesh = new Mesh::Mesh("sponza/sponza.dae");
 
 	//terrainDiffuseMap = new Texture2D("terrain/Ground_17_DIF.jpg");
 	//terrainDisplacementMap = new Texture2D("terrain/Ground_17_DISP.jpg");
 
-	smileyTexture = new Texture2D("spritesheet.png");
+	smileyTexture = new Texture::Texture2D("spritesheet.png");
 
 }
 
@@ -268,15 +270,15 @@ void Main::SceneSetUp() {
 	auto node = new Atlas::SceneNode();
 	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
 	scene->rootNode->Add(node);
-	scene->sky->skybox = new Skybox(skybox);
+	scene->sky->skybox = new Lighting::Skybox(skybox);
 
-	cubeActor = new MeshActor(cubeMesh);
-	treeActor = new MeshActor(treeMesh);
+	cubeActor = new Mesh::MeshActor(cubeMesh);
+	treeActor = new Mesh::MeshActor(treeMesh);
 	treeActor->modelMatrix = scale(mat4(1.0f), vec3(3.0f));
-	sponzaActor = new MeshActor(sponzaMesh);
+	sponzaActor = new Mesh::MeshActor(sponzaMesh);
 	sponzaActor->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
 
-	directionalLight = new DirectionalLight(AE_STATIONARY_LIGHT);
+	directionalLight = new Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
 #ifdef AE_OS_ANDROID
 	directionalLight->direction = vec3(0.0f, -1.0f, 0.5f);
     directionalLight->ambient = 0.005f;
@@ -294,22 +296,22 @@ void Main::SceneSetUp() {
 	directionalLight->GetShadow()->sampleCount = 1;
 	directionalLight->AddVolumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f);
 
-	PointLight* pointLight1 = new PointLight(AE_STATIONARY_LIGHT);
+	auto pointLight1 = new Lighting::PointLight(AE_STATIONARY_LIGHT);
 	pointLight1->location = vec3(24.35f, 6.5f, 7.1f);
 	pointLight1->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight1->AddShadow(0.0f, 512);
 
-	PointLight* pointLight2 = new PointLight(AE_STATIONARY_LIGHT);
+	auto pointLight2 = new Lighting::PointLight(AE_STATIONARY_LIGHT);
 	pointLight2->location = vec3(24.35f, 6.5f, -11.0f);
 	pointLight2->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight2->AddShadow(0.0f, 512);
 
-	PointLight* pointLight3 = new PointLight(AE_STATIONARY_LIGHT);
+	auto pointLight3 = new Lighting::PointLight(AE_STATIONARY_LIGHT);
 	pointLight3->location = vec3(-31.0f, 6.5f, 7.1f);
 	pointLight3->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight3->AddShadow(0.0f, 512);
 
-	PointLight* pointLight4 = new PointLight(AE_STATIONARY_LIGHT);
+	auto pointLight4 = new Lighting::PointLight(AE_STATIONARY_LIGHT);
 	pointLight4->location = vec3(-31.0f, 6.5f, -11.0f);
 	pointLight4->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight4->AddShadow(0.0f, 512);

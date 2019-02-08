@@ -7,13 +7,20 @@
 #include "../Scene.h"
 #include "../Window.h"
 
+namespace Atlas {
 
-class IRenderer {
+	namespace Renderer {
 
-public:
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) = 0;
-	virtual ~IRenderer() {}
+		class IRenderer {
 
-};
+		public:
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) = 0;
+			virtual ~IRenderer() {}
+
+		};
+
+	}
+
+}
 
 #endif

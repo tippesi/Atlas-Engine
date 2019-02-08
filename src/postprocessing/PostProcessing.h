@@ -5,20 +5,28 @@
 #include "Vignette.h"
 #include "ChromaticAberration.h"
 
-class PostProcessing {
+namespace Atlas {
 
-public:
-	///
-	PostProcessing();
+	namespace PostProcessing {
 
-	float exposure;
-	float saturation;
+		class PostProcessing {
 
-	bool filmicTonemapping;
+		public:
+			///
+			PostProcessing();
 
-	Vignette* vignette;
-	ChromaticAberration* chromaticAberration;
+			float exposure;
+			float saturation;
 
-};
+			bool filmicTonemapping;
+
+			Vignette* vignette;
+			ChromaticAberration* chromaticAberration;
+
+		};
+
+	}
+
+}
 
 #endif

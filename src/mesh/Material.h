@@ -15,65 +15,73 @@
 #define AE_MATERIAL_SPECULAR_MAP 2
 #define AE_MATERIAL_DISPLACEMENT_MAP 3
 
-class Material {
+namespace Atlas {
 
-public:
-	Material();
+	namespace Mesh {
 
-	~Material();
+		class Material {
 
-	void Update();
+		public:
+			Material();
 
-	void AddDiffuseMap(Image image);
+			~Material();
 
-	void AddNormalMap(Image image);
+			void Update();
 
-	void AddSpecularMap(Image image);
+			void AddDiffuseMap(Loader::Image image);
 
-	void AddDisplacementMap(Image image);
+			void AddNormalMap(Loader::Image image);
 
-	bool HasArrayMap();
-	bool HasDiffuseMap();
-	bool HasNormalMap();
-	bool HasSpecularMap();
-	bool HasDisplacementMap();
+			void AddSpecularMap(Loader::Image image);
 
-	float GetDiffuseMapIndex();
-	float GetNormalMapIndex();
-	float GetSpecularMapIndex();
-	float GetDisplacementMapIndex();
+			void AddDisplacementMap(Loader::Image image);
 
-	Texture2DArray* arrayMap;
-	Texture2D* diffuseMap;
-	Texture2D* normalMap;
-	Texture2D* specularMap;
-	Texture2D* displacementMap;
+			bool HasArrayMap();
+			bool HasDiffuseMap();
+			bool HasNormalMap();
+			bool HasSpecularMap();
+			bool HasDisplacementMap();
 
-	vec3 diffuseColor;
-	vec3 specularColor;
-	vec3 ambientColor;
+			float GetDiffuseMapIndex();
+			float GetNormalMapIndex();
+			float GetSpecularMapIndex();
+			float GetDisplacementMapIndex();
 
-	float specularHardness;
-	float specularIntensity;
+			Texture::Texture2DArray* arrayMap;
+			Texture::Texture2D* diffuseMap;
+			Texture::Texture2D* normalMap;
+			Texture::Texture2D* specularMap;
+			Texture::Texture2D* displacementMap;
 
-	float displacementScale;
+			vec3 diffuseColor;
+			vec3 specularColor;
+			vec3 ambientColor;
 
-	ShaderConfig geometryConfig;
-	ShaderConfig shadowConfig;
+			float specularHardness;
+			float specularIntensity;
 
-private:
-	std::unordered_map<int32_t, Image> images;
+			float displacementScale;
 
-	bool hasDiffuseMap;
-	bool hasNormalMap;
-	bool hasSpecularMap;
-	bool hasDisplacementMap;
+			Shader::ShaderConfig geometryConfig;
+			Shader::ShaderConfig shadowConfig;
 
-	float diffuseMapIndex;
-	float normalMapIndex;
-	float specularMapIndex;
-	float displacementMapIndex;
+		private:
+			std::unordered_map<int32_t, Loader::Image> images;
 
-};
+			bool hasDiffuseMap;
+			bool hasNormalMap;
+			bool hasSpecularMap;
+			bool hasDisplacementMap;
+
+			float diffuseMapIndex;
+			float normalMapIndex;
+			float specularMapIndex;
+			float displacementMapIndex;
+
+		};
+
+	}
+
+}
 
 #endif

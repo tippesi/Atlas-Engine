@@ -7,55 +7,63 @@
 #include "../Font.h"
 #include "buffer/VertexArray.h"
 
-class TextRenderer : public IRenderer {
+namespace Atlas {
 
-public:
-	TextRenderer();
+	namespace Renderer {
 
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+		class TextRenderer : public IRenderer {
 
-	void Render(Window* window, Font* font, std::string text, float x, float y, vec4 color,
-		float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+		public:
+			TextRenderer();
 
-	void Render(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 clipArea,
-		vec4 blendArea, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	void RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor,
-		float outlineScale, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+			void Render(Window* window, Font* font, std::string text, float x, float y, vec4 color,
+						float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	void RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
-		vec4 clipArea, vec4 blendArea, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+			void Render(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 clipArea,
+						vec4 blendArea, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	void Update();
+			void RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor,
+								float outlineScale, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-	static std::string vertexPath;
-	static std::string fragmentPath;
+			void RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
+								vec4 clipArea, vec4 blendArea, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-private:
-	void GetUniforms();
+			void Update();
 
-	std::vector<vec3> CalculateCharacterInstances(Font* font, std::string text, int32_t* characterCount);
+			static std::string vertexPath;
+			static std::string fragmentPath;
 
-	VertexArray vertexArray;
+		private:
+			void GetUniforms();
 
-	Shader shader;
+			std::vector<vec3> CalculateCharacterInstances(Font* font, std::string text, int32_t* characterCount);
 
-	Uniform* glyphsTexture;
-	Uniform* projectionMatrix;
-	Uniform* characterScales;
-	Uniform* characterSizes;
-	Uniform* textOffset;
-	Uniform* textScale;
-	Uniform* textColor;
-	Uniform* outline;
-	Uniform* outlineColor;
-	Uniform* outlineScale;
-	Uniform* pixelDistanceScale;
-	Uniform* edgeValue;
-	Uniform *clipArea;
-	Uniform *blendArea;
+			Buffer::VertexArray vertexArray;
 
-};
+			Shader::Shader shader;
 
+			Shader::Uniform* glyphsTexture;
+			Shader::Uniform* projectionMatrix;
+			Shader::Uniform* characterScales;
+			Shader::Uniform* characterSizes;
+			Shader::Uniform* textOffset;
+			Shader::Uniform* textScale;
+			Shader::Uniform* textColor;
+			Shader::Uniform* outline;
+			Shader::Uniform* outlineColor;
+			Shader::Uniform* outlineScale;
+			Shader::Uniform* pixelDistanceScale;
+			Shader::Uniform* edgeValue;
+			Shader::Uniform *clipArea;
+			Shader::Uniform *blendArea;
+
+		};
+
+
+	}
+
+}
 
 #endif

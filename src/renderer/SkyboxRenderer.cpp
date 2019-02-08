@@ -1,43 +1,51 @@
 #include "SkyboxRenderer.h"
 #include "helper/GeometryHelper.h"
 
-std::string SkyboxRenderer::vertexPath = "skybox.vsh";
-std::string SkyboxRenderer::fragmentPath = "skybox.fsh";
+namespace Atlas {
 
-SkyboxRenderer::SkyboxRenderer() {
+	namespace Renderer {
 
-	GeometryHelper::GenerateCubeVertexArray(vertexArray);
+		std::string SkyboxRenderer::vertexPath = "skybox.vsh";
+		std::string SkyboxRenderer::fragmentPath = "skybox.fsh";
 
-	shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-	shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+		SkyboxRenderer::SkyboxRenderer() {
 
-	shader.Compile();
+			Helper::GeometryHelper::GenerateCubeVertexArray(vertexArray);
 
-	GetUniforms();
+			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
+			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
-}
+			shader.Compile();
 
-void SkyboxRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+			GetUniforms();
 
-	shader.Bind();
+		}
 
-	skyCubemap->SetValue(0);
+		void SkyboxRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
-	mat4 mvpMatrix = camera->projectionMatrix * glm::mat4(glm::mat3(camera->viewMatrix)) * scene->sky->skybox->matrix;
+			shader.Bind();
 
-	modelViewProjectionMatrix->SetValue(mvpMatrix);
+			skyCubemap->SetValue(0);
 
-	vertexArray.Bind();
+			mat4 mvpMatrix = camera->projectionMatrix * glm::mat4(glm::mat3(camera->viewMatrix)) * scene->sky->skybox->matrix;
 
-	scene->sky->skybox->cubemap->Bind(GL_TEXTURE0);
+			modelViewProjectionMatrix->SetValue(mvpMatrix);
 
-	glDrawArrays(GL_TRIANGLES, 0, 36);	
+			vertexArray.Bind();
 
-}
+			scene->sky->skybox->cubemap->Bind(GL_TEXTURE0);
 
-void SkyboxRenderer::GetUniforms() {
+			glDrawArrays(GL_TRIANGLES, 0, 36);
 
-	skyCubemap = shader.GetUniform("skyCubemap");
-	modelViewProjectionMatrix = shader.GetUniform("mvpMatrix");
+		}
+
+		void SkyboxRenderer::GetUniforms() {
+
+			skyCubemap = shader.GetUniform("skyCubemap");
+			modelViewProjectionMatrix = shader.GetUniform("mvpMatrix");
+
+		}
+
+	}
 
 }

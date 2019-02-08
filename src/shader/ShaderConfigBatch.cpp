@@ -1,49 +1,57 @@
 #include "ShaderConfigBatch.h"
 
-ShaderConfigBatch::ShaderConfigBatch(Shader* shader) : shader(shader) {
+namespace Atlas {
 
-	ID = 0;
+	namespace Shader {
 
-}
+		ShaderConfigBatch::ShaderConfigBatch(Shader* shader) : shader(shader) {
 
-ShaderConfigBatch::~ShaderConfigBatch() {
+			ID = 0;
 
-	delete shader;
-
-}
-
-void ShaderConfigBatch::Add(ShaderConfig* config) {
-
-	config->configBatchID = ID;
-	configs.push_back(config);
-
-}
-
-void ShaderConfigBatch::Remove(ShaderConfig* config) {
-
-	for (auto iterator = configs.begin(); iterator != configs.end(); iterator++) {
-		if (config == *iterator) {
-			configs.erase(iterator);
-			return;
 		}
+
+		ShaderConfigBatch::~ShaderConfigBatch() {
+
+			delete shader;
+
+		}
+
+		void ShaderConfigBatch::Add(ShaderConfig* config) {
+
+			config->configBatchID = ID;
+			configs.push_back(config);
+
+		}
+
+		void ShaderConfigBatch::Remove(ShaderConfig* config) {
+
+			for (auto iterator = configs.begin(); iterator != configs.end(); iterator++) {
+				if (config == *iterator) {
+					configs.erase(iterator);
+					return;
+				}
+			}
+
+		}
+
+		size_t ShaderConfigBatch::GetSize() {
+
+			return configs.size();
+
+		}
+
+		void ShaderConfigBatch::Bind() {
+
+			shader->Bind();
+
+		}
+
+		Shader* ShaderConfigBatch::GetShader() {
+
+			return shader;
+
+		}
+
 	}
-
-}
-
-size_t ShaderConfigBatch::GetSize() {
-
-	return configs.size();
-
-}
-
-void ShaderConfigBatch::Bind() {
-
-	shader->Bind();
-
-}
-
-Shader* ShaderConfigBatch::GetShader() {
-
-	return shader;
 
 }

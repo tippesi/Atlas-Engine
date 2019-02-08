@@ -12,25 +12,25 @@ namespace Atlas {
 
 	}
 
-	void FrustumCulling::CullActorsFromShadow(ILight *light, Scene *scene, Camera *camera) {
+	void FrustumCulling::CullActorsFromShadow(Lighting::ILight *light, Scene *scene, Camera *camera) {
 
 		switch (light->type) {
 			case AE_DIRECTIONAL_LIGHT:
-				CullActorsFromDirectionalShadow((DirectionalLight *) light, scene, camera);
+				CullActorsFromDirectionalShadow((Lighting::DirectionalLight*) light, scene, camera);
 				break;
 			case AE_POINT_LIGHT:
-				CullActorsFromPointShadow((PointLight *) light, scene, camera);
+				CullActorsFromPointShadow((Lighting::PointLight*) light, scene, camera);
 				break;
 		}
 
 	}
 
-	void FrustumCulling::CullActorsFromPointShadow(PointLight *light, Scene *scene, Camera *camera) {
+	void FrustumCulling::CullActorsFromPointShadow(Lighting::PointLight *light, Scene *scene, Camera *camera) {
 
 
 	}
 
-	void FrustumCulling::CullActorsFromDirectionalShadow(DirectionalLight *light, Scene *scene, Camera *camera) {
+	void FrustumCulling::CullActorsFromDirectionalShadow(Lighting::DirectionalLight *light, Scene *scene, Camera *camera) {
 
 
 	}

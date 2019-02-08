@@ -8,8 +8,8 @@ namespace Atlas {
 		rootNode = new SceneNode();
 		rootNode->AddToScene(this);
 
-		sky = new Sky();
-		postProcessing = new PostProcessing();
+		sky = new Lighting::Sky();
+		postProcessing = new PostProcessing::PostProcessing();
 
 		renderList = new RenderList(AE_GEOMETRY_RENDERLIST, 0);
 
@@ -23,7 +23,7 @@ namespace Atlas {
 
 	}
 
-	void Scene::Add(MeshActor *actor) {
+	void Scene::Add(Mesh::MeshActor *actor) {
 
 		for (auto &meshActorBatch : meshActorBatches) {
 
@@ -35,7 +35,7 @@ namespace Atlas {
 
 		}
 
-		auto meshActorBatch = new MeshActorBatch(actor->mesh);
+		auto meshActorBatch = new Mesh::MeshActorBatch(actor->mesh);
 		meshActorBatch->Add(actor);
 
 		meshActorBatches.push_back(meshActorBatch);
@@ -44,7 +44,7 @@ namespace Atlas {
 
 	}
 
-	void Scene::Remove(MeshActor *actor) {
+	void Scene::Remove(Mesh::MeshActor *actor) {
 
 		for (auto &meshActorBatch : meshActorBatches) {
 
@@ -57,13 +57,13 @@ namespace Atlas {
 
 	}
 
-	void Scene::Add(Terrain *terrain) {
+	void Scene::Add(Terrain::Terrain *terrain) {
 
 		terrains.push_back(terrain);
 
 	}
 
-	void Scene::Remove(Terrain *terrain) {
+	void Scene::Remove(Terrain::Terrain *terrain) {
 
 		for (auto iterator = terrains.begin(); iterator != terrains.end(); iterator++) {
 
@@ -76,7 +76,7 @@ namespace Atlas {
 
 	}
 
-	void Scene::Add(ILight *light) {
+	void Scene::Add(Lighting::ILight *light) {
 
 		lights.push_back(light);
 
@@ -84,7 +84,7 @@ namespace Atlas {
 
 	}
 
-	void Scene::Remove(ILight *light) {
+	void Scene::Remove(Lighting::ILight *light) {
 
 		for (auto iterator = lights.begin(); iterator != lights.end(); iterator++) {
 

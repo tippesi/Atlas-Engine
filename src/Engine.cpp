@@ -76,19 +76,19 @@ namespace Atlas {
 #endif
 
 		// Do the setup for all the classes that need static setup
-		Texture::CheckExtensions();
+		Texture::Texture::CheckExtensions();
 		Buffer::Buffer::CheckExtensions();
-		Texture::GetMaxAnisotropyLevel();
+		Texture::Texture::GetMaxAnisotropyLevel();
 
 		LockFramerate();
 
 		Loader::AssetLoader::Init();
 
 		Loader::AssetLoader::SetAssetDirectory(assetDirectory);
-		ShaderStage::SetSourceDirectory(shaderDirectory);
+		Shader::ShaderStage::SetSourceDirectory(shaderDirectory);
 
-		GeometryRenderer::InitShaderBatch();
-		ShadowRenderer::InitShaderBatch();
+		Renderer::OpaqueRenderer::InitShaderBatch();
+		Renderer::ShadowRenderer::InitShaderBatch();
 
 		return window;
 

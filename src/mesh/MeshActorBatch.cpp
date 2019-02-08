@@ -1,46 +1,54 @@
 #include "MeshActorBatch.h"
 
-MeshActorBatch::MeshActorBatch(Mesh* mesh) : mesh(mesh) {
+namespace Atlas {
 
-	changed = false;
+	namespace Mesh {
 
-}
+		MeshActorBatch::MeshActorBatch(Mesh* mesh) : mesh(mesh) {
 
-void MeshActorBatch::Add(MeshActor* actor) {
+			changed = false;
 
-	actors.push_back(actor);
-	changed = true;
+		}
 
-}
+		void MeshActorBatch::Add(MeshActor* actor) {
 
-void MeshActorBatch::Remove(MeshActor* actor) {
-
-	for (auto iterator = actors.begin(); iterator != actors.end(); iterator++) {
-
-		if (*iterator == actor) {
-			actors.erase(iterator);
+			actors.push_back(actor);
 			changed = true;
-			return;
+
+		}
+
+		void MeshActorBatch::Remove(MeshActor* actor) {
+
+			for (auto iterator = actors.begin(); iterator != actors.end(); iterator++) {
+
+				if (*iterator == actor) {
+					actors.erase(iterator);
+					changed = true;
+					return;
+				}
+
+			}
+
+		}
+
+		Mesh* MeshActorBatch::GetMesh() {
+
+			return mesh;
+
+		}
+
+		int32_t MeshActorBatch::GetSize() {
+
+			return (uint32_t)actors.size();
+
+		}
+
+		void MeshActorBatch::Clear() {
+
+			actors.clear();
+
 		}
 
 	}
-
-}
-
-Mesh* MeshActorBatch::GetMesh() {
-
-	return mesh;
-
-}
-
-int32_t MeshActorBatch::GetSize() {
-
-	return (uint32_t)actors.size();
-
-}
-
-void MeshActorBatch::Clear() {
-
-	actors.clear();
 
 }

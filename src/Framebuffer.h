@@ -40,7 +40,7 @@ namespace Atlas {
          * @param texture
          * @param target
          */
-		void AddComponentTexture(int32_t attachment, Texture2D *texture, uint32_t target = GL_FRAMEBUFFER);
+		void AddComponentTexture(int32_t attachment, Texture::Texture2D *texture, uint32_t target = GL_FRAMEBUFFER);
 
 		/**
          *
@@ -49,7 +49,7 @@ namespace Atlas {
          * @param layer
          * @param target
          */
-		void AddComponentTextureArray(int32_t attachment, Texture2DArray *texture, int32_t layer,
+		void AddComponentTextureArray(int32_t attachment, Texture::Texture2DArray *texture, int32_t layer,
 									  uint32_t target = GL_FRAMEBUFFER);
 
 		/**
@@ -59,28 +59,28 @@ namespace Atlas {
          * @param face
          * @param target
          */
-		void AddComponentCubemap(int32_t attachment, Cubemap *cubemap, int32_t face, uint32_t target = GL_FRAMEBUFFER);
+		void AddComponentCubemap(int32_t attachment, Texture::Cubemap *cubemap, int32_t face, uint32_t target = GL_FRAMEBUFFER);
 
 		/**
          *
          * @param attachment
          * @return
          */
-		Texture2D *GetComponentTexture(int32_t attachment);
+		Texture::Texture2D *GetComponentTexture(int32_t attachment);
 
 		/**
          *
          * @param attachment
          * @return
          */
-		Texture2DArray *GetComponentTextureArray(int32_t attachment);
+		Texture::Texture2DArray *GetComponentTextureArray(int32_t attachment);
 
 		/**
          *
          * @param attachment
          * @return
          */
-		Cubemap *GetComponentCubemap(int32_t attachment);
+		Texture::Cubemap *GetComponentCubemap(int32_t attachment);
 
 		///
 		/// \param width
@@ -105,9 +105,9 @@ namespace Atlas {
          * Represents an added component
          */
 		struct FramebufferComponent {
-			Texture2D *texture; // If the component is a Texture2D
-			Texture2DArray *textureArray; // If the component is a Texture2DArray
-			Cubemap *cubemap; // If the component is a Cubemap
+			Texture::Texture2D *texture; // If the component is a Texture2D
+			Texture::Texture2DArray *textureArray; // If the component is a Texture2DArray
+			Texture::Cubemap *cubemap; // If the component is a Cubemap
 			int32_t index; // The index in the cubemap (face) or the Texture2DArray layer
 			uint32_t target; // The target to which the component was set
 			bool internalTexture; // Whether or not this is a texture that was created internally

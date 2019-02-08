@@ -1,7 +1,15 @@
 #include "Sky.h"
 
-Sky::Sky() {
+namespace Atlas {
 
-	skybox = nullptr;
+	namespace Lighting {
+
+		Sky::Sky() {
+
+			skybox = nullptr;
+
+		}
+
+	}
 
 }

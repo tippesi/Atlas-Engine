@@ -5,53 +5,61 @@
 #include "../Kernel.h"
 #include "IRenderer.h"
 
-class DirectionalVolumetricRenderer : public IRenderer{
+namespace Atlas {
 
-public:
-    DirectionalVolumetricRenderer();
+	namespace Renderer {
 
-    virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+		class DirectionalVolumetricRenderer : public IRenderer{
 
-	static std::string volumetricVertexPath;
-	static std::string volumetricFragmentPath;
-	static std::string bilateralBlurVertexPath;
-	static std::string bilateralBlurFragmentPath;
+		public:
+			DirectionalVolumetricRenderer();
 
-private:
-    void GetVolumetricUniforms();
-    void GetBilateralBlurUniforms();
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-    Framebuffer* framebuffer;
+			static std::string volumetricVertexPath;
+			static std::string volumetricFragmentPath;
+			static std::string bilateralBlurVertexPath;
+			static std::string bilateralBlurFragmentPath;
 
-	Kernel blurKernel;
+		private:
+			void GetVolumetricUniforms();
+			void GetBilateralBlurUniforms();
 
-    Shader volumetricShader;
-    Shader bilateralBlurShader;
+			Framebuffer* framebuffer;
 
-    // Volumetric shader uniforms
-    Uniform* depthTexture;
-    Uniform* shadowTexture;
-    Uniform* lightDirection;
-    Uniform* inverseProjectionMatrix;
-    Uniform* sampleCount;
-	Uniform* scattering;
-	Uniform* framebufferResolution;
+			Kernel blurKernel;
 
-    Uniform* shadowCascadeCount;
+			Shader::Shader volumetricShader;
+			Shader::Shader bilateralBlurShader;
 
-    struct ShadowCascadeUniform {
-        Uniform* distance;
-        Uniform* lightSpace;
-    }cascades[MAX_SHADOW_CASCADE_COUNT];
+			// Volumetric shader uniforms
+			Shader::Uniform* depthTexture;
+			Shader::Uniform* shadowTexture;
+			Shader::Uniform* lightDirection;
+			Shader::Uniform* inverseProjectionMatrix;
+			Shader::Uniform* sampleCount;
+			Shader::Uniform* scattering;
+			Shader::Uniform* framebufferResolution;
 
-    // Bilateral blur shader uniforms
-    Uniform* diffuseTexture;
-	Uniform* bilateralDepthTexture;
-    Uniform* blurDirection;
-    Uniform* offsets;
-    Uniform* weights;
-    Uniform* kernelSize;
+			Shader::Uniform* shadowCascadeCount;
 
-};
+			struct ShadowCascadeUniform {
+				Shader::Uniform* distance;
+				Shader::Uniform* lightSpace;
+			}cascades[MAX_SHADOW_CASCADE_COUNT];
+
+			// Bilateral blur shader uniforms
+			Shader::Uniform* diffuseTexture;
+			Shader::Uniform* bilateralDepthTexture;
+			Shader::Uniform* blurDirection;
+			Shader::Uniform* offsets;
+			Shader::Uniform* weights;
+			Shader::Uniform* kernelSize;
+
+		};
+
+	}
+
+}
 
 #endif

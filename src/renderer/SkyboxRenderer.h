@@ -5,26 +5,34 @@
 #include "IRenderer.h"
 #include "buffer/VertexArray.h"
 
-class SkyboxRenderer : public IRenderer {
+namespace Atlas {
 
-public:
-	SkyboxRenderer();
+	namespace Renderer {
 
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+		class SkyboxRenderer : public IRenderer {
 
-	static std::string vertexPath;
-	static std::string fragmentPath;
+		public:
+			SkyboxRenderer();
 
-private:
-	void GetUniforms();
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	VertexArray vertexArray;
+			static std::string vertexPath;
+			static std::string fragmentPath;
 
-	Shader shader;
+		private:
+			void GetUniforms();
 
-	Uniform* skyCubemap;
-	Uniform* modelViewProjectionMatrix;
+			Buffer::VertexArray vertexArray;
 
-};
+			Shader::Shader shader;
+
+			Shader::Uniform* skyCubemap;
+			Shader::Uniform* modelViewProjectionMatrix;
+
+		};
+
+	}
+
+}
 
 #endif

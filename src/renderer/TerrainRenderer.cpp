@@ -1,106 +1,114 @@
 #include "TerrainRenderer.h"
 
-std::string TerrainRenderer::vertexPath = "terrain/terrain.vsh";
-std::string TerrainRenderer::tessControlPath = "terrain/terrain.tcsh";
-std::string TerrainRenderer::tessEvalPath = "terrain/terrain.tesh";
-std::string TerrainRenderer::geometryPath = "terrain/terrain.gsh";
-std::string TerrainRenderer::fragmentPath = "terrain/terrain.fsh";
+namespace Atlas {
 
-TerrainRenderer::TerrainRenderer() {
+	namespace Renderer {
 
-	nearShader.AddStage(AE_VERTEX_STAGE, vertexPath);
-	nearShader.AddStage(AE_TESSELLATION_CONTROL_STAGE, tessControlPath);
-	nearShader.AddStage(AE_TESSELLATION_EVALUATION_STAGE, tessEvalPath);
-	// nearShader.AddStage(AE_GEOMETRY_STAGE, geometryPath);
-	nearShader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+		std::string TerrainRenderer::vertexPath = "terrain/terrain.vsh";
+		std::string TerrainRenderer::tessControlPath = "terrain/terrain.tcsh";
+		std::string TerrainRenderer::tessEvalPath = "terrain/terrain.tesh";
+		std::string TerrainRenderer::geometryPath = "terrain/terrain.gsh";
+		std::string TerrainRenderer::fragmentPath = "terrain/terrain.fsh";
 
-	// nearShader.AddMacro("GEOMETRY_SHADER");
+		TerrainRenderer::TerrainRenderer() {
 
-	nearShader.Compile();
+			nearShader.AddStage(AE_VERTEX_STAGE, vertexPath);
+			nearShader.AddStage(AE_TESSELLATION_CONTROL_STAGE, tessControlPath);
+			nearShader.AddStage(AE_TESSELLATION_EVALUATION_STAGE, tessEvalPath);
+			// nearShader.AddStage(AE_GEOMETRY_STAGE, geometryPath);
+			nearShader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
-	GetUniforms();
+			// nearShader.AddMacro("GEOMETRY_SHADER");
 
-}
+			nearShader.Compile();
 
-void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+			GetUniforms();
 
-	nearShader.Bind();
-	heightField->SetValue(0);
-	normalMap->SetValue(1);
-	diffuseMap->SetValue(2);
-	displacementMap->SetValue(3);
+		}
 
-	viewMatrix->SetValue(camera->viewMatrix);
-	projectionMatrix->SetValue(camera->projectionMatrix);
-	cameraLocation->SetValue(camera->location);
-	frustumPlanes->SetValue(camera->frustum.planes, 6);
+		void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
-	for (Terrain*& terrain : scene->terrains) {
+			nearShader.Bind();
+			heightField->SetValue(0);
+			normalMap->SetValue(1);
+			diffuseMap->SetValue(2);
+			displacementMap->SetValue(3);
 
-		modelMatrix->SetValue(mat4(1.0f));
+			viewMatrix->SetValue(camera->viewMatrix);
+			projectionMatrix->SetValue(camera->projectionMatrix);
+			cameraLocation->SetValue(camera->location);
+			frustumPlanes->SetValue(camera->frustum.planes, 6);
 
-		terrain->Bind();
+			for (auto& terrain : scene->terrains) {
 
-		heightScale->SetValue(terrain->heightScale);
+				modelMatrix->SetValue(mat4(1.0f));
 
-		tessellationFactor->SetValue(terrain->tessellationFactor);
-		tessellationSlope->SetValue(terrain->tessellationSlope);
-		tessellationShift->SetValue(terrain->tessellationShift);
-		maxTessellationLevel->SetValue(terrain->maxTessellationLevel);
+				terrain->Bind();
 
-		displacementDistance->SetValue(terrain->displacementDistance);
+				heightScale->SetValue(terrain->heightScale);
 
-		for (TerrainNode*& node : terrain->renderList) {
+				tessellationFactor->SetValue(terrain->tessellationFactor);
+				tessellationSlope->SetValue(terrain->tessellationSlope);
+				tessellationShift->SetValue(terrain->tessellationShift);
+				maxTessellationLevel->SetValue(terrain->maxTessellationLevel);
 
-			float patchScale = node->sideLength / 8.0f;
+				displacementDistance->SetValue(terrain->displacementDistance);
 
-			node->cell->heightField->Bind(GL_TEXTURE0);
-			node->cell->normalMap->Bind(GL_TEXTURE1);
-			node->cell->diffuseMap->Bind(GL_TEXTURE2);
-			node->cell->displacementMap->Bind(GL_TEXTURE3);
+				for (auto& node : terrain->renderList) {
 
-			displacementScale->SetValue(.15f);
+					float patchScale = node->sideLength / 8.0f;
 
-			nodeLocation->SetValue(node->location);
-			nodeSideLength->SetValue(node->sideLength);
+					node->cell->heightField->Bind(GL_TEXTURE0);
+					node->cell->normalMap->Bind(GL_TEXTURE1);
+					node->cell->diffuseMap->Bind(GL_TEXTURE2);
+					node->cell->displacementMap->Bind(GL_TEXTURE3);
 
-			tileScale->SetValue(terrain->resolution * powf(2.0f, (float)(terrain->LoDCount - node->cell->LoD)));
-			patchOffsetsScale->SetValue(patchScale);
+					displacementScale->SetValue(.15f);
 
-			glDrawArraysInstanced(GL_PATCHES, 0, terrain->patchVertexCount, 64);
+					nodeLocation->SetValue(node->location);
+					nodeSideLength->SetValue(node->sideLength);
+
+					tileScale->SetValue(terrain->resolution * powf(2.0f, (float)(terrain->LoDCount - node->cell->LoD)));
+					patchOffsetsScale->SetValue(patchScale);
+
+					glDrawArraysInstanced(GL_PATCHES, 0, terrain->patchVertexCount, 64);
+
+				}
+
+			}
+
+		}
+
+		void TerrainRenderer::GetUniforms() {
+
+			heightField = nearShader.GetUniform("heightField");
+			normalMap = nearShader.GetUniform("normalMap");
+			diffuseMap = nearShader.GetUniform("diffuseMap");
+			displacementMap = nearShader.GetUniform("displacementMap");
+			heightScale = nearShader.GetUniform("heightScale");
+
+			offset = nearShader.GetUniform("offset");
+			tileScale = nearShader.GetUniform("tileScale");
+			modelMatrix = nearShader.GetUniform("mMatrix");
+			viewMatrix = nearShader.GetUniform("vMatrix");
+			projectionMatrix = nearShader.GetUniform("pMatrix");
+			cameraLocation = nearShader.GetUniform("cameraLocation");
+			nodeSideLength = nearShader.GetUniform("nodeSideLength");
+			nodeLocation = nearShader.GetUniform("nodeLocation");
+			patchOffsetsScale = nearShader.GetUniform("patchOffsetsScale");
+
+			tessellationFactor = nearShader.GetUniform("tessellationFactor");
+			tessellationSlope = nearShader.GetUniform("tessellationSlope");
+			tessellationShift = nearShader.GetUniform("tessellationShift");
+			maxTessellationLevel = nearShader.GetUniform("maxTessellationLevel");
+
+			displacementScale = nearShader.GetUniform("displacementScale");
+			displacementDistance = nearShader.GetUniform("displacementDistance");
+
+			frustumPlanes = nearShader.GetUniform("frustumPlanes");
 
 		}
 
 	}
-
-}
-
-void TerrainRenderer::GetUniforms() {
-
-	heightField = nearShader.GetUniform("heightField");
-	normalMap = nearShader.GetUniform("normalMap");
-	diffuseMap = nearShader.GetUniform("diffuseMap");
-	displacementMap = nearShader.GetUniform("displacementMap");
-	heightScale = nearShader.GetUniform("heightScale");
-
-	offset = nearShader.GetUniform("offset");
-	tileScale = nearShader.GetUniform("tileScale");
-	modelMatrix = nearShader.GetUniform("mMatrix");
-	viewMatrix = nearShader.GetUniform("vMatrix");
-	projectionMatrix = nearShader.GetUniform("pMatrix");
-	cameraLocation = nearShader.GetUniform("cameraLocation");
-	nodeSideLength = nearShader.GetUniform("nodeSideLength");
-	nodeLocation = nearShader.GetUniform("nodeLocation");
-	patchOffsetsScale = nearShader.GetUniform("patchOffsetsScale");
-
-	tessellationFactor = nearShader.GetUniform("tessellationFactor");
-	tessellationSlope = nearShader.GetUniform("tessellationSlope");
-	tessellationShift = nearShader.GetUniform("tessellationShift");
-	maxTessellationLevel = nearShader.GetUniform("maxTessellationLevel");
-
-	displacementScale = nearShader.GetUniform("displacementScale");
-	displacementDistance = nearShader.GetUniform("displacementDistance");
-
-	frustumPlanes = nearShader.GetUniform("frustumPlanes");
 
 }

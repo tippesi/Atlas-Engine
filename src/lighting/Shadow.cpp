@@ -3,81 +3,89 @@
 #include "DirectionalLight.h"
 #include "PointLight.h"
 
-Shadow::Shadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection) : 
-	distance(distance), bias(bias), resolution(resolution) {
+namespace Atlas {
 
-	cascadeCount = glm::min(cascadeCount, MAX_SHADOW_CASCADE_COUNT);
-	splitCorrection = glm::clamp(splitCorrection, 0.0f, 1.0f);
-	componentCount = cascadeCount;
-	this->splitCorrection = splitCorrection;
+	namespace Lighting {
 
-	sampleCount = 16;
-	sampleRange = 2.2f;
-	useCubemap = false;
+		Shadow::Shadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection) :
+				distance(distance), bias(bias), resolution(resolution) {
 
-	components = new ShadowComponent[cascadeCount];
+			cascadeCount = glm::min(cascadeCount, MAX_SHADOW_CASCADE_COUNT);
+			splitCorrection = glm::clamp(splitCorrection, 0.0f, 1.0f);
+			componentCount = cascadeCount;
+			this->splitCorrection = splitCorrection;
 
-	maps = new Texture2DArray(GL_UNSIGNED_INT, resolution, resolution, cascadeCount,
-			GL_DEPTH_COMPONENT24, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+			sampleCount = 16;
+			sampleRange = 2.2f;
+			useCubemap = false;
 
-	maps->Bind(GL_TEXTURE0);
+			components = new ShadowComponent[cascadeCount];
 
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+			maps = new Texture::Texture2DArray(GL_UNSIGNED_INT, resolution, resolution, cascadeCount,
+									  GL_DEPTH_COMPONENT24, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
-	Update();
+			maps->Bind(GL_TEXTURE0);
 
-}
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
-Shadow::Shadow(float distance, float bias, int32_t resolution, bool useCubemap) :
-	distance(distance), bias(bias), resolution(resolution), useCubemap(useCubemap) {
+			Update();
 
-	sampleCount = 16;
-	sampleRange = 2;
-	splitCorrection = 0.0f;
-	
+		}
 
-	if (useCubemap) {
-	    componentCount = 6;
+		Shadow::Shadow(float distance, float bias, int32_t resolution, bool useCubemap) :
+				distance(distance), bias(bias), resolution(resolution), useCubemap(useCubemap) {
 
-	    cubemap  = new Cubemap(GL_UNSIGNED_INT, resolution, resolution, GL_DEPTH_COMPONENT24,
-	    		GL_CLAMP_TO_EDGE, GL_LINEAR, false);
+			sampleCount = 16;
+			sampleRange = 2;
+			splitCorrection = 0.0f;
 
-		cubemap->Bind(GL_TEXTURE0);
 
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+			if (useCubemap) {
+				componentCount = 6;
+
+				cubemap  = new Texture::Cubemap(GL_UNSIGNED_INT, resolution, resolution, GL_DEPTH_COMPONENT24,
+									   GL_CLAMP_TO_EDGE, GL_LINEAR, false);
+
+				cubemap->Bind(GL_TEXTURE0);
+
+				glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+				glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+
+			}
+			else {
+				componentCount = 1;
+
+				maps = new Texture::Texture2DArray(GL_UNSIGNED_INT, resolution, resolution, 1,
+										  GL_DEPTH_COMPONENT24, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+
+				maps->Bind(GL_TEXTURE0);
+
+				glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+				glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+
+			}
+
+			components = new ShadowComponent[componentCount];
+
+			Update();
+
+		}
+
+		void Shadow::Update() {
+
+			update = true;
+
+		}
+
+		Shadow::~Shadow() {
+
+			delete[] components;
+			delete maps;
+			delete cubemap;
+
+		}
 
 	}
-	else {
-        componentCount = 1;
-
-        maps = new Texture2DArray(GL_UNSIGNED_INT, resolution, resolution, 1,
-        		GL_DEPTH_COMPONENT24, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-
-		maps->Bind(GL_TEXTURE0);
-
-		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-
-	}
-
-    components = new ShadowComponent[componentCount];
-
-	Update();
-
-}
-
-void Shadow::Update() {
-
-	update = true;
-
-}
-
-Shadow::~Shadow() {
-
-	delete[] components;
-	delete maps;
-	delete cubemap;
 
 }

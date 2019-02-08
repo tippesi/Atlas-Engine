@@ -26,42 +26,43 @@ private:
 
 	void QuitEventHandler();
 
-	void ControllerDeviceEventHandler(Events::ControllerDeviceEvent event);
+	void ControllerDeviceEventHandler(Atlas::Events::ControllerDeviceEvent event);
 
-	void MouseButtonEventHandler(Events::MouseButtonEvent event);
+	void MouseButtonEventHandler(Atlas::Events::MouseButtonEvent event);
 
-	void TextInputEventHandler(Events::TextInputEvent event);
+	void TextInputEventHandler(Atlas::Events::TextInputEvent event);
 
-	Window* window;
+	Atlas::Window* window;
 
-	MouseHandler* mouseHandler;
-	KeyboardHandler* keyboardHandler;
-	ControllerHandler* controllerHandler;
+	Atlas::Input::MouseHandler* mouseHandler;
+	Atlas::Input::KeyboardHandler* keyboardHandler;
+	Atlas::Input::ControllerHandler* controllerHandler;
 
-	RenderTarget* renderTarget;
-	MasterRenderer* masterRenderer;
+	Atlas::RenderTarget* renderTarget;
+	Atlas::Renderer::MasterRenderer* masterRenderer;
 
-	Font* font;
+	Atlas::Font* font;
 
-	Camera* camera;
-	Scene* scene;
+	Atlas::Camera* camera;
+	Atlas::Scene* scene;
 
-	Cubemap* skybox;
-	Terrain* terrain;
-	Mesh* sponzaMesh;
-	Mesh* treeMesh;
-	Mesh* cubeMesh;
+	Atlas::Texture::Cubemap* skybox;
+	Atlas::Terrain::Terrain* terrain;
 
-	MeshActor* cubeActor;
-	MeshActor* treeActor;
-	MeshActor* sponzaActor;
+	Atlas::Mesh::Mesh* sponzaMesh;
+	Atlas::Mesh::Mesh* treeMesh;
+	Atlas::Mesh::Mesh* cubeMesh;
 
-	Texture2D* terrainDiffuseMap;
-	Texture2D* terrainDisplacementMap;
+	Atlas::Mesh::MeshActor* cubeActor;
+	Atlas::Mesh::MeshActor* treeActor;
+	Atlas::Mesh::MeshActor* sponzaActor;
 
-	Texture2D* smileyTexture;
+	Atlas::Texture::Texture2D* terrainDiffuseMap;
+	Atlas::Texture::Texture2D* terrainDisplacementMap;
 
-	DirectionalLight* directionalLight;
+	Atlas::Texture::Texture2D* smileyTexture;
+
+	Atlas::Lighting::DirectionalLight* directionalLight;
 
 	uint32_t renderingStart;
 	uint32_t frameCount;

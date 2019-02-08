@@ -16,12 +16,12 @@ namespace Atlas {
 
 		static void CullLightsFromScene(Scene *scene, Camera *camera);
 
-		static void CullActorsFromShadow(ILight *light, Scene *scene, Camera *camera);
+		static void CullActorsFromShadow(Lighting::ILight *light, Scene *scene, Camera *camera);
 
 	private:
-		static void CullActorsFromPointShadow(PointLight *light, Scene *scene, Camera *camera);
+		static void CullActorsFromPointShadow(Lighting::PointLight *light, Scene *scene, Camera *camera);
 
-		static void CullActorsFromDirectionalShadow(DirectionalLight *light, Scene *scene, Camera *camera);
+		static void CullActorsFromDirectionalShadow(Lighting::DirectionalLight *light, Scene *scene, Camera *camera);
 
 	};
 

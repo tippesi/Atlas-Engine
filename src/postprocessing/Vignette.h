@@ -3,23 +3,31 @@
 
 #include "../System.h"
 
-class Vignette {
+namespace Atlas {
 
-public:
-	///
-	/// \param offset
-	/// \param power
-	/// \param strength
-	/// \param color
-	Vignette(float offset, float power, float strength, vec3 color = vec3(0.0f)) :
-		offset(offset), power(power), strength(strength), color(color) { };
+	namespace PostProcessing {
 
-	float offset;
-	float power;
-	float strength;
+		class Vignette {
 
-	vec3 color;
+		public:
+			///
+			/// \param offset
+			/// \param power
+			/// \param strength
+			/// \param color
+			Vignette(float offset, float power, float strength, vec3 color = vec3(0.0f)) :
+					offset(offset), power(power), strength(strength), color(color) { };
 
-};
+			float offset;
+			float power;
+			float strength;
+
+			vec3 color;
+
+		};
+
+	}
+
+}
 
 #endif

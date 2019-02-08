@@ -8,7 +8,7 @@ namespace Atlas {
 
 	namespace Loader {
 
-		MeshData* ModelLoader::LoadMesh(std::string filename) {
+		Mesh::MeshData* ModelLoader::LoadMesh(std::string filename) {
 
 			std::string directoryPath(filename);
 
@@ -46,7 +46,7 @@ namespace Atlas {
 															   aiProcess_LimitBoneWeights |
 															   aiProcess_ImproveCacheLocality);
 
-			MeshData* meshData = new MeshData();
+			auto meshData = new Mesh::MeshData();
 
 			int32_t indexCount = 0;
 			int32_t vertexCount = 0;
@@ -107,9 +107,9 @@ namespace Atlas {
 
 			for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 
-				Material* material = LoadMaterial(scene->mMaterials[i], directoryPath);
+				auto material = LoadMaterial(scene->mMaterials[i], directoryPath);
 
-				MeshSubData* subData = new MeshSubData;
+				auto subData = new Mesh::MeshSubData;
 				subData->materialIndex = i;
 				subData->indicesOffset = usedFaces * 3;
 
@@ -181,9 +181,9 @@ namespace Atlas {
 
 		}
 
-		Material* ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, std::string directory) {
+		Mesh::Material* ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, std::string directory) {
 
-			Material* material = new Material();
+			auto material = new Mesh::Material();
 
 			aiColor3D diffuse;
 			aiColor3D specular;

@@ -1,43 +1,51 @@
 #include "ShaderConfig.h"
 
-ShaderConfig::ShaderConfig() {
+namespace Atlas {
 
-	configBatchID = 0;
-	added = false;
+	namespace Shader {
 
-}
+		ShaderConfig::ShaderConfig() {
 
-void ShaderConfig::AddMacro(std::string macro) {
+			configBatchID = 0;
+			added = false;
 
-	macros.push_back(macro);
-
-}
-
-void ShaderConfig::RemoveMacro(std::string macro) {
-
-	for (auto iterator = macros.begin(); iterator != macros.end(); iterator++) {
-		if (macro == *iterator) {
-			macros.erase(iterator);
-			return;
 		}
-	}
 
-}
+		void ShaderConfig::AddMacro(std::string macro) {
 
-bool ShaderConfig::HasMacro(std::string macro) {
+			macros.push_back(macro);
 
-	for (auto& compMacro : macros) {
-		if (compMacro == macro) {
-			return true;
 		}
+
+		void ShaderConfig::RemoveMacro(std::string macro) {
+
+			for (auto iterator = macros.begin(); iterator != macros.end(); iterator++) {
+				if (macro == *iterator) {
+					macros.erase(iterator);
+					return;
+				}
+			}
+
+		}
+
+		bool ShaderConfig::HasMacro(std::string macro) {
+
+			for (auto& compMacro : macros) {
+				if (compMacro == macro) {
+					return true;
+				}
+			}
+
+			return false;
+
+		}
+
+		void ShaderConfig::ClearMacros() {
+
+			macros.clear();
+
+		}
+
 	}
-
-	return false;
-
-}
-
-void ShaderConfig::ClearMacros() {
-
-	macros.clear();
 
 }

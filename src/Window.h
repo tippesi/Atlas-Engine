@@ -59,7 +59,7 @@ namespace Atlas {
          * Sets the icon of the window.
          * @param icon A pointer to a Texture object
          */
-		void SetIcon(Texture2D *icon);
+		void SetIcon(Texture::Texture2D *icon);
 
 		/**
          * Resets the position of the window to the given screen coordinates.

@@ -46,7 +46,7 @@ namespace Atlas {
 
 	}
 
-	void Window::SetIcon(Texture2D *icon) {
+	void Window::SetIcon(Texture::Texture2D *icon) {
 
 		auto data = icon->GetData();
 

@@ -14,86 +14,93 @@
 #define AE_TESSELLATION_EVALUATION_STAGE GL_TESS_EVALUATION_SHADER
 #define AE_COMPUTE_STAGE GL_COMPUTE_SHADER
 
-/**
- * A shader stage is a module/stage of a shader, e.g it might be a vertex shader.
- */
-class ShaderStage {
+namespace Atlas {
 
-public:
-	/**
-	 * Constructs a ShaderStage object.
-	 * @param type The type of the stage. See {@link ShaderStage.h} for more.
-	 * @param filename The name of the GLSL file
-	 */
-	ShaderStage(int32_t type, std::string filename);
+	namespace Shader {
 
-	/**
-	 * Constructs a ShaderStage object.
-	 * @param source A pointer to a valid ShaderStage object.
-	 */
-	ShaderStage(ShaderStage* source);
+		/**
+		 * A shader stage is a module/stage of a shader, e.g it might be a vertex shader.
+		 */
+		class ShaderStage {
 
-	/**
-	 * Destructs a ShaderStage object.
-	 */
-	~ShaderStage();
+		public:
+			/**
+             * Constructs a ShaderStage object.
+             * @param type The type of the stage. See {@link ShaderStage.h} for more.
+             * @param filename The name of the GLSL file
+             */
+			ShaderStage(int32_t type, std::string filename);
 
-	/**
-	 * Reloads the shader stage from the disk.
-	 * @return True if it had to be reloaded (timestamp), false otherwise.
-	 */
-	bool Reload();
+			/**
+             * Constructs a ShaderStage object.
+             * @param source A pointer to a valid ShaderStage object.
+             */
+			ShaderStage(ShaderStage* source);
 
-    /**
-     * Adds a macro to the shader stage.
-     * @param macro The macro to be added.
-     */
-	void AddMacro(std::string macro);
+			/**
+             * Destructs a ShaderStage object.
+             */
+			~ShaderStage();
 
-    /**
-     * Removes a macro from the shader stage.
-     * @param macro The macro to be removed.
-     */
-	void RemoveMacro(std::string macro);
+			/**
+             * Reloads the shader stage from the disk.
+             * @return True if it had to be reloaded (timestamp), false otherwise.
+             */
+			bool Reload();
 
-	/**
-	 * Returns a ShaderConstant object for a specific constant of the shader stage.
-	 * @param constant The name of the constant.
-	 * @return A pointer to a ShaderConstant object if valid. Nullptr otherwise.
-	 */
-	ShaderConstant* GetConstant(std::string constant);
+			/**
+             * Adds a macro to the shader stage.
+             * @param macro The macro to be added.
+             */
+			void AddMacro(std::string macro);
 
-	/**
-    * Compiles the shader stage.
-    * @return True if successful, false otherwise.
-    */
-	bool Compile();
+			/**
+             * Removes a macro from the shader stage.
+             * @param macro The macro to be removed.
+             */
+			void RemoveMacro(std::string macro);
 
-	/**
-	 * Sets the root shader source/binary directory for all shader files.
-	 * @param directory The path to the directory
-	 */
-	static void SetSourceDirectory(std::string directory);
+			/**
+             * Returns a ShaderConstant object for a specific constant of the shader stage.
+             * @param constant The name of the constant.
+             * @return A pointer to a ShaderConstant object if valid. Nullptr otherwise.
+             */
+			ShaderConstant* GetConstant(std::string constant);
 
-	int32_t ID;
-	int32_t type;
+			/**
+            * Compiles the shader stage.
+            * @return True if successful, false otherwise.
+            */
+			bool Compile();
 
-	std::string filename;
+			/**
+             * Sets the root shader source/binary directory for all shader files.
+             * @param directory The path to the directory
+             */
+			static void SetSourceDirectory(std::string directory);
 
-private:
-	std::string ReadShaderFile(std::string filename, bool mainFile);
+			int32_t ID;
+			int32_t type;
 
-	time_t GetLastModified();
+			std::string filename;
 
-	std::string code;
-	std::list<std::string> macros;
-	std::list<ShaderConstant*> constants;
+		private:
+			std::string ReadShaderFile(std::string filename, bool mainFile);
 
-	time_t lastModified;
+			time_t GetLastModified();
 
-	static std::string sourceDirectory;
+			std::string code;
+			std::list<std::string> macros;
+			std::list<ShaderConstant*> constants;
 
-};
+			time_t lastModified;
 
+			static std::string sourceDirectory;
+
+		};
+
+	}
+
+}
 
 #endif

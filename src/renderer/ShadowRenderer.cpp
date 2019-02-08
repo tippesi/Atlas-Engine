@@ -1,115 +1,123 @@
 #include "ShadowRenderer.h"
 
-std::string ShadowRenderer::vertexPath = "shadowmapping.vsh";
-std::string ShadowRenderer::fragmentPath = "shadowmapping.fsh";
+namespace Atlas {
 
-ShaderBatch ShadowRenderer::shaderBatch;
-std::mutex ShadowRenderer::shaderBatchMutex;
+	namespace Renderer {
 
-ShadowRenderer::ShadowRenderer() {
+		std::string ShadowRenderer::vertexPath = "shadowmapping.vsh";
+		std::string ShadowRenderer::fragmentPath = "shadowmapping.fsh";
 
-	framebuffer = new Framebuffer(0, 0);
+		Shader::ShaderBatch ShadowRenderer::shaderBatch;
+		std::mutex ShadowRenderer::shaderBatchMutex;
 
-	arrayMapUniform = shaderBatch.GetUniform("arrayMap");
-	diffuseMapUniform = shaderBatch.GetUniform("diffuseMap");
-	modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
-	lightSpaceMatrixUniform = shaderBatch.GetUniform("lightSpaceMatrix");
+		ShadowRenderer::ShadowRenderer() {
 
-}
+			framebuffer = new Framebuffer(0, 0);
 
+			arrayMapUniform = shaderBatch.GetUniform("arrayMap");
+			diffuseMapUniform = shaderBatch.GetUniform("diffuseMap");
+			modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
+			lightSpaceMatrixUniform = shaderBatch.GetUniform("lightSpaceMatrix");
 
-void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
-
-	std::lock_guard<std::mutex> guard(shaderBatchMutex);
-
-	bool backFaceCulling = true;
-
-	framebuffer->Bind();
-
-	for (auto& light : scene->lights) {
-
-		if (light->GetShadow() == nullptr) {
-			continue;
 		}
 
-		if (!light->GetShadow()->update) {
-			continue;
-		}
 
-		light->GetShadow()->update = false;
+		void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
-		// We expect every cascade to have the same resolution
-		glViewport(0, 0, light->GetShadow()->resolution, light->GetShadow()->resolution);
+			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
-		for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
+			bool backFaceCulling = true;
 
-			ShadowComponent* component = &light->GetShadow()->components[i];
+			framebuffer->Bind();
 
-			if (light->GetShadow()->useCubemap) {
-				framebuffer->AddComponentCubemap(GL_DEPTH_ATTACHMENT, light->GetShadow()->cubemap, i);
-			}
-			else {
-				framebuffer->AddComponentTextureArray(GL_DEPTH_ATTACHMENT, light->GetShadow()->maps, i);
-			}
+			for (auto& light : scene->lights) {
 
-			glClear(GL_DEPTH_BUFFER_BIT);
+				if (light->GetShadow() == nullptr) {
+					continue;
+				}
 
-			for (auto shaderConfigBatch : shaderBatch.configBatches) {
+				if (!light->GetShadow()->update) {
+					continue;
+				}
 
-				shaderBatch.Bind(shaderConfigBatch->ID);
+				light->GetShadow()->update = false;
 
-				arrayMapUniform->SetValue(0);
-				diffuseMapUniform->SetValue(0);
+				// We expect every cascade to have the same resolution
+				glViewport(0, 0, light->GetShadow()->resolution, light->GetShadow()->resolution);
 
-				mat4 lightSpace = component->projectionMatrix * component->viewMatrix;
+				for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
 
-				lightSpaceMatrixUniform->SetValue(lightSpace);
+					auto component = &light->GetShadow()->components[i];
 
-				for (auto& meshActorBatch : scene->meshActorBatches) {
-
-					Mesh* mesh = meshActorBatch->GetMesh();
-					mesh->Bind();
-
-					if (!mesh->cullBackFaces && backFaceCulling) {
-						glDisable(GL_CULL_FACE);
-						backFaceCulling = false;
+					if (light->GetShadow()->useCubemap) {
+						framebuffer->AddComponentCubemap(GL_DEPTH_ATTACHMENT, light->GetShadow()->cubemap, i);
 					}
-					else if (mesh->cullBackFaces && !backFaceCulling) {
-						glEnable(GL_CULL_FACE);
-						backFaceCulling = true;
+					else {
+						framebuffer->AddComponentTextureArray(GL_DEPTH_ATTACHMENT, light->GetShadow()->maps, i);
 					}
 
-					for (auto subData : mesh->data->subData) {
+					glClear(GL_DEPTH_BUFFER_BIT);
 
-						Material* material = mesh->data->materials[subData->materialIndex];
+					for (auto shaderConfigBatch : shaderBatch.configBatches) {
 
-						if (material->shadowConfig.configBatchID != shaderConfigBatch->ID) {
-							continue;
-						}
+						shaderBatch.Bind(shaderConfigBatch->ID);
 
-						if (material->HasDiffuseMap()) {
-							if (material->HasArrayMap()) {
-								if (material->arrayMap->channels == 4) {
-									material->arrayMap->Bind(GL_TEXTURE0);
+						arrayMapUniform->SetValue(0);
+						diffuseMapUniform->SetValue(0);
+
+						mat4 lightSpace = component->projectionMatrix * component->viewMatrix;
+
+						lightSpaceMatrixUniform->SetValue(lightSpace);
+
+						for (auto& meshActorBatch : scene->meshActorBatches) {
+
+							auto mesh = meshActorBatch->GetMesh();
+							mesh->Bind();
+
+							if (!mesh->cullBackFaces && backFaceCulling) {
+								glDisable(GL_CULL_FACE);
+								backFaceCulling = false;
+							}
+							else if (mesh->cullBackFaces && !backFaceCulling) {
+								glEnable(GL_CULL_FACE);
+								backFaceCulling = true;
+							}
+
+							for (auto subData : mesh->data->subData) {
+
+								auto material = mesh->data->materials[subData->materialIndex];
+
+								if (material->shadowConfig.configBatchID != shaderConfigBatch->ID) {
+									continue;
 								}
-							}
-							else {
-								if (material->diffuseMap->channels == 4) {
-									material->diffuseMap->Bind(GL_TEXTURE0);
+
+								if (material->HasDiffuseMap()) {
+									if (material->HasArrayMap()) {
+										if (material->arrayMap->channels == 4) {
+											material->arrayMap->Bind(GL_TEXTURE0);
+										}
+									}
+									else {
+										if (material->diffuseMap->channels == 4) {
+											material->diffuseMap->Bind(GL_TEXTURE0);
+										}
+									}
 								}
+
+								for (auto actor : meshActorBatch->actors) {
+
+									if (!actor->castShadow) {
+										continue;
+									}
+
+									modelMatrixUniform->SetValue(actor->transformedMatrix);
+
+									glDrawElements(mesh->data->primitiveType, subData->numIndices, mesh->data->indices->GetType(),
+												   (void*)(subData->indicesOffset * mesh->data->indices->GetElementSize()));
+
+								}
+
 							}
-						}
-
-						for (auto actor : meshActorBatch->actors) {
-
-							if (!actor->castShadow) {
-								continue;
-							}
-
-							modelMatrixUniform->SetValue(actor->transformedMatrix);
-
-							glDrawElements(mesh->data->primitiveType, subData->numIndices, mesh->data->indices->GetType(),
-								(void*)(subData->indicesOffset * mesh->data->indices->GetElementSize()));
 
 						}
 
@@ -121,31 +129,31 @@ void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera
 
 		}
 
+		void ShadowRenderer::InitShaderBatch() {
+
+			std::lock_guard<std::mutex> guard(shaderBatchMutex);
+
+			shaderBatch.AddStage(AE_VERTEX_STAGE, vertexPath);
+			shaderBatch.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+
+		}
+
+		void ShadowRenderer::AddConfig(Shader::ShaderConfig* config) {
+
+			std::lock_guard<std::mutex> guard(shaderBatchMutex);
+
+			shaderBatch.AddConfig(config);
+
+		}
+
+		void ShadowRenderer::RemoveConfig(Shader::ShaderConfig* config) {
+
+			std::lock_guard<std::mutex> guard(shaderBatchMutex);
+
+			shaderBatch.RemoveConfig(config);
+
+		}
+
 	}
-
-}
-
-void ShadowRenderer::InitShaderBatch() {
-
-	std::lock_guard<std::mutex> guard(shaderBatchMutex);
-
-	shaderBatch.AddStage(AE_VERTEX_STAGE, vertexPath);
-	shaderBatch.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
-
-}
-
-void ShadowRenderer::AddConfig(ShaderConfig* config) {
-
-	std::lock_guard<std::mutex> guard(shaderBatchMutex);
-
-	shaderBatch.AddConfig(config);
-
-}
-
-void ShadowRenderer::RemoveConfig(ShaderConfig* config) {
-
-	std::lock_guard<std::mutex> guard(shaderBatchMutex);
-
-	shaderBatch.RemoveConfig(config);
 
 }

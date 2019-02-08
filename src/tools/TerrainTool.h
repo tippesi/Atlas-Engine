@@ -24,7 +24,7 @@ namespace Atlas {
              * @return A pointer to a Terrain object.
              * @warning The input should correspond to the terrain specifications
              */
-			static Terrain* GenerateTerrain(Loader::Image16& heightImage, int32_t rootNodeCount, int32_t LoDCount,
+			static Terrain::Terrain* GenerateTerrain(Loader::Image16& heightImage, int32_t rootNodeCount, int32_t LoDCount,
 					int32_t patchSize, float resolution, float height);
 
 			/**
@@ -33,7 +33,7 @@ namespace Atlas {
              * @param directory
              * @warning All storage cells of the terrain must be loaded.
              */
-			static void SaveTerrain(Terrain* terrain, std::string directory);
+			static void SaveTerrain(Terrain::Terrain* terrain, std::string directory);
 
 			/**
              *
@@ -41,7 +41,7 @@ namespace Atlas {
              * @warning All storage cells of the terrain and their heightData member must be loaded.
              * It is assumed that all cells have textures of the same resolution.
              */
-			static void BakeTerrain(Terrain* terrain);
+			static void BakeTerrain(Terrain::Terrain* terrain);
 
 			/**
              *
@@ -53,9 +53,9 @@ namespace Atlas {
              * must be loaded. It is assumed that all cells have textures of the same resolution.
              * @note The kernel size needs to be smaller than 2 times the edge of a cell
              */
-			static void BrushHeight(Terrain* terrain, Kernel* kernel, float strength, vec2 position);
+			static void BrushHeight(Terrain::Terrain* terrain, Kernel* kernel, float strength, vec2 position);
 
-			static void SmoothHeight(Terrain* terrain, int32_t size, int32_t contributingRadius,
+			static void SmoothHeight(Terrain::Terrain* terrain, int32_t size, int32_t contributingRadius,
 					float strength, vec2 position);
 
 		private:

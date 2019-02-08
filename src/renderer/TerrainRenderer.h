@@ -4,54 +4,61 @@
 #include "../System.h"
 #include "IRenderer.h"
 
-class TerrainRenderer : public IRenderer {
+namespace Atlas {
 
-public:
-    TerrainRenderer();
+	namespace Renderer {
 
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+		class TerrainRenderer : public IRenderer {
 
-	void GetUniforms();
+		public:
+			TerrainRenderer();
 
-	static std::string vertexPath;
-	static std::string tessControlPath;
-	static std::string tessEvalPath;
-	static std::string geometryPath;
-	static std::string fragmentPath;
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-private:
-    Shader nearShader;
-    Shader middleShader;
-    Shader farShader;
+			void GetUniforms();
 
-	Uniform* heightField;
-	Uniform* normalMap;
-	Uniform* diffuseMap;
-	Uniform* displacementMap;
+			static std::string vertexPath;
+			static std::string tessControlPath;
+			static std::string tessEvalPath;
+			static std::string geometryPath;
+			static std::string fragmentPath;
 
-	Uniform* heightScale;
-	Uniform* offset;
-	Uniform* tileScale;
-	Uniform* modelMatrix;
-	Uniform* viewMatrix;
-	Uniform* projectionMatrix;
-	Uniform* cameraLocation;
-	Uniform* nodeSideLength;
-	Uniform* nodeLocation;
+		private:
+			Shader::Shader nearShader;
+			Shader::Shader middleShader;
+			Shader::Shader farShader;
 
-	Uniform* patchOffsetsScale;
+			Shader::Uniform* heightField;
+			Shader::Uniform* normalMap;
+			Shader::Uniform* diffuseMap;
+			Shader::Uniform* displacementMap;
 
-	Uniform* tessellationFactor;
-	Uniform* tessellationSlope;
-	Uniform* tessellationShift;
-	Uniform* maxTessellationLevel;
+			Shader::Uniform* heightScale;
+			Shader::Uniform* offset;
+			Shader::Uniform* tileScale;
+			Shader::Uniform* modelMatrix;
+			Shader::Uniform* viewMatrix;
+			Shader::Uniform* projectionMatrix;
+			Shader::Uniform* cameraLocation;
+			Shader::Uniform* nodeSideLength;
+			Shader::Uniform* nodeLocation;
 
-	Uniform* displacementScale;
-	Uniform* displacementDistance;
+			Shader::Uniform* patchOffsetsScale;
 
-	Uniform* frustumPlanes;
+			Shader::Uniform* tessellationFactor;
+			Shader::Uniform* tessellationSlope;
+			Shader::Uniform* tessellationShift;
+			Shader::Uniform* maxTessellationLevel;
 
-};
+			Shader::Uniform* displacementScale;
+			Shader::Uniform* displacementDistance;
 
+			Shader::Uniform* frustumPlanes;
+
+		};
+
+	}
+
+}
 
 #endif

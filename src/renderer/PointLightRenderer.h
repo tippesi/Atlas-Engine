@@ -4,40 +4,48 @@
 #include "../System.h"
 #include "IRenderer.h"
 
-class PointLightRenderer : public IRenderer {
+namespace Atlas {
 
-public:
-	PointLightRenderer();
+	namespace Renderer {
 
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+		class PointLightRenderer : public IRenderer {
 
-	static std::string vertexPath;
-	static std::string fragmentPath;
+		public:
+			PointLightRenderer();
 
-private:
-	void GetUniforms();
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	VertexArray vertexArray;
+			static std::string vertexPath;
+			static std::string fragmentPath;
 
-	Shader shader;
+		private:
+			void GetUniforms();
 
-	Uniform* diffuseTexture;
-	Uniform* normalTexture;
-	Uniform* materialTexture;
-	Uniform* depthTexture;
-	Uniform* shadowCubemap;
+			Buffer::VertexArray vertexArray;
 
-	Uniform* viewMatrix;
-	Uniform* projectionMatrix;
-	Uniform* inverseProjectionMatrix;
-	Uniform* lightViewMatrix;
-	Uniform* lightProjectionMatrix;
-	Uniform* viewSpaceLightLocation;
-	Uniform* lightLocation;
-	Uniform* lightColor;
-	Uniform* lightAmbient;
-	Uniform* lightRadius;
+			Shader::Shader shader;
 
-};
+			Shader::Uniform* diffuseTexture;
+			Shader::Uniform* normalTexture;
+			Shader::Uniform* materialTexture;
+			Shader::Uniform* depthTexture;
+			Shader::Uniform* shadowCubemap;
+
+			Shader::Uniform* viewMatrix;
+			Shader::Uniform* projectionMatrix;
+			Shader::Uniform* inverseProjectionMatrix;
+			Shader::Uniform* lightViewMatrix;
+			Shader::Uniform* lightProjectionMatrix;
+			Shader::Uniform* viewSpaceLightLocation;
+			Shader::Uniform* lightLocation;
+			Shader::Uniform* lightColor;
+			Shader::Uniform* lightAmbient;
+			Shader::Uniform* lightRadius;
+
+		};
+
+	}
+
+}
 
 #endif

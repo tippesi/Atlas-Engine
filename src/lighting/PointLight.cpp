@@ -1,75 +1,83 @@
 #include "PointLight.h"
 
-PointLight::PointLight(int32_t mobility) : ILight(AE_POINT_LIGHT, mobility) {
+namespace Atlas {
 
-    location = vec3(0.0f, 3.0f, 0.0f);
+	namespace Lighting {
 
-    color = vec3(1.0f);
-    ambient = 0.0f;
-	radius = 5.0f;
+		PointLight::PointLight(int32_t mobility) : ILight(AE_POINT_LIGHT, mobility) {
 
-    shadow = nullptr;
-    volumetric = nullptr;
+			location = vec3(0.0f, 3.0f, 0.0f);
 
-}
+			color = vec3(1.0f);
+			ambient = 0.0f;
+			radius = 5.0f;
 
-PointLight::~PointLight() {
+			shadow = nullptr;
+			volumetric = nullptr;
 
-	delete shadow;
-	delete volumetric;
+		}
 
-}
+		PointLight::~PointLight() {
 
-void PointLight::AddShadow(float bias, int32_t resolution) {
+			delete shadow;
+			delete volumetric;
 
-    shadow = new Shadow(0.0f, bias, resolution, true);
+		}
 
-	mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, radius);
-	vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
-					vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-					vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
+		void PointLight::AddShadow(float bias, int32_t resolution) {
 
-	vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-					vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
-					vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
+			shadow = new Shadow(0.0f, bias, resolution, true);
 
-	for (uint8_t i = 0; i < 6; i++) {
-		shadow->components[i].projectionMatrix = projectionMatrix;
-		shadow->components[i].viewMatrix = glm::lookAt(location, location + faces[i], ups[i]);
+			mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, radius);
+			vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
+							 vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+							 vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
+
+			vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+						   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
+						   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
+
+			for (uint8_t i = 0; i < 6; i++) {
+				shadow->components[i].projectionMatrix = projectionMatrix;
+				shadow->components[i].viewMatrix = glm::lookAt(location, location + faces[i], ups[i]);
+			}
+
+		}
+
+		void PointLight::RemoveShadow() {
+
+			delete shadow;
+			shadow = nullptr;
+
+		}
+
+		void PointLight::AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor) {
+
+			volumetric = new Volumetric(width, height, sampleCount, scattering, scatteringFactor);
+
+		}
+
+		void PointLight::RemoveVolumetric() {
+
+			delete volumetric;
+			volumetric = nullptr;
+
+		}
+
+		void PointLight::Update(Camera* camera) {
+
+			if (mobility == AE_MOVABLE_LIGHT && shadow != nullptr) {
+				shadow->Update();
+			}
+
+		}
+
+		float PointLight::GetRadius() {
+
+			return radius;
+
+		}
+
 	}
-
-}
-
-void PointLight::RemoveShadow() {
-
-	delete shadow;
-    shadow = nullptr;
-
-}
-
-void PointLight::AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor) {
-
-    volumetric = new Volumetric(width, height, sampleCount, scattering, scatteringFactor);
-
-}
-
-void PointLight::RemoveVolumetric() {
-
-	delete volumetric;
-    volumetric = nullptr;
-
-}
-
-void PointLight::Update(Camera* camera) {
-
-	if (mobility == AE_MOVABLE_LIGHT && shadow != nullptr) {
-		shadow->Update();
-	}
-
-}
-
-float PointLight::GetRadius() {
-
-	return radius;
 
 }

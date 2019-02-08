@@ -7,7 +7,7 @@ namespace Atlas {
 
 	}
 
-	void RenderList::Add(MeshActor *actor) {
+	void RenderList::Add(Mesh::MeshActor *actor) {
 
 		auto actorBatchKey = actorBatches.find(actor->mesh);
 
@@ -16,7 +16,7 @@ namespace Atlas {
 		} else {
 
 			// Create new actorbatch
-			auto meshActorBatch = new MeshActorBatch(actor->mesh);
+			auto meshActorBatch = new Mesh::MeshActorBatch(actor->mesh);
 			meshActorBatch->Add(actor);
 
 			actorBatches[actor->mesh] = meshActorBatch;
@@ -26,7 +26,7 @@ namespace Atlas {
 
 			for (auto &subData : actor->mesh->data->subData) {
 
-				ShaderConfig *shaderConfig;
+				Shader::ShaderConfig *shaderConfig;
 
 				if (type == AE_GEOMETRY_RENDERLIST) {
 					shaderConfig = &actor->mesh->data->materials[subData->materialIndex]->geometryConfig;
@@ -56,7 +56,7 @@ namespace Atlas {
 
 	}
 
-	void RenderList::Add(ILight *light) {
+	void RenderList::Add(Lighting::ILight *light) {
 
 		lights.push_back(light);
 

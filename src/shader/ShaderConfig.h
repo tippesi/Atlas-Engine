@@ -5,50 +5,58 @@
 #include <vector>
 #include <string>
 
-/**
- * A shader configuration consists of macros which configure a
- * shader in a shader batch. Shader configs with the same macros
- * use the same shader. A ShaderConfig always belongs to a ShaderConfigBatch
- * in one ShaderBatch and uses the shader of this batch.
- * @note A ShaderConfig can only be used in one ShaderBatch at a time.
- */
-class ShaderConfig {
+namespace Atlas {
 
-public:
-	/**
-	 * Constructs a ShaderConfig object.
-	 */
-	ShaderConfig();
+	namespace Shader {
 
-	/**
-	 * Adds a macro to the config.
-	 * @param macro The macro to be added.
-	 */
-	void AddMacro(std::string macro);
+		/**
+		 * A shader configuration consists of macros which configure a
+		 * shader in a shader batch. Shader configs with the same macros
+		 * use the same shader. A ShaderConfig always belongs to a ShaderConfigBatch
+ 		 * in one ShaderBatch and uses the shader of this batch.
+		 * @note A ShaderConfig can only be used in one ShaderBatch at a time.
+		 */
+		class ShaderConfig {
 
-	/**
-	 * Removes a macro from the config.
-	 * @param macro The macro to be removed.
-	 */
-	void RemoveMacro(std::string macro);
+		public:
+			/**
+             * Constructs a ShaderConfig object.
+             */
+			ShaderConfig();
 
-	/**
-	 * Checks if a macro is present in the config.
-	 * @param macro The macro to be checked.
-	 * @return True if present, false otherwise.
-	 */
-	bool HasMacro(std::string macro);
+			/**
+             * Adds a macro to the config.
+             * @param macro The macro to be added.
+             */
+			void AddMacro(std::string macro);
 
-	/**
-	 * Removes all macros from the config.
-	 */
-	void ClearMacros();
+			/**
+             * Removes a macro from the config.
+             * @param macro The macro to be removed.
+             */
+			void RemoveMacro(std::string macro);
 
-	int32_t configBatchID;
-	std::vector<std::string> macros;
-	
-	bool added;
+			/**
+             * Checks if a macro is present in the config.
+             * @param macro The macro to be checked.
+             * @return True if present, false otherwise.
+             */
+			bool HasMacro(std::string macro);
 
-};
+			/**
+             * Removes all macros from the config.
+             */
+			void ClearMacros();
+
+			int32_t configBatchID;
+			std::vector<std::string> macros;
+
+			bool added;
+
+		};
+
+	}
+
+}
 
 #endif

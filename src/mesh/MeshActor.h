@@ -4,27 +4,36 @@
 #include "../System.h"
 #include "Mesh.h"
 
-class MeshActor {
+namespace Atlas {
 
-public:
+	namespace Mesh {
 
-	/**
-	 *
-	 * @param mesh
-	 */
-	MeshActor(Mesh* mesh);
+		class MeshActor {
 
-	void Update();
+		public:
 
-	mat4 modelMatrix;
-	mat4 transformedMatrix;
+			/**
+             *
+             * @param mesh
+             */
+			MeshActor(Mesh* mesh);
 
-	Mesh* const mesh;
+			void Update();
 
-	bool castShadow;
+			mat4 modelMatrix;
+			mat4 transformedMatrix;
 
-	bool visible;
+			Mesh* const mesh;
 
-};
+			bool castShadow;
+
+			bool visible;
+
+		};
+
+
+	}
+
+}
 
 #endif

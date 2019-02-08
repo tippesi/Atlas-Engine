@@ -1,13 +1,21 @@
 #include "PostProcessing.h"
 
-PostProcessing::PostProcessing() {
+namespace Atlas {
 
-	exposure = 1.0f;
-	saturation = 1.0f;
+	namespace PostProcessing {
 
-	filmicTonemapping = false;
+		PostProcessing::PostProcessing() {
 
-	vignette = nullptr;
-	chromaticAberration = nullptr;
+			exposure = 1.0f;
+			saturation = 1.0f;
+
+			filmicTonemapping = false;
+
+			vignette = nullptr;
+			chromaticAberration = nullptr;
+
+		}
+
+	}
 
 }

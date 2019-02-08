@@ -1,43 +1,51 @@
 #include "AtmosphereRenderer.h"
 #include "helper/GeometryHelper.h"
 
-std::string AtmosphereRenderer::vertexPath = "atmosphere.vsh";
-std::string AtmosphereRenderer::fragmentPath = "atmosphere.fsh";
+namespace Atlas {
 
-AtmosphereRenderer::AtmosphereRenderer() {
+	namespace Renderer {
 
-	GeometryHelper::GenerateSphereVertexArray(vertexArray, 200, 200);
+		std::string AtmosphereRenderer::vertexPath = "atmosphere.vsh";
+		std::string AtmosphereRenderer::fragmentPath = "atmosphere.fsh";
 
-	shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-	shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+		AtmosphereRenderer::AtmosphereRenderer() {
 
-	shader.Compile();
+			Helper::GeometryHelper::GenerateSphereVertexArray(vertexArray, 200, 200);
 
-	GetUniforms();
+			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
+			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
-}
+			shader.Compile();
 
-void AtmosphereRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+			GetUniforms();
 
-	shader.Bind();
+		}
 
-	vertexArray.Bind();
+		void AtmosphereRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
 
-	viewMatrix->SetValue(camera->viewMatrix);
-	projectionMatrix->SetValue(camera->projectionMatrix);
-	cameraLocation->SetValue(vec3(camera->location));
-	sunDirection->SetValue(vec3(0.0f, -0.1f, -1.0f));
+			shader.Bind();
 
-	glDrawElements(GL_TRIANGLES, vertexArray.GetIndexComponent()->GetElementCount(),
-		vertexArray.GetIndexComponent()->GetDataType(), NULL);
+			vertexArray.Bind();
 
-}
+			viewMatrix->SetValue(camera->viewMatrix);
+			projectionMatrix->SetValue(camera->projectionMatrix);
+			cameraLocation->SetValue(vec3(camera->location));
+			sunDirection->SetValue(vec3(0.0f, -0.1f, -1.0f));
 
-void AtmosphereRenderer::GetUniforms() {
+			glDrawElements(GL_TRIANGLES, vertexArray.GetIndexComponent()->GetElementCount(),
+						   vertexArray.GetIndexComponent()->GetDataType(), NULL);
 
-	viewMatrix = shader.GetUniform("vMatrix");
-	projectionMatrix = shader.GetUniform("pMatrix");
-	cameraLocation = shader.GetUniform("cameraLocation");
-	sunDirection = shader.GetUniform("sunDirection");
+		}
+
+		void AtmosphereRenderer::GetUniforms() {
+
+			viewMatrix = shader.GetUniform("vMatrix");
+			projectionMatrix = shader.GetUniform("pMatrix");
+			cameraLocation = shader.GetUniform("cameraLocation");
+			sunDirection = shader.GetUniform("sunDirection");
+
+		}
+
+	}
 
 }

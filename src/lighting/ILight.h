@@ -12,36 +12,44 @@
 #define AE_POINT_LIGHT 1
 #define AE_SPOT_LIGHT 2
 
-class ILight {
+namespace Atlas {
 
-public:
-    virtual void RemoveShadow() = 0;
+	namespace Lighting {
 
-    virtual void RemoveVolumetric() = 0;
+		class ILight {
 
-	virtual void Update(Camera* camera) = 0;
+		public:
+			virtual void RemoveShadow() = 0;
 
-	inline Shadow * GetShadow() {
-		return shadow;
+			virtual void RemoveVolumetric() = 0;
+
+			virtual void Update(Camera* camera) = 0;
+
+			inline Shadow * GetShadow() {
+				return shadow;
+			}
+
+			inline Volumetric* GetVolumetric() {
+				return volumetric;
+			}
+
+			const int32_t type;
+			const int32_t mobility;
+
+			vec3 color;
+			float ambient;
+
+		protected:
+			ILight(int32_t type, int32_t mobility) : type(type), mobility(mobility) {}
+
+			Shadow* shadow;
+			Volumetric* volumetric;
+
+		};
+
 	}
 
-	inline Volumetric* GetVolumetric() {
-		return volumetric;
-	}
-
-    const int32_t type;
-    const int32_t mobility;
-
-    vec3 color;
-    float ambient;
-
-protected:
-	ILight(int32_t type, int32_t mobility) : type(type), mobility(mobility) {}
-
-    Shadow* shadow;
-    Volumetric* volumetric;
-
-};
+}
 
 
 #endif

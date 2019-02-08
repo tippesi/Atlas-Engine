@@ -4,20 +4,28 @@
 #include "../System.h"
 #include "../texture/Texture2D.h"
 
-class Volumetric {
+namespace Atlas {
 
-public:
-	Volumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor = 1.0f);
+	namespace Lighting {
 
-	~Volumetric();
+		class Volumetric {
 
-	int32_t sampleCount;
-	float scattering;
-	float scatteringFactor;
+		public:
+			Volumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor = 1.0f);
 
-    Texture2D* map;
-    Texture2D* blurMap;
+			~Volumetric();
 
-};
+			int32_t sampleCount;
+			float scattering;
+			float scatteringFactor;
+
+			Texture::Texture2D* map;
+			Texture::Texture2D* blurMap;
+
+		};
+
+	}
+
+}
 
 #endif

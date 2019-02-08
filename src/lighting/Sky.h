@@ -4,14 +4,22 @@
 #include "../System.h"
 #include "Skybox.h"
 
-class Sky {
+namespace Atlas {
 
-public:
-	Sky();
+	namespace Lighting {
 
-	Skybox* skybox;
+		class Sky {
 
-};
+		public:
+			Sky();
+
+			Skybox* skybox;
+
+		};
+
+	}
+
+}
 
 
 #endif

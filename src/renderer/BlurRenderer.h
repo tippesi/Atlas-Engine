@@ -4,35 +4,43 @@
 #include "../System.h"
 #include "IRenderer.h"
 
-class BlurRenderer : IRenderer {
+namespace Atlas {
 
-public:
-    BlurRenderer(std::string vertexSource, std::string fragmentSource, int32_t channelCount, float* kernelOffsets,
-            float* kernelWeights, int32_t kernelSize, bool bilateral = false);
+    namespace Renderer {
 
-    virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+        class BlurRenderer : IRenderer {
 
-    void Render(Texture2D* texture, Texture2D* swapTexture, Texture2D* depthTexture);
+        public:
+            BlurRenderer(std::string vertexSource, std::string fragmentSource, int32_t channelCount, float* kernelOffsets,
+                         float* kernelWeights, int32_t kernelSize, bool bilateral = false);
 
-private:
-    void GetUniforms();
+            virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-    float* kernelOffsets;
-    float* kernelWeights;
-    int32_t kernelSize;
+            void Render(Texture::Texture2D* texture, Texture::Texture2D* swapTexture, Texture::Texture2D* depthTexture);
 
-    bool bilateralBlur;
+        private:
+            void GetUniforms();
 
-    Framebuffer* framebuffer;
+            float* kernelOffsets;
+            float* kernelWeights;
+            int32_t kernelSize;
 
-    Shader shader;
+            bool bilateralBlur;
 
-    Uniform* diffuseTexture;
-    Uniform* depthTexture;
-    Uniform* blurDirection;
+            Framebuffer* framebuffer;
+
+            Shader::Shader shader;
+
+            Shader::Uniform* diffuseTexture;
+            Shader::Uniform* depthTexture;
+            Shader::Uniform* blurDirection;
 
 
-};
+        };
 
+
+    }
+
+}
 
 #endif

@@ -43,7 +43,7 @@ namespace Atlas {
             }
 
             if (colorSpaceConversion) {
-                Texture::GammaToLinear(data, image.width, image.height, image.channels);
+                Texture::Texture::GammaToLinear(data, image.width, image.height, image.channels);
             }
 
             image.data.assign(data, data + image.width * image.height * image.channels);
@@ -100,7 +100,7 @@ namespace Atlas {
             }
 
             if (colorSpaceConversion) {
-                Texture::GammaToLinear(data, image.width, image.height, image.channels);
+                Texture::Texture::GammaToLinear(data, image.width, image.height, image.channels);
             }
 
             image.data.assign(data, data + image.width * image.height * image.channels);

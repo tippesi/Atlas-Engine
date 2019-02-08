@@ -14,41 +14,48 @@
 #define FLOAT_ARRAY_CONSTANT 0x6
 #define INT_ARRAY_CONSTANT 0x7
 
-class ShaderConstant {
+namespace Atlas {
 
-public:
-	///
-	/// \param constantString
-	ShaderConstant(std::string constantString);
+	namespace Shader {
 
-	void SetValue(float value);
+		class ShaderConstant {
 
-	void SetValue(int32_t value);
+		public:
+			///
+			/// \param constantString
+			ShaderConstant(std::string constantString);
 
-	void SetValue(bool value);
+			void SetValue(float value);
 
-	void SetValue(vec2 value);
+			void SetValue(int32_t value);
 
-	void SetValue(vec3 value);
+			void SetValue(bool value);
 
-	void SetValue(vec4 value);
+			void SetValue(vec2 value);
 
-	void SetValue(float* value, int32_t length);
+			void SetValue(vec3 value);
 
-	void SetValue(int32_t* value, int32_t length);
+			void SetValue(vec4 value);
 
-	std::string GetName();
+			void SetValue(float* value, int32_t length);
 
-	std::string GetValuedString();
+			void SetValue(int32_t* value, int32_t length);
 
-private:
-	std::string name;
+			std::string GetName();
 
-	int32_t type;
+			std::string GetValuedString();
 
-	std::string valuedString;
+		private:
+			std::string name;
 
-};
+			int32_t type;
 
+			std::string valuedString;
+
+		};
+
+	}
+
+}
 
 #endif

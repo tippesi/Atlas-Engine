@@ -37,7 +37,7 @@ namespace Atlas {
 
 	}
 
-	void SceneNode::Add(MeshActor *actor) {
+	void SceneNode::Add(Mesh::MeshActor *actor) {
 
 		if (scene != nullptr) {
 			scene->Add(actor);
@@ -47,7 +47,7 @@ namespace Atlas {
 
 	}
 
-	void SceneNode::Remove(MeshActor *actor) {
+	void SceneNode::Remove(Mesh::MeshActor *actor) {
 
 		if (scene != nullptr) {
 			scene->Remove(actor);
@@ -64,7 +64,7 @@ namespace Atlas {
 
 	}
 
-	void SceneNode::Add(ILight *light) {
+	void SceneNode::Add(Lighting::ILight *light) {
 
 		if (scene != nullptr) {
 			scene->Add(light);
@@ -74,7 +74,7 @@ namespace Atlas {
 
 	}
 
-	void SceneNode::Remove(ILight *light) {
+	void SceneNode::Remove(Lighting::ILight *light) {
 
 		if (scene != nullptr) {
 			scene->Remove(light);
@@ -157,13 +157,13 @@ namespace Atlas {
 
 	}
 
-	std::vector<MeshActor *> SceneNode::GetMeshActors() {
+	std::vector<Mesh::MeshActor *> SceneNode::GetMeshActors() {
 
 		return meshActors;
 
 	}
 
-	std::vector<ILight *> SceneNode::GetLights() {
+	std::vector<Lighting::ILight *> SceneNode::GetLights() {
 
 		return lights;
 

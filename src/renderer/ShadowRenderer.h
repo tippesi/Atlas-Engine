@@ -7,34 +7,41 @@
 
 #include <mutex>
 
-class ShadowRenderer : public IRenderer {
+namespace Atlas {
 
-public:
-	ShadowRenderer();
+	namespace Renderer {
 
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+		class ShadowRenderer : public IRenderer {
 
-	static void InitShaderBatch();
+		public:
+			ShadowRenderer();
 
-	static void AddConfig(ShaderConfig* config);
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	static void RemoveConfig(ShaderConfig* config);
+			static void InitShaderBatch();
 
-	static std::string vertexPath;
-	static std::string fragmentPath;
+			static void AddConfig(Shader::ShaderConfig* config);
 
-private:
-	Framebuffer* framebuffer;
+			static void RemoveConfig(Shader::ShaderConfig* config);
 
-	Uniform* arrayMapUniform;
-	Uniform* diffuseMapUniform;
-	Uniform* lightSpaceMatrixUniform;
-	Uniform* modelMatrixUniform;
+			static std::string vertexPath;
+			static std::string fragmentPath;
 
-	static ShaderBatch shaderBatch;
-	static std::mutex shaderBatchMutex;
+		private:
+			Framebuffer* framebuffer;
 
-};
+			Shader::Uniform* arrayMapUniform;
+			Shader::Uniform* diffuseMapUniform;
+			Shader::Uniform* lightSpaceMatrixUniform;
+			Shader::Uniform* modelMatrixUniform;
 
+			static Shader::ShaderBatch shaderBatch;
+			static std::mutex shaderBatchMutex;
+
+		};
+
+	}
+
+}
 
 #endif

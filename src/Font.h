@@ -103,11 +103,11 @@ namespace Atlas {
 			vec2 size;
 		} glyphInfo[AE_GPU_GLYPH_COUNT];
 
-		Texture2DArray *glyphTexture;
+		Texture::Texture2DArray *glyphTexture;
 
 		// We need two glyph buffers to store 2048 glyphs
-		Buffer *firstGlyphBuffer;
-		Buffer *secondGlyphBuffer;
+		Buffer::Buffer *firstGlyphBuffer;
+		Buffer::Buffer *secondGlyphBuffer;
 
 	private:
 		Glyph glyphs[AE_FONT_GLYPH_COUNT];

@@ -4,51 +4,59 @@
 #include "../System.h"
 #include "IRenderer.h"
 
-class DirectionalLightRenderer : public IRenderer {
+namespace Atlas {
 
-public:
-	DirectionalLightRenderer();
+	namespace Renderer {
 
-	virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+        class DirectionalLightRenderer : public IRenderer {
 
-	static std::string vertexPath;
-	static std::string fragmentPath;
+        public:
+            DirectionalLightRenderer();
 
-private:
-	void GetUniforms();
+            virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-	Shader shader;
+            static std::string vertexPath;
+            static std::string fragmentPath;
 
-	Uniform* diffuseTexture;
-	Uniform* normalTexture;
-	Uniform* materialTexture;
-	Uniform* depthTexture;
-	Uniform* aoTexture;
-	Uniform* volumetricTexture;
-	Uniform* shadowTexture;
+        private:
+            void GetUniforms();
 
-	Uniform* inverseViewMatrix;
-	Uniform* inverseProjectionMatrix;
+            Shader::Shader shader;
 
-	Uniform* lightDirection;
-	Uniform* lightColor;
-	Uniform* lightAmbient;
+            Shader::Uniform* diffuseTexture;
+            Shader::Uniform* normalTexture;
+            Shader::Uniform* materialTexture;
+            Shader::Uniform* depthTexture;
+            Shader::Uniform* aoTexture;
+            Shader::Uniform* volumetricTexture;
+            Shader::Uniform* shadowTexture;
 
-	Uniform* scatteringFactor;
+            Shader::Uniform* inverseViewMatrix;
+            Shader::Uniform* inverseProjectionMatrix;
 
-	Uniform* shadowDistance;
-	Uniform* shadowBias;
-	Uniform* shadowSampleCount;
-	Uniform* shadowSampleRange;
-	Uniform* shadowSampleRandomness;
-	Uniform* shadowCascadeCount;
-	Uniform* shadowResolution;
+            Shader::Uniform* lightDirection;
+            Shader::Uniform* lightColor;
+            Shader::Uniform* lightAmbient;
 
-	struct ShadowCascadeUniform {
-		Uniform* distance;
-		Uniform* lightSpace;
-	}cascades[MAX_SHADOW_CASCADE_COUNT];
+            Shader::Uniform* scatteringFactor;
 
-};
+            Shader::Uniform* shadowDistance;
+            Shader::Uniform* shadowBias;
+            Shader::Uniform* shadowSampleCount;
+            Shader::Uniform* shadowSampleRange;
+            Shader::Uniform* shadowSampleRandomness;
+            Shader::Uniform* shadowCascadeCount;
+            Shader::Uniform* shadowResolution;
+
+            struct ShadowCascadeUniform {
+                Shader::Uniform* distance;
+                Shader::Uniform* lightSpace;
+            }cascades[MAX_SHADOW_CASCADE_COUNT];
+
+        };
+
+	}
+
+}
 
 #endif

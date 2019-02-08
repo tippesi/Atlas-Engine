@@ -29,19 +29,19 @@ namespace Atlas {
 
 		///
 		/// \param actor
-		void Add(MeshActor *actor);
+		void Add(Mesh::MeshActor *actor);
 
 		///
 		/// \param actor
-		void Remove(MeshActor *actor);
+		void Remove(Mesh::MeshActor *actor);
 
 		///
 		/// \param light
-		void Add(ILight *light);
+		void Add(Lighting::ILight *light);
 
 		///
 		/// \param light
-		void Remove(ILight *light);
+		void Remove(Lighting::ILight *light);
 
 		///
 		/// \param parentTransformation
@@ -56,9 +56,9 @@ namespace Atlas {
 
 		std::vector<SceneNode *> GetChildNodes();
 
-		std::vector<MeshActor *> GetMeshActors();
+		std::vector<Mesh::MeshActor *> GetMeshActors();
 
-		std::vector<ILight *> GetLights();
+		std::vector<Lighting::ILight *> GetLights();
 
 		Scene *scene;
 
@@ -68,8 +68,8 @@ namespace Atlas {
 		bool sceneSet;
 
 		std::vector<SceneNode *> childNodes;
-		std::vector<MeshActor *> meshActors;
-		std::vector<ILight *> lights;
+		std::vector<Mesh::MeshActor *> meshActors;
+		std::vector<Lighting::ILight *> lights;
 
 	};
 

@@ -16,7 +16,7 @@ namespace Atlas {
 		stbtt_fontinfo font;
 		std::string fontString;
 
-		auto fontFile = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
+		auto fontFile = Loader::AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
 		if (!fontFile.is_open()) {
 #ifdef AE_SHOW_LOG
@@ -25,7 +25,7 @@ namespace Atlas {
 			throw EngineException("Couldn't open font file");
 		}
 
-		auto buffer = AssetLoader::GetFileContent(fontFile);
+		auto buffer = Loader::AssetLoader::GetFileContent(fontFile);
 
 		fontFile.close();
 
@@ -33,10 +33,10 @@ namespace Atlas {
 			new EngineException("Failed loading font");
 		}
 
-		firstGlyphBuffer = new Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
+		firstGlyphBuffer = new Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
 		firstGlyphBuffer->SetSize(AE_GPU_GLYPH_COUNT / 2);
 
-		secondGlyphBuffer = new Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
+		secondGlyphBuffer = new Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
 		secondGlyphBuffer->SetSize(AE_GPU_GLYPH_COUNT / 2);
 
 		smoothing = 5.0f;
@@ -99,7 +99,7 @@ namespace Atlas {
 		depth = AE_GPU_GLYPH_COUNT < depth ? AE_GPU_GLYPH_COUNT : depth;
 
 		// Create texture and process texture data
-		glyphTexture = new Texture2DArray(GL_UNSIGNED_BYTE, width, height, depth,
+		glyphTexture = new Texture::Texture2DArray(GL_UNSIGNED_BYTE, width, height, depth,
 										  GL_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 		for (int32_t i = font.fontstart; i < range; i++) {

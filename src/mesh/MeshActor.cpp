@@ -1,17 +1,25 @@
 #include "MeshActor.h"
 
-MeshActor::MeshActor(Mesh* mesh) : mesh(mesh) {
+namespace Atlas {
 
-	modelMatrix = mat4(1.0f);
+	namespace Mesh {
 
-	castShadow = true;
+		MeshActor::MeshActor(Mesh* mesh) : mesh(mesh) {
 
-	visible = true;
+			modelMatrix = mat4(1.0f);
 
-}
+			castShadow = true;
 
-void MeshActor::Update() {
+			visible = true;
+
+		}
+
+		void MeshActor::Update() {
 
 
+
+		}
+
+	}
 
 }

@@ -14,8 +14,8 @@ namespace Atlas {
 
 	typedef struct RenderListBatch {
 
-		MeshActorBatch *meshActorBatch;
-		std::vector<MeshSubData *> subData;
+		Mesh::MeshActorBatch *meshActorBatch;
+		std::vector<Mesh::MeshSubData *> subData;
 
 	} RenderListBatch;
 
@@ -25,16 +25,16 @@ namespace Atlas {
 	public:
 		RenderList(int32_t type, int32_t mobility);
 
-		void Add(MeshActor *actor);
+		void Add(Mesh::MeshActor *actor);
 
-		void Add(ILight *light);
+		void Add(Lighting::ILight *light);
 
-		void RemoveMesh(Mesh *mesh);
+		void RemoveMesh(Mesh::Mesh *mesh);
 
 		void Clear();
 
-		std::vector<ILight *> lights;
-		std::map<Mesh *, MeshActorBatch *> actorBatches;
+		std::vector<Lighting::ILight *> lights;
+		std::map<Mesh::Mesh *, Mesh::MeshActorBatch *> actorBatches;
 		std::map<int32_t, std::vector<RenderListBatch>> orderedRenderBatches;
 
 	private:

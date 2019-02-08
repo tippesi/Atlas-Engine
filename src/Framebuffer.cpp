@@ -39,7 +39,7 @@ namespace Atlas {
 				delete component.texture;
 		}
 
-		component.texture = new Texture2D(dataFormat, width, height, internalFormat, wrapping, filtering, false, false);
+		component.texture = new Texture::Texture2D(dataFormat, width, height, internalFormat, wrapping, filtering, false, false);
 		component.textureArray = nullptr;
 		component.cubemap = nullptr;
 		component.internalTexture = true;
@@ -60,7 +60,7 @@ namespace Atlas {
 
 	}
 
-	void Framebuffer::AddComponentTexture(int32_t attachment, Texture2D *texture, uint32_t target) {
+	void Framebuffer::AddComponentTexture(int32_t attachment, Texture::Texture2D *texture, uint32_t target) {
 
 		FramebufferComponent component;
 
@@ -95,7 +95,7 @@ namespace Atlas {
 	}
 
 	void
-	Framebuffer::AddComponentTextureArray(int32_t attachment, Texture2DArray *texture, int32_t layer, uint32_t target) {
+	Framebuffer::AddComponentTextureArray(int32_t attachment, Texture::Texture2DArray *texture, int32_t layer, uint32_t target) {
 
 		FramebufferComponent component;
 
@@ -129,7 +129,7 @@ namespace Atlas {
 
 	}
 
-	void Framebuffer::AddComponentCubemap(int32_t attachment, Cubemap *cubemap, int32_t face, uint32_t target) {
+	void Framebuffer::AddComponentCubemap(int32_t attachment, Texture::Cubemap *cubemap, int32_t face, uint32_t target) {
 
 		FramebufferComponent component;
 
@@ -163,7 +163,7 @@ namespace Atlas {
 
 	}
 
-	Texture2D *Framebuffer::GetComponentTexture(int32_t attachment) {
+	Texture::Texture2D *Framebuffer::GetComponentTexture(int32_t attachment) {
 
 		auto search = components.find(attachment);
 
@@ -175,7 +175,7 @@ namespace Atlas {
 
 	}
 
-	Texture2DArray *Framebuffer::GetComponentTextureArray(int32_t attachment) {
+	Texture::Texture2DArray *Framebuffer::GetComponentTextureArray(int32_t attachment) {
 
 		auto search = components.find(attachment);
 
@@ -187,7 +187,7 @@ namespace Atlas {
 
 	}
 
-	Cubemap *Framebuffer::GetComponentCubemap(int32_t attachment) {
+	Texture::Cubemap *Framebuffer::GetComponentCubemap(int32_t attachment) {
 
 		auto search = components.find(attachment);
 

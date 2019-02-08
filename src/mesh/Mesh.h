@@ -8,43 +8,52 @@
 #define AE_STATIONARY_MESH 0
 #define AE_MOVABLE_MESH 1
 
-class Mesh {
+namespace Atlas {
 
-public:
-	///
-	/// \param data
-	Mesh(MeshData* data, int32_t mobility = AE_STATIONARY_MESH);
+	namespace Mesh {
 
-	///
-	/// \param filename
-	Mesh(std::string filename, int32_t mobility = AE_STATIONARY_MESH);
+		class Mesh {
+
+		public:
+			///
+			/// \param data
+			Mesh(MeshData* data, int32_t mobility = AE_STATIONARY_MESH);
+
+			///
+			/// \param filename
+			Mesh(std::string filename, int32_t mobility = AE_STATIONARY_MESH);
 
 
-	~Mesh();
+			~Mesh();
 
-	///
-	void UpdateData();
+			///
+			void UpdateData();
 
-	///
-	void Bind();
+			///
+			void Bind();
 
-	///
-	void Unbind();
+			///
+			void Unbind();
 
-	///
-	void DeleteContent();
+			///
+			void DeleteContent();
 
-	MeshData* const data;
+			MeshData* const data;
 
-	bool cullBackFaces = true;
+			bool cullBackFaces = true;
 
-	const int32_t mobility;
+			const int32_t mobility;
 
-private:
-	void InitializeVertexArray();
+		private:
+			void InitializeVertexArray();
 
-	VertexArray vertexArray;
+			Buffer::VertexArray vertexArray;
 
-};
+		};
+
+
+	}
+
+}
 
 #endif

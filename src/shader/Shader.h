@@ -7,107 +7,115 @@
 
 #include <vector>
 
-class Shader {
+namespace Atlas {
 
-public:
-	/**
-	 * Constructs a Shader object.
-	 */
-	Shader();
+	namespace Shader {
 
-	/**
-	 * Destructs a Shader object.
-	 */
-	~Shader();
+        class Shader {
 
-	/**
-	 * Adds a shader stage to the shader (e.g the vertex shader)
-	 * @param type The type of the stage. See {@link ShaderStage.h} for more.
-	 * @param filename The name of the GLSL file.
-	 * @note All stages are managed by the shader. This means that they
-	 * get released from memory if the shader gets destructed.
-	 */
-	void AddStage(int32_t type, std::string filename);
+        public:
+            /**
+             * Constructs a Shader object.
+             */
+            Shader();
 
-	/**
-	 * Adds a shader stage to the shader (e.g the vertex shader)
-	 * @param stage A pointer to a ShaderStage object.
-	 * @note All stages are managed by the shader. This means that they
-	 * get released from memory if the shader gets destructed.
-	 */
-	void AddStage(ShaderStage* stage);
+            /**
+             * Destructs a Shader object.
+             */
+            ~Shader();
 
-	/**
-	 * Returns a stage
-	 * @param type The type of the stage. See {@link ShaderStage.h} for more.
-	 * @return A pointer to the ShaderStage object.
-	 */
-	ShaderStage* GetStage(int32_t type);
+            /**
+             * Adds a shader stage to the shader (e.g the vertex shader)
+             * @param type The type of the stage. See {@link ShaderStage.h} for more.
+             * @param filename The name of the GLSL file.
+             * @note All stages are managed by the shader. This means that they
+             * get released from memory if the shader gets destructed.
+             */
+            void AddStage(int32_t type, std::string filename);
 
-	/**
-	 * Returns a Uniform object for a specific uniform of the shader.
-	 * @param uniformName The name of the uniform.
-	 * @return A pointer to a Uniform object if valid. Nullptr otherwise.
-	 * @note All uniforms are managed by the shader. This means that
-	 * they get released from memory if the shader gets destructed.
-	 */
-	Uniform* GetUniform(std::string uniformName);
+            /**
+             * Adds a shader stage to the shader (e.g the vertex shader)
+             * @param stage A pointer to a ShaderStage object.
+             * @note All stages are managed by the shader. This means that they
+             * get released from memory if the shader gets destructed.
+             */
+            void AddStage(ShaderStage* stage);
 
-	/**
-	 * Adds a macro to the shader.
-	 * @param macro The macro to be added.
-	 */
-	void AddMacro(std::string macro);
+            /**
+             * Returns a stage
+             * @param type The type of the stage. See {@link ShaderStage.h} for more.
+             * @return A pointer to the ShaderStage object.
+             */
+            ShaderStage* GetStage(int32_t type);
 
-	/**
-	 * Removes a macro from the shader.
-	 * @param macro The macro to be removed.
-	 */
-	void RemoveMacro(std::string macro);
+            /**
+             * Returns a Uniform object for a specific uniform of the shader.
+             * @param uniformName The name of the uniform.
+             * @return A pointer to a Uniform object if valid. Nullptr otherwise.
+             * @note All uniforms are managed by the shader. This means that
+             * they get released from memory if the shader gets destructed.
+             */
+            Uniform* GetUniform(std::string uniformName);
 
-	/**
-	 * Checks if a macro is present in the shader.
-	 * @param macro The macro to be checked.
-	 * @return True if present, false otherwise.
-	 */
-	bool HasMacro(std::string macro);
+            /**
+             * Adds a macro to the shader.
+             * @param macro The macro to be added.
+             */
+            void AddMacro(std::string macro);
 
-	/**
-	 * Compiles all shader stages and links them
-	 * @return True if successful, false otherwise.
-	 */
-	bool Compile();
+            /**
+             * Removes a macro from the shader.
+             * @param macro The macro to be removed.
+             */
+            void RemoveMacro(std::string macro);
 
-	/**
-	 * Requests if the shader is successfully compiled.
-	 * @return True if successful, false otherwise.
-	 */
-	bool IsCompiled();
+            /**
+             * Checks if a macro is present in the shader.
+             * @param macro The macro to be checked.
+             * @return True if present, false otherwise.
+             */
+            bool HasMacro(std::string macro);
 
-	/**
-	 * Binds the shader.
-	 */
-	void Bind();
+            /**
+             * Compiles all shader stages and links them
+             * @return True if successful, false otherwise.
+             */
+            bool Compile();
 
-	/**
-	 * Unbinds any bound shader.
-	 */
-	void Unbind();
+            /**
+             * Requests if the shader is successfully compiled.
+             * @return True if successful, false otherwise.
+             */
+            bool IsCompiled();
 
-	uint32_t GetID();
+            /**
+             * Binds the shader.
+             */
+            void Bind();
 
-	std::vector<Uniform*> uniforms;
-	std::vector<std::string> macros;
+            /**
+             * Unbinds any bound shader.
+             */
+            void Unbind();
 
-private:
-	uint32_t ID;
+            uint32_t GetID();
 
-	std::vector<ShaderStage*> stages;
+            std::vector<Uniform*> uniforms;
+            std::vector<std::string> macros;
 
-	bool isCompiled;
+        private:
+            uint32_t ID;
 
-	static uint32_t boundShaderID;
+            std::vector<ShaderStage*> stages;
 
-};
+            bool isCompiled;
+
+            static uint32_t boundShaderID;
+
+        };
+
+	}
+
+}
 
 #endif

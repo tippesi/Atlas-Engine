@@ -4,35 +4,44 @@
 #include "../System.h"
 #include "ILight.h"
 
-class DirectionalLight : public ILight {
+namespace Atlas {
 
-public:
-	DirectionalLight(int32_t mobility = AE_MOVABLE_LIGHT);
+	namespace Lighting {
 
-	~DirectionalLight();
+		class DirectionalLight : public ILight {
 
-	void AddShadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection, Camera* camera);
+		public:
+			DirectionalLight(int32_t mobility = AE_MOVABLE_LIGHT);
 
-	void AddShadow(float distance, float bias, int32_t resolution, vec3 centerPoint, mat4 orthoProjection);
+			~DirectionalLight();
 
-	void RemoveShadow();
+			void AddShadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection, Camera* camera);
 
-	void AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor = 1.0f);
+			void AddShadow(float distance, float bias, int32_t resolution, vec3 centerPoint, mat4 orthoProjection);
 
-	void RemoveVolumetric();
+			void RemoveShadow();
 
-	void Update(Camera* camera);
+			void AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor = 1.0f);
 
-	vec3 direction;
+			void RemoveVolumetric();
 
-private:
-	void UpdateShadowCascade(ShadowComponent* cascade, Camera* camera);
+			void Update(Camera* camera);
 
-	float FrustumSplitFormula(float correction, float near, float far, float splitIndex, float splitCount);
+			vec3 direction;
 
-	vec3 shadowCenter;
-	bool useShadowCenter;
+		private:
+			void UpdateShadowCascade(ShadowComponent* cascade, Camera* camera);
 
-};
+			float FrustumSplitFormula(float correction, float near, float far, float splitIndex, float splitCount);
+
+			vec3 shadowCenter;
+			bool useShadowCenter;
+
+		};
+
+
+	}
+
+}
 
 #endif

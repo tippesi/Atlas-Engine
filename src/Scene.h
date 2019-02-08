@@ -29,37 +29,37 @@ namespace Atlas {
          *
          * @param actor
          */
-		void Add(MeshActor *actor);
+		void Add(Mesh::MeshActor *actor);
 
 		/**
          *
          * @param actor
          */
-		void Remove(MeshActor *actor);
+		void Remove(Mesh::MeshActor *actor);
 
 		/**
          *
          * @param terrain
          */
-		void Add(Terrain *terrain);
+		void Add(Terrain::Terrain *terrain);
 
 		/**
          *
          * @param terrain
          */
-		void Remove(Terrain *terrain);
+		void Remove(Terrain::Terrain *terrain);
 
 		/**
          *
          * @param light
          */
-		void Add(ILight *light);
+		void Add(Lighting::ILight *light);
 
 		/**
          *
          * @param light
          */
-		void Remove(ILight *light);
+		void Remove(Lighting::ILight *light);
 
 		/**
          *
@@ -91,13 +91,13 @@ namespace Atlas {
 
 		SceneNode *rootNode;
 
-		std::vector<ILight *> lights;
-		std::vector<MeshActorBatch *> meshActorBatches;
-		std::vector<Terrain *> terrains;
+		std::vector<Lighting::ILight *> lights;
+		std::vector<Mesh::MeshActorBatch *> meshActorBatches;
+		std::vector<Terrain::Terrain *> terrains;
 		std::vector<Decal *> decals;
 
-		Sky *sky;
-		PostProcessing *postProcessing;
+		Lighting::Sky *sky;
+		PostProcessing::PostProcessing *postProcessing;
 
 		RenderList *renderList;
 

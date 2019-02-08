@@ -4,39 +4,46 @@
 #include "../System.h"
 #include "IRenderer.h"
 
-class DecalRenderer : public IRenderer {
+namespace Atlas {
 
-public:
-    DecalRenderer();
+	namespace Renderer {
 
-    void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+		class DecalRenderer : public IRenderer {
 
-    static std::string vertexPath;
-    static std::string fragmentPath;
+		public:
+			DecalRenderer();
 
-private:
-    void GetUniforms();
+			void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
 
-    VertexArray vertexArray;
+			static std::string vertexPath;
+			static std::string fragmentPath;
 
-    Shader shader;
+		private:
+			void GetUniforms();
 
-	Uniform* depthTexture;
-    Uniform* decalTexture;
-    Uniform* modelMatrix;
-    Uniform* viewMatrix;
-    Uniform* projectionMatrix;
-    Uniform* inverseViewMatrix;
-	Uniform* inverseProjectionMatrix;
+			Buffer::VertexArray vertexArray;
 
-	Uniform* color;
+			Shader::Shader shader;
 
-	Uniform* timeInMilliseconds;
-	Uniform* animationLength;
-	Uniform* rowCount;
-	Uniform* columnCount;
+			Shader::Uniform* depthTexture;
+			Shader::Uniform* decalTexture;
+			Shader::Uniform* modelMatrix;
+			Shader::Uniform* viewMatrix;
+			Shader::Uniform* projectionMatrix;
+			Shader::Uniform* inverseViewMatrix;
+			Shader::Uniform* inverseProjectionMatrix;
 
-};
+			Shader::Uniform* color;
 
+			Shader::Uniform* timeInMilliseconds;
+			Shader::Uniform* animationLength;
+			Shader::Uniform* rowCount;
+			Shader::Uniform* columnCount;
+
+		};
+
+	}
+
+}
 
 #endif

@@ -19,7 +19,7 @@ namespace Atlas {
         Texture2D::Texture2D(std::string filename, bool colorSpaceConversion, bool anisotropicFiltering,
                              bool generateMipMaps) {
 
-            Image image = ImageLoader::LoadImage(filename, colorSpaceConversion);
+            auto image = Loader::ImageLoader::LoadImage(filename, colorSpaceConversion);
 
             int32_t sizedFormat;
 

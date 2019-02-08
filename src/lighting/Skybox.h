@@ -4,15 +4,22 @@
 #include "../System.h"
 #include "../../texture/Cubemap.h"
 
-class Skybox {
+namespace Atlas {
 
-public:
-	Skybox(Cubemap* cubemap, mat4 matrix = mat4(1.0f)) : cubemap(cubemap), matrix(matrix) {};
+	namespace Lighting {
 
-	Cubemap * cubemap;
-	mat4 matrix;
+		class Skybox {
 
-};
+		public:
+			Skybox(Texture::Cubemap* cubemap, mat4 matrix = mat4(1.0f)) : cubemap(cubemap), matrix(matrix) {};
 
+			Texture::Cubemap * cubemap;
+			mat4 matrix;
+
+		};
+
+	}
+
+}
 
 #endif
