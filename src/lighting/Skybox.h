@@ -2,7 +2,7 @@
 #define AE_SKYBOX_H
 
 #include "../System.h"
-#include "../../texture/Cubemap.h"
+#include "../texture/Cubemap.h"
 
 namespace Atlas {
 

@@ -283,8 +283,8 @@ void Main::SceneSetUp() {
 	directionalLight->direction = vec3(0.0f, -1.0f, 0.5f);
     directionalLight->ambient = 0.005f;
 #else
-    directionalLight->direction = vec3(0.0f, -1.0f, 0.1f);
-    directionalLight->ambient = 0.05f;
+    directionalLight->direction = vec3(0.0f, -1.0f, 0.5f);
+    directionalLight->ambient = 0.005f;
 #endif
 	directionalLight->color = vec3(253, 194, 109) / 255.0f;
 
