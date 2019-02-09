@@ -21,8 +21,8 @@ namespace Atlas {
 				windowID = event.windowID;
 				x = event.x;
 				y = event.y;
-				xDelta = event.xrel;
-				yDelta = event.yrel;
+				dx = event.xrel;
+				dy = event.yrel;
 
 			}
 
@@ -44,12 +44,12 @@ namespace Atlas {
 			/**
              * The relative motion in x direction
              */
-			int32_t xDelta;
+			int32_t dx;
 
 			/**
              * The relative motion in y direction
              */
-			int32_t yDelta;
+			int32_t dy;
 
 		};
 

@@ -30,8 +30,8 @@ namespace Atlas {
                 x = event.x;
                 y = event.y;
 
-                xDelta = event.dx;
-                yDelta = event.dy;
+                dx = event.dx;
+                dy = event.dy;
 
                 pressure = event.pressure;
 
@@ -60,12 +60,12 @@ namespace Atlas {
             /**
              * The distance moved on the x-axis, normalized (-1, 1)
              */
-            float xDelta;
+            float dx;
 
             /**
              * The distance moved on the y-axis, normalized (-1, 1)
              */
-            float yDelta;
+            float dy;
 
             /**
              * The pressure applied by the finger, normalized (0, 1)

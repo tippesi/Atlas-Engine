@@ -5,6 +5,7 @@
 #include "input/Mouse.h"
 #include "input/Keyboard.h"
 #include "input/Controller.h"
+#include "input/Touch.h"
 
 class Main {
 
@@ -30,13 +31,12 @@ private:
 
 	void MouseButtonEventHandler(Atlas::Events::MouseButtonEvent event);
 
-	void TextInputEventHandler(Atlas::Events::TextInputEvent event);
-
 	Atlas::Window* window;
 
 	Atlas::Input::MouseHandler* mouseHandler;
 	Atlas::Input::KeyboardHandler* keyboardHandler;
 	Atlas::Input::ControllerHandler* controllerHandler;
+	Atlas::Input::TouchHandler* touchHandler;
 
 	Atlas::RenderTarget* renderTarget;
 	Atlas::Renderer::MasterRenderer* masterRenderer;

@@ -35,12 +35,12 @@ namespace Atlas {
 
 			if (controllerDevice > -1) {
 
-				float floatdelta = (float)deltaTime / 1000.0f;
+				float floatDelta = (float)deltaTime / 1000.0f;
 
-				location += camera->direction * -leftStick.y * floatdelta * (speed + speedIncrease);
-				location += camera->right * leftStick.x * floatdelta * (speed + speedIncrease);
+				location += camera->direction * -leftStick.y * floatDelta * (speed + speedIncrease);
+				location += camera->right * leftStick.x * floatDelta * (speed + speedIncrease);
 
-				rotation += -rightStick * floatdelta * sensibility;
+				rotation += -rightStick * floatDelta * sensibility;
 
 				float progress = glm::clamp(reactivity * ((float)deltaTime / 16.0f), 0.0f, 1.0f);
 

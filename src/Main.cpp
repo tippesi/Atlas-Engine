@@ -43,13 +43,17 @@ Main::Main(int argc, char* argv[]) {
 	auto mouseButtonEventHandler = std::bind(&Main::MouseButtonEventHandler, this, std::placeholders::_1);
     Atlas::Events::EventManager::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
-	camera = new Camera(47.0f, 2.0f, .25f, 4000.0f);
+	camera = new Camera(47.0f, 2.0f, .25f, 400.0f);
 	camera->location = vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = vec2(-3.14f / 2.0f, 0.0f);
 
+#ifdef AE_OS_ANDROID
+	touchHandler = new Atlas::Input::TouchHandler(camera, 1.5f, 7.0f, 0.2f);
+#else
 	mouseHandler = new Atlas::Input::MouseHandler(camera, 1.5f, 0.015f);
 	keyboardHandler = new Atlas::Input::KeyboardHandler(camera, 7.0f, 0.3f);
 	controllerHandler = new Atlas::Input::ControllerHandler(camera, 1.5f, 7.0f, 0.2f, 5000.0f);
+#endif
 
 	masterRenderer = new Renderer::MasterRenderer();
 
@@ -88,6 +92,9 @@ Main::Main(int argc, char* argv[]) {
 
 void Main::Update(uint32_t deltaTime) {
 
+#ifdef AE_OS_ANDROID
+	touchHandler->Update(camera, deltaTime);
+#else
 	if (!useControllerHandler) {
 		mouseHandler->Update(camera, deltaTime);
 		keyboardHandler->Update(camera, deltaTime);
@@ -95,6 +102,7 @@ void Main::Update(uint32_t deltaTime) {
 	else {
 		controllerHandler->Update(camera, deltaTime);
 	}
+#endif
 
 	camera->UpdateView();
 	camera->UpdateProjection();
@@ -270,7 +278,7 @@ void Main::SceneSetUp() {
 	auto node = new Atlas::SceneNode();
 	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
 	scene->rootNode->Add(node);
-	// scene->sky->skybox = new Lighting::Skybox(skybox);
+	scene->sky->skybox = new Lighting::Skybox(skybox);
 
 	cubeActor = new Mesh::MeshActor(cubeMesh);
 	treeActor = new Mesh::MeshActor(treeMesh);
@@ -283,8 +291,8 @@ void Main::SceneSetUp() {
 	directionalLight->direction = vec3(0.0f, -1.0f, 0.5f);
     directionalLight->ambient = 0.005f;
 #else
-    directionalLight->direction = vec3(0.0f, -1.0f, 0.5f);
-    directionalLight->ambient = 0.005f;
+    directionalLight->direction = vec3(0.0f, -1.0f, 0.1f);
+    directionalLight->ambient = 0.05f;
 #endif
 	directionalLight->color = vec3(253, 194, 109) / 255.0f;
 

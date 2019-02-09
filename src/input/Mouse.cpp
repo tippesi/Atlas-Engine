@@ -67,7 +67,7 @@ namespace Atlas {
 				if (!activationButtonDown)
 					return;
 
-				rotation += glm::vec2(-((float)event.xDelta), -((float)event.yDelta)) * sensibility * 0.001f;
+				rotation += glm::vec2(-((float)event.dx), -((float)event.dy)) * sensibility * 0.001f;
 
 			}
 
