@@ -2,14 +2,14 @@
 #define AE_POSTPROCESSRENDERER_H
 
 #include "../System.h"
-#include "IRenderer.h"
+#include "Renderer.h"
 #include "../shader/Shader.h"
 
 namespace Atlas {
 
 	namespace Renderer {
 
-		class PostProcessRenderer : public IRenderer {
+		class PostProcessRenderer : public Renderer {
 
 		public:
 			PostProcessRenderer();

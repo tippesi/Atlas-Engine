@@ -125,51 +125,56 @@ namespace Atlas {
                 }
             }
 
+            /**
+             * Determines the type of the sized format
+             * @param sizedFormat The sized format, e.g. AE_RGB16F
+             * @return The type of the format, e.g. AE_FLOAT
+             */
 			static int32_t GetType(int32_t sizedFormat) {
-				switch (sizedFormat) {
-				case AE_R8: return AE_UBYTE;
-				case AE_R8I: return AE_BYTE;
-				case AE_R8UI: return AE_UBYTE;
-				case AE_R16F: return AE_HALF_FLOAT;
-				case AE_R16I: return AE_SHORT;
-				case AE_R16UI: return AE_USHORT;
-				case AE_R32F: return AE_FLOAT;
-				case AE_R32I: return AE_INT;
-				case AE_R32UI: return AE_UINT;
-				case AE_RG8: return AE_UBYTE;
-				case AE_RG8I: return AE_BYTE;
-				case AE_RG8UI: return AE_UBYTE;
-				case AE_RG16F: return AE_HALF_FLOAT;
-				case AE_RG16I: return AE_SHORT;
-				case AE_RG16UI: return AE_USHORT;
-				case AE_RG32F: return AE_FLOAT;
-				case AE_RG32I: return AE_INT;
-				case AE_RG32UI: return AE_UINT;
-				case AE_RGB8: return AE_UBYTE;
-				case AE_RGB8I: return AE_BYTE;
-				case AE_RGB8UI: return AE_UBYTE;
-				case AE_RGB16F: return AE_HALF_FLOAT;
-				case AE_RGB16I: return AE_SHORT;
-				case AE_RGB16UI: return AE_USHORT;
-				case AE_RGB32F: return AE_FLOAT;
-				case AE_RGB32I: return AE_INT;
-				case AE_RGB32UI: return AE_UINT;
-				case AE_SRGB8: return AE_UBYTE;
-				case AE_RGBA8: return AE_UBYTE;
-				case AE_RGBA8I: return AE_BYTE;
-				case AE_RGBA8UI: return AE_UBYTE;
-				case AE_RGBA16F: return AE_HALF_FLOAT;
-				case AE_RGBA16I: return AE_SHORT;
-				case AE_RGBA16UI: return AE_USHORT;
-				case AE_RGBA32F: return AE_FLOAT;
-				case AE_RGBA32I: return AE_INT;
-				case AE_RGBA32UI: return AE_UINT;
-				case AE_SRGBA8: return AE_UBYTE;
-				case AE_DEPTH16: return AE_USHORT;
-				case AE_DEPTH24: return AE_UINT;
-				case AE_DEPTH32F: return AE_FLOAT;
-				default: return AE_UBYTE;
-				}
+                switch (sizedFormat) {
+                    case AE_R8: return AE_UBYTE;
+                    case AE_R8I: return AE_BYTE;
+                    case AE_R8UI: return AE_UBYTE;
+                    case AE_R16F: return AE_HALF_FLOAT;
+                    case AE_R16I: return AE_SHORT;
+                    case AE_R16UI: return AE_USHORT;
+                    case AE_R32F: return AE_FLOAT;
+                    case AE_R32I: return AE_INT;
+                    case AE_R32UI: return AE_UINT;
+                    case AE_RG8: return AE_UBYTE;
+                    case AE_RG8I: return AE_BYTE;
+                    case AE_RG8UI: return AE_UBYTE;
+                    case AE_RG16F: return AE_HALF_FLOAT;
+                    case AE_RG16I: return AE_SHORT;
+                    case AE_RG16UI: return AE_USHORT;
+                    case AE_RG32F: return AE_FLOAT;
+                    case AE_RG32I: return AE_INT;
+                    case AE_RG32UI: return AE_UINT;
+                    case AE_RGB8: return AE_UBYTE;
+                    case AE_RGB8I: return AE_BYTE;
+                    case AE_RGB8UI: return AE_UBYTE;
+                    case AE_RGB16F: return AE_HALF_FLOAT;
+                    case AE_RGB16I: return AE_SHORT;
+                    case AE_RGB16UI: return AE_USHORT;
+                    case AE_RGB32F: return AE_FLOAT;
+                    case AE_RGB32I: return AE_INT;
+                    case AE_RGB32UI: return AE_UINT;
+                    case AE_SRGB8: return AE_UBYTE;
+                    case AE_RGBA8: return AE_UBYTE;
+                    case AE_RGBA8I: return AE_BYTE;
+                    case AE_RGBA8UI: return AE_UBYTE;
+                    case AE_RGBA16F: return AE_HALF_FLOAT;
+                    case AE_RGBA16I: return AE_SHORT;
+                    case AE_RGBA16UI: return AE_USHORT;
+                    case AE_RGBA32F: return AE_FLOAT;
+                    case AE_RGBA32I: return AE_INT;
+                    case AE_RGBA32UI: return AE_UINT;
+                    case AE_SRGBA8: return AE_UBYTE;
+                    case AE_DEPTH16: return AE_USHORT;
+                    case AE_DEPTH24: return AE_UINT;
+                    case AE_DEPTH32F: return AE_FLOAT;
+                    default: return AE_UBYTE;
+                }
 			}
 
         };

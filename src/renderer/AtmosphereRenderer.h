@@ -2,14 +2,14 @@
 #define AE_ATMOSPHERERENDERER_H
 
 #include "../System.h"
-#include "IRenderer.h"
+#include "Renderer.h"
 
 namespace Atlas {
 
 	namespace Renderer {
 
 
-		class AtmosphereRenderer : public IRenderer {
+		class AtmosphereRenderer : public Renderer {
 
 		public:
 			AtmosphereRenderer();

@@ -2,14 +2,14 @@
 #define AE_SKYBOXRENDERER_H
 
 #include "../System.h"
-#include "IRenderer.h"
+#include "Renderer.h"
 #include "buffer/VertexArray.h"
 
 namespace Atlas {
 
 	namespace Renderer {
 
-		class SkyboxRenderer : public IRenderer {
+		class SkyboxRenderer : public Renderer {
 
 		public:
 			SkyboxRenderer();

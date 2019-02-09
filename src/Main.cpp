@@ -31,6 +31,8 @@ Main::Main(int argc, char* argv[]) {
 
 	Engine::UnlockFramerate();
 
+	auto icon = Texture::Texture2D("icon.png");
+    window->SetIcon(&icon);
 	window->Update();
 
 	// Register quit event

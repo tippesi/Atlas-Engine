@@ -3,7 +3,7 @@
 
 #include "../System.h"
 #include "../shader/ShaderBatch.h"
-#include "IRenderer.h"
+#include "Renderer.h"
 
 #include <mutex>
 
@@ -11,7 +11,7 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		class OpaqueRenderer : public IRenderer {
+		class OpaqueRenderer : public Renderer {
 
 		public:
 			OpaqueRenderer();

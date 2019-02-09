@@ -56,12 +56,12 @@ namespace Atlas {
 
             auto framebuffer = Framebuffer(width, height);
 
-            std::vector<uint8_t> data(width * height * channels);
+            std::vector<uint8_t> data(width * height * channels * TypeFormat::GetSize(dataType));
 
             framebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, this, depth);
 
             glReadPixels(0, 0, width, height,
-                         TextureFormat::GetBaseFormat(sizedFormat), GL_UNSIGNED_BYTE, data.data());
+                    TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
 
             framebuffer.Unbind();
 

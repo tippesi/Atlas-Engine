@@ -3,13 +3,13 @@
 
 #include "../System.h"
 #include "../Kernel.h"
-#include "IRenderer.h"
+#include "Renderer.h"
 
 namespace Atlas {
 
 	namespace Renderer {
 
-		class DirectionalVolumetricRenderer : public IRenderer{
+		class DirectionalVolumetricRenderer : public Renderer{
 
 		public:
 			DirectionalVolumetricRenderer();

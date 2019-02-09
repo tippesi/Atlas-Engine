@@ -1,5 +1,5 @@
-#ifndef AE_IRENDERER_H
-#define AE_IRENDERER_H
+#ifndef AE_RENDERER_H
+#define AE_RENDERER_H
 
 #include "../System.h"
 #include "../RenderTarget.h"
@@ -11,11 +11,11 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		class IRenderer {
+		class Renderer {
 
 		public:
 			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) = 0;
-			virtual ~IRenderer() {}
+			virtual ~Renderer() {}
 
 		};
 

@@ -2,13 +2,13 @@
 #define AE_BLURRENDERER_H
 
 #include "../System.h"
-#include "IRenderer.h"
+#include "Renderer.h"
 
 namespace Atlas {
 
     namespace Renderer {
 
-        class BlurRenderer : IRenderer {
+        class BlurRenderer : Renderer {
 
         public:
             BlurRenderer(std::string vertexSource, std::string fragmentSource, int32_t channelCount, float* kernelOffsets,

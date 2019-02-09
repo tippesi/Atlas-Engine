@@ -19,5 +19,33 @@
 #define AE_UINT_2_10_10_10 GL_UNSIGNED_INT_2_10_10_10_REV
 #endif
 
-#endif
+namespace Atlas {
 
+    class TypeFormat {
+
+    public:
+        /**
+         * Determines the size of the type
+         * @param typeFormat The format which should be checked on size
+         * @return The size of the format in bytes.
+         */
+        static int32_t GetSize(uint32_t typeFormat) {
+            switch(typeFormat) {
+                case AE_UBYTE: return 1;
+                case AE_BYTE: return 1;
+                case AE_USHORT: return 2;
+                case AE_SHORT: return 2;
+                case AE_UINT: return 4;
+                case AE_INT: return 4;
+                case AE_HALF_FLOAT: return 2;
+                case AE_FLOAT: return 4;
+                case AE_INT_2_10_10_10: return 4;
+                case AE_UINT_2_10_10_10: return 4;
+            }
+        }
+
+    };
+
+}
+
+#endif

@@ -2,7 +2,7 @@
 #define AE_TEXTRENDERER_H
 
 #include "../System.h"
-#include "IRenderer.h"
+#include "Renderer.h"
 
 #include "../Font.h"
 #include "buffer/VertexArray.h"
@@ -11,7 +11,7 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		class TextRenderer : public IRenderer {
+		class TextRenderer : public Renderer {
 
 		public:
 			TextRenderer();

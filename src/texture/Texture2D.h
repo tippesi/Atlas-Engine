@@ -61,6 +61,9 @@ namespace Atlas {
             /**
              * Retrieves the data of the texture from the GPU.
              * @return A vector holding the data.
+             * @note Depending on the data type of that texture the stride
+             * between each pixel may vary and data for one channel may be larger
+             * than 8 bits. To get the size of the data type call TypeFormat::GetSize().
              */
             std::vector<uint8_t> GetData();
 

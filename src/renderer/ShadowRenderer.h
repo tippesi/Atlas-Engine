@@ -2,7 +2,7 @@
 #define AE_SHADOWRENDERER_H
 
 #include "../System.h"
-#include "IRenderer.h"
+#include "Renderer.h"
 #include "../shader/ShaderBatch.h"
 
 #include <mutex>
@@ -11,7 +11,7 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		class ShadowRenderer : public IRenderer {
+		class ShadowRenderer : public Renderer {
 
 		public:
 			ShadowRenderer();
