@@ -25,13 +25,11 @@ namespace Atlas {
 
         void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene) {
 
-            std::vector<uint32_t> drawBuffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-
             vertexArray.Bind();
 
             shader.Bind();
 
-            target->geometryFramebuffer->SetDrawBuffers(drawBuffers);
+			target->geometryFramebuffer->SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
 
             depthTexture->SetValue(0);
             decalTexture->SetValue(1);
@@ -61,7 +59,8 @@ namespace Atlas {
 
             }
 
-            target->geometryFramebuffer->SetDrawBuffers(drawBuffers);
+            target->geometryFramebuffer->SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
+				GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
 
         }
 
