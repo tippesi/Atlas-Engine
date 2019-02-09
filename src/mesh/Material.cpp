@@ -69,8 +69,8 @@ namespace Atlas {
 
 			// Create the textures
 			if (useArrayMap && images.size() > 0) {
-				arrayMap = new Texture::Texture2DArray(AE_UBYTE, width, height, (int32_t)images.size(),
-													   Texture::Texture::GetSuggestedFormat(channels), GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+				arrayMap = new Texture::Texture2DArray(width, height, (int32_t)images.size(), 
+					Texture::Texture::GetSuggestedFormat(channels), GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 			}
 
 			int32_t index = 0;
@@ -87,8 +87,8 @@ namespace Atlas {
 					}
 					arrayMap->SetData(image->data, index++);
 				} else {
-					auto texture = new Texture::Texture2D(AE_UBYTE, image->width, image->height,
-														  Texture::Texture::GetSuggestedFormat(image->channels), GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					auto texture = new Texture::Texture2D(image->width, image->height, 
+						Texture::Texture::GetSuggestedFormat(image->channels), GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 					switch(map) {
 						case AE_MATERIAL_DIFFUSE_MAP: diffuseMap = texture; break;
 						case AE_MATERIAL_NORMAL_MAP: normalMap = texture; break;

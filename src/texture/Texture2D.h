@@ -13,7 +13,6 @@ namespace Atlas {
         public:
             /**
              * Constructs a Texture2D object.
-             * @param dataType
              * @param width
              * @param height
              * @param sizedFormat
@@ -22,7 +21,7 @@ namespace Atlas {
              * @param anisotropicFiltering
              * @param generateMipMaps
              */
-            Texture2D(GLenum dataType, int32_t width, int32_t height, int32_t sizedFormat,
+            Texture2D(int32_t width, int32_t height, int32_t sizedFormat,
                       int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
 
             /**

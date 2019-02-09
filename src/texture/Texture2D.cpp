@@ -6,13 +6,13 @@ namespace Atlas {
 
     namespace Texture {
 
-        Texture2D::Texture2D(GLenum dataType, int32_t width, int32_t height, int32_t sizedFormat, int32_t wrapping,
+        Texture2D::Texture2D(int32_t width, int32_t height, int32_t sizedFormat, int32_t wrapping,
                              int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
 
             this->width = width;
             this->height = height;
 
-            Generate(GL_TEXTURE_2D, dataType, sizedFormat, wrapping, filtering, anisotropicFiltering, generateMipMaps);
+            Generate(GL_TEXTURE_2D, sizedFormat, wrapping, filtering, anisotropicFiltering, generateMipMaps);
 
         }
 
@@ -34,7 +34,7 @@ namespace Atlas {
             height = image.height;
             channels = image.channels;
 
-            Generate(GL_TEXTURE_2D, AE_UBYTE, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR,
+            Generate(GL_TEXTURE_2D, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR,
                      anisotropicFiltering, generateMipMaps);
 
             SetData(image.data);
@@ -101,7 +101,7 @@ namespace Atlas {
             glDeleteTextures(1, &ID);
             glGenTextures(1, &ID);
 
-            Generate(GL_TEXTURE_2D, dataType, sizedFormat, wrapping, filtering, anisotropicFiltering, mipmaps);
+            Generate(GL_TEXTURE_2D, sizedFormat, wrapping, filtering, anisotropicFiltering, mipmaps);
 
         }
 

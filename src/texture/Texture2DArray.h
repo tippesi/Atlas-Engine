@@ -23,7 +23,7 @@ namespace Atlas {
              * @param anisotropicFiltering
              * @param generateMipMaps
              */
-            Texture2DArray(GLenum dataType, int32_t width, int32_t height, int32_t depth, int32_t sizedFormat,
+            Texture2DArray(int32_t width, int32_t height, int32_t depth, int32_t sizedFormat,
                            int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
 
             /**

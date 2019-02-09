@@ -185,11 +185,11 @@ namespace Atlas {
 
         }
 
-        void Texture::Generate(GLenum target, GLenum dataType, int32_t sizedFormat, int32_t wrapping,
+        void Texture::Generate(GLenum target,int32_t sizedFormat, int32_t wrapping,
                                int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
 
             this->channels = GetChannelCount(TextureFormat::GetBaseFormat(sizedFormat));
-            this->dataType = dataType;
+            this->dataType = TextureFormat::GetType(sizedFormat);
             this->sizedFormat = sizedFormat;
             this->wrapping = wrapping;
             this->filtering = filtering;

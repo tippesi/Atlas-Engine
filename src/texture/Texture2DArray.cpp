@@ -7,14 +7,14 @@ namespace Atlas {
 
     namespace Texture {
 
-        Texture2DArray::Texture2DArray(GLenum dataType, int32_t width, int32_t height, int32_t depth, int32_t sizedFormat,
+        Texture2DArray::Texture2DArray(int32_t width, int32_t height, int32_t depth, int32_t sizedFormat,
                                        int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
 
             this->width = width;
             this->height = height;
             this->depth = depth;
 
-            Generate(GL_TEXTURE_2D_ARRAY, dataType, sizedFormat, wrapping, filtering,
+            Generate(GL_TEXTURE_2D_ARRAY, sizedFormat, wrapping, filtering,
                      anisotropicFiltering, generateMipMaps);
 
         }
@@ -78,7 +78,7 @@ namespace Atlas {
             glDeleteTextures(1, &ID);
             glGenTextures(1, &ID);
 
-            Generate(GL_TEXTURE_2D_ARRAY, dataType, sizedFormat, wrapping,
+            Generate(GL_TEXTURE_2D_ARRAY, sizedFormat, wrapping,
                      filtering, anisotropicFiltering, mipmaps);
 
         }

@@ -26,12 +26,12 @@ namespace Atlas {
          *
          * @param attachment
          * @param dataFormat
-         * @param internalFormat
+         * @param sizedFormat
          * @param wrapping
          * @param filtering
          * @param target
          */
-		void AddComponent(int32_t attachment, GLenum dataFormat, int32_t internalFormat, int32_t wrapping,
+		void AddComponent(int32_t attachment, int32_t sizedFormat, int32_t wrapping,
 						  int32_t filtering, uint32_t target = GL_FRAMEBUFFER);
 
 		/**

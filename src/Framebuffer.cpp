@@ -24,7 +24,7 @@ namespace Atlas {
 
 	}
 
-	void Framebuffer::AddComponent(int32_t attachment, GLenum dataFormat, int32_t internalFormat, int32_t wrapping,
+	void Framebuffer::AddComponent(int32_t attachment, int32_t sizedFormat, int32_t wrapping,
 								   int32_t filtering, uint32_t target) {
 
 		FramebufferComponent component;
@@ -39,7 +39,7 @@ namespace Atlas {
 				delete component.texture;
 		}
 
-		component.texture = new Texture::Texture2D(dataFormat, width, height, internalFormat, wrapping, filtering, false, false);
+		component.texture = new Texture::Texture2D(width, height, sizedFormat, wrapping, filtering, false, false);
 		component.textureArray = nullptr;
 		component.cubemap = nullptr;
 		component.internalTexture = true;

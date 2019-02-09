@@ -168,10 +168,10 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 
 					// Create the data structures for the cell
 					cell->heightData.resize(tileResolutionSquared);
-					cell->heightField = new Texture::Texture2D(AE_USHORT, tileResolution,
-													  tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-					cell->normalMap = new Texture::Texture2D(AE_UBYTE, tileResolution,
-													tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+					cell->heightField = new Texture::Texture2D(tileResolution, 
+						tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+					cell->normalMap = new Texture::Texture2D(tileResolution, 
+						tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 					// Now copy a tile of the original image
 					// We make sure that every tile has the same size

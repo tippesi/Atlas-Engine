@@ -134,7 +134,7 @@ namespace Atlas {
              */
             int32_t GetMipMapLevel();
 
-            void Generate(GLenum target, GLenum dataType, int32_t sizedFormat, int32_t wrapping,
+            void Generate(GLenum target, int32_t sizedFormat, int32_t wrapping,
                           int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
 
             uint32_t ID;
