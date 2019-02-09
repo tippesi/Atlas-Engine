@@ -21,8 +21,8 @@ namespace Atlas {
 
 			components = new ShadowComponent[cascadeCount];
 
-			maps = new Texture::Texture2DArray(GL_UNSIGNED_INT, resolution, resolution, cascadeCount,
-									  GL_DEPTH_COMPONENT24, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+			maps = new Texture::Texture2DArray(AE_UINT, resolution, resolution, cascadeCount,
+									  AE_DEPTH24, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 			maps->Bind(GL_TEXTURE0);
 
@@ -44,7 +44,7 @@ namespace Atlas {
 			if (useCubemap) {
 				componentCount = 6;
 
-				cubemap  = new Texture::Cubemap(GL_UNSIGNED_INT, resolution, resolution, GL_DEPTH_COMPONENT24,
+				cubemap  = new Texture::Cubemap(AE_UINT, resolution, resolution, AE_DEPTH24,
 									   GL_CLAMP_TO_EDGE, GL_LINEAR, false);
 
 				cubemap->Bind(GL_TEXTURE0);
@@ -56,8 +56,8 @@ namespace Atlas {
 			else {
 				componentCount = 1;
 
-				maps = new Texture::Texture2DArray(GL_UNSIGNED_INT, resolution, resolution, 1,
-										  GL_DEPTH_COMPONENT24, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+				maps = new Texture::Texture2DArray(AE_UINT, resolution, resolution, 1,
+										  AE_DEPTH24, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 				maps->Bind(GL_TEXTURE0);
 

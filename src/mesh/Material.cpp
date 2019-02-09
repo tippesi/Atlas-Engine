@@ -69,7 +69,7 @@ namespace Atlas {
 
 			// Create the textures
 			if (useArrayMap && images.size() > 0) {
-				arrayMap = new Texture::Texture2DArray(GL_UNSIGNED_BYTE, width, height, (int32_t)images.size(),
+				arrayMap = new Texture::Texture2DArray(AE_UBYTE, width, height, (int32_t)images.size(),
 													   Texture::Texture::GetSuggestedFormat(channels), GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 			}
 
@@ -87,7 +87,7 @@ namespace Atlas {
 					}
 					arrayMap->SetData(image->data, index++);
 				} else {
-					auto texture = new Texture::Texture2D(GL_UNSIGNED_BYTE, image->width, image->height,
+					auto texture = new Texture::Texture2D(AE_UBYTE, image->width, image->height,
 														  Texture::Texture::GetSuggestedFormat(image->channels), GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 					switch(map) {
 						case AE_MATERIAL_DIFFUSE_MAP: diffuseMap = texture; break;

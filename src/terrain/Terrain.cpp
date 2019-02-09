@@ -279,7 +279,7 @@ namespace Atlas {
 				}
 			}
 
-			auto vertexBuffer = new Buffer::VertexBuffer(GL_FLOAT, 2, sizeof(vec2), patchVertexCount);
+			auto vertexBuffer = new Buffer::VertexBuffer(AE_FLOAT, 2, sizeof(vec2), patchVertexCount);
 			vertexBuffer->SetData(&vertices.data()[0], 0, patchVertexCount);
 			vertexArray.AddComponent(0, vertexBuffer);
 			glPatchParameteri(GL_PATCH_VERTICES, 4);
@@ -298,7 +298,7 @@ namespace Atlas {
 				}
 			}
 
-			auto offsetBuffer = new Buffer::VertexBuffer(GL_FLOAT, 2, sizeof(vec2), 64);
+			auto offsetBuffer = new Buffer::VertexBuffer(AE_FLOAT, 2, sizeof(vec2), 64);
 			offsetBuffer->SetData(&patchOffsets.data()[0], 0, 64);
 			vertexArray.AddInstancedComponent(1, offsetBuffer);
 

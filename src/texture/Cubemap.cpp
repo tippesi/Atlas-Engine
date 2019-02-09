@@ -33,12 +33,12 @@ namespace Atlas {
                if (image.data.size() != 0) {
 #ifdef AE_API_GL
                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, AE_SRGB8, image.width, image.height, 0,
-                                GL_RGB, GL_UNSIGNED_BYTE, image.data.data());
+                                AE_RGB, AE_UBYTE, image.data.data());
 #elif AE_API_GLES
                    Texture::GammaToLinear(image.data.data(), image.width, image.height, 3);
 
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, AE_RGB8, image.width, image.height, 0,
-				GL_RGB, GL_UNSIGNED_BYTE, image.data.data());
+				AE_RGB, AE_UBYTE, image.data.data());
 #endif
 #ifdef AE_SHOW_LOG
                    EngineLog("    Loaded cubemap face %d %s", i, filenames[i].c_str());

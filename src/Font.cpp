@@ -99,8 +99,8 @@ namespace Atlas {
 		depth = AE_GPU_GLYPH_COUNT < depth ? AE_GPU_GLYPH_COUNT : depth;
 
 		// Create texture and process texture data
-		glyphTexture = new Texture::Texture2DArray(GL_UNSIGNED_BYTE, width, height, depth,
-										  GL_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+		glyphTexture = new Texture::Texture2DArray(AE_UBYTE, width, height, depth,
+										  AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 		for (int32_t i = font.fontstart; i < range; i++) {
 

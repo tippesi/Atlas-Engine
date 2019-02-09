@@ -1,4 +1,5 @@
 #include "GeometryHelper.h"
+#include "../TypeFormat.h"
 
 namespace Atlas {
 
@@ -8,7 +9,7 @@ namespace Atlas {
 
 			void GeometryHelper::GenerateRectangleVertexArray(Buffer::VertexArray& vertexArray) {
 
-				auto buffer = new Buffer::VertexBuffer(GL_BYTE, 2, sizeof(int8_t) * 2, 8);
+				auto buffer = new Buffer::VertexBuffer(AE_BYTE, 2, sizeof(int8_t) * 2, 8);
 				buffer->SetData(&rectangleVertices[0], 0, 8);
 				vertexArray.AddComponent(0, buffer);
 
@@ -16,7 +17,7 @@ namespace Atlas {
 
 			void GeometryHelper::GenerateCubeVertexArray(Buffer::VertexArray& vertexArray) {
 
-				auto vertexBuffer = new Buffer::VertexBuffer(GL_FLOAT, 3, sizeof(vec3), 108);
+				auto vertexBuffer = new Buffer::VertexBuffer(AE_FLOAT, 3, sizeof(vec3), 108);
 				vertexBuffer->SetData(&cubeVertices[0], 0, 108);
 				vertexArray.AddComponent(0, vertexBuffer);
 

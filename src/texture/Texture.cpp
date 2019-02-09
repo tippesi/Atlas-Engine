@@ -123,11 +123,10 @@ namespace Atlas {
         int32_t Texture::GetChannelCount(int32_t baseFormat) {
 
             switch(baseFormat) {
-                case GL_RGBA: return 4;
-                case GL_RG: return 2;
-                case GL_RED: return 1;
-                case GL_DEPTH_COMPONENT: return 1;
-                case  GL_DEPTH_STENCIL: return 1;
+                case AE_RGBA: return 4;
+                case AE_RG: return 2;
+                case AE_R: return 1;
+                case AE_DEPTH: return 1;
                 default: return 3;
             }
 
@@ -136,10 +135,10 @@ namespace Atlas {
         int32_t Texture::GetSuggestedFormat(int32_t channelCount) {
 
             switch(channelCount) {
-                case 1: return GL_R8;
-                case 2: return GL_RG8;
-                case 4: return GL_RGBA8;
-                default: return GL_RGB8;
+                case 1: return AE_R8;
+                case 2: return AE_RG8;
+                case 4: return AE_RGBA8;
+                default: return AE_RGB8;
             }
 
         }

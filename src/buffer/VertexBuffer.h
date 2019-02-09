@@ -16,7 +16,7 @@ namespace Atlas {
 		public:
 			/**
              * Constructs a VertexBuffer object.
-             * @param dataType The data type of the data, e.g GL_FLOAT
+             * @param dataType The data type of the data, e.g AE_FLOAT
              * @param stride The number of elements of dataType per element
              * @param elementSize The size of each element in bytes
              * @param elementCount The number of elements in the vertex buffer will be filled with

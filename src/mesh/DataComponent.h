@@ -2,6 +2,7 @@
 #define AE_DATACOMPONENT_H
 
 #include "../System.h"
+#include "../TypeFormat.h"
 #include "Packing.h"
 
 #include <type_traits>
@@ -9,27 +10,27 @@
 /**
  * T should be uint32_t to support proper conversion
  */
-#define AE_COMPONENT_UNSIGNED_INT GL_UNSIGNED_INT
+#define AE_COMPONENT_UNSIGNED_INT AE_UINT
 /**
  * T should be float to support proper conversion
  */
-#define AE_COMPONENT_FLOAT GL_FLOAT
+#define AE_COMPONENT_FLOAT AE_FLOAT
 /**
  * T should be uint16_t to support proper conversion
  */
-#define AE_COMPONENT_UNSIGNED_SHORT GL_UNSIGNED_SHORT
+#define AE_COMPONENT_UNSIGNED_SHORT AE_USHORT
 /**
  * T should be uint8_t to support proper conversion
  */
-#define AE_COMPONENT_UNSIGNED_BYTE GL_UNSIGNED_BYTE
+#define AE_COMPONENT_UNSIGNED_BYTE AE_UBYTE
 /**
  * T should be float16 to support proper conversion
  */
-#define AE_COMPONENT_HALF_FLOAT GL_HALF_FLOAT
+#define AE_COMPONENT_HALF_FLOAT AE_HALF_FLOAT
 /**
  * T should be uint32_t to support proper conversion
  */
-#define AE_COMPONENT_PACKED_FLOAT GL_INT_2_10_10_10_REV
+#define AE_COMPONENT_PACKED_FLOAT AE_INT_2_10_10_10
 
 namespace Atlas {
 

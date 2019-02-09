@@ -11,8 +11,8 @@ namespace Atlas {
     namespace Texture {
 
         /**
- * The base class of all texture classes.
- */
+		 * The base class of all texture classes.
+		 */
         class Texture {
 
         public:
@@ -34,13 +34,13 @@ namespace Atlas {
 
             /**
              * Returns the data type of the texture.
-             * @return The data type, e.g GL_UNSIGNED_BYTE
+             * @return The data type, e.g AE_UBYTE
              */
             uint32_t GetDataType();
 
             /**
              * Returns the sized format of the texture.
-             * @return The sized format, e.g GL_RGB16F
+             * @return The sized format, e.g AE_RGB16F
              */
             int32_t GetSizedFormat();
 
@@ -90,7 +90,7 @@ namespace Atlas {
 
             /**
              * Determines the number of channels for a given base format.
-             * @param baseFormat The base format, e.g GL_RGB
+             * @param baseFormat The base format, e.g AE_RGB
              * @return The number of channels.
              */
             static int32_t GetChannelCount(int32_t baseFormat);
@@ -98,7 +98,7 @@ namespace Atlas {
             /**
              * Determines a suggested sized format for the current platform.
              * @param channelCount The number of channels of the image
-             * @return A suggested texture format, e.g GL_RGB8
+             * @return A suggested texture format, e.g AE_RGB8
              */
             static int32_t GetSuggestedFormat(int32_t channelCount);
 

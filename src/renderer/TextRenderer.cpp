@@ -12,7 +12,7 @@ namespace Atlas {
 
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
-			auto vertexBuffer = new Buffer::VertexBuffer(GL_FLOAT, 3, sizeof(vec3), 5000);
+			auto vertexBuffer = new Buffer::VertexBuffer(AE_FLOAT, 3, sizeof(vec3), 5000);
 			vertexArray.AddInstancedComponent(1, vertexBuffer);
 
 			shader.AddStage(AE_VERTEX_STAGE, vertexPath);

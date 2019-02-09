@@ -24,17 +24,17 @@ namespace Atlas {
             int32_t sizedFormat;
 
             switch (image.channels) {
-                case 4: sizedFormat = GL_RGBA8; break;
-                case 3: sizedFormat = GL_RGB8; break;
-                case 2: sizedFormat = GL_RG8; break;
-                case 1: sizedFormat = GL_R8; break;
+                case 4: sizedFormat = AE_RGBA8; break;
+                case 3: sizedFormat = AE_RGB8; break;
+                case 2: sizedFormat = AE_RG8; break;
+                case 1: sizedFormat = AE_R8; break;
             }
 
             width = image.width;
             height = image.height;
             channels = image.channels;
 
-            Generate(GL_TEXTURE_2D, GL_UNSIGNED_BYTE, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR,
+            Generate(GL_TEXTURE_2D, AE_UBYTE, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR,
                      anisotropicFiltering, generateMipMaps);
 
             SetData(image.data);
