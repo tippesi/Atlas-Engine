@@ -4,7 +4,7 @@ namespace Atlas {
 
 	namespace Lighting {
 
-        DirectionalLight::DirectionalLight(int32_t mobility) : ILight(AE_DIRECTIONAL_LIGHT, mobility) {
+        DirectionalLight::DirectionalLight(int32_t mobility) : Light(AE_DIRECTIONAL_LIGHT, mobility) {
 
             direction = vec3(0.0f, -1.0f, 0.0f);
 

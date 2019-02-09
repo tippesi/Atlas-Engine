@@ -2,13 +2,13 @@
 #define AE_DIRECTIONALLIGHT_H
 
 #include "../System.h"
-#include "ILight.h"
+#include "Light.h"
 
 namespace Atlas {
 
 	namespace Lighting {
 
-		class DirectionalLight : public ILight {
+		class DirectionalLight : public Light {
 
 		public:
 			DirectionalLight(int32_t mobility = AE_MOVABLE_LIGHT);

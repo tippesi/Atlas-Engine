@@ -135,7 +135,7 @@ void TerrainTool::GenerateHeightfieldLoDs(string heightfieldFilename, int32_t ro
 
 			if (heightImage.width % maxNodesPerSide != 0 || heightImage.height != heightImage.width
 				|| heightImage.channels != 1) {
-				throw EngineException("Some input value wasn't following the specifications");
+				throw AtlasException("Some input value wasn't following the specifications");
 			}
 
 			auto terrain = new Terrain::Terrain(rootNodeCount, LoDCount, patchSize, resolution, height);

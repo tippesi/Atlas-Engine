@@ -26,9 +26,9 @@ namespace Atlas {
 
             if (!fileStream.is_open()) {
 #ifdef AE_SHOW_LOG
-                EngineLog("Failed to load image %s", filename.c_str());
+                AtlasLog("Failed to load image %s", filename.c_str());
 #endif
-                throw EngineException("Image couldn't be loaded");
+                throw AtlasException("Image couldn't be loaded");
             }
 
             auto buffer = AssetLoader::GetFileContent(fileStream);
@@ -68,7 +68,7 @@ namespace Atlas {
             }
 
 #ifdef AE_SHOW_LOG
-            EngineLog("Loaded image %s", filename.c_str());
+            AtlasLog("Loaded image %s", filename.c_str());
 #endif
 
             return image;
@@ -83,9 +83,9 @@ namespace Atlas {
 
             if (!fileStream.is_open()) {
 #ifdef AE_SHOW_LOG
-                EngineLog("Failed to load image %s", filename.c_str());
+                AtlasLog("Failed to load image %s", filename.c_str());
 #endif
-                throw EngineException("Image couldn't be loaded");
+                throw AtlasException("Image couldn't be loaded");
             }
 
             auto buffer = AssetLoader::GetFileContent(fileStream);
@@ -125,7 +125,7 @@ namespace Atlas {
             }
 
 #ifdef AE_SHOW_LOG
-            EngineLog("Loaded image %s", filename.c_str());
+            AtlasLog("Loaded image %s", filename.c_str());
 #endif
 
             return image;
@@ -163,7 +163,7 @@ namespace Atlas {
             imageFile.open(filename);
 
             if (!imageFile.is_open()) {
-                throw EngineException("Couldn't write image");
+                throw AtlasException("Couldn't write image");
             }
 
             std::string header;
@@ -192,7 +192,7 @@ namespace Atlas {
             imageFile.open(filename);
 
             if (!imageFile.is_open()) {
-                throw EngineException("Couldn't write image");
+                throw AtlasException("Couldn't write image");
             }
 
             std::string header;

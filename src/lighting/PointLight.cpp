@@ -4,7 +4,7 @@ namespace Atlas {
 
 	namespace Lighting {
 
-		PointLight::PointLight(int32_t mobility) : ILight(AE_POINT_LIGHT, mobility) {
+		PointLight::PointLight(int32_t mobility) : Light(AE_POINT_LIGHT, mobility) {
 
 			location = vec3(0.0f, 3.0f, 0.0f);
 

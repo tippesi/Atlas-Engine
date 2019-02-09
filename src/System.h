@@ -30,7 +30,7 @@
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 
-#define EngineLog(...) __android_log_print(ANDROID_LOG_INFO, "ENGINE_LOG", __VA_ARGS__)
+#define AtlasLog(...) __android_log_print(ANDROID_LOG_INFO, "ATLAS_LOG", __VA_ARGS__)
 
 #elif defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
 
@@ -41,7 +41,7 @@
 #endif
 #include <Glad/glad/glad.h>
 
-#define EngineLog(...) printf(__VA_ARGS__); printf("\n");
+#define AtlasLog(...) printf(__VA_ARGS__); printf("\n");
 
 #endif
 
@@ -56,10 +56,10 @@ using glm::mat3;
 
 typedef short float16;
 
-class EngineException : public std::exception {
+class AtlasException : public std::exception {
 
 public:
-	EngineException(const char* message) : msg(message) { }
+	AtlasException(const char* message) : msg(message) { }
 
 	const char* what() const throw()
 	{

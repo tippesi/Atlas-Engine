@@ -16,7 +16,7 @@ namespace Atlas {
 
 	namespace Lighting {
 
-		class ILight {
+		class Light {
 
 		public:
 			virtual void RemoveShadow() = 0;
@@ -40,7 +40,7 @@ namespace Atlas {
 			float ambient;
 
 		protected:
-			ILight(int32_t type, int32_t mobility) : type(type), mobility(mobility) {}
+			Light(int32_t type, int32_t mobility) : type(type), mobility(mobility) {}
 
 			Shadow* shadow;
 			Volumetric* volumetric;

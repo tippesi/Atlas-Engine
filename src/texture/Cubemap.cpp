@@ -23,7 +23,7 @@ namespace Atlas {
            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 #ifdef AE_SHOW_LOG
-           EngineLog("Loading cubemap with ID %d", ID);
+           AtlasLog("Loading cubemap with ID %d", ID);
 #endif
 
            for (uint32_t i = 0; i < 6; i++) {
@@ -41,14 +41,14 @@ namespace Atlas {
 				AE_RGB, AE_UBYTE, image.data.data());
 #endif
 #ifdef AE_SHOW_LOG
-                   EngineLog("    Loaded cubemap face %d %s", i, filenames[i].c_str());
+                   AtlasLog("    Loaded cubemap face %d %s", i, filenames[i].c_str());
 #endif
                }
                else {
 #ifdef AE_SHOW_LOG
-                   EngineLog("    Failed to load cubemap face %d %s", i, filenames[i].c_str());
+                   AtlasLog("    Failed to load cubemap face %d %s", i, filenames[i].c_str());
 #endif
-                   throw EngineException("Failed to load cubemap");
+                   throw AtlasException("Failed to load cubemap");
                }
 
            }

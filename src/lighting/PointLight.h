@@ -2,13 +2,13 @@
 #define AE_POINTLIGHT_H
 
 #include "../System.h"
-#include "ILight.h"
+#include "Light.h"
 
 namespace Atlas {
 
 	namespace Lighting {
 
-		class PointLight : public ILight {
+		class PointLight : public Light {
 
 		public:
 			PointLight(int32_t mobility = AE_STATIONARY_LIGHT);

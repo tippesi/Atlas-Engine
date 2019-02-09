@@ -12,7 +12,7 @@ namespace Atlas {
 
 	}
 
-	void FrustumCulling::CullActorsFromShadow(Lighting::ILight *light, Scene *scene, Camera *camera) {
+	void FrustumCulling::CullActorsFromShadow(Lighting::Light *light, Scene *scene, Camera *camera) {
 
 		switch (light->type) {
 			case AE_DIRECTIONAL_LIGHT:

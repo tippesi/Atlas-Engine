@@ -33,11 +33,11 @@ namespace Atlas {
 #if defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
 #ifdef AE_API_GL
 		if (!gladLoadGL()) {
-			throw EngineException("Error initializing OpenGL");
+			throw AtlasException("Error initializing OpenGL");
 		}
 #elif AE_API_GLES
         if (SDL_GL_LoadLibrary(nullptr) != 0) {
-            throw EngineException("Error initializing OpenGL ES");
+            throw AtlasException("Error initializing OpenGL ES");
         }
         gladLoadGLES2Loader(SDL_GL_GetProcAddress);
         SDL_GL_UnloadLibrary();
@@ -47,15 +47,15 @@ namespace Atlas {
 		int value;
 
 #ifdef AE_SHOW_LOG
-		EngineLog("OpenGL Version: %s", glGetString(GL_VERSION));
+		AtlasLog("OpenGL Version: %s", glGetString(GL_VERSION));
 		SDL_GL_GetAttribute(SDL_GL_RED_SIZE, &value);
-		EngineLog("Native colorbuffer red component precision %d bits", value);
+		AtlasLog("Native colorbuffer red component precision %d bits", value);
 		SDL_GL_GetAttribute(SDL_GL_GREEN_SIZE, &value);
-		EngineLog("Native colorbuffer green component precision %d bits", value);
+		AtlasLog("Native colorbuffer green component precision %d bits", value);
 		SDL_GL_GetAttribute(SDL_GL_BLUE_SIZE, &value);
-		EngineLog("Native colorbuffer blue component precision %d bits", value);
+		AtlasLog("Native colorbuffer blue component precision %d bits", value);
 		SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE, &value);
-		EngineLog("Native depthbuffer precision %d bits", value);
+		AtlasLog("Native depthbuffer precision %d bits", value);
 #endif
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);

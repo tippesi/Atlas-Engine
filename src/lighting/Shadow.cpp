@@ -1,5 +1,5 @@
 #include "Shadow.h"
-#include "ILight.h"
+#include "Light.h"
 #include "DirectionalLight.h"
 #include "PointLight.h"
 

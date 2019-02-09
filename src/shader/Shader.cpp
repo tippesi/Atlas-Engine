@@ -138,7 +138,7 @@ namespace Atlas {
                     isCompiled = true;
 
 #ifdef AE_SHOW_LOG
-                    EngineLog("Compiled shader with ID %d", ID);
+                    AtlasLog("Compiled shader with ID %d", ID);
 #endif
 
                     Bind();
@@ -157,11 +157,11 @@ namespace Atlas {
                 auto programLog = std::vector<char>(programLogLength);
                 glGetProgramInfoLog(ID, programLogLength, &length, programLog.data());
 
-                EngineLog("Error linking shader files:");
+                AtlasLog("Error linking shader files:");
                 for (auto& stage : stages) {
-                    EngineLog("%s", stage->filename.c_str());
+                    AtlasLog("%s", stage->filename.c_str());
                 }
-                EngineLog("%s", programLog.data());
+                AtlasLog("%s", programLog.data());
 #endif
 
             }

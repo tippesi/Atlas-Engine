@@ -7,7 +7,7 @@
 #include "mesh/MeshActor.h"
 #include "mesh/MeshActorBatch.h"
 #include "terrain/Terrain.h"
-#include "lighting/ILight.h"
+#include "lighting/Light.h"
 #include "lighting/Sky.h"
 #include "postprocessing/PostProcessing.h"
 #include "Decal.h"
@@ -53,13 +53,13 @@ namespace Atlas {
          *
          * @param light
          */
-		void Add(Lighting::ILight *light);
+		void Add(Lighting::Light *light);
 
 		/**
          *
          * @param light
          */
-		void Remove(Lighting::ILight *light);
+		void Remove(Lighting::Light *light);
 
 		/**
          *
@@ -91,7 +91,7 @@ namespace Atlas {
 
 		SceneNode *rootNode;
 
-		std::vector<Lighting::ILight *> lights;
+		std::vector<Lighting::Light *> lights;
 		std::vector<Mesh::MeshActorBatch *> meshActorBatches;
 		std::vector<Terrain::Terrain *> terrains;
 		std::vector<Decal *> decals;

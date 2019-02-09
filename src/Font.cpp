@@ -20,9 +20,9 @@ namespace Atlas {
 
 		if (!fontFile.is_open()) {
 #ifdef AE_SHOW_LOG
-			EngineLog("Font %s not found", filename.c_str());
+			AtlasLog("Font %s not found", filename.c_str());
 #endif
-			throw EngineException("Couldn't open font file");
+			throw AtlasException("Couldn't open font file");
 		}
 
 		auto buffer = Loader::AssetLoader::GetFileContent(fontFile);
@@ -30,7 +30,7 @@ namespace Atlas {
 		fontFile.close();
 
 		if (!stbtt_InitFont(&font, (unsigned char *) buffer.data(), 0)) {
-			new EngineException("Failed loading font");
+			new AtlasException("Failed loading font");
 		}
 
 		firstGlyphBuffer = new Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);

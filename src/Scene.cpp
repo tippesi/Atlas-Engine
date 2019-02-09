@@ -76,7 +76,7 @@ namespace Atlas {
 
 	}
 
-	void Scene::Add(Lighting::ILight *light) {
+	void Scene::Add(Lighting::Light *light) {
 
 		lights.push_back(light);
 
@@ -84,7 +84,7 @@ namespace Atlas {
 
 	}
 
-	void Scene::Remove(Lighting::ILight *light) {
+	void Scene::Remove(Lighting::Light *light) {
 
 		for (auto iterator = lights.begin(); iterator != lights.end(); iterator++) {
 

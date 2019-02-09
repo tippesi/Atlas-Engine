@@ -23,9 +23,9 @@ namespace Atlas {
 
 			if (!fileStream.is_open()) {
 #ifdef AE_SHOW_LOG
-				EngineLog("Failed to load mddel %s", filename.c_str());
+				AtlasLog("Failed to load model %s", filename.c_str());
 #endif
-				throw EngineException("Model couldn't be loaded");
+				throw AtlasException("Model couldn't be loaded");
 			}
 
 			auto buffer = AssetLoader::GetFileContent(fileStream);

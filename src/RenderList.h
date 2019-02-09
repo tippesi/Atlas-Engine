@@ -2,7 +2,7 @@
 #define AE_RENDERLIST_H
 
 #include "System.h"
-#include "lighting/ILight.h"
+#include "lighting/Light.h"
 #include "mesh/MeshActorBatch.h"
 
 #include <map>
@@ -27,13 +27,13 @@ namespace Atlas {
 
 		void Add(Mesh::MeshActor *actor);
 
-		void Add(Lighting::ILight *light);
+		void Add(Lighting::Light *light);
 
 		void RemoveMesh(Mesh::Mesh *mesh);
 
 		void Clear();
 
-		std::vector<Lighting::ILight *> lights;
+		std::vector<Lighting::Light *> lights;
 		std::map<Mesh::Mesh *, Mesh::MeshActorBatch *> actorBatches;
 		std::map<int32_t, std::vector<RenderListBatch>> orderedRenderBatches;
 

@@ -56,7 +56,7 @@ namespace Atlas {
 
 	}
 
-	void RenderList::Add(Lighting::ILight *light) {
+	void RenderList::Add(Lighting::Light *light) {
 
 		lights.push_back(light);
 

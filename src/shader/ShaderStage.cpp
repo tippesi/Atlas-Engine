@@ -24,7 +24,7 @@ namespace Atlas {
             ID = glCreateShader(type);
 
 #ifdef AE_SHOW_LOG
-            EngineLog("Loaded shader file %s", filename.c_str());
+            AtlasLog("Loaded shader file %s", filename.c_str());
 #endif
 
         }
@@ -137,25 +137,25 @@ namespace Atlas {
                 glGetShaderInfoLog(ID, shaderLogLength, &length, shaderLog.data());
 
                 if (type == AE_VERTEX_STAGE) {
-                    EngineLog("\n\nCompiling vertex stage failed:");
+                    AtlasLog("\n\nCompiling vertex stage failed:");
                 }
                 else if (type == AE_FRAGMENT_STAGE) {
-                    EngineLog("\n\nCompiling fragment stage failed:");
+					AtlasLog("\n\nCompiling fragment stage failed:");
                 }
                 else if (type == AE_GEOMETRY_STAGE) {
-                    EngineLog("\n\nCompiling geometry stage failed:");
+					AtlasLog("\n\nCompiling geometry stage failed:");
                 }
                 else if (type == AE_TESSELLATION_CONTROL_STAGE) {
-                    EngineLog("\n\nCompiling tessellation control stage failed:");
+					AtlasLog("\n\nCompiling tessellation control stage failed:");
                 }
                 else if (type == AE_TESSELLATION_EVALUATION_STAGE) {
-                    EngineLog("\n\nCompiling tessellation evaluation stage failed:");
+					AtlasLog("\n\nCompiling tessellation evaluation stage failed:");
                 }
                 else if (type == AE_COMPUTE_STAGE) {
-                    EngineLog("\n\nCompiling compute stage failed:");
+					AtlasLog("\n\nCompiling compute stage failed:");
                 }
 
-                EngineLog("Compilation failed: %s\nError: %s", filename.c_str(), shaderLog.data());
+				AtlasLog("Compilation failed: %s\nError: %s", filename.c_str(), shaderLog.data());
 #endif
 
                 return false;
@@ -182,9 +182,9 @@ namespace Atlas {
 
             if (!shaderFile.is_open()) {
 #ifdef AE_SHOW_LOG
-                EngineLog("Shader file %s not found", filename.c_str());
+				AtlasLog("Shader file %s not found", filename.c_str());
 #endif
-                throw EngineException("Couldn't open shader file");
+                throw AtlasException("Couldn't open shader file");
             }
 
             shaderStream << shaderFile.rdbuf();

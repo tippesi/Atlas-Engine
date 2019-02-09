@@ -64,7 +64,7 @@ namespace Atlas {
 
 	}
 
-	void SceneNode::Add(Lighting::ILight *light) {
+	void SceneNode::Add(Lighting::Light *light) {
 
 		if (scene != nullptr) {
 			scene->Add(light);
@@ -74,7 +74,7 @@ namespace Atlas {
 
 	}
 
-	void SceneNode::Remove(Lighting::ILight *light) {
+	void SceneNode::Remove(Lighting::Light *light) {
 
 		if (scene != nullptr) {
 			scene->Remove(light);
@@ -163,7 +163,7 @@ namespace Atlas {
 
 	}
 
-	std::vector<Lighting::ILight *> SceneNode::GetLights() {
+	std::vector<Lighting::Light *> SceneNode::GetLights() {
 
 		return lights;
 

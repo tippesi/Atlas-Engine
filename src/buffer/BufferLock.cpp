@@ -62,7 +62,7 @@ namespace Atlas {
                 }
 
                 if (waitRet == GL_WAIT_FAILED) {
-                    throw EngineException("Failed to access memory");
+                    throw AtlasException("Failed to access memory");
                 }
 
                 // Time is in nanoseconds (we might need to change the wait duration)

@@ -8,7 +8,7 @@ namespace Atlas {
 		sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_OPENGL);
 
 		if (sdlWindow == NULL) {
-			throw EngineException("Error initializing window");
+			throw AtlasException("Error initializing window");
 		}
 
 		context = SDL_GL_CreateContext(sdlWindow);

@@ -157,7 +157,7 @@ namespace Atlas {
 	auto asset = AAssetManager_open(manager, assetPath.c_str(), AASSET_MODE_UNKNOWN);
 
 	if (!asset) {
-	    EngineLog("Asset not found: %s", assetPath.c_str());
+	    AtlasLog("Asset not found: %s", assetPath.c_str());
         return;
     }
 
@@ -165,7 +165,7 @@ namespace Atlas {
 
 	if (!stream.is_open()) {
 		AAsset_close(asset);
-		EngineLog("Couldn't open stream file");
+		AtlasLog("Couldn't open stream file");
 		return;
 	}
 
@@ -215,7 +215,7 @@ namespace Atlas {
 				auto childPath = path.substr(backPosition + 3, path.length());
 				size_t parentBackPostion = parentPath.find_last_of('/');
 				if (parentBackPostion == std::string::npos) {
-					throw EngineException("Trying to access data outside the assets folder");
+					throw AtlasException("Trying to access data outside the assets folder");
 				}
 				path = parentPath.substr(0, parentBackPostion) + childPath;
 			}
