@@ -87,15 +87,15 @@ int main(int argc, char* argv[]) {
 
 	// Notice that we want to move our cube later on. All meshes where we frequently want to
 	// update the positions should be AE_MOVABLE_MESH. Let's create our MeshActors then:
-	auto sponzaActor = Atlas::Mesh::MeshActor(&sponzaMesh);
-	auto treeActor = Atlas::Mesh::MeshActor(&treeMesh);
-	auto cubeActor = Atlas::Mesh::MeshActor(&cubeMesh);
+	auto sponzaActor = Atlas::Actor::MeshActor(&sponzaMesh);
+	auto treeActor = Atlas::Actor::MeshActor(&treeMesh);
+	auto cubeActor = Atlas::Actor::MeshActor(&cubeMesh);
 
 	// We want to scale our tree because it isn't large enough
-	treeActor.modelMatrix = glm::scale(mat4(1.0f), vec3(3.0f));
+	treeActor.SetMatrix(glm::scale(mat4(1.0f), vec3(3.0f)));
 
 	// We also want to scale the sponza model
-	sponzaActor.modelMatrix = glm::scale(mat4(1.0f), vec3(0.05f));
+	sponzaActor.SetMatrix(glm::scale(mat4(1.0f), vec3(0.05f)));
 
 	// We create a scene node, which we can later move around.
 	// The concept is really easy to understand: All actors of all the different types
