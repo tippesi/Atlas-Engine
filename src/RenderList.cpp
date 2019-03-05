@@ -1,13 +1,14 @@
+#include <actor/MeshActor.h>
 #include "RenderList.h"
 
 namespace Atlas {
 
-	RenderList::RenderList(int32_t type, int32_t mobility) : type(type), mobility(mobility) {
+	RenderList::RenderList(int32_t type) : type(type) {
 
 
 	}
 
-	void RenderList::Add(Mesh::MeshActor *actor) {
+	void RenderList::Add(Actor::MeshActor *actor) {
 
 		auto actorBatchKey = actorBatches.find(actor->mesh);
 
@@ -16,7 +17,7 @@ namespace Atlas {
 		} else {
 
 			// Create new actorbatch
-			auto meshActorBatch = new Mesh::MeshActorBatch(actor->mesh);
+			auto meshActorBatch = new Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>(actor->mesh);
 			meshActorBatch->Add(actor);
 
 			actorBatches[actor->mesh] = meshActorBatch;
@@ -28,7 +29,7 @@ namespace Atlas {
 
 				Shader::ShaderConfig *shaderConfig;
 
-				if (type == AE_GEOMETRY_RENDERLIST) {
+				if (type == AE_OPAQUE_RENDERLIST) {
 					shaderConfig = &actor->mesh->data->materials[subData->materialIndex]->geometryConfig;
 				} else {
 					shaderConfig = &actor->mesh->data->materials[subData->materialIndex]->shadowConfig;
@@ -56,7 +57,13 @@ namespace Atlas {
 
 	}
 
-	void RenderList::Add(Lighting::Light *light) {
+	void RenderList::Add(Actor::DecalActor* decalActor) {
+	
+		decalActors.push_back(decalActor);
+	
+	}
+
+	void RenderList::Add(Lighting::Light* light) {
 
 		lights.push_back(light);
 
@@ -68,6 +75,7 @@ namespace Atlas {
 			actorBatchKey.second->Clear();
 		}
 
+		decalActors.clear();
 		lights.clear();
 
 	}

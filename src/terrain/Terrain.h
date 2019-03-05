@@ -15,7 +15,7 @@ namespace Atlas {
 	namespace Terrain {
 
 		/**
-		 * Represents a terrain. This class uses different LoDs and tessellation to render the terrain
+		 * Represents a terrain. This class uses different LoDs (quad tree) and tessellation to render the terrain
 		 * efficiently with high detail without sacrificing too much on performance.
 		 */
 		class Terrain {
@@ -24,14 +24,14 @@ namespace Atlas {
 
 			/**
              * Constructs a Terrain object.
-             * @param rootNodeCount The number of root nodes. Root nodes are the lowest level of detail
+             * @param rootNodeSideCount The number of root nodes per side. Root nodes are the lowest level of detail.
              * @param LoDCount The number of level of detail levels. Results in LoDCount - 1 subdivisions of the root nodes.
-             * @param patchSizeFactor Changes the size of a patch and the number of vertices in a patch, e.g
+             * @param patchSizeFactor Changes the size of a patch and the number of vertices in a patch
              * @param resolution Like a scale in x and z direction of the terrain. Lower means more vertices per square unit.
              * @param height The maximum height of the terrain
              * @note The maximum number of nodes in a terrain is 2^16. A node has 8 * 8 = 64 patches.
              * The number of vertices per patch corresponds to 4 * pow(2 * patchSizeFactor, 2).
-             * @remark Let's assume we want 3 root nodes on each side of the terrain which leads to rootNodeCount = 3^2 = 9.
+             * @remark Let's assume we have a rootNodeSideCount of 3 which leads to rootNodeCount = 3^2 = 9.
              * We now decide that we want an LoDCount of 7. To check if we don't exceed the maximum number of nodes we calculate
              * rootNodeCount * (pow(4,LoDCount) - 1) / 3 = 3 * (pow(4, 7) - 1) = 49149 < 2^16 = 65536. This means that at the
              * maximum lod which is Lod6 we have a total of pow(4, 6) * 9 = 36864 nodes. If we have a patchSizeFactor of 4
@@ -40,7 +40,7 @@ namespace Atlas {
              * the resolution to 0.5 we get a total of 12288 units per terrain side. The size of map is therefore roughly
              * 150 kilounits^2.
              */
-			Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSizeFactor, float resolution, float height);
+			Terrain(int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSizeFactor, float resolution, float height);
 
 			/**
              * Updates the terrain and the storage queues.
@@ -114,13 +114,15 @@ namespace Atlas {
 
 			TerrainStorage* storage;
 
+			const int32_t rootNodeSideCount;
+			const int32_t LoDCount;
+			const int32_t patchSizeFactor;
+
 			vec3 translation;
 			float resolution;
 			float sideLength;
 
 			int32_t patchVertexCount;
-			int32_t patchSize;
-			std::vector<vec2> patchOffsets;
 
 			float tessellationFactor;
 			float tessellationSlope;
@@ -130,22 +132,21 @@ namespace Atlas {
 			float heightScale;
 			float displacementDistance;
 
-			int32_t LoDCount;
-
 			std::vector<TerrainNode*> renderList;
 
 		private:
-			void GeneratePatchVertexBuffer(int32_t patchSizeFactor);
+			void GeneratePatchVertexBuffer();
 
-			void GeneratePatchOffsets(int32_t patchSizeFactor);
+			void GeneratePatchOffsets();
 
 			float BarryCentric(vec3 p1, vec3 p2, vec3 p3, vec2 pos);
 
+			int32_t rootNodeCount;
+
 			std::vector<vec2> vertices;
+			std::vector<vec2> patchOffsets;
 
 			Buffer::VertexArray vertexArray;
-
-			int32_t rootNodeCount;
 
 			std::vector<float> LoDDistances;
 			std::vector<TerrainNode*> rootNodes;

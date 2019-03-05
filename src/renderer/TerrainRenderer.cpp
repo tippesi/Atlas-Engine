@@ -26,7 +26,7 @@ namespace Atlas {
 
 		}
 
-		void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+		void TerrainRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
 			nearShader.Bind();
 			heightField->SetValue(0);

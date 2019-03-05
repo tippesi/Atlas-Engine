@@ -13,7 +13,7 @@ namespace Atlas {
 		public:
 			Sky();
 
-			Skybox* skybox;
+			Skybox* skybox = nullptr;
 
 		};
 

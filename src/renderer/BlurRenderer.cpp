@@ -5,7 +5,7 @@ namespace Atlas {
     namespace Renderer {
 
         BlurRenderer::BlurRenderer(std::string vertexSource, std::string fragmentSource, int32_t channelCount,
-                                   float* kernelOffsets, float* kernelWeights, int32_t kernelSize, bool bilateral) : bilateralBlur(bilateral) {
+                float* kernelOffsets, float* kernelWeights, int32_t kernelSize, bool bilateral) : bilateralBlur(bilateral) {
 
             shader.AddStage(AE_VERTEX_STAGE, vertexSource);
             shader.AddStage(AE_FRAGMENT_STAGE, fragmentSource);
@@ -42,7 +42,7 @@ namespace Atlas {
 
         }
 
-        void BlurRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene) {
+        void BlurRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene::Scene *scene) {
 
             return;
 

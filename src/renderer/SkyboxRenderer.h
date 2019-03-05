@@ -14,7 +14,7 @@ namespace Atlas {
 		public:
 			SkyboxRenderer();
 
-			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
 			static std::string vertexPath;
 			static std::string fragmentPath;

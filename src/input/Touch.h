@@ -14,7 +14,7 @@ namespace Atlas {
         public:
 			TouchHandler(Camera* camera, float sensibility, float speed, float reactivity);
 
-			void Update(Camera* camera, uint32_t deltaTime);
+			void Update(Camera* camera, float deltaTime);
 
 			float sensibility;
 			float speed;

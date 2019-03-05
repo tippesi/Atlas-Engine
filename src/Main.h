@@ -13,9 +13,9 @@ public:
 	Main(int argc, char* argv[]);
 
 private:
-	void Update(uint32_t deltaTime);
+	void Update(float deltaTime);
 
-	void Render(uint32_t deltaTime);
+	void Render(float deltaTime);
 
 	void Stream();
 
@@ -28,8 +28,6 @@ private:
 	void QuitEventHandler();
 
 	void ControllerDeviceEventHandler(Atlas::Events::ControllerDeviceEvent event);
-
-	void MouseButtonEventHandler(Atlas::Events::MouseButtonEvent event);
 
 	Atlas::Window* window;
 
@@ -44,27 +42,21 @@ private:
 	Atlas::Font* font;
 
 	Atlas::Camera* camera;
-	Atlas::Scene* scene;
+	Atlas::Scene::Scene* scene;
 
 	Atlas::Texture::Cubemap* skybox;
-	Atlas::Terrain::Terrain* terrain;
 
 	Atlas::Mesh::Mesh* sponzaMesh;
 	Atlas::Mesh::Mesh* treeMesh;
 	Atlas::Mesh::Mesh* cubeMesh;
 
-	Atlas::Mesh::MeshActor* cubeActor;
-	Atlas::Mesh::MeshActor* treeActor;
-	Atlas::Mesh::MeshActor* sponzaActor;
-
-	Atlas::Texture::Texture2D* terrainDiffuseMap;
-	Atlas::Texture::Texture2D* terrainDisplacementMap;
-
-	Atlas::Texture::Texture2D* smileyTexture;
+	Atlas::Actor::MeshActor* cubeActor;
+	Atlas::Actor::MeshActor* treeActor;
+	Atlas::Actor::MeshActor* sponzaActor;
 
 	Atlas::Lighting::DirectionalLight* directionalLight;
 
-	uint32_t renderingStart;
+	float renderingStart;
 	uint32_t frameCount;
 
 	bool quit;

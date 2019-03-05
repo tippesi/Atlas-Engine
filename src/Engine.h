@@ -4,7 +4,7 @@
 #include "System.h"
 #include "Window.h"
 #include "Camera.h"
-#include "Scene.h"
+#include "scene/Scene.h"
 #include "RenderTarget.h"
 #include "shader/Shader.h"
 #include "renderer/MasterRenderer.h"
@@ -40,6 +40,8 @@ namespace Atlas {
          * @param height
          */
 		static void GetScreenSize(int32_t *width, int32_t *height);
+
+		static float GetClock();
 
 		/**
          * Locks the frame rate to the next available target frame rate of the monitor

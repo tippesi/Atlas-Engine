@@ -14,7 +14,7 @@ namespace Atlas {
 		public:
 			AtmosphereRenderer();
 
-			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
 			static std::string vertexPath;
 			static std::string fragmentPath;
@@ -30,6 +30,10 @@ namespace Atlas {
 			Shader::Uniform* projectionMatrix;
 			Shader::Uniform* cameraLocation;
 			Shader::Uniform* sunDirection;
+			Shader::Uniform* sunIntensity;
+			Shader::Uniform* planetCenter;
+			Shader::Uniform* atmosphereRadius;
+			Shader::Uniform* planetRadius;
 
 		};
 

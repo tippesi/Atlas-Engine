@@ -22,7 +22,7 @@ namespace Atlas {
 		}
 
 
-		void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+		void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
@@ -30,9 +30,9 @@ namespace Atlas {
 
 			framebuffer->Bind();
 
-			for (auto& light : scene->lights) {
+			for (auto& light : scene->renderList.lights) {
 
-				if (light->GetShadow() == nullptr) {
+				if (!light->GetShadow()) {
 					continue;
 				}
 
@@ -58,9 +58,12 @@ namespace Atlas {
 
 					glClear(GL_DEPTH_BUFFER_BIT);
 
-					for (auto shaderConfigBatch : shaderBatch.configBatches) {
+					for (auto& renderListBatchesKey : component->renderList->orderedRenderBatches) {
 
-						shaderBatch.Bind(shaderConfigBatch->ID);
+						int32_t configBatchID = renderListBatchesKey.first;
+						auto renderListBatches = renderListBatchesKey.second;
+
+						shaderBatch.Bind(configBatchID);
 
 						arrayMapUniform->SetValue(0);
 						diffuseMapUniform->SetValue(0);
@@ -69,9 +72,16 @@ namespace Atlas {
 
 						lightSpaceMatrixUniform->SetValue(lightSpace);
 
-						for (auto& meshActorBatch : scene->meshActorBatches) {
+						for (auto renderListBatch : renderListBatches) {
 
-							auto mesh = meshActorBatch->GetMesh();
+							auto meshActorBatch = renderListBatch.meshActorBatch;
+
+							// If there is no actor of that mesh visible we discard it.
+							if (meshActorBatch->GetSize() == 0) {
+								continue;
+							}
+
+							auto mesh = meshActorBatch->GetObject();
 							mesh->Bind();
 
 							if (!mesh->cullBackFaces && backFaceCulling) {
@@ -83,13 +93,14 @@ namespace Atlas {
 								backFaceCulling = true;
 							}
 
-							for (auto subData : mesh->data->subData) {
+							// Prepare uniform buffer here
+							// Generate all drawing commands
+							// We could also batch several materials together because the share the same shader
+
+							// Render the sub data of the mesh that use this specific shader
+							for (auto& subData : renderListBatch.subData) {
 
 								auto material = mesh->data->materials[subData->materialIndex];
-
-								if (material->shadowConfig.configBatchID != shaderConfigBatch->ID) {
-									continue;
-								}
 
 								if (material->HasDiffuseMap()) {
 									if (material->HasArrayMap()) {
@@ -104,11 +115,8 @@ namespace Atlas {
 									}
 								}
 
-								for (auto actor : meshActorBatch->actors) {
-
-									if (!actor->castShadow) {
-										continue;
-									}
+								// We could also use instanced rendering here
+								for (auto& actor : meshActorBatch->actors) {
 
 									modelMatrixUniform->SetValue(actor->transformedMatrix);
 

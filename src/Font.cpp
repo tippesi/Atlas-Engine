@@ -30,7 +30,7 @@ namespace Atlas {
 		fontFile.close();
 
 		if (!stbtt_InitFont(&font, (unsigned char *) buffer.data(), 0)) {
-			new AtlasException("Failed loading font");
+			throw AtlasException("Failed loading font");
 		}
 
 		firstGlyphBuffer = new Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
@@ -59,6 +59,10 @@ namespace Atlas {
 		uint8_t *data[AE_FONT_GLYPH_COUNT];
 
 		int32_t width = 0, height = 0, depth = 0;
+
+		// Initialize the kern for every glyph possible
+		for (int32_t i = 0; i < AE_FONT_GLYPH_COUNT; i++)
+			glyphs[i].kern.resize(AE_FONT_GLYPH_COUNT);
 
 		// Load the data and calculate the needed resolution for the texture
 		for (int32_t i = font.fontstart; i < range; i++) {

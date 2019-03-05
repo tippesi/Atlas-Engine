@@ -24,7 +24,7 @@ namespace Atlas {
 
 		}
 
-		void TextRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+		void TextRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
 			return;
 

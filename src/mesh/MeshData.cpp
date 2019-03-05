@@ -20,6 +20,16 @@ namespace Atlas {
 
 		}
 
+		MeshData::~MeshData() {
+
+			delete indices;
+			delete vertices;
+			delete texCoords;
+			delete normals;
+			delete tangents;
+
+		}
+
 		void MeshData::SetIndexCount(int32_t count) {
 
 			indices->SetSize(count);
@@ -48,16 +58,6 @@ namespace Atlas {
 		int32_t MeshData::GetVertexCount() {
 
 			return vertexCount;
-
-		}
-
-		MeshData::~MeshData() {
-
-			delete indices;
-			delete vertices;
-			delete texCoords;
-			delete normals;
-			delete tangents;
 
 		}
 

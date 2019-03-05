@@ -24,7 +24,9 @@ There exist two options:
 - You can use the engine as a CMake subproject. Just go ahead and use **add_subdirectory** in the root
 CMakeLists.txt of your project. Afterwards add **target_link_libraries(YOUR_TARGET ... AtlasEngine)**. You should be fine.
 - You can compile the engine and all dependencies as a static library (note that some dependencies also have
-dynamic libraries). Therefore use the **BUILD_LIBRARY** option when using CMake.
+dynamic libraries). Therefore use the **BUILD_LIBRARY** option when using CMake. After compiling the library
+with your favourite build system you shouldn't forget to also copy all the libraries and include them to your project.
+You can find them in **./lib/YourFavouriteSystem/**.
 ### Android
 The installation for Android is done differently. You can compile it using Gradle either with or without AndroidStudio.
 The Gradle project can be found in **./platform/android**. Open it before you proceed.
@@ -46,7 +48,7 @@ If you want more information have a look into the [Documentation](https://tippes
 - Set mesh data or any kind of data prior to rendering. More importantly: Don't create data while rendering.
 - Try to avoid using OpenGL, use existing engine features instead
 ## Code Example
-Here is a small introduction to the engine
+This code example can also be found in the main file.
 ```c
 #include <Engine.h>
 #include <input/Mouse.h>
@@ -54,140 +56,132 @@ Here is a small introduction to the engine
 
 int main(int argc, char* argv[]) {
 
-	// After initializing the engine we will get back a window object.
-	// We also need to tell in which directory all the assets are, so that
-	// we can use relative paths later on. Note that everything about the
-	// engine is in the Atlas namespace.
-	auto window = Atlas::Engine::Init("../data", "shader", "Example application",
-			AE_WINDOWPOSITION_UNDEFINED, AE_WINDOWPOSITION_UNDEFINED, 1280, 720, AE_WINDOW_RESIZABLE);
+	Window* window = Engine::Init("../data/shader", "Atlas Engine", WINDOWPOSITION_UNDEFINED,
+		WINDOWPOSITION_UNDEFINED, 1280, 720, WINDOW_RESIZABLE | WINDOW_BORDERLESS);
 
-	// Load an icon for the window
-	auto icon = Atlas::Texture::Texture2D("icon.png");
-	window->SetIcon(&icon);
-	window->Update();
+	Camera* camera = new Camera(47.0f, 2.0f, 1.0f, 200.0f);
+	camera->location = glm::vec3(30.0f, 25.0f, 0.0f);
+	camera->rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
-	// Let's set up our render target. All things get drawn to the render target
-	// before they are displayed.
-	auto renderTarget = Atlas::RenderTarget(1920, 1080);
+	Terrain* terrain = new Terrain(9, 7, 16, 0.5f, 30.0f);
 
-	// We also need a master renderer
-	auto masterRenderer = Atlas::Renderer::MasterRenderer();
+	Texture* texture = new Texture("../data/image.png");
 
-	// Now create our scene
-	auto scene = Atlas::Scene();
+	window->SetIcon(texture);
 
-	// We want to have a camera too
-	auto camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f, vec3(30.0f, 25.0f, 0.0f), vec2(-3.14f / 2.0f, 0.0f));
+	RenderTarget* target = new RenderTarget(1920, 1080);
 
-	// Now load the meshes we later want to use to create instances of them.
-	// We can add these instances of meshes, called MeshActor to our scene.
-	auto sponzaMesh = Atlas::Mesh::Mesh("sponza/sponza.dae", AE_STATIONARY_MESH);
-	auto treeMesh = Atlas::Mesh::Mesh("tree.dae", AE_STATIONARY_MESH);
-	auto cubeMesh = Atlas::Mesh::Mesh("cube.dae", AE_MOVABLE_MESH);
+	Scene* scene = new Scene();
 
-	// Notice that we want to move our cube later on. All meshes where we frequently want to
-	// update the positions should be AE_MOVABLE_MESH. Let's create our MeshActors then:
-	auto sponzaActor = Atlas::Actor::MeshActor(&sponzaMesh);
-	auto treeActor = Atlas::Actor::MeshActor(&treeMesh);
-	auto cubeActor = Atlas::Actor::MeshActor(&cubeMesh);
+	Cubemap* cubemap = new Cubemap("../data/cubemap/right.png",
+		"../data/cubemap/left.png",
+		"../data/cubemap/top.png",
+		"../data/cubemap/bottom.png",
+		"../data/cubemap/front.png",
+		"../data/cubemap/back.png");
 
-	// We want to scale our tree because it isn't large enough
-	treeActor.SetMatrix(glm::scale(mat4(1.0f), vec3(3.0f)));
+	scene->sky->skybox = new Skybox(cubemap);
 
-	// We also want to scale the sponza model
-	sponzaActor.SetMatrix(glm::scale(mat4(1.0f), vec3(0.05f)));
+	scene->postProcessing->chromaticAberration = new ChromaticAberration(0.7f);
 
-	// We create a scene node, which we can later move around.
-	// The concept is really easy to understand: All actors of all the different types
-	// which are added to that scene node translate, rotate and scale relative to the translation,
-	// rotation and scale of that scene node.
-	auto sceneNode = Atlas::SceneNode();
+	Mesh* mesh = new Mesh("../data/cube.dae");
+	Mesh* sponzaMesh = new Mesh("../data/sponza/sponza.dae");
 
-	// Notice that we add the scene node. The root node can also be translated, rotated and scaled.
-	// We will use this later on.
-	scene.rootNode->Add(&sceneNode);
+	Actor* actor = new Actor(mesh);
+	Actor* sponza = new Actor(sponzaMesh);
+	sponza->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
 
-	// Translate the scene node
-	sceneNode.transformationMatrix = glm::translate(vec3(0.0f, 1.0f, 5.0f));
+	MasterRenderer* renderer = new MasterRenderer();
 
-	// We can also add the actors to scene without adding them to a scene node.
-	// This means that all actors added this way have an absolute translation, rotation and scale.
-	scene.Add(&sponzaActor);
-	scene.Add(&treeActor);
+	SceneNode* node = new SceneNode();
 
-	sceneNode.Add(&cubeActor);
+	Light* globalLight = new Light(DIRECTIONAL_LIGHT);
+	globalLight->direction = vec3(0.0f, -1.0f, 0.5f);
+	globalLight->diffuseColor = vec3(253, 194, 109) / 255.0f * 3.0f;
+	globalLight->ambient = 0.05f;
+	globalLight->AddShadow(new Shadow(125.0f, 0.004f, 2048, 3, 0.7f), camera);
+	globalLight->AddVolumetric(new Volumetric(target->width / 2, target->height / 2, 20, -0.5f));
 
-	// Let's also create a global directional light. This is also stationary for this example scene.
-	auto directionalLight = Atlas::Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
+	node->Add(actor);
+	scene->rootNode->Add(node);
 
-	// Now we can change this light to our needs
-	directionalLight.direction = vec3(0.0f, -1.0f, 0.1f);
-	directionalLight.ambient = 0.05f;
-	directionalLight.color = vec3(253.0f, 194.0f, 109.0f) / 255.0f;
+	scene->Add(sponza);
 
-	// Shadow mapping that is fixed to a point
-	mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
-	directionalLight.AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
-	directionalLight.GetShadow()->sampleCount = 1;
+	scene->Add(globalLight);
 
-	// A shadow has to be added to work
-	directionalLight.AddVolumetric(renderTarget.width / 2, renderTarget.height / 2, 20, -0.5f);
+	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
 
-	scene.Add(&directionalLight);
+	// We create the controller handler
+	MouseHandler* mouseHandler = CreateMouseHandler(camera, 1.5f, 0.25f);
+	mouseHandler->lock = true;
+	KeyboardHandler* keyboardHandler = CreateKeyboardHandler(camera, 7.0f, 0.3f);
 
-	// We also want to interact with our little application. We therefore create a keyboard and mouse
-	// handler. The handlers which are currently present in the engine are very basic but can be seen
-	// as an example on how to write your own one.
-	auto mouseHandler = Atlas::Input::MouseHandler(&camera, 1.5f, 0.015f);
-	auto keyboardHandler = Atlas::Input::KeyboardHandler(&camera, 7.0f, 0.3f);
-
-	// We might also want to know when to exit the application. The engine has an event system build
-	// in. We use it to catch the events from the user. In this case we want to know if the user has
-	// closed the window (QuitEvent) or if the user pressed the escape button (KeyboardEvent).
+	// For now we will leave the main loop here until we implement a more advanced event system
+	// Our event structure
+	SDL_Event event;
 	bool quit = false;
 
-	Atlas::Events::EventManager::QuitEventDelegate.Subscribe([&quit]() {quit = true;});
+	// We need the time passed per frame in the rendering loop
+	unsigned int time = 0;
 
-	Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe([&quit](Atlas::Events::KeyboardEvent event) {
-		if (event.keycode == AE_KEY_ESCAPE) {
-			quit = true;
-		}
-	});
-
-	uint32_t time = 0;
-
-	// We now have a main loop here which does all the rendering on a regular basis.
-	// The framerate is locked as a standard but can also be unlocked via Atlas::Engine::UnlockFramerate()
+	// Handle events and rendering here
 	while (!quit) {
 
-		auto deltaTime = SDL_GetTicks() - time;
+		unsigned int deltatime = SDL_GetTicks() - time;
 		time = SDL_GetTicks();
 
-		mouseHandler.Update(&camera, deltaTime);
-		keyboardHandler.Update(&camera, deltaTime);
+		// Poll all the events
+		while (SDL_PollEvent(&event)) {
 
-		camera.UpdateView();
-		camera.UpdateProjection();
+			if (event.type == SDL_QUIT) {
 
-		masterRenderer.Update();
+				// If the SDL event is telling us to quit we should do it
+				quit = true;
 
-		Atlas::Engine::Update();
+			}
+			else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
 
-		// Rotate the root node around the y-axis. This also results in a rotation
-		// of the scene node that we added to the scene.
-		scene.rootNode->transformationMatrix = glm::rotate((float)time / 1000.0f, vec3(0.0f, 1.0f, 0.0f));
+				// If the user presses escape we also want to quit
+				quit = true;
 
-		scene.Update(&camera);
+			}
+			else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
 
-		// This does all our rendering for us.
-		masterRenderer.RenderScene(window, &renderTarget, &camera, &scene);
+				// If the user presses escape we also want to quit
+				quit = true;
 
-		// We update the window to swap our rendered stuff to the surface
+			}
+			else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+
+				mouseHandler->lock = false;
+
+			}
+			else if (event.type == SDL_MOUSEBUTTONUP && event.button.button == SDL_BUTTON_LEFT) {
+
+				mouseHandler->lock = true;
+
+			}
+
+		}
+
+		CalculateMouseHandler(mouseHandler, camera, deltatime);
+		CalculateKeyboardHandler(keyboardHandler, camera, deltatime);
+
+		camera->UpdateView();
+		camera->UpdateProjection();
+
+		scene->rootNode->transformationMatrix = glm::rotate((float)time / 1000.0f, vec3(0.0f, 1.0f, 0.0f));
+		actor->modelMatrix = glm::rotate((float)time / 500.0f, vec3(0.0f, 1.0f, 0.0f));
+
+		scene->Update();
+
+		globalLight->shadow->Update(camera);
+
+		renderer->RenderScene(window, target, camera, scene);
+
 		window->Update();
 
 	}
-
-	delete window;
 
 	return 0;
 

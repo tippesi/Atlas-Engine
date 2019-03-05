@@ -16,7 +16,7 @@ namespace Atlas {
 			/**
              * Generates a terrain from an image with height data
              * @param heightImage
-             * @param rootNodeCount
+             * @param rootNodeSideCount
              * @param LoDCount
              * @param patchSize
              * @param resolution
@@ -24,16 +24,34 @@ namespace Atlas {
              * @return A pointer to a Terrain object.
              * @warning The input should correspond to the terrain specifications
              */
-			static Terrain::Terrain* GenerateTerrain(Loader::Image16& heightImage, int32_t rootNodeCount, int32_t LoDCount,
+			static Terrain::Terrain* GenerateTerrain(Loader::Image16& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
 					int32_t patchSize, float resolution, float height);
 
 			/**
              * Stores the terrain in a directory on the hard drive
              * @param terrain
-             * @param directory
+             * @param filename
              * @warning All storage cells of the terrain must be loaded.
              */
-			static void SaveTerrain(Terrain::Terrain* terrain, std::string directory);
+			static void SaveTerrain(Terrain::Terrain* terrain, std::string filename);
+
+			/**
+			 * Loads the terrain.
+			 * @param filename
+			 * @return
+			 * @note This method just loads the terrain information, not the nodes.
+			 */
+			static Terrain::Terrain* LoadTerrain(std::string filename);
+
+			/**
+			 *
+			 * @param terrain
+			 * @param cell
+			 * @param filename
+			 * @param initWithHeightData
+			 */
+			static void LoadStorageCell(Terrain::Terrain* terrain, Terrain::TerrainStorageCell* cell,
+					std::string filename, bool initWithHeightData = false);
 
 			/**
              *

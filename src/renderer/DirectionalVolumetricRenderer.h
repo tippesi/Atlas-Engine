@@ -14,7 +14,7 @@ namespace Atlas {
 		public:
 			DirectionalVolumetricRenderer();
 
-			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
 			static std::string volumetricVertexPath;
 			static std::string volumetricFragmentPath;

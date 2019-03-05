@@ -16,19 +16,19 @@ namespace Atlas {
 		public:
 			TextRenderer();
 
-			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
 			void Render(Window* window, Font* font, std::string text, float x, float y, vec4 color,
-						float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+					float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 			void Render(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 clipArea,
-						vec4 blendArea, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+					vec4 blendArea, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 			void RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor,
-								float outlineScale, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+					float outlineScale, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 			void RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
-								vec4 clipArea, vec4 blendArea, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+					vec4 clipArea, vec4 blendArea, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 			void Update();
 

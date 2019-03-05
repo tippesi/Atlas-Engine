@@ -31,18 +31,16 @@ namespace Atlas {
 
 		}
 
-		void ControllerHandler::Update(Camera* camera, uint32_t deltaTime) {
+		void ControllerHandler::Update(Camera* camera, float deltaTime) {
 
 			if (controllerDevice > -1) {
 
-				float floatDelta = (float)deltaTime / 1000.0f;
+				location += camera->direction * -leftStick.y * deltaTime * (speed + speedIncrease);
+				location += camera->right * leftStick.x * deltaTime * (speed + speedIncrease);
 
-				location += camera->direction * -leftStick.y * floatDelta * (speed + speedIncrease);
-				location += camera->right * leftStick.x * floatDelta * (speed + speedIncrease);
+				rotation += -rightStick * deltaTime * sensibility;
 
-				rotation += -rightStick * floatDelta * sensibility;
-
-				float progress = glm::clamp(reactivity * ((float)deltaTime / 16.0f), 0.0f, 1.0f);
+				float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
 				camera->location = glm::mix(camera->location, location, progress);
 				camera->rotation = glm::mix(camera->rotation, rotation, progress);

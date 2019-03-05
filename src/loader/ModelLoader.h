@@ -3,7 +3,7 @@
 
 #include "../System.h"
 #include "../mesh/MeshData.h"
-#include "../SceneNode.h"
+#include "../scene/SceneNode.h"
 
 #include <Assimp/include/assimp/Importer.hpp>
 #include <Assimp/include/assimp/scene.h>
@@ -19,7 +19,7 @@ namespace Atlas {
 		public:
 			static Mesh::MeshData* LoadMesh(std::string filename);
 
-			static SceneNode* LoadSceneNode(std::string filename);
+			static Scene::SceneNode* LoadSceneNode(std::string filename);
 
 		private:
 			static Mesh::Material* LoadMaterial(aiMaterial* assimpMaterial, std::string directory);

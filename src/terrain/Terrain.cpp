@@ -4,46 +4,39 @@ namespace Atlas {
 
 	namespace Terrain {
 
-		Terrain::Terrain(int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, float resolution,
-						 float heightScale) :
-				resolution(resolution), heightScale(heightScale) {
+		Terrain::Terrain(int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSizeFactor, float resolution,
+			float heightScale) : rootNodeSideCount(rootNodeSideCount), LoDCount(LoDCount), 
+			patchSizeFactor(patchSizeFactor), resolution(resolution), heightScale(heightScale) {
 
 			translation = vec3(0.0f);
-			this->patchSize = patchSize;
 
-			// Just in case the input was somehow wrong
-			int32_t nodesPerSide = (int32_t) floor(sqrtf((float) rootNodeCount));
-			this->rootNodeCount = (int32_t) powf((float) nodesPerSide, 2.0f);
+			rootNodeCount = rootNodeSideCount * rootNodeSideCount;
 
 			// sum{k = 0 to LODCount - 1} 4^k = (4^(LODCount) - 1) / 3
 			int32_t nodesCount = (int32_t) ((powf(4.0f, (float) LoDCount) - 1.0f) / 3.0f) * this->rootNodeCount;
 
 			// We can just have 2^16 nodes due to 16 bit indexing
 			if (nodesCount >= 65536) {
-				// We have to adjust the LOD Count
-				this->LoDCount = (int32_t) (logf(3.0f * powf(2.0f, 16.0f) / (float) this->rootNodeCount + 1.0f) /
-											logf(4.0f));
-			} else {
-				this->LoDCount = LoDCount;
+				throw AtlasException("Wasn't able to create terrain due to too many nodes");
 			}
 
-			GeneratePatchVertexBuffer(this->patchSize);
-			GeneratePatchOffsets(this->patchSize);
+			GeneratePatchVertexBuffer();
+			GeneratePatchOffsets();
 
 			storage = new TerrainStorage(this->rootNodeCount, this->LoDCount);
 			LoDDistances = std::vector<float>(LoDCount);
 
 			// 2.0f time because we generate 2 * patchSize vertices. 8.0f because we have 8 * 8 patches per node.
-			sideLength = (float) nodesPerSide * resolution * powf(2, (float) this->LoDCount - 1.0f) * 2.0f *
-						 this->patchSize * 8.0f;
-			float ratio = sideLength / (float) nodesPerSide;
+			sideLength = (float)rootNodeSideCount * resolution * powf(2, (float) this->LoDCount - 1.0f) * 2.0f *
+						 patchSizeFactor * 8.0f;
+			float ratio = sideLength / (float)rootNodeSideCount;
 
 			for (int32_t i = 0; i < this->LoDCount; i++) {
 				LoDDistances[i] = sideLength - powf((float) i / (float) this->LoDCount, 0.25f) * sideLength;
 			}
 
-			for (int32_t i = 0; i < nodesPerSide; i++) {
-				for (int32_t j = 0; j < nodesPerSide; j++) {
+			for (int32_t i = 0; i < rootNodeSideCount; i++) {
+				for (int32_t j = 0; j < rootNodeSideCount; j++) {
 					TerrainStorageCell *cell = storage->GetCell(i, j, 0);
 					storage->requestedCells.push_back(cell);
 					rootNodes.push_back(
@@ -103,7 +96,7 @@ namespace Atlas {
 				return 0.0f;
 			}
 
-			float nodeSideLength = 16.0f * patchSize * resolution;
+			float nodeSideLength = 16.0f * patchSizeFactor * resolution;
 
 			x /= nodeSideLength;
 			z /= nodeSideLength;
@@ -238,7 +231,7 @@ namespace Atlas {
 
 		TerrainStorageCell *Terrain::GetStorageCell(float x, float z, int32_t LoD) {
 
-			float nodeSideLength = 16.0f * patchSize * resolution;
+			float nodeSideLength = 16.0f * patchSizeFactor * resolution;
 
 			x /= nodeSideLength;
 			z /= nodeSideLength;
@@ -262,7 +255,7 @@ namespace Atlas {
 
 		}
 
-		void Terrain::GeneratePatchVertexBuffer(int32_t patchSizeFactor) {
+		void Terrain::GeneratePatchVertexBuffer() {
 
 			patchVertexCount = 4 * (int32_t) powf((float) (patchSizeFactor), 2.0f);
 
@@ -286,7 +279,7 @@ namespace Atlas {
 
 		}
 
-		void Terrain::GeneratePatchOffsets(int32_t patchSizeFactor) {
+		void Terrain::GeneratePatchOffsets() {
 
 			patchOffsets = std::vector<vec2>(64);
 

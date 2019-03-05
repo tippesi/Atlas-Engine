@@ -3,6 +3,7 @@
 #include "AssetLoader.h"
 
 #include <vector>
+#include <limits>
 
 namespace Atlas {
 
@@ -36,15 +37,15 @@ namespace Atlas {
 			importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
 
 			const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(),
-															   aiProcess_CalcTangentSpace |
-															   aiProcess_JoinIdenticalVertices |
-															   aiProcess_Triangulate |
-															   aiProcess_OptimizeGraph |
-															   aiProcess_OptimizeMeshes |
-															   aiProcess_RemoveRedundantMaterials |
-															   aiProcess_GenSmoothNormals |
-															   aiProcess_LimitBoneWeights |
-															   aiProcess_ImproveCacheLocality);
+					aiProcess_CalcTangentSpace |
+					aiProcess_JoinIdenticalVertices |
+					aiProcess_Triangulate |
+					aiProcess_OptimizeGraph |
+					aiProcess_OptimizeMeshes |
+					aiProcess_RemoveRedundantMaterials |
+					aiProcess_GenSmoothNormals |
+					aiProcess_LimitBoneWeights |
+					aiProcess_ImproveCacheLocality);
 
 			auto meshData = new Mesh::MeshData();
 
@@ -95,6 +96,9 @@ namespace Atlas {
 
 			}
 
+			vec3 min = vec3(std::numeric_limits<float>::max());
+			vec3 max = vec3(-std::numeric_limits<float>::max());
+
 			uint32_t usedFaces = 0;
 			uint32_t usedVertices = 0;
 			uint32_t loadedVertices = 0;
@@ -116,9 +120,18 @@ namespace Atlas {
 				for (auto mesh : meshSorted[i]) {
 					// Copy vertices
 					for (uint32_t j = 0; j < mesh->mNumVertices; j++) {
+
 						vertices[usedVertices * 3] = mesh->mVertices[j].x;
 						vertices[usedVertices * 3 + 1] = mesh->mVertices[j].y;
 						vertices[usedVertices * 3 + 2] = mesh->mVertices[j].z;
+
+						max.x = glm::max(mesh->mVertices[j].x, max.x);
+						max.y = glm::max(mesh->mVertices[j].y, max.y);
+						max.z = glm::max(mesh->mVertices[j].z, max.z);
+
+						min.x = glm::min(mesh->mVertices[j].x, min.x);
+						min.y = glm::min(mesh->mVertices[j].y, min.y);
+						min.z = glm::min(mesh->mVertices[j].z, min.z);
 
 						vec3 normal = normalize(vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z));
 
@@ -149,6 +162,7 @@ namespace Atlas {
 						}
 
 						usedVertices++;
+
 					}
 					// Copy indices
 					for (uint32_t j = 0; j < mesh->mNumFaces; j++) {
@@ -167,6 +181,10 @@ namespace Atlas {
 				meshData->materials.push_back(material);
 
 			}
+
+			meshData->aabb = Common::AABB(min, max);
+
+			AtlasLog("%.3f,%.3f,%.3f/%.3f,%.3f,%.3f", min.x, min.y, min.z, max.x, max.y, max.z);
 
 			meshData->indices->Set(indices);
 			meshData->vertices->Set(vertices);

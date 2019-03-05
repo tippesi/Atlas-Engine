@@ -67,6 +67,9 @@ namespace Atlas {
 		// If the textures aren't working as expected this line should be changed
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
+		// If texture data isn't returned as expected this line should be changed
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -104,6 +107,12 @@ namespace Atlas {
 		SDL_GetCurrentDisplayMode(0, &displayMode);
 		*width = displayMode.w;
 		*height = displayMode.h;
+
+	}
+
+	float Engine::GetClock() {
+
+		return (float)SDL_GetTicks() / 1000.0f;
 
 	}
 

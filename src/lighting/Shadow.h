@@ -11,10 +11,10 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+	// Forward declaration of classes
+	class RenderList;
 
-		// Forward declaration of classes
-		class RenderList;
+	namespace Lighting {
 
 		typedef struct ShadowComponent {
 
@@ -23,6 +23,8 @@ namespace Atlas {
 
 			mat4 viewMatrix;
 			mat4 projectionMatrix;
+
+			RenderList* renderList;
 
 		}ShadowComponent;
 
@@ -46,18 +48,15 @@ namespace Atlas {
 			int32_t sampleCount;
 			float sampleRange;
 
-			ShadowComponent* components;
+			std::vector<ShadowComponent> components;
 			int32_t componentCount;
 
 			Texture::Texture2DArray* maps;
 			Texture::Cubemap* cubemap;
 
-			RenderList* renderList;
-
 			bool useCubemap;
 			bool allowDynamicActors;
 			bool update;
-
 
 		};
 

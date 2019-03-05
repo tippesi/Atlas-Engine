@@ -19,11 +19,11 @@ namespace Atlas {
 
 		}
 
-		void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+		void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
 			glViewport(window->viewport->x, window->viewport->y, window->viewport->width, window->viewport->height);
 
-			auto postProcessing = scene->postProcessing;
+			auto postProcessing = &scene->postProcessing;
 
 			bool hasFilmicTonemappingMacro = shader.HasMacro("FILMIC_TONEMAPPING");
 			bool hasVignetteMacro = shader.HasMacro("VIGNETTE");

@@ -23,7 +23,7 @@ namespace Atlas {
 
         }
 
-        void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene) {
+        void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene::Scene *scene) {
 
             vertexArray.Bind();
 
@@ -43,15 +43,17 @@ namespace Atlas {
 
             timeInMilliseconds->SetValue((float)SDL_GetTicks());
 
-            for (auto& decal : scene->decals) {
+            for (auto& decalActor : scene->renderList.decalActors) {
+
+				auto decal = decalActor->decal;
 
                 rowCount->SetValue(decal->rowCount);
                 columnCount->SetValue(decal->columnCount);
                 animationLength->SetValue(decal->animationLength);
 
-                modelMatrix->SetValue(decal->matrix);
+                modelMatrix->SetValue(decalActor->transformedMatrix);
 
-                color->SetValue(decal->color);
+                color->SetValue(decalActor->color);
 
                 decal->texture->Bind(GL_TEXTURE1);
 

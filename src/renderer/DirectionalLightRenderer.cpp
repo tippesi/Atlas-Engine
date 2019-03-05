@@ -23,7 +23,8 @@ namespace Atlas {
 
 		}
 
-		void DirectionalLightRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+		void DirectionalLightRenderer::Render(Window* window, RenderTarget* target,
+				Camera* camera, Scene::Scene* scene) {
 
 			shader.Bind();
 
@@ -44,9 +45,9 @@ namespace Atlas {
 			target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
 
 			// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
-			for (auto& light : scene->lights) {
+			for (auto& light : scene->renderList.lights) {
 
-				if (light->type != AE_DIRECTIONAL_LIGHT || light->GetShadow() == nullptr) {
+				if (light->type != AE_DIRECTIONAL_LIGHT) {
 					continue;
 				}
 
@@ -58,27 +59,32 @@ namespace Atlas {
 				lightColor->SetValue(directionalLight->color);
 				lightAmbient->SetValue(directionalLight->ambient);
 
-				scatteringFactor->SetValue(directionalLight->GetVolumetric() != nullptr ? directionalLight->GetVolumetric()->scatteringFactor : 0.0f);
+				scatteringFactor->SetValue(directionalLight->GetVolumetric() ? directionalLight->GetVolumetric()->scatteringFactor : 0.0f);
 
-				shadowDistance->SetValue(directionalLight->GetShadow()->distance);
-				shadowBias->SetValue(directionalLight->GetShadow()->bias);
-				shadowSampleCount->SetValue(directionalLight->GetShadow()->sampleCount);
-				shadowSampleRange->SetValue(directionalLight->GetShadow()->sampleRange);
-				shadowCascadeCount->SetValue(directionalLight->GetShadow()->componentCount);
-				shadowResolution->SetValue(vec2((float)directionalLight->GetShadow()->resolution));
-
-				if (light->GetVolumetric() != nullptr) {
+				if (light->GetVolumetric()) {
 					glViewport(0, 0, directionalLight->GetVolumetric()->map->width, directionalLight->GetVolumetric()->map->height);
 					directionalLight->GetVolumetric()->map->Bind(GL_TEXTURE5);
 					glViewport(0, 0, target->lightingFramebuffer->width, target->lightingFramebuffer->height);
 				}
 
-				directionalLight->GetShadow()->maps->Bind(GL_TEXTURE6);
+				if (light->GetShadow()) {
+					shadowDistance->SetValue(directionalLight->GetShadow()->distance);
+					shadowBias->SetValue(directionalLight->GetShadow()->bias);
+					shadowSampleCount->SetValue(directionalLight->GetShadow()->sampleCount);
+					shadowSampleRange->SetValue(directionalLight->GetShadow()->sampleRange);
+					shadowCascadeCount->SetValue(directionalLight->GetShadow()->componentCount);
+					shadowResolution->SetValue(vec2((float)directionalLight->GetShadow()->resolution));
 
-				for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
-					auto cascade = &directionalLight->GetShadow()->components[i];
-					cascades[i].distance->SetValue(cascade->farDistance);
-					cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->inverseViewMatrix);
+					directionalLight->GetShadow()->maps->Bind(GL_TEXTURE6);
+
+					for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
+						auto cascade = &directionalLight->GetShadow()->components[i];
+						cascades[i].distance->SetValue(cascade->farDistance);
+						cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->inverseViewMatrix);
+					}
+				}
+				else {
+					shadowDistance->SetValue(0.0f);
 				}
 
 				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

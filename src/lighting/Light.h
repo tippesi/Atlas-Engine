@@ -25,7 +25,7 @@ namespace Atlas {
 
 			virtual void Update(Camera* camera) = 0;
 
-			inline Shadow * GetShadow() {
+			inline Shadow* GetShadow() {
 				return shadow;
 			}
 

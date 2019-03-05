@@ -19,14 +19,12 @@ namespace Atlas {
 
 		}
 
-		void KeyboardHandler::Update(Camera* camera, uint32_t deltaTime) {
+		void KeyboardHandler::Update(Camera* camera, float deltaTime) {
 
-			float floatDelta = (float)deltaTime / 1000.0f;
+			location += camera->direction * movement.x * deltaTime * speed;
+			location += camera->right * movement.y * deltaTime * speed;
 
-			location += camera->direction * movement.x * floatDelta * speed;
-			location += camera->right * movement.y * floatDelta * speed;
-
-			float progress = glm::clamp(reactivity * ((float)deltaTime / 16.0f), 0.0f, 1.0f);
+			float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
 			camera->location = glm::mix(camera->location, location, progress);
 

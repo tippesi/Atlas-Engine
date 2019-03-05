@@ -18,10 +18,6 @@ namespace Atlas {
 		float columnCount;
 		float animationLength;
 
-		mat4 matrix;
-
-		vec4 color = vec4(1.0f);
-
 	};
 
 }

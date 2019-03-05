@@ -2,6 +2,7 @@
 #define AE_MESHDATA_H
 
 #include "../System.h"
+#include "../common/AABB.h"
 #include "DataComponent.h"
 #include "Material.h"
 
@@ -23,26 +24,35 @@ namespace Atlas {
 		class MeshData {
 
 		public:
-			///
+			/**
+			 *
+			 */
 			MeshData();
 
-			///
-			/// \param count
+			~MeshData();
+
+			/**
+			 *
+			 * @param count
+			 */
 			void SetIndexCount(int32_t count);
 
-			///
-			/// \return
+			/**
+			 *
+			 */
 			int32_t GetIndexCount();
 
-			///
-			/// \param count
+			/**
+			 *
+			 * @param count
+			 */
 			void SetVertexCount(int32_t count);
 
-			///
-			/// \return
+			/**
+			 *
+			 * @return
+			 */
 			int32_t GetVertexCount();
-
-			~MeshData();
 
 			DataComponent<uint32_t, void>* indices;
 
@@ -55,6 +65,8 @@ namespace Atlas {
 			std::vector<MeshSubData*> subData;
 
 			int32_t primitiveType;
+
+			Common::AABB aabb;
 
 		private:
 			int32_t indexCount;

@@ -31,7 +31,7 @@ namespace Atlas {
 
 		std::vector<uint8_t> data;
 
-		int32_t kern[AE_FONT_GLYPH_COUNT];
+		std::vector<int32_t> kern;
 
 	} Glyph;
 

@@ -93,6 +93,18 @@ file(GLOB_RECURSE ATLAS_ENGINE_SOURCE_FILES
 		
 list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/libraries\/")
 
+# Grouping source files into tree structure #######################################################
+foreach(SOURCE_FILE IN ITEMS ${ATLAS_ENGINE_SOURCE_FILES})
+    if (IS_ABSOLUTE "${SOURCE_FILE}")
+        file(RELATIVE_PATH SOURCE_FILE_REL "${CMAKE_CURRENT_SOURCE_DIR}" "${SOURCE_FILE}")
+    else()
+        set(SOURCE_FILE_REL "${SOURCE_FILE}")
+    endif()
+    get_filename_component(SOURCE_PATH "${SOURCE_FILE_REL}" PATH)
+    string(REPLACE "/" "\\" SOURCE_PATH_CONVERTED "${SOURCE_PATH}")
+    source_group("${SOURCE_PATH_CONVERTED}" FILES "${SOURCE_FILE}")
+endforeach()   
+	
 if (OPENGL_ES)
 set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_API_GLES)
 else()
@@ -105,13 +117,13 @@ if(ANDROID)
 else()
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 if (BUILD_LIBRARY)
-    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/[Mm]ain.c(pp)?")
+    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)src\/[Mm]ain.(c(pp)?|h(pp)?)$")
     add_library(${PROJECT_NAME} STATIC ${ATLAS_ENGINE_SOURCE_FILES})
 else()
     add_executable(${PROJECT_NAME} ${ATLAS_ENGINE_SOURCE_FILES})
 endif()
 else()
-    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/src\/[Mm]ain.c(pp)?")
+    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)src\/[Mm]ain.(c(pp)?|h(pp)?)$")
     add_library(${PROJECT_NAME} STATIC ${ATLAS_ENGINE_SOURCE_FILES})
 endif()
 endif()
@@ -123,9 +135,9 @@ target_include_directories(${PROJECT_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/dependencies
 	${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Assimp/include
 	${CMAKE_CURRENT_BINARY_DIR}/dependencies/Assimp/include
-	PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src
+	PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/libraries)
-
+	
 # Link libraries ##################################################################################
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${ATLAS_ENGINE_LIBS} LINK_PRIVATE ${ATLAS_ENGINE_SYSTEM_LIBS})

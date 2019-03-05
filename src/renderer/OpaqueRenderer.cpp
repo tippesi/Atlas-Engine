@@ -37,13 +37,13 @@ namespace Atlas {
 
 		}
 
-		void OpaqueRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+		void OpaqueRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			bool backFaceCulling = true;
 
-			for (auto& renderListBatchesKey : scene->renderList->orderedRenderBatches) {
+			for (auto& renderListBatchesKey : scene->renderList.orderedRenderBatches) {
 
 				int32_t configBatchID = renderListBatchesKey.first;
 				auto renderListBatches = renderListBatchesKey.second;
@@ -68,7 +68,7 @@ namespace Atlas {
 						continue;
 					}
 
-					auto mesh = meshActorBatch->GetMesh();
+					auto mesh = meshActorBatch->GetObject();
 					mesh->Bind();
 
 					if (!mesh->cullBackFaces && backFaceCulling) {

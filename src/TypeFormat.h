@@ -41,6 +41,7 @@ namespace Atlas {
                 case AE_FLOAT: return 4;
                 case AE_INT_2_10_10_10: return 4;
                 case AE_UINT_2_10_10_10: return 4;
+				default: return 4;
             }
         }
 

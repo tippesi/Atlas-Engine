@@ -13,7 +13,7 @@ namespace Atlas {
 		public:
 			TerrainRenderer();
 
-			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
 			void GetUniforms();
 

@@ -124,8 +124,11 @@ namespace Atlas {
 
             switch(baseFormat) {
                 case AE_RGBA: return 4;
+				case AE_RGBA_INT: return 4;
                 case AE_RG: return 2;
+				case AE_RG_INT: return 2;
                 case AE_R: return 1;
+				case AE_R_INT: return 1;
                 case AE_DEPTH: return 1;
                 default: return 3;
             }

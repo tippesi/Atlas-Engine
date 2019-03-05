@@ -42,9 +42,6 @@ Main::Main(int argc, char* argv[]) {
 	auto controllerDeviceEventHandler = std::bind(&Main::ControllerDeviceEventHandler, this, std::placeholders::_1);
     Atlas::Events::EventManager::ControllerDeviceEventDelegate.Subscribe(controllerDeviceEventHandler);
 
-	auto mouseButtonEventHandler = std::bind(&Main::MouseButtonEventHandler, this, std::placeholders::_1);
-    Atlas::Events::EventManager::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
-
 	camera = new Camera(47.0f, 2.0f, .25f, 400.0f);
 	camera->location = vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = vec2(-3.14f / 2.0f, 0.0f);
@@ -52,8 +49,8 @@ Main::Main(int argc, char* argv[]) {
 #ifdef AE_OS_ANDROID
 	touchHandler = new Atlas::Input::TouchHandler(camera, 1.5f, 7.0f, 0.2f);
 #else
-	mouseHandler = new Atlas::Input::MouseHandler(camera, 1.5f, 0.015f);
-	keyboardHandler = new Atlas::Input::KeyboardHandler(camera, 7.0f, 0.3f);
+	mouseHandler = new Atlas::Input::MouseHandler(camera, 1.5f, 6.0f);
+	keyboardHandler = new Atlas::Input::KeyboardHandler(camera, 7.0f, 6.0f);
 	controllerHandler = new Atlas::Input::ControllerHandler(camera, 1.5f, 7.0f, 0.2f, 5000.0f);
 #endif
 
@@ -63,20 +60,21 @@ Main::Main(int argc, char* argv[]) {
 	renderTarget = new Atlas::RenderTarget(1920, 1080);
 #else
     renderTarget = new RenderTarget(1280, 720);
+    Texture::Texture::SetAnisotropyLevel(8);
 #endif
 	Load();
 
 	SceneSetUp();
 
-	uint32_t time = 0;
+	float time = Engine::GetClock();
 
-	renderingStart = SDL_GetTicks();
+	renderingStart = Engine::GetClock();
 	frameCount = 1;
 
 	while (!quit) {
 
-		uint32_t deltaTime = SDL_GetTicks() - time;
-		time = SDL_GetTicks();
+		float deltaTime = Engine::GetClock() - time;
+		time = Engine::GetClock();
 
 		Engine::Update();
 
@@ -92,7 +90,7 @@ Main::Main(int argc, char* argv[]) {
 
 }
 
-void Main::Update(uint32_t deltaTime) {
+void Main::Update(float deltaTime) {
 
 #ifdef AE_OS_ANDROID
 	touchHandler->Update(camera, deltaTime);
@@ -109,21 +107,17 @@ void Main::Update(uint32_t deltaTime) {
 	camera->UpdateView();
 	camera->UpdateProjection();
 
-	// terrain->Update(camera);
-
-	scene->rootNode->transformationMatrix = glm::rotate((float)SDL_GetTicks() / 1000.0f, vec3(0.0f, 1.0f, 0.0f));
-
-	scene->Update(camera);
+	scene->Update(camera, deltaTime);
 
 	masterRenderer->Update();
 
 }
 
-void Main::Render(uint32_t deltaTime) {
+void Main::Render(float deltaTime) {
 
 	masterRenderer->RenderScene(window, renderTarget, camera, scene);
 
-	float averageFramerate = (float)(SDL_GetTicks() - renderingStart) / (float)frameCount;
+	float averageFramerate = (Engine::GetClock() - renderingStart) * 1000.0f / (float)frameCount;
 
 	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms";
 
@@ -133,53 +127,7 @@ void Main::Render(uint32_t deltaTime) {
 
 void Main::Stream() {
 
-    /*
-	for (auto& cell : terrain->storage->requestedCells) {
 
-		/*
-		string imagePath("../data/terrain/LoD");
-        imagePath += to_string(cell->LoD) + "/height" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
-		auto heightImage = ImageLoader::LoadImage(imagePath, false, 1);
-		cell->heightField = new Texture2D(GL_UNSIGNED_SHORT, heightImage.width, heightImage.height, GL_R8,
-		        GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-		auto shortVector = vector<uint16_t>(heightImage.width * heightImage.height);
-		for (int32_t i = 0; i < shortVector.size(); i++) {
-            shortVector[i] = (uint16_t)heightImage.data[i] * 257;
-		}
-		cell->heightField->SetData(shortVector);
-		cell->heightData = shortVector;
-
-        imagePath = "../data/terrain/LoD";
-        imagePath += to_string(cell->LoD) + "/normal" + to_string(cell->x) + "-" + to_string(cell->y) + ".png";
-		auto normalImage = ImageLoader::LoadImage(imagePath, false, 3);
-		cell->normalMap = new Texture2D(GL_UNSIGNED_BYTE, normalImage.width, normalImage.height, GL_RGB8,
-		        GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-		cell->normalMap->SetData(normalImage.data);
-
-
-		cell->diffuseMap = terrainDiffuseMap;
-		cell->displacementMap = terrainDisplacementMap;
-
-	}
-     */
-	/*
-	if (terrain->storage->requestedCells.size() > 0) {
-		for (int32_t i = 0; i < 10000; i++) {
-
-			float x = 1024.0f * (float)rand() / (float)RAND_MAX;
-			float z = 1024.0f * (float)rand() / (float)RAND_MAX;
-			float y = terrain->GetHeight(x, z);
-
-			auto tree = new MeshActor(treeMesh);
-			tree->modelMatrix = glm::translate(mat4(1.0f), vec3(x, y, z));
-			tree->modelMatrix = glm::scale(tree->modelMatrix, vec3(3.0f));
-
-			scene->Add(tree);
-
-		}
-	}
-    */
-	// terrain->storage->requestedCells.clear();
 
 }
 
@@ -200,11 +148,6 @@ void Main::Load() {
 	treeMesh = new Mesh::Mesh("tree.dae");
 	treeMesh->cullBackFaces = false;
 	sponzaMesh = new Mesh::Mesh("sponza/sponza.dae");
-
-	//terrainDiffuseMap = new Texture2D("terrain/Ground_17_DIF.jpg");
-	//terrainDisplacementMap = new Texture2D("terrain/Ground_17_DISP.jpg");
-
-	smileyTexture = new Texture::Texture2D("spritesheet.png");
 
 }
 
@@ -234,59 +177,18 @@ void Main::DisplayLoadingScreen() {
 
 void Main::SceneSetUp() {
 
-	scene = new Atlas::Scene();
+	scene = new Atlas::Scene::Scene();
 
-	/*
-	Image image = ImageLoader::LoadImage("terrain/heightfield.png", false, 1);
+	auto node = new Atlas::Scene::SceneNode();
+	node->SetMatrix(translate(vec3(0.0f, 1.0f, 5.0f)));
+	scene->Add(node);
+	scene->sky.skybox = new Lighting::Skybox(skybox);
 
-	Image16 image16;
-	image16.width = image.width;
-	image16.height = image.height;
-	image16.channels = image.channels;
-
-	image16.data.resize(image.data.size());
-
-	for (int32_t i = 0; i < image.data.size(); i++) {
-		image16.data[i] = (uint16_t)((float)image.data[i] / 255.0f * 65535.0f);
-	}
-
-	terrain = TerrainTool::GenerateTerrain(image16, 256, 1, 4, 2.0f, 300.0f);
-	// terrain = new Terrain(256, 1, 4, 2.0f, 300.0f);
-	terrain->SetTessellationFunction(8000.0f, 3.0f, 0.0f);
-	terrain->SetDisplacementDistance(20.0f);
-
-	scene->Add(terrain);
-	*/
-
-	Decal* decal = new Decal(smileyTexture, 4.0f, 4.0f, 500.0f);
-
-	decal->matrix = glm::scale(mat4(1.0f), vec3(10.0f, 1.0f, 10.0f));
-	decal->matrix = glm::translate(mat4(1.0f), vec3(0.0f, 12.0f, 0.0f)) *
-					glm::rotate(mat4(1.0f) , -3.14f / 2.0f, vec3(0.0f, 0.0f, 1.0f)) *
-					glm::rotate(mat4(1.0f), 3.14f / 2.0f, vec3(0.0f, 1.0f, 0.0f)) *
-					glm::scale(mat4(1.0f), vec3(5.0f, 5.0f, 10.0f));
-
-	// scene->Add(decal);
-
-	decal = new Decal(smileyTexture, 4.0f, 4.0f, 500.0f);
-
-	decal->matrix = glm::translate(mat4(1.0f), camera->location) * 
-		glm::rotate(mat4(1.0f) , -3.14f / 2.0f, vec3(0.0f, 0.0f, 1.0f)) * 
-		glm::rotate(mat4(1.0f), 3.14f / 2.0f, vec3(0.0f, 1.0f, 0.0f)) *
-		glm::scale(mat4(1.0f), vec3(1.0f, 1000.0f, 1.0f));
-
-	// scene->Add(decal);
-
-	auto node = new Atlas::SceneNode();
-	node->transformationMatrix = translate(vec3(0.0f, 1.0f, 5.0f));
-	scene->rootNode->Add(node);
-	scene->sky->skybox = new Lighting::Skybox(skybox);
-
-	cubeActor = new Mesh::MeshActor(cubeMesh);
-	treeActor = new Mesh::MeshActor(treeMesh);
-	treeActor->modelMatrix = scale(mat4(1.0f), vec3(3.0f));
-	sponzaActor = new Mesh::MeshActor(sponzaMesh);
-	sponzaActor->modelMatrix = scale(mat4(1.0f), vec3(0.05f));
+	cubeActor = new Actor::MeshActor(cubeMesh);
+	treeActor = new Actor::MeshActor(treeMesh);
+	treeActor->SetMatrix(scale(mat4(1.0f), vec3(3.0f)));
+	sponzaActor = new Actor::MeshActor(sponzaMesh);
+	sponzaActor->SetMatrix(scale(mat4(1.0f), vec3(0.05f)));
 
 	directionalLight = new Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
 #ifdef AE_OS_ANDROID
@@ -302,10 +204,15 @@ void Main::SceneSetUp() {
 	// directionalLight->AddShadow(300.0f, 0.01f, 1024, 4, 0.7f, camera);
 	// Shadow mapping that is fixed to a point
     mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
-	directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
+#ifndef AE_OS_ANDROID
+    directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
 	directionalLight->GetShadow()->sampleCount = 1;
 	directionalLight->AddVolumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f);
-
+#else
+    directionalLight->AddShadow(200.0f, 0.01f, 2048, vec3(0.0f), orthoProjection);
+    directionalLight->GetShadow()->sampleCount = 8;
+    directionalLight->AddVolumetric(renderTarget->width / 2, renderTarget->height / 2, 10, -0.5f);
+#endif
 	auto pointLight1 = new Lighting::PointLight(AE_STATIONARY_LIGHT);
 	pointLight1->location = vec3(24.35f, 6.5f, 7.1f);
 	pointLight1->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
@@ -352,24 +259,6 @@ void Main::ControllerDeviceEventHandler(Atlas::Events::ControllerDeviceEvent eve
 	}
 	else if (event.type == AE_CONTROLLER_REMOVED) {
 		useControllerHandler = false;
-	}
-
-}
-
-void Main::MouseButtonEventHandler(Atlas::Events::MouseButtonEvent event) {
-
-	if (event.button == AE_MOUSEBUTTON_RIGHT && event.state == AE_BUTTON_RELEASED) {
-
-		Decal* decal = new Decal(smileyTexture, 4.0f, 4.0f, 500.0f);
-
-		auto farPoint = camera->direction * camera->farPlane;
-
-		auto midPoint = farPoint / 2.0f;
-
-		decal->matrix =  glm::lookAt(camera->location, camera->location + camera->direction, camera->up) *  glm::scale(mat4(1.0f), vec3(1.0f, 1.0f, camera->farPlane));
-
-		scene->Add(decal);
-
 	}
 
 }

@@ -23,16 +23,14 @@ namespace Atlas {
 
 		}
 
-		void TouchHandler::Update(Camera* camera, uint32_t deltaTime) {
+		void TouchHandler::Update(Camera* camera, float deltaTime) {
 
-			float floatDelta = (float)deltaTime / 1000.0f;
+			location += 2.0f * camera->direction * -leftFinger.position.y * deltaTime * speed;
+			location += 2.0f * camera->right * leftFinger.position.x * deltaTime * speed;
 
-			location += 2.0f * camera->direction * -leftFinger.position.y * floatDelta * speed;
-			location += 2.0f * camera->right * leftFinger.position.x * floatDelta * speed;
+			rotation += 60.0f * -rightFinger.position * deltaTime * sensibility;
 
-			rotation += 60.0f * -rightFinger.position * floatDelta * sensibility;
-
-			float progress = glm::clamp(reactivity * ((float)deltaTime / 16.0f), 0.0f, 1.0f);
+			float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
 			camera->location = glm::mix(camera->location, location, progress);
 			camera->rotation = glm::mix(camera->rotation, rotation, progress);

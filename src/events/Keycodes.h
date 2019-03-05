@@ -13,7 +13,7 @@ typedef int32_t Keycode;
 enum {
 	AE_KEY_UNKNOWN = 0,
 
-	AE_KEY_RETURN = '\r',
+	AE_KEY_ENTER = '\r',
 	AE_KEY_ESCAPE = '\033',
 	AE_KEY_BACKSPACE = '\b',
 	AE_KEY_TAB = '\t',

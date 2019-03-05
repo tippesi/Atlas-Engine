@@ -14,7 +14,7 @@ namespace Atlas {
 		public:
 			KeyboardHandler(Camera* camera, float speed, float reactivity);
 
-			void Update(Camera* camera, uint32_t deltaTime);
+			void Update(Camera* camera, float deltaTime);
 
 			float speed;
 			float reactivity;

@@ -41,7 +41,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+		void MasterRenderer::RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
 			glEnable(GL_DEPTH_TEST);
 			glDepthMask(GL_TRUE);
@@ -88,7 +88,7 @@ namespace Atlas {
 			glDisable(GL_BLEND);
 			glEnable(GL_DEPTH_TEST);
 
-			if (scene->sky->skybox != nullptr) {
+			if (scene->sky.skybox != nullptr) {
 				skyboxRenderer.Render(window, target, camera, scene);
 			}
 			else {

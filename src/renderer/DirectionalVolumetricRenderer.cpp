@@ -35,7 +35,8 @@ namespace Atlas {
 
         }
 
-        void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene *scene) {
+        void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
+                Camera *camera, Scene::Scene *scene) {
 
             framebuffer->Bind();
 
@@ -47,9 +48,9 @@ namespace Atlas {
             inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
             target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
 
-            for (auto& light : scene->lights) {
+            for (auto& light : scene->renderList.lights) {
 
-                if (light->type != AE_DIRECTIONAL_LIGHT || light->GetShadow() == nullptr || light->GetVolumetric() == nullptr) {
+                if (light->type != AE_DIRECTIONAL_LIGHT || !light->GetShadow() || !light->GetVolumetric()) {
                     continue;
                 }
 
@@ -71,8 +72,8 @@ namespace Atlas {
                 light->GetShadow()->maps->Bind(GL_TEXTURE1);
 
                 for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
-                    auto cascade = &directionalLight->GetShadow()->components[i];
                     if (i < light->GetShadow()->componentCount) {
+						auto cascade = &directionalLight->GetShadow()->components[i];
                         cascades[i].distance->SetValue(cascade->farDistance);
                         cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->inverseViewMatrix);
                     }
@@ -103,7 +104,7 @@ namespace Atlas {
 
             kernelSize->SetValue((int32_t)kernelWeights->size());
 
-            for (auto& light : scene->lights) {
+            for (auto& light : scene->renderList.lights) {
 
                 if (light->type != AE_DIRECTIONAL_LIGHT || light->GetShadow() == nullptr || light->GetVolumetric() == nullptr) {
                     continue;

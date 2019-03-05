@@ -14,7 +14,7 @@ namespace Atlas {
 		public:
 			MouseHandler(Camera* camera, float sensibility, float reactivity, bool hideMouse = false);
 
-			void Update(Camera* camera, uint32_t deltaTime);
+			void Update(Camera* camera, float deltaTime);
 
 			void SetActivationButton(uint8_t mouseButton);
 

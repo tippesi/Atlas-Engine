@@ -34,7 +34,7 @@ namespace Atlas {
              * @param camera
              * @param scene
              */
-			void RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene* scene);
+			void RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
 			/**
              *

@@ -24,9 +24,9 @@ namespace Atlas {
 
 		}
 
-		void MouseHandler::Update(Camera* camera, uint32_t deltaTime) {
+		void MouseHandler::Update(Camera* camera, float deltaTime) {
 
-			float progress = glm::clamp(reactivity * (float)deltaTime, 0.0f, 1.0f);
+			float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
 			camera->rotation = glm::mix(camera->rotation, rotation, progress);
 

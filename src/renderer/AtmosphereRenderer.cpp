@@ -21,7 +21,7 @@ namespace Atlas {
 
 		}
 
-		void AtmosphereRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene* scene) {
+		void AtmosphereRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
 			shader.Bind();
 
@@ -30,7 +30,11 @@ namespace Atlas {
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
 			cameraLocation->SetValue(vec3(camera->location));
-			sunDirection->SetValue(vec3(0.0f, -0.4f, -1.0f));
+			sunDirection->SetValue(vec3(0.0f, -.02f, 0.5f));
+			sunIntensity->SetValue(22.0f);
+			planetCenter->SetValue(-vec3(0.0f, 6371000.0f, 0.0f));
+			planetRadius->SetValue(6371000.0f);
+			atmosphereRadius->SetValue(6471000.0f);
 
 			glDrawElements(GL_TRIANGLES, vertexArray.GetIndexComponent()->GetElementCount(),
 						   vertexArray.GetIndexComponent()->GetDataType(), NULL);
@@ -43,6 +47,10 @@ namespace Atlas {
 			projectionMatrix = shader.GetUniform("pMatrix");
 			cameraLocation = shader.GetUniform("cameraLocation");
 			sunDirection = shader.GetUniform("sunDirection");
+			sunIntensity = shader.GetUniform("sunIntensity");
+			planetCenter = shader.GetUniform("planetCenter");
+			atmosphereRadius = shader.GetUniform("atmosphereRadius");
+			planetRadius = shader.GetUniform("planetRadius");
 
 		}
 

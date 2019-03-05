@@ -2,6 +2,7 @@
 #include "Light.h"
 #include "DirectionalLight.h"
 #include "PointLight.h"
+#include "../RenderList.h"
 
 namespace Atlas {
 
@@ -19,8 +20,6 @@ namespace Atlas {
 			sampleRange = 2.2f;
 			useCubemap = false;
 
-			components = new ShadowComponent[cascadeCount];
-
 			maps = new Texture::Texture2DArray(resolution, resolution, cascadeCount, 
 				AE_DEPTH24, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
@@ -28,6 +27,12 @@ namespace Atlas {
 
 			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+
+			components = std::vector<ShadowComponent>(cascadeCount);
+
+			for (auto &component : components) {
+				component.renderList = new RenderList(AE_SHADOW_RENDERLIST);
+			}
 
 			Update();
 
@@ -66,7 +71,11 @@ namespace Atlas {
 
 			}
 
-			components = new ShadowComponent[componentCount];
+			components = std::vector<ShadowComponent>(componentCount);
+
+			for (auto &component : components) {
+				component.renderList = new RenderList(AE_SHADOW_RENDERLIST);
+			}
 
 			Update();
 
@@ -80,7 +89,6 @@ namespace Atlas {
 
 		Shadow::~Shadow() {
 
-			delete[] components;
 			delete maps;
 			delete cubemap;
 
