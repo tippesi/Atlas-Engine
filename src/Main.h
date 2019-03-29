@@ -50,11 +50,14 @@ private:
 	Atlas::Mesh::Mesh* treeMesh;
 	Atlas::Mesh::Mesh* cubeMesh;
 
-	Atlas::Actor::MeshActor* cubeActor;
-	Atlas::Actor::MeshActor* treeActor;
-	Atlas::Actor::MeshActor* sponzaActor;
+	Atlas::Actor::MovableMeshActor* cubeActor;
+	Atlas::Actor::StaticMeshActor* treeActor;
+	Atlas::Actor::StaticMeshActor* sponzaActor;
 
 	Atlas::Lighting::DirectionalLight* directionalLight;
+
+	Atlas::Audio::AudioData* audioData;
+	Atlas::Audio::AudioStream* audioStream;
 
 	float renderingStart;
 	uint32_t frameCount;

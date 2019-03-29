@@ -149,6 +149,11 @@ void Main::Load() {
 	treeMesh->cullBackFaces = false;
 	sponzaMesh = new Mesh::Mesh("sponza/sponza.dae");
 
+	audioData = new Audio::AudioData("MenuTheme2_final.wav");
+	audioStream = new Audio::AudioStream(audioData);
+
+	Audio::AudioManager::AddMusic(audioStream);
+
 }
 
 void Main::DisplayLoadingScreen() {
@@ -184,11 +189,9 @@ void Main::SceneSetUp() {
 	scene->Add(node);
 	scene->sky.skybox = new Lighting::Skybox(skybox);
 
-	cubeActor = new Actor::MeshActor(cubeMesh);
-	treeActor = new Actor::MeshActor(treeMesh);
-	treeActor->SetMatrix(scale(mat4(1.0f), vec3(3.0f)));
-	sponzaActor = new Actor::MeshActor(sponzaMesh);
-	sponzaActor->SetMatrix(scale(mat4(1.0f), vec3(0.05f)));
+	cubeActor = new Actor::MovableMeshActor(cubeMesh);
+	treeActor = new Actor::StaticMeshActor(treeMesh, scale(mat4(1.0f), vec3(3.0f)));
+	sponzaActor = new Actor::StaticMeshActor(sponzaMesh, scale(mat4(1.0f), vec3(0.05f)));
 
 	directionalLight = new Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
 #ifdef AE_OS_ANDROID
