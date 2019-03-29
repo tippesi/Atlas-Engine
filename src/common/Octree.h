@@ -12,18 +12,22 @@ namespace Atlas {
 
     namespace Common {
 
+        /**
+         * Based on https://anteru.net/blog/2008/loose-octrees/
+         * @tparam T
+         */
         template <class T> class Octree {
 
         public:
             Octree() {}
 
-            Octree(AABB aabb, int32_t capacity, int32_t depth);
+            Octree(AABB aabb, int32_t depth, float relaxFactor = 2.0f);
 
             bool Insert(T data, AABB aabb);
 
             void Remove(T data, AABB aabb);
 
-            void QueryAABB(std::unordered_set<T>& data, AABB aabb);
+            void QueryAABB(std::vector<T>& data, AABB aabb);
 
             bool IsSubdivided();
 
@@ -35,21 +39,24 @@ namespace Atlas {
 
             AABB aabb;
 
-			int32_t removeCount = 0;
-
         private:
             void Subdivide();
 
+            bool InsertInternal(T data, AABB aabb, vec3 center);
+
+            bool RemoveInternal(T data, AABB aabb, vec3 center);
+
             std::vector<Octree<T>> children;
 
-            int32_t capacity;
             int32_t depth;
+
+            float relaxFactor;
 
         };
 
         template <class T>
-        Octree<T>::Octree(AABB aabb, int32_t capacity, int32_t depth) :
-                aabb(aabb), capacity(capacity), depth(depth) {
+        Octree<T>::Octree(AABB aabb, int32_t depth, float relaxFactor) :
+                aabb(aabb), depth(depth), relaxFactor(relaxFactor) {
 
 
 
@@ -58,70 +65,29 @@ namespace Atlas {
         template <class T>
         bool Octree<T>::Insert(T data, AABB aabb) {
 
-            if (!this->aabb.Intersects(aabb)) {
-                return false;
-            }
+            auto center = aabb.min + 0.5f * (aabb.max - aabb.min);
 
-            if (octreeData.size() < capacity) {
-                octreeData.push_back(data);
-                return true;
-            }
-
-            bool successful = false;
-
-            if (depth > 0) {
-
-                if (children.size() == 0)
-                    Subdivide();
-
-                for (auto &child : children) {
-                    successful |= child.Insert(data, aabb);
-                }
-
-            }
-
-            return successful;
+            return InsertInternal(data, aabb, center);
 
         }
 
         template <class T>
         void Octree<T>::Remove(T data, AABB aabb) {
 
-            if (!this->aabb.Intersects(aabb))
-                return;
+            auto center = aabb.min + 0.5f * (aabb.max - aabb.min);
 
-			removeCount++;
-
-			auto item = std::find(octreeData.begin(), octreeData.end(), data);
-
-			if (item != octreeData.end()) {
-				octreeData.erase(item);
-				return;
-			}
-
-            if (children.size() == 0)
-                return;
-
-            bool removeChildren = true;
-
-            for (auto& child : children) {
-                child.Remove(data, aabb);
-                removeChildren = removeChildren && child.octreeData.size() == 0 && !child.IsSubdivided();
-            }
-
-            if (removeChildren)
-                children.resize(0);
+            RemoveInternal(data, aabb, center);
 
         }
 
         template <class T>
-        void Octree<T>::QueryAABB(std::unordered_set<T>& data, AABB aabb) {
+        void Octree<T>::QueryAABB(std::vector<T>& data, AABB aabb) {
 
 			if (!this->aabb.Intersects(aabb))
 				return;
 
 			for (auto& queryData : octreeData)
-			    data.insert(queryData);
+			    data.push_back(queryData);
 
 			for (auto& child : children) {
 				child.QueryAABB(data, aabb);
@@ -171,8 +137,90 @@ namespace Atlas {
             children.resize(8);
 
             for (uint8_t i = 0; i < 8; i++) {
-                children[i] = Octree<T>(aabbs[i], capacity, depth - 1);
+                children[i] = Octree<T>(aabbs[i], depth - 1, relaxFactor);
             }
+
+        }
+
+        template <class T>
+        bool Octree<T>::InsertInternal(T data, AABB aabb, vec3 center) {
+
+            if (!this->aabb.IsInside(center)) {
+                return false;
+            }
+
+			auto relaxedCenter = 0.5f * (this->aabb.max + this->aabb.min);
+			auto relaxedMin = relaxedCenter + relaxFactor * (this->aabb.min - relaxedCenter);
+			auto relaxedMax = relaxedCenter + relaxFactor * (this->aabb.max - relaxedCenter);
+
+            AABB relaxedBound(relaxedMin, relaxedMax);
+
+            if (!relaxedBound.IsInside(aabb)) {
+                return false;
+            }
+
+            bool successful = false;
+
+            if (depth > 0) {
+
+                if (children.size() == 0)
+                    Subdivide();
+
+                for (auto &child : children) {
+					if (successful)
+						break;
+                    successful |= child.InsertInternal(data, aabb, center);
+                }
+
+            }
+
+			if (!successful)
+				octreeData.push_back(data);
+
+            return true;
+
+        }
+
+        template <class T>
+        bool Octree<T>::RemoveInternal(T data, AABB aabb, vec3 center) {
+
+            if (!this->aabb.IsInside(center)) {
+                return false;
+            }
+
+			auto relaxedCenter = 0.5f * (this->aabb.max + this->aabb.min);
+			auto relaxedMin = relaxedCenter + relaxFactor * (this->aabb.min - relaxedCenter);
+			auto relaxedMax = relaxedCenter + relaxFactor * (this->aabb.max - relaxedCenter);
+
+			AABB relaxedBound(relaxedMin, relaxedMax);
+
+			if (!relaxedBound.IsInside(aabb)) {
+				return false;
+			}
+
+            auto item = std::find(octreeData.begin(), octreeData.end(), data);
+
+            if (item != octreeData.end()) {
+                octreeData.erase(item);
+                return true;
+            }
+
+            if (children.size() == 0)
+                return false;
+
+            bool removeChildren = true;
+			bool successful = false;
+
+            for (auto& child : children) {
+				if (!successful)
+					successful |= child.RemoveInternal(data, aabb, center);
+                removeChildren = removeChildren && child.octreeData.size() == 0 && !child.IsSubdivided();
+            }
+
+            if (removeChildren)
+                children.resize(0);
+
+			return successful;
 
         }
 

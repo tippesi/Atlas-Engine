@@ -67,7 +67,8 @@ namespace Atlas {
 			using SceneNode::Remove;
 
 		private:
-			Common::Octree<Actor::MeshActor*> meshOctree;
+			Common::Octree<Actor::MovableMeshActor*> movableMeshOctree;
+			Common::Octree<Actor::StaticMeshActor*> staticMeshOctree;
 			Common::Octree<Actor::DecalActor*> decalOctree;
 
 		};

@@ -14,7 +14,7 @@ namespace Atlas {
 		void SceneNode::Add(SceneNode *node) {
 
 			if (sceneSet) {
-				node->AddToScene(meshActorOctree, decalActorOctree);
+				node->AddToScene(movableMeshActorOctree, staticMeshActorOctree, decalActorOctree);
 			}
 
 			childNodes.push_back(node);
@@ -27,36 +27,50 @@ namespace Atlas {
 				node->RemoveFromScene();
 			}
 
-			for (auto iterator = childNodes.begin(); iterator != childNodes.end(); iterator++) {
+			auto item = std::find(childNodes.begin(), childNodes.end(), node);
 
-				if (*iterator == node) {
-					childNodes.erase(iterator);
-					return;
-				}
-
+			if (item != childNodes.end()) {
+				childNodes.erase(item);
 			}
 
 		}
 
-		void SceneNode::Add(Actor::MeshActor *actor) {
+		void SceneNode::Add(Actor::MovableMeshActor *actor) {
 
-			meshActors.push_back(actor);
+			movableMeshActors.push_back(actor);
 
 		}
 
-		void SceneNode::Remove(Actor::MeshActor *actor) {
+		void SceneNode::Remove(Actor::MovableMeshActor *actor) {
 
 			if (sceneSet) {
-				meshActorOctree->Remove(actor, actor->aabb);
+				movableMeshActorOctree->Remove(actor, actor->aabb);
 			}
 
-			for (auto iterator = meshActors.begin(); iterator != meshActors.end(); iterator++) {
+			auto item = std::find(movableMeshActors.begin(), movableMeshActors.end(), actor);
 
-				if (*iterator == actor) {
-					meshActors.erase(iterator);
-					return;
-				}
+			if (item != movableMeshActors.end()) {
+				movableMeshActors.erase(item);
+			}
 
+		}
+
+		void SceneNode::Add(Actor::StaticMeshActor *actor) {
+
+			staticMeshActors.push_back(actor);
+
+		}
+
+		void SceneNode::Remove(Actor::StaticMeshActor *actor) {
+
+			if (sceneSet) {
+				staticMeshActorOctree->Remove(actor, actor->aabb);
+			}
+
+			auto item = std::find(staticMeshActors.begin(), staticMeshActors.end(), actor);
+
+			if (item != staticMeshActors.end()) {
+				staticMeshActors.erase(item);
 			}
 
 		}
@@ -73,13 +87,10 @@ namespace Atlas {
 				decalActorOctree->Remove(actor, actor->aabb);
 			}
 
-			for (auto iterator = decalActors.begin(); iterator != decalActors.end(); iterator++) {
+			auto item = std::find(decalActors.begin(), decalActors.end(), actor);
 
-				if (*iterator == actor) {
-					decalActors.erase(iterator);
-					return;
-				}
-
+			if (item != decalActors.end()) {
+				decalActors.erase(item);
 			}
 
 		}
@@ -92,13 +103,10 @@ namespace Atlas {
 
 		void SceneNode::Remove(Lighting::Light *light) {
 
-			for (auto iterator = lights.begin(); iterator != lights.end(); iterator++) {
+			auto item = std::find(lights.begin(), lights.end(), light);
 
-				if (*iterator == light) {
-					lights.erase(iterator);
-					return;
-				}
-
+			if (item != lights.end()) {
+				lights.erase(item);
 			}
 
 		}
@@ -115,7 +123,8 @@ namespace Atlas {
 
 			childNodes.clear();
 
-			meshActors.clear();
+			movableMeshActors.clear();
+			staticMeshActors.clear();
 			decalActors.clear();
 			lights.clear();
 
@@ -137,21 +146,35 @@ namespace Atlas {
 				node->Update(camera, deltaTime, lights, transformedMatrix, parentTransformChanged);
 			}
 
-			if (!update) {
-				
-				for (auto &meshActor : meshActors) {
-					if (meshActor->HasMatrixChanged() || parentTransformChanged) {
-						update = true;
-						meshActorOctree->Remove(meshActor, meshActor->aabb);
-						removed = true;
-						// meshActor->Update(deltaTime, transformedMatrix, parentTransformChanged);
-					}
-					meshActor->Update(deltaTime, transformedMatrix, parentTransformChanged);
-					if (removed) {
-						meshActorOctree->Insert(meshActor, meshActor->aabb);
-						removed = false;
-					}
+			// Only update the static mesh actors if the node moves (the static actors can't
+			// be moved after being initialized by their constructor)
+			if (parentTransformChanged) {
+
+			    staticMeshActorOctree->Clear();
+
+			    for (auto &meshActor : staticMeshActors) {
+
+			        meshActor->Update(deltaTime, parentTransformation, true);
+			        staticMeshActorOctree->Insert(meshActor, meshActor->aabb);
+
+			    }
+
+			}
+
+			for (auto &meshActor : movableMeshActors) {
+
+				if (meshActor->HasMatrixChanged() || parentTransformChanged) {
+					movableMeshActorOctree->Remove(meshActor, meshActor->aabb);
+					removed = true;
 				}
+
+				meshActor->Update(deltaTime, transformedMatrix, parentTransformChanged);
+
+				if (removed) {
+					movableMeshActorOctree->Insert(meshActor, meshActor->aabb);
+					removed = false;
+				}
+
 			}
 
 			for (auto &decalActor : decalActors) {
@@ -173,28 +196,23 @@ namespace Atlas {
 
 		}
 
-		void SceneNode::AddToScene(Common::Octree<Actor::MeshActor*>* meshActorOctree,
-			Common::Octree<Actor::DecalActor*>* decalActorOctree) {
+		void SceneNode::AddToScene(Common::Octree<Actor::MovableMeshActor*>* movableMeshActorOctree,
+				Common::Octree<Actor::StaticMeshActor*>* staticMeshActorOctree,
+				Common::Octree<Actor::DecalActor*>* decalActorOctree) {
 
 			if (sceneSet)
 				return;
 
 			for (auto &node : childNodes) {
-				node->AddToScene(meshActorOctree, decalActorOctree);
+				node->AddToScene(movableMeshActorOctree, staticMeshActorOctree, decalActorOctree);
 			}
 
-			for (auto &meshActor : meshActors) {
-				meshActorOctree->Insert(meshActor, meshActor->aabb);
-			}
-
-			for (auto &decalActor : decalActors) {
-				decalActorOctree->Insert(decalActor, decalActor->aabb);
-			}
-
-			this->meshActorOctree = meshActorOctree;
+			this->movableMeshActorOctree = movableMeshActorOctree;
+			this->staticMeshActorOctree = staticMeshActorOctree;
 			this->decalActorOctree = decalActorOctree;
 
 			sceneSet = true;
+			matrixChanged = true;
 
 		}
 
@@ -207,8 +225,12 @@ namespace Atlas {
 				node->RemoveFromScene();
 			}
 
-			for (auto &meshActor : meshActors) {
-				meshActorOctree->Remove(meshActor, meshActor->aabb);
+			for (auto &meshActor : movableMeshActors) {
+				movableMeshActorOctree->Remove(meshActor, meshActor->aabb);
+			}
+
+			for (auto &meshActor : staticMeshActors) {
+				staticMeshActorOctree->Remove(meshActor, meshActor->aabb);
 			}
 
 			for (auto &decalActor : decalActors) {

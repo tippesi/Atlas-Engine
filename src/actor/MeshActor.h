@@ -12,19 +12,12 @@ namespace Atlas {
 		class MeshActor : public Actor {
 
 		public:
-			/**
-             *
-             * @param mesh
-             */
-			MeshActor(Mesh::Mesh* mesh);
-
 			void Update(float deltaTime, mat4 parentTransform, bool parentUpdate);
 
 			Mesh::Mesh* const mesh;
 
-			bool castShadow;
-
-			bool visible;
+		protected:
+			MeshActor(Mesh::Mesh* mesh) : mesh(mesh) {}
 
 		};
 

@@ -10,10 +10,12 @@ namespace Atlas {
 			renderList = RenderList(AE_OPAQUE_RENDERLIST);
 
 			Common::AABB aabb(vec3(-2048.0f), vec3(2048.0f));
-			meshOctree = Common::Octree<Actor::MeshActor*>(aabb, 8, 11);
-			decalOctree = Common::Octree<Actor::DecalActor*>(aabb, 1, 11);
 
-			AddToScene(&meshOctree, &decalOctree);
+			movableMeshOctree = Common::Octree<Actor::MovableMeshActor*>(aabb, 8);
+			staticMeshOctree = Common::Octree<Actor::StaticMeshActor*>(aabb, 8);
+			decalOctree = Common::Octree<Actor::DecalActor*>(aabb, 8);
+
+			AddToScene(&movableMeshOctree, &staticMeshOctree, &decalOctree);
 
 		}
 
@@ -31,13 +33,10 @@ namespace Atlas {
 
 		void Scene::Remove(Terrain::Terrain *terrain) {
 
-			for (auto iterator = terrains.begin(); iterator != terrains.end(); iterator++) {
+			auto item = std::find(terrains.begin(), terrains.end(), terrain);
 
-				if (*iterator == terrain) {
-					terrains.erase(iterator);
-					return;
-				}
-
+			if (item != terrains.end()) {
+				terrains.erase(item);
 			}
 
 		}
@@ -54,7 +53,8 @@ namespace Atlas {
 
 			SceneNode::Update(camera, deltaTime, accumulatedLights, mat4(1.0f), false);
 
-			std::unordered_set<Actor::MeshActor*> meshQueryResult;
+			std::vector<Actor::MovableMeshActor*> movableMeshActorQuery;
+			std::vector<Actor::StaticMeshActor*> staticMeshActorQuery;
 
 			for (auto &light : accumulatedLights) {
 				// We always want to render all lights
@@ -66,7 +66,8 @@ namespace Atlas {
 
 					for (auto& component : light->GetShadow()->components) {
 						component.renderList->Clear();
-						meshQueryResult.clear();
+						movableMeshActorQuery.clear();
+						staticMeshActorQuery.clear();
 
 						mat4 inverseMatrix = glm::inverse(component.projectionMatrix * component.viewMatrix);
 
@@ -74,9 +75,15 @@ namespace Atlas {
 
 						auto aabb = base.Transform(inverseMatrix);
 
-						meshOctree.QueryAABB(meshQueryResult, aabb);
+						movableMeshOctree.QueryAABB(movableMeshActorQuery, aabb);
 
-						for (auto &meshActor : meshQueryResult) {
+						for (auto &meshActor : movableMeshActorQuery) {
+							component.renderList->Add(meshActor);
+						}
+
+						staticMeshOctree.QueryAABB(staticMeshActorQuery, aabb);
+
+						for (auto &meshActor : staticMeshActorQuery) {
 							component.renderList->Add(meshActor);
 						}
 
@@ -84,7 +91,8 @@ namespace Atlas {
 				}
 			}
 
-			meshQueryResult.clear();
+			movableMeshActorQuery.clear();
+			staticMeshActorQuery.clear();
 
 			mat4 inverseMatrix = glm::inverse(camera->projectionMatrix * camera->viewMatrix);
 
@@ -92,10 +100,16 @@ namespace Atlas {
 
             auto aabb = base.Transform(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
 
-			meshOctree.QueryAABB(meshQueryResult, aabb);
+			movableMeshOctree.QueryAABB(movableMeshActorQuery, aabb);
 
-			for (auto& actor : meshQueryResult) {
+			for (auto& actor : movableMeshActorQuery) {
 				renderList.Add(actor);
+			}
+
+			staticMeshOctree.QueryAABB(staticMeshActorQuery, aabb);
+
+			for (auto &meshActor : staticMeshActorQuery) {
+				renderList.Add(meshActor);
 			}
 
 			FrustumCulling::CullActorsFromScene(this, camera);
@@ -111,7 +125,8 @@ namespace Atlas {
 
 			terrains.clear();
 
-			meshActorOctree->Clear();
+			movableMeshActorOctree->Clear();
+			staticMeshActorOctree->Clear();
 			decalActorOctree->Clear();
 
 			SceneNode::Clear();

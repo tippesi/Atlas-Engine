@@ -184,8 +184,6 @@ namespace Atlas {
 
 			meshData->aabb = Common::AABB(min, max);
 
-			AtlasLog("%.3f,%.3f,%.3f/%.3f,%.3f,%.3f", min.x, min.y, min.z, max.x, max.y, max.z);
-
 			meshData->indices->Set(indices);
 			meshData->vertices->Set(vertices);
 			meshData->normals->Set(normals);

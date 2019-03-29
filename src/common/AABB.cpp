@@ -18,6 +18,20 @@ namespace Atlas {
 
         }
 
+        bool AABB::IsInside(vec3 point) {
+
+        	return point.x >= min.x && point.x <= max.x &&
+        		point.y >= min.y && point.y <= max.y &&
+        		point.z >= min.z && point.z <= max.z;
+
+        }
+
+        bool AABB::IsInside(AABB aabb) {
+
+        	return IsInside(aabb.min) && IsInside(aabb.max);
+
+        }
+
 		AABB AABB::Transform(mat4 matrix) {
 
 			vec3 cube[] = { vec3(min.x, min.y, min.z), vec3(min.x, min.y, max.z),
@@ -43,6 +57,12 @@ namespace Atlas {
 			}
 
 			return AABB(min, max);
+
+		}
+
+		AABB AABB::Translate(vec3 translation) {
+
+			return AABB(min + translation, max + translation);
 
 		}
 

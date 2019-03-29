@@ -89,6 +89,7 @@ namespace Atlas {
             * @param z The z component of the point relative to the terrain origin
             * @return The height of the terrain.
             * @note This function is computationally expensive.
+            * @warning The cell containing the height value has to be loaded.
             */
 			float GetHeight(float x, float z);
 

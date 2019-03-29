@@ -87,6 +87,8 @@ namespace Atlas {
 
 		Loader::AssetLoader::Init();
 
+		Audio::AudioManager::Configure(48000, 2, 1024);
+
 		Loader::AssetLoader::SetAssetDirectory(assetDirectory);
 		Shader::ShaderStage::SetSourceDirectory(shaderDirectory);
 

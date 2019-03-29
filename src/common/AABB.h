@@ -15,7 +15,13 @@ namespace Atlas {
 
             bool Intersects(AABB aabb);
 
+            bool IsInside(vec3 point);
+
+            bool IsInside(AABB aabb);
+
 			AABB Transform(mat4 matrix);
+
+			AABB Translate(vec3 translation);
 
             vec3 min = vec3(0.0f);
             vec3 max = vec3(0.0f);

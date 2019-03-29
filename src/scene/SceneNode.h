@@ -2,7 +2,8 @@
 #define AE_SCENENODE_H
 
 #include "../System.h"
-#include "../actor/MeshActor.h"
+#include "../actor/MovableMeshActor.h"
+#include "../actor/StaticMeshActor.h"
 #include "../actor/DecalActor.h"
 #include "../lighting/Light.h"
 #include "../common/Octree.h"
@@ -39,13 +40,25 @@ namespace Atlas {
 			 *
 			 * @param actor
 			 */
-			virtual void Add(Actor::MeshActor *actor);
+			virtual void Add(Actor::MovableMeshActor *actor);
 
 			/**
 			 *
 			 * @param actor
 			 */
-			virtual void Remove(Actor::MeshActor *actor);
+			virtual void Remove(Actor::MovableMeshActor *actor);
+
+			/**
+			 *
+			 * @param actor
+			 */
+			virtual void Add(Actor::StaticMeshActor *actor);
+
+			/**
+			 *
+			 * @param actor
+			 */
+			virtual void Remove(Actor::StaticMeshActor *actor);
 
 			/**
 			 *
@@ -85,7 +98,8 @@ namespace Atlas {
 			 *
 			 * @param scene
 			 */
-			virtual void AddToScene(Common::Octree<Actor::MeshActor*>* meshActorOctree,
+			virtual void AddToScene(Common::Octree<Actor::MovableMeshActor*>* movableMeshActorOctree,
+				Common::Octree<Actor::StaticMeshActor*>* staticMeshActorOctree,
 				Common::Octree<Actor::DecalActor*>* decalActorOctree);
 
 			/**
@@ -108,15 +122,15 @@ namespace Atlas {
 			mat4 matrix;
 			mat4 transformedMatrix;
 
-			std::vector<SceneNode *> childNodes;
-			std::vector<Actor::MeshActor *> meshActors;
+			std::vector<SceneNode*> childNodes;
+			std::vector<Actor::MovableMeshActor*> movableMeshActors;
+			std::vector<Actor::StaticMeshActor*> staticMeshActors;
 			std::vector<Actor::DecalActor*> decalActors;
 			std::vector<Lighting::Light *> lights;
 
-			Common::Octree<Actor::MeshActor*>* meshActorOctree;
+			Common::Octree<Actor::MovableMeshActor*>* movableMeshActorOctree;
+			Common::Octree<Actor::StaticMeshActor*>* staticMeshActorOctree;
 			Common::Octree<Actor::DecalActor*>* decalActorOctree;
-
-			bool update = false;
 
 		};
 

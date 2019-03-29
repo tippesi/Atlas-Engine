@@ -4,15 +4,9 @@ namespace Atlas {
 
 	namespace Actor {
 
-		StaticMeshActor::StaticMeshActor(Mesh::Mesh* mesh, mat4 matrix) : mesh(mesh) {
+		StaticMeshActor::StaticMeshActor(Mesh::Mesh* mesh, mat4 matrix) : MeshActor(mesh) {
 
 			Actor::SetMatrix(matrix);
-
-		}
-
-		void StaticMeshActor::Update(float deltaTime, mat4 parentTransform, bool parentUpdate) {
-
-
 
 		}
 
