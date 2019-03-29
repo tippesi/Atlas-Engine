@@ -17,8 +17,6 @@ private:
 
 	void Render(float deltaTime);
 
-	void Stream();
-
 	void Load();
 
 	void DisplayLoadingScreen();

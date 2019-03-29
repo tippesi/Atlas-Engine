@@ -79,7 +79,6 @@ Main::Main(int argc, char* argv[]) {
 		Engine::Update();
 
 		Update(deltaTime);
-		Stream(); // Should be done in another thread
 		Render(deltaTime);
 
 		window->Update();
@@ -123,11 +122,7 @@ void Main::Render(float deltaTime) {
 
 	masterRenderer->textRenderer.Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f, true);
 
-}
-
-void Main::Stream() {
-
-
+	AtlasLog("%.3f,%.3f,%.3f", camera->location.x, camera->location.y, camera->location.z);
 
 }
 
@@ -152,7 +147,7 @@ void Main::Load() {
 	audioData = new Audio::AudioData("MenuTheme2_final.wav");
 	audioStream = new Audio::AudioStream(audioData);
 
-	Audio::AudioManager::AddMusic(audioStream);
+	// Audio::AudioManager::AddMusic(audioStream);
 
 }
 

@@ -83,7 +83,7 @@ namespace Atlas {
         template <class T>
         void Octree<T>::QueryAABB(std::vector<T>& data, AABB aabb) {
 
-			if (!this->aabb.Intersects(aabb))
+			if (!this->aabb.Scale(relaxFactor).Intersects(aabb))
 				return;
 
 			for (auto& queryData : octreeData)
@@ -149,13 +149,7 @@ namespace Atlas {
                 return false;
             }
 
-			auto relaxedCenter = 0.5f * (this->aabb.max + this->aabb.min);
-			auto relaxedMin = relaxedCenter + relaxFactor * (this->aabb.min - relaxedCenter);
-			auto relaxedMax = relaxedCenter + relaxFactor * (this->aabb.max - relaxedCenter);
-
-            AABB relaxedBound(relaxedMin, relaxedMax);
-
-            if (!relaxedBound.IsInside(aabb)) {
+            if (!this->aabb.Scale(relaxFactor).IsInside(aabb)) {
                 return false;
             }
 
@@ -188,13 +182,7 @@ namespace Atlas {
                 return false;
             }
 
-			auto relaxedCenter = 0.5f * (this->aabb.max + this->aabb.min);
-			auto relaxedMin = relaxedCenter + relaxFactor * (this->aabb.min - relaxedCenter);
-			auto relaxedMax = relaxedCenter + relaxFactor * (this->aabb.max - relaxedCenter);
-
-			AABB relaxedBound(relaxedMin, relaxedMax);
-
-			if (!relaxedBound.IsInside(aabb)) {
+			if (!this->aabb.Scale(relaxFactor).IsInside(aabb)) {
 				return false;
 			}
 

@@ -23,6 +23,8 @@ namespace Atlas {
 
 			AABB Translate(vec3 translation);
 
+			AABB Scale(float scale);
+
             vec3 min = vec3(0.0f);
             vec3 max = vec3(0.0f);
 

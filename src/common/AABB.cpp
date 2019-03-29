@@ -66,6 +66,16 @@ namespace Atlas {
 
 		}
 
+		AABB AABB::Scale(float scale) {
+
+			auto center = 0.5f * (min + max);
+			auto scaledMin = center + scale * (min - center);
+			auto scaledMax = center + scale * (max - center);
+
+			return AABB(scaledMin, scaledMax);
+
+		}
+
     }
 
 }
