@@ -19,16 +19,20 @@ namespace Atlas {
 
             /**
              * Sets the transformation matrix of an actor relative to its parent
-             * @param matrix A 4x4 matrix
+             * @param matrix A 4x4 matrix that contains the transformation of the actor.
              */
             inline void SetMatrix(mat4 matrix) { this->matrix = matrix; matrixChanged = true; };
 
             /**
              * Returns the transformation matrix relative to its parent
-             * @return A 4x4 matrix
+             * @return A 4x4 matrix that contains the transformation of the actor.
              */
             inline mat4 GetMatrix() { return matrix; }
 
+            /**
+             * Checks whether the transformation matrix of the actor has changed.
+             * @return
+             */
 			inline bool HasMatrixChanged() { return matrixChanged; }
 
             /**

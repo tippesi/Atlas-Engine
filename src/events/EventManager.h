@@ -16,6 +16,7 @@
 #include "ControllerDeviceEvent.h"
 #include "TouchEvent.h"
 #include "TextInputEvent.h"
+#include "AudioDeviceEvent.h"
 
 #include <mutex>
 #include <unordered_map>
@@ -43,6 +44,7 @@ namespace Atlas {
 			static EventDelegate<ControllerDeviceEvent> ControllerDeviceEventDelegate;
 			static EventDelegate<TouchEvent> TouchEventDelegate;
 			static EventDelegate<TextInputEvent> TextInputEventDelegate;
+			static EventDelegate<AudioDeviceEvent> AudioDeviceEventDelegate;
 			static EventDelegate<> QuitEventDelegate;
 
 		private:

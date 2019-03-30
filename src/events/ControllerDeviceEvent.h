@@ -28,7 +28,7 @@ namespace Atlas {
 			}
 
 			/**
-             * The type of the event. See {@link EngineControllerDeviceEvent.h} for more.
+             * The type of the event. See {@link ControllerDeviceEvent.h} for more.
              */
 			uint32_t type;
 

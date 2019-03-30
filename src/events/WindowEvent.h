@@ -42,7 +42,7 @@ namespace Atlas {
 			uint32_t windowID;
 
 			/**
-             * The type of the window event. See {@link EngineWindowEvent.h} for more
+             * The type of the window event. See {@link WindowEvent.h} for more
              */
 			uint8_t type;
 

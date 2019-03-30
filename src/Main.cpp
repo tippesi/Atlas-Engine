@@ -122,8 +122,6 @@ void Main::Render(float deltaTime) {
 
 	masterRenderer->textRenderer.Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f, true);
 
-	AtlasLog("%.3f,%.3f,%.3f", camera->location.x, camera->location.y, camera->location.z);
-
 }
 
 void Main::Load() {

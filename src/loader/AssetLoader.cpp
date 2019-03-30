@@ -185,12 +185,6 @@ namespace Atlas {
 
 		}
 
-		void AssetLoader::UnpackDirectory(std::string directory) {
-
-			std::lock_guard<std::mutex> guard(assetLoaderMutex);
-
-		}
-
 		std::string AssetLoader::GetFullPath(std::string path) {
 
 			return dataDirectory + "/" + path;

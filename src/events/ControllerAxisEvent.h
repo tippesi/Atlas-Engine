@@ -32,7 +32,7 @@ namespace Atlas {
 			}
 
 			/**
-             * The axis which was moved on the controller. See {@link EngineControllerAxisEvent.h} for more.
+             * The axis which was moved on the controller. See {@link ControllerAxisEvent.h} for more.
              */
 			uint8_t axis;
 

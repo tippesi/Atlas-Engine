@@ -41,7 +41,7 @@ namespace Atlas {
 			}
 
 			/**
-             * The button which was pressed on the controller. See {@link EngineControllerButtonEvent.h} for more.
+             * The button which was pressed on the controller. See {@link ControllerButtonEvent.h} for more.
              */
 			uint8_t button;
 

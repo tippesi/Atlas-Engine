@@ -36,12 +36,16 @@ namespace Atlas {
 							int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags = AE_WINDOW_FULLSCREEN);
 
 		/**
-         * 
-         * @param width
-         * @param height
+         * Returns the dimensions of the screen in pixels.
+         * @param width A pointer to an integer.
+         * @param height A pointer to an integer.
          */
 		static void GetScreenSize(int32_t *width, int32_t *height);
 
+		/**
+		 * Returns the time in seconds.
+		 * @return The time as a float in seconds.
+		 */
 		static float GetClock();
 
 		/**

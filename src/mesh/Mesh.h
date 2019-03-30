@@ -32,16 +32,24 @@ namespace Atlas {
 
 			~Mesh();
 
-			///
+			/**
+			 *
+			 */
 			void UpdateData();
 
-			///
+			/**
+			 *
+			 */
 			void Bind();
 
-			///
+			/**
+			 *
+			 */
 			void Unbind();
 
-			///
+			/**
+			 *
+			 */
 			void DeleteContent();
 
 			MeshData* const data;
