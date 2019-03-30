@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Renderer::MasterRenderer Class Reference</title>
+<title>Atlas Engine: Atlas::Renderer::OpaqueRenderer Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,81 +89,63 @@ $(document).ready(function(){initNavTree('dd/de9/a00552.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="../../d5/d21/a00549.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Renderer::MasterRenderer Class Reference</div>  </div>
+<div class="title">Atlas::Renderer::OpaqueRenderer Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d6/d7d/a00161_source.html">OpaqueRenderer.h</a>&gt;</code></p>
+<div class="dynheader">
+Inheritance diagram for Atlas::Renderer::OpaqueRenderer:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="../../dd/de9/a00552.png" usemap="#Atlas::Renderer::OpaqueRenderer_map" alt=""/>
+  <map id="Atlas::Renderer::OpaqueRenderer_map" name="Atlas::Renderer::OpaqueRenderer_map">
+<area href="../../d0/dc2/a00564.html" alt="Atlas::Renderer::Renderer" shape="rect" coords="0,0,202,24"/>
+</map>
+ </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a90eccd7df972c66bc44e108412355a0b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a90eccd7df972c66bc44e108412355a0b">MasterRenderer</a> ()</td></tr>
-<tr class="separator:a90eccd7df972c66bc44e108412355a0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5f941be740d75858c6f9a0b3d1a82f14"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a5f941be740d75858c6f9a0b3d1a82f14">~MasterRenderer</a> ()</td></tr>
-<tr class="separator:a5f941be740d75858c6f9a0b3d1a82f14"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a801b9bf53334750fd6074c874d772202"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a801b9bf53334750fd6074c874d772202">RenderScene</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, <a class="el" href="../../d8/d8e/a00344.html">RenderTarget</a> *target, <a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera, <a class="el" href="../../df/d03/a00348.html">Scene</a> *scene)</td></tr>
-<tr class="separator:a801b9bf53334750fd6074c874d772202"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aabde6e89e2323a33193c0fdd1787e2ee"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#aabde6e89e2323a33193c0fdd1787e2ee">RenderTexture</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, <a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a> *texture, float x, float y, float width, float height, bool alphaBlending=false, <a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
-<tr class="separator:aabde6e89e2323a33193c0fdd1787e2ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad281884be034d8d9d3d02b3129c218ed"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#ad281884be034d8d9d3d02b3129c218ed">RenderTexture</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, <a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a> *texture, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending=false, <a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
-<tr class="separator:ad281884be034d8d9d3d02b3129c218ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae4a2c75f7f7117a39abf978e885cf1f5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#ae4a2c75f7f7117a39abf978e885cf1f5">RenderTexture</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, <a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a> *texture, int32_t depth, float x, float y, float width, float height, bool alphaBlending=false, <a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
-<tr class="separator:ae4a2c75f7f7117a39abf978e885cf1f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4ea4304b29cb02a6f472c382eb760312"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a4ea4304b29cb02a6f472c382eb760312">RenderTexture</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, <a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a> *texture, int32_t depth, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending=false, <a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
-<tr class="separator:a4ea4304b29cb02a6f472c382eb760312"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af8dc23193d4d2fc01e0a4e05bb646a61"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#af8dc23193d4d2fc01e0a4e05bb646a61">RenderRectangle</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, vec4 color, float x, float y, float width, float height, bool alphaBlending=false, <a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
-<tr class="separator:af8dc23193d4d2fc01e0a4e05bb646a61"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0ebfdc75036387990db756360b815637"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a0ebfdc75036387990db756360b815637">RenderRectangle</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, vec4 color, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending=false, <a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *framebuffer=nullptr)</td></tr>
-<tr class="separator:a0ebfdc75036387990db756360b815637"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af04d5479b2b3d7b513992740f5a95b74"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#af04d5479b2b3d7b513992740f5a95b74">Update</a> ()</td></tr>
-<tr class="memdesc:af04d5479b2b3d7b513992740f5a95b74"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update of the renderer.  <a href="#af04d5479b2b3d7b513992740f5a95b74">More...</a><br /></td></tr>
-<tr class="separator:af04d5479b2b3d7b513992740f5a95b74"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7dbb430e3a818e2ca3acba2fbe20114a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a7dbb430e3a818e2ca3acba2fbe20114a">OpaqueRenderer</a> ()</td></tr>
+<tr class="separator:a7dbb430e3a818e2ca3acba2fbe20114a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8beb79a0b2acf4f0e96a404bc05fbf8d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a8beb79a0b2acf4f0e96a404bc05fbf8d">Render</a> (<a class="el" href="../../dc/d59/a00364.html">Window</a> *window, <a class="el" href="../../df/d03/a00348.html">RenderTarget</a> *target, <a class="el" href="../../db/d7b/a00296.html">Camera</a> *camera, Scene::Scene *scene)</td></tr>
+<tr class="separator:a8beb79a0b2acf4f0e96a404bc05fbf8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_a00564"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_a00564')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d0/dc2/a00564.html">Atlas::Renderer::Renderer</a></td></tr>
+<tr class="memitem:a63d2a27fa3dc6790432cdd60ec9d61fa inherit pub_methods_a00564"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc2/a00564.html#a63d2a27fa3dc6790432cdd60ec9d61fa">~Renderer</a> ()</td></tr>
+<tr class="separator:a63d2a27fa3dc6790432cdd60ec9d61fa inherit pub_methods_a00564"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:a7a65fca8d75556ea84ba27e3df4c8cf0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/de2/a00580.html">TextRenderer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a7a65fca8d75556ea84ba27e3df4c8cf0">textRenderer</a></td></tr>
-<tr class="separator:a7a65fca8d75556ea84ba27e3df4c8cf0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a677aa591a11cdc9d6201979a3f9dc5c9"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a677aa591a11cdc9d6201979a3f9dc5c9">InitShaderBatch</a> ()</td></tr>
+<tr class="separator:a677aa591a11cdc9d6201979a3f9dc5c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4528f7d0ecbda756d57a478b599d042d"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a4528f7d0ecbda756d57a478b599d042d">AddConfig</a> (<a class="el" href="../../d0/dec/a00592.html">Shader::ShaderConfig</a> *config)</td></tr>
+<tr class="separator:a4528f7d0ecbda756d57a478b599d042d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5dca4d8a45f45d97cba38d428e8fd777"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a5dca4d8a45f45d97cba38d428e8fd777">RemoveConfig</a> (<a class="el" href="../../d0/dec/a00592.html">Shader::ShaderConfig</a> *config)</td></tr>
+<tr class="separator:a5dca4d8a45f45d97cba38d428e8fd777"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:a30deaa58cfe19a1e754da591934a2ee6"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a30deaa58cfe19a1e754da591934a2ee6">vertexPath</a></td></tr>
-<tr class="separator:a30deaa58cfe19a1e754da591934a2ee6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abb92eb323fb751d86869a93605f3da42"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#abb92eb323fb751d86869a93605f3da42">fragmentPath</a></td></tr>
-<tr class="separator:abb92eb323fb751d86869a93605f3da42"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a618dede2d087006cdb414ca7ff05fbd7"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#a618dede2d087006cdb414ca7ff05fbd7">vertexPath</a></td></tr>
+<tr class="separator:a618dede2d087006cdb414ca7ff05fbd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac89864a8da815b9b6e70533f82c05998"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/de9/a00552.html#ac89864a8da815b9b6e70533f82c05998">fragmentPath</a></td></tr>
+<tr class="separator:ac89864a8da815b9b6e70533f82c05998"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d5/dcb/a00170_source.html#l00023">23</a> of file <a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d7d/a00161_source.html#l00014">14</a> of file <a class="el" href="../../d6/d7d/a00161_source.html">OpaqueRenderer.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a90eccd7df972c66bc44e108412355a0b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a90eccd7df972c66bc44e108412355a0b">&#9670;&nbsp;</a></span>MasterRenderer()</h2>
+<a id="a7dbb430e3a818e2ca3acba2fbe20114a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7dbb430e3a818e2ca3acba2fbe20114a">&#9670;&nbsp;</a></span>OpaqueRenderer()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Atlas::Renderer::MasterRenderer::MasterRenderer </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a5f941be740d75858c6f9a0b3d1a82f14"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5f941be740d75858c6f9a0b3d1a82f14">&#9670;&nbsp;</a></span>~MasterRenderer()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">Atlas::Renderer::MasterRenderer::~MasterRenderer </td>
+          <td class="memname">Atlas::Renderer::OpaqueRenderer::OpaqueRenderer </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -174,182 +156,94 @@ Static Public Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="af8dc23193d4d2fc01e0a4e05bb646a61"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af8dc23193d4d2fc01e0a4e05bb646a61">&#9670;&nbsp;</a></span>RenderRectangle() <span class="overload">[1/2]</span></h2>
+<a id="a4528f7d0ecbda756d57a478b599d042d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4528f7d0ecbda756d57a478b599d042d">&#9670;&nbsp;</a></span>AddConfig()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderRectangle </td>
+          <td class="memname">static void Atlas::Renderer::OpaqueRenderer::AddConfig </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
-          <td class="paramname"><em>window</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype"><a class="el" href="../../d0/dec/a00592.html">Shader::ShaderConfig</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>color</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td>
-          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">window</td><td></td></tr>
-    <tr><td class="paramname">color</td><td></td></tr>
-    <tr><td class="paramname">x</td><td></td></tr>
-    <tr><td class="paramname">y</td><td></td></tr>
-    <tr><td class="paramname">width</td><td></td></tr>
-    <tr><td class="paramname">height</td><td></td></tr>
-    <tr><td class="paramname">alphaBlending</td><td></td></tr>
-    <tr><td class="paramname">framebuffer</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
 
 </div>
 </div>
-<a id="a0ebfdc75036387990db756360b815637"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0ebfdc75036387990db756360b815637">&#9670;&nbsp;</a></span>RenderRectangle() <span class="overload">[2/2]</span></h2>
+<a id="a677aa591a11cdc9d6201979a3f9dc5c9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a677aa591a11cdc9d6201979a3f9dc5c9">&#9670;&nbsp;</a></span>InitShaderBatch()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderRectangle </td>
+          <td class="memname">static void Atlas::Renderer::OpaqueRenderer::InitShaderBatch </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
-          <td class="paramname"><em>window</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>color</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>clipArea</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>blendArea</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td>
-          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">window</td><td></td></tr>
-    <tr><td class="paramname">color</td><td></td></tr>
-    <tr><td class="paramname">x</td><td></td></tr>
-    <tr><td class="paramname">y</td><td></td></tr>
-    <tr><td class="paramname">width</td><td></td></tr>
-    <tr><td class="paramname">height</td><td></td></tr>
-    <tr><td class="paramname">clipArea</td><td></td></tr>
-    <tr><td class="paramname">blendArea</td><td></td></tr>
-    <tr><td class="paramname">alphaBlending</td><td></td></tr>
-    <tr><td class="paramname">framebuffer</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
 
 </div>
 </div>
-<a id="a801b9bf53334750fd6074c874d772202"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a801b9bf53334750fd6074c874d772202">&#9670;&nbsp;</a></span>RenderScene()</h2>
+<a id="a5dca4d8a45f45d97cba38d428e8fd777"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5dca4d8a45f45d97cba38d428e8fd777">&#9670;&nbsp;</a></span>RemoveConfig()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderScene </td>
+          <td class="memname">static void Atlas::Renderer::OpaqueRenderer::RemoveConfig </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d0/dec/a00592.html">Shader::ShaderConfig</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a8beb79a0b2acf4f0e96a404bc05fbf8d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8beb79a0b2acf4f0e96a404bc05fbf8d">&#9670;&nbsp;</a></span>Render()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void Atlas::Renderer::OpaqueRenderer::Render </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
           <td class="paramname"><em>window</em>, </td>
@@ -357,19 +251,19 @@ Static Public Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../d8/d8e/a00344.html">RenderTarget</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="../../df/d03/a00348.html">RenderTarget</a> *&#160;</td>
           <td class="paramname"><em>target</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="../../db/d7b/a00296.html">Camera</a> *&#160;</td>
           <td class="paramname"><em>camera</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../df/d03/a00348.html">Scene</a> *&#160;</td>
+          <td class="paramtype">Scene::Scene *&#160;</td>
           <td class="paramname"><em>scene</em>&#160;</td>
         </tr>
         <tr>
@@ -378,392 +272,20 @@ Static Public Attributes</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
-</div><div class="memdoc">
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">window</td><td></td></tr>
-    <tr><td class="paramname">target</td><td></td></tr>
-    <tr><td class="paramname">camera</td><td></td></tr>
-    <tr><td class="paramname">scene</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="aabde6e89e2323a33193c0fdd1787e2ee"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aabde6e89e2323a33193c0fdd1787e2ee">&#9670;&nbsp;</a></span>RenderTexture() <span class="overload">[1/4]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderTexture </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
-          <td class="paramname"><em>window</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a> *&#160;</td>
-          <td class="paramname"><em>texture</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td>
-          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">window</td><td></td></tr>
-    <tr><td class="paramname">texture</td><td></td></tr>
-    <tr><td class="paramname">x</td><td></td></tr>
-    <tr><td class="paramname">y</td><td></td></tr>
-    <tr><td class="paramname">width</td><td></td></tr>
-    <tr><td class="paramname">height</td><td></td></tr>
-    <tr><td class="paramname">alphaBlending</td><td></td></tr>
-    <tr><td class="paramname">framebuffer</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="ad281884be034d8d9d3d02b3129c218ed"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad281884be034d8d9d3d02b3129c218ed">&#9670;&nbsp;</a></span>RenderTexture() <span class="overload">[2/4]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderTexture </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
-          <td class="paramname"><em>window</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a> *&#160;</td>
-          <td class="paramname"><em>texture</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>clipArea</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>blendArea</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td>
-          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">window</td><td></td></tr>
-    <tr><td class="paramname">texture</td><td></td></tr>
-    <tr><td class="paramname">x</td><td></td></tr>
-    <tr><td class="paramname">y</td><td></td></tr>
-    <tr><td class="paramname">width</td><td></td></tr>
-    <tr><td class="paramname">height</td><td></td></tr>
-    <tr><td class="paramname">clipArea</td><td></td></tr>
-    <tr><td class="paramname">blendArea</td><td></td></tr>
-    <tr><td class="paramname">alphaBlending</td><td></td></tr>
-    <tr><td class="paramname">framebuffer</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="ae4a2c75f7f7117a39abf978e885cf1f5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae4a2c75f7f7117a39abf978e885cf1f5">&#9670;&nbsp;</a></span>RenderTexture() <span class="overload">[3/4]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderTexture </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
-          <td class="paramname"><em>window</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a> *&#160;</td>
-          <td class="paramname"><em>texture</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>depth</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td>
-          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">window</td><td></td></tr>
-    <tr><td class="paramname">texture</td><td></td></tr>
-    <tr><td class="paramname">depth</td><td></td></tr>
-    <tr><td class="paramname">x</td><td></td></tr>
-    <tr><td class="paramname">y</td><td></td></tr>
-    <tr><td class="paramname">width</td><td></td></tr>
-    <tr><td class="paramname">height</td><td></td></tr>
-    <tr><td class="paramname">alphaBlending</td><td></td></tr>
-    <tr><td class="paramname">framebuffer</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="a4ea4304b29cb02a6f472c382eb760312"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4ea4304b29cb02a6f472c382eb760312">&#9670;&nbsp;</a></span>RenderTexture() <span class="overload">[4/4]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Atlas::Renderer::MasterRenderer::RenderTexture </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td>
-          <td class="paramname"><em>window</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a> *&#160;</td>
-          <td class="paramname"><em>texture</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>depth</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>clipArea</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec4&#160;</td>
-          <td class="paramname"><em>blendArea</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>alphaBlending</em> = <code>false</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../d3/db8/a00316.html">Framebuffer</a> *&#160;</td>
-          <td class="paramname"><em>framebuffer</em> = <code>nullptr</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">window</td><td></td></tr>
-    <tr><td class="paramname">texture</td><td></td></tr>
-    <tr><td class="paramname">depth</td><td></td></tr>
-    <tr><td class="paramname">x</td><td></td></tr>
-    <tr><td class="paramname">y</td><td></td></tr>
-    <tr><td class="paramname">width</td><td></td></tr>
-    <tr><td class="paramname">height</td><td></td></tr>
-    <tr><td class="paramname">clipArea</td><td></td></tr>
-    <tr><td class="paramname">blendArea</td><td></td></tr>
-    <tr><td class="paramname">alphaBlending</td><td></td></tr>
-    <tr><td class="paramname">framebuffer</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="af04d5479b2b3d7b513992740f5a95b74"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af04d5479b2b3d7b513992740f5a95b74">&#9670;&nbsp;</a></span>Update()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Atlas::Renderer::MasterRenderer::Update </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p>Update of the renderer. </p>
-<dl class="section warning"><dt>Warning</dt><dd>Must be called every frame </dd></dl>
+<p>Implements <a class="el" href="../../d0/dc2/a00564.html#a3916cca4a604f05d9b0d6bf86836823d">Atlas::Renderer::Renderer</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="abb92eb323fb751d86869a93605f3da42"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abb92eb323fb751d86869a93605f3da42">&#9670;&nbsp;</a></span>fragmentPath</h2>
+<a id="ac89864a8da815b9b6e70533f82c05998"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac89864a8da815b9b6e70533f82c05998">&#9670;&nbsp;</a></span>fragmentPath</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -772,7 +294,7 @@ Static Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::string Atlas::Renderer::MasterRenderer::fragmentPath</td>
+          <td class="memname">std::string Atlas::Renderer::OpaqueRenderer::fragmentPath</td>
         </tr>
       </table>
   </td>
@@ -782,28 +304,12 @@ Static Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/dcb/a00170_source.html#l00141">141</a> of file <a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d7d/a00161_source.html#l00028">28</a> of file <a class="el" href="../../d6/d7d/a00161_source.html">OpaqueRenderer.h</a>.</p>
 
 </div>
 </div>
-<a id="a7a65fca8d75556ea84ba27e3df4c8cf0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7a65fca8d75556ea84ba27e3df4c8cf0">&#9670;&nbsp;</a></span>textRenderer</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../d3/de2/a00580.html">TextRenderer</a> Atlas::Renderer::MasterRenderer::textRenderer</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/dcb/a00170_source.html#l00138">138</a> of file <a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>.</p>
-
-</div>
-</div>
-<a id="a30deaa58cfe19a1e754da591934a2ee6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a30deaa58cfe19a1e754da591934a2ee6">&#9670;&nbsp;</a></span>vertexPath</h2>
+<a id="a618dede2d087006cdb414ca7ff05fbd7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a618dede2d087006cdb414ca7ff05fbd7">&#9670;&nbsp;</a></span>vertexPath</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -812,7 +318,7 @@ Static Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::string Atlas::Renderer::MasterRenderer::vertexPath</td>
+          <td class="memname">std::string Atlas::Renderer::OpaqueRenderer::vertexPath</td>
         </tr>
       </table>
   </td>
@@ -822,19 +328,19 @@ Static Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/dcb/a00170_source.html#l00140">140</a> of file <a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d6/d7d/a00161_source.html#l00027">27</a> of file <a class="el" href="../../d6/d7d/a00161_source.html">OpaqueRenderer.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/renderer/<a class="el" href="../../d5/dcb/a00170_source.html">MasterRenderer.h</a></li>
+<li>src/renderer/<a class="el" href="../../d6/d7d/a00161_source.html">OpaqueRenderer.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Renderer</a></li><li class="navelem"><a class="el" href="../../dd/de9/a00552.html">MasterRenderer</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../db/dc3/a00284.html">Renderer</a></li><li class="navelem"><a class="el" href="../../dd/de9/a00552.html">OpaqueRenderer</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

@@ -13,7 +13,6 @@ namespace Atlas {
         public:
             /**
              * Construct a Texture2DArray object.
-             * @param dataType
              * @param width
              * @param height
              * @param depth

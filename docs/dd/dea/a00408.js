@@ -1,6 +1,7 @@
 var a00408 =
 [
-    [ "TextInputEvent", "dd/dea/a00408.html#ae8d0e0815b469344ed5810ac576eaf7d", null ],
-    [ "character", "dd/dea/a00408.html#af82a2a68df25382bd4ad33a3aece37c4", null ],
-    [ "windowID", "dd/dea/a00408.html#a29d5afbad7f5015245258bdf012f630e", null ]
+    [ "MouseWheelEvent", "dd/dea/a00408.html#aced8aa55709465c537ec5a3d29fc7836", null ],
+    [ "windowID", "dd/dea/a00408.html#a6122965cd1988da32c7c7b934f4393f2", null ],
+    [ "x", "dd/dea/a00408.html#ae71e27d6a94513bd7aa024e9cbc74a5a", null ],
+    [ "y", "dd/dea/a00408.html#aa5ed5164f12482ac0af550ccaf401f5c", null ]
 ];

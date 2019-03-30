@@ -1,7 +1,6 @@
 var a00380 =
 [
-    [ "EventDelegate", "d8/ddd/a00380.html#ae64eb0fbb527d7121e400a0e01a8a91f", null ],
-    [ "Fire", "d8/ddd/a00380.html#a851c8f9778b088b20dac759000732256", null ],
-    [ "Subscribe", "d8/ddd/a00380.html#a3b9ca815f00b2d7915e7ada41d8e0bf5", null ],
-    [ "Unsubscribe", "d8/ddd/a00380.html#a1b72168e6c15c2499be4c93b54b7d10e", null ]
+    [ "ControllerDeviceEvent", "d8/ddd/a00380.html#a8616e5c935a1c035d93523824b9464eb", null ],
+    [ "device", "d8/ddd/a00380.html#ade97acdd033d3fb4fc8a2ab50203da22", null ],
+    [ "type", "d8/ddd/a00380.html#a560358fce5692fd1dc1dfc03486c2d82", null ]
 ];

@@ -1,8 +1,8 @@
 var a00283 =
 [
-    [ "Cubemap", "dc/df2/a00656.html", "dc/df2/a00656" ],
-    [ "Texture", "d5/d4e/a00660.html", "d5/d4e/a00660" ],
-    [ "Texture2D", "df/d46/a00664.html", "df/d46/a00664" ],
-    [ "Texture2DArray", "d0/d5c/a00668.html", "d0/d5c/a00668" ],
-    [ "TextureFormat", "d5/d40/a00672.html", "d5/d40/a00672" ]
+    [ "DataComponent", "de/d4e/a00500.html", "de/d4e/a00500" ],
+    [ "Material", "dc/d1c/a00504.html", "dc/d1c/a00504" ],
+    [ "Mesh", "dc/d30/a00508.html", "dc/d30/a00508" ],
+    [ "MeshData", "d4/d40/a00516.html", "d4/d40/a00516" ],
+    [ "MeshSubData", "d4/dfb/a00512.html", "d4/dfb/a00512" ]
 ];

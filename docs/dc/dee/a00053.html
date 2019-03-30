@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/events/ControllerButtonEvent.h File Reference</title>
+<title>Atlas Engine: src/events/ControllerDeviceEvent.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,299 +92,83 @@ $(document).ready(function(){initNavTree('dc/dee/a00053.html','../../');});
 <a href="#namespaces">Namespaces</a> &#124;
 <a href="#define-members">Macros</a>  </div>
   <div class="headertitle">
-<div class="title">ControllerButtonEvent.h File Reference</div>  </div>
+<div class="title">ControllerDeviceEvent.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../dd/d32/a00041_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d3/d8b/a00059_source.html">EventDelegate.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../dc/d87/a00032_source.html">../System.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d9/d2e/a00056_source.html">EventDelegate.h</a>&quot;</code><br />
 <code>#include &lt;SDL/include/SDL.h&gt;</code><br />
 </div>
 <p><a href="../../dc/dee/a00053_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d7e/a00372.html">Atlas::Events::ControllerButtonEvent</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A class to distribute controller button events.  <a href="../../db/d7e/a00372.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html">Atlas::Events::ControllerDeviceEvent</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A class to distribute controller device events.  <a href="../../d8/ddd/a00380.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:d9/dd6/a00272"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></td></tr>
+<tr class="memitem:dc/d5d/a00278"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:d0/d19/a00273"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d19/a00273.html">Atlas::Events</a></td></tr>
+<tr class="memitem:d2/d82/a00279"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d82/a00279.html">Atlas::Events</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:a4afe312f27f89189f693aa76d5028dbf"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#a4afe312f27f89189f693aa76d5028dbf">AE_CONTROLLERBUTTON_A</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_A</td></tr>
-<tr class="separator:a4afe312f27f89189f693aa76d5028dbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abb30d9201da04ba831deff6f97338f7b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#abb30d9201da04ba831deff6f97338f7b">AE_CONTROLLERBUTTON_B</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_B</td></tr>
-<tr class="separator:abb30d9201da04ba831deff6f97338f7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae3e50df3e4c96b5613c8f0b244e819d8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#ae3e50df3e4c96b5613c8f0b244e819d8">AE_CONTROLLERBUTTON_X</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_X</td></tr>
-<tr class="separator:ae3e50df3e4c96b5613c8f0b244e819d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa8cc26a0ce582568ee61d34dce3943e6"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#aa8cc26a0ce582568ee61d34dce3943e6">AE_CONTROLLERBUTTON_Y</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_Y</td></tr>
-<tr class="separator:aa8cc26a0ce582568ee61d34dce3943e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7afd0ad1dfe45971c81770f4e9c19fb1"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#a7afd0ad1dfe45971c81770f4e9c19fb1">AE_CONTROLLERBUTTON_UP</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_DPAD_UP</td></tr>
-<tr class="separator:a7afd0ad1dfe45971c81770f4e9c19fb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab599f45dac63c2e14837eeb2e7919ec0"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#ab599f45dac63c2e14837eeb2e7919ec0">AE_CONTROLLERBUTTON_DOWN</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_DPAD_DOWN</td></tr>
-<tr class="separator:ab599f45dac63c2e14837eeb2e7919ec0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad4ea2ce1a2c19cc912eb7a0a92b9f395"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#ad4ea2ce1a2c19cc912eb7a0a92b9f395">AE_CONTROLLERBUTTON_LEFT</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_DPAD_LEFT</td></tr>
-<tr class="separator:ad4ea2ce1a2c19cc912eb7a0a92b9f395"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac0d032d7ea752f9696865661c95ec6a2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#ac0d032d7ea752f9696865661c95ec6a2">AE_CONTROLLERBUTTON_RIGHT</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_DPAD_RIGHT</td></tr>
-<tr class="separator:ac0d032d7ea752f9696865661c95ec6a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac24a064b41b6ff5cfd273f02c01caec3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#ac24a064b41b6ff5cfd273f02c01caec3">AE_CONTROLLERBUTTON_LEFTSTICK</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_LEFTSTICK</td></tr>
-<tr class="separator:ac24a064b41b6ff5cfd273f02c01caec3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa1072150f418558c2a49826c19e1b94e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#aa1072150f418558c2a49826c19e1b94e">AE_CONTROLLERBUTTON_RIGHTSTICK</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_RIGHTSTICK</td></tr>
-<tr class="separator:aa1072150f418558c2a49826c19e1b94e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae4607886cc71645b6b017632ed8b7856"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#ae4607886cc71645b6b017632ed8b7856">AE_CONTROLLERBUTTON_LEFTSHOULDER</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_LEFTSHOULDER</td></tr>
-<tr class="separator:ae4607886cc71645b6b017632ed8b7856"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa6a602836a3bc3f5dcfcff61762d0de3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#aa6a602836a3bc3f5dcfcff61762d0de3">AE_CONTROLLERBUTTON_RIGHTSHOULDER</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_RIGHTSHOULDER</td></tr>
-<tr class="separator:aa6a602836a3bc3f5dcfcff61762d0de3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9f5902a9b681d751b453cafe4b6692c2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#a9f5902a9b681d751b453cafe4b6692c2">AE_CONTROLLERBUTTON_BACK</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_BACK</td></tr>
-<tr class="separator:a9f5902a9b681d751b453cafe4b6692c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aca278ffb52bc529088edd3e6489ed26c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#aca278ffb52bc529088edd3e6489ed26c">AE_CONTROLLERBUTTON_GUIDE</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_GUIDE</td></tr>
-<tr class="separator:aca278ffb52bc529088edd3e6489ed26c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51e5b4cafb058ee797080bc1d6490139"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#a51e5b4cafb058ee797080bc1d6490139">AE_CONTROLLERBUTTON_START</a>&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_START</td></tr>
-<tr class="separator:a51e5b4cafb058ee797080bc1d6490139"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6844af478e110cf54b532368a129738e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#a6844af478e110cf54b532368a129738e">AE_CONTROLLER_ADDED</a>&#160;&#160;&#160;SDL_CONTROLLERDEVICEADDED</td></tr>
+<tr class="separator:a6844af478e110cf54b532368a129738e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af338a7e04638a789553216e413ab1c83"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#af338a7e04638a789553216e413ab1c83">AE_CONTROLLER_REMOVED</a>&#160;&#160;&#160;SDL_CONTROLLERDEVICEREMOVED</td></tr>
+<tr class="separator:af338a7e04638a789553216e413ab1c83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a602e54ca61451c1a702aa6e38f306005"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dee/a00053.html#a602e54ca61451c1a702aa6e38f306005">AE_CONTROLLER_MAPPED</a>&#160;&#160;&#160;SDL_CONTROLLERDEVICEREMAPPED</td></tr>
+<tr class="separator:a602e54ca61451c1a702aa6e38f306005"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="a4afe312f27f89189f693aa76d5028dbf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4afe312f27f89189f693aa76d5028dbf">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_A</h2>
+<a id="a6844af478e110cf54b532368a129738e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6844af478e110cf54b532368a129738e">&#9670;&nbsp;</a></span>AE_CONTROLLER_ADDED</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_A&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_A</td>
+          <td class="memname">#define AE_CONTROLLER_ADDED&#160;&#160;&#160;SDL_CONTROLLERDEVICEADDED</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00009">9</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00009">9</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerDeviceEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="abb30d9201da04ba831deff6f97338f7b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abb30d9201da04ba831deff6f97338f7b">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_B</h2>
+<a id="a602e54ca61451c1a702aa6e38f306005"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a602e54ca61451c1a702aa6e38f306005">&#9670;&nbsp;</a></span>AE_CONTROLLER_MAPPED</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_B&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_B</td>
+          <td class="memname">#define AE_CONTROLLER_MAPPED&#160;&#160;&#160;SDL_CONTROLLERDEVICEREMAPPED</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00010">10</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00011">11</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerDeviceEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a9f5902a9b681d751b453cafe4b6692c2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9f5902a9b681d751b453cafe4b6692c2">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_BACK</h2>
+<a id="af338a7e04638a789553216e413ab1c83"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af338a7e04638a789553216e413ab1c83">&#9670;&nbsp;</a></span>AE_CONTROLLER_REMOVED</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_BACK&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_BACK</td>
+          <td class="memname">#define AE_CONTROLLER_REMOVED&#160;&#160;&#160;SDL_CONTROLLERDEVICEREMOVED</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00021">21</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="ab599f45dac63c2e14837eeb2e7919ec0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab599f45dac63c2e14837eeb2e7919ec0">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_DOWN</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_DOWN&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_DPAD_DOWN</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00014">14</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="aca278ffb52bc529088edd3e6489ed26c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aca278ffb52bc529088edd3e6489ed26c">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_GUIDE</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_GUIDE&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_GUIDE</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00022">22</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="ad4ea2ce1a2c19cc912eb7a0a92b9f395"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad4ea2ce1a2c19cc912eb7a0a92b9f395">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_LEFT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_LEFT&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_DPAD_LEFT</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00015">15</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="ae4607886cc71645b6b017632ed8b7856"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae4607886cc71645b6b017632ed8b7856">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_LEFTSHOULDER</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_LEFTSHOULDER&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_LEFTSHOULDER</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00019">19</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="ac24a064b41b6ff5cfd273f02c01caec3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac24a064b41b6ff5cfd273f02c01caec3">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_LEFTSTICK</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_LEFTSTICK&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_LEFTSTICK</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00017">17</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="ac0d032d7ea752f9696865661c95ec6a2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac0d032d7ea752f9696865661c95ec6a2">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_RIGHT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_RIGHT&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_DPAD_RIGHT</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00016">16</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="aa6a602836a3bc3f5dcfcff61762d0de3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa6a602836a3bc3f5dcfcff61762d0de3">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_RIGHTSHOULDER</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_RIGHTSHOULDER&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_RIGHTSHOULDER</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00020">20</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="aa1072150f418558c2a49826c19e1b94e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa1072150f418558c2a49826c19e1b94e">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_RIGHTSTICK</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_RIGHTSTICK&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_RIGHTSTICK</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00018">18</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a51e5b4cafb058ee797080bc1d6490139"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a51e5b4cafb058ee797080bc1d6490139">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_START</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_START&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_START</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00023">23</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a7afd0ad1dfe45971c81770f4e9c19fb1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7afd0ad1dfe45971c81770f4e9c19fb1">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_UP</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_UP&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_DPAD_UP</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00013">13</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="ae3e50df3e4c96b5613c8f0b244e819d8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae3e50df3e4c96b5613c8f0b244e819d8">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_X</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_X&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_X</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00011">11</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="aa8cc26a0ce582568ee61d34dce3943e6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa8cc26a0ce582568ee61d34dce3943e6">&#9670;&nbsp;</a></span>AE_CONTROLLERBUTTON_Y</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERBUTTON_Y&#160;&#160;&#160;SDL_CONTROLLER_BUTTON_Y</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00012">12</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00010">10</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerDeviceEvent.h</a>.</p>
 
 </div>
 </div>
@@ -393,7 +177,7 @@ Macros</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../dc/dee/a00053.html">ControllerButtonEvent.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../dc/dee/a00053.html">ControllerDeviceEvent.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

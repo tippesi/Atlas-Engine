@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Events::ControllerAxisEvent Class Reference</title>
+<title>Atlas Engine: Atlas::Events::AudioDeviceEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,39 +92,36 @@ $(document).ready(function(){initNavTree('d8/d21/a00368.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../dd/db5/a00365.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Events::ControllerAxisEvent Class Reference</div>  </div>
+<div class="title">Atlas::Events::AudioDeviceEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>A class to distribute controller axis events.  
+<p>A class to distribute audio device events.  
  <a href="../../d8/d21/a00368.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d5/df9/a00044_source.html">AudioDeviceEvent.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:af79ef2ef34f767b0f46d8a2ce0d6a12f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#af79ef2ef34f767b0f46d8a2ce0d6a12f">ControllerAxisEvent</a> (SDL_ControllerAxisEvent event)</td></tr>
-<tr class="separator:af79ef2ef34f767b0f46d8a2ce0d6a12f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac54318101e9e5d590340662da5fbeef3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#ac54318101e9e5d590340662da5fbeef3">AudioDeviceEvent</a> (SDL_AudioDeviceEvent event)</td></tr>
+<tr class="separator:ac54318101e9e5d590340662da5fbeef3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a7a84e82ce9df9780782f2d8a20f07009"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#a7a84e82ce9df9780782f2d8a20f07009">axis</a></td></tr>
-<tr class="memdesc:a7a84e82ce9df9780782f2d8a20f07009"><td class="mdescLeft">&#160;</td><td class="mdescRight">The axis which was moved on the controller.  <a href="#a7a84e82ce9df9780782f2d8a20f07009">More...</a><br /></td></tr>
-<tr class="separator:a7a84e82ce9df9780782f2d8a20f07009"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ada48f1a208d01294ada155d91a0329da"><td class="memItemLeft" align="right" valign="top">int16_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#ada48f1a208d01294ada155d91a0329da">value</a></td></tr>
-<tr class="memdesc:ada48f1a208d01294ada155d91a0329da"><td class="mdescLeft">&#160;</td><td class="mdescRight">The value of the axis.  <a href="#ada48f1a208d01294ada155d91a0329da">More...</a><br /></td></tr>
-<tr class="separator:ada48f1a208d01294ada155d91a0329da"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab2b11c5512bb4dd825c4657439d6e1eb"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#ab2b11c5512bb4dd825c4657439d6e1eb">device</a></td></tr>
-<tr class="memdesc:ab2b11c5512bb4dd825c4657439d6e1eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">The device ID of the game controller.  <a href="#ab2b11c5512bb4dd825c4657439d6e1eb">More...</a><br /></td></tr>
-<tr class="separator:ab2b11c5512bb4dd825c4657439d6e1eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1bd61869f51b9f380a6fa7c4c5532a52"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#a1bd61869f51b9f380a6fa7c4c5532a52">type</a></td></tr>
+<tr class="memdesc:a1bd61869f51b9f380a6fa7c4c5532a52"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the event.  <a href="#a1bd61869f51b9f380a6fa7c4c5532a52">More...</a><br /></td></tr>
+<tr class="separator:a1bd61869f51b9f380a6fa7c4c5532a52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f479783e13403e87e3358aad24951e0"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html#a9f479783e13403e87e3358aad24951e0">device</a></td></tr>
+<tr class="memdesc:a9f479783e13403e87e3358aad24951e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">The device ID of the audio device.  <a href="#a9f479783e13403e87e3358aad24951e0">More...</a><br /></td></tr>
+<tr class="separator:a9f479783e13403e87e3358aad24951e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A class to distribute controller axis events. </p>
+<div class="textblock"><p>A class to distribute audio device events. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00023">23</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/df9/a00044_source.html#l00019">19</a> of file <a class="el" href="../../d5/df9/a00044_source.html">AudioDeviceEvent.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="af79ef2ef34f767b0f46d8a2ce0d6a12f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af79ef2ef34f767b0f46d8a2ce0d6a12f">&#9670;&nbsp;</a></span>ControllerAxisEvent()</h2>
+<a id="ac54318101e9e5d590340662da5fbeef3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac54318101e9e5d590340662da5fbeef3">&#9670;&nbsp;</a></span>AudioDeviceEvent()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -133,9 +130,9 @@ Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">Atlas::Events::ControllerAxisEvent::ControllerAxisEvent </td>
+          <td class="memname">Atlas::Events::AudioDeviceEvent::AudioDeviceEvent </td>
           <td>(</td>
-          <td class="paramtype">SDL_ControllerAxisEvent&#160;</td>
+          <td class="paramtype">SDL_AudioDeviceEvent&#160;</td>
           <td class="paramname"><em>event</em></td><td>)</td>
           <td></td>
         </tr>
@@ -147,76 +144,57 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00026">26</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/df9/a00044_source.html#l00022">22</a> of file <a class="el" href="../../d5/df9/a00044_source.html">AudioDeviceEvent.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a7a84e82ce9df9780782f2d8a20f07009"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7a84e82ce9df9780782f2d8a20f07009">&#9670;&nbsp;</a></span>axis</h2>
+<a id="a9f479783e13403e87e3358aad24951e0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f479783e13403e87e3358aad24951e0">&#9670;&nbsp;</a></span>device</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint8_t Atlas::Events::ControllerAxisEvent::axis</td>
+          <td class="memname">uint32_t Atlas::Events::AudioDeviceEvent::device</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The axis which was moved on the controller. </p>
-<p>See <a class="el" href="../../">EngineControllerAxisEvent.h</a> for more. </p>
+<p>The device ID of the audio device. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00037">37</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/df9/a00044_source.html#l00037">37</a> of file <a class="el" href="../../d5/df9/a00044_source.html">AudioDeviceEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="ab2b11c5512bb4dd825c4657439d6e1eb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab2b11c5512bb4dd825c4657439d6e1eb">&#9670;&nbsp;</a></span>device</h2>
+<a id="a1bd61869f51b9f380a6fa7c4c5532a52"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1bd61869f51b9f380a6fa7c4c5532a52">&#9670;&nbsp;</a></span>type</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t Atlas::Events::ControllerAxisEvent::device</td>
+          <td class="memname">uint32_t Atlas::Events::AudioDeviceEvent::type</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The device ID of the game controller. </p>
+<p>The type of the event. </p>
+<p>See <a class="el" href="../../d5/df9/a00044.html">AudioDeviceEvent.h</a> for more. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00047">47</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="ada48f1a208d01294ada155d91a0329da"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ada48f1a208d01294ada155d91a0329da">&#9670;&nbsp;</a></span>value</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int16_t Atlas::Events::ControllerAxisEvent::value</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The value of the axis. </p>
-<p>Ranges from -32767-32767. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00042">42</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/df9/a00044_source.html#l00032">32</a> of file <a class="el" href="../../d5/df9/a00044_source.html">AudioDeviceEvent.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a></li>
+<li>src/events/<a class="el" href="../../d5/df9/a00044_source.html">AudioDeviceEvent.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d0/d19/a00273.html">Events</a></li><li class="navelem"><a class="el" href="../../d8/d21/a00368.html">ControllerAxisEvent</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d82/a00279.html">Events</a></li><li class="navelem"><a class="el" href="../../d8/d21/a00368.html">AudioDeviceEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

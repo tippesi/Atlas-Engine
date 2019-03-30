@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Loader::ImageLoader Class Reference</title>
+<title>Atlas Engine: Atlas::Loader::Image Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,241 +88,71 @@ $(document).ready(function(){initNavTree('d1/d0b/a00452.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d9/d10/a00449.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Loader::ImageLoader Class Reference</div>  </div>
+<div class="title">Atlas::Loader::Image Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d0/dc2/a00104_source.html">ImageLoader.h</a>&gt;</code></p>
+<p>Represents an image with 8 bits per channel.  
+ <a href="../../d1/d0b/a00452.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a>&gt;</code></p>
+<div class="dynheader">
+Inheritance diagram for Atlas::Loader::Image:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="../../d1/d0b/a00452.png" usemap="#Atlas::Loader::Image_map" alt=""/>
+  <map id="Atlas::Loader::Image_map" name="Atlas::Loader::Image_map">
+<area href="../../de/dfe/a00448.html" title="Base class for the image classes. " alt="Atlas::Loader::IImage" shape="rect" coords="0,0,128,24"/>
+</map>
+ </div></div>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
-Static Public Member Functions</h2></td></tr>
-<tr class="memitem:ae27f24102685e9647c0e738a93462c4a"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d3/dea/a00444.html">Image</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#ae27f24102685e9647c0e738a93462c4a">LoadImage</a> (std::string filename, bool colorSpaceConversion, int32_t forceChannels=0)</td></tr>
-<tr class="memdesc:ae27f24102685e9647c0e738a93462c4a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads an image with 8 bits per channel.  <a href="#ae27f24102685e9647c0e738a93462c4a">More...</a><br /></td></tr>
-<tr class="separator:ae27f24102685e9647c0e738a93462c4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af3670971622e82e58f3d3de2461ed129"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../de/dfe/a00448.html">Image16</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#af3670971622e82e58f3d3de2461ed129">LoadImage16</a> (std::string filename, bool colorSpaceConversion, int32_t forceChannels=0)</td></tr>
-<tr class="memdesc:af3670971622e82e58f3d3de2461ed129"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads an image with 16 bits per channel.  <a href="#af3670971622e82e58f3d3de2461ed129">More...</a><br /></td></tr>
-<tr class="separator:af3670971622e82e58f3d3de2461ed129"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a85645875a42e53663e7f6326f1ff377a"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#a85645875a42e53663e7f6326f1ff377a">SaveImage</a> (<a class="el" href="../../d3/dea/a00444.html">Image</a> &amp;image, std::string filename)</td></tr>
-<tr class="memdesc:a85645875a42e53663e7f6326f1ff377a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Save an image with 8 bits per channel to the hard drive.  <a href="#a85645875a42e53663e7f6326f1ff377a">More...</a><br /></td></tr>
-<tr class="separator:a85645875a42e53663e7f6326f1ff377a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab085fabede337f4f1f124b5090934751"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#ab085fabede337f4f1f124b5090934751">SaveImage16</a> (<a class="el" href="../../de/dfe/a00448.html">Image16</a> &amp;image, std::string filename)</td></tr>
-<tr class="memdesc:ab085fabede337f4f1f124b5090934751"><td class="mdescLeft">&#160;</td><td class="mdescRight">Save an image with 16 bits per channel to the hard drive.  <a href="#ab085fabede337f4f1f124b5090934751">More...</a><br /></td></tr>
-<tr class="separator:ab085fabede337f4f1f124b5090934751"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a96648ac7ad02bf8689b3585b8e65aea5"><td class="memItemLeft" align="right" valign="top">std::vector&lt; uint8_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html#a96648ac7ad02bf8689b3585b8e65aea5">data</a></td></tr>
+<tr class="separator:a96648ac7ad02bf8689b3585b8e65aea5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_attribs_a00448"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_a00448')"><img src="../../closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="../../de/dfe/a00448.html">Atlas::Loader::IImage</a></td></tr>
+<tr class="memitem:adab64b40e7641c7d9448aca392529d5d inherit pub_attribs_a00448"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/dfe/a00448.html#adab64b40e7641c7d9448aca392529d5d">width</a></td></tr>
+<tr class="separator:adab64b40e7641c7d9448aca392529d5d inherit pub_attribs_a00448"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9efc25365ae3c2ea80720b9bdf05f60d inherit pub_attribs_a00448"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/dfe/a00448.html#a9efc25365ae3c2ea80720b9bdf05f60d">height</a></td></tr>
+<tr class="separator:a9efc25365ae3c2ea80720b9bdf05f60d inherit pub_attribs_a00448"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1e07cda302b5f1b8882631bbddaebd7c inherit pub_attribs_a00448"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/dfe/a00448.html#a1e07cda302b5f1b8882631bbddaebd7c">channels</a></td></tr>
+<tr class="separator:a1e07cda302b5f1b8882631bbddaebd7c inherit pub_attribs_a00448"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a10a60db1bab786d829d49356292cafac inherit pub_attribs_a00448"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/dfe/a00448.html#a10a60db1bab786d829d49356292cafac">fileFormat</a></td></tr>
+<tr class="separator:a10a60db1bab786d829d49356292cafac inherit pub_attribs_a00448"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d0/dc2/a00104_source.html#l00051">51</a> of file <a class="el" href="../../d0/dc2/a00104_source.html">ImageLoader.h</a>.</p>
-</div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="ae27f24102685e9647c0e738a93462c4a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae27f24102685e9647c0e738a93462c4a">&#9670;&nbsp;</a></span>LoadImage()</h2>
+<div class="textblock"><p>Represents an image with 8 bits per channel. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d3a/a00101_source.html#l00034">34</a> of file <a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a>.</p>
+</div><h2 class="groupheader">Member Data Documentation</h2>
+<a id="a96648ac7ad02bf8689b3585b8e65aea5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a96648ac7ad02bf8689b3585b8e65aea5">&#9670;&nbsp;</a></span>data</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="../../d3/dea/a00444.html">Image</a> Atlas::Loader::ImageLoader::LoadImage </td>
-          <td>(</td>
-          <td class="paramtype">std::string&#160;</td>
-          <td class="paramname"><em>filename</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>colorSpaceConversion</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>forceChannels</em> = <code>0</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
+          <td class="memname">std::vector&lt;uint8_t&gt; Atlas::Loader::Image::data</td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
-<p>Loads an image with 8 bits per channel. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">filename</td><td>The name of the image file. </td></tr>
-    <tr><td class="paramname">colorSpaceConversion</td><td>Whether or not gamma to linear color space conversion is needed. </td></tr>
-    <tr><td class="paramname">forceChannels</td><td>The number of channels to be forced. Default is zero, which means no force. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>An <a class="el" href="../../d3/dea/a00444.html" title="Represents an image with 8 bits per channel. ">Image</a> object with all the important data. </dd></dl>
-
-</div>
-</div>
-<a id="af3670971622e82e58f3d3de2461ed129"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af3670971622e82e58f3d3de2461ed129">&#9670;&nbsp;</a></span>LoadImage16()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static <a class="el" href="../../de/dfe/a00448.html">Image16</a> Atlas::Loader::ImageLoader::LoadImage16 </td>
-          <td>(</td>
-          <td class="paramtype">std::string&#160;</td>
-          <td class="paramname"><em>filename</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>colorSpaceConversion</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>forceChannels</em> = <code>0</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Loads an image with 16 bits per channel. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">filename</td><td>The name of the image file. </td></tr>
-    <tr><td class="paramname">colorSpaceConversion</td><td>Whether or not gamma to linear color space conversion is needed. </td></tr>
-    <tr><td class="paramname">forceChannels</td><td>The number of channels to be forced. Default is zero, which means no force. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>An <a class="el" href="../../de/dfe/a00448.html" title="Represents an image with 16 bits per channel. ">Image16</a> object with all the important data. </dd></dl>
-
-</div>
-</div>
-<a id="a85645875a42e53663e7f6326f1ff377a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a85645875a42e53663e7f6326f1ff377a">&#9670;&nbsp;</a></span>SaveImage()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static void Atlas::Loader::ImageLoader::SaveImage </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d3/dea/a00444.html">Image</a> &amp;&#160;</td>
-          <td class="paramname"><em>image</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::string&#160;</td>
-          <td class="paramname"><em>filename</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Save an image with 8 bits per channel to the hard drive. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">image</td><td>The image to be stored </td></tr>
-    <tr><td class="paramname">filename</td><td>The filename that the image should have </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section note"><dt>Note</dt><dd>By changing the fileFormat in the <a class="el" href="../../d3/dea/a00444.html" title="Represents an image with 8 bits per channel. ">Image</a> object the output file changes as well. </dd></dl>
-
-</div>
-</div>
-<a id="ab085fabede337f4f1f124b5090934751"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab085fabede337f4f1f124b5090934751">&#9670;&nbsp;</a></span>SaveImage16()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static void Atlas::Loader::ImageLoader::SaveImage16 </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../de/dfe/a00448.html">Image16</a> &amp;&#160;</td>
-          <td class="paramname"><em>image</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::string&#160;</td>
-          <td class="paramname"><em>filename</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Save an image with 16 bits per channel to the hard drive. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">image</td><td>The image to be stored </td></tr>
-    <tr><td class="paramname">filename</td><td>The filename that the image should have </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section note"><dt>Note</dt><dd>By changing the fileFormat in the <a class="el" href="../../de/dfe/a00448.html" title="Represents an image with 16 bits per channel. ">Image16</a> object the output file changes as well. Only IMAGE_PGM is supported for now. </dd></dl>
+<p class="definition">Definition at line <a class="el" href="../../d4/d3a/a00101_source.html#l00037">37</a> of file <a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/loader/<a class="el" href="../../d0/dc2/a00104_source.html">ImageLoader.h</a></li>
+<li>src/loader/<a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d3/d5e/a00275.html">Loader</a></li><li class="navelem"><a class="el" href="../../d1/d0b/a00452.html">ImageLoader</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d04/a00281.html">Loader</a></li><li class="navelem"><a class="el" href="../../d1/d0b/a00452.html">Image</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

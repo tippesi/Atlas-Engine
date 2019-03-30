@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::RenderList Class Reference</title>
+<title>Atlas Engine: Atlas::RenderListBatch Struct Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,200 +88,67 @@ $(document).ready(function(){initNavTree('df/df1/a00340.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d4/dce/a00337.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::RenderList Class Reference</div>  </div>
+<div class="title">Atlas::RenderListBatch Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d6/d5b/a00026_source.html">RenderList.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:afe6eac173cc840eb4d9426c4c5ef6ff1"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/df1/a00340.html#afe6eac173cc840eb4d9426c4c5ef6ff1">RenderList</a> (int32_t type, int32_t mobility)</td></tr>
-<tr class="separator:afe6eac173cc840eb4d9426c4c5ef6ff1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1f76a6809f094e23846990c4772f067f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/df1/a00340.html#a1f76a6809f094e23846990c4772f067f">Add</a> (<a class="el" href="../../dc/d1c/a00504.html">Mesh::MeshActor</a> *actor)</td></tr>
-<tr class="separator:a1f76a6809f094e23846990c4772f067f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a765549c02b9ffce7a506d3bccab600c2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/df1/a00340.html#a765549c02b9ffce7a506d3bccab600c2">Add</a> (<a class="el" href="../../d2/d9d/a00464.html">Lighting::ILight</a> *light)</td></tr>
-<tr class="separator:a765549c02b9ffce7a506d3bccab600c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a96c90cb5466c75227cbd364626c662ce"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/df1/a00340.html#a96c90cb5466c75227cbd364626c662ce">RemoveMesh</a> (<a class="el" href="../../de/d4e/a00500.html">Mesh::Mesh</a> *mesh)</td></tr>
-<tr class="separator:a96c90cb5466c75227cbd364626c662ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a22b1bc094ddb7c195bddcfab3bd4641b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/df1/a00340.html#a22b1bc094ddb7c195bddcfab3bd4641b">Clear</a> ()</td></tr>
-<tr class="separator:a22b1bc094ddb7c195bddcfab3bd4641b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:aec881c5bbc8d9d775640fcbf227b8c71"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d2/d9d/a00464.html">Lighting::ILight</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/df1/a00340.html#aec881c5bbc8d9d775640fcbf227b8c71">lights</a></td></tr>
-<tr class="separator:aec881c5bbc8d9d775640fcbf227b8c71"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52938929573b5787ab43b13275333f98"><td class="memItemLeft" align="right" valign="top">std::map&lt; <a class="el" href="../../de/d4e/a00500.html">Mesh::Mesh</a> *, <a class="el" href="../../dc/d30/a00508.html">Mesh::MeshActorBatch</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/df1/a00340.html#a52938929573b5787ab43b13275333f98">actorBatches</a></td></tr>
-<tr class="separator:a52938929573b5787ab43b13275333f98"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b466b8ee3fb865d03d00dc7a16bfd27"><td class="memItemLeft" align="right" valign="top">std::map&lt; int32_t, std::vector&lt; <a class="el" href="../../dd/d1d/a00336.html">RenderListBatch</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/df1/a00340.html#a3b466b8ee3fb865d03d00dc7a16bfd27">orderedRenderBatches</a></td></tr>
-<tr class="separator:a3b466b8ee3fb865d03d00dc7a16bfd27"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa89085e3ddac83bebd584b58000b2c92"><td class="memItemLeft" align="right" valign="top">Actor::ActorBatch&lt; <a class="el" href="../../dc/d30/a00508.html">Mesh::Mesh</a> *, Actor::MeshActor * &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/df1/a00340.html#aa89085e3ddac83bebd584b58000b2c92">meshActorBatch</a></td></tr>
+<tr class="separator:aa89085e3ddac83bebd584b58000b2c92"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3889705dce6d4b81c04827019598ad1a"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d4/dfb/a00512.html">Mesh::MeshSubData</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/df1/a00340.html#a3889705dce6d4b81c04827019598ad1a">subData</a></td></tr>
+<tr class="separator:a3889705dce6d4b81c04827019598ad1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00023">23</a> of file <a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>.</p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="afe6eac173cc840eb4d9426c4c5ef6ff1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afe6eac173cc840eb4d9426c4c5ef6ff1">&#9670;&nbsp;</a></span>RenderList()</h2>
+<p class="definition">Definition at line <a class="el" href="../../d6/d5b/a00026_source.html#l00017">17</a> of file <a class="el" href="../../d6/d5b/a00026_source.html">RenderList.h</a>.</p>
+</div><h2 class="groupheader">Member Data Documentation</h2>
+<a id="aa89085e3ddac83bebd584b58000b2c92"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa89085e3ddac83bebd584b58000b2c92">&#9670;&nbsp;</a></span>meshActorBatch</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Atlas::RenderList::RenderList </td>
-          <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>type</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>mobility</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
+          <td class="memname">Actor::ActorBatch&lt;<a class="el" href="../../dc/d30/a00508.html">Mesh::Mesh</a>*, Actor::MeshActor*&gt;* Atlas::RenderListBatch::meshActorBatch</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="../../d6/d5b/a00026_source.html#l00019">19</a> of file <a class="el" href="../../d6/d5b/a00026_source.html">RenderList.h</a>.</p>
+
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a1f76a6809f094e23846990c4772f067f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1f76a6809f094e23846990c4772f067f">&#9670;&nbsp;</a></span>Add() <span class="overload">[1/2]</span></h2>
+<a id="a3889705dce6d4b81c04827019598ad1a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3889705dce6d4b81c04827019598ad1a">&#9670;&nbsp;</a></span>subData</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Atlas::RenderList::Add </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/d1c/a00504.html">Mesh::MeshActor</a> *&#160;</td>
-          <td class="paramname"><em>actor</em></td><td>)</td>
-          <td></td>
+          <td class="memname">std::vector&lt;<a class="el" href="../../d4/dfb/a00512.html">Mesh::MeshSubData</a> *&gt; Atlas::RenderListBatch::subData</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-</div>
-</div>
-<a id="a765549c02b9ffce7a506d3bccab600c2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a765549c02b9ffce7a506d3bccab600c2">&#9670;&nbsp;</a></span>Add() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Atlas::RenderList::Add </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d2/d9d/a00464.html">Lighting::ILight</a> *&#160;</td>
-          <td class="paramname"><em>light</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
+<p class="definition">Definition at line <a class="el" href="../../d6/d5b/a00026_source.html#l00020">20</a> of file <a class="el" href="../../d6/d5b/a00026_source.html">RenderList.h</a>.</p>
 
 </div>
 </div>
-<a id="a22b1bc094ddb7c195bddcfab3bd4641b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a22b1bc094ddb7c195bddcfab3bd4641b">&#9670;&nbsp;</a></span>Clear()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Atlas::RenderList::Clear </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a96c90cb5466c75227cbd364626c662ce"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a96c90cb5466c75227cbd364626c662ce">&#9670;&nbsp;</a></span>RemoveMesh()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Atlas::RenderList::RemoveMesh </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../de/d4e/a00500.html">Mesh::Mesh</a> *&#160;</td>
-          <td class="paramname"><em>mesh</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="a52938929573b5787ab43b13275333f98"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a52938929573b5787ab43b13275333f98">&#9670;&nbsp;</a></span>actorBatches</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::map&lt;<a class="el" href="../../de/d4e/a00500.html">Mesh::Mesh</a> *, <a class="el" href="../../dc/d30/a00508.html">Mesh::MeshActorBatch</a> *&gt; Atlas::RenderList::actorBatches</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00037">37</a> of file <a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>.</p>
-
-</div>
-</div>
-<a id="aec881c5bbc8d9d775640fcbf227b8c71"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aec881c5bbc8d9d775640fcbf227b8c71">&#9670;&nbsp;</a></span>lights</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::vector&lt;<a class="el" href="../../d2/d9d/a00464.html">Lighting::ILight</a> *&gt; Atlas::RenderList::lights</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00036">36</a> of file <a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>.</p>
-
-</div>
-</div>
-<a id="a3b466b8ee3fb865d03d00dc7a16bfd27"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3b466b8ee3fb865d03d00dc7a16bfd27">&#9670;&nbsp;</a></span>orderedRenderBatches</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::map&lt;int32_t, std::vector&lt;<a class="el" href="../../dd/d1d/a00336.html">RenderListBatch</a>&gt; &gt; Atlas::RenderList::orderedRenderBatches</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/d16/a00029_source.html#l00038">38</a> of file <a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a>.</p>
-
-</div>
-</div>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/<a class="el" href="../../d5/d16/a00029_source.html">RenderList.h</a></li>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>src/<a class="el" href="../../d6/d5b/a00026_source.html">RenderList.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../df/df1/a00340.html">RenderList</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../df/df1/a00340.html">RenderListBatch</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

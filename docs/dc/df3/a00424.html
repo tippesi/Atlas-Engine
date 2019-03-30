@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Input::KeyboardHandler Class Reference</title>
+<title>Atlas Engine: Atlas::Input::ControllerHandler Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,41 +92,51 @@ $(document).ready(function(){initNavTree('dc/df3/a00424.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d2/de1/a00421.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Input::KeyboardHandler Class Reference</div>  </div>
+<div class="title">Atlas::Input::ControllerHandler Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d1/dc1/a00092_source.html">Keyboard.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../da/d2a/a00086_source.html">Controller.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:abd513b3719310e2072b943ade56c5fde"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/df3/a00424.html#abd513b3719310e2072b943ade56c5fde">KeyboardHandler</a> (<a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera, float <a class="el" href="../../dc/df3/a00424.html#af3f8b2e1310827b1218f9aa3e0402f7c">speed</a>, float <a class="el" href="../../dc/df3/a00424.html#a2bd66e93a0a42763a75f1545fad5b6c0">reactivity</a>)</td></tr>
-<tr class="separator:abd513b3719310e2072b943ade56c5fde"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a352e8c444781ddec7eaa2d071cd8841e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/df3/a00424.html#a352e8c444781ddec7eaa2d071cd8841e">Update</a> (<a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera, uint32_t deltaTime)</td></tr>
-<tr class="separator:a352e8c444781ddec7eaa2d071cd8841e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac017c479d50bec25192df804ec5f75f0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/df3/a00424.html#ac017c479d50bec25192df804ec5f75f0">ControllerHandler</a> (<a class="el" href="../../db/d7b/a00296.html">Camera</a> *camera, float <a class="el" href="../../dc/df3/a00424.html#ace02017fa3ff7ce7442854faa72b9445">sensibility</a>, float <a class="el" href="../../dc/df3/a00424.html#a394342a91fe7ad54874d9e1c45268378">speed</a>, float <a class="el" href="../../dc/df3/a00424.html#a00ad701e8fc231d58818337b8e898eec">reactivity</a>, float <a class="el" href="../../dc/df3/a00424.html#a06adde57666893cdcc710b664b5d0ba2">threshold</a>, int32_t device=-1)</td></tr>
+<tr class="separator:ac017c479d50bec25192df804ec5f75f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29ea6b5a6e3c48d9dfced9d69ae4416d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/df3/a00424.html#a29ea6b5a6e3c48d9dfced9d69ae4416d">Update</a> (<a class="el" href="../../db/d7b/a00296.html">Camera</a> *camera, float deltaTime)</td></tr>
+<tr class="separator:a29ea6b5a6e3c48d9dfced9d69ae4416d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:af3f8b2e1310827b1218f9aa3e0402f7c"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/df3/a00424.html#af3f8b2e1310827b1218f9aa3e0402f7c">speed</a></td></tr>
-<tr class="separator:af3f8b2e1310827b1218f9aa3e0402f7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2bd66e93a0a42763a75f1545fad5b6c0"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/df3/a00424.html#a2bd66e93a0a42763a75f1545fad5b6c0">reactivity</a></td></tr>
-<tr class="separator:a2bd66e93a0a42763a75f1545fad5b6c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace02017fa3ff7ce7442854faa72b9445"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/df3/a00424.html#ace02017fa3ff7ce7442854faa72b9445">sensibility</a></td></tr>
+<tr class="separator:ace02017fa3ff7ce7442854faa72b9445"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a394342a91fe7ad54874d9e1c45268378"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/df3/a00424.html#a394342a91fe7ad54874d9e1c45268378">speed</a></td></tr>
+<tr class="separator:a394342a91fe7ad54874d9e1c45268378"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a00ad701e8fc231d58818337b8e898eec"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/df3/a00424.html#a00ad701e8fc231d58818337b8e898eec">reactivity</a></td></tr>
+<tr class="separator:a00ad701e8fc231d58818337b8e898eec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06adde57666893cdcc710b664b5d0ba2"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/df3/a00424.html#a06adde57666893cdcc710b664b5d0ba2">threshold</a></td></tr>
+<tr class="separator:a06adde57666893cdcc710b664b5d0ba2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d1/dc1/a00092_source.html#l00012">12</a> of file <a class="el" href="../../d1/dc1/a00092_source.html">Keyboard.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00012">12</a> of file <a class="el" href="../../da/d2a/a00086_source.html">Controller.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="abd513b3719310e2072b943ade56c5fde"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abd513b3719310e2072b943ade56c5fde">&#9670;&nbsp;</a></span>KeyboardHandler()</h2>
+<a id="ac017c479d50bec25192df804ec5f75f0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac017c479d50bec25192df804ec5f75f0">&#9670;&nbsp;</a></span>ControllerHandler()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Atlas::Input::KeyboardHandler::KeyboardHandler </td>
+          <td class="memname">Atlas::Input::ControllerHandler::ControllerHandler </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="../../db/d7b/a00296.html">Camera</a> *&#160;</td>
           <td class="paramname"><em>camera</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>sensibility</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -138,7 +148,19 @@ Public Attributes</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>reactivity</em>&#160;</td>
+          <td class="paramname"><em>reactivity</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>threshold</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>device</em> = <code>-1</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -151,22 +173,22 @@ Public Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a352e8c444781ddec7eaa2d071cd8841e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a352e8c444781ddec7eaa2d071cd8841e">&#9670;&nbsp;</a></span>Update()</h2>
+<a id="a29ea6b5a6e3c48d9dfced9d69ae4416d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a29ea6b5a6e3c48d9dfced9d69ae4416d">&#9670;&nbsp;</a></span>Update()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Atlas::Input::KeyboardHandler::Update </td>
+          <td class="memname">void Atlas::Input::ControllerHandler::Update </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="../../db/d7b/a00296.html">Camera</a> *&#160;</td>
           <td class="paramname"><em>camera</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramtype">float&#160;</td>
           <td class="paramname"><em>deltaTime</em>&#160;</td>
         </tr>
         <tr>
@@ -180,47 +202,79 @@ Public Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a2bd66e93a0a42763a75f1545fad5b6c0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2bd66e93a0a42763a75f1545fad5b6c0">&#9670;&nbsp;</a></span>reactivity</h2>
+<a id="a00ad701e8fc231d58818337b8e898eec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a00ad701e8fc231d58818337b8e898eec">&#9670;&nbsp;</a></span>reactivity</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float Atlas::Input::KeyboardHandler::reactivity</td>
+          <td class="memname">float Atlas::Input::ControllerHandler::reactivity</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/dc1/a00092_source.html#l00020">20</a> of file <a class="el" href="../../d1/dc1/a00092_source.html">Keyboard.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00022">22</a> of file <a class="el" href="../../da/d2a/a00086_source.html">Controller.h</a>.</p>
 
 </div>
 </div>
-<a id="af3f8b2e1310827b1218f9aa3e0402f7c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af3f8b2e1310827b1218f9aa3e0402f7c">&#9670;&nbsp;</a></span>speed</h2>
+<a id="ace02017fa3ff7ce7442854faa72b9445"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ace02017fa3ff7ce7442854faa72b9445">&#9670;&nbsp;</a></span>sensibility</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float Atlas::Input::KeyboardHandler::speed</td>
+          <td class="memname">float Atlas::Input::ControllerHandler::sensibility</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/dc1/a00092_source.html#l00019">19</a> of file <a class="el" href="../../d1/dc1/a00092_source.html">Keyboard.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00020">20</a> of file <a class="el" href="../../da/d2a/a00086_source.html">Controller.h</a>.</p>
+
+</div>
+</div>
+<a id="a394342a91fe7ad54874d9e1c45268378"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a394342a91fe7ad54874d9e1c45268378">&#9670;&nbsp;</a></span>speed</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Input::ControllerHandler::speed</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00021">21</a> of file <a class="el" href="../../da/d2a/a00086_source.html">Controller.h</a>.</p>
+
+</div>
+</div>
+<a id="a06adde57666893cdcc710b664b5d0ba2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a06adde57666893cdcc710b664b5d0ba2">&#9670;&nbsp;</a></span>threshold</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Input::ControllerHandler::threshold</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../da/d2a/a00086_source.html#l00023">23</a> of file <a class="el" href="../../da/d2a/a00086_source.html">Controller.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/input/<a class="el" href="../../d1/dc1/a00092_source.html">Keyboard.h</a></li>
+<li>src/input/<a class="el" href="../../da/d2a/a00086_source.html">Controller.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dd/d56/a00274.html">Input</a></li><li class="navelem"><a class="el" href="../../dc/df3/a00424.html">KeyboardHandler</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d0/dcd/a00280.html">Input</a></li><li class="navelem"><a class="el" href="../../dc/df3/a00424.html">ControllerHandler</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

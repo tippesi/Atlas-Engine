@@ -32,7 +32,7 @@ namespace Atlas {
 			uint32_t windowID;
 
 			/**
-             * The code of the key. See {@link EngineKeycodes.h} for more.
+             * The code of the key. See {@link Keycodes.h} for more.
              */
 			Keycode keycode;
 

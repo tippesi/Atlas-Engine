@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Lighting::Sky Class Reference</title>
+<title>Atlas Engine: Atlas::Lighting::ShadowComponent Struct Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,73 +88,121 @@ $(document).ready(function(){initNavTree('d9/dc5/a00480.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d9/dca/a00477.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Lighting::Sky Class Reference</div>  </div>
+<div class="title">Atlas::Lighting::ShadowComponent Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../df/dc8/a00122_source.html">Sky.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d4/d3e/a00116_source.html">Shadow.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:afac908d7aa6076df1a14d73e88b288da"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc5/a00480.html#afac908d7aa6076df1a14d73e88b288da">Sky</a> ()</td></tr>
-<tr class="separator:afac908d7aa6076df1a14d73e88b288da"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a6b9cbc7dcc3f40b1dcadd91cded7d37b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d89/a00484.html">Skybox</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc5/a00480.html#a6b9cbc7dcc3f40b1dcadd91cded7d37b">skybox</a></td></tr>
-<tr class="separator:a6b9cbc7dcc3f40b1dcadd91cded7d37b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a356df37f50f86b97f4a38d6ee9f9a59c"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc5/a00480.html#a356df37f50f86b97f4a38d6ee9f9a59c">nearDistance</a></td></tr>
+<tr class="separator:a356df37f50f86b97f4a38d6ee9f9a59c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a926121d1c53785622fd8005615283a06"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc5/a00480.html#a926121d1c53785622fd8005615283a06">farDistance</a></td></tr>
+<tr class="separator:a926121d1c53785622fd8005615283a06"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85282c1b3753ee3bca3f494bdf1e745e"><td class="memItemLeft" align="right" valign="top">mat4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc5/a00480.html#a85282c1b3753ee3bca3f494bdf1e745e">viewMatrix</a></td></tr>
+<tr class="separator:a85282c1b3753ee3bca3f494bdf1e745e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d472b3281de501d3664c4bae6702551"><td class="memItemLeft" align="right" valign="top">mat4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc5/a00480.html#a8d472b3281de501d3664c4bae6702551">projectionMatrix</a></td></tr>
+<tr class="separator:a8d472b3281de501d3664c4bae6702551"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a4258077d8ab80d6638a36ce02ece92"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d8e/a00344.html">RenderList</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dc5/a00480.html#a7a4258077d8ab80d6638a36ce02ece92">renderList</a></td></tr>
+<tr class="separator:a7a4258077d8ab80d6638a36ce02ece92"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../df/dc8/a00122_source.html#l00011">11</a> of file <a class="el" href="../../df/dc8/a00122_source.html">Sky.h</a>.</p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="afac908d7aa6076df1a14d73e88b288da"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afac908d7aa6076df1a14d73e88b288da">&#9670;&nbsp;</a></span>Sky()</h2>
+<p class="definition">Definition at line <a class="el" href="../../d4/d3e/a00116_source.html#l00019">19</a> of file <a class="el" href="../../d4/d3e/a00116_source.html">Shadow.h</a>.</p>
+</div><h2 class="groupheader">Member Data Documentation</h2>
+<a id="a926121d1c53785622fd8005615283a06"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a926121d1c53785622fd8005615283a06">&#9670;&nbsp;</a></span>farDistance</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Atlas::Lighting::Sky::Sky </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
+          <td class="memname">float Atlas::Lighting::ShadowComponent::farDistance</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="../../d4/d3e/a00116_source.html#l00022">22</a> of file <a class="el" href="../../d4/d3e/a00116_source.html">Shadow.h</a>.</p>
+
 </div>
 </div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="a6b9cbc7dcc3f40b1dcadd91cded7d37b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6b9cbc7dcc3f40b1dcadd91cded7d37b">&#9670;&nbsp;</a></span>skybox</h2>
+<a id="a356df37f50f86b97f4a38d6ee9f9a59c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a356df37f50f86b97f4a38d6ee9f9a59c">&#9670;&nbsp;</a></span>nearDistance</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d8/d89/a00484.html">Skybox</a>* Atlas::Lighting::Sky::skybox</td>
+          <td class="memname">float Atlas::Lighting::ShadowComponent::nearDistance</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/dc8/a00122_source.html#l00016">16</a> of file <a class="el" href="../../df/dc8/a00122_source.html">Sky.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d4/d3e/a00116_source.html#l00021">21</a> of file <a class="el" href="../../d4/d3e/a00116_source.html">Shadow.h</a>.</p>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/lighting/<a class="el" href="../../df/dc8/a00122_source.html">Sky.h</a></li>
+<a id="a8d472b3281de501d3664c4bae6702551"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8d472b3281de501d3664c4bae6702551">&#9670;&nbsp;</a></span>projectionMatrix</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mat4 Atlas::Lighting::ShadowComponent::projectionMatrix</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d3e/a00116_source.html#l00025">25</a> of file <a class="el" href="../../d4/d3e/a00116_source.html">Shadow.h</a>.</p>
+
+</div>
+</div>
+<a id="a7a4258077d8ab80d6638a36ce02ece92"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a4258077d8ab80d6638a36ce02ece92">&#9670;&nbsp;</a></span>renderList</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/d8e/a00344.html">RenderList</a>* Atlas::Lighting::ShadowComponent::renderList</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d3e/a00116_source.html#l00027">27</a> of file <a class="el" href="../../d4/d3e/a00116_source.html">Shadow.h</a>.</p>
+
+</div>
+</div>
+<a id="a85282c1b3753ee3bca3f494bdf1e745e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85282c1b3753ee3bca3f494bdf1e745e">&#9670;&nbsp;</a></span>viewMatrix</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mat4 Atlas::Lighting::ShadowComponent::viewMatrix</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d3e/a00116_source.html#l00024">24</a> of file <a class="el" href="../../d4/d3e/a00116_source.html">Shadow.h</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>src/lighting/<a class="el" href="../../d4/d3e/a00116_source.html">Shadow.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dc/d28/a00276.html">Lighting</a></li><li class="navelem"><a class="el" href="../../d9/dc5/a00480.html">Sky</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dc/dc9/a00282.html">Lighting</a></li><li class="navelem"><a class="el" href="../../d9/dc5/a00480.html">ShadowComponent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

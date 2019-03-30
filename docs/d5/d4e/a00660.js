@@ -7,7 +7,7 @@ var a00660 =
     [ "FlipDataHorizontally", "d5/d4e/a00660.html#a45dc2d6fd5d0e027dca357c7c573cfad", null ],
     [ "GammaToLinear", "d5/d4e/a00660.html#ad7f0094f196e578f561badcf0d09aaec", null ],
     [ "GammaToLinear", "d5/d4e/a00660.html#a0b03cdc9c7a14e8470afc8d8c685f622", null ],
-    [ "Generate", "d5/d4e/a00660.html#ab45f25ec7c7ff21274d2b6c4090e815d", null ],
+    [ "Generate", "d5/d4e/a00660.html#a203a3ff501a6d7434b84f4c3d057e36a", null ],
     [ "GetChannelCount", "d5/d4e/a00660.html#a0d7dfec9a152f63d738c3b2e1d809a05", null ],
     [ "GetDataType", "d5/d4e/a00660.html#a002dff70227c393268237bc0229dfde6", null ],
     [ "GetID", "d5/d4e/a00660.html#aac0a0185d3c7684d86d6105526501114", null ],

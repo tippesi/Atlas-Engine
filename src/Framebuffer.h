@@ -25,7 +25,6 @@ namespace Atlas {
 		/**
          *
          * @param attachment
-         * @param dataFormat
          * @param sizedFormat
          * @param wrapping
          * @param filtering

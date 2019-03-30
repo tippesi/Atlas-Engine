@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Lighting::DirectionalLight Class Reference</title>
+<title>Atlas Engine: Atlas::Loader::ImageLoader Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,260 +88,36 @@ $(document).ready(function(){initNavTree('db/db1/a00460.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="../../d1/dbd/a00457.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Lighting::DirectionalLight Class Reference</div>  </div>
+<div class="title">Atlas::Loader::ImageLoader Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../d4/d81/a00110_source.html">DirectionalLight.h</a>&gt;</code></p>
-<div class="dynheader">
-Inheritance diagram for Atlas::Lighting::DirectionalLight:</div>
-<div class="dyncontent">
- <div class="center">
-  <img src="../../db/db1/a00460.png" usemap="#Atlas::Lighting::DirectionalLight_map" alt=""/>
-  <map id="Atlas::Lighting::DirectionalLight_map" name="Atlas::Lighting::DirectionalLight_map">
-<area href="../../d2/d9d/a00464.html" alt="Atlas::Lighting::ILight" shape="rect" coords="0,0,184,24"/>
-</map>
- </div></div>
+<p><code>#include &lt;<a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:aa29bcb62af8de8e5e38c6d754a795560"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html#aa29bcb62af8de8e5e38c6d754a795560">DirectionalLight</a> (int32_t <a class="el" href="../../d2/d9d/a00464.html#abebef03d6816cb5ee27229dd4518429f">mobility</a>=<a class="el" href="../../d3/d00/a00113.html#a9c366764bb5b82fc7596f5c91f084761">AE_MOVABLE_LIGHT</a>)</td></tr>
-<tr class="separator:aa29bcb62af8de8e5e38c6d754a795560"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a68bb8e3f8e7fb5342b0bebf484fba7e0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html#a68bb8e3f8e7fb5342b0bebf484fba7e0">~DirectionalLight</a> ()</td></tr>
-<tr class="separator:a68bb8e3f8e7fb5342b0bebf484fba7e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9bddf24fe01a5b5fb222f6db597f5838"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html#a9bddf24fe01a5b5fb222f6db597f5838">AddShadow</a> (float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection, <a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera)</td></tr>
-<tr class="separator:a9bddf24fe01a5b5fb222f6db597f5838"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afb98968550e5c1e9c2c790b9771bc6c5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html#afb98968550e5c1e9c2c790b9771bc6c5">AddShadow</a> (float distance, float bias, int32_t resolution, vec3 centerPoint, mat4 orthoProjection)</td></tr>
-<tr class="separator:afb98968550e5c1e9c2c790b9771bc6c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5b6f843246155e48d7df76f8ae17877b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html#a5b6f843246155e48d7df76f8ae17877b">RemoveShadow</a> ()</td></tr>
-<tr class="separator:a5b6f843246155e48d7df76f8ae17877b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c6dd73b0ab0dcb40a6ccfa4a1c247bb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html#a2c6dd73b0ab0dcb40a6ccfa4a1c247bb">AddVolumetric</a> (int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor=1.0f)</td></tr>
-<tr class="separator:a2c6dd73b0ab0dcb40a6ccfa4a1c247bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac53a5db9fad5ae572ebfd8dc99fe275e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html#ac53a5db9fad5ae572ebfd8dc99fe275e">RemoveVolumetric</a> ()</td></tr>
-<tr class="separator:ac53a5db9fad5ae572ebfd8dc99fe275e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3034f708c1ea8942e6e37a63caa2ef0a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html#a3034f708c1ea8942e6e37a63caa2ef0a">Update</a> (<a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera)</td></tr>
-<tr class="separator:a3034f708c1ea8942e6e37a63caa2ef0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_a00464"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_a00464')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d2/d9d/a00464.html">Atlas::Lighting::ILight</a></td></tr>
-<tr class="memitem:abc92e225c3c05a2f3e93beb983143530 inherit pub_methods_a00464"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d9/d34/a00476.html">Shadow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#abc92e225c3c05a2f3e93beb983143530">GetShadow</a> ()</td></tr>
-<tr class="separator:abc92e225c3c05a2f3e93beb983143530 inherit pub_methods_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab1741ae658c0682c7469bdabad64ec9c inherit pub_methods_a00464"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/ddf/a00488.html">Volumetric</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#ab1741ae658c0682c7469bdabad64ec9c">GetVolumetric</a> ()</td></tr>
-<tr class="separator:ab1741ae658c0682c7469bdabad64ec9c inherit pub_methods_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:a4d8a64284d09f6534658d86a7396bedc"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html#a4d8a64284d09f6534658d86a7396bedc">direction</a></td></tr>
-<tr class="separator:a4d8a64284d09f6534658d86a7396bedc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_attribs_a00464"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_a00464')"><img src="../../closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="../../d2/d9d/a00464.html">Atlas::Lighting::ILight</a></td></tr>
-<tr class="memitem:a605293fcb8e8b59014dea4d6a2944992 inherit pub_attribs_a00464"><td class="memItemLeft" align="right" valign="top">const int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#a605293fcb8e8b59014dea4d6a2944992">type</a></td></tr>
-<tr class="separator:a605293fcb8e8b59014dea4d6a2944992 inherit pub_attribs_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abebef03d6816cb5ee27229dd4518429f inherit pub_attribs_a00464"><td class="memItemLeft" align="right" valign="top">const int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#abebef03d6816cb5ee27229dd4518429f">mobility</a></td></tr>
-<tr class="separator:abebef03d6816cb5ee27229dd4518429f inherit pub_attribs_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a941ab116d253baf15b6c51cc78523aef inherit pub_attribs_a00464"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#a941ab116d253baf15b6c51cc78523aef">color</a></td></tr>
-<tr class="separator:a941ab116d253baf15b6c51cc78523aef inherit pub_attribs_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4507dced8f27142bd97357577572d8f5 inherit pub_attribs_a00464"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#a4507dced8f27142bd97357577572d8f5">ambient</a></td></tr>
-<tr class="separator:a4507dced8f27142bd97357577572d8f5 inherit pub_attribs_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
-Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pro_methods_a00464"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_a00464')"><img src="../../closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="../../d2/d9d/a00464.html">Atlas::Lighting::ILight</a></td></tr>
-<tr class="memitem:a74253cdc387cc5732a30ebffc70d22cc inherit pro_methods_a00464"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#a74253cdc387cc5732a30ebffc70d22cc">ILight</a> (int32_t <a class="el" href="../../d2/d9d/a00464.html#a605293fcb8e8b59014dea4d6a2944992">type</a>, int32_t <a class="el" href="../../d2/d9d/a00464.html#abebef03d6816cb5ee27229dd4518429f">mobility</a>)</td></tr>
-<tr class="separator:a74253cdc387cc5732a30ebffc70d22cc inherit pro_methods_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pro_attribs_a00464"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_a00464')"><img src="../../closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="../../d2/d9d/a00464.html">Atlas::Lighting::ILight</a></td></tr>
-<tr class="memitem:a0e8ae67f43a27b356df91da81814b201 inherit pro_attribs_a00464"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d9/d34/a00476.html">Shadow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#a0e8ae67f43a27b356df91da81814b201">shadow</a></td></tr>
-<tr class="separator:a0e8ae67f43a27b356df91da81814b201 inherit pro_attribs_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1f4dbefe5847f9411320d243ae137d9a inherit pro_attribs_a00464"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/ddf/a00488.html">Volumetric</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d9d/a00464.html#a1f4dbefe5847f9411320d243ae137d9a">volumetric</a></td></tr>
-<tr class="separator:a1f4dbefe5847f9411320d243ae137d9a inherit pro_attribs_a00464"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:ae27f24102685e9647c0e738a93462c4a"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d1/d0b/a00452.html">Image</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html#ae27f24102685e9647c0e738a93462c4a">LoadImage</a> (std::string filename, bool colorSpaceConversion, int32_t forceChannels=0)</td></tr>
+<tr class="memdesc:ae27f24102685e9647c0e738a93462c4a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads an image with 8 bits per channel.  <a href="#ae27f24102685e9647c0e738a93462c4a">More...</a><br /></td></tr>
+<tr class="separator:ae27f24102685e9647c0e738a93462c4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3670971622e82e58f3d3de2461ed129"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../de/d87/a00456.html">Image16</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html#af3670971622e82e58f3d3de2461ed129">LoadImage16</a> (std::string filename, bool colorSpaceConversion, int32_t forceChannels=0)</td></tr>
+<tr class="memdesc:af3670971622e82e58f3d3de2461ed129"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads an image with 16 bits per channel.  <a href="#af3670971622e82e58f3d3de2461ed129">More...</a><br /></td></tr>
+<tr class="separator:af3670971622e82e58f3d3de2461ed129"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85645875a42e53663e7f6326f1ff377a"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html#a85645875a42e53663e7f6326f1ff377a">SaveImage</a> (<a class="el" href="../../d1/d0b/a00452.html">Image</a> &amp;image, std::string filename)</td></tr>
+<tr class="memdesc:a85645875a42e53663e7f6326f1ff377a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Save an image with 8 bits per channel to the hard drive.  <a href="#a85645875a42e53663e7f6326f1ff377a">More...</a><br /></td></tr>
+<tr class="separator:a85645875a42e53663e7f6326f1ff377a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab085fabede337f4f1f124b5090934751"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html#ab085fabede337f4f1f124b5090934751">SaveImage16</a> (<a class="el" href="../../de/d87/a00456.html">Image16</a> &amp;image, std::string filename)</td></tr>
+<tr class="memdesc:ab085fabede337f4f1f124b5090934751"><td class="mdescLeft">&#160;</td><td class="mdescRight">Save an image with 16 bits per channel to the hard drive.  <a href="#ab085fabede337f4f1f124b5090934751">More...</a><br /></td></tr>
+<tr class="separator:ab085fabede337f4f1f124b5090934751"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../d4/d81/a00110_source.html#l00011">11</a> of file <a class="el" href="../../d4/d81/a00110_source.html">DirectionalLight.h</a>.</p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="aa29bcb62af8de8e5e38c6d754a795560"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa29bcb62af8de8e5e38c6d754a795560">&#9670;&nbsp;</a></span>DirectionalLight()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">Atlas::Lighting::DirectionalLight::DirectionalLight </td>
-          <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>mobility</em> = <code><a class="el" href="../../d3/d00/a00113.html#a9c366764bb5b82fc7596f5c91f084761">AE_MOVABLE_LIGHT</a></code></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a68bb8e3f8e7fb5342b0bebf484fba7e0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a68bb8e3f8e7fb5342b0bebf484fba7e0">&#9670;&nbsp;</a></span>~DirectionalLight()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">Atlas::Lighting::DirectionalLight::~DirectionalLight </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a9bddf24fe01a5b5fb222f6db597f5838"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9bddf24fe01a5b5fb222f6db597f5838">&#9670;&nbsp;</a></span>AddShadow() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Atlas::Lighting::DirectionalLight::AddShadow </td>
-          <td>(</td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>distance</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>bias</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>resolution</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>cascadeCount</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>splitCorrection</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="afb98968550e5c1e9c2c790b9771bc6c5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afb98968550e5c1e9c2c790b9771bc6c5">&#9670;&nbsp;</a></span>AddShadow() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Atlas::Lighting::DirectionalLight::AddShadow </td>
-          <td>(</td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>distance</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>bias</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>resolution</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vec3&#160;</td>
-          <td class="paramname"><em>centerPoint</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">mat4&#160;</td>
-          <td class="paramname"><em>orthoProjection</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a2c6dd73b0ab0dcb40a6ccfa4a1c247bb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2c6dd73b0ab0dcb40a6ccfa4a1c247bb">&#9670;&nbsp;</a></span>AddVolumetric()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Atlas::Lighting::DirectionalLight::AddVolumetric </td>
-          <td>(</td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>sampleCount</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>scattering</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>scatteringFactor</em> = <code>1.0f</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a5b6f843246155e48d7df76f8ae17877b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5b6f843246155e48d7df76f8ae17877b">&#9670;&nbsp;</a></span>RemoveShadow()</h2>
+<p class="definition">Definition at line <a class="el" href="../../d4/d3a/a00101_source.html#l00051">51</a> of file <a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a>.</p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="ae27f24102685e9647c0e738a93462c4a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae27f24102685e9647c0e738a93462c4a">&#9670;&nbsp;</a></span>LoadImage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -350,25 +126,51 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void Atlas::Lighting::DirectionalLight::RemoveShadow </td>
+          <td class="memname">static <a class="el" href="../../d1/d0b/a00452.html">Image</a> Atlas::Loader::ImageLoader::LoadImage </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>colorSpaceConversion</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>forceChannels</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="../../d2/d9d/a00464.html#aa179461a0235c74b7f9c505e81e49813">Atlas::Lighting::ILight</a>.</p>
+<p>Loads an image with 8 bits per channel. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">filename</td><td>The name of the image file. </td></tr>
+    <tr><td class="paramname">colorSpaceConversion</td><td>Whether or not gamma to linear color space conversion is needed. </td></tr>
+    <tr><td class="paramname">forceChannels</td><td>The number of channels to be forced. Default is zero, which means no force. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>An <a class="el" href="../../d1/d0b/a00452.html" title="Represents an image with 8 bits per channel. ">Image</a> object with all the important data. </dd></dl>
 
 </div>
 </div>
-<a id="ac53a5db9fad5ae572ebfd8dc99fe275e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac53a5db9fad5ae572ebfd8dc99fe275e">&#9670;&nbsp;</a></span>RemoveVolumetric()</h2>
+<a id="af3670971622e82e58f3d3de2461ed129"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af3670971622e82e58f3d3de2461ed129">&#9670;&nbsp;</a></span>LoadImage16()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -377,25 +179,51 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void Atlas::Lighting::DirectionalLight::RemoveVolumetric </td>
+          <td class="memname">static <a class="el" href="../../de/d87/a00456.html">Image16</a> Atlas::Loader::ImageLoader::LoadImage16 </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>colorSpaceConversion</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>forceChannels</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="../../d2/d9d/a00464.html#a4e2216ada56a6a65384ca92d57cdaa0f">Atlas::Lighting::ILight</a>.</p>
+<p>Loads an image with 16 bits per channel. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">filename</td><td>The name of the image file. </td></tr>
+    <tr><td class="paramname">colorSpaceConversion</td><td>Whether or not gamma to linear color space conversion is needed. </td></tr>
+    <tr><td class="paramname">forceChannels</td><td>The number of channels to be forced. Default is zero, which means no force. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>An <a class="el" href="../../de/d87/a00456.html" title="Represents an image with 16 bits per channel. ">Image16</a> object with all the important data. </dd></dl>
 
 </div>
 </div>
-<a id="a3034f708c1ea8942e6e37a63caa2ef0a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3034f708c1ea8942e6e37a63caa2ef0a">&#9670;&nbsp;</a></span>Update()</h2>
+<a id="a85645875a42e53663e7f6326f1ff377a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85645875a42e53663e7f6326f1ff377a">&#9670;&nbsp;</a></span>SaveImage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -404,50 +232,97 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void Atlas::Lighting::DirectionalLight::Update </td>
+          <td class="memname">static void Atlas::Loader::ImageLoader::SaveImage </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../d1/d0b/a00452.html">Image</a> &amp;&#160;</td>
+          <td class="paramname"><em>image</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="../../d2/d9d/a00464.html#af3031dcc6bcbb9bc187ed0859805cb65">Atlas::Lighting::ILight</a>.</p>
+<p>Save an image with 8 bits per channel to the hard drive. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">image</td><td>The image to be stored </td></tr>
+    <tr><td class="paramname">filename</td><td>The filename that the image should have </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>By changing the fileFormat in the <a class="el" href="../../d1/d0b/a00452.html" title="Represents an image with 8 bits per channel. ">Image</a> object the output file changes as well. </dd></dl>
 
 </div>
 </div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="a4d8a64284d09f6534658d86a7396bedc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4d8a64284d09f6534658d86a7396bedc">&#9670;&nbsp;</a></span>direction</h2>
+<a id="ab085fabede337f4f1f124b5090934751"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab085fabede337f4f1f124b5090934751">&#9670;&nbsp;</a></span>SaveImage16()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">vec3 Atlas::Lighting::DirectionalLight::direction</td>
+          <td class="memname">static void Atlas::Loader::ImageLoader::SaveImage16 </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../de/d87/a00456.html">Image16</a> &amp;&#160;</td>
+          <td class="paramname"><em>image</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d4/d81/a00110_source.html#l00030">30</a> of file <a class="el" href="../../d4/d81/a00110_source.html">DirectionalLight.h</a>.</p>
+<p>Save an image with 16 bits per channel to the hard drive. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">image</td><td>The image to be stored </td></tr>
+    <tr><td class="paramname">filename</td><td>The filename that the image should have </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>By changing the fileFormat in the <a class="el" href="../../de/d87/a00456.html" title="Represents an image with 16 bits per channel. ">Image16</a> object the output file changes as well. Only IMAGE_PGM is supported for now. </dd></dl>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/lighting/<a class="el" href="../../d4/d81/a00110_source.html">DirectionalLight.h</a></li>
+<li>src/loader/<a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dc/d28/a00276.html">Lighting</a></li><li class="navelem"><a class="el" href="../../db/db1/a00460.html">DirectionalLight</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d04/a00281.html">Loader</a></li><li class="navelem"><a class="el" href="../../db/db1/a00460.html">ImageLoader</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

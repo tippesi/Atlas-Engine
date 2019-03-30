@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Lighting::Shadow Class Reference</title>
+<title>Atlas Engine: Atlas::Lighting::PointLight Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,152 +92,102 @@ $(document).ready(function(){initNavTree('d9/d34/a00476.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../dc/d8e/a00473.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Lighting::Shadow Class Reference</div>  </div>
+<div class="title">Atlas::Lighting::PointLight Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d3/d00/a00113_source.html">PointLight.h</a>&gt;</code></p>
+<div class="dynheader">
+Inheritance diagram for Atlas::Lighting::PointLight:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="../../d9/d34/a00476.png" usemap="#Atlas::Lighting::PointLight_map" alt=""/>
+  <map id="Atlas::Lighting::PointLight_map" name="Atlas::Lighting::PointLight_map">
+<area href="../../d7/db5/a00472.html" alt="Atlas::Lighting::Light" shape="rect" coords="0,0,151,24"/>
+</map>
+ </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a71dca2b9af7ba2bf0afaf6ab5e927bbf"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a71dca2b9af7ba2bf0afaf6ab5e927bbf">Shadow</a> (float <a class="el" href="../../d9/d34/a00476.html#aafe7e8176e6e481b1b30a1ea3f1ed314">distance</a>, float <a class="el" href="../../d9/d34/a00476.html#acb162df1e27cb397cd0131f14c65c231">bias</a>, int32_t <a class="el" href="../../d9/d34/a00476.html#abadb771082f586490939580d22f5a539">resolution</a>, int32_t numCascades, float <a class="el" href="../../d9/d34/a00476.html#acca13d664c36b747e9a76731487779d1">splitCorrection</a>)</td></tr>
-<tr class="separator:a71dca2b9af7ba2bf0afaf6ab5e927bbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae9d6988eee3d3ef9765d3198e30d84b4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#ae9d6988eee3d3ef9765d3198e30d84b4">Shadow</a> (float <a class="el" href="../../d9/d34/a00476.html#aafe7e8176e6e481b1b30a1ea3f1ed314">distance</a>, float <a class="el" href="../../d9/d34/a00476.html#acb162df1e27cb397cd0131f14c65c231">bias</a>, int32_t <a class="el" href="../../d9/d34/a00476.html#abadb771082f586490939580d22f5a539">resolution</a>, bool <a class="el" href="../../d9/d34/a00476.html#af002ead1f5092200f11169bb1530a10e">useCubemap</a>=false)</td></tr>
-<tr class="separator:ae9d6988eee3d3ef9765d3198e30d84b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0619903b488485b9848f33eb5b9ec58a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a0619903b488485b9848f33eb5b9ec58a">Update</a> ()</td></tr>
-<tr class="separator:a0619903b488485b9848f33eb5b9ec58a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae143a72c151bb0f3c42b8cda25f980c9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#ae143a72c151bb0f3c42b8cda25f980c9">~Shadow</a> ()</td></tr>
-<tr class="separator:ae143a72c151bb0f3c42b8cda25f980c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a225a2af908973bb67e04eef634b12053"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a225a2af908973bb67e04eef634b12053">PointLight</a> (int32_t <a class="el" href="../../d7/db5/a00472.html#a975d2a73efffd0892dfd062cab2a3fe7">mobility</a>=<a class="el" href="../../d4/d81/a00110.html#a0c47343b7929f66f59ed14286415ece1">AE_STATIONARY_LIGHT</a>)</td></tr>
+<tr class="separator:a225a2af908973bb67e04eef634b12053"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a19746bb55707e90cc72f6769fe542014"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a19746bb55707e90cc72f6769fe542014">~PointLight</a> ()</td></tr>
+<tr class="separator:a19746bb55707e90cc72f6769fe542014"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af4023854b5ee8b6461f5e3b9041352dc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#af4023854b5ee8b6461f5e3b9041352dc">AddShadow</a> (float bias, int32_t resolution)</td></tr>
+<tr class="separator:af4023854b5ee8b6461f5e3b9041352dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d9c8fe74b6890776750adb82349a60d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a9d9c8fe74b6890776750adb82349a60d">RemoveShadow</a> ()</td></tr>
+<tr class="separator:a9d9c8fe74b6890776750adb82349a60d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8892745e08f7295ea2af412a97a1e32f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a8892745e08f7295ea2af412a97a1e32f">AddVolumetric</a> (int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor=1.0f)</td></tr>
+<tr class="separator:a8892745e08f7295ea2af412a97a1e32f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2edb8b0f741e9d52024f09aadd462084"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a2edb8b0f741e9d52024f09aadd462084">RemoveVolumetric</a> ()</td></tr>
+<tr class="separator:a2edb8b0f741e9d52024f09aadd462084"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0012c9eb13b85e1bfb4f868dcb1b8c61"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a0012c9eb13b85e1bfb4f868dcb1b8c61">Update</a> (<a class="el" href="../../db/d7b/a00296.html">Camera</a> *camera)</td></tr>
+<tr class="separator:a0012c9eb13b85e1bfb4f868dcb1b8c61"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab372268938899b485a59004dd089e54b"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#ab372268938899b485a59004dd089e54b">GetRadius</a> ()</td></tr>
+<tr class="separator:ab372268938899b485a59004dd089e54b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_a00472"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_a00472')"><img src="../../closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="../../d7/db5/a00472.html">Atlas::Lighting::Light</a></td></tr>
+<tr class="memitem:a712d8d29bab2e73e1a010eda450fe1ef inherit pub_methods_a00472"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d89/a00484.html">Shadow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a712d8d29bab2e73e1a010eda450fe1ef">GetShadow</a> ()</td></tr>
+<tr class="separator:a712d8d29bab2e73e1a010eda450fe1ef inherit pub_methods_a00472"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc4130762b6522c29b22d4ca4dd46c64 inherit pub_methods_a00472"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/dad/a00496.html">Volumetric</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#adc4130762b6522c29b22d4ca4dd46c64">GetVolumetric</a> ()</td></tr>
+<tr class="separator:adc4130762b6522c29b22d4ca4dd46c64 inherit pub_methods_a00472"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:aafe7e8176e6e481b1b30a1ea3f1ed314"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#aafe7e8176e6e481b1b30a1ea3f1ed314">distance</a></td></tr>
-<tr class="separator:aafe7e8176e6e481b1b30a1ea3f1ed314"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acb162df1e27cb397cd0131f14c65c231"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#acb162df1e27cb397cd0131f14c65c231">bias</a></td></tr>
-<tr class="separator:acb162df1e27cb397cd0131f14c65c231"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acca13d664c36b747e9a76731487779d1"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#acca13d664c36b747e9a76731487779d1">splitCorrection</a></td></tr>
-<tr class="separator:acca13d664c36b747e9a76731487779d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abadb771082f586490939580d22f5a539"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#abadb771082f586490939580d22f5a539">resolution</a></td></tr>
-<tr class="separator:abadb771082f586490939580d22f5a539"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae23ee16bb8c40983ef49f3afac74e5a6"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#ae23ee16bb8c40983ef49f3afac74e5a6">sampleCount</a></td></tr>
-<tr class="separator:ae23ee16bb8c40983ef49f3afac74e5a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a78d0677481ef526227a941e74675303f"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a78d0677481ef526227a941e74675303f">sampleRange</a></td></tr>
-<tr class="separator:a78d0677481ef526227a941e74675303f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac01821ea3f4faca49b527a40301e2322"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d7/db5/a00472.html">ShadowComponent</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#ac01821ea3f4faca49b527a40301e2322">components</a></td></tr>
-<tr class="separator:ac01821ea3f4faca49b527a40301e2322"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9756e4e0b1c4581202369709862ae9c2"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a9756e4e0b1c4581202369709862ae9c2">componentCount</a></td></tr>
-<tr class="separator:a9756e4e0b1c4581202369709862ae9c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a76e82e3dc63575ed0f683067171d832f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a76e82e3dc63575ed0f683067171d832f">maps</a></td></tr>
-<tr class="separator:a76e82e3dc63575ed0f683067171d832f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3de29c99132573d978c063c84454db04"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/df2/a00656.html">Texture::Cubemap</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a3de29c99132573d978c063c84454db04">cubemap</a></td></tr>
-<tr class="separator:a3de29c99132573d978c063c84454db04"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5a2b1373b89a856f43c37e47177838a9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../df/df1/a00340.html">RenderList</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a5a2b1373b89a856f43c37e47177838a9">renderList</a></td></tr>
-<tr class="separator:a5a2b1373b89a856f43c37e47177838a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af002ead1f5092200f11169bb1530a10e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#af002ead1f5092200f11169bb1530a10e">useCubemap</a></td></tr>
-<tr class="separator:af002ead1f5092200f11169bb1530a10e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a142063548c8d51440222e5f1ffb00102"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a142063548c8d51440222e5f1ffb00102">allowDynamicActors</a></td></tr>
-<tr class="separator:a142063548c8d51440222e5f1ffb00102"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaec43528bc462e6cd40cb588fb76f3b3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#aaec43528bc462e6cd40cb588fb76f3b3">update</a></td></tr>
-<tr class="separator:aaec43528bc462e6cd40cb588fb76f3b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0feb1d9530285c5651e9cd81c1b60f96"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a0feb1d9530285c5651e9cd81c1b60f96">location</a></td></tr>
+<tr class="separator:a0feb1d9530285c5651e9cd81c1b60f96"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a189e74fc5a590f3e2913f8e35bceacff"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d34/a00476.html#a189e74fc5a590f3e2913f8e35bceacff">attenuation</a></td></tr>
+<tr class="separator:a189e74fc5a590f3e2913f8e35bceacff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_attribs_a00472"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_a00472')"><img src="../../closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="../../d7/db5/a00472.html">Atlas::Lighting::Light</a></td></tr>
+<tr class="memitem:a82f2c155fd4281cfdcd5417899cdf1ef inherit pub_attribs_a00472"><td class="memItemLeft" align="right" valign="top">const int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a82f2c155fd4281cfdcd5417899cdf1ef">type</a></td></tr>
+<tr class="separator:a82f2c155fd4281cfdcd5417899cdf1ef inherit pub_attribs_a00472"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a975d2a73efffd0892dfd062cab2a3fe7 inherit pub_attribs_a00472"><td class="memItemLeft" align="right" valign="top">const int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a975d2a73efffd0892dfd062cab2a3fe7">mobility</a></td></tr>
+<tr class="separator:a975d2a73efffd0892dfd062cab2a3fe7 inherit pub_attribs_a00472"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31cbaeaa182a05d980ae17596bf0742a inherit pub_attribs_a00472"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a31cbaeaa182a05d980ae17596bf0742a">color</a></td></tr>
+<tr class="separator:a31cbaeaa182a05d980ae17596bf0742a inherit pub_attribs_a00472"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8fbd1b6c6791d9a73d4e36b96dad69df inherit pub_attribs_a00472"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a8fbd1b6c6791d9a73d4e36b96dad69df">ambient</a></td></tr>
+<tr class="separator:a8fbd1b6c6791d9a73d4e36b96dad69df inherit pub_attribs_a00472"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pro_methods_a00472"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_a00472')"><img src="../../closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="../../d7/db5/a00472.html">Atlas::Lighting::Light</a></td></tr>
+<tr class="memitem:aa3510d5610e2d67443b3f50e83849ce9 inherit pro_methods_a00472"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#aa3510d5610e2d67443b3f50e83849ce9">Light</a> (int32_t <a class="el" href="../../d7/db5/a00472.html#a82f2c155fd4281cfdcd5417899cdf1ef">type</a>, int32_t <a class="el" href="../../d7/db5/a00472.html#a975d2a73efffd0892dfd062cab2a3fe7">mobility</a>)</td></tr>
+<tr class="separator:aa3510d5610e2d67443b3f50e83849ce9 inherit pro_methods_a00472"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pro_attribs_a00472"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_a00472')"><img src="../../closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="../../d7/db5/a00472.html">Atlas::Lighting::Light</a></td></tr>
+<tr class="memitem:a9352b13d813473ebd921945ea987e642 inherit pro_attribs_a00472"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d89/a00484.html">Shadow</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a9352b13d813473ebd921945ea987e642">shadow</a></td></tr>
+<tr class="separator:a9352b13d813473ebd921945ea987e642 inherit pro_attribs_a00472"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a251e825a64dafc553228e4e5aee3bd04 inherit pro_attribs_a00472"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/dad/a00496.html">Volumetric</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db5/a00472.html#a251e825a64dafc553228e4e5aee3bd04">volumetric</a></td></tr>
+<tr class="separator:a251e825a64dafc553228e4e5aee3bd04 inherit pro_attribs_a00472"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00029">29</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00011">11</a> of file <a class="el" href="../../d3/d00/a00113_source.html">PointLight.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a71dca2b9af7ba2bf0afaf6ab5e927bbf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a71dca2b9af7ba2bf0afaf6ab5e927bbf">&#9670;&nbsp;</a></span>Shadow() <span class="overload">[1/2]</span></h2>
+<a id="a225a2af908973bb67e04eef634b12053"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a225a2af908973bb67e04eef634b12053">&#9670;&nbsp;</a></span>PointLight()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Atlas::Lighting::Shadow::Shadow </td>
+          <td class="memname">Atlas::Lighting::PointLight::PointLight </td>
           <td>(</td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>distance</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>bias</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>resolution</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"><em>mobility</em> = <code><a class="el" href="../../d4/d81/a00110.html#a0c47343b7929f66f59ed14286415ece1">AE_STATIONARY_LIGHT</a></code></td><td>)</td>
           <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>numCascades</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>splitCorrection</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a id="ae9d6988eee3d3ef9765d3198e30d84b4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae9d6988eee3d3ef9765d3198e30d84b4">&#9670;&nbsp;</a></span>Shadow() <span class="overload">[2/2]</span></h2>
+<a id="a19746bb55707e90cc72f6769fe542014"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a19746bb55707e90cc72f6769fe542014">&#9670;&nbsp;</a></span>~PointLight()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Atlas::Lighting::Shadow::Shadow </td>
-          <td>(</td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>distance</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>bias</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>resolution</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>useCubemap</em> = <code>false</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ae143a72c151bb0f3c42b8cda25f980c9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae143a72c151bb0f3c42b8cda25f980c9">&#9670;&nbsp;</a></span>~Shadow()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">Atlas::Lighting::Shadow::~Shadow </td>
+          <td class="memname">Atlas::Lighting::PointLight::~PointLight </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -248,14 +198,88 @@ Public Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a0619903b488485b9848f33eb5b9ec58a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0619903b488485b9848f33eb5b9ec58a">&#9670;&nbsp;</a></span>Update()</h2>
+<a id="af4023854b5ee8b6461f5e3b9041352dc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af4023854b5ee8b6461f5e3b9041352dc">&#9670;&nbsp;</a></span>AddShadow()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Atlas::Lighting::Shadow::Update </td>
+          <td class="memname">void Atlas::Lighting::PointLight::AddShadow </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>bias</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>resolution</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a8892745e08f7295ea2af412a97a1e32f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8892745e08f7295ea2af412a97a1e32f">&#9670;&nbsp;</a></span>AddVolumetric()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Lighting::PointLight::AddVolumetric </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>sampleCount</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>scattering</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>scatteringFactor</em> = <code>1.0f</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ab372268938899b485a59004dd089e54b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab372268938899b485a59004dd089e54b">&#9670;&nbsp;</a></span>GetRadius()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Atlas::Lighting::PointLight::GetRadius </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -265,240 +289,130 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="a9d9c8fe74b6890776750adb82349a60d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9d9c8fe74b6890776750adb82349a60d">&#9670;&nbsp;</a></span>RemoveShadow()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Lighting::PointLight::RemoveShadow </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="../../d7/db5/a00472.html#ad7c1d36d0ab35f628c5a9abe6b5707c8">Atlas::Lighting::Light</a>.</p>
+
+</div>
+</div>
+<a id="a2edb8b0f741e9d52024f09aadd462084"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2edb8b0f741e9d52024f09aadd462084">&#9670;&nbsp;</a></span>RemoveVolumetric()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Lighting::PointLight::RemoveVolumetric </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="../../d7/db5/a00472.html#a90ea36bb2204011a0e37c18436f85b96">Atlas::Lighting::Light</a>.</p>
+
+</div>
+</div>
+<a id="a0012c9eb13b85e1bfb4f868dcb1b8c61"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0012c9eb13b85e1bfb4f868dcb1b8c61">&#9670;&nbsp;</a></span>Update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Lighting::PointLight::Update </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../db/d7b/a00296.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="../../d7/db5/a00472.html#afa6406c99cd3e6eabd8aab455fc37202">Atlas::Lighting::Light</a>.</p>
+
+</div>
+</div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a142063548c8d51440222e5f1ffb00102"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a142063548c8d51440222e5f1ffb00102">&#9670;&nbsp;</a></span>allowDynamicActors</h2>
+<a id="a189e74fc5a590f3e2913f8e35bceacff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a189e74fc5a590f3e2913f8e35bceacff">&#9670;&nbsp;</a></span>attenuation</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">bool Atlas::Lighting::Shadow::allowDynamicActors</td>
+          <td class="memname">float Atlas::Lighting::PointLight::attenuation</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00058">58</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00032">32</a> of file <a class="el" href="../../d3/d00/a00113_source.html">PointLight.h</a>.</p>
 
 </div>
 </div>
-<a id="acb162df1e27cb397cd0131f14c65c231"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acb162df1e27cb397cd0131f14c65c231">&#9670;&nbsp;</a></span>bias</h2>
+<a id="a0feb1d9530285c5651e9cd81c1b60f96"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0feb1d9530285c5651e9cd81c1b60f96">&#9670;&nbsp;</a></span>location</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float Atlas::Lighting::Shadow::bias</td>
+          <td class="memname">vec3 Atlas::Lighting::PointLight::location</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00041">41</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
-
-</div>
-</div>
-<a id="a9756e4e0b1c4581202369709862ae9c2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9756e4e0b1c4581202369709862ae9c2">&#9670;&nbsp;</a></span>componentCount</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Atlas::Lighting::Shadow::componentCount</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00050">50</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
-
-</div>
-</div>
-<a id="ac01821ea3f4faca49b527a40301e2322"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac01821ea3f4faca49b527a40301e2322">&#9670;&nbsp;</a></span>components</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../d7/db5/a00472.html">ShadowComponent</a>* Atlas::Lighting::Shadow::components</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00049">49</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
-
-</div>
-</div>
-<a id="a3de29c99132573d978c063c84454db04"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3de29c99132573d978c063c84454db04">&#9670;&nbsp;</a></span>cubemap</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../dc/df2/a00656.html">Texture::Cubemap</a>* Atlas::Lighting::Shadow::cubemap</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00053">53</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
-
-</div>
-</div>
-<a id="aafe7e8176e6e481b1b30a1ea3f1ed314"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aafe7e8176e6e481b1b30a1ea3f1ed314">&#9670;&nbsp;</a></span>distance</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Atlas::Lighting::Shadow::distance</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00040">40</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
-
-</div>
-</div>
-<a id="a76e82e3dc63575ed0f683067171d832f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a76e82e3dc63575ed0f683067171d832f">&#9670;&nbsp;</a></span>maps</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a>* Atlas::Lighting::Shadow::maps</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00052">52</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
-
-</div>
-</div>
-<a id="a5a2b1373b89a856f43c37e47177838a9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5a2b1373b89a856f43c37e47177838a9">&#9670;&nbsp;</a></span>renderList</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="../../df/df1/a00340.html">RenderList</a>* Atlas::Lighting::Shadow::renderList</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00055">55</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
-
-</div>
-</div>
-<a id="abadb771082f586490939580d22f5a539"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abadb771082f586490939580d22f5a539">&#9670;&nbsp;</a></span>resolution</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Atlas::Lighting::Shadow::resolution</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00044">44</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
-
-</div>
-</div>
-<a id="ae23ee16bb8c40983ef49f3afac74e5a6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae23ee16bb8c40983ef49f3afac74e5a6">&#9670;&nbsp;</a></span>sampleCount</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Atlas::Lighting::Shadow::sampleCount</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00046">46</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
-
-</div>
-</div>
-<a id="a78d0677481ef526227a941e74675303f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a78d0677481ef526227a941e74675303f">&#9670;&nbsp;</a></span>sampleRange</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Atlas::Lighting::Shadow::sampleRange</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00047">47</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
-
-</div>
-</div>
-<a id="acca13d664c36b747e9a76731487779d1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acca13d664c36b747e9a76731487779d1">&#9670;&nbsp;</a></span>splitCorrection</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Atlas::Lighting::Shadow::splitCorrection</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00042">42</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
-
-</div>
-</div>
-<a id="aaec43528bc462e6cd40cb588fb76f3b3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaec43528bc462e6cd40cb588fb76f3b3">&#9670;&nbsp;</a></span>update</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool Atlas::Lighting::Shadow::update</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00059">59</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
-
-</div>
-</div>
-<a id="af002ead1f5092200f11169bb1530a10e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af002ead1f5092200f11169bb1530a10e">&#9670;&nbsp;</a></span>useCubemap</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool Atlas::Lighting::Shadow::useCubemap</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../df/d6a/a00119_source.html#l00057">57</a> of file <a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d00/a00113_source.html#l00030">30</a> of file <a class="el" href="../../d3/d00/a00113_source.html">PointLight.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/lighting/<a class="el" href="../../df/d6a/a00119_source.html">Shadow.h</a></li>
+<li>src/lighting/<a class="el" href="../../d3/d00/a00113_source.html">PointLight.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dc/d28/a00276.html">Lighting</a></li><li class="navelem"><a class="el" href="../../d9/d34/a00476.html">Shadow</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dc/dc9/a00282.html">Lighting</a></li><li class="navelem"><a class="el" href="../../d9/d34/a00476.html">PointLight</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

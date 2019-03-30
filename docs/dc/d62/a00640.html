@@ -99,14 +99,14 @@ $(document).ready(function(){initNavTree('dc/d62/a00640.html','../../');});
 <p>Represents a terrain.  
  <a href="../../dc/d62/a00640.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae9403516ab2906e652493517fcb2e3d3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ae9403516ab2906e652493517fcb2e3d3">Terrain</a> (int32_t rootNodeCount, int32_t <a class="el" href="../../dc/d62/a00640.html#ab2c01446effc76a9887a946ec1583547">LoDCount</a>, int32_t patchSizeFactor, float <a class="el" href="../../dc/d62/a00640.html#a373075ebf9e0e471a161967c2aebc031">resolution</a>, float height)</td></tr>
-<tr class="memdesc:ae9403516ab2906e652493517fcb2e3d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../dc/d62/a00640.html" title="Represents a terrain. ">Terrain</a> object.  <a href="#ae9403516ab2906e652493517fcb2e3d3">More...</a><br /></td></tr>
-<tr class="separator:ae9403516ab2906e652493517fcb2e3d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaac2161297e69c7635cde83f1baad4f6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#aaac2161297e69c7635cde83f1baad4f6">Update</a> (<a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera)</td></tr>
+<tr class="memitem:a1702c529c3eebd8f780203383f4355bd"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a1702c529c3eebd8f780203383f4355bd">Terrain</a> (int32_t <a class="el" href="../../dc/d62/a00640.html#a3d3a4286076d40f67c743f729675c61d">rootNodeSideCount</a>, int32_t <a class="el" href="../../dc/d62/a00640.html#ae9fa6a474572f79d9a41121da25dafd0">LoDCount</a>, int32_t <a class="el" href="../../dc/d62/a00640.html#a8fbee37d5693476a1da44e8b6811df5d">patchSizeFactor</a>, float <a class="el" href="../../dc/d62/a00640.html#a373075ebf9e0e471a161967c2aebc031">resolution</a>, float height)</td></tr>
+<tr class="memdesc:a1702c529c3eebd8f780203383f4355bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../dc/d62/a00640.html" title="Represents a terrain. ">Terrain</a> object.  <a href="#a1702c529c3eebd8f780203383f4355bd">More...</a><br /></td></tr>
+<tr class="separator:a1702c529c3eebd8f780203383f4355bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaac2161297e69c7635cde83f1baad4f6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#aaac2161297e69c7635cde83f1baad4f6">Update</a> (<a class="el" href="../../db/d7b/a00296.html">Camera</a> *camera)</td></tr>
 <tr class="memdesc:aaac2161297e69c7635cde83f1baad4f6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the terrain and the storage queues.  <a href="#aaac2161297e69c7635cde83f1baad4f6">More...</a><br /></td></tr>
 <tr class="separator:aaac2161297e69c7635cde83f1baad4f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac0994588971b704a6110061c87089b03"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ac0994588971b704a6110061c87089b03">SetLoDDistance</a> (int32_t LoD, float distance)</td></tr>
@@ -135,6 +135,12 @@ Public Member Functions</h2></td></tr>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a529b3eb839336db7d5a29c1205622e08"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dd/d1f/a00648.html">TerrainStorage</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a529b3eb839336db7d5a29c1205622e08">storage</a></td></tr>
 <tr class="separator:a529b3eb839336db7d5a29c1205622e08"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d3a4286076d40f67c743f729675c61d"><td class="memItemLeft" align="right" valign="top">const int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a3d3a4286076d40f67c743f729675c61d">rootNodeSideCount</a></td></tr>
+<tr class="separator:a3d3a4286076d40f67c743f729675c61d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9fa6a474572f79d9a41121da25dafd0"><td class="memItemLeft" align="right" valign="top">const int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ae9fa6a474572f79d9a41121da25dafd0">LoDCount</a></td></tr>
+<tr class="separator:ae9fa6a474572f79d9a41121da25dafd0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8fbee37d5693476a1da44e8b6811df5d"><td class="memItemLeft" align="right" valign="top">const int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a8fbee37d5693476a1da44e8b6811df5d">patchSizeFactor</a></td></tr>
+<tr class="separator:a8fbee37d5693476a1da44e8b6811df5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a74699741953d8de0666e5cc0d2d673a4"><td class="memItemLeft" align="right" valign="top">vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a74699741953d8de0666e5cc0d2d673a4">translation</a></td></tr>
 <tr class="separator:a74699741953d8de0666e5cc0d2d673a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a373075ebf9e0e471a161967c2aebc031"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a373075ebf9e0e471a161967c2aebc031">resolution</a></td></tr>
@@ -143,10 +149,6 @@ Public Attributes</h2></td></tr>
 <tr class="separator:ae72f366dae00975b264990d944640787"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6b53e39dd8da91dc3ba3abf090e8c64f"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a6b53e39dd8da91dc3ba3abf090e8c64f">patchVertexCount</a></td></tr>
 <tr class="separator:a6b53e39dd8da91dc3ba3abf090e8c64f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae3d67493f6ac308f2ff1f7af0265bfca"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ae3d67493f6ac308f2ff1f7af0265bfca">patchSize</a></td></tr>
-<tr class="separator:ae3d67493f6ac308f2ff1f7af0265bfca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2a0b1098ef8e7e3a87dc0169b763aeed"><td class="memItemLeft" align="right" valign="top">std::vector&lt; vec2 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a2a0b1098ef8e7e3a87dc0169b763aeed">patchOffsets</a></td></tr>
-<tr class="separator:a2a0b1098ef8e7e3a87dc0169b763aeed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1fc63472861edad0f926e7e007a8e533"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#a1fc63472861edad0f926e7e007a8e533">tessellationFactor</a></td></tr>
 <tr class="separator:a1fc63472861edad0f926e7e007a8e533"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afba3eb3d1d9519b9997bac768444ba6b"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#afba3eb3d1d9519b9997bac768444ba6b">tessellationSlope</a></td></tr>
@@ -159,19 +161,17 @@ Public Attributes</h2></td></tr>
 <tr class="separator:a345119cd59eb21be53d71b6f34af46f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac54318466aaa8269c4b85f126e141d02"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ac54318466aaa8269c4b85f126e141d02">displacementDistance</a></td></tr>
 <tr class="separator:ac54318466aaa8269c4b85f126e141d02"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab2c01446effc76a9887a946ec1583547"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#ab2c01446effc76a9887a946ec1583547">LoDCount</a></td></tr>
-<tr class="separator:ab2c01446effc76a9887a946ec1583547"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaa1213282c3a744230053b0d3e57e743"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d9/d0f/a00644.html">TerrainNode</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d62/a00640.html#aaa1213282c3a744230053b0d3e57e743">renderList</a></td></tr>
 <tr class="separator:aaa1213282c3a744230053b0d3e57e743"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Represents a terrain. </p>
-<p>This class uses different LoDs and tessellation to render the terrain efficiently with high detail without sacrificing too much on performance. </p>
+<p>This class uses different LoDs (quad tree) and tessellation to render the terrain efficiently with high detail without sacrificing too much on performance. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00021">21</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00021">21</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ae9403516ab2906e652493517fcb2e3d3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae9403516ab2906e652493517fcb2e3d3">&#9670;&nbsp;</a></span>Terrain()</h2>
+<a id="a1702c529c3eebd8f780203383f4355bd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1702c529c3eebd8f780203383f4355bd">&#9670;&nbsp;</a></span>Terrain()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -180,7 +180,7 @@ Public Attributes</h2></td></tr>
           <td class="memname">Atlas::Terrain::Terrain::Terrain </td>
           <td>(</td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>rootNodeCount</em>, </td>
+          <td class="paramname"><em>rootNodeSideCount</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -217,16 +217,16 @@ Public Attributes</h2></td></tr>
 <p>Constructs a <a class="el" href="../../dc/d62/a00640.html" title="Represents a terrain. ">Terrain</a> object. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">rootNodeCount</td><td>The number of root nodes. Root nodes are the lowest level of detail </td></tr>
+    <tr><td class="paramname">rootNodeSideCount</td><td>The number of root nodes per side. Root nodes are the lowest level of detail. </td></tr>
     <tr><td class="paramname">LoDCount</td><td>The number of level of detail levels. Results in LoDCount - 1 subdivisions of the root nodes. </td></tr>
-    <tr><td class="paramname">patchSizeFactor</td><td>Changes the size of a patch and the number of vertices in a patch, e.g </td></tr>
+    <tr><td class="paramname">patchSizeFactor</td><td>Changes the size of a patch and the number of vertices in a patch </td></tr>
     <tr><td class="paramname">resolution</td><td>Like a scale in x and z direction of the terrain. Lower means more vertices per square unit. </td></tr>
     <tr><td class="paramname">height</td><td>The maximum height of the terrain </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section note"><dt>Note</dt><dd>The maximum number of nodes in a terrain is 2^16. A node has 8 * 8 = 64 patches. The number of vertices per patch corresponds to 4 * pow(2 * patchSizeFactor, 2). </dd></dl>
-<dl class="section remark"><dt>Remarks</dt><dd>Let's assume we want 3 root nodes on each side of the terrain which leads to rootNodeCount = 3^2 = 9. We now decide that we want an LoDCount of 7. To check if we don't exceed the maximum number of nodes we calculate rootNodeCount * (pow(4,LoDCount) - 1) / 3 = 3 * (pow(4, 7) - 1) = 49149 &lt; 2^16 = 65536. This means that at the maximum lod which is Lod6 we have a total of pow(4, 6) * 9 = 36864 nodes. If we have a patchSizeFactor of 4 we have 4 * pow(2 * 4, 2) = 64 vertices per patch. This results in a maximum vertex count of around 600 mio. If we take the square root we get the number of vertices per side: sqrt(603979776) = 24576. If we set the resolution to 0.5 we get a total of 12288 units per terrain side. The size of map is therefore roughly 150 kilounits^2. </dd></dl>
+<dl class="section remark"><dt>Remarks</dt><dd>Let's assume we have a rootNodeSideCount of 3 which leads to rootNodeCount = 3^2 = 9. We now decide that we want an LoDCount of 7. To check if we don't exceed the maximum number of nodes we calculate rootNodeCount * (pow(4,LoDCount) - 1) / 3 = 3 * (pow(4, 7) - 1) = 49149 &lt; 2^16 = 65536. This means that at the maximum lod which is Lod6 we have a total of pow(4, 6) * 9 = 36864 nodes. If we have a patchSizeFactor of 4 we have 4 * pow(2 * 4, 2) = 64 vertices per patch. This results in a maximum vertex count of around 600 mio. If we take the square root we get the number of vertices per side: sqrt(603979776) = 24576. If we set the resolution to 0.5 we get a total of 12288 units per terrain side. The size of map is therefore roughly 150 kilounits^2. </dd></dl>
 
 </div>
 </div>
@@ -286,6 +286,7 @@ Public Attributes</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The height of the terrain. </dd></dl>
 <dl class="section note"><dt>Note</dt><dd>This function is computationally expensive. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The cell containing the height value has to be loaded. </dd></dl>
 
 </div>
 </div>
@@ -480,7 +481,7 @@ Public Attributes</h2></td></tr>
         <tr>
           <td class="memname">void Atlas::Terrain::Terrain::Update </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="../../db/d7b/a00296.html">Camera</a> *&#160;</td>
           <td class="paramname"><em>camera</em></td><td>)</td>
           <td></td>
         </tr>
@@ -511,7 +512,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00131">131</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00134">134</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
@@ -527,23 +528,23 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00130">130</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00133">133</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
-<a id="ab2c01446effc76a9887a946ec1583547"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab2c01446effc76a9887a946ec1583547">&#9670;&nbsp;</a></span>LoDCount</h2>
+<a id="ae9fa6a474572f79d9a41121da25dafd0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae9fa6a474572f79d9a41121da25dafd0">&#9670;&nbsp;</a></span>LoDCount</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t Atlas::Terrain::Terrain::LoDCount</td>
+          <td class="memname">const int32_t Atlas::Terrain::Terrain::LoDCount</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00133">133</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00119">119</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
@@ -559,39 +560,23 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00128">128</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00131">131</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
-<a id="a2a0b1098ef8e7e3a87dc0169b763aeed"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2a0b1098ef8e7e3a87dc0169b763aeed">&#9670;&nbsp;</a></span>patchOffsets</h2>
+<a id="a8fbee37d5693476a1da44e8b6811df5d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8fbee37d5693476a1da44e8b6811df5d">&#9670;&nbsp;</a></span>patchSizeFactor</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::vector&lt;vec2&gt; Atlas::Terrain::Terrain::patchOffsets</td>
+          <td class="memname">const int32_t Atlas::Terrain::Terrain::patchSizeFactor</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00123">123</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
-
-</div>
-</div>
-<a id="ae3d67493f6ac308f2ff1f7af0265bfca"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae3d67493f6ac308f2ff1f7af0265bfca">&#9670;&nbsp;</a></span>patchSize</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Atlas::Terrain::Terrain::patchSize</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00122">122</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00120">120</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
@@ -607,7 +592,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00121">121</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00126">126</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
@@ -623,7 +608,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00135">135</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00136">136</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
@@ -639,7 +624,23 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00118">118</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00123">123</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
+
+</div>
+</div>
+<a id="a3d3a4286076d40f67c743f729675c61d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d3a4286076d40f67c743f729675c61d">&#9670;&nbsp;</a></span>rootNodeSideCount</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const int32_t Atlas::Terrain::Terrain::rootNodeSideCount</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00118">118</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
@@ -655,7 +656,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00119">119</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00124">124</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
@@ -671,7 +672,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00115">115</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00116">116</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
@@ -687,7 +688,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00125">125</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00128">128</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
@@ -703,7 +704,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00127">127</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00130">130</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
@@ -719,7 +720,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00126">126</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00129">129</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
@@ -735,19 +736,19 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d1/da8/a00230_source.html#l00117">117</a> of file <a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d52/a00221_source.html#l00122">122</a> of file <a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/terrain/<a class="el" href="../../d1/da8/a00230_source.html">Terrain.h</a></li>
+<li>src/terrain/<a class="el" href="../../dd/d52/a00221_source.html">Terrain.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dc/dc9/a00282.html">Terrain</a></li><li class="navelem"><a class="el" href="../../dc/d62/a00640.html">Terrain</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../da/ddc/a00288.html">Terrain</a></li><li class="navelem"><a class="el" href="../../dc/d62/a00640.html">Terrain</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

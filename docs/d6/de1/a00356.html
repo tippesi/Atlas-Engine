@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: EngineException Class Reference</title>
+<title>Atlas Engine: Atlas::TypeFormat Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,36 +88,27 @@ $(document).ready(function(){initNavTree('d6/de1/a00356.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="../../db/ddc/a00353.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">EngineException Class Reference</div>  </div>
+<div class="title">Atlas::TypeFormat Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../dd/d32/a00041_source.html">System.h</a>&gt;</code></p>
-<div class="dynheader">
-Inheritance diagram for EngineException:</div>
-<div class="dyncontent">
- <div class="center">
-  <img src="../../d6/de1/a00356.png" usemap="#EngineException_map" alt=""/>
-  <map id="EngineException_map" name="EngineException_map">
-</map>
- </div></div>
+<p><code>#include &lt;<a class="el" href="../../d4/d8c/a00035_source.html">TypeFormat.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:a9363db7bc02df9cdf078b79575c76dad"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/de1/a00356.html#a9363db7bc02df9cdf078b79575c76dad">EngineException</a> (const char *message)</td></tr>
-<tr class="separator:a9363db7bc02df9cdf078b79575c76dad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a01a78813780f07f5a370c4d9b65bec0a"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/de1/a00356.html#a01a78813780f07f5a370c4d9b65bec0a">what</a> () const  throw ()</td></tr>
-<tr class="separator:a01a78813780f07f5a370c4d9b65bec0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a822c8e33ef5e515a28874c2f3e1ea559"><td class="memItemLeft" align="right" valign="top">static int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/de1/a00356.html#a822c8e33ef5e515a28874c2f3e1ea559">GetSize</a> (uint32_t typeFormat)</td></tr>
+<tr class="memdesc:a822c8e33ef5e515a28874c2f3e1ea559"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the size of the type.  <a href="#a822c8e33ef5e515a28874c2f3e1ea559">More...</a><br /></td></tr>
+<tr class="separator:a822c8e33ef5e515a28874c2f3e1ea559"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../dd/d32/a00041_source.html#l00059">59</a> of file <a class="el" href="../../dd/d32/a00041_source.html">System.h</a>.</p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a9363db7bc02df9cdf078b79575c76dad"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9363db7bc02df9cdf078b79575c76dad">&#9670;&nbsp;</a></span>EngineException()</h2>
+<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00024">24</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">TypeFormat.h</a>.</p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a822c8e33ef5e515a28874c2f3e1ea559"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a822c8e33ef5e515a28874c2f3e1ea559">&#9670;&nbsp;</a></span>GetSize()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -126,67 +117,42 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">EngineException::EngineException </td>
+          <td class="memname">static int32_t Atlas::TypeFormat::GetSize </td>
           <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>message</em></td><td>)</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>typeFormat</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d32/a00041_source.html#l00062">62</a> of file <a class="el" href="../../dd/d32/a00041_source.html">System.h</a>.</p>
+<p>Determines the size of the type. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">typeFormat</td><td>The format which should be checked on size </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The size of the format in bytes. </dd></dl>
 
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a01a78813780f07f5a370c4d9b65bec0a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a01a78813780f07f5a370c4d9b65bec0a">&#9670;&nbsp;</a></span>what()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">const char* EngineException::what </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td> const</td>
-        </tr>
-        <tr>
-          <td align="right">throw </td><td>(</td><td colspan="2"></td>
-        </tr>
-        <tr>
-          <td align="right"></td><td>)</td><td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dd/d32/a00041_source.html#l00064">64</a> of file <a class="el" href="../../dd/d32/a00041_source.html">System.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00032">32</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">TypeFormat.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/<a class="el" href="../../dd/d32/a00041_source.html">System.h</a></li>
+<li>src/<a class="el" href="../../d4/d8c/a00035_source.html">TypeFormat.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d6/de1/a00356.html">EngineException</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d6/de1/a00356.html">TypeFormat</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

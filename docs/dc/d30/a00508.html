@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Mesh::MeshActorBatch Class Reference</title>
+<title>Atlas Engine: Atlas::Mesh::Mesh Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,107 +92,138 @@ $(document).ready(function(){initNavTree('dc/d30/a00508.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d7/d37/a00505.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Mesh::MeshActorBatch Class Reference</div>  </div>
+<div class="title">Atlas::Mesh::Mesh Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Manages the ordering of mesh actors.  
- <a href="../../dc/d30/a00508.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="../../d7/dce/a00143_source.html">MeshActorBatch.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../de/d76/a00134_source.html">Mesh.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:af99201d29727b0d5e5d8a89e2b848303"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#af99201d29727b0d5e5d8a89e2b848303">MeshActorBatch</a> (<a class="el" href="../../de/d4e/a00500.html">Mesh</a> *mesh)</td></tr>
-<tr class="memdesc:af99201d29727b0d5e5d8a89e2b848303"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs an <a class="el" href="../../dc/d30/a00508.html" title="Manages the ordering of mesh actors. ">MeshActorBatch</a> object for a mesh.  <a href="#af99201d29727b0d5e5d8a89e2b848303">More...</a><br /></td></tr>
-<tr class="separator:af99201d29727b0d5e5d8a89e2b848303"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1a8b563313128b3eeea995b1ea76fbf8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a1a8b563313128b3eeea995b1ea76fbf8">Add</a> (<a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> *actor)</td></tr>
-<tr class="memdesc:a1a8b563313128b3eeea995b1ea76fbf8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a mesh actor to the batch.  <a href="#a1a8b563313128b3eeea995b1ea76fbf8">More...</a><br /></td></tr>
-<tr class="separator:a1a8b563313128b3eeea995b1ea76fbf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad8c52f75cfc8b965bfa181a5abab8f86"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#ad8c52f75cfc8b965bfa181a5abab8f86">Remove</a> (<a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> *actor)</td></tr>
-<tr class="memdesc:ad8c52f75cfc8b965bfa181a5abab8f86"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a mesh actor from the actor batch.  <a href="#ad8c52f75cfc8b965bfa181a5abab8f86">More...</a><br /></td></tr>
-<tr class="separator:ad8c52f75cfc8b965bfa181a5abab8f86"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a83121c937f0e1a08e6061d67aeab39aa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/d4e/a00500.html">Mesh</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a83121c937f0e1a08e6061d67aeab39aa">GetMesh</a> ()</td></tr>
-<tr class="memdesc:a83121c937f0e1a08e6061d67aeab39aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the mesh of the batch.  <a href="#a83121c937f0e1a08e6061d67aeab39aa">More...</a><br /></td></tr>
-<tr class="separator:a83121c937f0e1a08e6061d67aeab39aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a250426a7195cd4adf1fcfaa4cd2f3a62"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a250426a7195cd4adf1fcfaa4cd2f3a62">GetSize</a> ()</td></tr>
-<tr class="memdesc:a250426a7195cd4adf1fcfaa4cd2f3a62"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of mesh actors in the batch.  <a href="#a250426a7195cd4adf1fcfaa4cd2f3a62">More...</a><br /></td></tr>
-<tr class="separator:a250426a7195cd4adf1fcfaa4cd2f3a62"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a369b33f6810149a055209f675e1fa66f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a369b33f6810149a055209f675e1fa66f">Clear</a> ()</td></tr>
-<tr class="memdesc:a369b33f6810149a055209f675e1fa66f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes all mesh actors from the batch.  <a href="#a369b33f6810149a055209f675e1fa66f">More...</a><br /></td></tr>
-<tr class="separator:a369b33f6810149a055209f675e1fa66f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83a3cce995fa0f5138ae25a5e8f434ef"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a83a3cce995fa0f5138ae25a5e8f434ef">Mesh</a> (<a class="el" href="../../d4/d40/a00516.html">MeshData</a> *<a class="el" href="../../dc/d30/a00508.html#ae06ba7c9e0168522413defd3375e5490">data</a>, int32_t <a class="el" href="../../dc/d30/a00508.html#a826b955ace5474b95439e4a783228ecc">mobility</a>=<a class="el" href="../../de/d76/a00134.html#afe3d8327a0f9ccc13d6154618116ddad">AE_STATIONARY_MESH</a>)</td></tr>
+<tr class="separator:a83a3cce995fa0f5138ae25a5e8f434ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa72b860515e94a4b5e15cf45364ed8b7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#aa72b860515e94a4b5e15cf45364ed8b7">Mesh</a> (std::string filename, int32_t <a class="el" href="../../dc/d30/a00508.html#a826b955ace5474b95439e4a783228ecc">mobility</a>=<a class="el" href="../../de/d76/a00134.html#afe3d8327a0f9ccc13d6154618116ddad">AE_STATIONARY_MESH</a>)</td></tr>
+<tr class="separator:aa72b860515e94a4b5e15cf45364ed8b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7436a26172ccb341b6313e7b3a2b9d41"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a7436a26172ccb341b6313e7b3a2b9d41">~Mesh</a> ()</td></tr>
+<tr class="separator:a7436a26172ccb341b6313e7b3a2b9d41"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89a0986b0d5074dc8bf7dd4787d9d47d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a89a0986b0d5074dc8bf7dd4787d9d47d">UpdateData</a> ()</td></tr>
+<tr class="separator:a89a0986b0d5074dc8bf7dd4787d9d47d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b7bce9f92bb7d48952568100b18cc2f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a8b7bce9f92bb7d48952568100b18cc2f">Bind</a> ()</td></tr>
+<tr class="separator:a8b7bce9f92bb7d48952568100b18cc2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a49c900aed4f3271045c8193c805769bb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a49c900aed4f3271045c8193c805769bb">Unbind</a> ()</td></tr>
+<tr class="separator:a49c900aed4f3271045c8193c805769bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a13b63f6a111bfff167f616a29ab95fc9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a13b63f6a111bfff167f616a29ab95fc9">DeleteContent</a> ()</td></tr>
+<tr class="separator:a13b63f6a111bfff167f616a29ab95fc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a5e436ed4e4bd6687a45b9971543d5101"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a5e436ed4e4bd6687a45b9971543d5101">actors</a></td></tr>
-<tr class="separator:a5e436ed4e4bd6687a45b9971543d5101"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae06ba7c9e0168522413defd3375e5490"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d40/a00516.html">MeshData</a> *const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#ae06ba7c9e0168522413defd3375e5490">data</a></td></tr>
+<tr class="separator:ae06ba7c9e0168522413defd3375e5490"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a826b955ace5474b95439e4a783228ecc"><td class="memItemLeft" align="right" valign="top">const int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a826b955ace5474b95439e4a783228ecc">mobility</a></td></tr>
+<tr class="separator:a826b955ace5474b95439e4a783228ecc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c326d82ac937721e094267befef7f03"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d30/a00508.html#a4c326d82ac937721e094267befef7f03">cullBackFaces</a> = true</td></tr>
+<tr class="separator:a4c326d82ac937721e094267befef7f03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Manages the ordering of mesh actors. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00017">17</a> of file <a class="el" href="../../d7/dce/a00143_source.html">MeshActorBatch.h</a>.</p>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00015">15</a> of file <a class="el" href="../../de/d76/a00134_source.html">Mesh.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="af99201d29727b0d5e5d8a89e2b848303"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af99201d29727b0d5e5d8a89e2b848303">&#9670;&nbsp;</a></span>MeshActorBatch()</h2>
+<a id="a83a3cce995fa0f5138ae25a5e8f434ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a83a3cce995fa0f5138ae25a5e8f434ef">&#9670;&nbsp;</a></span>Mesh() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Atlas::Mesh::MeshActorBatch::MeshActorBatch </td>
+          <td class="memname">Atlas::Mesh::Mesh::Mesh </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../de/d4e/a00500.html">Mesh</a> *&#160;</td>
-          <td class="paramname"><em>mesh</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../d4/d40/a00516.html">MeshData</a> *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>mobility</em> = <code><a class="el" href="../../de/d76/a00134.html#afe3d8327a0f9ccc13d6154618116ddad">AE_STATIONARY_MESH</a></code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td></td></tr>
+    <tr><td class="paramname">mobility</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="aa72b860515e94a4b5e15cf45364ed8b7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa72b860515e94a4b5e15cf45364ed8b7">&#9670;&nbsp;</a></span>Mesh() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Mesh::Mesh::Mesh </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>mobility</em> = <code><a class="el" href="../../de/d76/a00134.html#afe3d8327a0f9ccc13d6154618116ddad">AE_STATIONARY_MESH</a></code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">filename</td><td></td></tr>
+    <tr><td class="paramname">mobility</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a7436a26172ccb341b6313e7b3a2b9d41"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7436a26172ccb341b6313e7b3a2b9d41">&#9670;&nbsp;</a></span>~Mesh()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Mesh::Mesh::~Mesh </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p>Constructs an <a class="el" href="../../dc/d30/a00508.html" title="Manages the ordering of mesh actors. ">MeshActorBatch</a> object for a mesh. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">mesh</td><td>A pointer to a <a class="el" href="../../de/d4e/a00500.html">Mesh</a> object </td></tr>
-  </table>
-  </dd>
-</dl>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a1a8b563313128b3eeea995b1ea76fbf8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1a8b563313128b3eeea995b1ea76fbf8">&#9670;&nbsp;</a></span>Add()</h2>
+<a id="a8b7bce9f92bb7d48952568100b18cc2f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8b7bce9f92bb7d48952568100b18cc2f">&#9670;&nbsp;</a></span>Bind()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Atlas::Mesh::MeshActorBatch::Add </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> *&#160;</td>
-          <td class="paramname"><em>actor</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Adds a mesh actor to the batch. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">actor</td><td>A pointer to an <a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> object </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="a369b33f6810149a055209f675e1fa66f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a369b33f6810149a055209f675e1fa66f">&#9670;&nbsp;</a></span>Clear()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Atlas::Mesh::MeshActorBatch::Clear </td>
+          <td class="memname">void Atlas::Mesh::Mesh::Bind </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -200,18 +231,16 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Removes all mesh actors from the batch. </p>
-
 </div>
 </div>
-<a id="a83121c937f0e1a08e6061d67aeab39aa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a83121c937f0e1a08e6061d67aeab39aa">&#9670;&nbsp;</a></span>GetMesh()</h2>
+<a id="a13b63f6a111bfff167f616a29ab95fc9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a13b63f6a111bfff167f616a29ab95fc9">&#9670;&nbsp;</a></span>DeleteContent()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../de/d4e/a00500.html">Mesh</a>* Atlas::Mesh::MeshActorBatch::GetMesh </td>
+          <td class="memname">void Atlas::Mesh::Mesh::DeleteContent </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -219,19 +248,16 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Returns the mesh of the batch. </p>
-<dl class="section return"><dt>Returns</dt><dd>A pointer to a <a class="el" href="../../de/d4e/a00500.html">Mesh</a> object </dd></dl>
-
 </div>
 </div>
-<a id="a250426a7195cd4adf1fcfaa4cd2f3a62"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a250426a7195cd4adf1fcfaa4cd2f3a62">&#9670;&nbsp;</a></span>GetSize()</h2>
+<a id="a49c900aed4f3271045c8193c805769bb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a49c900aed4f3271045c8193c805769bb">&#9670;&nbsp;</a></span>Unbind()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t Atlas::Mesh::MeshActorBatch::GetSize </td>
+          <td class="memname">void Atlas::Mesh::Mesh::Unbind </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -239,63 +265,83 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Returns the number of mesh actors in the batch. </p>
-<dl class="section return"><dt>Returns</dt><dd>An integer with the number of mesh actors </dd></dl>
-
 </div>
 </div>
-<a id="ad8c52f75cfc8b965bfa181a5abab8f86"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad8c52f75cfc8b965bfa181a5abab8f86">&#9670;&nbsp;</a></span>Remove()</h2>
+<a id="a89a0986b0d5074dc8bf7dd4787d9d47d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a89a0986b0d5074dc8bf7dd4787d9d47d">&#9670;&nbsp;</a></span>UpdateData()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Atlas::Mesh::MeshActorBatch::Remove </td>
+          <td class="memname">void Atlas::Mesh::Mesh::UpdateData </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> *&#160;</td>
-          <td class="paramname"><em>actor</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p>Removes a mesh actor from the actor batch. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">actor</td><td>A pointer to an <a class="el" href="../../dc/d1c/a00504.html">MeshActor</a> object </td></tr>
-  </table>
-  </dd>
-</dl>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a5e436ed4e4bd6687a45b9971543d5101"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5e436ed4e4bd6687a45b9971543d5101">&#9670;&nbsp;</a></span>actors</h2>
+<a id="a4c326d82ac937721e094267befef7f03"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c326d82ac937721e094267befef7f03">&#9670;&nbsp;</a></span>cullBackFaces</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::vector&lt;<a class="el" href="../../dc/d1c/a00504.html">MeshActor</a>*&gt; Atlas::Mesh::MeshActorBatch::actors</td>
+          <td class="memname">bool Atlas::Mesh::Mesh::cullBackFaces = true</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00056">56</a> of file <a class="el" href="../../d7/dce/a00143_source.html">MeshActorBatch.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00059">59</a> of file <a class="el" href="../../de/d76/a00134_source.html">Mesh.h</a>.</p>
+
+</div>
+</div>
+<a id="ae06ba7c9e0168522413defd3375e5490"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae06ba7c9e0168522413defd3375e5490">&#9670;&nbsp;</a></span>data</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d4/d40/a00516.html">MeshData</a>* const Atlas::Mesh::Mesh::data</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00055">55</a> of file <a class="el" href="../../de/d76/a00134_source.html">Mesh.h</a>.</p>
+
+</div>
+</div>
+<a id="a826b955ace5474b95439e4a783228ecc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a826b955ace5474b95439e4a783228ecc">&#9670;&nbsp;</a></span>mobility</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const int32_t Atlas::Mesh::Mesh::mobility</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../de/d76/a00134_source.html#l00057">57</a> of file <a class="el" href="../../de/d76/a00134_source.html">Mesh.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/mesh/<a class="el" href="../../d7/dce/a00143_source.html">MeshActorBatch.h</a></li>
+<li>src/mesh/<a class="el" href="../../de/d76/a00134_source.html">Mesh.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d6/d4b/a00277.html">Mesh</a></li><li class="navelem"><a class="el" href="../../dc/d30/a00508.html">MeshActorBatch</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dd/dfe/a00283.html">Mesh</a></li><li class="navelem"><a class="el" href="../../dc/d30/a00508.html">Mesh</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

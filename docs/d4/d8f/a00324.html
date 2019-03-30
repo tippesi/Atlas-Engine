@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::FrustumCulling Class Reference</title>
+<title>Atlas Engine: Atlas::Framebuffer Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,48 +88,78 @@ $(document).ready(function(){initNavTree('d4/d8f/a00324.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../db/d53/a00321.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::FrustumCulling Class Reference</div>  </div>
+<div class="title">Atlas::Framebuffer Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../db/db2/a00020_source.html">FrustumCulling.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d4/d51/a00017_source.html">Framebuffer.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
-Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a801a1128e46327085fa9e88ae1018bda"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a801a1128e46327085fa9e88ae1018bda">CullActorsFromScene</a> (<a class="el" href="../../df/d03/a00348.html">Scene</a> *scene, <a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera)</td></tr>
-<tr class="separator:a801a1128e46327085fa9e88ae1018bda"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:affe8d5521d1251319404259ec9414b16"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#affe8d5521d1251319404259ec9414b16">CullLightsFromScene</a> (<a class="el" href="../../df/d03/a00348.html">Scene</a> *scene, <a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera)</td></tr>
-<tr class="separator:affe8d5521d1251319404259ec9414b16"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1fb19e668e9bf0a40cec7e80966f9cfb"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a1fb19e668e9bf0a40cec7e80966f9cfb">CullActorsFromShadow</a> (<a class="el" href="../../d2/d9d/a00464.html">Lighting::ILight</a> *light, <a class="el" href="../../df/d03/a00348.html">Scene</a> *scene, <a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera)</td></tr>
-<tr class="separator:a1fb19e668e9bf0a40cec7e80966f9cfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:ab4038a227301807ef53b042f0d40a7c0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#ab4038a227301807ef53b042f0d40a7c0">Framebuffer</a> (int32_t <a class="el" href="../../d4/d8f/a00324.html#a97dd0793c0a983c987d44a6886565939">width</a>, int32_t <a class="el" href="../../d4/d8f/a00324.html#a415a12b340b857d29c1dabc7bb96b396">height</a>)</td></tr>
+<tr class="separator:ab4038a227301807ef53b042f0d40a7c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1aaad7efee71572723e3b97113591a0d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a1aaad7efee71572723e3b97113591a0d">~Framebuffer</a> ()</td></tr>
+<tr class="separator:a1aaad7efee71572723e3b97113591a0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a166a5327039d9f8fa976648964f79f35"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a166a5327039d9f8fa976648964f79f35">AddComponent</a> (int32_t attachment, int32_t sizedFormat, int32_t wrapping, int32_t filtering, uint32_t target=GL_FRAMEBUFFER)</td></tr>
+<tr class="separator:a166a5327039d9f8fa976648964f79f35"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d6175dac4a1d765501d397be00bdba5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a8d6175dac4a1d765501d397be00bdba5">AddComponentTexture</a> (int32_t attachment, <a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a> *texture, uint32_t target=GL_FRAMEBUFFER)</td></tr>
+<tr class="separator:a8d6175dac4a1d765501d397be00bdba5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac2841c4d568b79b9df152ce8231c5bcf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#ac2841c4d568b79b9df152ce8231c5bcf">AddComponentTextureArray</a> (int32_t attachment, <a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a> *texture, int32_t layer, uint32_t target=GL_FRAMEBUFFER)</td></tr>
+<tr class="separator:ac2841c4d568b79b9df152ce8231c5bcf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1ff28835ea55ed15a81d72da2954c5d5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a1ff28835ea55ed15a81d72da2954c5d5">AddComponentCubemap</a> (int32_t attachment, <a class="el" href="../../dc/df2/a00656.html">Texture::Cubemap</a> *cubemap, int32_t face, uint32_t target=GL_FRAMEBUFFER)</td></tr>
+<tr class="separator:a1ff28835ea55ed15a81d72da2954c5d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed166097529bb36ee96c14a50744c705"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#aed166097529bb36ee96c14a50744c705">GetComponentTexture</a> (int32_t attachment)</td></tr>
+<tr class="separator:aed166097529bb36ee96c14a50744c705"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8de2417a761a528cb800b1144bd3cea2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a8de2417a761a528cb800b1144bd3cea2">GetComponentTextureArray</a> (int32_t attachment)</td></tr>
+<tr class="separator:a8de2417a761a528cb800b1144bd3cea2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4fbb41d9b1843399d7ff48ed06b68a3d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/df2/a00656.html">Texture::Cubemap</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a4fbb41d9b1843399d7ff48ed06b68a3d">GetComponentCubemap</a> (int32_t attachment)</td></tr>
+<tr class="separator:a4fbb41d9b1843399d7ff48ed06b68a3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aacb254045de9cdd078e30479fb4e7edb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#aacb254045de9cdd078e30479fb4e7edb">Resize</a> (int32_t <a class="el" href="../../d4/d8f/a00324.html#a97dd0793c0a983c987d44a6886565939">width</a>, int32_t <a class="el" href="../../d4/d8f/a00324.html#a415a12b340b857d29c1dabc7bb96b396">height</a>)</td></tr>
+<tr class="memdesc:aacb254045de9cdd078e30479fb4e7edb"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#aacb254045de9cdd078e30479fb4e7edb">More...</a><br /></td></tr>
+<tr class="separator:aacb254045de9cdd078e30479fb4e7edb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab0f5c864beaca79e837dc8a33c0d22c5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#ab0f5c864beaca79e837dc8a33c0d22c5">Bind</a> (bool resizeViewport=false)</td></tr>
+<tr class="memdesc:ab0f5c864beaca79e837dc8a33c0d22c5"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#ab0f5c864beaca79e837dc8a33c0d22c5">More...</a><br /></td></tr>
+<tr class="separator:ab0f5c864beaca79e837dc8a33c0d22c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2171e8e891df714d45acdda39a8ba21"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#ae2171e8e891df714d45acdda39a8ba21">Unbind</a> ()</td></tr>
+<tr class="separator:ae2171e8e891df714d45acdda39a8ba21"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6781dd6dbfb0fac6f8547702893f7ef4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a6781dd6dbfb0fac6f8547702893f7ef4">SetDrawBuffers</a> (std::vector&lt; uint32_t &gt; drawBuffers)</td></tr>
+<tr class="separator:a6781dd6dbfb0fac6f8547702893f7ef4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a97dd0793c0a983c987d44a6886565939"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a97dd0793c0a983c987d44a6886565939">width</a></td></tr>
+<tr class="separator:a97dd0793c0a983c987d44a6886565939"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a415a12b340b857d29c1dabc7bb96b396"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html#a415a12b340b857d29c1dabc7bb96b396">height</a></td></tr>
+<tr class="separator:a415a12b340b857d29c1dabc7bb96b396"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../db/db2/a00020_source.html#l00012">12</a> of file <a class="el" href="../../db/db2/a00020_source.html">FrustumCulling.h</a>.</p>
-</div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="a801a1128e46327085fa9e88ae1018bda"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a801a1128e46327085fa9e88ae1018bda">&#9670;&nbsp;</a></span>CullActorsFromScene()</h2>
+<p class="definition">Definition at line <a class="el" href="../../d4/d51/a00017_source.html#l00013">13</a> of file <a class="el" href="../../d4/d51/a00017_source.html">Framebuffer.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="ab4038a227301807ef53b042f0d40a7c0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab4038a227301807ef53b042f0d40a7c0">&#9670;&nbsp;</a></span>Framebuffer()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void Atlas::FrustumCulling::CullActorsFromScene </td>
+          <td class="memname">Atlas::Framebuffer::Framebuffer </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../df/d03/a00348.html">Scene</a> *&#160;</td>
-          <td class="paramname"><em>scene</em>, </td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>&#160;</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -137,41 +167,70 @@ Static Public Member Functions</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a1aaad7efee71572723e3b97113591a0d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1aaad7efee71572723e3b97113591a0d">&#9670;&nbsp;</a></span>~Framebuffer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Framebuffer::~Framebuffer </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a id="a1fb19e668e9bf0a40cec7e80966f9cfb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1fb19e668e9bf0a40cec7e80966f9cfb">&#9670;&nbsp;</a></span>CullActorsFromShadow()</h2>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a166a5327039d9f8fa976648964f79f35"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a166a5327039d9f8fa976648964f79f35">&#9670;&nbsp;</a></span>AddComponent()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void Atlas::FrustumCulling::CullActorsFromShadow </td>
+          <td class="memname">void Atlas::Framebuffer::AddComponent </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../d2/d9d/a00464.html">Lighting::ILight</a> *&#160;</td>
-          <td class="paramname"><em>light</em>, </td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../df/d03/a00348.html">Scene</a> *&#160;</td>
-          <td class="paramname"><em>scene</em>, </td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>sizedFormat</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>&#160;</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>wrapping</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>filtering</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>target</em> = <code>GL_FRAMEBUFFER</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -179,35 +238,49 @@ Static Public Member Functions</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attachment</td><td></td></tr>
+    <tr><td class="paramname">sizedFormat</td><td></td></tr>
+    <tr><td class="paramname">wrapping</td><td></td></tr>
+    <tr><td class="paramname">filtering</td><td></td></tr>
+    <tr><td class="paramname">target</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
-<a id="affe8d5521d1251319404259ec9414b16"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#affe8d5521d1251319404259ec9414b16">&#9670;&nbsp;</a></span>CullLightsFromScene()</h2>
+<a id="a1ff28835ea55ed15a81d72da2954c5d5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1ff28835ea55ed15a81d72da2954c5d5">&#9670;&nbsp;</a></span>AddComponentCubemap()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void Atlas::FrustumCulling::CullLightsFromScene </td>
+          <td class="memname">void Atlas::Framebuffer::AddComponentCubemap </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../df/d03/a00348.html">Scene</a> *&#160;</td>
-          <td class="paramname"><em>scene</em>, </td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>&#160;</td>
+          <td class="paramtype"><a class="el" href="../../dc/df2/a00656.html">Texture::Cubemap</a> *&#160;</td>
+          <td class="paramname"><em>cubemap</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>face</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>target</em> = <code>GL_FRAMEBUFFER</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -215,24 +288,327 @@ Static Public Member Functions</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attachment</td><td></td></tr>
+    <tr><td class="paramname">cubemap</td><td></td></tr>
+    <tr><td class="paramname">face</td><td></td></tr>
+    <tr><td class="paramname">target</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a8d6175dac4a1d765501d397be00bdba5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8d6175dac4a1d765501d397be00bdba5">&#9670;&nbsp;</a></span>AddComponentTexture()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Framebuffer::AddComponentTexture </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a> *&#160;</td>
+          <td class="paramname"><em>texture</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>target</em> = <code>GL_FRAMEBUFFER</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attachment</td><td></td></tr>
+    <tr><td class="paramname">texture</td><td></td></tr>
+    <tr><td class="paramname">target</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ac2841c4d568b79b9df152ce8231c5bcf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac2841c4d568b79b9df152ce8231c5bcf">&#9670;&nbsp;</a></span>AddComponentTextureArray()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Framebuffer::AddComponentTextureArray </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a> *&#160;</td>
+          <td class="paramname"><em>texture</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>layer</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>target</em> = <code>GL_FRAMEBUFFER</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attachment</td><td></td></tr>
+    <tr><td class="paramname">texture</td><td></td></tr>
+    <tr><td class="paramname">layer</td><td></td></tr>
+    <tr><td class="paramname">target</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ab0f5c864beaca79e837dc8a33c0d22c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab0f5c864beaca79e837dc8a33c0d22c5">&#9670;&nbsp;</a></span>Bind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Framebuffer::Bind </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>resizeViewport</em> = <code>false</code></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><br />
+ </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">resizeViewport</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a4fbb41d9b1843399d7ff48ed06b68a3d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4fbb41d9b1843399d7ff48ed06b68a3d">&#9670;&nbsp;</a></span>GetComponentCubemap()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../dc/df2/a00656.html">Texture::Cubemap</a>* Atlas::Framebuffer::GetComponentCubemap </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attachment</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="aed166097529bb36ee96c14a50744c705"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aed166097529bb36ee96c14a50744c705">&#9670;&nbsp;</a></span>GetComponentTexture()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../df/d46/a00664.html">Texture::Texture2D</a>* Atlas::Framebuffer::GetComponentTexture </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attachment</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="a8de2417a761a528cb800b1144bd3cea2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8de2417a761a528cb800b1144bd3cea2">&#9670;&nbsp;</a></span>GetComponentTextureArray()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d0/d5c/a00668.html">Texture::Texture2DArray</a>* Atlas::Framebuffer::GetComponentTextureArray </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>attachment</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attachment</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="aacb254045de9cdd078e30479fb4e7edb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aacb254045de9cdd078e30479fb4e7edb">&#9670;&nbsp;</a></span>Resize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Framebuffer::Resize </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>height</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><br />
+ </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">width</td><td></td></tr>
+    <tr><td class="paramname">height</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a6781dd6dbfb0fac6f8547702893f7ef4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6781dd6dbfb0fac6f8547702893f7ef4">&#9670;&nbsp;</a></span>SetDrawBuffers()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Framebuffer::SetDrawBuffers </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; uint32_t &gt;&#160;</td>
+          <td class="paramname"><em>drawBuffers</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ae2171e8e891df714d45acdda39a8ba21"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae2171e8e891df714d45acdda39a8ba21">&#9670;&nbsp;</a></span>Unbind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Framebuffer::Unbind </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a415a12b340b857d29c1dabc7bb96b396"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a415a12b340b857d29c1dabc7bb96b396">&#9670;&nbsp;</a></span>height</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::Framebuffer::height</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d51/a00017_source.html#l00100">100</a> of file <a class="el" href="../../d4/d51/a00017_source.html">Framebuffer.h</a>.</p>
+
+</div>
+</div>
+<a id="a97dd0793c0a983c987d44a6886565939"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a97dd0793c0a983c987d44a6886565939">&#9670;&nbsp;</a></span>width</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::Framebuffer::width</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d4/d51/a00017_source.html#l00099">99</a> of file <a class="el" href="../../d4/d51/a00017_source.html">Framebuffer.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/<a class="el" href="../../db/db2/a00020_source.html">FrustumCulling.h</a></li>
+<li>src/<a class="el" href="../../d4/d51/a00017_source.html">Framebuffer.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d4/d8f/a00324.html">FrustumCulling</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d4/d8f/a00324.html">Framebuffer</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

@@ -6,6 +6,7 @@ var a00516 =
     [ "GetVertexCount", "d4/d40/a00516.html#a1a1f77e93688e2e5e3d36f1e7f3b0e4f", null ],
     [ "SetIndexCount", "d4/d40/a00516.html#a3432669ce2c79b7f6319cee0e3e5292f", null ],
     [ "SetVertexCount", "d4/d40/a00516.html#a5ad697087845e1935a17681a97899815", null ],
+    [ "aabb", "d4/d40/a00516.html#acb8f4e22faf3afe9e2abd41070d7d9f9", null ],
     [ "indices", "d4/d40/a00516.html#a81c08f740e9b04f8d47c0862bc6d8315", null ],
     [ "materials", "d4/d40/a00516.html#a450e5ae488bb3161e165efdeb568c7e0", null ],
     [ "normals", "d4/d40/a00516.html#a5836c0806d38dccd0444f20b1c394d92", null ],

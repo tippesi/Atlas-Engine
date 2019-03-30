@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Events::MouseButtonEvent Class Reference</title>
+<title>Atlas Engine: Atlas::Events::KeyboardEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,45 +92,42 @@ $(document).ready(function(){initNavTree('d9/da1/a00396.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../da/dbf/a00393.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Events::MouseButtonEvent Class Reference</div>  </div>
+<div class="title">Atlas::Events::KeyboardEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>A class to distribute mouse button events.  
+<p>A class to distribute keyboard events.  
  <a href="../../d9/da1/a00396.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../df/d03/a00062_source.html">KeyboardEvent.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a6239a77b28461b255b004ec0aa6a4121"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/da1/a00396.html#a6239a77b28461b255b004ec0aa6a4121">MouseButtonEvent</a> (SDL_MouseButtonEvent event)</td></tr>
-<tr class="separator:a6239a77b28461b255b004ec0aa6a4121"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adefd7b4b7cca8db7e1ebca094f48e570"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/da1/a00396.html#adefd7b4b7cca8db7e1ebca094f48e570">KeyboardEvent</a> (SDL_KeyboardEvent event)</td></tr>
+<tr class="separator:adefd7b4b7cca8db7e1ebca094f48e570"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:ac6b2518942604898a89f0338d35b72e8"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/da1/a00396.html#ac6b2518942604898a89f0338d35b72e8">windowID</a></td></tr>
-<tr class="memdesc:ac6b2518942604898a89f0338d35b72e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#ac6b2518942604898a89f0338d35b72e8">More...</a><br /></td></tr>
-<tr class="separator:ac6b2518942604898a89f0338d35b72e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a69056ac74b08bcd68ed386255f114bd8"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/da1/a00396.html#a69056ac74b08bcd68ed386255f114bd8">state</a></td></tr>
-<tr class="memdesc:a69056ac74b08bcd68ed386255f114bd8"><td class="mdescLeft">&#160;</td><td class="mdescRight">The state of the button.  <a href="#a69056ac74b08bcd68ed386255f114bd8">More...</a><br /></td></tr>
-<tr class="separator:a69056ac74b08bcd68ed386255f114bd8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1dfb4ba8ed0bead0edea96ba853e721"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/da1/a00396.html#ad1dfb4ba8ed0bead0edea96ba853e721">button</a></td></tr>
-<tr class="memdesc:ad1dfb4ba8ed0bead0edea96ba853e721"><td class="mdescLeft">&#160;</td><td class="mdescRight">The button which was pressed.  <a href="#ad1dfb4ba8ed0bead0edea96ba853e721">More...</a><br /></td></tr>
-<tr class="separator:ad1dfb4ba8ed0bead0edea96ba853e721"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5df390a5b5b195e1c48927cb02794ff9"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/da1/a00396.html#a5df390a5b5b195e1c48927cb02794ff9">x</a></td></tr>
-<tr class="memdesc:a5df390a5b5b195e1c48927cb02794ff9"><td class="mdescLeft">&#160;</td><td class="mdescRight">The x coordinate relative to the window where the button event occurred.  <a href="#a5df390a5b5b195e1c48927cb02794ff9">More...</a><br /></td></tr>
-<tr class="separator:a5df390a5b5b195e1c48927cb02794ff9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad0a6359fe2a6fcfe4657b1e338c70ee6"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/da1/a00396.html#ad0a6359fe2a6fcfe4657b1e338c70ee6">y</a></td></tr>
-<tr class="memdesc:ad0a6359fe2a6fcfe4657b1e338c70ee6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The y coordinate relative to the window where the button event occurred.  <a href="#ad0a6359fe2a6fcfe4657b1e338c70ee6">More...</a><br /></td></tr>
-<tr class="separator:ad0a6359fe2a6fcfe4657b1e338c70ee6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3090cda62ac49ac1c0747080be94d955"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/da1/a00396.html#a3090cda62ac49ac1c0747080be94d955">windowID</a></td></tr>
+<tr class="memdesc:a3090cda62ac49ac1c0747080be94d955"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#a3090cda62ac49ac1c0747080be94d955">More...</a><br /></td></tr>
+<tr class="separator:a3090cda62ac49ac1c0747080be94d955"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a012478caaa8c4b0d7537e8eac3589c43"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/de1/a00065.html#a4922ee8137e19b9e693ee1d28f079ca1">Keycode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/da1/a00396.html#a012478caaa8c4b0d7537e8eac3589c43">keycode</a></td></tr>
+<tr class="memdesc:a012478caaa8c4b0d7537e8eac3589c43"><td class="mdescLeft">&#160;</td><td class="mdescRight">The code of the key.  <a href="#a012478caaa8c4b0d7537e8eac3589c43">More...</a><br /></td></tr>
+<tr class="separator:a012478caaa8c4b0d7537e8eac3589c43"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84c42594b1fff002f6972e242a4cca96"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/da1/a00396.html#a84c42594b1fff002f6972e242a4cca96">state</a></td></tr>
+<tr class="memdesc:a84c42594b1fff002f6972e242a4cca96"><td class="mdescLeft">&#160;</td><td class="mdescRight">The state of the button.  <a href="#a84c42594b1fff002f6972e242a4cca96">More...</a><br /></td></tr>
+<tr class="separator:a84c42594b1fff002f6972e242a4cca96"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca7f0f27ca17dfc4a531ea16e43f91db"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/da1/a00396.html#aca7f0f27ca17dfc4a531ea16e43f91db">repeat</a></td></tr>
+<tr class="memdesc:aca7f0f27ca17dfc4a531ea16e43f91db"><td class="mdescLeft">&#160;</td><td class="mdescRight">True if the key was pressed for longer.  <a href="#aca7f0f27ca17dfc4a531ea16e43f91db">More...</a><br /></td></tr>
+<tr class="separator:aca7f0f27ca17dfc4a531ea16e43f91db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A class to distribute mouse button events. </p>
+<div class="textblock"><p>A class to distribute keyboard events. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00022">22</a> of file <a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00017">17</a> of file <a class="el" href="../../df/d03/a00062_source.html">KeyboardEvent.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a6239a77b28461b255b004ec0aa6a4121"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6239a77b28461b255b004ec0aa6a4121">&#9670;&nbsp;</a></span>MouseButtonEvent()</h2>
+<a id="adefd7b4b7cca8db7e1ebca094f48e570"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adefd7b4b7cca8db7e1ebca094f48e570">&#9670;&nbsp;</a></span>KeyboardEvent()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -139,9 +136,9 @@ Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">Atlas::Events::MouseButtonEvent::MouseButtonEvent </td>
+          <td class="memname">Atlas::Events::KeyboardEvent::KeyboardEvent </td>
           <td>(</td>
-          <td class="paramtype">SDL_MouseButtonEvent&#160;</td>
+          <td class="paramtype">SDL_KeyboardEvent&#160;</td>
           <td class="paramname"><em>event</em></td><td>)</td>
           <td></td>
         </tr>
@@ -153,38 +150,57 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00025">25</a> of file <a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00020">20</a> of file <a class="el" href="../../df/d03/a00062_source.html">KeyboardEvent.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="ad1dfb4ba8ed0bead0edea96ba853e721"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad1dfb4ba8ed0bead0edea96ba853e721">&#9670;&nbsp;</a></span>button</h2>
+<a id="a012478caaa8c4b0d7537e8eac3589c43"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a012478caaa8c4b0d7537e8eac3589c43">&#9670;&nbsp;</a></span>keycode</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint8_t Atlas::Events::MouseButtonEvent::button</td>
+          <td class="memname"><a class="el" href="../../de/de1/a00065.html#a4922ee8137e19b9e693ee1d28f079ca1">Keycode</a> Atlas::Events::KeyboardEvent::keycode</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The button which was pressed. </p>
-<p>See <a class="el" href="../../">EngineMouseButtonEvent.h</a> for more </p>
+<p>The code of the key. </p>
+<p>See <a class="el" href="../../de/de1/a00065.html">Keycodes.h</a> for more. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00048">48</a> of file <a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00037">37</a> of file <a class="el" href="../../df/d03/a00062_source.html">KeyboardEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a69056ac74b08bcd68ed386255f114bd8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a69056ac74b08bcd68ed386255f114bd8">&#9670;&nbsp;</a></span>state</h2>
+<a id="aca7f0f27ca17dfc4a531ea16e43f91db"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aca7f0f27ca17dfc4a531ea16e43f91db">&#9670;&nbsp;</a></span>repeat</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint8_t Atlas::Events::MouseButtonEvent::state</td>
+          <td class="memname">bool Atlas::Events::KeyboardEvent::repeat</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>True if the key was pressed for longer. </p>
+<p>False otherwise. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00047">47</a> of file <a class="el" href="../../df/d03/a00062_source.html">KeyboardEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="a84c42594b1fff002f6972e242a4cca96"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a84c42594b1fff002f6972e242a4cca96">&#9670;&nbsp;</a></span>state</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint8_t Atlas::Events::KeyboardEvent::state</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -192,73 +208,37 @@ Public Attributes</h2></td></tr>
 <p>The state of the button. </p>
 <p>Might be BUTTON_PRESSED or BUTTON_RELEASED. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00043">43</a> of file <a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00042">42</a> of file <a class="el" href="../../df/d03/a00062_source.html">KeyboardEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="ac6b2518942604898a89f0338d35b72e8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac6b2518942604898a89f0338d35b72e8">&#9670;&nbsp;</a></span>windowID</h2>
+<a id="a3090cda62ac49ac1c0747080be94d955"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3090cda62ac49ac1c0747080be94d955">&#9670;&nbsp;</a></span>windowID</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint32_t Atlas::Events::MouseButtonEvent::windowID</td>
+          <td class="memname">uint32_t Atlas::Events::KeyboardEvent::windowID</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>The ID of the window the event occurred in. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00038">38</a> of file <a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a5df390a5b5b195e1c48927cb02794ff9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5df390a5b5b195e1c48927cb02794ff9">&#9670;&nbsp;</a></span>x</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Atlas::Events::MouseButtonEvent::x</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The x coordinate relative to the window where the button event occurred. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00053">53</a> of file <a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="ad0a6359fe2a6fcfe4657b1e338c70ee6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad0a6359fe2a6fcfe4657b1e338c70ee6">&#9670;&nbsp;</a></span>y</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Atlas::Events::MouseButtonEvent::y</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The y coordinate relative to the window where the button event occurred. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00058">58</a> of file <a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../df/d03/a00062_source.html#l00032">32</a> of file <a class="el" href="../../df/d03/a00062_source.html">KeyboardEvent.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a></li>
+<li>src/events/<a class="el" href="../../df/d03/a00062_source.html">KeyboardEvent.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d0/d19/a00273.html">Events</a></li><li class="navelem"><a class="el" href="../../d9/da1/a00396.html">MouseButtonEvent</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d82/a00279.html">Events</a></li><li class="navelem"><a class="el" href="../../d9/da1/a00396.html">KeyboardEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

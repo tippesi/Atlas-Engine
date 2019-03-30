@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Events::TextInputEvent Class Reference</title>
+<title>Atlas Engine: Atlas::Events::MouseWheelEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,36 +92,39 @@ $(document).ready(function(){initNavTree('dd/dea/a00408.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../de/de8/a00405.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Events::TextInputEvent Class Reference</div>  </div>
+<div class="title">Atlas::Events::MouseWheelEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>A class to distribute text input events.  
+<p>A class to distribute mouse wheel events.  
  <a href="../../dd/dea/a00408.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../da/dec/a00080_source.html">TextInputEvent.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../db/db6/a00074_source.html">MouseWheelEvent.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae8d0e0815b469344ed5810ac576eaf7d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/dea/a00408.html#ae8d0e0815b469344ed5810ac576eaf7d">TextInputEvent</a> (SDL_TextInputEvent event)</td></tr>
-<tr class="separator:ae8d0e0815b469344ed5810ac576eaf7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aced8aa55709465c537ec5a3d29fc7836"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/dea/a00408.html#aced8aa55709465c537ec5a3d29fc7836">MouseWheelEvent</a> (SDL_MouseWheelEvent event)</td></tr>
+<tr class="separator:aced8aa55709465c537ec5a3d29fc7836"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a29d5afbad7f5015245258bdf012f630e"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/dea/a00408.html#a29d5afbad7f5015245258bdf012f630e">windowID</a></td></tr>
-<tr class="memdesc:a29d5afbad7f5015245258bdf012f630e"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#a29d5afbad7f5015245258bdf012f630e">More...</a><br /></td></tr>
-<tr class="separator:a29d5afbad7f5015245258bdf012f630e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af82a2a68df25382bd4ad33a3aece37c4"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/dea/a00408.html#af82a2a68df25382bd4ad33a3aece37c4">character</a></td></tr>
-<tr class="memdesc:af82a2a68df25382bd4ad33a3aece37c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">The character that was typed in UTF-8.  <a href="#af82a2a68df25382bd4ad33a3aece37c4">More...</a><br /></td></tr>
-<tr class="separator:af82a2a68df25382bd4ad33a3aece37c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6122965cd1988da32c7c7b934f4393f2"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/dea/a00408.html#a6122965cd1988da32c7c7b934f4393f2">windowID</a></td></tr>
+<tr class="memdesc:a6122965cd1988da32c7c7b934f4393f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#a6122965cd1988da32c7c7b934f4393f2">More...</a><br /></td></tr>
+<tr class="separator:a6122965cd1988da32c7c7b934f4393f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae71e27d6a94513bd7aa024e9cbc74a5a"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/dea/a00408.html#ae71e27d6a94513bd7aa024e9cbc74a5a">x</a></td></tr>
+<tr class="memdesc:ae71e27d6a94513bd7aa024e9cbc74a5a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Horizontal scrolling, is positive when scrolling to the right and negative otherwise.  <a href="#ae71e27d6a94513bd7aa024e9cbc74a5a">More...</a><br /></td></tr>
+<tr class="separator:ae71e27d6a94513bd7aa024e9cbc74a5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa5ed5164f12482ac0af550ccaf401f5c"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/dea/a00408.html#aa5ed5164f12482ac0af550ccaf401f5c">y</a></td></tr>
+<tr class="memdesc:aa5ed5164f12482ac0af550ccaf401f5c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Vertical scrolling, is positive when scrolling to the up and negative otherwise.  <a href="#aa5ed5164f12482ac0af550ccaf401f5c">More...</a><br /></td></tr>
+<tr class="separator:aa5ed5164f12482ac0af550ccaf401f5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A class to distribute text input events. </p>
+<div class="textblock"><p>A class to distribute mouse wheel events. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../da/dec/a00080_source.html#l00018">18</a> of file <a class="el" href="../../da/dec/a00080_source.html">TextInputEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/db6/a00074_source.html#l00016">16</a> of file <a class="el" href="../../db/db6/a00074_source.html">MouseWheelEvent.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ae8d0e0815b469344ed5810ac576eaf7d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae8d0e0815b469344ed5810ac576eaf7d">&#9670;&nbsp;</a></span>TextInputEvent()</h2>
+<a id="aced8aa55709465c537ec5a3d29fc7836"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aced8aa55709465c537ec5a3d29fc7836">&#9670;&nbsp;</a></span>MouseWheelEvent()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -130,9 +133,9 @@ Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">Atlas::Events::TextInputEvent::TextInputEvent </td>
+          <td class="memname">Atlas::Events::MouseWheelEvent::MouseWheelEvent </td>
           <td>(</td>
-          <td class="paramtype">SDL_TextInputEvent&#160;</td>
+          <td class="paramtype">SDL_MouseWheelEvent&#160;</td>
           <td class="paramname"><em>event</em></td><td>)</td>
           <td></td>
         </tr>
@@ -144,56 +147,74 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../da/dec/a00080_source.html#l00021">21</a> of file <a class="el" href="../../da/dec/a00080_source.html">TextInputEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/db6/a00074_source.html#l00019">19</a> of file <a class="el" href="../../db/db6/a00074_source.html">MouseWheelEvent.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="af82a2a68df25382bd4ad33a3aece37c4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af82a2a68df25382bd4ad33a3aece37c4">&#9670;&nbsp;</a></span>character</h2>
+<a id="a6122965cd1988da32c7c7b934f4393f2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6122965cd1988da32c7c7b934f4393f2">&#9670;&nbsp;</a></span>windowID</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::string Atlas::Events::TextInputEvent::character</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The character that was typed in UTF-8. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../da/dec/a00080_source.html#l00042">42</a> of file <a class="el" href="../../da/dec/a00080_source.html">TextInputEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a29d5afbad7f5015245258bdf012f630e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a29d5afbad7f5015245258bdf012f630e">&#9670;&nbsp;</a></span>windowID</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">uint32_t Atlas::Events::TextInputEvent::windowID</td>
+          <td class="memname">uint32_t Atlas::Events::MouseWheelEvent::windowID</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>The ID of the window the event occurred in. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../da/dec/a00080_source.html#l00037">37</a> of file <a class="el" href="../../da/dec/a00080_source.html">TextInputEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/db6/a00074_source.html#l00030">30</a> of file <a class="el" href="../../db/db6/a00074_source.html">MouseWheelEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="ae71e27d6a94513bd7aa024e9cbc74a5a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae71e27d6a94513bd7aa024e9cbc74a5a">&#9670;&nbsp;</a></span>x</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::Events::MouseWheelEvent::x</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Horizontal scrolling, is positive when scrolling to the right and negative otherwise. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../db/db6/a00074_source.html#l00036">36</a> of file <a class="el" href="../../db/db6/a00074_source.html">MouseWheelEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="aa5ed5164f12482ac0af550ccaf401f5c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa5ed5164f12482ac0af550ccaf401f5c">&#9670;&nbsp;</a></span>y</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::Events::MouseWheelEvent::y</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Vertical scrolling, is positive when scrolling to the up and negative otherwise. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../db/db6/a00074_source.html#l00042">42</a> of file <a class="el" href="../../db/db6/a00074_source.html">MouseWheelEvent.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../da/dec/a00080_source.html">TextInputEvent.h</a></li>
+<li>src/events/<a class="el" href="../../db/db6/a00074_source.html">MouseWheelEvent.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d0/d19/a00273.html">Events</a></li><li class="navelem"><a class="el" href="../../dd/dea/a00408.html">TextInputEvent</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d82/a00279.html">Events</a></li><li class="navelem"><a class="el" href="../../dd/dea/a00408.html">MouseWheelEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

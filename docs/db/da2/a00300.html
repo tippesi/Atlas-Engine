@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Engine Class Reference</title>
+<title>Atlas Engine: Atlas::Camera::Frustum Struct Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,259 +88,49 @@ $(document).ready(function(){initNavTree('db/da2/a00300.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d3/d4a/a00297.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Engine Class Reference</div>  </div>
+<div class="title">Atlas::Camera::Frustum Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../da/d45/a00011_source.html">Engine.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
-Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a7e7a7fe5084e591ad8af07d4cc30a405"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../dc/d59/a00364.html">Window</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da2/a00300.html#a7e7a7fe5084e591ad8af07d4cc30a405">Init</a> (std::string assetDirectory, std::string shaderDirectory, std::string windowTitle, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags=<a class="el" href="../../d6/d2d/a00047.html#aeea5cdf704297f8221fb0eefccf3c014">AE_WINDOW_FULLSCREEN</a>)</td></tr>
-<tr class="memdesc:a7e7a7fe5084e591ad8af07d4cc30a405"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the engine.  <a href="#a7e7a7fe5084e591ad8af07d4cc30a405">More...</a><br /></td></tr>
-<tr class="separator:a7e7a7fe5084e591ad8af07d4cc30a405"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac167fce1ecb1f67e007fc8028ef73373"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da2/a00300.html#ac167fce1ecb1f67e007fc8028ef73373">GetScreenSize</a> (int32_t *width, int32_t *height)</td></tr>
-<tr class="separator:ac167fce1ecb1f67e007fc8028ef73373"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a04eb8ce613c1537b9608bb42ee51bd24"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da2/a00300.html#a04eb8ce613c1537b9608bb42ee51bd24">LockFramerate</a> ()</td></tr>
-<tr class="memdesc:a04eb8ce613c1537b9608bb42ee51bd24"><td class="mdescLeft">&#160;</td><td class="mdescRight">Locks the frame rate to the next available target frame rate of the monitor like min(availableTargetFramerate, possibleFramerate).  <a href="#a04eb8ce613c1537b9608bb42ee51bd24">More...</a><br /></td></tr>
-<tr class="separator:a04eb8ce613c1537b9608bb42ee51bd24"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a13f56ab555c44b6df5e72b229bc52c70"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da2/a00300.html#a13f56ab555c44b6df5e72b229bc52c70">UnlockFramerate</a> ()</td></tr>
-<tr class="memdesc:a13f56ab555c44b6df5e72b229bc52c70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unlocks the framerate.  <a href="#a13f56ab555c44b6df5e72b229bc52c70">More...</a><br /></td></tr>
-<tr class="separator:a13f56ab555c44b6df5e72b229bc52c70"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad9d527958d3354f780016c8b575dbe33"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da2/a00300.html#ad9d527958d3354f780016c8b575dbe33">Update</a> ()</td></tr>
-<tr class="memdesc:ad9d527958d3354f780016c8b575dbe33"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the engine and the system events.  <a href="#ad9d527958d3354f780016c8b575dbe33">More...</a><br /></td></tr>
-<tr class="separator:ad9d527958d3354f780016c8b575dbe33"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a25e6a52d9f868f90830e2043b3f9eaf0"><td class="memItemLeft" align="right" valign="top">vec4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/da2/a00300.html#a25e6a52d9f868f90830e2043b3f9eaf0">planes</a> [6]</td></tr>
+<tr class="separator:a25e6a52d9f868f90830e2043b3f9eaf0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../da/d45/a00011_source.html#l00018">18</a> of file <a class="el" href="../../da/d45/a00011_source.html">Engine.h</a>.</p>
-</div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="ac167fce1ecb1f67e007fc8028ef73373"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac167fce1ecb1f67e007fc8028ef73373">&#9670;&nbsp;</a></span>GetScreenSize()</h2>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00052">52</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
+</div><h2 class="groupheader">Member Data Documentation</h2>
+<a id="a25e6a52d9f868f90830e2043b3f9eaf0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a25e6a52d9f868f90830e2043b3f9eaf0">&#9670;&nbsp;</a></span>planes</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void Atlas::Engine::GetScreenSize </td>
-          <td>(</td>
-          <td class="paramtype">int32_t *&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t *&#160;</td>
-          <td class="paramname"><em>height</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
+          <td class="memname">vec4 Atlas::Camera::Frustum::planes[6]</td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">width</td><td></td></tr>
-    <tr><td class="paramname">height</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="a7e7a7fe5084e591ad8af07d4cc30a405"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7e7a7fe5084e591ad8af07d4cc30a405">&#9670;&nbsp;</a></span>Init()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static <a class="el" href="../../dc/d59/a00364.html">Window</a>* Atlas::Engine::Init </td>
-          <td>(</td>
-          <td class="paramtype">std::string&#160;</td>
-          <td class="paramname"><em>assetDirectory</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::string&#160;</td>
-          <td class="paramname"><em>shaderDirectory</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::string&#160;</td>
-          <td class="paramname"><em>windowTitle</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>flags</em> = <code><a class="el" href="../../d6/d2d/a00047.html#aeea5cdf704297f8221fb0eefccf3c014">AE_WINDOW_FULLSCREEN</a></code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
-<p>Initializes the engine. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">assetDirectory</td><td>The directory where all assets are located </td></tr>
-    <tr><td class="paramname">shaderDirectory</td><td>The directory where all the shader files are located relative to the asset directory </td></tr>
-    <tr><td class="paramname">windowTitle</td><td>The title of your window </td></tr>
-    <tr><td class="paramname">x</td><td>The x position of the window on the screen in pixels </td></tr>
-    <tr><td class="paramname">y</td><td>The y position of the window on the screen in pixels </td></tr>
-    <tr><td class="paramname">width</td><td>The width of the window in pixels </td></tr>
-    <tr><td class="paramname">height</td><td>The height of the window in pixels </td></tr>
-    <tr><td class="paramname">flags</td><td><a class="el" href="../../dc/d59/a00364.html" title="A simple window class. ">Window</a> flags. See <a class="el" href="../../d6/d2d/a00047.html">Window.h</a> for more. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>A pointer to a window object. </dd></dl>
-<dl class="section note"><dt>Note</dt><dd>All file paths handed over to the engine should be relative the asset directory </dd></dl>
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00053">53</a> of file <a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
-<a id="a04eb8ce613c1537b9608bb42ee51bd24"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a04eb8ce613c1537b9608bb42ee51bd24">&#9670;&nbsp;</a></span>LockFramerate()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static void Atlas::Engine::LockFramerate </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Locks the frame rate to the next available target frame rate of the monitor like min(availableTargetFramerate, possibleFramerate). </p>
-
-</div>
-</div>
-<a id="a13f56ab555c44b6df5e72b229bc52c70"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a13f56ab555c44b6df5e72b229bc52c70">&#9670;&nbsp;</a></span>UnlockFramerate()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static void Atlas::Engine::UnlockFramerate </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Unlocks the framerate. </p>
-
-</div>
-</div>
-<a id="ad9d527958d3354f780016c8b575dbe33"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad9d527958d3354f780016c8b575dbe33">&#9670;&nbsp;</a></span>Update()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static void Atlas::Engine::Update </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Updates the engine and the system events. </p>
-<p>Must be called in thread where the engine was initialized. </p>
-
-</div>
-</div>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/<a class="el" href="../../da/d45/a00011_source.html">Engine.h</a></li>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>src/<a class="el" href="../../dd/dad/a00005_source.html">Camera.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../db/da2/a00300.html">Engine</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../db/d7b/a00296.html">Camera</a></li><li class="navelem"><a class="el" href="../../db/da2/a00300.html">Frustum</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

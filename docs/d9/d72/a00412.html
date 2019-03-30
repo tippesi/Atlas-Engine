@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Events::TouchEvent Class Reference</title>
+<title>Atlas Engine: Atlas::Events::TextInputEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,51 +92,36 @@ $(document).ready(function(){initNavTree('d9/d72/a00412.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../de/d3d/a00409.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Events::TouchEvent Class Reference</div>  </div>
+<div class="title">Atlas::Events::TextInputEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>A class to distribute touchscreen events.  
+<p>A class to distribute text input events.  
  <a href="../../d9/d72/a00412.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../d2/d1f/a00083_source.html">TouchEvent.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d1/d09/a00077_source.html">TextInputEvent.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a9d9c440ac8cd3c5fba442e40bcc9b875"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#a9d9c440ac8cd3c5fba442e40bcc9b875">TouchEvent</a> (SDL_TouchFingerEvent event)</td></tr>
-<tr class="separator:a9d9c440ac8cd3c5fba442e40bcc9b875"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8d0e0815b469344ed5810ac576eaf7d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#ae8d0e0815b469344ed5810ac576eaf7d">TextInputEvent</a> (SDL_TextInputEvent event)</td></tr>
+<tr class="separator:ae8d0e0815b469344ed5810ac576eaf7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a36f19a5831a7e793ef4065a6957626ff"><td class="memItemLeft" align="right" valign="top">int64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#a36f19a5831a7e793ef4065a6957626ff">finger</a></td></tr>
-<tr class="memdesc:a36f19a5831a7e793ef4065a6957626ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the finger.  <a href="#a36f19a5831a7e793ef4065a6957626ff">More...</a><br /></td></tr>
-<tr class="separator:a36f19a5831a7e793ef4065a6957626ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a93a265a7d869271e43c5c0e38a3ea9ee"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#a93a265a7d869271e43c5c0e38a3ea9ee">type</a></td></tr>
-<tr class="memdesc:a93a265a7d869271e43c5c0e38a3ea9ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the touch event.  <a href="#a93a265a7d869271e43c5c0e38a3ea9ee">More...</a><br /></td></tr>
-<tr class="separator:a93a265a7d869271e43c5c0e38a3ea9ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adfa6082f332badf0d599be7025d40d65"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#adfa6082f332badf0d599be7025d40d65">x</a></td></tr>
-<tr class="memdesc:adfa6082f332badf0d599be7025d40d65"><td class="mdescLeft">&#160;</td><td class="mdescRight">The x-axis location of the finger, normalized (0, 1)  <a href="#adfa6082f332badf0d599be7025d40d65">More...</a><br /></td></tr>
-<tr class="separator:adfa6082f332badf0d599be7025d40d65"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a739e73aaf33c127a9f70a86387027908"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#a739e73aaf33c127a9f70a86387027908">y</a></td></tr>
-<tr class="memdesc:a739e73aaf33c127a9f70a86387027908"><td class="mdescLeft">&#160;</td><td class="mdescRight">The y-axis location of the finger, normalized (0, 1)  <a href="#a739e73aaf33c127a9f70a86387027908">More...</a><br /></td></tr>
-<tr class="separator:a739e73aaf33c127a9f70a86387027908"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad4686b18a9fb1d59ad7412347b730eff"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#ad4686b18a9fb1d59ad7412347b730eff">xDelta</a></td></tr>
-<tr class="memdesc:ad4686b18a9fb1d59ad7412347b730eff"><td class="mdescLeft">&#160;</td><td class="mdescRight">The distance moved on the x-axis, normalized (-1, 1)  <a href="#ad4686b18a9fb1d59ad7412347b730eff">More...</a><br /></td></tr>
-<tr class="separator:ad4686b18a9fb1d59ad7412347b730eff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acbb28b9cae42f7393d1c124123a0730a"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#acbb28b9cae42f7393d1c124123a0730a">yDelta</a></td></tr>
-<tr class="memdesc:acbb28b9cae42f7393d1c124123a0730a"><td class="mdescLeft">&#160;</td><td class="mdescRight">The distance moved on the y-axis, normalized (-1, 1)  <a href="#acbb28b9cae42f7393d1c124123a0730a">More...</a><br /></td></tr>
-<tr class="separator:acbb28b9cae42f7393d1c124123a0730a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a574853ac60667ae51b07a6be490e7cf4"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#a574853ac60667ae51b07a6be490e7cf4">pressure</a></td></tr>
-<tr class="memdesc:a574853ac60667ae51b07a6be490e7cf4"><td class="mdescLeft">&#160;</td><td class="mdescRight">The pressure applied by the finger, normalized (0, 1)  <a href="#a574853ac60667ae51b07a6be490e7cf4">More...</a><br /></td></tr>
-<tr class="separator:a574853ac60667ae51b07a6be490e7cf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29d5afbad7f5015245258bdf012f630e"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#a29d5afbad7f5015245258bdf012f630e">windowID</a></td></tr>
+<tr class="memdesc:a29d5afbad7f5015245258bdf012f630e"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#a29d5afbad7f5015245258bdf012f630e">More...</a><br /></td></tr>
+<tr class="separator:a29d5afbad7f5015245258bdf012f630e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af82a2a68df25382bd4ad33a3aece37c4"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d72/a00412.html#af82a2a68df25382bd4ad33a3aece37c4">character</a></td></tr>
+<tr class="memdesc:af82a2a68df25382bd4ad33a3aece37c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">The character that was typed in UTF-8.  <a href="#af82a2a68df25382bd4ad33a3aece37c4">More...</a><br /></td></tr>
+<tr class="separator:af82a2a68df25382bd4ad33a3aece37c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A class to distribute touchscreen events. </p>
+<div class="textblock"><p>A class to distribute text input events. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00021">21</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">TouchEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00018">18</a> of file <a class="el" href="../../d1/d09/a00077_source.html">TextInputEvent.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a9d9c440ac8cd3c5fba442e40bcc9b875"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9d9c440ac8cd3c5fba442e40bcc9b875">&#9670;&nbsp;</a></span>TouchEvent()</h2>
+<a id="ae8d0e0815b469344ed5810ac576eaf7d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae8d0e0815b469344ed5810ac576eaf7d">&#9670;&nbsp;</a></span>TextInputEvent()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -145,9 +130,9 @@ Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">Atlas::Events::TouchEvent::TouchEvent </td>
+          <td class="memname">Atlas::Events::TextInputEvent::TextInputEvent </td>
           <td>(</td>
-          <td class="paramtype">SDL_TouchFingerEvent&#160;</td>
+          <td class="paramtype">SDL_TextInputEvent&#160;</td>
           <td class="paramname"><em>event</em></td><td>)</td>
           <td></td>
         </tr>
@@ -159,147 +144,56 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00024">24</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">TouchEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00021">21</a> of file <a class="el" href="../../d1/d09/a00077_source.html">TextInputEvent.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a36f19a5831a7e793ef4065a6957626ff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a36f19a5831a7e793ef4065a6957626ff">&#9670;&nbsp;</a></span>finger</h2>
+<a id="af82a2a68df25382bd4ad33a3aece37c4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af82a2a68df25382bd4ad33a3aece37c4">&#9670;&nbsp;</a></span>character</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int64_t Atlas::Events::TouchEvent::finger</td>
+          <td class="memname">std::string Atlas::Events::TextInputEvent::character</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The ID of the finger. </p>
+<p>The character that was typed in UTF-8. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00043">43</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">TouchEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00042">42</a> of file <a class="el" href="../../d1/d09/a00077_source.html">TextInputEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a574853ac60667ae51b07a6be490e7cf4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a574853ac60667ae51b07a6be490e7cf4">&#9670;&nbsp;</a></span>pressure</h2>
+<a id="a29d5afbad7f5015245258bdf012f630e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a29d5afbad7f5015245258bdf012f630e">&#9670;&nbsp;</a></span>windowID</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float Atlas::Events::TouchEvent::pressure</td>
+          <td class="memname">uint32_t Atlas::Events::TextInputEvent::windowID</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The pressure applied by the finger, normalized (0, 1) </p>
+<p>The ID of the window the event occurred in. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00073">73</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">TouchEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a93a265a7d869271e43c5c0e38a3ea9ee"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a93a265a7d869271e43c5c0e38a3ea9ee">&#9670;&nbsp;</a></span>type</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">uint32_t Atlas::Events::TouchEvent::type</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The type of the touch event. </p>
-<p>See <a class="el" href="../../d2/d1f/a00083.html">TouchEvent.h</a> for more. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00048">48</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">TouchEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="adfa6082f332badf0d599be7025d40d65"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adfa6082f332badf0d599be7025d40d65">&#9670;&nbsp;</a></span>x</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Atlas::Events::TouchEvent::x</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The x-axis location of the finger, normalized (0, 1) </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00053">53</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">TouchEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="ad4686b18a9fb1d59ad7412347b730eff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad4686b18a9fb1d59ad7412347b730eff">&#9670;&nbsp;</a></span>xDelta</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Atlas::Events::TouchEvent::xDelta</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The distance moved on the x-axis, normalized (-1, 1) </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00063">63</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">TouchEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a739e73aaf33c127a9f70a86387027908"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a739e73aaf33c127a9f70a86387027908">&#9670;&nbsp;</a></span>y</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Atlas::Events::TouchEvent::y</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The y-axis location of the finger, normalized (0, 1) </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00058">58</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">TouchEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="acbb28b9cae42f7393d1c124123a0730a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acbb28b9cae42f7393d1c124123a0730a">&#9670;&nbsp;</a></span>yDelta</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Atlas::Events::TouchEvent::yDelta</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The distance moved on the y-axis, normalized (-1, 1) </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00068">68</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">TouchEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d1/d09/a00077_source.html#l00037">37</a> of file <a class="el" href="../../d1/d09/a00077_source.html">TextInputEvent.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../d2/d1f/a00083_source.html">TouchEvent.h</a></li>
+<li>src/events/<a class="el" href="../../d1/d09/a00077_source.html">TextInputEvent.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d0/d19/a00273.html">Events</a></li><li class="navelem"><a class="el" href="../../d9/d72/a00412.html">TouchEvent</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d82/a00279.html">Events</a></li><li class="navelem"><a class="el" href="../../d9/d72/a00412.html">TextInputEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

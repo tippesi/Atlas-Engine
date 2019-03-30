@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Events::ControllerDeviceEvent Class Reference</title>
+<title>Atlas Engine: Atlas::Events::ControllerButtonEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,36 +92,39 @@ $(document).ready(function(){initNavTree('d6/db8/a00376.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../dc/de3/a00373.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Events::ControllerDeviceEvent Class Reference</div>  </div>
+<div class="title">Atlas::Events::ControllerButtonEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>A class to distribute controller device events.  
+<p>A class to distribute controller button events.  
  <a href="../../d6/db8/a00376.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../d9/d2e/a00056_source.html">ControllerDeviceEvent.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d5/de0/a00050_source.html">ControllerButtonEvent.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8616e5c935a1c035d93523824b9464eb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/db8/a00376.html#a8616e5c935a1c035d93523824b9464eb">ControllerDeviceEvent</a> (SDL_ControllerDeviceEvent event)</td></tr>
-<tr class="separator:a8616e5c935a1c035d93523824b9464eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c57ccfc5d949f578a791ad643275504"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/db8/a00376.html#a4c57ccfc5d949f578a791ad643275504">ControllerButtonEvent</a> (SDL_ControllerButtonEvent event)</td></tr>
+<tr class="separator:a4c57ccfc5d949f578a791ad643275504"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a560358fce5692fd1dc1dfc03486c2d82"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/db8/a00376.html#a560358fce5692fd1dc1dfc03486c2d82">type</a></td></tr>
-<tr class="memdesc:a560358fce5692fd1dc1dfc03486c2d82"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the event.  <a href="#a560358fce5692fd1dc1dfc03486c2d82">More...</a><br /></td></tr>
-<tr class="separator:a560358fce5692fd1dc1dfc03486c2d82"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ade97acdd033d3fb4fc8a2ab50203da22"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/db8/a00376.html#ade97acdd033d3fb4fc8a2ab50203da22">device</a></td></tr>
-<tr class="memdesc:ade97acdd033d3fb4fc8a2ab50203da22"><td class="mdescLeft">&#160;</td><td class="mdescRight">The device ID of the game controller.  <a href="#ade97acdd033d3fb4fc8a2ab50203da22">More...</a><br /></td></tr>
-<tr class="separator:ade97acdd033d3fb4fc8a2ab50203da22"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:addb16c454ee4a751181505f47eb4e98e"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/db8/a00376.html#addb16c454ee4a751181505f47eb4e98e">button</a></td></tr>
+<tr class="memdesc:addb16c454ee4a751181505f47eb4e98e"><td class="mdescLeft">&#160;</td><td class="mdescRight">The button which was pressed on the controller.  <a href="#addb16c454ee4a751181505f47eb4e98e">More...</a><br /></td></tr>
+<tr class="separator:addb16c454ee4a751181505f47eb4e98e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a364621ca8d283892ffb623a63a2333c7"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/db8/a00376.html#a364621ca8d283892ffb623a63a2333c7">state</a></td></tr>
+<tr class="memdesc:a364621ca8d283892ffb623a63a2333c7"><td class="mdescLeft">&#160;</td><td class="mdescRight">The state of the button.  <a href="#a364621ca8d283892ffb623a63a2333c7">More...</a><br /></td></tr>
+<tr class="separator:a364621ca8d283892ffb623a63a2333c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a70a204e7ffe5c115cec0cd42e154d142"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/db8/a00376.html#a70a204e7ffe5c115cec0cd42e154d142">device</a></td></tr>
+<tr class="memdesc:a70a204e7ffe5c115cec0cd42e154d142"><td class="mdescLeft">&#160;</td><td class="mdescRight">The device ID of the game controller.  <a href="#a70a204e7ffe5c115cec0cd42e154d142">More...</a><br /></td></tr>
+<tr class="separator:a70a204e7ffe5c115cec0cd42e154d142"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A class to distribute controller device events. </p>
+<div class="textblock"><p>A class to distribute controller button events. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00020">20</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">ControllerDeviceEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00032">32</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerButtonEvent.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a8616e5c935a1c035d93523824b9464eb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8616e5c935a1c035d93523824b9464eb">&#9670;&nbsp;</a></span>ControllerDeviceEvent()</h2>
+<a id="a4c57ccfc5d949f578a791ad643275504"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c57ccfc5d949f578a791ad643275504">&#9670;&nbsp;</a></span>ControllerButtonEvent()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -130,9 +133,9 @@ Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">Atlas::Events::ControllerDeviceEvent::ControllerDeviceEvent </td>
+          <td class="memname">Atlas::Events::ControllerButtonEvent::ControllerButtonEvent </td>
           <td>(</td>
-          <td class="paramtype">SDL_ControllerDeviceEvent&#160;</td>
+          <td class="paramtype">SDL_ControllerButtonEvent&#160;</td>
           <td class="paramname"><em>event</em></td><td>)</td>
           <td></td>
         </tr>
@@ -144,57 +147,76 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00023">23</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">ControllerDeviceEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00035">35</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerButtonEvent.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="ade97acdd033d3fb4fc8a2ab50203da22"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ade97acdd033d3fb4fc8a2ab50203da22">&#9670;&nbsp;</a></span>device</h2>
+<a id="addb16c454ee4a751181505f47eb4e98e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#addb16c454ee4a751181505f47eb4e98e">&#9670;&nbsp;</a></span>button</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int32_t Atlas::Events::ControllerDeviceEvent::device</td>
+          <td class="memname">uint8_t Atlas::Events::ControllerButtonEvent::button</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The button which was pressed on the controller. </p>
+<p>See <a class="el" href="../../d5/de0/a00050.html">ControllerButtonEvent.h</a> for more. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00046">46</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerButtonEvent.h</a>.</p>
+
+</div>
+</div>
+<a id="a70a204e7ffe5c115cec0cd42e154d142"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a70a204e7ffe5c115cec0cd42e154d142">&#9670;&nbsp;</a></span>device</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::Events::ControllerButtonEvent::device</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>The device ID of the game controller. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00038">38</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">ControllerDeviceEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00056">56</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerButtonEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a560358fce5692fd1dc1dfc03486c2d82"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a560358fce5692fd1dc1dfc03486c2d82">&#9670;&nbsp;</a></span>type</h2>
+<a id="a364621ca8d283892ffb623a63a2333c7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a364621ca8d283892ffb623a63a2333c7">&#9670;&nbsp;</a></span>state</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint32_t Atlas::Events::ControllerDeviceEvent::type</td>
+          <td class="memname">uint8_t Atlas::Events::ControllerButtonEvent::state</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The type of the event. </p>
-<p>See <a class="el" href="../../">EngineControllerDeviceEvent.h</a> for more. </p>
+<p>The state of the button. </p>
+<p>Might be BUTTON_PRESSED or BUTTON_RELEASED. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d9/d2e/a00056_source.html#l00033">33</a> of file <a class="el" href="../../d9/d2e/a00056_source.html">ControllerDeviceEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00051">51</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerButtonEvent.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../d9/d2e/a00056_source.html">ControllerDeviceEvent.h</a></li>
+<li>src/events/<a class="el" href="../../d5/de0/a00050_source.html">ControllerButtonEvent.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d0/d19/a00273.html">Events</a></li><li class="navelem"><a class="el" href="../../d6/db8/a00376.html">ControllerDeviceEvent</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d82/a00279.html">Events</a></li><li class="navelem"><a class="el" href="../../d6/db8/a00376.html">ControllerButtonEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

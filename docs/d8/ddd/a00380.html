@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Events::EventDelegate&lt; Args &gt; Class Template Reference</title>
+<title>Atlas Engine: Atlas::Events::ControllerDeviceEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,171 +89,112 @@ $(document).ready(function(){initNavTree('d8/ddd/a00380.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d4/d13/a00377.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Events::EventDelegate&lt; Args &gt; Class Template Reference</div>  </div>
+<div class="title">Atlas::Events::ControllerDeviceEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Handles the event flow between subscriber and publisher.  
+<p>A class to distribute controller device events.  
  <a href="../../d8/ddd/a00380.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../d3/d8b/a00059_source.html">EventDelegate.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../dc/dee/a00053_source.html">ControllerDeviceEvent.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae64eb0fbb527d7121e400a0e01a8a91f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#ae64eb0fbb527d7121e400a0e01a8a91f">EventDelegate</a> ()</td></tr>
-<tr class="memdesc:ae64eb0fbb527d7121e400a0e01a8a91f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d8/ddd/a00380.html" title="Handles the event flow between subscriber and publisher. ">EventDelegate</a> object.  <a href="#ae64eb0fbb527d7121e400a0e01a8a91f">More...</a><br /></td></tr>
-<tr class="separator:ae64eb0fbb527d7121e400a0e01a8a91f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b9ca815f00b2d7915e7ada41d8e0bf5"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#a3b9ca815f00b2d7915e7ada41d8e0bf5">Subscribe</a> (std::function&lt; void(Args ...)&gt; handle)</td></tr>
-<tr class="memdesc:a3b9ca815f00b2d7915e7ada41d8e0bf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subscribes a method/function to the event delegate which wants to receive the arguments specified in Args.  <a href="#a3b9ca815f00b2d7915e7ada41d8e0bf5">More...</a><br /></td></tr>
-<tr class="separator:a3b9ca815f00b2d7915e7ada41d8e0bf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1b72168e6c15c2499be4c93b54b7d10e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#a1b72168e6c15c2499be4c93b54b7d10e">Unsubscribe</a> (uint32_t subscriberID)</td></tr>
-<tr class="memdesc:a1b72168e6c15c2499be4c93b54b7d10e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unsubscribes a method/function from the event delegate.  <a href="#a1b72168e6c15c2499be4c93b54b7d10e">More...</a><br /></td></tr>
-<tr class="separator:a1b72168e6c15c2499be4c93b54b7d10e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a851c8f9778b088b20dac759000732256"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#a851c8f9778b088b20dac759000732256">Fire</a> (Args ... args)</td></tr>
-<tr class="memdesc:a851c8f9778b088b20dac759000732256"><td class="mdescLeft">&#160;</td><td class="mdescRight">Publishes Args arguments to the subscribers.  <a href="#a851c8f9778b088b20dac759000732256">More...</a><br /></td></tr>
-<tr class="separator:a851c8f9778b088b20dac759000732256"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8616e5c935a1c035d93523824b9464eb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#a8616e5c935a1c035d93523824b9464eb">ControllerDeviceEvent</a> (SDL_ControllerDeviceEvent event)</td></tr>
+<tr class="separator:a8616e5c935a1c035d93523824b9464eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a560358fce5692fd1dc1dfc03486c2d82"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#a560358fce5692fd1dc1dfc03486c2d82">type</a></td></tr>
+<tr class="memdesc:a560358fce5692fd1dc1dfc03486c2d82"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the event.  <a href="#a560358fce5692fd1dc1dfc03486c2d82">More...</a><br /></td></tr>
+<tr class="separator:a560358fce5692fd1dc1dfc03486c2d82"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade97acdd033d3fb4fc8a2ab50203da22"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/ddd/a00380.html#ade97acdd033d3fb4fc8a2ab50203da22">device</a></td></tr>
+<tr class="memdesc:ade97acdd033d3fb4fc8a2ab50203da22"><td class="mdescLeft">&#160;</td><td class="mdescRight">The device ID of the game controller.  <a href="#ade97acdd033d3fb4fc8a2ab50203da22">More...</a><br /></td></tr>
+<tr class="separator:ade97acdd033d3fb4fc8a2ab50203da22"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;class ... Args&gt;<br />
-class Atlas::Events::EventDelegate&lt; Args &gt;</h3>
+<div class="textblock"><p>A class to distribute controller device events. </p>
 
-<p>Handles the event flow between subscriber and publisher. </p>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">Args</td><td>Variable amount of parameters which can be exchanged with the delegate. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00019">19</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EventDelegate.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00020">20</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerDeviceEvent.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ae64eb0fbb527d7121e400a0e01a8a91f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae64eb0fbb527d7121e400a0e01a8a91f">&#9670;&nbsp;</a></span>EventDelegate()</h2>
+<a id="a8616e5c935a1c035d93523824b9464eb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8616e5c935a1c035d93523824b9464eb">&#9670;&nbsp;</a></span>ControllerDeviceEvent()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<div class="memtemplate">
-template&lt;class... Args&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d8/ddd/a00380.html">Atlas::Events::EventDelegate</a>&lt; Args &gt;::<a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a> </td>
+          <td class="memname">Atlas::Events::ControllerDeviceEvent::ControllerDeviceEvent </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">SDL_ControllerDeviceEvent&#160;</td>
+          <td class="paramname"><em>event</em></td><td>)</td>
           <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00023">23</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerDeviceEvent.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="ade97acdd033d3fb4fc8a2ab50203da22"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade97acdd033d3fb4fc8a2ab50203da22">&#9670;&nbsp;</a></span>device</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::Events::ControllerDeviceEvent::device</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Constructs a <a class="el" href="../../d8/ddd/a00380.html" title="Handles the event flow between subscriber and publisher. ">EventDelegate</a> object. </p>
+<p>The device ID of the game controller. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00056">56</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EventDelegate.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00038">38</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerDeviceEvent.h</a>.</p>
 
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a851c8f9778b088b20dac759000732256"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a851c8f9778b088b20dac759000732256">&#9670;&nbsp;</a></span>Fire()</h2>
+<a id="a560358fce5692fd1dc1dfc03486c2d82"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a560358fce5692fd1dc1dfc03486c2d82">&#9670;&nbsp;</a></span>type</h2>
 
 <div class="memitem">
 <div class="memproto">
-<div class="memtemplate">
-template&lt;class... Args&gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="../../d8/ddd/a00380.html">Atlas::Events::EventDelegate</a>&lt; Args &gt;::Fire </td>
-          <td>(</td>
-          <td class="paramtype">Args ...&#160;</td>
-          <td class="paramname"><em>args</em></td><td>)</td>
-          <td></td>
+          <td class="memname">uint32_t Atlas::Events::ControllerDeviceEvent::type</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Publishes Args arguments to the subscribers. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">args</td><td>The arguments which should be published </td></tr>
-  </table>
-  </dd>
-</dl>
+<p>The type of the event. </p>
+<p>See <a class="el" href="../../dc/dee/a00053.html">ControllerDeviceEvent.h</a> for more. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00083">83</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EventDelegate.h</a>.</p>
-
-</div>
-</div>
-<a id="a3b9ca815f00b2d7915e7ada41d8e0bf5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3b9ca815f00b2d7915e7ada41d8e0bf5">&#9670;&nbsp;</a></span>Subscribe()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class... Args&gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">uint32_t <a class="el" href="../../d8/ddd/a00380.html">Atlas::Events::EventDelegate</a>&lt; Args &gt;::Subscribe </td>
-          <td>(</td>
-          <td class="paramtype">std::function&lt; void(Args ...)&gt;&#160;</td>
-          <td class="paramname"><em>handle</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subscribes a method/function to the event delegate which wants to receive the arguments specified in Args. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">handle</td><td>A method/function which has the required Args as parameters </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>A handle which can later be used to unsubscribe from the event delegate. </dd></dl>
-<dl class="section note"><dt>Note</dt><dd>To subscribe a method of an object to the event delegate use std::bind() </dd></dl>
-
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00061">61</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EventDelegate.h</a>.</p>
-
-</div>
-</div>
-<a id="a1b72168e6c15c2499be4c93b54b7d10e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1b72168e6c15c2499be4c93b54b7d10e">&#9670;&nbsp;</a></span>Unsubscribe()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class... Args&gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="../../d8/ddd/a00380.html">Atlas::Events::EventDelegate</a>&lt; Args &gt;::Unsubscribe </td>
-          <td>(</td>
-          <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>subscriberID</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Unsubscribes a method/function from the event delegate. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">subscriberID</td><td>The handle which was returned previously at the time of subscription. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00072">72</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">EventDelegate.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dee/a00053_source.html#l00033">33</a> of file <a class="el" href="../../dc/dee/a00053_source.html">ControllerDeviceEvent.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/events/<a class="el" href="../../d3/d8b/a00059_source.html">EventDelegate.h</a></li>
+<li>src/events/<a class="el" href="../../dc/dee/a00053_source.html">ControllerDeviceEvent.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d0/d19/a00273.html">Events</a></li><li class="navelem"><a class="el" href="../../d8/ddd/a00380.html">EventDelegate</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d82/a00279.html">Events</a></li><li class="navelem"><a class="el" href="../../d8/ddd/a00380.html">ControllerDeviceEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

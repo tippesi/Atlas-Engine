@@ -98,7 +98,7 @@ $(document).ready(function(){initNavTree('d0/d15/a00700.html','../../');});
 <p>Manages the vertex data flow between the CPU and GPU.  
  <a href="../../d0/d15/a00700.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="../../d5/d42/a00269_source.html">VertexBuffer.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../dd/dd7/a00260_source.html">VertexBuffer.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for Atlas::Buffer::VertexBuffer:</div>
 <div class="dyncontent">
@@ -111,7 +111,7 @@ Inheritance diagram for Atlas::Buffer::VertexBuffer:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a57458d835d7b6119cde8532831e2ef0c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d15/a00700.html#a57458d835d7b6119cde8532831e2ef0c">VertexBuffer</a> (uint32_t dataType, int32_t stride, size_t <a class="el" href="../../d5/d39/a00676.html#a28bc768e056aafdb3bd47cef396a8917">elementSize</a>, size_t <a class="el" href="../../d5/d39/a00676.html#a6cda0da2292b45ff9a376e260c304c3d">elementCount</a>, uint32_t flags=<a class="el" href="../../d9/d39/a00257.html#a557eca57f3e7bfc45486eee06516412d">AE_BUFFER_IMMUTABLE</a>)</td></tr>
+<tr class="memitem:a57458d835d7b6119cde8532831e2ef0c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d15/a00700.html#a57458d835d7b6119cde8532831e2ef0c">VertexBuffer</a> (uint32_t dataType, int32_t stride, size_t <a class="el" href="../../d5/d39/a00676.html#a28bc768e056aafdb3bd47cef396a8917">elementSize</a>, size_t <a class="el" href="../../d5/d39/a00676.html#a6cda0da2292b45ff9a376e260c304c3d">elementCount</a>, uint32_t flags=<a class="el" href="../../dd/dd7/a00248.html#a557eca57f3e7bfc45486eee06516412d">AE_BUFFER_IMMUTABLE</a>)</td></tr>
 <tr class="memdesc:a57458d835d7b6119cde8532831e2ef0c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="../../d0/d15/a00700.html" title="Manages the vertex data flow between the CPU and GPU. ">VertexBuffer</a> object.  <a href="#a57458d835d7b6119cde8532831e2ef0c">More...</a><br /></td></tr>
 <tr class="separator:a57458d835d7b6119cde8532831e2ef0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a110775ae6428075920a9c3e3d8426928"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d15/a00700.html#a110775ae6428075920a9c3e3d8426928">~VertexBuffer</a> ()</td></tr>
@@ -232,7 +232,7 @@ Additional Inherited Members</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Manages the vertex data flow between the CPU and GPU. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d5/d42/a00269_source.html#l00014">14</a> of file <a class="el" href="../../d5/d42/a00269_source.html">VertexBuffer.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/dd7/a00260_source.html#l00014">14</a> of file <a class="el" href="../../dd/dd7/a00260_source.html">VertexBuffer.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a57458d835d7b6119cde8532831e2ef0c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a57458d835d7b6119cde8532831e2ef0c">&#9670;&nbsp;</a></span>VertexBuffer()</h2>
@@ -268,7 +268,7 @@ Additional Inherited Members</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>flags</em> = <code><a class="el" href="../../d9/d39/a00257.html#a557eca57f3e7bfc45486eee06516412d">AE_BUFFER_IMMUTABLE</a></code>&#160;</td>
+          <td class="paramname"><em>flags</em> = <code><a class="el" href="../../dd/dd7/a00248.html#a557eca57f3e7bfc45486eee06516412d">AE_BUFFER_IMMUTABLE</a></code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -281,11 +281,11 @@ Additional Inherited Members</h2></td></tr>
 <p>Constructs a <a class="el" href="../../d0/d15/a00700.html" title="Manages the vertex data flow between the CPU and GPU. ">VertexBuffer</a> object. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">dataType</td><td>The data type of the data, e.g GL_FLOAT </td></tr>
+    <tr><td class="paramname">dataType</td><td>The data type of the data, e.g AE_FLOAT </td></tr>
     <tr><td class="paramname">stride</td><td>The number of elements of dataType per element </td></tr>
     <tr><td class="paramname">elementSize</td><td>The size of each element in bytes </td></tr>
     <tr><td class="paramname">elementCount</td><td>The number of elements in the vertex buffer will be filled with </td></tr>
-    <tr><td class="paramname">flags</td><td>The flags of the vertex buffer. Shouldn't be changed unless it's really needed. See <a class="el" href="../../d9/d39/a00257.html">Buffer.h</a> for more. </td></tr>
+    <tr><td class="paramname">flags</td><td>The flags of the vertex buffer. Shouldn't be changed unless it's really needed. See <a class="el" href="../../dd/dd7/a00248.html">Buffer.h</a> for more. </td></tr>
   </table>
   </dd>
 </dl>
@@ -408,14 +408,14 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/buffer/<a class="el" href="../../d5/d42/a00269_source.html">VertexBuffer.h</a></li>
+<li>src/buffer/<a class="el" href="../../dd/dd7/a00260_source.html">VertexBuffer.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../db/dc3/a00284.html">Buffer</a></li><li class="navelem"><a class="el" href="../../d0/d15/a00700.html">VertexBuffer</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../de/d25/a00290.html">Buffer</a></li><li class="navelem"><a class="el" href="../../d0/d15/a00700.html">VertexBuffer</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

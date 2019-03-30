@@ -95,26 +95,31 @@ $(document).ready(function(){initNavTree('d3/dd6/a00624.html','../../');});
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../dc/d9a/a00218_source.html">TerrainTool.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="../../d3/de5/a00209_source.html">TerrainTool.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a0598e26b9f1eb2638f33147baec3feb5"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a0598e26b9f1eb2638f33147baec3feb5">GenerateTerrain</a> (<a class="el" href="../../de/dfe/a00448.html">Loader::Image16</a> &amp;heightImage, int32_t rootNodeCount, int32_t LoDCount, int32_t patchSize, float resolution, float height)</td></tr>
-<tr class="memdesc:a0598e26b9f1eb2638f33147baec3feb5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generates a terrain from an image with height data.  <a href="#a0598e26b9f1eb2638f33147baec3feb5">More...</a><br /></td></tr>
-<tr class="separator:a0598e26b9f1eb2638f33147baec3feb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af40c18d10397adc51605f56a2ef8a2f1"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#af40c18d10397adc51605f56a2ef8a2f1">SaveTerrain</a> (<a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *terrain, std::string directory)</td></tr>
-<tr class="memdesc:af40c18d10397adc51605f56a2ef8a2f1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stores the terrain in a directory on the hard drive.  <a href="#af40c18d10397adc51605f56a2ef8a2f1">More...</a><br /></td></tr>
-<tr class="separator:af40c18d10397adc51605f56a2ef8a2f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abf83827abaca279842ef43c1fee6850f"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#abf83827abaca279842ef43c1fee6850f">GenerateTerrain</a> (<a class="el" href="../../de/d87/a00456.html">Loader::Image16</a> &amp;heightImage, int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution, float height)</td></tr>
+<tr class="memdesc:abf83827abaca279842ef43c1fee6850f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generates a terrain from an image with height data.  <a href="#abf83827abaca279842ef43c1fee6850f">More...</a><br /></td></tr>
+<tr class="separator:abf83827abaca279842ef43c1fee6850f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a21ff256010fae09131f1e67a50508b8f"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a21ff256010fae09131f1e67a50508b8f">SaveTerrain</a> (<a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *terrain, std::string filename)</td></tr>
+<tr class="memdesc:a21ff256010fae09131f1e67a50508b8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stores the terrain in a directory on the hard drive.  <a href="#a21ff256010fae09131f1e67a50508b8f">More...</a><br /></td></tr>
+<tr class="separator:a21ff256010fae09131f1e67a50508b8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad390014a87626eb3c373b61e252f8920"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#ad390014a87626eb3c373b61e252f8920">LoadTerrain</a> (std::string filename)</td></tr>
+<tr class="memdesc:ad390014a87626eb3c373b61e252f8920"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads the terrain.  <a href="#ad390014a87626eb3c373b61e252f8920">More...</a><br /></td></tr>
+<tr class="separator:ad390014a87626eb3c373b61e252f8920"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a00c41b6fbf02d438fd46676eaa1432cf"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a00c41b6fbf02d438fd46676eaa1432cf">LoadStorageCell</a> (<a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *terrain, <a class="el" href="../../df/d37/a00652.html">Terrain::TerrainStorageCell</a> *cell, std::string filename, bool initWithHeightData=false)</td></tr>
+<tr class="separator:a00c41b6fbf02d438fd46676eaa1432cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2015433e6d7618c1c696cd28e3b44e7c"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#a2015433e6d7618c1c696cd28e3b44e7c">BakeTerrain</a> (<a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *terrain)</td></tr>
 <tr class="separator:a2015433e6d7618c1c696cd28e3b44e7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae5c7ce1d640cfa23e11b19f3d6bc47e5"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#ae5c7ce1d640cfa23e11b19f3d6bc47e5">BrushHeight</a> (<a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *terrain, <a class="el" href="../../d4/db5/a00328.html">Kernel</a> *kernel, float strength, vec2 position)</td></tr>
+<tr class="memitem:ae5c7ce1d640cfa23e11b19f3d6bc47e5"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#ae5c7ce1d640cfa23e11b19f3d6bc47e5">BrushHeight</a> (<a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *terrain, <a class="el" href="../../dc/d50/a00332.html">Kernel</a> *kernel, float strength, vec2 position)</td></tr>
 <tr class="separator:ae5c7ce1d640cfa23e11b19f3d6bc47e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab6418feb3d4235c63d5fb7ef7b12f2ee"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/dd6/a00624.html#ab6418feb3d4235c63d5fb7ef7b12f2ee">SmoothHeight</a> (<a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *terrain, int32_t size, int32_t contributingRadius, float strength, vec2 position)</td></tr>
 <tr class="separator:ab6418feb3d4235c63d5fb7ef7b12f2ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../dc/d9a/a00218_source.html#l00013">13</a> of file <a class="el" href="../../dc/d9a/a00218_source.html">TerrainTool.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/de5/a00209_source.html#l00013">13</a> of file <a class="el" href="../../d3/de5/a00209_source.html">TerrainTool.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a2015433e6d7618c1c696cd28e3b44e7c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2015433e6d7618c1c696cd28e3b44e7c">&#9670;&nbsp;</a></span>BakeTerrain()</h2>
@@ -167,7 +172,7 @@ Static Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="../../d4/db5/a00328.html">Kernel</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="../../dc/d50/a00332.html">Kernel</a> *&#160;</td>
           <td class="paramname"><em>kernel</em>, </td>
         </tr>
         <tr>
@@ -208,8 +213,8 @@ Static Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a0598e26b9f1eb2638f33147baec3feb5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0598e26b9f1eb2638f33147baec3feb5">&#9670;&nbsp;</a></span>GenerateTerrain()</h2>
+<a id="abf83827abaca279842ef43c1fee6850f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abf83827abaca279842ef43c1fee6850f">&#9670;&nbsp;</a></span>GenerateTerrain()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -220,14 +225,14 @@ Static Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">static <a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a>* Atlas::Tools::TerrainTool::GenerateTerrain </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../de/dfe/a00448.html">Loader::Image16</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="../../de/d87/a00456.html">Loader::Image16</a> &amp;&#160;</td>
           <td class="paramname"><em>heightImage</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>rootNodeCount</em>, </td>
+          <td class="paramname"><em>rootNodeSideCount</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -270,7 +275,7 @@ Static Public Member Functions</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">heightImage</td><td></td></tr>
-    <tr><td class="paramname">rootNodeCount</td><td></td></tr>
+    <tr><td class="paramname">rootNodeSideCount</td><td></td></tr>
     <tr><td class="paramname">LoDCount</td><td></td></tr>
     <tr><td class="paramname">patchSize</td><td></td></tr>
     <tr><td class="paramname">resolution</td><td></td></tr>
@@ -278,13 +283,106 @@ Static Public Member Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A pointer to a <a class="el" href="../../dc/dc9/a00282.html">Terrain</a> object. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a <a class="el" href="../../da/ddc/a00288.html">Terrain</a> object. </dd></dl>
 <dl class="section warning"><dt>Warning</dt><dd>The input should correspond to the terrain specifications </dd></dl>
 
 </div>
 </div>
-<a id="af40c18d10397adc51605f56a2ef8a2f1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af40c18d10397adc51605f56a2ef8a2f1">&#9670;&nbsp;</a></span>SaveTerrain()</h2>
+<a id="a00c41b6fbf02d438fd46676eaa1432cf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a00c41b6fbf02d438fd46676eaa1432cf">&#9670;&nbsp;</a></span>LoadStorageCell()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void Atlas::Tools::TerrainTool::LoadStorageCell </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a> *&#160;</td>
+          <td class="paramname"><em>terrain</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../df/d37/a00652.html">Terrain::TerrainStorageCell</a> *&#160;</td>
+          <td class="paramname"><em>cell</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>initWithHeightData</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">terrain</td><td></td></tr>
+    <tr><td class="paramname">cell</td><td></td></tr>
+    <tr><td class="paramname">filename</td><td></td></tr>
+    <tr><td class="paramname">initWithHeightData</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ad390014a87626eb3c373b61e252f8920"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad390014a87626eb3c373b61e252f8920">&#9670;&nbsp;</a></span>LoadTerrain()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static <a class="el" href="../../dc/d62/a00640.html">Terrain::Terrain</a>* Atlas::Tools::TerrainTool::LoadTerrain </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Loads the terrain. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">filename</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+<dl class="section note"><dt>Note</dt><dd>This method just loads the terrain information, not the nodes. </dd></dl>
+
+</div>
+</div>
+<a id="a21ff256010fae09131f1e67a50508b8f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a21ff256010fae09131f1e67a50508b8f">&#9670;&nbsp;</a></span>SaveTerrain()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -302,7 +400,7 @@ Static Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">std::string&#160;</td>
-          <td class="paramname"><em>directory</em>&#160;</td>
+          <td class="paramname"><em>filename</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -321,7 +419,7 @@ Static Public Member Functions</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">terrain</td><td></td></tr>
-    <tr><td class="paramname">directory</td><td></td></tr>
+    <tr><td class="paramname">filename</td><td></td></tr>
   </table>
   </dd>
 </dl>
@@ -384,14 +482,14 @@ Static Public Member Functions</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/tools/<a class="el" href="../../dc/d9a/a00218_source.html">TerrainTool.h</a></li>
+<li>src/tools/<a class="el" href="../../d3/de5/a00209_source.html">TerrainTool.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d0/dcd/a00280.html">Tools</a></li><li class="navelem"><a class="el" href="../../d3/dd6/a00624.html">TerrainTool</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d5/d7b/a00286.html">Tools</a></li><li class="navelem"><a class="el" href="../../d3/dd6/a00624.html">TerrainTool</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

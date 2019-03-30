@@ -1,9 +1,9 @@
 var a00400 =
 [
-    [ "MouseMotionEvent", "d9/d95/a00400.html#af24620070b4b05ded12b83be4a5b0829", null ],
-    [ "windowID", "d9/d95/a00400.html#ad03fd6aba8800b602795827103581f44", null ],
-    [ "x", "d9/d95/a00400.html#a8af90bf8cd1e1b808fcc9677c2647d76", null ],
-    [ "xDelta", "d9/d95/a00400.html#a8ce26f39a7c15cbef27fdd7bec3f780d", null ],
-    [ "y", "d9/d95/a00400.html#a6e9691db681afef1a0116ffe5526638e", null ],
-    [ "yDelta", "d9/d95/a00400.html#a5f22d0c367ca830eac8b28fc2f860b3c", null ]
+    [ "MouseButtonEvent", "d9/d95/a00400.html#a6239a77b28461b255b004ec0aa6a4121", null ],
+    [ "button", "d9/d95/a00400.html#ad1dfb4ba8ed0bead0edea96ba853e721", null ],
+    [ "state", "d9/d95/a00400.html#a69056ac74b08bcd68ed386255f114bd8", null ],
+    [ "windowID", "d9/d95/a00400.html#ac6b2518942604898a89f0338d35b72e8", null ],
+    [ "x", "d9/d95/a00400.html#a5df390a5b5b195e1c48927cb02794ff9", null ],
+    [ "y", "d9/d95/a00400.html#ad0a6359fe2a6fcfe4657b1e338c70ee6", null ]
 ];

@@ -1,10 +1,7 @@
 var a00556 =
 [
-    [ "OpaqueRenderer", "d6/d95/a00556.html#a7dbb430e3a818e2ca3acba2fbe20114a", null ],
-    [ "AddConfig", "d6/d95/a00556.html#a4528f7d0ecbda756d57a478b599d042d", null ],
-    [ "InitShaderBatch", "d6/d95/a00556.html#a677aa591a11cdc9d6201979a3f9dc5c9", null ],
-    [ "RemoveConfig", "d6/d95/a00556.html#a5dca4d8a45f45d97cba38d428e8fd777", null ],
-    [ "Render", "d6/d95/a00556.html#a7e4fad56d3ddf51269a9431e67ea9e97", null ],
-    [ "fragmentPath", "d6/d95/a00556.html#ac89864a8da815b9b6e70533f82c05998", null ],
-    [ "vertexPath", "d6/d95/a00556.html#a618dede2d087006cdb414ca7ff05fbd7", null ]
+    [ "PointLightRenderer", "d6/d95/a00556.html#a7eaa75939cadf6e371db7267d86c0dd0", null ],
+    [ "Render", "d6/d95/a00556.html#ae98abb451503b45f28d765a3eb50240f", null ],
+    [ "fragmentPath", "d6/d95/a00556.html#a10a1f686e8e5836d8770830539a83c41", null ],
+    [ "vertexPath", "d6/d95/a00556.html#ae7013af91d57a117f6af79b6129e1190", null ]
 ];

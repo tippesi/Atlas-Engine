@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/events/MouseButtonEvent.h File Reference</title>
+<title>Atlas Engine: src/events/MouseMotionEvent.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,131 +89,36 @@ $(document).ready(function(){initNavTree('d0/d89/a00071.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a>  </div>
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">MouseButtonEvent.h File Reference</div>  </div>
+<div class="title">MouseMotionEvent.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../dd/d32/a00041_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d3/d8b/a00059_source.html">EventDelegate.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../dc/d87/a00032_source.html">../System.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d9/d2e/a00056_source.html">EventDelegate.h</a>&quot;</code><br />
 <code>#include &lt;SDL/include/SDL.h&gt;</code><br />
 </div>
 <p><a href="../../d0/d89/a00071_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/da1/a00396.html">Atlas::Events::MouseButtonEvent</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A class to distribute mouse button events.  <a href="../../d9/da1/a00396.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/de6/a00404.html">Atlas::Events::MouseMotionEvent</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A class to distribute mouse motion events.  <a href="../../d9/de6/a00404.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:d9/dd6/a00272"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></td></tr>
+<tr class="memitem:dc/d5d/a00278"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:d0/d19/a00273"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d19/a00273.html">Atlas::Events</a></td></tr>
+<tr class="memitem:d2/d82/a00279"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d82/a00279.html">Atlas::Events</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:ad6103689017f48d0cbb99d4a6d4a0eae"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d89/a00071.html#ad6103689017f48d0cbb99d4a6d4a0eae">AE_MOUSEBUTTON_LEFT</a>&#160;&#160;&#160;SDL_BUTTON_LEFT</td></tr>
-<tr class="separator:ad6103689017f48d0cbb99d4a6d4a0eae"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae42ee7f0afb125303767266526517261"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d89/a00071.html#ae42ee7f0afb125303767266526517261">AE_MOUSEBUTTON_MIDDLE</a>&#160;&#160;&#160;SDL_BUTTON_MIDDLE</td></tr>
-<tr class="separator:ae42ee7f0afb125303767266526517261"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a77bd599cfea5e3479cce697eb1442aa3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d89/a00071.html#a77bd599cfea5e3479cce697eb1442aa3">AE_MOUSEBUTTON_RIGHT</a>&#160;&#160;&#160;SDL_BUTTON_RIGHT</td></tr>
-<tr class="separator:a77bd599cfea5e3479cce697eb1442aa3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52055d7d0ac097e26f638783b301ff65"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d89/a00071.html#a52055d7d0ac097e26f638783b301ff65">AE_MOUSEBUTTON_X1</a>&#160;&#160;&#160;SDL_BUTTON_X1</td></tr>
-<tr class="separator:a52055d7d0ac097e26f638783b301ff65"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa1e23c9e2fc999b3d819c6b8f9ac4828"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d89/a00071.html#aa1e23c9e2fc999b3d819c6b8f9ac4828">AE_MOUSEBUTTON_X2</a>&#160;&#160;&#160;SDL_BUTTON_X2</td></tr>
-<tr class="separator:aa1e23c9e2fc999b3d819c6b8f9ac4828"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="ad6103689017f48d0cbb99d4a6d4a0eae"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad6103689017f48d0cbb99d4a6d4a0eae">&#9670;&nbsp;</a></span>AE_MOUSEBUTTON_LEFT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_MOUSEBUTTON_LEFT&#160;&#160;&#160;SDL_BUTTON_LEFT</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00009">9</a> of file <a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="ae42ee7f0afb125303767266526517261"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae42ee7f0afb125303767266526517261">&#9670;&nbsp;</a></span>AE_MOUSEBUTTON_MIDDLE</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_MOUSEBUTTON_MIDDLE&#160;&#160;&#160;SDL_BUTTON_MIDDLE</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00010">10</a> of file <a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a77bd599cfea5e3479cce697eb1442aa3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a77bd599cfea5e3479cce697eb1442aa3">&#9670;&nbsp;</a></span>AE_MOUSEBUTTON_RIGHT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_MOUSEBUTTON_RIGHT&#160;&#160;&#160;SDL_BUTTON_RIGHT</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00011">11</a> of file <a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a52055d7d0ac097e26f638783b301ff65"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a52055d7d0ac097e26f638783b301ff65">&#9670;&nbsp;</a></span>AE_MOUSEBUTTON_X1</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_MOUSEBUTTON_X1&#160;&#160;&#160;SDL_BUTTON_X1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00012">12</a> of file <a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="aa1e23c9e2fc999b3d819c6b8f9ac4828"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa1e23c9e2fc999b3d819c6b8f9ac4828">&#9670;&nbsp;</a></span>AE_MOUSEBUTTON_X2</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_MOUSEBUTTON_X2&#160;&#160;&#160;SDL_BUTTON_X2</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d0/d89/a00071_source.html#l00013">13</a> of file <a class="el" href="../../d0/d89/a00071_source.html">MouseButtonEvent.h</a>.</p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../d0/d89/a00071.html">MouseButtonEvent.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../d0/d89/a00071.html">MouseMotionEvent.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

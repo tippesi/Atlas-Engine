@@ -1,6 +1,7 @@
 var a00376 =
 [
-    [ "ControllerDeviceEvent", "d6/db8/a00376.html#a8616e5c935a1c035d93523824b9464eb", null ],
-    [ "device", "d6/db8/a00376.html#ade97acdd033d3fb4fc8a2ab50203da22", null ],
-    [ "type", "d6/db8/a00376.html#a560358fce5692fd1dc1dfc03486c2d82", null ]
+    [ "ControllerButtonEvent", "d6/db8/a00376.html#a4c57ccfc5d949f578a791ad643275504", null ],
+    [ "button", "d6/db8/a00376.html#addb16c454ee4a751181505f47eb4e98e", null ],
+    [ "device", "d6/db8/a00376.html#a70a204e7ffe5c115cec0cd42e154d142", null ],
+    [ "state", "d6/db8/a00376.html#a364621ca8d283892ffb623a63a2333c7", null ]
 ];

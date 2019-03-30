@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Input::ControllerHandler Class Reference</title>
+<title>Atlas Engine: Atlas::Events::WindowEvent Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,189 +92,131 @@ $(document).ready(function(){initNavTree('db/d4f/a00420.html','../../');});
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="../../d8/de7/a00417.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Input::ControllerHandler Class Reference</div>  </div>
+<div class="title">Atlas::Events::WindowEvent Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>&gt;</code></p>
+<p>A class to distribute window events.  
+ <a href="../../db/d4f/a00420.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../d2/d1f/a00083_source.html">WindowEvent.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ac017c479d50bec25192df804ec5f75f0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#ac017c479d50bec25192df804ec5f75f0">ControllerHandler</a> (<a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera, float <a class="el" href="../../db/d4f/a00420.html#ace02017fa3ff7ce7442854faa72b9445">sensibility</a>, float <a class="el" href="../../db/d4f/a00420.html#a394342a91fe7ad54874d9e1c45268378">speed</a>, float <a class="el" href="../../db/d4f/a00420.html#a00ad701e8fc231d58818337b8e898eec">reactivity</a>, float <a class="el" href="../../db/d4f/a00420.html#a06adde57666893cdcc710b664b5d0ba2">threshold</a>, int32_t device=-1)</td></tr>
-<tr class="separator:ac017c479d50bec25192df804ec5f75f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2f4f010f9058e6e5aaf54d5542721698"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a2f4f010f9058e6e5aaf54d5542721698">Update</a> (<a class="el" href="../../da/ddc/a00288.html">Camera</a> *camera, uint32_t deltaTime)</td></tr>
-<tr class="separator:a2f4f010f9058e6e5aaf54d5542721698"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef66560dfa4b134a2d599e6a18b238c2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#aef66560dfa4b134a2d599e6a18b238c2">WindowEvent</a> (SDL_WindowEvent event)</td></tr>
+<tr class="separator:aef66560dfa4b134a2d599e6a18b238c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:ace02017fa3ff7ce7442854faa72b9445"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#ace02017fa3ff7ce7442854faa72b9445">sensibility</a></td></tr>
-<tr class="separator:ace02017fa3ff7ce7442854faa72b9445"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a394342a91fe7ad54874d9e1c45268378"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a394342a91fe7ad54874d9e1c45268378">speed</a></td></tr>
-<tr class="separator:a394342a91fe7ad54874d9e1c45268378"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a00ad701e8fc231d58818337b8e898eec"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a00ad701e8fc231d58818337b8e898eec">reactivity</a></td></tr>
-<tr class="separator:a00ad701e8fc231d58818337b8e898eec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a06adde57666893cdcc710b664b5d0ba2"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a06adde57666893cdcc710b664b5d0ba2">threshold</a></td></tr>
-<tr class="separator:a06adde57666893cdcc710b664b5d0ba2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a64041405ba79bede93365d3bd0945152"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#a64041405ba79bede93365d3bd0945152">windowID</a></td></tr>
+<tr class="memdesc:a64041405ba79bede93365d3bd0945152"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ID of the window the event occurred in.  <a href="#a64041405ba79bede93365d3bd0945152">More...</a><br /></td></tr>
+<tr class="separator:a64041405ba79bede93365d3bd0945152"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff0b4d6b2dad240b0e9f6e61f568dc58"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#aff0b4d6b2dad240b0e9f6e61f568dc58">type</a></td></tr>
+<tr class="memdesc:aff0b4d6b2dad240b0e9f6e61f568dc58"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the window event.  <a href="#aff0b4d6b2dad240b0e9f6e61f568dc58">More...</a><br /></td></tr>
+<tr class="separator:aff0b4d6b2dad240b0e9f6e61f568dc58"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab576f93e740def26e53cd11bafb503b3"><td class="memItemLeft" align="right" valign="top">ivec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d4f/a00420.html#ab576f93e740def26e53cd11bafb503b3">data</a></td></tr>
+<tr class="memdesc:ab576f93e740def26e53cd11bafb503b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">The data specific to the event.  <a href="#ab576f93e740def26e53cd11bafb503b3">More...</a><br /></td></tr>
+<tr class="separator:ab576f93e740def26e53cd11bafb503b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00012">12</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
+<div class="textblock"><p>A class to distribute window events. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00030">30</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">WindowEvent.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ac017c479d50bec25192df804ec5f75f0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac017c479d50bec25192df804ec5f75f0">&#9670;&nbsp;</a></span>ControllerHandler()</h2>
+<a id="aef66560dfa4b134a2d599e6a18b238c2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aef66560dfa4b134a2d599e6a18b238c2">&#9670;&nbsp;</a></span>WindowEvent()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">Atlas::Input::ControllerHandler::ControllerHandler </td>
+          <td class="memname">Atlas::Events::WindowEvent::WindowEvent </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype">SDL_WindowEvent&#160;</td>
+          <td class="paramname"><em>event</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>sensibility</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>speed</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>reactivity</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>threshold</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>device</em> = <code>-1</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a2f4f010f9058e6e5aaf54d5542721698"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2f4f010f9058e6e5aaf54d5542721698">&#9670;&nbsp;</a></span>Update()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Atlas::Input::ControllerHandler::Update </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="../../da/ddc/a00288.html">Camera</a> *&#160;</td>
-          <td class="paramname"><em>camera</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">uint32_t&#160;</td>
-          <td class="paramname"><em>deltaTime</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
+<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00033">33</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">WindowEvent.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a00ad701e8fc231d58818337b8e898eec"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a00ad701e8fc231d58818337b8e898eec">&#9670;&nbsp;</a></span>reactivity</h2>
+<a id="ab576f93e740def26e53cd11bafb503b3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab576f93e740def26e53cd11bafb503b3">&#9670;&nbsp;</a></span>data</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float Atlas::Input::ControllerHandler::reactivity</td>
+          <td class="memname">ivec2 Atlas::Events::WindowEvent::data</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00022">22</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
+<p>The data specific to the event. </p>
+<p>Represents screen space coordinates </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00052">52</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">WindowEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="ace02017fa3ff7ce7442854faa72b9445"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ace02017fa3ff7ce7442854faa72b9445">&#9670;&nbsp;</a></span>sensibility</h2>
+<a id="aff0b4d6b2dad240b0e9f6e61f568dc58"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aff0b4d6b2dad240b0e9f6e61f568dc58">&#9670;&nbsp;</a></span>type</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float Atlas::Input::ControllerHandler::sensibility</td>
+          <td class="memname">uint8_t Atlas::Events::WindowEvent::type</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00020">20</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
+<p>The type of the window event. </p>
+<p>See <a class="el" href="../../d2/d1f/a00083.html">WindowEvent.h</a> for more </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00047">47</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">WindowEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a394342a91fe7ad54874d9e1c45268378"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a394342a91fe7ad54874d9e1c45268378">&#9670;&nbsp;</a></span>speed</h2>
+<a id="a64041405ba79bede93365d3bd0945152"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a64041405ba79bede93365d3bd0945152">&#9670;&nbsp;</a></span>windowID</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float Atlas::Input::ControllerHandler::speed</td>
+          <td class="memname">uint32_t Atlas::Events::WindowEvent::windowID</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00021">21</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
+<p>The ID of the window the event occurred in. </p>
 
-</div>
-</div>
-<a id="a06adde57666893cdcc710b664b5d0ba2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a06adde57666893cdcc710b664b5d0ba2">&#9670;&nbsp;</a></span>threshold</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float Atlas::Input::ControllerHandler::threshold</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../db/dab/a00089_source.html#l00023">23</a> of file <a class="el" href="../../db/dab/a00089_source.html">Controller.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d2/d1f/a00083_source.html#l00042">42</a> of file <a class="el" href="../../d2/d1f/a00083_source.html">WindowEvent.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>src/input/<a class="el" href="../../db/dab/a00089_source.html">Controller.h</a></li>
+<li>src/events/<a class="el" href="../../d2/d1f/a00083_source.html">WindowEvent.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../d9/dd6/a00272.html">Atlas</a></li><li class="navelem"><a class="el" href="../../dd/d56/a00274.html">Input</a></li><li class="navelem"><a class="el" href="../../db/d4f/a00420.html">ControllerHandler</a></li>
+    <li class="navelem"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d2/d82/a00279.html">Events</a></li><li class="navelem"><a class="el" href="../../db/d4f/a00420.html">WindowEvent</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

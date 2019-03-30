@@ -1,10 +1,26 @@
 var a00296 =
 [
-    [ "Decal", "db/d7b/a00296.html#a0436dcf442bd6b3b7f69ad6781913f7c", null ],
-    [ "animationLength", "db/d7b/a00296.html#aebbf88993b806e10dab1e536b28616a8", null ],
-    [ "color", "db/d7b/a00296.html#abf7ba5d9c736f1ea9039363b3afa7620", null ],
-    [ "columnCount", "db/d7b/a00296.html#acd8eda7c9ba03b60336cf1f6cea8ba8e", null ],
-    [ "matrix", "db/d7b/a00296.html#a011bb2e6737a05fc2c3784cade0b8f49", null ],
-    [ "rowCount", "db/d7b/a00296.html#a8ebcbbd2014772c1ac961b3cf8bf8dd3", null ],
-    [ "texture", "db/d7b/a00296.html#a7fbe300ab60979db4e0a68f5afc1a7ea", null ]
+    [ "Frustum", "db/da2/a00300.html", "db/da2/a00300" ],
+    [ "Frustum", "db/d7b/a00296.html#a540b15dcdd8727277903db88ed38af17", null ],
+    [ "Camera", "db/d7b/a00296.html#afac5b4e0a8bd1bda80f7406e95c0ac57", null ],
+    [ "~Camera", "db/d7b/a00296.html#a3da15b3005968a0bafb232c7a93c1a5c", null ],
+    [ "GetFrustumCorners", "db/d7b/a00296.html#aafeda26dbca20ee0f15ada614e56c521", null ],
+    [ "UpdateProjection", "db/d7b/a00296.html#ae60ca9cf1b6c8b5f1bdd0d84829fe4ae", null ],
+    [ "UpdateView", "db/d7b/a00296.html#a6b26c5c1c17b6ffa72ca8fcfcfb28e0f", null ],
+    [ "aspectRatio", "db/d7b/a00296.html#a55d8d725e014fde3519517054074ecb7", null ],
+    [ "direction", "db/d7b/a00296.html#a20deb3009db04516f890342063d7652b", null ],
+    [ "farPlane", "db/d7b/a00296.html#acbed85d78ff6e40aa824186601c17b07", null ],
+    [ "fieldOfView", "db/d7b/a00296.html#a55b81d2cb982ff0cfb19f325ea18c075", null ],
+    [ "frustum", "db/d7b/a00296.html#a0aeb6d99d761c7b512d040a7435bc8cc", null ],
+    [ "inverseProjectionMatrix", "db/d7b/a00296.html#aa2d93caa9727749d8707e7b0dbef04a2", null ],
+    [ "inverseViewMatrix", "db/d7b/a00296.html#a9d38a7f77cbee099f0cb65c6d5c33940", null ],
+    [ "location", "db/d7b/a00296.html#a3e9ebcbc50b5e15e59f418492518036f", null ],
+    [ "nearPlane", "db/d7b/a00296.html#a6f4bb655114a55ed57a9dffcb8c8ba80", null ],
+    [ "projectionMatrix", "db/d7b/a00296.html#af8fa62dd433cda76f65dcfaa8821399d", null ],
+    [ "right", "db/d7b/a00296.html#a819650b27da2c46f02d11e7dfb9bc7e2", null ],
+    [ "rotation", "db/d7b/a00296.html#a0318ff180dfe7b868e316a2eefa0fe64", null ],
+    [ "thirdPerson", "db/d7b/a00296.html#aeaf1db9c5f0adc9b8917af39f0eb8b62", null ],
+    [ "thirdPersonDistance", "db/d7b/a00296.html#afce3efac81faed8ffec90741516203ef", null ],
+    [ "up", "db/d7b/a00296.html#a1eb3f727c86f3e8812ddd064ba508989", null ],
+    [ "viewMatrix", "db/d7b/a00296.html#ac3989330a93c4e0bce62fcf3e1901b08", null ]
 ];
