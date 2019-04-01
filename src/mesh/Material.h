@@ -26,28 +26,11 @@ namespace Atlas {
 
 			~Material();
 
-			void Update();
-
-			void AddDiffuseMap(Loader::Image image);
-
-			void AddNormalMap(Loader::Image image);
-
-			void AddSpecularMap(Loader::Image image);
-
-			void AddDisplacementMap(Loader::Image image);
-
-			bool HasArrayMap();
 			bool HasDiffuseMap();
 			bool HasNormalMap();
 			bool HasSpecularMap();
 			bool HasDisplacementMap();
 
-			float GetDiffuseMapIndex();
-			float GetNormalMapIndex();
-			float GetSpecularMapIndex();
-			float GetDisplacementMapIndex();
-
-			Texture::Texture2DArray* arrayMap;
 			Texture::Texture2D* diffuseMap;
 			Texture::Texture2D* normalMap;
 			Texture::Texture2D* specularMap;
@@ -61,22 +44,6 @@ namespace Atlas {
 			float specularIntensity;
 
 			float displacementScale;
-
-			Shader::ShaderConfig geometryConfig;
-			Shader::ShaderConfig shadowConfig;
-
-		private:
-			std::unordered_map<int32_t, Loader::Image> images;
-
-			bool hasDiffuseMap;
-			bool hasNormalMap;
-			bool hasSpecularMap;
-			bool hasDisplacementMap;
-
-			float diffuseMapIndex;
-			float normalMapIndex;
-			float specularMapIndex;
-			float displacementMapIndex;
 
 		};
 

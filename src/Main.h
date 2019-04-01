@@ -27,8 +27,6 @@ private:
 
 	void ControllerDeviceEventHandler(Atlas::Events::ControllerDeviceEvent event);
 
-	void DropEventHandler(Atlas::Events::DropEvent event);
-
 	Atlas::Window* window;
 
 	Atlas::Input::MouseHandler* mouseHandler;

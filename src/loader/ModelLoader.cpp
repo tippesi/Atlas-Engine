@@ -219,16 +219,16 @@ namespace Atlas {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
-				material->AddDiffuseMap(ImageLoader::LoadImage(path, true));
+				auto texture = new Texture::Texture2D(path, true);
+				material->diffuseMap = texture;
 			}
 			if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
-				material->AddNormalMap(ImageLoader::LoadImage(path, false));
+				auto texture = new Texture::Texture2D(path, false);
+				material->normalMap = texture;
 			}
-
-			material->Update();
 
 			return material;
 

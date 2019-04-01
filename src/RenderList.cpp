@@ -29,10 +29,12 @@ namespace Atlas {
 
 				Shader::ShaderConfig *shaderConfig;
 
+				auto data = actor->mesh->data;
+
 				if (type == AE_OPAQUE_RENDERLIST) {
-					shaderConfig = &actor->mesh->data->materials[subData->materialIndex]->geometryConfig;
+					shaderConfig = &actor->mesh->configs[data->materials[subData->materialIndex]].opaqueConfig;
 				} else {
-					shaderConfig = &actor->mesh->data->materials[subData->materialIndex]->shadowConfig;
+					shaderConfig = &actor->mesh->configs[data->materials[subData->materialIndex]].shadowConfig;
 				}
 
 				auto batchKey = renderListBatches.find(shaderConfig->configBatchID);

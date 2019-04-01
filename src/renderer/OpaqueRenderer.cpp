@@ -89,27 +89,14 @@ namespace Atlas {
 
 						auto material = mesh->data->materials[subData->materialIndex];
 
-						if (material->HasArrayMap()) {
-							material->arrayMap->Bind(GL_TEXTURE0);
-							if (material->HasDiffuseMap())
-								diffuseMapIndexUniform->SetValue(material->GetDiffuseMapIndex());
-							if (material->HasNormalMap())
-								normalMapIndexUniform->SetValue(material->GetNormalMapIndex());
-							if (material->HasSpecularMap())
-								specularMapIndexUniform->SetValue(material->GetSpecularMapIndex());
-							if (material->HasDisplacementMap())
-								heightMapIndexUniform->SetValue(material->GetDisplacementMapIndex());
-						}
-						else {
-							if (material->HasDiffuseMap())
-								material->diffuseMap->Bind(GL_TEXTURE0);
-							if (material->HasNormalMap())
-								material->normalMap->Bind(GL_TEXTURE1);
-							if (material->HasSpecularMap())
-								material->specularMap->Bind(GL_TEXTURE2);
-							if (material->HasDisplacementMap())
-								material->displacementMap->Bind(GL_TEXTURE3);
-						}
+						if (material->HasDiffuseMap())
+							material->diffuseMap->Bind(GL_TEXTURE0);
+						if (material->HasNormalMap())
+							material->normalMap->Bind(GL_TEXTURE1);
+						if (material->HasSpecularMap())
+							material->specularMap->Bind(GL_TEXTURE2);
+						if (material->HasDisplacementMap())
+							material->displacementMap->Bind(GL_TEXTURE3);
 
 						diffuseColorUniform->SetValue(material->diffuseColor);
 						specularColorUniform->SetValue(material->specularColor);

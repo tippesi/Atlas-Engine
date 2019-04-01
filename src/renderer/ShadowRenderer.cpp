@@ -103,15 +103,8 @@ namespace Atlas {
 								auto material = mesh->data->materials[subData->materialIndex];
 
 								if (material->HasDiffuseMap()) {
-									if (material->HasArrayMap()) {
-										if (material->arrayMap->channels == 4) {
-											material->arrayMap->Bind(GL_TEXTURE0);
-										}
-									}
-									else {
-										if (material->diffuseMap->channels == 4) {
-											material->diffuseMap->Bind(GL_TEXTURE0);
-										}
+									if (material->diffuseMap->channels == 4) {
+										material->diffuseMap->Bind(GL_TEXTURE0);
 									}
 								}
 
