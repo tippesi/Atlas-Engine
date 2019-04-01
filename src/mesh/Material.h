@@ -8,7 +8,7 @@
 #include "../shader/Shader.h"
 #include "../shader/ShaderConfig.h"
 
-#include <unordered_map>
+#include <string>
 
 #define AE_MATERIAL_DIFFUSE_MAP 0
 #define AE_MATERIAL_NORMAL_MAP 1
@@ -30,6 +30,8 @@ namespace Atlas {
 			bool HasNormalMap();
 			bool HasSpecularMap();
 			bool HasDisplacementMap();
+
+			std::string name;
 
 			Texture::Texture2D* diffuseMap;
 			Texture::Texture2D* normalMap;

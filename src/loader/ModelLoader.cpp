@@ -201,15 +201,20 @@ namespace Atlas {
 
 			auto material = new Mesh::Material();
 
+            aiString name;
+
 			aiColor3D diffuse;
 			aiColor3D specular;
 			aiColor3D ambient;
 
+			assimpMaterial->Get(AI_MATKEY_NAME, name);
 			assimpMaterial->Get(AI_MATKEY_SHININESS, material->specularHardness);
 			assimpMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, material->specularIntensity);
 			assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
 			assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specular);
 			assimpMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ambient);
+
+            material->name = std::string(name.C_Str());
 
 			material->diffuseColor = vec3(diffuse.r, diffuse.g, diffuse.b);
 			material->specularColor = vec3(specular.r, specular.g, specular.b);
