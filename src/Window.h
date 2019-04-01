@@ -120,6 +120,7 @@ namespace Atlas {
 		Events::EventDelegate<Events::MouseWheelEvent> mouseWheelEventDelegate;
 		Events::EventDelegate<Events::ControllerAxisEvent> controllerAxisEventDelegate;
 		Events::EventDelegate<Events::ControllerButtonEvent> controllerButtonEventDelegate;
+		Events::EventDelegate<Events::DropEvent> dropEventDelegate;
 
 	private:
 		void WindowEventHandler(Events::WindowEvent event);
@@ -135,6 +136,8 @@ namespace Atlas {
 		void ControllerAxisEventHandler(Events::ControllerAxisEvent event);
 
 		void ControllerButtonEventHandler(Events::ControllerButtonEvent event);
+
+		void DropEventHandler(Events::DropEvent event);
 
 		uint32_t ID;
 

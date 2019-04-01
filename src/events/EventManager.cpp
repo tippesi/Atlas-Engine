@@ -15,6 +15,7 @@ namespace Atlas {
 		EventDelegate<TouchEvent> EventManager::TouchEventDelegate;
 		EventDelegate<TextInputEvent> EventManager::TextInputEventDelegate;
 		EventDelegate<AudioDeviceEvent> EventManager::AudioDeviceEventDelegate;
+		EventDelegate<DropEvent> EventManager::DropEventDelegate;
 		EventDelegate<> EventManager::QuitEventDelegate;
 
 		std::mutex EventManager::handlerMutex;
@@ -71,7 +72,7 @@ namespace Atlas {
 					ControllerButtonEventDelegate.Fire(event);
 
 				} else if (e.type == SDL_CONTROLLERDEVICEADDED || e.type == SDL_CONTROLLERDEVICEREMOVED ||
-						   e.type == SDL_CONTROLLERDEVICEREMAPPED) {
+					e.type == SDL_CONTROLLERDEVICEREMAPPED) {
 
 					if (e.type == SDL_CONTROLLERDEVICEADDED) {
 						ControllerDevice device;
@@ -110,6 +111,13 @@ namespace Atlas {
 					AudioDeviceEvent event(e.adevice);
 
 					AudioDeviceEventDelegate.Fire(event);
+
+				} else if (e.type == SDL_DROPFILE || e.type == SDL_DROPBEGIN ||
+					e.type == SDL_DROPCOMPLETE || e.type == SDL_DROPTEXT) {
+
+					DropEvent event(e.drop);
+
+					DropEventDelegate.Fire(event);
 
 				} else if (e.type == SDL_QUIT) {
 

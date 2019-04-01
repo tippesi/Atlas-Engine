@@ -32,6 +32,15 @@ namespace Atlas {
 		auto mouseWheelEventHandler = std::bind(&Window::MouseWheelEventHandler, this, std::placeholders::_1);
 		Events::EventManager::MouseWheelEventDelegate.Subscribe(mouseWheelEventHandler);
 
+		auto controllerAxisEventHandler = std::bind(&Window::ControllerAxisEventHandler, this, std::placeholders::_1);
+		Events::EventManager::ControllerAxisEventDelegate.Subscribe(controllerAxisEventHandler);
+
+		auto controllerButtonEventHandler = std::bind(&Window::ControllerButtonEventHandler, this, std::placeholders::_1);
+		Events::EventManager::ControllerButtonEventDelegate.Subscribe(controllerButtonEventHandler);
+
+		auto dropEventHandler = std::bind(&Window::DropEventHandler, this, std::placeholders::_1);
+		Events::EventManager::DropEventDelegate.Subscribe(dropEventHandler);
+
 	}
 
 	uint32_t Window::GetID() {
@@ -185,6 +194,15 @@ namespace Atlas {
 			return;
 
 		controllerButtonEventDelegate.Fire(event);
+
+	}
+
+	void Window::DropEventHandler(Atlas::Events::DropEvent event) {
+
+		if (event.windowID != ID)
+			return;
+
+		dropEventDelegate.Fire(event);
 
 	}
 

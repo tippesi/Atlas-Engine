@@ -42,6 +42,9 @@ Main::Main(int argc, char* argv[]) {
 	auto controllerDeviceEventHandler = std::bind(&Main::ControllerDeviceEventHandler, this, std::placeholders::_1);
     Atlas::Events::EventManager::ControllerDeviceEventDelegate.Subscribe(controllerDeviceEventHandler);
 
+    auto dropEventHandler = std::bind(&Main::DropEventHandler, this, std::placeholders::_1);
+    Atlas::Events::EventManager::DropEventDelegate.Subscribe(dropEventHandler);
+
 	camera = new Camera(47.0f, 2.0f, .25f, 400.0f);
 	camera->location = vec3(30.0f, 25.0f, 0.0f);
 	camera->rotation = vec2(-3.14f / 2.0f, 0.0f);
@@ -256,6 +259,12 @@ void Main::ControllerDeviceEventHandler(Atlas::Events::ControllerDeviceEvent eve
 	else if (event.type == AE_CONTROLLER_REMOVED) {
 		useControllerHandler = false;
 	}
+
+}
+
+void Main::DropEventHandler(Atlas::Events::DropEvent event) {
+
+	AtlasLog("%s", event.file.c_str());
 
 }
 
