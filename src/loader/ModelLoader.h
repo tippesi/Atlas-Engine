@@ -22,7 +22,7 @@ namespace Atlas {
 			static Scene::SceneNode* LoadSceneNode(std::string filename);
 
 		private:
-			static Mesh::Material* LoadMaterial(aiMaterial* assimpMaterial, std::string directory);
+			static Material* LoadMaterial(aiMaterial* assimpMaterial, std::string directory);
 
 		};
 

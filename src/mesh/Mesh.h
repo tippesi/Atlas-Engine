@@ -2,10 +2,10 @@
 #define AE_MESH_H
 
 #include "../System.h"
+#include "../Material.h"
 #include "../buffer/VertexArray.h"
 #include "../shader/ShaderConfig.h"
 #include "MeshData.h"
-#include "Material.h"
 
 #include <unordered_map>
 

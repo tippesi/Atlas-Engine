@@ -21,7 +21,7 @@ namespace Atlas {
 	public:
 		/**
          * Initializes the engine
-         * @param assetDirectory The directory where all assets are located
+         * @param assetDirectory The directory where all assets are located (needs to be relative to the runtime directory)
          * @param shaderDirectory The directory where all the shader files are located relative to the asset directory
          * @param windowTitle The title of your window
          * @param x The x position of the window on the screen in pixels

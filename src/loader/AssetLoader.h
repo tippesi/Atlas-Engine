@@ -92,8 +92,6 @@ namespace Atlas {
         private:
             static std::string GetAssetPath(std::string path);
 
-            static std::string GetAbsolutePath(std::string path);
-
             static std::string assetDirectory;
 
             static std::string dataDirectory;

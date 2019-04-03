@@ -32,7 +32,7 @@ namespace Atlas {
 		private:
 			void UpdateShadowCascade(ShadowComponent* cascade, Camera* camera);
 
-			float FrustumSplitFormula(float correction, float near, float far, float splitIndex, float splitCount);
+			float FrustumSplitFormula(float correction, float nearDist, float farDist, float splitIndex, float splitCount);
 
 			vec3 shadowCenter;
 			bool useShadowCenter;

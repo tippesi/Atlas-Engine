@@ -268,7 +268,7 @@ namespace Atlas {
 							int32_t cellOffset = y * tileResolution + x;
 							int32_t imageOffset = (j * (tileResolution - 1) + y) * heightDataResolution +
 												  i * (tileResolution - 1) + x;
-							heightData[imageOffset] = cell->heightData[cellOffset];
+							heightData[imageOffset] = (uint16_t)cell->heightData[cellOffset];
 						}
 					}
 				}

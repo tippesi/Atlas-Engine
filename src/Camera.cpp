@@ -73,18 +73,18 @@ namespace Atlas {
 		float nearWidth = aspectRatio * nearHeight;
 
 		vec3 cameraLocation = thirdPerson ? location - direction * thirdPersonDistance : location;
-		vec3 far = cameraLocation + direction * farPlane;
-		vec3 near = cameraLocation + direction * nearPlane;
+		vec3 farPoint = cameraLocation + direction * farPlane;
+		vec3 nearPoint = cameraLocation + direction * nearPlane;
 
-		corners.push_back(far + farHeight * up - farWidth * right);
-		corners.push_back(far + farHeight * up + farWidth * right);
-		corners.push_back(far - farHeight * up - farWidth * right);
-		corners.push_back(far - farHeight * up + farWidth * right);
+		corners.push_back(farPoint + farHeight * up - farWidth * right);
+		corners.push_back(farPoint + farHeight * up + farWidth * right);
+		corners.push_back(farPoint - farHeight * up - farWidth * right);
+		corners.push_back(farPoint - farHeight * up + farWidth * right);
 
-		corners.push_back(near + nearHeight * up - nearWidth * right);
-		corners.push_back(near + nearHeight * up + nearWidth * right);
-		corners.push_back(near - nearHeight * up - nearWidth * right);
-		corners.push_back(near - nearHeight * up + nearWidth * right);
+		corners.push_back(nearPoint + nearHeight * up - nearWidth * right);
+		corners.push_back(nearPoint + nearHeight * up + nearWidth * right);
+		corners.push_back(nearPoint - nearHeight * up - nearWidth * right);
+		corners.push_back(nearPoint - nearHeight * up + nearWidth * right);
 
 		return corners;
 

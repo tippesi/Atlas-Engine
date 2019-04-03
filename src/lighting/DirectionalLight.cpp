@@ -127,10 +127,10 @@ namespace Atlas {
 
         }
 
-        float DirectionalLight::FrustumSplitFormula(float correction, float near, float far, float splitIndex, float splitCount) {
+        float DirectionalLight::FrustumSplitFormula(float correction, float nearDist, float farDist, float splitIndex, float splitCount) {
 
-            return correction * near * powf(far / near, splitIndex / splitCount) +
-                   (1.0f - correction) * (near + (splitIndex / splitCount) * (far - near));
+            return correction * nearDist * powf(farDist / nearDist, splitIndex / splitCount) +
+                   (1.0f - correction) * (nearDist + (splitIndex / splitCount) * (farDist - nearDist));
 
         }
 

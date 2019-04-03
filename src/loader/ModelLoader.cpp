@@ -197,9 +197,9 @@ namespace Atlas {
 
 		}
 
-		Mesh::Material* ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, std::string directory) {
+		Material* ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, std::string directory) {
 
-			auto material = new Mesh::Material();
+			auto material = new Material();
 
             aiString name;
 

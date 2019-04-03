@@ -11,12 +11,6 @@
 #include <math.h>
 #include <exception>
 
-// GLM
-#include "libraries/glm/glm.hpp"
-#include "libraries/glm/gtc/type_ptr.hpp"
-#include "libraries/glm/gtx/common.hpp"
-#include "libraries/glm/gtx/transform.hpp"
-
 #if  defined(AE_OS_ANDROID)
 
 #define GL_GLEXT_PROTOTYPES
@@ -36,14 +30,20 @@
 
 // GLAD
 #ifdef AE_OS_WINDOWS
-#define APIENTRY __stdcall
 #include <direct.h>
+#include <Windows.h>
 #endif
 #include <Glad/glad/glad.h>
 
 #define AtlasLog(...) printf(__VA_ARGS__); printf("\n");
 
 #endif
+
+// GLM
+#include "libraries/glm/glm.hpp"
+#include "libraries/glm/gtc/type_ptr.hpp"
+#include "libraries/glm/gtx/common.hpp"
+#include "libraries/glm/gtx/transform.hpp"
 
 // Important definitions
 using glm::vec4;

@@ -103,7 +103,7 @@ namespace Atlas {
 
 		}
 
-		void Mesh::AddMaterial(Atlas::Mesh::Material *material) {
+		void Mesh::AddMaterial(Material *material) {
 
 			MaterialConfig materialConfig;
 
