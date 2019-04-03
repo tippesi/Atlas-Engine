@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Member List</title>
+<title>Atlas Engine: Atlas::Buffer::VertexArray Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('dc/d14/a00720.html','../../');});
+$(document).ready(function(){initNavTree('d3/d82/a00717.html','../../');});
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -87,28 +87,327 @@ $(document).ready(function(){initNavTree('dc/d14/a00720.html','../../');});
 </div>
 
 <div class="header">
+  <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="../../df/d96/a00714.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Common::Octree&lt; T &gt; Member List</div>  </div>
+<div class="title">Atlas::Buffer::VertexArray Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This is the complete list of members for <a class="el" href="../../dc/d14/a00720.html">Atlas::Common::Octree&lt; T &gt;</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="../../dc/d14/a00720.html#a6368e222b30ecaeaaa380ce7c3307bfd">aabb</a></td><td class="entry"><a class="el" href="../../dc/d14/a00720.html">Atlas::Common::Octree&lt; T &gt;</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../dc/d14/a00720.html#a37c7e5170eae9d75172f995d3a573b4f">Clear</a>()</td><td class="entry"><a class="el" href="../../dc/d14/a00720.html">Atlas::Common::Octree&lt; T &gt;</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../dc/d14/a00720.html#a599ff83bd881417eaa8c43e89e8a936e">GetChildren</a>()</td><td class="entry"><a class="el" href="../../dc/d14/a00720.html">Atlas::Common::Octree&lt; T &gt;</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../dc/d14/a00720.html#ada578591122a231d3a9a036ee81ae990">Insert</a>(T data, AABB aabb)</td><td class="entry"><a class="el" href="../../dc/d14/a00720.html">Atlas::Common::Octree&lt; T &gt;</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../dc/d14/a00720.html#a0739b61cae4ac2155bcc2d02487f80b1">IsSubdivided</a>()</td><td class="entry"><a class="el" href="../../dc/d14/a00720.html">Atlas::Common::Octree&lt; T &gt;</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../dc/d14/a00720.html#adde5d197d2eeff3e5ec61228915b31b2">Octree</a>()</td><td class="entry"><a class="el" href="../../dc/d14/a00720.html">Atlas::Common::Octree&lt; T &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../dc/d14/a00720.html#a8c6cc93a526a4b687395130f0006fe14">Octree</a>(AABB aabb, int32_t depth, float relaxFactor=2.0f)</td><td class="entry"><a class="el" href="../../dc/d14/a00720.html">Atlas::Common::Octree&lt; T &gt;</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../dc/d14/a00720.html#a9b3363e0a356b2951d97cf35e7c1dd07">octreeData</a></td><td class="entry"><a class="el" href="../../dc/d14/a00720.html">Atlas::Common::Octree&lt; T &gt;</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../dc/d14/a00720.html#a5f8d87cd80fb90618e6d18c6adafd234">QueryAABB</a>(std::vector&lt; T &gt; &amp;data, AABB aabb)</td><td class="entry"><a class="el" href="../../dc/d14/a00720.html">Atlas::Common::Octree&lt; T &gt;</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../dc/d14/a00720.html#af58fbce577562497799289f855e9d017">Remove</a>(T data, AABB aabb)</td><td class="entry"><a class="el" href="../../dc/d14/a00720.html">Atlas::Common::Octree&lt; T &gt;</a></td><td class="entry"></td></tr>
-</table></div><!-- contents -->
+<p><code>#include &lt;<a class="el" href="../../df/da9/a00263_source.html">VertexArray.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:ac95b07d43df3a166ffda91b39765fcdb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d82/a00717.html#ac95b07d43df3a166ffda91b39765fcdb">VertexArray</a> ()</td></tr>
+<tr class="separator:ac95b07d43df3a166ffda91b39765fcdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a33a746d24eca643c384e970e19b7fe71"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d82/a00717.html#a33a746d24eca643c384e970e19b7fe71">AddIndexComponent</a> (<a class="el" href="../../d1/d04/a00713.html">IndexBuffer</a> *buffer)</td></tr>
+<tr class="separator:a33a746d24eca643c384e970e19b7fe71"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1910fafa7afe21f114808afd2c24b96"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d82/a00717.html#ac1910fafa7afe21f114808afd2c24b96">AddComponent</a> (uint32_t attribArray, <a class="el" href="../../dd/dc1/a00721.html">VertexBuffer</a> *buffer, bool normalized=false)</td></tr>
+<tr class="separator:ac1910fafa7afe21f114808afd2c24b96"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa20260ca8ca71425fb846a34cbf9c2f5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d82/a00717.html#aa20260ca8ca71425fb846a34cbf9c2f5">AddInstancedComponent</a> (uint32_t attribArray, <a class="el" href="../../dd/dc1/a00721.html">VertexBuffer</a> *buffer, bool normalized=false)</td></tr>
+<tr class="separator:aa20260ca8ca71425fb846a34cbf9c2f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb0ffc50f3316fa7564f744bfce8934c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d1/d04/a00713.html">IndexBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d82/a00717.html#abb0ffc50f3316fa7564f744bfce8934c">GetIndexComponent</a> ()</td></tr>
+<tr class="separator:abb0ffc50f3316fa7564f744bfce8934c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a0932383b821fec86a361b36ee90ad0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dd/dc1/a00721.html">VertexBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d82/a00717.html#a9a0932383b821fec86a361b36ee90ad0">GetComponent</a> (uint32_t attribArray)</td></tr>
+<tr class="separator:a9a0932383b821fec86a361b36ee90ad0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4450b7ee5ed379e5d77bd1d2d11c1007"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d82/a00717.html#a4450b7ee5ed379e5d77bd1d2d11c1007">GetMaxAttributeArrayCount</a> ()</td></tr>
+<tr class="separator:a4450b7ee5ed379e5d77bd1d2d11c1007"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a805d7324747ff1de13136efa8304b9c2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d82/a00717.html#a805d7324747ff1de13136efa8304b9c2">Bind</a> ()</td></tr>
+<tr class="separator:a805d7324747ff1de13136efa8304b9c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31115b02fff5a2c07fd48363e5e00148"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d82/a00717.html#a31115b02fff5a2c07fd48363e5e00148">Unbind</a> ()</td></tr>
+<tr class="separator:a31115b02fff5a2c07fd48363e5e00148"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a503ddde8a3856d044b17fa29e82ad4d7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d82/a00717.html#a503ddde8a3856d044b17fa29e82ad4d7">ClearContent</a> ()</td></tr>
+<tr class="separator:a503ddde8a3856d044b17fa29e82ad4d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adfa3f24d38f29b6a751ac84cd55bc62e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d82/a00717.html#adfa3f24d38f29b6a751ac84cd55bc62e">DeleteContent</a> ()</td></tr>
+<tr class="separator:adfa3f24d38f29b6a751ac84cd55bc62e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc9b18b98d7632b04c978041bcd38cd4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d82/a00717.html#afc9b18b98d7632b04c978041bcd38cd4">~VertexArray</a> ()</td></tr>
+<tr class="separator:afc9b18b98d7632b04c978041bcd38cd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../df/da9/a00263_source.html#l00014">14</a> of file <a class="el" href="../../df/da9/a00263_source.html">VertexArray.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="ac95b07d43df3a166ffda91b39765fcdb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac95b07d43df3a166ffda91b39765fcdb">&#9670;&nbsp;</a></span>VertexArray()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Buffer::VertexArray::VertexArray </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="afc9b18b98d7632b04c978041bcd38cd4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afc9b18b98d7632b04c978041bcd38cd4">&#9670;&nbsp;</a></span>~VertexArray()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Buffer::VertexArray::~VertexArray </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="ac1910fafa7afe21f114808afd2c24b96"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac1910fafa7afe21f114808afd2c24b96">&#9670;&nbsp;</a></span>AddComponent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Buffer::VertexArray::AddComponent </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>attribArray</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../dd/dc1/a00721.html">VertexBuffer</a> *&#160;</td>
+          <td class="paramname"><em>buffer</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>normalized</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attribArray</td><td></td></tr>
+    <tr><td class="paramname">buffer</td><td></td></tr>
+    <tr><td class="paramname">normalized</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a33a746d24eca643c384e970e19b7fe71"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a33a746d24eca643c384e970e19b7fe71">&#9670;&nbsp;</a></span>AddIndexComponent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Buffer::VertexArray::AddIndexComponent </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d1/d04/a00713.html">IndexBuffer</a> *&#160;</td>
+          <td class="paramname"><em>buffer</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">buffer</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="aa20260ca8ca71425fb846a34cbf9c2f5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa20260ca8ca71425fb846a34cbf9c2f5">&#9670;&nbsp;</a></span>AddInstancedComponent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Buffer::VertexArray::AddInstancedComponent </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>attribArray</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../dd/dc1/a00721.html">VertexBuffer</a> *&#160;</td>
+          <td class="paramname"><em>buffer</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>normalized</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attribArray</td><td></td></tr>
+    <tr><td class="paramname">buffer</td><td></td></tr>
+    <tr><td class="paramname">normalized</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a805d7324747ff1de13136efa8304b9c2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a805d7324747ff1de13136efa8304b9c2">&#9670;&nbsp;</a></span>Bind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Buffer::VertexArray::Bind </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a503ddde8a3856d044b17fa29e82ad4d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a503ddde8a3856d044b17fa29e82ad4d7">&#9670;&nbsp;</a></span>ClearContent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Buffer::VertexArray::ClearContent </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="adfa3f24d38f29b6a751ac84cd55bc62e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adfa3f24d38f29b6a751ac84cd55bc62e">&#9670;&nbsp;</a></span>DeleteContent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Buffer::VertexArray::DeleteContent </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9a0932383b821fec86a361b36ee90ad0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9a0932383b821fec86a361b36ee90ad0">&#9670;&nbsp;</a></span>GetComponent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../dd/dc1/a00721.html">VertexBuffer</a>* Atlas::Buffer::VertexArray::GetComponent </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>attribArray</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">attribArray</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="abb0ffc50f3316fa7564f744bfce8934c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abb0ffc50f3316fa7564f744bfce8934c">&#9670;&nbsp;</a></span>GetIndexComponent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d1/d04/a00713.html">IndexBuffer</a>* Atlas::Buffer::VertexArray::GetIndexComponent </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="a4450b7ee5ed379e5d77bd1d2d11c1007"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4450b7ee5ed379e5d77bd1d2d11c1007">&#9670;&nbsp;</a></span>GetMaxAttributeArrayCount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::Buffer::VertexArray::GetMaxAttributeArrayCount </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a31115b02fff5a2c07fd48363e5e00148"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a31115b02fff5a2c07fd48363e5e00148">&#9670;&nbsp;</a></span>Unbind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Buffer::VertexArray::Unbind </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/buffer/<a class="el" href="../../df/da9/a00263_source.html">VertexArray.h</a></li>
+</ul>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
+    <li class="navelem"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></li><li class="navelem"><a class="el" href="../../df/d95/a00299.html">Buffer</a></li><li class="navelem"><a class="el" href="../../d3/d82/a00717.html">VertexArray</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

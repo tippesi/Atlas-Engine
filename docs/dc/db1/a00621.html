@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Member List</title>
+<title>Atlas Engine: Atlas::Shader::ShaderConstant Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('d3/dd6/a00624.html','../../');});
+$(document).ready(function(){initNavTree('dc/db1/a00621.html','../../');});
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -87,25 +87,282 @@ $(document).ready(function(){initNavTree('d3/dd6/a00624.html','../../');});
 </div>
 
 <div class="header">
+  <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="../../de/d85/a00618.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Tools::TerrainTool Member List</div>  </div>
+<div class="title">Atlas::Shader::ShaderConstant Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This is the complete list of members for <a class="el" href="../../d3/dd6/a00624.html">Atlas::Tools::TerrainTool</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="../../d3/dd6/a00624.html#a2015433e6d7618c1c696cd28e3b44e7c">BakeTerrain</a>(Terrain::Terrain *terrain)</td><td class="entry"><a class="el" href="../../d3/dd6/a00624.html">Atlas::Tools::TerrainTool</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d3/dd6/a00624.html#ae5c7ce1d640cfa23e11b19f3d6bc47e5">BrushHeight</a>(Terrain::Terrain *terrain, Kernel *kernel, float strength, vec2 position)</td><td class="entry"><a class="el" href="../../d3/dd6/a00624.html">Atlas::Tools::TerrainTool</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d3/dd6/a00624.html#abf83827abaca279842ef43c1fee6850f">GenerateTerrain</a>(Loader::Image16 &amp;heightImage, int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution, float height)</td><td class="entry"><a class="el" href="../../d3/dd6/a00624.html">Atlas::Tools::TerrainTool</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d3/dd6/a00624.html#a00c41b6fbf02d438fd46676eaa1432cf">LoadStorageCell</a>(Terrain::Terrain *terrain, Terrain::TerrainStorageCell *cell, std::string filename, bool initWithHeightData=false)</td><td class="entry"><a class="el" href="../../d3/dd6/a00624.html">Atlas::Tools::TerrainTool</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d3/dd6/a00624.html#ad390014a87626eb3c373b61e252f8920">LoadTerrain</a>(std::string filename)</td><td class="entry"><a class="el" href="../../d3/dd6/a00624.html">Atlas::Tools::TerrainTool</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d3/dd6/a00624.html#a21ff256010fae09131f1e67a50508b8f">SaveTerrain</a>(Terrain::Terrain *terrain, std::string filename)</td><td class="entry"><a class="el" href="../../d3/dd6/a00624.html">Atlas::Tools::TerrainTool</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d3/dd6/a00624.html#ab6418feb3d4235c63d5fb7ef7b12f2ee">SmoothHeight</a>(Terrain::Terrain *terrain, int32_t size, int32_t contributingRadius, float strength, vec2 position)</td><td class="entry"><a class="el" href="../../d3/dd6/a00624.html">Atlas::Tools::TerrainTool</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-</table></div><!-- contents -->
+<p><code>#include &lt;<a class="el" href="../../de/d79/a00203_source.html">ShaderConstant.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:aedce412dbcd90f0241c6d37ffb3794ad"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/db1/a00621.html#aedce412dbcd90f0241c6d37ffb3794ad">ShaderConstant</a> (std::string constantString)</td></tr>
+<tr class="memdesc:aedce412dbcd90f0241c6d37ffb3794ad"><td class="mdescLeft">&#160;</td><td class="mdescRight"><br />
+  <a href="#aedce412dbcd90f0241c6d37ffb3794ad">More...</a><br /></td></tr>
+<tr class="separator:aedce412dbcd90f0241c6d37ffb3794ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37851a7e42ad40a1b95f05ddebe6d3db"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/db1/a00621.html#a37851a7e42ad40a1b95f05ddebe6d3db">SetValue</a> (float value)</td></tr>
+<tr class="separator:a37851a7e42ad40a1b95f05ddebe6d3db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb20a9765ea0305759a8f3bd6c2f73f8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/db1/a00621.html#acb20a9765ea0305759a8f3bd6c2f73f8">SetValue</a> (int32_t value)</td></tr>
+<tr class="separator:acb20a9765ea0305759a8f3bd6c2f73f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a51e239ef0062f2df5d9ff504d3347adc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/db1/a00621.html#a51e239ef0062f2df5d9ff504d3347adc">SetValue</a> (bool value)</td></tr>
+<tr class="separator:a51e239ef0062f2df5d9ff504d3347adc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a241e2b71f7f0edfc520c09a23b1999af"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/db1/a00621.html#a241e2b71f7f0edfc520c09a23b1999af">SetValue</a> (vec2 value)</td></tr>
+<tr class="separator:a241e2b71f7f0edfc520c09a23b1999af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf59da92cc56d09d20078c7e01910a62"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/db1/a00621.html#acf59da92cc56d09d20078c7e01910a62">SetValue</a> (vec3 value)</td></tr>
+<tr class="separator:acf59da92cc56d09d20078c7e01910a62"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5c7042edd2e97629b1835cf4ef91312"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/db1/a00621.html#ae5c7042edd2e97629b1835cf4ef91312">SetValue</a> (vec4 value)</td></tr>
+<tr class="separator:ae5c7042edd2e97629b1835cf4ef91312"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae401dcd5c39ffd2bb1b8412d134687e6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/db1/a00621.html#ae401dcd5c39ffd2bb1b8412d134687e6">SetValue</a> (float *value, int32_t length)</td></tr>
+<tr class="separator:ae401dcd5c39ffd2bb1b8412d134687e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4bba80efd9afd2c591233f4579160eb4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/db1/a00621.html#a4bba80efd9afd2c591233f4579160eb4">SetValue</a> (int32_t *value, int32_t length)</td></tr>
+<tr class="separator:a4bba80efd9afd2c591233f4579160eb4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab982aad238451c60cecc4c277aa078fc"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/db1/a00621.html#ab982aad238451c60cecc4c277aa078fc">GetName</a> ()</td></tr>
+<tr class="separator:ab982aad238451c60cecc4c277aa078fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ec2cc320a74f03f2bf1097bd98491aa"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/db1/a00621.html#a2ec2cc320a74f03f2bf1097bd98491aa">GetValuedString</a> ()</td></tr>
+<tr class="separator:a2ec2cc320a74f03f2bf1097bd98491aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../de/d79/a00203_source.html#l00021">21</a> of file <a class="el" href="../../de/d79/a00203_source.html">ShaderConstant.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="aedce412dbcd90f0241c6d37ffb3794ad"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aedce412dbcd90f0241c6d37ffb3794ad">&#9670;&nbsp;</a></span>ShaderConstant()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Shader::ShaderConstant::ShaderConstant </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>constantString</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><br />
+ </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">constantString</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="ab982aad238451c60cecc4c277aa078fc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab982aad238451c60cecc4c277aa078fc">&#9670;&nbsp;</a></span>GetName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string Atlas::Shader::ShaderConstant::GetName </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a2ec2cc320a74f03f2bf1097bd98491aa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2ec2cc320a74f03f2bf1097bd98491aa">&#9670;&nbsp;</a></span>GetValuedString()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string Atlas::Shader::ShaderConstant::GetValuedString </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a37851a7e42ad40a1b95f05ddebe6d3db"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a37851a7e42ad40a1b95f05ddebe6d3db">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[1/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="acb20a9765ea0305759a8f3bd6c2f73f8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acb20a9765ea0305759a8f3bd6c2f73f8">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[2/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a51e239ef0062f2df5d9ff504d3347adc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a51e239ef0062f2df5d9ff504d3347adc">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[3/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a241e2b71f7f0edfc520c09a23b1999af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a241e2b71f7f0edfc520c09a23b1999af">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[4/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">vec2&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="acf59da92cc56d09d20078c7e01910a62"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acf59da92cc56d09d20078c7e01910a62">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[5/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">vec3&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ae5c7042edd2e97629b1835cf4ef91312"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae5c7042edd2e97629b1835cf4ef91312">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[6/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">vec4&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ae401dcd5c39ffd2bb1b8412d134687e6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae401dcd5c39ffd2bb1b8412d134687e6">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[7/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">float *&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a4bba80efd9afd2c591233f4579160eb4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4bba80efd9afd2c591233f4579160eb4">&#9670;&nbsp;</a></span>SetValue() <span class="overload">[8/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Shader::ShaderConstant::SetValue </td>
+          <td>(</td>
+          <td class="paramtype">int32_t *&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/shader/<a class="el" href="../../de/d79/a00203_source.html">ShaderConstant.h</a></li>
+</ul>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
+    <li class="navelem"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d4/d5b/a00294.html">Shader</a></li><li class="navelem"><a class="el" href="../../dc/db1/a00621.html">ShaderConstant</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

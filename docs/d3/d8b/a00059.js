@@ -1,6 +1,8 @@
 var a00059 =
 [
-    [ "EventManager", "d9/dc1/a00388.html", "d9/dc1/a00388" ],
-    [ "AE_BUTTON_PRESSED", "d3/d8b/a00059.html#a269ac23a95fa3575b8b90373d522b7ed", null ],
-    [ "AE_BUTTON_RELEASED", "d3/d8b/a00059.html#a527d7f84c4e7f176446d0e82553b3e6c", null ]
+    [ "DropEvent", "d7/d93/a00397.html", "d7/d93/a00397" ],
+    [ "AE_BEGINDROP", "d3/d8b/a00059.html#a3ff1081e92a4c186f893d84db39eddcf", null ],
+    [ "AE_COMPLETEDROP", "d3/d8b/a00059.html#a281e9237fa07c63ba6db01fe060fa084", null ],
+    [ "AE_FILEDROP", "d3/d8b/a00059.html#a6abf906de8ed9bc2047d474968b87aa1", null ],
+    [ "AE_TEXTDROP", "d3/d8b/a00059.html#a837ddaa7266cb112982bb5d76dc5ad7a", null ]
 ];

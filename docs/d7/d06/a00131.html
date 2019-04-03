@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/mesh/Material.h File Reference</title>
+<title>Atlas Engine: src/lighting/Skybox.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,116 +89,34 @@ $(document).ready(function(){initNavTree('d7/d06/a00131.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a>  </div>
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">Material.h File Reference</div>  </div>
+<div class="title">Skybox.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../dc/d87/a00032_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d0/d27/a00239_source.html">../texture/Texture2D.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d2/dc8/a00242_source.html">../texture/Texture2DArray.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d4/d3a/a00101_source.html">../loader/ImageLoader.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../de/df3/a00185_source.html">../shader/Shader.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d9/dd0/a00191_source.html">../shader/ShaderConfig.h</a>&quot;</code><br />
-<code>#include &lt;unordered_map&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">../System.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d0/d27/a00239_source.html">../texture/Cubemap.h</a>&quot;</code><br />
 </div>
 <p><a href="../../d7/d06/a00131_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d1c/a00504.html">Atlas::Mesh::Material</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/def/a00513.html">Atlas::Lighting::Skybox</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:dc/d5d/a00278"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></td></tr>
+<tr class="memitem:d6/d7f/a00287"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:dd/dfe/a00283"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/dfe/a00283.html">Atlas::Mesh</a></td></tr>
+<tr class="memitem:da/dd4/a00291"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/dd4/a00291.html">Atlas::Lighting</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:af569a895c02485a5605fa6977d754fd9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/d06/a00131.html#af569a895c02485a5605fa6977d754fd9">AE_MATERIAL_DIFFUSE_MAP</a>&#160;&#160;&#160;0</td></tr>
-<tr class="separator:af569a895c02485a5605fa6977d754fd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa1188932424854ae34fe34b8b963e1d1"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/d06/a00131.html#aa1188932424854ae34fe34b8b963e1d1">AE_MATERIAL_NORMAL_MAP</a>&#160;&#160;&#160;1</td></tr>
-<tr class="separator:aa1188932424854ae34fe34b8b963e1d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af3936ddcc05e2e8ff5beac320d1f43f9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/d06/a00131.html#af3936ddcc05e2e8ff5beac320d1f43f9">AE_MATERIAL_SPECULAR_MAP</a>&#160;&#160;&#160;2</td></tr>
-<tr class="separator:af3936ddcc05e2e8ff5beac320d1f43f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0653f36c8d9e616e0b1ceda11c4c4137"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/d06/a00131.html#a0653f36c8d9e616e0b1ceda11c4c4137">AE_MATERIAL_DISPLACEMENT_MAP</a>&#160;&#160;&#160;3</td></tr>
-<tr class="separator:a0653f36c8d9e616e0b1ceda11c4c4137"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="af569a895c02485a5605fa6977d754fd9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af569a895c02485a5605fa6977d754fd9">&#9670;&nbsp;</a></span>AE_MATERIAL_DIFFUSE_MAP</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_MATERIAL_DIFFUSE_MAP&#160;&#160;&#160;0</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00013">13</a> of file <a class="el" href="../../d7/d06/a00131_source.html">Material.h</a>.</p>
-
-</div>
-</div>
-<a id="a0653f36c8d9e616e0b1ceda11c4c4137"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0653f36c8d9e616e0b1ceda11c4c4137">&#9670;&nbsp;</a></span>AE_MATERIAL_DISPLACEMENT_MAP</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_MATERIAL_DISPLACEMENT_MAP&#160;&#160;&#160;3</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00016">16</a> of file <a class="el" href="../../d7/d06/a00131_source.html">Material.h</a>.</p>
-
-</div>
-</div>
-<a id="aa1188932424854ae34fe34b8b963e1d1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa1188932424854ae34fe34b8b963e1d1">&#9670;&nbsp;</a></span>AE_MATERIAL_NORMAL_MAP</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_MATERIAL_NORMAL_MAP&#160;&#160;&#160;1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00014">14</a> of file <a class="el" href="../../d7/d06/a00131_source.html">Material.h</a>.</p>
-
-</div>
-</div>
-<a id="af3936ddcc05e2e8ff5beac320d1f43f9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af3936ddcc05e2e8ff5beac320d1f43f9">&#9670;&nbsp;</a></span>AE_MATERIAL_SPECULAR_MAP</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_MATERIAL_SPECULAR_MAP&#160;&#160;&#160;2</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d7/d06/a00131_source.html#l00015">15</a> of file <a class="el" href="../../d7/d06/a00131_source.html">Material.h</a>.</p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../d7/d06/a00131.html">Material.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_21d93b4c2deba69589411e8b07614db4.html">lighting</a></li><li class="navelem"><a class="el" href="../../d7/d06/a00131.html">Skybox.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

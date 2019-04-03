@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Member List</title>
+<title>Atlas Engine: Atlas::Renderer::Renderer Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('d8/d2e/a00588.html','../../');});
+$(document).ready(function(){initNavTree('dc/dac/a00585.html','../../');});
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -87,29 +87,134 @@ $(document).ready(function(){initNavTree('d8/d2e/a00588.html','../../');});
 </div>
 
 <div class="header">
+  <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="../../d4/d2f/a00582.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Shader::ShaderBatch Member List</div>  </div>
+<div class="title">Atlas::Renderer::Renderer Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This is the complete list of members for <a class="el" href="../../d8/d2e/a00588.html">Atlas::Shader::ShaderBatch</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="../../d8/d2e/a00588.html#a53675c59866ff8cfe0f6aad9b238649c">AddConfig</a>(ShaderConfig *config)</td><td class="entry"><a class="el" href="../../d8/d2e/a00588.html">Atlas::Shader::ShaderBatch</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d8/d2e/a00588.html#a273b1f8e5e749924abea6e7339327fc9">AddStage</a>(int32_t type, std::string filename)</td><td class="entry"><a class="el" href="../../d8/d2e/a00588.html">Atlas::Shader::ShaderBatch</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d8/d2e/a00588.html#a8014749ec9613cbe246196d2c7584b37">Bind</a>(int32_t configBatchID)</td><td class="entry"><a class="el" href="../../d8/d2e/a00588.html">Atlas::Shader::ShaderBatch</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d8/d2e/a00588.html#ac12501b60475ed5b9b25442ccc876e68">boundShaderID</a></td><td class="entry"><a class="el" href="../../d8/d2e/a00588.html">Atlas::Shader::ShaderBatch</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d8/d2e/a00588.html#a8ae5e5a421d4c3e12033006211725b90">configBatches</a></td><td class="entry"><a class="el" href="../../d8/d2e/a00588.html">Atlas::Shader::ShaderBatch</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d8/d2e/a00588.html#a053b362d36dd02868bedb8170f081598">GetUniform</a>(std::string uniformName)</td><td class="entry"><a class="el" href="../../d8/d2e/a00588.html">Atlas::Shader::ShaderBatch</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d8/d2e/a00588.html#a937669801dcf90c239b0f23f2582ee53">RemoveConfig</a>(ShaderConfig *config)</td><td class="entry"><a class="el" href="../../d8/d2e/a00588.html">Atlas::Shader::ShaderBatch</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d8/d2e/a00588.html#ad09dc9bf5164c7c4ed2487731a196375">ShaderBatch</a>()</td><td class="entry"><a class="el" href="../../d8/d2e/a00588.html">Atlas::Shader::ShaderBatch</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d8/d2e/a00588.html#ad3df5565e8204e3c8ffa1ab5b9f6e6e4">stages</a></td><td class="entry"><a class="el" href="../../d8/d2e/a00588.html">Atlas::Shader::ShaderBatch</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d8/d2e/a00588.html#a43ee398602bb071c5cad26c8d67894fd">uniforms</a></td><td class="entry"><a class="el" href="../../d8/d2e/a00588.html">Atlas::Shader::ShaderBatch</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d8/d2e/a00588.html#a57d6fe19cba476fa1e83f586aa857cef">~ShaderBatch</a>()</td><td class="entry"><a class="el" href="../../d8/d2e/a00588.html">Atlas::Shader::ShaderBatch</a></td><td class="entry"></td></tr>
-</table></div><!-- contents -->
+<p><code>#include &lt;<a class="el" href="../../d5/de9/a00176_source.html">Renderer.h</a>&gt;</code></p>
+<div class="dynheader">
+Inheritance diagram for Atlas::Renderer::Renderer:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="../../dc/dac/a00585.png" usemap="#Atlas::Renderer::Renderer_map" alt=""/>
+  <map id="Atlas::Renderer::Renderer_map" name="Atlas::Renderer::Renderer_map">
+<area href="../../dd/d72/a00541.html" alt="Atlas::Renderer::AtmosphereRenderer" shape="rect" coords="289,56,568,80"/>
+<area href="../../d8/deb/a00545.html" alt="Atlas::Renderer::BlurRenderer" shape="rect" coords="289,112,568,136"/>
+<area href="../../d5/d21/a00549.html" alt="Atlas::Renderer::DecalRenderer" shape="rect" coords="289,168,568,192"/>
+<area href="../../d0/d79/a00553.html" alt="Atlas::Renderer::DirectionalLightRenderer" shape="rect" coords="289,224,568,248"/>
+<area href="../../d2/d50/a00561.html" alt="Atlas::Renderer::DirectionalVolumetricRenderer" shape="rect" coords="289,280,568,304"/>
+<area href="../../d6/d21/a00573.html" alt="Atlas::Renderer::OpaqueRenderer" shape="rect" coords="289,336,568,360"/>
+<area href="../../d8/d9b/a00577.html" alt="Atlas::Renderer::PointLightRenderer" shape="rect" coords="289,392,568,416"/>
+<area href="../../d8/dc8/a00581.html" alt="Atlas::Renderer::PostProcessRenderer" shape="rect" coords="289,448,568,472"/>
+<area href="../../d6/da3/a00589.html" alt="Atlas::Renderer::ShadowRenderer" shape="rect" coords="289,504,568,528"/>
+<area href="../../d2/da3/a00593.html" alt="Atlas::Renderer::SkyboxRenderer" shape="rect" coords="289,560,568,584"/>
+<area href="../../d8/dbd/a00597.html" alt="Atlas::Renderer::TerrainRenderer" shape="rect" coords="289,616,568,640"/>
+<area href="../../d6/db2/a00601.html" alt="Atlas::Renderer::TextRenderer" shape="rect" coords="289,672,568,696"/>
+</map>
+ </div></div>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a3916cca4a604f05d9b0d6bf86836823d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dac/a00585.html#a3916cca4a604f05d9b0d6bf86836823d">Render</a> (<a class="el" href="../../d4/d13/a00377.html">Window</a> *window, <a class="el" href="../../d7/ddb/a00361.html">RenderTarget</a> *target, <a class="el" href="../../d3/d07/a00305.html">Camera</a> *camera, Scene::Scene *scene)=0</td></tr>
+<tr class="separator:a3916cca4a604f05d9b0d6bf86836823d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a63d2a27fa3dc6790432cdd60ec9d61fa"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dac/a00585.html#a63d2a27fa3dc6790432cdd60ec9d61fa">~Renderer</a> ()</td></tr>
+<tr class="separator:a63d2a27fa3dc6790432cdd60ec9d61fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../d5/de9/a00176_source.html#l00014">14</a> of file <a class="el" href="../../d5/de9/a00176_source.html">Renderer.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a63d2a27fa3dc6790432cdd60ec9d61fa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a63d2a27fa3dc6790432cdd60ec9d61fa">&#9670;&nbsp;</a></span>~Renderer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual Atlas::Renderer::Renderer::~Renderer </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/de9/a00176_source.html#l00018">18</a> of file <a class="el" href="../../d5/de9/a00176_source.html">Renderer.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a3916cca4a604f05d9b0d6bf86836823d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3916cca4a604f05d9b0d6bf86836823d">&#9670;&nbsp;</a></span>Render()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void Atlas::Renderer::Renderer::Render </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d4/d13/a00377.html">Window</a> *&#160;</td>
+          <td class="paramname"><em>window</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d7/ddb/a00361.html">RenderTarget</a> *&#160;</td>
+          <td class="paramname"><em>target</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d3/d07/a00305.html">Camera</a> *&#160;</td>
+          <td class="paramname"><em>camera</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Scene::Scene *&#160;</td>
+          <td class="paramname"><em>scene</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implemented in <a class="el" href="../../d6/d21/a00573.html#a8beb79a0b2acf4f0e96a404bc05fbf8d">Atlas::Renderer::OpaqueRenderer</a>, <a class="el" href="../../d6/da3/a00589.html#a43f97ccf2bc1bda6ad55f1f5f58ec774">Atlas::Renderer::ShadowRenderer</a>, <a class="el" href="../../d6/db2/a00601.html#ae16eee8e3f8aa6ec6d9af41bf9ee9a8d">Atlas::Renderer::TextRenderer</a>, <a class="el" href="../../dd/d72/a00541.html#ae545fd0224836c98427c0a39df88c587">Atlas::Renderer::AtmosphereRenderer</a>, <a class="el" href="../../d8/deb/a00545.html#ae93debcfef370287529d69204e675b0d">Atlas::Renderer::BlurRenderer</a>, <a class="el" href="../../d2/d50/a00561.html#ada323bdebc44999a2e7724d9fa2e5e83">Atlas::Renderer::DirectionalVolumetricRenderer</a>, <a class="el" href="../../d8/dc8/a00581.html#a821ee27213ef700fc244700a80fd99ff">Atlas::Renderer::PostProcessRenderer</a>, <a class="el" href="../../d2/da3/a00593.html#a4a4d2d7f491f132c5ab9896726cb7af3">Atlas::Renderer::SkyboxRenderer</a>, <a class="el" href="../../d5/d21/a00549.html#a1c02e3b13ad30402aa5d77476fefa852">Atlas::Renderer::DecalRenderer</a>, <a class="el" href="../../d0/d79/a00553.html#aec7881934b1f9b3158b4ef54bf8082a8">Atlas::Renderer::DirectionalLightRenderer</a>, <a class="el" href="../../d8/d9b/a00577.html#ae98abb451503b45f28d765a3eb50240f">Atlas::Renderer::PointLightRenderer</a>, and <a class="el" href="../../d8/dbd/a00597.html#a510099716c4e4f19485e15733996be13">Atlas::Renderer::TerrainRenderer</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/renderer/<a class="el" href="../../d5/de9/a00176_source.html">Renderer.h</a></li>
+</ul>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
+    <li class="navelem"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d6/d82/a00293.html">Renderer</a></li><li class="navelem"><a class="el" href="../../dc/dac/a00585.html">Renderer</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

@@ -1,8 +1,8 @@
 var a00026 =
 [
-    [ "RenderListBatch", "df/df1/a00340.html", "df/df1/a00340" ],
-    [ "RenderList", "d8/d8e/a00344.html", "d8/d8e/a00344" ],
-    [ "AE_OPAQUE_RENDERLIST", "d6/d5b/a00026.html#a410a507935037f6b1f21d6f4ea797212", null ],
-    [ "AE_SHADOW_RENDERLIST", "d6/d5b/a00026.html#a92717d289f5c47192413324c3f9e2f50", null ],
-    [ "RenderListBatch", "d6/d5b/a00026.html#a699345f6cda54a78eab60fefec068e8a", null ]
+    [ "Material", "d7/dfc/a00349.html", "d7/dfc/a00349" ],
+    [ "AE_MATERIAL_DIFFUSE_MAP", "d6/d5b/a00026.html#af569a895c02485a5605fa6977d754fd9", null ],
+    [ "AE_MATERIAL_DISPLACEMENT_MAP", "d6/d5b/a00026.html#a0653f36c8d9e616e0b1ceda11c4c4137", null ],
+    [ "AE_MATERIAL_NORMAL_MAP", "d6/d5b/a00026.html#aa1188932424854ae34fe34b8b963e1d1", null ],
+    [ "AE_MATERIAL_SPECULAR_MAP", "d6/d5b/a00026.html#af3936ddcc05e2e8ff5beac320d1f43f9", null ]
 ];

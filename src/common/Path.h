@@ -13,7 +13,7 @@ namespace Atlas {
 
 		public:
 		    /**
-		     * Calculate the path from one file to another.
+		     * Calculates the path from one file to another.
 		     * @param src A path to a file.
 		     * @param dest A path to a file.
 		     * @return The path from src to dest.

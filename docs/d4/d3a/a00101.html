@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/loader/ImageLoader.h File Reference</title>
+<title>Atlas Engine: src/input/Touch.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,120 +89,35 @@ $(document).ready(function(){initNavTree('d4/d3a/a00101.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a>  </div>
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">ImageLoader.h File Reference</div>  </div>
+<div class="title">Touch.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../dc/d87/a00032_source.html">../System.h</a>&quot;</code><br />
-<code>#include &lt;vector&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">../System.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../de/de1/a00065_source.html">../events/EventManager.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../dd/dad/a00005_source.html">../Camera.h</a>&quot;</code><br />
 </div>
 <p><a href="../../d4/d3a/a00101_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/dfe/a00448.html">Atlas::Loader::IImage</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Base class for the image classes.  <a href="../../de/dfe/a00448.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00452.html">Atlas::Loader::Image</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents an image with 8 bits per channel.  <a href="../../d1/d0b/a00452.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d87/a00456.html">Atlas::Loader::Image16</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents an image with 16 bits per channel.  <a href="../../de/d87/a00456.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/db1/a00460.html">Atlas::Loader::ImageLoader</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/dc3/a00453.html">Atlas::Input::TouchHandler</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:dc/d5d/a00278"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d5d/a00278.html">Atlas</a></td></tr>
+<tr class="memitem:d6/d7f/a00287"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:d2/d04/a00281"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d04/a00281.html">Atlas::Loader</a></td></tr>
+<tr class="memitem:d4/d66/a00289"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d66/a00289.html">Atlas::Input</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:afef3a2d4ae98d37d69065dfba9a9aedf"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d3a/a00101.html#afef3a2d4ae98d37d69065dfba9a9aedf">AE_IMAGE_PNG</a>&#160;&#160;&#160;0</td></tr>
-<tr class="separator:afef3a2d4ae98d37d69065dfba9a9aedf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8b45a668875b41888bc8093a94011685"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d3a/a00101.html#a8b45a668875b41888bc8093a94011685">AE_IMAGE_JPG</a>&#160;&#160;&#160;1</td></tr>
-<tr class="separator:a8b45a668875b41888bc8093a94011685"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6883c5f103c776627d687a825a83443a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d3a/a00101.html#a6883c5f103c776627d687a825a83443a">AE_IMAGE_BMP</a>&#160;&#160;&#160;2</td></tr>
-<tr class="separator:a6883c5f103c776627d687a825a83443a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac460c441e4ba026bf9dbf1d1bde461f4"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d3a/a00101.html#ac460c441e4ba026bf9dbf1d1bde461f4">AE_IMAGE_PGM</a>&#160;&#160;&#160;3</td></tr>
-<tr class="separator:ac460c441e4ba026bf9dbf1d1bde461f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="a6883c5f103c776627d687a825a83443a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6883c5f103c776627d687a825a83443a">&#9670;&nbsp;</a></span>AE_IMAGE_BMP</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_IMAGE_BMP&#160;&#160;&#160;2</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d3a/a00101_source.html#l00010">10</a> of file <a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a>.</p>
-
-</div>
-</div>
-<a id="a8b45a668875b41888bc8093a94011685"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8b45a668875b41888bc8093a94011685">&#9670;&nbsp;</a></span>AE_IMAGE_JPG</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_IMAGE_JPG&#160;&#160;&#160;1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d3a/a00101_source.html#l00009">9</a> of file <a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a>.</p>
-
-</div>
-</div>
-<a id="ac460c441e4ba026bf9dbf1d1bde461f4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac460c441e4ba026bf9dbf1d1bde461f4">&#9670;&nbsp;</a></span>AE_IMAGE_PGM</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_IMAGE_PGM&#160;&#160;&#160;3</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d3a/a00101_source.html#l00011">11</a> of file <a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a>.</p>
-
-</div>
-</div>
-<a id="afef3a2d4ae98d37d69065dfba9a9aedf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afef3a2d4ae98d37d69065dfba9a9aedf">&#9670;&nbsp;</a></span>AE_IMAGE_PNG</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_IMAGE_PNG&#160;&#160;&#160;0</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d3a/a00101_source.html#l00008">8</a> of file <a class="el" href="../../d4/d3a/a00101_source.html">ImageLoader.h</a>.</p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_1f6e0c4656fa8537bb95d4658659e347.html">loader</a></li><li class="navelem"><a class="el" href="../../d4/d3a/a00101.html">ImageLoader.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_d365e15d984c8d0205117ee0c40d6716.html">input</a></li><li class="navelem"><a class="el" href="../../d4/d3a/a00101.html">Touch.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

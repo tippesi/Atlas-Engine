@@ -1,4 +1,6 @@
 var a00300 =
 [
-    [ "planes", "db/da2/a00300.html#a25e6a52d9f868f90830e2043b3f9eaf0", null ]
+    [ "AudioData", "d8/db9/a00725.html", "d8/db9/a00725" ],
+    [ "AudioManager", "d8/d52/a00729.html", "d8/d52/a00729" ],
+    [ "AudioStream", "d4/d91/a00733.html", "d4/d91/a00733" ]
 ];

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Member List</title>
+<title>Atlas Engine: Atlas::Terrain::TerrainStorage Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('d5/d40/a00672.html','../../');});
+$(document).ready(function(){initNavTree('d8/d7a/a00669.html','../../');});
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -87,20 +87,203 @@ $(document).ready(function(){initNavTree('d5/d40/a00672.html','../../');});
 </div>
 
 <div class="header">
+  <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="../../d9/d41/a00666.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Texture::TextureFormat Member List</div>  </div>
+<div class="title">Atlas::Terrain::TerrainStorage Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This is the complete list of members for <a class="el" href="../../d5/d40/a00672.html">Atlas::Texture::TextureFormat</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="../../d5/d40/a00672.html#a470d031fb8814692efe9f558292df16d">GetBaseFormat</a>(int32_t sizedFormat)</td><td class="entry"><a class="el" href="../../d5/d40/a00672.html">Atlas::Texture::TextureFormat</a></td><td class="entry"><span class="mlabel">inline</span><span class="mlabel">static</span></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d5/d40/a00672.html#a15de8d84a4272d1a38a82ab724d6eaec">GetType</a>(int32_t sizedFormat)</td><td class="entry"><a class="el" href="../../d5/d40/a00672.html">Atlas::Texture::TextureFormat</a></td><td class="entry"><span class="mlabel">inline</span><span class="mlabel">static</span></td></tr>
-</table></div><!-- contents -->
+<p>Manages the materials and data for all terrain nodes.  
+ <a href="../../d8/d7a/a00669.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../d6/de1/a00233_source.html">TerrainStorage.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a5a20de93f7d7e378b4cd78bf8355fbb8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d7a/a00669.html#a5a20de93f7d7e378b4cd78bf8355fbb8">TerrainStorage</a> (int32_t rootNodeCount, int32_t LoDCount)</td></tr>
+<tr class="memdesc:a5a20de93f7d7e378b4cd78bf8355fbb8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a terrain storage object.  <a href="#a5a20de93f7d7e378b4cd78bf8355fbb8">More...</a><br /></td></tr>
+<tr class="separator:a5a20de93f7d7e378b4cd78bf8355fbb8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a81c056bb5570e00d54bf39a1a77c40aa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d4/d4f/a00673.html">TerrainStorageCell</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d7a/a00669.html#a81c056bb5570e00d54bf39a1a77c40aa">GetCell</a> (int32_t x, int32_t y, int32_t LoD)</td></tr>
+<tr class="memdesc:a81c056bb5570e00d54bf39a1a77c40aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the cell to the corresponding arguments in the storage object.  <a href="#a81c056bb5570e00d54bf39a1a77c40aa">More...</a><br /></td></tr>
+<tr class="separator:a81c056bb5570e00d54bf39a1a77c40aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a160c960142cfd89aca7f3157f8bbd5d6"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d7a/a00669.html#a160c960142cfd89aca7f3157f8bbd5d6">GetCellCount</a> (int32_t LoD)</td></tr>
+<tr class="memdesc:a160c960142cfd89aca7f3157f8bbd5d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of cell for a specific LoD level.  <a href="#a160c960142cfd89aca7f3157f8bbd5d6">More...</a><br /></td></tr>
+<tr class="separator:a160c960142cfd89aca7f3157f8bbd5d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a736546297237e9a06e1cd1c119a083fa"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d4/d4f/a00673.html">TerrainStorageCell</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d7a/a00669.html#a736546297237e9a06e1cd1c119a083fa">requestedCells</a></td></tr>
+<tr class="memdesc:a736546297237e9a06e1cd1c119a083fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">The storage cells the terrain request to change the level of detail.  <a href="#a736546297237e9a06e1cd1c119a083fa">More...</a><br /></td></tr>
+<tr class="separator:a736546297237e9a06e1cd1c119a083fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8bc7c02771e8cc6a66c279dce3151e7"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="../../d4/d4f/a00673.html">TerrainStorageCell</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d7a/a00669.html#ad8bc7c02771e8cc6a66c279dce3151e7">unusedCells</a></td></tr>
+<tr class="memdesc:ad8bc7c02771e8cc6a66c279dce3151e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">The storage cells the terrain doesn't need any more because of a change in the level of detail.  <a href="#ad8bc7c02771e8cc6a66c279dce3151e7">More...</a><br /></td></tr>
+<tr class="separator:ad8bc7c02771e8cc6a66c279dce3151e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Manages the materials and data for all terrain nodes. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/de1/a00233_source.html#l00016">16</a> of file <a class="el" href="../../d6/de1/a00233_source.html">TerrainStorage.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a5a20de93f7d7e378b4cd78bf8355fbb8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5a20de93f7d7e378b4cd78bf8355fbb8">&#9670;&nbsp;</a></span>TerrainStorage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Terrain::TerrainStorage::TerrainStorage </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>rootNodeCount</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>LoDCount</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Constructs a terrain storage object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">rootNodeCount</td><td>The root node count of the terrain </td></tr>
+    <tr><td class="paramname">LoDCount</td><td>The level of detail count of the terrain </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a81c056bb5570e00d54bf39a1a77c40aa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a81c056bb5570e00d54bf39a1a77c40aa">&#9670;&nbsp;</a></span>GetCell()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d4/d4f/a00673.html">TerrainStorageCell</a>* Atlas::Terrain::TerrainStorage::GetCell </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>LoD</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Finds the cell to the corresponding arguments in the storage object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">x</td><td>The x sector of the node </td></tr>
+    <tr><td class="paramname">y</td><td>The y sector of the node </td></tr>
+    <tr><td class="paramname">LoD</td><td>The level of detail of the node </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a <a class="el" href="../../d4/d4f/a00673.html" title="Stores the material information for a terrain node. ">TerrainStorageCell</a> </dd></dl>
+<dl class="section remark"><dt>Remarks</dt><dd>The terrain storage can be understood as a mipmap where each level of detail is represented by a mipmap level. This means y is the coordinate in z direction of the terrain. Also x and y aren't world space coordinates but are the coordinates of a specific terrain node in their level of detail. E.g at a level of detail of 5 and a rootNodeCount of 9 x and y are in range (0, 2^(5-1) * 9) </dd></dl>
+
+</div>
+</div>
+<a id="a160c960142cfd89aca7f3157f8bbd5d6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a160c960142cfd89aca7f3157f8bbd5d6">&#9670;&nbsp;</a></span>GetCellCount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int32_t Atlas::Terrain::TerrainStorage::GetCellCount </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>LoD</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the number of cell for a specific LoD level. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">LoD</td><td>The LoD level </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>An integer with the number of cells </dd></dl>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a736546297237e9a06e1cd1c119a083fa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a736546297237e9a06e1cd1c119a083fa">&#9670;&nbsp;</a></span>requestedCells</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;<a class="el" href="../../d4/d4f/a00673.html">TerrainStorageCell</a>*&gt; Atlas::Terrain::TerrainStorage::requestedCells</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The storage cells the terrain request to change the level of detail. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/de1/a00233_source.html#l00051">51</a> of file <a class="el" href="../../d6/de1/a00233_source.html">TerrainStorage.h</a>.</p>
+
+</div>
+</div>
+<a id="ad8bc7c02771e8cc6a66c279dce3151e7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad8bc7c02771e8cc6a66c279dce3151e7">&#9670;&nbsp;</a></span>unusedCells</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;<a class="el" href="../../d4/d4f/a00673.html">TerrainStorageCell</a>*&gt; Atlas::Terrain::TerrainStorage::unusedCells</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The storage cells the terrain doesn't need any more because of a change in the level of detail. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d6/de1/a00233_source.html#l00057">57</a> of file <a class="el" href="../../d6/de1/a00233_source.html">TerrainStorage.h</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/terrain/<a class="el" href="../../d6/de1/a00233_source.html">TerrainStorage.h</a></li>
+</ul>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
+    <li class="navelem"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d3/d4a/a00297.html">Terrain</a></li><li class="navelem"><a class="el" href="../../d8/d7a/a00669.html">TerrainStorage</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

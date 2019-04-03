@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Member List</title>
+<title>Atlas Engine: Atlas::Buffer::BufferLock Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('d4/d6a/a00704.html','../../');});
+$(document).ready(function(){initNavTree('dd/d57/a00701.html','../../');});
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -87,26 +87,158 @@ $(document).ready(function(){initNavTree('d4/d6a/a00704.html','../../');});
 </div>
 
 <div class="header">
+  <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="../../df/dbb/a00698.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Audio::AudioData Member List</div>  </div>
+<div class="title">Atlas::Buffer::BufferLock Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This is the complete list of members for <a class="el" href="../../d4/d6a/a00704.html">Atlas::Audio::AudioData</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="../../d4/d6a/a00704.html#aeaf9da2e3ea3f8b7f015b5d2f0748c7a">ApplyFormat</a>(SDL_AudioSpec &amp;formatSpec)</td><td class="entry"><a class="el" href="../../d4/d6a/a00704.html">Atlas::Audio::AudioData</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d4/d6a/a00704.html#a4d745017e171e9602826d6075b461105">AudioData</a>()</td><td class="entry"><a class="el" href="../../d4/d6a/a00704.html">Atlas::Audio::AudioData</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d4/d6a/a00704.html#a6a0f59dc0da9cd8a1c55ad703eacc6ba">AudioData</a>(std::string filename)</td><td class="entry"><a class="el" href="../../d4/d6a/a00704.html">Atlas::Audio::AudioData</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d4/d6a/a00704.html#a6dde923ed0ecf40f911397a598ace74f">Convert</a>(uint32_t frequency, uint8_t channels, uint32_t format)</td><td class="entry"><a class="el" href="../../d4/d6a/a00704.html">Atlas::Audio::AudioData</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d4/d6a/a00704.html#a1b18512246436ba190dd4bf38f915c31">data</a></td><td class="entry"><a class="el" href="../../d4/d6a/a00704.html">Atlas::Audio::AudioData</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d4/d6a/a00704.html#a6098942623257a4ca1ebbee53fc03f90">GetChannelCount</a>()</td><td class="entry"><a class="el" href="../../d4/d6a/a00704.html">Atlas::Audio::AudioData</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d4/d6a/a00704.html#abd14dce24c4d9d6c41cc978fa158b0c3">GetFrequency</a>()</td><td class="entry"><a class="el" href="../../d4/d6a/a00704.html">Atlas::Audio::AudioData</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d4/d6a/a00704.html#ac52cd998555ec00f6ba74daa8cf4b0f8">GetSampleSize</a>()</td><td class="entry"><a class="el" href="../../d4/d6a/a00704.html">Atlas::Audio::AudioData</a></td><td class="entry"></td></tr>
-</table></div><!-- contents -->
+<p>Manages the memory safety of shared memory between driver and engine.  
+ <a href="../../dd/d57/a00701.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="../../d9/d39/a00257_source.html">BufferLock.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:ad70100decb49cd41adfe871d5d59f995"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d57/a00701.html#ad70100decb49cd41adfe871d5d59f995">BufferLock</a> ()</td></tr>
+<tr class="separator:ad70100decb49cd41adfe871d5d59f995"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9830ca19e85a7e2beb3e22efa1bcefea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d57/a00701.html#a9830ca19e85a7e2beb3e22efa1bcefea">WaitForLockedRange</a> (size_t offset, size_t length)</td></tr>
+<tr class="memdesc:a9830ca19e85a7e2beb3e22efa1bcefea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Waits until the range is free to use again.  <a href="#a9830ca19e85a7e2beb3e22efa1bcefea">More...</a><br /></td></tr>
+<tr class="separator:a9830ca19e85a7e2beb3e22efa1bcefea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abd11a3a9779ea584e9bcafa39c91458e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d57/a00701.html#abd11a3a9779ea584e9bcafa39c91458e">LockRange</a> (size_t offset, size_t length)</td></tr>
+<tr class="memdesc:abd11a3a9779ea584e9bcafa39c91458e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Locks the range.  <a href="#abd11a3a9779ea584e9bcafa39c91458e">More...</a><br /></td></tr>
+<tr class="separator:abd11a3a9779ea584e9bcafa39c91458e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e04bfb54a128bced3828b7b73a4fe1e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d57/a00701.html#a4e04bfb54a128bced3828b7b73a4fe1e">~BufferLock</a> ()</td></tr>
+<tr class="separator:a4e04bfb54a128bced3828b7b73a4fe1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Manages the memory safety of shared memory between driver and engine. </p>
+<p>Thanks to John McDonald: <a href="https://github.com/nvMcJohn/apitest">https://github.com/nvMcJohn/apitest</a> </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d9/d39/a00257_source.html#l00016">16</a> of file <a class="el" href="../../d9/d39/a00257_source.html">BufferLock.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="ad70100decb49cd41adfe871d5d59f995"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad70100decb49cd41adfe871d5d59f995">&#9670;&nbsp;</a></span>BufferLock()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Buffer::BufferLock::BufferLock </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a4e04bfb54a128bced3828b7b73a4fe1e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4e04bfb54a128bced3828b7b73a4fe1e">&#9670;&nbsp;</a></span>~BufferLock()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Buffer::BufferLock::~BufferLock </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="abd11a3a9779ea584e9bcafa39c91458e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abd11a3a9779ea584e9bcafa39c91458e">&#9670;&nbsp;</a></span>LockRange()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Buffer::BufferLock::LockRange </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Locks the range. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">offset</td><td>The offset in bytes </td></tr>
+    <tr><td class="paramname">length</td><td>The length in bytes </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a9830ca19e85a7e2beb3e22efa1bcefea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9830ca19e85a7e2beb3e22efa1bcefea">&#9670;&nbsp;</a></span>WaitForLockedRange()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Buffer::BufferLock::WaitForLockedRange </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Waits until the range is free to use again. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">offset</td><td>The offset in bytes </td></tr>
+    <tr><td class="paramname">length</td><td>The length in bytes </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>To improve this use multiple buffering </dd></dl>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/buffer/<a class="el" href="../../d9/d39/a00257_source.html">BufferLock.h</a></li>
+</ul>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
+    <li class="navelem"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></li><li class="navelem"><a class="el" href="../../df/d95/a00299.html">Buffer</a></li><li class="navelem"><a class="el" href="../../dd/d57/a00701.html">BufferLock</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

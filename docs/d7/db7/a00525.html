@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Member List</title>
+<title>Atlas Engine: Atlas::Mesh::Mesh Class Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('d5/d81/a00528.html','../../');});
+$(document).ready(function(){initNavTree('d7/db7/a00525.html','../../');});
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -87,23 +87,266 @@ $(document).ready(function(){initNavTree('d5/d81/a00528.html','../../');});
 </div>
 
 <div class="header">
+  <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="../../d8/d14/a00522.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Renderer::DecalRenderer Member List</div>  </div>
+<div class="title">Atlas::Mesh::Mesh Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This is the complete list of members for <a class="el" href="../../d5/d81/a00528.html">Atlas::Renderer::DecalRenderer</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="../../d5/d81/a00528.html#a0649107bfbd857ab03ad8759ef517e34">DecalRenderer</a>()</td><td class="entry"><a class="el" href="../../d5/d81/a00528.html">Atlas::Renderer::DecalRenderer</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d5/d81/a00528.html#afa3c3be623b6f07851c06d97efba8269">fragmentPath</a></td><td class="entry"><a class="el" href="../../d5/d81/a00528.html">Atlas::Renderer::DecalRenderer</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d5/d81/a00528.html#a1c02e3b13ad30402aa5d77476fefa852">Render</a>(Window *window, RenderTarget *target, Camera *camera, Scene::Scene *scene)</td><td class="entry"><a class="el" href="../../d5/d81/a00528.html">Atlas::Renderer::DecalRenderer</a></td><td class="entry"><span class="mlabel">virtual</span></td></tr>
-  <tr><td class="entry"><a class="el" href="../../d5/d81/a00528.html#ae604cb3b3b53d54783d291e7b5eeadc0">vertexPath</a></td><td class="entry"><a class="el" href="../../d5/d81/a00528.html">Atlas::Renderer::DecalRenderer</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="../../d0/dc2/a00564.html#a63d2a27fa3dc6790432cdd60ec9d61fa">~Renderer</a>()</td><td class="entry"><a class="el" href="../../d0/dc2/a00564.html">Atlas::Renderer::Renderer</a></td><td class="entry"><span class="mlabel">inline</span><span class="mlabel">virtual</span></td></tr>
-</table></div><!-- contents -->
+<p><code>#include &lt;<a class="el" href="../../d5/db1/a00140_source.html">Mesh.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00529.html">MaterialConfig</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a83a3cce995fa0f5138ae25a5e8f434ef"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db7/a00525.html#a83a3cce995fa0f5138ae25a5e8f434ef">Mesh</a> (<a class="el" href="../../d8/d6e/a00537.html">MeshData</a> *<a class="el" href="../../d7/db7/a00525.html#ae06ba7c9e0168522413defd3375e5490">data</a>, int32_t <a class="el" href="../../d7/db7/a00525.html#a826b955ace5474b95439e4a783228ecc">mobility</a>=<a class="el" href="../../d5/db1/a00140.html#afe3d8327a0f9ccc13d6154618116ddad">AE_STATIONARY_MESH</a>)</td></tr>
+<tr class="separator:a83a3cce995fa0f5138ae25a5e8f434ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa72b860515e94a4b5e15cf45364ed8b7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db7/a00525.html#aa72b860515e94a4b5e15cf45364ed8b7">Mesh</a> (std::string filename, int32_t <a class="el" href="../../d7/db7/a00525.html#a826b955ace5474b95439e4a783228ecc">mobility</a>=<a class="el" href="../../d5/db1/a00140.html#afe3d8327a0f9ccc13d6154618116ddad">AE_STATIONARY_MESH</a>)</td></tr>
+<tr class="separator:aa72b860515e94a4b5e15cf45364ed8b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7436a26172ccb341b6313e7b3a2b9d41"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db7/a00525.html#a7436a26172ccb341b6313e7b3a2b9d41">~Mesh</a> ()</td></tr>
+<tr class="separator:a7436a26172ccb341b6313e7b3a2b9d41"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89a0986b0d5074dc8bf7dd4787d9d47d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db7/a00525.html#a89a0986b0d5074dc8bf7dd4787d9d47d">UpdateData</a> ()</td></tr>
+<tr class="separator:a89a0986b0d5074dc8bf7dd4787d9d47d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b7bce9f92bb7d48952568100b18cc2f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db7/a00525.html#a8b7bce9f92bb7d48952568100b18cc2f">Bind</a> ()</td></tr>
+<tr class="separator:a8b7bce9f92bb7d48952568100b18cc2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a49c900aed4f3271045c8193c805769bb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db7/a00525.html#a49c900aed4f3271045c8193c805769bb">Unbind</a> ()</td></tr>
+<tr class="separator:a49c900aed4f3271045c8193c805769bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:ae06ba7c9e0168522413defd3375e5490"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d6e/a00537.html">MeshData</a> *const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db7/a00525.html#ae06ba7c9e0168522413defd3375e5490">data</a></td></tr>
+<tr class="separator:ae06ba7c9e0168522413defd3375e5490"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a826b955ace5474b95439e4a783228ecc"><td class="memItemLeft" align="right" valign="top">const int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db7/a00525.html#a826b955ace5474b95439e4a783228ecc">mobility</a></td></tr>
+<tr class="separator:a826b955ace5474b95439e4a783228ecc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c326d82ac937721e094267befef7f03"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db7/a00525.html#a4c326d82ac937721e094267befef7f03">cullBackFaces</a> = true</td></tr>
+<tr class="separator:a4c326d82ac937721e094267befef7f03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acac3e8b5fc1c1c8f278333a805a19893"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; <a class="el" href="../../d7/dfc/a00349.html">Material</a> *, <a class="el" href="../../d1/d0b/a00529.html">MaterialConfig</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db7/a00525.html#acac3e8b5fc1c1c8f278333a805a19893">configs</a></td></tr>
+<tr class="separator:acac3e8b5fc1c1c8f278333a805a19893"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00019">19</a> of file <a class="el" href="../../d5/db1/a00140_source.html">Mesh.h</a>.</p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a83a3cce995fa0f5138ae25a5e8f434ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a83a3cce995fa0f5138ae25a5e8f434ef">&#9670;&nbsp;</a></span>Mesh() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Mesh::Mesh::Mesh </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d8/d6e/a00537.html">MeshData</a> *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>mobility</em> = <code><a class="el" href="../../d5/db1/a00140.html#afe3d8327a0f9ccc13d6154618116ddad">AE_STATIONARY_MESH</a></code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td></td></tr>
+    <tr><td class="paramname">mobility</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="aa72b860515e94a4b5e15cf45364ed8b7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa72b860515e94a4b5e15cf45364ed8b7">&#9670;&nbsp;</a></span>Mesh() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Mesh::Mesh::Mesh </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>mobility</em> = <code><a class="el" href="../../d5/db1/a00140.html#afe3d8327a0f9ccc13d6154618116ddad">AE_STATIONARY_MESH</a></code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">filename</td><td></td></tr>
+    <tr><td class="paramname">mobility</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a7436a26172ccb341b6313e7b3a2b9d41"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7436a26172ccb341b6313e7b3a2b9d41">&#9670;&nbsp;</a></span>~Mesh()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Atlas::Mesh::Mesh::~Mesh </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a8b7bce9f92bb7d48952568100b18cc2f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8b7bce9f92bb7d48952568100b18cc2f">&#9670;&nbsp;</a></span>Bind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Mesh::Mesh::Bind </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a49c900aed4f3271045c8193c805769bb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a49c900aed4f3271045c8193c805769bb">&#9670;&nbsp;</a></span>Unbind()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Mesh::Mesh::Unbind </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a89a0986b0d5074dc8bf7dd4787d9d47d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a89a0986b0d5074dc8bf7dd4787d9d47d">&#9670;&nbsp;</a></span>UpdateData()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Atlas::Mesh::Mesh::UpdateData </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="acac3e8b5fc1c1c8f278333a805a19893"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acac3e8b5fc1c1c8f278333a805a19893">&#9670;&nbsp;</a></span>configs</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unordered_map&lt;<a class="el" href="../../d7/dfc/a00349.html">Material</a>*, <a class="el" href="../../d1/d0b/a00529.html">MaterialConfig</a>&gt; Atlas::Mesh::Mesh::configs</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00067">67</a> of file <a class="el" href="../../d5/db1/a00140_source.html">Mesh.h</a>.</p>
+
+</div>
+</div>
+<a id="a4c326d82ac937721e094267befef7f03"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c326d82ac937721e094267befef7f03">&#9670;&nbsp;</a></span>cullBackFaces</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Atlas::Mesh::Mesh::cullBackFaces = true</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00058">58</a> of file <a class="el" href="../../d5/db1/a00140_source.html">Mesh.h</a>.</p>
+
+</div>
+</div>
+<a id="ae06ba7c9e0168522413defd3375e5490"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae06ba7c9e0168522413defd3375e5490">&#9670;&nbsp;</a></span>data</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/d6e/a00537.html">MeshData</a>* const Atlas::Mesh::Mesh::data</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00054">54</a> of file <a class="el" href="../../d5/db1/a00140_source.html">Mesh.h</a>.</p>
+
+</div>
+</div>
+<a id="a826b955ace5474b95439e4a783228ecc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a826b955ace5474b95439e4a783228ecc">&#9670;&nbsp;</a></span>mobility</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const int32_t Atlas::Mesh::Mesh::mobility</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00056">56</a> of file <a class="el" href="../../d5/db1/a00140_source.html">Mesh.h</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>src/mesh/<a class="el" href="../../d5/db1/a00140_source.html">Mesh.h</a></li>
+</ul>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
+    <li class="navelem"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d8/d0a/a00292.html">Mesh</a></li><li class="navelem"><a class="el" href="../../d7/db7/a00525.html">Mesh</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

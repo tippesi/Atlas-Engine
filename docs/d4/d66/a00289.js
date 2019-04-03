@@ -1,8 +1,7 @@
 var a00289 =
 [
-    [ "Cubemap", "dc/df2/a00656.html", "dc/df2/a00656" ],
-    [ "Texture", "d5/d4e/a00660.html", "d5/d4e/a00660" ],
-    [ "Texture2D", "df/d46/a00664.html", "df/d46/a00664" ],
-    [ "Texture2DArray", "d0/d5c/a00668.html", "d0/d5c/a00668" ],
-    [ "TextureFormat", "d5/d40/a00672.html", "d5/d40/a00672" ]
+    [ "ControllerHandler", "d6/d66/a00441.html", "d6/d66/a00441" ],
+    [ "KeyboardHandler", "dd/d47/a00445.html", "dd/d47/a00445" ],
+    [ "MouseHandler", "d9/d10/a00449.html", "d9/d10/a00449" ],
+    [ "TouchHandler", "da/dc3/a00453.html", "da/dc3/a00453" ]
 ];

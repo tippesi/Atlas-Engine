@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['light',['Light',['../d7/db5/a00472.html',1,'Atlas::Lighting']]]
+  ['light',['Light',['../d9/da5/a00493.html',1,'Atlas::Lighting']]]
 ];
