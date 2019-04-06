@@ -154,7 +154,8 @@ namespace Atlas {
 
 			    for (auto &meshActor : staticMeshActors) {
 
-			        meshActor->Update(deltaTime, parentTransformation, true);
+			        meshActor->Update(*camera, deltaTime,
+						parentTransformation, true);
 			        staticMeshActorOctree->Insert(meshActor, meshActor->aabb);
 
 			    }
@@ -168,7 +169,8 @@ namespace Atlas {
 					removed = true;
 				}
 
-				meshActor->Update(deltaTime, transformedMatrix, parentTransformChanged);
+				meshActor->Update(*camera, deltaTime, 
+					transformedMatrix, parentTransformChanged);
 
 				if (removed) {
 					movableMeshActorOctree->Insert(meshActor, meshActor->aabb);
@@ -182,7 +184,10 @@ namespace Atlas {
 					decalActorOctree->Remove(decalActor, decalActor->aabb);
 					removed = true;
 				}
-				decalActor->Update(deltaTime, transformedMatrix, parentTransformChanged);
+
+				decalActor->Update(*camera, deltaTime, 
+					transformedMatrix, parentTransformChanged);
+
 				if (removed) {
 					decalActorOctree->Insert(decalActor, decalActor->aabb);
 					removed = false;

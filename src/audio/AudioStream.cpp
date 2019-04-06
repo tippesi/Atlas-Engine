@@ -6,25 +6,65 @@ namespace Atlas {
 
 		double AudioStream::GetDuration() {
 
+			std::lock_guard<std::mutex> lock(mutex);
+
 			return (double)data->data.size() * 2.0 / (double)(data->GetFrequency() * data->GetSampleSize());
 
 		}
 
+		void AudioStream::SetTime(double time) {
+
+			std::lock_guard<std::mutex> lock(mutex);
+
+			progress = time * (double)(data->GetFrequency() * data->GetSampleSize() / data->GetChannelCount()) / 2.0;
+			progress = progress >= 0.0 ? progress : 0.0;
+
+		}
+
 		double AudioStream::GetTime() {
+
+			std::lock_guard<std::mutex> lock(mutex);
 
 			return 2.0 * progress * (double)data->GetChannelCount() / 
 				(double)(data->GetFrequency() * data->GetSampleSize());
 
 		}
 
-		void AudioStream::SetTime(double time) {
+		void AudioStream::SetVolume(float volume) {
 
-			progress = time * (double)(data->GetFrequency() * data->GetSampleSize() / data->GetChannelCount()) / 2.0;
-			progress = progress >= 0.0 ? progress : 0.0;
+			std::lock_guard<std::mutex> lock(mutex);
+
+			this->volume = volume;
 
 		}
         
+		float AudioStream::GetVolume() {
+
+			std::lock_guard<std::mutex> lock(mutex);
+
+			return volume;
+
+		}
+
+		void AudioStream::SetPitch(double pitch) {
+
+			std::lock_guard<std::mutex> lock(mutex);
+
+			this->pitch = pitch;
+
+		}
+
+		double AudioStream::GetPitch() {
+
+			std::lock_guard<std::mutex> lock(mutex);
+
+			return pitch;
+
+		}
+
 		std::vector<int16_t> AudioStream::GetChunk(int32_t length) {
+
+			std::lock_guard<std::mutex> lock(mutex);
 
 			std::vector<int16_t> chunk(length);
 

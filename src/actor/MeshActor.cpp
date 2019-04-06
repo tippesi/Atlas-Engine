@@ -4,7 +4,8 @@ namespace Atlas {
 
 	namespace Actor {
 
-		void MeshActor::Update(float deltaTime, mat4 parentTransform, bool parentUpdate) {
+		void MeshActor::Update(Camera camera, float deltaTime,
+			mat4 parentTransform, bool parentUpdate) {
 
 			if (matrixChanged || parentUpdate) {
 

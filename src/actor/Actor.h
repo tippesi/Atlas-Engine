@@ -2,6 +2,7 @@
 #define AE_ACTOR_H
 
 #include "../System.h"
+#include "../Camera.h"
 #include "../common/AABB.h"
 
 namespace Atlas {
@@ -38,11 +39,13 @@ namespace Atlas {
             /**
              * Updates the axis-aligned bounding box and transformedMatrix according to it's
              * parent matrix. (Only if update is needed => parentUpdate && matrixChanged)
+			 * @param camera
              * @param deltaTime
              * @param parentTransform
              * @param parentUpdate
              */
-            virtual void Update(float deltaTime, mat4 parentTransform, bool parentUpdate) = 0;
+            virtual void Update(Camera camera, float deltaTime, 
+				mat4 parentTransform, bool parentUpdate) = 0;
 
             Common::AABB aabb;
             mat4 transformedMatrix;

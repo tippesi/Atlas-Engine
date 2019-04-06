@@ -10,11 +10,6 @@
 
 #include <string>
 
-#define AE_MATERIAL_DIFFUSE_MAP 0
-#define AE_MATERIAL_NORMAL_MAP 1
-#define AE_MATERIAL_SPECULAR_MAP 2
-#define AE_MATERIAL_DISPLACEMENT_MAP 3
-
 namespace Atlas {
 
 	class Material {
@@ -44,6 +39,11 @@ namespace Atlas {
 		float specularIntensity;
 
 		float displacementScale;
+
+		std::string diffuseMapPath;
+		std::string normalMapPath;
+		std::string specularMapPath;
+		std::string displacementMapPath;
 
 	};
 

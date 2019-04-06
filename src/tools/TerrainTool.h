@@ -28,32 +28,6 @@ namespace Atlas {
 					int32_t patchSize, float resolution, float height);
 
 			/**
-             * Stores the terrain in a directory on the hard drive
-             * @param terrain
-             * @param filename
-             * @warning All storage cells of the terrain must be loaded.
-             */
-			static void SaveTerrain(Terrain::Terrain* terrain, std::string filename);
-
-			/**
-			 * Loads the terrain.
-			 * @param filename
-			 * @return
-			 * @note This method just loads the terrain information, not the nodes.
-			 */
-			static Terrain::Terrain* LoadTerrain(std::string filename);
-
-			/**
-			 *
-			 * @param terrain
-			 * @param cell
-			 * @param filename
-			 * @param initWithHeightData
-			 */
-			static void LoadStorageCell(Terrain::Terrain* terrain, Terrain::TerrainStorageCell* cell,
-					std::string filename, bool initWithHeightData = false);
-
-			/**
              *
              * @param terrain
              * @warning All storage cells of the terrain and their heightData member must be loaded.
@@ -73,6 +47,14 @@ namespace Atlas {
              */
 			static void BrushHeight(Terrain::Terrain* terrain, Kernel* kernel, float strength, vec2 position);
 
+			/**
+			 *
+			 * @param terrain
+			 * @param size
+			 * @param contributingRadius
+			 * @param strength
+			 * @param position
+			 */
 			static void SmoothHeight(Terrain::Terrain* terrain, int32_t size, int32_t contributingRadius,
 					float strength, vec2 position);
 

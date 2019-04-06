@@ -10,7 +10,8 @@ namespace Atlas {
 
         }
 
-        void DecalActor::Update(float deltaTime, mat4 parentTransform, bool parentUpdate) {
+        void DecalActor::Update(Camera, float deltaTime, 
+			mat4 parentTransform, bool parentUpdate) {
 
             if (matrixChanged || parentUpdate) {
 

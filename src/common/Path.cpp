@@ -33,12 +33,18 @@ namespace Atlas {
 			dest = dest.substr(count, dest.size());
 
 			for (int32_t i = count; i < src.size(); i++)
-				if (src[i] == '/')
+				if (src[i] == '/' || src[i] == '\\')
 					result.append("../");
 
 			result.append(dest);
 
 			return result;
+
+		}
+
+		std::string Path::GetDirectory(std::string path) {
+
+			return path.substr(0, path.find_last_of("/\\"));
 
 		}
 
@@ -72,6 +78,11 @@ namespace Atlas {
 		std::string Path::Normalize(std::string path) {
 
 			size_t backPosition;
+
+			for (size_t i = 0; i < path.size(); i++) {
+				if (path[i] == '\\')
+					path[i] = '/';
+			}
 
 			while ((backPosition = path.find("/..")) != std::string::npos) {
 				auto parentPath = path.substr(0, backPosition);

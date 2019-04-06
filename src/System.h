@@ -31,6 +31,9 @@
 // GLAD
 #ifdef AE_OS_WINDOWS
 #include <direct.h>
+#ifndef NOMINMAX
+#define NOMINMAX 1
+#endif
 #include <Windows.h>
 #endif
 #include <Glad/glad/glad.h>

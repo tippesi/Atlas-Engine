@@ -13,7 +13,8 @@ namespace Atlas {
 		public:
             DecalActor(Decal* decal);
 
-            virtual void Update(float deltaTime, mat4 parentTransform, bool parentUpdate);
+            void Update(Camera camera, float deltaTime,
+				mat4 parentTransform, bool parentUpdate) override;
 
             Decal* const decal;
 

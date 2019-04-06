@@ -72,20 +72,15 @@ namespace Atlas {
 
 			stream->ApplyFormat(audioSpec);
 
-			mutex.lock();
+			std::lock_guard<std::mutex> lock(mutex);
 
 			musicQueue.push_back(stream);
-
-			mutex.unlock();
 
         }
 
         void AudioManager::RemoveMusic(AudioStream *stream) {
 
-			mutex.lock();
-
-					   
-			mutex.unlock();
+			std::lock_guard<std::mutex> lock(mutex);
 
         }
 
@@ -99,11 +94,11 @@ namespace Atlas {
 			std::memset(dest.data(), 0, length * 2);
 
 			// Compute music first
-			mutex.lock();
+			std::unique_lock<std::mutex> lock(mutex);
 
 			auto queue = musicQueue;
 
-			mutex.unlock();
+			lock.unlock();
 
 			for (auto stream : queue) {
 
@@ -114,11 +109,11 @@ namespace Atlas {
 			}
 
 			// Compute audio effects
-			mutex.lock();
+			lock.lock();
 
 
 
-			mutex.unlock();
+			lock.unlock();
 
 			std::memcpy(stream, dest.data(), length * 2);
 
