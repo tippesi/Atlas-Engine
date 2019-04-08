@@ -36,7 +36,7 @@ namespace Atlas {
 			std::getline(stream, line);
 
 			lastPosition = line.find_first_of(' ');
-			position = line.find_first_of('\n', lastPosition);
+			position = line.find_first_of("\r\n", lastPosition);
 			material->name = line.substr(lastPosition + 1, position - lastPosition);
 
 			std::getline(stream, line);
@@ -150,16 +150,16 @@ namespace Atlas {
 
 			vec3 vector;
 
-			auto lastPosition = line.find_first_of(' ');
-			auto position = line.find_first_of(' ', lastPosition + 1);
+			auto lastPosition = line.find_first_of(' ') + 1;
+			auto position = line.find_first_of(' ', lastPosition);
 			vector.x = std::stof(line.substr(lastPosition, position - lastPosition));
 
-			lastPosition = position;
-			position = line.find_first_of(' ', lastPosition + 1);
+			lastPosition = position + 1;
+			position = line.find_first_of(' ', lastPosition);
 			vector.y = std::stof(line.substr(lastPosition, position - lastPosition));
 
-			lastPosition = position;
-			position = line.find_first_of('\n', lastPosition + 1);
+			lastPosition = position + 1;
+			position = line.find_first_of("\r\n", lastPosition);
 			vector.z = std::stof(line.substr(lastPosition, position - lastPosition));
 
 			return vector;
@@ -168,18 +168,18 @@ namespace Atlas {
 
 		float MaterialLoader::ReadFloat(std::string line) {
 
-			auto lastPosition = line.find_first_of(' ');
-			auto position = line.find_first_of('\n', lastPosition + 1);
+			auto lastPosition = line.find_first_of(' ') + 1;
+			auto position = line.find_first_of("\r\n", lastPosition);
 			return std::stof(line.substr(lastPosition, position - lastPosition));
 
 		}
 
 		std::string MaterialLoader::ReadFilePath(std::string line, std::string materialDirectory) {
 
-			auto lastPosition = line.find_first_of(' ');
-			auto position = line.find_first_of('\n', lastPosition + 1);
-			auto string = line.substr(lastPosition + 1, position - lastPosition);
-			return Common::Path::GetAbsolute(materialDirectory + "/"+ string);
+			auto lastPosition = line.find_first_of(' ') + 1;
+			auto position = line.find_first_of("\r\n", lastPosition);
+			auto string = line.substr(lastPosition, position - lastPosition);
+			return Common::Path::GetAbsolute(materialDirectory + "/" + string);
 
 		}
 

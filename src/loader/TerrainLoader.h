@@ -34,8 +34,14 @@ namespace Atlas {
              * @param filename
              * @param initWithHeightData
              */
-            static void LoadStorageCell(Terrain::Terrain* terrain, Terrain::TerrainStorageCell* cell,
-                                        std::string filename, bool initWithHeightData = false);
+            static void LoadStorageCell(Terrain::Terrain* terrain, Terrain::TerrainStorageCell* cell, 
+				std::string filename, bool initWithHeightData = false);
+
+		private:
+			static int32_t ReadInt(const char* ptr, std::string line, size_t& offset);
+
+			static float ReadFloat(const char* ptr, std::string line, size_t& offset);
+
 
         };
 

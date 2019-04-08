@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "TerrainStorage.h"
 
 namespace Atlas {
@@ -11,7 +12,7 @@ namespace Atlas {
 
 			for (int32_t i = 0; i < LoDCount; i++) {
 
-				cells[i].resize(rootNodeCount * (int32_t)powf(4, (float)i));
+				cells[i] = std::vector<TerrainStorageCell>(rootNodeCount * (int32_t)powf(4, (float)i), this);
 				LoDSideLengths[i] = (int32_t)sqrtf((float)rootNodeCount * powf(4.0f, (float)i));
 
 				for (int32_t x = 0; x < LoDSideLengths[i]; x++) {
@@ -37,6 +38,26 @@ namespace Atlas {
 		int32_t TerrainStorage::GetCellCount(int32_t LoD) {
 
 			return cells[LoD].size();
+
+		}
+
+		int32_t TerrainStorage::GetMaterialIndex(Material* material) {
+
+			auto item = std::find(materials.begin(), materials.end(), material);
+
+			if (item == materials.end()) {
+				materials.push_back(material);
+				return (int32_t)materials.size() - 1;
+			}
+			else {
+				return (int32_t)std::distance(materials.begin(), item);
+			}
+
+		}
+
+		std::vector<Material*> TerrainStorage::GetMaterials() {
+
+			return materials;
 
 		}
 

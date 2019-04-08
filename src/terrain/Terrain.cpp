@@ -74,6 +74,16 @@ namespace Atlas {
 
 		}
 
+		float Terrain::GetLoDDistance(int32_t LoD) {
+
+			if (LoD >= 0 && LoD < LoDCount) {
+				return LoDDistances[LoD];
+			}
+
+			return 0.0f;
+
+		}
+
 		void Terrain::SetTessellationFunction(float factor, float slope, float shift, float maxLevel) {
 
 			tessellationFactor = factor;

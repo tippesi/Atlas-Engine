@@ -60,6 +60,8 @@ namespace Atlas {
              */
 			void SetLoDDistance(int32_t LoD, float distance);
 
+			float GetLoDDistance(int32_t LoD);
+
 			/**
              * Sets the tessellation function t(distance) = factor / pow(distance, slope) + shift
              * @param factor

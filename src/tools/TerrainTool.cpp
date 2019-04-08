@@ -54,6 +54,8 @@ namespace Atlas {
 						tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
 					cell->normalMap = new Texture::Texture2D(tileResolution, 
 						tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+					cell->splatMap = new Texture::Texture2D(tileResolution,
+						tileResolution, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 					// Now copy a tile of the original image
 					// We make sure that every tile has the same size
@@ -155,16 +157,16 @@ namespace Atlas {
 				else {
 					// Downsample data
 					stbir_resize_uint16_generic(heightData.data(), heightDataResolution, heightDataResolution,
-												heightDataResolution * 2, resizedHeightData.data(), resizedHeightDataResolution,
-												resizedHeightDataResolution, resizedHeightDataResolution * 2, 1, -1, 0,
-												STBIR_EDGE_CLAMP,
-												STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+						heightDataResolution * 2, resizedHeightData.data(), resizedHeightDataResolution,
+						resizedHeightDataResolution, resizedHeightDataResolution * 2, 1, -1, 0,
+						STBIR_EDGE_CLAMP,
+						STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
 
 					stbir_resize_uint8_generic(normalData.data(), heightDataResolution, heightDataResolution,
-											   heightDataResolution * 3, resizedNormalData.data(), resizedHeightDataResolution,
-											   resizedHeightDataResolution, resizedHeightDataResolution * 3, 3, -1, 0,
-											   STBIR_EDGE_CLAMP,
-											   STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+						heightDataResolution * 3, resizedNormalData.data(), resizedHeightDataResolution,
+						resizedHeightDataResolution, resizedHeightDataResolution * 3, 3, -1, 0,
+						STBIR_EDGE_CLAMP,
+						STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
 				}
 
 				// i is in x direction, j in y direction

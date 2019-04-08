@@ -45,6 +45,10 @@ namespace Atlas {
              */
 			int32_t GetCellCount(int32_t LoD);
 
+			int32_t GetMaterialIndex(Material* material);
+
+			std::vector<Material*> GetMaterials();
+
 			/**
              * The storage cells the terrain request to change the level of detail.
              */
@@ -61,6 +65,8 @@ namespace Atlas {
 			int32_t LoDCount;
 
 			int32_t* LoDSideLengths;
+
+			std::vector<Material*> materials;
 
 			std::vector<std::vector<TerrainStorageCell>> cells;
 

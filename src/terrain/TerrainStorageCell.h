@@ -2,13 +2,15 @@
 #define AE_TERRAINSTORAGECELL_H
 
 #include "../System.h"
-#include "../texture/Texture2D.h"
+#include "../Material.h"
 
 #include <vector>
 
 namespace Atlas {
 
 	namespace Terrain {
+
+		class TerrainStorage;
 
 		/**
 		 * Stores the material information for a terrain node.
@@ -17,22 +19,30 @@ namespace Atlas {
 		class TerrainStorageCell {
 
 		public:
-			TerrainStorageCell();
+			TerrainStorageCell(TerrainStorage* storage);
 
 			bool IsLoaded();
 
-			int32_t x;
-			int32_t y;
-			int32_t LoD;
+			void SetMaterial(Material* material, int32_t slot);
+
+			int32_t x = 0;
+			int32_t y = 0;
+			int32_t LoD = 0;
+
+			int32_t materialIndices[4];
 
 			vec2 position;
 
 			std::vector<float> heightData;
 
-			Texture::Texture2D* heightField;
-			Texture::Texture2D* normalMap;
-			Texture::Texture2D* diffuseMap;
-			Texture::Texture2D* displacementMap;
+			Texture::Texture2D* heightField = nullptr;
+			Texture::Texture2D* normalMap = nullptr;
+			Texture::Texture2D* splatMap = nullptr;
+			Texture::Texture2D* diffuseMap = nullptr;
+			Texture::Texture2D* displacementMap = nullptr;
+
+		private:
+			TerrainStorage* const storage;
 
 		};
 

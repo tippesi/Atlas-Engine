@@ -33,7 +33,9 @@ namespace Atlas {
 				else {
 					data[i] = (int16_t)((float)data[i] * rightChannelVolume);
 				}
-			}                                           
+			}
+
+			return data;
 
 		}
 

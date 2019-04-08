@@ -1,18 +1,14 @@
 #include "TerrainStorageCell.h"
+#include "TerrainStorage.h"
 
 namespace Atlas {
 
 	namespace Terrain {
 
-		TerrainStorageCell::TerrainStorageCell() {
+		TerrainStorageCell::TerrainStorageCell(TerrainStorage* storage) : storage(storage) {
 
-			x = 0;
-			y = 0;
-			LoD = 0;
+			std::memset(materialIndices, 0, sizeof(materialIndices));
 
-			heightField = nullptr;
-			normalMap = nullptr;
-			diffuseMap = nullptr;
 		}
 
 		bool TerrainStorageCell::IsLoaded() {
@@ -30,6 +26,14 @@ namespace Atlas {
 				return false;
 
 			return true;
+
+		}
+
+		void TerrainStorageCell::SetMaterial(Material* material, int32_t slot) {
+
+			if (slot >= 0 && slot <= 3) {
+				materialIndices[slot] = storage->GetMaterialIndex(material);
+			}
 
 		}
 
