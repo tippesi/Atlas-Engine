@@ -37,7 +37,7 @@ namespace Atlas {
 
 		int32_t TerrainStorage::GetCellCount(int32_t LoD) {
 
-			return cells[LoD].size();
+			return (int32_t)cells[LoD].size();
 
 		}
 

@@ -79,7 +79,7 @@ namespace Atlas {
 
 					glEnableVertexAttribArray(attribArray + i);
 					glVertexAttribPointer(attribArray + i, internalStride, buffer->GetDataType(), normalized,
-							buffer->GetElementSize(), (const GLvoid*)(buffer->GetElementSize() / numAttribArrays * i));
+							(int32_t)buffer->GetElementSize(), (void*)((uint64_t)(buffer->GetElementSize() / numAttribArrays * i)));
 					glVertexAttribDivisor(attribArray + i, 1);
 
 					vertexComponents[attribArray + i] = buffer;

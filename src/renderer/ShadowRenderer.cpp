@@ -12,8 +12,6 @@ namespace Atlas {
 
 		ShadowRenderer::ShadowRenderer() {
 
-			framebuffer = new Framebuffer(0, 0);
-
 			arrayMapUniform = shaderBatch.GetUniform("arrayMap");
 			diffuseMapUniform = shaderBatch.GetUniform("diffuseMap");
 			modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
@@ -28,7 +26,7 @@ namespace Atlas {
 
 			bool backFaceCulling = true;
 
-			framebuffer->Bind();
+			framebuffer.Bind();
 
 			for (auto& light : scene->renderList.lights) {
 
@@ -50,10 +48,10 @@ namespace Atlas {
 					auto component = &light->GetShadow()->components[i];
 
 					if (light->GetShadow()->useCubemap) {
-						framebuffer->AddComponentCubemap(GL_DEPTH_ATTACHMENT, light->GetShadow()->cubemap, i);
+						framebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT, light->GetShadow()->cubemap, i);
 					}
 					else {
-						framebuffer->AddComponentTextureArray(GL_DEPTH_ATTACHMENT, light->GetShadow()->maps, i);
+						framebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT, light->GetShadow()->maps, i);
 					}
 
 					glClear(GL_DEPTH_BUFFER_BIT);
@@ -114,7 +112,7 @@ namespace Atlas {
 									modelMatrixUniform->SetValue(actor->transformedMatrix);
 
 									glDrawElements(mesh->data->primitiveType, subData->numIndices, mesh->data->indices->GetType(),
-												   (void*)(subData->indicesOffset * mesh->data->indices->GetElementSize()));
+												   (void*)((uint64_t)(subData->indicesOffset * mesh->data->indices->GetElementSize())));
 
 								}
 

@@ -13,7 +13,12 @@ namespace Atlas {
 
 	public:
 		/**
-         * Creates a Viewport object.
+		 * Constructs a Viewport object.
+		 */
+		Viewport() {}
+
+		/**
+         * Constructs a Viewport object.
          * @param x The offset in x direction to the upper left corner of the window
          * @param y The offset in y direction to the upper left corner of the window
          * @param width The width in pixels of the viewport
@@ -42,11 +47,11 @@ namespace Atlas {
          */
 		vec3 Unproject(vec3 point, Camera *camera);
 
-		int32_t x;
-		int32_t y;
+		int32_t x = 0;
+		int32_t y = 0;
 
-		int32_t width;
-		int32_t height;
+		int32_t width = 0;
+		int32_t height = 0;
 
 	};
 

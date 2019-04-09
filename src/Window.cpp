@@ -15,7 +15,7 @@ namespace Atlas {
 
 		ID = SDL_GetWindowID(sdlWindow);
 
-		this->viewport = new Viewport(0, 0, width, height);
+		this->viewport = Viewport(0, 0, width, height);
 
 		auto windowEventHandler = std::bind(&Window::WindowEventHandler, this, std::placeholders::_1);
 		Events::EventManager::WindowEventDelegate.Subscribe(windowEventHandler);
@@ -40,6 +40,14 @@ namespace Atlas {
 
 		auto dropEventHandler = std::bind(&Window::DropEventHandler, this, std::placeholders::_1);
 		Events::EventManager::DropEventDelegate.Subscribe(dropEventHandler);
+
+	}
+
+	Window::~Window() {
+
+		SDL_DestroyWindow(sdlWindow);
+
+		SDL_GL_DeleteContext(context);
 
 	}
 
@@ -203,16 +211,6 @@ namespace Atlas {
 			return;
 
 		dropEventDelegate.Fire(event);
-
-	}
-
-	Window::~Window() {
-
-		SDL_DestroyWindow(sdlWindow);
-
-		SDL_GL_DeleteContext(context);
-
-		delete this->viewport;
 
 	}
 

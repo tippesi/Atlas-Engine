@@ -22,7 +22,7 @@ namespace Atlas {
 		public:
 
 			/**
-             *
+             * Constructs a scene object.
              */
 			Scene();
 

@@ -140,7 +140,7 @@ namespace Atlas {
 						normals[usedVertices * 4 + 2] = normal.z;
 						normals[usedVertices * 4 + 3] = 0.0f;
 
-						if (hasTangents && mesh->mTangents != NULL) {
+						if (hasTangents && mesh->mTangents != nullptr) {
 							vec3 tangent = vec3(mesh->mTangents[j].x, mesh->mTangents[j].y, mesh->mTangents[j].z);
 							tangent = normalize(tangent - normal * dot(normal, tangent));
 
@@ -156,7 +156,7 @@ namespace Atlas {
 							tangents[usedVertices * 4 + 3] = dotProduct < 0.0f ? -1.0f : 1.0f;
 						}
 
-						if (hasTexCoords && mesh->mTextureCoords[0] != NULL) {
+						if (hasTexCoords && mesh->mTextureCoords[0] != nullptr) {
 							texCoords[usedVertices * 2] = mesh->mTextureCoords[0][j].x;
 							texCoords[usedVertices * 2 + 1] = mesh->mTextureCoords[0][j].y;
 						}

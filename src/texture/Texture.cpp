@@ -15,20 +15,34 @@ namespace Atlas {
 
             glGenTextures(1, &ID);
 
-            width = 0;
-            height = 0;
-            depth = 0;
-            channels = 0;
-
-            dataType = 0;
-            sizedFormat = 0;
-            mipmaps = false;
-
         }
 
         Texture::~Texture() {
 
             glDeleteTextures(1, &ID);
+
+        }
+
+        Texture& Texture::operator=(Texture &that) {
+
+            if (this != &that) {
+
+                // Remember that we have persistent texture memory.
+                // We can't just change the format, but are required to
+                // retrieve a new texture ID.
+                glDeleteTextures(1, &ID);
+                glGenTextures(1, &ID);
+
+                this->width = that.width;
+                this->height = that.height;
+                this->depth = that.depth;
+                
+                Generate(that.target, that.sizedFormat, that.wrapping, that.filtering,
+                        that.anisotropicFiltering, that.mipmaps);
+
+            }
+
+            return *this;
 
         }
 
@@ -188,9 +202,10 @@ namespace Atlas {
 
         }
 
-        void Texture::Generate(GLenum target,int32_t sizedFormat, int32_t wrapping,
+        void Texture::Generate(uint32_t target, int32_t sizedFormat, int32_t wrapping,
                                int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
 
+            this->target = target;
             this->channels = GetChannelCount(TextureFormat::GetBaseFormat(sizedFormat));
             this->dataType = TextureFormat::GetType(sizedFormat);
             this->sizedFormat = sizedFormat;

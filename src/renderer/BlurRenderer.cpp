@@ -38,8 +38,6 @@ namespace Atlas {
 
             GetUniforms();
 
-            framebuffer = new Framebuffer(0, 0);
-
         }
 
         void BlurRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene::Scene *scene) {
@@ -51,7 +49,7 @@ namespace Atlas {
         void BlurRenderer::Render(Texture::Texture2D *texture, Texture::Texture2D *swapTexture,
                 Texture::Texture2D* depthTexture) {
 
-            framebuffer->Bind();
+            framebuffer.Bind();
 
             diffuseTexture->SetValue(0);
             this->depthTexture->SetValue(1);
@@ -62,7 +60,7 @@ namespace Atlas {
 
             glViewport(0, 0, texture->width, texture->height);
 
-            framebuffer->AddComponentTexture(GL_COLOR_ATTACHMENT0, swapTexture);
+            framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, swapTexture);
 
             texture->Bind(GL_TEXTURE0);
 
@@ -70,7 +68,7 @@ namespace Atlas {
 
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-            framebuffer->AddComponentTexture(GL_COLOR_ATTACHMENT0, texture);
+            framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, texture);
 
             swapTexture->Bind(GL_TEXTURE0);
 

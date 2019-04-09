@@ -27,6 +27,14 @@ namespace Atlas {
             virtual ~Texture();
 
             /**
+             * Copies the data from another texture to the texture object.
+             * @param that Another texture.
+             * @return A reference to the texture.
+             * @note The graphics API object will be changed.
+             */
+			Texture& operator=(Texture& that);
+
+            /**
              * Returns the ID of the texture object.
              * @return The ID of the texture object.
              */
@@ -107,12 +115,12 @@ namespace Atlas {
              */
             static void CheckExtensions();
 
-            int32_t width;
-            int32_t height;
+            int32_t width = 0;
+            int32_t height = 0;
 
-            int32_t depth;
+            int32_t depth = 0;
 
-            int32_t channels;
+            int32_t channels = 0;
 
         protected:
             /**
@@ -134,19 +142,21 @@ namespace Atlas {
              */
             int32_t GetMipMapLevel();
 
-            void Generate(GLenum target, int32_t sizedFormat, int32_t wrapping,
+            void Generate(uint32_t target, int32_t sizedFormat, int32_t wrapping,
                           int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
 
-            uint32_t ID;
+            uint32_t ID = 0;
 
-            uint32_t dataType;
-            int32_t sizedFormat;
+            uint32_t target = 0;
 
-            int32_t wrapping;
-            int32_t filtering;
+            uint32_t dataType = 0;
+            int32_t sizedFormat = 0;
 
-            bool anisotropicFiltering;
-            bool mipmaps;
+            int32_t wrapping = 0;
+            int32_t filtering = 0;
+
+            bool anisotropicFiltering = false;
+            bool mipmaps = false;
 
             static int32_t anisotropyLevel;
 

@@ -76,7 +76,7 @@ Main::Main(int argc, char* argv[]) {
 		float deltaTime = Engine::GetClock() - time;
 		time = Engine::GetClock();
 
-		Engine::Update();
+		Engine::Update(deltaTime);
 
 		Update(deltaTime);
 		Render(deltaTime);
@@ -140,8 +140,9 @@ void Main::Load() {
 	cubeMesh = new Mesh::Mesh("cube.dae");
 	treeMesh = new Mesh::Mesh("tree.dae");
 	treeMesh->cullBackFaces = false;
-	sponzaMesh = new Mesh::Mesh("sanmiguel/sanmiguel.dae");
-	sponzaMesh->cullBackFaces = false;
+	//sponzaMesh = new Mesh::Mesh("sanmiguel/sanmiguel.dae");
+	//sponzaMesh->cullBackFaces = false;
+	sponzaMesh = new Mesh::Mesh("sponza/sponza.dae");
 
 	audioData = new Audio::AudioData("MenuTheme2_final.wav");
 	audioStream = new Audio::AudioStream(audioData);
@@ -184,8 +185,8 @@ void Main::SceneSetUp() {
 	scene->sky.skybox = new Lighting::Skybox(skybox);
 
 	cubeActor = new Actor::MovableMeshActor(cubeMesh);
-	//treeActor = new Actor::StaticMeshActor(treeMesh, scale(mat4(1.0f), vec3(3.0f)));
-	sponzaActor = new Actor::StaticMeshActor(sponzaMesh, scale(mat4(1.0f), vec3(2.0f)));
+	treeActor = new Actor::StaticMeshActor(treeMesh, scale(mat4(1.0f), vec3(3.0f)));
+	sponzaActor = new Actor::StaticMeshActor(sponzaMesh, scale(mat4(1.0f), vec3(.05f)));
 
 	directionalLight = new Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
 #ifdef AE_OS_ANDROID
@@ -203,14 +204,14 @@ void Main::SceneSetUp() {
     mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
 #ifndef AE_OS_ANDROID
     directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
-	directionalLight->GetShadow()->sampleCount = 8;
+	directionalLight->GetShadow()->sampleCount = 1;
 	directionalLight->AddVolumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f);
 #else
     directionalLight->AddShadow(200.0f, 0.01f, 2048, vec3(0.0f), orthoProjection);
     directionalLight->GetShadow()->sampleCount = 8;
     directionalLight->AddVolumetric(renderTarget->width / 2, renderTarget->height / 2, 10, -0.5f);
 #endif
-	/*
+	
 	auto pointLight1 = new Lighting::PointLight(AE_STATIONARY_LIGHT);
 	pointLight1->location = vec3(24.35f, 6.5f, 7.1f);
 	pointLight1->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
@@ -230,8 +231,8 @@ void Main::SceneSetUp() {
 	pointLight4->location = vec3(-31.0f, 6.5f, -11.0f);
 	pointLight4->color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight4->AddShadow(0.0f, 512);
-	*/
 
+	/*
 	// San Miguel settings
 	auto pointLight1 = new Lighting::PointLight(AE_STATIONARY_LIGHT);
 	pointLight1->location = vec3(50.461f, 12.566f, 20.102f);
@@ -252,10 +253,11 @@ void Main::SceneSetUp() {
 	pointLight4->location = vec3(22.879f, 17.180f, -3.488f);
 	pointLight4->color = vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight4->AddShadow(0.0f, 1024);
+	*/
 
 	node->Add(cubeActor);
 	scene->Add(sponzaActor);
-	// scene->Add(treeActor);
+	scene->Add(treeActor);
 
 	scene->Add(directionalLight);
 

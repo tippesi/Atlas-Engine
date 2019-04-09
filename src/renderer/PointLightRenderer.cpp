@@ -38,10 +38,10 @@ namespace Atlas {
 			projectionMatrix->SetValue(camera->projectionMatrix);
 			inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
-			target->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
-			target->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
-			target->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
-			target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
+			target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
 
 			for (auto light : scene->renderList.lights) {
 
@@ -63,8 +63,8 @@ namespace Atlas {
 				lightAmbient->SetValue(pointLight->ambient);
 				lightRadius->SetValue(pointLight->GetRadius());
 
-				glDrawElements(GL_TRIANGLES, vertexArray.GetIndexComponent()->GetElementCount(),
-							   vertexArray.GetIndexComponent()->GetDataType(), NULL);
+				glDrawElements(GL_TRIANGLES, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
+							   vertexArray.GetIndexComponent()->GetDataType(), nullptr);
 
 			}
 

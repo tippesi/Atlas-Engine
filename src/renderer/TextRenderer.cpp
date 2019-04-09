@@ -33,8 +33,8 @@ namespace Atlas {
 		void TextRenderer::Render(Window* window, Font* font, std::string text, float x, float y, vec4 color,
 								  float scale, bool alphaBlending, Framebuffer* framebuffer) {
 
-			float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
-			float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+			float width = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
+			float height = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
 
 			vec4 clipArea = vec4(0.0f, 0.0f, width, height);
 			vec4 blendArea = vec4(0.0f, 0.0f, width, height);
@@ -48,8 +48,8 @@ namespace Atlas {
 
 			int32_t characterCount;
 
-			float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
-			float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+			float width = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
+			float height = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
 
 			if (x > width || y > height)
 				return;
@@ -62,7 +62,7 @@ namespace Atlas {
 				framebuffer->Bind(true);
 			}
 			else {
-				glViewport(0, 0, window->viewport->width, window->viewport->height);
+				glViewport(0, 0, window->viewport.width, window->viewport.height);
 			}
 
 			glDisable(GL_CULL_FACE);
@@ -116,8 +116,8 @@ namespace Atlas {
 		void TextRenderer::RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor,
 										  float outlineScale, float scale, bool alphaBlending, Framebuffer* framebuffer) {
 
-			float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
-			float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+			float width = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
+			float height = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
 
 			vec4 clipArea = vec4(0.0f, 0.0f, width, height);
 			vec4 blendArea = vec4(0.0f, 0.0f, width, height);
@@ -140,7 +140,7 @@ namespace Atlas {
 				framebuffer->Bind(true);
 			}
 			else {
-				glViewport(0, 0, window->viewport->width, window->viewport->height);
+				glViewport(0, 0, window->viewport.width, window->viewport.height);
 			}
 
 			glDisable(GL_CULL_FACE);
@@ -150,8 +150,8 @@ namespace Atlas {
 				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			}
 
-			float width = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
-			float height = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+			float width = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
+			float height = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
 
 			auto instances = CalculateCharacterInstances(font, text, &characterCount);
 			vertexArray.GetComponent(1)->SetData(instances.data(), 0, instances.size());

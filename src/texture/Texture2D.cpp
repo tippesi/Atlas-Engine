@@ -41,6 +41,21 @@ namespace Atlas {
 
         }
 
+        Texture2D& Texture2D::operator=(Texture2D &that) {
+
+            if (this != &that) {
+
+                Texture::operator=(that);
+
+                auto data = that.GetData();
+                SetData(data);
+
+            }
+
+            return *this;
+
+        }
+
         void Texture2D::Bind(uint32_t unit) {
 
             glActiveTexture(unit);

@@ -35,8 +35,6 @@ namespace Atlas {
         private:
             SDL_AudioSpec spec;
 
-			static std::mutex mutex;
-
         };
 
     }

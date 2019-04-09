@@ -21,7 +21,7 @@ namespace Atlas {
 
 		void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
-			glViewport(window->viewport->x, window->viewport->y, window->viewport->width, window->viewport->height);
+			glViewport(window->viewport.x, window->viewport.y, window->viewport.width, window->viewport.height);
 
 			auto postProcessing = &scene->postProcessing;
 
@@ -58,8 +58,8 @@ namespace Atlas {
 			bloomThirdTexture->SetValue(3);
 
 			hdrTextureResolution->SetValue(
-					vec2(target->lightingFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0)->width,
-						 target->lightingFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0)->height));
+					vec2(target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->width,
+						 target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->height));
 
 			exposure->SetValue(postProcessing->exposure);
 			saturation->SetValue(postProcessing->saturation);
@@ -78,7 +78,7 @@ namespace Atlas {
 				vignetteColor->SetValue(postProcessing->vignette->color);
 			}
 
-			target->lightingFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
+			target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
 
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

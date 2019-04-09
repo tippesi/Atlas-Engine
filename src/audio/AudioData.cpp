@@ -28,7 +28,7 @@ namespace Atlas {
 
             auto filedata = Loader::AssetLoader::GetFileContent(stream);
 
-            auto rw = SDL_RWFromMem(filedata.data(), filedata.size());
+            auto rw = SDL_RWFromMem(filedata.data(), (int32_t)filedata.size());
 
             if (!rw) {
                 throw AtlasException("Error getting RWOPS interface");
@@ -67,7 +67,7 @@ namespace Atlas {
                 std::vector<uint8_t> temporary(data.size() * 2 * cvt.len_mult);
 
                 cvt.buf = temporary.data();
-				cvt.len = data.size() * 2;
+				cvt.len = (int32_t)data.size() * 2;
 
                 std::memcpy(cvt.buf, data.data(), cvt.len);
 

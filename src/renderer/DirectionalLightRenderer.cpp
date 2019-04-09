@@ -39,10 +39,10 @@ namespace Atlas {
 			inverseViewMatrix->SetValue(camera->inverseViewMatrix);
 			inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
-			target->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
-			target->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
-			target->geometryFramebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
-			target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
+			target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
 
 			// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
 			for (auto& light : scene->renderList.lights) {
@@ -51,7 +51,7 @@ namespace Atlas {
 					continue;
 				}
 
-				auto directionalLight = (Lighting::DirectionalLight*)light;
+				auto directionalLight = static_cast<Lighting::DirectionalLight*>(light);
 
 				vec3 direction = normalize(vec3(camera->viewMatrix * vec4(directionalLight->direction, 0.0f)));
 
@@ -64,7 +64,7 @@ namespace Atlas {
 				if (light->GetVolumetric()) {
 					glViewport(0, 0, directionalLight->GetVolumetric()->map->width, directionalLight->GetVolumetric()->map->height);
 					directionalLight->GetVolumetric()->map->Bind(GL_TEXTURE5);
-					glViewport(0, 0, target->lightingFramebuffer->width, target->lightingFramebuffer->height);
+					glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
 				}
 
 				if (light->GetShadow()) {

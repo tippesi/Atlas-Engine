@@ -41,6 +41,8 @@ namespace Atlas {
 		Window(std::string title, int32_t x, int32_t y, int32_t width, int32_t height,
 			   int32_t flags = AE_WINDOW_FULLSCREEN);
 
+		~Window();
+
 		/**
          * Returns the ID of the window.
          * @return
@@ -109,9 +111,7 @@ namespace Atlas {
          */
 		void Clear(vec3 color = vec3(0.0f));
 
-		~Window();
-
-		Viewport *viewport;
+		Viewport viewport;
 
 		Events::EventDelegate<Events::WindowEvent> windowEventDelegate;
 		Events::EventDelegate<Events::KeyboardEvent> keyboardEventDelegate;

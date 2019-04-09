@@ -48,7 +48,7 @@ namespace Atlas {
 
 			shadowRenderer.Render(window, target, camera, scene);
 
-			target->geometryFramebuffer->Bind(true);
+			target->geometryFramebuffer.Bind(true);
 
 			glEnable(GL_CULL_FACE);
 
@@ -72,7 +72,7 @@ namespace Atlas {
 
 			directionalVolumetricRenderer.Render(window, target, camera, scene);
 
-			target->lightingFramebuffer->Bind(true);
+			target->lightingFramebuffer.Bind(true);
 
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
@@ -95,7 +95,7 @@ namespace Atlas {
 				atmosphereRenderer.Render(window, target, camera, scene);
 			}
 
-			target->lightingFramebuffer->Unbind();
+			target->lightingFramebuffer.Unbind();
 
 			glDisable(GL_DEPTH_TEST);
 
@@ -108,8 +108,8 @@ namespace Atlas {
 		void MasterRenderer::RenderTexture(Window* window, Texture::Texture2D* texture, float x, float y, float width, float height,
 										   bool alphaBlending, Framebuffer* framebuffer) {
 
-			float viewportWidth = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
-			float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+			float viewportWidth = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
+			float viewportHeight = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
 
 			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
@@ -131,7 +131,7 @@ namespace Atlas {
 				framebuffer->Bind(true);
 			}
 			else {
-				glViewport(0, 0, window->viewport->width, window->viewport->height);
+				glViewport(0, 0, window->viewport.width, window->viewport.height);
 			}
 
 			if (alphaBlending) {
@@ -140,8 +140,8 @@ namespace Atlas {
 			}
 
 
-			float viewportWidth = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
-			float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+			float viewportWidth = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
+			float viewportHeight = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
 
 			texture2DProjectionMatrix->SetValue(glm::ortho(0.0f, (float)viewportWidth, 0.0f, (float)viewportHeight));
 			texture2DOffset->SetValue(vec2(x, y));
@@ -169,8 +169,8 @@ namespace Atlas {
 		void MasterRenderer::RenderTexture(Window* window, Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
 										   bool alphaBlending, Framebuffer* framebuffer) {
 
-			float viewportWidth = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
-			float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+			float viewportWidth = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
+			float viewportHeight = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
 
 			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
@@ -192,7 +192,7 @@ namespace Atlas {
 				framebuffer->Bind(true);
 			}
 			else {
-				glViewport(0, 0, window->viewport->width, window->viewport->height);
+				glViewport(0, 0, window->viewport.width, window->viewport.height);
 			}
 
 			if (alphaBlending) {
@@ -201,8 +201,8 @@ namespace Atlas {
 			}
 
 
-			float viewportWidth = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
-			float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+			float viewportWidth = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
+			float viewportHeight = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
 
 			texture2DArrayProjectionMatrix->SetValue(glm::ortho(0.0f, (float)viewportWidth, 0.0f, (float)viewportHeight));
 			texture2DArrayOffset->SetValue(vec2(x, y));
@@ -231,8 +231,8 @@ namespace Atlas {
 		void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
 											 bool alphaBlending, Framebuffer* framebuffer) {
 
-			float viewportWidth = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
-			float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+			float viewportWidth = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
+			float viewportHeight = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
 
 			if (x > viewportWidth || y > viewportHeight ||
 				y + height < 0 || x + width < 0) {
@@ -249,8 +249,8 @@ namespace Atlas {
 		void MasterRenderer::RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
 											 vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
 
-			float viewportWidth = (float)(framebuffer == nullptr ? window->viewport->width : framebuffer->width);
-			float viewportHeight = (float)(framebuffer == nullptr ? window->viewport->height : framebuffer->height);
+			float viewportWidth = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
+			float viewportHeight = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
 
 			if (x > viewportWidth || y > viewportHeight ||
 				y + height < 0 || x + width < 0) {
@@ -267,7 +267,7 @@ namespace Atlas {
 				framebuffer->Bind(true);
 			}
 			else {
-				glViewport(0, 0, window->viewport->width, window->viewport->height);
+				glViewport(0, 0, window->viewport.width, window->viewport.height);
 			}
 
 			if (alphaBlending) {

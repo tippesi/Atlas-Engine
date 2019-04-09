@@ -35,7 +35,7 @@ namespace Atlas {
 
             fileStream.close();
 
-            auto data = stbi_load_from_memory((unsigned char*)buffer.data(), buffer.size(),
+            auto data = stbi_load_from_memory((unsigned char*)buffer.data(), (int32_t)buffer.size(),
                     &image.width, &image.height, &image.channels, forceChannels);
 
             if (forceChannels > 0) {
@@ -92,7 +92,7 @@ namespace Atlas {
 
             fileStream.close();
 
-            auto data = stbi_load_16_from_memory((unsigned char*)buffer.data(), buffer.size(),
+            auto data = stbi_load_16_from_memory((unsigned char*)buffer.data(), (int32_t)buffer.size(),
                     &image.width, &image.height, &image.channels, forceChannels);
 
             if (forceChannels > 0) {

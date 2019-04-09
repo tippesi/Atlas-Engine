@@ -29,7 +29,7 @@ namespace Atlas {
 				throw AtlasException("File isn't a material file");
 			}
 
-			auto lastPosition = 4;
+			size_t lastPosition = 4;
 			auto position = header.find_first_of('\n', lastPosition);
 			auto textureCount = std::stoi(header.substr(lastPosition, position - lastPosition));
 

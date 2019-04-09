@@ -25,7 +25,7 @@ namespace Atlas {
 			void GetVolumetricUniforms();
 			void GetBilateralBlurUniforms();
 
-			Framebuffer* framebuffer;
+			Framebuffer framebuffer;
 
 			Kernel blurKernel;
 

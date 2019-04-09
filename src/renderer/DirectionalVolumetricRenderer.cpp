@@ -12,8 +12,6 @@ namespace Atlas {
 
         DirectionalVolumetricRenderer::DirectionalVolumetricRenderer() {
 
-            framebuffer = new Framebuffer(0, 0);
-
             blurKernel.CalculateBoxFilter(21);
 
             volumetricShader.AddStage(AE_VERTEX_STAGE, volumetricVertexPath);
@@ -38,7 +36,7 @@ namespace Atlas {
         void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
                 Camera *camera, Scene::Scene *scene) {
 
-            framebuffer->Bind();
+            framebuffer.Bind();
 
             volumetricShader.Bind();
 
@@ -46,7 +44,7 @@ namespace Atlas {
             shadowTexture->SetValue(1);
 
             inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
-            target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
+            target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
 
             for (auto& light : scene->renderList.lights) {
 
@@ -58,7 +56,7 @@ namespace Atlas {
 
                 glViewport(0, 0, directionalLight->GetVolumetric()->map->width, directionalLight->GetVolumetric()->map->height);
 
-                framebuffer->AddComponentTexture(GL_COLOR_ATTACHMENT0, directionalLight->GetVolumetric()->map);
+                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, directionalLight->GetVolumetric()->map);
 
                 vec3 direction = normalize(vec3(camera->viewMatrix * vec4(directionalLight->direction, 0.0f)));
 
@@ -92,7 +90,7 @@ namespace Atlas {
             diffuseTexture->SetValue(0);
             bilateralDepthTexture->SetValue(1);
 
-            target->geometryFramebuffer->GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
+            target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
 
             std::vector<float>* kernelWeights;
             std::vector<float>* kernelOffsets;
@@ -114,7 +112,7 @@ namespace Atlas {
 
                 glViewport(0, 0, directionalLight->GetVolumetric()->map->width, directionalLight->GetVolumetric()->map->height);
 
-                framebuffer->AddComponentTexture(GL_COLOR_ATTACHMENT0, directionalLight->GetVolumetric()->blurMap);
+                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, directionalLight->GetVolumetric()->blurMap);
 
                 directionalLight->GetVolumetric()->map->Bind(GL_TEXTURE0);
 
@@ -122,7 +120,7 @@ namespace Atlas {
 
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-                framebuffer->AddComponentTexture(GL_COLOR_ATTACHMENT0, directionalLight->GetVolumetric()->map);
+                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, directionalLight->GetVolumetric()->map);
 
                 directionalLight->GetVolumetric()->blurMap->Bind(GL_TEXTURE0);
 

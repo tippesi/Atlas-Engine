@@ -27,7 +27,7 @@ namespace Atlas {
 
             bool bilateralBlur;
 
-            Framebuffer* framebuffer;
+            Framebuffer framebuffer;
 
             Shader::Shader shader;
 

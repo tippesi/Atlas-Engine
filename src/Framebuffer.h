@@ -14,13 +14,28 @@ namespace Atlas {
 
 	public:
 		/**
-         *
+		 * Constructs a Framebuffer object.
+		 */
+		Framebuffer();
+
+		/**
+         * Constructs a Framebuffer object.
          * @param width
          * @param height
          */
 		Framebuffer(int32_t width, int32_t height);
 
+		/**
+		 * Destructs the Framebuffer object.
+		 */
 		~Framebuffer();
+
+		/**
+		 *
+		 * @param that
+		 * @return
+		 */
+		Framebuffer& operator=(Framebuffer &that);
 
 		/**
          *
@@ -38,6 +53,7 @@ namespace Atlas {
          * @param attachment
          * @param texture
          * @param target
+		 * @note The framebuffer doesn't take the ownership of the texture.
          */
 		void AddComponentTexture(int32_t attachment, Texture::Texture2D *texture, uint32_t target = GL_FRAMEBUFFER);
 
@@ -47,6 +63,7 @@ namespace Atlas {
          * @param texture
          * @param layer
          * @param target
+		 * @note The framebuffer doesn't take the ownership of the texture.
          */
 		void AddComponentTextureArray(int32_t attachment, Texture::Texture2DArray *texture, int32_t layer,
 									  uint32_t target = GL_FRAMEBUFFER);
@@ -81,23 +98,32 @@ namespace Atlas {
          */
 		Texture::Cubemap *GetComponentCubemap(int32_t attachment);
 
-		///
-		/// \param width
-		/// \param height
+		/**
+		 *
+		 * @param width
+		 * @param height
+		 */
 		void Resize(int32_t width, int32_t height);
 
-		///
-		/// \param resizeViewport
+		/**
+		 *
+		 * @param resizeViewport
+		 */
 		void Bind(bool resizeViewport = false);
 
-		///
+		/**
+		 * Unbinds any framebuffer.
+		 */
 		void Unbind();
 
-
+		/**
+		 *
+		 * @param drawBuffers
+		 */
 		void SetDrawBuffers(std::vector<uint32_t> drawBuffers);
 
-		int32_t width;
-		int32_t height;
+		int32_t width = 0;
+		int32_t height = 0;
 
 	private:
 		/**

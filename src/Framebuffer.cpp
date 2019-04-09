@@ -4,6 +4,14 @@ namespace Atlas {
 
 	uint32_t Framebuffer::boundFramebufferID = 0;
 
+	Framebuffer::Framebuffer() {
+
+		glGenFramebuffers(1, &ID);
+
+		drawBuffersSet = false;
+
+	}
+
 	Framebuffer::Framebuffer(int32_t width, int32_t height) : width(width), height(height) {
 
 		glGenFramebuffers(1, &ID);
@@ -21,6 +29,18 @@ namespace Atlas {
 		}
 
 		glDeleteFramebuffers(1, &ID);
+
+	}
+
+	Framebuffer& Framebuffer::operator=(Atlas::Framebuffer &that) {
+
+		if (this != &that) {
+
+
+
+		}
+
+		return *this;
 
 	}
 
@@ -250,7 +270,7 @@ namespace Atlas {
 
 		Bind();
 
-		glDrawBuffers(drawBuffers.size(), drawBuffers.data());
+		glDrawBuffers((int32_t)drawBuffers.size(), drawBuffers.data());
 
 		drawBuffersSet = true;
 

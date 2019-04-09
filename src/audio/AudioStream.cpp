@@ -4,6 +4,29 @@ namespace Atlas {
     
     namespace Audio {
 
+		AudioStream& AudioStream::operator=(AudioStream& that) {
+
+		    if (this != &that) {
+
+                std::lock(mutex, that.mutex);
+                std::lock_guard<std::mutex> lock_this(mutex, std::adopt_lock);
+                std::lock_guard<std::mutex> lock_that(that.mutex, std::adopt_lock);
+
+                this->loop = that.loop;
+
+                this->progress = that.progress;
+
+                this->volume = that.volume;
+                this->pitch = that.pitch;
+
+                this->data = that.data;
+
+            }
+
+			return *this;
+
+		}
+
 		double AudioStream::GetDuration() {
 
 			std::lock_guard<std::mutex> lock(mutex);
@@ -110,6 +133,8 @@ namespace Atlas {
 		}
 
 		void AudioStream::ApplyFormat(SDL_AudioSpec& spec) {
+
+			std::lock_guard<std::mutex> lock(mutex);
 
 			data->ApplyFormat(spec);
 

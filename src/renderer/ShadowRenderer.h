@@ -28,7 +28,7 @@ namespace Atlas {
 			static std::string fragmentPath;
 
 		private:
-			Framebuffer* framebuffer;
+			Framebuffer framebuffer;
 
 			Shader::Uniform* arrayMapUniform;
 			Shader::Uniform* diffuseMapUniform;

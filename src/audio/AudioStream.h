@@ -18,6 +18,8 @@ namespace Atlas {
 
             AudioStream(AudioData* data) : data(data) {}
 
+			AudioStream& operator=(AudioStream& that);
+
 			double GetDuration();
 
 			void SetTime(double time);

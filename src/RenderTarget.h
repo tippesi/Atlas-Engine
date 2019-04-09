@@ -10,26 +10,32 @@ namespace Atlas {
 
 	public:
 		/**
-		 *
-		 * @param width
-		 * @param height
+		 * Constructs a RenderTarget object.
+		 */
+		RenderTarget() {}
+
+		/**
+		 * Constructs a RenderTarget object.
+		 * @param width The width of the render target
+		 * @param height The height of the render target
 		 */
 		RenderTarget(int32_t width, int32_t height);
 
 		/**
-		 *
-		 * @param width
-		 * @param height
+		 * Resizes the render target.
+		 * @param width The width of the render target
+		 * @param height The height of the render target
 		 */
 		void Resize(int32_t width, int32_t height);
 
-		~RenderTarget();
+		Framebuffer geometryFramebuffer;
+		Framebuffer lightingFramebuffer;
 
-		Framebuffer *geometryFramebuffer;
-		Framebuffer *lightingFramebuffer;
+		int32_t width = 0;
+		int32_t height = 0;
 
-		int32_t width;
-		int32_t height;
+	private:
+		Texture::Texture2D depthTexture;
 
 	};
 

@@ -11,6 +11,11 @@ namespace Atlas {
         class Texture2D : public Texture {
 
         public:
+			/**
+			 * Constructs a Texture2D object.
+			 */
+			Texture2D() {}
+
             /**
              * Constructs a Texture2D object.
              * @param width
@@ -22,7 +27,7 @@ namespace Atlas {
              * @param generateMipMaps
              */
             Texture2D(int32_t width, int32_t height, int32_t sizedFormat,
-                      int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
+				int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
 
             /**
              * Constructs a Texture2D object from an image file.
@@ -32,7 +37,15 @@ namespace Atlas {
              * @param generateMipMaps
              */
             Texture2D(std::string filename, bool colorSpaceConversion = true, bool anisotropicFiltering = true,
-                      bool generateMipMaps = true);
+				bool generateMipMaps = true);
+
+            /**
+             * Copies the data from another texture to the texture object.
+             * @param that Another texture.
+             * @return A reference to the texture.
+             * @note The graphics API object will be changed.
+             */
+            Texture2D& operator=(Texture2D& that);
 
             /**
              * Binds the texture to a texture unit
