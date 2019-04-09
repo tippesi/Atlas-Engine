@@ -62,6 +62,7 @@ namespace Atlas {
 					node->cell->normalMap->Bind(GL_TEXTURE1);
 					node->cell->diffuseMap->Bind(GL_TEXTURE2);
 					node->cell->displacementMap->Bind(GL_TEXTURE3);
+					node->cell->splatMap->Bind(GL_TEXTURE4);
 
 					displacementScale->SetValue(.15f);
 

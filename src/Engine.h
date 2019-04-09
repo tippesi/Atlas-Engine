@@ -63,7 +63,7 @@ namespace Atlas {
          * Updates the engine and the system events. Must be called in thread
          * where the engine was initialized.
          */
-		static void Update();
+		static void Update(float deltaTime);
 
 	};
 

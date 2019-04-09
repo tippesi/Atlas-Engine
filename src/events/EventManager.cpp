@@ -16,12 +16,13 @@ namespace Atlas {
 		EventDelegate<TextInputEvent> EventManager::TextInputEventDelegate;
 		EventDelegate<AudioDeviceEvent> EventManager::AudioDeviceEventDelegate;
 		EventDelegate<DropEvent> EventManager::DropEventDelegate;
+		EventDelegate<ClockEvent> EventManager::ClockEventDelegate;
 		EventDelegate<> EventManager::QuitEventDelegate;
 
 		std::mutex EventManager::handlerMutex;
 		std::unordered_map<int32_t, EventManager::ControllerDevice> EventManager::controllers;
 
-		void EventManager::Update() {
+		void EventManager::Update(float deltaTime) {
 
 			std::lock_guard<std::mutex> guard(handlerMutex);
 
@@ -126,6 +127,10 @@ namespace Atlas {
 				}
 
 			}
+
+			ClockEvent event(deltaTime);
+
+			ClockEventDelegate.Fire(event);
 
 		}
 

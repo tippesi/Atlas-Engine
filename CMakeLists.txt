@@ -5,6 +5,12 @@ endif()
 project(AtlasEngine)
 cmake_minimum_required(VERSION 3.7)
 
+# Only 64 bit is supported
+###################################################################
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+	message(FATAL_ERROR "32 bit isn't supported")
+endif()
+
 # Options and compiler settings ###################################################################
 option(BUILD_LIBRARY "Build as library" OFF)
 option(OPENGL_ES "Use OpenGL ES instead of OpenGL" OFF)

@@ -94,8 +94,6 @@ namespace Atlas {
 			movableMeshActorQuery.clear();
 			staticMeshActorQuery.clear();
 
-			mat4 inverseMatrix = glm::inverse(camera->projectionMatrix * camera->viewMatrix);
-
 			Common::AABB base(vec3(-1.0f), vec3(1.0f));
 
             auto aabb = base.Transform(glm::inverse(camera->projectionMatrix * camera->viewMatrix));

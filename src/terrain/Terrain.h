@@ -100,7 +100,7 @@ namespace Atlas {
             * @param x The x component of the point relative to the terrain origin
             * @param z The z component of the point relative to the terrain origin
             * @param LoD The lod level of the storage cell.
-            * @return A pointer to a TerrainStorageObject. Equals nullptr if input wasn't valid.
+            * @return A pointer to a TerrainStorageCell object. Equals nullptr if input wasn't valid.
             * @note For every point there exist as many storage cells as there are lod levels.
             */
 			TerrainStorageCell* GetStorageCell(float x, float z, int32_t LoD);

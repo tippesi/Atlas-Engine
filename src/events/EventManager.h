@@ -18,6 +18,7 @@
 #include "TextInputEvent.h"
 #include "AudioDeviceEvent.h"
 #include "DropEvent.h"
+#include "ClockEvent.h"
 
 #include <mutex>
 #include <unordered_map>
@@ -29,7 +30,7 @@ namespace Atlas {
 		class EventManager {
 
 		public:
-			static void Update();
+			static void Update(float deltaTime);
 
 			static void EnableTextInput();
 
@@ -47,6 +48,7 @@ namespace Atlas {
 			static EventDelegate<TextInputEvent> TextInputEventDelegate;
 			static EventDelegate<AudioDeviceEvent> AudioDeviceEventDelegate;
 			static EventDelegate<DropEvent> DropEventDelegate;
+			static EventDelegate<ClockEvent> ClockEventDelegate;
 			static EventDelegate<> QuitEventDelegate;
 
 		private:
