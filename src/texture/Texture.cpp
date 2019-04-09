@@ -46,6 +46,25 @@ namespace Atlas {
 
         }
 
+		void Texture::Bind() {
+
+			glBindTexture(target, ID);
+
+		}
+
+		void Texture::Bind(uint32_t unit) {
+
+			glActiveTexture(unit);
+			Bind();
+
+		}
+
+		void Texture::Unbind() {
+
+			glBindTexture(target, 0);
+
+		}
+
         uint32_t Texture::GetID() {
 
             return ID;
@@ -236,6 +255,13 @@ namespace Atlas {
             }
 
         }
+
+		void Texture::GenerateMipmap() {
+
+			if (mipmaps)
+				glGenerateMipmap(target);
+
+		}
 
     }
 

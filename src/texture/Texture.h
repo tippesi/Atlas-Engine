@@ -34,6 +34,23 @@ namespace Atlas {
              */
 			Texture& operator=(Texture& that);
 
+			/**
+			 * Binds the texture to the active texture unit
+			 */
+			void Bind();
+
+			/**
+			 * Binds the texture to a texture unit.
+			 * @param unit The texture unit the texture should be bound to.
+			 * @note The texture unit should be between GL_TEXTURE0-GL_TEXTURE_MAX
+			 */
+			void Bind(uint32_t unit);
+
+			/**
+			 * Unbinds any texture from the textures target.
+			 */
+			void Unbind();
+
             /**
              * Returns the ID of the texture object.
              * @return The ID of the texture object.
@@ -51,18 +68,6 @@ namespace Atlas {
              * @return The sized format, e.g AE_RGB16F
              */
             int32_t GetSizedFormat();
-
-            /**
-             * Binds the texture to a texture unit
-             * @param unit The texture unit the texture should be bound to.
-             * @note The texture unit should be between GL_TEXTURE0-GL_TEXTURE_MAX
-             */
-            virtual void Bind(uint32_t unit) = 0;
-
-            /**
-             * Unbinds any texture.
-             */
-            virtual void Unbind() = 0;
 
             /**
              * Determines the maximum anisotropy level offered by the system.
@@ -144,6 +149,8 @@ namespace Atlas {
 
             void Generate(uint32_t target, int32_t sizedFormat, int32_t wrapping,
                           int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
+
+			void GenerateMipmap();
 
             uint32_t ID = 0;
 

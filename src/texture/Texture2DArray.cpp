@@ -19,36 +19,40 @@ namespace Atlas {
 
         }
 
-        void Texture2DArray::Bind(uint32_t unit) {
+		Texture2DArray& Texture2DArray::operator=(Texture2DArray &that) {
 
-            glActiveTexture(unit);
-            glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
+			if (this != &that) {
 
-        }
+				Texture::operator=(that);
 
-        void Texture2DArray::Unbind() {
+				for (int32_t i = 0; i < depth; i++) {
+					auto data = that.GetData(i);
+					SetData(data, i);
+				}
 
-            glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+			}
 
-        }
+			return *this;
+
+		}
 
         void Texture2DArray::SetData(std::vector<uint8_t> &data, int32_t depth, int32_t count) {
 
-            glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
+			Bind();
             glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, width, height, count,
                             TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
-            if (mipmaps)
-                glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+			
+			GenerateMipmap();
 
         }
 
         void Texture2DArray::SetData(std::vector<uint16_t> &data, int32_t depth, int32_t count) {
 
-            glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
+			Bind();
             glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, width, height, count,
                             TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
-            if (mipmaps)
-                glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+            
+			GenerateMipmap();
 
         }
 

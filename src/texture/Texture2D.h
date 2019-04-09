@@ -48,18 +48,6 @@ namespace Atlas {
             Texture2D& operator=(Texture2D& that);
 
             /**
-             * Binds the texture to a texture unit
-             * @param unit The texture unit the texture should be bound to.
-             * @note The texture unit should be between GL_TEXTURE0-GL_TEXTURE_MAX
-             */
-            void Bind(uint32_t unit);
-
-            /**
-             * Unbinds any texture.
-             */
-            void Unbind();
-
-            /**
              * Sets the data of the texture
              * @param data A vector holding the new data.
              */

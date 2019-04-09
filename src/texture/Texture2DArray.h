@@ -11,6 +11,11 @@ namespace Atlas {
         class Texture2DArray : public Texture {
 
         public:
+			/**
+			 * Constructs a Texture2DArray object.
+			 */
+			Texture2DArray() {}
+
             /**
              * Construct a Texture2DArray object.
              * @param width
@@ -25,17 +30,13 @@ namespace Atlas {
             Texture2DArray(int32_t width, int32_t height, int32_t depth, int32_t sizedFormat,
                            int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
 
-            /**
-             * Binds the texture to a texture unit
-             * @param unit The texture unit the texture should be bound to.
-             * @note The texture unit should be between GL_TEXTURE0-GL_TEXTURE_MAX
-             */
-            void Bind(uint32_t unit);
-
-            /**
-             * Unbinds any texture.
-             */
-            void Unbind();
+			/**
+			 * Copies the data from another texture to the texture object.
+			 * @param that Another texture.
+			 * @return A reference to the texture.
+			 * @note The graphics API object will be changed.
+			 */
+			Texture2DArray& operator=(Texture2DArray& that);
 
             /**
              * Sets the data of the texture

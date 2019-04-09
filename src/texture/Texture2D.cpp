@@ -56,38 +56,23 @@ namespace Atlas {
 
         }
 
-        void Texture2D::Bind(uint32_t unit) {
-
-            glActiveTexture(unit);
-            glBindTexture(GL_TEXTURE_2D, ID);
-
-        }
-
-        void Texture2D::Unbind() {
-
-            glBindTexture(GL_TEXTURE_2D, 0);
-
-        }
-
         void Texture2D::SetData(std::vector<uint8_t> &data) {
 
-            glBindTexture(GL_TEXTURE_2D, ID);
+			Bind();
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
                             TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
 
-            if (mipmaps)
-                glGenerateMipmap(GL_TEXTURE_2D);
+			GenerateMipmap();
 
         }
 
         void Texture2D::SetData(std::vector<uint16_t> &data) {
 
-            glBindTexture(GL_TEXTURE_2D, ID);
+			Bind();
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
                             TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
 
-            if (mipmaps)
-                glGenerateMipmap(GL_TEXTURE_2D);
+			GenerateMipmap();
 
         }
 
