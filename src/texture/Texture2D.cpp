@@ -11,6 +11,7 @@ namespace Atlas {
 
             this->width = width;
             this->height = height;
+			this->layers = 1;
 
             Generate(GL_TEXTURE_2D, sizedFormat, wrapping, filtering, anisotropicFiltering, generateMipMaps);
 
@@ -48,6 +49,8 @@ namespace Atlas {
                 Texture::operator=(that);
 
                 auto data = that.GetData();
+				if (glGetError() == GL_NO_ERROR)
+					AtlasLog("Logl\nLog\nLog");
                 SetData(data);
 
             }
@@ -82,7 +85,10 @@ namespace Atlas {
 
             std::vector<uint8_t> data(width * height * channels * TypeFormat::GetSize(dataType));
 
-            framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, this);
+			if (TextureFormat::GetBaseFormat(sizedFormat) != AE_DEPTH)
+				framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, this);
+			else
+				framebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, this);
 
             glReadPixels(0, 0, width, height,
                     TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());

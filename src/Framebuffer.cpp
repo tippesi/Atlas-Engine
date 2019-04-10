@@ -32,11 +32,12 @@ namespace Atlas {
 
 	}
 
-	Framebuffer& Framebuffer::operator=(Atlas::Framebuffer &that) {
+	Framebuffer& Framebuffer::operator=(Framebuffer &that) {
 
 		if (this != &that) {
 
-
+			this->width = that.width;
+			this->height = that.height;
 
 		}
 
@@ -50,7 +51,6 @@ namespace Atlas {
 		FramebufferComponent component;
 
 		auto search = components.find(attachment);
-
 
 		if (search != components.end()) {
 			component = search->second;
@@ -236,7 +236,7 @@ namespace Atlas {
 			}
 
 			if (component.textureArray != nullptr) {
-				component.textureArray->Resize(width, height, component.textureArray->depth);
+				component.textureArray->Resize(width, height, component.textureArray->layers);
 				glFramebufferTextureLayer(component.target, componentKey.first,
 										  component.textureArray->GetID(), 0, component.index);
 			}

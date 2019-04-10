@@ -12,7 +12,7 @@ namespace Atlas {
 
             this->width = width;
             this->height = height;
-            this->depth = depth;
+            this->layers = depth;
 
             Generate(GL_TEXTURE_2D_ARRAY, sizedFormat, wrapping, filtering,
                      anisotropicFiltering, generateMipMaps);
@@ -25,7 +25,7 @@ namespace Atlas {
 
 				Texture::operator=(that);
 
-				for (int32_t i = 0; i < depth; i++) {
+				for (int32_t i = 0; i < layers; i++) {
 					auto data = that.GetData(i);
 					SetData(data, i);
 				}
@@ -77,7 +77,7 @@ namespace Atlas {
 
             this->width = width;
             this->height = height;
-            this->depth = depth;
+            this->layers = depth;
 
             glDeleteTextures(1, &ID);
             glGenTextures(1, &ID);
@@ -104,7 +104,7 @@ namespace Atlas {
 
         void Texture2DArray::ReserveStorage(int32_t mipCount) {
 
-            glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, sizedFormat, width, height, depth);
+            glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, sizedFormat, width, height, layers);
 
         }
 

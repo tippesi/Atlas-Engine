@@ -123,7 +123,7 @@ namespace Atlas {
             int32_t width = 0;
             int32_t height = 0;
 
-            int32_t depth = 0;
+            int32_t layers = 0;
 
             int32_t channels = 0;
 

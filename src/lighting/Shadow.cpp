@@ -49,7 +49,7 @@ namespace Atlas {
 			if (useCubemap) {
 				componentCount = 6;
 
-				cubemap  = new Texture::Cubemap(AE_UINT, resolution, resolution, AE_DEPTH24,
+				cubemap  = new Texture::Cubemap(resolution, resolution, AE_DEPTH24,
 									   GL_CLAMP_TO_EDGE, GL_LINEAR, false);
 
 				cubemap->Bind(GL_TEXTURE0);

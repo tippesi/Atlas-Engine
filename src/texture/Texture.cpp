@@ -35,7 +35,7 @@ namespace Atlas {
 
                 this->width = that.width;
                 this->height = that.height;
-                this->depth = that.depth;
+                this->layers = that.layers;
                 
                 Generate(that.target, that.sizedFormat, that.wrapping, that.filtering,
                         that.anisotropicFiltering, that.mipmaps);
@@ -250,8 +250,9 @@ namespace Atlas {
                 glTexParameteri(target, GL_TEXTURE_MIN_FILTER, filtering);
                 glTexParameteri(target, GL_TEXTURE_MAG_FILTER, filtering);
 
-                glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapping);
-                glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
+				glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapping);
+				glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
+				glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapping);
             }
 
         }

@@ -1,6 +1,6 @@
 #include "Cubemap.h"
-#include "texture/Texture.h"
-#include "loader/ImageLoader.h"
+#include "../loader/ImageLoader.h"
+#include "../Framebuffer.h"
 
 namespace Atlas {
 
@@ -10,109 +10,80 @@ namespace Atlas {
                         std::string bottom, std::string front, std::string back) {
 
            std::string filenames[] = { right, left, top, bottom, front, back };
+		   Loader::Image images[6];
 
-           glGenTextures(1, &ID);
+		   for (int32_t i = 0; i < 6; i++) {
+			   images[i] = Loader::ImageLoader::LoadImage(filenames[i], true, 3);
 
-           glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
-
-           glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-           glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-           glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-           glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-           glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
+			   if (images[i].data.size() == 0) {
 #ifdef AE_SHOW_LOG
-           AtlasLog("Loading cubemap with ID %d", ID);
+				   AtlasLog("    Failed to load cubemap face %d %s", i, filenames[i].c_str());
 #endif
+				   throw AtlasException("Failed to load cubemap");
+			   }
 
-           for (uint32_t i = 0; i < 6; i++) {
+		   }
 
-               auto image = Loader::ImageLoader::LoadImage(filenames[i], false, 3);
+		   this->width = images[0].width;
+		   this->height = images[0].height;
+		   this->layers = 6;
 
-               if (image.data.size() != 0) {
-#ifdef AE_API_GL
-                   glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, AE_SRGB8, image.width, image.height, 0,
-                                AE_RGB, AE_UBYTE, image.data.data());
-#elif AE_API_GLES
-                   Texture::GammaToLinear(image.data.data(), image.width, image.height, 3);
+		   Generate(GL_TEXTURE_CUBE_MAP, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR,
+			   false, true);
 
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, AE_RGB8, image.width, image.height, 0,
-				AE_RGB, AE_UBYTE, image.data.data());
-#endif
-#ifdef AE_SHOW_LOG
-                   AtlasLog("    Loaded cubemap face %d %s", i, filenames[i].c_str());
-#endif
-               }
-               else {
-#ifdef AE_SHOW_LOG
-                   AtlasLog("    Failed to load cubemap face %d %s", i, filenames[i].c_str());
-#endif
-                   throw AtlasException("Failed to load cubemap");
-               }
-
-           }
-
-           glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-
-           glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+		   for (int32_t i = 0; i < 6; i++)
+			   SetData(images[i].data, i);
 
        }
 
-       Cubemap::Cubemap(GLenum dataFormant, int32_t width, int32_t height, int32_t internalFormat,
-                        int32_t wrapping, int32_t filtering, bool mipmaps) {
+       Cubemap::Cubemap(int32_t width, int32_t height, int32_t sizedFormat,
+                        int32_t wrapping, int32_t filtering, bool generateMipmaps) {
 
-           glGenTextures(1, &ID);
+		   this->width = width;
+		   this->height = height;
+		   this->layers = 6;
 
-           glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
+		   Generate(GL_TEXTURE_CUBE_MAP, sizedFormat, wrapping, filtering,
+			   anisotropicFiltering, generateMipmaps);
 
-           if (mipmaps) {
-               glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-               glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-           }
-           else {
-               glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, filtering);
-               glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, filtering);
-           }
-
-           glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, wrapping);
-           glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, wrapping);
-           glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, wrapping);
-
-           for (uint32_t i = 0; i < 6; i++) {
-
-               glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0,
-                            TextureFormat::GetBaseFormat(internalFormat), dataFormant, NULL);
-
-           }
-
-           if (mipmaps) {
-               glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-           }
-
-           glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
+		   glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapping);
+		   glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
+		   glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapping);
 
        }
 
-       Cubemap::~Cubemap() {
+	   void Cubemap::SetData(std::vector<uint8_t> &data, int32_t layer) {
 
-           glDeleteTextures(1, &ID);
+		   Bind();
+		   glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, 0, 0, 0, width, height,
+			   TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
 
-       }
+		   GenerateMipmap();
 
-       void Cubemap::Bind(uint32_t unit) {
+	   }
 
-           glActiveTexture(unit);
-           glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
+	   std::vector<uint8_t> Cubemap::GetData(int32_t layer) {
 
-       }
+		   auto framebuffer = Framebuffer(width, height);
 
-       uint32_t Cubemap::GetID() {
+		   std::vector<uint8_t> data(width * height * channels * TypeFormat::GetSize(dataType));
 
-           return ID;
+		   framebuffer.AddComponentCubemap(GL_COLOR_ATTACHMENT0, this, layer);
 
-       }
+		   glReadPixels(0, 0, width, height,
+			   TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
+
+		   framebuffer.Unbind();
+
+		   return data;
+
+	   }
+
+	   void Cubemap::ReserveStorage(int32_t mipCount) {
+
+		   glTexStorage2D(GL_TEXTURE_CUBE_MAP, mipCount, sizedFormat, width, height);
+
+	   }
 
    }
 
