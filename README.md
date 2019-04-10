@@ -46,6 +46,7 @@ If you want more information have a look into the [Documentation](https://tippes
 - Use textures with the same size and format for each material
 - Set mesh data or any kind of data prior to rendering. More importantly: Don't create data while rendering.
 - Try to avoid using OpenGL, use existing engine features instead
+- Reduce the number of samples used for anisotropic filtering (default is the maximum possbile number of samples)
 ## Code Example
 Here is a small introduction to the engine
 ```c
@@ -194,6 +195,48 @@ int main(int argc, char* argv[]) {
 
 }
 ```
-As you may have seen it's pretty easy to use the engine. One thing I have to warn you is that the rendering parts of the 
-code are **not thread-safe**. So it's recommended to keep the rendering in just one thread. Loading textures, shaders and 
-vertex buffers can be safely done in another thread.
+#### Copy constructors/assignment operators and graphic API objects
+There are several classes which represent an easy interface to handle graphic API objects and content on the graphics card. These classes are Shader, ShaderStage, Mesh, Textures (Texture2D, ...), Framebuffer, etc. Now you might ask what happens when you use copy
+constructors or assignment operators on these classes. To put it simply: Everything is being copied. When I was developing these methods
+I asked myself when I wanted to use a copy constructor or an assignment operator. My answer to that question was that you only wanted to use these methods when you want a copy of the object. Or the other way around: When you don't want a copy you can always use a reference. Let's have an example:
+```c
+// One common example would be that we want to pass a mesh as a function parameter.
+// This is what you shouldn't do if you don't want to create a copy of the mesh:
+void DoSomeStuffWithAMesh(Mesh mesh) {
+	
+}
+
+// Use a reference instead to make sure the object isn't being duplicated:
+void DoSomeStuffWithAMesh(Mesh &mesh) {
+
+}
+
+
+// Let's go a step further:
+void AddStuffToScene(Scene* scene, Mesh mesh) {
+	for (int32_t i = 0; i < 100; i++)
+		scene->Add(new StaticMeshActor(mesh));
+	// Store the mesh somewhere to keep it in memory.
+}
+// Is using a copy constructor
+auto mesh = Mesh();
+// The following is really bad because the scene uses the pointer to the
+// meshes to sort them properly. Because we're creating a new mesh for every
+// call there are now 100 meshes in the scene
+for (int32_t i = 0; i < 100; i++)
+	AddStuffToScene(&scene, mesh);
+	
+// Let's try it again:
+void AddStuffToScene(Scene* scene, Mesh& mesh) {
+	for (int32_t i = 0; i < 100; i++)
+		scene->Add(new StaticMeshActor(mesh));
+	// Store the mesh somewhere to keep it in memory.
+}
+// Even better would be Mesh mesh(args);
+auto& mesh = Mesh();
+for (int32_t i = 0; i < 100; i++)
+	AddStuffToScene(&scene, mesh);
+```
+Please note that classes like the actors contain a pointer to the classes presented above. When using an assignment operator on an actor the mesh isn't copied, but the pointer to that mesh is.
+#### Thread safety
+Most classes are not designed to be used across different threads. These classes have to be protected by you as the user. But there are also classes which are known to be used in several threads. These classes are the EventManager, EventDelegate, AudioManager, AudioStream, AssetLoader. They can all be savely accessed by multiple threads. Note that all methods which are static e.g. OpaqueRenderer::AddConfig(...) are always thread safe.
