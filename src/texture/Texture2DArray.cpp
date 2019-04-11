@@ -19,16 +19,13 @@ namespace Atlas {
 
         }
 
-		Texture2DArray& Texture2DArray::operator=(Texture2DArray &that) {
+		Texture2DArray& Texture2DArray::operator=(const Texture2DArray &that) {
 
 			if (this != &that) {
 
 				Texture::operator=(that);
 
-				for (int32_t i = 0; i < layers; i++) {
-					auto data = that.GetData(i);
-					SetData(data, i);
-				}
+				Copy(that);
 
 			}
 

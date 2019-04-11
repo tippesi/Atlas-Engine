@@ -45,7 +45,7 @@ namespace Atlas {
              * @return A reference to the texture.
              * @note The graphics API object will be changed.
              */
-            Texture2D& operator=(Texture2D& that);
+            Texture2D& operator=(const Texture2D& that);
 
             /**
              * Sets the data of the texture

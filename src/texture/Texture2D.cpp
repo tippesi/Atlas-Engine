@@ -42,16 +42,13 @@ namespace Atlas {
 
         }
 
-        Texture2D& Texture2D::operator=(Texture2D &that) {
+        Texture2D& Texture2D::operator=(const Texture2D &that) {
 
             if (this != &that) {
 
                 Texture::operator=(that);
 
-                auto data = that.GetData();
-				if (glGetError() == GL_NO_ERROR)
-					AtlasLog("Logl\nLog\nLog");
-                SetData(data);
+                Copy(that);
 
             }
 

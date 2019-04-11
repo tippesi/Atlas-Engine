@@ -23,7 +23,7 @@ namespace Atlas {
 
         }
 
-        Texture& Texture::operator=(Texture &that) {
+        Texture& Texture::operator=(const Texture &that) {
 
             if (this != &that) {
 
@@ -80,6 +80,20 @@ namespace Atlas {
         int32_t Texture::GetSizedFormat() {
 
             return sizedFormat;
+
+        }
+
+        void Texture::Copy(const Texture &texture) {
+
+            if (width != texture.width || height != texture.height ||
+                layers != texture.layers || channels != texture.channels)
+                return;
+
+            glCopyImageSubData(texture.ID, texture.target, 0, 0, 0, 0,
+                    ID, target, 0, 0, 0, 0,
+                    width, height, layers);
+
+            GenerateMipmap();
 
         }
 

@@ -32,7 +32,7 @@ namespace Atlas {
              * @return A reference to the texture.
              * @note The graphics API object will be changed.
              */
-			Texture& operator=(Texture& that);
+			Texture& operator=(const Texture& that);
 
 			/**
 			 * Binds the texture to the active texture unit
@@ -68,6 +68,12 @@ namespace Atlas {
              * @return The sized format, e.g AE_RGB16F
              */
             int32_t GetSizedFormat();
+
+            /**
+             * Copies a texture to the texture
+             * @param texture The other texture where the data is taken
+             */
+            void Copy(const Texture& texture);
 
             /**
              * Determines the maximum anisotropy level offered by the system.

@@ -58,6 +58,7 @@ namespace Atlas {
 			static void SmoothHeight(Terrain::Terrain* terrain, int32_t size, int32_t contributingRadius,
 					float strength, vec2 position);
 
+			
 			static void BrushMaterial(Terrain::Terrain* terrain, Kernel* kernel, float strength, vec2 position);
 
 		private:
