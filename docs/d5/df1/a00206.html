@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/shader/ShaderStage.h File Reference</title>
+<title>Atlas Engine: src/shader/ShaderConfigBatch.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,150 +89,37 @@ $(document).ready(function(){initNavTree('d5/df1/a00206.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a>  </div>
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">ShaderStage.h File Reference</div>  </div>
+<div class="title">ShaderConfigBatch.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../de/d79/a00203_source.html">ShaderConstant.h</a>&quot;</code><br />
-<code>#include &lt;list&gt;</code><br />
-<code>#include &lt;string&gt;</code><br />
+<code>#include &quot;<a class="el" href="../../de/d79/a00203_source.html">ShaderConfig.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../de/db1/a00197_source.html">Shader.h</a>&quot;</code><br />
+<code>#include &lt;vector&gt;</code><br />
 </div>
 <p><a href="../../d5/df1/a00206_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d34/a00625.html">Atlas::Shader::ShaderStage</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A shader stage is a module/stage of a shader, e.g it might be a vertex shader.  <a href="../../d2/d34/a00625.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/d5f/a00663.html">Atlas::Shader::ShaderConfigBatch</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <a class="el" href="../../d7/d5f/a00663.html" title="A ShaderConfigBatch groups an arbitrary number of ShaderConfigs together which use the same shader...">ShaderConfigBatch</a> groups an arbitrary number of ShaderConfigs together which use the same shader.  <a href="../../d7/d5f/a00663.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:d6/d7f/a00287"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></td></tr>
+<tr class="memitem:de/d55/a00323"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d55/a00323.html">Atlas</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:d4/d5b/a00294"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d5b/a00294.html">Atlas::Shader</a></td></tr>
+<tr class="memitem:dd/dbb/a00330"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/dbb/a00330.html">Atlas::Shader</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:aa4e90d638cfc72ab9d1dc213e23f1fd6"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/df1/a00206.html#aa4e90d638cfc72ab9d1dc213e23f1fd6">AE_VERTEX_STAGE</a>&#160;&#160;&#160;GL_VERTEX_SHADER</td></tr>
-<tr class="separator:aa4e90d638cfc72ab9d1dc213e23f1fd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab208e6813a5c929cd5bcd8681a20cd90"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/df1/a00206.html#ab208e6813a5c929cd5bcd8681a20cd90">AE_FRAGMENT_STAGE</a>&#160;&#160;&#160;GL_FRAGMENT_SHADER</td></tr>
-<tr class="separator:ab208e6813a5c929cd5bcd8681a20cd90"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3489544ab664b00d8c7d6ad4f9aa19bd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/df1/a00206.html#a3489544ab664b00d8c7d6ad4f9aa19bd">AE_GEOMETRY_STAGE</a>&#160;&#160;&#160;GL_GEOMETRY_SHADER</td></tr>
-<tr class="separator:a3489544ab664b00d8c7d6ad4f9aa19bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad195a720d1d0739a31f760ea08fe0cb5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/df1/a00206.html#ad195a720d1d0739a31f760ea08fe0cb5">AE_TESSELLATION_CONTROL_STAGE</a>&#160;&#160;&#160;GL_TESS_CONTROL_SHADER</td></tr>
-<tr class="separator:ad195a720d1d0739a31f760ea08fe0cb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab75c30f23c33eff18389b8abcec10982"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/df1/a00206.html#ab75c30f23c33eff18389b8abcec10982">AE_TESSELLATION_EVALUATION_STAGE</a>&#160;&#160;&#160;GL_TESS_EVALUATION_SHADER</td></tr>
-<tr class="separator:ab75c30f23c33eff18389b8abcec10982"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa8d5680939f05aa24b613972747118c2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/df1/a00206.html#aa8d5680939f05aa24b613972747118c2">AE_COMPUTE_STAGE</a>&#160;&#160;&#160;GL_COMPUTE_SHADER</td></tr>
-<tr class="separator:aa8d5680939f05aa24b613972747118c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="aa8d5680939f05aa24b613972747118c2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa8d5680939f05aa24b613972747118c2">&#9670;&nbsp;</a></span>AE_COMPUTE_STAGE</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_COMPUTE_STAGE&#160;&#160;&#160;GL_COMPUTE_SHADER</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/df1/a00206_source.html#l00015">15</a> of file <a class="el" href="../../d5/df1/a00206_source.html">ShaderStage.h</a>.</p>
-
-</div>
-</div>
-<a id="ab208e6813a5c929cd5bcd8681a20cd90"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab208e6813a5c929cd5bcd8681a20cd90">&#9670;&nbsp;</a></span>AE_FRAGMENT_STAGE</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_FRAGMENT_STAGE&#160;&#160;&#160;GL_FRAGMENT_SHADER</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/df1/a00206_source.html#l00011">11</a> of file <a class="el" href="../../d5/df1/a00206_source.html">ShaderStage.h</a>.</p>
-
-</div>
-</div>
-<a id="a3489544ab664b00d8c7d6ad4f9aa19bd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3489544ab664b00d8c7d6ad4f9aa19bd">&#9670;&nbsp;</a></span>AE_GEOMETRY_STAGE</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_GEOMETRY_STAGE&#160;&#160;&#160;GL_GEOMETRY_SHADER</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/df1/a00206_source.html#l00012">12</a> of file <a class="el" href="../../d5/df1/a00206_source.html">ShaderStage.h</a>.</p>
-
-</div>
-</div>
-<a id="ad195a720d1d0739a31f760ea08fe0cb5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad195a720d1d0739a31f760ea08fe0cb5">&#9670;&nbsp;</a></span>AE_TESSELLATION_CONTROL_STAGE</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_TESSELLATION_CONTROL_STAGE&#160;&#160;&#160;GL_TESS_CONTROL_SHADER</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/df1/a00206_source.html#l00013">13</a> of file <a class="el" href="../../d5/df1/a00206_source.html">ShaderStage.h</a>.</p>
-
-</div>
-</div>
-<a id="ab75c30f23c33eff18389b8abcec10982"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab75c30f23c33eff18389b8abcec10982">&#9670;&nbsp;</a></span>AE_TESSELLATION_EVALUATION_STAGE</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_TESSELLATION_EVALUATION_STAGE&#160;&#160;&#160;GL_TESS_EVALUATION_SHADER</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/df1/a00206_source.html#l00014">14</a> of file <a class="el" href="../../d5/df1/a00206_source.html">ShaderStage.h</a>.</p>
-
-</div>
-</div>
-<a id="aa4e90d638cfc72ab9d1dc213e23f1fd6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa4e90d638cfc72ab9d1dc213e23f1fd6">&#9670;&nbsp;</a></span>AE_VERTEX_STAGE</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_VERTEX_STAGE&#160;&#160;&#160;GL_VERTEX_SHADER</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/df1/a00206_source.html#l00010">10</a> of file <a class="el" href="../../d5/df1/a00206_source.html">ShaderStage.h</a>.</p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_9e88f1b6fa3ecf8a71537f17c04010fb.html">shader</a></li><li class="navelem"><a class="el" href="../../d5/df1/a00206.html">ShaderStage.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_9e88f1b6fa3ecf8a71537f17c04010fb.html">shader</a></li><li class="navelem"><a class="el" href="../../d5/df1/a00206.html">ShaderConfigBatch.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

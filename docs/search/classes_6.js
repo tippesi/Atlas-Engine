@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['glyph',['Glyph',['../db/d53/a00321.html',1,'Atlas']]],
-  ['glyphinfo',['GlyphInfo',['../dd/d4e/a00329.html',1,'Atlas::Font']]]
+  ['glyph',['Glyph',['../d4/def/a00359.html',1,'Atlas']]],
+  ['glyphinfo',['GlyphInfo',['../df/dc2/a00367.html',1,'Atlas::Font']]]
 ];

@@ -1,8 +1,7 @@
 var a00059 =
 [
-    [ "DropEvent", "d7/d93/a00397.html", "d7/d93/a00397" ],
-    [ "AE_BEGINDROP", "d3/d8b/a00059.html#a3ff1081e92a4c186f893d84db39eddcf", null ],
-    [ "AE_COMPLETEDROP", "d3/d8b/a00059.html#a281e9237fa07c63ba6db01fe060fa084", null ],
-    [ "AE_FILEDROP", "d3/d8b/a00059.html#a6abf906de8ed9bc2047d474968b87aa1", null ],
-    [ "AE_TEXTDROP", "d3/d8b/a00059.html#a837ddaa7266cb112982bb5d76dc5ad7a", null ]
+    [ "ControllerDeviceEvent", "d0/dc5/a00435.html", "d0/dc5/a00435" ],
+    [ "AE_CONTROLLER_ADDED", "d3/d8b/a00059.html#a6844af478e110cf54b532368a129738e", null ],
+    [ "AE_CONTROLLER_MAPPED", "d3/d8b/a00059.html#a602e54ca61451c1a702aa6e38f306005", null ],
+    [ "AE_CONTROLLER_REMOVED", "d3/d8b/a00059.html#af338a7e04638a789553216e413ab1c83", null ]
 ];

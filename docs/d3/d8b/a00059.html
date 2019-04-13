@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/events/DropEvent.h File Reference</title>
+<title>Atlas Engine: src/events/ControllerDeviceEvent.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -92,102 +92,83 @@ $(document).ready(function(){initNavTree('d3/d8b/a00059.html','../../');});
 <a href="#namespaces">Namespaces</a> &#124;
 <a href="#define-members">Macros</a>  </div>
   <div class="headertitle">
-<div class="title">DropEvent.h File Reference</div>  </div>
+<div class="title">ControllerDeviceEvent.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../df/d03/a00062_source.html">EventDelegate.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../de/de1/a00065_source.html">EventDelegate.h</a>&quot;</code><br />
 <code>#include &lt;SDL/include/SDL.h&gt;</code><br />
-<code>#include &lt;string&gt;</code><br />
 </div>
 <p><a href="../../d3/d8b/a00059_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/d93/a00397.html">Atlas::Events::DropEvent</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A class to distribute drop events.  <a href="../../d7/d93/a00397.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc5/a00435.html">Atlas::Events::ControllerDeviceEvent</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A class to distribute controller device events.  <a href="../../d0/dc5/a00435.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:d6/d7f/a00287"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></td></tr>
+<tr class="memitem:de/d55/a00323"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d55/a00323.html">Atlas</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:da/ddc/a00288"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/ddc/a00288.html">Atlas::Events</a></td></tr>
+<tr class="memitem:d4/d8f/a00324"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html">Atlas::Events</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:a6abf906de8ed9bc2047d474968b87aa1"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a6abf906de8ed9bc2047d474968b87aa1">AE_FILEDROP</a>&#160;&#160;&#160;SDL_DROPFILE</td></tr>
-<tr class="separator:a6abf906de8ed9bc2047d474968b87aa1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a837ddaa7266cb112982bb5d76dc5ad7a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a837ddaa7266cb112982bb5d76dc5ad7a">AE_TEXTDROP</a>&#160;&#160;&#160;SDL_DROPTEXT</td></tr>
-<tr class="separator:a837ddaa7266cb112982bb5d76dc5ad7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3ff1081e92a4c186f893d84db39eddcf"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a3ff1081e92a4c186f893d84db39eddcf">AE_BEGINDROP</a>&#160;&#160;&#160;SDL_DROPBEGIN</td></tr>
-<tr class="separator:a3ff1081e92a4c186f893d84db39eddcf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a281e9237fa07c63ba6db01fe060fa084"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a281e9237fa07c63ba6db01fe060fa084">AE_COMPLETEDROP</a>&#160;&#160;&#160;SDL_DROPCOMPLETE</td></tr>
-<tr class="separator:a281e9237fa07c63ba6db01fe060fa084"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6844af478e110cf54b532368a129738e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a6844af478e110cf54b532368a129738e">AE_CONTROLLER_ADDED</a>&#160;&#160;&#160;SDL_CONTROLLERDEVICEADDED</td></tr>
+<tr class="separator:a6844af478e110cf54b532368a129738e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af338a7e04638a789553216e413ab1c83"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#af338a7e04638a789553216e413ab1c83">AE_CONTROLLER_REMOVED</a>&#160;&#160;&#160;SDL_CONTROLLERDEVICEREMOVED</td></tr>
+<tr class="separator:af338a7e04638a789553216e413ab1c83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a602e54ca61451c1a702aa6e38f306005"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d8b/a00059.html#a602e54ca61451c1a702aa6e38f306005">AE_CONTROLLER_MAPPED</a>&#160;&#160;&#160;SDL_CONTROLLERDEVICEREMAPPED</td></tr>
+<tr class="separator:a602e54ca61451c1a702aa6e38f306005"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="a3ff1081e92a4c186f893d84db39eddcf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3ff1081e92a4c186f893d84db39eddcf">&#9670;&nbsp;</a></span>AE_BEGINDROP</h2>
+<a id="a6844af478e110cf54b532368a129738e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6844af478e110cf54b532368a129738e">&#9670;&nbsp;</a></span>AE_CONTROLLER_ADDED</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define AE_BEGINDROP&#160;&#160;&#160;SDL_DROPBEGIN</td>
+          <td class="memname">#define AE_CONTROLLER_ADDED&#160;&#160;&#160;SDL_CONTROLLERDEVICEADDED</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00012">12</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">DropEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00009">9</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">ControllerDeviceEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a281e9237fa07c63ba6db01fe060fa084"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a281e9237fa07c63ba6db01fe060fa084">&#9670;&nbsp;</a></span>AE_COMPLETEDROP</h2>
+<a id="a602e54ca61451c1a702aa6e38f306005"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a602e54ca61451c1a702aa6e38f306005">&#9670;&nbsp;</a></span>AE_CONTROLLER_MAPPED</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define AE_COMPLETEDROP&#160;&#160;&#160;SDL_DROPCOMPLETE</td>
+          <td class="memname">#define AE_CONTROLLER_MAPPED&#160;&#160;&#160;SDL_CONTROLLERDEVICEREMAPPED</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00013">13</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">DropEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00011">11</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">ControllerDeviceEvent.h</a>.</p>
 
 </div>
 </div>
-<a id="a6abf906de8ed9bc2047d474968b87aa1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6abf906de8ed9bc2047d474968b87aa1">&#9670;&nbsp;</a></span>AE_FILEDROP</h2>
+<a id="af338a7e04638a789553216e413ab1c83"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af338a7e04638a789553216e413ab1c83">&#9670;&nbsp;</a></span>AE_CONTROLLER_REMOVED</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define AE_FILEDROP&#160;&#160;&#160;SDL_DROPFILE</td>
+          <td class="memname">#define AE_CONTROLLER_REMOVED&#160;&#160;&#160;SDL_CONTROLLERDEVICEREMOVED</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00010">10</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">DropEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a837ddaa7266cb112982bb5d76dc5ad7a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a837ddaa7266cb112982bb5d76dc5ad7a">&#9670;&nbsp;</a></span>AE_TEXTDROP</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_TEXTDROP&#160;&#160;&#160;SDL_DROPTEXT</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00011">11</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">DropEvent.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d3/d8b/a00059_source.html#l00010">10</a> of file <a class="el" href="../../d3/d8b/a00059_source.html">ControllerDeviceEvent.h</a>.</p>
 
 </div>
 </div>
@@ -196,7 +177,7 @@ Macros</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../d3/d8b/a00059.html">DropEvent.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../d3/d8b/a00059.html">ControllerDeviceEvent.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

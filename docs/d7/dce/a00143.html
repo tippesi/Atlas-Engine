@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/mesh/MeshData.h File Reference</title>
+<title>Atlas Engine: src/mesh/DataComponent.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -90,76 +90,158 @@ $(document).ready(function(){initNavTree('d7/dce/a00143.html','../../');});
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#define-members">Macros</a>  </div>
   <div class="headertitle">
-<div class="title">MeshData.h File Reference</div>  </div>
+<div class="title">DataComponent.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../dc/d5d/a00278_source.html">../common/AABB.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d2/df5/a00137_source.html">DataComponent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d6/d5b/a00026_source.html">Material.h</a>&quot;</code><br />
-<code>#include &lt;vector&gt;</code><br />
+<code>#include &quot;<a class="el" href="../../d8/d41/a00038_source.html">../TypeFormat.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d7/d9a/a00152_source.html">Packing.h</a>&quot;</code><br />
+<code>#include &lt;type_traits&gt;</code><br />
 </div>
 <p><a href="../../d7/dce/a00143_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d44/a00533.html">Atlas::Mesh::MeshSubData</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d6e/a00537.html">Atlas::Mesh::MeshData</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/dd7/a00567.html">Atlas::Mesh::DataComponent&lt; S, T &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Manage the data of the vertex buffer of a mesh.  <a href="../../d2/dd7/a00567.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:d6/d7f/a00287"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></td></tr>
+<tr class="memitem:de/d55/a00323"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d55/a00323.html">Atlas</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:d8/d0a/a00292"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html">Atlas::Mesh</a></td></tr>
+<tr class="memitem:d4/db5/a00328"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/db5/a00328.html">Atlas::Mesh</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:af3a414eb746b6ff97e31316eff3f7688"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#af3a414eb746b6ff97e31316eff3f7688">AE_PRIMITIVE_TRIANGLES</a>&#160;&#160;&#160;GL_TRIANGLES</td></tr>
-<tr class="separator:af3a414eb746b6ff97e31316eff3f7688"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a782e687414ad7d9d3d48eacf8c0c2b6d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#a782e687414ad7d9d3d48eacf8c0c2b6d">AE_PRIMITIVE_TRIANGLE_STRIP</a>&#160;&#160;&#160;GL_TRIANGLE_STRIP</td></tr>
-<tr class="separator:a782e687414ad7d9d3d48eacf8c0c2b6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:ada3646ccdde29c215cc031ce6b52fff3"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../db/d44/a00533.html">Atlas::Mesh::MeshSubData</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html#ada3646ccdde29c215cc031ce6b52fff3">Atlas::Mesh::MeshSubData</a></td></tr>
-<tr class="separator:ada3646ccdde29c215cc031ce6b52fff3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca174563358aaa46b29c5165d552520f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#aca174563358aaa46b29c5165d552520f">AE_COMPONENT_UNSIGNED_INT</a>&#160;&#160;&#160;AE_UINT</td></tr>
+<tr class="memdesc:aca174563358aaa46b29c5165d552520f"><td class="mdescLeft">&#160;</td><td class="mdescRight">T should be uint32_t to support proper conversion.  <a href="#aca174563358aaa46b29c5165d552520f">More...</a><br /></td></tr>
+<tr class="separator:aca174563358aaa46b29c5165d552520f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ada8919441ba4a5f6be849086b97dc625"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#ada8919441ba4a5f6be849086b97dc625">AE_COMPONENT_FLOAT</a>&#160;&#160;&#160;AE_FLOAT</td></tr>
+<tr class="memdesc:ada8919441ba4a5f6be849086b97dc625"><td class="mdescLeft">&#160;</td><td class="mdescRight">T should be float to support proper conversion.  <a href="#ada8919441ba4a5f6be849086b97dc625">More...</a><br /></td></tr>
+<tr class="separator:ada8919441ba4a5f6be849086b97dc625"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9aa516ce28fb093d7b05be9a446cb0b3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#a9aa516ce28fb093d7b05be9a446cb0b3">AE_COMPONENT_UNSIGNED_SHORT</a>&#160;&#160;&#160;AE_USHORT</td></tr>
+<tr class="memdesc:a9aa516ce28fb093d7b05be9a446cb0b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">T should be uint16_t to support proper conversion.  <a href="#a9aa516ce28fb093d7b05be9a446cb0b3">More...</a><br /></td></tr>
+<tr class="separator:a9aa516ce28fb093d7b05be9a446cb0b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae3ba136a138352b6dd4bc3e705188e1c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#ae3ba136a138352b6dd4bc3e705188e1c">AE_COMPONENT_UNSIGNED_BYTE</a>&#160;&#160;&#160;AE_UBYTE</td></tr>
+<tr class="memdesc:ae3ba136a138352b6dd4bc3e705188e1c"><td class="mdescLeft">&#160;</td><td class="mdescRight">T should be uint8_t to support proper conversion.  <a href="#ae3ba136a138352b6dd4bc3e705188e1c">More...</a><br /></td></tr>
+<tr class="separator:ae3ba136a138352b6dd4bc3e705188e1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f71ad04130ae92fa8808f893b7a7867"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#a2f71ad04130ae92fa8808f893b7a7867">AE_COMPONENT_HALF_FLOAT</a>&#160;&#160;&#160;AE_HALF_FLOAT</td></tr>
+<tr class="memdesc:a2f71ad04130ae92fa8808f893b7a7867"><td class="mdescLeft">&#160;</td><td class="mdescRight">T should be float16 to support proper conversion.  <a href="#a2f71ad04130ae92fa8808f893b7a7867">More...</a><br /></td></tr>
+<tr class="separator:a2f71ad04130ae92fa8808f893b7a7867"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f5b4ecbe3fdfda7ee56f31f174e33a7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/dce/a00143.html#a2f5b4ecbe3fdfda7ee56f31f174e33a7">AE_COMPONENT_PACKED_FLOAT</a>&#160;&#160;&#160;AE_INT_2_10_10_10</td></tr>
+<tr class="memdesc:a2f5b4ecbe3fdfda7ee56f31f174e33a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">T should be uint32_t to support proper conversion.  <a href="#a2f5b4ecbe3fdfda7ee56f31f174e33a7">More...</a><br /></td></tr>
+<tr class="separator:a2f5b4ecbe3fdfda7ee56f31f174e33a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="a782e687414ad7d9d3d48eacf8c0c2b6d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a782e687414ad7d9d3d48eacf8c0c2b6d">&#9670;&nbsp;</a></span>AE_PRIMITIVE_TRIANGLE_STRIP</h2>
+<a id="ada8919441ba4a5f6be849086b97dc625"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ada8919441ba4a5f6be849086b97dc625">&#9670;&nbsp;</a></span>AE_COMPONENT_FLOAT</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define AE_PRIMITIVE_TRIANGLE_STRIP&#160;&#160;&#160;GL_TRIANGLE_STRIP</td>
+          <td class="memname">#define AE_COMPONENT_FLOAT&#160;&#160;&#160;AE_FLOAT</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00012">12</a> of file <a class="el" href="../../d7/dce/a00143_source.html">MeshData.h</a>.</p>
+<p>T should be float to support proper conversion. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00017">17</a> of file <a class="el" href="../../d7/dce/a00143_source.html">DataComponent.h</a>.</p>
 
 </div>
 </div>
-<a id="af3a414eb746b6ff97e31316eff3f7688"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af3a414eb746b6ff97e31316eff3f7688">&#9670;&nbsp;</a></span>AE_PRIMITIVE_TRIANGLES</h2>
+<a id="a2f71ad04130ae92fa8808f893b7a7867"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2f71ad04130ae92fa8808f893b7a7867">&#9670;&nbsp;</a></span>AE_COMPONENT_HALF_FLOAT</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define AE_PRIMITIVE_TRIANGLES&#160;&#160;&#160;GL_TRIANGLES</td>
+          <td class="memname">#define AE_COMPONENT_HALF_FLOAT&#160;&#160;&#160;AE_HALF_FLOAT</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00011">11</a> of file <a class="el" href="../../d7/dce/a00143_source.html">MeshData.h</a>.</p>
+<p>T should be float16 to support proper conversion. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00029">29</a> of file <a class="el" href="../../d7/dce/a00143_source.html">DataComponent.h</a>.</p>
+
+</div>
+</div>
+<a id="a2f5b4ecbe3fdfda7ee56f31f174e33a7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2f5b4ecbe3fdfda7ee56f31f174e33a7">&#9670;&nbsp;</a></span>AE_COMPONENT_PACKED_FLOAT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define AE_COMPONENT_PACKED_FLOAT&#160;&#160;&#160;AE_INT_2_10_10_10</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>T should be uint32_t to support proper conversion. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00033">33</a> of file <a class="el" href="../../d7/dce/a00143_source.html">DataComponent.h</a>.</p>
+
+</div>
+</div>
+<a id="ae3ba136a138352b6dd4bc3e705188e1c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae3ba136a138352b6dd4bc3e705188e1c">&#9670;&nbsp;</a></span>AE_COMPONENT_UNSIGNED_BYTE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define AE_COMPONENT_UNSIGNED_BYTE&#160;&#160;&#160;AE_UBYTE</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>T should be uint8_t to support proper conversion. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00025">25</a> of file <a class="el" href="../../d7/dce/a00143_source.html">DataComponent.h</a>.</p>
+
+</div>
+</div>
+<a id="aca174563358aaa46b29c5165d552520f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aca174563358aaa46b29c5165d552520f">&#9670;&nbsp;</a></span>AE_COMPONENT_UNSIGNED_INT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define AE_COMPONENT_UNSIGNED_INT&#160;&#160;&#160;AE_UINT</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>T should be uint32_t to support proper conversion. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00013">13</a> of file <a class="el" href="../../d7/dce/a00143_source.html">DataComponent.h</a>.</p>
+
+</div>
+</div>
+<a id="a9aa516ce28fb093d7b05be9a446cb0b3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9aa516ce28fb093d7b05be9a446cb0b3">&#9670;&nbsp;</a></span>AE_COMPONENT_UNSIGNED_SHORT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define AE_COMPONENT_UNSIGNED_SHORT&#160;&#160;&#160;AE_USHORT</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>T should be uint16_t to support proper conversion. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d7/dce/a00143_source.html#l00021">21</a> of file <a class="el" href="../../d7/dce/a00143_source.html">DataComponent.h</a>.</p>
 
 </div>
 </div>
@@ -168,7 +250,7 @@ Typedefs</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../d7/dce/a00143.html">MeshData.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../d7/dce/a00143.html">DataComponent.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

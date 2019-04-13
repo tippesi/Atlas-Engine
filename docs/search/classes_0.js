@@ -1,11 +1,15 @@
 var searchData=
 [
-  ['aabb',['AABB',['../dd/db2/a00737.html',1,'Atlas::Common']]],
-  ['assetloader',['AssetLoader',['../d5/d5f/a00461.html',1,'Atlas::Loader']]],
-  ['atlasexception',['AtlasException',['../dd/db5/a00365.html',1,'']]],
-  ['atmosphererenderer',['AtmosphereRenderer',['../dd/d72/a00541.html',1,'Atlas::Renderer']]],
-  ['audiodata',['AudioData',['../d8/db9/a00725.html',1,'Atlas::Audio']]],
-  ['audiodeviceevent',['AudioDeviceEvent',['../de/d08/a00381.html',1,'Atlas::Events']]],
-  ['audiomanager',['AudioManager',['../d8/d52/a00729.html',1,'Atlas::Audio']]],
-  ['audiostream',['AudioStream',['../d4/d91/a00733.html',1,'Atlas::Audio']]]
+  ['aabb',['AABB',['../dc/d0c/a00783.html',1,'Atlas::Common']]],
+  ['actor',['Actor',['../dd/d7a/a00795.html',1,'Atlas::Actor']]],
+  ['actorbatch',['ActorBatch',['../d0/d7d/a00799.html',1,'Atlas::Actor']]],
+  ['actorbatch_3c_20atlas_3a_3amesh_3a_3amesh_20_2a_2c_20atlas_3a_3aactor_3a_3ameshactor_20_2a_3e',['ActorBatch&lt; Atlas::Mesh::Mesh *, Atlas::Actor::MeshActor *&gt;',['../d0/d7d/a00799.html',1,'Atlas::Actor']]],
+  ['assetloader',['AssetLoader',['../d4/de5/a00503.html',1,'Atlas::Loader']]],
+  ['atlasexception',['AtlasException',['../d0/da0/a00403.html',1,'']]],
+  ['atmosphererenderer',['AtmosphereRenderer',['../de/dde/a00587.html',1,'Atlas::Renderer']]],
+  ['audioactor',['AudioActor',['../d5/d72/a00803.html',1,'Atlas::Actor']]],
+  ['audiodata',['AudioData',['../dd/de5/a00771.html',1,'Atlas::Audio']]],
+  ['audiodeviceevent',['AudioDeviceEvent',['../d3/d29/a00419.html',1,'Atlas::Events']]],
+  ['audiomanager',['AudioManager',['../dc/d5d/a00775.html',1,'Atlas::Audio']]],
+  ['audiostream',['AudioStream',['../d3/d95/a00779.html',1,'Atlas::Audio']]]
 ];

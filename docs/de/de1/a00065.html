@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/events/EventManager.h File Reference</title>
+<title>Atlas Engine: src/events/EventDelegate.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,88 +89,38 @@ $(document).ready(function(){initNavTree('de/de1/a00065.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a>  </div>
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">EventManager.h File Reference</div>  </div>
+<div class="title">EventDelegate.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../db/dab/a00089_source.html">WindowEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../da/d24/a00068_source.html">KeyboardEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../db/db6/a00074_source.html">MouseButtonEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d1/d09/a00077_source.html">MouseMotionEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../da/dec/a00080_source.html">MouseWheelEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../dc/dee/a00053_source.html">ControllerButtonEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d9/d2e/a00056_source.html">ControllerDeviceEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../da/d2a/a00086_source.html">TouchEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d2/d1f/a00083_source.html">TextInputEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d6/d2d/a00047_source.html">AudioDeviceEvent.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d3/d8b/a00059_source.html">DropEvent.h</a>&quot;</code><br />
+<code>#include &lt;functional&gt;</code><br />
+<code>#include &lt;map&gt;</code><br />
 <code>#include &lt;mutex&gt;</code><br />
-<code>#include &lt;unordered_map&gt;</code><br />
+<code>#include &lt;vector&gt;</code><br />
 </div>
 <p><a href="../../de/de1/a00065_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de8/a00405.html">Atlas::Events::EventManager</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc4/a00443.html">Atlas::Events::EventDelegate&lt; Args &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Handles the event flow between subscriber and publisher.  <a href="../../d0/dc4/a00443.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:d6/d7f/a00287"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></td></tr>
+<tr class="memitem:de/d55/a00323"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d55/a00323.html">Atlas</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:da/ddc/a00288"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/ddc/a00288.html">Atlas::Events</a></td></tr>
+<tr class="memitem:d4/d8f/a00324"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html">Atlas::Events</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:a527d7f84c4e7f176446d0e82553b3e6c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de1/a00065.html#a527d7f84c4e7f176446d0e82553b3e6c">AE_BUTTON_RELEASED</a>&#160;&#160;&#160;0</td></tr>
-<tr class="separator:a527d7f84c4e7f176446d0e82553b3e6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a269ac23a95fa3575b8b90373d522b7ed"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de1/a00065.html#a269ac23a95fa3575b8b90373d522b7ed">AE_BUTTON_PRESSED</a>&#160;&#160;&#160;1</td></tr>
-<tr class="separator:a269ac23a95fa3575b8b90373d522b7ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="a269ac23a95fa3575b8b90373d522b7ed"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a269ac23a95fa3575b8b90373d522b7ed">&#9670;&nbsp;</a></span>AE_BUTTON_PRESSED</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_BUTTON_PRESSED&#160;&#160;&#160;1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00005">5</a> of file <a class="el" href="../../de/de1/a00065_source.html">EventManager.h</a>.</p>
-
-</div>
-</div>
-<a id="a527d7f84c4e7f176446d0e82553b3e6c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a527d7f84c4e7f176446d0e82553b3e6c">&#9670;&nbsp;</a></span>AE_BUTTON_RELEASED</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_BUTTON_RELEASED&#160;&#160;&#160;0</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../de/de1/a00065_source.html#l00004">4</a> of file <a class="el" href="../../de/de1/a00065_source.html">EventManager.h</a>.</p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../de/de1/a00065.html">EventManager.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../de/de1/a00065.html">EventDelegate.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

@@ -805,7 +805,9 @@ INPUT                  = README.md \
                          src/texture \
                          src/buffer \
                          src/audio \
-                         src/common
+                         src/common \
+                         src/actor \
+                         src/scene
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

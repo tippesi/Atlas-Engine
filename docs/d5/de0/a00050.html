@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/events/ControllerAxisEvent.h File Reference</title>
+<title>Atlas Engine: src/events/ClockEvent.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,149 +89,34 @@ $(document).ready(function(){initNavTree('d5/de0/a00050.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a>  </div>
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">ControllerAxisEvent.h File Reference</div>  </div>
+<div class="title">ClockEvent.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../df/d03/a00062_source.html">EventDelegate.h</a>&quot;</code><br />
-<code>#include &lt;SDL/include/SDL.h&gt;</code><br />
 </div>
 <p><a href="../../d5/de0/a00050_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d05/a00385.html">Atlas::Events::ControllerAxisEvent</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A class to distribute controller axis events.  <a href="../../d5/d05/a00385.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d05/a00423.html">Atlas::Events::ClockEvent</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A class to distribute frame update events.  <a href="../../d1/d05/a00423.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:d6/d7f/a00287"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></td></tr>
+<tr class="memitem:de/d55/a00323"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d55/a00323.html">Atlas</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:da/ddc/a00288"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/ddc/a00288.html">Atlas::Events</a></td></tr>
+<tr class="memitem:d4/d8f/a00324"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8f/a00324.html">Atlas::Events</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:a8dafec7ca9d4ad584145cf8b4f633ae9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/de0/a00050.html#a8dafec7ca9d4ad584145cf8b4f633ae9">AE_CONTROLLERAXIS_LEFTX</a>&#160;&#160;&#160;SDL_CONTROLLER_AXIS_LEFTX</td></tr>
-<tr class="separator:a8dafec7ca9d4ad584145cf8b4f633ae9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af53254030f6a7a7259a06e438a51da49"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/de0/a00050.html#af53254030f6a7a7259a06e438a51da49">AE_CONTROLLERAXIS_LEFTY</a>&#160;&#160;&#160;SDL_CONTROLLER_AXIS_LEFTY</td></tr>
-<tr class="separator:af53254030f6a7a7259a06e438a51da49"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af8489136bf2bbddb94cb85fa6384db92"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/de0/a00050.html#af8489136bf2bbddb94cb85fa6384db92">AE_CONTROLLERAXIS_RIGHTX</a>&#160;&#160;&#160;SDL_CONTROLLER_AXIS_RIGHTX</td></tr>
-<tr class="separator:af8489136bf2bbddb94cb85fa6384db92"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaee16b18c1462c8db69384381e36d314"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/de0/a00050.html#aaee16b18c1462c8db69384381e36d314">AE_CONTROLLERAXIS_RIGHTY</a>&#160;&#160;&#160;SDL_CONTROLLER_AXIS_RIGHTY</td></tr>
-<tr class="separator:aaee16b18c1462c8db69384381e36d314"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae05cda6a78d149f9e1e1272ff0b9fdf6"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/de0/a00050.html#ae05cda6a78d149f9e1e1272ff0b9fdf6">AE_CONTROLLERAXIS_LEFTTRIGGER</a>&#160;&#160;&#160;SDL_CONTROLLER_AXIS_TRIGGERLEFT</td></tr>
-<tr class="separator:ae05cda6a78d149f9e1e1272ff0b9fdf6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac35d9221b98c15b7c5580379106c4c78"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/de0/a00050.html#ac35d9221b98c15b7c5580379106c4c78">AE_CONTROLLERAXIS_RIGHTTRIGGER</a>&#160;&#160;&#160;SDL_CONTROLLER_AXIS_TRIGGERRIGHT</td></tr>
-<tr class="separator:ac35d9221b98c15b7c5580379106c4c78"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="ae05cda6a78d149f9e1e1272ff0b9fdf6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae05cda6a78d149f9e1e1272ff0b9fdf6">&#9670;&nbsp;</a></span>AE_CONTROLLERAXIS_LEFTTRIGGER</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERAXIS_LEFTTRIGGER&#160;&#160;&#160;SDL_CONTROLLER_AXIS_TRIGGERLEFT</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00013">13</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="a8dafec7ca9d4ad584145cf8b4f633ae9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8dafec7ca9d4ad584145cf8b4f633ae9">&#9670;&nbsp;</a></span>AE_CONTROLLERAXIS_LEFTX</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERAXIS_LEFTX&#160;&#160;&#160;SDL_CONTROLLER_AXIS_LEFTX</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00009">9</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="af53254030f6a7a7259a06e438a51da49"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af53254030f6a7a7259a06e438a51da49">&#9670;&nbsp;</a></span>AE_CONTROLLERAXIS_LEFTY</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERAXIS_LEFTY&#160;&#160;&#160;SDL_CONTROLLER_AXIS_LEFTY</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00010">10</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="ac35d9221b98c15b7c5580379106c4c78"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac35d9221b98c15b7c5580379106c4c78">&#9670;&nbsp;</a></span>AE_CONTROLLERAXIS_RIGHTTRIGGER</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERAXIS_RIGHTTRIGGER&#160;&#160;&#160;SDL_CONTROLLER_AXIS_TRIGGERRIGHT</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00014">14</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="af8489136bf2bbddb94cb85fa6384db92"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af8489136bf2bbddb94cb85fa6384db92">&#9670;&nbsp;</a></span>AE_CONTROLLERAXIS_RIGHTX</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERAXIS_RIGHTX&#160;&#160;&#160;SDL_CONTROLLER_AXIS_RIGHTX</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00011">11</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
-
-</div>
-</div>
-<a id="aaee16b18c1462c8db69384381e36d314"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaee16b18c1462c8db69384381e36d314">&#9670;&nbsp;</a></span>AE_CONTROLLERAXIS_RIGHTY</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_CONTROLLERAXIS_RIGHTY&#160;&#160;&#160;SDL_CONTROLLER_AXIS_RIGHTY</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/de0/a00050_source.html#l00012">12</a> of file <a class="el" href="../../d5/de0/a00050_source.html">ControllerAxisEvent.h</a>.</p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../d5/de0/a00050.html">ControllerAxisEvent.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_14e1e259e8275dc0c459acef3bbf05ae.html">events</a></li><li class="navelem"><a class="el" href="../../d5/de0/a00050.html">ClockEvent.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/mesh/Mesh.h File Reference</title>
+<title>Atlas Engine: src/lighting/Volumetric.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,81 +89,34 @@ $(document).ready(function(){initNavTree('d5/db1/a00140.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a>  </div>
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">Mesh.h File Reference</div>  </div>
+<div class="title">Volumetric.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d6/d5b/a00026_source.html">../Material.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../df/da9/a00263_source.html">../buffer/VertexArray.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../de/db1/a00197_source.html">../shader/ShaderConfig.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d7/dce/a00143_source.html">MeshData.h</a>&quot;</code><br />
-<code>#include &lt;unordered_map&gt;</code><br />
+<code>#include &quot;<a class="el" href="../../d3/d1a/a00251_source.html">../texture/Texture2D.h</a>&quot;</code><br />
 </div>
 <p><a href="../../d5/db1/a00140_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db7/a00525.html">Atlas::Mesh::Mesh</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d0b/a00529.html">Atlas::Mesh::Mesh::MaterialConfig</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dae/a00563.html">Atlas::Lighting::Volumetric</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:d6/d7f/a00287"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d7f/a00287.html">Atlas</a></td></tr>
+<tr class="memitem:de/d55/a00323"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d55/a00323.html">Atlas</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:d8/d0a/a00292"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d0a/a00292.html">Atlas::Mesh</a></td></tr>
+<tr class="memitem:d8/dfc/a00327"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dfc/a00327.html">Atlas::Lighting</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:afe3d8327a0f9ccc13d6154618116ddad"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/db1/a00140.html#afe3d8327a0f9ccc13d6154618116ddad">AE_STATIONARY_MESH</a>&#160;&#160;&#160;0</td></tr>
-<tr class="separator:afe3d8327a0f9ccc13d6154618116ddad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adb7b4944b8d8b3bbb0cffe8f03f8cd6c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/db1/a00140.html#adb7b4944b8d8b3bbb0cffe8f03f8cd6c">AE_MOVABLE_MESH</a>&#160;&#160;&#160;1</td></tr>
-<tr class="separator:adb7b4944b8d8b3bbb0cffe8f03f8cd6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="adb7b4944b8d8b3bbb0cffe8f03f8cd6c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adb7b4944b8d8b3bbb0cffe8f03f8cd6c">&#9670;&nbsp;</a></span>AE_MOVABLE_MESH</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_MOVABLE_MESH&#160;&#160;&#160;1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00013">13</a> of file <a class="el" href="../../d5/db1/a00140_source.html">Mesh.h</a>.</p>
-
-</div>
-</div>
-<a id="afe3d8327a0f9ccc13d6154618116ddad"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afe3d8327a0f9ccc13d6154618116ddad">&#9670;&nbsp;</a></span>AE_STATIONARY_MESH</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_STATIONARY_MESH&#160;&#160;&#160;0</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d5/db1/a00140_source.html#l00012">12</a> of file <a class="el" href="../../d5/db1/a00140_source.html">Mesh.h</a>.</p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../d5/db1/a00140.html">Mesh.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_21d93b4c2deba69589411e8b07614db4.html">lighting</a></li><li class="navelem"><a class="el" href="../../d5/db1/a00140.html">Volumetric.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>
