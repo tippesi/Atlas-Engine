@@ -55,6 +55,7 @@ namespace Atlas {
 
 			std::vector<Actor::MovableMeshActor*> movableMeshActorQuery;
 			std::vector<Actor::StaticMeshActor*> staticMeshActorQuery;
+			std::vector<Actor::DecalActor*> decalActorQuery;
 
 			for (auto &light : accumulatedLights) {
 				// We always want to render all lights
@@ -108,6 +109,12 @@ namespace Atlas {
 
 			for (auto &meshActor : staticMeshActorQuery) {
 				renderList.Add(meshActor);
+			}
+
+			decalOctree.QueryAABB(decalActorQuery, aabb);
+
+			for (auto& decalActor : decalActorQuery) {
+				renderList.Add(decalActor);
 			}
 
 			FrustumCulling::CullActorsFromScene(this, camera);

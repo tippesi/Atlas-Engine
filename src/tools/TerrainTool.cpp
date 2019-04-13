@@ -25,7 +25,7 @@ namespace Atlas {
 			auto terrain = new Terrain::Terrain(rootNodeSideCount, LoDCount, patchSize, resolution, height);
 
 			// Calculate the number of vertices per tile and resize the height data to map 1:1
-			int32_t tileResolution = 16 * patchSize;
+			int32_t tileResolution = 8 * patchSize;
 
 			int32_t totalResolution = tileResolution * maxNodesPerSide;
 
@@ -79,7 +79,7 @@ namespace Atlas {
 							else {
 								imageOffset = yImage * totalResolution + xImage;
 							}
-							cell->heightData[cellOffset] = (float)heightData[imageOffset];
+							cell->heightData[cellOffset] = (float)heightData[imageOffset] / 65535.0f;
 							cellHeightData[cellOffset] = heightData[imageOffset];
 						}
 					}
@@ -122,7 +122,7 @@ namespace Atlas {
 							int32_t cellOffset = y * tileResolution + x;
 							int32_t imageOffset = (j * (tileResolution - 1) + y) * heightDataResolution +
 												  i * (tileResolution - 1) + x;
-							heightData[imageOffset] = (uint16_t)cell->heightData[cellOffset];
+							heightData[imageOffset] = (uint16_t)(cell->heightData[cellOffset] * 65535.0f);
 						}
 					}
 				}
@@ -262,8 +262,8 @@ namespace Atlas {
 			// Apply the kernel on the whole data
 			position -= middleMiddle->position;
 
-			int32_t x = (int32_t)floorf(position.x / terrain->resolution);
-			int32_t y = (int32_t)floorf(position.y / terrain->resolution);
+			int32_t x = (int32_t)floorf(position.x / (2.0f * terrain->resolution));
+			int32_t y = (int32_t)floorf(position.y / (2.0f * terrain->resolution));
 
 			x += width;
 			y += height;
@@ -278,8 +278,8 @@ namespace Atlas {
 					int32_t xTranslated = x + (*offsets)[i][j].x;
 					int32_t yTranslated = y + (*offsets)[i][j].y;
 					int32_t index = yTranslated * width * 3 + xTranslated;
-					float value = data[index] + scale * (*weights)[i][j] / terrain->heightScale * 65535.0f;
-					data[index] = glm::clamp(value, 0.0f, 65535.0f);
+					float value = data[index] + scale * (*weights)[i][j] / terrain->heightScale;
+					data[index] = glm::clamp(value, 0.0f, 1.0f);
 				}
 			}
 
@@ -317,7 +317,7 @@ namespace Atlas {
 					}
 
 					for (uint32_t k = 0; k < cellHeightData.size(); k++) {
-						cellHeightData[k] = (uint16_t)cell->heightData[k];
+						cellHeightData[k] = (uint16_t)(cell->heightData[k] * 65535.0f);
 					}
 
 					cell->heightField->SetData(cellHeightData);
@@ -392,8 +392,8 @@ namespace Atlas {
 			// Apply the kernel on the whole data
 			position -= middleMiddle->position;
 
-			int32_t x = (int32_t)floorf(position.x / terrain->resolution);
-			int32_t y = (int32_t)floorf(position.y / terrain->resolution);
+			int32_t x = (int32_t)floorf(position.x / (2.0f * terrain->resolution));
+			int32_t y = (int32_t)floorf(position.y / (2.0f * terrain->resolution));
 
 			x += width;
 			y += height;
@@ -466,7 +466,7 @@ namespace Atlas {
 					}
 
 					for (uint32_t k = 0; k < cellHeightData.size(); k++) {
-						cellHeightData[k] = (uint16_t)cell->heightData[k];
+						cellHeightData[k] = (uint16_t)(cell->heightData[k] * 65535.0f);
 					}
 
 					cell->heightField->SetData(cellHeightData);

@@ -120,30 +120,23 @@ namespace Atlas {
 				return 0.0f;
 			}
 
-			if (cell->heightData.size() == 0 || cell->heightField == nullptr) {
-				return 0.0f;
-			}
+			x -= xIndex;
+			z -= zIndex;
 
-			if ((int32_t) cell->heightData.size() != cell->heightField->height * cell->heightField->width) {
-				return 0.0f;
-			}
+			// Cells have overlapping edges (last pixels are on next cell)
+			x *= (float)(cell->heightField->width - 1);
+			z *= (float)(cell->heightField->height - 1);
 
-			x *= nodeSideLength;
-			z *= nodeSideLength;
+			xIndex = floorf(x);
+			zIndex = floorf(z);
 
-			float xOffset = fmod(x, nodeSideLength);
-			float zOffset = fmod(z, nodeSideLength);
+			auto xCoord = x - xIndex;
+			auto zCoord = z - zIndex;
 
-			float xGridSize = nodeSideLength / (float) cell->heightField->width;
-			float zGridSize = nodeSideLength / (float) cell->heightField->height;
-
-			float xCoord = fmod(xOffset, xGridSize) / xGridSize;
-			float zCoord = fmod(zOffset, zGridSize) / zGridSize;
+			int32_t xPosition = (int32_t) xIndex;
+			int32_t zPosition = (int32_t) zIndex;
 
 			float height = 0.0f;
-
-			int32_t xPosition = (int32_t) (xOffset / xGridSize);
-			int32_t zPosition = (int32_t) (zOffset / zGridSize);
 
 			/*
             topLeft        topRight
@@ -156,7 +149,7 @@ namespace Atlas {
             topLeft is in x direction
             bottomRight is in z direction
             */
-			float heightBottomLeft = (float) cell->heightData[xPosition + cell->heightField->width * zPosition];
+			float heightBottomLeft = cell->heightData[xPosition + cell->heightField->width * zPosition];
 
 			float heightBottomRight = 0.0f;
 			float heightTopRight = 0.0f;
@@ -172,13 +165,9 @@ namespace Atlas {
 					heightTopRight = heightBottomLeft;
 					heightBottomRight = heightBottomLeft;
 				} else {
-					if (neighbourCell->heightData.size() == 0 || neighbourCell->heightField == nullptr) {
-						return 0.0f;
-					}
-
-					heightTopLeft = (float) neighbourCell->heightData[1];
-					heightBottomRight = (float) neighbourCell->heightData[neighbourCell->heightField->width];
-					heightTopRight = (float) neighbourCell->heightData[neighbourCell->heightField->width + 1];
+					heightTopLeft = neighbourCell->heightData[1];
+					heightBottomRight = neighbourCell->heightData[neighbourCell->heightField->width];
+					heightTopRight = neighbourCell->heightData[neighbourCell->heightField->width + 1];
 				}
 			} else if (zPosition + 1 == cell->heightField->height) {
 
@@ -190,17 +179,13 @@ namespace Atlas {
 					heightBottomRight = heightBottomLeft;
 					heightTopRight = heightTopLeft;
 				} else {
-					if (neighbourCell->heightData.size() == 0 || neighbourCell->heightField == nullptr) {
-						return 0.0f;
-					}
-
-					heightBottomRight = (float) neighbourCell->heightData[xPosition];
-					heightTopRight = (float) neighbourCell->heightData[xPosition + 1];
+					heightBottomRight = neighbourCell->heightData[xPosition];
+					heightTopRight = neighbourCell->heightData[xPosition + 1];
 				}
 
 			} else if (xPosition + 1 == cell->heightField->width) {
 
-				heightBottomRight = (float) cell->heightData[xPosition + cell->heightField->width * (zPosition + 1)];
+				heightBottomRight = cell->heightData[xPosition + cell->heightField->width * (zPosition + 1)];
 
 				auto neighbourCell = storage->GetCell((int32_t) xIndex + 1, (int32_t) zIndex, LoDCount - 1);
 
@@ -208,30 +193,26 @@ namespace Atlas {
 					heightTopLeft = heightBottomLeft;
 					heightTopRight = heightBottomRight;
 				} else {
-					if (neighbourCell->heightData.size() == 0 || neighbourCell->heightField == nullptr) {
-						return 0.0f;
-					}
-
-					heightTopLeft = (float) neighbourCell->heightData[zPosition * neighbourCell->heightField->width];
-					heightTopRight = (float) neighbourCell->heightData[(zPosition + 1) *
+					heightTopLeft = neighbourCell->heightData[zPosition * neighbourCell->heightField->width];
+					heightTopRight = neighbourCell->heightData[(zPosition + 1) *
 																	   neighbourCell->heightField->width];
 				}
 
 			} else {
-				heightTopLeft = (float) cell->heightData[xPosition + 1 + cell->heightField->width * zPosition];
-				heightBottomRight = (float) cell->heightData[xPosition + cell->heightField->width * (zPosition + 1)];
-				heightTopRight = (float) cell->heightData[xPosition + 1 + cell->heightField->width * (zPosition + 1)];
+				heightTopLeft = cell->heightData[xPosition + 1 + cell->heightField->width * zPosition];
+				heightBottomRight = cell->heightData[xPosition + cell->heightField->width * (zPosition + 1)];
+				heightTopRight = cell->heightData[xPosition + 1 + cell->heightField->width * (zPosition + 1)];
 			}
 
 			if (xCoord > zCoord) {
-				height = BarryCentric(vec3(0.0f, heightBottomLeft / 65535.0f * heightScale, 0.0f),
-									  vec3(1.0f, heightTopLeft / 65535.0f * heightScale, 0.0f),
-									  vec3(1.0f, heightTopRight / 65535.0f * heightScale, 1.0f),
+				height = BarryCentric(vec3(0.0f, heightBottomLeft * heightScale, 0.0f),
+									  vec3(1.0f, heightTopLeft * heightScale, 0.0f),
+									  vec3(1.0f, heightTopRight * heightScale, 1.0f),
 									  vec2(xCoord, zCoord));
 			} else {
-				height = BarryCentric(vec3(0.0f, heightBottomLeft / 65535.0f * heightScale, 0.0f),
-									  vec3(1.0f, heightTopRight / 65535.0f * heightScale, 1.0f),
-									  vec3(0.0f, heightBottomRight / 65535.0f * heightScale, 1.0f),
+				height = BarryCentric(vec3(0.0f, heightBottomLeft * heightScale, 0.0f),
+									  vec3(1.0f, heightTopRight * heightScale, 1.0f),
+									  vec3(0.0f, heightBottomRight * heightScale, 1.0f),
 									  vec2(xCoord, zCoord));
 			}
 

@@ -193,7 +193,7 @@ namespace Atlas {
 				std::getline(fileStream, body);
 
 			auto isLeaf = cell->LoD == terrain->LoDCount - 1;
-            auto tileResolution = 16 * terrain->patchSizeFactor + 1;
+            auto tileResolution = 8 * terrain->patchSizeFactor + 1;
 
 			// Normal map + height map + splat map + material indices
 			auto leafNodeDataCount = (int64_t)tileResolution * tileResolution * 9 + 4 * 4;
@@ -242,7 +242,7 @@ namespace Atlas {
                 cell->heightData.resize(tileResolution * tileResolution);
 
                 for (uint32_t i = 0; i < cell->heightData.size(); i++)
-                    cell->heightData[i] = (float)heightFieldData[i];
+                    cell->heightData[i] = (float)heightFieldData[i] / 65535.0f;
             }
 
             fileStream.close();
