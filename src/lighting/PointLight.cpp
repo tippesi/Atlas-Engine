@@ -10,7 +10,7 @@ namespace Atlas {
 
 			color = vec3(1.0f);
 			ambient = 0.0f;
-			radius = 10.0f;
+			radius = 5.0f;
 
 			shadow = nullptr;
 			volumetric = nullptr;
