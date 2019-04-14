@@ -16,6 +16,9 @@ namespace Atlas {
 			 */
 			Texture2D() {}
 
+
+			Texture2D(const Texture2D& that);
+
             /**
              * Constructs a Texture2D object.
              * @param width
@@ -26,8 +29,8 @@ namespace Atlas {
              * @param anisotropicFiltering
              * @param generateMipMaps
              */
-            Texture2D(int32_t width, int32_t height, int32_t sizedFormat,
-				int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
+            Texture2D(int32_t width, int32_t height, int32_t sizedFormat, int32_t wrapping = GL_CLAMP_TO_EDGE, 
+				int32_t filtering = GL_LINEAR, bool anisotropicFiltering = false, bool generateMipMaps = false);
 
             /**
              * Constructs a Texture2D object from an image file.

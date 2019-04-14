@@ -18,6 +18,8 @@ namespace Atlas {
 			 */
 			Cubemap() {}
 
+			Cubemap(const Cubemap& that);
+
             /**
              * Constructs a Cubemap object.
              * @param right

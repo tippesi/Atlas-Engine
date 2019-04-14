@@ -12,6 +12,14 @@ namespace Atlas {
 
 	}
 
+	Framebuffer::Framebuffer(const Framebuffer& that) {
+
+		glGenFramebuffers(1, &ID);
+
+		drawBuffersSet = false;
+
+	}
+
 	Framebuffer::Framebuffer(int32_t width, int32_t height) : width(width), height(height) {
 
 		glGenFramebuffers(1, &ID);

@@ -6,6 +6,12 @@ namespace Atlas {
 
    namespace Texture {
 
+	   Cubemap::Cubemap(const Cubemap& that) {
+
+		   DeepCopy(that);
+
+	   }
+
        Cubemap::Cubemap(std::string right, std::string left, std::string top,
                         std::string bottom, std::string front, std::string back) {
 

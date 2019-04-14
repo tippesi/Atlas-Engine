@@ -66,7 +66,7 @@ void main() {
 		float currentWeight = weight[i];
 #ifdef BILATERAL
 		float depth = texture(depthTexture, fTexCoord - (vec2(offset[i]) * blurDirection)).r;
-        closeness = max(0.0f, 1.0f - 1000.0f * abs(centerDepth - depth));
+        closeness = max(0.0f, 1.0f - 100.0f * abs(centerDepth - depth));
 		currentWeight *= closeness;
 		totalWeight += currentWeight;
 #endif

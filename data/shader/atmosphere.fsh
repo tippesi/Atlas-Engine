@@ -8,10 +8,13 @@ in vec3 fPosition;
 
 uniform vec3 cameraLocation;
 uniform vec3 sunDirection;
+uniform float sunIntensity;
+uniform float atmosphereRadius;
+uniform float planetRadius;
+uniform vec3 planetCenter;
 
-const vec3 planetCenter = -vec3(0.0f, 6371, 0.0f);
-const float rayScaleHeight = 8.0f;
-const float mieScaleHeight = 1.2f; 
+const float rayScaleHeight = 8.0e3f;
+const float mieScaleHeight = 1.2e3f; 
 
 void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kRlh, float kMie, out vec3 totalRlh, out vec3 totalMie);
 
@@ -20,9 +23,6 @@ void main() {
 	const float g = 0.99f;
 	vec3 r = normalize(fPosition);
 	vec3 pSun = normalize(-sunDirection);
-	const float kMie = 21e-3;
-	const vec3 kRlh = vec3(5.5e-3, 13.0e-3, 22.4e-3);
-	const float iSun = 22.0f;
 	
 	vec3 totalRlh;
 	vec3 totalMie;
@@ -31,10 +31,10 @@ void main() {
         normalize(fPosition),           // normalized ray direction
         vec3(0.0f, 1.0f, 0.0f),               // ray origin
         -sunDirection,                        // position of the sun
-        6371.0f,                         // radius of the planet in meters
-        6871.0f,                         // radius of the atmosphere in meters
-        vec3(5.5e-3, 13.0e-3, 22.4e-3), // Rayleigh scattering coefficient
-        21e-3,                          // Mie scattering coefficient
+        planetRadius,                         // radius of the planet in meters
+        atmosphereRadius,                         // radius of the atmosphere in meters
+        vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
+        21e-6,                          // Mie scattering coefficient
 		totalRlh,
 		totalMie
     );	
@@ -183,7 +183,7 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
 
     }
 	
-	totalMie = totalMie * 20.0f * kMie;
-	totalRlh = totalRlh * 20.0f * kRlh;
+	totalMie = totalMie * sunIntensity * kMie;
+	totalRlh = totalRlh * sunIntensity * kRlh;
 	
 }

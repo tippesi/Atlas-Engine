@@ -5,9 +5,8 @@ namespace Atlas {
 
 	namespace Shader {
 
-		Uniform::Uniform(uint32_t shaderID, std::string uniformName, ShaderBatch* shaderBatch, int32_t ID) : ID(ID), shaderID(shaderID), shaderBatch(shaderBatch) {
-
-			name = uniformName;
+		Uniform::Uniform(uint32_t shaderID, std::string uniformName, ShaderBatch* shaderBatch, int32_t ID) :  
+			shaderID(shaderID), name(uniformName), shaderBatch(shaderBatch), ID(ID) {
 
 			if (shaderBatch == nullptr) {
 				this->ID = glGetUniformLocation(shaderID, uniformName.c_str());
@@ -17,7 +16,7 @@ namespace Atlas {
 
 		void Uniform::Update() {
 
-			this->ID = glGetUniformLocation(shaderID, name.c_str());
+			ID = glGetUniformLocation(shaderID, name.c_str());
 
 		}
 

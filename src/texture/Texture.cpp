@@ -33,12 +33,7 @@ namespace Atlas {
                 glDeleteTextures(1, &ID);
                 glGenTextures(1, &ID);
 
-                this->width = that.width;
-                this->height = that.height;
-                this->layers = that.layers;
-                
-                Generate(that.target, that.sizedFormat, that.wrapping, that.filtering,
-                        that.anisotropicFiltering, that.mipmaps);
+				DeepCopy(that);
 
             }
 
@@ -56,6 +51,12 @@ namespace Atlas {
 
 			glActiveTexture(unit);
 			Bind();
+
+		}
+
+		void Texture::Bind(uint32_t access, uint32_t unit, int32_t level) {
+
+			glBindImageTexture(unit, ID, level, layers > 1, layers, access, sizedFormat);
 
 		}
 
@@ -275,6 +276,23 @@ namespace Atlas {
 
 			if (mipmaps)
 				glGenerateMipmap(target);
+
+		}
+
+		void Texture::DeepCopy(const Texture& that) {
+
+			this->width = that.width;
+			this->height = that.height;
+			this->layers = that.layers;
+
+			AtlasLog("Deep Copy");
+
+			Generate(that.target, that.sizedFormat, that.wrapping, that.filtering,
+				that.anisotropicFiltering, that.mipmaps);
+
+			AtlasLog("Deep generate finished");
+
+			Copy(that);
 
 		}
 

@@ -16,6 +16,8 @@ namespace Atlas {
 			 */
 			Texture2DArray() {}
 
+			Texture2DArray(const Texture2DArray& that);
+
             /**
              * Construct a Texture2DArray object.
              * @param width

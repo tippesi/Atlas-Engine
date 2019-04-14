@@ -55,6 +55,11 @@ namespace Atlas {
 
         Uniform* Shader::GetUniform(std::string uniformName) {
 
+			// Check if we have the uniform cached
+			for (auto& uniform : uniforms)
+				if (uniform->name == uniformName)
+					return uniform;
+			
             Bind();
 
             Uniform* uniform = new Uniform(ID, uniformName);
@@ -188,15 +193,15 @@ namespace Atlas {
             }
 #ifdef AE_INSTANT_SHADER_RELOAD
             bool reloaded = false;
-	for (auto& stage : stages) {
-		reloaded = stage->Reload() ? true : reloaded;
-	}
-	if (reloaded) {
-		Compile();
-		if (!isCompiled) {
-			return;
-		}
-	}
+			for (auto& stage : stages) {
+				reloaded = stage->Reload() ? true : reloaded;
+			}
+			if (reloaded) {
+				Compile();
+				if (!isCompiled) {
+					return;
+				}
+			}
 #endif
 
             if (boundShaderID != ID) {

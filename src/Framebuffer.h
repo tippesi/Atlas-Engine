@@ -18,6 +18,8 @@ namespace Atlas {
 		 */
 		Framebuffer();
 
+		Framebuffer(const Framebuffer& that);
+
 		/**
          * Constructs a Framebuffer object.
          * @param width

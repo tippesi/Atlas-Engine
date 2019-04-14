@@ -7,6 +7,12 @@ namespace Atlas {
 
     namespace Texture {
 
+		Texture2DArray::Texture2DArray(const Texture2DArray& that) {
+
+			DeepCopy(that);
+
+		}
+
         Texture2DArray::Texture2DArray(int32_t width, int32_t height, int32_t depth, int32_t sizedFormat,
                                        int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
 
@@ -24,8 +30,6 @@ namespace Atlas {
 			if (this != &that) {
 
 				Texture::operator=(that);
-
-				Copy(that);
 
 			}
 

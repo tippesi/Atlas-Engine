@@ -35,16 +35,26 @@ namespace Atlas {
 			Texture& operator=(const Texture& that);
 
 			/**
-			 * Binds the texture to the active texture unit
+			 * Binds the texture as a sampler to the active texture unit
 			 */
 			void Bind();
 
 			/**
-			 * Binds the texture to a texture unit.
+			 * Binds the texture as a sampler to a texture unit.
 			 * @param unit The texture unit the texture should be bound to.
 			 * @note The texture unit should be between GL_TEXTURE0-GL_TEXTURE_MAX
 			 */
 			void Bind(uint32_t unit);
+
+			/**
+			 * Binds the texture to an image binding point (specified in shader)
+			 * @param access The kind of access needed e.g. GL_WRITE_ONLY
+			 * @param unit The binding point specified in the shader
+			 * @param level The mipmap level which should be accessed
+			 * @note If the texture has multiple layers, e.g. it is a Texture2DArray
+			 * then all layers will be made available.
+			 */
+			void Bind(uint32_t access, uint32_t unit, int32_t level = 0);
 
 			/**
 			 * Unbinds any texture from the textures target.
@@ -157,6 +167,8 @@ namespace Atlas {
                           int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
 
 			void GenerateMipmap();
+
+			void DeepCopy(const Texture& that);
 
             uint32_t ID = 0;
 

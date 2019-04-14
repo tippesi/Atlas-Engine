@@ -10,10 +10,13 @@ uniform mat4 vMatrix;
 uniform mat4 pMatrix;
 uniform vec3 cameraLocation;
 uniform vec3 sunDirection;
+uniform float atmosphereRadius;
+uniform float planetRadius;
+uniform vec3 planetCenter;
 
 void main() {
 	
-    vec4 pos = vec4(vPosition * 6871.0f - vec3(0.0f, 6371.0f, 0.0f), 1.0f);
+    vec4 pos = vec4(vPosition * atmosphereRadius + planetCenter, 1.0f);
 	fPosition = pos.xyz - cameraLocation;
 	gl_Position = (pMatrix * vMatrix * pos).xyww;
 	
