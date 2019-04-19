@@ -9,7 +9,6 @@ uniform vec4 outlineColor;
 uniform float outlineScale;
 
 uniform float edgeValue;
-uniform float padding;
 uniform float smoothness;
 
 uniform vec4 clipArea;
@@ -28,7 +27,7 @@ void main() {
             discard;
 	
 	float intensity = texture(glyphsTexture, fTexCoord).r;
-	float smoothing = 0.25 / (smoothness * padding * textScale);
+	float smoothing = smoothness * fwidth(intensity);
 	
 	float outlineFactor = smoothstep(edgeValue - smoothing, edgeValue + smoothing, intensity);
 	color = mix(outlineColor, textColor, outlineFactor);

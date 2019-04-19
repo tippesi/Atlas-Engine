@@ -54,7 +54,6 @@ namespace Atlas {
 			Shader::Uniform* outlineColor;
 			Shader::Uniform* outlineScale;
 			Shader::Uniform* edgeValue;
-			Shader::Uniform* padding;
 			Shader::Uniform* smoothness;
 			Shader::Uniform *clipArea;
 			Shader::Uniform *blendArea;

@@ -6,6 +6,7 @@
 #include "input/Keyboard.h"
 #include "input/Controller.h"
 #include "input/Touch.h"
+#include "renderer/gpgpu/OceanSimulation.h"
 
 class Main {
 
@@ -56,6 +57,8 @@ private:
 
 	Atlas::Audio::AudioData* audioData;
 	Atlas::Audio::AudioStream* audioStream;
+
+	Atlas::Renderer::GPGPU::OceanSimulation* simulation;
 
 	float renderingStart;
 	uint32_t frameCount;

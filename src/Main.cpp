@@ -66,6 +66,9 @@ Main::Main(int argc, char* argv[]) {
 
 	SceneSetUp();
 
+	simulation = new Atlas::Renderer::GPGPU::OceanSimulation(512, 1000);
+	simulation->AddOceanState(4.0f, vec2(1.0f, 0.0f), 26.0f);
+
 	float time = Engine::GetClock();
 
 	renderingStart = Engine::GetClock();
@@ -114,13 +117,17 @@ void Main::Update(float deltaTime) {
 
 void Main::Render(float deltaTime) {
 
+	simulation->ComputeHT(simulation->oceanStates[0]);
+
 	masterRenderer->RenderScene(window, renderTarget, camera, scene);
 
 	float averageFramerate = (Engine::GetClock() - renderingStart) * 1000.0f / (float)frameCount;
 
 	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms";
 
-	masterRenderer->textRenderer.Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f, true);
+	masterRenderer->textRenderer.Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
+
+	masterRenderer->RenderTexture(window, &simulation->hTDy, 0.0f, 20.0f, 512.0f, 512.0f);
 
 }
 

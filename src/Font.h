@@ -91,10 +91,9 @@ namespace Atlas {
 
 		float lineHeight;
 
-		float smoothness = 0.8f;
+		float smoothness = 0.7f;
 
 		uint8_t edgeValue;
-		int32_t padding;
 
 		struct GlyphInfo {
 			vec2 scale;

@@ -102,7 +102,6 @@ namespace Atlas {
 			this->outlineScale->SetValue(outlineScale);
 
 			edgeValue->SetValue(((float)font->edgeValue) / 255.0f);
-			padding->SetValue((float)font->padding);
 			smoothness->SetValue(font->smoothness);
 
 			this->clipArea->SetValue(clipArea);
@@ -148,7 +147,6 @@ namespace Atlas {
 			outlineColor = shader.GetUniform("outlineColor");
 			outlineScale = shader.GetUniform("outlineScale");
 			edgeValue = shader.GetUniform("edgeValue");
-			padding = shader.GetUniform("padding");
 			smoothness = shader.GetUniform("smoothness");
 			clipArea = shader.GetUniform("clipArea");
 			blendArea = shader.GetUniform("blendArea");
