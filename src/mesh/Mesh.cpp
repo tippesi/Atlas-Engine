@@ -28,7 +28,7 @@ namespace Atlas {
 
 		Mesh::~Mesh() {
 
-			vertexArray.DeleteContent();
+			
 
 		}
 
@@ -75,27 +75,27 @@ namespace Atlas {
 
 			if (data->indices->ContainsData()) {
 				auto indices = new Buffer::IndexBuffer(data->indices->GetType(),
-													   data->indices->GetElementSize(), data->GetIndexCount());
+					data->indices->GetElementSize(), data->GetIndexCount());
 				vertexArray.AddIndexComponent(indices);
 			}
 			if (data->vertices->ContainsData()) {
-				auto vertices = new Buffer::VertexBuffer(data->vertices->GetType(),
-														 data->vertices->GetStride(), data->vertices->GetElementSize(), data->GetVertexCount());
+				auto vertices = new Buffer::VertexBuffer(data->vertices->GetType(), 
+					data->vertices->GetStride(), data->vertices->GetElementSize(), data->GetVertexCount());
 				vertexArray.AddComponent(0, vertices);
 			}
 			if (data->normals->ContainsData()) {
 				auto normals = new Buffer::VertexBuffer(data->normals->GetType(),
-														data->normals->GetStride(), data->normals->GetElementSize(), data->GetVertexCount());
+					data->normals->GetStride(), data->normals->GetElementSize(), data->GetVertexCount());
 				vertexArray.AddComponent(1, normals);
 			}
 			if (data->texCoords->ContainsData()) {
 				auto texCoords = new Buffer::VertexBuffer(data->texCoords->GetType(),
-														  data->texCoords->GetStride(), data->texCoords->GetElementSize(), data->GetVertexCount());
+					data->texCoords->GetStride(), data->texCoords->GetElementSize(), data->GetVertexCount());
 				vertexArray.AddComponent(2, texCoords);
 			}
 			if (data->tangents->ContainsData()) {
 				auto tangents = new Buffer::VertexBuffer(data->tangents->GetType(),
-														 data->tangents->GetStride(), data->tangents->GetElementSize(), data->GetVertexCount());
+					data->tangents->GetStride(), data->tangents->GetElementSize(), data->GetVertexCount());
 				vertexArray.AddComponent(3, tangents);
 			}
 

@@ -21,8 +21,14 @@ namespace Atlas {
 			VertexArray();
 
 			/**
+			 *
+			 */
+			~VertexArray();
+
+			/**
              *
              * @param buffer
+             * @note The object takes the ownership of the buffer.
              */
 			void AddIndexComponent(IndexBuffer* buffer);
 
@@ -31,6 +37,7 @@ namespace Atlas {
              * @param attribArray
              * @param buffer
              * @param normalized
+             * @note The object takes the ownership of the buffer.
              */
 			void AddComponent(uint32_t attribArray, VertexBuffer* buffer, bool normalized = false);
 
@@ -39,6 +46,7 @@ namespace Atlas {
              * @param attribArray
              * @param buffer
              * @param normalized
+             * @note The object takes the ownership of the buffer.
              */
 			void AddInstancedComponent(uint32_t attribArray, VertexBuffer* buffer, bool normalized = false);
 
@@ -55,21 +63,15 @@ namespace Atlas {
              */
 			VertexBuffer* GetComponent(uint32_t attribArray);
 
-			int32_t GetMaxAttributeArrayCount();
-
-			///
+			/**
+			 * Binds the vertex array.
+			 */
 			void Bind();
 
-			///
+			/**
+			 * Unbinds any vertex array.
+			 */
 			void Unbind();
-
-			///
-			void ClearContent();
-
-			///
-			void DeleteContent();
-
-			~VertexArray();
 
 		private:
 			uint32_t ID;

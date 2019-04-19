@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#define AE_FONT_GLYPH_COUNT 2048
+#define AE_FONT_GLYPH_COUNT 4096
 #define AE_GPU_GLYPH_COUNT 2048
 
 namespace Atlas {
@@ -29,8 +29,6 @@ namespace Atlas {
 		vec2 textureScale;
 		vec2 offset;
 
-		std::vector<uint8_t> data;
-
 		std::vector<int32_t> kern;
 
 	} Glyph;
@@ -47,7 +45,7 @@ namespace Atlas {
          * @param filename The file path to the true type font
          * @param pixelSize The height of the characters in pixels
          * @param padding Extra pixels around the characters which are filled with the distance
-         * @param edgeValue The value in range 0-255 where the character is reconstructed
+         * @param edgeValue The value in range 0-255 where the character is reconstructed (should normally be 127)
          * @note Only fully supports fonts with up to 2048 glyphs.
          * @remark Let's say you have a padding of 5 and an edgeValue of 100 with a pixelSize
          * of 10. A character texture now has a height of about 10 + 2 * 5 pixels where the padding
@@ -56,7 +54,7 @@ namespace Atlas {
          * because 5 - 5 * 100/255 is approximately 3. Everything outside this area can be used
          * as the outline.
          */
-		Font(std::string filename, float pixelSize, int32_t padding, uint8_t edgeValue);
+		Font(std::string filename, float pixelSize, int32_t padding, uint8_t edgeValue = 127);
 
 		~Font();
 
@@ -93,10 +91,10 @@ namespace Atlas {
 
 		float lineHeight;
 
-		float smoothing;
+		float smoothness = 0.8f;
 
-		float pixelDistanceScale;
 		uint8_t edgeValue;
+		int32_t padding;
 
 		struct GlyphInfo {
 			vec2 scale;

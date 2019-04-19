@@ -1,4 +1,5 @@
 #include "OceanSimulation.h"
+#include "Engine.h"
 
 namespace Atlas {
 
@@ -18,10 +19,16 @@ namespace Atlas {
 				Helper::NoiseGenerator::GenerateNoiseTexture2D(noise2);
 				Helper::NoiseGenerator::GenerateNoiseTexture2D(noise3);
 
-				hT = Texture::Texture2D(N, N, AE_RGBA32F);
+				hTDy = Texture::Texture2D(N, N, AE_RGBA32F);
+				hTDx = Texture::Texture2D(N, N, AE_RGBA32F);
+				hTDz = Texture::Texture2D(N, N, AE_RGBA32F);
 
 				h0.AddStage(AE_COMPUTE_STAGE, "ocean/h0.csh");
 				ht.AddStage(AE_COMPUTE_STAGE, "ocean/ht.csh");
+
+				NUniform = ht.GetUniform("N");
+				LUniform = ht.GetUniform("L");
+				timeUniform = ht.GetUniform("time");
 
 			}
 
@@ -56,10 +63,47 @@ namespace Atlas {
 				auto wUniform = h0.GetUniform("w");
 				auto windspeedUniform = h0.GetUniform("windspeed");
 
+				h0.Bind();
+
+				noise0Uniform->SetValue(0);
+				noise1Uniform->SetValue(1);
+				noise2Uniform->SetValue(2);
+				noise3Uniform->SetValue(3);
+
+				NUniform->SetValue(N);
+				LUniform->SetValue(L);
+				AUniform->SetValue(state.waveAmplitude);
+				wUniform->SetValue(state.waveDirection);
+				windspeedUniform->SetValue(state.windSpeed);
+
+				noise0.Bind(GL_TEXTURE0);
+				noise1.Bind(GL_TEXTURE1);
+				noise2.Bind(GL_TEXTURE2);
+				noise3.Bind(GL_TEXTURE3);
+
 				state.h0K.Bind(GL_WRITE_ONLY, 0);
 				state.h0MinusK.Bind(GL_WRITE_ONLY, 1);
 
+				glDispatchCompute(N / 16, N / 16, 1);
 
+			}
+
+			void OceanSimulation::ComputeHT(OceanState& state) {
+
+				ht.Bind();
+
+				NUniform->SetValue(N);
+				LUniform->SetValue(L);
+				timeUniform->SetValue(Engine::GetClock());
+
+				hTDy.Bind(GL_WRITE_ONLY, 0);
+				hTDx.Bind(GL_WRITE_ONLY, 1);
+				hTDz.Bind(GL_WRITE_ONLY, 2);
+
+				state.h0K.Bind(GL_READ_ONLY, 3);
+				state.h0MinusK.Bind(GL_READ_ONLY, 4);
+
+				glDispatchCompute(N / 16, N / 16, 1);
 
 			}
 

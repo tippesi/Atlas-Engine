@@ -11,7 +11,8 @@
 
 namespace Atlas {
 
-	Font::Font(std::string filename, float pixelSize, int32_t padding, uint8_t edgeValue) : edgeValue(edgeValue) {
+	Font::Font(std::string filename, float pixelSize, int32_t padding, uint8_t edgeValue) : 
+		padding(padding), edgeValue(edgeValue) {
 
 		stbtt_fontinfo font;
 		std::string fontString;
@@ -39,8 +40,6 @@ namespace Atlas {
 		secondGlyphBuffer = new Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
 		secondGlyphBuffer->SetSize(AE_GPU_GLYPH_COUNT / 2);
 
-		smoothing = 5.0f;
-
 		float scale = (float) stbtt_ScaleForPixelHeight(&font, pixelSize);
 
 		int32_t iAscent, iDescent, iLineGap;
@@ -52,28 +51,38 @@ namespace Atlas {
 
 		lineHeight = ascent - descent + lineGap;
 
-		pixelDistanceScale = (float) edgeValue / (float) padding;
+		auto pixelDistanceScale = (float) edgeValue / (float) padding;
 
-		int32_t range = font.numGlyphs > AE_FONT_GLYPH_COUNT ? AE_FONT_GLYPH_COUNT : font.numGlyphs;
+		int32_t codepointCount = 0;
+		int32_t glyphCount = 0;
+		// Check the number of codepoints for the total number of glyphs
+		while (glyphCount < font.numGlyphs && codepointCount < AE_FONT_GLYPH_COUNT) {
+			// Larger zero if there exists a corresponding glyph to the codepoint
+			if (stbtt_FindGlyphIndex(&font, codepointCount))
+				glyphCount++;
+			codepointCount++;
+		}
+
+		codepointCount = codepointCount > AE_FONT_GLYPH_COUNT ? AE_FONT_GLYPH_COUNT : codepointCount;
 
 		uint8_t *data[AE_FONT_GLYPH_COUNT];
 
 		int32_t width = 0, height = 0, depth = 0;
+		ivec2 offset = ivec2(0, 0);
 
 		// Initialize the kern for every glyph possible
 		for (int32_t i = 0; i < AE_FONT_GLYPH_COUNT; i++)
 			glyphs[i].kern.resize(AE_FONT_GLYPH_COUNT);
 
 		// Load the data and calculate the needed resolution for the texture
-		for (int32_t i = font.fontstart; i < range; i++) {
+		for (int32_t i = font.fontstart; i < codepointCount; i++) {
 
 			auto glyph = &glyphs[i];
 
 			glyph->codepoint = i;
 
-			int32_t xOffset, yOffset;
 			data[i] = stbtt_GetCodepointSDF(&font, scale, i, padding, edgeValue, pixelDistanceScale,
-											&glyph->width, &glyph->height, &xOffset, &yOffset);
+											&glyph->width, &glyph->height, &offset.x, &offset.y);
 
 			for (int32_t j = 0; j < AE_FONT_GLYPH_COUNT; j++) {
 				glyph->kern[j] = (int32_t) ((float) stbtt_GetCodepointKernAdvance(&font, i, j) * scale);
@@ -91,8 +100,8 @@ namespace Atlas {
 				continue;
 			}
 
-			glyph->offset.x = (float) xOffset;
-			glyph->offset.y = (float) yOffset;
+			glyph->offset.x = (float) offset.x;
+			glyph->offset.y = (float) offset.y;
 
 			width = glyph->width > width ? glyph->width : width;
 			height = glyph->height > height ? glyph->height : height;
@@ -106,18 +115,16 @@ namespace Atlas {
 		glyphTexture = new Texture::Texture2DArray(width, height, depth, AE_R8, 
 			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
-		for (int32_t i = font.fontstart; i < range; i++) {
+		std::vector<uint8_t> glyphData(width * height);
+
+		for (int32_t i = font.fontstart; i < codepointCount; i++) {
 
 			if (data[i] == nullptr)
 				continue;
 
 			auto glyph = &glyphs[i];
 
-			glyph->data.resize(width * height);
-
-			for (int32_t i = 0; i < width * height; i++) {
-				glyph->data[i] = 0;
-			}
+			std::memset(glyphData.data(), 0, glyphData.size());
 
 			glyph->textureScale.x = (float) glyph->width / (float) width;
 			glyph->textureScale.y = (float) glyph->height / (float) height;
@@ -128,14 +135,14 @@ namespace Atlas {
 
 				for (int32_t x = 0; x < glyph->width; x++) {
 					for (int32_t y = 0; y < glyph->height; y++) {
-						glyph->data[y * width + x] = data[i][y * glyph->width + x];
+						glyphData[y * width + x] = data[i][y * glyph->width + x];
 					}
 				}
 
 				glyphInfo[glyph->texArrayIndex].scale = glyph->textureScale;
 				glyphInfo[glyph->texArrayIndex].size = vec2((float) glyph->width, (float) glyph->height);
 
-				glyphTexture->SetData(glyph->data, glyph->texArrayIndex);
+				glyphTexture->SetData(glyphData, glyph->texArrayIndex);
 
 			} else {
 

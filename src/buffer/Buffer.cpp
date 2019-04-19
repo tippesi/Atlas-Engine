@@ -6,23 +6,14 @@ namespace Atlas {
 
         bool Buffer::immutableStorageSupported = false;
 
+        Buffer::Buffer(const Buffer& that) {
+
+			DeepCopy(that);
+
+        }
+
         Buffer::Buffer(uint32_t type, size_t elementSize, uint32_t flags) : type(type), elementSize(elementSize) {
 
-            ID = 0;
-
-            dataFlags = 0;
-            mapFlags = 0;
-
-            bufferingIndex = 0;
-
-            mappedData = 0;
-            mappedDataOffset = 0;
-
-            elementCount = 0;
-            sizeInBytes = 0;
-
-            mapped = false;
-            immutable = false;
             dynamicStorage = flags & AE_BUFFER_DYNAMIC_STORAGE ? true : false;
 
             // Check flags.
@@ -54,15 +45,23 @@ namespace Atlas {
                 dataFlags |= GL_STATIC_DRAW;
             }
 
-            // Check for alignment issues and add padding if needed
-
-
-
         }
 
         Buffer::~Buffer() {
 
             DestroyInternal();
+
+        }
+
+        Buffer& Buffer::operator=(const Buffer &that) {
+
+            if (this != &that) {
+
+				DeepCopy(that);
+
+            }
+
+            return *this;
 
         }
 
@@ -195,7 +194,7 @@ namespace Atlas {
 
             void* bufferData = (uint8_t*)(mappedDataOffset + mappedData);
 
-            memcpy(bufferData, data, copyLength);
+            std::memcpy(bufferData, data, copyLength);
 
             mappedData = mappedData + copyLength;
 
@@ -207,16 +206,17 @@ namespace Atlas {
 
         }
 
-        void Buffer::Copy(Buffer *copyBuffer, size_t readOffset, size_t writeOffset, size_t length) {
+        void Buffer::Copy(const Buffer *copyBuffer, size_t readOffset, 
+			size_t writeOffset, size_t length) {
 
-            // The type of the buffer can't be the same because we have to bind both.
-            if (copyBuffer->GetType() == type)
-                return;
+			if (!length)
+				return;
 
-            copyBuffer->Bind();
-            Bind();
+			glBindBuffer(GL_COPY_WRITE_BUFFER, ID);
+			glBindBuffer(GL_COPY_READ_BUFFER, copyBuffer->ID);
 
-            glCopyBufferSubData(copyBuffer->GetType(), type, readOffset, writeOffset, length);
+            glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 
+				readOffset, writeOffset, length);
 
         }
 
@@ -260,6 +260,7 @@ namespace Atlas {
             }
 
 #ifdef AE_OS_ANDROID
+			// It is not properly supported only since API 28
             immutableStorageSupported = false;
 #endif
 
@@ -270,6 +271,29 @@ namespace Atlas {
             return immutableStorageSupported;
 
         }
+
+		void Buffer::DeepCopy(const Buffer& that) {
+
+			if (mapped && !immutable)
+				Unmap();
+
+			type = that.type;
+
+			elementSize = that.elementSize;
+
+			mapFlags = that.mapFlags;
+			dataFlags = that.dataFlags;
+			
+			immutable = that.immutable;
+			dynamicStorage = that.dynamicStorage;
+
+			bufferingCount = that.bufferingCount;
+			bufferingIndex = 0;
+
+			SetSize(that.elementCount);
+			Copy(&that, 0, 0, that.sizeInBytes);
+
+		}
 
         void Buffer::CreateInternal() {
 

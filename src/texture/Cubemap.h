@@ -18,6 +18,10 @@ namespace Atlas {
 			 */
 			Cubemap() {}
 
+			/**
+             * Constructs a Cubemap object.
+			 * @param that Another Cubemap object.
+             */
 			Cubemap(const Cubemap& that);
 
             /**
@@ -44,6 +48,14 @@ namespace Atlas {
              */
             Cubemap(int32_t width, int32_t height, int32_t sizedFormat,
                     int32_t wrapping, int32_t filtering, bool generateMipmaps);
+
+			/**
+             * Copies the data from another Cubemap object to the Cubemap object.
+             * @param that Another Cubemap object.
+             * @return A reference to the texture.
+             * @note The graphics API object will be changed.
+             */
+            Cubemap& operator=(const Cubemap &that);
 
 			/**
 			 * Sets the data of the texture

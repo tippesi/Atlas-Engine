@@ -5,11 +5,12 @@ in vec2 fScreenPosition;
 
 uniform sampler2DArray glyphsTexture;
 uniform vec4 textColor;
-uniform bool outline;
 uniform vec4 outlineColor;
 uniform float outlineScale;
-uniform float pixelDistanceScale;
-uniform int edgeValue;
+
+uniform float edgeValue;
+uniform float padding;
+uniform float smoothness;
 
 uniform vec4 clipArea;
 uniform vec4 blendArea;
@@ -18,8 +19,7 @@ uniform float textScale;
 
 void main() {
 
-	color = vec4(0.0f);
-    float factor = 10.0f * sqrt(textScale);
+	color = vec4(0.0);
 
     if (fScreenPosition.x < clipArea.x ||
 		fScreenPosition.y < clipArea.y ||
@@ -28,21 +28,15 @@ void main() {
             discard;
 	
 	float intensity = texture(glyphsTexture, fTexCoord).r;
-
-	float outlineDistance = (float(edgeValue) - pixelDistanceScale * outlineScale) / 255.0f - intensity;
-	float inlineDistance = float(edgeValue) / 255.0f - intensity;
-
-	float outlineMultiplier = clamp(0.5f - factor * outlineDistance, 0.0f, 1.0f);
-    float inlineMultiplier = clamp(0.5f - factor * inlineDistance, 0.0f, 1.0f);
-
-	if (outlineMultiplier == 0.0f && outline)
-		discard;
-	else if (inlineMultiplier == 0.0f && !outline)
-		discard;
+	float smoothing = 0.25 / (smoothness * padding * textScale);
 	
-	if (outlineMultiplier >= 0.0f && outline)
-		color = vec4(outlineColor.rgb, outlineColor.a * outlineMultiplier);
+	float outlineFactor = smoothstep(edgeValue - smoothing, edgeValue + smoothing, intensity);
+	color = mix(outlineColor, textColor, outlineFactor);
 	
-	color = mix(color, vec4(textColor.rgb, textColor.a * inlineMultiplier), inlineMultiplier);
+	float mixDistance = mix(edgeValue, 0.0, outlineScale);
+	float alpha = smoothstep(mixDistance - smoothing, mixDistance + smoothing, intensity);
+		
+	color = outlineScale > 0.0 ? vec4(color.rgb, color.a * alpha) : 
+		vec4(textColor.rgb, textColor.a * alpha);
 
 }

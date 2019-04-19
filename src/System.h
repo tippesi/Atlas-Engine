@@ -3,8 +3,13 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-// #define ENGINE_INSTANT_SHADER_RELOAD
+// There are three available defines to change some engine behavior:
+// AE_INSTANT_SHADER_RELOAD: Tracks shader changes and reloads them on change (high performance impact)
+// AE_SHOW_LOG: Prints out general information to the console or debug window (low performance impact)
+// AE_SHOW_API_DEBUG_LOG: Prints out graphics API specific things (medium performance impact)
+
 #define AE_SHOW_LOG
+#define AE_SHOW_API_DEBUG_LOG
 
 #include <stdint.h>
 #include <string>

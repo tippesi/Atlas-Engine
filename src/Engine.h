@@ -65,6 +65,10 @@ namespace Atlas {
          */
 		static void Update(float deltaTime);
 
+	private:
+		static void DebugCallback(GLenum source, GLenum type, GLuint ID, GLenum severity,
+			GLsizei length, const GLchar* message, const void* userParam);
+
 	};
 
 }

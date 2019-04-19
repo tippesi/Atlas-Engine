@@ -4,7 +4,7 @@ namespace Atlas {
     
     namespace Audio {
 
-		AudioStream& AudioStream::operator=(AudioStream& that) {
+		AudioStream& AudioStream::operator=(const AudioStream& that) {
 
 		    if (this != &that) {
 

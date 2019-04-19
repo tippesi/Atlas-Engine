@@ -56,7 +56,7 @@ namespace Atlas {
 
 		void Texture::Bind(uint32_t access, uint32_t unit, int32_t level) {
 
-			glBindImageTexture(unit, ID, level, layers > 1, layers, access, sizedFormat);
+			glBindImageTexture(unit, ID, level, layers > 1, 0, access, sizedFormat);
 
 		}
 
@@ -285,12 +285,8 @@ namespace Atlas {
 			this->height = that.height;
 			this->layers = that.layers;
 
-			AtlasLog("Deep Copy");
-
 			Generate(that.target, that.sizedFormat, that.wrapping, that.filtering,
 				that.anisotropicFiltering, that.mipmaps);
-
-			AtlasLog("Deep generate finished");
 
 			Copy(that);
 

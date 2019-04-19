@@ -42,6 +42,11 @@ namespace Atlas {
 			int32_t tileResolutionSquared = tileResolution * tileResolution;
 
 			std::vector<uint16_t> cellHeightData(tileResolutionSquared);
+			std::vector<uint8_t> cellSplatData(tileResolutionSquared * 4);
+
+			for (size_t i = 0; i < cellSplatData.size(); i++)
+				if (i % 4 == 0)
+					cellSplatData[i] = 255;
 
 			// i is in x direction, j in y direction
 			for (int32_t i = 0; i < maxNodesPerSide; i++) {
@@ -85,6 +90,7 @@ namespace Atlas {
 					}
 
 					cell->heightField->SetData(cellHeightData);
+					cell->splatMap->SetData(cellSplatData);
 
 				}
 			}
@@ -475,6 +481,155 @@ namespace Atlas {
 			}
 
 		}
+
+        void TerrainTool::BrushMaterial(Terrain::Terrain* terrain, Kernel* kernel, float strength,
+                vec2 position, int32_t channel) {
+
+            int32_t LoD = terrain->LoDCount - 1;
+
+            // Get the storage cells
+            auto middleMiddle = terrain->GetStorageCell(position.x, position.y, LoD);
+
+            if (middleMiddle == nullptr)
+                return;
+
+            auto upperLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
+            auto upperMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
+            auto upperRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
+            auto middleLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
+            auto middleRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
+            auto bottomLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
+            auto bottomMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
+            auto bottomRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
+
+            Terrain::TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
+                                                    middleLeft, middleMiddle, middleRight,
+                                                    bottomLeft, bottomMiddle, bottomRight};
+
+            std::vector<uint8_t> cellDatas[9];
+
+            // Now bring all height data into one array (we assume that all tiles have the same size)
+            int32_t width = middleMiddle->splatMap->width - 1;
+            int32_t height = middleMiddle->splatMap->height - 1;
+
+            std::vector<uint8_t> combinedSplatMap(width * height * 9 * 4);
+
+            auto data = combinedSplatMap.data();
+
+            for (int32_t i = 0; i < 3; i++) {
+                for (int32_t j = 0; j < 3; j++) {
+
+                    auto cell = cells[i * 3 + j];
+
+                    if (cell == nullptr)
+                        continue;
+
+                    cellDatas[i * 3 + j] = cell->splatMap->GetData();
+                    auto& splatData = cellDatas[i * 3 + j];
+
+                    for (int32_t k = 0; k < height + 1; k++) {
+                        for (int32_t l = 0; l < width + 1; l++) {
+                            int32_t x = j * width + l;
+                            int32_t y = i * height + k;
+                            // We don't want to update the last heights of the right and bottom cells
+                            if (x >= width * 3 || y >= height * 3)
+                                continue;
+
+                            for (int32_t m = 0; m < 4; m++) {
+                                int32_t dataOffset = (y * 3 * width + x) * 4 + m;
+                                int32_t cellOffset = (k * (width + 1) + l) * 4 + m;
+
+                                data[dataOffset] = splatData[cellOffset];
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+            // Apply the kernel on the whole data
+            position -= middleMiddle->position;
+
+            int32_t x = (int32_t)floorf(position.x / (2.0f * terrain->resolution));
+            int32_t y = (int32_t)floorf(position.y / (2.0f * terrain->resolution));
+
+            x += width;
+            y += height;
+
+            std::vector<std::vector<float>>* weights = nullptr;
+            std::vector<std::vector<ivec2>>* offsets = nullptr;
+
+            kernel->Get(weights, offsets);
+
+            for (uint32_t i = 0; i < weights->size(); i++) {
+                for (uint32_t j = 0; j < weights->size(); j++) {
+                    auto xTranslated = x + (*offsets)[i][j].x;
+                    auto yTranslated = y + (*offsets)[i][j].y;
+                    auto index = (yTranslated * width * 3 + xTranslated) * 4;
+                    auto value = glm::clamp((float)(data[index + channel]) / 255.0f
+                            + strength * (*weights)[i][j], 0.0f, 1.0f);
+                    auto sum = 0.0f;
+                    for (int32_t k = 0; k < 4; k++) {
+                        if (k == channel)
+                            continue;
+                        sum += ((float)data[index + k]) / 255.0f;
+                    }
+                    auto factor = sum ? (1.0f - value) / sum : 1.0f;
+                    for (int32_t k = 0; k < 4; k++) {
+                        if (k == channel)
+                            continue;
+                        data[index + k] = (uint8_t)(((float)data[index + k]) * factor);
+                    }
+                    data[index + channel] = (uint8_t)(glm::clamp(value * 255.0f, 0.0f, 255.0f));
+                }
+            }
+
+            width += 1;
+            height += 1;
+
+            // Split the data up and update the height fields
+            for (int32_t i = 0; i < 3; i++) {
+                for (int32_t j = 0; j < 3; j++) {
+
+                    auto cell = cells[i * 3 + j];
+
+                    if (cell == nullptr)
+                        continue;
+
+                    auto& splatData = cellDatas[i * 3 + j];
+
+                    for (int32_t k = 0; k < height; k++) {
+                        for (int32_t l = 0; l < width; l++) {
+                            x = j * (width - 1) + l;
+                            y = i * (height - 1) + k;
+
+                            // We don't want to update the last heights of the right and bottom cells
+                            if (x >= (width - 1) * 3 || y >= (height - 1) * 3)
+                                continue;
+
+                            for (int32_t m = 0; m < 4; m++) {
+                                int32_t dataOffset = (y * 3 * (width - 1) + x) * 4 + m;
+                                int32_t cellOffset = (k * width + l) * 4 + m;
+
+                                // Might fail because the outer right and bottom cells (globally) always have one row less
+                                // Needs some fix with the terrain generation. We need to make sure that all terrain tiles
+                                // have the same size.
+                                splatData[cellOffset] = data[dataOffset];
+                            }
+
+                        }
+                    }
+
+                    cell->splatMap->SetData(splatData);
+
+                }
+
+            }
+
+        }
 
 		void TerrainTool::GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData, int32_t width, int32_t height, float strength) {
 

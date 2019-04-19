@@ -31,7 +31,7 @@ namespace Atlas {
 		}
 
 		void TextRenderer::Render(Window* window, Font* font, std::string text, float x, float y, vec4 color,
-								  float scale, bool alphaBlending, Framebuffer* framebuffer) {
+								  float scale,Framebuffer* framebuffer) {
 
 			float width = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
 			float height = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
@@ -39,82 +39,20 @@ namespace Atlas {
 			vec4 clipArea = vec4(0.0f, 0.0f, width, height);
 			vec4 blendArea = vec4(0.0f, 0.0f, width, height);
 
-			Render(window, font, text, x, y, color, clipArea, blendArea, scale, alphaBlending, framebuffer);
+			RenderOutlined(window, font, text, x, y, color, vec4(1.0f), 0.0f, clipArea, blendArea, scale, framebuffer);
 
 		}
 
 		void TextRenderer::Render(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 clipArea,
-								  vec4 blendArea, float scale, bool alphaBlending, Framebuffer* framebuffer) {
+								  vec4 blendArea, float scale, Framebuffer* framebuffer) {
 
-			int32_t characterCount;
+			RenderOutlined(window, font, text, x, y, color, vec4(1.0f), 0.0f, clipArea, blendArea, scale, framebuffer);
 
-			float width = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
-			float height = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
-
-			if (x > width || y > height)
-				return;
-
-			shader.Bind();
-
-			outline->SetValue(false);
-
-			if (framebuffer != nullptr) {
-				framebuffer->Bind(true);
-			}
-			else {
-				glViewport(0, 0, window->viewport.width, window->viewport.height);
-			}
-
-			glDisable(GL_CULL_FACE);
-
-			if (alphaBlending) {
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			}
-
-			auto instances = CalculateCharacterInstances(font, text, &characterCount);
-			vertexArray.GetComponent(1)->SetData(instances.data(), 0, instances.size());
-
-			glyphsTexture->SetValue(0);
-
-			projectionMatrix->SetValue(glm::ortho(0.0f, width, 0.0f, height));
-
-			textScale->SetValue(scale);
-			textOffset->SetValue(vec2(x, y));
-			textColor->SetValue(color);
-
-			pixelDistanceScale->SetValue(font->pixelDistanceScale);
-			edgeValue->SetValue(font->edgeValue);
-
-			this->clipArea->SetValue(clipArea);
-			this->blendArea->SetValue(blendArea);
-
-			font->glyphTexture->Bind(GL_TEXTURE0);
-
-			font->firstGlyphBuffer->BindBase(0);
-			font->secondGlyphBuffer->BindBase(1);
-
-			vertexArray.Bind();
-
-			glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, characterCount);
-
-			if (alphaBlending) {
-				glDisable(GL_BLEND);
-			}
-
-			if (framebuffer != nullptr) {
-				framebuffer->Unbind();
-			}
-
-			font->firstGlyphBuffer->Unbind();
-			font->secondGlyphBuffer->Unbind();
-
-			glEnable(GL_CULL_FACE);
 
 		}
 
 		void TextRenderer::RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor,
-										  float outlineScale, float scale, bool alphaBlending, Framebuffer* framebuffer) {
+										  float outlineScale, float scale, Framebuffer* framebuffer) {
 
 			float width = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
 			float height = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
@@ -122,19 +60,17 @@ namespace Atlas {
 			vec4 clipArea = vec4(0.0f, 0.0f, width, height);
 			vec4 blendArea = vec4(0.0f, 0.0f, width, height);
 
-			RenderOutlined(window, font, text, x, y, color, outlineColor, outlineScale, clipArea, blendArea,
-						   scale, alphaBlending, framebuffer);
+			RenderOutlined(window, font, text, x, y, color, outlineColor, outlineScale, 
+				clipArea, blendArea, scale, framebuffer);
 
 		}
 
 		void TextRenderer::RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
-										  vec4 clipArea, vec4 blendArea, float scale, bool alphaBlending, Framebuffer* framebuffer) {
+										  vec4 clipArea, vec4 blendArea, float scale, Framebuffer* framebuffer) {
 
 			int32_t characterCount;
 
 			shader.Bind();
-
-			outline->SetValue(true);
 
 			if (framebuffer != nullptr) {
 				framebuffer->Bind(true);
@@ -145,10 +81,8 @@ namespace Atlas {
 
 			glDisable(GL_CULL_FACE);
 
-			if (alphaBlending) {
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			}
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 			float width = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
 			float height = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
@@ -167,8 +101,9 @@ namespace Atlas {
 			this->outlineColor->SetValue(outlineColor);
 			this->outlineScale->SetValue(outlineScale);
 
-			pixelDistanceScale->SetValue(font->pixelDistanceScale);
-			edgeValue->SetValue(font->edgeValue);
+			edgeValue->SetValue(((float)font->edgeValue) / 255.0f);
+			padding->SetValue((float)font->padding);
+			smoothness->SetValue(font->smoothness);
 
 			this->clipArea->SetValue(clipArea);
 			this->blendArea->SetValue(blendArea);
@@ -182,9 +117,7 @@ namespace Atlas {
 
 			glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, characterCount);
 
-			if (alphaBlending) {
-				glDisable(GL_BLEND);
-			}
+			glDisable(GL_BLEND);
 
 			if (framebuffer != nullptr) {
 				framebuffer->Unbind();
@@ -212,20 +145,13 @@ namespace Atlas {
 			textOffset = shader.GetUniform("textOffset");
 			textScale = shader.GetUniform("textScale");
 			textColor = shader.GetUniform("textColor");
-			outline = shader.GetUniform("outline");
 			outlineColor = shader.GetUniform("outlineColor");
 			outlineScale = shader.GetUniform("outlineScale");
-			pixelDistanceScale = shader.GetUniform("pixelDistanceScale");
 			edgeValue = shader.GetUniform("edgeValue");
+			padding = shader.GetUniform("padding");
+			smoothness = shader.GetUniform("smoothness");
 			clipArea = shader.GetUniform("clipArea");
 			blendArea = shader.GetUniform("blendArea");
-
-			// Can be removed later on when we raise the version requirements to 4.2
-			uint32_t firstBufferIndex = glGetUniformBlockIndex(shader.GetID(), "UBO1");
-			uint32_t secondBufferIndex = glGetUniformBlockIndex(shader.GetID(), "UBO2");
-
-			glUniformBlockBinding(shader.GetID(), firstBufferIndex, 0);
-			glUniformBlockBinding(shader.GetID(), secondBufferIndex, 1);
 
 		}
 

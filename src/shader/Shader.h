@@ -19,10 +19,14 @@ namespace Atlas {
              */
             Shader();
 
+			Shader(const Shader& that);
+
             /**
              * Destructs a Shader object.
              */
             ~Shader();
+
+			Shader& operator=(const Shader& that);
 
             /**
              * Adds a shader stage to the shader (e.g the vertex shader)
@@ -104,6 +108,8 @@ namespace Atlas {
             std::vector<std::string> macros;
 
         private:
+			void DeepCopy(const Shader& that);
+
             uint32_t ID;
 
             std::vector<ShaderStage*> stages;

@@ -18,7 +18,7 @@ namespace Atlas {
 
             AudioStream(AudioData* data) : data(data) {}
 
-			AudioStream& operator=(AudioStream& that);
+			AudioStream& operator=(const AudioStream& that);
 
 			double GetDuration();
 
@@ -48,7 +48,7 @@ namespace Atlas {
 
 			AudioData* data;
 
-			std::mutex mutex;
+			mutable std::mutex mutex;
 
         };
 

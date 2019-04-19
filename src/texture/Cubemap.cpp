@@ -58,6 +58,18 @@ namespace Atlas {
 
        }
 
+       Cubemap& Cubemap::operator=(const Atlas::Texture::Cubemap &that) {
+
+	   		if (this != &that) {
+
+				Texture::operator=(that);
+
+	   		}
+
+	   		return *this;
+
+	   }
+
 	   void Cubemap::SetData(std::vector<uint8_t> &data, int32_t layer) {
 
 		   Bind();

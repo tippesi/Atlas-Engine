@@ -14,6 +14,17 @@ namespace Atlas {
 
 		namespace GPGPU {
 
+			struct OceanState {
+
+				Texture::Texture2D h0K;
+				Texture::Texture2D h0MinusK;
+
+				float waveAmplitude;
+				vec2 waveDirection;
+				float windSpeed;
+
+			};
+
 			class OceanSimulation {
 			
 			public:
@@ -22,19 +33,16 @@ namespace Atlas {
 				void AddOceanState(float waveAmplitude, vec2 waveDirection,
 					float windSpeed);
 
+				void ComputeHT(OceanState& state);
+
+				std::vector<OceanState> oceanStates;
+
+				Texture::Texture2D hTDy;
+				Texture::Texture2D hTDx;
+				Texture::Texture2D hTDz;
+
 			private:
-				struct OceanState {
-
-					Texture::Texture2D h0K;
-					Texture::Texture2D h0MinusK;
-
-					float waveAmplitude;
-					vec2 waveDirection;
-					float windSpeed;
-
-				};
-
-				void ComputeH0(OceanState& state);
+				void ComputeH0(OceanState& state);				
 
 				int32_t N;
 				int32_t L;
@@ -48,9 +56,9 @@ namespace Atlas {
 				Texture::Texture2D noise2;
 				Texture::Texture2D noise3;
 
-				Texture::Texture2D hT;
-
-				std::vector<OceanState> oceanStates;
+				Shader::Uniform* NUniform;
+				Shader::Uniform* LUniform;
+				Shader::Uniform* timeUniform;
 
 			};
 

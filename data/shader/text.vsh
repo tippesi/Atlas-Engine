@@ -14,11 +14,11 @@ struct GlyphInfo {
 	vec2 size;
 };
 
-layout (std140) uniform UBO1 {
+layout (binding = 0, std140) uniform UBO1 {
     GlyphInfo glyphs1[1024];
 };
 
-layout (std140) uniform UBO2 {
+layout (binding = 1, std140) uniform UBO2 {
     GlyphInfo glyphs2[1024];
 };
 

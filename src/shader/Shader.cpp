@@ -13,6 +13,12 @@ namespace Atlas {
 
         }
 
+		Shader::Shader(const Shader& that) {
+
+
+
+		}
+
         Shader::~Shader() {
 
             for (auto& stage : stages) {
@@ -26,6 +32,18 @@ namespace Atlas {
             glDeleteProgram(ID);
 
         }
+
+		Shader& Shader::operator=(const Shader& that) {
+
+			if (this != &that) {
+
+
+
+			}
+
+			return *this;
+
+		}
 
         void Shader::AddStage(int32_t type, std::string filename) {
 
@@ -224,6 +242,12 @@ namespace Atlas {
             return ID;
 
         }
+
+		void Shader::DeepCopy(const Shader& that) {
+
+
+
+		}
 
 	}
 

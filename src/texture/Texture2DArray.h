@@ -16,6 +16,10 @@ namespace Atlas {
 			 */
 			Texture2DArray() {}
 
+            /**
+             * Constructs a Texture2DArray object.
+             * @param that Another Texture2DArray object.
+             */
 			Texture2DArray(const Texture2DArray& that);
 
             /**

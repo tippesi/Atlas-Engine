@@ -19,6 +19,17 @@ namespace Atlas {
 
 		}
 
+		VertexArray::~VertexArray() {
+
+			glDeleteVertexArrays(1, &ID);
+
+			delete indexComponent;
+
+			for (auto& key : vertexComponents)
+				delete key.second;
+
+		}
+
 		void VertexArray::AddIndexComponent(IndexBuffer* buffer) {
 
 			Bind();
@@ -131,31 +142,6 @@ namespace Atlas {
 			glBindVertexArray(0);
 
 			boundVertexArrayID = 0;
-
-		}
-
-		void VertexArray::ClearContent() {
-
-			indexComponent = nullptr;
-			vertexComponents.clear();
-
-		}
-
-		void VertexArray::DeleteContent() {
-
-			delete indexComponent;
-
-			for (auto& bufferKey : vertexComponents) {
-				delete bufferKey.second;
-			}
-
-			ClearContent();
-
-		}
-
-		VertexArray::~VertexArray() {
-
-			glDeleteVertexArrays(1, &ID);
 
 		}
 

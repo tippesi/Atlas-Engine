@@ -58,6 +58,19 @@ namespace Atlas {
 
 		public:
 			/**
+			 * Constructs a Buffer object.
+			 */
+			Buffer() {}
+
+			/**
+			 * Constructs a Buffer object.
+			 * @param that Another Buffer object.
+			 * @note The state of the other buffer won't be copied (e.g. if the
+			 * other buffer is mapped this buffer won't be mapped automatically)
+			 */
+			Buffer(const Buffer& that);
+
+			/**
              * Constructs a Buffer object.
              * @param type The type of the buffer, e.g VERTEX_BUFFER. See {@link Buffer.h} for more.
              * @param elementSize The size of each element in the buffer
@@ -67,6 +80,15 @@ namespace Atlas {
 			Buffer(uint32_t type, size_t elementSize, uint32_t flags);
 
 			virtual ~Buffer();
+
+			/**
+			 * Copies the data from another Buffer to the Buffer object.
+			 * @param that Another Buffer object.
+			 * @return A reference to the buffer.
+			 * @note The state of the other buffer won't be copied (e.g. if the
+			 * other buffer is mapped this buffer won't be mapped automatically)
+			 */
+			Buffer& operator=(const Buffer& that);
 
 			/**
              * Binds the buffer to the target specified in the constructor.
@@ -172,14 +194,15 @@ namespace Atlas {
 
 			/**
              * Copies the data of the copy buffer to this buffer.
-             * @param readBuffer Another buffer with of different type.
+             * @param readBuffer Another buffer.
              * @param readOffset The offset in the readBuffer in bytes.
              * @param writeOffset The offset in the buffer in bytes.
              * @param length The length in bytes.
              * @note The read buffer should have a smaller or equal size than
              * the buffer.
              */
-			virtual void Copy(Buffer *readBuffer, size_t readOffset, size_t writeOffset, size_t length);
+			virtual void Copy(const Buffer *readBuffer, size_t readOffset, 
+				size_t writeOffset, size_t length);
 
 			/**
              * Returns the type/target of the buffer
@@ -217,30 +240,33 @@ namespace Atlas {
 			static bool IsImmutableStorageSupported();
 
 		protected:
+			virtual void DeepCopy(const Buffer& that);
+
 			void CreateInternal();
 
 			void DestroyInternal();
 
-			uint32_t ID;
+			uint32_t ID = 0;
 
-			uint32_t type;
-			size_t elementSize;
-			size_t elementCount;
+			uint32_t type = 0;
 
-			size_t sizeInBytes;
+			size_t elementSize = 0;
+			size_t elementCount = 0;
 
-			uint32_t mapFlags;
-			uint32_t dataFlags;
+			size_t sizeInBytes = 0;
 
-			size_t mappedData;
-			size_t mappedDataOffset;
+			uint32_t mapFlags = 0;
+			uint32_t dataFlags = 0;
 
-			bool immutable;
-			bool mapped;
-			bool dynamicStorage;
+			bool mapped = false;
+			size_t mappedData = 0;
+			size_t mappedDataOffset = 0;
 
-			size_t bufferingCount;
-			size_t bufferingIndex;
+			bool immutable = false;
+			bool dynamicStorage = false;
+
+			size_t bufferingCount = 0;
+			size_t bufferingIndex = 0;
 
 			BufferLock bufferLock;
 

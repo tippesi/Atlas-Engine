@@ -19,16 +19,16 @@ namespace Atlas {
 			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
 			void Render(Window* window, Font* font, std::string text, float x, float y, vec4 color,
-					float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+					float scale = 1.0f, Framebuffer* framebuffer = nullptr);
 
 			void Render(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 clipArea,
-					vec4 blendArea, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+					vec4 blendArea, float scale = 1.0f, Framebuffer* framebuffer = nullptr);
 
 			void RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor,
-					float outlineScale, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+					float outlineScale, float scale = 1.0f, Framebuffer* framebuffer = nullptr);
 
 			void RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
-					vec4 clipArea, vec4 blendArea, float scale = 1.0f, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+					vec4 clipArea, vec4 blendArea, float scale = 1.0f, Framebuffer* framebuffer = nullptr);
 
 			void Update();
 
@@ -51,11 +51,11 @@ namespace Atlas {
 			Shader::Uniform* textOffset;
 			Shader::Uniform* textScale;
 			Shader::Uniform* textColor;
-			Shader::Uniform* outline;
 			Shader::Uniform* outlineColor;
 			Shader::Uniform* outlineScale;
-			Shader::Uniform* pixelDistanceScale;
 			Shader::Uniform* edgeValue;
+			Shader::Uniform* padding;
+			Shader::Uniform* smoothness;
 			Shader::Uniform *clipArea;
 			Shader::Uniform *blendArea;
 

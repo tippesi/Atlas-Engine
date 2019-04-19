@@ -37,7 +37,7 @@ namespace Atlas {
 
 		MasterRenderer::~MasterRenderer() {
 
-			vertexArray.DeleteContent();
+			
 
 		}
 
