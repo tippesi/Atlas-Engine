@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['data',['data',['../d4/def/a00359.html#a14705d9e2f1bc6e4604d19b73703d32e',1,'Atlas::Glyph::data()'],['../d9/d4a/a00479.html#ab576f93e740def26e53cd11bafb503b3',1,'Atlas::Events::WindowEvent::data()'],['../d6/d10/a00511.html#a96648ac7ad02bf8689b3585b8e65aea5',1,'Atlas::Loader::Image::data()'],['../dc/d19/a00515.html#a2b6a50a1b9fab0026ecac546b07b1dee',1,'Atlas::Loader::Image16::data()'],['../df/d3a/a00571.html#ae06ba7c9e0168522413defd3375e5490',1,'Atlas::Mesh::Mesh::data()'],['../dd/de5/a00771.html#a1b18512246436ba190dd4bf38f915c31',1,'Atlas::Audio::AudioData::data()']]],
+  ['data',['data',['../d9/d4a/a00479.html#ab576f93e740def26e53cd11bafb503b3',1,'Atlas::Events::WindowEvent::data()'],['../d6/d10/a00511.html#a96648ac7ad02bf8689b3585b8e65aea5',1,'Atlas::Loader::Image::data()'],['../dc/d19/a00515.html#a2b6a50a1b9fab0026ecac546b07b1dee',1,'Atlas::Loader::Image16::data()'],['../df/d3a/a00571.html#ae06ba7c9e0168522413defd3375e5490',1,'Atlas::Mesh::Mesh::data()'],['../dd/de5/a00771.html#a1b18512246436ba190dd4bf38f915c31',1,'Atlas::Audio::AudioData::data()']]],
   ['datacomponent',['DataComponent',['../d2/dd7/a00567.html',1,'Atlas::Mesh::DataComponent&lt; S, T &gt;'],['../d2/dd7/a00567.html#a4bee81512d8fcbcdb4a4d0446bb13777',1,'Atlas::Mesh::DataComponent::DataComponent()']]],
   ['datacomponent_2eh',['DataComponent.h',['../d7/dce/a00143.html',1,'']]],
   ['datacomponent_3c_20float_2c_20float_20_3e',['DataComponent&lt; float, float &gt;',['../d2/dd7/a00567.html',1,'Atlas::Mesh']]],
@@ -17,7 +17,7 @@ var searchData=
   ['decalactors',['decalActors',['../db/dbc/a00395.html#a0516158e3e12bcd4b0abe5575f072b78',1,'Atlas::RenderList::decalActors()'],['../d7/d5f/a00831.html#ab0a75cb94e46d6a212f28268970829f1',1,'Atlas::Scene::SceneNode::decalActors()']]],
   ['decalrenderer',['DecalRenderer',['../d8/de9/a00595.html',1,'Atlas::Renderer::DecalRenderer'],['../d8/de9/a00595.html#a0649107bfbd857ab03ad8759ef517e34',1,'Atlas::Renderer::DecalRenderer::DecalRenderer()']]],
   ['decalrenderer_2eh',['DecalRenderer.h',['../d6/d7d/a00161.html',1,'']]],
-  ['deletecontent',['DeleteContent',['../d3/de3/a00763.html#adfa3f24d38f29b6a751ac84cd55bc62e',1,'Atlas::Buffer::VertexArray']]],
+  ['deepcopy',['DeepCopy',['../dc/ddc/a00727.html#a424dba4aaf5de6e71b1a1bffc7ab5aad',1,'Atlas::Texture::Texture::DeepCopy()'],['../d0/d0a/a00743.html#a4c4448cfb4183b9ffe8c0f11253325e9',1,'Atlas::Buffer::Buffer::DeepCopy()']]],
   ['descent',['descent',['../d9/d9b/a00363.html#ab26410c04548fe6a73f1ed2968cfe37c',1,'Atlas::Font']]],
   ['destroyinternal',['DestroyInternal',['../d0/d0a/a00743.html#abc2b61924e1669e9e55a1f9208808d1f',1,'Atlas::Buffer::Buffer']]],
   ['device',['device',['../d3/d29/a00419.html#a9f479783e13403e87e3358aad24951e0',1,'Atlas::Events::AudioDeviceEvent::device()'],['../da/db6/a00427.html#ab2b11c5512bb4dd825c4657439d6e1eb',1,'Atlas::Events::ControllerAxisEvent::device()'],['../df/d70/a00431.html#a70a204e7ffe5c115cec0cd42e154d142',1,'Atlas::Events::ControllerButtonEvent::device()'],['../d0/dc5/a00435.html#ade97acdd033d3fb4fc8a2ab50203da22',1,'Atlas::Events::ControllerDeviceEvent::device()']]],

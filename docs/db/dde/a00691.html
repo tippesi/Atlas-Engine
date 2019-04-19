@@ -108,8 +108,8 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:ae5c7ce1d640cfa23e11b19f3d6bc47e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab6418feb3d4235c63d5fb7ef7b12f2ee"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/dde/a00691.html#ab6418feb3d4235c63d5fb7ef7b12f2ee">SmoothHeight</a> (<a class="el" href="../../d1/d56/a00707.html">Terrain::Terrain</a> *terrain, int32_t size, int32_t contributingRadius, float strength, vec2 position)</td></tr>
 <tr class="separator:ab6418feb3d4235c63d5fb7ef7b12f2ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a09b3f8452aa9ff727d55149003878ebf"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/dde/a00691.html#a09b3f8452aa9ff727d55149003878ebf">BrushMaterial</a> (<a class="el" href="../../d1/d56/a00707.html">Terrain::Terrain</a> *terrain, <a class="el" href="../../d8/d95/a00379.html">Kernel</a> *kernel, float strength, vec2 position)</td></tr>
-<tr class="separator:a09b3f8452aa9ff727d55149003878ebf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8edcb4602b0fb2c736ef30720003b7e3"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/dde/a00691.html#a8edcb4602b0fb2c736ef30720003b7e3">BrushMaterial</a> (<a class="el" href="../../d1/d56/a00707.html">Terrain::Terrain</a> *terrain, <a class="el" href="../../d8/d95/a00379.html">Kernel</a> *kernel, float strength, vec2 position, int32_t channel)</td></tr>
+<tr class="separator:a8edcb4602b0fb2c736ef30720003b7e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
@@ -207,8 +207,8 @@ Static Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a09b3f8452aa9ff727d55149003878ebf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a09b3f8452aa9ff727d55149003878ebf">&#9670;&nbsp;</a></span>BrushMaterial()</h2>
+<a id="a8edcb4602b0fb2c736ef30720003b7e3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8edcb4602b0fb2c736ef30720003b7e3">&#9670;&nbsp;</a></span>BrushMaterial()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -238,7 +238,13 @@ Static Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">vec2&#160;</td>
-          <td class="paramname"><em>position</em>&#160;</td>
+          <td class="paramname"><em>position</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>channel</em>&#160;</td>
         </tr>
         <tr>
           <td></td>

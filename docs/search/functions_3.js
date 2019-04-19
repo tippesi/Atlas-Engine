@@ -4,7 +4,7 @@ var searchData=
   ['decal',['Decal',['../d0/d48/a00351.html#a0436dcf442bd6b3b7f69ad6781913f7c',1,'Atlas::Decal']]],
   ['decalactor',['DecalActor',['../df/dc7/a00807.html#a2ebb0b097931ae546658a84e3beb55f2',1,'Atlas::Actor::DecalActor']]],
   ['decalrenderer',['DecalRenderer',['../d8/de9/a00595.html#a0649107bfbd857ab03ad8759ef517e34',1,'Atlas::Renderer::DecalRenderer']]],
-  ['deletecontent',['DeleteContent',['../d3/de3/a00763.html#adfa3f24d38f29b6a751ac84cd55bc62e',1,'Atlas::Buffer::VertexArray']]],
+  ['deepcopy',['DeepCopy',['../dc/ddc/a00727.html#a424dba4aaf5de6e71b1a1bffc7ab5aad',1,'Atlas::Texture::Texture::DeepCopy()'],['../d0/d0a/a00743.html#a4c4448cfb4183b9ffe8c0f11253325e9',1,'Atlas::Buffer::Buffer::DeepCopy()']]],
   ['destroyinternal',['DestroyInternal',['../d0/d0a/a00743.html#abc2b61924e1669e9e55a1f9208808d1f',1,'Atlas::Buffer::Buffer']]],
   ['directionallight',['DirectionalLight',['../d7/d84/a00535.html#aa29bcb62af8de8e5e38c6d754a795560',1,'Atlas::Lighting::DirectionalLight']]],
   ['directionallightrenderer',['DirectionalLightRenderer',['../d5/d8a/a00599.html#a3c6401089971850dbbd29de48320fce3',1,'Atlas::Renderer::DirectionalLightRenderer']]],

@@ -1,6 +1,7 @@
 var a00371 =
 [
     [ "Framebuffer", "d6/d80/a00371.html#a587df5ffad1118e2364ae206dc215c3f", null ],
+    [ "Framebuffer", "d6/d80/a00371.html#a6d629e6c63ddad22285837e2294bda09", null ],
     [ "Framebuffer", "d6/d80/a00371.html#ab4038a227301807ef53b042f0d40a7c0", null ],
     [ "~Framebuffer", "d6/d80/a00371.html#a1aaad7efee71572723e3b97113591a0d", null ],
     [ "AddComponent", "d6/d80/a00371.html#a166a5327039d9f8fa976648964f79f35", null ],

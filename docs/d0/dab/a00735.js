@@ -1,6 +1,7 @@
 var a00735 =
 [
     [ "Texture2DArray", "d0/dab/a00735.html#a13cafffa41ef1e7360c0d457979cec69", null ],
+    [ "Texture2DArray", "d0/dab/a00735.html#aaafafe1748321f09d7af5765b90620cc", null ],
     [ "Texture2DArray", "d0/dab/a00735.html#abd7946d98240227003d7711357de6b2f", null ],
     [ "GetData", "d0/dab/a00735.html#ad477de651c549775467955c84ff1284a", null ],
     [ "operator=", "d0/dab/a00735.html#a8e650647adb16ef53ffa79c7973c5722", null ],

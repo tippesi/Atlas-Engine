@@ -17,7 +17,7 @@ var searchData=
   ['sizeinbytes',['sizeInBytes',['../d0/d0a/a00743.html#a864843b27ffaed2c54a7bce8c4ed95b4',1,'Atlas::Buffer::Buffer']]],
   ['sky',['sky',['../dc/d1b/a00827.html#a32af60dcdf0a2f7307ebc2db65f5da56',1,'Atlas::Scene::Scene']]],
   ['skybox',['skybox',['../d8/d75/a00555.html#a6b9cbc7dcc3f40b1dcadd91cded7d37b',1,'Atlas::Lighting::Sky']]],
-  ['smoothing',['smoothing',['../d9/d9b/a00363.html#a8994133680d48a2d8ba2f9ca2a5526fb',1,'Atlas::Font']]],
+  ['smoothness',['smoothness',['../d9/d9b/a00363.html#a9739478da4ac2a727540081e8c1cc9f6',1,'Atlas::Font']]],
   ['specularcolor',['specularColor',['../db/db9/a00387.html#a2e00999464dcf8a1d230a9c15c348b92',1,'Atlas::Material']]],
   ['specularhardness',['specularHardness',['../db/db9/a00387.html#afbc8b4fc60f5bff3bf4b9e30e13af02c',1,'Atlas::Material']]],
   ['specularintensity',['specularIntensity',['../db/db9/a00387.html#afa0552e428d99c4f8838e9ca75b2c554',1,'Atlas::Material']]],

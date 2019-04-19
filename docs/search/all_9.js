@@ -9,7 +9,7 @@ var searchData=
   ['immutable',['immutable',['../d0/d0a/a00743.html#a270eccebefdfaa82bb1047ad7714a638',1,'Atlas::Buffer::Buffer']]],
   ['immutablestoragesupported',['immutableStorageSupported',['../d0/d0a/a00743.html#a6611ae6028b369f5e62af7a75fd5c3b0',1,'Atlas::Buffer::Buffer']]],
   ['increment',['Increment',['../d0/d0a/a00743.html#a4a81f49303220f89b67469a152f2591f',1,'Atlas::Buffer::Buffer']]],
-  ['indexbuffer',['IndexBuffer',['../d2/d87/a00759.html',1,'Atlas::Buffer::IndexBuffer'],['../d2/d87/a00759.html#a0d4c878c8eabc6b1655f469389526da2',1,'Atlas::Buffer::IndexBuffer::IndexBuffer()']]],
+  ['indexbuffer',['IndexBuffer',['../d2/d87/a00759.html',1,'Atlas::Buffer::IndexBuffer'],['../d2/d87/a00759.html#a437a2af67c5caaa333641f13245e7046',1,'Atlas::Buffer::IndexBuffer::IndexBuffer()'],['../d2/d87/a00759.html#a2ae9bf0fdda93b0b63d4103cfcc473d3',1,'Atlas::Buffer::IndexBuffer::IndexBuffer(const IndexBuffer &amp;that)'],['../d2/d87/a00759.html#a0d4c878c8eabc6b1655f469389526da2',1,'Atlas::Buffer::IndexBuffer::IndexBuffer(uint32_t dataType, size_t elementSize, size_t elementCount)']]],
   ['indexbuffer_2eh',['IndexBuffer.h',['../d5/d35/a00266.html',1,'']]],
   ['indices',['indices',['../d5/d80/a00583.html#a81c08f740e9b04f8d47c0862bc6d8315',1,'Atlas::Mesh::MeshData']]],
   ['indicesoffset',['indicesOffset',['../dc/d4a/a00579.html#a599943311ba3e9082e2b6c79fccf53bf',1,'Atlas::Mesh::MeshSubData']]],

@@ -45,7 +45,6 @@ var searchData=
   ['getmaterials',['GetMaterials',['../d3/d3b/a00715.html#a28f27f3a9333e457cff2a574cdbb1bfc',1,'Atlas::Terrain::TerrainStorage']]],
   ['getmatrix',['GetMatrix',['../dd/d7a/a00795.html#a4c38e516679c016b38ff04418d816b02',1,'Atlas::Actor::Actor']]],
   ['getmaxanisotropylevel',['GetMaxAnisotropyLevel',['../dc/ddc/a00727.html#aa39f48caf7303c4b40089e75534b7595',1,'Atlas::Texture::Texture']]],
-  ['getmaxattributearraycount',['GetMaxAttributeArrayCount',['../d3/de3/a00763.html#a4450b7ee5ed379e5d77bd1d2d11c1007',1,'Atlas::Buffer::VertexArray']]],
   ['getmipmaplevel',['GetMipMapLevel',['../dc/ddc/a00727.html#a5989a94ba3761427d89a0f717a8da6a0',1,'Atlas::Texture::Texture']]],
   ['getname',['GetName',['../d2/d6e/a00667.html#ab982aad238451c60cecc4c277aa078fc',1,'Atlas::Shader::ShaderConstant']]],
   ['getobject',['GetObject',['../d0/d7d/a00799.html#a95f6428857d682ff3a653b8b6054561d',1,'Atlas::Actor::ActorBatch']]],

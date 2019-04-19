@@ -1,7 +1,7 @@
 var searchData=
 [
   ['increment',['Increment',['../d0/d0a/a00743.html#a4a81f49303220f89b67469a152f2591f',1,'Atlas::Buffer::Buffer']]],
-  ['indexbuffer',['IndexBuffer',['../d2/d87/a00759.html#a0d4c878c8eabc6b1655f469389526da2',1,'Atlas::Buffer::IndexBuffer']]],
+  ['indexbuffer',['IndexBuffer',['../d2/d87/a00759.html#a437a2af67c5caaa333641f13245e7046',1,'Atlas::Buffer::IndexBuffer::IndexBuffer()'],['../d2/d87/a00759.html#a2ae9bf0fdda93b0b63d4103cfcc473d3',1,'Atlas::Buffer::IndexBuffer::IndexBuffer(const IndexBuffer &amp;that)'],['../d2/d87/a00759.html#a0d4c878c8eabc6b1655f469389526da2',1,'Atlas::Buffer::IndexBuffer::IndexBuffer(uint32_t dataType, size_t elementSize, size_t elementCount)']]],
   ['init',['Init',['../d3/dc9/a00355.html#a7e7a7fe5084e591ad8af07d4cc30a405',1,'Atlas::Engine::Init()'],['../d4/de5/a00503.html#a07fea178008cf9b53bfbee51ed27dfdb',1,'Atlas::Loader::AssetLoader::Init()']]],
   ['initshaderbatch',['InitShaderBatch',['../d6/d6a/a00619.html#a677aa591a11cdc9d6201979a3f9dc5c9',1,'Atlas::Renderer::OpaqueRenderer::InitShaderBatch()'],['../d4/d10/a00635.html#af8ff6199e5b81258347732b5dbc5cbb8',1,'Atlas::Renderer::ShadowRenderer::InitShaderBatch()']]],
   ['insert',['Insert',['../d8/d7f/a00787.html#ada578591122a231d3a9a036ee81ae990',1,'Atlas::Common::Octree']]],

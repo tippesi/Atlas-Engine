@@ -1,6 +1,7 @@
 var a00651 =
 [
     [ "Shader", "de/d33/a00651.html#aa2a131cc93d416d906ebbc401500b0ce", null ],
+    [ "Shader", "de/d33/a00651.html#abc0225d981e8016dbbe697f1444cd1d0", null ],
     [ "~Shader", "de/d33/a00651.html#a0d75139edeef53de2c0f121789066c4d", null ],
     [ "AddMacro", "de/d33/a00651.html#a9b7c7713d3f0eacd786b7bc7777a7949", null ],
     [ "AddStage", "de/d33/a00651.html#aea06d1b17adffbad039e7fcf7ec136f5", null ],
@@ -12,6 +13,7 @@ var a00651 =
     [ "GetUniform", "de/d33/a00651.html#a112f443feb522d4bf89fd48d76abd08b", null ],
     [ "HasMacro", "de/d33/a00651.html#a4ade63fe873a192d2d5eb25afa5bd730", null ],
     [ "IsCompiled", "de/d33/a00651.html#a1e01af22e4d84d2954456b7972462ecd", null ],
+    [ "operator=", "de/d33/a00651.html#af562339dc752b9cde1d4dc2f6320e485", null ],
     [ "RemoveMacro", "de/d33/a00651.html#a71dbcaf955170cfb843ff294354bc6c7", null ],
     [ "Unbind", "de/d33/a00651.html#a50e3e75e31e867e4dfebc0fc9147fe94", null ],
     [ "macros", "de/d33/a00651.html#a53c5f28611c07da38917a32f7cbd54f7", null ],

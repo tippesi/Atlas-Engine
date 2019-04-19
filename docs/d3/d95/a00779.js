@@ -8,7 +8,7 @@ var a00779 =
     [ "GetPitch", "d3/d95/a00779.html#a83865711c2604f508b484e18a4ff6cc1", null ],
     [ "GetTime", "d3/d95/a00779.html#a06cbde109ad997b914e3574ff58de5b1", null ],
     [ "GetVolume", "d3/d95/a00779.html#a437497761ba9b18d12d785a8a3960c53", null ],
-    [ "operator=", "d3/d95/a00779.html#a15db2514f6641e9a9f9a30b96d8f4d38", null ],
+    [ "operator=", "d3/d95/a00779.html#adfc311eb727e159b4f50dd4f0986f7c4", null ],
     [ "SetPitch", "d3/d95/a00779.html#ab2f1ddc9462b441d9470c7a80cebd33f", null ],
     [ "SetTime", "d3/d95/a00779.html#a1d2ed3113d568cd5c5c2e7b6468b0596", null ],
     [ "SetVolume", "d3/d95/a00779.html#a61e0c78d0e2dc06e97ba46f0dae7d682", null ],

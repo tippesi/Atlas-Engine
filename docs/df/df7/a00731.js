@@ -1,7 +1,8 @@
 var a00731 =
 [
     [ "Texture2D", "df/df7/a00731.html#ac2f97fe38825413a45897a2f3b0c8293", null ],
-    [ "Texture2D", "df/df7/a00731.html#aecf2cdd64f1c71d0febfd33ec6d1040b", null ],
+    [ "Texture2D", "df/df7/a00731.html#a2647b67547e6788d9488f89e90f2e9d8", null ],
+    [ "Texture2D", "df/df7/a00731.html#a00b8b9512a3a981025a6d840ac82971f", null ],
     [ "Texture2D", "df/df7/a00731.html#a88cbe3777874f91e1ed114b481245bf6", null ],
     [ "GetData", "df/df7/a00731.html#a841b3032d96fcfaa051b733a5a816d34", null ],
     [ "operator=", "df/df7/a00731.html#acfd35bcf813b3c45ccff4f11bdc3f34c", null ],

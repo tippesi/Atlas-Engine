@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['data',['data',['../d4/def/a00359.html#a14705d9e2f1bc6e4604d19b73703d32e',1,'Atlas::Glyph::data()'],['../d9/d4a/a00479.html#ab576f93e740def26e53cd11bafb503b3',1,'Atlas::Events::WindowEvent::data()'],['../d6/d10/a00511.html#a96648ac7ad02bf8689b3585b8e65aea5',1,'Atlas::Loader::Image::data()'],['../dc/d19/a00515.html#a2b6a50a1b9fab0026ecac546b07b1dee',1,'Atlas::Loader::Image16::data()'],['../df/d3a/a00571.html#ae06ba7c9e0168522413defd3375e5490',1,'Atlas::Mesh::Mesh::data()'],['../dd/de5/a00771.html#a1b18512246436ba190dd4bf38f915c31',1,'Atlas::Audio::AudioData::data()']]],
+  ['data',['data',['../d9/d4a/a00479.html#ab576f93e740def26e53cd11bafb503b3',1,'Atlas::Events::WindowEvent::data()'],['../d6/d10/a00511.html#a96648ac7ad02bf8689b3585b8e65aea5',1,'Atlas::Loader::Image::data()'],['../dc/d19/a00515.html#a2b6a50a1b9fab0026ecac546b07b1dee',1,'Atlas::Loader::Image16::data()'],['../df/d3a/a00571.html#ae06ba7c9e0168522413defd3375e5490',1,'Atlas::Mesh::Mesh::data()'],['../dd/de5/a00771.html#a1b18512246436ba190dd4bf38f915c31',1,'Atlas::Audio::AudioData::data()']]],
   ['dataflags',['dataFlags',['../d0/d0a/a00743.html#a09ed4030d0f287c70e7ced582deaeef6',1,'Atlas::Buffer::Buffer']]],
   ['datatype',['dataType',['../dc/ddc/a00727.html#a0661d5badd205ef6270a00b6ce885492',1,'Atlas::Texture::Texture']]],
   ['decal',['decal',['../df/dc7/a00807.html#aff3b525a221a2c9d0f69c487f418f147',1,'Atlas::Actor::DecalActor']]],
