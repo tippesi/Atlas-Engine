@@ -133,7 +133,7 @@ void Main::Render(float deltaTime) {
 
 void Main::Load() {
 
-	font = new Font("roboto.ttf", 88, 5, 200);
+	font = new Font("roboto.ttf", 88, 5);
 
 	DisplayLoadingScreen();
 
