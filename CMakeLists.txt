@@ -27,6 +27,8 @@ set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE STRING "Override Assimp tools settings")
 if (ANDROID)
 set(OPENGL_ES ON)
 find_library(OpenGL REQUIRED)
+# Workaround for issue 6
+find_library(ANDROID_DL_LIBRARY NAMES libdl.so dl)
 endif()
 if (NOT OPENGL_ES)
 find_package(OpenGL REQUIRED)
@@ -66,8 +68,8 @@ endif()
 
 if(ANDROID)
 	set(ATLAS_ENGINE_COMPILE_DEFINITIONS AE_OS_ANDROID)
-	
-	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 hidapi)
+
+	set(ATLAS_ENGINE_LIBS ${DLPATH} assimp SDL2main SDL2 hidapi)
 	set(ATLAS_ENGINE_SYSTEM_LIBS android EGL GLESv3 m)
 endif()
 
