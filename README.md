@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
 	auto masterRenderer = Atlas::Renderer::MasterRenderer();
 
 	// Now create our scene
-	auto scene = Atlas::Scene();
+	auto scene = Atlas::Scene::Scene();
 
 	// We want to have a camera too
 	auto camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f, vec3(30.0f, 25.0f, 0.0f), vec2(-3.14f / 2.0f, 0.0f));
@@ -89,28 +89,22 @@ int main(int argc, char* argv[]) {
 
 	// Notice that we want to move our cube later on. All meshes where we frequently want to
 	// update the positions should be AE_MOVABLE_MESH. Let's create our MeshActors then:
-	auto sponzaActor = Atlas::Actor::MeshActor(&sponzaMesh);
-	auto treeActor = Atlas::Actor::MeshActor(&treeMesh);
-	auto cubeActor = Atlas::Actor::MeshActor(&cubeMesh);
-
-	// We want to scale our tree because it isn't large enough
-	treeActor.SetMatrix(glm::scale(mat4(1.0f), vec3(3.0f)));
-
-	// We also want to scale the sponza model
-	sponzaActor.SetMatrix(glm::scale(mat4(1.0f), vec3(0.05f)));
+	auto sponzaActor = Atlas::Actor::StaticMeshActor(&sponzaMesh, glm::scale(vec3(0.05f)));
+	auto treeActor = Atlas::Actor::StaticMeshActor(&treeMesh, glm::scale(vec3(3.0f)));
+	auto cubeActor = Atlas::Actor::MovableMeshActor(&cubeMesh);
 
 	// We create a scene node, which we can later move around.
 	// The concept is really easy to understand: All actors of all the different types
 	// which are added to that scene node translate, rotate and scale relative to the translation,
 	// rotation and scale of that scene node.
-	auto sceneNode = Atlas::SceneNode();
+	auto sceneNode = Atlas::Scene::SceneNode();
 
 	// Notice that we add the scene node. The root node can also be translated, rotated and scaled.
 	// We will use this later on.
-	scene.rootNode->Add(&sceneNode);
+	scene.Add(&sceneNode);
 
 	// Translate the scene node
-	sceneNode.transformationMatrix = glm::translate(vec3(0.0f, 1.0f, 5.0f));
+	sceneNode.SetMatrix(glm::translate(vec3(0.0f, 1.0f, 5.0f)));
 
 	// We can also add the actors to scene without adding them to a scene node.
 	// This means that all actors added this way have an absolute translation, rotation and scale.
@@ -139,7 +133,7 @@ int main(int argc, char* argv[]) {
 
 	// We also want to interact with our little application. We therefore create a keyboard and mouse
 	// handler. The handlers which are currently present in the engine are very basic but can be seen
-	// as an example on how to write your own one.
+	// as an example on how to write your own ones.
 	auto mouseHandler = Atlas::Input::MouseHandler(&camera, 1.5f, 0.015f);
 	auto keyboardHandler = Atlas::Input::KeyboardHandler(&camera, 7.0f, 0.3f);
 
@@ -156,14 +150,14 @@ int main(int argc, char* argv[]) {
 		}
 	});
 
-	uint32_t time = 0;
+	float time = 0.0f;
 
 	// We now have a main loop here which does all the rendering on a regular basis.
 	// The framerate is locked as a standard but can also be unlocked via Atlas::Engine::UnlockFramerate()
 	while (!quit) {
 
-		auto deltaTime = SDL_GetTicks() - time;
-		time = SDL_GetTicks();
+		auto deltaTime = Atlas::Engine::GetClock() - time;
+		time = Atlas::Engine::GetClock();
 
 		mouseHandler.Update(&camera, deltaTime);
 		keyboardHandler.Update(&camera, deltaTime);
@@ -173,13 +167,13 @@ int main(int argc, char* argv[]) {
 
 		masterRenderer.Update();
 
-		Atlas::Engine::Update();
+		Atlas::Engine::Update(deltaTime);
 
 		// Rotate the root node around the y-axis. This also results in a rotation
 		// of the scene node that we added to the scene.
-		scene.rootNode->transformationMatrix = glm::rotate((float)time / 1000.0f, vec3(0.0f, 1.0f, 0.0f));
+		scene.SetMatrix(glm::rotate((float)time / 1000.0f, vec3(0.0f, 1.0f, 0.0f)));
 
-		scene.Update(&camera);
+		scene.Update(&camera, deltaTime);
 
 		// This does all our rendering for us.
 		masterRenderer.RenderScene(window, &renderTarget, &camera, &scene);
