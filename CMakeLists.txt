@@ -69,7 +69,7 @@ endif()
 if(ANDROID)
 	set(ATLAS_ENGINE_COMPILE_DEFINITIONS AE_OS_ANDROID)
 
-	set(ATLAS_ENGINE_LIBS ${DLPATH} assimp SDL2main SDL2 hidapi)
+	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 hidapi)
 	set(ATLAS_ENGINE_SYSTEM_LIBS android EGL GLESv3 m)
 endif()
 
