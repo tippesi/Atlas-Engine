@@ -21,11 +21,12 @@ namespace Atlas {
              * @param patchSize
              * @param resolution
              * @param height
+			 * @param material A standard material which is applied.
              * @return A pointer to a Terrain object.
              * @warning The input should correspond to the terrain specifications
              */
 			static Terrain::Terrain* GenerateTerrain(Loader::Image16& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
-					int32_t patchSize, float resolution, float height);
+					int32_t patchSize, float resolution, float height, Material* material1, Material* material2);
 
 			/**
              *

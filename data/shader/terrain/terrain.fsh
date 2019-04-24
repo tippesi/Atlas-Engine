@@ -1,19 +1,26 @@
+#include "../common/material"
+
 layout (location = 0) out vec3 diffuse;
 layout (location = 1) out vec3 normal;
 layout (location = 2) out vec2 additional;
 
 #ifndef GEOMETRY_SHADER
 in vec2 teTexCoords;
+in vec4 splat;
 #endif
 
 uniform mat4 vMatrix;
 uniform sampler2D normalMap;
-uniform sampler2D diffuseMap;
+
+uniform Material materials[4];
 
 void main() {
 	
-#ifndef GEOMETRY_SHADER
-	diffuse = texture(diffuseMap, teTexCoords * 40.0f).rgb;
+#ifndef GEOMETRY_SHADER	
+	diffuse = texture(materials[0].diffuseMap, teTexCoords * 40.0f).rgb * splat.r + 
+		texture(materials[1].diffuseMap, teTexCoords * 40.0f).rgb * splat.g + 
+		texture(materials[2].diffuseMap, teTexCoords * 40.0f).rgb * splat.b + 
+		texture(materials[3].diffuseMap, teTexCoords * 40.0f).rgb * splat.a;
 	
 	// We should move this to the tesselation evaluation shader
 	// so we only have to calculate these normals once. After that 

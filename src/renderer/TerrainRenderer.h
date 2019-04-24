@@ -31,7 +31,7 @@ namespace Atlas {
 			Shader::Uniform* heightField;
 			Shader::Uniform* normalMap;
 			Shader::Uniform* diffuseMap;
-			Shader::Uniform* displacementMap;
+			Shader::Uniform* splatMap;
 
 			Shader::Uniform* heightScale;
 			Shader::Uniform* offset;
@@ -50,10 +50,22 @@ namespace Atlas {
 			Shader::Uniform* tessellationShift;
 			Shader::Uniform* maxTessellationLevel;
 
-			Shader::Uniform* displacementScale;
 			Shader::Uniform* displacementDistance;
 
 			Shader::Uniform* frustumPlanes;
+
+			struct MaterialUniform {
+				Shader::Uniform* diffuseMap;
+				Shader::Uniform* normalMap;
+				Shader::Uniform* displacementMap;
+
+				Shader::Uniform* diffuseColor;
+
+				Shader::Uniform* specularHardness;
+				Shader::Uniform* specularIntensity;
+
+				Shader::Uniform* displacementScale;
+			}materials[4];
 
 		};
 

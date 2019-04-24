@@ -1,20 +1,22 @@
+#include "../common/material"
+
 layout(quads, fractional_even_spacing, cw) in;
 
 out vec2 teTexCoords;
+out vec4 splat;
 
-uniform sampler2D displacementMap;
+uniform sampler2D splatMap;
 
 uniform vec2 nodeLocation;
 uniform float nodeSideLength;
 
-uniform float displacementScale;
 uniform float displacementDistance;
 
 uniform mat4 vMatrix;
 uniform mat4 pMatrix;
 
 uniform vec3 cameraLocation;
-
+uniform Material materials[4];
 
 void main(){
 
@@ -39,7 +41,13 @@ void main(){
 	
 	teTexCoords = texCoords;
 	
-	float displacement = texture(displacementMap, texCoords * 40.0f).r * displacementScale * clamp((displacementDistance - vertexDistance), 0.0f, 1.0f);
+	splat = texture(splatMap, texCoords);
+	
+	float displacement = (texture(materials[0].displacementMap, texCoords * 40.0f).r * materials[0].displacementScale * splat.r + 
+		texture(materials[1].displacementMap, texCoords * 40.0f).r * materials[1].displacementScale * splat.g + 
+		texture(materials[2].displacementMap, texCoords * 40.0f).r * materials[2].displacementScale * splat.b + 
+		texture(materials[3].displacementMap, texCoords * 40.0f).r * materials[3].displacementScale * splat.a)
+		* clamp((displacementDistance - vertexDistance), 0.0f, 1.0f);
 	
 	position.y += displacement;
 	

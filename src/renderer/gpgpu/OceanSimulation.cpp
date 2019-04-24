@@ -14,6 +14,8 @@ namespace Atlas {
 				noise2 = Texture::Texture2D(N, N, AE_R8);
 				noise3 = Texture::Texture2D(N, N, AE_R8);
 
+				twiddleIndices = Texture::Texture2D(N, (int32_t)log2((float)N), AE_RGBA32F);
+
 				Helper::NoiseGenerator::GenerateNoiseTexture2D(noise0);
 				Helper::NoiseGenerator::GenerateNoiseTexture2D(noise1);
 				Helper::NoiseGenerator::GenerateNoiseTexture2D(noise2);
@@ -85,6 +87,12 @@ namespace Atlas {
 				state.h0MinusK.Bind(GL_WRITE_ONLY, 1);
 
 				glDispatchCompute(N / 16, N / 16, 1);
+
+			}
+
+			void OceanSimulation::ComputeTwiddleIndices() {
+
+
 
 			}
 

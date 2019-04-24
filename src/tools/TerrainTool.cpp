@@ -13,7 +13,7 @@ namespace Atlas {
 	namespace Tools {
 
 		Terrain::Terrain* TerrainTool::GenerateTerrain(Loader::Image16 &heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
-											  int32_t patchSize, float resolution, float height) {
+											  int32_t patchSize, float resolution, float height, Material* material1, Material* material2) {
 
 			// Check if everything is correct
 			int32_t maxNodesPerSide = (int32_t)powf(2.0f, (float)LoDCount - 1.0f) * rootNodeSideCount;
@@ -52,6 +52,9 @@ namespace Atlas {
 			for (int32_t i = 0; i < maxNodesPerSide; i++) {
 				for (int32_t j = 0; j < maxNodesPerSide; j++) {
 					auto cell = terrain->storage->GetCell(i, j, LoDCount - 1);
+
+					cell->SetMaterial(material1, 0);
+					cell->SetMaterial(material2, 1);
 
 					// Create the data structures for the cell
 					cell->heightData.resize(tileResolutionSquared);

@@ -1,0 +1,17 @@
+struct Material {
+	
+	sampler2D diffuseMap;
+	sampler2D normalMap;
+	sampler2D specularMap;
+	sampler2D displacementMap;
+	
+	vec3 diffuseColor;
+	vec3 specularColor;
+	vec3 ambientColor;
+	
+	float specularHardness;
+	float specularIntensity;
+	
+	float displacementScale;
+	
+};

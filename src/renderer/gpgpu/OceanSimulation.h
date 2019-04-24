@@ -42,7 +42,9 @@ namespace Atlas {
 				Texture::Texture2D hTDz;
 
 			private:
-				void ComputeH0(OceanState& state);				
+				void ComputeH0(OceanState& state);
+
+				void ComputeTwiddleIndices();
 
 				int32_t N;
 				int32_t L;
@@ -55,6 +57,8 @@ namespace Atlas {
 				Texture::Texture2D noise1;
 				Texture::Texture2D noise2;
 				Texture::Texture2D noise3;
+
+				Texture::Texture2D twiddleIndices;
 
 				Shader::Uniform* NUniform;
 				Shader::Uniform* LUniform;

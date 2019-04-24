@@ -25,11 +25,15 @@ namespace Atlas {
 
 			void SetMaterial(Material* material, int32_t slot);
 
+			void RemoveMaterial(int32_t slot);
+
+			Material* GetMaterial(int32_t slot);
+
+			std::vector<Material*> GetMaterials();
+
 			int32_t x = 0;
 			int32_t y = 0;
 			int32_t LoD = 0;
-
-			int32_t materialIndices[4];
 
 			vec2 position;
 
@@ -39,7 +43,8 @@ namespace Atlas {
 			Texture::Texture2D* normalMap = nullptr;
 			Texture::Texture2D* splatMap = nullptr;
 			Texture::Texture2D* diffuseMap = nullptr;
-			Texture::Texture2D* displacementMap = nullptr;
+
+			int32_t materialIndices[4];
 
 		private:
 			TerrainStorage* const storage;

@@ -43,19 +43,45 @@ namespace Atlas {
 
 		int32_t TerrainStorage::GetMaterialIndex(Material* material) {
 
-			auto item = std::find(materials.begin(), materials.end(), material);
+			size_t count = 0;
+			while (count < materials.size()) {
+				if (material == materials[count].first)
+					break;
+				count++;
+			}
 
-			if (item == materials.end()) {
-				materials.push_back(material);
-				return (int32_t)materials.size() - 1;
+			if (count != materials.size()) {
+				materials[count].second++;
+				return (int32_t)count;
 			}
-			else {
-				return (int32_t)std::distance(materials.begin(), item);
-			}
+
+			materials.push_back(std::pair<Material*, int32_t>(material, 1));
+			return (int32_t)materials.size() - 1;
+
+		}
+
+		void TerrainStorage::RemoveMaterial(int32_t index) {
+
+			if (index >= 0 && index < (int32_t)materials.size())
+				if (!--materials[index].second)
+					materials.erase(materials.begin() + index);				
+
+		}
+
+		Material* TerrainStorage::GetMaterial(int32_t index) {
+
+			if (index >= 0 && index < (int32_t)materials.size())
+				return materials[index].first;
 
 		}
 
 		std::vector<Material*> TerrainStorage::GetMaterials() {
+
+			std::vector<Material*> materials;
+
+			for (auto& pair : this->materials) {
+				materials.push_back(pair.first);
+			}
 
 			return materials;
 

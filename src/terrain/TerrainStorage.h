@@ -47,6 +47,10 @@ namespace Atlas {
 
 			int32_t GetMaterialIndex(Material* material);
 
+			void RemoveMaterial(int32_t index);
+
+			Material* GetMaterial(int32_t index);
+
 			std::vector<Material*> GetMaterials();
 
 			/**
@@ -66,7 +70,7 @@ namespace Atlas {
 
 			int32_t* LoDSideLengths;
 
-			std::vector<Material*> materials;
+			std::vector<std::pair<Material*, int32_t>> materials;
 
 			std::vector<std::vector<TerrainStorageCell>> cells;
 

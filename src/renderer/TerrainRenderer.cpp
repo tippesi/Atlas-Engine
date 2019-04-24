@@ -32,7 +32,15 @@ namespace Atlas {
 			heightField->SetValue(0);
 			normalMap->SetValue(1);
 			diffuseMap->SetValue(2);
-			displacementMap->SetValue(3);
+			splatMap->SetValue(3);
+
+			auto mapCount = 3;
+
+			for (int32_t i = 0; i < 4; i++) {
+				materials[i].diffuseMap->SetValue(++mapCount);
+				materials[i].normalMap->SetValue(++mapCount);
+				materials[i].displacementMap->SetValue(++mapCount);
+			}
 
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
@@ -60,11 +68,22 @@ namespace Atlas {
 
 					node->cell->heightField->Bind(GL_TEXTURE0);
 					node->cell->normalMap->Bind(GL_TEXTURE1);
-					node->cell->diffuseMap->Bind(GL_TEXTURE2);
-					node->cell->displacementMap->Bind(GL_TEXTURE3);
-					node->cell->splatMap->Bind(GL_TEXTURE4);
+					node->cell->splatMap->Bind(GL_TEXTURE3);
 
-					displacementScale->SetValue(.15f);
+					for (int32_t i = 0; i < 4; i++) {
+						auto material = node->cell->GetMaterial(i);
+						if (!material)
+							continue;
+						material->diffuseMap->Bind(GL_TEXTURE0 + i * 3 + 4);
+						// material->normalMap->Bind(GL_TEXTURE0 + i * 3 + 5);
+						material->displacementMap->Bind(GL_TEXTURE0 + i * 3 + 6);
+						materials[i].diffuseColor->SetValue(material->diffuseColor);
+
+						materials[i].specularHardness->SetValue(material->specularHardness);
+						materials[i].specularIntensity->SetValue(material->specularIntensity);
+					
+						materials[i].displacementScale->SetValue(material->displacementScale);
+					}
 
 					nodeLocation->SetValue(node->location);
 					nodeSideLength->SetValue(node->sideLength);
@@ -85,7 +104,7 @@ namespace Atlas {
 			heightField = nearShader.GetUniform("heightField");
 			normalMap = nearShader.GetUniform("normalMap");
 			diffuseMap = nearShader.GetUniform("diffuseMap");
-			displacementMap = nearShader.GetUniform("displacementMap");
+			splatMap = nearShader.GetUniform("splatMap");
 			heightScale = nearShader.GetUniform("heightScale");
 
 			offset = nearShader.GetUniform("offset");
@@ -103,10 +122,22 @@ namespace Atlas {
 			tessellationShift = nearShader.GetUniform("tessellationShift");
 			maxTessellationLevel = nearShader.GetUniform("maxTessellationLevel");
 
-			displacementScale = nearShader.GetUniform("displacementScale");
 			displacementDistance = nearShader.GetUniform("displacementDistance");
 
 			frustumPlanes = nearShader.GetUniform("frustumPlanes");
+
+			for (int32_t i = 0; i < 4; i++) {
+				materials[i].diffuseMap = nearShader.GetUniform("materials[" + std::to_string(i) + "].diffuseMap");
+				materials[i].normalMap = nearShader.GetUniform("materials[" + std::to_string(i) + "].normalMap");
+				materials[i].displacementMap = nearShader.GetUniform("materials[" + std::to_string(i) + "].displacementMap");
+
+				materials[i].diffuseColor = nearShader.GetUniform("materials[" + std::to_string(i) + "].diffuseColor");
+
+				materials[i].specularHardness = nearShader.GetUniform("materials[" + std::to_string(i) + "].specularHardness");
+				materials[i].specularIntensity = nearShader.GetUniform("materials[" + std::to_string(i) + "].specularIntensity");
+
+				materials[i].displacementScale = nearShader.GetUniform("materials[" + std::to_string(i) + "].displacementScale");
+			}
 
 		}
 
