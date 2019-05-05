@@ -11,9 +11,6 @@
 
 namespace Atlas {
 
-	// Forward declaration of classes
-	class RenderList;
-
 	namespace Lighting {
 
 		typedef struct ShadowComponent {
@@ -23,8 +20,6 @@ namespace Atlas {
 
 			mat4 viewMatrix;
 			mat4 projectionMatrix;
-
-			RenderList* renderList;
 
 		}ShadowComponent;
 

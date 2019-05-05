@@ -18,7 +18,7 @@ namespace Atlas {
 
 		void ShaderConfigBatch::Add(ShaderConfig* config) {
 
-			config->configBatchID = ID;
+			config->shaderID = ID;
 			configs.push_back(config);
 
 		}

@@ -55,10 +55,16 @@ namespace Atlas {
 			Uniform* GetUniform(std::string uniformName);
 
 			/**
+			 * Binds the shader of a config batch.
+			 * @param config The shader configuration which should be bound
+			 */
+			void Bind(ShaderConfig* config);
+
+			/**
              * Binds the shader of a config batch.
-             * @param configBatchID The ID of the config batch.
+             * @param shaderID The ID of the config batch.
              */
-			void Bind(int32_t configBatchID);
+			void Bind(int32_t shaderID);
 
 			std::vector<ShaderStage*> stages;
 			std::vector<ShaderConfigBatch*> configBatches;

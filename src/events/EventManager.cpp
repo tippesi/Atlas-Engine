@@ -1,5 +1,7 @@
 #include "EventManager.h"
 
+#include "../Clock.h"
+
 namespace Atlas {
 
 	namespace Events {
@@ -22,7 +24,7 @@ namespace Atlas {
 		std::mutex EventManager::handlerMutex;
 		std::unordered_map<int32_t, EventManager::ControllerDevice> EventManager::controllers;
 
-		void EventManager::Update(float deltaTime) {
+		void EventManager::Update() {
 
 			std::lock_guard<std::mutex> guard(handlerMutex);
 
@@ -128,7 +130,7 @@ namespace Atlas {
 
 			}
 
-			ClockEvent event(deltaTime);
+			ClockEvent event(Clock::GetDelta());
 
 			ClockEventDelegate.Fire(event);
 

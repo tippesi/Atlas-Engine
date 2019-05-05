@@ -28,7 +28,8 @@ namespace Atlas {
              * Subscribes a method/function to the event delegate which wants to receive the arguments specified in Args.
              * @param handle A method/function which has the required Args as parameters
              * @return A handle which can later be used to unsubscribe from the event delegate.
-             * @note To subscribe a method of an object to the event delegate use std::bind()
+             * @note To subscribe a method of an object to the event delegate use std::bind().
+			 * If the handle is invalidated, the object will be unsubscribed automatically.
              */
 			uint32_t Subscribe(std::function<void(Args ...)> handle);
 

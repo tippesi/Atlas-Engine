@@ -5,17 +5,9 @@ namespace Atlas {
 
 	namespace Scene {
 
-		Scene::Scene() : SceneNode() {
+		Scene::Scene(vec3 min, vec3 max) : SceneNode(), SpacePartitioning(min, max, 8) {
 
-			renderList = RenderList(AE_OPAQUE_RENDERLIST);
-
-			Common::AABB aabb(vec3(-2048.0f), vec3(2048.0f));
-
-			movableMeshOctree = Common::Octree<Actor::MovableMeshActor*>(aabb, 8);
-			staticMeshOctree = Common::Octree<Actor::StaticMeshActor*>(aabb, 8);
-			decalOctree = Common::Octree<Actor::DecalActor*>(aabb, 8);
-
-			AddToScene(&movableMeshOctree, &staticMeshOctree, &decalOctree);
+			AddToScene(this);
 
 		}
 
@@ -43,83 +35,11 @@ namespace Atlas {
 
 		void Scene::Update(Camera *camera, float deltaTime) {
 
-			renderList.Clear();
-
 			for (auto &terrain : terrains) {
 				terrain->Update(camera);
 			}
 
-			auto accumulatedLights = std::vector<Lighting::Light*>();
-
-			SceneNode::Update(camera, deltaTime, accumulatedLights, mat4(1.0f), false);
-
-			std::vector<Actor::MovableMeshActor*> movableMeshActorQuery;
-			std::vector<Actor::StaticMeshActor*> staticMeshActorQuery;
-			std::vector<Actor::DecalActor*> decalActorQuery;
-
-			for (auto &light : accumulatedLights) {
-				// We always want to render all lights
-				renderList.Add(light);
-				// Check if the renderlist of the shadow needs an update
-				if (light->GetShadow()) {
-					if (!light->GetShadow()->update)
-						continue;
-
-					for (auto& component : light->GetShadow()->components) {
-						component.renderList->Clear();
-						movableMeshActorQuery.clear();
-						staticMeshActorQuery.clear();
-
-						mat4 inverseMatrix = glm::inverse(component.projectionMatrix * component.viewMatrix);
-
-						Common::AABB base(vec3(-1.0f), vec3(1.0f));
-
-						auto aabb = base.Transform(inverseMatrix);
-
-						movableMeshOctree.QueryAABB(movableMeshActorQuery, aabb);
-
-						for (auto &meshActor : movableMeshActorQuery) {
-							component.renderList->Add(meshActor);
-						}
-
-						staticMeshOctree.QueryAABB(staticMeshActorQuery, aabb);
-
-						for (auto &meshActor : staticMeshActorQuery) {
-							component.renderList->Add(meshActor);
-						}
-
-					}
-				}
-			}
-
-			movableMeshActorQuery.clear();
-			staticMeshActorQuery.clear();
-
-			Common::AABB base(vec3(-1.0f), vec3(1.0f));
-
-            auto aabb = base.Transform(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
-
-			movableMeshOctree.QueryAABB(movableMeshActorQuery, aabb);
-
-			for (auto& actor : movableMeshActorQuery) {
-				renderList.Add(actor);
-			}
-
-			staticMeshOctree.QueryAABB(staticMeshActorQuery, aabb);
-
-			for (auto &meshActor : staticMeshActorQuery) {
-				renderList.Add(meshActor);
-			}
-
-			decalOctree.QueryAABB(decalActorQuery, aabb);
-
-			for (auto& decalActor : decalActorQuery) {
-				renderList.Add(decalActor);
-			}
-
-			FrustumCulling::CullActorsFromScene(this, camera);
-
-			FrustumCulling::CullLightsFromScene(this, camera);
+			SceneNode::Update(camera, deltaTime, mat4(1.0f), false);
 
 		}
 
@@ -130,11 +50,8 @@ namespace Atlas {
 
 			terrains.clear();
 
-			movableMeshActorOctree->Clear();
-			staticMeshActorOctree->Clear();
-			decalActorOctree->Clear();
-
 			SceneNode::Clear();
+			SpacePartitioning::Clear();
 
 		}
 

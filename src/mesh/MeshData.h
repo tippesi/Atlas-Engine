@@ -16,9 +16,12 @@ namespace Atlas {
 	namespace Mesh {
 
 		struct MeshSubData {
+
 			uint32_t indicesOffset;
-			uint32_t numIndices;
-			uint32_t materialIndex;
+			uint32_t indicesCount;
+			
+			Material* material;
+		
 		};
 
 		class MeshData {

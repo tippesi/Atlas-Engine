@@ -1,6 +1,8 @@
 #include "DecalRenderer.h"
 #include "helper/GeometryHelper.h"
 
+#include "../Clock.h"
+
 namespace Atlas {
 
     namespace Renderer {
@@ -23,7 +25,7 @@ namespace Atlas {
 
         }
 
-        void DecalRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene::Scene *scene) {
+        void DecalRenderer::Render(Viewport *viewport, RenderTarget *target, Camera *camera, Scene::Scene *scene) {
 
             vertexArray.Bind();
 
@@ -41,9 +43,14 @@ namespace Atlas {
             inverseViewMatrix->SetValue(camera->inverseViewMatrix);
             inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
-            timeInMilliseconds->SetValue((float)SDL_GetTicks());
+            timeInMilliseconds->SetValue(1000.0f * Clock::Get());
 
-            for (auto& decalActor : scene->renderList.decalActors) {
+			Common::AABB base(vec3(-1.0f), vec3(1.0f));
+			auto aabb = base.Transform(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
+
+			auto decalActors = scene->GetDecalActors(aabb);
+
+            for (auto& decalActor : decalActors) {
 
 				auto decal = decalActor->decal;
 

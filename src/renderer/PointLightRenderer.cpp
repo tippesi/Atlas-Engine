@@ -22,7 +22,7 @@ namespace Atlas {
 
 		}
 
-		void PointLightRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+		void PointLightRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
 			shader.Bind();
 
@@ -43,7 +43,9 @@ namespace Atlas {
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
 			target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
 
-			for (auto light : scene->renderList.lights) {
+			auto lights = scene->GetLights();
+
+			for (auto light : lights) {
 
 				if (light->type != AE_POINT_LIGHT) {
 					continue;

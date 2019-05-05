@@ -40,7 +40,7 @@ namespace Atlas {
 
         }
 
-        void BlurRenderer::Render(Window *window, RenderTarget *target, Camera *camera, Scene::Scene *scene) {
+        void BlurRenderer::Render(Viewport *viewport, RenderTarget *target, Camera *camera, Scene::Scene *scene) {
 
             return;
 

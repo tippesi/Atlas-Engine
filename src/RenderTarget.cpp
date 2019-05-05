@@ -39,4 +39,10 @@ namespace Atlas {
 
 	}
 
+	ivec2 RenderTarget::GetSize() {
+
+		return ivec2(width, height);
+
+	}
+
 }

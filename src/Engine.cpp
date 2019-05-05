@@ -104,11 +104,13 @@ namespace Atlas {
 		Renderer::OpaqueRenderer::InitShaderBatch();
 		Renderer::ShadowRenderer::InitShaderBatch();
 
+		Clock::Update();
+
 		return window;
 
 	}
 
-	void Engine::GetScreenSize(int32_t *width, int32_t *height) {
+	ivec2 Engine::GetScreenSize() {
 
 		if (SDL_WasInit(SDL_INIT_EVERYTHING) != SDL_INIT_EVERYTHING) {
 			SDL_Init(SDL_INIT_EVERYTHING);
@@ -116,14 +118,8 @@ namespace Atlas {
 
 		SDL_DisplayMode displayMode;
 		SDL_GetCurrentDisplayMode(0, &displayMode);
-		*width = displayMode.w;
-		*height = displayMode.h;
-
-	}
-
-	float Engine::GetClock() {
-
-		return (float)SDL_GetTicks() / 1000.0f;
+		
+		return ivec2(displayMode.w, displayMode.h);
 
 	}
 
@@ -139,9 +135,10 @@ namespace Atlas {
 
 	}
 
-	void Engine::Update(float deltaTime) {
+	void Engine::Update() {
 
-		Events::EventManager::Update(deltaTime);
+		Clock::Update();
+		Events::EventManager::Update();
 
 	}
 

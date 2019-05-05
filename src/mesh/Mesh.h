@@ -12,6 +12,9 @@
 #define AE_STATIONARY_MESH 0
 #define AE_MOVABLE_MESH 1
 
+#define AE_OPAQUE_CONFIG 0
+#define AE_SHADOW_CONFIG 1
+
 namespace Atlas {
 
 	namespace Mesh {
@@ -51,6 +54,8 @@ namespace Atlas {
 			 */
 			void Unbind();
 
+			Shader::ShaderConfig* GetConfig(Material* material, int32_t type);
+
 			MeshData* const data;
 
 			const int32_t mobility;
@@ -64,7 +69,7 @@ namespace Atlas {
 
 			};
 
-			std::unordered_map<Material*, MaterialConfig> configs;
+			std::unordered_map<Material*, MaterialConfig*> configs;
 
 		private:
 			void InitializeVertexArray();

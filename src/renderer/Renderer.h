@@ -5,7 +5,7 @@
 #include "../RenderTarget.h"
 #include "../Camera.h"
 #include "../scene/Scene.h"
-#include "../Window.h"
+#include "../Viewport.h"
 
 namespace Atlas {
 
@@ -14,7 +14,7 @@ namespace Atlas {
 		class Renderer {
 
 		public:
-			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) = 0;
+			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) = 0;
 			virtual ~Renderer() {}
 
 		};

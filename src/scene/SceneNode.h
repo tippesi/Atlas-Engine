@@ -8,6 +8,9 @@
 #include "../lighting/Light.h"
 #include "../common/Octree.h"
 #include "../Decal.h"
+
+#include "SpacePartitioning.h"
+
 #include <vector>
 
 namespace Atlas {
@@ -20,13 +23,14 @@ namespace Atlas {
 			/**
              *
              */
-			SceneNode();
+			SceneNode() {}
 
-			virtual ~SceneNode() {};
+			virtual ~SceneNode() {}
 
 			/**
 			 *
 			 * @param node
+			 * @note A scene node can only be attached to one node.
 			 */
 			virtual void Add(SceneNode *node);
 
@@ -39,6 +43,7 @@ namespace Atlas {
 			/**
 			 *
 			 * @param actor
+			 * @note An actor can only be attached in one node.
 			 */
 			virtual void Add(Actor::MovableMeshActor *actor);
 
@@ -51,6 +56,7 @@ namespace Atlas {
 			/**
 			 *
 			 * @param actor
+			 * @note An actor can only be attached in one node.
 			 */
 			virtual void Add(Actor::StaticMeshActor *actor);
 
@@ -63,6 +69,7 @@ namespace Atlas {
 			/**
 			 *
 			 * @param decal
+			 * @note An actor can only be attached in one node.
 			 */
 			virtual void Add(Actor::DecalActor* decal);
 
@@ -98,9 +105,7 @@ namespace Atlas {
 			 *
 			 * @param scene
 			 */
-			virtual void AddToScene(Common::Octree<Actor::MovableMeshActor*>* movableMeshActorOctree,
-				Common::Octree<Actor::StaticMeshActor*>* staticMeshActorOctree,
-				Common::Octree<Actor::DecalActor*>* decalActorOctree);
+			virtual void AddToScene(SpacePartitioning* spacePartitioning);
 
 			/**
 			 *
@@ -113,11 +118,11 @@ namespace Atlas {
 			 * @param parentTransformation
 			 * @param parentTransformChanged
 			 */
-			virtual void Update(Camera* camera, float deltaTime, std::vector<Lighting::Light*>& lights,
-					mat4 parentTransformation, bool parentTransformChanged);
+			virtual void Update(Camera* camera, float deltaTime, mat4 parentTransformation,
+				bool parentTransformChanged);
 
-			bool sceneSet;
-			bool matrixChanged;
+			bool sceneSet = false;
+			bool matrixChanged = true;
 
 			mat4 matrix;
 			mat4 transformedMatrix;
@@ -128,9 +133,9 @@ namespace Atlas {
 			std::vector<Actor::DecalActor*> decalActors;
 			std::vector<Lighting::Light *> lights;
 
-			Common::Octree<Actor::MovableMeshActor*>* movableMeshActorOctree;
-			Common::Octree<Actor::StaticMeshActor*>* staticMeshActorOctree;
-			Common::Octree<Actor::DecalActor*>* decalActorOctree;
+			std::vector<Actor::StaticMeshActor*> addableStaticMeshActors;
+
+			SpacePartitioning* spacePartitioning;
 
 		};
 

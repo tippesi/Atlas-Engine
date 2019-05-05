@@ -114,7 +114,7 @@ namespace Atlas {
 				auto material = LoadMaterial(scene->mMaterials[i], directoryPath);
 
 				auto subData = new Mesh::MeshSubData;
-				subData->materialIndex = i;
+				subData->material = material;
 				subData->indicesOffset = usedFaces * 3;
 
 				for (auto mesh : meshSorted[i]) {
@@ -176,7 +176,7 @@ namespace Atlas {
 
 				}
 
-				subData->numIndices = usedFaces * 3 - subData->indicesOffset;
+				subData->indicesCount = usedFaces * 3 - subData->indicesOffset;
 				meshData->subData.push_back(subData);
 				meshData->materials.push_back(material);
 

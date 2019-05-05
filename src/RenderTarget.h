@@ -28,14 +28,20 @@ namespace Atlas {
 		 */
 		void Resize(int32_t width, int32_t height);
 
+		/**
+		 * Returns the size of the render target.
+		 * @return An 2-component integer vector where x is the width and y is the height.
+		 */
+		ivec2 GetSize();
+
 		Framebuffer geometryFramebuffer;
 		Framebuffer lightingFramebuffer;
 
-		int32_t width = 0;
-		int32_t height = 0;
-
 	private:
 		Texture::Texture2D depthTexture;
+
+		int32_t width = 0;
+		int32_t height = 0;
 
 	};
 

@@ -21,7 +21,7 @@ namespace Atlas {
 
 		}
 
-		void SkyboxRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+		void SkyboxRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
 			shader.Bind();
 

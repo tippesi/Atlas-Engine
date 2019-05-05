@@ -1,6 +1,8 @@
 #include "PostProcessRenderer.h"
 #include "MasterRenderer.h"
 
+#include "../Clock.h"
+
 namespace Atlas {
 
 	namespace Renderer {
@@ -19,9 +21,9 @@ namespace Atlas {
 
 		}
 
-		void PostProcessRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+		void PostProcessRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
-			glViewport(window->viewport.x, window->viewport.y, window->viewport.width, window->viewport.height);
+			glViewport(viewport->x, viewport->y, viewport->width, viewport->height);
 
 			auto postProcessing = &scene->postProcessing;
 
@@ -63,7 +65,7 @@ namespace Atlas {
 
 			exposure->SetValue(postProcessing->exposure);
 			saturation->SetValue(postProcessing->saturation);
-			timeInMilliseconds->SetValue((float)clock());
+			timeInMilliseconds->SetValue(1000.0f * Clock::Get());
 
 			if (postProcessing->chromaticAberration != nullptr) {
 				float reversedValue = postProcessing->chromaticAberration->colorsReversed ? 1.0f : 0.0f;

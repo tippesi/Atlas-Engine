@@ -23,7 +23,7 @@ namespace Atlas {
 
 		}
 
-		void DirectionalLightRenderer::Render(Window* window, RenderTarget* target,
+		void DirectionalLightRenderer::Render(Viewport* viewport, RenderTarget* target,
 				Camera* camera, Scene::Scene* scene) {
 
 			shader.Bind();
@@ -44,8 +44,10 @@ namespace Atlas {
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
 			target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
 
+			auto lights = scene->GetLights();
+
 			// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
-			for (auto& light : scene->renderList.lights) {
+			for (auto& light : lights) {
 
 				if (light->type != AE_DIRECTIONAL_LIGHT) {
 					continue;

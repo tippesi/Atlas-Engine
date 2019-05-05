@@ -12,22 +12,24 @@ Main::Main(int argc, char* argv[]) {
 	quit = false;
 	useControllerHandler = false;
 
-	int32_t width, height, flags;
-	Engine::GetScreenSize(&width, &height);
+	auto screenSize = Engine::GetScreenSize();
 
+	int32_t flags;
 	std::string assetDirectory = "data";
 
 #ifndef AE_OS_ANDROID
 	assetDirectory = "../data";
-	width = 1280;
-	height = 720;
+	screenSize.x = 1280;
+	screenSize.y = 720;
 	flags = AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI;
 #else
 	flags = AE_WINDOW_FULLSCREEN;
 #endif
 
-	window = Engine::Init(assetDirectory, "shader", "Atlas Engine",AE_WINDOWPOSITION_UNDEFINED,
-			AE_WINDOWPOSITION_UNDEFINED, width, height, flags);
+	viewport = Viewport(0, 0, screenSize.x, screenSize.y);
+
+	window = Engine::Init(assetDirectory, "shader", "Atlas Engine", AE_WINDOWPOSITION_UNDEFINED,
+			AE_WINDOWPOSITION_UNDEFINED, screenSize.x, screenSize.y, flags);
 
 	Engine::UnlockFramerate();
 
@@ -69,17 +71,14 @@ Main::Main(int argc, char* argv[]) {
 	simulation = new Atlas::Renderer::GPGPU::OceanSimulation(512, 1000);
 	simulation->AddOceanState(4.0f, vec2(1.0f, 0.0f), 26.0f);
 
-	float time = Engine::GetClock();
-
-	renderingStart = Engine::GetClock();
+	renderingStart = Clock::Get();
 	frameCount = 1;
 
 	while (!quit) {
 
-		float deltaTime = Engine::GetClock() - time;
-		time = Engine::GetClock();
+		Engine::Update();
 
-		Engine::Update(deltaTime);
+		auto deltaTime = Clock::GetDelta();
 
 		Update(deltaTime);
 		Render(deltaTime);
@@ -117,17 +116,17 @@ void Main::Update(float deltaTime) {
 
 void Main::Render(float deltaTime) {
 
-	simulation->ComputeHT(simulation->oceanStates[0]);
+	// simulation->ComputeHT(simulation->oceanStates[0]);
 
-	masterRenderer->RenderScene(window, renderTarget, camera, scene);
+	masterRenderer->RenderScene(&viewport, renderTarget, camera, scene);
 
-	float averageFramerate = (Engine::GetClock() - renderingStart) * 1000.0f / (float)frameCount;
+	float averageFramerate = Clock::GetAverage();
 
 	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms";
 
-	masterRenderer->textRenderer.Render(window, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
+	masterRenderer->textRenderer.Render(&viewport, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
 
-	masterRenderer->RenderTexture(window, &simulation->hTDy, 0.0f, 20.0f, 512.0f, 512.0f);
+	// masterRenderer->RenderTexture(&viewport, &simulation->hTDy, 0.0f, 20.0f, 512.0f, 512.0f);
 
 }
 
@@ -165,18 +164,17 @@ void Main::DisplayLoadingScreen() {
 
     window->Clear();
 
-    int32_t width, height;
-    Engine::GetScreenSize(&width, &height);
+	auto screenSize = Engine::GetScreenSize();
 
 #ifndef AE_OS_ANDROID
-    width = 1280;
-	height = 720;
+    screenSize.x = 1280;
+	screenSize.y = 720;
 #endif
 
-	float x = width / 2 - textWidth / 2;
-	float y = height / 2 - textHeight / 2;
+	float x = screenSize.x / 2 - textWidth / 2;
+	float y = screenSize.y / 2 - textHeight / 2;
 
-	masterRenderer->textRenderer.Render(window, font, "Lädt...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+	masterRenderer->textRenderer.Render(&viewport, font, "Lädt...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
 	window->Update();
 
@@ -184,7 +182,7 @@ void Main::DisplayLoadingScreen() {
 
 void Main::SceneSetUp() {
 
-	scene = new Atlas::Scene::Scene();
+	scene = new Atlas::Scene::Scene(vec3(-2048.0f), vec3(2048.0f));
 
 	auto node = new Atlas::Scene::SceneNode();
 	node->SetMatrix(translate(vec3(0.0f, 1.0f, 5.0f)));
@@ -212,7 +210,7 @@ void Main::SceneSetUp() {
 #ifndef AE_OS_ANDROID
     directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
 	directionalLight->GetShadow()->sampleCount = 1;
-	directionalLight->AddVolumetric(renderTarget->width / 2, renderTarget->height / 2, 20, -0.5f);
+	directionalLight->AddVolumetric(renderTarget->GetSize().x / 2, renderTarget->GetSize().y / 2, 20, -0.5f);
 #else
     directionalLight->AddShadow(200.0f, 0.01f, 2048, vec3(0.0f), orthoProjection);
     directionalLight->GetShadow()->sampleCount = 8;

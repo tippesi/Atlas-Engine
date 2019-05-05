@@ -38,6 +38,8 @@ private:
 	Atlas::RenderTarget* renderTarget;
 	Atlas::Renderer::MasterRenderer* masterRenderer;
 
+	Atlas::Viewport viewport;
+
 	Atlas::Font* font;
 
 	Atlas::Camera* camera;

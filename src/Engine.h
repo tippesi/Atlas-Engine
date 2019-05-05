@@ -4,6 +4,7 @@
 #include "System.h"
 #include "Window.h"
 #include "Camera.h"
+#include "Clock.h"
 #include "scene/Scene.h"
 #include "RenderTarget.h"
 #include "shader/Shader.h"
@@ -36,17 +37,10 @@ namespace Atlas {
 							int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags = AE_WINDOW_FULLSCREEN);
 
 		/**
-         * Returns the dimensions of the screen in pixels.
-         * @param width A pointer to an integer.
-         * @param height A pointer to an integer.
-         */
-		static void GetScreenSize(int32_t *width, int32_t *height);
-
-		/**
-		 * Returns the time in seconds.
-		 * @return The time as a float in seconds.
+		 * Returns the size of the screen.
+		 * @return An 2-component integer vector where x is the width and y is the height.
 		 */
-		static float GetClock();
+		static ivec2 GetScreenSize();
 
 		/**
          * Locks the frame rate to the next available target frame rate of the monitor
@@ -63,7 +57,7 @@ namespace Atlas {
          * Updates the engine and the system events. Must be called in thread
          * where the engine was initialized.
          */
-		static void Update(float deltaTime);
+		static void Update();
 
 	private:
 		static void DebugCallback(GLenum source, GLenum type, GLuint ID, GLenum severity,

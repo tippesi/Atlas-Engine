@@ -48,7 +48,7 @@ namespace Atlas {
              */
 			void ClearMacros();
 
-			int32_t configBatchID;
+			int32_t shaderID;
 			std::vector<std::string> macros;
 
 			bool added;

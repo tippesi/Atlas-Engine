@@ -6,7 +6,7 @@ namespace Atlas {
 
 		ShaderConfig::ShaderConfig() {
 
-			configBatchID = 0;
+			shaderID = 0;
 			added = false;
 
 		}

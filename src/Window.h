@@ -72,10 +72,9 @@ namespace Atlas {
 
 		/**
          * Returns the position of the window.
-         * @param x A pointer to an integer where the x value will be written into
-         * @param y A pointer to an integer where the y value will be written into
+         * @return An 2-component integer vector.
          */
-		void GetPosition(int32_t *x, int32_t *y);
+		ivec2 GetPosition();
 
 		/**
          * Resets the size of the window to the given values.
@@ -85,11 +84,10 @@ namespace Atlas {
 		void SetSize(int32_t width, int32_t height);
 
 		/**
-         * Returns the size of the window.
-         * @param width A pointer to an integer where the width value will be written into
-         * @param height A pointer to an integer where the height value will be written into
-         */
-		void GetSize(int32_t *width, int32_t *height);
+		 * Returns the size of the window.
+		 * @return An 2-component integer vector where x is the width and y is the height.
+		 */
+		ivec2 GetSize();
 
 		/**
          * Shows the window if the window was hidden
@@ -111,8 +109,6 @@ namespace Atlas {
          */
 		void Clear(vec3 color = vec3(0.0f));
 
-		Viewport viewport;
-
 		Events::EventDelegate<Events::WindowEvent> windowEventDelegate;
 		Events::EventDelegate<Events::KeyboardEvent> keyboardEventDelegate;
 		Events::EventDelegate<Events::MouseButtonEvent> mouseButtonEventDelegate;
@@ -124,19 +120,12 @@ namespace Atlas {
 
 	private:
 		void WindowEventHandler(Events::WindowEvent event);
-
 		void KeyboardEventHandler(Events::KeyboardEvent event);
-
 		void MouseButtonEventHandler(Events::MouseButtonEvent event);
-
 		void MouseMotionEventHandler(Events::MouseMotionEvent event);
-
 		void MouseWheelEventHandler(Events::MouseWheelEvent event);
-
 		void ControllerAxisEventHandler(Events::ControllerAxisEvent event);
-
 		void ControllerButtonEventHandler(Events::ControllerButtonEvent event);
-
 		void DropEventHandler(Events::DropEvent event);
 
 		uint32_t ID;
@@ -151,6 +140,15 @@ namespace Atlas {
 		int32_t height;
 
 		bool hasFocus;
+
+		int32_t windowEventSubcriberID;
+		int32_t keyboardEventSubscriberID;
+		int32_t mouseButtonEventSubscriberID;
+		int32_t mouseMotionEventSubscriberID;
+		int32_t mouseWheelEventSubscriberID;
+		int32_t controllerAxisEventSubscriberID;
+		int32_t controllerButtonEventSubscriberID;
+		int32_t dropEventSubscriberID;
 
 	};
 

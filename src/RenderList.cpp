@@ -14,60 +14,40 @@ namespace Atlas {
 
 		if (actorBatchKey != actorBatches.end()) {
 			actorBatchKey->second->Add(actor);
-		} else {
+			return;
+		}
 
-			// Create new actorbatch
-			auto meshActorBatch = new Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>(actor->mesh);
-			meshActorBatch->Add(actor);
+		// Create new actor batch
+		auto meshActorBatch = new Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>(actor->mesh);
+		meshActorBatch->Add(actor);
 
-			actorBatches[actor->mesh] = meshActorBatch;
+		actorBatches[actor->mesh] = meshActorBatch;
 
-			// Build up all render list batches
-			std::map<int32_t, RenderListBatch> renderListBatches;
+		// Build up all render list batches
+		std::map<int32_t, RenderListBatch> renderListBatches;
 
-			for (auto &subData : actor->mesh->data->subData) {
+		for (auto &subData : actor->mesh->data->subData) {
 
-				Shader::ShaderConfig *shaderConfig;
+			auto shaderConfig = actor->mesh->GetConfig(subData->material, type);
 
-				auto data = actor->mesh->data;
+			auto batchKey = renderListBatches.find(shaderConfig->shaderID);
 
-				if (type == AE_OPAQUE_RENDERLIST) {
-					shaderConfig = &actor->mesh->configs[data->materials[subData->materialIndex]].opaqueConfig;
-				} else {
-					shaderConfig = &actor->mesh->configs[data->materials[subData->materialIndex]].shadowConfig;
-				}
-
-				auto batchKey = renderListBatches.find(shaderConfig->configBatchID);
-
-				if (batchKey != renderListBatches.end()) {
-					batchKey->second.subData.push_back(subData);
-				} else {
-					RenderListBatch batch;
-					batch.meshActorBatch = meshActorBatch;
-					batch.subData.push_back(subData);
-					renderListBatches[shaderConfig->configBatchID] = batch;
-				}
-
+			if (batchKey != renderListBatches.end()) {
+				batchKey->second.subData.push_back(subData);
+				continue;
 			}
 
-			// Integrate the render list batches into the ordered render batches
-			for (auto &renderListBatchKey : renderListBatches) {
-				orderedRenderBatches[renderListBatchKey.first].push_back(renderListBatchKey.second);
-			}
+			RenderListBatch batch;
+			batch.meshActorBatch = meshActorBatch;
+			batch.subData.push_back(subData);
+			renderListBatches[shaderConfig->shaderID] = batch;
 
 		}
 
-	}
-
-	void RenderList::Add(Actor::DecalActor* decalActor) {
-	
-		decalActors.push_back(decalActor);
-	
-	}
-
-	void RenderList::Add(Lighting::Light* light) {
-
-		lights.push_back(light);
+		// Integrate the render list batches into the ordered render batches
+		for (auto &renderListBatchKey : renderListBatches) {
+			orderedRenderBatches[renderListBatchKey.first].push_back(renderListBatchKey.second);
+		}
 
 	}
 
@@ -76,9 +56,6 @@ namespace Atlas {
 		for (auto &actorBatchKey : actorBatches) {
 			actorBatchKey.second->Clear();
 		}
-
-		decalActors.clear();
-		lights.clear();
 
 	}
 

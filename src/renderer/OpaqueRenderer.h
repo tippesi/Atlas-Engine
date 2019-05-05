@@ -2,6 +2,7 @@
 #define AE_GEOMETRYRENDERER_H
 
 #include "../System.h"
+#include "../RenderList.h"
 #include "../shader/ShaderBatch.h"
 #include "Renderer.h"
 
@@ -16,7 +17,7 @@ namespace Atlas {
 		public:
 			OpaqueRenderer();
 
-			virtual void Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
 			static void InitShaderBatch();
 
@@ -28,6 +29,8 @@ namespace Atlas {
 			static std::string fragmentPath;
 
 		private:
+			RenderList renderList;
+
 			Shader::Uniform* arrayMapUniform;
 			Shader::Uniform* diffuseMapUniform;
 			Shader::Uniform* normalMapUniform;

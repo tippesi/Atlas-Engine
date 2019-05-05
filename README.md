@@ -233,4 +233,4 @@ for (int32_t i = 0; i < 100; i++)
 ```
 Please note that classes like the actors contain a pointer to the classes presented above. When using an assignment operator on an actor the mesh isn't copied, but the pointer to that mesh is.
 #### Thread safety
-Most classes are not designed to be used across different threads by default. These classes have to be protected by you as the user. But there are also classes which are known to be used in several threads. These classes are the EventManager, EventDelegate, AudioManager, AudioStream, AssetLoader. They can all be savely accessed by multiple threads. Note that all methods which are static e.g. OpaqueRenderer::AddConfig(...) are always thread safe.
+Most classes are not designed to be used across different threads by default. These classes have to be protected by you as the user. But there are also classes which are known to be used in several threads. These classes are the EventManager, EventDelegate, Time, AudioManager, AudioStream and AssetLoader. They can all be savely accessed by multiple threads. Note that all methods which are static e.g. OpaqueRenderer::AddConfig(...) are always thread safe.

@@ -91,7 +91,7 @@ namespace Atlas {
 
 		float lineHeight;
 
-		float smoothness = 0.7f;
+		float smoothness = 1.0f;
 
 		uint8_t edgeValue;
 

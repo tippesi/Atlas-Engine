@@ -48,7 +48,7 @@ namespace Atlas {
 
 		}
 
-		RayIntersection RayCasting::BinarySearch(Ray ray, Terrain::Terrain* terrain, float start,
+		RayIntersection RayCasting::BinarySearch(Common::Ray ray, Terrain::Terrain* terrain, float start,
 				float finish, int count) {
 
 			float half = start + (finish - start) / 2.0f;
@@ -71,7 +71,7 @@ namespace Atlas {
 
 		}
 
-		bool RayCasting::IntersectionInRange(Ray ray, Terrain::Terrain* terrain, float start, float finish) {
+		bool RayCasting::IntersectionInRange(Common::Ray ray, Terrain::Terrain* terrain, float start, float finish) {
 
 			auto startPosition = ray.origin + ray.direction * start;
 			auto finishPosition = ray.origin + ray.direction * finish;
@@ -92,9 +92,9 @@ namespace Atlas {
 
 		}
 
-		RayCasting::Ray RayCasting::CalculateRay(Viewport *viewport, Camera *camera) {
+		Common::Ray RayCasting::CalculateRay(Viewport *viewport, Camera *camera) {
 
-			Ray ray;
+			Common::Ray ray;
 
 			auto nearPoint = viewport->Unproject(vec3(mouseLocation.x, mouseLocation.y, 0.0f), camera);
 			auto farPoint = viewport->Unproject(vec3(mouseLocation.x, mouseLocation.y, 1.0f), camera);

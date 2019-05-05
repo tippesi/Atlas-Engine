@@ -29,6 +29,8 @@ namespace Atlas {
 
             void QueryAABB(std::vector<T>& data, AABB aabb);
 
+			void GetData(std::vector<T>& data);
+
             bool IsSubdivided();
 
             std::vector<Octree<T>> GetChildren();
@@ -83,17 +85,36 @@ namespace Atlas {
         template <class T>
         void Octree<T>::QueryAABB(std::vector<T>& data, AABB aabb) {
 
-			if (!this->aabb.Scale(relaxFactor).Intersects(aabb))
+			auto scaled = this->aabb.Scale(relaxFactor);
+
+			if (!scaled.Intersects(aabb))
 				return;
 
-			for (auto& queryData : octreeData)
-			    data.push_back(queryData);
-
-			for (auto& child : children) {
-				child.QueryAABB(data, aabb);
+			// Check if aabb encloses this octree node
+			// In that case we can add all data and children data
+			if (aabb.IsInside(scaled)) {
+				GetData(data);
+				return;
 			}
 
+			for (auto& ele : octreeData)
+			    data.push_back(ele);
+
+			for (auto& child : children)
+				child.QueryAABB(data, aabb);
+
         }
+
+		template <class T>
+		void Octree<T>::GetData(std::vector<T>& data) {
+
+			for (auto& ele : octreeData)
+				data.push_back(ele);
+
+			for (auto& child : children)
+				child.GetData(data);
+
+		}
 
         template <class T>
         bool Octree<T>::IsSubdivided() {

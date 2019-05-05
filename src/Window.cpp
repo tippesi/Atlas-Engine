@@ -15,31 +15,29 @@ namespace Atlas {
 
 		ID = SDL_GetWindowID(sdlWindow);
 
-		this->viewport = Viewport(0, 0, width, height);
-
 		auto windowEventHandler = std::bind(&Window::WindowEventHandler, this, std::placeholders::_1);
-		Events::EventManager::WindowEventDelegate.Subscribe(windowEventHandler);
+		windowEventSubcriberID = Events::EventManager::WindowEventDelegate.Subscribe(windowEventHandler);
 
 		auto keyboardEventHandler = std::bind(&Window::KeyboardEventHandler, this, std::placeholders::_1);
-		Events::EventManager::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
+		keyboardEventSubscriberID = Events::EventManager::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
 
 		auto mouseButtonEventHandler = std::bind(&Window::MouseButtonEventHandler, this, std::placeholders::_1);
-		Events::EventManager::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
+		mouseButtonEventSubscriberID = Events::EventManager::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
 		auto mouseMotionEventHandler = std::bind(&Window::MouseMotionEventHandler, this, std::placeholders::_1);
-		Events::EventManager::MouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
+		mouseMotionEventSubscriberID = Events::EventManager::MouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
 
 		auto mouseWheelEventHandler = std::bind(&Window::MouseWheelEventHandler, this, std::placeholders::_1);
-		Events::EventManager::MouseWheelEventDelegate.Subscribe(mouseWheelEventHandler);
+		mouseWheelEventSubscriberID = Events::EventManager::MouseWheelEventDelegate.Subscribe(mouseWheelEventHandler);
 
 		auto controllerAxisEventHandler = std::bind(&Window::ControllerAxisEventHandler, this, std::placeholders::_1);
-		Events::EventManager::ControllerAxisEventDelegate.Subscribe(controllerAxisEventHandler);
+		controllerAxisEventSubscriberID = Events::EventManager::ControllerAxisEventDelegate.Subscribe(controllerAxisEventHandler);
 
 		auto controllerButtonEventHandler = std::bind(&Window::ControllerButtonEventHandler, this, std::placeholders::_1);
-		Events::EventManager::ControllerButtonEventDelegate.Subscribe(controllerButtonEventHandler);
+		controllerButtonEventSubscriberID = Events::EventManager::ControllerButtonEventDelegate.Subscribe(controllerButtonEventHandler);
 
 		auto dropEventHandler = std::bind(&Window::DropEventHandler, this, std::placeholders::_1);
-		Events::EventManager::DropEventDelegate.Subscribe(dropEventHandler);
+		dropEventSubscriberID = Events::EventManager::DropEventDelegate.Subscribe(dropEventHandler);
 
 	}
 
@@ -48,6 +46,15 @@ namespace Atlas {
 		SDL_DestroyWindow(sdlWindow);
 
 		SDL_GL_DeleteContext(context);
+
+		Events::EventManager::WindowEventDelegate.Unsubscribe(windowEventSubcriberID);
+		Events::EventManager::KeyboardEventDelegate.Unsubscribe(keyboardEventSubscriberID);
+		Events::EventManager::MouseButtonEventDelegate.Unsubscribe(mouseButtonEventSubscriberID);
+		Events::EventManager::MouseMotionEventDelegate.Unsubscribe(mouseMotionEventSubscriberID);
+		Events::EventManager::MouseWheelEventDelegate.Unsubscribe(mouseWheelEventSubscriberID);
+		Events::EventManager::ControllerAxisEventDelegate.Unsubscribe(controllerAxisEventSubscriberID);
+		Events::EventManager::ControllerButtonEventDelegate.Unsubscribe(controllerButtonEventSubscriberID);
+		Events::EventManager::DropEventDelegate.Unsubscribe(dropEventSubscriberID);
 
 	}
 
@@ -86,10 +93,9 @@ namespace Atlas {
 
 	}
 
-	void Window::GetPosition(int32_t *x, int32_t *y) {
+	ivec2 Window::GetPosition() {
 
-		*x = this->x;
-		*y = this->y;
+		return ivec2(x, y);
 
 	}
 
@@ -102,10 +108,9 @@ namespace Atlas {
 
 	}
 
-	void Window::GetSize(int32_t *width, int32_t *height) {
+	ivec2 Window::GetSize() {
 
-		*width = this->width;
-		*height = this->height;
+		return ivec2(width, height);
 
 	}
 

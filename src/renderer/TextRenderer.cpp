@@ -24,48 +24,48 @@ namespace Atlas {
 
 		}
 
-		void TextRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+		void TextRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
 			return;
 
 		}
 
-		void TextRenderer::Render(Window* window, Font* font, std::string text, float x, float y, vec4 color,
-								  float scale,Framebuffer* framebuffer) {
+		void TextRenderer::Render(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color,
+								  float scale, Framebuffer* framebuffer) {
 
-			float width = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
-			float height = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
+			float width = (float)(framebuffer == nullptr ? viewport->width : framebuffer->width);
+			float height = (float)(framebuffer == nullptr ? viewport->height : framebuffer->height);
 
 			vec4 clipArea = vec4(0.0f, 0.0f, width, height);
 			vec4 blendArea = vec4(0.0f, 0.0f, width, height);
 
-			RenderOutlined(window, font, text, x, y, color, vec4(1.0f), 0.0f, clipArea, blendArea, scale, framebuffer);
+			RenderOutlined(viewport, font, text, x, y, color, vec4(1.0f), 0.0f, clipArea, blendArea, scale, framebuffer);
 
 		}
 
-		void TextRenderer::Render(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 clipArea,
+		void TextRenderer::Render(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 clipArea,
 								  vec4 blendArea, float scale, Framebuffer* framebuffer) {
 
-			RenderOutlined(window, font, text, x, y, color, vec4(1.0f), 0.0f, clipArea, blendArea, scale, framebuffer);
+			RenderOutlined(viewport, font, text, x, y, color, vec4(1.0f), 0.0f, clipArea, blendArea, scale, framebuffer);
 
 
 		}
 
-		void TextRenderer::RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor,
+		void TextRenderer::RenderOutlined(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor,
 										  float outlineScale, float scale, Framebuffer* framebuffer) {
 
-			float width = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
-			float height = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
+			float width = (float)(framebuffer == nullptr ? viewport->width : framebuffer->width);
+			float height = (float)(framebuffer == nullptr ? viewport->height : framebuffer->height);
 
 			vec4 clipArea = vec4(0.0f, 0.0f, width, height);
 			vec4 blendArea = vec4(0.0f, 0.0f, width, height);
 
-			RenderOutlined(window, font, text, x, y, color, outlineColor, outlineScale, 
+			RenderOutlined(viewport, font, text, x, y, color, outlineColor, outlineScale, 
 				clipArea, blendArea, scale, framebuffer);
 
 		}
 
-		void TextRenderer::RenderOutlined(Window* window, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
+		void TextRenderer::RenderOutlined(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
 										  vec4 clipArea, vec4 blendArea, float scale, Framebuffer* framebuffer) {
 
 			int32_t characterCount;
@@ -76,7 +76,7 @@ namespace Atlas {
 				framebuffer->Bind(true);
 			}
 			else {
-				glViewport(0, 0, window->viewport.width, window->viewport.height);
+				glViewport(0, 0, viewport->width, viewport->height);
 			}
 
 			glDisable(GL_CULL_FACE);
@@ -84,8 +84,8 @@ namespace Atlas {
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-			float width = (float)(framebuffer == nullptr ? window->viewport.width : framebuffer->width);
-			float height = (float)(framebuffer == nullptr ? window->viewport.height : framebuffer->height);
+			float width = (float)(framebuffer == nullptr ? viewport->width : framebuffer->width);
+			float height = (float)(framebuffer == nullptr ? viewport->height : framebuffer->height);
 
 			auto instances = CalculateCharacterInstances(font, text, &characterCount);
 			vertexArray.GetComponent(1)->SetData(instances.data(), 0, instances.size());

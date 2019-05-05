@@ -69,6 +69,23 @@ namespace Atlas {
 
 		}
 
+		Shader::ShaderConfig* Mesh::GetConfig(Material* material, int32_t type) {
+
+			auto key = configs.find(material);
+
+			if (key == configs.end())
+				return nullptr;
+
+			auto matConfig = key->second;
+
+			switch (type) {
+			case AE_OPAQUE_CONFIG: return &matConfig->opaqueConfig;
+			case AE_SHADOW_CONFIG: return &matConfig->shadowConfig;
+			default: return nullptr;
+			}
+
+		}
+
 		void Mesh::InitializeVertexArray() {
 
 			vertexArray.Unbind();
@@ -105,22 +122,22 @@ namespace Atlas {
 
 		void Mesh::AddMaterial(Material *material) {
 
-			MaterialConfig materialConfig;
+			auto materialConfig = new MaterialConfig;
 
 			if (material->HasDiffuseMap()) {
-				materialConfig.opaqueConfig.AddMacro("DIFFUSE_MAP");
+				materialConfig->opaqueConfig.AddMacro("DIFFUSE_MAP");
 				if (material->diffuseMap->channels == 4)
-					materialConfig.shadowConfig.AddMacro("ALPHA");
+					materialConfig->shadowConfig.AddMacro("ALPHA");
 			}
 
 			if (material->HasNormalMap()) {
-				materialConfig.opaqueConfig.AddMacro("NORMAL_MAP");
+				materialConfig->opaqueConfig.AddMacro("NORMAL_MAP");
 			}
 
 			configs[material] = materialConfig;
 
-			Renderer::OpaqueRenderer::AddConfig(&configs[material].opaqueConfig);
-			Renderer::ShadowRenderer::AddConfig(&configs[material].shadowConfig);
+			Renderer::OpaqueRenderer::AddConfig(&materialConfig->opaqueConfig);
+			Renderer::ShadowRenderer::AddConfig(&materialConfig->shadowConfig);
 
 		}
 

@@ -33,7 +33,7 @@ namespace Atlas {
 
         }
 
-        void DirectionalVolumetricRenderer::Render(Window *window, RenderTarget *target,
+        void DirectionalVolumetricRenderer::Render(Viewport *viewport, RenderTarget *target,
                 Camera *camera, Scene::Scene *scene) {
 
             framebuffer.Bind();
@@ -46,7 +46,9 @@ namespace Atlas {
             inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
             target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
 
-            for (auto& light : scene->renderList.lights) {
+			auto lights = scene->GetLights();
+
+            for (auto& light : lights) {
 
                 if (light->type != AE_DIRECTIONAL_LIGHT || !light->GetShadow() || !light->GetVolumetric()) {
                     continue;
@@ -102,7 +104,7 @@ namespace Atlas {
 
             kernelSize->SetValue((int32_t)kernelWeights->size());
 
-            for (auto& light : scene->renderList.lights) {
+            for (auto& light : lights) {
 
                 if (light->type != AE_DIRECTIONAL_LIGHT || light->GetShadow() == nullptr || light->GetVolumetric() == nullptr) {
                     continue;

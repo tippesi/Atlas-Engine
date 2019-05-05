@@ -2,7 +2,6 @@
 #include "Light.h"
 #include "DirectionalLight.h"
 #include "PointLight.h"
-#include "../RenderList.h"
 
 namespace Atlas {
 
@@ -29,10 +28,6 @@ namespace Atlas {
 			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
 			components = std::vector<ShadowComponent>(cascadeCount);
-
-			for (auto &component : components) {
-				component.renderList = new RenderList(AE_SHADOW_RENDERLIST);
-			}
 
 			Update();
 
@@ -72,10 +67,6 @@ namespace Atlas {
 			}
 
 			components = std::vector<ShadowComponent>(componentCount);
-
-			for (auto &component : components) {
-				component.renderList = new RenderList(AE_SHADOW_RENDERLIST);
-			}
 
 			Update();
 

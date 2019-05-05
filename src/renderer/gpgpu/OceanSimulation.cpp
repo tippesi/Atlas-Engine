@@ -1,5 +1,5 @@
 #include "OceanSimulation.h"
-#include "Engine.h"
+#include "Clock.h"
 
 namespace Atlas {
 
@@ -102,7 +102,7 @@ namespace Atlas {
 
 				NUniform->SetValue(N);
 				LUniform->SetValue(L);
-				timeUniform->SetValue(Engine::GetClock());
+				timeUniform->SetValue(Clock::Get());
 
 				hTDy.Bind(GL_WRITE_ONLY, 0);
 				hTDx.Bind(GL_WRITE_ONLY, 1);

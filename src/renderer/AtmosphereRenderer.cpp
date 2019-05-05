@@ -21,7 +21,7 @@ namespace Atlas {
 
 		}
 
-		void AtmosphereRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+		void AtmosphereRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
 			shader.Bind();
 
@@ -30,7 +30,7 @@ namespace Atlas {
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
 			cameraLocation->SetValue(vec3(camera->location));
-			sunDirection->SetValue(vec3(0.0f, -.02f, 0.5f));
+			sunDirection->SetValue(vec3(0.0f, -1.0f, 0.5f));
 			sunIntensity->SetValue(22.0f);
 			planetCenter->SetValue(-vec3(0.0f, 6371000.0f, 0.0f));
 			planetRadius->SetValue(6371000.0f);

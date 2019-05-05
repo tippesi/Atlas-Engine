@@ -12,6 +12,8 @@ namespace Atlas {
 
 		ShadowRenderer::ShadowRenderer() {
 
+			renderList = RenderList(AE_SHADOW_CONFIG);
+
 			arrayMapUniform = shaderBatch.GetUniform("arrayMap");
 			diffuseMapUniform = shaderBatch.GetUniform("diffuseMap");
 			modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
@@ -20,7 +22,7 @@ namespace Atlas {
 		}
 
 
-		void ShadowRenderer::Render(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+		void ShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
@@ -28,7 +30,9 @@ namespace Atlas {
 
 			framebuffer.Bind();
 
-			for (auto& light : scene->renderList.lights) {
+			auto lights = scene->GetLights();
+
+			for (auto& light : lights) {
 
 				if (!light->GetShadow()) {
 					continue;
@@ -56,12 +60,19 @@ namespace Atlas {
 
 					glClear(GL_DEPTH_BUFFER_BIT);
 
-					for (auto& renderListBatchesKey : component->renderList->orderedRenderBatches) {
+					renderList.Clear();
 
-						int32_t configBatchID = renderListBatchesKey.first;
+					Common::AABB base(vec3(-1.0f), vec3(1.0f));
+					auto aabb = base.Transform(glm::inverse(component->projectionMatrix * component->viewMatrix));
+
+					scene->GetRenderList(aabb, renderList);
+
+					for (auto& renderListBatchesKey : renderList.orderedRenderBatches) {
+
+						int32_t shaderID = renderListBatchesKey.first;
 						auto renderListBatches = renderListBatchesKey.second;
 
-						shaderBatch.Bind(configBatchID);
+						shaderBatch.Bind(shaderID);
 
 						arrayMapUniform->SetValue(0);
 						diffuseMapUniform->SetValue(0);
@@ -75,7 +86,7 @@ namespace Atlas {
 							auto meshActorBatch = renderListBatch.meshActorBatch;
 
 							// If there is no actor of that mesh visible we discard it.
-							if (meshActorBatch->GetSize() == 0) {
+							if (!meshActorBatch->GetSize()) {
 								continue;
 							}
 
@@ -98,7 +109,7 @@ namespace Atlas {
 							// Render the sub data of the mesh that use this specific shader
 							for (auto& subData : renderListBatch.subData) {
 
-								auto material = mesh->data->materials[subData->materialIndex];
+								auto material = subData->material;
 
 								if (material->HasDiffuseMap()) {
 									if (material->diffuseMap->channels == 4) {
@@ -111,7 +122,7 @@ namespace Atlas {
 
 									modelMatrixUniform->SetValue(actor->transformedMatrix);
 
-									glDrawElements(mesh->data->primitiveType, subData->numIndices, mesh->data->indices->GetType(),
+									glDrawElements(mesh->data->primitiveType, subData->indicesCount, mesh->data->indices->GetType(),
 												   (void*)((uint64_t)(subData->indicesOffset * mesh->data->indices->GetElementSize())));
 
 								}

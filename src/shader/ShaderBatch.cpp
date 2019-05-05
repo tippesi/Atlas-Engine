@@ -89,7 +89,7 @@ namespace Atlas {
 				return;
 			}
 
-			auto batch = configBatches[config->configBatchID];
+			auto batch = configBatches[config->shaderID];
 			batch->Remove(config);
 
 			config->added = false;
@@ -117,11 +117,17 @@ namespace Atlas {
 
 		}
 
-		void ShaderBatch::Bind(int32_t configBatchID) {
+		void ShaderBatch::Bind(ShaderConfig* config) {
 
-			boundShaderID = configBatchID;
+			Bind(config->shaderID);
 
-			configBatches[configBatchID]->Bind();
+		}
+
+		void ShaderBatch::Bind(int32_t shaderID) {
+
+			boundShaderID = shaderID;
+
+			configBatches[shaderID]->Bind();
 
 		}
 

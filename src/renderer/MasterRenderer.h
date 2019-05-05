@@ -34,7 +34,7 @@ namespace Atlas {
              * @param camera
              * @param scene
              */
-			void RenderScene(Window* window, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			void RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
 			/**
              *
@@ -47,7 +47,7 @@ namespace Atlas {
              * @param alphaBlending
              * @param framebuffer
              */
-			void RenderTexture(Window* window, Texture::Texture2D* texture, float x, float y, float width, float height,
+			void RenderTexture(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
 							   bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 			/**
@@ -63,7 +63,7 @@ namespace Atlas {
              * @param alphaBlending
              * @param framebuffer
              */
-			void RenderTexture(Window* window, Texture::Texture2D* texture, float x, float y, float width, float height,
+			void RenderTexture(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
 							   vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 			/**
@@ -78,7 +78,7 @@ namespace Atlas {
 			 * @param alphaBlending
 			 * @param framebuffer
 			 */
-			void RenderTexture(Window* window, Texture::Texture2DArray* texture, int32_t depth, float x, float y,
+			void RenderTexture(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y,
 							   float width, float height, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 			/**
@@ -95,7 +95,7 @@ namespace Atlas {
 			 * @param alphaBlending
 			 * @param framebuffer
 			 */
-			void RenderTexture(Window* window, Texture::Texture2DArray* texture, int32_t depth, float x, float y,
+			void RenderTexture(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y,
 							   float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending = false,
 							   Framebuffer* framebuffer = nullptr);
 
@@ -110,7 +110,7 @@ namespace Atlas {
              * @param alphaBlending
              * @param framebuffer
              */
-			void RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
+			void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
 								 bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 			/**
@@ -126,7 +126,7 @@ namespace Atlas {
              * @param alphaBlending
              * @param framebuffer
              */
-			void RenderRectangle(Window* window, vec4 color, float x, float y, float width, float height,
+			void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
 								 vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
 			/**

@@ -30,7 +30,10 @@ namespace Atlas {
 		class EventManager {
 
 		public:
-			static void Update(float deltaTime);
+			/**
+			 * Updates the event manager. Is called by the engine.
+			 */
+			static void Update();
 
 			static void EnableTextInput();
 
