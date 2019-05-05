@@ -6,8 +6,8 @@ in mat4 inverseModelMatrix;
 
 out vec4 fragColor;
 
-uniform sampler2D depthTexture;
-uniform sampler2D decalTexture;
+layout(binding = 0) uniform sampler2D depthTexture;
+layout(binding = 1) uniform sampler2D decalTexture;
 uniform vec2 depthTextureResolution;
 uniform mat4 ivMatrix;
 

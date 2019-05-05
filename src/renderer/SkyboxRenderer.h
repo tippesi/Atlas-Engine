@@ -26,7 +26,6 @@ namespace Atlas {
 
 			Shader::Shader shader;
 
-			Shader::Uniform* skyCubemap;
 			Shader::Uniform* modelViewProjectionMatrix;
 
 		};

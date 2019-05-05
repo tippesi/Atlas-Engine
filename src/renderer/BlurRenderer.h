@@ -31,8 +31,6 @@ namespace Atlas {
 
             Shader::Shader shader;
 
-            Shader::Uniform* diffuseTexture;
-            Shader::Uniform* depthTexture;
             Shader::Uniform* blurDirection;
 
 

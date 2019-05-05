@@ -33,9 +33,6 @@ namespace Atlas {
 
 			target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
 
-            depthTexture->SetValue(0);
-            decalTexture->SetValue(1);
-
             target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
 
             viewMatrix->SetValue(camera->viewMatrix);
@@ -75,8 +72,6 @@ namespace Atlas {
 
         void DecalRenderer::GetUniforms() {
 
-            depthTexture = shader.GetUniform("depthTexture");
-            decalTexture = shader.GetUniform("decalTexture");
             modelMatrix = shader.GetUniform("mMatrix");
             viewMatrix = shader.GetUniform("vMatrix");
             projectionMatrix = shader.GetUniform("pMatrix");

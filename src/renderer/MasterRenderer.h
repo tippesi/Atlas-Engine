@@ -159,14 +159,12 @@ namespace Atlas {
 			Shader::Uniform* texture2DProjectionMatrix;
 			Shader::Uniform* texture2DOffset;
 			Shader::Uniform* texture2DScale;
-			Shader::Uniform* texture2DTexture;
 			Shader::Uniform* texture2DClipArea;
 			Shader::Uniform* texture2DBlendArea;
 
 			Shader::Uniform* texture2DArrayProjectionMatrix;
 			Shader::Uniform* texture2DArrayOffset;
 			Shader::Uniform* texture2DArrayScale;
-			Shader::Uniform* texture2DArrayTexture;
 			Shader::Uniform* texture2DArrayClipArea;
 			Shader::Uniform* texture2DArrayBlendArea;
 			Shader::Uniform* texture2DArrayDepth;

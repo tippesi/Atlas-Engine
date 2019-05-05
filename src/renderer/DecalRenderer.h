@@ -25,8 +25,6 @@ namespace Atlas {
 
 			Shader::Shader shader;
 
-			Shader::Uniform* depthTexture;
-			Shader::Uniform* decalTexture;
 			Shader::Uniform* modelMatrix;
 			Shader::Uniform* viewMatrix;
 			Shader::Uniform* projectionMatrix;

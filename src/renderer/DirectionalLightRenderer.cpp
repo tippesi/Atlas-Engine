@@ -28,14 +28,6 @@ namespace Atlas {
 
 			shader.Bind();
 
-			diffuseTexture->SetValue(0);
-			normalTexture->SetValue(1);
-			materialTexture->SetValue(2);
-			depthTexture->SetValue(3);
-			aoTexture->SetValue(4);
-			volumetricTexture->SetValue(5);
-			shadowTexture->SetValue(6);
-
 			inverseViewMatrix->SetValue(camera->inverseViewMatrix);
 			inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
@@ -96,14 +88,6 @@ namespace Atlas {
 		}
 
 		void DirectionalLightRenderer::GetUniforms() {
-
-			diffuseTexture = shader.GetUniform("diffuseTexture");
-			normalTexture = shader.GetUniform("normalTexture");
-			materialTexture = shader.GetUniform("materialTexture");
-			depthTexture = shader.GetUniform("depthTexture");
-			aoTexture = shader.GetUniform("aoTexture");
-			volumetricTexture = shader.GetUniform("volumetricTexture");
-			shadowTexture = shader.GetUniform("cascadeMaps");
 
 			inverseViewMatrix = shader.GetUniform("ivMatrix");
 			inverseProjectionMatrix = shader.GetUniform("ipMatrix");

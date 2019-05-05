@@ -14,8 +14,6 @@ namespace Atlas {
 
 			renderList = RenderList(AE_SHADOW_CONFIG);
 
-			arrayMapUniform = shaderBatch.GetUniform("arrayMap");
-			diffuseMapUniform = shaderBatch.GetUniform("diffuseMap");
 			modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
 			lightSpaceMatrixUniform = shaderBatch.GetUniform("lightSpaceMatrix");
 
@@ -73,9 +71,6 @@ namespace Atlas {
 						auto renderListBatches = renderListBatchesKey.second;
 
 						shaderBatch.Bind(shaderID);
-
-						arrayMapUniform->SetValue(0);
-						diffuseMapUniform->SetValue(0);
 
 						mat4 lightSpace = component->projectionMatrix * component->viewMatrix;
 

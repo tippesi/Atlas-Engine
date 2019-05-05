@@ -33,8 +33,6 @@ namespace Atlas {
 			Shader::Shader bilateralBlurShader;
 
 			// Volumetric shader uniforms
-			Shader::Uniform* depthTexture;
-			Shader::Uniform* shadowTexture;
 			Shader::Uniform* lightDirection;
 			Shader::Uniform* inverseProjectionMatrix;
 			Shader::Uniform* sampleCount;
@@ -49,8 +47,6 @@ namespace Atlas {
 			}cascades[MAX_SHADOW_CASCADE_COUNT];
 
 			// Bilateral blur shader uniforms
-			Shader::Uniform* diffuseTexture;
-			Shader::Uniform* bilateralDepthTexture;
 			Shader::Uniform* blurDirection;
 			Shader::Uniform* offsets;
 			Shader::Uniform* weights;

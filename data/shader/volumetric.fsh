@@ -3,8 +3,8 @@
 
 in vec2 fTexCoord;
 
-uniform sampler2D depthTexture;
-uniform sampler2DArrayShadow cascadeMaps;
+layout(binding = 0) uniform sampler2D depthTexture;
+layout(binding = 1) uniform sampler2DArrayShadow cascadeMaps;
 
 uniform Light light;
 uniform int sampleCount;

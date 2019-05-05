@@ -28,12 +28,6 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
-			diffuseTexture->SetValue(0);
-			normalTexture->SetValue(1);
-			materialTexture->SetValue(2);
-			depthTexture->SetValue(3);
-			shadowCubemap->SetValue(4);
-
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
 			inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
@@ -74,11 +68,6 @@ namespace Atlas {
 
 		void PointLightRenderer::GetUniforms() {
 
-			diffuseTexture = shader.GetUniform("diffuseTexture");
-			normalTexture = shader.GetUniform("normalTexture");
-			materialTexture = shader.GetUniform("materialTexture");
-			depthTexture = shader.GetUniform("depthTexture");
-			shadowCubemap = shader.GetUniform("shadowCubemap");
 			viewMatrix = shader.GetUniform("vMatrix");
 			projectionMatrix = shader.GetUniform("pMatrix");
 			inverseProjectionMatrix = shader.GetUniform("ipMatrix");

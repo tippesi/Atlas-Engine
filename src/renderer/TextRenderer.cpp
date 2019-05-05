@@ -90,8 +90,6 @@ namespace Atlas {
 			auto instances = CalculateCharacterInstances(font, text, &characterCount);
 			vertexArray.GetComponent(1)->SetData(instances.data(), 0, instances.size());
 
-			glyphsTexture->SetValue(0);
-
 			projectionMatrix->SetValue(glm::ortho(0.0f, width, 0.0f, height));
 
 			textScale->SetValue(scale);
@@ -137,7 +135,6 @@ namespace Atlas {
 
 		void TextRenderer::GetUniforms() {
 
-			glyphsTexture = shader.GetUniform("glyphsTexture");
 			projectionMatrix = shader.GetUniform("pMatrix");
 			characterScales = shader.GetUniform("characterScales");
 			characterSizes = shader.GetUniform("characterSizes");

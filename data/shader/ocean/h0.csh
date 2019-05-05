@@ -5,10 +5,10 @@ layout (local_size_x = 16, local_size_y = 16) in;
 layout (binding = 0, rgba32f) writeonly uniform image2D h0K;
 layout (binding = 1, rgba32f) writeonly uniform image2D h0MinusK;
 
-uniform sampler2D noise0;
-uniform sampler2D noise1;
-uniform sampler2D noise2;
-uniform sampler2D noise3;
+layout(binding = 2) uniform sampler2D noise0;
+layout(binding = 3) uniform sampler2D noise1;
+layout(binding = 4) uniform sampler2D noise2;
+layout(binding = 5) uniform sampler2D noise3;
 
 uniform int N;
 uniform int L;

@@ -1,9 +1,9 @@
 #ifdef ALPHA
 #ifdef ARRAY_MAP
-uniform sampler2DArray arrayMap;
+layout(binding = 0) uniform sampler2DArray arrayMap;
 uniform float diffuseMapIndex;
 #else
-uniform sampler2D diffuseMap;
+layout(binding = 0) uniform sampler2D diffuseMap;
 #endif
 
 in vec2 fTexCoord;

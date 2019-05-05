@@ -51,9 +51,6 @@ namespace Atlas {
 
             framebuffer.Bind();
 
-            diffuseTexture->SetValue(0);
-            this->depthTexture->SetValue(1);
-
             if (bilateralBlur) {
                 depthTexture->Bind(GL_TEXTURE1);
             }
@@ -80,8 +77,6 @@ namespace Atlas {
 
         void BlurRenderer::GetUniforms() {
 
-            diffuseTexture = shader.GetUniform("diffuseTexture");
-            depthTexture = shader.GetUniform("depthTexture");
             blurDirection = shader.GetUniform("blurDirection");
 
         }

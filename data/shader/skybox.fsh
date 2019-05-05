@@ -2,7 +2,7 @@ out vec3 fragColor;
 
 in vec3 fTexCoord;
 
-uniform samplerCube skyCubemap;
+layout(binding = 0) uniform samplerCube skyCubemap;
 
 void main() {
 	

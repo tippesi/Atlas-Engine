@@ -23,14 +23,6 @@ namespace Atlas {
 
             Shader::Shader shader;
 
-            Shader::Uniform* diffuseTexture;
-            Shader::Uniform* normalTexture;
-            Shader::Uniform* materialTexture;
-            Shader::Uniform* depthTexture;
-            Shader::Uniform* aoTexture;
-            Shader::Uniform* volumetricTexture;
-            Shader::Uniform* shadowTexture;
-
             Shader::Uniform* inverseViewMatrix;
             Shader::Uniform* inverseProjectionMatrix;
 

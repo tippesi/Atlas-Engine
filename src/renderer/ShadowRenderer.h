@@ -33,8 +33,6 @@ namespace Atlas {
 
 			Framebuffer framebuffer;
 
-			Shader::Uniform* arrayMapUniform;
-			Shader::Uniform* diffuseMapUniform;
 			Shader::Uniform* lightSpaceMatrixUniform;
 			Shader::Uniform* modelMatrixUniform;
 

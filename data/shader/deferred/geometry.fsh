@@ -2,33 +2,17 @@ layout (location = 0) out vec3 diffuse;
 layout (location = 1) out vec3 normal;
 layout (location = 2) out vec2 additional;
 
-#ifdef ARRAY_MAP
-uniform sampler2DArray arrayMap;
 #ifdef DIFFUSE_MAP
-uniform float diffuseMapIndex;
+layout(binding = 0) uniform sampler2D diffuseMap;
 #endif
 #ifdef NORMAL_MAP
-uniform float normalMapIndex;
+layout(binding = 1) uniform sampler2D normalMap;
 #endif
 #ifdef SPECULAR_MAP
-uniform float specularMapIndex;
+layout(binding = 2) uniform sampler2D specularMap;
 #endif
 #ifdef HEIGHT_MAP
-uniform float heightMapIndex;
-#endif
-#else
-#ifdef DIFFUSE_MAP
-uniform sampler2D diffuseMap;
-#endif
-#ifdef NORMAL_MAP
-uniform sampler2D normalMap;
-#endif
-#ifdef SPECULAR_MAP
-uniform sampler2D specularMap;
-#endif
-#ifdef HEIGHT_MAP
-uniform sampler2D heightMap;
-#endif
+layout(binding = 3) uniform sampler2D heightMap;
 #endif
 
 #ifdef REFLECTION

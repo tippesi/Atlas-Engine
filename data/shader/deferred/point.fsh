@@ -5,11 +5,11 @@ in vec3 fTexCoordProj;
 in vec3 viewSpacePosition;
 out vec4 fragColor;
 
-uniform sampler2D diffuseTexture;
-uniform sampler2D normalTexture;
-uniform sampler2D materialTexture;
-uniform sampler2D depthTexture;
-uniform samplerCubeShadow shadowCubemap;
+layout(binding = 0) uniform sampler2D diffuseTexture;
+layout(binding = 1) uniform sampler2D normalTexture;
+layout(binding = 2) uniform sampler2D materialTexture;
+layout(binding = 3) uniform sampler2D depthTexture;
+layout(binding = 4) uniform samplerCubeShadow shadowCubemap;
 
 uniform Light light;
 uniform vec3 viewSpaceLightLocation;

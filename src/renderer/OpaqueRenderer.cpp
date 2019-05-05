@@ -16,17 +16,6 @@ namespace Atlas {
 
 			renderList = RenderList(AE_OPAQUE_CONFIG);
 
-			arrayMapUniform = shaderBatch.GetUniform("arrayMapUniform");
-			diffuseMapUniform = shaderBatch.GetUniform("diffuseMap");
-			specularMapUniform = shaderBatch.GetUniform("specularMap");
-			normalMapUniform = shaderBatch.GetUniform("normalMap");
-			heightMapUniform = shaderBatch.GetUniform("heightMap");
-
-			diffuseMapIndexUniform = shaderBatch.GetUniform("diffuseMapIndex");
-			normalMapIndexUniform = shaderBatch.GetUniform("normalMapIndex");
-			specularMapIndexUniform = shaderBatch.GetUniform("specularMapIndex");
-			heightMapIndexUniform = shaderBatch.GetUniform("heightMapIndex");
-
 			modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
 			viewMatrixUniform = shaderBatch.GetUniform("vMatrix");
 			projectionMatrixUniform = shaderBatch.GetUniform("pMatrix");
@@ -58,12 +47,6 @@ namespace Atlas {
 				auto renderListBatches = renderListBatchesKey.second;
 
 				shaderBatch.Bind(shaderID);
-
-				arrayMapUniform->SetValue(0);
-				diffuseMapUniform->SetValue(0);
-				normalMapUniform->SetValue(1);
-				specularMapUniform->SetValue(2);
-				heightMapUniform->SetValue(3);
 
 				viewMatrixUniform->SetValue(camera->viewMatrix);
 				projectionMatrixUniform->SetValue(camera->projectionMatrix);

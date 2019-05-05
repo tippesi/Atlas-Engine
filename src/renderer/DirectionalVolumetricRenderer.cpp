@@ -40,9 +40,6 @@ namespace Atlas {
 
             volumetricShader.Bind();
 
-            depthTexture->SetValue(0);
-            shadowTexture->SetValue(1);
-
             inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
             target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
 
@@ -89,9 +86,6 @@ namespace Atlas {
 
             bilateralBlurShader.Bind();
 
-            diffuseTexture->SetValue(0);
-            bilateralDepthTexture->SetValue(1);
-
             target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
 
             std::vector<float>* kernelWeights;
@@ -136,8 +130,6 @@ namespace Atlas {
 
         void DirectionalVolumetricRenderer::GetVolumetricUniforms() {
 
-            depthTexture = volumetricShader.GetUniform("depthTexture");
-            shadowTexture = volumetricShader.GetUniform("cascadeMaps");
             lightDirection = volumetricShader.GetUniform("light.direction");
             inverseProjectionMatrix = volumetricShader.GetUniform("ipMatrix");
             sampleCount = volumetricShader.GetUniform("sampleCount");
@@ -154,8 +146,6 @@ namespace Atlas {
 
         void DirectionalVolumetricRenderer::GetBilateralBlurUniforms() {
 
-            diffuseTexture = bilateralBlurShader.GetUniform("diffuseTexture");
-            bilateralDepthTexture = bilateralBlurShader.GetUniform("depthTexture");
             blurDirection = bilateralBlurShader.GetUniform("blurDirection");
             offsets = bilateralBlurShader.GetUniform("offset");
             weights = bilateralBlurShader.GetUniform("weight");

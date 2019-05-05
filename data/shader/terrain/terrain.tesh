@@ -40,17 +40,21 @@ void main(){
 	texCoords /= nodeSideLength;
 	
 	teTexCoords = texCoords;
-	
+	/*
 	splat = texture(splatMap, texCoords);
 	
-	float displacement = (texture(materials[0].displacementMap, texCoords * 40.0f).r * materials[0].displacementScale * splat.r + 
-		texture(materials[1].displacementMap, texCoords * 40.0f).r * materials[1].displacementScale * splat.g + 
-		texture(materials[2].displacementMap, texCoords * 40.0f).r * materials[2].displacementScale * splat.b + 
-		texture(materials[3].displacementMap, texCoords * 40.0f).r * materials[3].displacementScale * splat.a)
-		* clamp((displacementDistance - vertexDistance), 0.0f, 1.0f);
+	float weight = clamp((displacementDistance - vertexDistance), 0.0f, 1.0f);
 	
-	position.y += displacement;
-	
+	if (weight > 0.0) {
+		float displacement = (texture(materials[0].displacementMap, texCoords * 40.0f).r * materials[0].displacementScale * splat.r + 
+			texture(materials[1].displacementMap, texCoords * 40.0f).r * materials[1].displacementScale * splat.g + 
+			texture(materials[2].displacementMap, texCoords * 40.0f).r * materials[2].displacementScale * splat.b + 
+			texture(materials[3].displacementMap, texCoords * 40.0f).r * materials[3].displacementScale * splat.a)
+			* weight;
+		
+		position.y += displacement;
+	}
+	*/
 #ifndef GEOMETRY_SHADER
 	position = pMatrix * vMatrix * position;
 #endif

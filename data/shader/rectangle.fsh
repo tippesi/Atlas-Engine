@@ -2,10 +2,10 @@ layout (location = 0) out vec4 color;
 
 #ifdef TEXTURE2D
 in vec2 fTexCoord;
-uniform sampler2D rectangleTexture;
+layout(binding = 0) uniform sampler2D rectangleTexture;
 #elif defined(TEXTURE2D_ARRAY)
 in vec2 fTexCoord;
-uniform sampler2DArray rectangleTexture;
+layout(binding = 0) uniform sampler2DArray rectangleTexture;
 uniform float textureDepth;
 #else
 uniform vec4 rectangleColor;

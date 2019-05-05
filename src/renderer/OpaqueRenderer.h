@@ -31,17 +31,6 @@ namespace Atlas {
 		private:
 			RenderList renderList;
 
-			Shader::Uniform* arrayMapUniform;
-			Shader::Uniform* diffuseMapUniform;
-			Shader::Uniform* normalMapUniform;
-			Shader::Uniform* specularMapUniform;
-			Shader::Uniform* heightMapUniform;
-
-			Shader::Uniform* diffuseMapIndexUniform;
-			Shader::Uniform* normalMapIndexUniform;
-			Shader::Uniform* specularMapIndexUniform;
-			Shader::Uniform* heightMapIndexUniform;
-
 			Shader::Uniform* modelMatrixUniform;
 			Shader::Uniform* viewMatrixUniform;
 			Shader::Uniform* projectionMatrixUniform;

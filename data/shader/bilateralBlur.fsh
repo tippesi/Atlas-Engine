@@ -1,9 +1,9 @@
 in vec2 fTexCoord;
 
-uniform sampler2D diffuseTexture;
+layout(binding = 0) uniform sampler2D diffuseTexture;
 
 #ifdef BILATERAL
-uniform sampler2D depthTexture;
+layout(binding = 1) uniform sampler2D depthTexture;
 #endif
 
 uniform vec2 blurDirection;
@@ -66,7 +66,7 @@ void main() {
 		float currentWeight = weight[i];
 #ifdef BILATERAL
 		float depth = texture(depthTexture, fTexCoord - (vec2(offset[i]) * blurDirection)).r;
-        closeness = max(0.0f, 1.0f - 100.0f * abs(centerDepth - depth));
+        closeness = max(0.0f, 1.0f - 1000.0f * abs(centerDepth - depth));
 		currentWeight *= closeness;
 		totalWeight += currentWeight;
 #endif

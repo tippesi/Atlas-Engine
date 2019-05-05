@@ -25,8 +25,6 @@ namespace Atlas {
 
 			shader.Bind();
 
-			skyCubemap->SetValue(0);
-
 			mat4 mvpMatrix = camera->projectionMatrix * glm::mat4(glm::mat3(camera->viewMatrix)) * scene->sky.skybox->matrix;
 
 			modelViewProjectionMatrix->SetValue(mvpMatrix);
@@ -41,7 +39,6 @@ namespace Atlas {
 
 		void SkyboxRenderer::GetUniforms() {
 
-			skyCubemap = shader.GetUniform("skyCubemap");
 			modelViewProjectionMatrix = shader.GetUniform("mvpMatrix");
 
 		}

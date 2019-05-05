@@ -4,8 +4,9 @@ out float fragColor;
 
 in vec2 fTexCoord;
 
-uniform sampler2D textures[2];
-uniform sampler2D shadowMap;
+layout(binding = 0) uniform sampler2D randomTexture;
+layout(binding = 1) uniform sampler2D normalTexture;
+layout(binding = 2) uniform sampler2D shadowMap;
 uniform vec3 ssaoSamples[64];
 uniform vec2 framebufferResolution;
 

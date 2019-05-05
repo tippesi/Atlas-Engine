@@ -54,11 +54,6 @@ namespace Atlas {
 
 			shader.Bind();
 
-			hdrTexture->SetValue(0);
-			bloomFirstTexture->SetValue(1);
-			bloomSecondTexture->SetValue(2);
-			bloomThirdTexture->SetValue(3);
-
 			hdrTextureResolution->SetValue(
 					vec2(target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->width,
 						 target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->height));
@@ -88,10 +83,6 @@ namespace Atlas {
 
 		void PostProcessRenderer::GetUniforms() {
 
-			hdrTexture = shader.GetUniform("hdrTexture");
-			bloomFirstTexture = shader.GetUniform("bloomFirstTexture");
-			bloomSecondTexture = shader.GetUniform("bloomSecondTexture");
-			bloomThirdTexture = shader.GetUniform("bloomThirdTexture");
 			hdrTextureResolution = shader.GetUniform("hdrTextureResolution");
 			exposure = shader.GetUniform("exposure");
 			saturation = shader.GetUniform("saturation");

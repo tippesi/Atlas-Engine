@@ -18,6 +18,8 @@ const float mieScaleHeight = 1.2e3f;
 
 void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kRlh, float kMie, out vec3 totalRlh, out vec3 totalMie);
 
+const float gamma = 2.2f;
+
 void main() {
 	
 	const float g = 0.99f;
@@ -46,7 +48,7 @@ void main() {
     float pRlh = 3.0 / (16.0 * PI) * (1.0 + mumu);
     float pMie = 3.0 / (8.0 * PI) * ((1.0 - gg) * (mumu + 1.0)) / (pow(1.0 + gg - 2.0 * mu * g, 1.5) * (2.0 + gg));
 	
-	fragColor = pRlh * totalRlh + pMie * totalMie;
+	fragColor = pow(pRlh * totalRlh + pMie * totalMie, vec3(gamma));
 	
 }
 

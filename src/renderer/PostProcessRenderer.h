@@ -24,10 +24,6 @@ namespace Atlas {
 
 			Shader::Shader shader;
 
-			Shader::Uniform* hdrTexture;
-			Shader::Uniform* bloomFirstTexture;
-			Shader::Uniform* bloomSecondTexture;
-			Shader::Uniform* bloomThirdTexture;
 			Shader::Uniform* hdrTextureResolution;
 			Shader::Uniform* exposure;
 			Shader::Uniform* saturation;

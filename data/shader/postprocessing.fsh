@@ -1,9 +1,9 @@
 in vec2 fPosition;
 
-uniform sampler2D hdrTexture;
-uniform sampler2D bloomFirstTexture;
-uniform sampler2D bloomSecondTexture;
-uniform sampler2D bloomThirdTexture;
+layout(binding = 0) uniform sampler2D hdrTexture;
+layout(binding = 1) uniform sampler2D bloomFirstTexture;
+layout(binding = 2) uniform sampler2D bloomSecondTexture;
+layout(binding = 3) uniform sampler2D bloomThirdTexture;
 uniform vec2 hdrTextureResolution;
 uniform float exposure;
 uniform float saturation;
@@ -138,8 +138,7 @@ void main() {
 #else
 	color = ToneMap(color);
 #endif
-#endif
-	
+#endif	
 	color = pow(color, vec3(gamma));
 	
 	color = saturate(color, saturation);

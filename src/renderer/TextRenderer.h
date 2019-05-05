@@ -44,7 +44,6 @@ namespace Atlas {
 
 			Shader::Shader shader;
 
-			Shader::Uniform* glyphsTexture;
 			Shader::Uniform* projectionMatrix;
 			Shader::Uniform* characterScales;
 			Shader::Uniform* characterSizes;

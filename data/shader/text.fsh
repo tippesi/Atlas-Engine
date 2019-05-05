@@ -3,7 +3,7 @@ layout (location = 0) out vec4 color;
 in vec3 fTexCoord;
 in vec2 fScreenPosition;
 
-uniform sampler2DArray glyphsTexture;
+layout(binding = 0) uniform sampler2DArray glyphsTexture;
 uniform vec4 textColor;
 uniform vec4 outlineColor;
 uniform float outlineScale;

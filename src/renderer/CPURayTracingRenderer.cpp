@@ -2,6 +2,8 @@
 
 #include "../common/Ray.h"
 
+#include <vector>
+
 namespace Atlas {
 
 	namespace Renderer {
@@ -26,6 +28,19 @@ namespace Atlas {
 
 			auto offset = ivec2(viewport->x, viewport->y);
 			auto size = ivec2(viewport->width, viewport->height);
+
+			std::vector<Actor::MeshActor*> actors;
+
+			Common::AABB base(vec3(-1.0f), vec3(1.0f));
+			auto aabb = base.Transform(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
+
+			auto movableActors = scene->GetMovableMeshActors(aabb);
+			auto staticActors = scene->GetStaticMeshActors(aabb);
+
+			for (auto& actor : movableActors)
+				actors.push_back(actor);
+			for (auto& actor : staticActors)
+				actors.push_back(actor);
 
 			for (int32_t x = 0; x < size.x; x++) {
 				for (int32_t y = 0; y < size.y; y++) {

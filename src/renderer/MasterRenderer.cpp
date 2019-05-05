@@ -148,7 +148,6 @@ namespace Atlas {
 			texture2DScale->SetValue(vec2(width, height));
 			texture2DBlendArea->SetValue(blendArea);
 			texture2DClipArea->SetValue(clipArea);
-			texture2DTexture->SetValue(0);
 
 			texture->Bind(GL_TEXTURE0);
 
@@ -210,7 +209,6 @@ namespace Atlas {
 			texture2DArrayBlendArea->SetValue(blendArea);
 			texture2DArrayClipArea->SetValue(clipArea);
 			texture2DArrayDepth->SetValue((float)depth);
-			texture2DArrayTexture->SetValue(0);
 
 			texture->Bind(GL_TEXTURE0);
 
@@ -314,14 +312,12 @@ namespace Atlas {
 			texture2DProjectionMatrix = texture2DShader.GetUniform("pMatrix");
 			texture2DOffset = texture2DShader.GetUniform("rectangleOffset");
 			texture2DScale = texture2DShader.GetUniform("rectangleScale");
-			texture2DTexture = texture2DShader.GetUniform("rectangleTexture");
 			texture2DBlendArea = texture2DShader.GetUniform("rectangleBlendArea");
 			texture2DClipArea = texture2DShader.GetUniform("rectangleClipArea");
 
 			texture2DArrayProjectionMatrix = texture2DArrayShader.GetUniform("pMatrix");
 			texture2DArrayOffset = texture2DArrayShader.GetUniform("rectangleOffset");
 			texture2DArrayScale = texture2DArrayShader.GetUniform("rectangleScale");
-			texture2DArrayTexture = texture2DArrayShader.GetUniform("rectangleTexture");
 			texture2DArrayBlendArea = texture2DArrayShader.GetUniform("rectangleBlendArea");
 			texture2DArrayClipArea = texture2DArrayShader.GetUniform("rectangleClipArea");
 			texture2DArrayDepth = texture2DArrayShader.GetUniform("textureDepth");
