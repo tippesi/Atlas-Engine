@@ -22,7 +22,7 @@ const float gamma = 2.2f;
 
 void main() {
 	
-	const float g = 0.99f;
+	const float g = 0.7f;
 	vec3 r = normalize(fPosition);
 	vec3 pSun = normalize(-sunDirection);
 	

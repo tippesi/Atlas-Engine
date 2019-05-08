@@ -58,6 +58,8 @@ namespace Atlas {
              */
 			DataComponent(int32_t componentType, int32_t stride);
 
+			~DataComponent();
+
 			/**
              * Sets the data for the component and converts it into data of component type.
              * @param values An array of values of type S.
@@ -135,8 +137,6 @@ namespace Atlas {
              */
 			bool ContainsData();
 
-			~DataComponent();
-
 		private:
 			bool containsData;
 
@@ -161,6 +161,26 @@ namespace Atlas {
 			size = 0;
 
 			SetType(componentType);
+
+		}
+
+		template <class S, class T>
+		DataComponent<S, T>::~DataComponent() {
+
+			delete[] data;
+
+			if (componentType == AE_COMPONENT_HALF_FLOAT) {
+				delete[](float16*)convertedData;
+			}
+			else if (componentType == AE_COMPONENT_PACKED_FLOAT) {
+				delete[](uint32_t*)convertedData;
+			}
+			else if (componentType == AE_COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
+				delete[](uint16_t*)convertedData;
+			}
+			else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
+				delete[](uint8_t*)convertedData;
+			}
 
 		}
 
@@ -345,26 +365,6 @@ namespace Atlas {
 		bool DataComponent<S, T>::ContainsData() {
 
 			return containsData;
-
-		}
-
-		template <class S, class T>
-		DataComponent<S, T>::~DataComponent() {
-
-			delete[] data;
-
-			if (componentType == AE_COMPONENT_HALF_FLOAT) {
-				delete[] (float16*)convertedData;
-			}
-			else if (componentType == AE_COMPONENT_PACKED_FLOAT) {
-				delete[] (uint32_t*)convertedData;
-			}
-			else if (componentType == AE_COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
-				delete[] (uint16_t*)convertedData;
-			}
-			else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
-				delete[] (uint8_t*)convertedData;
-			}
 
 		}
 

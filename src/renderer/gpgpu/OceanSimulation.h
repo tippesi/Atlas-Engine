@@ -41,24 +41,27 @@ namespace Atlas {
 				Texture::Texture2D hTDx;
 				Texture::Texture2D hTDz;
 
+				Texture::Texture2D twiddleIndices;
+
 			private:
 				void ComputeH0(OceanState& state);
 
 				void ComputeTwiddleIndices();
+
+				int32_t ReverseBits(int32_t data, int32_t bitCount);
 
 				int32_t N;
 				int32_t L;
 
 				Shader::Shader h0;
 				Shader::Shader ht;
+				Shader::Shader twiddle;
 
 				// Precomputed noise textures
 				Texture::Texture2D noise0;
 				Texture::Texture2D noise1;
 				Texture::Texture2D noise2;
 				Texture::Texture2D noise3;
-
-				Texture::Texture2D twiddleIndices;
 
 				Shader::Uniform* NUniform;
 				Shader::Uniform* LUniform;

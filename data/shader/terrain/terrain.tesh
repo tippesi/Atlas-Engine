@@ -40,7 +40,7 @@ void main(){
 	texCoords /= nodeSideLength;
 	
 	teTexCoords = texCoords;
-	/*
+	
 	splat = texture(splatMap, texCoords);
 	
 	float weight = clamp((displacementDistance - vertexDistance), 0.0f, 1.0f);
@@ -54,7 +54,7 @@ void main(){
 		
 		position.y += displacement;
 	}
-	*/
+	
 #ifndef GEOMETRY_SHADER
 	position = pMatrix * vMatrix * position;
 #endif

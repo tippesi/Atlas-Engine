@@ -14,7 +14,7 @@ namespace Atlas {
 
         Buffer::Buffer(uint32_t type, size_t elementSize, uint32_t flags) : type(type), elementSize(elementSize) {
 
-            dynamicStorage = flags & AE_BUFFER_DYNAMIC_STORAGE ? true : false;
+            dynamicStorage = flags & AE_BUFFER_DYNAMIC_STORAGE;
 
             // Check flags.
             if (flags & AE_BUFFER_DOUBLE_BUFFERING) {
@@ -27,7 +27,7 @@ namespace Atlas {
                 bufferingCount = 1;
             }
 
-            immutable = flags & AE_BUFFER_IMMUTABLE && immutableStorageSupported;
+            immutable = (flags & AE_BUFFER_IMMUTABLE) && immutableStorageSupported;
 
             // Configure mapping and storage flags.
             mapFlags |= (flags & AE_BUFFER_MAP_READ ? GL_MAP_READ_BIT : 0);
