@@ -107,6 +107,7 @@ namespace Atlas {
             composedCode.append("#version 430\n\n#define ENGINE_GL\n");
 #elif AE_API_GLES
             composedCode.append("#version 320 es\n\nprecision highp float;\nprecision highp sampler2D;\
+				\nprecision highp usampler2D;\nprecision highp image2D;\
 				\nprecision highp samplerCube;\nprecision highp sampler2DArrayShadow;\nprecision highp sampler2DArray;\
 				\nprecision highp samplerCubeShadow;\nprecision highp int;\n#define ENGINE_GLES\n");
 #endif

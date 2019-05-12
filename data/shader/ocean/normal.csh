@@ -4,16 +4,15 @@ layout (binding = 0, rgba32f) readonly uniform image2D displacementMap;
 layout (binding = 1, rgba16f) writeonly uniform image2D normalMap;
 
 uniform int N;
-uniform 
 
 void main() {
 
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	
-	vec3 dispL = imageLoad(displacementMap, ivec2(mod(coord.x - 1, N), coord.y)).rgb;
-	vec3 dispR = imageLoad(displacementMap, ivec2(mod(coord.x + 1, N), coord.y)).rgb;
-	vec3 dispT = imageLoad(displacementMap, ivec2(coord.x, mod(coord.y + 1, N))).rgb;
-	vec3 dispD = imageLoad(displacementMap, ivec2(coord.x, mod(coord.y - 1, N))).rgb;
+	vec3 dispL = imageLoad(displacementMap, ivec2((coord.x - 1) % N, coord.y)).rgb;
+	vec3 dispR = imageLoad(displacementMap, ivec2((coord.x + 1) % N, coord.y)).rgb;
+	vec3 dispT = imageLoad(displacementMap, ivec2(coord.x, (coord.y + 1) % N)).rgb;
+	vec3 dispD = imageLoad(displacementMap, ivec2(coord.x, (coord.y - 1) % N)).rgb;
 	
 	float y = 3.2;
 	float x = (dispL.y - dispR.y);

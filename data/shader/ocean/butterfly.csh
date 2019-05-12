@@ -5,12 +5,12 @@ layout (local_size_x = 16, local_size_y = 16) in;
 
 layout (binding = 0, rgba32f) uniform image2D twiddleIndicesTexture;
 
-layout (binding = 1, rg32f) uniform image2D pingpongY0;
-layout (binding = 2, rg32f) uniform image2D pingpongX0;
-layout (binding = 3, rg32f) uniform image2D pingpongZ0;
-layout (binding = 4, rg32f) uniform image2D pingpongY1;
-layout (binding = 5, rg32f) uniform image2D pingpongX1;
-layout (binding = 6, rg32f) uniform image2D pingpongZ1;
+layout (binding = 1, rgba32f) uniform image2D pingpongY0;
+layout (binding = 2, rgba32f) uniform image2D pingpongX0;
+layout (binding = 3, rgba32f) uniform image2D pingpongZ0;
+layout (binding = 4, rgba32f) uniform image2D pingpongY1;
+layout (binding = 5, rgba32f) uniform image2D pingpongX1;
+layout (binding = 6, rgba32f) uniform image2D pingpongZ1;
 
 uniform int stage;
 uniform int pingpong;

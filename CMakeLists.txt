@@ -35,6 +35,19 @@ find_package(OpenGL REQUIRED)
 set(OpenGL_GL_PREFERENCE GLVND)
 endif()
 
+# Message options #################################################################################
+if (OPENGL_ES)
+message(STATUS "Using OpenGL ES")
+else()
+message(STATUS "Using OpenGL")
+endif()
+
+if (BUILD_LIBRARY)
+message(STATUS "Building as a library")
+else()
+message(STATUS "Building as application")
+endif()
+
 # Add dependencies ################################################################################
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Assimp EXCLUDE_FROM_ALL)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/SDL EXCLUDE_FROM_ALL)

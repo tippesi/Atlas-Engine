@@ -60,8 +60,6 @@ private:
 	Atlas::Audio::AudioData* audioData;
 	Atlas::Audio::AudioStream* audioStream;
 
-	Atlas::Renderer::GPGPU::OceanSimulation* simulation;
-
 	float renderingStart;
 	uint32_t frameCount;
 

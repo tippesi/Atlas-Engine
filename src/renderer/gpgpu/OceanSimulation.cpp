@@ -27,16 +27,16 @@ namespace Atlas {
 				displacementMap = Texture::Texture2D(N, N, AE_RGBA32F, GL_REPEAT, GL_LINEAR);
 				normalMap = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR);
 
-				h0K = Texture::Texture2D(N, N, AE_RG32F);
-				h0MinusK = Texture::Texture2D(N, N, AE_RG32F);
+				h0K = Texture::Texture2D(N, N, AE_RGBA32F);
+				h0MinusK = Texture::Texture2D(N, N, AE_RGBA32F);
 
-				hTDy = Texture::Texture2D(N, N, AE_RG32F);
-				hTDx = Texture::Texture2D(N, N, AE_RG32F);
-				hTDz = Texture::Texture2D(N, N, AE_RG32F);
+				hTDy = Texture::Texture2D(N, N, AE_RGBA32F);
+				hTDx = Texture::Texture2D(N, N, AE_RGBA32F);
+				hTDz = Texture::Texture2D(N, N, AE_RGBA32F);
 
-				hTDyPingpong = Texture::Texture2D(N, N, AE_RG32F);
-				hTDxPingpong = Texture::Texture2D(N, N, AE_RG32F);
-				hTDzPingpong = Texture::Texture2D(N, N, AE_RG32F);
+				hTDyPingpong = Texture::Texture2D(N, N, AE_RGBA32F);
+				hTDxPingpong = Texture::Texture2D(N, N, AE_RGBA32F);
+				hTDzPingpong = Texture::Texture2D(N, N, AE_RGBA32F);
 
 				h0.AddStage(AE_COMPUTE_STAGE, "ocean/h0.csh");
 				ht.AddStage(AE_COMPUTE_STAGE, "ocean/ht.csh");

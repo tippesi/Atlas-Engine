@@ -68,9 +68,6 @@ Main::Main(int argc, char* argv[]) {
 
 	SceneSetUp();
 
-	simulation = new Atlas::Renderer::GPGPU::OceanSimulation(512, 1000);
-	simulation->AddOceanState(4.0f, vec2(1.0f, 0.0f), 26.0f);
-
 	renderingStart = Clock::Get();
 	frameCount = 1;
 
@@ -126,8 +123,6 @@ void Main::Render(float deltaTime) {
 
 	masterRenderer->textRenderer.Render(&viewport, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
 
-	// masterRenderer->RenderTexture(&viewport, &simulation->hTDy, 0.0f, 20.0f, 512.0f, 512.0f);
-
 }
 
 void Main::Load() {
@@ -153,7 +148,7 @@ void Main::Load() {
 	audioData = new Audio::AudioData("MenuTheme2_final.wav");
 	audioStream = new Audio::AudioStream(audioData);
 
-	// Audio::AudioManager::AddMusic(audioStream);
+	Audio::AudioManager::AddMusic(audioStream);
 
 }
 
@@ -214,7 +209,7 @@ void Main::SceneSetUp() {
 #else
     directionalLight->AddShadow(200.0f, 0.01f, 2048, vec3(0.0f), orthoProjection);
     directionalLight->GetShadow()->sampleCount = 8;
-    directionalLight->AddVolumetric(renderTarget->width / 2, renderTarget->height / 2, 10, -0.5f);
+    directionalLight->AddVolumetric(renderTarget->GetSize().x / 2, renderTarget->GetSize().y / 2, 10, -0.5f);
 #endif
 	
 	auto pointLight1 = new Lighting::PointLight(AE_STATIONARY_LIGHT);
