@@ -2,8 +2,8 @@
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-layout (binding = 0, rgba32f) writeonly uniform image2D h0K;
-layout (binding = 1, rgba32f) writeonly uniform image2D h0MinusK;
+layout (binding = 0, rg32f) writeonly uniform image2D h0K;
+layout (binding = 1, rg32f) writeonly uniform image2D h0MinusK;
 
 layout(binding = 2) uniform sampler2D noise0;
 layout(binding = 3) uniform sampler2D noise1;
@@ -15,6 +15,7 @@ uniform int L;
 uniform float A;
 uniform vec2 w;
 uniform float windspeed;
+uniform float windDependency;
 
 const float g = 9.81;
 
@@ -41,7 +42,12 @@ vec4 gaussrnd() {
 float phillips(vec2 k, float A, float lkSqd, float l, vec2 w) {
 
 	float kDotw = dot(normalize(k), normalize(w));
-	return (A / (lkSqd * lkSqd)) * pow(kDotw * kDotw, 2.0) * exp(-1.0 / (lkSqd * l * l));
+	float phillips = (A / (lkSqd * lkSqd)) * pow(kDotw * kDotw, 1.0) * exp(-1.0 / (lkSqd * l * l));
+	
+	if (kDotw < 0)
+		phillips *= windDependency;
+	
+	return phillips;
 
 }
 

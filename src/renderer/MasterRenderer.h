@@ -6,6 +6,7 @@
 
 #include "OpaqueRenderer.h"
 #include "TerrainRenderer.h"
+#include "OceanRenderer.h"
 #include "ShadowRenderer.h"
 #include "DecalRenderer.h"
 #include "DirectionalVolumetricRenderer.h"
@@ -136,6 +137,7 @@ namespace Atlas {
 			void Update();
 
 			TextRenderer textRenderer;
+			OceanRenderer oceanRenderer;
 
 			static std::string vertexPath;
 			static std::string fragmentPath;

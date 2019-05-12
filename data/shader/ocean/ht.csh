@@ -3,12 +3,12 @@
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-layout (binding = 0, rgba32f) writeonly uniform image2D hTDy;
-layout (binding = 1, rgba32f) writeonly uniform image2D hTDx;
-layout (binding = 2, rgba32f) writeonly uniform image2D hTDz;
+layout (binding = 0, rg32f) writeonly uniform image2D hTDy;
+layout (binding = 1, rg32f) writeonly uniform image2D hTDx;
+layout (binding = 2, rg32f) writeonly uniform image2D hTDz;
 
-layout (binding = 3, rgba32f) readonly uniform image2D h0K;
-layout (binding = 4, rgba32f) readonly uniform image2D h0MinusK;
+layout (binding = 3, rg32f) readonly uniform image2D h0K;
+layout (binding = 4, rg32f) readonly uniform image2D h0MinusK;
 
 uniform int N;
 uniform int L;
@@ -29,8 +29,8 @@ void main() {
 	
 	complex h0k = complex(imageLoad(h0K, ivec2(gl_GlobalInvocationID.xy)).r,
 		imageLoad(h0K, ivec2(gl_GlobalInvocationID.xy)).g);
-	complex h0minusk = complex(imageLoad(h0MinusK, ivec2(gl_GlobalInvocationID.xy)).r,
-		imageLoad(h0MinusK, ivec2(gl_GlobalInvocationID.xy)).g);
+	complex h0minusk = conj(complex(imageLoad(h0MinusK, ivec2(gl_GlobalInvocationID.xy)).r,
+		imageLoad(h0MinusK, ivec2(gl_GlobalInvocationID.xy)).g));
 		
 	float c = cos(w * time);
 	float s = sin(w * time);

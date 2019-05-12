@@ -58,6 +58,8 @@ namespace Atlas {
 
 			opaqueRenderer.Render(viewport, target, camera, scene);
 
+			oceanRenderer.Render(viewport, target, camera, scene);
+
 			glEnable(GL_CULL_FACE);
 			glDepthMask(GL_FALSE);
 			glDisable(GL_DEPTH_TEST);
@@ -297,6 +299,7 @@ namespace Atlas {
 		void MasterRenderer::Update() {
 
 			textRenderer.Update();
+			oceanRenderer.Update();
 
 		}
 

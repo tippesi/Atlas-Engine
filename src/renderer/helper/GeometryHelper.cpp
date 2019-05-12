@@ -23,6 +23,52 @@ namespace Atlas {
 
 			}
 
+			void GeometryHelper::GenerateGridVertexArray(Buffer::VertexArray& vertexArray, int32_t subdivisions, float scale) {
+
+				int32_t vertexCount = subdivisions * subdivisions;
+				int32_t indexCount = (subdivisions * 2 + 2) * (subdivisions - 1);
+
+				auto vertexBuffer = new Buffer::VertexBuffer(AE_FLOAT, 3, sizeof(vec3), vertexCount);
+				auto indexBuffer = new Buffer::IndexBuffer(AE_UINT, sizeof(uint32_t), indexCount);
+
+				std::vector<vec3> vertices(vertexCount);
+				std::vector<uint32_t> indices(indexCount);
+
+				for (int32_t z = 0; z < subdivisions; z++) {
+					for (int32_t x = 0; x < subdivisions; x++) {
+
+						auto xf = (float)z * scale;
+						auto zf = (float)x * scale;
+
+						vertices[z * subdivisions + x] = vec3(xf, 0.0f, zf);
+
+					}
+				}
+
+				vertexBuffer->SetData(vertices.data(), 0, vertexCount);
+
+				int32_t i = 0;
+
+				for (int32_t z = 0; z < subdivisions - 1; z++) {
+
+					indices[i++] = z * subdivisions;
+
+					for (int32_t x = 0; x < subdivisions; x++) {
+						indices[i++] = z * subdivisions + x;
+						indices[i++] = (z + 1) * subdivisions + x;
+					}
+
+					indices[i++] = (z + 1) * subdivisions + (subdivisions - 1);
+
+				}
+
+				indexBuffer->SetData(indices.data(), 0, indexCount);
+
+				vertexArray.AddIndexComponent(indexBuffer);
+				vertexArray.AddComponent(0, vertexBuffer);
+
+			}
+
 			void GeometryHelper::GenerateSphereVertexArray(Buffer::VertexArray& vertexArray, uint32_t rings, uint32_t segments) {
 
 				uint32_t* indices = nullptr;
@@ -34,8 +80,8 @@ namespace Atlas {
 				// This helps us for both atmospheric and point light rendering
 				GenerateSphere(rings, segments, indices, vertices, &indexCount, &vertexCount);
 
-				auto indicesBuffer = new Buffer::IndexBuffer(GL_UNSIGNED_INT, sizeof(uint32_t), indexCount);
-				auto verticesBuffer = new Buffer::VertexBuffer(GL_FLOAT, 3, sizeof(vec3), vertexCount);
+				auto indicesBuffer = new Buffer::IndexBuffer(AE_UINT, sizeof(uint32_t), indexCount);
+				auto verticesBuffer = new Buffer::VertexBuffer(AE_FLOAT, 3, sizeof(vec3), vertexCount);
 				indicesBuffer->SetData(&indices[0], 0, indexCount);
 				verticesBuffer->SetData(&vertices[0], 0, vertexCount);
 				vertexArray.AddIndexComponent(indicesBuffer);

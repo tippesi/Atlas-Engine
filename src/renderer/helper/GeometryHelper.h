@@ -17,6 +17,8 @@ namespace Atlas {
 
 				static void GenerateCubeVertexArray(Buffer::VertexArray& vertexArray);
 
+				static void GenerateGridVertexArray(Buffer::VertexArray& vertexArray, int32_t subdivisions, float scale);
+
 				static void GenerateSphereVertexArray(Buffer::VertexArray& vertexArray, uint32_t rings, uint32_t segments);
 
 			private:

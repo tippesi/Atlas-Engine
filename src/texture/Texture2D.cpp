@@ -40,6 +40,7 @@ namespace Atlas {
             width = image.width;
             height = image.height;
             channels = image.channels;
+			this->layers = 1;
 
             Generate(GL_TEXTURE_2D, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR,
                      anisotropicFiltering, generateMipMaps);
