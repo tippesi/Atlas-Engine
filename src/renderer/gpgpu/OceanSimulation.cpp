@@ -114,7 +114,7 @@ namespace Atlas {
 					indices[i] = ReverseBits(i, bitCount);
 				}
 
-				Buffer::Buffer buffer(AE_SHADER_BUFFER, sizeof(int32_t), AE_BUFFER_DYNAMIC_STORAGE);
+				Buffer::Buffer buffer(AE_SHADER_STORAGE_BUFFER, sizeof(int32_t), AE_BUFFER_DYNAMIC_STORAGE);
 				buffer.SetSize(indices.size());
 				buffer.SetData(indices.data(), 0, indices.size());
 

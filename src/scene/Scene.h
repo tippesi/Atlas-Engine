@@ -52,6 +52,8 @@ namespace Atlas {
              */
 			void Update(Camera *camera, float deltaTime);
 
+			bool HasChanged();
+
 			/**
 			 * Renamed from SceneNode: A scene shouldn't be transformed.
 			 */
@@ -73,6 +75,9 @@ namespace Atlas {
 
 			Lighting::Sky sky;
 			PostProcessing::PostProcessing postProcessing;
+
+		private:
+			bool hasChanged;
 
 		};
 

@@ -4,39 +4,53 @@ namespace Atlas {
 
 	namespace Common {
 
-		bool Ray::Intersects(AABB aabb) {
+		Ray::Ray(vec3 origin, vec3 direction) : origin(origin), direction(direction) {
 
-			vec3 inverseDirection = 1.0f / direction;
-
-
-
-			return true;
+			inverseDirection = 1.0f / direction;
 
 		}
 
-		bool Ray::Intersects(vec3 point0, vec3 point1, vec3 point2) {
+		bool Ray::Intersects(AABB aabb, float tmin, float tmax) {
+
+			auto t0 = (aabb.min - origin) * inverseDirection;
+			auto t1 = (aabb.max - origin) * inverseDirection;
+
+			auto tsmall = glm::min(t0, t1);
+			auto tbig = glm::max(t0, t1);
+
+			auto tminf = glm::max(tmin, glm::max(tsmall.x, glm::max(tsmall.y, tsmall.z)));
+			auto tmaxf = glm::min(tmax, glm::min(tbig.x, glm::min(tbig.y, tbig.z)));
+
+			return (tminf < tmaxf);
+
+		}
+
+		bool Ray::Intersects(vec3 v0, vec3 v1, vec3 v2) {
 
 			vec3 intersection;
+			float t;
 
-			return Intersects(point0, point1, point2, intersection);
+			return Intersects(v0, v1, v2, t, intersection);
 
 		}
 
-		bool Ray::Intersects(vec3 point0, vec3 point1, vec3 point2, vec3& intersection) {
+		bool Ray::Intersects(vec3 v0, vec3 v1, vec3 v2, float& t, vec3& intersection) {
 
-			auto e0 = point1 - point0;
-			auto e1 = point2 - point0;
-			auto s = origin - point0;
+			auto e0 = v1 - v0;
+			auto e1 = v2 - v0;
+			auto s = origin - v0;
+
+			auto p = cross(s, e0);
+			auto q = cross(direction, e1);
 			
-			auto sol = vec3(glm::dot(glm::cross(s, e0), e1),
-				glm::dot(glm::cross(direction, e1), s),
-				glm::dot(glm::cross(s, e1), direction)) / 
-				(glm::dot(glm::cross(direction, e1), e0));
+			auto sol = vec3(glm::dot(p, e1), glm::dot(q, s),
+				glm::dot(p, direction)) / (glm::dot(q, e0));
 
 			if (sol.x >= 0.0f && sol.y >= 0.0f && 
 				sol.z >= 0.0f && sol.y + sol.z <= 1.0f) {
 
-				intersection = point0 + e0 * sol.y + e1 * sol.z;
+				intersection = v0 + e0 * sol.y + e1 * sol.z;
+				t = sol.x;
 
 				return true;
 

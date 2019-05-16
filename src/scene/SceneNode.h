@@ -117,8 +117,9 @@ namespace Atlas {
 			 * @param deltaTime
 			 * @param parentTransformation
 			 * @param parentTransformChanged
+			 * @return True if something has changed, false otherwise
 			 */
-			virtual void Update(Camera* camera, float deltaTime, mat4 parentTransformation,
+			virtual bool Update(Camera* camera, float deltaTime, mat4 parentTransformation,
 				bool parentTransformChanged);
 
 			bool sceneSet = false;

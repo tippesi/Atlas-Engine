@@ -13,16 +13,19 @@ namespace Atlas {
 		public:
 			Ray() {}
 
-			Ray(vec3 origin, vec3 direction) : origin(origin), direction(direction) {}
+			Ray(vec3 origin, vec3 direction);
 
-			bool Intersects(AABB aabb);
+			bool Intersects(AABB aabb, float tmin, float tmax);
 
-			bool Intersects(vec3 point0, vec3 point1, vec3 point2);
+			bool Intersects(vec3 v0, vec3 v1, vec3 v2);
 
-			bool Intersects(vec3 point0, vec3 point1, vec3 point2, vec3& intersection);
+			bool Intersects(vec3 v0, vec3 v1, vec3 v2, float& t, vec3& intersection);
 
 			vec3 origin;
 			vec3 direction = vec3(0.0f, 1.0f, 0.0f);
+
+		private:
+			vec3 inverseDirection = vec3(0.0f, 1.0f, 0.0f);
 
 		};
 

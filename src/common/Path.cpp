@@ -48,6 +48,13 @@ namespace Atlas {
 
 		}
 
+		std::string Path::GetFilename(std::string path) {
+
+			auto offset = path.find_last_of("/\\") + 1;
+			return path.substr(offset, path.end() - path.begin() - offset);
+
+		}
+
 		std::string Path::GetAbsolute(std::string path) {
 
 #if defined(AE_OS_ANDROID) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)

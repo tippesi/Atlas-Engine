@@ -6,6 +6,7 @@
 
 #include <list>
 #include <string>
+#include <set>
 
 #define AE_VERTEX_STAGE GL_VERTEX_SHADER
 #define AE_FRAGMENT_STAGE GL_FRAGMENT_SHADER
@@ -92,6 +93,7 @@ namespace Atlas {
 			std::string code;
 			std::list<std::string> macros;
 			std::list<ShaderConstant*> constants;
+			std::set<std::string> includes;
 
 			time_t lastModified;
 

@@ -1,5 +1,6 @@
 #include "ShaderStage.h"
 #include "../loader/AssetLoader.h"
+#include "../common/Path.h"
 
 #include <fstream>
 #include <sstream>
@@ -192,8 +193,7 @@ namespace Atlas {
             shaderFile.close();
             shaderCode = shaderStream.str();
 
-            size_t filePathPosition = filename.find_last_of("/");
-            filename.erase(filePathPosition + 1, filename.length() - 1);
+			auto directory = Common::Path::GetDirectory(filename) + "/";
 
             // Copy all includes into the code
             while (shaderCode.find("#include ") != std::string::npos) {
@@ -206,12 +206,25 @@ namespace Atlas {
 
                 auto includeFilename = shaderCode.substr(filenamePosition, filenameEndPosition - filenamePosition);
 
-                auto includeCode = ReadShaderFile(filename + includeFilename, false);
+				auto shortenedFilename = Common::Path::GetFilename(includeFilename);
 
-                auto codeBeforeInclude = shaderCode.substr(0, includePosition);
-                auto codeAfterInclude = shaderCode.substr(lineBreakPosition, shaderCode.length() - 1);
+				auto codeBeforeInclude = shaderCode.substr(0, includePosition);
+				auto codeAfterInclude = shaderCode.substr(lineBreakPosition, shaderCode.length() - 1);
 
-                shaderCode = codeBeforeInclude + includeCode + codeAfterInclude;
+				// Check for multiple includes of a file
+				if (includes.find(shortenedFilename) == includes.end()) {
+
+					includes.insert(shortenedFilename);
+					auto includeCode = ReadShaderFile(directory + includeFilename, false);
+
+					shaderCode = codeBeforeInclude + includeCode + codeAfterInclude;
+
+				}
+				else {
+
+					shaderCode = codeBeforeInclude + codeAfterInclude;
+
+				}
 
             }
 

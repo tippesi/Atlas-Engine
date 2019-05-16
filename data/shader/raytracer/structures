@@ -1,0 +1,26 @@
+struct Ray {
+	vec3 origin;
+	vec3 direction;
+	vec3 inverseDirection;
+};
+
+struct AABB {
+	vec4 min;
+	vec4 max;
+};
+
+struct Triangle {
+	vec4 v0;
+	vec4 v1;
+	vec4 v2;
+};
+
+struct BVHNode {
+	
+	AABB aabb;
+	
+	int leftChild;
+	int rightChild;
+	int triangleIndex;
+	
+};

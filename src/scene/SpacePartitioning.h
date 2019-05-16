@@ -43,6 +43,8 @@ namespace Atlas {
 
 			void GetRenderList(Common::AABB aabb, RenderList& renderList);
 
+			std::vector<Actor::MeshActor*> GetMeshActors();
+
 			std::vector<Actor::StaticMeshActor*> GetStaticMeshActors(Common::AABB aabb);
 
 			std::vector<Actor::MovableMeshActor*> GetMovableMeshActors(Common::AABB aabb);

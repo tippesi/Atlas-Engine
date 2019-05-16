@@ -12,9 +12,9 @@ namespace Atlas {
 
 			Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 512, 0.25f);
 
-			simulation = new GPGPU::OceanSimulation(128, 2000);
+			simulation = new GPGPU::OceanSimulation(512, 2000);
 
-			foam = Texture::Texture2D("foam.jpg", false);
+			//foam = Texture::Texture2D("foam.jpg", false);
 
 			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
 			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
@@ -31,8 +31,8 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
-			displacementScale->SetValue(0.75f);
-			choppyScale->SetValue(0.75f);
+			displacementScale->SetValue(0.75f * 16.0f);
+			choppyScale->SetValue(0.75f * 16.0f);
 			cameraLocation->SetValue(vec3(camera->viewMatrix[3]));
 
 			simulation->displacementMap.Bind(GL_TEXTURE0);

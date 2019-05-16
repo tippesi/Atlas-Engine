@@ -4,6 +4,8 @@
 #include "../System.h"
 #include "Renderer.h"
 
+#include <unordered_map>
+
 namespace Atlas {
 
 	namespace Renderer {
@@ -20,15 +22,9 @@ namespace Atlas {
 			static std::string unprojectionComputePath;
 
 		private:
-			Shader::Shader unprojectionShader;
+			void PreprocessActors(std::vector<Actor::MeshActor*> &actors);
 
-			Texture::Texture2D rayOriginsTexture;
-			Texture::Texture2D rayDirectionTexture;
-
-			Shader::Uniform* inverseViewMatrix;
-			Shader::Uniform* inverseProjectionMatrix;
-
-
+			std::unordered_map<Actor::MeshActor*, std::vector<vec3>> transformedVertices;
 
 		};
 

@@ -23,12 +23,20 @@ namespace Atlas {
 			static std::string GetRelative(std::string src, std::string dest);
 
 			/**
-			 * Calculates the path from one file to another.
+			 * Returns the parent directory of a file.
 			 * @param path A path to a file.
 			 * @return The parent directory of the file.
 			 * @warning The paths must contain a filename.
 			 */
 			static std::string GetDirectory(std::string path);
+
+			/**
+			 * Returns the filename of a path.
+			 * @param path A path to a file.
+			 * @return The filename in the path.
+			 * @warning The paths must contain a filename.
+			 */
+			static std::string GetFilename(std::string path);
 
 			/**
 			 * Gets the absolute and normalized path to for a relative path

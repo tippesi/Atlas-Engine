@@ -132,10 +132,14 @@ namespace Atlas {
 
 		}
 
-		void SceneNode::Update(Camera* camera, float deltaTime, mat4 parentTransformation,
+		bool SceneNode::Update(Camera* camera, float deltaTime, mat4 parentTransformation,
 			bool parentTransformChanged) {
 
+			bool changed = false;;
+
 			parentTransformChanged |= matrixChanged;
+
+			changed |= parentTransformChanged;
 
 			bool removed = false;
 
@@ -145,7 +149,7 @@ namespace Atlas {
 			}
 
 			for (auto &node : childNodes) {
-				node->Update(camera, deltaTime, transformedMatrix, parentTransformChanged);
+				changed |= node->Update(camera, deltaTime, transformedMatrix, parentTransformChanged);
 			}
 
 			// Only update the static mesh actors if the node moves (the static actors can't
@@ -170,6 +174,8 @@ namespace Atlas {
 					parentTransformation, true);
 				spacePartitioning->Add(meshActor);
 
+				changed = true;
+
 			}
 
 			addableStaticMeshActors.clear();
@@ -179,6 +185,7 @@ namespace Atlas {
 				if (meshActor->HasMatrixChanged() || parentTransformChanged) {
 					spacePartitioning->Remove(meshActor);
 					removed = true;
+					changed = true;
 				}
 
 				meshActor->Update(*camera, deltaTime, 
@@ -209,6 +216,8 @@ namespace Atlas {
 			for (auto &light : lights) {
 				light->Update(camera);
 			}
+
+			return changed;
 
 		}
 

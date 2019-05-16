@@ -49,7 +49,7 @@ Main::Main(int argc, char* argv[]) {
 	camera->rotation = vec2(-3.14f / 2.0f, 0.0f);
 
 #ifdef AE_OS_ANDROID
-	touchHandler = new Atlas::Input::TouchHandler(camera, 1.5f, 7.0f, 6.0f);
+	touchHandler = new Atlas::Input::TouchHandler(camera, 1.5f, 7.0f, 0.2f);
 #else
 	mouseHandler = new Atlas::Input::MouseHandler(camera, 1.5f, 6.0f);
 	keyboardHandler = new Atlas::Input::KeyboardHandler(camera, 7.0f, 6.0f);

@@ -39,7 +39,13 @@ namespace Atlas {
 				terrain->Update(camera);
 			}
 
-			SceneNode::Update(camera, deltaTime, mat4(1.0f), false);
+			hasChanged = SceneNode::Update(camera, deltaTime, mat4(1.0f), false);
+
+		}
+
+		bool Scene::HasChanged() {
+
+			return hasChanged;
 
 		}
 
