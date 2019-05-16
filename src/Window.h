@@ -84,10 +84,16 @@ namespace Atlas {
 		void SetSize(int32_t width, int32_t height);
 
 		/**
-		 * Returns the size of the window.
-		 * @return An 2-component integer vector where x is the width and y is the height.
+		 * Returns the width of the window.
+		 * @return The width of the window.
 		 */
-		ivec2 GetSize();
+		int32_t GetWidth();
+
+		/**
+		 * Returns the width of the window.
+		 * @return The width of the window.
+		 */
+		int32_t GetHeight();
 
 		/**
          * Shows the window if the window was hidden

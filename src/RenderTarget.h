@@ -29,10 +29,16 @@ namespace Atlas {
 		void Resize(int32_t width, int32_t height);
 
 		/**
-		 * Returns the size of the render target.
-		 * @return An 2-component integer vector where x is the width and y is the height.
+		 * Returns the width of the render target.
+		 * @return The width of the render target.
 		 */
-		ivec2 GetSize();
+		int32_t GetWidth();
+
+		/**
+		 * Returns the width of the render target.
+		 * @return The width of the render target.
+		 */
+		int32_t GetHeight();
 
 		Framebuffer geometryFramebuffer;
 		Framebuffer lightingFramebuffer;

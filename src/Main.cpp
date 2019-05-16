@@ -205,7 +205,7 @@ void Main::SceneSetUp() {
 #ifndef AE_OS_ANDROID
     directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
 	directionalLight->GetShadow()->sampleCount = 1;
-	directionalLight->AddVolumetric(renderTarget->GetSize().x / 2, renderTarget->GetSize().y / 2, 20, -0.5f);
+	directionalLight->AddVolumetric(renderTarget->GetWidth() / 2, renderTarget->GetHeight() / 2, 20, -0.5f);
 #else
     directionalLight->AddShadow(200.0f, 0.01f, 2048, vec3(0.0f), orthoProjection);
     directionalLight->GetShadow()->sampleCount = 8;
