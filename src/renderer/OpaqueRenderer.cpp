@@ -74,7 +74,7 @@ namespace Atlas {
 
 					// Prepare uniform buffer here
 					// Generate all drawing commands
-					// We could also batch several materials together because the share the same shader
+					// We could also batch several materials together because they share the same shader
 
 					// Render the sub data of the mesh that use this specific shader
 					for (auto& subData : renderListBatch.subData) {
@@ -101,8 +101,8 @@ namespace Atlas {
 
 							modelMatrixUniform->SetValue(actor->transformedMatrix);
 
-							glDrawElements(mesh->data->primitiveType, subData->indicesCount, mesh->data->indices->GetType(),
-										   (void*)((uint64_t)(subData->indicesOffset * mesh->data->indices->GetElementSize())));
+							glDrawElements(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
+										   (void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())));
 
 						}
 

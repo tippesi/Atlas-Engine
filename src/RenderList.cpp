@@ -26,7 +26,7 @@ namespace Atlas {
 		// Build up all render list batches
 		std::map<int32_t, RenderListBatch> renderListBatches;
 
-		for (auto &subData : actor->mesh->data->subData) {
+		for (auto &subData : actor->mesh->data.subData) {
 
 			auto shaderConfig = actor->mesh->GetConfig(subData->material, type);
 

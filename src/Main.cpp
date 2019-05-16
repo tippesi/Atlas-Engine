@@ -7,29 +7,12 @@
 
 using namespace Atlas;
 
-Main::Main(int argc, char* argv[]) {
+Main::Main(int argc, char* argv[], Window* window) : window(window) {
 
 	quit = false;
 	useControllerHandler = false;
 
-	auto screenSize = Engine::GetScreenSize();
-
-	int32_t flags;
-	std::string assetDirectory = "data";
-
-#ifndef AE_OS_ANDROID
-	assetDirectory = "../data";
-	screenSize.x = 1280;
-	screenSize.y = 720;
-	flags = AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI;
-#else
-	flags = AE_WINDOW_FULLSCREEN;
-#endif
-
-	viewport = Viewport(0, 0, screenSize.x, screenSize.y);
-
-	window = Engine::Init(assetDirectory, "shader", "Atlas Engine", AE_WINDOWPOSITION_UNDEFINED,
-			AE_WINDOWPOSITION_UNDEFINED, screenSize.x, screenSize.y, flags);
+	viewport = Viewport(0, 0, window->GetWidth(), window->GetHeight());
 
 	Engine::UnlockFramerate();
 
@@ -138,12 +121,12 @@ void Main::Load() {
 		"cubemap/front.png",
 		"cubemap/back.png");
 
-	cubeMesh = new Mesh::Mesh("cube.dae");
-	treeMesh = new Mesh::Mesh("tree.dae");
-	treeMesh->cullBackFaces = false;
+	cubeMesh = Mesh::Mesh("cube.dae");
+	treeMesh = Mesh::Mesh("tree.dae");
+	treeMesh.cullBackFaces = false;
 	//sponzaMesh = new Mesh::Mesh("sanmiguel/sanmiguel.dae");
 	//sponzaMesh->cullBackFaces = false;
-	sponzaMesh = new Mesh::Mesh("sponza/sponza.dae");
+	sponzaMesh = Mesh::Mesh("sponza/sponza.dae");
 
 	audioData = new Audio::AudioData("MenuTheme2_final.wav");
 	audioStream = new Audio::AudioStream(audioData);
@@ -184,9 +167,9 @@ void Main::SceneSetUp() {
 	scene->Add(node);
 	scene->sky.skybox = new Lighting::Skybox(skybox);
 
-	cubeActor = new Actor::MovableMeshActor(cubeMesh);
-	treeActor = new Actor::StaticMeshActor(treeMesh, scale(mat4(1.0f), vec3(3.0f)));
-	sponzaActor = new Actor::StaticMeshActor(sponzaMesh, scale(mat4(1.0f), vec3(.05f)));
+	cubeActor = new Actor::MovableMeshActor(&cubeMesh);
+	treeActor = new Actor::StaticMeshActor(&treeMesh, scale(mat4(1.0f), vec3(3.0f)));
+	sponzaActor = new Actor::StaticMeshActor(&sponzaMesh, scale(mat4(1.0f), vec3(.05f)));
 
 	directionalLight = new Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
 #ifdef AE_OS_ANDROID
@@ -287,7 +270,25 @@ void Main::ControllerDeviceEventHandler(Atlas::Events::ControllerDeviceEvent eve
 
 int main(int argc, char* argv[]) {
 
-	Main mainClass(argc, argv);
+	auto screenSize = Engine::GetScreenSize();
+
+	int32_t flags;
+	std::string assetDirectory = "data";
+
+#ifndef AE_OS_ANDROID
+	assetDirectory = "../data";
+	screenSize.x = 1280;
+	screenSize.y = 720;
+	flags = AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI;
+#else
+	flags = AE_WINDOW_FULLSCREEN;
+#endif
+
+	auto window = Engine::Init(assetDirectory, "shader", "Atlas Engine", AE_WINDOWPOSITION_UNDEFINED,
+		AE_WINDOWPOSITION_UNDEFINED, screenSize.x, screenSize.y, flags);
+
+
+	Main mainClass(argc, argv, window);
 
 	return 0;
 

@@ -108,8 +108,8 @@ namespace Atlas {
 			int32_t vertexCount = 0;
 
 			for (auto& actor : actors) {
-				indexCount += actor->mesh->data->GetIndexCount();
-				vertexCount += actor->mesh->data->GetVertexCount();
+				indexCount += actor->mesh->data.GetIndexCount();
+				vertexCount += actor->mesh->data.GetVertexCount();
 			}
 
 			auto vertexByteCount = vertexCount * sizeof(vec4);
@@ -125,11 +125,11 @@ namespace Atlas {
 			vertexCount = 0;
 
 			for (auto& actor : actors) {
-				auto actorIndexCount = actor->mesh->data->GetIndexCount();
-				auto actorVertexCount = actor->mesh->data->GetVertexCount();
+				auto actorIndexCount = actor->mesh->data.GetIndexCount();
+				auto actorVertexCount = actor->mesh->data.GetVertexCount();
 
-				auto actorIndices = actor->mesh->data->indices->Get();
-				auto actorVertices = actor->mesh->data->vertices->Get();
+				auto actorIndices = actor->mesh->data.indices.Get();
+				auto actorVertices = actor->mesh->data.vertices.Get();
 
 				for (int32_t i = 0; i < actorIndexCount; i++) {
 					auto j = actorIndices[i];
@@ -161,7 +161,7 @@ namespace Atlas {
 
 			for (auto& actor : actors) {
 				
-				auto actorTriangleCount = (int32_t)actor->mesh->data->GetIndexCount() / 3;
+				auto actorTriangleCount = (int32_t)actor->mesh->data.GetIndexCount() / 3;
 
 				triangleOffsetVertexUpdateUniform->SetValue(triangleCount);
 				triangleCountVertexUpdateUniform->SetValue(actorTriangleCount);

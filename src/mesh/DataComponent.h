@@ -52,13 +52,20 @@ namespace Atlas {
 
 		public:
 			/**
-             * Constructs a DataComponent object
+			 * Constructs a DataComponent object.
+			 */
+			DataComponent() {}
+
+			/**
+             * Constructs a DataComponent object.
              * @param componentType The type of the component S should be converted into. See {@link DataComponent.h} for more.
              * @param stride The stride in elements of that specific component.
              */
 			DataComponent(int32_t componentType, int32_t stride);
 
 			~DataComponent();
+
+			DataComponent& operator=(const DataComponent& that);
 
 			/**
              * Sets the data for the component and converts it into data of component type.
@@ -138,27 +145,20 @@ namespace Atlas {
 			bool ContainsData();
 
 		private:
-			bool containsData;
+			bool containsData = false;
 
-			int32_t componentType;
-			int32_t stride;
-			int32_t size;
+			int32_t componentType = 0;
+			int32_t stride = 0;
+			int32_t size = 0;
 
-			S* data;
-			void* convertedData;
+			S* data = nullptr;
+			void* convertedData = nullptr;
 
 		};
 
 
 		template <class S, class T>
 		DataComponent<S, T>::DataComponent(int32_t componentType, int32_t stride) : stride(stride) {
-
-			containsData = false;
-
-			convertedData = nullptr;
-			data = nullptr;
-
-			size = 0;
 
 			SetType(componentType);
 
@@ -181,6 +181,38 @@ namespace Atlas {
 			else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
 				delete[](uint8_t*)convertedData;
 			}
+
+		}
+
+		template <class S, class T>
+		DataComponent<S, T>& DataComponent<S, T>::operator=(const DataComponent<S, T>& that) {
+
+			if (this != &that) {
+
+				stride = that.stride;
+
+				// Deletes data and convertedData.
+				// Creates new convertedData afterwards
+				SetType(that.componentType);
+				SetSize(that.size);
+
+				containsData = that.containsData;
+
+				if (containsData) {
+					data = new S[size];
+					std::memcpy(data, that.data, size * sizeof(S));
+					// Not all types require conversion
+					if (!convertedData) {
+						convertedData = data;
+					}
+					else {
+						std::memcpy(convertedData, that.convertedData, size * GetElementSize());
+					}
+				}
+
+			}
+
+			return *this;
 
 		}
 
@@ -247,38 +279,44 @@ namespace Atlas {
 		template <class S, class T>
 		void DataComponent<S, T>::SetType(int32_t componentType) {
 
-			if (componentType == AE_COMPONENT_HALF_FLOAT) {
-				delete[](float16*)convertedData;
-			}
-			else if (componentType == AE_COMPONENT_PACKED_FLOAT) {
-				delete[](uint32_t*)convertedData;
-			}
-			else if (componentType == AE_COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
-				delete[](uint16_t*)convertedData;
-			}
-			else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
-				delete[](uint8_t*)convertedData;
+			if (size > 0) {
+				if (componentType == AE_COMPONENT_HALF_FLOAT) {
+					delete[](float16*)convertedData;
+				}
+				else if (componentType == AE_COMPONENT_PACKED_FLOAT) {
+					delete[](uint32_t*)convertedData;
+				}
+				else if (componentType == AE_COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
+					delete[](uint16_t*)convertedData;
+				}
+				else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
+					delete[](uint8_t*)convertedData;
+				}
 			}
 
 			// We should check if the type is compatible to T
 			this->componentType = componentType;
 
-			if (componentType == AE_COMPONENT_HALF_FLOAT) {
-				delete[] data;
-				convertedData = new float16[stride * size];
+			if (size > 0) {
+				if (componentType == AE_COMPONENT_HALF_FLOAT) {
+					delete[] data;
+					convertedData = new float16[stride * size];
+				}
+				else if (componentType == AE_COMPONENT_PACKED_FLOAT) {
+					delete[] data;
+					convertedData = new uint32_t[size];
+				}
+				else if (componentType == AE_COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
+					delete[] data;
+					convertedData = new uint16_t[stride * size];
+				}
+				else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
+					delete[] data;
+					convertedData = new uint8_t[stride * size];
+				}
 			}
-			else if (componentType == AE_COMPONENT_PACKED_FLOAT) {
-				delete[] data;
-				convertedData = new uint32_t[size];
-			}
-			else if (componentType == AE_COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
-				delete[] data;
-				convertedData = new uint16_t[stride * size];
-			}
-			else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
-				delete[] data;
-				convertedData = new uint8_t[stride * size];
-			}
+
+			data = nullptr;
 
 		}
 
@@ -292,28 +330,41 @@ namespace Atlas {
 		template <class S, class T>
 		void DataComponent<S, T>::SetSize(int32_t size) {
 
+			if (size > 0) {
+				if (componentType == AE_COMPONENT_HALF_FLOAT) {
+					delete[] data;
+					delete[](float16*)convertedData;
+				}
+				else if (componentType == AE_COMPONENT_PACKED_FLOAT) {
+					delete[] data;
+					delete[](uint32_t*)convertedData;
+				}
+				else if (componentType == AE_COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
+					delete[] data;
+					delete[](uint16_t*)convertedData;
+				}
+				else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
+					delete[] data;
+					delete[](uint8_t*)convertedData;
+				}
+			}
+
 			this->size = size;
 
 			if (componentType == AE_COMPONENT_HALF_FLOAT) {
-				delete[] (float16*)convertedData;
-				delete[] data;
 				convertedData = new float16[stride * size];
 			}
 			else if (componentType == AE_COMPONENT_PACKED_FLOAT) {
-				delete[](uint32_t*)convertedData;
-				delete[] data;
 				convertedData = new uint32_t[size];
 			}
 			else if (componentType == AE_COMPONENT_UNSIGNED_SHORT && sizeof(uint16_t) <= sizeof(S)) {
-				delete[](uint16_t*)convertedData;
-				delete[] data;
 				convertedData = new uint16_t[stride * size];
 			}
 			else if (componentType == AE_COMPONENT_UNSIGNED_BYTE && sizeof(uint8_t) <= sizeof(S)) {
-				delete[](uint8_t*)convertedData;
-				delete[] data;
 				convertedData = new uint8_t[stride * size];
 			}
+
+			data = nullptr;
 
 		}
 

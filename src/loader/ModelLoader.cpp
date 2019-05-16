@@ -9,7 +9,7 @@ namespace Atlas {
 
 	namespace Loader {
 
-		Mesh::MeshData* ModelLoader::LoadMesh(std::string filename) {
+		void ModelLoader::LoadMesh(std::string filename, Mesh::MeshData& meshData) {
 
 			std::string directoryPath(filename);
 
@@ -47,8 +47,6 @@ namespace Atlas {
 					aiProcess_LimitBoneWeights |
 					aiProcess_ImproveCacheLocality);
 
-			auto meshData = new Mesh::MeshData();
-
 			int32_t indexCount = 0;
 			int32_t vertexCount = 0;
 			int32_t bonesCount = 0;
@@ -76,19 +74,19 @@ namespace Atlas {
 			}
 
 			if (indexCount > 65535) {
-				meshData->indices->SetType(AE_COMPONENT_UNSIGNED_INT);
+				meshData.indices.SetType(AE_COMPONENT_UNSIGNED_INT);
 			}
 			else {
-				meshData->indices->SetType(AE_COMPONENT_UNSIGNED_SHORT);
+				meshData.indices.SetType(AE_COMPONENT_UNSIGNED_SHORT);
 			}
 
-			meshData->vertices->SetType(AE_COMPONENT_FLOAT);
-			meshData->normals->SetType(AE_COMPONENT_PACKED_FLOAT);
-			meshData->texCoords->SetType(AE_COMPONENT_HALF_FLOAT);
-			meshData->tangents->SetType(AE_COMPONENT_PACKED_FLOAT);
+			meshData.vertices.SetType(AE_COMPONENT_FLOAT);
+			meshData.normals.SetType(AE_COMPONENT_PACKED_FLOAT);
+			meshData.texCoords.SetType(AE_COMPONENT_HALF_FLOAT);
+			meshData.tangents.SetType(AE_COMPONENT_PACKED_FLOAT);
 
-			meshData->SetIndexCount(indexCount);
-			meshData->SetVertexCount(vertexCount);
+			meshData.SetIndexCount(indexCount);
+			meshData.SetVertexCount(vertexCount);
 
 			if (scene->HasAnimations() || bonesCount > 0) {
 
@@ -177,23 +175,21 @@ namespace Atlas {
 				}
 
 				subData->indicesCount = usedFaces * 3 - subData->indicesOffset;
-				meshData->subData.push_back(subData);
-				meshData->materials.push_back(material);
+				meshData.subData.push_back(subData);
+				meshData.materials.push_back(material);
 
 			}
 
-			meshData->aabb = Common::AABB(min, max);
+			meshData.aabb = Common::AABB(min, max);
 
-			meshData->indices->Set(indices);
-			meshData->vertices->Set(vertices);
-			meshData->normals->Set(normals);
+			meshData.indices.Set(indices);
+			meshData.vertices.Set(vertices);
+			meshData.normals.Set(normals);
 
 			if (hasTexCoords)
-				meshData->texCoords->Set(texCoords);
+				meshData.texCoords.Set(texCoords);
 			if (hasTangents)
-				meshData->tangents->Set(tangents);
-
-			return meshData;
+				meshData.tangents.Set(tangents);
 
 		}
 

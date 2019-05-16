@@ -32,8 +32,6 @@ namespace Atlas {
 			 */
 			MeshData();
 
-			~MeshData();
-
 			/**
 			 *
 			 * @param count
@@ -57,12 +55,12 @@ namespace Atlas {
 			 */
 			int32_t GetVertexCount();
 
-			DataComponent<uint32_t, void>* indices;
+			DataComponent<uint32_t, void> indices;
 
-			DataComponent<float, float>* vertices;
-			DataComponent<float, float16>* texCoords;
-			DataComponent<float, uint32_t>* normals;
-			DataComponent<float, uint32_t>* tangents;
+			DataComponent<float, float> vertices;
+			DataComponent<float, float16> texCoords;
+			DataComponent<float, uint32_t> normals;
+			DataComponent<float, uint32_t> tangents;
 
 			std::vector<Material*> materials;
 			std::vector<MeshSubData*> subData;

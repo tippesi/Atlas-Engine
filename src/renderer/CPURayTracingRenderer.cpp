@@ -62,10 +62,10 @@ namespace Atlas {
 						if (!ray.Intersects(actor->aabb, 0.0f, camera->farPlane))
 							continue;
 
-						auto indexCount = actor->mesh->data->GetIndexCount();
+						auto indexCount = actor->mesh->data.GetIndexCount();
 
 						auto& vertices = transformedVertices[actor];
-						auto indices = actor->mesh->data->indices->Get();
+						auto indices = actor->mesh->data.indices.Get();
 
 						for (int32_t i = 0; i < indexCount; i += 3) {
 
@@ -110,8 +110,8 @@ namespace Atlas {
 
 			for (auto& actor : actors) {
 
-				auto vertexCount = actor->mesh->data->GetVertexCount();
-				auto vertices = actor->mesh->data->vertices->Get();
+				auto vertexCount = actor->mesh->data.GetVertexCount();
+				auto vertices = actor->mesh->data.vertices.Get();
 
 				auto mMatrix = actor->transformedMatrix;
 

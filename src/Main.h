@@ -11,7 +11,7 @@
 class Main {
 
 public:
-	Main(int argc, char* argv[]);
+	Main(int argc, char* argv[], Atlas::Window* window);
 
 private:
 	void Update(float deltaTime);
@@ -47,9 +47,9 @@ private:
 
 	Atlas::Texture::Cubemap* skybox;
 
-	Atlas::Mesh::Mesh* sponzaMesh;
-	Atlas::Mesh::Mesh* treeMesh;
-	Atlas::Mesh::Mesh* cubeMesh;
+	Atlas::Mesh::Mesh sponzaMesh;
+	Atlas::Mesh::Mesh treeMesh;
+	Atlas::Mesh::Mesh cubeMesh = Atlas::Mesh::Mesh("cube.dae");
 
 	Atlas::Actor::MovableMeshActor* cubeActor;
 	Atlas::Actor::StaticMeshActor* treeActor;

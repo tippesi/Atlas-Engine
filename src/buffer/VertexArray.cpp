@@ -15,8 +15,6 @@ namespace Atlas {
 
 			maxAttribArrayCount = (uint32_t)maxVertexAttribs;
 
-			indexComponent = nullptr;
-
 		}
 
 		VertexArray::~VertexArray() {
@@ -27,6 +25,36 @@ namespace Atlas {
 
 			for (auto& key : vertexComponents)
 				delete key.second;
+
+		}
+
+		VertexArray& VertexArray::operator=(const VertexArray& that) {
+
+			if (this != &that) {
+
+				glDeleteVertexArrays(1, &ID);
+				glGenVertexArrays(1, &ID);
+
+				delete indexComponent;
+
+				for (auto& key : vertexComponents)
+					delete key.second;
+
+				vertexComponents.clear();
+
+				if (that.indexComponent != nullptr) {
+					auto buffer = new IndexBuffer(*that.indexComponent);
+					AddIndexComponent(buffer);
+				}
+
+				for (auto& key : that.vertexComponents) {
+					auto buffer = new VertexBuffer(*key.second);
+					AddComponent(key.first, buffer);
+				}
+
+			}
+
+			return *this;
 
 		}
 
