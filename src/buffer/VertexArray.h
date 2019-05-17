@@ -87,8 +87,6 @@ namespace Atlas {
 
 			uint32_t maxAttribArrayCount;
 
-			static uint32_t boundVertexArrayID;
-
 		};
 
 	}

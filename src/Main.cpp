@@ -36,7 +36,7 @@ Main::Main(int argc, char* argv[], Window* window) : window(window) {
 #else
 	mouseHandler = new Atlas::Input::MouseHandler(camera, 1.5f, 6.0f);
 	keyboardHandler = new Atlas::Input::KeyboardHandler(camera, 7.0f, 6.0f);
-	controllerHandler = new Atlas::Input::ControllerHandler(camera, 1.5f, 7.0f, 0.2f, 5000.0f);
+	controllerHandler = new Atlas::Input::ControllerHandler(camera, 1.5f, 7.0f, 6.0f, 5000.0f);
 #endif
 
 	masterRenderer = new Renderer::MasterRenderer();
@@ -121,12 +121,13 @@ void Main::Load() {
 		"cubemap/front.png",
 		"cubemap/back.png");
 
-	cubeMesh = Mesh::Mesh("cube.dae");
-	treeMesh = Mesh::Mesh("tree.dae");
-	treeMesh.cullBackFaces = false;
+	cubeMesh =  Mesh::Mesh("cube.dae");
 	//sponzaMesh = new Mesh::Mesh("sanmiguel/sanmiguel.dae");
 	//sponzaMesh->cullBackFaces = false;
 	sponzaMesh = Mesh::Mesh("sponza/sponza.dae");
+
+	treeMesh = Mesh::Mesh("tree.dae");
+	treeMesh.cullBackFaces = false;
 
 	audioData = new Audio::AudioData("MenuTheme2_final.wav");
 	audioStream = new Audio::AudioStream(audioData);

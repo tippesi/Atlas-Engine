@@ -4,8 +4,6 @@ namespace Atlas {
 
 	namespace Buffer {
 
-		uint32_t VertexArray::boundVertexArrayID = 0;
-
 		VertexArray::VertexArray() {
 
 			glGenVertexArrays(1, &ID);
@@ -32,15 +30,17 @@ namespace Atlas {
 
 			if (this != &that) {
 
+				Unbind();
+
 				glDeleteVertexArrays(1, &ID);
 				glGenVertexArrays(1, &ID);
+
+				Bind();
 
 				delete indexComponent;
 
 				for (auto& key : vertexComponents)
 					delete key.second;
-
-				vertexComponents.clear();
 
 				if (that.indexComponent != nullptr) {
 					auto buffer = new IndexBuffer(*that.indexComponent);
@@ -155,21 +155,13 @@ namespace Atlas {
 
 		void VertexArray::Bind() {
 
-			if (boundVertexArrayID != ID) {
-
-				glBindVertexArray(ID);
-
-				boundVertexArrayID = ID;
-
-			}
+			glBindVertexArray(ID);
 
 		}
 
 		void VertexArray::Unbind() {
 
 			glBindVertexArray(0);
-
-			boundVertexArrayID = 0;
 
 		}
 

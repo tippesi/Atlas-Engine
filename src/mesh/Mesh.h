@@ -48,6 +48,8 @@ namespace Atlas {
 			 */
 			void Unbind();
 
+			Buffer::VertexArray vertexArray;
+
 			Shader::ShaderConfig* GetConfig(Material* material, int32_t type);
 
 			MeshData data;
@@ -69,8 +71,6 @@ namespace Atlas {
 			void InitializeVertexArray();
 
 			void AddMaterial(Material* material);
-
-			Buffer::VertexArray vertexArray;
 
 		};
 

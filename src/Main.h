@@ -49,7 +49,7 @@ private:
 
 	Atlas::Mesh::Mesh sponzaMesh;
 	Atlas::Mesh::Mesh treeMesh;
-	Atlas::Mesh::Mesh cubeMesh = Atlas::Mesh::Mesh("cube.dae");
+	Atlas::Mesh::Mesh cubeMesh;
 
 	Atlas::Actor::MovableMeshActor* cubeActor;
 	Atlas::Actor::StaticMeshActor* treeActor;
