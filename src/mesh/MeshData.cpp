@@ -20,6 +20,12 @@ namespace Atlas {
 
 		}
 
+		MeshData::~MeshData() {
+
+			
+
+		}
+
 		void MeshData::SetIndexCount(int32_t count) {
 
 			indices.SetSize(count);

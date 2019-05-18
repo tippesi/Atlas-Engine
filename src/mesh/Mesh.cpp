@@ -19,6 +19,12 @@ namespace Atlas {
 
 		}
 
+		Mesh::~Mesh() {
+
+			ClearMaterials();
+
+		}
+
 		Mesh& Mesh::operator=(const Mesh& that) {
 
 			if (this != &that) {
@@ -26,11 +32,12 @@ namespace Atlas {
 				data = that.data;
 				mobility = that.mobility;
 				cullBackFaces = that.cullBackFaces;
-				configs = that.configs;
+				vertexArray = that.vertexArray;
 
-				vertexArray = Buffer::VertexArray();
+				ClearMaterials();
 
-				InitializeVertexArray();
+				for (auto material : data.materials)
+					AddMaterial(material);
 
 			}
 
@@ -94,7 +101,7 @@ namespace Atlas {
 
 		void Mesh::InitializeVertexArray() {
 
-			vertexArray.Unbind();
+			vertexArray.Bind();
 
 			if (data.indices.ContainsData()) {
 				auto indices = new Buffer::IndexBuffer(data.indices.GetType(),
@@ -122,6 +129,8 @@ namespace Atlas {
 				vertexArray.AddComponent(3, tangents);
 			}
 
+			vertexArray.Unbind();
+
 			UpdateData();
 
 		}
@@ -144,6 +153,19 @@ namespace Atlas {
 
 			Renderer::OpaqueRenderer::AddConfig(&materialConfig->opaqueConfig);
 			Renderer::ShadowRenderer::AddConfig(&materialConfig->shadowConfig);
+
+		}
+
+		void Mesh::ClearMaterials() {
+
+			for (auto& materialConfigKey : configs) {
+				auto materialConfig = materialConfigKey.second;
+				Renderer::OpaqueRenderer::RemoveConfig(&materialConfig->opaqueConfig);
+				Renderer::ShadowRenderer::RemoveConfig(&materialConfig->shadowConfig);
+				delete materialConfig;
+			}
+
+			configs.clear();
 
 		}
 

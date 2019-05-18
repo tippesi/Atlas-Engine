@@ -122,8 +122,8 @@ void Main::Load() {
 		"cubemap/back.png");
 
 	cubeMesh =  Mesh::Mesh("cube.dae");
-	//sponzaMesh = new Mesh::Mesh("sanmiguel/sanmiguel.dae");
-	//sponzaMesh->cullBackFaces = false;
+	// sponzaMesh = new Mesh::Mesh("sanmiguel/sanmiguel.dae");
+	// sponzaMesh->cullBackFaces = false;
 	sponzaMesh = Mesh::Mesh("sponza/sponza.dae");
 
 	treeMesh = Mesh::Mesh("tree.dae");

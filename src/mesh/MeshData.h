@@ -32,6 +32,8 @@ namespace Atlas {
 			 */
 			MeshData();
 
+			~MeshData();
+
 			/**
 			 *
 			 * @param count

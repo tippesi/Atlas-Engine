@@ -31,6 +31,8 @@ namespace Atlas {
 			 */
 			Mesh(std::string filename, int32_t mobility = AE_STATIONARY_MESH);
 
+			~Mesh();
+
 			Mesh& operator=(const Mesh& that);
 
 			/**
@@ -71,6 +73,8 @@ namespace Atlas {
 			void InitializeVertexArray();
 
 			void AddMaterial(Material* material);
+
+			void ClearMaterials();
 
 		};
 

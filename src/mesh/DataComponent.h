@@ -186,8 +186,12 @@ namespace Atlas {
 				SetType(that.componentType);
 				SetSize(that.size);
 
-				if (that.containsData)
-					Set(that.data);
+				if (that.containsData) {
+					// We need to duplicate the data
+					auto data = new S[size];
+					std::memcpy(data, that.data, size * sizeof(S));
+					Set(data);
+				}
 
 			}
 

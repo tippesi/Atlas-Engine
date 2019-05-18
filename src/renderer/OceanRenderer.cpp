@@ -14,7 +14,7 @@ namespace Atlas {
 
 			simulation = new GPGPU::OceanSimulation(512, 2000);
 
-			//foam = Texture::Texture2D("foam.jpg", false);
+			foam = Texture::Texture2D("foam.jpg", false);
 
 			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
 			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);

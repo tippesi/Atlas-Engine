@@ -32,11 +32,6 @@ namespace Atlas {
 
 				Unbind();
 
-				glDeleteVertexArrays(1, &ID);
-				glGenVertexArrays(1, &ID);
-
-				Bind();
-
 				delete indexComponent;
 
 				for (auto& key : vertexComponents)
@@ -51,6 +46,8 @@ namespace Atlas {
 					auto buffer = new VertexBuffer(*key.second);
 					AddComponent(key.first, buffer);
 				}
+
+				Unbind();
 
 			}
 
