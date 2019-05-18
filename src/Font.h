@@ -39,6 +39,10 @@ namespace Atlas {
 	class Font {
 
 	public:
+		/**
+		 * Constructs a font object.
+		 */
+		Font() {}
 
 		/**
          * Loads a true type font from a file.
@@ -55,8 +59,6 @@ namespace Atlas {
          * as the outline.
          */
 		Font(std::string filename, float pixelSize, int32_t padding, uint8_t edgeValue = 127);
-
-		~Font();
 
 		/**
          * Returns the glyph of a character
@@ -100,11 +102,11 @@ namespace Atlas {
 			vec2 size;
 		} glyphInfo[AE_GPU_GLYPH_COUNT];
 
-		Texture::Texture2DArray *glyphTexture;
+		Texture::Texture2DArray glyphTexture;
 
 		// We need two glyph buffers to store 2048 glyphs
-		Buffer::Buffer *firstGlyphBuffer;
-		Buffer::Buffer *secondGlyphBuffer;
+		Buffer::Buffer firstGlyphBuffer;
+		Buffer::Buffer secondGlyphBuffer;
 
 	private:
 		Glyph glyphs[AE_FONT_GLYPH_COUNT];

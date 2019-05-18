@@ -35,7 +35,8 @@ namespace Atlas {
 
 			std::sort(config->macros.begin(), config->macros.end());
 
-			for (ShaderConfigBatch* configBatch : configBatches) {
+			for (auto configBatchKey : configBatches) {
+				auto configBatch = configBatchKey.second;
 				if (configBatch->GetShader()->macros.size() != config->macros.size()) {
 					continue;
 				}
@@ -79,7 +80,7 @@ namespace Atlas {
 
 			batch->Add(config);
 			config->added = true;
-			configBatches.push_back(batch);
+			configBatches[batch->ID] = batch;
 
 		}
 
@@ -96,15 +97,15 @@ namespace Atlas {
 
 			// Remove empty batches
 			if (batch->GetSize() == 0) {
-				configBatches.erase(configBatches.begin() + batch->ID);
+				configBatches.erase(config->shaderID);
 			}
 
 		}
 
 		Uniform* ShaderBatch::GetUniform(std::string uniformName) {
 
-			for (ShaderConfigBatch* batch : configBatches) {
-				batch->GetShader()->GetUniform(uniformName);
+			for (auto batchKey : configBatches) {
+				batchKey.second->GetShader()->GetUniform(uniformName);
 			}
 
 			// We don't care about the shader ID because the uniform object

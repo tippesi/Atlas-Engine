@@ -167,7 +167,7 @@ namespace Atlas {
 
         void Buffer::SetData(void *data, size_t offset, size_t length) {
 
-            if (mapped || !dynamicStorage)
+            if (mapped || (!dynamicStorage && immutable))
                 return;
 
             Bind();

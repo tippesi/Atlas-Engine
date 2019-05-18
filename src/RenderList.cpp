@@ -28,18 +28,18 @@ namespace Atlas {
 
 		for (auto &subData : actor->mesh->data.subData) {
 
-			auto shaderConfig = actor->mesh->GetConfig(subData->material, type);
+			auto shaderConfig = actor->mesh->GetConfig(subData.material, type);
 
 			auto batchKey = renderListBatches.find(shaderConfig->shaderID);
 
 			if (batchKey != renderListBatches.end()) {
-				batchKey->second.subData.push_back(subData);
+				batchKey->second.subData.push_back(&subData);
 				continue;
 			}
 
 			RenderListBatch batch;
 			batch.meshActorBatch = meshActorBatch;
-			batch.subData.push_back(subData);
+			batch.subData.push_back(&subData);
 			renderListBatches[shaderConfig->shaderID] = batch;
 
 		}

@@ -6,6 +6,7 @@
 #include "ShaderConfigBatch.h"
 
 #include <vector>
+#include <unordered_map>
 
 namespace Atlas {
 
@@ -67,7 +68,7 @@ namespace Atlas {
 			void Bind(int32_t shaderID);
 
 			std::vector<ShaderStage*> stages;
-			std::vector<ShaderConfigBatch*> configBatches;
+			std::unordered_map<int32_t, ShaderConfigBatch*> configBatches;
 			std::vector<Uniform*> uniforms;
 
 			int32_t boundShaderID;

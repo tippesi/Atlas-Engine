@@ -36,11 +36,11 @@ private:
 	Atlas::Input::TouchHandler* touchHandler;
 
 	Atlas::RenderTarget* renderTarget;
-	Atlas::Renderer::MasterRenderer* masterRenderer;
+	Atlas::Renderer::MasterRenderer masterRenderer;
 
 	Atlas::Viewport viewport;
 
-	Atlas::Font* font;
+	Atlas::Font font;
 
 	Atlas::Camera* camera;
 	Atlas::Scene::Scene* scene;
@@ -51,9 +51,9 @@ private:
 	Atlas::Mesh::Mesh treeMesh;
 	Atlas::Mesh::Mesh cubeMesh;
 
-	Atlas::Actor::MovableMeshActor* cubeActor;
-	Atlas::Actor::StaticMeshActor* treeActor;
-	Atlas::Actor::StaticMeshActor* sponzaActor;
+	Atlas::Actor::MovableMeshActor cubeActor;
+	Atlas::Actor::StaticMeshActor treeActor;
+	Atlas::Actor::StaticMeshActor sponzaActor;
 
 	Atlas::Lighting::DirectionalLight* directionalLight;
 

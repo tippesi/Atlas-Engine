@@ -14,8 +14,8 @@ namespace Atlas {
 
 			InitializeVertexArray();
 
-			for (auto material : data.materials)
-				AddMaterial(material);
+			for (auto& material : data.materials)
+				AddMaterial(&material);
 
 		}
 
@@ -36,8 +36,8 @@ namespace Atlas {
 
 				ClearMaterials();
 
-				for (auto material : data.materials)
-					AddMaterial(material);
+				for (auto& material : data.materials)
+					AddMaterial(&material);
 
 			}
 
@@ -70,13 +70,13 @@ namespace Atlas {
 
 		}
 
-		void Mesh::Bind() {
+		void Mesh::Bind() const {
 
 			vertexArray.Bind();
 
 		}
 
-		void Mesh::Unbind() {
+		void Mesh::Unbind() const {
 
 			vertexArray.Unbind();
 

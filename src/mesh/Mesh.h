@@ -43,14 +43,12 @@ namespace Atlas {
 			/**
 			 *
 			 */
-			void Bind();
+			void Bind() const;
 
 			/**
 			 *
 			 */
-			void Unbind();
-
-			Buffer::VertexArray vertexArray;
+			void Unbind() const;
 
 			Shader::ShaderConfig* GetConfig(Material* material, int32_t type);
 
@@ -75,6 +73,9 @@ namespace Atlas {
 			void AddMaterial(Material* material);
 
 			void ClearMaterials();
+
+
+			Buffer::VertexArray vertexArray;
 
 		};
 

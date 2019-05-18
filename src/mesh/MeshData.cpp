@@ -10,19 +10,42 @@ namespace Atlas {
 
 			vertices = DataComponent<float, float>(AE_COMPONENT_FLOAT, 3);
 			texCoords = DataComponent<float, float16>(AE_COMPONENT_FLOAT, 2);
-			normals = DataComponent<float, uint32_t>(AE_COMPONENT_FLOAT, 3);
-			tangents = DataComponent<float, uint32_t>(AE_COMPONENT_FLOAT, 3);
-
-			indexCount = 0;
-			vertexCount = 0;
-
-			primitiveType = AE_PRIMITIVE_TRIANGLES;
+			normals = DataComponent<float, uint32_t>(AE_COMPONENT_FLOAT, 4);
+			tangents = DataComponent<float, uint32_t>(AE_COMPONENT_FLOAT, 4);
 
 		}
 
-		MeshData::~MeshData() {
+		MeshData& MeshData::operator=(const MeshData& that) {
 
-			
+			if (this != &that) {
+
+				indices = that.indices;
+				
+				vertices = that.vertices;
+				texCoords = that.texCoords;
+				normals = that.normals;
+				tangents = that.tangents;
+
+				indexCount = that.indexCount;
+				vertexCount = that.vertexCount;
+
+				primitiveType = that.primitiveType;
+
+				aabb = that.aabb;
+
+				materials.resize(that.materials.size());
+				subData.resize(that.subData.size());
+
+				// We need to refresh the pointers in the sub data
+				for (size_t i = 0; i < that.subData.size(); i++) {
+					materials[i] = that.materials[i];
+					subData[i] = that.subData[i];
+					subData[i].material = &materials[i];
+				}
+
+			}
+
+			return *this;
 
 		}
 
@@ -34,7 +57,7 @@ namespace Atlas {
 
 		}
 
-		int32_t MeshData::GetIndexCount() {
+		int32_t MeshData::GetIndexCount() const {
 
 			return indexCount;
 
@@ -51,7 +74,7 @@ namespace Atlas {
 
 		}
 
-		int32_t MeshData::GetVertexCount() {
+		int32_t MeshData::GetVertexCount() const {
 
 			return vertexCount;
 

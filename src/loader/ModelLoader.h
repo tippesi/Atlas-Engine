@@ -20,7 +20,7 @@ namespace Atlas {
 			static void LoadMesh(std::string filename, Mesh::MeshData& meshData);
 
 		private:
-			static Material* LoadMaterial(aiMaterial* assimpMaterial, std::string directory);
+			static void LoadMaterial(aiMaterial* assimpMaterial, Material& material, std::string directory);
 
 		};
 

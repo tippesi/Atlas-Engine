@@ -39,8 +39,6 @@ Main::Main(int argc, char* argv[], Window* window) : window(window) {
 	controllerHandler = new Atlas::Input::ControllerHandler(camera, 1.5f, 7.0f, 6.0f, 5000.0f);
 #endif
 
-	masterRenderer = new Renderer::MasterRenderer();
-
 #ifndef AE_OS_ANDROID
 	renderTarget = new Atlas::RenderTarget(1920, 1080);
 #else
@@ -90,7 +88,7 @@ void Main::Update(float deltaTime) {
 
 	scene->Update(camera, deltaTime);
 
-	masterRenderer->Update();
+	masterRenderer.Update();
 
 }
 
@@ -98,19 +96,19 @@ void Main::Render(float deltaTime) {
 
 	// simulation->ComputeHT(simulation->oceanStates[0]);
 
-	masterRenderer->RenderScene(&viewport, renderTarget, camera, scene);
+	masterRenderer.RenderScene(&viewport, renderTarget, camera, scene);
 
 	float averageFramerate = Clock::GetAverage();
 
 	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms";
 
-	masterRenderer->textRenderer.Render(&viewport, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
+	masterRenderer.textRenderer.Render(&viewport, &font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
 
 }
 
 void Main::Load() {
 
-	font = new Font("roboto.ttf", 88, 5);
+	font = Font("roboto.ttf", 88, 5);
 
 	DisplayLoadingScreen();
 
@@ -139,7 +137,7 @@ void Main::Load() {
 void Main::DisplayLoadingScreen() {
 
 	float textWidth, textHeight;
-	font->ComputeDimensions("Lädt...", 2.5f, &textWidth, &textHeight);
+	font.ComputeDimensions("Lädt...", 2.5f, &textWidth, &textHeight);
 
     window->Clear();
 
@@ -153,7 +151,7 @@ void Main::DisplayLoadingScreen() {
 	float x = screenSize.x / 2 - textWidth / 2;
 	float y = screenSize.y / 2 - textHeight / 2;
 
-	masterRenderer->textRenderer.Render(&viewport, font, "Lädt...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+	masterRenderer.textRenderer.Render(&viewport, &font, "Lädt...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
 	window->Update();
 
@@ -168,9 +166,9 @@ void Main::SceneSetUp() {
 	scene->Add(node);
 	scene->sky.skybox = new Lighting::Skybox(skybox);
 
-	cubeActor = new Actor::MovableMeshActor(&cubeMesh);
-	treeActor = new Actor::StaticMeshActor(&treeMesh, scale(mat4(1.0f), vec3(3.0f)));
-	sponzaActor = new Actor::StaticMeshActor(&sponzaMesh, scale(mat4(1.0f), vec3(.05f)));
+	cubeActor = Actor::MovableMeshActor(&cubeMesh);
+	treeActor = Actor::StaticMeshActor(&treeMesh, scale(mat4(1.0f), vec3(3.0f)));
+	sponzaActor = Actor::StaticMeshActor(&sponzaMesh, scale(mat4(1.0f), vec3(.05f)));
 
 	directionalLight = new Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
 #ifdef AE_OS_ANDROID
@@ -239,9 +237,9 @@ void Main::SceneSetUp() {
 	pointLight4->AddShadow(0.0f, 1024);
 	*/
 
-	node->Add(cubeActor);
-	scene->Add(sponzaActor);
-	scene->Add(treeActor);
+	node->Add(&cubeActor);
+	scene->Add(&sponzaActor);
+	scene->Add(&treeActor);
 
 	scene->Add(directionalLight);
 

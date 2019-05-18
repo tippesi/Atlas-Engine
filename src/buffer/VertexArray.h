@@ -71,12 +71,12 @@ namespace Atlas {
 			/**
 			 * Binds the vertex array.
 			 */
-			void Bind();
+			void Bind() const;
 
 			/**
 			 * Unbinds any vertex array.
 			 */
-			void Unbind();
+			void Unbind() const;
 
 		private:
 			uint32_t ID;

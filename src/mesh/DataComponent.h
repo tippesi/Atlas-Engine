@@ -188,9 +188,10 @@ namespace Atlas {
 
 				if (that.containsData) {
 					// We need to duplicate the data
-					auto data = new S[size];
-					std::memcpy(data, that.data, size * sizeof(S));
-					Set(data);
+					auto dataSize = stride * size;
+					auto copy = new S[dataSize];
+					std::memcpy(copy, that.data, dataSize * sizeof(S));
+					Set(copy);
 				}
 
 			}

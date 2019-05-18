@@ -19,31 +19,36 @@ namespace Atlas {
 
 		~Material();
 
-		bool HasDiffuseMap();
-		bool HasNormalMap();
-		bool HasSpecularMap();
-		bool HasDisplacementMap();
+		Material& operator=(const Material& that);
+
+		bool HasDiffuseMap() const;
+		bool HasNormalMap() const;
+		bool HasSpecularMap() const;
+		bool HasDisplacementMap() const;
 
 		std::string name;
 
-		Texture::Texture2D* diffuseMap;
-		Texture::Texture2D* normalMap;
-		Texture::Texture2D* specularMap;
-		Texture::Texture2D* displacementMap;
+		Texture::Texture2D* diffuseMap = nullptr;
+		Texture::Texture2D* normalMap = nullptr;
+		Texture::Texture2D* specularMap = nullptr;
+		Texture::Texture2D* displacementMap = nullptr;
 
-		vec3 diffuseColor;
-		vec3 specularColor;
-		vec3 ambientColor;
+		vec3 diffuseColor = vec3(1.0f);
+		vec3 specularColor = vec3(1.0f);
+		vec3 ambientColor = vec3(1.0f);
 
-		float specularHardness;
-		float specularIntensity;
+		float specularHardness = 1.0f;
+		float specularIntensity = 0.0f;
 
-		float displacementScale;
+		float displacementScale = 1.0f;
 
 		std::string diffuseMapPath;
 		std::string normalMapPath;
 		std::string specularMapPath;
 		std::string displacementMapPath;
+
+	private:
+		void DeleteTextures();
 
 	};
 

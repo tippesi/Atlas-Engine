@@ -32,7 +32,7 @@ namespace Atlas {
 			 */
 			MeshData();
 
-			~MeshData();
+			MeshData& operator=(const MeshData& that);
 
 			/**
 			 *
@@ -43,7 +43,7 @@ namespace Atlas {
 			/**
 			 *
 			 */
-			int32_t GetIndexCount();
+			int32_t GetIndexCount() const;
 
 			/**
 			 *
@@ -55,7 +55,7 @@ namespace Atlas {
 			 *
 			 * @return
 			 */
-			int32_t GetVertexCount();
+			int32_t GetVertexCount() const;
 
 			DataComponent<uint32_t, void> indices;
 
@@ -64,16 +64,16 @@ namespace Atlas {
 			DataComponent<float, uint32_t> normals;
 			DataComponent<float, uint32_t> tangents;
 
-			std::vector<Material*> materials;
-			std::vector<MeshSubData*> subData;
+			std::vector<Material> materials;
+			std::vector<MeshSubData> subData;
 
-			int32_t primitiveType;
+			int32_t primitiveType = AE_PRIMITIVE_TRIANGLES;
 
 			Common::AABB aabb;
 
 		private:
-			int32_t indexCount;
-			int32_t vertexCount;
+			int32_t indexCount = 0;
+			int32_t vertexCount = 0;
 
 		};
 

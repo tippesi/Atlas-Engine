@@ -107,13 +107,18 @@ namespace Atlas {
 			float* texCoords = hasTexCoords ? new float[vertexCount * 2] : nullptr;
 			float* tangents = hasTangents ? new float[vertexCount * 4] : nullptr;
 
+			meshData.subData = std::vector<Mesh::MeshSubData>(scene->mNumMaterials);
+			meshData.materials = std::vector<Material>(scene->mNumMaterials);
+
 			for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 
-				auto material = LoadMaterial(scene->mMaterials[i], directoryPath);
+				auto& material = meshData.materials[i];
+				auto& subData = meshData.subData[i];
 
-				auto subData = new Mesh::MeshSubData;
-				subData->material = material;
-				subData->indicesOffset = usedFaces * 3;
+				LoadMaterial(scene->mMaterials[i], material, directoryPath);
+
+				subData.material = &material;
+				subData.indicesOffset = usedFaces * 3;
 
 				for (auto mesh : meshSorted[i]) {
 					// Copy vertices
@@ -174,9 +179,7 @@ namespace Atlas {
 
 				}
 
-				subData->indicesCount = usedFaces * 3 - subData->indicesOffset;
-				meshData.subData.push_back(subData);
-				meshData.materials.push_back(material);
+				subData.indicesCount = usedFaces * 3 - subData.indicesOffset;
 
 			}
 
@@ -193,9 +196,7 @@ namespace Atlas {
 
 		}
 
-		Material* ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, std::string directory) {
-
-			auto material = new Material();
+		void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, Material& material, std::string directory) {
 
             aiString name;
 
@@ -204,34 +205,32 @@ namespace Atlas {
 			aiColor3D ambient;
 
 			assimpMaterial->Get(AI_MATKEY_NAME, name);
-			assimpMaterial->Get(AI_MATKEY_SHININESS, material->specularHardness);
-			assimpMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, material->specularIntensity);
+			assimpMaterial->Get(AI_MATKEY_SHININESS, material.specularHardness);
+			assimpMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, material.specularIntensity);
 			assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
 			assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specular);
 			assimpMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ambient);
 
-            material->name = std::string(name.C_Str());
+            material.name = std::string(name.C_Str());
 
-			material->diffuseColor = vec3(diffuse.r, diffuse.g, diffuse.b);
-			material->specularColor = vec3(specular.r, specular.g, specular.b);
-			material->ambientColor = vec3(ambient.r, ambient.g, ambient.b);
+			material.diffuseColor = vec3(diffuse.r, diffuse.g, diffuse.b);
+			material.specularColor = vec3(specular.r, specular.g, specular.b);
+			material.ambientColor = vec3(ambient.r, ambient.g, ambient.b);
 
 			if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
 				auto texture = new Texture::Texture2D(path, true);
-				material->diffuseMap = texture;
+				material.diffuseMap = texture;
 			}
 			if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
 				auto texture = new Texture::Texture2D(path, false);
-				material->normalMap = texture;
+				material.normalMap = texture;
 			}
-
-			return material;
 
 		}
 
