@@ -3,6 +3,7 @@
 
 #include "../System.h"
 #include "Skybox.h"
+#include "DirectionalLight.h"
 
 namespace Atlas {
 
@@ -12,6 +13,8 @@ namespace Atlas {
 
 		public:
 			Sky();
+
+			DirectionalLight* sun = nullptr;
 
 			Skybox* skybox = nullptr;
 
