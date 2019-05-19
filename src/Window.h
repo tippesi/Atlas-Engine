@@ -137,7 +137,6 @@ namespace Atlas {
 		uint32_t ID;
 
 		SDL_Window *sdlWindow;
-		SDL_GLContext context;
 
 		int32_t x;
 		int32_t y;
