@@ -9,6 +9,9 @@ namespace Atlas {
 
 		class OceanNode {
 
+		public:
+			OceanNode();
+
 
 
 		};
