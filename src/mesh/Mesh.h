@@ -22,12 +22,7 @@ namespace Atlas {
 		class Mesh {
 
 		public:
-			/**
-			 *
-			 * @param data
-			 * @param mobility
-			 */
-			Mesh(MeshData* data, int32_t mobility = AE_STATIONARY_MESH);
+			Mesh() {}
 
 			/**
 			 *
@@ -36,8 +31,9 @@ namespace Atlas {
 			 */
 			Mesh(std::string filename, int32_t mobility = AE_STATIONARY_MESH);
 
-
 			~Mesh();
+
+			Mesh& operator=(const Mesh& that);
 
 			/**
 			 *
@@ -47,18 +43,18 @@ namespace Atlas {
 			/**
 			 *
 			 */
-			void Bind();
+			void Bind() const;
 
 			/**
 			 *
 			 */
-			void Unbind();
+			void Unbind() const;
 
 			Shader::ShaderConfig* GetConfig(Material* material, int32_t type);
 
-			MeshData* const data;
+			MeshData data;
 
-			const int32_t mobility;
+			int32_t mobility;
 
 			bool cullBackFaces = true;
 
@@ -75,6 +71,9 @@ namespace Atlas {
 			void InitializeVertexArray();
 
 			void AddMaterial(Material* material);
+
+			void ClearMaterials();
+
 
 			Buffer::VertexArray vertexArray;
 

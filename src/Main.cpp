@@ -7,29 +7,12 @@
 
 using namespace Atlas;
 
-Main::Main(int argc, char* argv[]) {
+Main::Main(int argc, char* argv[], Window* window) : window(window) {
 
 	quit = false;
 	useControllerHandler = false;
 
-	auto screenSize = Engine::GetScreenSize();
-
-	int32_t flags;
-	std::string assetDirectory = "data";
-
-#ifndef AE_OS_ANDROID
-	assetDirectory = "../data";
-	screenSize.x = 1280;
-	screenSize.y = 720;
-	flags = AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI;
-#else
-	flags = AE_WINDOW_FULLSCREEN;
-#endif
-
-	viewport = Viewport(0, 0, screenSize.x, screenSize.y);
-
-	window = Engine::Init(assetDirectory, "shader", "Atlas Engine", AE_WINDOWPOSITION_UNDEFINED,
-			AE_WINDOWPOSITION_UNDEFINED, screenSize.x, screenSize.y, flags);
+	viewport = Viewport(0, 0, window->GetWidth(), window->GetHeight());
 
 	Engine::UnlockFramerate();
 
@@ -53,10 +36,8 @@ Main::Main(int argc, char* argv[]) {
 #else
 	mouseHandler = new Atlas::Input::MouseHandler(camera, 1.5f, 6.0f);
 	keyboardHandler = new Atlas::Input::KeyboardHandler(camera, 7.0f, 6.0f);
-	controllerHandler = new Atlas::Input::ControllerHandler(camera, 1.5f, 7.0f, 0.2f, 5000.0f);
+	controllerHandler = new Atlas::Input::ControllerHandler(camera, 1.5f, 7.0f, 6.0f, 5000.0f);
 #endif
-
-	masterRenderer = new Renderer::MasterRenderer();
 
 #ifndef AE_OS_ANDROID
 	renderTarget = new Atlas::RenderTarget(1920, 1080);
@@ -107,7 +88,7 @@ void Main::Update(float deltaTime) {
 
 	scene->Update(camera, deltaTime);
 
-	masterRenderer->Update();
+	masterRenderer.Update();
 
 }
 
@@ -115,19 +96,19 @@ void Main::Render(float deltaTime) {
 
 	// simulation->ComputeHT(simulation->oceanStates[0]);
 
-	masterRenderer->RenderScene(&viewport, renderTarget, camera, scene);
+	masterRenderer.RenderScene(&viewport, renderTarget, camera, scene);
 
 	float averageFramerate = Clock::GetAverage();
 
 	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms";
 
-	masterRenderer->textRenderer.Render(&viewport, font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
+	masterRenderer.textRenderer.Render(&viewport, &font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
 
 }
 
 void Main::Load() {
 
-	font = new Font("roboto.ttf", 88, 5);
+	font = Font("roboto.ttf", 88, 5);
 
 	DisplayLoadingScreen();
 
@@ -138,12 +119,13 @@ void Main::Load() {
 		"cubemap/front.png",
 		"cubemap/back.png");
 
-	cubeMesh = new Mesh::Mesh("cube.dae");
-	treeMesh = new Mesh::Mesh("tree.dae");
-	treeMesh->cullBackFaces = false;
-	//sponzaMesh = new Mesh::Mesh("sanmiguel/sanmiguel.dae");
-	//sponzaMesh->cullBackFaces = false;
-	sponzaMesh = new Mesh::Mesh("sponza/sponza.dae");
+	cubeMesh =  Mesh::Mesh("cube.dae");
+	// sponzaMesh = new Mesh::Mesh("sanmiguel/sanmiguel.dae");
+	// sponzaMesh->cullBackFaces = false;
+	sponzaMesh = Mesh::Mesh("sponza/sponza.dae");
+
+	treeMesh = Mesh::Mesh("tree.dae");
+	treeMesh.cullBackFaces = false;
 
 	audioData = new Audio::AudioData("MenuTheme2_final.wav");
 	audioStream = new Audio::AudioStream(audioData);
@@ -155,7 +137,7 @@ void Main::Load() {
 void Main::DisplayLoadingScreen() {
 
 	float textWidth, textHeight;
-	font->ComputeDimensions("Lädt...", 2.5f, &textWidth, &textHeight);
+	font.ComputeDimensions("Lädt...", 2.5f, &textWidth, &textHeight);
 
     window->Clear();
 
@@ -169,7 +151,7 @@ void Main::DisplayLoadingScreen() {
 	float x = screenSize.x / 2 - textWidth / 2;
 	float y = screenSize.y / 2 - textHeight / 2;
 
-	masterRenderer->textRenderer.Render(&viewport, font, "Lädt...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+	masterRenderer.textRenderer.Render(&viewport, &font, "Lädt...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
 	window->Update();
 
@@ -184,9 +166,9 @@ void Main::SceneSetUp() {
 	scene->Add(node);
 	scene->sky.skybox = new Lighting::Skybox(skybox);
 
-	cubeActor = new Actor::MovableMeshActor(cubeMesh);
-	treeActor = new Actor::StaticMeshActor(treeMesh, scale(mat4(1.0f), vec3(3.0f)));
-	sponzaActor = new Actor::StaticMeshActor(sponzaMesh, scale(mat4(1.0f), vec3(.05f)));
+	cubeActor = Actor::MovableMeshActor(&cubeMesh);
+	treeActor = Actor::StaticMeshActor(&treeMesh, scale(mat4(1.0f), vec3(3.0f)));
+	sponzaActor = Actor::StaticMeshActor(&sponzaMesh, scale(mat4(1.0f), vec3(.05f)));
 
 	directionalLight = new Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
 #ifdef AE_OS_ANDROID
@@ -205,7 +187,7 @@ void Main::SceneSetUp() {
 #ifndef AE_OS_ANDROID
     directionalLight->AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
 	directionalLight->GetShadow()->sampleCount = 1;
-	directionalLight->AddVolumetric(renderTarget->GetSize().x / 2, renderTarget->GetSize().y / 2, 20, -0.5f);
+	directionalLight->AddVolumetric(renderTarget->GetWidth() / 2, renderTarget->GetHeight() / 2, 20, -0.5f);
 #else
     directionalLight->AddShadow(200.0f, 0.01f, 2048, vec3(0.0f), orthoProjection);
     directionalLight->GetShadow()->sampleCount = 8;
@@ -255,9 +237,9 @@ void Main::SceneSetUp() {
 	pointLight4->AddShadow(0.0f, 1024);
 	*/
 
-	node->Add(cubeActor);
-	scene->Add(sponzaActor);
-	scene->Add(treeActor);
+	node->Add(&cubeActor);
+	scene->Add(&sponzaActor);
+	scene->Add(&treeActor);
 
 	scene->Add(directionalLight);
 
@@ -287,7 +269,25 @@ void Main::ControllerDeviceEventHandler(Atlas::Events::ControllerDeviceEvent eve
 
 int main(int argc, char* argv[]) {
 
-	Main mainClass(argc, argv);
+	auto screenSize = Engine::GetScreenSize();
+
+	int32_t flags;
+	std::string assetDirectory = "data";
+
+#ifndef AE_OS_ANDROID
+	assetDirectory = "../data";
+	screenSize.x = 1280;
+	screenSize.y = 720;
+	flags = AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI;
+#else
+	flags = AE_WINDOW_FULLSCREEN;
+#endif
+
+	auto window = Engine::Init(assetDirectory, "shader", "Atlas Engine", AE_WINDOWPOSITION_UNDEFINED,
+		AE_WINDOWPOSITION_UNDEFINED, screenSize.x, screenSize.y, flags);
+
+
+	Main mainClass(argc, argv, window);
 
 	return 0;
 

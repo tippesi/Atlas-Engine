@@ -26,6 +26,11 @@ namespace Atlas {
 			~VertexArray();
 
 			/**
+			 *
+			 */
+			VertexArray& operator=(const VertexArray& that);
+
+			/**
              *
              * @param buffer
              * @note The object takes the ownership of the buffer.
@@ -66,23 +71,21 @@ namespace Atlas {
 			/**
 			 * Binds the vertex array.
 			 */
-			void Bind();
+			void Bind() const;
 
 			/**
 			 * Unbinds any vertex array.
 			 */
-			void Unbind();
+			void Unbind() const;
 
 		private:
 			uint32_t ID;
 
-			IndexBuffer* indexComponent;
+			IndexBuffer* indexComponent = nullptr;
 
 			std::unordered_map<uint32_t, VertexBuffer*> vertexComponents;
 
 			uint32_t maxAttribArrayCount;
-
-			static uint32_t boundVertexArrayID;
 
 		};
 

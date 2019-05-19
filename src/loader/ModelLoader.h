@@ -17,12 +17,10 @@ namespace Atlas {
 		class ModelLoader {
 
 		public:
-			static Mesh::MeshData* LoadMesh(std::string filename);
-
-			static Scene::SceneNode* LoadSceneNode(std::string filename);
+			static void LoadMesh(std::string filename, Mesh::MeshData& meshData);
 
 		private:
-			static Material* LoadMaterial(aiMaterial* assimpMaterial, std::string directory);
+			static void LoadMaterial(aiMaterial* assimpMaterial, Material& material, std::string directory);
 
 		};
 

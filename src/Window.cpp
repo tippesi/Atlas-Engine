@@ -108,9 +108,15 @@ namespace Atlas {
 
 	}
 
-	ivec2 Window::GetSize() {
+	int32_t Window::GetWidth() {
 
-		return ivec2(width, height);
+		return width;
+
+	}
+
+	int32_t Window::GetHeight() {
+
+		return height;
 
 	}
 

@@ -39,9 +39,15 @@ namespace Atlas {
 
 	}
 
-	ivec2 RenderTarget::GetSize() {
+	int32_t RenderTarget::GetWidth() {
 
-		return ivec2(width, height);
+		return width;
+
+	}
+
+	int32_t RenderTarget::GetHeight() {
+
+		return height;
 
 	}
 

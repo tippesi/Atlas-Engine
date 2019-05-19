@@ -15,7 +15,7 @@ namespace Atlas {
 			void Update(Camera camera, float deltaTime,
 				mat4 parentTransform, bool parentUpdate) override;
 
-			Mesh::Mesh* const mesh;
+			Mesh::Mesh* mesh;
 
 		protected:
 			MeshActor(Mesh::Mesh* mesh) : mesh(mesh) {}

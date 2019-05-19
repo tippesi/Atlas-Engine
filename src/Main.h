@@ -11,7 +11,7 @@
 class Main {
 
 public:
-	Main(int argc, char* argv[]);
+	Main(int argc, char* argv[], Atlas::Window* window);
 
 private:
 	void Update(float deltaTime);
@@ -36,24 +36,24 @@ private:
 	Atlas::Input::TouchHandler* touchHandler;
 
 	Atlas::RenderTarget* renderTarget;
-	Atlas::Renderer::MasterRenderer* masterRenderer;
+	Atlas::Renderer::MasterRenderer masterRenderer;
 
 	Atlas::Viewport viewport;
 
-	Atlas::Font* font;
+	Atlas::Font font;
 
 	Atlas::Camera* camera;
 	Atlas::Scene::Scene* scene;
 
 	Atlas::Texture::Cubemap* skybox;
 
-	Atlas::Mesh::Mesh* sponzaMesh;
-	Atlas::Mesh::Mesh* treeMesh;
-	Atlas::Mesh::Mesh* cubeMesh;
+	Atlas::Mesh::Mesh sponzaMesh;
+	Atlas::Mesh::Mesh treeMesh;
+	Atlas::Mesh::Mesh cubeMesh;
 
-	Atlas::Actor::MovableMeshActor* cubeActor;
-	Atlas::Actor::StaticMeshActor* treeActor;
-	Atlas::Actor::StaticMeshActor* sponzaActor;
+	Atlas::Actor::MovableMeshActor cubeActor;
+	Atlas::Actor::StaticMeshActor treeActor;
+	Atlas::Actor::StaticMeshActor sponzaActor;
 
 	Atlas::Lighting::DirectionalLight* directionalLight;
 

@@ -9,7 +9,7 @@ namespace Atlas {
 
 	namespace Loader {
 
-		Mesh::MeshData* ModelLoader::LoadMesh(std::string filename) {
+		void ModelLoader::LoadMesh(std::string filename, Mesh::MeshData& meshData) {
 
 			std::string directoryPath(filename);
 
@@ -47,8 +47,6 @@ namespace Atlas {
 					aiProcess_LimitBoneWeights |
 					aiProcess_ImproveCacheLocality);
 
-			auto meshData = new Mesh::MeshData();
-
 			int32_t indexCount = 0;
 			int32_t vertexCount = 0;
 			int32_t bonesCount = 0;
@@ -76,19 +74,19 @@ namespace Atlas {
 			}
 
 			if (indexCount > 65535) {
-				meshData->indices->SetType(AE_COMPONENT_UNSIGNED_INT);
+				meshData.indices.SetType(AE_COMPONENT_UNSIGNED_INT);
 			}
 			else {
-				meshData->indices->SetType(AE_COMPONENT_UNSIGNED_SHORT);
+				meshData.indices.SetType(AE_COMPONENT_UNSIGNED_SHORT);
 			}
 
-			meshData->vertices->SetType(AE_COMPONENT_FLOAT);
-			meshData->normals->SetType(AE_COMPONENT_PACKED_FLOAT);
-			meshData->texCoords->SetType(AE_COMPONENT_HALF_FLOAT);
-			meshData->tangents->SetType(AE_COMPONENT_PACKED_FLOAT);
+			meshData.vertices.SetType(AE_COMPONENT_FLOAT);
+			meshData.normals.SetType(AE_COMPONENT_PACKED_FLOAT);
+			meshData.texCoords.SetType(AE_COMPONENT_HALF_FLOAT);
+			meshData.tangents.SetType(AE_COMPONENT_PACKED_FLOAT);
 
-			meshData->SetIndexCount(indexCount);
-			meshData->SetVertexCount(vertexCount);
+			meshData.SetIndexCount(indexCount);
+			meshData.SetVertexCount(vertexCount);
 
 			if (scene->HasAnimations() || bonesCount > 0) {
 
@@ -109,13 +107,18 @@ namespace Atlas {
 			float* texCoords = hasTexCoords ? new float[vertexCount * 2] : nullptr;
 			float* tangents = hasTangents ? new float[vertexCount * 4] : nullptr;
 
+			meshData.subData = std::vector<Mesh::MeshSubData>(scene->mNumMaterials);
+			meshData.materials = std::vector<Material>(scene->mNumMaterials);
+
 			for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 
-				auto material = LoadMaterial(scene->mMaterials[i], directoryPath);
+				auto& material = meshData.materials[i];
+				auto& subData = meshData.subData[i];
 
-				auto subData = new Mesh::MeshSubData;
-				subData->material = material;
-				subData->indicesOffset = usedFaces * 3;
+				LoadMaterial(scene->mMaterials[i], material, directoryPath);
+
+				subData.material = &material;
+				subData.indicesOffset = usedFaces * 3;
 
 				for (auto mesh : meshSorted[i]) {
 					// Copy vertices
@@ -176,30 +179,24 @@ namespace Atlas {
 
 				}
 
-				subData->indicesCount = usedFaces * 3 - subData->indicesOffset;
-				meshData->subData.push_back(subData);
-				meshData->materials.push_back(material);
+				subData.indicesCount = usedFaces * 3 - subData.indicesOffset;
 
 			}
 
-			meshData->aabb = Common::AABB(min, max);
+			meshData.aabb = Common::AABB(min, max);
 
-			meshData->indices->Set(indices);
-			meshData->vertices->Set(vertices);
-			meshData->normals->Set(normals);
+			meshData.indices.Set(indices);
+			meshData.vertices.Set(vertices);
+			meshData.normals.Set(normals);
 
 			if (hasTexCoords)
-				meshData->texCoords->Set(texCoords);
+				meshData.texCoords.Set(texCoords);
 			if (hasTangents)
-				meshData->tangents->Set(tangents);
-
-			return meshData;
+				meshData.tangents.Set(tangents);
 
 		}
 
-		Material* ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, std::string directory) {
-
-			auto material = new Material();
+		void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, Material& material, std::string directory) {
 
             aiString name;
 
@@ -208,34 +205,32 @@ namespace Atlas {
 			aiColor3D ambient;
 
 			assimpMaterial->Get(AI_MATKEY_NAME, name);
-			assimpMaterial->Get(AI_MATKEY_SHININESS, material->specularHardness);
-			assimpMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, material->specularIntensity);
+			assimpMaterial->Get(AI_MATKEY_SHININESS, material.specularHardness);
+			assimpMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, material.specularIntensity);
 			assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
 			assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specular);
 			assimpMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ambient);
 
-            material->name = std::string(name.C_Str());
+            material.name = std::string(name.C_Str());
 
-			material->diffuseColor = vec3(diffuse.r, diffuse.g, diffuse.b);
-			material->specularColor = vec3(specular.r, specular.g, specular.b);
-			material->ambientColor = vec3(ambient.r, ambient.g, ambient.b);
+			material.diffuseColor = vec3(diffuse.r, diffuse.g, diffuse.b);
+			material.specularColor = vec3(specular.r, specular.g, specular.b);
+			material.ambientColor = vec3(ambient.r, ambient.g, ambient.b);
 
 			if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
 				auto texture = new Texture::Texture2D(path, true);
-				material->diffuseMap = texture;
+				material.diffuseMap = texture;
 			}
 			if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
 				auto texture = new Texture::Texture2D(path, false);
-				material->normalMap = texture;
+				material.normalMap = texture;
 			}
-
-			return material;
 
 		}
 

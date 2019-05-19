@@ -44,8 +44,8 @@ namespace Atlas {
 				float waveAmplitude = 0.35f;
 				vec2 waveDirection = vec2(0.8f, 0.6f);
 
-				float windSpeed = 600.0f;
-				float windDependency = 0.07f;
+				float windSpeed = 6.0f;
+				float windDependency = 0.7f;
 
 				Shader::Shader h0;
 				Shader::Shader ht;

@@ -117,8 +117,8 @@ namespace Atlas {
 
 									modelMatrixUniform->SetValue(actor->transformedMatrix);
 
-									glDrawElements(mesh->data->primitiveType, subData->indicesCount, mesh->data->indices->GetType(),
-												   (void*)((uint64_t)(subData->indicesOffset * mesh->data->indices->GetElementSize())));
+									glDrawElements(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
+												   (void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())));
 
 								}
 

@@ -33,11 +33,11 @@ namespace Atlas {
 			throw AtlasException("Failed loading font");
 		}
 
-		firstGlyphBuffer = new Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
-		firstGlyphBuffer->SetSize(AE_GPU_GLYPH_COUNT / 2);
+		firstGlyphBuffer = Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
+		firstGlyphBuffer.SetSize(AE_GPU_GLYPH_COUNT / 2);
 
-		secondGlyphBuffer = new Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
-		secondGlyphBuffer->SetSize(AE_GPU_GLYPH_COUNT / 2);
+		secondGlyphBuffer = Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
+		secondGlyphBuffer.SetSize(AE_GPU_GLYPH_COUNT / 2);
 
 		float scale = (float) stbtt_ScaleForPixelHeight(&font, pixelSize);
 
@@ -111,7 +111,7 @@ namespace Atlas {
 		depth = AE_GPU_GLYPH_COUNT < depth ? AE_GPU_GLYPH_COUNT : depth;
 
 		// Create texture and process texture data
-		glyphTexture = new Texture::Texture2DArray(width, height, depth, AE_R8, 
+		glyphTexture = Texture::Texture2DArray(width, height, depth, AE_R8, 
 			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 		std::vector<uint8_t> glyphData(width * height);
@@ -141,7 +141,7 @@ namespace Atlas {
 				glyphInfo[glyph->texArrayIndex].scale = glyph->textureScale;
 				glyphInfo[glyph->texArrayIndex].size = vec2((float) glyph->width, (float) glyph->height);
 
-				glyphTexture->SetData(glyphData, glyph->texArrayIndex);
+				glyphTexture.SetData(glyphData, glyph->texArrayIndex);
 
 			} else {
 
@@ -153,16 +153,8 @@ namespace Atlas {
 
 		}
 
-		firstGlyphBuffer->SetData(&glyphInfo[0], 0, AE_GPU_GLYPH_COUNT / 2);
-		secondGlyphBuffer->SetData(&glyphInfo[AE_GPU_GLYPH_COUNT / 2], 0, AE_GPU_GLYPH_COUNT / 2);
-
-	}
-
-	Font::~Font() {
-
-		delete glyphTexture;
-		delete firstGlyphBuffer;
-		delete secondGlyphBuffer;
+		firstGlyphBuffer.SetData(&glyphInfo[0], 0, AE_GPU_GLYPH_COUNT / 2);
+		secondGlyphBuffer.SetData(&glyphInfo[AE_GPU_GLYPH_COUNT / 2], 0, AE_GPU_GLYPH_COUNT / 2);
 
 	}
 
