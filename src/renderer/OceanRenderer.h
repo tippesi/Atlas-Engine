@@ -48,6 +48,7 @@ namespace Atlas {
 			Shader::Uniform* lightDirection;
 			Shader::Uniform* lightColor;
 			Shader::Uniform* lightAmbient;
+			Shader::Uniform* lightScatteringFactor;
 
 			Shader::Uniform* shadowDistance;
 			Shader::Uniform* shadowBias;

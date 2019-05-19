@@ -50,6 +50,16 @@ namespace Atlas {
 			lightColor->SetValue(sun->color);
 			lightAmbient->SetValue(sun->ambient);
 
+			
+			lightScatteringFactor->SetValue(sun->GetVolumetric() ? sun->GetVolumetric()->scatteringFactor : 0.0f);
+
+			if (sun->GetVolumetric()) {
+				glViewport(0, 0, sun->GetVolumetric()->map->width, sun->GetVolumetric()->map->height);
+				sun->GetVolumetric()->map->Bind(GL_TEXTURE7);
+				glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
+			}
+			
+
 			if (sun->GetShadow()) {
 				shadowDistance->SetValue(sun->GetShadow()->distance);
 				shadowBias->SetValue(sun->GetShadow()->bias);
@@ -127,6 +137,7 @@ namespace Atlas {
 			lightDirection = shader.GetUniform("light.direction");
 			lightColor = shader.GetUniform("light.color");
 			lightAmbient = shader.GetUniform("light.ambient");
+			lightScatteringFactor = shader.GetUniform("light.scatteringFactor");
 
 			shadowDistance = shader.GetUniform("light.shadow.distance");
 			shadowBias = shader.GetUniform("light.shadow.bias");

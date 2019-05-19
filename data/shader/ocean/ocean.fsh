@@ -8,6 +8,7 @@ layout (binding = 2) uniform sampler2D foamTexture;
 layout (binding = 3) uniform samplerCube skyEnvProbe;
 layout (binding = 4) uniform sampler2D refractionTexture;
 layout (binding = 5) uniform sampler2D depthTexture;
+layout (binding = 7) uniform sampler2D volumetricTexture;
 
 in vec4 fClipSpace;
 in vec3 fPosition;
@@ -34,6 +35,7 @@ void main() {
 	diffuse = waterBodyColor;
 	
 	float shadowFactor = max(CalculateCascadedShadow(light, fModelCoord, fPosition), light.ambient);
+	vec3 volumetric = texture(volumetricTexture, ndcCoord).r * light.color * light.scatteringFactor;
 	
 	vec3 normal = normalize(fNormal);
 		
@@ -53,6 +55,6 @@ void main() {
 	
 	diffuse  = mix(diffuse, vec3(foamIntensity) * shadowFactor, min(1.0, foamIntensity * pow(fold, 2.0)));
 	
-	diffuse = mix(texture(refractionTexture, ndcCoord).rgb, diffuse, waterViewDepth);
+	diffuse = mix(texture(refractionTexture, ndcCoord).rgb, diffuse, waterViewDepth) + volumetric;
 	
 }
