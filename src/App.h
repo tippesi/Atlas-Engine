@@ -1,11 +1,11 @@
-#ifndef AE_MAIN_H
-#define AE_MAIN_H
+#ifndef AE_APP_H
+#define AE_APP_H
 
 #include "Engine.h"
 #include "input/Mouse.h"
 #include "input/Keyboard.h"
 #include "input/Controller.h"
-#include "input/Touch.h"
+#include "input/Touch.h"                  
 #include "renderer/gpgpu/OceanSimulation.h"
 
 class Main {

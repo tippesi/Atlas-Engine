@@ -97,7 +97,7 @@ namespace Atlas {
 
 			glDepthMask(GL_TRUE);
 
-			oceanRenderer.Render(viewport, target, camera, scene);
+			// oceanRenderer.Render(viewport, target, camera, scene);
 
 			target->lightingFramebuffer.Unbind();
 
@@ -301,7 +301,7 @@ namespace Atlas {
 		void MasterRenderer::Update() {
 
 			textRenderer.Update();
-			oceanRenderer.Update();
+			// oceanRenderer.Update();
 
 		}
 
