@@ -47,7 +47,7 @@ namespace Atlas {
             }
 
             image.data.assign(data, data + image.width * image.height * image.channels);
-            delete[] data;
+			stbi_image_free(data);
 
             auto fileFormatPosition = filename.find_last_of('.') + 1;
             auto fileFormat = filename.substr(fileFormatPosition, filename.length());
@@ -104,7 +104,7 @@ namespace Atlas {
             }
 
             image.data.assign(data, data + image.width * image.height * image.channels);
-            delete[] data;
+			stbi_image_free(data);
 
             auto fileFormatPosition = filename.find_last_of('.') + 1;
             auto fileFormat = filename.substr(fileFormatPosition, filename.length());

@@ -71,8 +71,8 @@ namespace Atlas {
 
 			void GeometryHelper::GenerateSphereVertexArray(Buffer::VertexArray& vertexArray, uint32_t rings, uint32_t segments) {
 
-				uint32_t* indices = nullptr;
-				vec3* vertices = nullptr;
+				std::vector<uint32_t> indices;
+				std::vector<vec3> vertices;
 
 				uint32_t indexCount, vertexCount;
 
@@ -82,15 +82,15 @@ namespace Atlas {
 
 				auto indicesBuffer = new Buffer::IndexBuffer(AE_UINT, sizeof(uint32_t), indexCount);
 				auto verticesBuffer = new Buffer::VertexBuffer(AE_FLOAT, 3, sizeof(vec3), vertexCount);
-				indicesBuffer->SetData(&indices[0], 0, indexCount);
-				verticesBuffer->SetData(&vertices[0], 0, vertexCount);
+				indicesBuffer->SetData(indices.data(), 0, indexCount);
+				verticesBuffer->SetData(vertices.data(), 0, vertexCount);
 				vertexArray.AddIndexComponent(indicesBuffer);
 				vertexArray.AddComponent(0, verticesBuffer);
 
 			}
 
-			void GeometryHelper::GenerateSphere(uint32_t rings, uint32_t segments, uint32_t*& indices, vec3*& vertices,
-												uint32_t* indexCount, uint32_t* vertexCount) {
+			void GeometryHelper::GenerateSphere(uint32_t rings, uint32_t segments, std::vector<uint32_t>& indices,
+				std::vector<vec3>& vertices, uint32_t* indexCount, uint32_t* vertexCount) {
 
 				rings = rings < 3 ? 3 : rings;
 				segments = segments < 3 ? 3 : segments;
@@ -99,8 +99,8 @@ namespace Atlas {
 				*vertexCount = innerRings * segments + 2;
 				*indexCount = (innerRings - 1) * segments * 6 + 2 * segments * 3;
 
-				vertices = new vec3[*vertexCount];
-				indices = new uint32_t[*indexCount];
+				vertices.resize(*vertexCount);
+				indices.resize(*indexCount);
 
 				// Set the two outer rings
 				vertices[0] = vec3(0.0f, 1.0f, 0.0f);
