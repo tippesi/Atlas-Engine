@@ -4,6 +4,13 @@ namespace Atlas {
 
     namespace Input {
 
+		TouchHandler::TouchHandler() {
+
+			auto touchEventHandler = std::bind(&TouchHandler::TouchEventHandler, this, std::placeholders::_1);
+			eventHandle = Events::EventManager::TouchEventDelegate.Subscribe(touchEventHandler);
+
+		}
+
 		TouchHandler::TouchHandler(Camera* camera, float sensibility, float speed, float reactivity)
 			: sensibility(sensibility), speed(speed), reactivity(reactivity) {
 
@@ -19,7 +26,7 @@ namespace Atlas {
 			rightFinger.position = vec2(0.0f);
 
 			auto touchEventHandler = std::bind(&TouchHandler::TouchEventHandler, this, std::placeholders::_1);
-			Events::EventManager::TouchEventDelegate.Subscribe(touchEventHandler);
+			eventHandle = Events::EventManager::TouchEventDelegate.Subscribe(touchEventHandler);
 
 		}
 

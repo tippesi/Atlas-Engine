@@ -3,6 +3,7 @@
 
 #include "System.h"
 #include "Window.h"
+#include "Context.h"
 #include "Camera.h"
 #include "Clock.h"
 #include "scene/Scene.h"
@@ -24,17 +25,11 @@ namespace Atlas {
          * Initializes the engine
          * @param assetDirectory The directory where all assets are located (needs to be relative to the runtime directory)
          * @param shaderDirectory The directory where all the shader files are located relative to the asset directory
-         * @param windowTitle The title of your window
-         * @param x The x position of the window on the screen in pixels
-         * @param y The y position of the window on the screen in pixels
-         * @param width The width of the window in pixels
-         * @param height The height of the window in pixels
-         * @param flags Window flags. See {@link Window.h} for more.
-         * @return A pointer to a window object.
          * @note All file paths handed over to the engine should be relative the asset directory
          */
-		static Window *Init(std::string assetDirectory, std::string shaderDirectory, std::string windowTitle,
-							int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags = AE_WINDOW_FULLSCREEN);
+		static Context* Init(std::string assetDirectory, std::string shaderDirectory);
+
+		static void Shutdown();
 
 		/**
 		 * Returns the size of the screen.
@@ -59,9 +54,10 @@ namespace Atlas {
          */
 		static void Update();
 
-	private:
-		static void DebugCallback(GLenum source, GLenum type, GLuint ID, GLenum severity,
-			GLsizei length, const GLchar* message, const void* userParam);
+		/**
+		 * This window is there by default and is not visible.
+		 */
+		static SDL_Window* defaultWindow;		
 
 	};
 

@@ -2,6 +2,7 @@
 #define AE_ENGINEINSTANCE_H
 
 #include "Engine.h"
+#include "Context.h"
 
 namespace Atlas {
 
@@ -21,10 +22,14 @@ namespace Atlas {
 
 		void Update();
 
-	protected:
-		void Exit();
+		static std::string assetDirectory;
+		static std::string shaderDirectory;
 
 		Window window;
+		Context context;
+
+	protected:
+		void Exit();
 
 		Renderer::MasterRenderer masterRenderer;
 

@@ -5,7 +5,16 @@ extern Atlas::EngineInstance* GetEngineInstance();
 
 int main(int argc, char* argv[]) {
 
+	auto context = Atlas::Engine::Init(Atlas::EngineInstance::assetDirectory,
+		Atlas::EngineInstance::shaderDirectory);
+
 	auto instance = GetEngineInstance();
+
+	context->AttachTo(&instance->window);
+
+	// No need to clean context up, will be released when the
+	// instance is deleted.
+	instance->context = *context;
 
 	bool quit = false;
 
@@ -27,11 +36,13 @@ int main(int argc, char* argv[]) {
 		instance->Update(deltaTime);
 		instance->Render(deltaTime);
 
-		engine->window->Update();
+		instance->window.Update();
 
 	}
 
 	instance->UnloadContent();
+
+	Atlas::Engine::Shutdown();
 
 	return 0;
 

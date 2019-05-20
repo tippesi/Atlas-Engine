@@ -12,6 +12,8 @@ namespace Atlas {
         class TouchHandler {
 
         public:
+			TouchHandler();
+
 			TouchHandler(Camera* camera, float sensibility, float speed, float reactivity);
 
 			void Update(Camera* camera, float deltaTime);
@@ -34,6 +36,8 @@ namespace Atlas {
 
 			vec3 location;
 			vec2 rotation;
+
+			int32_t eventHandle;
 
         };
 

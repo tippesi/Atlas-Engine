@@ -29,6 +29,7 @@ namespace Atlas {
 			if (this != &that) {
 
 				Buffer::operator=(that);
+
 				dataType = that.dataType;
 				stride = that.stride;
 

@@ -17,8 +17,6 @@ namespace Atlas {
 		class SpacePartitioning {
 
 		public:
-			SpacePartitioning() {}
-
 			SpacePartitioning(vec3 min, vec3 max, int32_t depth);
 
 			void Add(Actor::MovableMeshActor* actor);

@@ -25,7 +25,20 @@ namespace Atlas {
              */
 			SceneNode() {}
 
+			SceneNode(const SceneNode& that);
+
+			/**
+			 * 
+			 */
+			SceneNode(SpacePartitioning* partitioning) { AddToScene(partitioning); }
+
+			/**
+			 * 
+			 */
 			virtual ~SceneNode() {}
+
+
+			SceneNode& operator=(const SceneNode& that);
 
 			/**
 			 *
@@ -43,7 +56,7 @@ namespace Atlas {
 			/**
 			 *
 			 * @param actor
-			 * @note An actor can only be attached in one node.
+			 * @note An actor can only be attached to one node.
 			 */
 			virtual void Add(Actor::MovableMeshActor *actor);
 
@@ -56,7 +69,7 @@ namespace Atlas {
 			/**
 			 *
 			 * @param actor
-			 * @note An actor can only be attached in one node.
+			 * @note An actor can only be attached to one node.
 			 */
 			virtual void Add(Actor::StaticMeshActor *actor);
 
@@ -69,7 +82,7 @@ namespace Atlas {
 			/**
 			 *
 			 * @param decal
-			 * @note An actor can only be attached in one node.
+			 * @note An actor can only be attached to one node.
 			 */
 			virtual void Add(Actor::DecalActor* decal);
 
@@ -122,6 +135,8 @@ namespace Atlas {
 			virtual bool Update(Camera* camera, float deltaTime, mat4 parentTransformation,
 				bool parentTransformChanged);
 
+			void DeepCopy(const SceneNode& that);
+
 			bool sceneSet = false;
 			bool matrixChanged = true;
 
@@ -132,11 +147,11 @@ namespace Atlas {
 			std::vector<Actor::MovableMeshActor*> movableMeshActors;
 			std::vector<Actor::StaticMeshActor*> staticMeshActors;
 			std::vector<Actor::DecalActor*> decalActors;
-			std::vector<Lighting::Light *> lights;
+			std::vector<Lighting::Light*> lights;
 
 			std::vector<Actor::StaticMeshActor*> addableStaticMeshActors;
 
-			SpacePartitioning* spacePartitioning;
+			SpacePartitioning* spacePartitioning = nullptr;
 
 		};
 

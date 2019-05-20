@@ -5,6 +5,24 @@ namespace Atlas {
 
 	namespace Scene {
 
+		SceneNode::SceneNode(const SceneNode& that) {
+
+			DeepCopy(that);
+
+		}
+
+		SceneNode& SceneNode::operator=(const SceneNode& that) {
+
+			if (this != &that) {
+
+				DeepCopy(that);
+
+			}
+
+			return *this;
+
+		}
+
 		void SceneNode::Add(SceneNode *node) {
 
 			if (sceneSet) {
@@ -135,7 +153,7 @@ namespace Atlas {
 		bool SceneNode::Update(Camera* camera, float deltaTime, mat4 parentTransformation,
 			bool parentTransformChanged) {
 
-			bool changed = false;;
+			bool changed = false;
 
 			parentTransformChanged |= matrixChanged;
 
@@ -263,6 +281,30 @@ namespace Atlas {
 			}
 
 			sceneSet = false;
+
+		}
+
+		void SceneNode::DeepCopy(const SceneNode& that) {
+
+			RemoveFromScene();
+
+			matrixChanged = true;
+
+			matrix = that.matrix;
+			transformedMatrix = that.transformedMatrix;
+
+			movableMeshActors = that.movableMeshActors;
+			staticMeshActors = that.staticMeshActors;
+			decalActors = that.decalActors;
+			lights = that.lights;
+
+			childNodes.resize(that.childNodes.size());
+
+			for (size_t i = 0; i < that.childNodes.size(); i++)
+				childNodes[i] = new SceneNode(*that.childNodes[i]);
+
+			if (spacePartitioning)
+				AddToScene(spacePartitioning);
 
 		}
 

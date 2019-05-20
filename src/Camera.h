@@ -14,6 +14,8 @@ namespace Atlas {
 	class Camera {
 
 	public:
+		Camera() {}
+
 		/**
          * Constructs a Camera object.
          * @param fieldOfView The field of view in degrees.
@@ -53,20 +55,20 @@ namespace Atlas {
 			vec4 planes[6];
 		} Frustum;
 
-		vec3 location;
-		vec2 rotation;
+		vec3 location = vec3(0.0f);
+		vec2 rotation = vec2(0.0f);
 
-		float fieldOfView;
-		float aspectRatio;
-		float nearPlane;
-		float farPlane;
+		float fieldOfView = 45.0f;
+		float aspectRatio = 2.0f;
+		float nearPlane = 1.0;
+		float farPlane = 400.0f;
 
-		bool thirdPerson;
-		float thirdPersonDistance;
+		bool thirdPerson = false;
+		float thirdPersonDistance = 15.0f;
 
-		vec3 direction;
-		vec3 up;
-		vec3 right;
+		vec3 direction = vec3(0.0f, 0.0f, -1.0f);
+		vec3 up = vec3(0.0f, 1.0f, 0.0f);
+		vec3 right = vec3(1.0f, 0.0f, 0.0f);
 
 		mat4 viewMatrix;
 		mat4 projectionMatrix;

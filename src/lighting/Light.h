@@ -33,8 +33,8 @@ namespace Atlas {
 				return volumetric;
 			}
 
-			const int32_t type;
-			const int32_t mobility;
+			int32_t type;
+			int32_t mobility;
 
 			vec3 color;
 			float ambient;

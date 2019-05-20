@@ -23,17 +23,19 @@ namespace Atlas {
 
             Octree(AABB aabb, int32_t depth, float relaxFactor = 2.0f);
 
+			Octree& operator=(const Octree& that);
+
             bool Insert(T data, AABB aabb);
 
             void Remove(T data, AABB aabb);
 
             void QueryAABB(std::vector<T>& data, AABB aabb);
 
-			void GetData(std::vector<T>& data);
+			void GetData(std::vector<T>& data) const;
 
-            bool IsSubdivided();
+            bool IsSubdivided() const;
 
-            std::vector<Octree<T>> GetChildren();
+            std::vector<Octree<T>> GetChildren() const;
 
 			void Clear();
 
@@ -63,6 +65,33 @@ namespace Atlas {
 
 
         }
+
+		template <class T>
+		Octree<T>& Octree<T>::operator=(const Octree<T>& that) {
+
+			if (this != &that) {
+
+				depth = that.depth;
+				relaxFactor = that.relaxFactor;
+				aabb = that.aabb;
+
+				octreeData = that.octreeData;
+
+				if (that.IsSubdivided()) {
+
+					children.resize(8);
+
+					for (uint8_t i = 0; i < 8; i++) {
+						children[i] = that.children[i];
+					}
+
+				}
+
+			}
+
+			return *this;
+
+		}
 
         template <class T>
         bool Octree<T>::Insert(T data, AABB aabb) {
@@ -106,7 +135,7 @@ namespace Atlas {
         }
 
 		template <class T>
-		void Octree<T>::GetData(std::vector<T>& data) {
+		void Octree<T>::GetData(std::vector<T>& data) const {
 
 			for (auto& ele : octreeData)
 				data.push_back(ele);
@@ -117,14 +146,14 @@ namespace Atlas {
 		}
 
         template <class T>
-        bool Octree<T>::IsSubdivided() {
+        bool Octree<T>::IsSubdivided() const {
 
             return children.size() != 0;
 
         }
 
         template <class T>
-        std::vector<Octree<T>> Octree<T>::GetChildren() {
+        std::vector<Octree<T>> Octree<T>::GetChildren() const {
 
             return children;
 

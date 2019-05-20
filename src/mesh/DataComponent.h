@@ -56,6 +56,8 @@ namespace Atlas {
 			 */
 			DataComponent() {}
 
+			DataComponent(const DataComponent& that);
+
 			/**
              * Constructs a DataComponent object.
              * @param componentType The type of the component S should be converted into. See {@link DataComponent.h} for more.
@@ -147,6 +149,8 @@ namespace Atlas {
 		private:
 			void DeleteData();
 
+			void DeepCopy(const DataComponent& that);
+
 			bool containsData = false;
 
 			int32_t componentType = 0;
@@ -158,6 +162,12 @@ namespace Atlas {
 
 		};
 
+		template <class S, class T>
+		DataComponent<S, T>::DataComponent(const DataComponent<S, T>& that) {
+
+			DeepCopy(that);
+
+		}
 
 		template <class S, class T>
 		DataComponent<S, T>::DataComponent(int32_t componentType, int32_t stride) : stride(stride) {
@@ -178,21 +188,7 @@ namespace Atlas {
 
 			if (this != &that) {
 
-				stride = that.stride;
-				containsData = false;
-
-				// Deletes data and convertedData.
-				// Creates new convertedData afterwards
-				SetType(that.componentType);
-				SetSize(that.size);
-
-				if (that.containsData) {
-					// We need to duplicate the data
-					auto dataSize = stride * size;
-					auto copy = new S[dataSize];
-					std::memcpy(copy, that.data, dataSize * sizeof(S));
-					Set(copy);
-				}
+				DeepCopy(that);
 
 			}
 
@@ -362,6 +358,27 @@ namespace Atlas {
 
 			data = nullptr;
 			convertedData = nullptr;
+
+		}
+
+		template <class S, class T>
+		void DataComponent<S, T>::DeepCopy(const DataComponent<S, T>& that) {
+
+			stride = that.stride;
+			containsData = false;
+
+			// Deletes data and convertedData.
+			// Creates new convertedData afterwards
+			SetType(that.componentType);
+			SetSize(that.size);
+
+			if (that.containsData) {
+				// We need to duplicate the data
+				auto dataSize = stride * size;
+				auto copy = new S[dataSize];
+				std::memcpy(copy, that.data, dataSize * sizeof(S));
+				Set(copy);
+			}
 
 		}
 

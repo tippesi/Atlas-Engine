@@ -32,6 +32,8 @@ namespace Atlas {
 			 */
 			MeshData();
 
+			MeshData(const MeshData& data);
+
 			MeshData& operator=(const MeshData& that);
 
 			/**
@@ -72,6 +74,8 @@ namespace Atlas {
 			Common::AABB aabb;
 
 		private:
+			void DeepCopy(const MeshData& that);
+
 			int32_t indexCount = 0;
 			int32_t vertexCount = 0;
 

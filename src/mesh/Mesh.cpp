@@ -8,6 +8,21 @@ namespace Atlas {
 
 	namespace Mesh {
 
+		Mesh::Mesh(const Mesh& that) {
+
+			DeepCopy(that);
+
+		}
+
+		Mesh::Mesh(MeshData data, int32_t mobility) : mobility(mobility), data(data) {
+
+			InitializeVertexArray();
+
+			for (auto& material : data.materials)
+				AddMaterial(&material);
+
+		}
+
 		Mesh::Mesh(std::string filename, int32_t mobility) : mobility(mobility) {
 
 			Loader::ModelLoader::LoadMesh(filename, data);
@@ -29,15 +44,9 @@ namespace Atlas {
 
 			if (this != &that) {
 
-				data = that.data;
-				mobility = that.mobility;
-				cullBackFaces = that.cullBackFaces;
-				vertexArray = that.vertexArray;
-
 				ClearMaterials();
 
-				for (auto& material : data.materials)
-					AddMaterial(&material);
+				DeepCopy(that);
 
 			}
 
@@ -166,6 +175,18 @@ namespace Atlas {
 			}
 
 			configs.clear();
+
+		}
+
+		void Mesh::DeepCopy(const Mesh& that) {
+
+			data = that.data;
+			mobility = that.mobility;
+			cullBackFaces = that.cullBackFaces;
+			vertexArray = that.vertexArray;
+
+			for (auto& material : data.materials)
+				AddMaterial(&material);
 
 		}
 

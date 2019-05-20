@@ -19,6 +19,10 @@ namespace Atlas {
 		class Scene : public SceneNode, public SpacePartitioning {
 
 		public:
+			/**
+			 * Constructs a scene object.
+			 */
+			Scene() : SceneNode(this), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 8) {}
 
 			/**
              * Constructs a scene object.
@@ -27,7 +31,13 @@ namespace Atlas {
              */
 			Scene(vec3 min, vec3 max);
 
+			/**
+			 * Destructs a scene object.
+			 */
 			~Scene();
+
+
+			Scene& operator=(const Scene& that);
 
 			/**
              *
@@ -45,13 +55,14 @@ namespace Atlas {
              *
              * @param camera
 			 * @param deltaTime
-             * @remark The update call does the following:
-             * - First traverse the scene tree to retrieve information about all actors and update them
-             * - Do the frustum culling on the actors returned, order them if they need updates for their current settings
-             * - Gather all light data and fill the renderlists with the actors visible for these lights
+             * @remark 
              */
 			void Update(Camera *camera, float deltaTime);
 
+			/**
+			 * Checks whether the scene has changed since the last update
+			 * @return True if scene has changed, false otherwise.
+			 */
 			bool HasChanged();
 
 			/**
@@ -71,7 +82,7 @@ namespace Atlas {
 			using SceneNode::Add;
 			using SceneNode::Remove;
 
-			std::vector<Terrain::Terrain *> terrains;
+			std::vector<Terrain::Terrain*> terrains;
 
 			Lighting::Sky sky;
 			PostProcessing::PostProcessing postProcessing;

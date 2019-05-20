@@ -4,6 +4,12 @@ namespace Atlas {
 
 	namespace Mesh {
 
+		MeshData::MeshData(const MeshData& that) {
+
+			DeepCopy(that);
+
+		}
+
 		MeshData::MeshData() {
 
 			indices = DataComponent<uint32_t, void>(AE_COMPONENT_UNSIGNED_INT, 1);
@@ -19,29 +25,7 @@ namespace Atlas {
 
 			if (this != &that) {
 
-				indices = that.indices;
-				
-				vertices = that.vertices;
-				texCoords = that.texCoords;
-				normals = that.normals;
-				tangents = that.tangents;
-
-				indexCount = that.indexCount;
-				vertexCount = that.vertexCount;
-
-				primitiveType = that.primitiveType;
-
-				aabb = that.aabb;
-
-				materials.resize(that.materials.size());
-				subData.resize(that.subData.size());
-
-				// We need to refresh the pointers in the sub data
-				for (size_t i = 0; i < that.subData.size(); i++) {
-					materials[i] = that.materials[i];
-					subData[i] = that.subData[i];
-					subData[i].material = &materials[i];
-				}
+				DeepCopy(that);
 
 			}
 
@@ -77,6 +61,34 @@ namespace Atlas {
 		int32_t MeshData::GetVertexCount() const {
 
 			return vertexCount;
+
+		}
+
+		void MeshData::DeepCopy(const MeshData& that) {
+
+			indices = that.indices;
+
+			vertices = that.vertices;
+			texCoords = that.texCoords;
+			normals = that.normals;
+			tangents = that.tangents;
+
+			indexCount = that.indexCount;
+			vertexCount = that.vertexCount;
+
+			primitiveType = that.primitiveType;
+
+			aabb = that.aabb;
+
+			materials.resize(that.materials.size());
+			subData.resize(that.subData.size());
+
+			// We need to refresh the pointers in the sub data
+			for (size_t i = 0; i < that.subData.size(); i++) {
+				materials[i] = that.materials[i];
+				subData[i] = that.subData[i];
+				subData[i].material = &materials[i];
+			}
 
 		}
 

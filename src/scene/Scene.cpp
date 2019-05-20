@@ -17,6 +17,24 @@ namespace Atlas {
 
 		}
 
+		Scene& Scene::operator=(const Scene& that) {
+
+			if (this != &that) {
+
+				SceneNode::operator=(that);
+
+				terrains = that.terrains;
+				sky = that.sky;
+				postProcessing = that.postProcessing;
+
+				hasChanged = true;
+
+			}
+
+			return *this;
+
+		}
+
 		void Scene::Add(Terrain::Terrain *terrain) {
 
 			terrains.push_back(terrain);

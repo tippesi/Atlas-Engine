@@ -11,8 +11,6 @@ namespace Atlas {
 			throw AtlasException("Error initializing window");
 		}
 
-		context = SDL_GL_CreateContext(sdlWindow);
-
 		ID = SDL_GetWindowID(sdlWindow);
 
 		auto windowEventHandler = std::bind(&Window::WindowEventHandler, this, std::placeholders::_1);
@@ -44,8 +42,6 @@ namespace Atlas {
 	Window::~Window() {
 
 		SDL_DestroyWindow(sdlWindow);
-
-		SDL_GL_DeleteContext(context);
 
 		Events::EventManager::WindowEventDelegate.Unsubscribe(windowEventSubcriberID);
 		Events::EventManager::KeyboardEventDelegate.Unsubscribe(keyboardEventSubscriberID);
@@ -142,6 +138,12 @@ namespace Atlas {
 
 		glClearColor(color.r, color.g, color.b, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	}
+
+	SDL_Window* Window::GetSDLWindow() {
+
+		return sdlWindow;
 
 	}
 

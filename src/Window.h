@@ -115,6 +115,11 @@ namespace Atlas {
          */
 		void Clear(vec3 color = vec3(0.0f));
 
+		/**
+		 * Returns the pointer to the SDL window structure
+		 */
+		SDL_Window* GetSDLWindow();
+
 		Events::EventDelegate<Events::WindowEvent> windowEventDelegate;
 		Events::EventDelegate<Events::KeyboardEvent> keyboardEventDelegate;
 		Events::EventDelegate<Events::MouseButtonEvent> mouseButtonEventDelegate;
@@ -136,7 +141,7 @@ namespace Atlas {
 
 		uint32_t ID;
 
-		SDL_Window *sdlWindow;
+		SDL_Window* sdlWindow;
 
 		int32_t x;
 		int32_t y;

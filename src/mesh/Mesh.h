@@ -24,6 +24,15 @@ namespace Atlas {
 		public:
 			Mesh() {}
 
+			Mesh(const Mesh& that);
+
+			/**
+			 *
+			 * @param filename
+			 * @param mobility
+			 */
+			Mesh(MeshData data, int32_t mobility = AE_STATIONARY_MESH);
+
 			/**
 			 *
 			 * @param filename
@@ -74,6 +83,7 @@ namespace Atlas {
 
 			void ClearMaterials();
 
+			void DeepCopy(const Mesh& that);
 
 			Buffer::VertexArray vertexArray;
 
