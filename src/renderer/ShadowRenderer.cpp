@@ -50,10 +50,10 @@ namespace Atlas {
 					auto component = &light->GetShadow()->components[i];
 
 					if (light->GetShadow()->useCubemap) {
-						framebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT, light->GetShadow()->cubemap, i);
+						framebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT, &light->GetShadow()->cubemap, i);
 					}
 					else {
-						framebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT, light->GetShadow()->maps, i);
+						framebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT, &light->GetShadow()->maps, i);
 					}
 
 					glClear(GL_DEPTH_BUFFER_BIT);

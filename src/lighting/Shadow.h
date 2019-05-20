@@ -32,8 +32,6 @@ namespace Atlas {
 
 			void Update();
 
-			~Shadow();
-
 			float distance;
 			float bias;
 			float splitCorrection;
@@ -46,8 +44,8 @@ namespace Atlas {
 			std::vector<ShadowComponent> components;
 			int32_t componentCount;
 
-			Texture::Texture2DArray* maps;
-			Texture::Cubemap* cubemap;
+			Texture::Texture2DArray maps;
+			Texture::Cubemap cubemap;
 
 			bool useCubemap;
 			bool allowDynamicActors;

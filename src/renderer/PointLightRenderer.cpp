@@ -48,7 +48,7 @@ namespace Atlas {
 				auto pointLight = (Lighting::PointLight*)light;
 
 				if (pointLight->GetShadow() != nullptr) {
-					pointLight->GetShadow()->cubemap->Bind(GL_TEXTURE4);
+					pointLight->GetShadow()->cubemap.Bind(GL_TEXTURE4);
 					lightViewMatrix->SetValue(glm::translate(mat4(1.0f), -pointLight->location) * camera->inverseViewMatrix);
 					lightProjectionMatrix->SetValue(pointLight->GetShadow()->components[0].projectionMatrix);
 				}

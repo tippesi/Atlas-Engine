@@ -18,8 +18,7 @@ namespace Atlas {
 
         DirectionalLight::~DirectionalLight() {
 
-            delete shadow;
-            delete volumetric;
+            
 
         }
 

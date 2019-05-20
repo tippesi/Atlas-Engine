@@ -69,7 +69,7 @@ namespace Atlas {
 					shadowCascadeCount->SetValue(directionalLight->GetShadow()->componentCount);
 					shadowResolution->SetValue(vec2((float)directionalLight->GetShadow()->resolution));
 
-					directionalLight->GetShadow()->maps->Bind(GL_TEXTURE6);
+					directionalLight->GetShadow()->maps.Bind(GL_TEXTURE6);
 
 					for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
 						auto cascade = &directionalLight->GetShadow()->components[i];

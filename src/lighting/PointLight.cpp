@@ -19,8 +19,7 @@ namespace Atlas {
 
 		PointLight::~PointLight() {
 
-			delete shadow;
-			delete volumetric;
+
 
 		}
 

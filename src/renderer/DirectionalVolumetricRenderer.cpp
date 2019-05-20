@@ -66,7 +66,7 @@ namespace Atlas {
                 framebufferResolution->SetValue(vec2(directionalLight->GetVolumetric()->map->width,
                                                      directionalLight->GetVolumetric()->map->height));
 
-                light->GetShadow()->maps->Bind(GL_TEXTURE1);
+                light->GetShadow()->maps.Bind(GL_TEXTURE1);
 
                 for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
                     if (i < light->GetShadow()->componentCount) {
