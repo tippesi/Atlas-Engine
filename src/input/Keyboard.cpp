@@ -8,14 +8,44 @@ namespace Atlas {
 
 	namespace Input {
 
+		KeyboardHandler::KeyboardHandler() {
+
+			RegisterEvent();
+
+		}
+
+		KeyboardHandler::KeyboardHandler(const KeyboardHandler& that) {
+
+			RegisterEvent();
+
+			DeepCopy(that);
+
+		}
+
 		KeyboardHandler::KeyboardHandler(Camera* camera, float speed, float reactivity) :
 				speed(speed), reactivity(reactivity) {
 
-			location = camera->location;
-			movement = vec2(0.0f);
+			RegisterEvent();
 
-			auto keyboardEventHandler = std::bind(&KeyboardHandler::KeyboardEventHandler, this, std::placeholders::_1);
-			Events::EventManager::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
+			location = camera->location;
+			
+		}
+
+		KeyboardHandler::~KeyboardHandler() {
+
+			Events::EventManager::KeyboardEventDelegate.Unsubscribe(eventHandle);
+
+		}
+
+		KeyboardHandler& KeyboardHandler::operator=(const KeyboardHandler& that) {
+
+			if (this != &that) {
+
+				DeepCopy(that);
+
+			}
+
+			return *this;
 
 		}
 
@@ -27,6 +57,13 @@ namespace Atlas {
 			float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
 			camera->location = glm::mix(camera->location, location, progress);
+
+		}
+
+		void KeyboardHandler::RegisterEvent() {
+
+			auto keyboardEventHandler = std::bind(&KeyboardHandler::KeyboardEventHandler, this, std::placeholders::_1);
+			eventHandle = Events::EventManager::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
 
 		}
 
@@ -63,6 +100,16 @@ namespace Atlas {
 			if (event.keycode == AE_KEY_A && event.state == AE_BUTTON_RELEASED) {
 				movement.y += 1.0f;
 			}
+
+		}
+
+		void KeyboardHandler::DeepCopy(const KeyboardHandler& that) {
+
+			speed = that.speed;
+			reactivity = that.reactivity;
+
+			location = that.location;
+			movement = that.movement;
 
 		}
 

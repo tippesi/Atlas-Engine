@@ -12,9 +12,15 @@ namespace Atlas {
 		class MouseHandler {
 
 		public:
-			MouseHandler() {}
+			MouseHandler();
+
+			MouseHandler(const MouseHandler& that);
 
 			MouseHandler(Camera* camera, float sensibility, float reactivity, bool hideMouse = false);
+
+			~MouseHandler();
+
+			MouseHandler& MouseHandler::operator=(const MouseHandler& that);
 
 			void Update(Camera* camera, float deltaTime);
 
@@ -24,24 +30,27 @@ namespace Atlas {
 
 			void ShowMouse();
 
-			float sensibility;
-			float reactivity;
+			float sensibility = 1.5f;
+			float reactivity = 6.0f;
 
-			bool lock;
-			bool hideMouse;
+			bool lock = false;
+			bool hideMouse = false;
 
 		private:
+			void RegisterEvents();
+
 			void MouseMotionEventHandler(Events::MouseMotionEvent event);
 			void MouseButtonEventHandler(Events::MouseButtonEvent event);
 
-			bool activationButtonDown;
-			uint8_t activationButton;
+			void DeepCopy(const MouseHandler& that);
 
-			//If the camera gets changed, the rotation should be updated by the user
-			glm::vec2 rotation;
+			bool activationButtonDown = false;
+			uint8_t activationButton = AE_MOUSEBUTTON_LEFT;
 
-			glm::vec2 lastMousePosition;
-			glm::vec2 mousePosition;
+			vec2 rotation = vec2(0.0f);
+
+			int32_t mouseMotionEventHandle;
+			int32_t mouseButtonEventHandle;
 
 		};
 

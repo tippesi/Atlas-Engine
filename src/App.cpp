@@ -32,11 +32,11 @@ void App::LoadContent() {
 	scene = Atlas::Scene::Scene(vec3(-2048.0f), vec3(2048.0f));
 
 #ifdef AE_OS_ANDROID
-	touchHandler = new Atlas::Input::TouchHandler(&camera, 1.5f, 7.0f, 6.0f);
+	touchHandler = Atlas::Input::TouchHandler(&camera, 1.5f, 7.0f, 6.0f);
 #else
-	mouseHandler = new Atlas::Input::MouseHandler(&camera, 1.5f, 6.0f);
-	keyboardHandler = new Atlas::Input::KeyboardHandler(&camera, 7.0f, 6.0f);
-	controllerHandler = new Atlas::Input::ControllerHandler(&camera, 1.5f, 7.0f, 6.0f, 5000.0f);
+	mouseHandler = Atlas::Input::MouseHandler(&camera, 1.5f, 6.0f);
+	keyboardHandler = Atlas::Input::KeyboardHandler(&camera, 7.0f, 6.0f);
+	controllerHandler = Atlas::Input::ControllerHandler(&camera, 1.5f, 7.0f, 6.0f, 5000.0f);
 #endif
 
 	Atlas::Events::EventManager::ControllerDeviceEventDelegate.Subscribe(
@@ -136,14 +136,14 @@ void App::UnloadContent() {
 void App::Update(float deltaTime) {
 
 #ifdef AE_OS_ANDROID
-	touchHandler->Update(&camera, deltaTime);
+	touchHandler.Update(&camera, deltaTime);
 #else
 	if (!useControllerHandler) {
-		mouseHandler->Update(&camera, deltaTime);
-		keyboardHandler->Update(&camera, deltaTime);
+		mouseHandler.Update(&camera, deltaTime);
+		keyboardHandler.Update(&camera, deltaTime);
 	}
 	else {
-		controllerHandler->Update(&camera, deltaTime);
+		controllerHandler.Update(&camera, deltaTime);
 	}
 #endif
 

@@ -5,29 +5,55 @@ namespace Atlas {
 
 	namespace Input {
 
+		ControllerHandler::ControllerHandler() {
+
+			RegisterEvents();
+
+		}
+
+		ControllerHandler::ControllerHandler(const ControllerHandler& that) {
+
+			RegisterEvents();
+
+			DeepCopy(that);
+
+		}
+
 		ControllerHandler::ControllerHandler(Camera* camera, float sensibility, float speed, float reactivity,
 				float threshold, int32_t device) :
 				sensibility(sensibility), speed(speed), reactivity(reactivity),
 				threshold(threshold), controllerDevice(device) {
 
-			auto controllerAxisEventHandler = std::bind(&ControllerHandler::ControllerAxisEventHandler,
-														this, std::placeholders::_1);
-			Events::EventManager::ControllerAxisEventDelegate.Subscribe(controllerAxisEventHandler);
-
-			auto controllerButtonEventHandler = std::bind(&ControllerHandler::ControllerButtonEventHandler,
-														  this, std::placeholders::_1);
-			Events::EventManager::ControllerButtonEventDelegate.Subscribe(controllerButtonEventHandler);
-
-			auto controllerDeviceEventHandler = std::bind(&ControllerHandler::ControllerDeviceEventHandler,
-														  this, std::placeholders::_1);
-			Events::EventManager::ControllerDeviceEventDelegate.Subscribe(controllerDeviceEventHandler);
+			RegisterEvents();
 
 			location = camera->location;
 			rotation = camera->rotation;
 
-			leftStick = vec2(0.0f);
-			rightStick = vec2(0.0f);
-			speedIncrease = 0.0f;
+		}
+
+		ControllerHandler::~ControllerHandler() {
+
+			Atlas::Events::EventManager::ControllerAxisEventDelegate.Unsubscribe(
+				controllerAxisEventHandle
+			);
+			Atlas::Events::EventManager::ControllerButtonEventDelegate.Unsubscribe(
+				controllerButtonEventHandle
+			);
+			Atlas::Events::EventManager::ControllerDeviceEventDelegate.Unsubscribe(
+				controllerDeviceEventHandle
+			);
+
+		}
+
+		ControllerHandler& ControllerHandler::operator=(const ControllerHandler& that) {
+
+			if (this != &that) {
+
+				DeepCopy(that);
+
+			}
+
+			return *this;
 
 		}
 
@@ -52,6 +78,25 @@ namespace Atlas {
 				rotation = camera->rotation;
 
 			}
+
+		}
+
+		void ControllerHandler::RegisterEvents() {
+
+			auto controllerAxisEventHandler = std::bind(&ControllerHandler::ControllerAxisEventHandler,
+				this, std::placeholders::_1);
+			controllerAxisEventHandle = Events::EventManager::ControllerAxisEventDelegate.Subscribe(
+				controllerAxisEventHandler);
+
+			auto controllerButtonEventHandler = std::bind(&ControllerHandler::ControllerButtonEventHandler,
+				this, std::placeholders::_1);
+			controllerButtonEventHandle = Events::EventManager::ControllerButtonEventDelegate.Subscribe(
+				controllerButtonEventHandler);
+
+			auto controllerDeviceEventHandler = std::bind(&ControllerHandler::ControllerDeviceEventHandler,
+				this, std::placeholders::_1);
+			controllerDeviceEventHandle = Events::EventManager::ControllerDeviceEventDelegate.Subscribe(
+				controllerDeviceEventHandler);
 
 		}
 
@@ -103,6 +148,25 @@ namespace Atlas {
 				}
 
 			}
+
+		}
+
+		void ControllerHandler::DeepCopy(const ControllerHandler& that) {
+
+			sensibility = that.sensibility;
+			speed = that.speed;
+			reactivity = that.reactivity;
+			threshold = that.threshold;
+
+			leftStick = that.leftStick;
+			rightStick = that.rightStick;
+
+			speedIncrease = that.speedIncrease;
+
+			location = that.location;
+			rotation = that.rotation;
+
+			controllerDevice = that.controllerDevice;
 
 		}
 

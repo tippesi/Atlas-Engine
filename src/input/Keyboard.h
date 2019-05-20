@@ -12,20 +12,32 @@ namespace Atlas {
 		class KeyboardHandler {
 
 		public:
-			KeyboardHandler() {}
+			KeyboardHandler();
+
+			KeyboardHandler(const KeyboardHandler& that);
 
 			KeyboardHandler(Camera* camera, float speed, float reactivity);
 
+			~KeyboardHandler();
+
+			KeyboardHandler& operator=(const KeyboardHandler& that);
+
 			void Update(Camera* camera, float deltaTime);
 
-			float speed;
-			float reactivity;
+			float speed = 7.0f;
+			float reactivity = 6.0f;
 
 		private:
+			void RegisterEvent();
+
 			void KeyboardEventHandler(Events::KeyboardEvent event);
 
-			vec3 location;
-			vec2 movement;
+			void DeepCopy(const KeyboardHandler& that);
+
+			vec3 location = vec3(0.0f);
+			vec2 movement = vec2(0.0f);
+
+			int32_t eventHandle;
 
 		};
 

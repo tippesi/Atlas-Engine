@@ -6,27 +6,43 @@ namespace Atlas {
 
 		TouchHandler::TouchHandler() {
 
-			auto touchEventHandler = std::bind(&TouchHandler::TouchEventHandler, this, std::placeholders::_1);
-			eventHandle = Events::EventManager::TouchEventDelegate.Subscribe(touchEventHandler);
+			RegisterEvent();
+
+		}
+
+		TouchHandler::TouchHandler(const TouchHandler& that) {
+
+			RegisterEvent();
+
+			DeepCopy(that);
 
 		}
 
 		TouchHandler::TouchHandler(Camera* camera, float sensibility, float speed, float reactivity)
 			: sensibility(sensibility), speed(speed), reactivity(reactivity) {
 
+			RegisterEvent();
+
 			location = camera->location;
 			rotation = camera->rotation;
 
-			leftFinger.ID = -1;
-			rightFinger.ID = -1;
+		}
 
-			// The position will be the accumulated changes of positions until the finger
-			// is no longer pressed.
-			leftFinger.position = vec2(0.0f);
-			rightFinger.position = vec2(0.0f);
+		TouchHandler::~TouchHandler() {
 
-			auto touchEventHandler = std::bind(&TouchHandler::TouchEventHandler, this, std::placeholders::_1);
-			eventHandle = Events::EventManager::TouchEventDelegate.Subscribe(touchEventHandler);
+			Atlas::Events::EventManager::TouchEventDelegate.Unsubscribe(eventHandle);
+
+		}
+
+		TouchHandler& TouchHandler::operator=(const TouchHandler& that) {
+
+			if (this != &that) {
+
+				DeepCopy(that);
+
+			}
+
+			return *this;
 
 		}
 
@@ -45,6 +61,13 @@ namespace Atlas {
 			// We want to reset the accumulated position to zero for the right finger
 			rightFinger.position = vec2(0.0f);
 			
+		}
+
+		void TouchHandler::RegisterEvent() {
+
+			auto touchEventHandler = std::bind(&TouchHandler::TouchEventHandler, this, std::placeholders::_1);
+			eventHandle = Events::EventManager::TouchEventDelegate.Subscribe(touchEventHandler);
+
 		}
 
 		void TouchHandler::TouchEventHandler(Events::TouchEvent event) {
@@ -74,6 +97,20 @@ namespace Atlas {
 					rightFinger.position += vec2(event.dx, event.dy);
 				}
 			}
+
+		}
+
+		void TouchHandler::DeepCopy(const TouchHandler& that) {
+
+			sensibility = that.sensibility;
+			speed = that.speed;
+			reactivity = that.reactivity;
+
+			leftFinger = that.leftFinger;
+			rightFinger = that.rightFinger;
+
+			location = that.location;
+			rotation = that.rotation;
 
 		}
 

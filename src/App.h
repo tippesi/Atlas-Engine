@@ -21,8 +21,6 @@ public:
 	virtual void Render(float deltaTime) final;
 
 private:
-	void ControllerDeviceEventHandler(Atlas::Events::ControllerDeviceEvent event);
-
 	Atlas::RenderTarget* renderTarget;
 	Atlas::Viewport viewport;
 
@@ -49,10 +47,10 @@ private:
 	Atlas::Audio::AudioData* audioData;
 	Atlas::Audio::AudioStream* audioStream;
 
-	Atlas::Input::MouseHandler* mouseHandler;
-	Atlas::Input::KeyboardHandler* keyboardHandler;
-	Atlas::Input::ControllerHandler* controllerHandler;
-	Atlas::Input::TouchHandler* touchHandler;
+	Atlas::Input::MouseHandler mouseHandler;
+	Atlas::Input::KeyboardHandler keyboardHandler;
+	Atlas::Input::ControllerHandler controllerHandler;
+	Atlas::Input::TouchHandler touchHandler;
 
 	bool useControllerHandler;
 

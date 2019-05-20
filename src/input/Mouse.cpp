@@ -7,20 +7,49 @@ namespace Atlas {
 
 	namespace Input {
 
+		MouseHandler::MouseHandler() {
+
+			RegisterEvents();
+
+		}
+
+		MouseHandler::MouseHandler(const MouseHandler& that) {
+
+			RegisterEvents();
+
+			DeepCopy(that);
+
+		}
+
 		MouseHandler::MouseHandler(Camera* camera, float sensibility, float reactivity, bool hideMouse) :
 				sensibility(sensibility), reactivity(reactivity), hideMouse(hideMouse) {
 
-			activationButtonDown = false;
-			hideMouse = false;
-			lock = false;
-			activationButton = AE_MOUSEBUTTON_LEFT;
+			RegisterEvents();
+
 			rotation = camera->rotation;
 
-			auto mouseMotionEventHandler = std::bind(&MouseHandler::MouseMotionEventHandler, this, std::placeholders::_1);
-			Events::EventManager::MouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
+		}
 
-			auto mouseButtonEventHandler = std::bind(&MouseHandler::MouseButtonEventHandler, this, std::placeholders::_1);
-			Events::EventManager::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
+		MouseHandler::~MouseHandler() {
+
+			Atlas::Events::EventManager::MouseMotionEventDelegate.Unsubscribe(
+				mouseMotionEventHandle
+			);
+			Atlas::Events::EventManager::MouseButtonEventDelegate.Unsubscribe(
+				mouseButtonEventHandle
+			);
+
+		}
+
+		MouseHandler& MouseHandler::operator=(const MouseHandler& that) {
+
+			if (this != &that) {
+
+				DeepCopy(that);
+
+			}
+
+			return *this;
 
 		}
 
@@ -49,6 +78,16 @@ namespace Atlas {
 
 			hideMouse = false;
 			SDL_ShowCursor(1);
+
+		}
+
+		void MouseHandler::RegisterEvents() {
+
+			auto mouseMotionEventHandler = std::bind(&MouseHandler::MouseMotionEventHandler, this, std::placeholders::_1);
+			mouseMotionEventHandle = Events::EventManager::MouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
+
+			auto mouseButtonEventHandler = std::bind(&MouseHandler::MouseButtonEventHandler, this, std::placeholders::_1);
+			mouseButtonEventHandle = Events::EventManager::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
 		}
 
@@ -83,6 +122,21 @@ namespace Atlas {
 
 			if (event.button == activationButton && event.state == AE_BUTTON_RELEASED)
 				activationButtonDown = false;
+
+		}
+
+		void MouseHandler::DeepCopy(const MouseHandler& that) {
+
+			sensibility = that.sensibility;
+			reactivity = that.reactivity;
+
+			lock = that.lock;
+			hideMouse = that.hideMouse;
+
+			activationButtonDown = that.activationButtonDown;
+			activationButton = that.activationButton;
+
+			rotation = that.rotation;
 
 		}
 

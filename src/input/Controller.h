@@ -12,30 +12,46 @@ namespace Atlas {
 		class ControllerHandler {
 
 		public:
+			ControllerHandler();
+
+			ControllerHandler(const ControllerHandler& that);
+
 			ControllerHandler(Camera* camera, float sensibility, float speed, float reactivity,
 					float threshold, int32_t device = -1);
 
+			~ControllerHandler();
+
+			ControllerHandler& operator=(const ControllerHandler& that);
+
 			void Update(Camera* camera, float deltaTime);
 
-			float sensibility;
-			float speed;
-			float reactivity;
-			float threshold;
+			float sensibility = 1.5f;
+			float speed = 7.0f;
+			float reactivity = 6.0f;
+			float threshold = 5000.0f;
 
 		private:
+			void RegisterEvents();
+
 			void ControllerAxisEventHandler(Events::ControllerAxisEvent event);
 			void ControllerButtonEventHandler(Events::ControllerButtonEvent event);
 			void ControllerDeviceEventHandler(Events::ControllerDeviceEvent event);
 
-			vec2 leftStick;
-			vec2 rightStick;
+			void DeepCopy(const ControllerHandler& that);
 
-			float speedIncrease;
+			vec2 leftStick = vec2(0.0f);
+			vec2 rightStick = vec2(0.0f);
 
-			vec3 location;
-			vec2 rotation;
+			float speedIncrease = 0.0f;
 
-			int32_t controllerDevice;
+			vec3 location = vec3(0.0f);
+			vec2 rotation = vec3(0.0f);
+
+			int32_t controllerDevice = -1;
+
+			int32_t controllerAxisEventHandle;
+			int32_t controllerButtonEventHandle;
+			int32_t controllerDeviceEventHandle;
 
 		};
 
