@@ -7,13 +7,34 @@ namespace Atlas {
 		AE_WINDOWPOSITION_UNDEFINED, AE_WINDOWPOSITION_UNDEFINED, windowWidth, 
 		windowHeight, flags) {
 
-
+		LockFramerate();
 
 	}
 
 	void EngineInstance::Update() {
 
 		masterRenderer.Update();
+
+	}
+
+	ivec2 EngineInstance::GetScreenSize() {
+
+		SDL_DisplayMode displayMode;
+		SDL_GetCurrentDisplayMode(0, &displayMode);
+
+		return ivec2(displayMode.w, displayMode.h);
+
+	}
+
+	void EngineInstance::LockFramerate() {
+
+		SDL_GL_SetSwapInterval(1);
+
+	}
+
+	void EngineInstance::UnlockFramerate() {
+
+		SDL_GL_SetSwapInterval(0);
 
 	}
 

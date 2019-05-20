@@ -11,9 +11,10 @@ int main(int argc, char* argv[]) {
 	auto instance = GetEngineInstance();
 
 	context->AttachTo(&instance->window);
+	Atlas::Engine::DestroyDefaultWindow();
 
-	// No need to clean context up, will be released when the
-	// instance is deleted.
+	// No need to clean the context up, will be released
+	// when the instance is being deleted.
 	instance->context = *context;
 
 	bool quit = false;
@@ -41,8 +42,6 @@ int main(int argc, char* argv[]) {
 	}
 
 	instance->UnloadContent();
-
-	Atlas::Engine::Shutdown();
 
 	return 0;
 

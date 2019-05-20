@@ -72,8 +72,6 @@ namespace Atlas {
 		Buffer::Buffer::CheckExtensions();
 		Texture::Texture::GetMaxAnisotropyLevel();
 
-		LockFramerate();
-
 		Loader::AssetLoader::Init();
 
 		Audio::AudioManager::Configure(48000, 2, 1024);
@@ -90,34 +88,9 @@ namespace Atlas {
 
 	}
 
-	void Engine::Shutdown() {
+	void Engine::DestroyDefaultWindow() {
 
 		SDL_DestroyWindow(defaultWindow);
-
-	}
-
-	ivec2 Engine::GetScreenSize() {
-
-		if (SDL_WasInit(SDL_INIT_EVERYTHING) != SDL_INIT_EVERYTHING) {
-			SDL_Init(SDL_INIT_EVERYTHING);
-		}
-
-		SDL_DisplayMode displayMode;
-		SDL_GetCurrentDisplayMode(0, &displayMode);
-		
-		return ivec2(displayMode.w, displayMode.h);
-
-	}
-
-	void Engine::LockFramerate() {
-
-		SDL_GL_SetSwapInterval(1);
-
-	}
-
-	void Engine::UnlockFramerate() {
-
-		SDL_GL_SetSwapInterval(0);
 
 	}
 

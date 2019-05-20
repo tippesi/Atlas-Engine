@@ -29,24 +29,11 @@ namespace Atlas {
          */
 		static Context* Init(std::string assetDirectory, std::string shaderDirectory);
 
-		static void Shutdown();
-
 		/**
-		 * Returns the size of the screen.
-		 * @return An 2-component integer vector where x is the width and y is the height.
+		 * Deletes the default window.
+		 * @note This method is called after an engine instance is created.
 		 */
-		static ivec2 GetScreenSize();
-
-		/**
-         * Locks the frame rate to the next available target frame rate of the monitor
-         * like min(availableTargetFramerate, possibleFramerate).
-         */
-		static void LockFramerate();
-
-		/**
-         * Unlocks the framerate.
-         */
-		static void UnlockFramerate();
+		static void DestroyDefaultWindow();
 
 		/**
          * Updates the engine and the system events. Must be called in thread
