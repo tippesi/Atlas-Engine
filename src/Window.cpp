@@ -3,7 +3,8 @@
 namespace Atlas {
 
 	Window::Window(std::string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags) :
-			x(x), y(y), width(width), height(height) {
+			x(x == AE_WINDOWPOSITION_UNDEFINED ? 0 : x), y(y == AE_WINDOWPOSITION_UNDEFINED ? 0 : y),
+			width(width), height(height) {
 
 		sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_OPENGL);
 
@@ -125,6 +126,26 @@ namespace Atlas {
 	void Window::Hide() {
 
 		SDL_HideWindow(sdlWindow);
+
+	}
+
+	void Window::Maximize() {
+
+		SDL_MaximizeWindow(sdlWindow);
+		SDL_GL_GetDrawableSize(sdlWindow, &width, &height);
+
+	}
+
+	void Window::Minimize() {
+
+		SDL_MinimizeWindow(sdlWindow);
+		SDL_GL_GetDrawableSize(sdlWindow, &width, &height);
+
+	}
+
+	void Window::SetFullscreen(bool fullscreen) {
+
+		SDL_SetWindowFullscreen(sdlWindow, (fullscreen ? AE_WINDOW_FULLSCREEN : 0));
 
 	}
 

@@ -106,6 +106,23 @@ namespace Atlas {
 		void Hide();
 
 		/**
+		 * Maximizes the window.
+		 */
+		void Maximize();
+
+		/**
+		 * Minimizes the window.
+		 */
+		void Minimize();
+
+		/**
+		 * Changes the window mode depending on the parameter.
+		 * @param fullscreen Makes the window fullscreen if true.
+		 * If false, sets the window mode to windowed.
+		 */
+		void SetFullscreen(bool fullscreen);
+
+		/**
          * Updates the window events and the rendering surface.
          */
 		void Update();
