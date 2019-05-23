@@ -25,16 +25,16 @@ namespace Atlas {
 
 			Shader::Shader shader;
 
-			Shader::Uniform* viewMatrix;
-			Shader::Uniform* projectionMatrix;
-			Shader::Uniform* inverseProjectionMatrix;
-			Shader::Uniform* lightViewMatrix;
-			Shader::Uniform* lightProjectionMatrix;
-			Shader::Uniform* viewSpaceLightLocation;
-			Shader::Uniform* lightLocation;
-			Shader::Uniform* lightColor;
-			Shader::Uniform* lightAmbient;
-			Shader::Uniform* lightRadius;
+			Shader::Uniform* viewMatrix = nullptr;
+			Shader::Uniform* projectionMatrix = nullptr;
+			Shader::Uniform* inverseProjectionMatrix = nullptr;
+			Shader::Uniform* lightViewMatrix = nullptr;
+			Shader::Uniform* lightProjectionMatrix = nullptr;
+			Shader::Uniform* viewSpaceLightLocation = nullptr;
+			Shader::Uniform* lightLocation = nullptr;
+			Shader::Uniform* lightColor = nullptr;
+			Shader::Uniform* lightAmbient = nullptr;
+			Shader::Uniform* lightRadius = nullptr;
 
 		};
 

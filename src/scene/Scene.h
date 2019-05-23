@@ -88,7 +88,7 @@ namespace Atlas {
 			PostProcessing::PostProcessing postProcessing;
 
 		private:
-			bool hasChanged;
+			bool hasChanged = true;
 
 		};
 

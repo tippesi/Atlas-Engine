@@ -73,6 +73,8 @@ namespace Atlas {
 			if (index >= 0 && index < (int32_t)materials.size())
 				return materials[index].first;
 
+			return nullptr;
+
 		}
 
 		std::vector<Material*> TerrainStorage::GetMaterials() {

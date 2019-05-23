@@ -20,7 +20,7 @@ namespace Atlas {
 
 			~MouseHandler();
 
-			MouseHandler& MouseHandler::operator=(const MouseHandler& that);
+			MouseHandler& operator=(const MouseHandler& that);
 
 			void Update(Camera* camera, float deltaTime);
 

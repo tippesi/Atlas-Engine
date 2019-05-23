@@ -26,7 +26,7 @@ namespace Atlas {
 
 			Shader::Shader shader;
 
-			Shader::Uniform* modelViewProjectionMatrix;
+			Shader::Uniform* modelViewProjectionMatrix = nullptr;
 
 		};
 

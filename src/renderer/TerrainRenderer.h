@@ -28,31 +28,31 @@ namespace Atlas {
 			Shader::Shader middleShader;
 			Shader::Shader farShader;
 
-			Shader::Uniform* heightField;
-			Shader::Uniform* normalMap;
-			Shader::Uniform* diffuseMap;
-			Shader::Uniform* splatMap;
+			Shader::Uniform* heightField = nullptr;
+			Shader::Uniform* normalMap = nullptr;
+			Shader::Uniform* diffuseMap = nullptr;
+			Shader::Uniform* splatMap = nullptr;
 
-			Shader::Uniform* heightScale;
-			Shader::Uniform* offset;
-			Shader::Uniform* tileScale;
-			Shader::Uniform* modelMatrix;
-			Shader::Uniform* viewMatrix;
-			Shader::Uniform* projectionMatrix;
-			Shader::Uniform* cameraLocation;
-			Shader::Uniform* nodeSideLength;
-			Shader::Uniform* nodeLocation;
+			Shader::Uniform* heightScale = nullptr;
+			Shader::Uniform* offset = nullptr;
+			Shader::Uniform* tileScale = nullptr;
+			Shader::Uniform* modelMatrix = nullptr;
+			Shader::Uniform* viewMatrix = nullptr;
+			Shader::Uniform* projectionMatrix = nullptr;
+			Shader::Uniform* cameraLocation = nullptr;
+			Shader::Uniform* nodeSideLength = nullptr;
+			Shader::Uniform* nodeLocation = nullptr;
 
-			Shader::Uniform* patchOffsetsScale;
+			Shader::Uniform* patchOffsetsScale = nullptr;
 
-			Shader::Uniform* tessellationFactor;
-			Shader::Uniform* tessellationSlope;
-			Shader::Uniform* tessellationShift;
-			Shader::Uniform* maxTessellationLevel;
+			Shader::Uniform* tessellationFactor = nullptr;
+			Shader::Uniform* tessellationSlope = nullptr;
+			Shader::Uniform* tessellationShift = nullptr;
+			Shader::Uniform* maxTessellationLevel = nullptr;
 
-			Shader::Uniform* displacementDistance;
+			Shader::Uniform* displacementDistance = nullptr;
 
-			Shader::Uniform* frustumPlanes;
+			Shader::Uniform* frustumPlanes = nullptr;
 
 			struct MaterialUniform {
 				Shader::Uniform* diffuseMap;

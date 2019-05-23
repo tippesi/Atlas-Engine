@@ -89,10 +89,10 @@ namespace Atlas {
 			glEnable(GL_DEPTH_TEST);
 
 			if (scene->sky.skybox != nullptr) {
-				skyboxRenderer.Render(viewport, target, camera, scene);
+				//skyboxRenderer.Render(viewport, target, camera, scene);
 			}
 			else {
-				atmosphereRenderer.Render(viewport, target, camera, scene);
+				//atmosphereRenderer.Render(viewport, target, camera, scene);
 			}
 
 			glDepthMask(GL_TRUE);

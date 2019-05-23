@@ -1,11 +1,10 @@
 #include "App.h"
 
-#include "tools/TerrainTool.h"
-
-#include "libraries/stb/stb_image.h"
-#include "libraries/stb/stb_image_write.h"
-
+#ifndef AE_OS_ANDROID
 std::string Atlas::EngineInstance::assetDirectory = "../data";
+#else
+std::string Atlas::EngineInstance::assetDirectory = "data";
+#endif
 std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
@@ -15,8 +14,8 @@ void App::LoadContent() {
 #ifndef AE_OS_ANDROID
 	renderTarget = new Atlas::RenderTarget(1920, 1080);
 #else
-	renderTarget = new RenderTarget(1280, 720);
-	Texture::Texture::SetAnisotropyLevel(8);
+	renderTarget = new Atlas::RenderTarget(1280, 720);
+	Atlas::Texture::Texture::SetAnisotropyLevel(8);
 #endif
 
 	viewport = Atlas::Viewport(0, 0, window.GetWidth(), window.GetHeight());
@@ -86,7 +85,7 @@ void App::LoadContent() {
 #else
 	directionalLight.AddShadow(200.0f, 0.01f, 2048, vec3(0.0f), orthoProjection);
 	directionalLight.GetShadow()->sampleCount = 8;
-	directionalLight.AddVolumetric(renderTarget->GetSize().x / 2, renderTarget->GetSize().y / 2, 10, -0.5f);
+	directionalLight.AddVolumetric(renderTarget->GetWidth() / 2, renderTarget->GetHeight() / 2, 10, -0.5f);
 #endif
 
 	auto pointLight1 = Atlas::Lighting::PointLight(AE_STATIONARY_LIGHT);

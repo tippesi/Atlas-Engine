@@ -151,25 +151,25 @@ namespace Atlas {
 			Shader::Shader texture2DShader;
 			Shader::Shader texture2DArrayShader;
 
-			Shader::Uniform* rectangleProjectionMatrix;
-			Shader::Uniform* rectangleOffset;
-			Shader::Uniform* rectangleScale;
-			Shader::Uniform* rectangleColor;
-			Shader::Uniform* rectangleClipArea;
-			Shader::Uniform* rectangleBlendArea;
+			Shader::Uniform* rectangleProjectionMatrix = nullptr;
+			Shader::Uniform* rectangleOffset = nullptr;
+			Shader::Uniform* rectangleScale = nullptr;
+			Shader::Uniform* rectangleColor = nullptr;
+			Shader::Uniform* rectangleClipArea = nullptr;
+			Shader::Uniform* rectangleBlendArea = nullptr;
 
-			Shader::Uniform* texture2DProjectionMatrix;
-			Shader::Uniform* texture2DOffset;
-			Shader::Uniform* texture2DScale;
-			Shader::Uniform* texture2DClipArea;
-			Shader::Uniform* texture2DBlendArea;
+			Shader::Uniform* texture2DProjectionMatrix = nullptr;
+			Shader::Uniform* texture2DOffset = nullptr;
+			Shader::Uniform* texture2DScale = nullptr;
+			Shader::Uniform* texture2DClipArea = nullptr;
+			Shader::Uniform* texture2DBlendArea = nullptr;
 
-			Shader::Uniform* texture2DArrayProjectionMatrix;
-			Shader::Uniform* texture2DArrayOffset;
-			Shader::Uniform* texture2DArrayScale;
-			Shader::Uniform* texture2DArrayClipArea;
-			Shader::Uniform* texture2DArrayBlendArea;
-			Shader::Uniform* texture2DArrayDepth;
+			Shader::Uniform* texture2DArrayProjectionMatrix = nullptr;
+			Shader::Uniform* texture2DArrayOffset = nullptr;
+			Shader::Uniform* texture2DArrayScale = nullptr;
+			Shader::Uniform* texture2DArrayClipArea = nullptr;
+			Shader::Uniform* texture2DArrayBlendArea = nullptr;
+			Shader::Uniform* texture2DArrayDepth = nullptr;
 
 			OpaqueRenderer opaqueRenderer;
 			TerrainRenderer terrainRenderer;

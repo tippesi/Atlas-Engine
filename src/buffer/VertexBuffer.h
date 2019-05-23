@@ -79,8 +79,8 @@ namespace Atlas {
 			int32_t GetStride();
 
 		private:
-			uint32_t dataType;
-			int32_t stride;
+			uint32_t dataType = AE_FLOAT;
+			int32_t stride = 1;
 
 		};
 

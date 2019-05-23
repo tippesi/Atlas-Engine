@@ -33,13 +33,13 @@ namespace Atlas {
 			Shader::Shader bilateralBlurShader;
 
 			// Volumetric shader uniforms
-			Shader::Uniform* lightDirection;
-			Shader::Uniform* inverseProjectionMatrix;
-			Shader::Uniform* sampleCount;
-			Shader::Uniform* scattering;
-			Shader::Uniform* framebufferResolution;
+			Shader::Uniform* lightDirection = nullptr;
+			Shader::Uniform* inverseProjectionMatrix = nullptr;
+			Shader::Uniform* sampleCount = nullptr;
+			Shader::Uniform* scattering = nullptr;
+			Shader::Uniform* framebufferResolution = nullptr;
 
-			Shader::Uniform* shadowCascadeCount;
+			Shader::Uniform* shadowCascadeCount = nullptr;
 
 			struct ShadowCascadeUniform {
 				Shader::Uniform* distance;
@@ -47,10 +47,10 @@ namespace Atlas {
 			}cascades[MAX_SHADOW_CASCADE_COUNT];
 
 			// Bilateral blur shader uniforms
-			Shader::Uniform* blurDirection;
-			Shader::Uniform* offsets;
-			Shader::Uniform* weights;
-			Shader::Uniform* kernelSize;
+			Shader::Uniform* blurDirection = nullptr;
+			Shader::Uniform* offsets = nullptr;
+			Shader::Uniform* weights = nullptr;
+			Shader::Uniform* kernelSize = nullptr;
 
 		};
 

@@ -31,15 +31,15 @@ namespace Atlas {
 		private:
 			RenderList renderList;
 
-			Shader::Uniform* modelMatrixUniform;
-			Shader::Uniform* viewMatrixUniform;
-			Shader::Uniform* projectionMatrixUniform;
+			Shader::Uniform* modelMatrixUniform = nullptr;
+			Shader::Uniform* viewMatrixUniform = nullptr;
+			Shader::Uniform* projectionMatrixUniform = nullptr;
 
-			Shader::Uniform* diffuseColorUniform;
-			Shader::Uniform* specularColorUniform;
-			Shader::Uniform* ambientColorUniform;
-			Shader::Uniform* specularHardnessUniform;
-			Shader::Uniform* specularIntensityUniform;
+			Shader::Uniform* diffuseColorUniform = nullptr;
+			Shader::Uniform* specularColorUniform = nullptr;
+			Shader::Uniform* ambientColorUniform = nullptr;
+			Shader::Uniform* specularHardnessUniform = nullptr;
+			Shader::Uniform* specularIntensityUniform = nullptr;
 
 			static Shader::ShaderBatch shaderBatch;
 			static std::mutex shaderBatchMutex;

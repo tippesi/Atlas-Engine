@@ -25,18 +25,18 @@ namespace Atlas {
 
 			Shader::Shader shader;
 
-			Shader::Uniform* modelMatrix;
-			Shader::Uniform* viewMatrix;
-			Shader::Uniform* projectionMatrix;
-			Shader::Uniform* inverseViewMatrix;
-			Shader::Uniform* inverseProjectionMatrix;
+			Shader::Uniform* modelMatrix = nullptr;
+			Shader::Uniform* viewMatrix = nullptr;
+			Shader::Uniform* projectionMatrix = nullptr;
+			Shader::Uniform* inverseViewMatrix = nullptr;
+			Shader::Uniform* inverseProjectionMatrix = nullptr;
 
-			Shader::Uniform* color;
+			Shader::Uniform* color = nullptr;
 
-			Shader::Uniform* timeInMilliseconds;
-			Shader::Uniform* animationLength;
-			Shader::Uniform* rowCount;
-			Shader::Uniform* columnCount;
+			Shader::Uniform* timeInMilliseconds = nullptr;
+			Shader::Uniform* animationLength = nullptr;
+			Shader::Uniform* rowCount = nullptr;
+			Shader::Uniform* columnCount = nullptr;
 
 		};
 

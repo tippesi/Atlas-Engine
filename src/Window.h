@@ -166,7 +166,7 @@ namespace Atlas {
 		int32_t width;
 		int32_t height;
 
-		bool hasFocus;
+		bool hasFocus = false;
 
 		int32_t windowEventSubcriberID;
 		int32_t keyboardEventSubscriberID;

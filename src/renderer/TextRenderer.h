@@ -44,18 +44,18 @@ namespace Atlas {
 
 			Shader::Shader shader;
 
-			Shader::Uniform* projectionMatrix;
-			Shader::Uniform* characterScales;
-			Shader::Uniform* characterSizes;
-			Shader::Uniform* textOffset;
-			Shader::Uniform* textScale;
-			Shader::Uniform* textColor;
-			Shader::Uniform* outlineColor;
-			Shader::Uniform* outlineScale;
-			Shader::Uniform* edgeValue;
-			Shader::Uniform* smoothness;
-			Shader::Uniform* clipArea;
-			Shader::Uniform* blendArea;
+			Shader::Uniform* projectionMatrix = nullptr;
+			Shader::Uniform* characterScales = nullptr;
+			Shader::Uniform* characterSizes = nullptr;
+			Shader::Uniform* textOffset = nullptr;
+			Shader::Uniform* textScale = nullptr;
+			Shader::Uniform* textColor = nullptr;
+			Shader::Uniform* outlineColor = nullptr;
+			Shader::Uniform* outlineScale = nullptr;
+			Shader::Uniform* edgeValue = nullptr;
+			Shader::Uniform* smoothness = nullptr;
+			Shader::Uniform* clipArea = nullptr;
+			Shader::Uniform* blendArea = nullptr;
 
 		};
 

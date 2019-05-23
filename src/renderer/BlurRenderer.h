@@ -21,8 +21,8 @@ namespace Atlas {
         private:
             void GetUniforms();
 
-            float* kernelOffsets;
-            float* kernelWeights;
+            float* kernelOffsets = nullptr;
+            float* kernelWeights = nullptr;
             int32_t kernelSize;
 
             bool bilateralBlur;
@@ -31,7 +31,7 @@ namespace Atlas {
 
             Shader::Shader shader;
 
-            Shader::Uniform* blurDirection;
+            Shader::Uniform* blurDirection = nullptr;
 
 
         };

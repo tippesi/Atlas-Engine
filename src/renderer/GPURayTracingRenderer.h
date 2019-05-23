@@ -34,34 +34,49 @@ namespace Atlas {
 				vec4 v0;
 				vec4 v1;
 				vec4 v2;
+				vec4 n0;
+				vec4 n1;
+				vec4 n2;
+			};
+
+			struct GPUMaterial {
+				vec4 diffuseColor;
+
+				float specularHardness;
+				float specularIntensity;
 			};
 
 			int32_t workGroupLimit;
 			int32_t shaderStorageLimit;
 
 			Buffer::Buffer triangleBuffer;
+			Buffer::Buffer materialBuffer;
+			Buffer::Buffer materialIndicesBuffer;
 
 			Shader::Shader vertexUpdateShader;
 
-			Shader::Uniform* modelMatrixVertexUpdateUniform;
-			Shader::Uniform* triangleOffsetVertexUpdateUniform;
-			Shader::Uniform* triangleCountVertexUpdateUniform;
-			Shader::Uniform* xInvocationsVertexUpdateUniform;
+			Shader::Uniform* modelMatrixVertexUpdateUniform = nullptr;
+			Shader::Uniform* triangleOffsetVertexUpdateUniform = nullptr;
+			Shader::Uniform* triangleCountVertexUpdateUniform = nullptr;
+			Shader::Uniform* xInvocationsVertexUpdateUniform = nullptr;
 
 			Shader::Shader BVHShader;
 
 
 			Shader::Shader rayCasterShader;
 
-			Shader::Uniform* widthRayCasterUniform;
-			Shader::Uniform* heightRayCasterUniform;
-			Shader::Uniform* originRayCasterUniform;
-			Shader::Uniform* rightRayCasterUniform;
-			Shader::Uniform* bottomRayCasterUniform;
-			Shader::Uniform* cameraLocationRayCasterUniform;
-			Shader::Uniform* cameraFarPlaneRayCasterUniform;
-			Shader::Uniform* cameraNearPlaneRayCasterUniform;
-			Shader::Uniform* triangleCountRayCasterUniform;
+			Shader::Uniform* widthRayCasterUniform = nullptr;
+			Shader::Uniform* heightRayCasterUniform = nullptr;
+			Shader::Uniform* originRayCasterUniform = nullptr;
+			Shader::Uniform* rightRayCasterUniform = nullptr;
+			Shader::Uniform* bottomRayCasterUniform = nullptr;
+			Shader::Uniform* cameraLocationRayCasterUniform = nullptr;
+			Shader::Uniform* cameraFarPlaneRayCasterUniform = nullptr;
+			Shader::Uniform* cameraNearPlaneRayCasterUniform = nullptr;
+			Shader::Uniform* triangleCountRayCasterUniform = nullptr;
+			Shader::Uniform* lightDirectionRayCasterUniform = nullptr;
+			Shader::Uniform* lightColorRayCasterUniform = nullptr;
+			Shader::Uniform* lightAmbientRayCasterUniform = nullptr;
 
 		};
 

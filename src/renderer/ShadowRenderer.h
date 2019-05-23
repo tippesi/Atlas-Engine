@@ -33,8 +33,8 @@ namespace Atlas {
 
 			Framebuffer framebuffer;
 
-			Shader::Uniform* lightSpaceMatrixUniform;
-			Shader::Uniform* modelMatrixUniform;
+			Shader::Uniform* lightSpaceMatrixUniform = nullptr;
+			Shader::Uniform* modelMatrixUniform = nullptr;
 
 			static Shader::ShaderBatch shaderBatch;
 			static std::mutex shaderBatchMutex;

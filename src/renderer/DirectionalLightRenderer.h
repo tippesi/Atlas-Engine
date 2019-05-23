@@ -23,22 +23,22 @@ namespace Atlas {
 
             Shader::Shader shader;
 
-            Shader::Uniform* inverseViewMatrix;
-            Shader::Uniform* inverseProjectionMatrix;
+            Shader::Uniform* inverseViewMatrix = nullptr;
+            Shader::Uniform* inverseProjectionMatrix = nullptr;
 
-            Shader::Uniform* lightDirection;
-            Shader::Uniform* lightColor;
-            Shader::Uniform* lightAmbient;
+            Shader::Uniform* lightDirection = nullptr;
+            Shader::Uniform* lightColor = nullptr;
+            Shader::Uniform* lightAmbient = nullptr;
 
-            Shader::Uniform* scatteringFactor;
+            Shader::Uniform* scatteringFactor = nullptr;
 
-            Shader::Uniform* shadowDistance;
-            Shader::Uniform* shadowBias;
-            Shader::Uniform* shadowSampleCount;
-            Shader::Uniform* shadowSampleRange;
-            Shader::Uniform* shadowSampleRandomness;
-            Shader::Uniform* shadowCascadeCount;
-            Shader::Uniform* shadowResolution;
+            Shader::Uniform* shadowDistance = nullptr;
+            Shader::Uniform* shadowBias = nullptr;
+            Shader::Uniform* shadowSampleCount = nullptr;
+            Shader::Uniform* shadowSampleRange = nullptr;
+            Shader::Uniform* shadowSampleRandomness = nullptr;
+            Shader::Uniform* shadowCascadeCount = nullptr;
+            Shader::Uniform* shadowResolution = nullptr;
 
             struct ShadowCascadeUniform {
                 Shader::Uniform* distance;

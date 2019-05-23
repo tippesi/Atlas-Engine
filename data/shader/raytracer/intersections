@@ -16,7 +16,7 @@ bool Intersection(Ray ray, AABB aabb, float tmin, float tmax) {
 }
 
 bool Intersection(Ray ray, vec3 v0, vec3 v1, vec3 v2,
-	out float t, out vec3 intersection) {
+	out vec3 sol) {
 
 	vec3 e0 = v1 - v0;
 	vec3 e1 = v2 - v0;
@@ -25,14 +25,12 @@ bool Intersection(Ray ray, vec3 v0, vec3 v1, vec3 v2,
 	vec3 p = cross(s, e0);
 	vec3 q = cross(ray.direction, e1);
 	
-	vec3 sol = vec3(dot(p, e1), dot(q, s), 
+	sol = vec3(dot(p, e1), dot(q, s), 
 		dot(p, ray.direction)) / dot(q, e0);
 		
 	if (sol.x >= 0.0 && sol.y >= 0.0 &&
 		sol.z >= 0.0 && sol.y + sol.z <= 1.0) {
 		
-		intersection = v0 + e0 * sol.y + e1 * sol.z;
-		t = sol.x;
 		return true;
 	
 	}

@@ -2,6 +2,7 @@
 #define AE_BUFFER_H
 
 #include "../System.h"
+#include "../TypeFormat.h"
 #include "BufferLock.h"
 
 /**

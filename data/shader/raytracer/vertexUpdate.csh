@@ -28,6 +28,10 @@ void main() {
 		triangle.v1 = mMatrix * triangle.v1;
 		triangle.v2 = mMatrix * triangle.v2;
 		
+		triangle.n0 = normalize(mMatrix * triangle.n0);
+		triangle.n1 = normalize(mMatrix * triangle.n1);
+		triangle.n2 = normalize(mMatrix * triangle.n2);
+		
 		triangles.data[index] = triangle;
 
 	}

@@ -24,17 +24,17 @@ namespace Atlas {
 
 			Shader::Shader shader;
 
-			Shader::Uniform* hdrTextureResolution;
-			Shader::Uniform* exposure;
-			Shader::Uniform* saturation;
-			Shader::Uniform* bloomPassses;
-			Shader::Uniform* aberrationStrength;
-			Shader::Uniform* aberrationReversed;
-			Shader::Uniform* vignetteOffset;
-			Shader::Uniform* vignettePower;
-			Shader::Uniform* vignetteStrength;
-			Shader::Uniform* vignetteColor;
-			Shader::Uniform* timeInMilliseconds;
+			Shader::Uniform* hdrTextureResolution = nullptr;
+			Shader::Uniform* exposure = nullptr;
+			Shader::Uniform* saturation = nullptr;
+			Shader::Uniform* bloomPassses = nullptr;
+			Shader::Uniform* aberrationStrength = nullptr;
+			Shader::Uniform* aberrationReversed = nullptr;
+			Shader::Uniform* vignetteOffset = nullptr;
+			Shader::Uniform* vignettePower = nullptr;
+			Shader::Uniform* vignetteStrength = nullptr;
+			Shader::Uniform* vignetteColor = nullptr;
+			Shader::Uniform* timeInMilliseconds = nullptr;
 
 		};
 

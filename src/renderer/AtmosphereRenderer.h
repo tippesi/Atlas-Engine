@@ -26,14 +26,14 @@ namespace Atlas {
 
 			Shader::Shader shader;
 
-			Shader::Uniform* viewMatrix;
-			Shader::Uniform* projectionMatrix;
-			Shader::Uniform* cameraLocation;
-			Shader::Uniform* sunDirection;
-			Shader::Uniform* sunIntensity;
-			Shader::Uniform* planetCenter;
-			Shader::Uniform* atmosphereRadius;
-			Shader::Uniform* planetRadius;
+			Shader::Uniform* viewMatrix = nullptr;
+			Shader::Uniform* projectionMatrix = nullptr;
+			Shader::Uniform* cameraLocation = nullptr;
+			Shader::Uniform* sunDirection = nullptr;
+			Shader::Uniform* sunIntensity = nullptr;
+			Shader::Uniform* planetCenter = nullptr;
+			Shader::Uniform* atmosphereRadius = nullptr;
+			Shader::Uniform* planetRadius = nullptr;
 
 		};
 

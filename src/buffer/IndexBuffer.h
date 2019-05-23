@@ -65,7 +65,7 @@ namespace Atlas {
             uint32_t GetDataType();
 
         private:
-            uint32_t dataType;
+            uint32_t dataType = AE_UINT;
 
         };
 

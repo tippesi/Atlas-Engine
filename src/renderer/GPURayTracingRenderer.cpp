@@ -1,5 +1,8 @@
 #include "GPURayTracingRenderer.h"
 
+#include <unordered_set>
+#include <unordered_map>
+
 namespace Atlas {
 
 	namespace Renderer {
@@ -13,7 +16,12 @@ namespace Atlas {
 			glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &shaderStorageLimit);
 			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &workGroupLimit);
 
-			triangleBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUTriangle), AE_BUFFER_DYNAMIC_STORAGE);
+			triangleBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUTriangle),
+				AE_BUFFER_DYNAMIC_STORAGE);
+			materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUMaterial),
+				AE_BUFFER_DYNAMIC_STORAGE);
+			materialIndicesBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(int32_t),
+				AE_BUFFER_DYNAMIC_STORAGE);
 
 			vertexUpdateShader.AddStage(AE_COMPUTE_STAGE, vertexUpdateComputePath);
 			vertexUpdateShader.Compile();
@@ -46,6 +54,19 @@ namespace Atlas {
 				if (!UpdateGPUData(scene))
 					return;
 
+			auto lights = scene->GetLights();
+
+			Lighting::DirectionalLight* sun = nullptr;
+
+			for (auto& light : lights) {
+				if (light->type == AE_DIRECTIONAL_LIGHT) {
+					sun = static_cast<Lighting::DirectionalLight*>(light);
+				}
+			}
+
+			if (!sun)
+				return;
+
 			rayCasterShader.Bind();
 
 			widthRayCasterUniform->SetValue(texture->width);
@@ -63,9 +84,15 @@ namespace Atlas {
 
 			triangleCountRayCasterUniform->SetValue((int32_t)triangleBuffer.GetElementCount());
 
+			lightDirectionRayCasterUniform->SetValue(sun->direction);
+			lightColorRayCasterUniform->SetValue(sun->color);
+			lightAmbientRayCasterUniform->SetValue(sun->ambient);
+
 			texture->Bind(GL_WRITE_ONLY, 0);
 
 			triangleBuffer.BindBase(1);
+			materialIndicesBuffer.BindBase(2);
+			materialBuffer.BindBase(3);
 
 			glDispatchCompute(texture->width / 16, texture->height / 16, 1);
 
@@ -97,6 +124,9 @@ namespace Atlas {
 			cameraFarPlaneRayCasterUniform = rayCasterShader.GetUniform("cameraFarPlane");
 			cameraNearPlaneRayCasterUniform = rayCasterShader.GetUniform("cameraNearPlane");
 			triangleCountRayCasterUniform = rayCasterShader.GetUniform("triangleCount");
+			lightDirectionRayCasterUniform = rayCasterShader.GetUniform("light.direction");
+			lightColorRayCasterUniform = rayCasterShader.GetUniform("light.color");
+			lightAmbientRayCasterUniform = rayCasterShader.GetUniform("light.ambient");
 
 		}
 
@@ -106,13 +136,30 @@ namespace Atlas {
 
 			int32_t indexCount = 0;
 			int32_t vertexCount = 0;
+			int32_t materialCount = 0;
+
+			std::unordered_set<Mesh::Mesh*> meshes;
+			std::unordered_map<Material*, int32_t> materialAccess;
+			std::vector<GPUMaterial> materials;
 
 			for (auto& actor : actors) {
 				indexCount += actor->mesh->data.GetIndexCount();
 				vertexCount += actor->mesh->data.GetVertexCount();
+				if (meshes.find(actor->mesh) == meshes.end()) {
+					auto& actorMaterials = actor->mesh->data.materials;
+					for (auto& material : actorMaterials) {
+						materialAccess[&material] = materialCount;
+						GPUMaterial gpuMaterial;
+						gpuMaterial.diffuseColor = vec4(material.diffuseColor, 1.0f);
+						gpuMaterial.specularIntensity = material.specularIntensity;
+						gpuMaterial.specularHardness = material.specularHardness;
+						materials.push_back(gpuMaterial);
+						materialCount++;
+					}
+				}
 			}
 
-			auto vertexByteCount = vertexCount * sizeof(vec4);
+			auto vertexByteCount = vertexCount * sizeof(GPUTriangle);
 
 			if (vertexByteCount > shaderStorageLimit) {
 				AtlasLog("Scene has to many data for shader storage buffer objects\n\
@@ -120,7 +167,11 @@ namespace Atlas {
 				return false;
 			}
 
+			int32_t triangleCount = indexCount / 3;
+
 			std::vector<vec4> vertices(indexCount);
+			std::vector<vec4> normals(indexCount);
+			std::vector<int32_t> materialIndices(triangleCount);
 
 			vertexCount = 0;
 
@@ -130,27 +181,48 @@ namespace Atlas {
 
 				auto actorIndices = actor->mesh->data.indices.Get();
 				auto actorVertices = actor->mesh->data.vertices.Get();
+				auto actorNormals = actor->mesh->data.normals.Get();
 
-				for (int32_t i = 0; i < actorIndexCount; i++) {
-					auto j = actorIndices[i];
-					vertices[vertexCount++] = vec4(actorVertices[j * 3], actorVertices[j * 3 + 1],
+				for (auto& subData : actor->mesh->data.subData) {
+
+					auto offset = subData.indicesOffset;
+					auto count = subData.indicesCount;
+					auto materialIndex = materialAccess[subData.material];
+
+					for (int32_t i = 0; i < actorIndexCount; i++) {
+						auto j = actorIndices[i + offset];
+						vertices[vertexCount] = vec4(actorVertices[j * 3], actorVertices[j * 3 + 1],
 							actorVertices[j * 3 + 2], 1.0f);
+						normals[vertexCount] = vec4(actorNormals[j * 4], actorNormals[j * 4 + 1],
+							actorNormals[j * 4 + 2], 0.0f);
+						if ((vertexCount % 3) == 0) {
+							materialIndices[vertexCount / 3] = materialIndex;
+						}
+						vertexCount++;
+					}
 				}
 
 			}
 
-			int32_t triangleCount = indexCount / 3;
 			std::vector<GPUTriangle> triangles(triangleCount);
 
 			for (int32_t i = 0; i < triangleCount; i++) {
 				triangles[i].v0 = vertices[i * 3];
 				triangles[i].v1 = vertices[i * 3 + 1];
 				triangles[i].v2 = vertices[i * 3 + 2];
+				triangles[i].n0 = normals[i * 3];
+				triangles[i].n1 = normals[i * 3 + 1];
+				triangles[i].n2 = normals[i * 3 + 2];
 			}
 
 			triangleBuffer.SetSize(triangles.size());
 			triangleBuffer.SetData(triangles.data(), 0, triangles.size());
 
+			materialBuffer.SetSize(materials.size());
+			materialBuffer.SetData(materials.data(), 0, materials.size());
+
+			materialIndicesBuffer.SetSize(materialIndices.size());
+			materialIndicesBuffer.SetData(materialIndices.data(), 0, materialIndices.size());
 			
 			vertexUpdateShader.Bind();
 
