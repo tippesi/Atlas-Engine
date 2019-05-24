@@ -44,7 +44,8 @@ namespace Atlas {
 		/**
 		 * This window is there by default and is not visible.
 		 */
-		static SDL_Window* defaultWindow;		
+		static SDL_Window* defaultWindow;
+		static Context* defaultContext;
 
 	};
 

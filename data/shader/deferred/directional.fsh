@@ -62,7 +62,7 @@ void main() {
 #endif
 	
 	diffuse = max((dot(normal, lightDir) * light.color) * shadowFactor,
-		ambient * occlusionFactor) * surfaceColor;		
+		0.0) * surfaceColor;		
 	
 	if(specularIntensity > 0.0f && shadowFactor > 0.5f) {
 		

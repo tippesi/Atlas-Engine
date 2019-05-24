@@ -10,12 +10,13 @@ int main(int argc, char* argv[]) {
 
 	auto instance = GetEngineInstance();
 
-	context->AttachTo(&instance->window);
-	Atlas::Engine::DestroyDefaultWindow();
-
 	// No need to clean the context up, will be released
 	// when the instance is being deleted.
 	instance->context = *context;
+
+	// We need to pass the command line arguments
+	for (int32_t i = 0; i < argc; i++)
+	    instance->args.push_back(std::string(argv[i]));
 
 	bool quit = false;
 

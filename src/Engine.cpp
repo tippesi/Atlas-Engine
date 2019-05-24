@@ -3,6 +3,7 @@
 namespace Atlas {
 
 	SDL_Window* Engine::defaultWindow = nullptr;
+	Context* Engine::defaultContext = nullptr;
 
 	Context* Engine::Init(std::string assetDirectory, std::string shaderDirectory) {
 
@@ -51,7 +52,7 @@ namespace Atlas {
 #endif
 
 		SDL_GL_DeleteContext(setupContext);
-		auto context = new Context(defaultWindow);
+		defaultContext = new Context(defaultWindow);
 
 		int value;
 
@@ -84,13 +85,7 @@ namespace Atlas {
 
 		Clock::Update();
 
-		return context;
-
-	}
-
-	void Engine::DestroyDefaultWindow() {
-
-		SDL_DestroyWindow(defaultWindow);
+		return defaultContext;
 
 	}
 

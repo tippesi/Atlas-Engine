@@ -4,6 +4,8 @@
 #include "Engine.h"
 #include "Context.h"
 
+#include <vector>
+
 namespace Atlas {
 
 	class EngineInstance {
@@ -60,8 +62,21 @@ namespace Atlas {
 		 */
 		static std::string shaderDirectory;
 
+		/**
+		 * The main window to which the context is attached to
+		 */
 		Window window;
+
+		/**
+		 * A default context which needs to be used for rendering.
+		 */
 		Context context;
+
+        /**
+         * Command line arguments.
+         * @note This member will be first available when LoadContent() is called.
+         */
+		std::vector<std::string> args;
 
 	protected:
 		/**

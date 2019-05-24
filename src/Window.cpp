@@ -1,4 +1,5 @@
 #include "Window.h"
+#include "Engine.h"
 
 namespace Atlas {
 
@@ -6,11 +7,24 @@ namespace Atlas {
 			x(x == AE_WINDOWPOSITION_UNDEFINED ? 0 : x), y(y == AE_WINDOWPOSITION_UNDEFINED ? 0 : y),
 			width(width), height(height) {
 
+	    // The engine creates a default SDL window.
+	    // We destroy it here in case we need room on some
+	    // platforms which only support one window at a time.
+	    if (Engine::defaultWindow) {
+            Engine::defaultContext->Unbind();
+            SDL_DestroyWindow(Engine::defaultWindow);
+        }
+
 		sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_OPENGL);
 
 		if (sdlWindow == nullptr) {
 			throw AtlasException("Error initializing window");
 		}
+
+        if (Engine::defaultWindow) {
+            Engine::defaultContext->AttachTo(this);
+            Engine::defaultWindow = nullptr;
+        }
 
 		ID = SDL_GetWindowID(sdlWindow);
 
@@ -146,6 +160,12 @@ namespace Atlas {
 	void Window::SetFullscreen(bool fullscreen) {
 
 		SDL_SetWindowFullscreen(sdlWindow, (fullscreen ? AE_WINDOW_FULLSCREEN : 0));
+
+	}
+
+	void Window::SetBordered(bool border) {
+
+	    SDL_SetWindowBordered(sdlWindow, border ? SDL_TRUE : SDL_FALSE);
 
 	}
 

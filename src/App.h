@@ -7,10 +7,16 @@
 #include <input/Controller.h>
 #include <input/Touch.h>
 
+#ifndef AE_OS_ANDROID
+#define WINDOW_FLAGS AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI
+#else
+#define WINDOW_FLAGS AE_WINDOW_FULLSCREEN
+#endif
+
 class App : public Atlas::EngineInstance {
 
 public:
-	App() : EngineInstance("Atlas Engine", 1280, 720) {}
+	App() : EngineInstance("Atlas Engine", 1280, 720, WINDOW_FLAGS) {}
 
 	virtual void LoadContent() final;
 

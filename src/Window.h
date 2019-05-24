@@ -117,10 +117,16 @@ namespace Atlas {
 
 		/**
 		 * Changes the window mode depending on the parameter.
-		 * @param fullscreen Makes the window fullscreen if true.
-		 * If false, sets the window mode to windowed.
+		 * @param fullscreen True to make the window fullscreen, false
+		 * to change into windowed mode.
 		 */
 		void SetFullscreen(bool fullscreen);
+
+		/**
+		 * Changes the window border depending on the parameter.
+		 * @param border True to adds a border, false to remove it.
+		 */
+		void SetBordered(bool border);
 
 		/**
          * Updates the window events and the rendering surface.
@@ -158,7 +164,7 @@ namespace Atlas {
 
 		uint32_t ID;
 
-		SDL_Window* sdlWindow;
+		SDL_Window* sdlWindow = nullptr;
 
 		int32_t x;
 		int32_t y;
