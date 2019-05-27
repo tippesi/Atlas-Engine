@@ -47,9 +47,9 @@ void main() {
 	volumetric = texture(volumetricTexture, fTexCoord).r * light.color * light.scatteringFactor;
 #endif
 
-	vec3 specular = vec3(0.0f);
-	vec3 diffuse = vec3(1.0f);
-	vec3 ambient = vec3(light.ambient * surfaceColor);
+	vec3 specular = vec3(1.0f);
+	vec3 diffuse = surfaceColor;
+	vec3 ambient = light.ambient * surfaceColor;
 	
 	float occlusionFactor = 1.0f;
 		
@@ -60,21 +60,14 @@ void main() {
 	occlusionFactor = pow(texture(aoTexture, fTexCoord).r, aoStrength);
 	ambient *= occlusionFactor;
 #endif
-	
-	diffuse = max((dot(normal, lightDir) * light.color) * shadowFactor,
-		0.0) * surfaceColor;		
-	
-	if(specularIntensity > 0.0f && shadowFactor > 0.5f) {
+
+	float nDotL = max(dot(normal, lightDir), 0.0);
 		
-		vec3 halfwayDir = normalize(lightDir + viewDir);  
-		float dampedFactor = pow(max(dot(normal, halfwayDir), 0.0f), specularHardness);
-		specular = light.color * dampedFactor * specularIntensity;
+	vec3 halfway = normalize(lightDir + viewDir);
+	specular *= pow(max(dot(normal, halfway), 0.0f), specularHardness)
+		* specularIntensity;
 	
-	}
-	
-	if(shadowFactor < 0.5f)
-		fragColor = vec4(diffuse + ambient + volumetric, 1.0f);
-	else
-		fragColor = vec4(diffuse + specular + ambient + volumetric, 1.0f);
+	fragColor = vec4((diffuse + specular) * nDotL * light.color * shadowFactor
+		+ ambient + volumetric, 1.0);
 
 }
