@@ -27,7 +27,7 @@ void App::LoadContent() {
 	font = Atlas::Font("roboto.ttf", 88, 10);
 
 	camera = Atlas::Camera(47.0f, 2.0f, .25f, 400.0f,
-		vec3(30.0f, 85.0f, 0.0f), vec2(-3.14f / 2.0f, 0.0f));
+		vec3(30.0f, 25.0f, 0.0f), vec2(-3.14f / 2.0f, 0.0f));
 
 	scene = Atlas::Scene::Scene(vec3(-2048.0f), vec3(2048.0f));
 

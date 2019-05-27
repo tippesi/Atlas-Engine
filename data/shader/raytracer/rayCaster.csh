@@ -103,7 +103,7 @@ void EvaluateLight(int triangleIndex, vec2 barrycentric, out vec3 color) {
 	vec3 diffuse = vec3(1.0);
 	vec3 ambient = vec3(light.ambient * surfaceColor);
 	
-	diffuse = max((dot(normal, -light.direction) * light.color), ambient) * surfaceColor;		
+	diffuse = max((dot(normal, -light.direction) * light.color), 0.0) * surfaceColor;	
 	
 	color = diffuse + specular + ambient;
 	
