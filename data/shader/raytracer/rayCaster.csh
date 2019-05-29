@@ -38,8 +38,16 @@ uniform int triangleCount;
 uniform Light light;
 
 const float gamma = 1.0 / 2.2;
+const int sharedDataCount = 32;
+
+shared vec3 sharedVertices[sharedDataCount * 3];
 
 void EvaluateLight(int triangleIndex, vec2 barrycentric, out vec3 color);
+
+void syncronize() {
+	memoryBarrierShared();
+	barrier();
+}
 
 void main() {
 
@@ -55,24 +63,47 @@ void main() {
 	
 	float intersectionDistance = cameraFarPlane;
 	int triangleIndex = 0;
-	vec2 barrycentric = vec2(0.0);
-	
+	vec2 barrycentric = vec2(0.0);	
 
-	for (int i = 0; i < triangleCount; i++) {
-		vec3 v0 = triangles.data[i].v0.xyz;
-		vec3 v1 = triangles.data[i].v1.xyz;
-		vec3 v2 = triangles.data[i].v2.xyz;
+	for (int i = 0; i < triangleCount; i+=sharedDataCount) {
+	
+		// One thread copies a data chunk to shared memory
+		if (gl_LocalInvocationID.x == 0 &&
+			gl_LocalInvocationID.y == 0) {
+			for (int j = 0; j < sharedDataCount; j++) {
+				if (i + j < triangleCount) {
+					sharedVertices[j * 3] = triangles.data[i + j].v0.xyz;
+					sharedVertices[j * 3 + 1] = triangles.data[i + j].v1.xyz;
+					sharedVertices[j * 3 + 2] = triangles.data[i + j].v2.xyz;
+				}
+				else {
+					sharedVertices[j * 3] = triangles.data[triangleCount - 1].v0.xyz;
+					sharedVertices[j * 3 + 1] = triangles.data[triangleCount - 1].v1.xyz;
+					sharedVertices[j * 3 + 2] = triangles.data[triangleCount - 1].v2.xyz;
+				}
+			}
+		}
 		
-		vec3 sol;
-		if (!Intersection(ray, v0, v1, v2, sol))
-			continue;
+		syncronize();
 		
-		if (sol.x >= intersectionDistance)
-			continue;
+		for (int j = 0; j < sharedDataCount; j++) {
+	
+			vec3 v0 = sharedVertices[j * 3];
+			vec3 v1 = sharedVertices[j * 3 + 1];
+			vec3 v2 = sharedVertices[j * 3 + 2];
 			
-		intersectionDistance = sol.x;
-		triangleIndex = i;
-		barrycentric = sol.yz;
+			vec3 sol;
+			if (!Intersection(ray, v0, v1, v2, sol))
+				continue;
+			
+			if (sol.x >= intersectionDistance)
+				continue;
+				
+			intersectionDistance = sol.x;
+			triangleIndex = i + j;
+			barrycentric = sol.yz;
+			
+		}
 	}
 	
 	vec3 color;
@@ -103,7 +134,7 @@ void EvaluateLight(int triangleIndex, vec2 barrycentric, out vec3 color) {
 	vec3 diffuse = vec3(1.0);
 	vec3 ambient = vec3(light.ambient * surfaceColor);
 	
-	diffuse = max((dot(normal, -light.direction) * light.color), 0.0) * surfaceColor;	
+	diffuse = max((dot(normal, -light.direction) * light.color), ambient) * surfaceColor;		
 	
 	color = diffuse + specular + ambient;
 	

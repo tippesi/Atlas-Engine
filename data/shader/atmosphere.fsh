@@ -18,7 +18,7 @@ const float mieScaleHeight = 1.2e3f;
 
 void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kRlh, float kMie, out vec3 totalRlh, out vec3 totalMie);
 
-const float gamma = 2.2;
+const float gamma = 2.2f;
 
 void main() {
 	
@@ -31,7 +31,7 @@ void main() {
 	
 	atmosphere(
         normalize(fPosition),           // normalized ray direction
-        vec3(0.0f, 0.0f, 0.0f),               // ray origin
+        vec3(0.0f, 1.0f, 0.0f),               // ray origin
         -sunDirection,                        // position of the sun
         planetRadius,                         // radius of the planet in meters
         atmosphereRadius,                         // radius of the atmosphere in meters

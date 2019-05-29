@@ -74,7 +74,7 @@ void main() {
 	shadowFactor /= float(samples);  
 	
 	diffuse = max((dot(normal, lightDir) * light.color) * shadowFactor,
-		0.0) * surfaceColor;
+		ambient * occlusionFactor) * surfaceColor;
 
 	fragColor = vec4(max((diffuse + ambient) * (light.radius - fragToLightDistance) / light.radius, 0.0f) + volumetric, 1.0f);
 

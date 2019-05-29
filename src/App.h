@@ -62,49 +62,4 @@ private:
 
 };
 
-
-class Main {
-
-public:
-	Main(int argc, char* argv[], Atlas::Window* window);
-
-private:
-	void Update(float deltaTime);
-
-	void Render(float deltaTime);
-
-	void Load();
-
-	void DisplayLoadingScreen();
-
-	void SceneSetUp();
-
-	void QuitEventHandler();
-
-	void ControllerDeviceEventHandler(Atlas::Events::ControllerDeviceEvent event);
-
-	Atlas::Window* window;
-
-	Atlas::Input::MouseHandler* mouseHandler;
-	Atlas::Input::KeyboardHandler* keyboardHandler;
-
-
-	Atlas::RenderTarget* renderTarget;
-	Atlas::Renderer::MasterRenderer masterRenderer;
-
-	Atlas::Viewport viewport;
-
-	Atlas::Font font;
-
-	Atlas::Camera* camera;
-	Atlas::Scene::Scene* scene;
-
-	Atlas::Texture::Cubemap* skybox;
-
-
-	bool quit;
-
-
-};
-
 #endif
