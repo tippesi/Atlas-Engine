@@ -98,6 +98,13 @@ namespace Atlas {
 
         }
 
+		void Texture::GenerateMipmap() {
+
+			if (mipmaps)
+				glGenerateMipmap(target);
+
+		}
+
         int32_t Texture::GetMaxAnisotropyLevel() {
 
             if (anisotropicFilteringSupported) {
@@ -271,13 +278,6 @@ namespace Atlas {
             }
 
         }
-
-		void Texture::GenerateMipmap() {
-
-			if (mipmaps)
-				glGenerateMipmap(target);
-
-		}
 
 		void Texture::DeepCopy(const Texture& that) {
 

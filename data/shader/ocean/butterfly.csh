@@ -1,123 +1,93 @@
 #include "../common/PI"
 #include "../common/complex"
 
-layout (local_size_x = 16, local_size_y = 16) in;
+layout (local_size_x = 8, local_size_y = 8) in;
 
-layout (binding = 0, rgba32f) uniform image2D twiddleIndicesTexture;
+layout (binding = 0, rg32f) uniform image2D twiddleIndicesTexture;
 
-layout (binding = 1, rgba32f) uniform image2D pingpongY0;
-layout (binding = 2, rgba32f) uniform image2D pingpongX0;
-layout (binding = 3, rgba32f) uniform image2D pingpongZ0;
-layout (binding = 4, rgba32f) uniform image2D pingpongY1;
-layout (binding = 5, rgba32f) uniform image2D pingpongX1;
-layout (binding = 6, rgba32f) uniform image2D pingpongZ1;
+layout (binding = 1, rg32f) uniform image2D pingpongY0;
+layout (binding = 2, rgba32f) uniform image2D pingpongXZ0;
+layout (binding = 3, rg32f) uniform image2D pingpongY1;
+layout (binding = 4, rgba32f) uniform image2D pingpongXZ1;
 
 uniform int stage;
 uniform int pingpong;
 uniform int direction;
+uniform int N;
+uniform float preTwiddle;
 
 void horizontal();
 void vertical();
 
 void main() {
 
-	if (direction == 0)
-		horizontal();
-	else
-		vertical();
+#ifdef HORIZONTAL
+	horizontal();
+#endif
+#ifdef VERTICAL
+	vertical();
+#endif
 
 }
 
 void horizontal() {
 
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+	
+	float k = mod(coord.x * preTwiddle, float(N));
+	float twiddleArgument = 2.0 * PI * k / float(N);
+	vec2 twiddleFactor = vec2(cos(twiddleArgument), sin(twiddleArgument));
 
 	if (pingpong == 0) {
 	
-		vec4 twiddle = imageLoad(twiddleIndicesTexture, ivec2(stage, coord.x)).rgba;
+		vec2 twiddle = imageLoad(twiddleIndicesTexture, ivec2(stage, coord.x)).rg;
 		
+#ifndef CHOPPY
 		// Y
-		vec2 s = imageLoad(pingpongY0, ivec2(twiddle.z, coord.y)).rg;
-		vec2 t = imageLoad(pingpongY0, ivec2(twiddle.w, coord.y)).rg;
-		vec2 u = vec2(twiddle.x, twiddle.y);
+		vec2 s0 = imageLoad(pingpongY0, ivec2(twiddle.x, coord.y)).rg;
+		vec2 t0 = imageLoad(pingpongY0, ivec2(twiddle.y, coord.y)).rg;
 		
-		complex p = complex(s.x, s.y);
-		complex q = complex(t.x, t.y);
-		complex w = complex(u.x, u.y);
+		vec2 H0 = s0 + mul(twiddleFactor, t0);
 		
-		complex H = add(p, mul(w, q));
+		imageStore(pingpongY1, coord, vec4(H0, 0, 1));
+#else
+		// XZ
+		vec4 s1 = imageLoad(pingpongXZ0, ivec2(twiddle.x, coord.y));
+		vec4 t1 = imageLoad(pingpongXZ0, ivec2(twiddle.y, coord.y));
 		
-		imageStore(pingpongY1, coord, vec4(H.real, H.imag, 0, 1));
+		vec4 u1 = vec4(twiddleFactor.x, twiddleFactor.y,
+			twiddleFactor.x, twiddleFactor.y);
 		
-		// X
-		s = imageLoad(pingpongX0, ivec2(twiddle.z, coord.y)).rg;
-		t = imageLoad(pingpongX0, ivec2(twiddle.w, coord.y)).rg;
-		u = vec2(twiddle.x, twiddle.y);
+		vec4 H1 = s1 + mul(u1, t1);
 		
-		p = complex(s.x, s.y);
-		q = complex(t.x, t.y);
-		w = complex(u.x, u.y);
-		
-		H = add(p, mul(w, q));
-		
-		imageStore(pingpongX1, coord, vec4(H.real, H.imag, 0, 1));
-		
-		// Z
-		s = imageLoad(pingpongZ0, ivec2(twiddle.z, coord.y)).rg;
-		t = imageLoad(pingpongZ0, ivec2(twiddle.w, coord.y)).rg;
-		u = vec2(twiddle.x, twiddle.y);
-		
-		p = complex(s.x, s.y);
-		q = complex(t.x, t.y);
-		w = complex(u.x, u.y);
-		
-		H = add(p, mul(w, q));
-		
-		imageStore(pingpongZ1, coord, vec4(H.real, H.imag, 0, 1));
+		imageStore(pingpongXZ1, coord, H1);
+#endif
 	
 	}
 	else {
 	
-		vec4 twiddle = imageLoad(twiddleIndicesTexture, ivec2(stage, coord.x)).rgba;
+		vec2 twiddle = imageLoad(twiddleIndicesTexture, ivec2(stage, coord.x)).rg;
 		
+#ifndef CHOPPY
 		// Y
-		vec2 s = imageLoad(pingpongY1, ivec2(twiddle.z, coord.y)).rg;
-		vec2 t = imageLoad(pingpongY1, ivec2(twiddle.w, coord.y)).rg;
-		vec2 u = vec2(twiddle.x, twiddle.y);
+		vec2 s0 = imageLoad(pingpongY1, ivec2(twiddle.x, coord.y)).rg;
+		vec2 t0 = imageLoad(pingpongY1, ivec2(twiddle.y, coord.y)).rg;
 		
-		complex p = complex(s.x, s.y);
-		complex q = complex(t.x, t.y);
-		complex w = complex(u.x, u.y);
+		vec2 H0 = s0 + mul(twiddleFactor, t0);
 		
-		complex H = add(p, mul(w, q));
+		imageStore(pingpongY0, coord, vec4(H0, 0, 1));
+#else
+		// XZ
+		vec4 s1 = imageLoad(pingpongXZ1, ivec2(twiddle.x, coord.y));
+		vec4 t1 = imageLoad(pingpongXZ1, ivec2(twiddle.y, coord.y));
 		
-		imageStore(pingpongY0, coord, vec4(H.real, H.imag, 0, 1));
+		vec4 u1 = vec4(twiddleFactor.x, twiddleFactor.y,
+			twiddleFactor.x, twiddleFactor.y);
 		
-		// X
-		s = imageLoad(pingpongX1, ivec2(twiddle.z, coord.y)).rg;
-		t = imageLoad(pingpongX1, ivec2(twiddle.w, coord.y)).rg;
-		u = vec2(twiddle.x, twiddle.y);
+		vec4 H1 = s1 + mul(u1, t1);
 		
-		p = complex(s.x, s.y);
-		q = complex(t.x, t.y);
-		w = complex(u.x, u.y);
-		
-		H = add(p, mul(w, q));
-		
-		imageStore(pingpongX0, coord, vec4(H.real, H.imag, 0, 1));
-		
-		// Z
-		s = imageLoad(pingpongZ1, ivec2(twiddle.z, coord.y)).rg;
-		t = imageLoad(pingpongZ1, ivec2(twiddle.w, coord.y)).rg;
-		u = vec2(twiddle.x, twiddle.y);
-		
-		p = complex(s.x, s.y);
-		q = complex(t.x, t.y);
-		w = complex(u.x, u.y);
-		
-		H = add(p, mul(w, q));
-		
-		imageStore(pingpongZ0, coord, vec4(H.real, H.imag, 0, 1));
+		imageStore(pingpongXZ0, coord, H1);
+#endif
 	
 	}
 
@@ -127,93 +97,61 @@ void vertical() {
 
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	
+	float k = mod(coord.y * preTwiddle, float(N));
+	float twiddleArgument = 2.0 * PI * k / float(N);
+	vec2 twiddleFactor = vec2(cos(twiddleArgument), sin(twiddleArgument));
+	
 	if (pingpong == 0) {
 	
-		vec4 twiddle = imageLoad(twiddleIndicesTexture, ivec2(stage, coord.y)).rgba;
+		vec2 twiddle = imageLoad(twiddleIndicesTexture, ivec2(stage, coord.y)).rg;
 		
+#ifndef CHOPPY
 		// Y
-		vec2 s = imageLoad(pingpongY0, ivec2(coord.x, twiddle.z)).rg;
-		vec2 t = imageLoad(pingpongY0, ivec2(coord.x, twiddle.w)).rg;
-		vec2 u = vec2(twiddle.x, twiddle.y);
+		vec2 s0 = imageLoad(pingpongY0, ivec2(coord.x, twiddle.x)).rg;
+		vec2 t0 = imageLoad(pingpongY0, ivec2(coord.x, twiddle.y)).rg;
 		
-		complex p = complex(s.x, s.y);
-		complex q = complex(t.x, t.y);
-		complex w = complex(u.x, u.y);
+		vec2 H0 = s0 + mul(twiddleFactor, t0);
 		
-		complex H = add(p, mul(w, q));
+		imageStore(pingpongY1, coord, vec4(H0, 0, 1));
+#else
+		// XZ
+		vec4 s1 = imageLoad(pingpongXZ0, ivec2(coord.x, twiddle.x));
+		vec4 t1 = imageLoad(pingpongXZ0, ivec2(coord.x, twiddle.y));
 		
-		imageStore(pingpongY1, coord, vec4(H.real, H.imag, 0, 1));
+		vec4 u1 = vec4(twiddleFactor.x, twiddleFactor.y,
+			twiddleFactor.x, twiddleFactor.y);
 		
-		// X
-		s = imageLoad(pingpongX0, ivec2(coord.x, twiddle.z)).rg;
-		t = imageLoad(pingpongX0, ivec2(coord.x, twiddle.w)).rg;
-		u = vec2(twiddle.x, twiddle.y);
+		vec4 H1 = s1 + mul(u1, t1);
 		
-		p = complex(s.x, s.y);
-		q = complex(t.x, t.y);
-		w = complex(u.x, u.y);
-		
-		H = add(p, mul(w, q));
-		
-		imageStore(pingpongX1, coord, vec4(H.real, H.imag, 0, 1));
-		
-		// Z
-		s = imageLoad(pingpongZ0, ivec2(coord.x, twiddle.z)).rg;
-		t = imageLoad(pingpongZ0, ivec2(coord.x, twiddle.w)).rg;
-		u = vec2(twiddle.x, twiddle.y);
-		
-		p = complex(s.x, s.y);
-		q = complex(t.x, t.y);
-		w = complex(u.x, u.y);
-		
-		H = add(p, mul(w, q));
-		
-		imageStore(pingpongZ1, coord, vec4(H.real, H.imag, 0, 1));
-	
+		imageStore(pingpongXZ1, coord, H1);
+#endif
+
 	}
 	else {
 	
-		vec4 twiddle = imageLoad(twiddleIndicesTexture, ivec2(stage, coord.y)).rgba;
+		vec2 twiddle = imageLoad(twiddleIndicesTexture, ivec2(stage, coord.y)).rg;
 		
+#ifndef CHOPPY
 		// Y
-		vec2 s = imageLoad(pingpongY1, ivec2(coord.x, twiddle.z)).rg;
-		vec2 t = imageLoad(pingpongY1, ivec2(coord.x, twiddle.w)).rg;
-		vec2 u = vec2(twiddle.x, twiddle.y);
+		vec2 s0 = imageLoad(pingpongY1, ivec2(coord.x, twiddle.x)).rg;
+		vec2 t0 = imageLoad(pingpongY1, ivec2(coord.x, twiddle.y)).rg;
 		
-		complex p = complex(s.x, s.y);
-		complex q = complex(t.x, t.y);
-		complex w = complex(u.x, u.y);
+		vec2 H0 = s0 + mul(twiddleFactor, t0);
 		
-		complex H = add(p, mul(w, q));
+		imageStore(pingpongY0, coord, vec4(H0, 0, 1));
+#else
+		// XZ
+		vec4 s1 = imageLoad(pingpongXZ1, ivec2(coord.x, twiddle.x));
+		vec4 t1 = imageLoad(pingpongXZ1, ivec2(coord.x, twiddle.y));
 		
-		imageStore(pingpongY0, coord, vec4(H.real, H.imag, 0, 1));
+		vec4 u1 = vec4(twiddleFactor.x, twiddleFactor.y,
+			twiddleFactor.x, twiddleFactor.y);
 		
-		// X
-		s = imageLoad(pingpongX1, ivec2(coord.x, twiddle.z)).rg;
-		t = imageLoad(pingpongX1, ivec2(coord.x, twiddle.w)).rg;
-		u = vec2(twiddle.x, twiddle.y);
+		vec4 H1 = s1 + mul(u1, t1);
 		
-		p = complex(s.x, s.y);
-		q = complex(t.x, t.y);
-		w = complex(u.x, u.y);
-		
-		H = add(p, mul(w, q));
-		
-		imageStore(pingpongX0, coord, vec4(H.real, H.imag, 0, 1));
-		
-		// Z
-		s = imageLoad(pingpongZ1, ivec2(coord.x, twiddle.z)).rg;
-		t = imageLoad(pingpongZ1, ivec2(coord.x, twiddle.w)).rg;
-		u = vec2(twiddle.x, twiddle.y);
-		
-		p = complex(s.x, s.y);
-		q = complex(t.x, t.y);
-		w = complex(u.x, u.y);
-		
-		H = add(p, mul(w, q));
-		
-		imageStore(pingpongZ0, coord, vec4(H.real, H.imag, 0, 1));
-	
+		imageStore(pingpongXZ0, coord, H1);
+#endif
+
 	}
 
 }

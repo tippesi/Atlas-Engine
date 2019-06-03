@@ -104,7 +104,7 @@ namespace Atlas {
 			for (int32_t i = 0; i < 2; i++) {
 				for (int32_t j = 0; j < 2; j++) {
 					children.push_back(TerrainNode(vec2(location.x + (float)i * sideLength / 2.0f * resolution, location.y + (float)j * sideLength / 2.0f * resolution), resolution, height,
-												   sideLength / 2.0f, LoD + 1, this->LoDCount, absoluteIndex, vec2(i, j), storage, childrenCells[i][j]));
+						sideLength / 2.0f, LoD + 1, this->LoDCount, absoluteIndex, ivec2(i, j), storage, childrenCells[i][j]));
 				}
 			}
 

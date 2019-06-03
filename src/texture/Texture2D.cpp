@@ -115,7 +115,7 @@ namespace Atlas {
 
         void Texture2D::SaveToPNG(std::string filename) {
 
-            Loader::Image image;
+            Common::Image8 image;
 
             image.width = width;
             image.height = height;

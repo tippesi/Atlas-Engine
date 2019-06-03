@@ -59,8 +59,8 @@ namespace Atlas {
 			auto shader = new Shader();
 			auto batch = new ShaderConfigBatch(shader);
 
-			for (auto& stage : stages) {
-				auto componentCopy = new ShaderStage(stage);
+			for (auto stage : stages) {
+				auto componentCopy = new ShaderStage(*stage);
 				shader->AddStage(componentCopy);
 			}
 

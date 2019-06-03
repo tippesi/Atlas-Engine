@@ -13,6 +13,8 @@ namespace Atlas {
 
 	void EngineInstance::Update() {
 
+		window.Clear();
+
 		masterRenderer.Update();
 
 	}

@@ -3,7 +3,6 @@
 layout (local_size_x = 16, local_size_y = 16) in;
 
 layout (binding = 0, rgba32f) writeonly uniform image2D h0K;
-layout (binding = 1, rgba32f) writeonly uniform image2D h0MinusK;
 
 layout(binding = 2) uniform sampler2D noise0;
 layout(binding = 3) uniform sampler2D noise1;
@@ -39,12 +38,12 @@ vec4 gaussrnd() {
 
 }
 
-float phillips(vec2 k, float A, float lkSqd, float l, vec2 w) {
+float phillips(vec2 waveVector, float A, float kSqr, float l, vec2 windDirection) {
 
-	float kDotw = dot(normalize(k), normalize(w));
-	float phillips = (A / (lkSqd * lkSqd)) * pow(kDotw * kDotw, 1.0) * exp(-1.0 / (lkSqd * l * l));
+	float kCos = dot(normalize(waveVector), normalize(windDirection));
+	float phillips = A / (kSqr * kSqr) * pow(kCos * kCos, 1.0) * exp(-1.0 / (kSqr * l * l));
 	
-	if (kDotw < 0.0)
+	if (kCos < 0.0)
 		phillips *= windDependency;
 	
 	return phillips;
@@ -53,22 +52,29 @@ float phillips(vec2 k, float A, float lkSqd, float l, vec2 w) {
 
 void main() {
 
-	vec2 x = vec2(gl_GlobalInvocationID.xy) - float(N) / 2.0;
+	vec2 coord = vec2(gl_GlobalInvocationID.xy) - float(N) / 2.0;
 	
-	vec2 k = vec2(2.0 * PI / float(L)) * x;
+	vec2 waveVector = 2.0 * PI / float(L) * coord;
 	
-	float lk = length(k);	
-	if (lk < 0.0001) lk = 0.0001;
-	float lkSqd = lk * lk;
+	float k = length(waveVector);	
+	if (k < 0.0001) k = 0.0001;
+	float kSqr = k * k;
 	
 	float l = (windspeed * windspeed) / g;
 	
-	float h0k = clamp(sqrt(phillips(k, A, lkSqd, l, w)) / sqrt(2.0), -4000.0, 4000.0);
-	float h0minusk = clamp(sqrt(phillips(-k, A, lkSqd, l, w)) / sqrt(2.0), -4000.0, 4000.0);
+	float damping = 2.0 * PI / float(L * L);
+	
+	float h0k = clamp(sqrt(phillips(waveVector, A, kSqr, l, w)) / sqrt(2.0) * damping, -4000.0, 4000.0);
+	float h0mk = clamp(sqrt(phillips(-waveVector, A, kSqr, l, w)) / sqrt(2.0) * damping, -4000.0, 4000.0);
 	
 	vec4 rnd = gaussrnd();
 	
-	imageStore(h0K, ivec2(gl_GlobalInvocationID.xy), vec4(rnd.xy * h0k, 0.0, 1.0));
-	imageStore(h0MinusK, ivec2(gl_GlobalInvocationID.xy), vec4(rnd.zw * h0minusk, 0.0, 1.0));
-
+	if (waveVector.x == 0.0 &&
+		waveVector.y == 0.0) {
+		h0k = 0.0;
+		h0mk = 0.0;
+	}
+	
+	imageStore(h0K, ivec2(gl_GlobalInvocationID.xy), vec4(rnd.xy * h0k, rnd.zw * h0mk));
+	
 }

@@ -19,14 +19,17 @@ namespace Atlas {
              */
             Shader();
 
-			Shader(const Shader& that);
+			Shader(const Shader& that) = delete;
 
             /**
              * Destructs a Shader object.
              */
             ~Shader();
 
-			Shader& operator=(const Shader& that);
+			/**
+			 * A Shader object shouldn't be copied because of the uniforms.
+			 */
+			Shader& operator=(const Shader& that) = delete;
 
             /**
              * Adds a shader stage to the shader (e.g the vertex shader)
@@ -108,8 +111,6 @@ namespace Atlas {
             std::vector<std::string> macros;
 
         private:
-			void DeepCopy(const Shader& that);
-
             uint32_t ID;
 
             std::vector<ShaderStage*> stages;

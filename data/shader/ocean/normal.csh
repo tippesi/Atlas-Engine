@@ -4,28 +4,43 @@ layout (binding = 0, rgba32f) readonly uniform image2D displacementMap;
 layout (binding = 1, rgba16f) writeonly uniform image2D normalMap;
 
 uniform int N;
+uniform int L;
 
 void main() {
 
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	
-	vec3 dispL = imageLoad(displacementMap, ivec2((coord.x - 1) % N, coord.y)).rgb;
-	vec3 dispR = imageLoad(displacementMap, ivec2((coord.x + 1) % N, coord.y)).rgb;
-	vec3 dispT = imageLoad(displacementMap, ivec2(coord.x, (coord.y + 1) % N)).rgb;
-	vec3 dispD = imageLoad(displacementMap, ivec2(coord.x, (coord.y - 1) % N)).rgb;
+	vec2 fCoord = vec2(coord);
+	float fN = float(N);
 	
-	float y = 3.2 / 16.0;
-	float x = (dispL.y - dispR.y);
-	float z = dispD.y - dispT.y;
+	float texelSize = 0.01 * float(L) / fN;
 	
-	vec3 normal = normalize(vec3(x, y, z));
-	
-	// Jacobian
-	vec2 Dx = (dispR.xz - dispL.xz) * .75 * 16.0;
-	vec2 Dy = (dispT.xz - dispD.xz) * .75 * 16.0;
+	vec3 center = imageLoad(displacementMap, coord).rgb;
+	vec3 left = imageLoad(displacementMap, ivec2(mod(fCoord.x - 1.0, fN), coord.y)).rgb;
+	vec3 right = imageLoad(displacementMap, ivec2(mod(fCoord.x + 1.0, fN), coord.y)).rgb;
+	vec3 top = imageLoad(displacementMap, ivec2(coord.x, mod(fCoord.y + 1.0, fN))).rgb;
+	vec3 bottom = imageLoad(displacementMap, ivec2(coord.x, mod(fCoord.y - 1.0, fN))).rgb;
+
+	// Calculate jacobian
+	vec2 Dx = (right.xz - left.xz);
+	vec2 Dy = (top.xz - bottom.xz);
 	float J = (1.0 + Dx.x) * (1.0 + Dy.y) - Dx.y * Dy.x;
 	
 	float fold = clamp(1.0 - J, 0.0, 1.0);
+	
+	// Calculate difference
+	left = left - center + vec3(-texelSize, 0.0, 0.0);
+	right = right - center + vec3(texelSize, 0.0, 0.0);
+	top = top - center + vec3(0.0, 0.0, -texelSize);
+	bottom = bottom - center + vec3(0.0, 0.0, texelSize);
+	
+	// Calculate normal
+	vec3 topLeft = cross(top, left);
+	vec3 topRight = cross(right, top);
+	vec3 bottomLeft = cross(left, bottom);
+	vec3 bottomRight = cross(bottom, right);
+	
+	vec3 normal = normalize(topLeft + topRight + bottomLeft + bottomRight);
 	
 	imageStore(normalMap, coord, vec4(normal, fold));
 

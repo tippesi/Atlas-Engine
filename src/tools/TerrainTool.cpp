@@ -12,7 +12,7 @@ namespace Atlas {
 
 	namespace Tools {
 
-		Terrain::Terrain* TerrainTool::GenerateTerrain(Loader::Image16 &heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
+		Terrain::Terrain* TerrainTool::GenerateTerrain(Common::Image16 &heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
 											  int32_t patchSize, float resolution, float height, Material* material1, Material* material2) {
 
 			// Check if everything is correct

@@ -3,7 +3,7 @@
 
 #include "../System.h"
 #include "../terrain/Terrain.h"
-#include "../loader/ImageLoader.h"
+#include "../common/Image.h"
 #include "../Kernel.h"
 
 namespace Atlas {
@@ -25,7 +25,7 @@ namespace Atlas {
              * @return A pointer to a Terrain object.
              * @warning The input should correspond to the terrain specifications
              */
-			static Terrain::Terrain* GenerateTerrain(Loader::Image16& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
+			static Terrain::Terrain* GenerateTerrain(Common::Image16& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
 					int32_t patchSize, float resolution, float height, Material* material1, Material* material2);
 
 			/**

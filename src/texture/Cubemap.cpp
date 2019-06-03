@@ -16,7 +16,7 @@ namespace Atlas {
                         std::string bottom, std::string front, std::string back) {
 
            std::string filenames[] = { right, left, top, bottom, front, back };
-		   Loader::Image images[6];
+		   Common::Image8 images[6];
 
 		   for (int32_t i = 0; i < 6; i++) {
 			   images[i] = Loader::ImageLoader::LoadImage(filenames[i], true, 3);

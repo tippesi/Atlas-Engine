@@ -4,7 +4,7 @@
 #include "../System.h"
 #include "Renderer.h"
 
-#include "gpgpu/OceanSimulation.h"
+#include "../ocean/OceanSimulation.h"
 
 namespace Atlas {
 
@@ -17,12 +17,8 @@ namespace Atlas {
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
-			void Update();
-
 			static std::string vertexPath;
 			static std::string fragmentPath;
-
-			GPGPU::OceanSimulation* simulation;
 
 		private:
 			void GetUniforms();
@@ -34,6 +30,10 @@ namespace Atlas {
 			Texture::Texture2D depthTexture;
 
 			Shader::Shader shader;
+
+			Shader::Uniform* nodeLocation = nullptr;
+			Shader::Uniform* nodeSideLength = nullptr;
+			Shader::Uniform* nodeHeight = nullptr;
 
 			Shader::Uniform* viewMatrix = nullptr;
 			Shader::Uniform* inverseViewMatrix = nullptr;

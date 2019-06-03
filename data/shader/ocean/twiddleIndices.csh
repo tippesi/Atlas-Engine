@@ -2,7 +2,7 @@
 #include "../common/complex"
 
 layout (local_size_x = 1, local_size_y = 16) in;
-layout (binding = 0, rgba32f) writeonly uniform image2D twiddleIndicesTexture;
+layout (binding = 0, rg32f) writeonly uniform image2D twiddleIndicesTexture;
 
 // The first butterfly stage we use bit-reversed indices computed
 // on the CPU.
@@ -16,10 +16,6 @@ uniform int N;
 void main() {
 
 	vec2 coord = vec2(gl_GlobalInvocationID.xy);
-	
-	float k = mod(coord.y * float(N) / pow(2.0, coord.x + 1.0), float(N));
-	complex twiddleFactor = complex(cos(2.0 * PI * k / float(N)),
-		sin(2.0 * PI * k / float(N)));
 		
 	// Span of the butterfly operation at a given horizontal point
 	float span = floor(pow(2.0, coord.x));
@@ -31,19 +27,17 @@ void main() {
 	// For the first stage use the shader storage buffer
 	if (coord.x == 0.0) {
 		if (topWing)
-			twiddleIndices = vec4(twiddleFactor.real, twiddleFactor.imag,
-				bitrevIndices.index[int(coord.y)], bitrevIndices.index[int(coord.y + 1.0)]);
+			twiddleIndices = vec4(bitrevIndices.index[int(coord.y)], 
+				bitrevIndices.index[int(coord.y + 1.0)], 0.0, 0.0);
 		else
-			twiddleIndices = vec4(twiddleFactor.real, twiddleFactor.imag,
-				bitrevIndices.index[int(coord.y - 1.0)], bitrevIndices.index[int(coord.y)]);
+			twiddleIndices = vec4(bitrevIndices.index[int(coord.y - 1.0)],
+				bitrevIndices.index[int(coord.y)], 0.0, 0.0);
 	}
 	else {
 		if (topWing)
-			twiddleIndices = vec4(twiddleFactor.real, twiddleFactor.imag,
-				coord.y, coord.y + span);
+			twiddleIndices = vec4(coord.y, coord.y + span, 0.0, 0.0);
 		else
-			twiddleIndices = vec4(twiddleFactor.real, twiddleFactor.imag,
-				coord.y - span, coord.y);
+			twiddleIndices = vec4(coord.y - span, coord.y, 0.0, 0.0);
 	}
 	
 	imageStore(twiddleIndicesTexture, ivec2(coord), twiddleIndices);

@@ -18,9 +18,9 @@ namespace Atlas {
 
 	namespace Loader {
 
-        Image ImageLoader::LoadImage(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {
+		Common::Image8 ImageLoader::LoadImage(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {
 
-            Image image;
+			Common::Image8 image;
 
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
@@ -75,9 +75,9 @@ namespace Atlas {
 
         }
 
-        Image16 ImageLoader::LoadImage16(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {
+		Common::Image16 ImageLoader::LoadImage16(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {
 
-            Image16 image;
+			Common::Image16 image;
 
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
@@ -132,7 +132,7 @@ namespace Atlas {
 
         }
 
-        void ImageLoader::SaveImage(Image &image, std::string filename) {
+        void ImageLoader::SaveImage(Common::Image8 &image, std::string filename) {
 
             switch(image.fileFormat) {
                 case AE_IMAGE_JPG: break;
@@ -145,7 +145,7 @@ namespace Atlas {
 
         }
 
-        void ImageLoader::SaveImage16(Image16 &image, std::string filename) {
+        void ImageLoader::SaveImage16(Common::Image16 &image, std::string filename) {
 
             switch(image.fileFormat) {
                 case AE_IMAGE_JPG: break;
@@ -157,7 +157,7 @@ namespace Atlas {
 
         }
 
-        void ImageLoader::SavePGM8(Image &image, std::string filename) {
+        void ImageLoader::SavePGM8(Common::Image8 &image, std::string filename) {
 
             std::ofstream imageFile;
             imageFile.open(filename);
@@ -186,7 +186,7 @@ namespace Atlas {
 
         }
 
-        void ImageLoader::SavePGM16(Image16 &image, std::string filename) {
+        void ImageLoader::SavePGM16(Common::Image16 &image, std::string filename) {
 
             std::ofstream imageFile;
             imageFile.open(filename);

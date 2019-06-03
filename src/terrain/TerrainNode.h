@@ -15,7 +15,7 @@ namespace Atlas {
 
 		public:
 			TerrainNode(vec2 location, float resolution, float height, float sideLength, int32_t LoD, int32_t LoDCount,
-						ivec2 parentIndex, ivec2 relativeIndex, TerrainStorage* storage, TerrainStorageCell* cell);
+				ivec2 parentIndex, ivec2 relativeIndex, TerrainStorage* storage, TerrainStorageCell* cell);
 
 			~TerrainNode();
 

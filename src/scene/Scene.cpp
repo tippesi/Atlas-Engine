@@ -57,6 +57,9 @@ namespace Atlas {
 				terrain->Update(camera);
 			}
 
+			if (ocean)
+				ocean->Update(camera);
+
 			hasChanged = SceneNode::Update(camera, deltaTime, mat4(1.0f), false);
 
 		}

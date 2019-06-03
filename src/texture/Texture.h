@@ -85,6 +85,11 @@ namespace Atlas {
              */
             void Copy(const Texture& texture);
 
+			/**
+			 * Generates the mipmaps.
+			 */
+			void GenerateMipmap();
+
             /**
              * Determines the maximum anisotropy level offered by the system.
              * @return The maximum anisotropy level
@@ -165,8 +170,6 @@ namespace Atlas {
 
             void Generate(uint32_t target, int32_t sizedFormat, int32_t wrapping,
                           int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
-
-			void GenerateMipmap();
 
 			void DeepCopy(const Texture& that);
 

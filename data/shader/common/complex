@@ -14,6 +14,20 @@ complex mul(complex c0, complex c1) {
 
 }
 
+vec2 mul(vec2 c0, vec2 c1) {
+	return vec2(c0.x * c1.x - c0.y * c1.y,
+		c0.x * c1.y + c0.y * c1.x);
+}
+
+vec4 mul(vec4 c0, vec4 c1) {
+	return vec4(
+		c0.x * c1.x - c0.y * c1.y,
+		c0.x * c1.y + c0.y * c1.x,
+		c0.z * c1.z - c0.w * c1.w,
+		c0.z * c1.w + c0.w * c1.z
+		);
+}
+
 complex add(complex c0, complex c1) {
 
 	complex c;

@@ -90,7 +90,7 @@ namespace Atlas {
 
         void Texture2DArray::SaveToPNG(std::string filename, int32_t depth) {
 
-            Loader::Image image;
+			Common::Image8 image;
 
             image.width = width;
             image.height = height;

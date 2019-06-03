@@ -97,7 +97,7 @@ namespace Atlas {
 
 			glDepthMask(GL_TRUE);
 
-			// oceanRenderer.Render(viewport, target, camera, scene);
+			oceanRenderer.Render(viewport, target, camera, scene);
 
 			target->lightingFramebuffer.Unbind();
 
@@ -110,7 +110,7 @@ namespace Atlas {
 		}
 
 		void MasterRenderer::RenderTexture(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-										   bool alphaBlending, Framebuffer* framebuffer) {
+			bool alphaBlending, Framebuffer* framebuffer) {
 
 			float viewportWidth = (float)(framebuffer == nullptr ? viewport->width : framebuffer->width);
 			float viewportHeight = (float)(framebuffer == nullptr ? viewport->height : framebuffer->height);
@@ -123,7 +123,7 @@ namespace Atlas {
 		}
 
 		void MasterRenderer::RenderTexture(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-										   vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
+			vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
 
 			vertexArray.Bind();
 
@@ -142,7 +142,6 @@ namespace Atlas {
 				glEnable(GL_BLEND);
 				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			}
-
 
 			float viewportWidth = (float)(framebuffer == nullptr ? viewport->width : framebuffer->width);
 			float viewportHeight = (float)(framebuffer == nullptr ? viewport->height : framebuffer->height);
@@ -169,8 +168,8 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::RenderTexture(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
-										   bool alphaBlending, Framebuffer* framebuffer) {
+		void MasterRenderer::RenderTexture(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x,
+			float y, float width, float height,  bool alphaBlending, Framebuffer* framebuffer) {
 
 			float viewportWidth = (float)(framebuffer == nullptr ? viewport->width : framebuffer->width);
 			float viewportHeight = (float)(framebuffer == nullptr ? viewport->height : framebuffer->height);
@@ -183,7 +182,7 @@ namespace Atlas {
 		}
 
 		void MasterRenderer::RenderTexture(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
-										   vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
+			vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
 
 			vertexArray.Bind();
 
@@ -231,7 +230,7 @@ namespace Atlas {
 		}
 
 		void MasterRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-											 bool alphaBlending, Framebuffer* framebuffer) {
+			bool alphaBlending, Framebuffer* framebuffer) {
 
 			float viewportWidth = (float)(framebuffer == nullptr ? viewport->width : framebuffer->width);
 			float viewportHeight = (float)(framebuffer == nullptr ? viewport->height : framebuffer->height);
@@ -249,7 +248,7 @@ namespace Atlas {
 		}
 
 		void MasterRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-											 vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
+			vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
 
 			float viewportWidth = (float)(framebuffer == nullptr ? viewport->width : framebuffer->width);
 			float viewportHeight = (float)(framebuffer == nullptr ? viewport->height : framebuffer->height);
@@ -301,7 +300,6 @@ namespace Atlas {
 		void MasterRenderer::Update() {
 
 			textRenderer.Update();
-			// oceanRenderer.Update();
 
 		}
 

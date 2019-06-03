@@ -10,9 +10,7 @@ namespace Atlas {
 
 		OceanRenderer::OceanRenderer() {
 
-			Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 512, 0.25f);
-
-			simulation = new GPGPU::OceanSimulation(512, 2000);
+			Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 128, 1.0f / 127.0f);
 
 			foam = Texture::Texture2D("foam.jpg", false);
 
@@ -26,6 +24,11 @@ namespace Atlas {
 		}
 
 		void OceanRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+
+			if (!scene->ocean)
+				return;
+
+			auto ocean = scene->ocean;
 
 			shader.Bind();
 
@@ -44,9 +47,7 @@ namespace Atlas {
 			if (!sun)
 				return;
 
-			vec3 direction = normalize(vec3(camera->viewMatrix * vec4(sun->direction, 0.0f)));
-
-			lightDirection->SetValue(direction);
+			lightDirection->SetValue(normalize(sun->direction));
 			lightColor->SetValue(sun->color);
 			lightAmbient->SetValue(sun->ambient);
 
@@ -80,19 +81,35 @@ namespace Atlas {
 				shadowDistance->SetValue(0.0f);
 			}
 
-			displacementScale->SetValue(0.75f * 16.0f);
-			choppyScale->SetValue(0.75f * 16.0f);
+			displacementScale->SetValue(4.0f);
+			choppyScale->SetValue(4.0f);
 			cameraLocation->SetValue(vec3(camera->viewMatrix[3]));
 
-			auto refractionTexture = Texture::Texture2D(
-				*target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)
-			);
-			auto depthTexture = Texture::Texture2D(
-				*target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)
-			);
+			// Update local texture copies
+			auto texture = target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0);
 
-			simulation->displacementMap.Bind(GL_TEXTURE0);
-			simulation->normalMap.Bind(GL_TEXTURE1);
+			if (refractionTexture.width != texture->width ||
+				refractionTexture.height != texture->height ||
+				refractionTexture.GetSizedFormat() != texture->GetSizedFormat()) {
+				refractionTexture = Texture::Texture2D(*texture);
+			}
+			else {
+				refractionTexture.Copy(*texture);
+			}
+
+			texture = target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT);
+
+			if (depthTexture.width != texture->width ||
+				depthTexture.height != texture->height ||
+				depthTexture.GetSizedFormat() != texture->GetSizedFormat()) {
+				depthTexture = Texture::Texture2D(*texture);
+			}
+			else {
+				depthTexture.Copy(*texture);
+			}
+
+			ocean->simulation.displacementMap.Bind(GL_TEXTURE0);
+			ocean->simulation.normalMap.Bind(GL_TEXTURE1);
 
 			foam.Bind(GL_TEXTURE2);
 
@@ -108,21 +125,32 @@ namespace Atlas {
 			inverseViewMatrix->SetValue(camera->inverseViewMatrix);
 			inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
-				GL_SHADER_STORAGE_BARRIER_BIT);
+			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-			glDrawElements(GL_TRIANGLE_STRIP, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
-				vertexArray.GetIndexComponent()->GetDataType(), nullptr);
+			auto renderList = ocean->GetRenderList();
 
-		}
+			// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-		void OceanRenderer::Update() {
+			for (auto node : renderList) {
 
-			simulation->Compute();
+				nodeLocation->SetValue(node->location);
+				nodeSideLength->SetValue(node->sideLength);
+				nodeHeight->SetValue(node->height);
+
+				glDrawElements(GL_TRIANGLE_STRIP, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
+					vertexArray.GetIndexComponent()->GetDataType(), nullptr);
+
+			}
+
+			// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		}
 
 		void OceanRenderer::GetUniforms() {
+
+			nodeLocation = shader.GetUniform("nodeLocation");
+			nodeSideLength = shader.GetUniform("nodeSideLength");
+			nodeHeight = shader.GetUniform("nodeHeight");
 
 			viewMatrix = shader.GetUniform("vMatrix");
 			inverseViewMatrix = shader.GetUniform("ivMatrix");
