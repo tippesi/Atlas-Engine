@@ -90,6 +90,8 @@ namespace Atlas {
                 layers != texture.layers || channels != texture.channels)
                 return;
 
+			Bind();
+
             glCopyImageSubData(texture.ID, texture.target, 0, 0, 0, 0,
                     ID, target, 0, 0, 0, 0,
                     width, height, layers);
@@ -259,7 +261,7 @@ namespace Atlas {
 
             int32_t mipCount = mipmaps ? GetMipMapLevel() : 1;
 
-            ReserveStorage(mipCount);
+			glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
 
             if (generateMipMaps) {
                 if (anisotropicFiltering) {
@@ -276,6 +278,8 @@ namespace Atlas {
 				glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
 				glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapping);
             }
+
+			ReserveStorage(mipCount);
 
         }
 

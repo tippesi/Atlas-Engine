@@ -2,6 +2,8 @@
 #define AE_CAMERA_H
 
 #include "System.h"
+#include "common/Frustum.h"
+
 #include <vector>
 
 namespace Atlas {
@@ -29,11 +31,6 @@ namespace Atlas {
 			   vec2 rotation = vec2(0.0f));
 
 		/**
-        * Destructs a Camera object.
-        */
-		~Camera();
-
-		/**
          * Calculates the view matrix based on the location and rotation of the camera.
          */
 		void UpdateView();
@@ -50,10 +47,6 @@ namespace Atlas {
          * @return A vector where the corners are stored.
          */
 		std::vector<vec3> GetFrustumCorners(float nearPlane, float farPlane);
-
-		typedef struct Frustum {
-			vec4 planes[6];
-		} Frustum;
 
 		vec3 location = vec3(0.0f);
 		vec2 rotation = vec2(0.0f);
@@ -76,7 +69,7 @@ namespace Atlas {
 		mat4 inverseViewMatrix;
 		mat4 inverseProjectionMatrix;
 
-		Frustum frustum;
+		Common::Frustum frustum;
 
 	private:
 		void CalculateFrustum();

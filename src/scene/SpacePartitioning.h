@@ -39,7 +39,7 @@ namespace Atlas {
 
 			void Remove(Lighting::Light* light);
 
-			void GetRenderList(Common::AABB aabb, RenderList& renderList);
+			void GetRenderList(Common::Frustum frustum, Common::AABB aabb, RenderList& renderList);
 
 			std::vector<Actor::MeshActor*> GetMeshActors();
 

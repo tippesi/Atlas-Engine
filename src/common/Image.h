@@ -44,12 +44,13 @@ namespace Atlas {
 		public:
 			Image8() {}
 
-			Image8(int32_t width, int32_t height, int32_t channels) :
-				Image(width, height, channels) {
+			Image8(int32_t width, int32_t height, int32_t channels);
 
-				data.resize((size_t)width * height * channels);
+			ivec4 Sample(int32_t x, int32_t y);
 
-			}
+			ivec4 Sample(float x, float y);
+
+			ivec4 SampleLinear(float x, float y);
 
 			std::vector<uint8_t> data;
 
@@ -63,12 +64,13 @@ namespace Atlas {
 		public:
 			Image16() {}
 
-			Image16(int32_t width, int32_t height, int32_t channels) :
-				Image(width, height, channels) {
+			Image16(int32_t width, int32_t height, int32_t channels);
 
-				data.resize((size_t)width * height * channels);
+			ivec4 Sample(int32_t x, int32_t y);
 
-			}
+			ivec4 Sample(float x, float y);
+
+			// TODO: ivec4 SampleLinear(float x, float y);
 
 			std::vector<uint16_t> data;
 

@@ -45,7 +45,7 @@ namespace Atlas {
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
 			cameraLocation->SetValue(camera->location);
-			frustumPlanes->SetValue(camera->frustum.planes, 6);
+			// frustumPlanes->SetValue(camera->frustum.planes, 6);
 
 			for (auto& terrain : scene->terrains) {
 
@@ -61,6 +61,8 @@ namespace Atlas {
 				maxTessellationLevel->SetValue(terrain->maxTessellationLevel);
 
 				displacementDistance->SetValue(terrain->displacementDistance);
+
+				// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 				for (auto& node : terrain->renderList) {
 
@@ -88,12 +90,19 @@ namespace Atlas {
 					nodeLocation->SetValue(node->location);
 					nodeSideLength->SetValue(node->sideLength);
 
+					leftLoD->SetValue(node->leftLoDStitch);
+					topLoD->SetValue(node->topLoDStitch);
+					rightLoD->SetValue(node->rightLoDStitch);
+					bottomLoD->SetValue(node->bottomLoDStitch);
+
 					tileScale->SetValue(terrain->resolution * powf(2.0f, (float)(terrain->LoDCount - node->cell->LoD)));
-					patchOffsetsScale->SetValue(patchScale);
+					patchSize->SetValue((float)terrain->patchSizeFactor);
 
 					glDrawArraysInstanced(GL_PATCHES, 0, terrain->patchVertexCount, 64);
 
 				}
+
+				// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 			}
 
@@ -115,7 +124,12 @@ namespace Atlas {
 			cameraLocation = nearShader.GetUniform("cameraLocation");
 			nodeSideLength = nearShader.GetUniform("nodeSideLength");
 			nodeLocation = nearShader.GetUniform("nodeLocation");
-			patchOffsetsScale = nearShader.GetUniform("patchOffsetsScale");
+			patchSize = nearShader.GetUniform("patchSize");
+
+			leftLoD = nearShader.GetUniform("leftLoD");
+			topLoD = nearShader.GetUniform("topLoD");
+			rightLoD = nearShader.GetUniform("rightLoD");
+			bottomLoD = nearShader.GetUniform("bottomLoD");
 
 			tessellationFactor = nearShader.GetUniform("tessellationFactor");
 			tessellationSlope = nearShader.GetUniform("tessellationSlope");

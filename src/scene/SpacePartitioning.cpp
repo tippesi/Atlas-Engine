@@ -78,7 +78,7 @@ namespace Atlas {
 
 		}
 
-		void SpacePartitioning::GetRenderList(Common::AABB aabb, RenderList& renderList) {
+		void SpacePartitioning::GetRenderList(Common::Frustum frustum, Common::AABB aabb, RenderList& renderList) {
 
 			std::vector<Actor::MovableMeshActor*> movableActors;
 			std::vector<Actor::StaticMeshActor*> staticActors;
@@ -87,11 +87,13 @@ namespace Atlas {
 			staticMeshOctree.QueryAABB(staticActors, aabb);
 
 			for (auto& actor : movableActors) {
-				renderList.Add(actor);
+				if (frustum.IsVisible(actor->aabb))
+					renderList.Add(actor);
 			}
 
 			for (auto& actor : staticActors) {
-				renderList.Add(actor);
+				if (frustum.IsVisible(actor->aabb))
+					renderList.Add(actor);
 			}
 
 		}

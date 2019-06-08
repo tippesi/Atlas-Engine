@@ -4,6 +4,8 @@
 
 #include <vector>
 
+bool set = false;
+
 namespace Atlas {
 
 	namespace Ocean {
@@ -67,23 +69,11 @@ namespace Atlas {
 			normalLUniform = normal.GetUniform("L");
 
 			ComputeTwiddleIndices();
-			ComputeH0();
+			ComputeSpectrum();
 
 		}
 
-		void OceanSimulation::SetState(float waveAmplitude, vec2 waveDirection,
-			float windSpeed, float windDependency) {
-
-			this->waveAmplitude = waveAmplitude;
-			this->waveDirection = waveDirection;
-			this->windSpeed = windSpeed;
-			this->windDependency = windDependency;
-
-			ComputeH0();
-
-		}
-
-		void OceanSimulation::ComputeH0() {
+		void OceanSimulation::ComputeSpectrum() {
 
 			auto NUniform = h0.GetUniform("N");
 			auto LUniform = h0.GetUniform("L");
@@ -97,7 +87,7 @@ namespace Atlas {
 			NUniform->SetValue(N);
 			LUniform->SetValue(L);
 			AUniform->SetValue(waveAmplitude);
-			wUniform->SetValue(waveDirection);
+			wUniform->SetValue(windDirection);
 			windspeedUniform->SetValue(windSpeed);
 			windDependencyUniform->SetValue(windDependency);
 
@@ -272,6 +262,9 @@ namespace Atlas {
 
 			glDispatchCompute(N / 16, N / 16, 1);
 
+			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+			normalMap.Bind();
 			normalMap.GenerateMipmap();
 
 		}

@@ -10,7 +10,7 @@ namespace Atlas {
 
 		OceanRenderer::OceanRenderer() {
 
-			Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 128, 1.0f / 127.0f);
+			Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 129, 1.0f / 128.0f);
 
 			foam = Texture::Texture2D("foam.jpg", false);
 
@@ -81,8 +81,10 @@ namespace Atlas {
 				shadowDistance->SetValue(0.0f);
 			}
 
-			displacementScale->SetValue(4.0f);
-			choppyScale->SetValue(4.0f);
+			displacementScale->SetValue(ocean->displacementScale);
+			choppyScale->SetValue(ocean->choppynessScale);
+			tiling->SetValue(ocean->tiling);
+
 			cameraLocation->SetValue(vec3(camera->viewMatrix[3]));
 
 			// Update local texture copies
@@ -131,11 +133,17 @@ namespace Atlas {
 
 			// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+			oceanHeight->SetValue(ocean->height);
+
 			for (auto node : renderList) {
 
 				nodeLocation->SetValue(node->location);
 				nodeSideLength->SetValue(node->sideLength);
-				nodeHeight->SetValue(node->height);
+
+				leftLoD->SetValue(node->leftLoDStitch);
+				topLoD->SetValue(node->topLoDStitch);
+				rightLoD->SetValue(node->rightLoDStitch);
+				bottomLoD->SetValue(node->bottomLoDStitch);
 
 				glDrawElements(GL_TRIANGLE_STRIP, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
 					vertexArray.GetIndexComponent()->GetDataType(), nullptr);
@@ -150,7 +158,7 @@ namespace Atlas {
 
 			nodeLocation = shader.GetUniform("nodeLocation");
 			nodeSideLength = shader.GetUniform("nodeSideLength");
-			nodeHeight = shader.GetUniform("nodeHeight");
+			oceanHeight = shader.GetUniform("oceanHeight");
 
 			viewMatrix = shader.GetUniform("vMatrix");
 			inverseViewMatrix = shader.GetUniform("ivMatrix");
@@ -161,6 +169,12 @@ namespace Atlas {
 
 			displacementScale = shader.GetUniform("displacementScale");
 			choppyScale = shader.GetUniform("choppyScale");
+			tiling = shader.GetUniform("tiling");
+
+			leftLoD = shader.GetUniform("leftLoD");
+			topLoD = shader.GetUniform("topLoD");
+			rightLoD = shader.GetUniform("rightLoD");
+			bottomLoD = shader.GetUniform("bottomLoD");
 
 			lightDirection = shader.GetUniform("light.direction");
 			lightColor = shader.GetUniform("light.color");

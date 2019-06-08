@@ -44,11 +44,11 @@ void main() {
 		
 	vec3 reflectionVec = normalize(mat3(ivMatrix) * reflect(normalize(fPosition), normal));
 	
-	float sunSpot = pow(clamp(dot(reflectionVec, sunDir), 0.0, 1.0), 300.0);
+	float sunSpot = pow(clamp(dot(reflectionVec, sunDir), 0.0, 1.0), 400.0);
 	
 	float fresnel = 0.02 + (1.0 - 0.02) * pow(1.0 - dot(normalize(-fPosition), normal), 5.0);
 	
-	fresnel = mix(fresnel, 0.0, clamp((0.2 - reflectionVec.y) * 5.0, 0.0, 1.0));
+	fresnel = mix(fresnel, 0.0, clamp((0.01 - reflectionVec.y) * 5.0, 0.0, 1.0));
 	
 	diffuse *= shadowFactor;
 	
@@ -61,7 +61,5 @@ void main() {
 	diffuse  = mix(diffuse, vec3(foamIntensity) * shadowFactor, foamIntensity * min(1.0, fold));
 	
 	diffuse = mix(texture(refractionTexture, ndcCoord).rgb, diffuse, waterViewDepth) + volumetric;
-	
-	// diffuse = vec3(fresnel);
 	
 }

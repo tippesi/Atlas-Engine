@@ -159,8 +159,7 @@ namespace Atlas {
 
         void ImageLoader::SavePGM8(Common::Image8 &image, std::string filename) {
 
-            std::ofstream imageFile;
-            imageFile.open(filename);
+			auto imageFile = AssetLoader::WriteFile(filename, std::ios::out);
 
             if (!imageFile.is_open()) {
                 throw AtlasException("Couldn't write image");
@@ -169,18 +168,17 @@ namespace Atlas {
             std::string header;
 
             // Create image header
-            header.append("P5 ");
+            header.append("P2 ");
             header.append(std::to_string(image.width) + " ");
             header.append(std::to_string(image.height) + " ");
             header.append("255\n");
 
             imageFile << header;
 
-            for (int32_t y = 0; y < image.height; y++) {
-                for (int32_t x = 0; x < image.width; x++) {
-                    imageFile << image.data[y * image.width + x];
-                }
-            }
+			for (auto data : image.data) {
+				imageFile << data;
+				imageFile << " ";
+			}
 
             imageFile.close();
 
@@ -188,8 +186,7 @@ namespace Atlas {
 
         void ImageLoader::SavePGM16(Common::Image16 &image, std::string filename) {
 
-            std::ofstream imageFile;
-            imageFile.open(filename);
+			auto imageFile = AssetLoader::WriteFile(filename, std::ios::out);
 
             if (!imageFile.is_open()) {
                 throw AtlasException("Couldn't write image");
@@ -198,18 +195,17 @@ namespace Atlas {
             std::string header;
 
             // Create image header
-            header.append("P5 ");
+            header.append("P2 ");
             header.append(std::to_string(image.width) + " ");
             header.append(std::to_string(image.height) + " ");
             header.append("65535\n");
 
             imageFile << header;
 
-            for (int32_t y = 0; y < image.height; y++) {
-                for (int32_t x = 0; x < image.width; x++) {
-                    imageFile << image.data[y * image.width + x];
-                }
-            }
+			for (auto data : image.data) {
+				imageFile << data;
+				imageFile << " ";
+			}
 
             imageFile.close();
 

@@ -32,10 +32,8 @@ namespace Atlas {
 			std::vector<uint16_t> heightData(totalResolution * totalResolution);
 
 			stbir_resize_uint16_generic(heightImage.data.data(), heightImage.width, heightImage.height,
-										heightImage.width * 2, heightData.data(), totalResolution,
-										totalResolution, totalResolution * 2, 1, -1, 0,
-										STBIR_EDGE_CLAMP,
-										STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+				heightImage.width * 2, heightData.data(), totalResolution, totalResolution, totalResolution * 2,
+				1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
 
 			// We need some room in the bottom and right for overlapping vertices
 			tileResolution += 1;
@@ -107,20 +105,28 @@ namespace Atlas {
 		void TerrainTool::BakeTerrain(Terrain::Terrain *terrain) {
 
 			// Generate one large heightmap (assumes all tiles have the same size)
-			int32_t tileResolution = terrain->storage->GetCell(0, 0, terrain->LoDCount - 1)->heightField->width;
+			int32_t tileResolution = terrain->storage->GetCell(0, 0, terrain->LoDCount - 1)->heightField->width - 1;
 			int32_t tileResolutionSquared = tileResolution * tileResolution;
 			int32_t tileCount = terrain->storage->GetCellCount(terrain->LoDCount - 1);
 
 			int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
 
 			auto heightData = std::vector<uint16_t>(tileCount * tileResolution * tileResolution);
+			auto splatData = std::vector<uint8_t>(heightData.size() * 4);
 
 			int32_t heightDataResolution = (int32_t)sqrtf((float)heightData.size());
+
+			Material* material1 = nullptr;
+			Material* material2 = nullptr;
 
 			// i is in x direction, j in y direction
 			for (int32_t i = 0; i < tileSideCount; i++) {
 				for (int32_t j = 0; j < tileSideCount; j++) {
 					auto cell = terrain->storage->GetCell(i, j, terrain->LoDCount - 1);
+					auto cellSplatData = cell->splatMap->GetData();
+
+					material1 = cell->GetMaterial(0);
+					material2 = cell->GetMaterial(1);
 
 					// Now copy a tile of the original image
 					// We make sure that every tile has the same size
@@ -128,56 +134,80 @@ namespace Atlas {
 					// adjacent cells connect to each other
 					for (int32_t y = 0; y < tileResolution; y++) {
 						for (int32_t x = 0; x < tileResolution; x++) {
-							int32_t cellOffset = y * tileResolution + x;
-							int32_t imageOffset = (j * (tileResolution - 1) + y) * heightDataResolution +
-												  i * (tileResolution - 1) + x;
+							int32_t cellOffset = y * (tileResolution + 1) + x;
+							int32_t imageOffset = (j * tileResolution + y) * heightDataResolution +
+												  i * tileResolution + x;
 							heightData[imageOffset] = (uint16_t)(cell->heightData[cellOffset] * 65535.0f);
+							splatData[imageOffset * 4] = cellSplatData[cellOffset * 4];
+							splatData[imageOffset * 4 + 1] = cellSplatData[cellOffset * 4 + 1];
+							splatData[imageOffset * 4 + 2] = cellSplatData[cellOffset * 4 + 2];
+							splatData[imageOffset * 4 + 3] = cellSplatData[cellOffset * 4 + 3];
 						}
 					}
 				}
 			}
 
+			tileResolution += 1;
+
 			// Calculate the normals
 			auto normalData = std::vector<uint8_t>(heightData.size() * 3);
 
-			GenerateNormalData(heightData, normalData, (tileResolution - 1) * tileSideCount + 1,
-							   (tileResolution - 1) * tileSideCount + 1, 8.0f);
+			GenerateNormalData(heightData, normalData, (tileResolution - 1) * tileSideCount,
+							   (tileResolution - 1) * tileSideCount, 8.0f);
 
 			// Iterate through all the LoD level and resize images according to the tile size
 
 			std::vector<uint16_t> tileHeightData(tileResolution * tileResolution);
 			std::vector<uint8_t> tileNormalData(tileHeightData.size() * 3);
+			std::vector<uint8_t> tileSplatData(tileHeightData.size() * 4);
 
 			for (int32_t k = 0; k < terrain->LoDCount; k++) {
 
 				int32_t Lod = terrain->LoDCount - k - 1;
 
-				int32_t tileSideCountLod = tileSideCount / (int32_t)powf(2.0f, (float)k);
+				int32_t downsample = (int32_t)powf(2.0f, (float)k);
+				int32_t tileSideCountLod = tileSideCount / downsample;
 
 				std::vector<uint16_t> resizedHeightData(tileSideCountLod * tileSideCountLod * tileResolutionSquared);
 				std::vector<uint8_t> resizedNormalData(resizedHeightData.size() * 3);
+				std::vector<uint8_t> resizedSplatData(resizedHeightData.size() * 4);
 
 				int32_t resizedHeightDataResolution = (int32_t)sqrtf((float)resizedHeightData.size());
 
 				if (k == 0) {
 					resizedHeightData = heightData;
 					resizedNormalData = normalData;
+					resizedSplatData = splatData;
 				}
 				else {
-					// Downsample data
-					stbir_resize_uint16_generic(heightData.data(), heightDataResolution, heightDataResolution,
-						heightDataResolution * 2, resizedHeightData.data(), resizedHeightDataResolution,
-						resizedHeightDataResolution, resizedHeightDataResolution * 2, 1, -1, 0,
-						STBIR_EDGE_CLAMP,
-						STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+					// Downsample data (we need to do it manually here)
 
-					stbir_resize_uint8_generic(normalData.data(), heightDataResolution, heightDataResolution,
-						heightDataResolution * 3, resizedNormalData.data(), resizedHeightDataResolution,
-						resizedHeightDataResolution, resizedHeightDataResolution * 3, 3, -1, 0,
-						STBIR_EDGE_CLAMP,
-						STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+					for (int32_t y = 0; y < resizedHeightDataResolution; y++) {
+						for (int32_t x = 0; x < resizedHeightDataResolution; x++) {
+							auto offset0 = ivec2(x, y);
+							auto offset1 = ivec2(x, y) * downsample;
+							auto index0 = offset0.y * resizedHeightDataResolution + offset0.x;
+							auto index1 = offset1.y * heightDataResolution + offset1.x;
+							resizedHeightData[index0] = heightData[index1];
+							resizedNormalData[index0 * 3] = normalData[index1 * 3];
+							resizedNormalData[index0 * 3 + 1] = normalData[index1 * 3 + 1];
+							resizedNormalData[index0 * 3 + 2] = normalData[index1 * 3 + 2];
+						}
+					}
+
+					stbir_resize_uint8_generic(splatData.data(), heightDataResolution, heightDataResolution,
+						heightDataResolution * 4, resizedSplatData.data(), resizedHeightDataResolution,
+						resizedHeightDataResolution, resizedHeightDataResolution * 4, 4, -1, 0,
+						STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
 				}
 
+				/*
+				Common::Image16 image(resizedHeightDataResolution, resizedHeightDataResolution, 1);
+				image.data = resizedHeightData;
+				image.fileFormat = AE_IMAGE_PGM;
+
+				Loader::ImageLoader::SaveImage16(image, std::string("LOD" + std::to_string(k) + ".pgm").c_str());
+				*/
 				// i is in x direction, j in y direction
 				for (int32_t i = 0; i < tileSideCountLod; i++) {
 					for (int32_t j = 0; j < tileSideCountLod; j++) {
@@ -190,17 +220,52 @@ namespace Atlas {
 						for (int32_t y = 0; y < tileResolution; y++) {
 							for (int32_t x = 0; x < tileResolution; x++) {
 								int32_t cellOffset = y * tileResolution + x;
-								int32_t imageOffset = (j * (tileResolution - 1) + y) * resizedHeightDataResolution +
-													  i * (tileResolution - 1) + x;
+								int32_t xImage = i * (tileResolution - 1) + x;
+								int32_t yImage = j * (tileResolution - 1) + y;
+								int32_t imageOffset = 0;
+								int32_t totalResolution = resizedHeightDataResolution;
+								if (xImage >= totalResolution && yImage >= totalResolution) {
+									imageOffset = (totalResolution - 1) * totalResolution + totalResolution - 1;
+								}
+								else if (yImage >= totalResolution) {
+									imageOffset = (totalResolution - 1) * totalResolution + xImage;
+								}
+								else if (xImage >= totalResolution) {
+									imageOffset = yImage * totalResolution + totalResolution - 1;
+								}
+								else {
+									imageOffset = yImage * totalResolution + xImage;
+								}
 								tileHeightData[cellOffset] = resizedHeightData[imageOffset];
 								tileNormalData[cellOffset * 3] = resizedNormalData[imageOffset * 3];
 								tileNormalData[cellOffset * 3 + 1] = resizedNormalData[imageOffset * 3 + 1];
 								tileNormalData[cellOffset * 3 + 2] = resizedNormalData[imageOffset * 3 + 2];
+								tileSplatData[cellOffset * 4] = resizedSplatData[imageOffset * 4];
+								tileSplatData[cellOffset * 4 + 1] = resizedSplatData[imageOffset * 4 + 1];
+								tileSplatData[cellOffset * 4 + 2] = resizedSplatData[imageOffset * 4 + 2];
+								tileSplatData[cellOffset * 4 + 3] = resizedSplatData[imageOffset * 4 + 3];
 							}
+						}
+
+						if (!cell->heightField) {
+							cell->heightField = new Texture::Texture2D(tileResolution,
+								tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+						}
+						if (!cell->normalMap) {
+							cell->normalMap = new Texture::Texture2D(tileResolution,
+								tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+						}
+						if (!cell->splatMap) {
+							cell->splatMap = new Texture::Texture2D(tileResolution,
+								tileResolution, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 						}
 
 						cell->heightField->SetData(tileHeightData);
 						cell->normalMap->SetData(tileNormalData);
+						cell->splatMap->SetData(tileSplatData);
+
+						cell->SetMaterial(material1, 0);
+						cell->SetMaterial(material2, 1);
 
 					}
 				}

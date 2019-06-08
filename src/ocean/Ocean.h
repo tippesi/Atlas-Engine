@@ -32,14 +32,22 @@ namespace Atlas {
 
 			OceanSimulation simulation;
 
+			float displacementScale = 4.0f;
+			float choppynessScale = 4.0f;
+
+			float tiling = 32.0f;
+
+			float height;
+
 		private:
+			void SortNodes(std::vector<OceanNode*>& nodes, Camera* camera);
+
 			std::vector<OceanNode*> renderList;
 
 			Common::Image8 LoDImage;
 
 			std::vector<float> LoDDistances;
 
-			float height;
 			float size;
 
 		};

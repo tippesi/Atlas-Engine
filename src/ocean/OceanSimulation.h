@@ -17,31 +17,29 @@ namespace Atlas {
 		public:
 			OceanSimulation(int32_t N, int32_t L);
 
-			void SetState(float waveAmplitude, vec2 waveDirection,
-				float windSpeed, float windDependency);
-
 			void Compute();
+
+			void ComputeSpectrum();
 
 			Texture::Texture2D displacementMap;
 			Texture::Texture2D normalMap;
 
 			Texture::Texture2D twiddleIndices;
 
-		private:
-			void ComputeH0();
+			int32_t L;
 
+			float waveAmplitude = 1.0f;
+
+			vec2 windDirection = vec2(0.8f, 0.6f);
+			float windSpeed = 60.0f;
+			float windDependency = 0.07f;
+
+		private:
 			void ComputeTwiddleIndices();
 
 			int32_t ReverseBits(int32_t data, int32_t bitCount);
 
 			int32_t N;
-			int32_t L;
-
-			float waveAmplitude = 0.35f;
-			vec2 waveDirection = vec2(0.8f, 0.6f);
-
-			float windSpeed = 600.0f;
-			float windDependency = 0.7f;
 
 			Shader::Shader h0;
 			Shader::Shader ht;

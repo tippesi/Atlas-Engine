@@ -1,5 +1,7 @@
 #include "Terrain.h"
 
+#include <algorithm>
+
 namespace Atlas {
 
 	namespace Terrain {
@@ -13,7 +15,8 @@ namespace Atlas {
 			rootNodeCount = rootNodeSideCount * rootNodeSideCount;
 
 			// sum{k = 0 to LODCount - 1} 4^k = (4^(LODCount) - 1) / 3
-			int32_t nodesCount = (int32_t) ((powf(4.0f, (float) LoDCount) - 1.0f) / 3.0f) * this->rootNodeCount;
+			int32_t nodesCount = (int32_t) ((powf(4.0f, (float) LoDCount) - 1.0f) / 3.0f) * rootNodeCount;
+			int32_t leafNodesSideCount = rootNodeSideCount * (int32_t)(powf(2.0f, (float)LoDCount - 1.0f));
 
 			// We can just have 2^16 nodes due to 16 bit indexing
 			if (nodesCount >= 65536) {
@@ -23,25 +26,28 @@ namespace Atlas {
 			GeneratePatchVertexBuffer();
 			GeneratePatchOffsets();
 
-			storage = new TerrainStorage(this->rootNodeCount, this->LoDCount);
+			storage = new TerrainStorage(rootNodeCount, LoDCount);
 			LoDDistances = std::vector<float>(LoDCount);
+			LoDImage = Common::Image8(leafNodesSideCount, leafNodesSideCount, 1);
 
 			// 2.0f time because we generate 2 * patchSize vertices. 8.0f because we have 8 * 8 patches per node.
-			sideLength = (float)rootNodeSideCount * resolution * powf(2, (float) this->LoDCount - 1.0f) * 2.0f *
+			sideLength = (float)rootNodeSideCount * resolution * powf(2, (float) LoDCount - 1.0f) * 2.0f *
 						 patchSizeFactor * 8.0f;
 			float ratio = sideLength / (float)rootNodeSideCount;
 
-			for (int32_t i = 0; i < this->LoDCount; i++) {
-				LoDDistances[i] = sideLength - powf((float) i / (float) this->LoDCount, 0.25f) * sideLength;
+			auto distance = sideLength;
+
+			for (int32_t i = 0; i < LoDCount; i++) {
+				distance /= 2.0f;
+				LoDDistances[i] = distance;				
 			}
 
 			for (int32_t i = 0; i < rootNodeSideCount; i++) {
 				for (int32_t j = 0; j < rootNodeSideCount; j++) {
 					TerrainStorageCell *cell = storage->GetCell(i, j, 0);
 					storage->requestedCells.push_back(cell);
-					rootNodes.push_back(
-							new TerrainNode(vec2((float) i * ratio, (float) j * ratio), resolution, heightScale, ratio,
-											0, this->LoDCount, ivec2(0, 0), ivec2(i, j), storage, cell));
+					rootNodes.push_back(TerrainNode(vec2((float) i * ratio, (float) j * ratio), heightScale,
+						ratio, 0, LoDCount, rootNodeSideCount, ivec2(0, 0), ivec2(i, j), storage, cell));
 				}
 			}
 
@@ -56,13 +62,31 @@ namespace Atlas {
 
 		void Terrain::Update(Camera *camera) {
 
+			std::vector<TerrainNode*> leafList;
+
+			for (auto& node : rootNodes)
+				node.Update(camera, LoDDistances,
+					leafList, LoDImage);
+
 			renderList.clear();
 
-			for (TerrainNode *&node : rootNodes) {
-				node->Update(camera, renderList, LoDDistances.data());
+			for (auto node : leafList) {
+				auto aabb = Common::AABB(
+					vec3(node->location.x, 0.0f, node->location.y),
+					vec3(node->location.x + node->sideLength, heightScale,
+						node->location.y + node->sideLength)
+				);
+
+				if (camera->frustum.IsVisible(aabb))
+					renderList.push_back(node);
 			}
 
-			// TODO: Sort renderlist by LoD here. Better: Have a list for each LoD
+			for (auto node : renderList) {
+				node->CheckNeighbourLoD(LoDImage);
+			}
+
+			// Sort the list to render from front to back
+			SortNodes(renderList, camera);
 
 		}
 
@@ -243,6 +267,24 @@ namespace Atlas {
 		void Terrain::Unbind() {
 
 			vertexArray.Unbind();
+
+		}
+
+		void Terrain::SortNodes(std::vector<TerrainNode*>& nodes, Camera* camera) {
+
+			std::sort(nodes.begin(), nodes.end(),
+				[=](TerrainNode* node1, TerrainNode* node2) -> bool {
+
+					auto distance1 = glm::distance(camera->location,
+						vec3(node1->location.x + node1->sideLength / 2.0f,
+							0.0f, node1->location.y + node1->sideLength / 2.0f));
+					auto distance2 = glm::distance(camera->location,
+						vec3(node2->location.x + node2->sideLength / 2.0f,
+							0.0f, node2->location.y + node2->sideLength / 2.0f));
+
+					return distance1 < distance2;
+
+				});
 
 		}
 

@@ -257,6 +257,7 @@ namespace Atlas {
 
 			size_t sizeInBytes = 0;
 
+			uint32_t flags = 0;
 			uint32_t mapFlags = 0;
 			uint32_t dataFlags = 0;
 

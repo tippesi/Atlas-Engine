@@ -33,7 +33,7 @@ namespace Atlas {
 
 			Shader::Uniform* nodeLocation = nullptr;
 			Shader::Uniform* nodeSideLength = nullptr;
-			Shader::Uniform* nodeHeight = nullptr;
+			Shader::Uniform* oceanHeight = nullptr;
 
 			Shader::Uniform* viewMatrix = nullptr;
 			Shader::Uniform* inverseViewMatrix = nullptr;
@@ -44,6 +44,12 @@ namespace Atlas {
 
 			Shader::Uniform* displacementScale = nullptr;
 			Shader::Uniform* choppyScale = nullptr;
+			Shader::Uniform* tiling = nullptr;
+
+			Shader::Uniform* leftLoD = nullptr;
+			Shader::Uniform* topLoD = nullptr;
+			Shader::Uniform* rightLoD = nullptr;
+			Shader::Uniform* bottomLoD = nullptr;
 
 			Shader::Uniform* lightDirection = nullptr;
 			Shader::Uniform* lightColor = nullptr;

@@ -137,7 +137,11 @@ namespace Atlas {
 
 			std::vector<TerrainNode*> renderList;
 
+			Common::Image8 LoDImage;
+
 		private:
+			void SortNodes(std::vector<TerrainNode*>& nodes, Camera* camera);
+
 			void GeneratePatchVertexBuffer();
 
 			void GeneratePatchOffsets();
@@ -152,7 +156,7 @@ namespace Atlas {
 			Buffer::VertexArray vertexArray;
 
 			std::vector<float> LoDDistances;
-			std::vector<TerrainNode*> rootNodes;
+			std::vector<TerrainNode> rootNodes;
 
 		};
 

@@ -39,7 +39,7 @@ namespace Atlas {
 			Common::AABB base(vec3(-1.0f), vec3(1.0f));
 			auto aabb = base.Transform(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
 
-			scene->GetRenderList(aabb, renderList);
+			scene->GetRenderList(camera->frustum, aabb, renderList);
 
 			for (auto& renderListBatchesKey : renderList.orderedRenderBatches) {
 

@@ -61,9 +61,13 @@ namespace Atlas {
 					renderList.Clear();
 
 					Common::AABB base(vec3(-1.0f), vec3(1.0f));
-					auto aabb = base.Transform(glm::inverse(component->projectionMatrix * component->viewMatrix));
+					auto inverseMatrix = glm::inverse(component->projectionMatrix * component->viewMatrix);
+					auto aabb = base.Transform(inverseMatrix);
 
-					scene->GetRenderList(aabb, renderList);
+					auto corners = GetFrustumCorners(inverseMatrix);
+					auto frustum = Common::Frustum(corners);
+
+					scene->GetRenderList(frustum, aabb, renderList);
 
 					for (auto& renderListBatchesKey : renderList.orderedRenderBatches) {
 
@@ -156,6 +160,30 @@ namespace Atlas {
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			shaderBatch.RemoveConfig(config);
+
+		}
+
+		std::vector<vec3> ShadowRenderer::GetFrustumCorners(mat4 inverseMatrix) {
+
+			vec3 vectors[8] = {
+				vec3(-1.0f, 1.0f, 1.0f),
+				vec3(1.0f, 1.0f, 1.0f),
+				vec3(-1.0f, -1.0f, 1.0f),
+				vec3(1.0f, -1.0f, 1.0f),
+				vec3(-1.0f, 1.0f, -1.0f),
+				vec3(1.0f, 1.0f, -1.0f),
+				vec3(-1.0f, -1.0f, -1.0f),
+				vec3(1.0f, -1.0f, -1.0f)
+			};
+
+			std::vector<vec3> corners;
+
+			for (uint8_t i = 0; i < 8; i++) {
+				auto homogenous = inverseMatrix * vec4(vectors[i], 1.0f);
+				corners.push_back(vec3(homogenous) / homogenous.w);
+			}
+
+			return corners;
 
 		}
 

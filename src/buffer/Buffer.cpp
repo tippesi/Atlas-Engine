@@ -12,7 +12,8 @@ namespace Atlas {
 
         }
 
-        Buffer::Buffer(uint32_t type, size_t elementSize, uint32_t flags) : type(type), elementSize(elementSize) {
+        Buffer::Buffer(uint32_t type, size_t elementSize, uint32_t flags) : type(type), 
+			elementSize(elementSize), flags(flags) {
 
             dynamicStorage = flags & AE_BUFFER_DYNAMIC_STORAGE;
 

@@ -29,6 +29,8 @@ namespace Atlas {
 			static std::string fragmentPath;
 
 		private:
+			std::vector<vec3> GetFrustumCorners(mat4 inverseMatrix);
+
 			RenderList renderList;
 
 			Framebuffer framebuffer;

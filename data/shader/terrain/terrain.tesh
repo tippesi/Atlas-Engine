@@ -2,7 +2,8 @@
 
 layout(quads, fractional_even_spacing, cw) in;
 
-out vec2 teTexCoords;
+out vec2 materialTexCoords;
+out vec2 texCoords;
 out vec4 splat;
 
 uniform sampler2D splatMap;
@@ -36,20 +37,21 @@ void main(){
 	
 	float vertexDistance = distance(position.xyz, cameraLocation);
 	
-	vec2 texCoords = vec2(position.x, position.z) - nodeLocation;
-	texCoords /= nodeSideLength;
+	texCoords = vec2(position.x, position.z) - nodeLocation;
+
+	materialTexCoords = texCoords;
 	
-	teTexCoords = texCoords;
+	texCoords /= nodeSideLength;
 	
 	splat = texture(splatMap, texCoords);
 	
 	float weight = clamp((displacementDistance - vertexDistance), 0.0f, 1.0f);
 	
 	if (weight > 0.0) {
-		float displacement = (texture(materials[0].displacementMap, texCoords * 40.0f).r * materials[0].displacementScale * splat.r + 
-			texture(materials[1].displacementMap, texCoords * 40.0f).r * materials[1].displacementScale * splat.g + 
-			texture(materials[2].displacementMap, texCoords * 40.0f).r * materials[2].displacementScale * splat.b + 
-			texture(materials[3].displacementMap, texCoords * 40.0f).r * materials[3].displacementScale * splat.a)
+		float displacement = (texture(materials[0].displacementMap, materialTexCoords / 4.0f).r * materials[0].displacementScale * splat.r + 
+			texture(materials[1].displacementMap, materialTexCoords / 4.0f).r * materials[1].displacementScale * splat.g + 
+			texture(materials[2].displacementMap, materialTexCoords / 4.0f).r * materials[2].displacementScale * splat.b + 
+			texture(materials[3].displacementMap, materialTexCoords / 4.0f).r * materials[3].displacementScale * splat.a)
 			* weight;
 		
 		position.y += displacement;

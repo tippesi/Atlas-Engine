@@ -43,7 +43,12 @@ namespace Atlas {
 			Shader::Uniform* nodeSideLength = nullptr;
 			Shader::Uniform* nodeLocation = nullptr;
 
-			Shader::Uniform* patchOffsetsScale = nullptr;
+			Shader::Uniform* leftLoD = nullptr;
+			Shader::Uniform* topLoD = nullptr;
+			Shader::Uniform* rightLoD = nullptr;
+			Shader::Uniform* bottomLoD = nullptr;
+
+			Shader::Uniform* patchSize = nullptr;
 
 			Shader::Uniform* tessellationFactor = nullptr;
 			Shader::Uniform* tessellationSlope = nullptr;
