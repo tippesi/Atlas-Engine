@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/Camera.h File Reference</title>
+<title>Atlas Engine: src/App.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,35 +89,52 @@ $(document).ready(function(){initNavTree('dd/dad/a00005.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a>  </div>
+<a href="#define-members">Macros</a>  </div>
   <div class="headertitle">
-<div class="title">Camera.h File Reference</div>  </div>
+<div class="title">App.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">System.h</a>&quot;</code><br />
-<code>#include &lt;vector&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="../../d3/d52/a00023_source.html">EngineInstance.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="../../d4/d81/a00110_source.html">input/Mouse.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="../../df/d98/a00107_source.html">input/Keyboard.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="../../d0/dc2/a00104_source.html">input/Controller.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="../../d3/d00/a00113_source.html">input/Touch.h</a>&gt;</code><br />
 </div>
 <p><a href="../../dd/dad/a00005_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/dc5/a00343.html">Atlas::Camera</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Used to represent a camera in the engine.  <a href="../../d0/dc5/a00343.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/dc6/a00347.html">Atlas::Camera::Frustum</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/df5/a00386.html">App</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
-Namespaces</h2></td></tr>
-<tr class="memitem:de/d55/a00323"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d55/a00323.html">Atlas</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
+Macros</h2></td></tr>
+<tr class="memitem:af4133f63f420de57d459110c176c98b7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/dad/a00005.html#af4133f63f420de57d459110c176c98b7">WINDOW_FLAGS</a>&#160;&#160;&#160;<a class="el" href="../../dc/dee/a00053.html#aa2740f52b7899850bf3998b9adbeddd1">AE_WINDOW_RESIZABLE</a> | <a class="el" href="../../dc/dee/a00053.html#af07d7be754402811992b78a191619ea6">AE_WINDOW_HIGH_DPI</a></td></tr>
+<tr class="separator:af4133f63f420de57d459110c176c98b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="af4133f63f420de57d459110c176c98b7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af4133f63f420de57d459110c176c98b7">&#9670;&nbsp;</a></span>WINDOW_FLAGS</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define WINDOW_FLAGS&#160;&#160;&#160;<a class="el" href="../../dc/dee/a00053.html#aa2740f52b7899850bf3998b9adbeddd1">AE_WINDOW_RESIZABLE</a> | <a class="el" href="../../dc/dee/a00053.html#af07d7be754402811992b78a191619ea6">AE_WINDOW_HIGH_DPI</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="../../dd/dad/a00005_source.html#l00011">11</a> of file <a class="el" href="../../dd/dad/a00005_source.html">App.h</a>.</p>
+
+</div>
+</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dd/dad/a00005.html">Camera.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dd/dad/a00005.html">App.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

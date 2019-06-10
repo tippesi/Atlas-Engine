@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/renderer/DecalRenderer.h File Reference</title>
+<title>Atlas Engine: src/mesh/Packing.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,35 +88,38 @@ $(document).ready(function(){initNavTree('d6/d7d/a00161.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a>  </div>
+<a href="#namespaces">Namespaces</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
-<div class="title">DecalRenderer.h File Reference</div>  </div>
+<div class="title">Packing.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d7/d25/a00182_source.html">Renderer.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">../System.h</a>&quot;</code><br />
 </div>
 <p><a href="../../d6/d7d/a00161_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
-Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/de9/a00595.html">Atlas::Renderer::DecalRenderer</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:de/d55/a00323"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d55/a00323.html">Atlas</a></td></tr>
+<tr class="memitem:dd/db5/a00365"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db5/a00365.html">Atlas</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:dd/d4e/a00329"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d4e/a00329.html">Atlas::Renderer</a></td></tr>
+<tr class="memitem:d3/d30/a00370"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d30/a00370.html">Atlas::Mesh</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:ae5b3d1b59d3750edee0a013f13c454ac"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d30/a00370.html#ae5b3d1b59d3750edee0a013f13c454ac">Atlas::Mesh::packNormalizedFloat_2_10_10_10_REV</a> (vec4 vector)</td></tr>
+<tr class="memdesc:ae5b3d1b59d3750edee0a013f13c454ac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Packs a vector into a 32 bit integer.  <a href="../../d3/d30/a00370.html#ae5b3d1b59d3750edee0a013f13c454ac">More...</a><br /></td></tr>
+<tr class="separator:ae5b3d1b59d3750edee0a013f13c454ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f3ed475ab4dba276a143d81460746f5"><td class="memItemLeft" align="right" valign="top">vec4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d30/a00370.html#a3f3ed475ab4dba276a143d81460746f5">Atlas::Mesh::unpackNormalizedFloat_2_10_10_10_REV</a> (uint32_t packed)</td></tr>
+<tr class="memdesc:a3f3ed475ab4dba276a143d81460746f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unpacks a vector from a 32 bit integer.  <a href="../../d3/d30/a00370.html#a3f3ed475ab4dba276a143d81460746f5">More...</a><br /></td></tr>
+<tr class="separator:a3f3ed475ab4dba276a143d81460746f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7bc5e25958a2fb25a8561f3aa0def6c5.html">renderer</a></li><li class="navelem"><a class="el" href="../../d6/d7d/a00161.html">DecalRenderer.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_7be0d8c199b9408ae01f5d77515b8def.html">mesh</a></li><li class="navelem"><a class="el" href="../../d6/d7d/a00161.html">Packing.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

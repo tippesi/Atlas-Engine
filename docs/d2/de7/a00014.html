@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/Font.h File Reference</title>
+<title>Atlas Engine: src/Context.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,88 +89,33 @@ $(document).ready(function(){initNavTree('d2/de7/a00014.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">Font.h File Reference</div>  </div>
+<div class="title">Context.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d7/d03/a00254_source.html">texture/Texture2DArray.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../dd/dd7/a00260_source.html">buffer/Buffer.h</a>&quot;</code><br />
-<code>#include &lt;vector&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">System.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../dc/dee/a00053_source.html">Window.h</a>&quot;</code><br />
+<code>#include &lt;SDL/include/SDL.h&gt;</code><br />
 </div>
 <p><a href="../../d2/de7/a00014_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/def/a00359.html">Atlas::Glyph</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents a character.  <a href="../../d4/def/a00359.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/d9b/a00363.html">Atlas::Font</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Handles the font loading and management of characters.  <a href="../../d9/d9b/a00363.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/dc2/a00367.html">Atlas::Font::GlyphInfo</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d9/dd1/a00398.html">Atlas::Context</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:de/d55/a00323"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d55/a00323.html">Atlas</a></td></tr>
+<tr class="memitem:dd/db5/a00365"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db5/a00365.html">Atlas</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:afae0a94ac6bf36890351387de3bd9291"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/de7/a00014.html#afae0a94ac6bf36890351387de3bd9291">AE_FONT_GLYPH_COUNT</a>&#160;&#160;&#160;4096</td></tr>
-<tr class="separator:afae0a94ac6bf36890351387de3bd9291"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab64c11424f4dd87b68a1e317a6896796"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/de7/a00014.html#ab64c11424f4dd87b68a1e317a6896796">AE_GPU_GLYPH_COUNT</a>&#160;&#160;&#160;2048</td></tr>
-<tr class="separator:ab64c11424f4dd87b68a1e317a6896796"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:a29b304f5c48620d39528a5ff603161bd"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../d4/def/a00359.html">Atlas::Glyph</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d55/a00323.html#a29b304f5c48620d39528a5ff603161bd">Atlas::Glyph</a></td></tr>
-<tr class="memdesc:a29b304f5c48620d39528a5ff603161bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents a character.  <a href="../../de/d55/a00323.html#a29b304f5c48620d39528a5ff603161bd">More...</a><br /></td></tr>
-<tr class="separator:a29b304f5c48620d39528a5ff603161bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="afae0a94ac6bf36890351387de3bd9291"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afae0a94ac6bf36890351387de3bd9291">&#9670;&nbsp;</a></span>AE_FONT_GLYPH_COUNT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_FONT_GLYPH_COUNT&#160;&#160;&#160;4096</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00010">10</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
-
-</div>
-</div>
-<a id="ab64c11424f4dd87b68a1e317a6896796"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab64c11424f4dd87b68a1e317a6896796">&#9670;&nbsp;</a></span>AE_GPU_GLYPH_COUNT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_GPU_GLYPH_COUNT&#160;&#160;&#160;2048</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00011">11</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../d2/de7/a00014.html">Font.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../d2/de7/a00014.html">Context.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

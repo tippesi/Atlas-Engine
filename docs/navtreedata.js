@@ -39,8 +39,7 @@ var NAVTREE =
       [ "Class Members", "functions.html", [
         [ "All", "functions.html", "functions_dup" ],
         [ "Functions", "functions_func.html", "functions_func" ],
-        [ "Variables", "functions_vars.html", "functions_vars" ],
-        [ "Typedefs", "functions_type.html", null ]
+        [ "Variables", "functions_vars.html", "functions_vars" ]
       ] ]
     ] ],
     [ "Files", "files.html", [
@@ -58,13 +57,13 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"d2/d6e/a00667.html#acb20a9765ea0305759a8f3bd6c2f73f8",
-"d5/d16/a00029_source.html",
-"d8/d13/a00671.html#a9fbf412379420ae25cd07d7746cdf2d4",
-"db/db6/a00074.html#a06fc87d81c62e9abb8790b6e5713c55ba27bf446236838573fc1b08366a8fe3b3",
-"db/dd9/a00179_source.html",
-"de/d19/a00643.html#ab7e6e49b924f94dfa1349d5164f834fa",
-"namespaces.html"
+"d1/da6/a00738.html",
+"d2/d1f/a00083.html#a06fc87d81c62e9abb8790b6e5713c55baed6ddd67314bcab87674f7b3f2c62a24",
+"d4/d8c/a00035.html",
+"d7/d25/a00182_source.html",
+"d9/dad/a00394.html#a23fcec6a8d5b9f43b7fdfd008d82925a",
+"dc/d2b/a00546.html#a542d8f35d876bdeff984e4b5b549fb4d",
+"de/de1/a00065.html#aa6a602836a3bc3f5dcfcff61762d0de3"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['glyph',['Glyph',['../d4/def/a00359.html',1,'Atlas']]],
-  ['glyphinfo',['GlyphInfo',['../df/dc2/a00367.html',1,'Atlas::Font']]]
+  ['glyph',['Glyph',['../d4/dbc/a00414.html',1,'Atlas']]],
+  ['glyphinfo',['GlyphInfo',['../db/d43/a00422.html',1,'Atlas::Font']]],
+  ['gpuraytracingrenderer',['GPURayTracingRenderer',['../d9/db8/a00658.html',1,'Atlas::Renderer']]]
 ];

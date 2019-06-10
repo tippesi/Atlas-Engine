@@ -1,6 +1,6 @@
 var annotated_dup =
 [
-    [ "Atlas", "de/d55/a00323.html", "de/d55/a00323" ],
-    [ "AtlasException", "d0/da0/a00403.html", "d0/da0/a00403" ],
-    [ "Main", "da/dee/a00383.html", "da/dee/a00383" ]
+    [ "Atlas", "dd/db5/a00365.html", "dd/db5/a00365" ],
+    [ "App", "dd/df5/a00386.html", "dd/df5/a00386" ],
+    [ "AtlasException", "d7/d9f/a00454.html", "d7/d9f/a00454" ]
 ];

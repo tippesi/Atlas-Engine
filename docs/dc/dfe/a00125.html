@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/lighting/Light.h File Reference</title>
+<title>Atlas Engine: src/loader/ModelLoader.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,130 +89,39 @@ $(document).ready(function(){initNavTree('dc/dfe/a00125.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a>  </div>
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">Light.h File Reference</div>  </div>
+<div class="title">ModelLoader.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="../../d4/d8c/a00035_source.html">../System.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d7/d06/a00131_source.html">Shadow.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../d5/db1/a00140_source.html">Volumetric.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">../System.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d6/db8/a00158_source.html">../mesh/MeshData.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d1/dc6/a00347_source.html">../scene/SceneNode.h</a>&quot;</code><br />
+<code>#include &lt;Assimp/include/assimp/Importer.hpp&gt;</code><br />
+<code>#include &lt;Assimp/include/assimp/scene.h&gt;</code><br />
+<code>#include &lt;Assimp/include/assimp/postprocess.h&gt;</code><br />
+<code>#include &lt;Assimp/include/assimp/types.h&gt;</code><br />
 </div>
 <p><a href="../../dc/dfe/a00125_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d87/a00539.html">Atlas::Lighting::Light</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d3e/a00566.html">Atlas::Loader::ModelLoader</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:de/d55/a00323"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d55/a00323.html">Atlas</a></td></tr>
+<tr class="memitem:dd/db5/a00365"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db5/a00365.html">Atlas</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:d8/dfc/a00327"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/dfc/a00327.html">Atlas::Lighting</a></td></tr>
+<tr class="memitem:d8/d21/a00368"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d21/a00368.html">Atlas::Loader</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:a0c47343b7929f66f59ed14286415ece1"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dfe/a00125.html#a0c47343b7929f66f59ed14286415ece1">AE_STATIONARY_LIGHT</a>&#160;&#160;&#160;0</td></tr>
-<tr class="separator:a0c47343b7929f66f59ed14286415ece1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9c366764bb5b82fc7596f5c91f084761"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dfe/a00125.html#a9c366764bb5b82fc7596f5c91f084761">AE_MOVABLE_LIGHT</a>&#160;&#160;&#160;1</td></tr>
-<tr class="separator:a9c366764bb5b82fc7596f5c91f084761"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af2b76a00e5758a67d5f1196b3e2e9db2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dfe/a00125.html#af2b76a00e5758a67d5f1196b3e2e9db2">AE_DIRECTIONAL_LIGHT</a>&#160;&#160;&#160;0</td></tr>
-<tr class="separator:af2b76a00e5758a67d5f1196b3e2e9db2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a289bd6cbecb4a1fe25214e242411aeba"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dfe/a00125.html#a289bd6cbecb4a1fe25214e242411aeba">AE_POINT_LIGHT</a>&#160;&#160;&#160;1</td></tr>
-<tr class="separator:a289bd6cbecb4a1fe25214e242411aeba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a93066e99652ae09a8222c00d0de4c689"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dfe/a00125.html#a93066e99652ae09a8222c00d0de4c689">AE_SPOT_LIGHT</a>&#160;&#160;&#160;2</td></tr>
-<tr class="separator:a93066e99652ae09a8222c00d0de4c689"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="af2b76a00e5758a67d5f1196b3e2e9db2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af2b76a00e5758a67d5f1196b3e2e9db2">&#9670;&nbsp;</a></span>AE_DIRECTIONAL_LIGHT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_DIRECTIONAL_LIGHT&#160;&#160;&#160;0</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dfe/a00125_source.html#l00011">11</a> of file <a class="el" href="../../dc/dfe/a00125_source.html">Light.h</a>.</p>
-
-</div>
-</div>
-<a id="a9c366764bb5b82fc7596f5c91f084761"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9c366764bb5b82fc7596f5c91f084761">&#9670;&nbsp;</a></span>AE_MOVABLE_LIGHT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_MOVABLE_LIGHT&#160;&#160;&#160;1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dfe/a00125_source.html#l00009">9</a> of file <a class="el" href="../../dc/dfe/a00125_source.html">Light.h</a>.</p>
-
-</div>
-</div>
-<a id="a289bd6cbecb4a1fe25214e242411aeba"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a289bd6cbecb4a1fe25214e242411aeba">&#9670;&nbsp;</a></span>AE_POINT_LIGHT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_POINT_LIGHT&#160;&#160;&#160;1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dfe/a00125_source.html#l00012">12</a> of file <a class="el" href="../../dc/dfe/a00125_source.html">Light.h</a>.</p>
-
-</div>
-</div>
-<a id="a93066e99652ae09a8222c00d0de4c689"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a93066e99652ae09a8222c00d0de4c689">&#9670;&nbsp;</a></span>AE_SPOT_LIGHT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_SPOT_LIGHT&#160;&#160;&#160;2</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dfe/a00125_source.html#l00013">13</a> of file <a class="el" href="../../dc/dfe/a00125_source.html">Light.h</a>.</p>
-
-</div>
-</div>
-<a id="a0c47343b7929f66f59ed14286415ece1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0c47343b7929f66f59ed14286415ece1">&#9670;&nbsp;</a></span>AE_STATIONARY_LIGHT</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_STATIONARY_LIGHT&#160;&#160;&#160;0</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../dc/dfe/a00125_source.html#l00008">8</a> of file <a class="el" href="../../dc/dfe/a00125_source.html">Light.h</a>.</p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_21d93b4c2deba69589411e8b07614db4.html">lighting</a></li><li class="navelem"><a class="el" href="../../dc/dfe/a00125.html">Light.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_1f6e0c4656fa8537bb95d4658659e347.html">loader</a></li><li class="navelem"><a class="el" href="../../dc/dfe/a00125.html">ModelLoader.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

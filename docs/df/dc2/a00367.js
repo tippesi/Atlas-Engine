@@ -1,5 +1,7 @@
 var a00367 =
 [
-    [ "scale", "df/dc2/a00367.html#a31b64104d5016aa6c180e4745fbffa11", null ],
-    [ "size", "df/dc2/a00367.html#ada6d066dfd57a67a6b9414ee36d9d497", null ]
+    [ "ControllerHandler", "dc/d20/a00534.html", "dc/d20/a00534" ],
+    [ "KeyboardHandler", "dd/d5a/a00538.html", "dd/d5a/a00538" ],
+    [ "MouseHandler", "d0/ddb/a00542.html", "d0/ddb/a00542" ],
+    [ "TouchHandler", "dc/d2b/a00546.html", "dc/d2b/a00546" ]
 ];

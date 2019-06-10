@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: src/System.h File Reference</title>
+<title>Atlas Engine: src/Material.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -89,114 +89,37 @@ $(document).ready(function(){initNavTree('d4/d8c/a00035.html','../../');});
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#define-members">Macros</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">System.h File Reference</div>  </div>
+<div class="title">Material.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;stdint.h&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">System.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d5/d42/a00269_source.html">texture/Texture2D.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d9/dd6/a00272_source.html">texture/Texture2DArray.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../df/d6a/a00119_source.html">loader/ImageLoader.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d3/dd5/a00215_source.html">shader/Shader.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../dd/d52/a00221_source.html">shader/ShaderConfig.h</a>&quot;</code><br />
 <code>#include &lt;string&gt;</code><br />
-<code>#include &lt;math.h&gt;</code><br />
-<code>#include &lt;exception&gt;</code><br />
-<code>#include &quot;libraries/glm/glm.hpp&quot;</code><br />
-<code>#include &quot;libraries/glm/gtc/type_ptr.hpp&quot;</code><br />
-<code>#include &quot;libraries/glm/gtx/common.hpp&quot;</code><br />
-<code>#include &quot;libraries/glm/gtx/transform.hpp&quot;</code><br />
 </div>
 <p><a href="../../d4/d8c/a00035_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/da0/a00403.html">AtlasException</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/dfd/a00438.html">Atlas::Material</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:af08ec37a8c99d747fb60fa15bc28678b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8c/a00035.html#af08ec37a8c99d747fb60fa15bc28678b">_CRT_SECURE_NO_WARNINGS</a></td></tr>
-<tr class="separator:af08ec37a8c99d747fb60fa15bc28678b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aca31e9435c8305e42d69926c4b63d429"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8c/a00035.html#aca31e9435c8305e42d69926c4b63d429">AE_SHOW_LOG</a></td></tr>
-<tr class="separator:aca31e9435c8305e42d69926c4b63d429"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a688e4800b61c314d29ea8cb89cc006c0"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8c/a00035.html#a688e4800b61c314d29ea8cb89cc006c0">AE_SHOW_API_DEBUG_LOG</a></td></tr>
-<tr class="separator:a688e4800b61c314d29ea8cb89cc006c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:a9896105af80932c2c56974268a875f10"><td class="memItemLeft" align="right" valign="top">typedef short&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d8c/a00035.html#a9896105af80932c2c56974268a875f10">float16</a></td></tr>
-<tr class="separator:a9896105af80932c2c56974268a875f10"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:dd/db5/a00365"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db5/a00365.html">Atlas</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="af08ec37a8c99d747fb60fa15bc28678b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af08ec37a8c99d747fb60fa15bc28678b">&#9670;&nbsp;</a></span>_CRT_SECURE_NO_WARNINGS</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define _CRT_SECURE_NO_WARNINGS</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00004">4</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">System.h</a>.</p>
-
-</div>
-</div>
-<a id="a688e4800b61c314d29ea8cb89cc006c0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a688e4800b61c314d29ea8cb89cc006c0">&#9670;&nbsp;</a></span>AE_SHOW_API_DEBUG_LOG</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_SHOW_API_DEBUG_LOG</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00012">12</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">System.h</a>.</p>
-
-</div>
-</div>
-<a id="aca31e9435c8305e42d69926c4b63d429"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aca31e9435c8305e42d69926c4b63d429">&#9670;&nbsp;</a></span>AE_SHOW_LOG</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define AE_SHOW_LOG</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00011">11</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">System.h</a>.</p>
-
-</div>
-</div>
-<h2 class="groupheader">Typedef Documentation</h2>
-<a id="a9896105af80932c2c56974268a875f10"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9896105af80932c2c56974268a875f10">&#9670;&nbsp;</a></span>float16</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef short <a class="el" href="../../d4/d8c/a00035.html#a9896105af80932c2c56974268a875f10">float16</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d4/d8c/a00035_source.html#l00065">65</a> of file <a class="el" href="../../d4/d8c/a00035_source.html">System.h</a>.</p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../d4/d8c/a00035.html">System.h</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../d4/d8c/a00035.html">Material.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

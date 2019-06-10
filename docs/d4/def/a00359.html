@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Atlas Engine: Atlas::Glyph Struct Reference</title>
+<title>Atlas Engine: src/ocean/OceanSimulation.h File Reference</title>
 <link href="../../tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="../../jquery.js"></script>
 <script type="text/javascript" src="../../dynsections.js"></script>
@@ -88,179 +88,38 @@ $(document).ready(function(){initNavTree('d4/def/a00359.html','../../');});
 
 <div class="header">
   <div class="summary">
-<a href="#pub-attribs">Public Attributes</a> &#124;
-<a href="../../d6/de1/a00356.html">List of all members</a>  </div>
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">Atlas::Glyph Struct Reference</div>  </div>
+<div class="title">OceanSimulation.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-
-<p>Represents a character.  
- <a href="../../d4/def/a00359.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>&gt;</code></p>
+<div class="textblock"><code>#include &quot;<a class="el" href="../../d5/df9/a00044_source.html">../System.h</a>&quot;</code><br />
+<code>#include &quot;../renderer/helper/NoiseGenerator.h&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d5/d42/a00269_source.html">../texture/Texture2D.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../d3/dd5/a00215_source.html">../shader/Shader.h</a>&quot;</code><br />
+<code>#include &lt;vector&gt;</code><br />
+</div>
+<p><a href="../../d4/def/a00359_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:a01b9c2854a35f35a2c433d01a125f7bd"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/def/a00359.html#a01b9c2854a35f35a2c433d01a125f7bd">codepoint</a></td></tr>
-<tr class="separator:a01b9c2854a35f35a2c433d01a125f7bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6b37a60de8e5f48bc451fd6ba076a36e"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/def/a00359.html#a6b37a60de8e5f48bc451fd6ba076a36e">advance</a></td></tr>
-<tr class="separator:a6b37a60de8e5f48bc451fd6ba076a36e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a77b58ed664b88588b58463afe1f49805"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/def/a00359.html#a77b58ed664b88588b58463afe1f49805">width</a></td></tr>
-<tr class="separator:a77b58ed664b88588b58463afe1f49805"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5645c633303b343c73e2ea78f20f3936"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/def/a00359.html#a5645c633303b343c73e2ea78f20f3936">height</a></td></tr>
-<tr class="separator:a5645c633303b343c73e2ea78f20f3936"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3dfa067312aaa6ea5935939b0203b413"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/def/a00359.html#a3dfa067312aaa6ea5935939b0203b413">texArrayIndex</a></td></tr>
-<tr class="separator:a3dfa067312aaa6ea5935939b0203b413"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afde41e8fcb0001c702a00577b74e076e"><td class="memItemLeft" align="right" valign="top">vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/def/a00359.html#afde41e8fcb0001c702a00577b74e076e">textureScale</a></td></tr>
-<tr class="separator:afde41e8fcb0001c702a00577b74e076e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afbcd5431fa91452c8e3008cd288b0f97"><td class="memItemLeft" align="right" valign="top">vec2&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/def/a00359.html#afbcd5431fa91452c8e3008cd288b0f97">offset</a></td></tr>
-<tr class="separator:afbcd5431fa91452c8e3008cd288b0f97"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae0cea775d28d0a4b45617033ff1c60a1"><td class="memItemLeft" align="right" valign="top">std::vector&lt; int32_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/def/a00359.html#ae0cea775d28d0a4b45617033ff1c60a1">kern</a></td></tr>
-<tr class="separator:ae0cea775d28d0a4b45617033ff1c60a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/df0/a00934.html">Atlas::Ocean::OceanSimulation</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:dd/db5/a00365"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/db5/a00365.html">Atlas</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:d3/d45/a00382"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d45/a00382.html">Atlas::Ocean</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Represents a character. </p>
-
-<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00018">18</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
-</div><h2 class="groupheader">Member Data Documentation</h2>
-<a id="a6b37a60de8e5f48bc451fd6ba076a36e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6b37a60de8e5f48bc451fd6ba076a36e">&#9670;&nbsp;</a></span>advance</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Atlas::Glyph::advance</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00022">22</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
-
-</div>
-</div>
-<a id="a01b9c2854a35f35a2c433d01a125f7bd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a01b9c2854a35f35a2c433d01a125f7bd">&#9670;&nbsp;</a></span>codepoint</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Atlas::Glyph::codepoint</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00020">20</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
-
-</div>
-</div>
-<a id="a5645c633303b343c73e2ea78f20f3936"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5645c633303b343c73e2ea78f20f3936">&#9670;&nbsp;</a></span>height</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Atlas::Glyph::height</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00025">25</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
-
-</div>
-</div>
-<a id="ae0cea775d28d0a4b45617033ff1c60a1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae0cea775d28d0a4b45617033ff1c60a1">&#9670;&nbsp;</a></span>kern</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::vector&lt;int32_t&gt; Atlas::Glyph::kern</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00032">32</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
-
-</div>
-</div>
-<a id="afbcd5431fa91452c8e3008cd288b0f97"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afbcd5431fa91452c8e3008cd288b0f97">&#9670;&nbsp;</a></span>offset</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vec2 Atlas::Glyph::offset</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00030">30</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
-
-</div>
-</div>
-<a id="a3dfa067312aaa6ea5935939b0203b413"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3dfa067312aaa6ea5935939b0203b413">&#9670;&nbsp;</a></span>texArrayIndex</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Atlas::Glyph::texArrayIndex</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00027">27</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
-
-</div>
-</div>
-<a id="afde41e8fcb0001c702a00577b74e076e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afde41e8fcb0001c702a00577b74e076e">&#9670;&nbsp;</a></span>textureScale</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">vec2 Atlas::Glyph::textureScale</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00029">29</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
-
-</div>
-</div>
-<a id="a77b58ed664b88588b58463afe1f49805"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a77b58ed664b88588b58463afe1f49805">&#9670;&nbsp;</a></span>width</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int32_t Atlas::Glyph::width</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="../../d2/de7/a00014_source.html#l00024">24</a> of file <a class="el" href="../../d2/de7/a00014_source.html">Font.h</a>.</p>
-
-</div>
-</div>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li>src/<a class="el" href="../../d2/de7/a00014_source.html">Font.h</a></li>
-</ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="../../de/d55/a00323.html">Atlas</a></li><li class="navelem"><a class="el" href="../../d4/def/a00359.html">Glyph</a></li>
+    <li class="navelem"><a class="el" href="../../dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="../../dir_fc4742bc7fe380063c66c237a94132e3.html">ocean</a></li><li class="navelem"><a class="el" href="../../d4/def/a00359.html">OceanSimulation.h</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>
