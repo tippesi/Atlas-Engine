@@ -65,6 +65,9 @@ namespace Atlas {
 		glDepthFunc(GL_LEQUAL);
 		glEnable(GL_CULL_FACE);
 
+		// For debugging
+		glLineWidth(2.0f);
+
 #ifdef AE_SHOW_API_DEBUG_LOG
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		glDebugMessageCallback(Context::DebugCallback, this);

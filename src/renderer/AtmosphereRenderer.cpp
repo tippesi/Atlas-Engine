@@ -27,9 +27,12 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
+			auto location = camera->thirdPerson ? camera->location -
+				camera->direction * camera->thirdPersonDistance : camera->location;
+
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
-			cameraLocation->SetValue(vec3(camera->location));
+			cameraLocation->SetValue(location);
 			sunDirection->SetValue(vec3(0.0f, -1.0f, 0.0f));
 			sunIntensity->SetValue(22.0f);
 			planetCenter->SetValue(-vec3(0.0f, 6371000.0f, 0.0f));

@@ -46,6 +46,14 @@ namespace Atlas {
 			 */
 			bool IsVisible(AABB aabb);
 
+			/**
+			 * Returns the planes of the frustum as 4-component vectors
+			 * @return The planes of the frustum
+			 * @note The xyz components encode the normal, the w component
+			 * encodes the distance -dot(normal, planeOrigin)
+			 */
+			std::vector<vec4> GetPlanes();
+
 		private:
 			enum {
 				TOP_PLANE = 0, BOTTOM_PLANE, NEAR_PLANE,

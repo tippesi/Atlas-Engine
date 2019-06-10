@@ -42,6 +42,19 @@ namespace Atlas {
 
 		}
 
+		std::vector<vec4> Frustum::GetPlanes() {
+
+			std::vector<vec4> planes;
+
+			for (uint8_t i = 0; i < 6; i++) {
+				planes.push_back(vec4(this->planes[i].normal,
+					this->planes[i].distance));
+			}
+
+			return planes;
+
+		}
+
 	}
 
 }

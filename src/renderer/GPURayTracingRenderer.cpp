@@ -67,6 +67,9 @@ namespace Atlas {
 			if (!sun)
 				return;
 
+			auto cameraLocation = camera->thirdPerson ? camera->location -
+				camera->direction * camera->thirdPersonDistance : camera->location;
+
 			rayCasterShader.Bind();
 
 			widthRayCasterUniform->SetValue(texture->width);
@@ -78,7 +81,7 @@ namespace Atlas {
 			rightRayCasterUniform->SetValue(corners[1] - corners[0]);
 			bottomRayCasterUniform->SetValue(corners[2] - corners[0]);
 
-			cameraLocationRayCasterUniform->SetValue(camera->location);
+			cameraLocationRayCasterUniform->SetValue(cameraLocation);
 			cameraFarPlaneRayCasterUniform->SetValue(camera->farPlane);
 			cameraNearPlaneRayCasterUniform->SetValue(camera->nearPlane);
 

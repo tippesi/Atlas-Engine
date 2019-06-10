@@ -23,7 +23,7 @@ uniform mat4 vMatrix;
 uniform Light light;
 
 const vec3 sunDir = vec3(0.936016, 0.0780013, -0.343206);
-const vec3 waterBodyColor = vec3(0.0f, 0.015f, 0.0375f);
+const vec3 waterBodyColor = vec3(0.0, 0.015, 0.0375);
 
 void main() {
 	
@@ -37,7 +37,7 @@ void main() {
 	float waterViewDepth = clamp(distance(fPosition, depthPos) / 5.0, 0.0, 1.0);
 	diffuse = waterBodyColor;
 	
-	float shadowFactor = max(CalculateCascadedShadow(light, fModelCoord, fPosition), light.ambient);
+	float shadowFactor = max(CalculateCascadedShadow(light, fPosition, 1.0), light.ambient);
 	vec3 volumetric = texture(volumetricTexture, ndcCoord).r * light.color * light.scatteringFactor;
 	
 	vec3 normal = normalize(fNormal);

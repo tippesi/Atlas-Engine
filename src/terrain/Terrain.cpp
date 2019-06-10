@@ -85,8 +85,11 @@ namespace Atlas {
 				node->CheckNeighbourLoD(LoDImage);
 			}
 
+			auto cameraLocation = camera->thirdPerson ? camera->location -
+				camera->direction * camera->thirdPersonDistance : camera->location;
+
 			// Sort the list to render from front to back
-			SortNodes(renderList, camera);
+			SortNodes(renderList, cameraLocation);
 
 		}
 
@@ -270,15 +273,15 @@ namespace Atlas {
 
 		}
 
-		void Terrain::SortNodes(std::vector<TerrainNode*>& nodes, Camera* camera) {
+		void Terrain::SortNodes(std::vector<TerrainNode*>& nodes, vec3 cameraLocation) {
 
 			std::sort(nodes.begin(), nodes.end(),
 				[=](TerrainNode* node1, TerrainNode* node2) -> bool {
 
-					auto distance1 = glm::distance(camera->location,
+					auto distance1 = glm::distance(cameraLocation,
 						vec3(node1->location.x + node1->sideLength / 2.0f,
 							0.0f, node1->location.y + node1->sideLength / 2.0f));
-					auto distance2 = glm::distance(camera->location,
+					auto distance2 = glm::distance(cameraLocation,
 						vec3(node2->location.x + node2->sideLength / 2.0f,
 							0.0f, node2->location.y + node2->sideLength / 2.0f));
 

@@ -93,9 +93,11 @@ namespace Atlas {
 
         void DirectionalLight::UpdateShadowCascade(ShadowComponent* cascade, Camera* camera) {
 
-            vec3 cameraLocation = camera->thirdPerson ? camera->location - camera->direction * camera->thirdPersonDistance : camera->location;
+            auto cameraLocation = camera->thirdPerson ? camera->location - 
+				camera->direction * camera->thirdPersonDistance : camera->location;
 
-            vec3 cascadeCenter = cameraLocation + camera->direction * (cascade->nearDistance + (cascade->farDistance - cascade->nearDistance) * 0.5f);
+            auto cascadeCenter = cameraLocation + camera->direction * 
+				(cascade->nearDistance + (cascade->farDistance - cascade->nearDistance) * 0.5f);
 
             vec3 lightDirection = normalize(direction);
 

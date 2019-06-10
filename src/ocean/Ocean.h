@@ -40,7 +40,7 @@ namespace Atlas {
 			float height;
 
 		private:
-			void SortNodes(std::vector<OceanNode*>& nodes, Camera* camera);
+			void SortNodes(std::vector<OceanNode*>& nodes, vec3 cameraLocation);
 
 			std::vector<OceanNode*> renderList;
 

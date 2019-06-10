@@ -140,7 +140,7 @@ namespace Atlas {
 			Common::Image8 LoDImage;
 
 		private:
-			void SortNodes(std::vector<TerrainNode*>& nodes, Camera* camera);
+			void SortNodes(std::vector<TerrainNode*>& nodes, vec3 cameraLocation);
 
 			void GeneratePatchVertexBuffer();
 

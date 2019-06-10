@@ -25,8 +25,8 @@ namespace Atlas {
 
 		} else {
 
-			up = cross(right, -direction);
-			viewMatrix = lookAt(location - direction * thirdPersonDistance, location, -up);
+			up = cross(right, direction);
+			viewMatrix = lookAt(location - direction * thirdPersonDistance, location, up);
 
 		}
 

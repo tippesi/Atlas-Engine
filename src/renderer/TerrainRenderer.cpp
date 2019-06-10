@@ -45,7 +45,7 @@ namespace Atlas {
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
 			cameraLocation->SetValue(camera->location);
-			// frustumPlanes->SetValue(camera->frustum.planes, 6);
+			frustumPlanes->SetValue(camera->frustum.GetPlanes().data(), 6);
 
 			for (auto& terrain : scene->terrains) {
 
@@ -62,7 +62,7 @@ namespace Atlas {
 
 				displacementDistance->SetValue(terrain->displacementDistance);
 
-				// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 				for (auto& node : terrain->renderList) {
 

@@ -33,48 +33,39 @@ void main() {
 	vec2 material = texture(materialTexture, fTexCoord).rg;
 	
 	// Material properties
-	float specularIntensity = material.r;
-	float specularHardness = material.g;
+	float specularIntensity = max(material.r, 0.0);
+	float specularHardness = max(material.g, 1.0);
 	
 	float shadowFactor = 1.0f;
 	vec3 volumetric = vec3(0.0f);
 	
-#ifdef SHADOWS	
-	vec3 modelCoords = vec3(ivMatrix * vec4(fragPos, 1.0f));
+	vec3 viewDir = normalize(-fragPos);
+	vec3 lightDir = -light.direction;
 	
-	shadowFactor = CalculateCascadedShadow(light, modelCoords, fragPos); 
+	float nDotL = max(dot(normal, lightDir), 0.0);
+	
+#ifdef SHADOWS	
+	shadowFactor = CalculateCascadedShadow(light, fragPos, nDotL); 
 	
 	volumetric = texture(volumetricTexture, fTexCoord).r * light.color * light.scatteringFactor;
 #endif
 
-	vec3 specular = vec3(0.0f);
-	vec3 diffuse = vec3(1.0f);
-	vec3 ambient = vec3(light.ambient * surfaceColor);
+	vec3 specular = vec3(1.0f);
+	vec3 diffuse = surfaceColor;
+	vec3 ambient = light.ambient * surfaceColor;
 	
 	float occlusionFactor = 1.0f;
-		
-	vec3 viewDir = normalize(-fragPos);
-	vec3 lightDir = -light.direction;
 	
 #ifdef SSAO
 	occlusionFactor = pow(texture(aoTexture, fTexCoord).r, aoStrength);
 	ambient *= occlusionFactor;
 #endif
-	
-	diffuse = max((dot(normal, lightDir) * light.color) * shadowFactor,
-		ambient * occlusionFactor) * surfaceColor;		
-	
-	if(specularIntensity > 0.0f && shadowFactor > 0.5f) {
 		
-		vec3 halfwayDir = normalize(lightDir + viewDir);  
-		float dampedFactor = pow(max(dot(normal, halfwayDir), 0.0f), specularHardness);
-		specular = light.color * dampedFactor * specularIntensity;
+	vec3 halfway = normalize(lightDir + viewDir);
+	specular *= pow(max(dot(normal, halfway), 0.0f), specularHardness)
+		* specularIntensity;
 	
-	}
-	
-	if(shadowFactor < 0.5f)
-		fragColor = vec4(diffuse + ambient + volumetric, 1.0f);
-	else
-		fragColor = vec4(diffuse + specular + ambient + volumetric, 1.0f);
+	fragColor = vec4((diffuse + specular) * nDotL * light.color * shadowFactor
+		+ ambient + volumetric, 1.0);
 
 }

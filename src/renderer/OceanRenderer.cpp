@@ -85,8 +85,6 @@ namespace Atlas {
 			choppyScale->SetValue(ocean->choppynessScale);
 			tiling->SetValue(ocean->tiling);
 
-			cameraLocation->SetValue(vec3(camera->viewMatrix[3]));
-
 			// Update local texture copies
 			auto texture = target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0);
 
@@ -164,8 +162,6 @@ namespace Atlas {
 			inverseViewMatrix = shader.GetUniform("ivMatrix");
 			projectionMatrix = shader.GetUniform("pMatrix");
 			inverseProjectionMatrix = shader.GetUniform("ipMatrix");
-
-			cameraLocation = shader.GetUniform("cameraLocation");
 
 			displacementScale = shader.GetUniform("displacementScale");
 			choppyScale = shader.GetUniform("choppyScale");

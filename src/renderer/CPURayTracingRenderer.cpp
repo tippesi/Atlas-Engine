@@ -35,6 +35,9 @@ namespace Atlas {
 			if (scene->HasChanged())
 				PreprocessActors(actors);
 
+			auto cameraLocation = camera->thirdPerson ? camera->location -
+				camera->direction * camera->thirdPersonDistance : camera->location;
+
 			auto corners = camera->GetFrustumCorners(camera->nearPlane, camera->farPlane);
 
 			auto origin = corners[0];
@@ -49,9 +52,9 @@ namespace Atlas {
 					auto coord = vec2((float)x, (float)y) * texelSize;
 					
 					auto rayDir = glm::normalize(origin + coord.x * right + 
-						coord.y * bottom - camera->location);
+						coord.y * bottom - cameraLocation);
 
-					Common::Ray ray(camera->location + rayDir * camera->nearPlane, rayDir);
+					Common::Ray ray(cameraLocation + rayDir * camera->nearPlane, rayDir);
 
 					auto intersect = rayDir * camera->farPlane;
 					auto distance = camera->farPlane;

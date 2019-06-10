@@ -31,25 +31,28 @@ namespace Atlas {
 
 			auto calcHeight = 0.0f;
 
-			if (camera->location.y > height) {
+			auto cameraLocation = camera->thirdPerson ? camera->location -
+				camera->direction * camera->thirdPersonDistance : camera->location;
+
+			if (cameraLocation.y > height) {
 				calcHeight = height;
 			}
 			else {
-				if (camera->location.y < 0.0f) {
+				if (cameraLocation.y < 0.0f) {
 					calcHeight = 0.0f;
 				}
 				else {
-					calcHeight = camera->location.y;
+					calcHeight = cameraLocation.y;
 				}
 			}
 
 			// We should check every corner and the middle of the node to get the minimal distance
-			float minDistance = glm::distance(camera->location, vec3(location.x + sideLength / 2.0f, 
+			float minDistance = glm::distance(cameraLocation, vec3(location.x + sideLength / 2.0f, 
 				calcHeight, location.y + sideLength / 2.0f));
 
 			for (int32_t x = 0; x < 4; x++) {
 				for (int32_t y = 0; y < 4; y++) {
-					minDistance = glm::min(minDistance, glm::distance(camera->location,
+					minDistance = glm::min(minDistance, glm::distance(cameraLocation,
 						vec3(location.x + (float)x * sideLength * 0.5f, calcHeight,
 							 location.y + (float)y * sideLength * 0.5f)));
 				}

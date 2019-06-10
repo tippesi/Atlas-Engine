@@ -58,6 +58,7 @@ namespace Atlas {
              * Returns a size for a readable opened file.
              * @param stream An ifstream object.
              * @return The size of the file in bytes.
+			 * @note Assumes the stream is opened in binary mode.
              */
             static size_t GetFileSize(std::ifstream& stream);
 
@@ -65,6 +66,7 @@ namespace Atlas {
              * Returns the content of the file as a byte vector.
              * @param stream An ifstream object.
              * @return The content of tha file.
+			 * @note Assumes the stream is opened in binary mode.
              */
             static std::vector<char> GetFileContent(std::ifstream& stream);
 

@@ -20,23 +20,12 @@ namespace Atlas {
 			else
 				directoryPath.clear();
 
-			auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
-
-			if (!fileStream.is_open()) {
-#ifdef AE_SHOW_LOG
-				AtlasLog("Failed to load model %s", filename.c_str());
-#endif
-				throw AtlasException("Model couldn't be loaded");
-			}
-
-			auto buffer = AssetLoader::GetFileContent(fileStream);
-
-			fileStream.close();
+			AssetLoader::UnpackFile(filename);
 
 			Assimp::Importer importer;
 			importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
 
-			const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(),
+			const aiScene* scene = importer.ReadFile(AssetLoader::GetFullPath(filename),
 					aiProcess_CalcTangentSpace |
 					aiProcess_JoinIdenticalVertices |
 					aiProcess_Triangulate |
@@ -46,6 +35,13 @@ namespace Atlas {
 					aiProcess_GenSmoothNormals |
 					aiProcess_LimitBoneWeights |
 					aiProcess_ImproveCacheLocality);
+
+			if (!scene) {
+#ifdef AE_SHOW_LOG
+				AtlasLog("Error processing model %s", importer.GetErrorString());
+#endif
+				throw AtlasException("Model couldn't be loaded");
+			}
 
 			int32_t indexCount = 0;
 			int32_t vertexCount = 0;

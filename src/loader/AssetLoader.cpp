@@ -3,6 +3,7 @@
 #include <SDL/include/SDL.h>
 
 #include <vector>
+#include <sys/stat.h>
 
 namespace Atlas {
 
@@ -112,9 +113,10 @@ namespace Atlas {
 
 			stream.seekg(0, stream.end);
 			auto size = stream.tellg();
-			stream.seekg(0);
+			stream.clear();
+			stream.seekg(0, stream.beg);
 
-			return size - stream.tellg();
+			return size;
 
 		}
 
@@ -124,9 +126,7 @@ namespace Atlas {
 
 			std::vector<char> buffer(size);
 
-			if (!stream.read(buffer.data(), size)) {
-				buffer.resize(0);
-			}
+			stream.read(buffer.data(), size);
 
 			return buffer;
 
