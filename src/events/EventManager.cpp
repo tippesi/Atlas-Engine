@@ -28,6 +28,10 @@ namespace Atlas {
 
 			std::lock_guard<std::mutex> guard(handlerMutex);
 
+			ClockEvent event(Clock::GetDelta());
+
+			ClockEventDelegate.Fire(event);
+
 			SDL_Event e;
 
 			while (SDL_PollEvent(&e)) {
@@ -129,10 +133,6 @@ namespace Atlas {
 				}
 
 			}
-
-			ClockEvent event(Clock::GetDelta());
-
-			ClockEventDelegate.Fire(event);
 
 		}
 

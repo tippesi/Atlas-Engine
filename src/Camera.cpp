@@ -13,22 +13,18 @@ namespace Atlas {
 
 	void Camera::UpdateView() {
 
-		direction = normalize(
-				vec3(cos(rotation.y) * sin(rotation.x), sin(rotation.y), cos(rotation.y) * cos(rotation.x)));
+		direction = normalize(vec3(cos(rotation.y) * sin(rotation.x),
+			sin(rotation.y), cos(rotation.y) * cos(rotation.x)));
 
-		right = vec3(sin(rotation.x - 3.14f / 2.0f), 0.0f, cos(rotation.x - 3.14f / 2.0f));
+		right = normalize(vec3(sin(rotation.x - 3.14f / 2.0f), 
+			0.0f, cos(rotation.x - 3.14f / 2.0f)));
 
-		if (!thirdPerson) {
+		up = cross(right, direction);
 
-			up = cross(right, direction);
+		if (!thirdPerson)			
 			viewMatrix = lookAt(location, location + direction, up);
-
-		} else {
-
-			up = cross(right, direction);
+		else
 			viewMatrix = lookAt(location - direction * thirdPersonDistance, location, up);
-
-		}
 
 		inverseViewMatrix = inverse(viewMatrix);
 

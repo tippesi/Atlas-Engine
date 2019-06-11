@@ -44,11 +44,18 @@ void main() {
 
 	if(gl_InvocationID == 0){
 	
-		vec3 min = gl_in[0].gl_Position.xyz;
-		vec3 max = gl_in[2].gl_Position.xyz;
-		max.y = heightScale;
+		vec3 minVec = min(gl_in[0].gl_Position.xyz,
+			min(gl_in[1].gl_Position.xyz,
+			min(gl_in[2].gl_Position.xyz,
+			    gl_in[3].gl_Position.xyz)));
+		vec3 maxVec = max(gl_in[0].gl_Position.xyz,
+			max(gl_in[1].gl_Position.xyz,
+			max(gl_in[2].gl_Position.xyz,
+			    gl_in[3].gl_Position.xyz)));
+				
+		maxVec.y += 2.0;
 		
-		if (IsTileVisible(min, max)) {
+		if (IsTileVisible(minVec, maxVec)) {
 	
 			vec3 midAB = vec3(gl_in[0].gl_Position + gl_in[1].gl_Position) / 2.0;
 			vec3 midBC = vec3(gl_in[1].gl_Position + gl_in[2].gl_Position) / 2.0;
