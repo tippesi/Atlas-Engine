@@ -6,7 +6,7 @@
 
 namespace Atlas {
 
-	namespace Common {
+	namespace Volume {
 
 		class Ray {
 
@@ -17,9 +17,11 @@ namespace Atlas {
 
 			bool Intersects(AABB aabb, float tmin, float tmax);
 
+			bool Intersects(AABB aabb, float tmin, float tmax, float& t);
+
 			bool Intersects(vec3 v0, vec3 v1, vec3 v2);
 
-			bool Intersects(vec3 v0, vec3 v1, vec3 v2, float& t, vec3& intersection);
+			bool Intersects(vec3 v0, vec3 v1, vec3 v2, vec3& intersection);
 
 			vec3 origin;
 			vec3 direction = vec3(0.0f, 1.0f, 0.0f);

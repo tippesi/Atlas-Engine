@@ -2,7 +2,7 @@
 #define AE_MESHDATA_H
 
 #include "../System.h"
-#include "../common/AABB.h"
+#include "../volume/AABB.h"
 #include "DataComponent.h"
 #include "Material.h"
 
@@ -71,7 +71,7 @@ namespace Atlas {
 
 			int32_t primitiveType = AE_PRIMITIVE_TRIANGLES;
 
-			Common::AABB aabb;
+			Volume::AABB aabb;
 
 		private:
 			void DeepCopy(const MeshData& that);

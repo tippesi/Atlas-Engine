@@ -71,7 +71,7 @@ namespace Atlas {
 			renderList.clear();
 
 			for (auto node : leafList) {
-				auto aabb = Common::AABB(
+				auto aabb = Volume::AABB(
 					vec3(node->location.x, 0.0f, node->location.y),
 					vec3(node->location.x + node->sideLength, heightScale,
 						node->location.y + node->sideLength)

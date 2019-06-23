@@ -1,2 +1,107 @@
 #include <intersections>
+#include <structures>
 
+layout (std430, binding = 2) buffer Triangles {
+	Triangle data[];
+} triangles;
+
+layout (std430, binding = 3) buffer MaterialIndices {
+	int data[];
+} materialIndices;
+
+layout(std430, binding = 4) buffer AABBs {
+	AABB data[];
+}aabbs;
+
+layout(std430, binding = 5) buffer Nodes {
+	BVHNode data[];
+}nodes;
+
+void CheckLeaf(Ray ray, int nodePtr, float tmin, float tmax,
+	inout int triangleIndex, inout vec3 intersection);
+
+void QueryBVH(Ray ray, float tmin, float tmax, out int triangleIndex,
+	out vec3 intersection) {
+		
+	int stack[32];
+	int stackPtr = 1;
+	
+	intersection.x = tmax;
+	
+	BVHNode node = nodes.data[0];
+	
+	do {
+		// If the pointer is -1 then there is no child.
+		int childLPtr = node.leftChild;
+		int childRPtr = node.rightChild;
+		
+		bool intersectL = false;
+		bool intersectR = false;
+		bool isLLeaf = false;
+		bool isRLeaf = false;
+		
+		float tL = 0.0;
+		float tR = 0.0;
+		
+		if (childLPtr > 0) {
+			intersectL = Intersection(ray, 
+				nodes.data[childLPtr].aabb, tmin, tmax, tL);
+			isLLeaf = nodes.data[childLPtr].dataCount > 0;
+		}
+		
+		if (childRPtr > 0) {
+			intersectR = Intersection(ray, 
+				nodes.data[childRPtr].aabb, tmin, tmax, tR);
+			isRLeaf = nodes.data[childRPtr].dataCount > 0;
+		}
+		
+		if(intersectL && isLLeaf && tL < intersection.x) {
+			CheckLeaf(ray, childLPtr, tmin, tmax, 
+				triangleIndex, intersection);
+		}
+		
+		if (intersectR && isRLeaf && tR < intersection.x) {
+			CheckLeaf(ray, childRPtr, tmin, tmax,
+				triangleIndex, intersection);
+		}
+		
+		bool traverseL = (intersectL && !isLLeaf);
+		bool traverseR = (intersectR && !isRLeaf);
+		
+		if (!traverseL && !traverseR) {
+			node = nodes.data[stack[--stackPtr]];
+		}
+		else {
+			node = traverseL ? nodes.data[childLPtr] :
+				nodes.data[childRPtr];
+			if (traverseL && traverseR)
+				stack[stackPtr++] = childRPtr;
+		}
+			
+	}
+	while (stackPtr != 0);
+		
+}
+
+void CheckLeaf(Ray ray, int nodePtr, float tmin, float tmax,
+	inout int triangleIndex, inout vec3 intersection) {
+		
+	int offset = nodes.data[nodePtr].dataOffset;
+	int count = nodes.data[nodePtr].dataCount;
+	
+	float t = 0.0;
+	vec3 sol, v0, v1, v2;
+	
+	for (int i = offset; i < offset + count; i++) {
+		v0 = triangles.data[i].v0.xyz;
+		v1 = triangles.data[i].v1.xyz;
+		v2 = triangles.data[i].v2.xyz;
+		if (Intersection(ray, v0, v1, v2, sol)) {
+			if (sol.x < intersection.x) {
+				intersection = sol;
+				triangleIndex = i;
+			}
+		}
+	}
+		
+}

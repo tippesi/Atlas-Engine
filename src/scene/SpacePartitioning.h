@@ -3,7 +3,7 @@
 
 #include "../System.h"
 #include "../RenderList.h"
-#include "../common/Octree.h"
+#include "../volume/Octree.h"
 
 #include "../actor/StaticMeshActor.h"
 #include "../actor/MovableMeshActor.h"
@@ -39,29 +39,29 @@ namespace Atlas {
 
 			void Remove(Lighting::Light* light);
 
-			void GetRenderList(Common::Frustum frustum, Common::AABB aabb, RenderList& renderList);
+			void GetRenderList(Volume::Frustum frustum, Volume::AABB aabb, RenderList& renderList);
 
 			std::vector<Actor::MeshActor*> GetMeshActors();
 
-			std::vector<Actor::StaticMeshActor*> GetStaticMeshActors(Common::AABB aabb);
+			std::vector<Actor::StaticMeshActor*> GetStaticMeshActors(Volume::AABB aabb);
 
-			std::vector<Actor::MovableMeshActor*> GetMovableMeshActors(Common::AABB aabb);
+			std::vector<Actor::MovableMeshActor*> GetMovableMeshActors(Volume::AABB aabb);
 
-			std::vector<Actor::DecalActor*> GetDecalActors(Common::AABB aabb);
+			std::vector<Actor::DecalActor*> GetDecalActors(Volume::AABB aabb);
 
-			std::vector<Actor::AudioActor*> GetAudioActors(Common::AABB aabb);
+			std::vector<Actor::AudioActor*> GetAudioActors(Volume::AABB aabb);
 
 			std::vector<Lighting::Light*> GetLights();
 
 			void Clear();
 
 		private:
-			Common::AABB aabb;
+			Volume::AABB aabb;
 			
-			Common::Octree<Actor::MovableMeshActor*> movableMeshOctree;
-			Common::Octree<Actor::StaticMeshActor*> staticMeshOctree;
-			Common::Octree<Actor::DecalActor*> decalOctree;
-			Common::Octree<Actor::AudioActor*> audioOctree;
+			Volume::Octree<Actor::MovableMeshActor*> movableMeshOctree;
+			Volume::Octree<Actor::StaticMeshActor*> staticMeshOctree;
+			Volume::Octree<Actor::DecalActor*> decalOctree;
+			Volume::Octree<Actor::AudioActor*> audioOctree;
 
 			std::vector<Lighting::Light*> lights;
 

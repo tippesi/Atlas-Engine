@@ -42,7 +42,7 @@ namespace Atlas {
 
             timeInMilliseconds->SetValue(1000.0f * Clock::Get());
 
-			Common::AABB base(vec3(-1.0f), vec3(1.0f));
+			Volume::AABB base(vec3(-1.0f), vec3(1.0f));
 			auto aabb = base.Transform(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
 
 			auto decalActors = scene->GetDecalActors(aabb);

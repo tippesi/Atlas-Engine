@@ -2,7 +2,7 @@
 
 namespace Atlas {
 
-	namespace Common {
+	namespace Volume {
 
 		Ray::Ray(vec3 origin, vec3 direction) : origin(origin), direction(direction) {
 
@@ -11,6 +11,14 @@ namespace Atlas {
 		}
 
 		bool Ray::Intersects(AABB aabb, float tmin, float tmax) {
+
+			auto t = 0.0f;
+
+			return Intersects(aabb, tmin, tmax, t);
+
+		}
+
+		bool Ray::Intersects(AABB aabb, float tmin, float tmax, float& t) {
 
 			auto t0 = (aabb.min - origin) * inverseDirection;
 			auto t1 = (aabb.max - origin) * inverseDirection;
@@ -21,20 +29,21 @@ namespace Atlas {
 			auto tminf = glm::max(tmin, glm::max(tsmall.x, glm::max(tsmall.y, tsmall.z)));
 			auto tmaxf = glm::min(tmax, glm::min(tbig.x, glm::min(tbig.y, tbig.z)));
 
-			return (tminf < tmaxf);
+			t = tminf;
+
+			return (tminf <= tmaxf);
 
 		}
 
 		bool Ray::Intersects(vec3 v0, vec3 v1, vec3 v2) {
 
 			vec3 intersection;
-			float t;
 
-			return Intersects(v0, v1, v2, t, intersection);
+			return Intersects(v0, v1, v2, intersection);
 
 		}
 
-		bool Ray::Intersects(vec3 v0, vec3 v1, vec3 v2, float& t, vec3& intersection) {
+		bool Ray::Intersects(vec3 v0, vec3 v1, vec3 v2, vec3& intersection) {
 
 			auto e0 = v1 - v0;
 			auto e1 = v2 - v0;
@@ -49,8 +58,7 @@ namespace Atlas {
 			if (sol.x >= 0.0f && sol.y >= 0.0f && 
 				sol.z >= 0.0f && sol.y + sol.z <= 1.0f) {
 
-				intersection = v0 + e0 * sol.y + e1 * sol.z;
-				t = sol.x;
+				intersection = sol;
 
 				return true;
 

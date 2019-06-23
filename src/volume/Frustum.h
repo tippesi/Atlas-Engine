@@ -9,7 +9,7 @@
 
 namespace Atlas {
 
-	namespace Common {
+	namespace Volume {
 
 		class Frustum {
 
@@ -22,7 +22,7 @@ namespace Atlas {
             /**
              * Constructs a Frustum object.
              * @param corners The 8 corners of the frustum.
-             * @note The corner must be in the following order
+             * @note The corners must be in the following order
              * with the far plane corners first and the near plane corners second:
              * Far plane: Upper left, upper right, bottom left, bottom right
              * Near plane: Upper left, upper right, bottom left, bottom right
@@ -32,7 +32,7 @@ namespace Atlas {
 			/**
 			 * Resizes the frustum.
 			 * @param corners The 8 corners of the frustum.
-             * @note The corner must be in the following order
+             * @note The corners must be in the following order
              * with the far plane corners first and the near plane corners second:
              * Far plane: Upper left, upper right, bottom left, bottom right
              * Near plane: Upper left, upper right, bottom left, bottom right

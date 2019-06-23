@@ -1,6 +1,6 @@
 #include "CPURayTracingRenderer.h"
 
-#include "../common/Ray.h"
+#include "../volume/Ray.h"
 
 #include <vector>
 
@@ -30,10 +30,21 @@ namespace Atlas {
 
 			auto texelSize = 1.0f / vec2((float)viewport->width, (float)viewport->height);
 
-			auto actors = scene->GetMeshActors();
+			auto lights = scene->GetLights();
+
+			Lighting::DirectionalLight* sun = nullptr;
+
+			for (auto& light : lights) {
+				if (light->type == AE_DIRECTIONAL_LIGHT) {
+					sun = static_cast<Lighting::DirectionalLight*>(light);
+				}
+			}
+
+			if (!sun)
+				return;
 
 			if (scene->HasChanged())
-				PreprocessActors(actors);
+				UpdateData(scene);
 
 			auto cameraLocation = camera->thirdPerson ? camera->location -
 				camera->direction * camera->thirdPersonDistance : camera->location;
@@ -43,6 +54,9 @@ namespace Atlas {
 			auto origin = corners[0];
 			auto right = corners[1] - origin;
 			auto bottom = corners[2] - origin;
+
+			auto averageTests = 0.0;
+			auto totalTests = 0.0;
 
 			for (int32_t x = 0; x < size.x; x++) {
 				for (int32_t y = 0; y < size.y; y++) {
@@ -54,86 +68,212 @@ namespace Atlas {
 					auto rayDir = glm::normalize(origin + coord.x * right + 
 						coord.y * bottom - cameraLocation);
 
-					Common::Ray ray(cameraLocation + rayDir * camera->nearPlane, rayDir);
+					Volume::Ray ray(cameraLocation + rayDir * camera->nearPlane, rayDir);
 
-					auto intersect = rayDir * camera->farPlane;
+					auto intersections = bvh.GetIntersection(ray);
+
+					if (intersections.size()) {
+						averageTests += (double)intersections.size();
+						totalTests += 1.0;
+					}
+
+					auto barrycentric = vec2(0.0f);
+					auto index = 0;
 					auto distance = camera->farPlane;
-					auto color = vec3(0.0f);
 
-					for (auto& actor : actors) {
+					int32_t count = 0;
 
-						if (!ray.Intersects(actor->aabb, 0.0f, camera->farPlane))
+					for (auto& triangle : intersections) {
+						count++;
+
+						// Retrieve vertices by their index
+						auto& v0 = triangle.v0;
+						auto& v1 = triangle.v1;
+						auto& v2 = triangle.v2;
+
+						// Check for intersection
+						vec3 intersection;
+						if (!ray.Intersects(v0, v1, v2, intersection))
 							continue;
 
-						auto indexCount = actor->mesh->data.GetIndexCount();
+						if (intersection.x >= distance)
+							continue;
 
-						auto& vertices = transformedVertices[actor];
-						auto indices = actor->mesh->data.indices.Get();
-
-						for (int32_t i = 0; i < indexCount; i += 3) {
-
-							// Retrieve vertices by their index
-							auto v0 = vertices[indices[i]];
-							auto v1 = vertices[indices[i + 1]];
-							auto v2 = vertices[indices[i + 2]];
-
-							// Check for intersection
-							vec3 intersection;
-							float t;
-							if (!ray.Intersects(v0, v1, v2, t, intersection))
-								continue;
-
-							if (t >= distance)
-								continue;
-
-							distance = t;
-							intersect = intersection;
-							color = vec3(1.0f, 0.0f, 0.0f);
-
-						}
+						distance = intersection.x;
+						barrycentric = vec2(intersection.y,
+							intersection.z);
+						index = count - 1;
 
 					}
 
-					uint8_t mono = (uint8_t)((camera->farPlane - distance) / camera->farPlane * 255.0f);
+					vec3 color(0.0f);
 
-					data[(pixel.y * texture->width + pixel.x) * 4] = mono;
-					data[(pixel.y * texture->width + pixel.x) * 4 + 1] = mono;
-					data[(pixel.y * texture->width + pixel.x) * 4 + 2] = mono;
+					if (distance < camera->farPlane)
+						color = EvaluateLight(sun, cameraLocation,
+							intersections[index], barrycentric);
+
+					data[(pixel.y * texture->width + pixel.x) * 4] = (uint8_t)(glm::clamp(color.r, 0.0f, 1.0f) * 255.0f);
+					data[(pixel.y * texture->width + pixel.x) * 4 + 1] = (uint8_t)(glm::clamp(color.g, 0.0f, 1.0f) * 255.0f);
+					data[(pixel.y * texture->width + pixel.x) * 4 + 2] = (uint8_t)(glm::clamp(color.b, 0.0f, 1.0f) * 255.0f);
 
 				}
 			}
 
 			texture->SetData(data);
+			AtlasLog("Average tests: %.3f", (float)(averageTests / totalTests));
 
 		}
 
-		void CPURayTracingRenderer::PreprocessActors(std::vector<Actor::MeshActor*> &actors) {
 
-			transformedVertices.clear();
+
+		vec3 CPURayTracingRenderer::EvaluateLight(Lighting::DirectionalLight* light, vec3 cameraLocation,
+			Triangle triangle, vec2 barrycentric) {
+
+			const float gamma = 1.0f / 2.2f;
+
+			auto n0 = triangle.n0;
+			auto n1 = triangle.n1;
+			auto n2 = triangle.n2;
+
+			auto v0 = triangle.v0;
+			auto v1 = triangle.v1;
+			auto v2 = triangle.v2;
+
+			auto mat = materials[triangle.materialIndex];
+
+			auto normal = glm::normalize((1.0f - barrycentric.x - barrycentric.y) * n0 +
+				barrycentric.x * n1 + barrycentric.y * n2);
+			auto position = (1.0f - barrycentric.x - barrycentric.y) * v0 +
+				barrycentric.x * v1 + barrycentric.y * v2;
+
+			auto viewDir = glm::normalize(cameraLocation - position);
+			auto lightDir = glm::normalize(-light->direction);
+
+			auto surfaceColor = mat->diffuseColor;
+			auto nDotL = glm::max(glm::dot(normal, lightDir), 0.0f);
+
+			vec3 specular(1.0f);
+			vec3 diffuse(surfaceColor);
+			vec3 ambient(light->ambient * surfaceColor);
+
+			auto halfway = glm::normalize(viewDir + lightDir);
+			specular *= glm::pow(glm::max(glm::dot(normal, halfway), 0.0f),
+				mat->specularHardness) * mat->specularIntensity;
+
+			auto color = (diffuse + specular) * nDotL * light->color + ambient;
+
+			return glm::pow(color, vec3(gamma));
+
+		}
+
+		void CPURayTracingRenderer::UpdateData(Scene::Scene* scene) {
+
+			auto actors = scene->GetMeshActors();
+
+			int32_t indexCount = 0;
+			int32_t vertexCount = 0;
+			int32_t materialCount = 0;
+
+			std::unordered_set<Mesh::Mesh*> meshes;
+			std::unordered_map<Material*, int32_t> materialAccess;
+
+			for (auto& actor : actors) {
+				indexCount += actor->mesh->data.GetIndexCount();
+				vertexCount += actor->mesh->data.GetVertexCount();
+				if (meshes.find(actor->mesh) == meshes.end()) {
+					auto& actorMaterials = actor->mesh->data.materials;
+					for (auto& material : actorMaterials) {
+						materialAccess[&material] = materialCount;
+						materials.push_back(&material);
+						materialCount++;
+					}
+				}
+			}
+
+			int32_t triangleCount = indexCount / 3;
+
+			std::vector<vec4> vertices(indexCount);
+			std::vector<vec4> normals(indexCount);
+			std::vector<int32_t> materialIndices(triangleCount);
+
+			vertexCount = 0;
+
+			for (auto& actor : actors) {
+				auto actorIndexCount = actor->mesh->data.GetIndexCount();
+				auto actorVertexCount = actor->mesh->data.GetVertexCount();
+
+				auto actorIndices = actor->mesh->data.indices.Get();
+				auto actorVertices = actor->mesh->data.vertices.Get();
+				auto actorNormals = actor->mesh->data.normals.Get();
+
+				for (auto& subData : actor->mesh->data.subData) {
+
+					auto offset = subData.indicesOffset;
+					auto count = subData.indicesCount;
+					auto materialIndex = materialAccess[subData.material];
+
+					for (int32_t i = 0; i < count; i++) {
+						auto j = actorIndices[i + offset];
+						vertices[vertexCount] = vec4(actorVertices[j * 3], actorVertices[j * 3 + 1],
+							actorVertices[j * 3 + 2], 1.0f);
+						normals[vertexCount] = vec4(actorNormals[j * 4], actorNormals[j * 4 + 1],
+							actorNormals[j * 4 + 2], 0.0f);
+						if ((vertexCount % 3) == 0) {
+							materialIndices[vertexCount / 3] = materialIndex;
+						}
+						vertexCount++;
+					}
+				}
+
+			}
+
+			triangles.resize(triangleCount);
+
+			for (int32_t i = 0; i < triangleCount; i++) {
+				triangles[i].v0 = vertices[i * 3];
+				triangles[i].v1 = vertices[i * 3 + 1];
+				triangles[i].v2 = vertices[i * 3 + 2];
+				triangles[i].n0 = normals[i * 3];
+				triangles[i].n1 = normals[i * 3 + 1];
+				triangles[i].n2 = normals[i * 3 + 2];
+				triangles[i].materialIndex = materialIndices[i];
+			}
+
+			triangleCount = 0;
+
+			std::vector<Volume::AABB> aabbs;
 
 			for (auto& actor : actors) {
 
-				auto vertexCount = actor->mesh->data.GetVertexCount();
-				auto vertices = actor->mesh->data.vertices.Get();
+				auto actorTriangleCount = (int32_t)actor->mesh->data.GetIndexCount() / 3;
 
-				auto mMatrix = actor->transformedMatrix;
+				auto matrix = actor->transformedMatrix;
 
-				std::vector<vec3> transformed(vertexCount);
+				for (int32_t i = 0; i < actorTriangleCount; i++) {
 
-				for (int32_t i = 0; i < vertexCount; i++) {
-					
-					auto vector = vec3(vertices[i * 3],
-						vertices[i * 3 + 1], vertices[i * 3 + 2]);
+					auto k = i + triangleCount;
 
-					vector = vec3(mMatrix * vec4(vector, 1.0f));
+					triangles[k].v0 = vec3(matrix * vec4(triangles[k].v0, 1.0f));
+					triangles[k].v1 = vec3(matrix * vec4(triangles[k].v1, 1.0f));
+					triangles[k].v2 = vec3(matrix * vec4(triangles[k].v2, 1.0f));
+					triangles[k].n0 = vec3(matrix * vec4(triangles[k].n0, 0.0f));
+					triangles[k].n1 = vec3(matrix * vec4(triangles[k].n1, 0.0f));
+					triangles[k].n2 = vec3(matrix * vec4(triangles[k].n2, 0.0f));
 
-					transformed[i] = vector;
+					auto min = glm::min(glm::min(triangles[k].v0, triangles[k].v1),
+						triangles[k].v2);
+					auto max = glm::max(glm::max(triangles[k].v0, triangles[k].v1),
+						triangles[k].v2);
+
+					aabbs.push_back(Volume::AABB(min, max));
 
 				}
 
-				transformedVertices[actor] = transformed;
+				triangleCount += actorTriangleCount;
 
 			}
+
+			bvh = Volume::BVH<Triangle>(aabbs, triangles);
 
 		}
 

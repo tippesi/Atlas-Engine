@@ -44,7 +44,7 @@ namespace Atlas {
 
 			// TODO: Check every node against the camera
 			for (auto node : leafs) {
-				auto aabb = Common::AABB(
+				auto aabb = Volume::AABB(
 					vec3(node->location.x, height, node->location.y),
 					vec3(node->location.x + node->sideLength, height + 100.0f,
 						node->location.y + node->sideLength)

@@ -7,10 +7,10 @@ namespace Atlas {
 		SpacePartitioning::SpacePartitioning(vec3 min, vec3 max, int32_t depth) : 
 			aabb(min, max) {
 
-			staticMeshOctree = Common::Octree<Actor::StaticMeshActor*>(aabb, depth);
-			movableMeshOctree = Common::Octree<Actor::MovableMeshActor*>(aabb, depth);
-			decalOctree = Common::Octree<Actor::DecalActor*>(aabb, depth);
-			audioOctree = Common::Octree<Actor::AudioActor*>(aabb, depth);
+			staticMeshOctree = Volume::Octree<Actor::StaticMeshActor*>(aabb, depth);
+			movableMeshOctree = Volume::Octree<Actor::MovableMeshActor*>(aabb, depth);
+			decalOctree = Volume::Octree<Actor::DecalActor*>(aabb, depth);
+			audioOctree = Volume::Octree<Actor::AudioActor*>(aabb, depth);
 
 		}
 
@@ -78,7 +78,7 @@ namespace Atlas {
 
 		}
 
-		void SpacePartitioning::GetRenderList(Common::Frustum frustum, Common::AABB aabb, RenderList& renderList) {
+		void SpacePartitioning::GetRenderList(Volume::Frustum frustum, Volume::AABB aabb, RenderList& renderList) {
 
 			std::vector<Actor::MovableMeshActor*> movableActors;
 			std::vector<Actor::StaticMeshActor*> staticActors;
@@ -120,7 +120,7 @@ namespace Atlas {
 
 		}
 
-		std::vector<Actor::MovableMeshActor*> SpacePartitioning::GetMovableMeshActors(Common::AABB aabb) {
+		std::vector<Actor::MovableMeshActor*> SpacePartitioning::GetMovableMeshActors(Volume::AABB aabb) {
 
 			std::vector<Actor::MovableMeshActor*> actors;
 
@@ -130,7 +130,7 @@ namespace Atlas {
 
 		}
 
-		std::vector<Actor::StaticMeshActor*> SpacePartitioning::GetStaticMeshActors(Common::AABB aabb) {
+		std::vector<Actor::StaticMeshActor*> SpacePartitioning::GetStaticMeshActors(Volume::AABB aabb) {
 
 			std::vector<Actor::StaticMeshActor*> actors;
 
@@ -140,7 +140,7 @@ namespace Atlas {
 
 		}
 
-		std::vector<Actor::DecalActor*> SpacePartitioning::GetDecalActors(Common::AABB aabb) {
+		std::vector<Actor::DecalActor*> SpacePartitioning::GetDecalActors(Volume::AABB aabb) {
 
 			std::vector<Actor::DecalActor*> actors;
 
@@ -150,7 +150,7 @@ namespace Atlas {
 
 		}
 
-		std::vector<Actor::AudioActor*> SpacePartitioning::GetAudioActors(Common::AABB aabb) {
+		std::vector<Actor::AudioActor*> SpacePartitioning::GetAudioActors(Volume::AABB aabb) {
 
 			std::vector<Actor::AudioActor*> actors;
 

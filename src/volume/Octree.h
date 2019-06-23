@@ -10,7 +10,7 @@
 
 namespace Atlas {
 
-    namespace Common {
+    namespace Volume {
 
         /**
          * Based on https://anteru.net/blog/2008/loose-octrees/

@@ -3,7 +3,7 @@
 
 #include "../System.h"
 #include "../Camera.h"
-#include "../common/AABB.h"
+#include "../volume/AABB.h"
 
 namespace Atlas {
 
@@ -47,7 +47,7 @@ namespace Atlas {
             virtual void Update(Camera camera, float deltaTime, 
 				mat4 parentTransform, bool parentUpdate) = 0;
 
-            Common::AABB aabb;
+            Volume::AABB aabb;
             mat4 transformedMatrix;
 
             bool matrixChanged = false;

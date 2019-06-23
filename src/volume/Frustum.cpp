@@ -2,7 +2,7 @@
 
 namespace Atlas {
 
-	namespace Common {
+	namespace Volume {
 
 		Frustum::Frustum(std::vector<vec3> corners) {
 

@@ -2,7 +2,7 @@
 #define AE_CAMERA_H
 
 #include "System.h"
-#include "common/Frustum.h"
+#include "volume/Frustum.h"
 
 #include <vector>
 
@@ -45,6 +45,10 @@ namespace Atlas {
          * @param nearPlane The near plane where the corners should be calculated.
          * @param farPlane The far plane where the corners should be calculated.
          * @return A vector where the corners are stored.
+		 * @note The corners are in the following order
+		 * with the far plane corners first and the near plane corners second:
+		 * Far plane: Upper left, upper right, bottom left, bottom right
+		 * Near plane: Upper left, upper right, bottom left, bottom right
          */
 		std::vector<vec3> GetFrustumCorners(float nearPlane, float farPlane);
 
@@ -69,7 +73,7 @@ namespace Atlas {
 		mat4 inverseViewMatrix;
 		mat4 inverseProjectionMatrix;
 
-		Common::Frustum frustum;
+		Volume::Frustum frustum;
 
 	private:
 		void CalculateFrustum();

@@ -19,7 +19,7 @@ namespace Atlas {
 
                 transformedMatrix = parentTransform * GetMatrix();
 
-				Common::AABB base(vec3(-1.0f), vec3(1.0f));
+				Volume::AABB base(vec3(-1.0f), vec3(1.0f));
 
 				aabb = base.Transform(transformedMatrix);
 

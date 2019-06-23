@@ -6,7 +6,6 @@
 #include "../actor/StaticMeshActor.h"
 #include "../actor/DecalActor.h"
 #include "../lighting/Light.h"
-#include "../common/Octree.h"
 #include "../Decal.h"
 
 #include "SpacePartitioning.h"

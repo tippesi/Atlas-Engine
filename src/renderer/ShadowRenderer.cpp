@@ -60,12 +60,12 @@ namespace Atlas {
 
 					renderList.Clear();
 
-					Common::AABB base(vec3(-1.0f), vec3(1.0f));
+					Volume::AABB base(vec3(-1.0f), vec3(1.0f));
 					auto inverseMatrix = glm::inverse(component->projectionMatrix * component->viewMatrix);
 					auto aabb = base.Transform(inverseMatrix);
 
 					auto corners = GetFrustumCorners(inverseMatrix);
-					auto frustum = Common::Frustum(corners);
+					auto frustum = Volume::Frustum(corners);
 
 					scene->GetRenderList(frustum, aabb, renderList);
 
