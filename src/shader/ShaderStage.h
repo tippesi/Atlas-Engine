@@ -90,12 +90,16 @@ namespace Atlas {
 
 			time_t GetLastModified();
 
+			std::string GetErrorLog(std::string& code);
+
 			std::string code;
 			std::list<std::string> macros;
 			std::list<ShaderConstant*> constants;
 			std::set<std::string> includes;
 
 			time_t lastModified;
+
+			bool error = false;
 
 			static std::string sourceDirectory;
 

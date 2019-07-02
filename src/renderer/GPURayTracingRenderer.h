@@ -30,6 +30,16 @@ namespace Atlas {
 
 			bool UpdateGPUData(Scene::Scene* scene);
 
+			struct Triangle {
+				vec3 v0;
+				vec3 v1;
+				vec3 v2;
+				vec3 n0;
+				vec3 n1;
+				vec3 n2;
+				int32_t materialIndex;
+			};
+
 			struct GPUTriangle {
 				vec4 v0;
 				vec4 v1;
@@ -40,8 +50,29 @@ namespace Atlas {
 			};
 
 			struct GPUMaterial {
-				vec4 diffuseColor;
-				vec4 specularAttributes;
+				vec3 diffuseColor;
+				float specularIntensity;
+				float specularHardness;
+			};
+
+			struct GPUAABB {
+				vec3 min;
+				vec3 max;
+			};
+
+			// Cache friendly 32 bit
+			struct GPUBVHNode {
+				union {
+					struct {
+						uint32_t leftChild;
+						uint32_t rightChild;
+					}inner;
+					struct {
+						uint32_t dataOffset;
+						uint32_t dataCount;
+					}leaf;
+				};				
+				GPUAABB aabb;
 			};
 
 			int32_t workGroupLimit;
@@ -50,6 +81,7 @@ namespace Atlas {
 			Buffer::Buffer triangleBuffer;
 			Buffer::Buffer materialBuffer;
 			Buffer::Buffer materialIndicesBuffer;
+			Buffer::Buffer nodesBuffer;
 
 			Shader::Shader vertexUpdateShader;
 

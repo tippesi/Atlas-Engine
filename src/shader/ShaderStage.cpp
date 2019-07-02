@@ -63,6 +63,8 @@ namespace Atlas {
             if (comp == lastModified) {
                 return false;
             }
+			
+			error = false;
 
             lastModified = comp;
 
@@ -131,33 +133,13 @@ namespace Atlas {
             glCompileShader(ID);
             glGetShaderiv(ID, GL_COMPILE_STATUS, &compiled);
 
-            if (!compiled) {
+            if (!compiled && !error) {
+
+				error = true;
+
 #ifdef AE_SHOW_LOG
-                int32_t shaderLogLength, length;
-                glGetShaderiv(ID, GL_INFO_LOG_LENGTH, &shaderLogLength);
-                auto shaderLog = std::vector<char>(shaderLogLength);
-                glGetShaderInfoLog(ID, shaderLogLength, &length, shaderLog.data());
-
-                if (type == AE_VERTEX_STAGE) {
-                    AtlasLog("\n\nCompiling vertex stage failed:");
-                }
-                else if (type == AE_FRAGMENT_STAGE) {
-					AtlasLog("\n\nCompiling fragment stage failed:");
-                }
-                else if (type == AE_GEOMETRY_STAGE) {
-					AtlasLog("\n\nCompiling geometry stage failed:");
-                }
-                else if (type == AE_TESSELLATION_CONTROL_STAGE) {
-					AtlasLog("\n\nCompiling tessellation control stage failed:");
-                }
-                else if (type == AE_TESSELLATION_EVALUATION_STAGE) {
-					AtlasLog("\n\nCompiling tessellation evaluation stage failed:");
-                }
-                else if (type == AE_COMPUTE_STAGE) {
-					AtlasLog("\n\nCompiling compute stage failed:");
-                }
-
-				AtlasLog("Compilation failed: %s\nError: %s", filename.c_str(), shaderLog.data());
+				auto log = GetErrorLog(composedCode);
+				AtlasLog("%s", log.c_str());
 #endif
 
                 return false;
@@ -275,6 +257,50 @@ namespace Atlas {
             return 0;
 
         }
+
+		std::string ShaderStage::GetErrorLog(std::string& code) {
+
+			std::string log;
+
+			int32_t shaderLogLength, length;
+			glGetShaderiv(ID, GL_INFO_LOG_LENGTH, &shaderLogLength);
+			auto shaderLog = std::vector<char>(shaderLogLength);
+			glGetShaderInfoLog(ID, shaderLogLength, &length, shaderLog.data());
+
+			if (type == AE_VERTEX_STAGE) {
+				log.append("Compiling vertex stage failed.");
+			}
+			else if (type == AE_FRAGMENT_STAGE) {
+				log.append("Compiling fragment stage failed.");
+			}
+			else if (type == AE_GEOMETRY_STAGE) {
+				log.append("Compiling geometry stage failed.");
+			}
+			else if (type == AE_TESSELLATION_CONTROL_STAGE) {
+				log.append("Compiling tessellation control stage failed.");
+			}
+			else if (type == AE_TESSELLATION_EVALUATION_STAGE) {
+				log.append("Compiling tessellation evaluation stage failed.");
+			}
+			else if (type == AE_COMPUTE_STAGE) {
+				log.append("Compiling compute stage failed.");
+			}
+
+			log.append("\nFile: " + filename);
+			log.append("\nError: " + std::string(shaderLog.data()));
+
+			int32_t lineCount = 1;
+			size_t pos = 0, lastPos = 0;
+
+			while ((pos = code.find('\n', lastPos)) != std::string::npos) {
+				log.append("[" + std::to_string(lineCount++) + "] ");
+				log.append(code.substr(lastPos, pos - lastPos + 1));
+				lastPos = pos + 1;
+			}
+
+			return log;
+
+		}
 
     }
 

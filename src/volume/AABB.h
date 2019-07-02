@@ -3,6 +3,8 @@
 
 #include "../System.h"
 
+#include <vector>
+
 namespace Atlas {
 
     namespace Volume {
@@ -70,6 +72,12 @@ namespace Atlas {
 			 * @note The AABB where this method was called on won't be scaled.
 			 */
 			AABB Scale(float scale);
+
+			/**
+			 * Returns the eight corners of the AABB.
+			 * @return The eight corners of the AABB.
+			 */
+			std::vector<vec3> GetCorners();
 
             vec3 min = vec3(0.0f);
             vec3 max = vec3(0.0f);

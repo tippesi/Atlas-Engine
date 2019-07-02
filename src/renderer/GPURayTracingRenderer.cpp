@@ -1,5 +1,7 @@
 #include "GPURayTracingRenderer.h"
 
+#include "../volume/BVH.h"
+
 #include <unordered_set>
 #include <unordered_map>
 
@@ -21,6 +23,8 @@ namespace Atlas {
 			materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUMaterial),
 				AE_BUFFER_DYNAMIC_STORAGE);
 			materialIndicesBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(int32_t),
+				AE_BUFFER_DYNAMIC_STORAGE);
+			nodesBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUBVHNode),
 				AE_BUFFER_DYNAMIC_STORAGE);
 
 			vertexUpdateShader.AddStage(AE_COMPUTE_STAGE, vertexUpdateComputePath);
@@ -87,17 +91,18 @@ namespace Atlas {
 
 			triangleCountRayCasterUniform->SetValue((int32_t)triangleBuffer.GetElementCount());
 
-			lightDirectionRayCasterUniform->SetValue(sun->direction);
+			lightDirectionRayCasterUniform->SetValue(normalize(sun->direction));
 			lightColorRayCasterUniform->SetValue(sun->color);
 			lightAmbientRayCasterUniform->SetValue(sun->ambient);
 
 			texture->Bind(GL_WRITE_ONLY, 0);
 
-			triangleBuffer.BindBase(1);
-			materialIndicesBuffer.BindBase(2);
-			materialBuffer.BindBase(3);
+			materialBuffer.BindBase(1);
+			triangleBuffer.BindBase(2);
+			materialIndicesBuffer.BindBase(3);
+			nodesBuffer.BindBase(4);
 
-			glDispatchCompute(texture->width / 16, texture->height / 16, 1);
+			glDispatchCompute(texture->width / 8, texture->height / 8, 1);
 
 		}
 
@@ -153,9 +158,9 @@ namespace Atlas {
 					for (auto& material : actorMaterials) {
 						materialAccess[&material] = materialCount;
 						GPUMaterial gpuMaterial;
-						gpuMaterial.diffuseColor = vec4(material.diffuseColor, 1.0f);
-						gpuMaterial.specularAttributes.x = material.specularIntensity;
-						gpuMaterial.specularAttributes.y = material.specularHardness;
+						gpuMaterial.diffuseColor = material.diffuseColor;
+						gpuMaterial.specularIntensity = material.specularIntensity;
+						gpuMaterial.specularHardness = material.specularHardness;
 						materials.push_back(gpuMaterial);
 						materialCount++;
 					}
@@ -207,7 +212,7 @@ namespace Atlas {
 
 			}
 
-			std::vector<GPUTriangle> triangles(triangleCount);
+			std::vector<Triangle> triangles(triangleCount);
 
 			for (int32_t i = 0; i < triangleCount; i++) {
 				triangles[i].v0 = vertices[i * 3];
@@ -216,11 +221,90 @@ namespace Atlas {
 				triangles[i].n0 = normals[i * 3];
 				triangles[i].n1 = normals[i * 3 + 1];
 				triangles[i].n2 = normals[i * 3 + 2];
+				triangles[i].materialIndex = materialIndices[i];
 			}
 
-			triangleBuffer.Bind();
-			triangleBuffer.SetSize(triangles.size());
-			triangleBuffer.SetData(triangles.data(), 0, triangles.size());
+			triangleCount = 0;
+
+			std::vector<Volume::AABB> aabbs;
+
+			for (auto& actor : actors) {
+
+				auto actorTriangleCount = (int32_t)actor->mesh->data.GetIndexCount() / 3;
+
+				auto matrix = actor->transformedMatrix;
+
+				for (int32_t i = 0; i < actorTriangleCount; i++) {
+
+					auto k = i + triangleCount;
+
+					triangles[k].v0 = vec3(matrix * vec4(triangles[k].v0, 1.0f));
+					triangles[k].v1 = vec3(matrix * vec4(triangles[k].v1, 1.0f));
+					triangles[k].v2 = vec3(matrix * vec4(triangles[k].v2, 1.0f));
+					triangles[k].n0 = vec3(matrix * vec4(triangles[k].n0, 0.0f));
+					triangles[k].n1 = vec3(matrix * vec4(triangles[k].n1, 0.0f));
+					triangles[k].n2 = vec3(matrix * vec4(triangles[k].n2, 0.0f));
+
+					auto min = glm::min(glm::min(triangles[k].v0, triangles[k].v1),
+						triangles[k].v2);
+					auto max = glm::max(glm::max(triangles[k].v0, triangles[k].v1),
+						triangles[k].v2);
+
+					aabbs.push_back(Volume::AABB(min, max));
+
+				}
+
+				triangleCount += actorTriangleCount;
+
+			}
+
+			// Generate BVH
+			auto bvh = Volume::BVH<Triangle>(aabbs, triangles);
+
+			// Temporaray data
+			triangles = bvh.data;
+			aabbs = bvh.aabbs;
+
+			auto nodes = bvh.GetTree();
+
+			// Copy to GPU format
+			auto gpuTriangles = std::vector<GPUTriangle>(triangles.size());
+			auto gpuNodes = std::vector<GPUBVHNode>(nodes.size());
+
+			// Sorted triangels according to BVH
+			for (size_t i = 0; i < triangles.size(); i++) {
+
+				gpuTriangles[i].v0 = vec4(triangles[i].v0, 1.0f);
+				gpuTriangles[i].v1 = vec4(triangles[i].v1, 1.0f);
+				gpuTriangles[i].v2 = vec4(triangles[i].v2, 1.0f);
+
+				gpuTriangles[i].n0 = vec4(triangles[i].n0, 1.0f);
+				gpuTriangles[i].n1 = vec4(triangles[i].n1, 1.0f);
+				gpuTriangles[i].n2 = vec4(triangles[i].n2, 1.0f);
+
+				materialIndices[i] = triangles[i].materialIndex;
+
+			}
+
+			// Copy nodes
+			for (size_t i = 0; i < nodes.size(); i++) {
+
+				
+				if (nodes[i].dataCount) {
+					// Leaf node (0x80000000 signalizes a leaf node)
+					gpuNodes[i].leaf.dataOffset = nodes[i].dataOffset;
+					gpuNodes[i].leaf.dataCount = 0x80000000 | nodes[i].dataCount;
+				}
+				else {
+					// Inner node
+					gpuNodes[i].inner.leftChild = nodes[i].leftChild;
+					gpuNodes[i].inner.rightChild = nodes[i].rightChild;
+				}				
+
+				gpuNodes[i].aabb.min = nodes[i].aabb.min;
+				gpuNodes[i].aabb.max = nodes[i].aabb.max;
+
+			}
 
 			materialBuffer.Bind();
 			materialBuffer.SetSize(materials.size());
@@ -230,42 +314,13 @@ namespace Atlas {
 			materialIndicesBuffer.SetSize(materialIndices.size());
 			materialIndicesBuffer.SetData(materialIndices.data(), 0, materialIndices.size());
 			
-			vertexUpdateShader.Bind();
+			triangleBuffer.Bind();
+			triangleBuffer.SetSize(gpuTriangles.size());
+			triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
 
-			triangleBuffer.BindBase(1);
-
-			triangleCount = 0;
-			int32_t xInvocations = 0, yInvocations = 0;
-
-			for (auto& actor : actors) {
-				
-				auto actorTriangleCount = (int32_t)actor->mesh->data.GetIndexCount() / 3;
-
-				triangleOffsetVertexUpdateUniform->SetValue(triangleCount);
-				triangleCountVertexUpdateUniform->SetValue(actorTriangleCount);
-
-				// Check if our work group count is to large
-				// Some vendors like Intel just support the minimum of 65536.
-				if (actorTriangleCount < workGroupLimit) {
-					xInvocations = actorTriangleCount;
-					yInvocations = 1;
-				}
-				else {
-					auto computeDimension = (int32_t)ceilf(sqrtf((float)actorTriangleCount));
-					xInvocations = computeDimension;
-					yInvocations = computeDimension;
-				}
-
-				xInvocationsVertexUpdateUniform->SetValue(xInvocations);
-				modelMatrixVertexUpdateUniform->SetValue(actor->transformedMatrix);
-
-				glDispatchCompute(xInvocations, yInvocations, 1);
-
-				triangleCount += actorTriangleCount;
-
-			}
-
-			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+			nodesBuffer.Bind();
+			nodesBuffer.SetSize(gpuNodes.size());
+			nodesBuffer.SetData(gpuNodes.data(), 0, gpuNodes.size());
 
 			return true;
 

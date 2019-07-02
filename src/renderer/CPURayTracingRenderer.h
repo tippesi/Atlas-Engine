@@ -2,6 +2,7 @@
 #define AE_CPURAYTRACINGRENDERER_H
 
 #include "../System.h"
+#include "../volume/BVH.h"
 #include "Renderer.h"
 
 #include <unordered_map>
@@ -19,13 +20,6 @@ namespace Atlas {
 
 			void Render(Viewport* viewport, Texture::Texture2D* texture, Camera* camera, Scene::Scene* scene);
 
-			static std::string unprojectionComputePath;
-
-		private:
-			vec3 EvaluateLight(Lighting::DirectionalLight* light, int32_t index, vec2 barrycentric);
-
-			void UpdateData(Scene::Scene* scene);
-
 			struct Triangle {
 				vec3 v0;
 				vec3 v1;
@@ -36,8 +30,20 @@ namespace Atlas {
 				int32_t materialIndex;
 			};
 
+			Volume::BVH<Triangle>* GetBVH() { return &bvh; }
+
+			static std::string unprojectionComputePath;
+
+		private:
+			vec3 EvaluateLight(Lighting::DirectionalLight* light, vec3 cameraLocation,
+				Triangle triangle, vec2 barrycentric);
+
+			void UpdateData(Scene::Scene* scene);
+
 			std::vector<Triangle> triangles;
 			std::vector<Material*> materials;
+
+			Volume::BVH<Triangle> bvh;
 
 		};
 
