@@ -55,9 +55,6 @@ namespace Atlas {
 			auto right = corners[1] - origin;
 			auto bottom = corners[2] - origin;
 
-			auto averageTests = 0.0;
-			auto totalTests = 0.0;
-
 			for (int32_t x = 0; x < size.x; x++) {
 				for (int32_t y = 0; y < size.y; y++) {
 
@@ -70,20 +67,13 @@ namespace Atlas {
 
 					Volume::Ray ray(cameraLocation + rayDir * camera->nearPlane, rayDir);
 
-					auto intersections = bvh.GetIntersection(ray);
-
-					if (intersections.size()) {
-						averageTests += (double)intersections.size();
-						totalTests += 1.0;
-					}
-
 					auto barrycentric = vec2(0.0f);
 					auto index = 0;
 					auto distance = camera->farPlane;
 
 					int32_t count = 0;
 
-					for (auto& triangle : intersections) {
+					for (auto& triangle : triangles) {
 						count++;
 
 						// Retrieve vertices by their index
@@ -109,8 +99,7 @@ namespace Atlas {
 					vec3 color(0.0f);
 
 					if (distance < camera->farPlane)
-						color = EvaluateLight(sun, cameraLocation,
-							intersections[index], barrycentric);
+						color = EvaluateLight(sun, index, barrycentric);
 
 					data[(pixel.y * texture->width + pixel.x) * 4] = (uint8_t)(glm::clamp(color.r, 0.0f, 1.0f) * 255.0f);
 					data[(pixel.y * texture->width + pixel.x) * 4 + 1] = (uint8_t)(glm::clamp(color.g, 0.0f, 1.0f) * 255.0f);
@@ -120,47 +109,31 @@ namespace Atlas {
 			}
 
 			texture->SetData(data);
-			AtlasLog("Average tests: %.3f", (float)(averageTests / totalTests));
 
 		}
 
-
-
-		vec3 CPURayTracingRenderer::EvaluateLight(Lighting::DirectionalLight* light, vec3 cameraLocation,
-			Triangle triangle, vec2 barrycentric) {
+		vec3 CPURayTracingRenderer::EvaluateLight(Lighting::DirectionalLight* light, int32_t index, vec2 barrycentric) {
 
 			const float gamma = 1.0f / 2.2f;
+
+			auto& triangle = triangles[index];
 
 			auto n0 = triangle.n0;
 			auto n1 = triangle.n1;
 			auto n2 = triangle.n2;
 
-			auto v0 = triangle.v0;
-			auto v1 = triangle.v1;
-			auto v2 = triangle.v2;
+			auto normal = (1.0f - barrycentric.x - barrycentric.y) * n0 +
+				barrycentric.x * n1 + barrycentric.y * n2;
 
-			auto mat = materials[triangle.materialIndex];
+			auto surfaceColor = materials[triangle.materialIndex]->diffuseColor;
 
-			auto normal = glm::normalize((1.0f - barrycentric.x - barrycentric.y) * n0 +
-				barrycentric.x * n1 + barrycentric.y * n2);
-			auto position = (1.0f - barrycentric.x - barrycentric.y) * v0 +
-				barrycentric.x * v1 + barrycentric.y * v2;
-
-			auto viewDir = glm::normalize(cameraLocation - position);
-			auto lightDir = glm::normalize(-light->direction);
-
-			auto surfaceColor = mat->diffuseColor;
-			auto nDotL = glm::max(glm::dot(normal, lightDir), 0.0f);
-
-			vec3 specular(1.0f);
-			vec3 diffuse(surfaceColor);
+			vec3 specular(0.0f);
+			vec3 diffuse(1.0f);
 			vec3 ambient(light->ambient * surfaceColor);
 
-			auto halfway = glm::normalize(viewDir + lightDir);
-			specular *= glm::pow(glm::max(glm::dot(normal, halfway), 0.0f),
-				mat->specularHardness) * mat->specularIntensity;
+			diffuse = glm::max(glm::dot(normal, -light->direction) * light->color, 0.0f) * surfaceColor;
 
-			auto color = (diffuse + specular) * nDotL * light->color + ambient;
+			auto color = diffuse + specular + ambient;
 
 			return glm::pow(color, vec3(gamma));
 
@@ -212,7 +185,7 @@ namespace Atlas {
 					auto count = subData.indicesCount;
 					auto materialIndex = materialAccess[subData.material];
 
-					for (int32_t i = 0; i < count; i++) {
+					for (int32_t i = 0; i < actorIndexCount; i++) {
 						auto j = actorIndices[i + offset];
 						vertices[vertexCount] = vec4(actorVertices[j * 3], actorVertices[j * 3 + 1],
 							actorVertices[j * 3 + 2], 1.0f);
@@ -241,8 +214,6 @@ namespace Atlas {
 
 			triangleCount = 0;
 
-			std::vector<Volume::AABB> aabbs;
-
 			for (auto& actor : actors) {
 
 				auto actorTriangleCount = (int32_t)actor->mesh->data.GetIndexCount() / 3;
@@ -260,20 +231,11 @@ namespace Atlas {
 					triangles[k].n1 = vec3(matrix * vec4(triangles[k].n1, 0.0f));
 					triangles[k].n2 = vec3(matrix * vec4(triangles[k].n2, 0.0f));
 
-					auto min = glm::min(glm::min(triangles[k].v0, triangles[k].v1),
-						triangles[k].v2);
-					auto max = glm::max(glm::max(triangles[k].v0, triangles[k].v1),
-						triangles[k].v2);
-
-					aabbs.push_back(Volume::AABB(min, max));
-
 				}
 
 				triangleCount += actorTriangleCount;
 
 			}
-
-			bvh = Volume::BVH<Triangle>(aabbs, triangles);
 
 		}
 

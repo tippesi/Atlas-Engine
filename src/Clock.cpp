@@ -11,7 +11,6 @@ namespace Atlas {
 
 	std::vector<float> Clock::deltas;
 	size_t Clock::frameCount = 0;
-	size_t Clock::totalFrames = 0;
 
 	float Clock::Get() {
 
@@ -50,10 +49,7 @@ namespace Atlas {
 		for (auto delta : deltas)
 			average += delta;
 
-		auto size = deltas.size() < totalFrames ?
-			(float)deltas.size() : (float)totalFrames;
-
-		return average / size;
+		return average / (float)deltas.size();
 
 	}
 
@@ -64,15 +60,14 @@ namespace Atlas {
 		if (!deltas.size())
 			deltas.resize(300);
 
+		frameCount = (frameCount + 1) % deltas.size();
+
 		auto time = Get();
 		deltaTime = time - timeStamp;
 
 		deltas[frameCount] = deltaTime;
 
 		timeStamp = time;
-
-		frameCount = (frameCount + 1) % deltas.size();
-		totalFrames++;
 
 	}
 

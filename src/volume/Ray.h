@@ -17,8 +17,6 @@ namespace Atlas {
 
 			bool Intersects(AABB aabb, float tmin, float tmax);
 
-			bool Intersects(AABB aabb, float tmin, float tmax, float& t);
-
 			bool Intersects(vec3 v0, vec3 v1, vec3 v2);
 
 			bool Intersects(vec3 v0, vec3 v1, vec3 v2, vec3& intersection);

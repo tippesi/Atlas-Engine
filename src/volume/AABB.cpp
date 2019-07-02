@@ -76,22 +76,6 @@ namespace Atlas {
 
 		}
 
-		std::vector<vec3> AABB::GetCorners() {
-
-			std::vector<vec3> corners;
-
-			vec3 cube[] = { vec3(min.x, min.y, max.z), vec3(max.x, min.y, max.z),
-				vec3(max.x, max.y, max.z), vec3(min.x, max.y, max.z),
-				vec3(min.x, min.y, min.z), vec3(max.x, min.y, min.z),
-				vec3(max.x, max.y, min.z), vec3(min.x, max.y, min.z) };
-
-			for (uint8_t i = 0; i < 8; i++)
-				corners.push_back(cube[i]);
-
-			return corners;
-
-		}
-
     }
 
 }

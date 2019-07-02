@@ -1,12 +1,9 @@
 #include <structures>
 
-bool Intersection(Ray ray, AABB aabb, float tmin, float tmax, out float t) {
-	
-	vec3 minVec = vec3(aabb.minX, aabb.minY, aabb.minZ);
-	vec3 maxVec = vec3(aabb.maxX, aabb.maxY, aabb.maxZ);
+bool Intersection(Ray ray, AABB aabb, float tmin, float tmax) {
 
-	vec3 t0 = (minVec - ray.origin) * ray.inverseDirection;
-	vec3 t1 = (maxVec - ray.origin) * ray.inverseDirection;
+	vec3 t0 = (aabb.min.xyz - ray.origin) * ray.inverseDirection;
+	vec3 t1 = (aabb.max.xyz - ray.origin) * ray.inverseDirection;
 	
 	vec3 tsmall = min(t0, t1);
 	vec3 tbig = max(t0, t1);
@@ -14,9 +11,7 @@ bool Intersection(Ray ray, AABB aabb, float tmin, float tmax, out float t) {
 	float tminf = max(tmin, max(tsmall.x, max(tsmall.y, tsmall.z)));
 	float tmaxf = min(tmax, min(tbig.x, min(tbig.y, tbig.z)));
 	
-	t = tminf;
-	
-	return (tminf <= tmaxf);
+	return (tminf < tmaxf);
 
 }
 

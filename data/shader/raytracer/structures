@@ -1,9 +1,3 @@
-// About alignement in GLSL: 
-// A structure has to be a mupltiple of the size of
-// it's largest member, e.g. for a bunch of floats it's one byte
-// Every vec3 gets rounded up to 16 bytes, which means the structure
-// has to be a size of multiple of 16 bytes.
-
 struct Ray {
 	vec3 origin;
 	vec3 direction;
@@ -11,12 +5,8 @@ struct Ray {
 };
 
 struct AABB {
-	float minX;
-	float minY;
-	float minZ;
-	float maxX;
-	float maxY;
-	float maxZ;
+	vec4 min;
+	vec4 max;
 };
 
 struct Triangle {
@@ -29,20 +19,17 @@ struct Triangle {
 };
 
 struct Material {
-	float diffR;
-	float diffG;
-	float diffB;
-	float specularIntensity;
-	float specularHardness;
+	vec4 diffuseColor;
+	vec4 specularAttributes;
 };
 
 struct BVHNode {
 	
+	AABB aabb;
+	
 	int leftChild;
 	int rightChild;
-	int dataOffset;
-	int dataCount;
-	AABB aabb;
+	int triangleIndex;
 	
 };
 

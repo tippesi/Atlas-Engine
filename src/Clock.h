@@ -44,7 +44,6 @@ namespace Atlas {
 
 		static std::vector<float> deltas;
 		static size_t frameCount;
-		static size_t totalFrames;
 
 	};
 

@@ -12,14 +12,6 @@ namespace Atlas {
 
 		bool Ray::Intersects(AABB aabb, float tmin, float tmax) {
 
-			auto t = 0.0f;
-
-			return Intersects(aabb, tmin, tmax, t);
-
-		}
-
-		bool Ray::Intersects(AABB aabb, float tmin, float tmax, float& t) {
-
 			auto t0 = (aabb.min - origin) * inverseDirection;
 			auto t1 = (aabb.max - origin) * inverseDirection;
 
@@ -29,9 +21,7 @@ namespace Atlas {
 			auto tminf = glm::max(tmin, glm::max(tsmall.x, glm::max(tsmall.y, tsmall.z)));
 			auto tmaxf = glm::min(tmax, glm::min(tbig.x, glm::min(tbig.y, tbig.z)));
 
-			t = tminf;
-
-			return (tminf <= tmaxf);
+			return (tminf < tmaxf);
 
 		}
 

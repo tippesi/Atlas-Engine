@@ -90,8 +90,8 @@ namespace Atlas {
 
 			}
 
-			auto min = vec3(std::numeric_limits<float>::max());
-			auto max = vec3(-std::numeric_limits<float>::max());
+			vec3 min = vec3(std::numeric_limits<float>::max());
+			vec3 max = vec3(-std::numeric_limits<float>::max());
 
 			uint32_t usedFaces = 0;
 			uint32_t usedVertices = 0;
