@@ -15,7 +15,7 @@ namespace Atlas {
 	/**
 	 * Represents a character
 	 */
-	typedef struct Glyph {
+	struct Glyph {
 
 		int32_t codepoint;
 
@@ -31,7 +31,7 @@ namespace Atlas {
 
 		std::vector<int32_t> kern;
 
-	} Glyph;
+	};
 
 	/**
 	 * Handles the font loading and management of characters.
