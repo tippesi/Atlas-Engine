@@ -41,6 +41,12 @@ namespace Atlas {
 
 	}
 
+	vec3 Camera::GetLocation() {
+
+		return  thirdPerson ? location - direction * thirdPersonDistance : location;
+
+	}
+
 	std::vector<vec3> Camera::GetFrustumCorners(float nearPlane, float farPlane) {
 
 		std::vector<vec3> corners;
@@ -53,7 +59,7 @@ namespace Atlas {
 		float nearHeight = nearPlane * tang;
 		float nearWidth = aspectRatio * nearHeight;
 
-		vec3 cameraLocation = thirdPerson ? location - direction * thirdPersonDistance : location;
+		vec3 cameraLocation = GetLocation();
 		vec3 farPoint = cameraLocation + direction * farPlane;
 		vec3 nearPoint = cameraLocation + direction * nearPlane;
 

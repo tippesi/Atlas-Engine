@@ -41,6 +41,12 @@ namespace Atlas {
 		void UpdateProjection();
 
 		/**
+		 * Calculates the actual camera location.
+		 * @return The location as a 3-component vector.
+		 */
+		vec3 GetLocation();
+
+		/**
          * Calculates the view frustum corners in world space.
          * @param nearPlane The near plane where the corners should be calculated.
          * @param farPlane The far plane where the corners should be calculated.

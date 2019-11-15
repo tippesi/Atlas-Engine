@@ -54,18 +54,18 @@ namespace Atlas {
 
 			}
 
-			float distanceVolume = 1.0f;
+			float distanceVolume = glm::min(1.0f, 1.0f / (glm::distance(vec3(transformedMatrix[3]), camera.GetLocation()) / 10.0f));
 
 			audible = distanceVolume > cutoff;
 
-			auto direction = glm::normalize(glm::vec3(transformedMatrix[3]) - vec3(camera.viewMatrix[3]));			
+			auto direction = glm::normalize(glm::vec3(transformedMatrix[3]) - camera.GetLocation());			
 
 			if ((matrixChanged || parentUpdate) && audible) {
 
 				auto actorDirection = vec3(transformedMatrix[3]) - lastLocation;
 				auto distance = glm::length(actorDirection);
 
-				auto abs = glm::dot(actorDirection, direction) > 0.0f ? 1.0f : -1.0f;
+				auto abs = glm::dot(actorDirection, direction) > 0.0f ? -1.0f : 1.0f;
 
 				velocity = distance / deltaTime * abs;
 
@@ -81,7 +81,12 @@ namespace Atlas {
 
 				leftChannelVolume = (1.0f - mix) * distanceVolume;
 				rightChannelVolume = mix * distanceVolume;
+
 			}
+
+			AtlasLog("%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f", leftChannelVolume, rightChannelVolume,
+				glm::vec3(camera.viewMatrix[3]).x, glm::vec3(camera.viewMatrix[3]).y, glm::vec3(camera.viewMatrix[3]).z,
+				velocity, distanceVolume);
 
 			matrixChanged = false;
 

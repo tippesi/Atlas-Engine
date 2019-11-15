@@ -27,6 +27,8 @@ public:
 	virtual void Render(float deltaTime) final;
 
 private:
+	void DisplayLoadingScreen();
+
 	Atlas::RenderTarget* renderTarget;
 	Atlas::Viewport viewport;
 
@@ -49,6 +51,8 @@ private:
 	Atlas::Actor::MovableMeshActor cubeActor;
 	Atlas::Actor::StaticMeshActor treeActor;
 	Atlas::Actor::StaticMeshActor sponzaActor;
+
+	Atlas::Actor::AudioActor* audioActor;
 
 	Atlas::Audio::AudioData* audioData;
 	Atlas::Audio::AudioStream* audioStream;

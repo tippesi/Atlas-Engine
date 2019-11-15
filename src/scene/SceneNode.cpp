@@ -1,6 +1,8 @@
 #include "SceneNode.h"
 #include "Scene.h"
 
+#include "../audio/AudioManager.h"
+
 namespace Atlas {
 
 	namespace Scene {
@@ -104,6 +106,30 @@ namespace Atlas {
 			if (item != decalActors.end()) {
 				decalActors.erase(item);
 			}
+
+		}
+
+		void SceneNode::Add(Actor::AudioActor* actor) {
+
+			audioActors.push_back(actor);
+
+			Atlas::Audio::AudioManager::AddMusic(actor);
+
+		}
+
+		void SceneNode::Remove(Actor::AudioActor* actor) {
+
+			if (sceneSet) {
+				spacePartitioning->Remove(actor);
+			}
+
+			auto item = std::find(audioActors.begin(), audioActors.end(), actor);
+
+			if (item != audioActors.end()) {
+				audioActors.erase(item);
+			}
+
+			Atlas::Audio::AudioManager::RemoveMusic(actor);
 
 		}
 
@@ -227,6 +253,21 @@ namespace Atlas {
 
 				if (removed) {
 					spacePartitioning->Add(decalActor);
+					removed = false;
+				}
+			}
+
+			for (auto& audioActor : audioActors) {
+				if (audioActor->HasMatrixChanged() || parentTransformChanged) {
+					spacePartitioning->Remove(audioActor);
+					removed = true;
+				}
+
+				audioActor->Update(*camera, deltaTime,
+					transformedMatrix, parentTransformChanged);
+
+				if (removed) {
+					spacePartitioning->Add(audioActor);
 					removed = false;
 				}
 			}

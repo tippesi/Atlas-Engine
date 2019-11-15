@@ -26,6 +26,8 @@ void App::LoadContent() {
 
 	font = Atlas::Font("roboto.ttf", 88, 10);
 
+	DisplayLoadingScreen();
+
 	camera = Atlas::Camera(47.0f, 2.0f, .25f, 400.0f,
 		vec3(30.0f, 25.0f, 0.0f), vec2(-3.14f / 2.0f, 0.0f));
 
@@ -61,9 +63,13 @@ void App::LoadContent() {
 	treeMesh = Atlas::Mesh::Mesh("tree.dae");
 	treeMesh.cullBackFaces = false;
 
+	audioData = new Atlas::Audio::AudioData("MenuTheme2_final.wav");
+
 	cubeActor = Atlas::Actor::MovableMeshActor(&cubeMesh);
 	treeActor = Atlas::Actor::StaticMeshActor(&treeMesh, scale(mat4(1.0f), vec3(3.0f)));
 	sponzaActor = Atlas::Actor::StaticMeshActor(&sponzaMesh, scale(mat4(1.0f), vec3(.05f)));
+
+	audioActor = new Atlas::Actor::AudioActor(audioData);
 
 	directionalLight = Atlas::Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
 #ifdef AE_OS_ANDROID
@@ -113,6 +119,8 @@ void App::LoadContent() {
 	scene.Add(&sponzaActor);
 	scene.Add(&treeActor);
 
+	scene.Add(audioActor);
+
 	scene.Add(&directionalLight);
 
 	scene.Add(&pointLight0);
@@ -120,10 +128,9 @@ void App::LoadContent() {
 	scene.Add(&pointLight2);
 	scene.Add(&pointLight3);
 
-	audioData = new Atlas::Audio::AudioData("MenuTheme2_final.wav");
 	audioStream = new Atlas::Audio::AudioStream(audioData);
 
-	Atlas::Audio::AudioManager::AddMusic(audioStream);
+	//Atlas::Audio::AudioManager::AddMusic(audioStream);
 
 }
 
@@ -152,6 +159,8 @@ void App::Update(float deltaTime) {
 
 	scene.Update(&camera, deltaTime);
 
+	audioActor->SetMatrix(glm::translate(vec3(0.0f, 0.0f, sin(Atlas::Clock::Get() / 5.0f) * 1.0f) + vec3(30.0f, 25.0f, 0.0f)));
+
 }
 
 void App::Render(float deltaTime) {
@@ -160,30 +169,24 @@ void App::Render(float deltaTime) {
 
 	float averageFramerate = Atlas::Clock::GetAverage();
 
-	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms";
+	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms" + 
+		std::to_string(audioActor->GetVolume());
 
 	masterRenderer.textRenderer.Render(&viewport, &font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
 
 }
 
-Atlas::EngineInstance* GetEngineInstance() {
-
-	return new App();
-
-}
-
-/*
-void Main::DisplayLoadingScreen() {
+void App::DisplayLoadingScreen() {
 
 	float textWidth, textHeight;
 	font.ComputeDimensions("Lädt...", 2.5f, &textWidth, &textHeight);
 
-    window->Clear();
+	window.Clear();
 
-	auto screenSize = Engine::GetScreenSize();
+	auto screenSize = GetScreenSize();
 
 #ifndef AE_OS_ANDROID
-    screenSize.x = 1280;
+	screenSize.x = 1280;
 	screenSize.y = 720;
 #endif
 
@@ -192,7 +195,12 @@ void Main::DisplayLoadingScreen() {
 
 	masterRenderer.textRenderer.Render(&viewport, &font, "Lädt...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
-	window->Update();
+	window.Update();
 
 }
-*/
+
+Atlas::EngineInstance* GetEngineInstance() {
+
+	return new App();
+
+}

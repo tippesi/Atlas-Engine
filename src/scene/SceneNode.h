@@ -93,6 +93,19 @@ namespace Atlas {
 
 			/**
 			 *
+			 * @param decal
+			 * @note An actor can only be attached to one node.
+			 */
+			virtual void Add(Actor::AudioActor* decal);
+
+			/**
+			 *
+			 * @param decal
+			 */
+			virtual void Remove(Actor::AudioActor* decal);
+
+			/**
+			 *
 			 * @param light
 			 */
 			virtual void Add(Lighting::Light *light);
@@ -146,6 +159,7 @@ namespace Atlas {
 			std::vector<Actor::MovableMeshActor*> movableMeshActors;
 			std::vector<Actor::StaticMeshActor*> staticMeshActors;
 			std::vector<Actor::DecalActor*> decalActors;
+			std::vector<Actor::AudioActor*> audioActors;
 			std::vector<Lighting::Light*> lights;
 
 			std::vector<Actor::StaticMeshActor*> addableStaticMeshActors;
