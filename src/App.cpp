@@ -89,25 +89,25 @@ void App::LoadContent() {
 	directionalLight.AddVolumetric(renderTarget->GetWidth() / 2, renderTarget->GetHeight() / 2, 10, -0.5f);
 #endif
 
-	auto pointLight1 = Atlas::Lighting::PointLight(AE_STATIONARY_LIGHT);
-	pointLight1.location = vec3(24.35f, 6.5f, 7.1f);
+	pointLight0 = Atlas::Lighting::PointLight(AE_STATIONARY_LIGHT);
+	pointLight0.location = vec3(24.35f, 6.5f, 7.1f);
+	pointLight0.color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
+	pointLight0.AddShadow(0.0f, 512);
+
+	pointLight1 = Atlas::Lighting::PointLight(AE_STATIONARY_LIGHT);
+	pointLight1.location = vec3(24.35f, 6.5f, -11.0f);
 	pointLight1.color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight1.AddShadow(0.0f, 512);
 
-	auto pointLight2 = Atlas::Lighting::PointLight(AE_STATIONARY_LIGHT);
-	pointLight2.location = vec3(24.35f, 6.5f, -11.0f);
+	pointLight2 = Atlas::Lighting::PointLight(AE_STATIONARY_LIGHT);
+	pointLight2.location = vec3(-31.0f, 6.5f, 7.1f);
 	pointLight2.color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight2.AddShadow(0.0f, 512);
 
-	auto pointLight3 = Atlas::Lighting::PointLight(AE_STATIONARY_LIGHT);
-	pointLight3.location = vec3(-31.0f, 6.5f, 7.1f);
+	pointLight3 = Atlas::Lighting::PointLight(AE_STATIONARY_LIGHT);
+	pointLight3.location = vec3(-31.0f, 6.5f, -11.0f);
 	pointLight3.color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight3.AddShadow(0.0f, 512);
-
-	auto pointLight4 = Atlas::Lighting::PointLight(AE_STATIONARY_LIGHT);
-	pointLight4.location = vec3(-31.0f, 6.5f, -11.0f);
-	pointLight4.color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
-	pointLight4.AddShadow(0.0f, 512);
 
 	scene.Add(&cubeActor);
 	scene.Add(&sponzaActor);
@@ -115,10 +115,10 @@ void App::LoadContent() {
 
 	scene.Add(&directionalLight);
 
+	scene.Add(&pointLight0);
 	scene.Add(&pointLight1);
 	scene.Add(&pointLight2);
 	scene.Add(&pointLight3);
-	scene.Add(&pointLight4);
 
 	audioData = new Atlas::Audio::AudioData("MenuTheme2_final.wav");
 	audioStream = new Atlas::Audio::AudioStream(audioData);
