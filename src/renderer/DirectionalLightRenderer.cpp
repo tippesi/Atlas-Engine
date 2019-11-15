@@ -31,6 +31,8 @@ namespace Atlas {
 			inverseViewMatrix->SetValue(camera->inverseViewMatrix);
 			inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
+			glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
+
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
@@ -58,7 +60,6 @@ namespace Atlas {
 				if (light->GetVolumetric()) {
 					glViewport(0, 0, directionalLight->GetVolumetric()->map->width, directionalLight->GetVolumetric()->map->height);
 					directionalLight->GetVolumetric()->map->Bind(GL_TEXTURE5);
-					glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
 				}
 
 				if (light->GetShadow()) {
@@ -80,6 +81,8 @@ namespace Atlas {
 				else {
 					shadowDistance->SetValue(0.0f);
 				}
+
+				glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
 
 				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

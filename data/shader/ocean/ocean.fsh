@@ -48,7 +48,7 @@ void main() {
 	
 	float fresnel = 0.02 + (1.0 - 0.02) * pow(1.0 - dot(normalize(-fPosition), normal), 5.0);
 	
-	fresnel = mix(fresnel, 0.0, clamp((0.01 - reflectionVec.y) * 5.0, 0.0, 1.0));
+	reflectionVec.y = max(reflectionVec.y, 0.0);
 	
 	diffuse *= shadowFactor;
 	

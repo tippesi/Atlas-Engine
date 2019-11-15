@@ -33,6 +33,9 @@ namespace Atlas {
 			throw AtlasException("Failed loading font");
 		}
 
+		glyphs.resize(AE_FONT_GLYPH_COUNT);
+		glyphInfo.resize(AE_FONT_GLYPH_COUNT);
+
 		firstGlyphBuffer = Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
 		firstGlyphBuffer.SetSize(AE_GPU_GLYPH_COUNT / 2);
 

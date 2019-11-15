@@ -24,6 +24,8 @@ namespace Atlas {
 
 			void Update(Camera* camera, float deltaTime);
 
+			void Reset(Camera* camera);
+
 			float speed = 7.0f;
 			float reactivity = 6.0f;
 

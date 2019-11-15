@@ -100,7 +100,9 @@ namespace Atlas {
 		struct GlyphInfo {
 			vec2 scale;
 			vec2 size;
-		} glyphInfo[AE_GPU_GLYPH_COUNT];
+		};
+
+		std::vector<GlyphInfo> glyphInfo;
 
 		Texture::Texture2DArray glyphTexture;
 
@@ -109,7 +111,7 @@ namespace Atlas {
 		Buffer::Buffer secondGlyphBuffer;
 
 	private:
-		Glyph glyphs[AE_FONT_GLYPH_COUNT];
+		std::vector<Glyph> glyphs;
 
 	};
 

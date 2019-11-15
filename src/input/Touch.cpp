@@ -63,6 +63,13 @@ namespace Atlas {
 			
 		}
 
+		void TouchHandler::Reset(Camera* camera) {
+
+			rotation = camera->rotation;
+			location = camera->location;
+
+		}
+
 		void TouchHandler::RegisterEvent() {
 
 			auto touchEventHandler = std::bind(&TouchHandler::TouchEventHandler, this, std::placeholders::_1);

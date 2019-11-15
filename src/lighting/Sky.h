@@ -2,7 +2,7 @@
 #define AE_SKY_H
 
 #include "../System.h"
-#include "Skybox.h"
+#include "../texture/Cubemap.h"
 #include "DirectionalLight.h"
 
 namespace Atlas {
@@ -16,7 +16,7 @@ namespace Atlas {
 
 			DirectionalLight* sun = nullptr;
 
-			Skybox* skybox = nullptr;
+			Texture::Cubemap* cubemap = nullptr;
 
 		};
 

@@ -25,13 +25,13 @@ namespace Atlas {
 
 			shader.Bind();
 
-			mat4 mvpMatrix = camera->projectionMatrix * glm::mat4(glm::mat3(camera->viewMatrix)) * scene->sky.skybox->matrix;
+			mat4 mvpMatrix = camera->projectionMatrix * glm::mat4(glm::mat3(camera->viewMatrix));
 
 			modelViewProjectionMatrix->SetValue(mvpMatrix);
 
 			vertexArray.Bind();
 
-			scene->sky.skybox->cubemap->Bind(GL_TEXTURE0);
+			scene->sky.cubemap->Bind(GL_TEXTURE0);
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 

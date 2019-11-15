@@ -7,13 +7,13 @@
 #include "../texture/Cubemap.h"
 #include "../texture/Texture2DArray.h"
 
-#define MAX_SHADOW_CASCADE_COUNT 4
+#define MAX_SHADOW_CASCADE_COUNT 5
 
 namespace Atlas {
 
 	namespace Lighting {
 
-		typedef struct ShadowComponent {
+		struct ShadowComponent {
 
 			float nearDistance;
 			float farDistance;
@@ -21,7 +21,9 @@ namespace Atlas {
 			mat4 viewMatrix;
 			mat4 projectionMatrix;
 
-		}ShadowComponent;
+			mat4 frustumMatrix;
+
+		};
 
 		class Shadow {
 

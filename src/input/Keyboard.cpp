@@ -60,6 +60,12 @@ namespace Atlas {
 
 		}
 
+		void KeyboardHandler::Reset(Camera* camera) {
+
+			location = camera->location;
+
+		}
+
 		void KeyboardHandler::RegisterEvent() {
 
 			auto keyboardEventHandler = std::bind(&KeyboardHandler::KeyboardEventHandler, this, std::placeholders::_1);

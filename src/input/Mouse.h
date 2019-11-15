@@ -24,6 +24,8 @@ namespace Atlas {
 
 			void Update(Camera* camera, float deltaTime);
 
+			void Reset(Camera* camera);
+
 			void SetActivationButton(uint8_t mouseButton);
 
 			void HideMouse();

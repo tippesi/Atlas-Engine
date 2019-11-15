@@ -36,6 +36,8 @@ namespace Atlas {
 
 				for (auto& key : vertexComponents)
 					delete key.second;
+				
+				vertexComponents.clear();
 
 				if (that.indexComponent != nullptr) {
 					auto buffer = new IndexBuffer(*that.indexComponent);

@@ -81,6 +81,13 @@ namespace Atlas {
 
 		}
 
+		void ControllerHandler::Reset(Camera* camera) {
+
+			location = camera->location;
+			rotation = camera->rotation;
+
+		}
+
 		void ControllerHandler::RegisterEvents() {
 
 			auto controllerAxisEventHandler = std::bind(&ControllerHandler::ControllerAxisEventHandler,

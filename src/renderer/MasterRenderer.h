@@ -138,6 +138,7 @@ namespace Atlas {
 
 			TextRenderer textRenderer;
 			OceanRenderer oceanRenderer;
+			AtmosphereRenderer atmosphereRenderer;
 
 			static std::string vertexPath;
 			static std::string fragmentPath;
@@ -179,7 +180,6 @@ namespace Atlas {
 			DirectionalLightRenderer directionalLightRenderer;
 			PointLightRenderer pointLightRenderer;
 			SkyboxRenderer skyboxRenderer;
-			AtmosphereRenderer atmosphereRenderer;
 			PostProcessRenderer postProcessRenderer;
 
 		};

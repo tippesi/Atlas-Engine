@@ -99,32 +99,71 @@ namespace Atlas {
             auto cascadeCenter = cameraLocation + camera->direction * 
 				(cascade->nearDistance + (cascade->farDistance - cascade->nearDistance) * 0.5f);
 
+			// auto resolution = (float)()
+
             vec3 lightDirection = normalize(direction);
 
             // A near enough up vector. This is because if the light location is
             // (0.0f, 1.0f, 0.0f) the shadows wouldn't render correctly due to the
             // shadows (or lights) view matrix. This is just a hack
             vec3 up = glm::vec3(0.0000000000000001f, 1.0f, 0.0000000000000001f);
-            cascade->viewMatrix = lookAt(cascadeCenter, cascadeCenter + lightDirection, up);
+            cascade->viewMatrix = lookAt(cascadeCenter - lightDirection, cascadeCenter, up);
 
             std::vector<vec3> corners = camera->GetFrustumCorners(cascade->nearDistance, cascade->farDistance);
 
             vec3 maxProj = vec3(cascade->viewMatrix * vec4(corners.at(0), 1.0f));
             vec3 minProj = maxProj;
 
+			auto maxLength = 0.0f;
+
             for (auto corner : corners) {
+
+				maxLength = glm::max(maxLength, glm::length(corner - cascadeCenter));
+
                 corner = vec3(cascade->viewMatrix * vec4(corner, 1.0f));
 
-                maxProj.x = glm::max(maxProj.x, corner.x);
-                maxProj.y = glm::max(maxProj.y, corner.y);
-                maxProj.z = glm::max(maxProj.z, corner.z);
+				maxProj.x = glm::max(maxProj.x, corner.x);
+				maxProj.y = glm::max(maxProj.y, corner.y);
+				maxProj.z = glm::max(maxProj.z, corner.z);
 
                 minProj.x = glm::min(minProj.x, corner.x);
                 minProj.y = glm::min(minProj.y, corner.y);
                 minProj.z = glm::min(minProj.z, corner.z);
             }
 
-            cascade->projectionMatrix = glm::ortho(minProj.x, maxProj.x, minProj.y, maxProj.y, -maxProj.z - 150.0f, -minProj.z);
+            cascade->frustumMatrix = glm::ortho(minProj.x, 
+				maxProj.x,
+				minProj.y,
+				maxProj.y,
+				-maxProj.z - 150.0f, // We need to render stuff behind the camera
+				-minProj.z + 10.0f) * cascade->viewMatrix; // We need to extend a bit to hide seams at cascade splits
+
+			maxLength = glm::ceil(maxLength);
+
+			// AtlasLog("%.3f", maxLength);
+
+			cascade->projectionMatrix = glm::ortho(-maxLength,
+				maxLength,
+				-maxLength,
+				maxLength,
+				-maxLength - 150.0f, // We need to render stuff behind the camera
+				maxLength + 10.0f); // We need to extend a bit to hide seams at cascade splits
+
+			glm::mat4 shadowMatrix = cascade->projectionMatrix * cascade->viewMatrix;
+			glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+			shadowOrigin = shadowMatrix * shadowOrigin;
+			GLfloat storedW = shadowOrigin.w;
+			shadowOrigin = shadowOrigin * (float)shadow->resolution / 2.0f;
+
+			glm::vec4 roundedOrigin = glm::round(shadowOrigin);
+			glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
+			roundOffset = roundOffset * 2.0f / (float)shadow->resolution;
+			roundOffset.z = 0.0f;
+			roundOffset.w = 0.0f;
+
+			glm::mat4 shadowProj = cascade->projectionMatrix;
+			shadowProj[3] += roundOffset;
+			cascade->projectionMatrix = shadowProj;
 
         }
 

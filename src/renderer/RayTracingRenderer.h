@@ -10,10 +10,10 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		class GPURayTracingRenderer : public Renderer {
+		class RayTracingRenderer : public Renderer {
 
 		public:
-			GPURayTracingRenderer();
+			RayTracingRenderer();
 
 			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
@@ -28,7 +28,7 @@ namespace Atlas {
 			void GetBVHUniforms();
 			void GetRayCasterUniforms();
 
-			bool UpdateGPUData(Scene::Scene* scene);
+			bool UpdateData(Scene::Scene* scene);
 
 			struct Triangle {
 				vec3 v0;

@@ -113,8 +113,8 @@ namespace Atlas {
 
 			foam.Bind(GL_TEXTURE2);
 
-			if (scene->sky.skybox != nullptr)
-				scene->sky.skybox->cubemap->Bind(GL_TEXTURE3);
+			if (scene->sky.cubemap != nullptr)
+				scene->sky.cubemap->Bind(GL_TEXTURE3);
 
 			refractionTexture.Bind(GL_TEXTURE4);
 			depthTexture.Bind(GL_TEXTURE5);

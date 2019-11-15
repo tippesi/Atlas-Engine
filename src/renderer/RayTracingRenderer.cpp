@@ -1,4 +1,4 @@
-#include "GPURayTracingRenderer.h"
+#include "RayTracingRenderer.h"
 
 #include "../volume/BVH.h"
 
@@ -9,15 +9,17 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string GPURayTracingRenderer::vertexUpdateComputePath = "raytracer/vertexUpdate.csh";
-		std::string GPURayTracingRenderer::BVHComputePath = "raytracer/BVHConstruction.csh";
-		std::string GPURayTracingRenderer::rayCasterComputePath = "raytracer/rayCaster.csh";
+		std::string RayTracingRenderer::vertexUpdateComputePath = "raytracer/vertexUpdate.csh";
+		std::string RayTracingRenderer::BVHComputePath = "raytracer/BVHConstruction.csh";
+		std::string RayTracingRenderer::rayCasterComputePath = "raytracer/rayCaster.csh";
 
-		GPURayTracingRenderer::GPURayTracingRenderer() {
+		RayTracingRenderer::RayTracingRenderer() {
 
+			// Check the possible limits
 			glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &shaderStorageLimit);
 			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &workGroupLimit);
 
+			// Create dynamic resizable shader storage buffers
 			triangleBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUTriangle),
 				AE_BUFFER_DYNAMIC_STORAGE);
 			materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUMaterial),
@@ -27,9 +29,11 @@ namespace Atlas {
 			nodesBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUBVHNode),
 				AE_BUFFER_DYNAMIC_STORAGE);
 
+			// Load shader stages from hard drive and compile the shader
 			vertexUpdateShader.AddStage(AE_COMPUTE_STAGE, vertexUpdateComputePath);
 			vertexUpdateShader.Compile();
 
+			// Retrieve uniforms
 			GetVertexUpdateUniforms();
 
 			BVHShader.AddStage(AE_COMPUTE_STAGE, BVHComputePath);
@@ -44,20 +48,24 @@ namespace Atlas {
 
 		}
 
-		void GPURayTracingRenderer::Render(Viewport* viewport, RenderTarget* target,
+		void RayTracingRenderer::Render(Viewport* viewport, RenderTarget* target,
 			Camera* camera, Scene::Scene* scene) {
 
 
 
 		}
 
-		void GPURayTracingRenderer::Render(Viewport* viewport, Texture::Texture2D* texture,
+		void RayTracingRenderer::Render(Viewport* viewport, Texture::Texture2D* texture,
 			Camera* camera, Scene::Scene* scene) {
 
+			// Check if the scene has changed. A change might happen when an actor has been updated,
+			// new actors have been added or old actors have been removed. If this happens we update
+			// the data structures.
 			if (scene->HasChanged())
-				if (!UpdateGPUData(scene))
+				if (!UpdateData(scene)) // Only proceed if GPU data is valid
 					return;
 
+			// Retrieve the first directional light source of the scene
 			auto lights = scene->GetLights();
 
 			Lighting::DirectionalLight* sun = nullptr;
@@ -68,14 +76,17 @@ namespace Atlas {
 				}
 			}
 
+			// If there is no directional light we won't do anything
 			if (!sun)
 				return;
 
 			auto cameraLocation = camera->thirdPerson ? camera->location -
 				camera->direction * camera->thirdPersonDistance : camera->location;
 
+			// Bind the neccessary shader to do the ray casting and light evaluation
 			rayCasterShader.Bind();
 
+			// Set all uniforms which are required by the compute shader
 			widthRayCasterUniform->SetValue(texture->width);
 			heightRayCasterUniform->SetValue(texture->height);
 
@@ -95,18 +106,23 @@ namespace Atlas {
 			lightColorRayCasterUniform->SetValue(sun->color);
 			lightAmbientRayCasterUniform->SetValue(sun->ambient);
 
+			// Bind texture only for writing
 			texture->Bind(GL_WRITE_ONLY, 0);
 
+			// Bind all buffers to their binding points
 			materialBuffer.BindBase(1);
 			triangleBuffer.BindBase(2);
 			materialIndicesBuffer.BindBase(3);
 			nodesBuffer.BindBase(4);
 
+			// Dispatch the compute shader in 
 			glDispatchCompute(texture->width / 8, texture->height / 8, 1);
+
+			texture->Unbind();
 
 		}
 
-		void GPURayTracingRenderer::GetVertexUpdateUniforms() {
+		void RayTracingRenderer::GetVertexUpdateUniforms() {
 
 			modelMatrixVertexUpdateUniform = vertexUpdateShader.GetUniform("mMatrix");
 			triangleOffsetVertexUpdateUniform = vertexUpdateShader.GetUniform("triangleOffset");
@@ -115,13 +131,13 @@ namespace Atlas {
 
 		}
 
-		void GPURayTracingRenderer::GetBVHUniforms() {
+		void RayTracingRenderer::GetBVHUniforms() {
 
 
 
 		}
 
-		void GPURayTracingRenderer::GetRayCasterUniforms() {
+		void RayTracingRenderer::GetRayCasterUniforms() {
 
 			widthRayCasterUniform = rayCasterShader.GetUniform("width");
 			heightRayCasterUniform = rayCasterShader.GetUniform("height");
@@ -138,7 +154,7 @@ namespace Atlas {
 
 		}
 
-		bool GPURayTracingRenderer::UpdateGPUData(Scene::Scene* scene) {
+		bool RayTracingRenderer::UpdateData(Scene::Scene* scene) {
 
 			auto actors = scene->GetMeshActors();
 
@@ -289,7 +305,7 @@ namespace Atlas {
 			// Copy nodes
 			for (size_t i = 0; i < nodes.size(); i++) {
 
-				
+
 				if (nodes[i].dataCount) {
 					// Leaf node (0x80000000 signalizes a leaf node)
 					gpuNodes[i].leaf.dataOffset = nodes[i].dataOffset;
@@ -299,7 +315,7 @@ namespace Atlas {
 					// Inner node
 					gpuNodes[i].inner.leftChild = nodes[i].leftChild;
 					gpuNodes[i].inner.rightChild = nodes[i].rightChild;
-				}				
+				}
 
 				gpuNodes[i].aabb.min = nodes[i].aabb.min;
 				gpuNodes[i].aabb.max = nodes[i].aabb.max;
@@ -313,7 +329,7 @@ namespace Atlas {
 			materialIndicesBuffer.Bind();
 			materialIndicesBuffer.SetSize(materialIndices.size());
 			materialIndicesBuffer.SetData(materialIndices.data(), 0, materialIndices.size());
-			
+
 			triangleBuffer.Bind();
 			triangleBuffer.SetSize(gpuTriangles.size());
 			triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());

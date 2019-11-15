@@ -201,6 +201,11 @@ namespace Atlas {
 			hasFocus = false;
 		}
 
+		if (event.type == AE_WINDOWEVENT_RESIZED) {
+			width = event.data.x;
+			height = event.data.y;
+		}
+
 		windowEventDelegate.Fire(event);
 
 	}

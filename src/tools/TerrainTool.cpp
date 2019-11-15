@@ -153,7 +153,7 @@ namespace Atlas {
 			auto normalData = std::vector<uint8_t>(heightData.size() * 3);
 
 			GenerateNormalData(heightData, normalData, (tileResolution - 1) * tileSideCount,
-							   (tileResolution - 1) * tileSideCount, 8.0f);
+							   (tileResolution - 1) * tileSideCount, terrain->heightScale);
 
 			// Iterate through all the LoD level and resize images according to the tile size
 
@@ -699,30 +699,22 @@ namespace Atlas {
 
         }
 
-		void TerrainTool::GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData, int32_t width, int32_t height, float strength) {
+		void TerrainTool::GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData, int32_t width, int32_t height, float scale) {
 
 			int32_t dataWidth = (int32_t)sqrtf((float)heightData.size());
 
 			for (int32_t x = 0; x < dataWidth; x++) {
 				for (int32_t y = 0; y < dataWidth; y++) {
 
-					float h0 = GetHeight(heightData, dataWidth, x - 1, y - 1, width, height);
-					float h1 = GetHeight(heightData, dataWidth, x, y - 1, width, height);
-					float h2 = GetHeight(heightData, dataWidth, x + 1, y - 1, width, height);
-					float h3 = GetHeight(heightData, dataWidth, x - 1, y, width, height);
-					float h4 = GetHeight(heightData, dataWidth, x + 1, y, width, height);
-					float h5 = GetHeight(heightData, dataWidth, x - 1, y + 1, width, height);
-					float h6 = GetHeight(heightData, dataWidth, x, y + 1, width, height);
-					float h7 = GetHeight(heightData, dataWidth, x + 1, y + 1, width, height);
+					float heightL = GetHeight(heightData, dataWidth, x - 1, y, width, height) * scale;
+					float heightR = GetHeight(heightData, dataWidth, x + 1, y, width, height) * scale;
+					float heightD = GetHeight(heightData, dataWidth, x, y - 1, width, height) * scale;
+					float heightU = GetHeight(heightData, dataWidth, x, y + 1, width, height) * scale;
 
-					// Sobel filter
-					vec3 normal;
+					auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f, 
+						heightD - heightU));
 
-					normal.z = 1.0f / strength;
-					normal.y = h0 + 2.0f * h1 + h2 - h5 - 2.0f * h6 - h7;
-					normal.x = h0 + 2.0f * h3 + h5 - h2 - 2.0f * h4 - h7;
-
-					normal = (0.5f * glm::normalize(-normal) + 0.5f) * 255.0f;
+					normal = (0.5f * normal + 0.5f) * 255.0f;
 
 					normalData[3 * y * dataWidth + 3 * x] = (uint8_t)normal.x;
 					normalData[3 * y * dataWidth + 3 * x + 1] = (uint8_t)normal.y;

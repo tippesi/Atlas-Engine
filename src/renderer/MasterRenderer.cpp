@@ -52,7 +52,7 @@ namespace Atlas {
 
 			glEnable(GL_CULL_FACE);
 
-			glClear(GL_DEPTH_BUFFER_BIT);
+			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 			terrainRenderer.Render(viewport, target, camera, scene);
 
@@ -88,12 +88,7 @@ namespace Atlas {
 			glDisable(GL_BLEND);
 			glEnable(GL_DEPTH_TEST);
 
-			if (scene->sky.skybox != nullptr) {
-				skyboxRenderer.Render(viewport, target, camera, scene);
-			}
-			else {
-				atmosphereRenderer.Render(viewport, target, camera, scene);
-			}
+			atmosphereRenderer.Render(viewport, target, camera, scene);
 
 			glDepthMask(GL_TRUE);
 

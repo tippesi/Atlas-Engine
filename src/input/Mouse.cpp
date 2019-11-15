@@ -61,6 +61,12 @@ namespace Atlas {
 
 		}
 
+		void MouseHandler::Reset(Camera* camera) {
+
+			rotation = camera->rotation;
+
+		}
+
 		void MouseHandler::SetActivationButton(uint8_t mouseButton) {
 
 			activationButton = mouseButton;

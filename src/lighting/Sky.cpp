@@ -6,7 +6,7 @@ namespace Atlas {
 
 		Sky::Sky() {
 
-			skybox = nullptr;
+
 
 		}
 

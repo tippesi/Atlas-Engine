@@ -281,6 +281,8 @@ namespace Atlas {
 
 			ReserveStorage(mipCount);
 
+			Unbind();
+
         }
 
 		void Texture::DeepCopy(const Texture& that) {

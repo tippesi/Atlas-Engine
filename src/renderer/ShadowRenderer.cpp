@@ -28,6 +28,9 @@ namespace Atlas {
 
 			framebuffer.Bind();
 
+			glDrawBuffer(GL_NONE);
+			glReadBuffer(GL_NONE);
+
 			auto lights = scene->GetLights();
 
 			for (auto& light : lights) {
@@ -60,8 +63,10 @@ namespace Atlas {
 
 					renderList.Clear();
 
+					// The component matrix is a better approximation of the actual
+					// frustum that the invariant matrix
 					Volume::AABB base(vec3(-1.0f), vec3(1.0f));
-					auto inverseMatrix = glm::inverse(component->projectionMatrix * component->viewMatrix);
+					auto inverseMatrix = glm::inverse(component->frustumMatrix);
 					auto aabb = base.Transform(inverseMatrix);
 
 					auto corners = GetFrustumCorners(inverseMatrix);
