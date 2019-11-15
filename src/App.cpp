@@ -9,7 +9,7 @@ std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
 
-	UnlockFramerate();
+	// UnlockFramerate();
 
 #ifndef AE_OS_ANDROID
 	renderTarget = new Atlas::RenderTarget(1920, 1080);
@@ -70,6 +70,7 @@ void App::LoadContent() {
 	sponzaActor = Atlas::Actor::StaticMeshActor(&sponzaMesh, scale(mat4(1.0f), vec3(.05f)));
 
 	audioActor = new Atlas::Actor::AudioActor(audioData);
+	audioActor->loop = true;
 
 	directionalLight = Atlas::Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
 #ifdef AE_OS_ANDROID
@@ -159,7 +160,7 @@ void App::Update(float deltaTime) {
 
 	scene.Update(&camera, deltaTime);
 
-	audioActor->SetMatrix(glm::translate(vec3(0.0f, 0.0f, sin(Atlas::Clock::Get() / 5.0f) * 1.0f) + vec3(30.0f, 25.0f, 0.0f)));
+	audioActor->SetMatrix(glm::translate(vec3(30.0f, 25.0f, 0.0f)));
 
 }
 
@@ -170,7 +171,7 @@ void App::Render(float deltaTime) {
 	float averageFramerate = Atlas::Clock::GetAverage();
 
 	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms" + 
-		std::to_string(audioActor->GetVolume());
+		std::to_string(audioActor->GetPitch());
 
 	masterRenderer.textRenderer.Render(&viewport, &font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
 

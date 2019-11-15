@@ -22,6 +22,7 @@ namespace Atlas {
 
 			// Maybe we should allow other wavespeeds (e.g. for underwater)
 			auto pitch = 1.0 + velocity / 333.3;
+			pitch = pitch >= 0.0 ? pitch : 0.0;
 			AudioStream::SetPitch(pitch);
 
 			auto data = AudioStream::GetChunk(length);
@@ -49,44 +50,41 @@ namespace Atlas {
 			if (matrixChanged || parentUpdate) {				
 
 				lastLocation = vec3(transformedMatrix[3]);
-
 				transformedMatrix = parentTransform * GetMatrix();
 
 			}
 
-			float distanceVolume = glm::min(1.0f, 1.0f / (glm::distance(vec3(transformedMatrix[3]), camera.GetLocation()) / 10.0f));
+			// We don't want to devide by zero
+			auto distance = glm::max(0.00001f, 
+				glm::distance(vec3(transformedMatrix[3]), camera.GetLocation()));
+
+			if (!init) {
+				cameraDistance = distance;
+				init = true;
+			}
+
+			float distanceVolume = glm::min(1.0f, 1.0f / (distance / 10.0f));
 
 			audible = distanceVolume > cutoff;
 
-			auto direction = glm::normalize(glm::vec3(transformedMatrix[3]) - camera.GetLocation());			
-
-			if ((matrixChanged || parentUpdate) && audible) {
-
-				auto actorDirection = vec3(transformedMatrix[3]) - lastLocation;
-				auto distance = glm::length(actorDirection);
-
-				auto abs = glm::dot(actorDirection, direction) > 0.0f ? -1.0f : 1.0f;
-
-				velocity = distance / deltaTime * abs;
-
-			}
-			else {
-
-				velocity = 0.0f;
-
-			}
+			velocity = (cameraDistance - distance) / deltaTime;
 
 			if (audible) {
-				float mix = 0.5f * glm::dot(direction, camera.right) + 0.5f;
+				auto mix = 0.0f;
 
-				leftChannelVolume = (1.0f - mix) * distanceVolume;
-				rightChannelVolume = mix * distanceVolume;
+				if (distance == 0.00001f) {
+					mix = 0.5f;
+				}
+				else {
+					auto direction = glm::normalize(glm::vec3(transformedMatrix[3]) - camera.GetLocation());
+					mix = 0.5f * glm::dot(direction, camera.right) + 0.5f;
+				}
 
+				leftChannelVolume = mix * distanceVolume;
+				rightChannelVolume = (1.0f - mix) * distanceVolume;
 			}
 
-			AtlasLog("%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f", leftChannelVolume, rightChannelVolume,
-				glm::vec3(camera.viewMatrix[3]).x, glm::vec3(camera.viewMatrix[3]).y, glm::vec3(camera.viewMatrix[3]).z,
-				velocity, distanceVolume);
+			cameraDistance = distance;
 
 			matrixChanged = false;
 

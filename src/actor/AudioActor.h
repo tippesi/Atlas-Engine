@@ -28,8 +28,10 @@ namespace Atlas {
 			float rightChannelVolume = 1.0f;
 
 			float velocity = 0.0f;
+			float cameraDistance = 0.0f;
 
 			bool audible = true;
+			bool init = false;
 
 			std::mutex mutex;
 
