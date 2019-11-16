@@ -80,10 +80,31 @@ namespace Atlas {
             int32_t GetSizedFormat();
 
             /**
-             * Copies a texture to the texture
-             * @param texture The other texture where the data is taken
+             * Copies a texture to the texture.
+             * @param texture The other texture where the data is taken from.
              */
             void Copy(const Texture& texture);
+
+            /**
+             * Copies a texture to the texture.
+             * @param texture The other texture where the data is taken from.
+             * @param srcX The x coordinate of the source texture to be copied from.
+             * @param srcY The y coordinate of the source texture to be copied from.
+             * @param srcZ The z coordinate of the source texture to be copied from.
+             * @param destX The x coordinate of the destination texture to be copied to.
+             * @param destY The y coordinate of the destination texture to be copied to.
+             * @param destZ The z coordinate of the destination texture to be copied to.
+             * @param width The width of the region to be copied.
+             * @param height The height of the region to be copied.
+             * @param depth The depth of the region to be copied.
+             * @note The destination texture is the object where this method is called,
+             * while the source texture is given to the method as the texture parameter.
+			 * @warning In case one of the parameters exceeds the limit of one of the textures
+			 * the method won't do anything and return before any copy operation.
+             */
+			void Copy(const Texture& texture, int32_t srcX, int32_t srcY,
+				int32_t srcZ, int32_t destX, int32_t destY, int32_t destZ,
+				int32_t width, int32_t height, int32_t depth);
 
 			/**
 			 * Generates the mipmaps.

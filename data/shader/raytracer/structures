@@ -5,35 +5,48 @@
 // has to be a size of multiple of 16 bytes.
 
 struct Ray {
+	
 	vec3 origin;
 	vec3 direction;
 	vec3 inverseDirection;
+	
 };
 
 struct AABB {
+	
 	float minX;
 	float minY;
 	float minZ;
 	float maxX;
 	float maxY;
 	float maxZ;
+	
 };
 
 struct Triangle {
+	
 	vec4 v0;
 	vec4 v1;
 	vec4 v2;
 	vec4 n0;
 	vec4 n1;
 	vec4 n2;
+	
 };
 
 struct Material {
+	
 	float diffR;
 	float diffG;
 	float diffB;
+	
 	float specularIntensity;
 	float specularHardness;
+	
+	uint textureLayer;
+	uint textureWidth;
+	uint textureHeight;
+
 };
 
 struct BVHNode {

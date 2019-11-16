@@ -20,8 +20,6 @@ namespace Atlas {
 			glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &textureUnitCount);
 			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &workGroupLimit);
 
-			AtlasLog("Maximum number of accessible texture units: %d", textureUnitCount);
-
 			// Create dynamic resizable shader storage buffers
 			triangleBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUTriangle),
 				AE_BUFFER_DYNAMIC_STORAGE);
@@ -118,6 +116,8 @@ namespace Atlas {
 			materialIndicesBuffer.BindBase(3);
 			nodesBuffer.BindBase(4);
 
+			textureArray.Bind(GL_READ_ONLY, 5);
+
 			// Dispatch the compute shader in 
 			glDispatchCompute(texture->width / 8, texture->height / 8, 1);
 
@@ -164,10 +164,13 @@ namespace Atlas {
 			int32_t indexCount = 0;
 			int32_t vertexCount = 0;
 			int32_t materialCount = 0;
+			uint32_t diffuseMapCount = 0;
 
 			std::unordered_set<Mesh::Mesh*> meshes;
 			std::unordered_map<Material*, int32_t> materialAccess;
 			std::vector<GPUMaterial> materials;
+
+			UpdateTexture(scene);
 
 			for (auto& actor : actors) {
 				indexCount += actor->mesh->data.GetIndexCount();
@@ -180,9 +183,15 @@ namespace Atlas {
 						gpuMaterial.diffuseColor = material.diffuseColor;
 						gpuMaterial.specularIntensity = material.specularIntensity;
 						gpuMaterial.specularHardness = material.specularHardness;
+						if (material.HasDiffuseMap()) {
+							gpuMaterial.textureLayer = diffuseMapCount++;
+							gpuMaterial.textureWidth = material.diffuseMap->width;
+							gpuMaterial.textureHeight = material.diffuseMap->height;
+						}
 						materials.push_back(gpuMaterial);
 						materialCount++;
 					}
+					meshes.insert(actor->mesh);
 				}
 			}
 
@@ -198,6 +207,7 @@ namespace Atlas {
 
 			std::vector<vec4> vertices(indexCount);
 			std::vector<vec4> normals(indexCount);
+			std::vector<vec2> texCoords(indexCount);
 			std::vector<int32_t> materialIndices(triangleCount);
 
 			vertexCount = 0;
@@ -209,6 +219,7 @@ namespace Atlas {
 				auto actorIndices = actor->mesh->data.indices.Get();
 				auto actorVertices = actor->mesh->data.vertices.Get();
 				auto actorNormals = actor->mesh->data.normals.Get();
+				auto actorTexCoords = actor->mesh->data.texCoords.Get();
 
 				for (auto& subData : actor->mesh->data.subData) {
 
@@ -222,6 +233,7 @@ namespace Atlas {
 							actorVertices[j * 3 + 2], 1.0f);
 						normals[vertexCount] = vec4(actorNormals[j * 4], actorNormals[j * 4 + 1],
 							actorNormals[j * 4 + 2], 0.0f);
+						texCoords[vertexCount] = vec2(actorTexCoords[j * 2], actorTexCoords[j * 2 + 1]);
 						if ((vertexCount % 3) == 0) {
 							materialIndices[vertexCount / 3] = materialIndex;
 						}
@@ -240,6 +252,9 @@ namespace Atlas {
 				triangles[i].n0 = normals[i * 3];
 				triangles[i].n1 = normals[i * 3 + 1];
 				triangles[i].n2 = normals[i * 3 + 2];
+				triangles[i].t0 = texCoords[i * 3];
+				triangles[i].t1 = texCoords[i * 3 + 1];
+				triangles[i].t2 = texCoords[i * 3 + 2];
 				triangles[i].materialIndex = materialIndices[i];
 			}
 
@@ -290,16 +305,20 @@ namespace Atlas {
 			auto gpuTriangles = std::vector<GPUTriangle>(triangles.size());
 			auto gpuNodes = std::vector<GPUBVHNode>(nodes.size());
 
-			// Sorted triangels according to BVH
+			// Sorted triangles according to BVH
 			for (size_t i = 0; i < triangles.size(); i++) {
 
-				gpuTriangles[i].v0 = vec4(triangles[i].v0, 1.0f);
-				gpuTriangles[i].v1 = vec4(triangles[i].v1, 1.0f);
-				gpuTriangles[i].v2 = vec4(triangles[i].v2, 1.0f);
+				auto t0 = triangles[i].t0;
+				auto t1 = triangles[i].t1;
+				auto t2 = triangles[i].t2;
 
-				gpuTriangles[i].n0 = vec4(triangles[i].n0, 1.0f);
-				gpuTriangles[i].n1 = vec4(triangles[i].n1, 1.0f);
-				gpuTriangles[i].n2 = vec4(triangles[i].n2, 1.0f);
+				gpuTriangles[i].v0 = vec4(triangles[i].v0, t0.x);
+				gpuTriangles[i].v1 = vec4(triangles[i].v1, t0.y);
+				gpuTriangles[i].v2 = vec4(triangles[i].v2, t1.x);
+
+				gpuTriangles[i].n0 = vec4(triangles[i].n0, t1.y);
+				gpuTriangles[i].n1 = vec4(triangles[i].n1, t2.x);
+				gpuTriangles[i].n2 = vec4(triangles[i].n2, t2.y);
 
 				materialIndices[i] = triangles[i].materialIndex;
 
@@ -307,7 +326,6 @@ namespace Atlas {
 
 			// Copy nodes
 			for (size_t i = 0; i < nodes.size(); i++) {
-
 
 				if (nodes[i].dataCount) {
 					// Leaf node (0x80000000 signalizes a leaf node)
@@ -342,6 +360,83 @@ namespace Atlas {
 			nodesBuffer.SetData(gpuNodes.data(), 0, gpuNodes.size());
 
 			return true;
+
+		}
+
+		void RayTracingRenderer::UpdateTexture(Scene::Scene* scene) {
+
+			auto actors = scene->GetMeshActors();
+
+			std::unordered_set<Mesh::Mesh*> meshes;
+
+			int32_t width = 0, height = 0, layers = 0;
+
+			for (auto& actor : actors) {
+				if (meshes.find(actor->mesh) == meshes.end()) {
+					auto& actorMaterials = actor->mesh->data.materials;
+					for (auto& material : actorMaterials) {
+						if (material.HasDiffuseMap()) {
+							layers++;
+							width = material.diffuseMap->width > width ? 
+								material.diffuseMap->width : width;
+							height = material.diffuseMap->height > height ?
+								material.diffuseMap->height : height;
+						}
+					}
+					meshes.insert(actor->mesh);
+				}
+			}
+
+			meshes.clear();
+
+			textureArray = Texture::Texture2DArray(width, height, layers, AE_RGBA8);
+
+			int32_t count = 0;
+
+			for (auto& actor : actors) {
+				if (meshes.find(actor->mesh) == meshes.end()) {
+					auto& actorMaterials = actor->mesh->data.materials;
+					for (auto& material : actorMaterials) {
+						if (material.HasDiffuseMap()) {
+							
+							auto data = material.diffuseMap->GetData();
+
+							// We need four channels (OpenGL restrictions for imageSamplers
+							// in compute shaders)
+							std::vector<uint8_t> convertedData;
+
+							if (material.diffuseMap->channels == 4) {
+
+								convertedData = data;
+
+							}
+							else if (material.diffuseMap->channels == 3) {
+
+								auto pixelCount = material.diffuseMap->width *
+									material.diffuseMap->height;
+
+								convertedData.resize(pixelCount * 4);
+
+								for (uint32_t i = 0; i < pixelCount; i++) {
+
+									convertedData[i * 4] = data[i * 3];
+									convertedData[i * 4 + 1] = data[i * 3 + 1];
+									convertedData[i * 4 + 2] = data[i * 3 + 2];
+									convertedData[i * 4 + 3] = 0;
+
+								}
+
+							}
+
+							textureArray.SetData(convertedData, 0, 0, count, material.diffuseMap->width,
+								material.diffuseMap->height, 1);
+							
+							count++;
+						}
+					}
+					meshes.insert(actor->mesh);
+				}
+			}
 
 		}
 

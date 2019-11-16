@@ -1,5 +1,6 @@
 #include <structures>
 #include <intersections>
+#include <texture>
 #include <BVH>
 
 layout (local_size_x = 8, local_size_y = 8) in;
@@ -71,16 +72,22 @@ void EvaluateLight(int triangleIndex, vec2 barrycentric, out vec3 color) {
 
 	Triangle triangle = triangles.data[triangleIndex];
 	Material mat = materials.data[materialIndices.data[triangleIndex]];
+	
+	vec2 t0 = vec2(triangle.v0.w, triangle.v1.w);
+	vec2 t1 = vec2(triangle.v2.w, triangle.n0.w);
+	vec2 t2 = vec2(triangle.n1.w, triangle.n2.w);
 
 	// Interpolate normal by using barrycentric coordinates
 	vec3 normal = normalize(vec3((1.0 - barrycentric.x - barrycentric.y) * triangle.n0 + 
 		barrycentric.x * triangle.n1 + barrycentric.y * triangle.n2));
 	vec3 position = vec3((1.0 - barrycentric.x - barrycentric.y) * triangle.v0 + 
 		barrycentric.x * triangle.v1 + barrycentric.y * triangle.v2);
-	vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB);
+	vec2 texCoord = (1.0 - barrycentric.x - barrycentric.y) * t0 + 
+		barrycentric.x * t1 + barrycentric.y * t2;
+	vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) * 
+		vec3(SampleDiffuseBilinear(mat, texCoord));
 	
-	float shadowFactor = 1.0;
-	
+	float shadowFactor = 1.0;	
 	
 	// Shadow testing
 	Ray ray;

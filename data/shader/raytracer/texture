@@ -1,0 +1,59 @@
+#include <structures>
+
+layout (binding = 5, rgba8) readonly uniform image2DArray textures;
+
+ivec2 GetTexCoord(vec2 texCoord, Material material) {
+	
+	return ivec2(texCoord) % ivec2(material.textureWidth, material.textureHeight);
+	
+}
+
+vec4 SampleDiffuse(Material material, vec2 texCoord) {
+	
+	float width = float(material.textureWidth);
+	float height = float(material.textureHeight);
+
+	texCoord.x *= width;
+	texCoord.y *= height;
+
+	int x = int(texCoord.x - floor(texCoord.x));
+	int y = int(texCoord.y - floor(texCoord.y));
+	
+	ivec2 iTexCoord = GetTexCoord(texCoord, material);
+
+	return imageLoad(textures, ivec3(iTexCoord, material.textureLayer));
+	
+}
+
+vec4 SampleDiffuseBilinear(Material material, vec2 texCoord) {
+	
+	
+	float width = float(material.textureWidth);
+	float height = float(material.textureHeight);
+
+	texCoord.x *= width;
+	texCoord.y *= height;
+
+	float x = texCoord.x - floor(texCoord.x);
+	float y = texCoord.y - floor(texCoord.y);
+	
+	// Calculate the four texture coordinates
+	ivec2 q00Tex = GetTexCoord(texCoord, material);
+	ivec2 q10Tex = GetTexCoord(texCoord + vec2(1.0, 0.0), material);
+	ivec2 q01Tex = GetTexCoord(texCoord + vec2(0.0, 1.0), material);
+	ivec2 q11Tex = GetTexCoord(texCoord + vec2(1.0, 1.0), material);	
+	
+	// Fetch the four texture samples
+	vec4 q00 = imageLoad(textures, ivec3(q00Tex, material.textureLayer));
+	vec4 q10 = imageLoad(textures, ivec3(q10Tex, material.textureLayer));
+	vec4 q01 = imageLoad(textures, ivec3(q01Tex, material.textureLayer));
+	vec4 q11 = imageLoad(textures, ivec3(q11Tex, material.textureLayer));
+	
+	// Interpolate samples horizontally
+	vec4 h0 = (1.0 - x) * q00 + x * q10;
+	vec4 h1 = (1.0 - x) * q01 + x * q11;
+	
+	// Interpolate samples vertically
+	return (1.0 - y) * h0 + y * h1;	
+	
+}

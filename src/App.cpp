@@ -134,7 +134,7 @@ void App::LoadContent() {
 
 	//Atlas::Audio::AudioManager::AddMusic(audioStream);
 
-	rayTraceTexture = Atlas::Texture::Texture2D(1920, 1080, GL_RGBA8);
+	rayTraceTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA8);
 
 }
 

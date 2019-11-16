@@ -30,6 +30,8 @@ namespace Atlas {
 
 			bool UpdateData(Scene::Scene* scene);
 
+			void UpdateTexture(Scene::Scene* scene);
+
 			struct Triangle {
 				vec3 v0;
 				vec3 v1;
@@ -37,6 +39,9 @@ namespace Atlas {
 				vec3 n0;
 				vec3 n1;
 				vec3 n2;
+				vec2 t0;
+				vec2 t1;
+				vec2 t2;
 				int32_t materialIndex;
 			};
 
@@ -53,6 +58,10 @@ namespace Atlas {
 				vec3 diffuseColor;
 				float specularIntensity;
 				float specularHardness;
+
+				uint32_t textureLayer;
+				uint32_t textureWidth;
+				uint32_t textureHeight;
 			};
 
 			struct GPUAABB {
@@ -83,6 +92,8 @@ namespace Atlas {
 			Buffer::Buffer materialBuffer;
 			Buffer::Buffer materialIndicesBuffer;
 			Buffer::Buffer nodesBuffer;
+
+			Texture::Texture2DArray textureArray;
 
 			Shader::Shader vertexUpdateShader;
 

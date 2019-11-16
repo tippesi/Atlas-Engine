@@ -90,15 +90,30 @@ namespace Atlas {
                 layers != texture.layers || channels != texture.channels)
                 return;
 
-			Bind();
-
-            glCopyImageSubData(texture.ID, texture.target, 0, 0, 0, 0,
-                    ID, target, 0, 0, 0, 0,
-                    width, height, layers);
-
-            GenerateMipmap();
+			Copy(texture, 0, 0, 0, 0, 0, 0, width, height, layers);
 
         }
+
+		void Texture::Copy(const Texture& texture, int32_t srcX, int32_t srcY,
+			int32_t srcZ, int32_t destX, int32_t destY, int32_t destZ,
+			int32_t width, int32_t height, int32_t depth) {
+
+			if (width <= 0 || height <= 0 || depth <= 0 ||
+				srcX + width > texture.width || srcY + height > texture.height ||
+				srcZ + depth > texture.layers || destX + width > this->width || 
+				destY + height > this->height || destZ + depth > this->layers)
+				return;
+
+			Bind();
+
+			glCopyImageSubData(texture.ID, texture.target, 
+				0, srcX, srcY, srcZ, ID, target,
+				0, destX, destY, destZ,
+				width, height, depth);
+
+			GenerateMipmap();
+
+		}
 
 		void Texture::GenerateMipmap() {
 

@@ -34,7 +34,8 @@ namespace Atlas {
              * @param generateMipMaps
              */
             Texture2DArray(int32_t width, int32_t height, int32_t depth, int32_t sizedFormat,
-                           int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
+                int32_t wrapping = GL_CLAMP_TO_EDGE, int32_t filtering = GL_NEAREST,
+				bool anisotropicFiltering = false, bool generateMipMaps = false);
 
 			/**
 			 * Copies the data from another texture to the texture object.
@@ -45,7 +46,7 @@ namespace Atlas {
 			Texture2DArray& operator=(const Texture2DArray& that);
 
             /**
-             * Sets the data of the texture
+             * Sets the data of the texture object.
              * @param data A vector holding the new data.
              * @param depth The depth where the data should be set.
              * @param count The number of layer where the data should be written to.
@@ -54,13 +55,39 @@ namespace Atlas {
             void SetData(std::vector<uint8_t>& data, int32_t depth, int32_t count = 1);
 
             /**
-            * Sets the data of the texture
+             * Sets the data of the texture object.
+             * @param data A vector holding the new data.
+             * @param x Specifies a pixel offset in x direction.
+             * @param y Specifies a pixel offset in x direction.
+             * @param z Specifies a pixel offset in x direction.
+             * @param width The width of the texture region to be set.
+             * @param height The height of the texture region to be set.
+             * @param depth The depth of the texture region to be set.
+             */
+			void SetData(std::vector<uint8_t>& data, int32_t x, int32_t y, int32_t z,
+				int32_t width, int32_t height, int32_t depth);
+
+            /**
+            * Sets the data of the texture object.
             * @param data A vector holding the new data.
             * @param depth The depth where the data should be set.
             * @param count The number of layer where the data should be written to.
             * @note The data has to have the size of count * width * height * channels.
             */
             void SetData(std::vector<uint16_t>& data, int32_t depth, int32_t count = 1);
+
+            /**
+             * Sets the data of the texture object.
+             * @param data A vector holding the new data.
+             * @param x Specifies a pixel offset in x direction.
+             * @param y Specifies a pixel offset in x direction.
+             * @param z Specifies a pixel offset in x direction.
+             * @param width The width of the texture region to be set.
+             * @param height The height of the texture region to be set.
+             * @param depth The depth of the texture region to be set.
+             */
+			void SetData(std::vector<uint16_t>& data, int32_t x, int32_t y, int32_t z,
+				int32_t width, int32_t height, int32_t depth);
 
             /**
              * Retrieves the data of the texture from the GPU.
