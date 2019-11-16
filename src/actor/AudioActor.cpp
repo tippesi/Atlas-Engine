@@ -10,6 +10,33 @@ namespace Atlas {
 
 		}
 
+		AudioActor& AudioActor::operator=(const AudioActor& that) {
+
+			if (this != &that) {
+
+				AudioStream::operator=(that);
+
+				aabb = that.aabb;
+				transformedMatrix = that.transformedMatrix;
+				SetMatrix(that.GetMatrix());
+
+				cutoff = that.cutoff;
+
+				leftChannelVolume = that.leftChannelVolume;
+				rightChannelVolume = that.rightChannelVolume;
+
+				velocity = that.velocity;
+				cameraDistance = that.cameraDistance;
+
+				audible = that.audible;
+				init = that.init;
+
+			}
+
+			return *this;
+
+		}
+
 		std::vector<int16_t> AudioActor::GetChunk(int32_t length) {
 
 			std::unique_lock<std::mutex> lock(mutex);

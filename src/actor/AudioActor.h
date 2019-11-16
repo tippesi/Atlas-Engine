@@ -14,7 +14,11 @@ namespace Atlas {
 		class AudioActor : public Actor, public Audio::AudioStream {
 
 		public:
+			AudioActor() {}
+
 			AudioActor(Audio::AudioData* data);
+
+			AudioActor& operator=(const AudioActor& that);
 
 			std::vector<int16_t> GetChunk(int32_t length) override;
 

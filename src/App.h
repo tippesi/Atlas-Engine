@@ -52,10 +52,10 @@ private:
 	Atlas::Actor::StaticMeshActor treeActor;
 	Atlas::Actor::StaticMeshActor sponzaActor;
 
-	Atlas::Actor::AudioActor* audioActor;
+	Atlas::Actor::AudioActor audioActor;
 
-	Atlas::Audio::AudioData* audioData;
-	Atlas::Audio::AudioStream* audioStream;
+	Atlas::Audio::AudioData audioData;
+	Atlas::Audio::AudioStream audioStream;
 
 	Atlas::Input::MouseHandler mouseHandler;
 	Atlas::Input::KeyboardHandler keyboardHandler;

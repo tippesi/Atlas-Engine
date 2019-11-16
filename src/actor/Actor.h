@@ -28,13 +28,13 @@ namespace Atlas {
              * Returns the transformation matrix relative to its parent
              * @return A 4x4 matrix that contains the transformation of the actor.
              */
-            inline mat4 GetMatrix() { return matrix; }
+			inline mat4 GetMatrix() const { return matrix; }
 
             /**
              * Checks whether the transformation matrix of the actor has changed.
              * @return
              */
-			inline bool HasMatrixChanged() { return matrixChanged; }
+			inline bool HasMatrixChanged() const { return matrixChanged; }
 
             /**
              * Updates the axis-aligned bounding box and transformedMatrix according to it's
