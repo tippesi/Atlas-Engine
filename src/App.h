@@ -7,6 +7,8 @@
 #include <input/Controller.h>
 #include <input/Touch.h>
 
+#include <renderer/RayTracingRenderer.h>
+
 #ifndef AE_OS_ANDROID
 #define WINDOW_FLAGS AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI
 #else
@@ -63,6 +65,9 @@ private:
 	Atlas::Input::TouchHandler touchHandler;
 
 	bool useControllerHandler;
+
+	Atlas::Renderer::RayTracingRenderer rayTracingRenderer;
+	Atlas::Texture::Texture2D rayTraceTexture;
 
 };
 

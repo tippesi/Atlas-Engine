@@ -99,8 +99,6 @@ namespace Atlas {
             auto cascadeCenter = cameraLocation + camera->direction * 
 				(cascade->nearDistance + (cascade->farDistance - cascade->nearDistance) * 0.5f);
 
-			// auto resolution = (float)()
-
             vec3 lightDirection = normalize(direction);
 
             // A near enough up vector. This is because if the light location is
@@ -140,8 +138,6 @@ namespace Atlas {
 
 			maxLength = glm::ceil(maxLength);
 
-			// AtlasLog("%.3f", maxLength);
-
 			cascade->projectionMatrix = glm::ortho(-maxLength,
 				maxLength,
 				-maxLength,
@@ -152,7 +148,7 @@ namespace Atlas {
 			glm::mat4 shadowMatrix = cascade->projectionMatrix * cascade->viewMatrix;
 			glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 			shadowOrigin = shadowMatrix * shadowOrigin;
-			GLfloat storedW = shadowOrigin.w;
+			auto storedW = shadowOrigin.w;
 			shadowOrigin = shadowOrigin * (float)shadow->resolution / 2.0f;
 
 			glm::vec4 roundedOrigin = glm::round(shadowOrigin);

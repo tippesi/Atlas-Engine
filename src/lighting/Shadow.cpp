@@ -21,7 +21,7 @@ namespace Atlas {
 
 			// GL_NEAREST fixes shadow aliasing on object edges on NVIDIA cards
 			maps = Texture::Texture2DArray(resolution, resolution, cascadeCount, 
-				AE_DEPTH16, GL_CLAMP_TO_BORDER, GL_LINEAR, false, false);
+				AE_DEPTH16, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 			maps.Bind(GL_TEXTURE0);
 

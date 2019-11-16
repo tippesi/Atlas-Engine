@@ -81,7 +81,7 @@ void EvaluateLight(int triangleIndex, vec2 barrycentric, out vec3 color) {
 	
 	float shadowFactor = 1.0;
 	
-	/*
+	
 	// Shadow testing
 	Ray ray;
 	ray.direction = -light.direction;
@@ -91,7 +91,7 @@ void EvaluateLight(int triangleIndex, vec2 barrycentric, out vec3 color) {
 	vec3 intersection;
 	QueryBVH(ray, 0.0, cameraFarPlane, triangleIndex, intersection);
 	shadowFactor = intersection.x < cameraFarPlane ? 0.0 : 1.0;
-	*/
+	
 	vec3 viewDir = normalize(cameraLocation - position);
 	vec3 lightDir = -light.direction;
 	

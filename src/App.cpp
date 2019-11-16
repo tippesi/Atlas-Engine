@@ -9,7 +9,7 @@ std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
 
-	// UnlockFramerate();
+	UnlockFramerate();
 
 #ifndef AE_OS_ANDROID
 	renderTarget = new Atlas::RenderTarget(1920, 1080);
@@ -72,7 +72,7 @@ void App::LoadContent() {
 	audioActor = Atlas::Actor::AudioActor(&audioData);
 	audioActor.loop = true;
 
-	directionalLight = Atlas::Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
+	directionalLight = Atlas::Lighting::DirectionalLight(AE_MOVABLE_LIGHT);
 #ifdef AE_OS_ANDROID
 	directionalLight.direction = vec3(0.0f, -1.0f, 0.5f);
 	directionalLight.ambient = 0.005f;
@@ -83,12 +83,13 @@ void App::LoadContent() {
 	directionalLight.color = vec3(253, 194, 109) / 255.0f;
 
 	// Cascaded shadow mapping
-	// directionalLight.AddShadow(300.0f, 0.01f, 1024, 4, 0.7f, camera);
+	directionalLight.AddShadow(200.0f, 0.01f, 1024, 5, 0.7f, &camera);
 	// Shadow mapping that is fixed to a point
 	mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
 #ifndef AE_OS_ANDROID
-	directionalLight.AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
+	// directionalLight.AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
 	directionalLight.GetShadow()->sampleCount = 1;
+	directionalLight.GetShadow()->sampleRange = 1.5;
 	directionalLight.AddVolumetric(renderTarget->GetWidth() / 2, renderTarget->GetHeight() / 2, 20, -0.5f);
 #else
 	directionalLight.AddShadow(200.0f, 0.01f, 2048, vec3(0.0f), orthoProjection);
@@ -133,6 +134,8 @@ void App::LoadContent() {
 
 	//Atlas::Audio::AudioManager::AddMusic(audioStream);
 
+	rayTraceTexture = Atlas::Texture::Texture2D(1920, 1080, GL_RGBA8);
+
 }
 
 void App::UnloadContent() {
@@ -166,7 +169,19 @@ void App::Update(float deltaTime) {
 
 void App::Render(float deltaTime) {
 
-	masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
+	viewport.Set(0, 0, rayTraceTexture.width, rayTraceTexture.height);
+
+	rayTracingRenderer.Render(&viewport, &rayTraceTexture, &camera, &scene);
+
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
+		GL_SHADER_STORAGE_BARRIER_BIT);
+
+	viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
+
+	masterRenderer.RenderTexture(&viewport, &rayTraceTexture, 0.0f, 0.0f,
+		(float)viewport.width, (float)viewport.height);
+
+	// masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
 
 	float averageFramerate = Atlas::Clock::GetAverage();
 

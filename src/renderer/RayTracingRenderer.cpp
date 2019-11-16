@@ -17,7 +17,10 @@ namespace Atlas {
 
 			// Check the possible limits
 			glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &shaderStorageLimit);
+			glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &textureUnitCount);
 			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &workGroupLimit);
+
+			AtlasLog("Maximum number of accessible texture units: %d", textureUnitCount);
 
 			// Create dynamic resizable shader storage buffers
 			triangleBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUTriangle),

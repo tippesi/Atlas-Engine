@@ -77,6 +77,7 @@ namespace Atlas {
 
 			int32_t workGroupLimit;
 			int32_t shaderStorageLimit;
+			int32_t textureUnitCount;
 
 			Buffer::Buffer triangleBuffer;
 			Buffer::Buffer materialBuffer;
