@@ -20,7 +20,7 @@ void QueryBVH(Ray ray, float tmin, float tmax, out int triangleIndex,
 	out vec3 intersection) {
 		
 	uint stack[32];
-	uint stackPtr = 1;
+	uint stackPtr = uint(1);
 	
 	intersection.x = tmax;
 	
@@ -41,17 +41,17 @@ void QueryBVH(Ray ray, float tmin, float tmax, out int triangleIndex,
 		float tL = 0.0;
 		float tR = 0.0;
 		
-		if (childLPtr > 0) {
+		if (childLPtr > uint(0)) {
 			intersectL = Intersection(ray, 
 				nodes.data[childLPtr].aabb, tmin, tmax, tL);
-			isLLeaf = (nodes.data[childLPtr].data2 & 0x80000000) > 0;
+			isLLeaf = (nodes.data[childLPtr].data2 & uint(0x80000000)) > uint(0);
 			validL = tL < intersection.x;
 		}
 		
-		if (childRPtr >	0) {
+		if (childRPtr >	uint(0)) {
 			intersectR = Intersection(ray, 
 				nodes.data[childRPtr].aabb, tmin, tmax, tR);
-			isRLeaf = (nodes.data[childRPtr].data2 & 0x80000000) > 0;
+			isRLeaf = (nodes.data[childRPtr].data2 & uint(0x80000000)) > uint(0);
 			validR = tR < intersection.x;
 		}
 		
@@ -79,7 +79,7 @@ void QueryBVH(Ray ray, float tmin, float tmax, out int triangleIndex,
 		}
 			
 	}
-	while (stackPtr != 0);
+	while (stackPtr != uint(0));
 		
 }
 
@@ -87,7 +87,7 @@ void CheckLeaf(Ray ray, uint nodePtr, float tmin, float tmax,
 	inout int triangleIndex, inout vec3 intersection) {
 		
 	uint offset = nodes.data[nodePtr].data1;
-	uint count = nodes.data[nodePtr].data2 & 0x7fffffff;
+	uint count = nodes.data[nodePtr].data2 & uint(0x7fffffff);
 	
 	vec3 sol, v0, v1, v2;
 	

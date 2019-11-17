@@ -1,4 +1,4 @@
 mkdir build
 cd build
-cmake ../ -A x64
+cmake ../ -DOPENGL_ES=ON -A x64
 start AtlasEngine.sln

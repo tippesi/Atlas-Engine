@@ -80,6 +80,10 @@ namespace Atlas {
              */
 			static void SetSourceDirectory(std::string directory);
 
+#ifdef AE_SHOW_LOG
+			std::string GetErrorLog();
+#endif
+
 			int32_t ID;
 			int32_t type;
 
@@ -90,7 +94,9 @@ namespace Atlas {
 
 			time_t GetLastModified();
 
-			std::string GetErrorLog(std::string& code);
+#ifdef AE_SHOW_LOG
+			std::string stageCode;
+#endif
 
 			std::string code;
 			std::list<std::string> macros;

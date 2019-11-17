@@ -116,17 +116,18 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		DirectIllumination(position, normal, texCoord, mat, direct);
 		
 		// create 2 random numbers
-		float r1 = 2.0 * PI * random(vec4(coord, float(sampleCount), 0));
+		float r1 = 2.0 * PI * random(vec4(coord, float(sampleCount), 0.0));
 		float r2 = random(vec4(coord, float(sampleCount), 1));
 		float r2s = sqrt(r2);
 
 		// compute orthonormal coordinate frame uvw with hitpoint as origin 
 		vec3 w = normal;
-		vec3 u = normalize(cross((abs(w.x) > .1 ? vec3(0, 1, 0) : vec3(1, 0, 0)), w));
+		vec3 u = normalize(cross((abs(w.x) > .1 ? vec3(0.0, 1.0, 0.0)
+			: vec3(1.0, 0.0, 0.0)), w));
 		vec3 v = cross(w, u);
 		
 		ray.origin = position;
-		ray.direction = normalize(u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1 - r2));
+		ray.direction = normalize(u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1.0 - r2));
 		ray.inverseDirection = 1.0 / ray.direction;
 		
 		ray.origin += normal * 0.03;

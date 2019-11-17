@@ -110,7 +110,7 @@ namespace Atlas {
             composedCode.append("#version 430\n\n#define ENGINE_GL\n");
 #elif AE_API_GLES
             composedCode.append("#version 320 es\n\nprecision highp float;\nprecision highp sampler2D;\
-				\nprecision highp usampler2D;\nprecision highp image2D;\
+				\nprecision highp usampler2D;\nprecision highp image2D;\nprecision highp image2DArray;\
 				\nprecision highp samplerCube;\nprecision highp sampler2DArrayShadow;\nprecision highp sampler2DArray;\
 				\nprecision highp samplerCubeShadow;\nprecision highp int;\n#define ENGINE_GLES\n");
 #endif
@@ -125,6 +125,10 @@ namespace Atlas {
 
             composedCode.append(code);
 
+#ifdef AE_SHOW_LOG
+			stageCode = composedCode;
+#endif
+
             const char* convertedCode = composedCode.c_str();
 
             int compiled = 0;
@@ -138,7 +142,7 @@ namespace Atlas {
 				error = true;
 
 #ifdef AE_SHOW_LOG
-				auto log = GetErrorLog(composedCode);
+				auto log = GetErrorLog();
 				AtlasLog("%s", log.c_str());
 #endif
 
@@ -258,7 +262,7 @@ namespace Atlas {
 
         }
 
-		std::string ShaderStage::GetErrorLog(std::string& code) {
+		std::string ShaderStage::GetErrorLog() {
 
 			std::string log;
 
@@ -292,9 +296,9 @@ namespace Atlas {
 			int32_t lineCount = 1;
 			size_t pos = 0, lastPos = 0;
 
-			while ((pos = code.find('\n', lastPos)) != std::string::npos) {
+			while ((pos = stageCode.find('\n', lastPos)) != std::string::npos) {
 				log.append("[" + std::to_string(lineCount++) + "] ");
-				log.append(code.substr(lastPos, pos - lastPos + 1));
+				log.append(stageCode.substr(lastPos, pos - lastPos + 1));
 				lastPos = pos + 1;
 			}
 

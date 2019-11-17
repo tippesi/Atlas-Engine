@@ -62,8 +62,8 @@ namespace Atlas {
 			if (camera->location != cameraLocation || camera->rotation != cameraRotation) {
 				sampleCount = 0;
 				// Will reset the data
-				accumulationTexture->SetData(std::vector<uint8_t>(
-					texture->width * texture->height * 16, 0));
+				std::vector<uint8_t> data(texture->width * texture->height * 16, 0);
+				accumulationTexture->SetData(data);
 
 				cameraLocation = camera->location;
 				cameraRotation = camera->rotation;
