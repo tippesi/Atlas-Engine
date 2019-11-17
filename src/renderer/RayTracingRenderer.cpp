@@ -57,7 +57,19 @@ namespace Atlas {
 		}
 
 		void RayTracingRenderer::Render(Viewport* viewport, Texture::Texture2D* texture,
-			Camera* camera, Scene::Scene* scene) {
+			Texture::Texture2D* accumulationTexture, Camera* camera, Scene::Scene* scene) {
+
+			if (camera->location != cameraLocation || camera->rotation != cameraRotation) {
+				sampleCount = 0;
+				// Will reset the data
+				accumulationTexture->Resize(texture->width, texture->height);
+
+				cameraLocation = camera->location;
+				cameraRotation = camera->rotation;
+
+			}
+
+			sampleCount++;
 
 			// Check if the scene has changed. A change might happen when an actor has been updated,
 			// new actors have been added or old actors have been removed. If this happens we update
@@ -107,16 +119,18 @@ namespace Atlas {
 			lightColorRayCasterUniform->SetValue(sun->color);
 			lightAmbientRayCasterUniform->SetValue(sun->ambient);
 
+			sampleCountRayCasterUniform->SetValue(sampleCount);
+
 			// Bind texture only for writing
 			texture->Bind(GL_WRITE_ONLY, 0);
+			accumulationTexture->Bind(GL_READ_WRITE, 1);
+			textureArray.Bind(GL_READ_ONLY, 2);
 
 			// Bind all buffers to their binding points
 			materialBuffer.BindBase(1);
 			triangleBuffer.BindBase(2);
 			materialIndicesBuffer.BindBase(3);
 			nodesBuffer.BindBase(4);
-
-			textureArray.Bind(GL_READ_ONLY, 5);
 
 			// Dispatch the compute shader in 
 			glDispatchCompute(texture->width / 8, texture->height / 8, 1);
@@ -154,6 +168,7 @@ namespace Atlas {
 			lightDirectionRayCasterUniform = rayCasterShader.GetUniform("light.direction");
 			lightColorRayCasterUniform = rayCasterShader.GetUniform("light.color");
 			lightAmbientRayCasterUniform = rayCasterShader.GetUniform("light.ambient");
+			sampleCountRayCasterUniform = rayCasterShader.GetUniform("sampleCount");
 
 		}
 

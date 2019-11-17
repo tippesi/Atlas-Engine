@@ -78,7 +78,7 @@ void App::LoadContent() {
 	directionalLight.ambient = 0.005f;
 #else
 	directionalLight.direction = vec3(0.0f, -1.0f, 0.1f);
-	directionalLight.ambient = 0.05f;
+	directionalLight.ambient = 0.005f;
 #endif
 	directionalLight.color = vec3(253, 194, 109) / 255.0f;
 
@@ -135,6 +135,7 @@ void App::LoadContent() {
 	//Atlas::Audio::AudioManager::AddMusic(audioStream);
 
 	rayTraceTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA8);
+	accumulationTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA32F);
 
 }
 
@@ -171,7 +172,7 @@ void App::Render(float deltaTime) {
 
 	viewport.Set(0, 0, rayTraceTexture.width, rayTraceTexture.height);
 
-	rayTracingRenderer.Render(&viewport, &rayTraceTexture, &camera, &scene);
+	rayTracingRenderer.Render(&viewport, &rayTraceTexture, &accumulationTexture, &camera, &scene);
 
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
 		GL_SHADER_STORAGE_BARRIER_BIT);

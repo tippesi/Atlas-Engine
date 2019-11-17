@@ -67,6 +67,7 @@ private:
 	bool useControllerHandler;
 
 	Atlas::Renderer::RayTracingRenderer rayTracingRenderer;
+	Atlas::Texture::Texture2D accumulationTexture;
 	Atlas::Texture::Texture2D rayTraceTexture;
 
 };

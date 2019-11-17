@@ -17,7 +17,8 @@ namespace Atlas {
 
 			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
-			void Render(Viewport* viewport, Texture::Texture2D* texture, Camera* camera, Scene::Scene* scene);
+			void Render(Viewport* viewport, Texture::Texture2D* texture, Texture::Texture2D* accumulationTexture,
+				Camera* camera, Scene::Scene* scene);
 
 			static std::string vertexUpdateComputePath;
 			static std::string BVHComputePath;
@@ -88,6 +89,11 @@ namespace Atlas {
 			int32_t shaderStorageLimit;
 			int32_t textureUnitCount;
 
+			vec3 cameraLocation;
+			vec2 cameraRotation;
+
+			int32_t sampleCount = 0;
+
 			Buffer::Buffer triangleBuffer;
 			Buffer::Buffer materialBuffer;
 			Buffer::Buffer materialIndicesBuffer;
@@ -118,6 +124,7 @@ namespace Atlas {
 			Shader::Uniform* lightDirectionRayCasterUniform = nullptr;
 			Shader::Uniform* lightColorRayCasterUniform = nullptr;
 			Shader::Uniform* lightAmbientRayCasterUniform = nullptr;
+			Shader::Uniform* sampleCountRayCasterUniform = nullptr;
 
 		};
 
