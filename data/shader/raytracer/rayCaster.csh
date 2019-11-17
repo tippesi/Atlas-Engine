@@ -1,6 +1,7 @@
 #include <structures>
 #include <intersections>
 #include <texture>
+#include <random>
 #include <BVH>
 
 layout (local_size_x = 8, local_size_y = 8) in;
@@ -33,7 +34,7 @@ uniform Light light;
 
 const float gamma = 1.0 / 2.2;
 
-void EvaluateLight(Ray ray, int triangleIndex, vec2 barrycentric, out vec3 color);
+void DirectIllumination(Ray ray, int triangleIndex, vec2 barrycentric, out vec3 color);
 
 void main() {
 
@@ -57,7 +58,7 @@ void main() {
 	vec3 color;
 	
 	if (intersection.x < cameraFarPlane) {
-		EvaluateLight(ray, triangleIndex, barrycentric, color);
+		DirectIllumination(ray, triangleIndex, barrycentric, color);
 	}
 	else {
 		color = vec3(0.0);
@@ -68,7 +69,7 @@ void main() {
 
 }
 
-void EvaluateLight(Ray ray, int triangleIndex, vec2 barrycentric, out vec3 color) {
+void DirectIllumination(Ray ray, int triangleIndex, vec2 barrycentric, out vec3 color) {
 
 	Triangle triangle = triangles.data[triangleIndex];
 	Material mat = materials.data[materialIndices.data[triangleIndex]];
