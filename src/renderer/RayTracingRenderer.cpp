@@ -62,7 +62,8 @@ namespace Atlas {
 			if (camera->location != cameraLocation || camera->rotation != cameraRotation) {
 				sampleCount = 0;
 				// Will reset the data
-				accumulationTexture->Resize(texture->width, texture->height);
+				accumulationTexture->SetData(std::vector<uint8_t>(
+					texture->width * texture->height * 16, 0));
 
 				cameraLocation = camera->location;
 				cameraRotation = camera->rotation;
@@ -136,6 +137,12 @@ namespace Atlas {
 			glDispatchCompute(texture->width / 8, texture->height / 8, 1);
 
 			texture->Unbind();
+
+		}
+
+		int32_t RayTracingRenderer::GetSampleCount() {
+
+			return sampleCount;
 
 		}
 

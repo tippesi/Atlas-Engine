@@ -121,7 +121,7 @@ void App::LoadContent() {
 	scene.Add(&sponzaActor);
 	scene.Add(&treeActor);
 
-	scene.Add(&audioActor);
+	// scene.Add(&audioActor);
 
 	scene.Add(&directionalLight);
 
@@ -134,8 +134,8 @@ void App::LoadContent() {
 
 	//Atlas::Audio::AudioManager::AddMusic(audioStream);
 
-	rayTraceTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA8);
-	accumulationTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA32F);
+	rayTraceTexture = Atlas::Texture::Texture2D(1920, 1080, GL_RGBA8);
+	accumulationTexture = Atlas::Texture::Texture2D(1920, 1080, GL_RGBA32F);
 
 }
 
@@ -186,8 +186,8 @@ void App::Render(float deltaTime) {
 
 	float averageFramerate = Atlas::Clock::GetAverage();
 
-	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms" + 
-		std::to_string(audioActor.GetPitch());
+	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms"
+		+ " " + std::to_string(rayTracingRenderer.GetSampleCount()) + " samples";
 
 	masterRenderer.textRenderer.Render(&viewport, &font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
 

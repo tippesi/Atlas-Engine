@@ -78,7 +78,7 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 	vec3 mask = vec3(1.0);
 	vec3 accumColor = vec3(0.0);
 
-	for (int bounces = 0; bounces < 1; bounces++) {
+	for (int bounces = 0; bounces < 4; bounces++) {
 
 		int triangleIndex = 0;
 		vec3 intersection;
@@ -131,8 +131,10 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		
 		ray.origin += normal * 0.03;
 		
-		accumColor += direct * surfaceColor * mask;
-		mask *= 0.25;		
+		mask *= surfaceColor;
+		
+		accumColor += direct * mask;
+		mask *= dot(ray.direction, normal);		
 		
 	}
 	
@@ -169,6 +171,6 @@ void DirectIllumination(vec3 position, vec3 normal,
 	specular *= pow(max(dot(normal, halfway), 0.0), mat.specularHardness)
 		* mat.specularIntensity;
 	
-	color = (diffuse) * nDotL * light.color * shadowFactor + ambient;
+	color = (diffuse) * nDotL * light.color * shadowFactor;
 	
 }

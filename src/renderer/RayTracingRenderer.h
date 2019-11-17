@@ -20,6 +20,8 @@ namespace Atlas {
 			void Render(Viewport* viewport, Texture::Texture2D* texture, Texture::Texture2D* accumulationTexture,
 				Camera* camera, Scene::Scene* scene);
 
+			int32_t GetSampleCount();
+
 			static std::string vertexUpdateComputePath;
 			static std::string BVHComputePath;
 			static std::string rayCasterComputePath;
