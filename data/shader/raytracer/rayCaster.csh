@@ -33,7 +33,7 @@ uniform Light light;
 
 const float gamma = 1.0 / 2.2;
 
-void EvaluateLight(int triangleIndex, vec2 barrycentric, out vec3 color);
+void EvaluateLight(Ray ray, int triangleIndex, vec2 barrycentric, out vec3 color);
 
 void main() {
 
@@ -57,7 +57,7 @@ void main() {
 	vec3 color;
 	
 	if (intersection.x < cameraFarPlane) {
-		EvaluateLight(triangleIndex, barrycentric, color);
+		EvaluateLight(ray, triangleIndex, barrycentric, color);
 	}
 	else {
 		color = vec3(0.0);
@@ -68,7 +68,7 @@ void main() {
 
 }
 
-void EvaluateLight(int triangleIndex, vec2 barrycentric, out vec3 color) {
+void EvaluateLight(Ray ray, int triangleIndex, vec2 barrycentric, out vec3 color) {
 
 	Triangle triangle = triangles.data[triangleIndex];
 	Material mat = materials.data[materialIndices.data[triangleIndex]];
@@ -86,11 +86,13 @@ void EvaluateLight(int triangleIndex, vec2 barrycentric, out vec3 color) {
 		barrycentric.x * t1 + barrycentric.y * t2;
 	vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) * 
 		vec3(SampleDiffuseBilinear(mat, texCoord));
+		
+	normal = dot(normal, ray.direction) < 0.0 ? normal : normal * -1.0;
 	
 	float shadowFactor = 1.0;	
 	
+	
 	// Shadow testing
-	Ray ray;
 	ray.direction = -light.direction;
 	ray.origin = position -light.direction * 0.0001;
 	ray.inverseDirection = 1.0 / ray.direction;
