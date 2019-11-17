@@ -78,7 +78,7 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 	vec3 mask = vec3(1.0);
 	vec3 accumColor = vec3(0.0);
 
-	for (int bounces = 0; bounces < 2; bounces++) {
+	for (int bounces = 0; bounces < 1; bounces++) {
 
 		int triangleIndex = 0;
 		vec3 intersection;
@@ -131,7 +131,7 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		
 		ray.origin += normal * 0.03;
 		
-		accumColor += direct  * surfaceColor * mask;
+		accumColor += direct * surfaceColor * mask;
 		mask *= 0.25;		
 		
 	}

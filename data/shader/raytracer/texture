@@ -4,8 +4,9 @@ layout (binding = 2, rgba8) readonly uniform image2DArray textures;
 
 ivec2 GetTexCoord(vec2 texCoord, Material material) {
 	
-	return ivec2(texCoord) % ivec2(material.textureWidth, material.textureHeight);
-	
+	return ivec2(mod(texCoord.x, float(material.textureWidth)),
+		mod(texCoord.y, float(material.textureHeight)));
+		
 }
 
 vec4 SampleDiffuse(Material material, vec2 texCoord) {

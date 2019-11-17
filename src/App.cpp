@@ -78,7 +78,7 @@ void App::LoadContent() {
 	directionalLight.ambient = 0.005f;
 #else
 	directionalLight.direction = vec3(0.0f, -1.0f, 0.1f);
-	directionalLight.ambient = 0.005f;
+	directionalLight.ambient = 0.05f;
 #endif
 	directionalLight.color = vec3(253, 194, 109) / 255.0f;
 
