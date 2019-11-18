@@ -118,8 +118,10 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 			barrycentric.x * triangle.v1 + barrycentric.y * triangle.v2);
 		vec2 texCoord = (1.0 - barrycentric.x - barrycentric.y) * t0 + 
 			barrycentric.x * t1 + barrycentric.y * t2;
-			
-		normal = dot(normal, ray.direction) < 0.0 ? normal : normal * -1.0;
+		
+		// Produces some problems in the bottom left corner of the Sponza scene,
+		// but fixes the cube. Should work in theory.
+		normal = dot(normal, ray.direction) <= 0.0 ? normal : normal * -1.0;
 		
 		vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) *
 			vec3(SampleDiffuseBilinear(mat, texCoord));
@@ -166,7 +168,7 @@ void DirectIllumination(vec3 position, vec3 normal,
 	// Shadow testing
 	Ray ray;
 	ray.direction = -light.direction;
-	ray.origin = position -light.direction * 0.0001;
+	ray.origin = position -light.direction * 0.01;
 	ray.inverseDirection = 1.0 / ray.direction;
 	
 	vec3 intersection;

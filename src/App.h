@@ -49,10 +49,12 @@ private:
 	Atlas::Mesh::Mesh sponzaMesh;
 	Atlas::Mesh::Mesh treeMesh;
 	Atlas::Mesh::Mesh cubeMesh;
+	Atlas::Mesh::Mesh sunMesh;
 
 	Atlas::Actor::StaticMeshActor cubeActor;
 	Atlas::Actor::StaticMeshActor treeActor;
 	Atlas::Actor::StaticMeshActor sponzaActor;
+	Atlas::Actor::StaticMeshActor sunActor;
 
 	Atlas::Actor::AudioActor audioActor;
 

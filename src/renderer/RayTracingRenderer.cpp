@@ -93,10 +93,6 @@ namespace Atlas {
 				}
 			}
 
-			// If there is no directional light we won't do anything
-			if (!sun)
-				return;
-
 			auto cameraLocation = camera->thirdPerson ? camera->location -
 				camera->direction * camera->thirdPersonDistance : camera->location;
 
@@ -119,9 +115,14 @@ namespace Atlas {
 
 			triangleCountRayCasterUniform->SetValue((int32_t)triangleBuffer.GetElementCount());
 
-			lightDirectionRayCasterUniform->SetValue(normalize(sun->direction));
-			lightColorRayCasterUniform->SetValue(sun->color);
-			lightAmbientRayCasterUniform->SetValue(sun->ambient);
+			if (sun) {
+				lightDirectionRayCasterUniform->SetValue(normalize(sun->direction));
+				lightColorRayCasterUniform->SetValue(sun->color);
+				lightAmbientRayCasterUniform->SetValue(sun->ambient);
+			}
+			else {
+				lightColorRayCasterUniform->SetValue(vec3(0.0f));
+			}
 
 			sampleCountRayCasterUniform->SetValue(sampleCount);
 			pixelOffsetRayCasterUniform->SetValue(ivec2(texture->width, texture->height) /
@@ -287,7 +288,8 @@ namespace Atlas {
 							actorVertices[j * 3 + 2], 1.0f);
 						normals[vertexCount] = vec4(actorNormals[j * 4], actorNormals[j * 4 + 1],
 							actorNormals[j * 4 + 2], 0.0f);
-						texCoords[vertexCount] = vec2(actorTexCoords[j * 2], actorTexCoords[j * 2 + 1]);
+						if (actor->mesh->data.texCoords.ContainsData())
+							texCoords[vertexCount] = vec2(actorTexCoords[j * 2], actorTexCoords[j * 2 + 1]);
 						if ((vertexCount % 3) == 0) {
 							materialIndices[vertexCount / 3] = materialIndex;
 						}

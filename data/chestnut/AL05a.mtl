@@ -1,0 +1,33 @@
+newmtl Bark1
+Ka 0.392157 0.392157 0.392157
+Kd 1 1 1
+Ks 0 0 0
+illum 2
+Ns 10
+map_Kd AL05brk.png
+map_bump AL05brk_b.png
+
+newmtl Leaf1
+Ka 0.392157 0.392157 0.392157
+Kd 1 1 1
+Ks 0.01 0.01 0.01
+illum 2
+Ns 10
+map_Kd AL05aut.png
+
+newmtl Leaf1b
+Ka 0.392157 0.392157 0.392157
+Kd 1 1 1
+Ks 0.01 0.01 0.01
+illum 2
+Ns 100
+map_Kd AL05aut.png
+
+newmtl Bark1b
+Ka 0.392157 0.392157 0.392157
+Kd 1 1 1
+Ks 0 0 0
+illum 2
+Ns 10
+map_Kd AL05brk.png
+map_bump AL05brk_b.png
