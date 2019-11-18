@@ -113,16 +113,19 @@ namespace Atlas {
 
         }
 
-        void Texture2D::SaveToPNG(std::string filename) {
+        void Texture2D::SaveToPNG(std::string filename, bool flipHorizontally) {
 
             Common::Image8 image;
 
             image.width = width;
             image.height = height;
+			image.channels = channels;
             image.fileFormat = AE_IMAGE_PNG;
 
             image.data = GetData();
-            FlipDataHorizontally(image.data);
+
+			if (flipHorizontally)
+				image.data = FlipDataHorizontally(image.data);
 
             Loader::ImageLoader::SaveImage(image, filename);
 

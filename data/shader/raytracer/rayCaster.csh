@@ -16,8 +16,8 @@ Except for image variables qualified with the format qualifiers r32f, r32i, and 
 image variables must specify either memory qualifier readonly or the memory qualifier writeonly.
 Reading and writing simultaneously to other formats is not supported on OpenGL ES
 */
-layout (binding = 1, rgba32f) readonly uniform image2D inAccumImage;
-layout (binding = 2, rgba32f) writeonly uniform image2D outAccumImage;
+layout (binding = 1, rgba16f) readonly uniform image2D inAccumImage;
+layout (binding = 2, rgba16f) writeonly uniform image2D outAccumImage;
 
 layout (std430, binding = 1) buffer Materials {
 	Material data[];
@@ -56,8 +56,11 @@ void DirectIllumination(vec3 position, vec3 normal,
 void main() {
 	
 	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy) + pixelOffset;
+	
+	float jitterX = random(vec2(float(sampleCount), 0.0));
+	float jitterY = random(vec2(float(sampleCount), 1.0));
 
-	vec2 coord = vec2(pixel) / 
+	vec2 coord = (vec2(pixel) + vec2(jitterX, jitterY)) / 
 		vec2(float(width), float(height));
 		
 	vec3 color = vec3(0.0);
@@ -87,7 +90,7 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 	vec3 mask = vec3(1.0);
 	vec3 accumColor = vec3(0.0);
 
-	for (int bounces = 0; bounces < 4; bounces++) {
+	for (int bounces = 0; bounces < 3; bounces++) {
 
 		int triangleIndex = 0;
 		vec3 intersection;

@@ -88,7 +88,7 @@ namespace Atlas {
              * @param filename The name of the file
              * @note Only UNSIGNED_BYTE textures are supported.
              */
-            void SaveToPNG(std::string filename);
+            void SaveToPNG(std::string filename, bool flipHorizontally = false);
 
         protected:
             void ReserveStorage(int32_t mipCount);

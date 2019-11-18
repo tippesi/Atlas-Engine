@@ -180,8 +180,9 @@ namespace Atlas {
             /**
              * Flips texture data horizontally.
              * @param data The data to be flipped.
+			 * @return The flipped data.
              */
-            void FlipDataHorizontally(std::vector<uint8_t>& data);
+			std::vector<uint8_t> FlipDataHorizontally(std::vector<uint8_t>& data);
 
             /**
              * Determines the maximum needed mipmap level.

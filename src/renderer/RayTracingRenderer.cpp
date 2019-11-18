@@ -62,7 +62,7 @@ namespace Atlas {
 			if (camera->location != cameraLocation || camera->rotation != cameraRotation) {
 				
 				// Will reset the data
-				std::vector<uint8_t> data(texture->width * texture->height * 16, 0);
+				std::vector<uint8_t> data(texture->width * texture->height * 8, 0);
 				inAccumTexture->SetData(data);
 				outAccumTexture->SetData(data);
 				data.resize(texture->width * texture->height * 4);

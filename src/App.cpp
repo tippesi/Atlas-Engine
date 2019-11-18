@@ -23,6 +23,7 @@ void App::LoadContent() {
 
 	auto icon = Atlas::Texture::Texture2D("icon.png");
 	window.SetIcon(&icon);
+	window.Update();
 
 	font = Atlas::Font("roboto.ttf", 88, 10);
 
@@ -117,9 +118,9 @@ void App::LoadContent() {
 	pointLight3.color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight3.AddShadow(0.0f, 512);
 
-	scene.Add(&cubeActor);
+	//scene.Add(&cubeActor);
 	scene.Add(&sponzaActor);
-	scene.Add(&treeActor);
+	//scene.Add(&treeActor);
 
 	// scene.Add(&audioActor);
 
@@ -134,10 +135,15 @@ void App::LoadContent() {
 
 	//Atlas::Audio::AudioManager::AddMusic(audioStream);
 
-	rayTraceTexture = Atlas::Texture::Texture2D(1920, 1080, GL_RGBA8);
-	inAccumTexture = Atlas::Texture::Texture2D(1920, 1080, GL_RGBA32F);
-	outAccumTexture = Atlas::Texture::Texture2D(1920, 1080, GL_RGBA32F);
-
+#ifndef AE_OS_ANDROID
+	rayTraceTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
+	inAccumTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+	outAccumTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+#else
+    rayTraceTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
+    inAccumTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA32F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+    outAccumTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA32F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+#endif
 }
 
 void App::UnloadContent() {
@@ -174,8 +180,13 @@ void App::Render(float deltaTime) {
 
     viewport.Set(0, 0, rayTraceTexture.width, rayTraceTexture.height);
 
+#ifndef AE_OS_ANDROID
 	rayTracingRenderer.Render(&viewport, &rayTraceTexture, &inAccumTexture,
-        &outAccumTexture, ivec2(16, 1), &camera, &scene);
+		&outAccumTexture, ivec2(1, 1), &camera, &scene);
+#else
+	rayTracingRenderer.Render(&viewport, &rayTraceTexture, &inAccumTexture,
+        &outAccumTexture, ivec2(16, 9), &camera, &scene);
+#endif
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
 		GL_SHADER_STORAGE_BARRIER_BIT);
@@ -184,7 +195,7 @@ void App::Render(float deltaTime) {
 
     masterRenderer.RenderTexture(&viewport, &rayTraceTexture, 0.0f, 0.0f,
 		(float) viewport.width, (float) viewport.height);
-
+    
 	// masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
 
 	float averageFramerate = Atlas::Clock::GetAverage();
@@ -199,21 +210,16 @@ void App::Render(float deltaTime) {
 void App::DisplayLoadingScreen() {
 
 	float textWidth, textHeight;
-	font.ComputeDimensions("Lädt...", 2.5f, &textWidth, &textHeight);
+	font.ComputeDimensions("Loading...", 2.5f, &textWidth, &textHeight);
 
 	window.Clear();
 
 	auto screenSize = GetScreenSize();
 
-#ifndef AE_OS_ANDROID
-	screenSize.x = 1280;
-	screenSize.y = 720;
-#endif
-
 	float x = screenSize.x / 2 - textWidth / 2;
 	float y = screenSize.y / 2 - textHeight / 2;
 
-	masterRenderer.textRenderer.Render(&viewport, &font, "Lädt...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+	masterRenderer.textRenderer.Render(&viewport, &font, "Loading...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
 	window.Update();
 
