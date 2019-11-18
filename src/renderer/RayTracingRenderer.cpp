@@ -56,21 +56,24 @@ namespace Atlas {
 
 		}
 
-		void RayTracingRenderer::Render(Viewport* viewport, Texture::Texture2D* texture,
-			Texture::Texture2D* accumulationTexture, Camera* camera, Scene::Scene* scene) {
+		void RayTracingRenderer::Render(Viewport* viewport, Texture::Texture2D* texture, Texture::Texture2D* inAccumTexture,
+			Texture::Texture2D* outAccumTexture, ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene) {
 
 			if (camera->location != cameraLocation || camera->rotation != cameraRotation) {
-				sampleCount = 0;
+				
 				// Will reset the data
 				std::vector<uint8_t> data(texture->width * texture->height * 16, 0);
-				accumulationTexture->SetData(data);
+				inAccumTexture->SetData(data);
+				outAccumTexture->SetData(data);
+				data.resize(texture->width * texture->height * 4);
+				texture->SetData(data);
 
 				cameraLocation = camera->location;
 				cameraRotation = camera->rotation;
 
-			}
-
-			sampleCount++;
+				sampleCount = 1;
+				imageOffset = ivec2(0);
+			}			
 
 			// Check if the scene has changed. A change might happen when an actor has been updated,
 			// new actors have been added or old actors have been removed. If this happens we update
@@ -121,11 +124,22 @@ namespace Atlas {
 			lightAmbientRayCasterUniform->SetValue(sun->ambient);
 
 			sampleCountRayCasterUniform->SetValue(sampleCount);
+			pixelOffsetRayCasterUniform->SetValue(ivec2(texture->width, texture->height) /
+				imageSubdivisions * imageOffset);
+
+
 
 			// Bind texture only for writing
 			texture->Bind(GL_WRITE_ONLY, 0);
-			accumulationTexture->Bind(GL_READ_WRITE, 1);
-			textureArray.Bind(GL_READ_ONLY, 2);
+			if (sampleCount % 2 == 0) {
+				inAccumTexture->Bind(GL_READ_ONLY, 1);
+				outAccumTexture->Bind(GL_WRITE_ONLY, 2);
+			}
+			else {
+				outAccumTexture->Bind(GL_READ_ONLY, 1);
+				inAccumTexture->Bind(GL_WRITE_ONLY, 2);
+			}
+			textureArray.Bind(GL_READ_ONLY, 3);
 
 			// Bind all buffers to their binding points
 			materialBuffer.BindBase(1);
@@ -134,9 +148,22 @@ namespace Atlas {
 			nodesBuffer.BindBase(4);
 
 			// Dispatch the compute shader in 
-			glDispatchCompute(texture->width / 8, texture->height / 8, 1);
+			glDispatchCompute(texture->width / 8 / imageSubdivisions.x,
+				texture->height / 8 / imageSubdivisions.y, 1);
 
 			texture->Unbind();
+
+			imageOffset.x++;
+
+			if (imageOffset.x == imageSubdivisions.x) {
+				imageOffset.x = 0;
+				imageOffset.y++;
+			}
+
+			if (imageOffset.y == imageSubdivisions.y) {
+				imageOffset.y = 0;
+				sampleCount++;
+			}
 
 		}
 
@@ -176,6 +203,7 @@ namespace Atlas {
 			lightColorRayCasterUniform = rayCasterShader.GetUniform("light.color");
 			lightAmbientRayCasterUniform = rayCasterShader.GetUniform("light.ambient");
 			sampleCountRayCasterUniform = rayCasterShader.GetUniform("sampleCount");
+			pixelOffsetRayCasterUniform = rayCasterShader.GetUniform("pixelOffset");
 
 		}
 
@@ -279,6 +307,10 @@ namespace Atlas {
 				triangles[i].t2 = texCoords[i * 3 + 2];
 				triangles[i].materialIndex = materialIndices[i];
 			}
+
+			vertices.clear();
+			normals.clear();
+			texCoords.clear();
 
 			triangleCount = 0;
 

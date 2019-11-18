@@ -5,12 +5,19 @@
 #include <BVH>
 #include <../common/PI>
 
+#define INF 1000000000000.0
+
 layout (local_size_x = 8, local_size_y = 8) in;
 
 layout (binding = 0, rgba8) writeonly uniform image2D outputImage;
-layout (binding = 1, rgba32f) uniform image2D accumulationImage;
 
-#define INF 1000000000000.0
+/*
+Except for image variables qualified with the format qualifiers r32f, r32i, and r32ui, 
+image variables must specify either memory qualifier readonly or the memory qualifier writeonly.
+Reading and writing simultaneously to other formats is not supported on OpenGL ES
+*/
+layout (binding = 1, rgba32f) readonly uniform image2D inAccumImage;
+layout (binding = 2, rgba32f) writeonly uniform image2D outAccumImage;
 
 layout (std430, binding = 1) buffer Materials {
 	Material data[];
@@ -38,6 +45,7 @@ uniform Light light;
 
 // Total sample count
 uniform int sampleCount;
+uniform ivec2 pixelOffset;
 
 const float gamma = 1.0 / 2.2;
 
@@ -46,8 +54,10 @@ void DirectIllumination(vec3 position, vec3 normal,
 	vec2 texCoord, Material material, out vec3 color);
 
 void main() {
+	
+	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy) + pixelOffset;
 
-	vec2 coord = vec2(gl_GlobalInvocationID.xy) / 
+	vec2 coord = vec2(pixel) / 
 		vec2(float(width), float(height));
 		
 	vec3 color = vec3(0.0);
@@ -61,14 +71,13 @@ void main() {
 	
 	Radiance(ray, coord, color);
 		
-	vec4 accumColor = imageLoad(accumulationImage,
-		ivec2(gl_GlobalInvocationID.xy));
+	vec4 accumColor = imageLoad(inAccumImage, pixel);
 		
 	accumColor += vec4(color, 1.0);
 	
-	imageStore(accumulationImage, ivec2(gl_GlobalInvocationID.xy), accumColor);
+	imageStore(outAccumImage, pixel, accumColor);
 
-	imageStore(outputImage, ivec2(gl_GlobalInvocationID.xy),
+	imageStore(outputImage, pixel,
 		pow(accumColor / float(sampleCount), vec4(gamma)));
 
 }

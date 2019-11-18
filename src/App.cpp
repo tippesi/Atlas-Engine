@@ -74,7 +74,7 @@ void App::LoadContent() {
 
 	directionalLight = Atlas::Lighting::DirectionalLight(AE_MOVABLE_LIGHT);
 #ifdef AE_OS_ANDROID
-	directionalLight.direction = vec3(0.0f, -1.0f, 0.5f);
+	directionalLight.direction = vec3(0.0f, -1.0f, 0.1f);
 	directionalLight.ambient = 0.005f;
 #else
 	directionalLight.direction = vec3(0.0f, -1.0f, 0.1f);
@@ -135,7 +135,8 @@ void App::LoadContent() {
 	//Atlas::Audio::AudioManager::AddMusic(audioStream);
 
 	rayTraceTexture = Atlas::Texture::Texture2D(1920, 1080, GL_RGBA8);
-	accumulationTexture = Atlas::Texture::Texture2D(1920, 1080, GL_RGBA32F);
+	inAccumTexture = Atlas::Texture::Texture2D(1920, 1080, GL_RGBA32F);
+	outAccumTexture = Atlas::Texture::Texture2D(1920, 1080, GL_RGBA32F);
 
 }
 
@@ -170,17 +171,19 @@ void App::Update(float deltaTime) {
 
 void App::Render(float deltaTime) {
 
-	viewport.Set(0, 0, rayTraceTexture.width, rayTraceTexture.height);
 
-	rayTracingRenderer.Render(&viewport, &rayTraceTexture, &accumulationTexture, &camera, &scene);
+    viewport.Set(0, 0, rayTraceTexture.width, rayTraceTexture.height);
 
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
+	rayTracingRenderer.Render(&viewport, &rayTraceTexture, &inAccumTexture,
+        &outAccumTexture, ivec2(16, 1), &camera, &scene);
+
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
 		GL_SHADER_STORAGE_BARRIER_BIT);
 
-	viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
+    viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
 
-	masterRenderer.RenderTexture(&viewport, &rayTraceTexture, 0.0f, 0.0f,
-		(float)viewport.width, (float)viewport.height);
+    masterRenderer.RenderTexture(&viewport, &rayTraceTexture, 0.0f, 0.0f,
+		(float) viewport.width, (float) viewport.height);
 
 	// masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
 

@@ -17,8 +17,10 @@ namespace Atlas {
 
 			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
-			void Render(Viewport* viewport, Texture::Texture2D* texture, Texture::Texture2D* accumulationTexture,
-				Camera* camera, Scene::Scene* scene);
+			void Render(Viewport* viewport, Texture::Texture2D* texture, Texture::Texture2D* inAccumTexture,
+				Texture::Texture2D* outAccumTexture, ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene);
+
+			bool UpdateData(Scene::Scene* scene);
 
 			int32_t GetSampleCount();
 
@@ -30,8 +32,6 @@ namespace Atlas {
 			void GetVertexUpdateUniforms();
 			void GetBVHUniforms();
 			void GetRayCasterUniforms();
-
-			bool UpdateData(Scene::Scene* scene);
 
 			void UpdateTexture(Scene::Scene* scene);
 
@@ -95,6 +95,7 @@ namespace Atlas {
 			vec2 cameraRotation;
 
 			int32_t sampleCount = 0;
+			ivec2 imageOffset = ivec2(0);
 
 			Buffer::Buffer triangleBuffer;
 			Buffer::Buffer materialBuffer;
@@ -127,6 +128,7 @@ namespace Atlas {
 			Shader::Uniform* lightColorRayCasterUniform = nullptr;
 			Shader::Uniform* lightAmbientRayCasterUniform = nullptr;
 			Shader::Uniform* sampleCountRayCasterUniform = nullptr;
+			Shader::Uniform* pixelOffsetRayCasterUniform = nullptr;
 
 		};
 

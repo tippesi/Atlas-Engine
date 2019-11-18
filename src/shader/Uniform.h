@@ -46,6 +46,12 @@ namespace Atlas {
 
 			void SetValue(vec2 value);
 
+			void SetValue(ivec4 value);
+
+			void SetValue(ivec3 value);
+
+			void SetValue(ivec2 value);
+
 			void SetValue(int32_t *value, int32_t length);
 
 			void SetValue(float *value, int32_t length);

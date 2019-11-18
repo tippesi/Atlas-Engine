@@ -165,7 +165,9 @@ namespace Atlas {
                 AtlasLog("Error linking shader files:");
                 for (auto& stage : stages) {
                     AtlasLog("%s", stage->filename.c_str());
-					AtlasLog("%s", stage->GetErrorLog().c_str());
+                    auto log = stage->GetErrorLog();
+                    if (!log.empty())
+					    AtlasLog("%s", log.c_str());
                 }
                 AtlasLog("%s", programLog.data());
 #endif

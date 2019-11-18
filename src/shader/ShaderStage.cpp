@@ -268,6 +268,10 @@ namespace Atlas {
 
 			int32_t shaderLogLength, length;
 			glGetShaderiv(ID, GL_INFO_LOG_LENGTH, &shaderLogLength);
+
+			if (!shaderLogLength)
+			    return "No error";
+
 			auto shaderLog = std::vector<char>(shaderLogLength);
 			glGetShaderInfoLog(ID, shaderLogLength, &length, shaderLog.data());
 
