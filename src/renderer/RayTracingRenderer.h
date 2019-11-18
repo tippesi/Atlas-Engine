@@ -59,12 +59,14 @@ namespace Atlas {
 
 			struct GPUMaterial {
 				vec3 diffuseColor;
+				vec3 emissiveColor;
+
 				float specularIntensity;
 				float specularHardness;
 
-				uint32_t textureLayer;
-				uint32_t textureWidth;
-				uint32_t textureHeight;
+				int32_t textureLayer;
+				int32_t textureWidth;
+				int32_t textureHeight;
 			};
 
 			struct GPUAABB {

@@ -40,12 +40,16 @@ struct Material {
 	float diffG;
 	float diffB;
 	
+	float emissR;
+	float emissG;
+	float emissB;
+	
 	float specularIntensity;
 	float specularHardness;
 	
-	uint textureLayer;
-	uint textureWidth;
-	uint textureHeight;
+	int textureLayer;
+	int textureWidth;
+	int textureHeight;
 
 };
 

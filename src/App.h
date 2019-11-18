@@ -50,7 +50,7 @@ private:
 	Atlas::Mesh::Mesh treeMesh;
 	Atlas::Mesh::Mesh cubeMesh;
 
-	Atlas::Actor::MovableMeshActor cubeActor;
+	Atlas::Actor::StaticMeshActor cubeActor;
 	Atlas::Actor::StaticMeshActor treeActor;
 	Atlas::Actor::StaticMeshActor sponzaActor;
 

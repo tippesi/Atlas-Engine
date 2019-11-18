@@ -62,7 +62,7 @@ namespace Atlas {
 			if (camera->location != cameraLocation || camera->rotation != cameraRotation) {
 				
 				// Will reset the data
-				std::vector<uint8_t> data(texture->width * texture->height * 8, 0);
+				std::vector<uint8_t> data(texture->width * texture->height * 16, 0);
 				inAccumTexture->SetData(data);
 				outAccumTexture->SetData(data);
 				data.resize(texture->width * texture->height * 4);
@@ -231,12 +231,16 @@ namespace Atlas {
 						materialAccess[&material] = materialCount;
 						GPUMaterial gpuMaterial;
 						gpuMaterial.diffuseColor = material.diffuseColor;
+						gpuMaterial.emissiveColor = material.emissiveColor;
 						gpuMaterial.specularIntensity = material.specularIntensity;
 						gpuMaterial.specularHardness = material.specularHardness;
 						if (material.HasDiffuseMap()) {
 							gpuMaterial.textureLayer = diffuseMapCount++;
 							gpuMaterial.textureWidth = material.diffuseMap->width;
 							gpuMaterial.textureHeight = material.diffuseMap->height;
+						}
+						else {
+							gpuMaterial.textureLayer = -1;
 						}
 						materials.push_back(gpuMaterial);
 						materialCount++;

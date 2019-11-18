@@ -199,6 +199,7 @@ namespace Atlas {
 			aiColor3D diffuse;
 			aiColor3D specular;
 			aiColor3D ambient;
+			aiColor3D emissive;
 
 			assimpMaterial->Get(AI_MATKEY_NAME, name);
 			assimpMaterial->Get(AI_MATKEY_SHININESS, material.specularHardness);
@@ -206,12 +207,14 @@ namespace Atlas {
 			assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
 			assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specular);
 			assimpMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ambient);
+			assimpMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, emissive);
 
             material.name = std::string(name.C_Str());
 
 			material.diffuseColor = vec3(diffuse.r, diffuse.g, diffuse.b);
 			material.specularColor = vec3(specular.r, specular.g, specular.b);
 			material.ambientColor = vec3(ambient.r, ambient.g, ambient.b);
+			material.emissiveColor = vec3(emissive.r, emissive.g, emissive.b);
 
 			if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 				aiString aiPath;

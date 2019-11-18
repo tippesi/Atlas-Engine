@@ -59,14 +59,16 @@ void App::LoadContent() {
 		}
 	});
 
-	cubeMesh = Atlas::Mesh::Mesh("cube.dae");
+	cubeMesh = Atlas::Mesh::Mesh("CornellBox-Sphere.obj");
+	cubeMesh.data.materials[5].emissiveColor = vec3(10.0f);
+
 	sponzaMesh = Atlas::Mesh::Mesh("sponza/sponza.dae");
 	treeMesh = Atlas::Mesh::Mesh("tree.dae");
 	treeMesh.cullBackFaces = false;
 
 	audioData = Atlas::Audio::AudioData("MenuTheme2_final.wav");
 
-	cubeActor = Atlas::Actor::MovableMeshActor(&cubeMesh);
+	cubeActor = Atlas::Actor::StaticMeshActor(&cubeMesh, scale(translate(vec3(0.0f, 0.0f, 10.0f)), vec3(5.0f)));
 	treeActor = Atlas::Actor::StaticMeshActor(&treeMesh, scale(mat4(1.0f), vec3(3.0f)));
 	sponzaActor = Atlas::Actor::StaticMeshActor(&sponzaMesh, scale(mat4(1.0f), vec3(.05f)));
 
@@ -118,7 +120,7 @@ void App::LoadContent() {
 	pointLight3.color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
 	pointLight3.AddShadow(0.0f, 512);
 
-	//scene.Add(&cubeActor);
+	scene.Add(&cubeActor);
 	scene.Add(&sponzaActor);
 	//scene.Add(&treeActor);
 
@@ -137,8 +139,8 @@ void App::LoadContent() {
 
 #ifndef AE_OS_ANDROID
 	rayTraceTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
-	inAccumTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-	outAccumTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+	inAccumTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA32F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+	outAccumTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA32F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 #else
     rayTraceTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
     inAccumTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA32F, GL_CLAMP_TO_EDGE, GL_LINEAR);

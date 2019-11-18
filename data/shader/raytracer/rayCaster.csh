@@ -16,8 +16,8 @@ Except for image variables qualified with the format qualifiers r32f, r32i, and 
 image variables must specify either memory qualifier readonly or the memory qualifier writeonly.
 Reading and writing simultaneously to other formats is not supported on OpenGL ES
 */
-layout (binding = 1, rgba16f) readonly uniform image2D inAccumImage;
-layout (binding = 2, rgba16f) writeonly uniform image2D outAccumImage;
+layout (binding = 1, rgba32f) readonly uniform image2D inAccumImage;
+layout (binding = 2, rgba32f) writeonly uniform image2D outAccumImage;
 
 layout (std430, binding = 1) buffer Materials {
 	Material data[];
@@ -123,13 +123,15 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		
 		vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) *
 			vec3(SampleDiffuseBilinear(mat, texCoord));
+			
+		vec3 emissiveColor = vec3(mat.emissR, mat.emissG, mat.emissB);
 		
 		vec3 direct;
 		DirectIllumination(position, normal, texCoord, mat, direct);
 		
 		// create 2 random numbers
-		float r1 = 2.0 * PI * random(vec4(coord, float(sampleCount), 0.0));
-		float r2 = random(vec4(coord, float(sampleCount), 1));
+		float r1 = 2.0 * PI * random(vec4(coord, float(sampleCount), bounces));
+		float r2 = random(vec4(coord, float(sampleCount), bounces + 1.0));
 		float r2s = sqrt(r2);
 
 		// compute orthonormal coordinate frame uvw with hitpoint as origin 
@@ -144,9 +146,10 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		
 		ray.origin += normal * 0.03;
 		
-		mask *= surfaceColor;
 		
-		accumColor += direct * mask;
+		accumColor += (surfaceColor * direct + emissiveColor) * mask;
+		
+		mask *= surfaceColor;
 		mask *= dot(ray.direction, normal);		
 		
 	}
