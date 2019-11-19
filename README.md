@@ -1,8 +1,8 @@
 # Atlas Engine
 ![Example scene](rasterized.png)
-<center>*Rasterized image*</center>
+*Rasterized image*
 ![Example scene](raytraced.png)
-<center>*Ray traced image*</center>
+*Ray traced image*
 ## Introduction
 This is a cross platform engine that is available on all major platforms including Linux, Windows, MacOS and Android.
 >**Note:**
