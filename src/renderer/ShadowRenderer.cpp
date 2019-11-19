@@ -28,9 +28,6 @@ namespace Atlas {
 
 			framebuffer.Bind();
 
-			glDrawBuffers(1, GL_NONE);
-			glReadBuffer(GL_NONE);
-
 			auto lights = scene->GetLights();
 
 			for (auto& light : lights) {
