@@ -18,10 +18,14 @@ namespace Atlas {
 		}
 
 		// Create new actor batch
-		auto meshActorBatch = new Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>(actor->mesh);
-		meshActorBatch->Add(actor);
+		auto actorBatch = new Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>(actor->mesh);
+		auto actorBatchBuffer = new Buffer::VertexBuffer(AE_FLOAT, 16, sizeof(mat4), 0,
+			AE_BUFFER_DYNAMIC_STORAGE);
 
-		actorBatches[actor->mesh] = meshActorBatch;
+		actorBatch->Add(actor);
+
+		actorBatches[actor->mesh] = actorBatch;
+		actorBatchBuffers[actor->mesh] = actorBatchBuffer;
 
 		// Build up all render list batches
 		std::map<int32_t, RenderListBatch> renderListBatches;
@@ -38,7 +42,7 @@ namespace Atlas {
 			}
 
 			RenderListBatch batch;
-			batch.meshActorBatch = meshActorBatch;
+			batch.actorBatch = actorBatch;
 			batch.subData.push_back(&subData);
 			renderListBatches[shaderConfig->shaderID] = batch;
 
@@ -51,10 +55,45 @@ namespace Atlas {
 
 	}
 
+	void RenderList::UpdateBuffers() {
+
+		std::vector<mat4> actorMatrices;
+
+		for (auto& actorBatchKey : actorBatches) {
+			auto actorBatch = actorBatchKey.second;
+			auto actorBatchBuffer = actorBatchBuffers[actorBatchKey.first];
+
+			if (!actorBatch->GetSize())
+				continue;
+
+			actorBatchBuffer->SetSize(actorBatch->GetSize());
+
+			actorMatrices.reserve(actorBatch->GetSize());
+
+			for (auto actor : actorBatch->actors) {
+				actorMatrices.push_back(actor->transformedMatrix);
+			}
+
+			actorBatchBuffer->SetData(actorMatrices.data(), 0,
+				actorBatch->GetSize());
+
+			actorBatch->GetObject()->vertexArray.AddInstancedComponent(4, actorBatchBuffer);
+
+			actorMatrices.clear();
+		}
+
+	}
+
 	void RenderList::Clear() {
 
 		for (auto &actorBatchKey : actorBatches) {
-			actorBatchKey.second->Clear();
+			auto actorBatch = actorBatchKey.second;
+			auto actorBatchBuffer = actorBatchBuffers[actorBatchKey.first];
+
+			actorBatch->Clear();
+			actorBatchBuffer->SetSize(0);
+
+			actorBatch->GetObject()->vertexArray.DisableComponent(4);
 		}
 
 	}

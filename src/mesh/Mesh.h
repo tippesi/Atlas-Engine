@@ -76,6 +76,8 @@ namespace Atlas {
 
 			std::unordered_map<Material*, MaterialConfig*> configs;
 
+			Buffer::VertexArray vertexArray;
+
 		private:
 			void InitializeVertexArray();
 
@@ -84,8 +86,6 @@ namespace Atlas {
 			void ClearMaterials();
 
 			void DeepCopy(const Mesh& that);
-
-			Buffer::VertexArray vertexArray;
 
 		};
 

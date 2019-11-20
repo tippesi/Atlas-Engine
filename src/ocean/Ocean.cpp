@@ -50,7 +50,7 @@ namespace Atlas {
 						node->location.y + node->sideLength)
 				);
 
-				if (camera->frustum.IsVisible(aabb))
+				if (camera->frustum.Intersects(aabb))
 					renderList.push_back(node);
 			}
 

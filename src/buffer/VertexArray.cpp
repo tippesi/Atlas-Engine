@@ -110,11 +110,6 @@ namespace Atlas {
 
 				for (int32_t i = 0; i < numAttribArrays; i++) {
 
-					auto find = vertexComponents.find(attribArray + i);
-
-					if (find != vertexComponents.end())
-						return;
-
 					glEnableVertexAttribArray(attribArray + i);
 					glVertexAttribPointer(attribArray + i, internalStride, buffer->GetDataType(), normalized,
 							(int32_t)buffer->GetElementSize(), (void*)((uint64_t)(buffer->GetElementSize() / numAttribArrays * i)));
@@ -137,6 +132,14 @@ namespace Atlas {
 				vertexComponents[attribArray] = buffer;
 
 			}
+
+		}
+
+		void VertexArray::DisableComponent(uint32_t attribArray) {
+
+			Bind();
+
+			glDisableVertexAttribArray(attribArray);
 
 		}
 

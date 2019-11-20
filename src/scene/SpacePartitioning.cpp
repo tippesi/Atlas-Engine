@@ -1,5 +1,7 @@
 #include "SpacePartitioning.h"
 
+#include "../libraries/glm/gtx/norm.hpp"
+
 namespace Atlas {
 
 	namespace Scene {
@@ -78,24 +80,35 @@ namespace Atlas {
 
 		}
 
-		void SpacePartitioning::GetRenderList(Volume::Frustum frustum, Volume::AABB aabb, RenderList& renderList) {
+		void SpacePartitioning::GetRenderList(Volume::Frustum frustum, RenderList& renderList) {
 
 			std::vector<Actor::MovableMeshActor*> movableActors;
+			std::vector<Actor::MovableMeshActor*> insideMovableActors;
 			std::vector<Actor::StaticMeshActor*> staticActors;
+			std::vector<Actor::StaticMeshActor*> insideStaticActors;
 
-			movableMeshOctree.QueryAABB(movableActors, aabb);
-			staticMeshOctree.QueryAABB(staticActors, aabb);
+			movableMeshOctree.QueryFrustum(movableActors,
+				insideMovableActors, frustum);
+			staticMeshOctree.QueryFrustum(staticActors,
+				insideStaticActors, frustum);
 
 			for (auto& actor : movableActors) {
-				if (frustum.IsVisible(actor->aabb))
+				if (frustum.Intersects(actor->aabb))
 					renderList.Add(actor);
 			}
 
-			for (auto& actor : staticActors) {
-				if (frustum.IsVisible(actor->aabb))
+			for (auto& actor : insideMovableActors)
+				renderList.Add(actor);
+
+			for (auto& actor : staticActors) {	
+				if (frustum.Intersects(actor->aabb)) {
 					renderList.Add(actor);
+				}
 			}
 
+			for (auto& actor : insideStaticActors)
+				renderList.Add(actor);
+		
 		}
 
 		std::vector<Actor::MeshActor*> SpacePartitioning::GetMeshActors() {

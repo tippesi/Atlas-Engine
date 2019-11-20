@@ -40,11 +40,18 @@ namespace Atlas {
 			void Resize(std::vector<vec3> corners);
 
 			/**
-			 * Visibility test for AABBs
+			 * Checks if the AABB intersects the frustum
 			 * @param aabb An AABB to test against the frustum
 			 * @return True if visible, false otherwise.
 			 */
-			bool IsVisible(AABB aabb);
+			bool Intersects(AABB aabb);
+
+			/**
+			 * Checks if the AABB is inside the frustum
+			 * @param aabb An AABB to test against the frustum
+			 * @return True if visible, false otherwise.
+			 */
+			bool IsInside(AABB aabb);
 
 			/**
 			 * Returns the planes of the frustum as 4-component vectors
@@ -56,8 +63,8 @@ namespace Atlas {
 
 		private:
 			enum {
-				TOP_PLANE = 0, BOTTOM_PLANE, NEAR_PLANE,
-				FAR_PLANE, LEFT_PLANE, RIGHT_PLANE
+				NEAR_PLANE = 0,	FAR_PLANE, TOP_PLANE,
+				BOTTOM_PLANE, LEFT_PLANE, RIGHT_PLANE
 			};
 
 			struct Plane {

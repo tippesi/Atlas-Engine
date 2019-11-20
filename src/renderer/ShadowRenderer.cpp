@@ -58,18 +58,14 @@ namespace Atlas {
 
 					glClear(GL_DEPTH_BUFFER_BIT);
 
-					renderList.Clear();
 
-					// The component matrix is a better approximation of the actual
-					// frustum that the invariant matrix
-					Volume::AABB base(vec3(-1.0f), vec3(1.0f));
 					auto inverseMatrix = glm::inverse(component->frustumMatrix);
-					auto aabb = base.Transform(inverseMatrix);
 
 					auto corners = GetFrustumCorners(inverseMatrix);
 					auto frustum = Volume::Frustum(corners);
 
-					scene->GetRenderList(frustum, aabb, renderList);
+					scene->GetRenderList(frustum, renderList);
+					renderList.UpdateBuffers();
 
 					for (auto& renderListBatchesKey : renderList.orderedRenderBatches) {
 
@@ -84,14 +80,14 @@ namespace Atlas {
 
 						for (auto renderListBatch : renderListBatches) {
 
-							auto meshActorBatch = renderListBatch.meshActorBatch;
+							auto actorBatch = renderListBatch.actorBatch;
 
 							// If there is no actor of that mesh visible we discard it.
-							if (!meshActorBatch->GetSize()) {
+							if (!actorBatch->GetSize()) {
 								continue;
 							}
 
-							auto mesh = meshActorBatch->GetObject();
+							auto mesh = actorBatch->GetObject();
 							mesh->Bind();
 
 							if (!mesh->cullBackFaces && backFaceCulling) {
@@ -118,21 +114,16 @@ namespace Atlas {
 									}
 								}
 
-								// We could also use instanced rendering here
-								for (auto& actor : meshActorBatch->actors) {
-
-									modelMatrixUniform->SetValue(actor->transformedMatrix);
-
-									glDrawElements(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
-												   (void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())));
-
-								}
+								glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
+									(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), actorBatch->GetSize());
 
 							}
 
 						}
 
 					}
+
+					renderList.Clear();
 
 				}
 

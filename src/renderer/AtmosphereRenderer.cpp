@@ -42,7 +42,7 @@ namespace Atlas {
 			atmosphereRadius->SetValue(6471000.0f);
 
 			glDrawElements(GL_TRIANGLES, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
-						   vertexArray.GetIndexComponent()->GetDataType(), nullptr);
+				vertexArray.GetIndexComponent()->GetDataType(), nullptr);
 
 		}
 

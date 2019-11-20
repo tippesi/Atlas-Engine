@@ -79,7 +79,7 @@ void App::LoadContent() {
 	audioActor = Atlas::Actor::AudioActor(&audioData);
 	audioActor.loop = true;
 
-	directionalLight = Atlas::Lighting::DirectionalLight(AE_MOVABLE_LIGHT);
+	directionalLight = Atlas::Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
 #ifdef AE_OS_ANDROID
 	directionalLight.direction = vec3(0.0f, -1.0f, 0.1f);
 	directionalLight.ambient = 0.005f;
@@ -90,11 +90,11 @@ void App::LoadContent() {
 	directionalLight.color = vec3(253, 194, 109) / 255.0f;
 
 	// Cascaded shadow mapping
-	directionalLight.AddShadow(200.0f, 0.01f, 1024, 5, 0.7f, &camera);
+	//directionalLight.AddShadow(200.0f, 0.01f, 1024, 5, 0.7f, &camera);
 	// Shadow mapping that is fixed to a point
 	mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
 #ifndef AE_OS_ANDROID
-	// directionalLight.AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
+	directionalLight.AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
 	directionalLight.GetShadow()->sampleCount = 1;
 	directionalLight.GetShadow()->sampleRange = 1.5;
 	directionalLight.AddVolumetric(renderTarget->GetWidth() / 2, renderTarget->GetHeight() / 2, 20, -0.5f);
@@ -202,8 +202,8 @@ void App::Render(float deltaTime) {
 
     masterRenderer.RenderTexture(&viewport, &rayTraceTexture, 0.0f, 0.0f,
 		(float) viewport.width, (float) viewport.height);
+	
 	*/
-
 	viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
     
 	masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
@@ -213,7 +213,7 @@ void App::Render(float deltaTime) {
 	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms"
 		+ " " + std::to_string(rayTracingRenderer.GetSampleCount()) + " samples";
 
-	// masterRenderer.textRenderer.Render(&viewport, &font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
+	masterRenderer.textRenderer.Render(&viewport, &font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
 
 }
 

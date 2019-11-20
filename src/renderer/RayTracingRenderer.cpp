@@ -282,7 +282,7 @@ namespace Atlas {
 					auto count = subData.indicesCount;
 					auto materialIndex = materialAccess[subData.material];
 
-					for (int32_t i = 0; i < count; i++) {
+					for (uint32_t i = 0; i < count; i++) {
 						auto j = actorIndices[i + offset];
 						vertices[vertexCount] = vec4(actorVertices[j * 3], actorVertices[j * 3 + 1],
 							actorVertices[j * 3 + 2], 1.0f);
@@ -477,7 +477,7 @@ namespace Atlas {
 
 								convertedData.resize(pixelCount * 4);
 
-								for (uint32_t i = 0; i < pixelCount; i++) {
+								for (int32_t i = 0; i < pixelCount; i++) {
 
 									convertedData[i * 4] = data[i * 3];
 									convertedData[i * 4 + 1] = data[i * 3 + 1];

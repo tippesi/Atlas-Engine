@@ -13,7 +13,7 @@ namespace Atlas {
 
 	struct RenderListBatch {
 
-		Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>* meshActorBatch;
+		Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>* actorBatch;
 		std::vector<Mesh::MeshSubData*> subData;
 
 	};
@@ -25,9 +25,12 @@ namespace Atlas {
 
 		void Add(Actor::MeshActor *actor);
 
+		void UpdateBuffers();
+
 		void Clear();
 
 		std::map<Mesh::Mesh*, Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>*> actorBatches;
+		std::map<Mesh::Mesh*, Buffer::VertexBuffer*> actorBatchBuffers;
 		std::map<int32_t, std::vector<RenderListBatch>> orderedRenderBatches;
 
 	private:

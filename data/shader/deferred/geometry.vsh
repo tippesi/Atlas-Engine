@@ -9,9 +9,7 @@ layout(location=3)in vec4 vTangent;
 layout(location=4)in uvec4 vBoneIDs;
 layout(location=5)in vec4 vBoneWeights;
 #endif
-#ifdef INSTANCING
-layout(location=6)in mat4 mMatrix;
-#endif
+layout(location=4)in mat4 mMatrix;
 
 out vec2 fTexCoord;
 
@@ -28,9 +26,6 @@ layout (std140) uniform AnimationUBO {
 #endif
 uniform mat4 pMatrix;
 uniform mat4 vMatrix;
-#ifndef INSTANCING
-uniform mat4 mMatrix;
-#endif
 
 void main() {
 

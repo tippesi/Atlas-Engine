@@ -21,17 +21,38 @@ namespace Atlas {
 
 		}
 
-		bool Frustum::IsVisible(AABB aabb) {
+		bool Frustum::Intersects(AABB aabb) {
 
-			for (uint8_t i = 0; i < 6; i++) {
+			for (uint8_t i = 2; i < 6; i++) {
 
-				auto normal = planes[i].normal;
-				auto distance = planes[i].distance;
+				auto& normal = planes[i].normal;
+				auto& distance = planes[i].distance;
 
 				vec3 s;
 				s.x = normal.x >= 0.0f ? aabb.max.x : aabb.min.x;
 				s.y = normal.y >= 0.0f ? aabb.max.y : aabb.min.y;
 				s.z = normal.z >= 0.0f ? aabb.max.z : aabb.min.z;
+
+				if (distance + glm::dot(normal, s) < 0.0f)
+					return false;
+
+			}
+
+			return true;
+
+		}
+
+		bool Frustum::IsInside(AABB aabb) {
+
+			for (uint8_t i = 2; i < 6; i++) {
+
+				auto& normal = planes[i].normal;
+				auto& distance = planes[i].distance;
+
+				vec3 s;
+				s.x = normal.x >= 0.0f ? aabb.min.x : aabb.max.x;
+				s.y = normal.y >= 0.0f ? aabb.min.y : aabb.max.y;
+				s.z = normal.z >= 0.0f ? aabb.min.z : aabb.max.z;
 
 				if (distance + glm::dot(normal, s) < 0.0f)
 					return false;

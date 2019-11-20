@@ -34,12 +34,9 @@ namespace Atlas {
 
 			bool backFaceCulling = true;
 
-			renderList.Clear();
+			scene->GetRenderList(camera->frustum, renderList);
 
-			Volume::AABB base(vec3(-1.0f), vec3(1.0f));
-			auto aabb = base.Transform(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
-
-			scene->GetRenderList(camera->frustum, aabb, renderList);
+			renderList.UpdateBuffers();
 
 			for (auto& renderListBatchesKey : renderList.orderedRenderBatches) {
 
@@ -53,14 +50,14 @@ namespace Atlas {
 
 				for (auto renderListBatch : renderListBatches) {
 
-					auto meshActorBatch = renderListBatch.meshActorBatch;
+					auto actorBatch = renderListBatch.actorBatch;
 
 					// If there is no actor of that mesh visible we discard it.
-					if (!meshActorBatch->GetSize()) {
+					if (!actorBatch->GetSize()) {
 						continue;
 					}
 
-					auto mesh = meshActorBatch->GetObject();
+					auto mesh = actorBatch->GetObject();
 					mesh->Bind();
 
 					if (!mesh->cullBackFaces && backFaceCulling) {
@@ -96,21 +93,16 @@ namespace Atlas {
 						specularHardnessUniform->SetValue(material->specularHardness);
 						specularIntensityUniform->SetValue(material->specularIntensity);
 
-						// We could also use instanced rendering here
-						for (auto& actor : meshActorBatch->actors) {
-
-							modelMatrixUniform->SetValue(actor->transformedMatrix);
-
-							glDrawElements(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
-										   (void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())));
-
-						}
+						glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
+							(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), actorBatch->GetSize());
 
 					}
 
 				}
 
 			}
+
+			renderList.Clear();
 
 		}
 

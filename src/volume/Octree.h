@@ -3,6 +3,7 @@
 
 #include "../System.h"
 #include "AABB.h"
+#include "Frustum.h"
 
 #include <vector>
 #include <unordered_set>
@@ -30,6 +31,8 @@ namespace Atlas {
             void Remove(T data, AABB aabb);
 
             void QueryAABB(std::vector<T>& data, AABB aabb);
+
+			void QueryFrustum(std::vector<T>& data, std::vector<T>& insideData, Frustum frustum);
 
 			void GetData(std::vector<T>& data) const;
 
@@ -133,6 +136,30 @@ namespace Atlas {
 				child.QueryAABB(data, aabb);
 
         }
+
+		template <class T>
+		void Octree<T>::QueryFrustum(std::vector<T>& data, std::vector<T>& insideData, Frustum frustum) {
+
+			auto scaled = this->aabb.Scale(relaxFactor);
+
+			if (!frustum.Intersects(scaled))
+				return;
+
+			// Check if frustum encloses this octree node
+			// In that case we can add all data and children data
+			if (frustum.IsInside(scaled)) {
+				GetData(insideData);
+				return;
+			}
+
+			for (auto& ele : octreeData) {
+				data.push_back(ele);
+			}
+
+			for (auto& child : children)
+				child.QueryFrustum(data, insideData, frustum);
+
+		}
 
 		template <class T>
 		void Octree<T>::GetData(std::vector<T>& data) const {
