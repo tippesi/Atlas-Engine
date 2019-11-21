@@ -1,0 +1,25 @@
+vec4 unpackUnitVector(int compressed) {
+
+	vec4 vector;
+	
+	vector.x = float((compressed >> 0) & 1023) / 1023.0 * 2.0 - 1.0;
+	vector.y = float((compressed >> 10) & 1023) / 1023.0 * 2.0 - 1.0;
+	vector.z = float((compressed >> 20) & 1023) / 1023.0 * 2.0 - 1.0;
+	vector.w = float((compressed >> 30) & 3) - 1.0;
+
+	return vector;
+
+}
+
+int packUnitVector(vec4 vector) {
+	
+	int unit = 0;
+	
+	unit |= int(((vector.x * 0.5 + 0.5) * 1023.0)) << 0;
+	unit |= int(((vector.y * 0.5 + 0.5) * 1023.0)) << 10;
+	unit |= int(((vector.z * 0.5 + 0.5) * 1023.0)) << 20;
+	unit |= int(((vector.w * 0.5 + 0.5) * 2.0)) << 30;
+
+	return unit;	
+	
+}

@@ -35,26 +35,14 @@ namespace Atlas {
 
 			void UpdateTexture(Scene::Scene* scene);
 
-			struct Triangle {
-				vec3 v0;
-				vec3 v1;
-				vec3 v2;
-				vec3 n0;
-				vec3 n1;
-				vec3 n2;
-				vec2 t0;
-				vec2 t1;
-				vec2 t2;
-				int32_t materialIndex;
-			};
+			int32_t PackUnitVector(vec4 vector);
+			int32_t PackHalfFloatVector(vec2 vector);
 
 			struct GPUTriangle {
 				vec4 v0;
 				vec4 v1;
 				vec4 v2;
-				vec4 n0;
-				vec4 n1;
-				vec4 n2;
+				vec4 d0;
 			};
 
 			struct GPUMaterial {
@@ -101,7 +89,6 @@ namespace Atlas {
 
 			Buffer::Buffer triangleBuffer;
 			Buffer::Buffer materialBuffer;
-			Buffer::Buffer materialIndicesBuffer;
 			Buffer::Buffer nodesBuffer;
 
 			Texture::Texture2DArray textureArray;

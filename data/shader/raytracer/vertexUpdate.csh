@@ -16,6 +16,7 @@ void main() {
 	int index = int(gl_GlobalInvocationID.x)
 		+ xInvocations * int(gl_GlobalInvocationID.y);
 	
+	/*
     // We might have more threads than triangles 
 	// per compute dispatch
 	if (index < triangleCount) {
@@ -35,5 +36,6 @@ void main() {
 		triangles.data[index] = triangle;
 
 	}
+	*/
 	
 }

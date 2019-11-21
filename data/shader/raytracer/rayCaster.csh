@@ -3,6 +3,7 @@
 #include <texture>
 #include <random>
 #include <BVH>
+#include <../common/packing>
 #include <../common/PI>
 
 #define INF 1000000000000.0
@@ -50,8 +51,9 @@ uniform ivec2 pixelOffset;
 const float gamma = 1.0 / 2.2;
 
 void Radiance(Ray ray, vec2 coord, out vec3 color);
-void DirectIllumination(vec3 position, vec3 normal,
-	vec2 texCoord, Material material, out vec3 color);
+void DirectIllumination(vec3 position, vec3 normal, Material material, out vec3 color);
+
+Triangle UnpackTriangle(PackedTriangle triangle);
 
 void main() {
 	
@@ -104,36 +106,32 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 			return;			
 		}
 		
-		Triangle triangle = triangles.data[triangleIndex];
-		Material mat = materials.data[materialIndices.data[triangleIndex]];
-		
-		vec2 t0 = vec2(triangle.v0.w, triangle.v1.w);
-		vec2 t1 = vec2(triangle.v2.w, triangle.n0.w);
-		vec2 t2 = vec2(triangle.n1.w, triangle.n2.w);
+		Triangle tri = UnpackTriangle(triangles.data[triangleIndex]);
+		Material mat = materials.data[tri.materialIndex];
 
 		// Interpolate normal by using barrycentric coordinates
-		vec3 normal = normalize(vec3((1.0 - barrycentric.x - barrycentric.y) * triangle.n0 + 
-			barrycentric.x * triangle.n1 + barrycentric.y * triangle.n2));
-		vec3 position = vec3((1.0 - barrycentric.x - barrycentric.y) * triangle.v0 + 
-			barrycentric.x * triangle.v1 + barrycentric.y * triangle.v2);
-		vec2 texCoord = (1.0 - barrycentric.x - barrycentric.y) * t0 + 
-			barrycentric.x * t1 + barrycentric.y * t2;
+		vec3 normal = normalize(vec3((1.0 - barrycentric.x - barrycentric.y) * tri.n0 + 
+			barrycentric.x * tri.n1 + barrycentric.y * tri.n2));
+		vec3 position = vec3((1.0 - barrycentric.x - barrycentric.y) * tri.v0 + 
+			barrycentric.x * tri.v1 + barrycentric.y * tri.v2);
+		vec2 texCoord = (1.0 - barrycentric.x - barrycentric.y) * tri.uv0 + 
+			barrycentric.x * tri.uv1 + barrycentric.y * tri.uv2;
 		
 		// Produces some problems in the bottom left corner of the Sponza scene,
 		// but fixes the cube. Should work in theory.
 		normal = dot(normal, ray.direction) <= 0.0 ? normal : normal * -1.0;
 		
-		vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) *
+		vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) * 
 			vec3(SampleDiffuseBilinear(mat, texCoord));
 			
 		vec3 emissiveColor = vec3(mat.emissR, mat.emissG, mat.emissB);
 		
 		vec3 direct;
-		DirectIllumination(position, normal, texCoord, mat, direct);
+		DirectIllumination(position, normal, mat, direct);
 		
 		// create 2 random numbers
-		float r1 = 2.0 * PI * random(vec4(coord, float(sampleCount), bounces));
-		float r2 = random(vec4(coord, float(sampleCount), bounces + 1.0));
+		float r1 = 2.0 * PI * random(vec4(coord, float(sampleCount), float(bounces)));
+		float r2 = random(vec4(coord, float(sampleCount), float(bounces) + 1.0));
 		float r2s = sqrt(r2);
 
 		// compute orthonormal coordinate frame uvw with hitpoint as origin 
@@ -161,7 +159,7 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 }
 
 void DirectIllumination(vec3 position, vec3 normal,
-	vec2 texCoord, Material mat, out vec3 color) {
+	Material mat, out vec3 color) {
 	
 	float shadowFactor = 1.0;	
 	
@@ -190,5 +188,33 @@ void DirectIllumination(vec3 position, vec3 normal,
 		* mat.specularIntensity;
 	
 	color = (diffuse) * nDotL * light.color * shadowFactor;
+	
+}
+
+Triangle UnpackTriangle(PackedTriangle triangle) {
+	
+	Triangle tri;
+
+	tri.v0 = triangle.v0.xyz;
+	tri.v1 = triangle.v1.xyz;
+	tri.v2 = triangle.v2.xyz;
+	
+	tri.n0 = vec3(unpackUnitVector(floatBitsToInt(triangle.v0.w)));
+	tri.n1 = vec3(unpackUnitVector(floatBitsToInt(triangle.v1.w)));
+	tri.n2 = vec3(unpackUnitVector(floatBitsToInt(triangle.v2.w)));
+	
+	/*
+	tri.t0 = unpackUnitVector(floatBitsToInt(triangle.d0.x));
+	tri.t1 = unpackUnitVector(floatBitsToInt(triangle.d0.y));
+	tri.t2 = unpackUnitVector(floatBitsToInt(triangle.d0.z));
+	*/
+	
+	tri.uv0 = unpackHalf2x16(floatBitsToUint(triangle.d0.x));
+	tri.uv1 = unpackHalf2x16(floatBitsToUint(triangle.d0.y));
+	tri.uv2 = unpackHalf2x16(floatBitsToUint(triangle.d0.z));
+	
+	tri.materialIndex = floatBitsToInt(triangle.d0.w);
+	
+	return tri;
 	
 }

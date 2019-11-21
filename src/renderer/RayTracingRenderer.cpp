@@ -1,6 +1,8 @@
 #include "RayTracingRenderer.h"
 
 #include "../volume/BVH.h"
+#include "../libraries/glm/packing.hpp"
+#include "../libraries/glm/gtc/packing.hpp"
 
 #include <unordered_set>
 #include <unordered_map>
@@ -24,8 +26,6 @@ namespace Atlas {
 			triangleBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUTriangle),
 				AE_BUFFER_DYNAMIC_STORAGE);
 			materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUMaterial),
-				AE_BUFFER_DYNAMIC_STORAGE);
-			materialIndicesBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(int32_t),
 				AE_BUFFER_DYNAMIC_STORAGE);
 			nodesBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUBVHNode),
 				AE_BUFFER_DYNAMIC_STORAGE);
@@ -145,8 +145,7 @@ namespace Atlas {
 			// Bind all buffers to their binding points
 			materialBuffer.BindBase(1);
 			triangleBuffer.BindBase(2);
-			materialIndicesBuffer.BindBase(3);
-			nodesBuffer.BindBase(4);
+			nodesBuffer.BindBase(3);
 
 			// Dispatch the compute shader in 
 			glDispatchCompute(texture->width / 8 / imageSubdivisions.x,
@@ -260,8 +259,8 @@ namespace Atlas {
 
 			int32_t triangleCount = indexCount / 3;
 
-			std::vector<vec4> vertices(indexCount);
-			std::vector<vec4> normals(indexCount);
+			std::vector<vec3> vertices(indexCount);
+			std::vector<vec3> normals(indexCount);
 			std::vector<vec2> texCoords(indexCount);
 			std::vector<int32_t> materialIndices(triangleCount);
 
@@ -284,10 +283,10 @@ namespace Atlas {
 
 					for (uint32_t i = 0; i < count; i++) {
 						auto j = actorIndices[i + offset];
-						vertices[vertexCount] = vec4(actorVertices[j * 3], actorVertices[j * 3 + 1],
-							actorVertices[j * 3 + 2], 1.0f);
-						normals[vertexCount] = vec4(actorNormals[j * 4], actorNormals[j * 4 + 1],
-							actorNormals[j * 4 + 2], 0.0f);
+						vertices[vertexCount] = vec3(actorVertices[j * 3], actorVertices[j * 3 + 1],
+							actorVertices[j * 3 + 2]);
+						normals[vertexCount] = vec3(actorNormals[j * 4], actorNormals[j * 4 + 1],
+							actorNormals[j * 4 + 2]);
 						if (actor->mesh->data.texCoords.ContainsData())
 							texCoords[vertexCount] = vec2(actorTexCoords[j * 2], actorTexCoords[j * 2 + 1]);
 						if ((vertexCount % 3) == 0) {
@@ -299,24 +298,7 @@ namespace Atlas {
 
 			}
 
-			std::vector<Triangle> triangles(triangleCount);
-
-			for (int32_t i = 0; i < triangleCount; i++) {
-				triangles[i].v0 = vertices[i * 3];
-				triangles[i].v1 = vertices[i * 3 + 1];
-				triangles[i].v2 = vertices[i * 3 + 2];
-				triangles[i].n0 = normals[i * 3];
-				triangles[i].n1 = normals[i * 3 + 1];
-				triangles[i].n2 = normals[i * 3 + 2];
-				triangles[i].t0 = texCoords[i * 3];
-				triangles[i].t1 = texCoords[i * 3 + 1];
-				triangles[i].t2 = texCoords[i * 3 + 2];
-				triangles[i].materialIndex = materialIndices[i];
-			}
-
-			vertices.clear();
-			normals.clear();
-			texCoords.clear();
+			std::vector<GPUTriangle> triangles(triangleCount);
 
 			triangleCount = 0;
 
@@ -332,12 +314,34 @@ namespace Atlas {
 
 					auto k = i + triangleCount;
 
-					triangles[k].v0 = vec3(matrix * vec4(triangles[k].v0, 1.0f));
-					triangles[k].v1 = vec3(matrix * vec4(triangles[k].v1, 1.0f));
-					triangles[k].v2 = vec3(matrix * vec4(triangles[k].v2, 1.0f));
-					triangles[k].n0 = vec3(matrix * vec4(triangles[k].n0, 0.0f));
-					triangles[k].n1 = vec3(matrix * vec4(triangles[k].n1, 0.0f));
-					triangles[k].n2 = vec3(matrix * vec4(triangles[k].n2, 0.0f));
+					// Transform everything
+					auto v0 = vec3(matrix * vec4(vertices[k * 3], 1.0f));
+					auto v1 = vec3(matrix * vec4(vertices[k * 3 + 1], 1.0f));
+					auto v2 = vec3(matrix * vec4(vertices[k * 3 + 2], 1.0f));
+
+					auto n0 = normalize(vec3(matrix * vec4(normals[k * 3], 0.0f)));
+					auto n1 = normalize(vec3(matrix * vec4(normals[k * 3 + 1], 0.0f)));
+					auto n2 = normalize(vec3(matrix * vec4(normals[k * 3 + 2], 0.0f)));
+
+					auto uv0 = texCoords[k * 3];
+					auto uv1 = texCoords[k * 3 + 1];
+					auto uv2 = texCoords[k * 3 + 2];
+
+					// Compress data
+					auto cn0 = PackUnitVector(vec4(n0, 0.0f));
+					auto cn1 = PackUnitVector(vec4(n1, 0.0f));
+					auto cn2 = PackUnitVector(vec4(n2, 0.0f));
+
+					auto cuv0 = glm::packHalf2x16(uv0);
+					auto cuv1 = glm::packHalf2x16(uv1);
+					auto cuv2 = glm::packHalf2x16(uv2);
+
+
+					triangles[k].v0 = vec4(v0, *(float*)& cn0);
+					triangles[k].v1 = vec4(v1, *(float*)& cn1);
+					triangles[k].v2 = vec4(v2, *(float*)& cn2);
+					triangles[k].d0 = vec4(*(float*)& cuv0, *(float*)& cuv1,
+						*(float*)& cuv2, *(float*)& materialIndices[k]);
 
 					auto min = glm::min(glm::min(triangles[k].v0, triangles[k].v1),
 						triangles[k].v2);
@@ -352,8 +356,12 @@ namespace Atlas {
 
 			}
 
+			vertices.clear();
+			normals.clear();
+			texCoords.clear();
+
 			// Generate BVH
-			auto bvh = Volume::BVH<Triangle>(aabbs, triangles);
+			auto bvh = Volume::BVH<GPUTriangle>(aabbs, triangles);
 
 			// Temporaray data
 			triangles = bvh.data;
@@ -362,27 +370,7 @@ namespace Atlas {
 			auto nodes = bvh.GetTree();
 
 			// Copy to GPU format
-			auto gpuTriangles = std::vector<GPUTriangle>(triangles.size());
 			auto gpuNodes = std::vector<GPUBVHNode>(nodes.size());
-
-			// Sorted triangles according to BVH
-			for (size_t i = 0; i < triangles.size(); i++) {
-
-				auto t0 = triangles[i].t0;
-				auto t1 = triangles[i].t1;
-				auto t2 = triangles[i].t2;
-
-				gpuTriangles[i].v0 = vec4(triangles[i].v0, t0.x);
-				gpuTriangles[i].v1 = vec4(triangles[i].v1, t0.y);
-				gpuTriangles[i].v2 = vec4(triangles[i].v2, t1.x);
-
-				gpuTriangles[i].n0 = vec4(triangles[i].n0, t1.y);
-				gpuTriangles[i].n1 = vec4(triangles[i].n1, t2.x);
-				gpuTriangles[i].n2 = vec4(triangles[i].n2, t2.y);
-
-				materialIndices[i] = triangles[i].materialIndex;
-
-			}
 
 			// Copy nodes
 			for (size_t i = 0; i < nodes.size(); i++) {
@@ -407,13 +395,9 @@ namespace Atlas {
 			materialBuffer.SetSize(materials.size());
 			materialBuffer.SetData(materials.data(), 0, materials.size());
 
-			materialIndicesBuffer.Bind();
-			materialIndicesBuffer.SetSize(materialIndices.size());
-			materialIndicesBuffer.SetData(materialIndices.data(), 0, materialIndices.size());
-
 			triangleBuffer.Bind();
-			triangleBuffer.SetSize(gpuTriangles.size());
-			triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
+			triangleBuffer.SetSize(triangles.size());
+			triangleBuffer.SetData(triangles.data(), 0, triangles.size());
 
 			nodesBuffer.Bind();
 			nodesBuffer.SetSize(gpuNodes.size());
@@ -497,6 +481,19 @@ namespace Atlas {
 					meshes.insert(actor->mesh);
 				}
 			}
+
+		}
+
+		int32_t RayTracingRenderer::PackUnitVector(vec4 vector) {
+
+			int32_t packed = 0;
+
+			packed |= (int32_t)((vector.x * 0.5f + 0.5f) * 1023.0f) << 0;
+			packed |= (int32_t)((vector.y * 0.5f + 0.5f) * 1023.0f) << 10;
+			packed |= (int32_t)((vector.z * 0.5f + 0.5f) * 1023.0f) << 20;
+			packed |= (int32_t)((vector.w * 0.5f + 0.5f) * 2.0f) << 30;
+
+			return packed;
 
 		}
 

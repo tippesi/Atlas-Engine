@@ -184,7 +184,7 @@ void App::Update(float deltaTime) {
 
 void App::Render(float deltaTime) {
 
-	/*
+	
     viewport.Set(0, 0, rayTraceTexture.width, rayTraceTexture.height);
 
 #ifndef AE_OS_ANDROID
@@ -203,11 +203,11 @@ void App::Render(float deltaTime) {
     masterRenderer.RenderTexture(&viewport, &rayTraceTexture, 0.0f, 0.0f,
 		(float) viewport.width, (float) viewport.height);
 	
-	*/
+	/*
 	viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
     
 	masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
-
+	*/
 	float averageFramerate = Atlas::Clock::GetAverage();
 
 	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms"

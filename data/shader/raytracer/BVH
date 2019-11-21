@@ -2,14 +2,10 @@
 #include <structures>
 
 layout (std430, binding = 2) buffer Triangles {
-	Triangle data[];
+	PackedTriangle data[];
 } triangles;
 
-layout (std430, binding = 3) buffer MaterialIndices {
-	int data[];
-} materialIndices;
-
-layout(std430, binding = 4) buffer Nodes {
+layout(std430, binding = 3) buffer Nodes {
 	BVHNode data[];
 }nodes;
 
