@@ -44,6 +44,7 @@ namespace Atlas {
 				vec4 v1;
 				vec4 v2;
 				vec4 d0;
+				vec4 d1;
 			};
 
 			struct GPUTexture {
@@ -66,7 +67,7 @@ namespace Atlas {
 				float specularHardness;
 
 				GPUTexture diffuseTexture;
-
+				GPUTexture normalTexture;
 			};
 
 			struct GPUAABB {
@@ -104,6 +105,7 @@ namespace Atlas {
 			Buffer::Buffer nodesBuffer;
 
 			Texture::TextureAtlas diffuseTextureAtlas;
+			Texture::TextureAtlas normalTextureAtlas;
 
 			Shader::Shader vertexUpdateShader;
 

@@ -142,6 +142,7 @@ namespace Atlas {
 			}
 			
 			diffuseTextureAtlas.texture.Bind(GL_READ_ONLY, 3);
+			normalTextureAtlas.texture.Bind(GL_READ_ONLY, 4);
 
 			// Bind all buffers to their binding points
 			materialBuffer.BindBase(1);
@@ -230,11 +231,14 @@ namespace Atlas {
 					auto& actorMaterials = actor->mesh->data.materials;
 					for (auto& material : actorMaterials) {
 						materialAccess[&material] = materialCount;
+
 						GPUMaterial gpuMaterial;
+						
 						gpuMaterial.diffuseColor = material.diffuseColor;
 						gpuMaterial.emissiveColor = material.emissiveColor;
 						gpuMaterial.specularIntensity = material.specularIntensity;
 						gpuMaterial.specularHardness = material.specularHardness;
+						
 						if (material.HasDiffuseMap()) {
 							auto slice = diffuseTextureAtlas.slices[material.diffuseMap];
 
@@ -250,6 +254,23 @@ namespace Atlas {
 						else {
 							gpuMaterial.diffuseTexture.layer = -1;
 						}
+						
+						if (material.HasNormalMap()) {
+							auto slice = normalTextureAtlas.slices[material.normalMap];
+
+							gpuMaterial.normalTexture.layer = slice.layer;
+
+							gpuMaterial.normalTexture.x = slice.offset.x;
+							gpuMaterial.normalTexture.y = slice.offset.x;
+
+							gpuMaterial.normalTexture.width = slice.size.x;
+							gpuMaterial.normalTexture.height = slice.size.x;
+
+						}
+						else {
+							gpuMaterial.normalTexture.layer = -1;
+						}
+						
 						materials.push_back(gpuMaterial);
 						materialCount++;
 					}
@@ -269,6 +290,7 @@ namespace Atlas {
 
 			std::vector<vec3> vertices(indexCount);
 			std::vector<vec3> normals(indexCount);
+			std::vector<vec4> tangents(indexCount);
 			std::vector<vec2> texCoords(indexCount);
 			std::vector<int32_t> materialIndices(triangleCount);
 
@@ -281,6 +303,7 @@ namespace Atlas {
 				auto actorIndices = actor->mesh->data.indices.Get();
 				auto actorVertices = actor->mesh->data.vertices.Get();
 				auto actorNormals = actor->mesh->data.normals.Get();
+				auto actorTangents = actor->mesh->data.tangents.Get();
 				auto actorTexCoords = actor->mesh->data.texCoords.Get();
 
 				for (auto& subData : actor->mesh->data.subData) {
@@ -295,6 +318,9 @@ namespace Atlas {
 							actorVertices[j * 3 + 2]);
 						normals[vertexCount] = vec3(actorNormals[j * 4], actorNormals[j * 4 + 1],
 							actorNormals[j * 4 + 2]);
+						if (actor->mesh->data.tangents.ContainsData())
+							tangents[vertexCount] = vec4(actorTangents[j * 4], actorTangents[j * 4 + 1],
+								actorTangents[j * 4 + 2], actorTangents[j * 4 + 3]);
 						if (actor->mesh->data.texCoords.ContainsData())
 							texCoords[vertexCount] = vec2(actorTexCoords[j * 2], actorTexCoords[j * 2 + 1]);
 						if ((vertexCount % 3) == 0) {
@@ -331,6 +357,13 @@ namespace Atlas {
 					auto n1 = normalize(vec3(matrix * vec4(normals[k * 3 + 1], 0.0f)));
 					auto n2 = normalize(vec3(matrix * vec4(normals[k * 3 + 2], 0.0f)));
 
+					auto t0 = vec4(normalize(vec3(matrix * 
+						vec4(vec3(tangents[k * 3]), 0.0f))), tangents[k * 3].w);
+					auto t1 = vec4(normalize(vec3(matrix * 
+						vec4(vec3(tangents[k * 3 + 1]), 0.0f))), tangents[k * 3 + 1].w);
+					auto t2 = vec4(normalize(vec3(matrix * 
+						vec4(vec3(tangents[k * 3 + 2]), 0.0f))), tangents[k * 3 + 2].w);
+
 					auto uv0 = texCoords[k * 3];
 					auto uv1 = texCoords[k * 3 + 1];
 					auto uv2 = texCoords[k * 3 + 2];
@@ -340,16 +373,21 @@ namespace Atlas {
 					auto cn1 = PackUnitVector(vec4(n1, 0.0f));
 					auto cn2 = PackUnitVector(vec4(n2, 0.0f));
 
+					auto ct0 = PackUnitVector(t0);
+					auto ct1 = PackUnitVector(t1);
+					auto ct2 = PackUnitVector(t2);
+
 					auto cuv0 = glm::packHalf2x16(uv0);
 					auto cuv1 = glm::packHalf2x16(uv1);
 					auto cuv2 = glm::packHalf2x16(uv2);
-
 
 					triangles[k].v0 = vec4(v0, *(float*)& cn0);
 					triangles[k].v1 = vec4(v1, *(float*)& cn1);
 					triangles[k].v2 = vec4(v2, *(float*)& cn2);
 					triangles[k].d0 = vec4(*(float*)& cuv0, *(float*)& cuv1,
 						*(float*)& cuv2, *(float*)& materialIndices[k]);
+					triangles[k].d1 = vec4(*(float*)& ct0, *(float*)& ct1,
+						*(float*)& ct2, 0.0f);
 
 					auto min = glm::min(glm::min(triangles[k].v0, triangles[k].v1),
 						triangles[k].v2);
@@ -420,31 +458,24 @@ namespace Atlas {
 			auto actors = scene->GetMeshActors();
 
 			std::unordered_set<Mesh::Mesh*> meshes;
-			std::vector<Texture::Texture2D*> textures;
-
-			int32_t width = 0, height = 0, layers = 0;
+			std::vector<Texture::Texture2D*> diffuseTextures;
+			std::vector<Texture::Texture2D*> normalTextures;
 
 			for (auto& actor : actors) {
 				if (meshes.find(actor->mesh) == meshes.end()) {
 					auto& actorMaterials = actor->mesh->data.materials;
 					for (auto& material : actorMaterials) {
-						if (material.HasDiffuseMap()) {
-							layers++;
-							width = material.diffuseMap->width > width ? 
-								material.diffuseMap->width : width;
-							height = material.diffuseMap->height > height ?
-								material.diffuseMap->height : height;
-
-							textures.push_back(material.diffuseMap);
-						}
+						if (material.HasDiffuseMap())
+							diffuseTextures.push_back(material.diffuseMap);
+						if (material.HasNormalMap())
+							normalTextures.push_back(material.normalMap);
 					}
 					meshes.insert(actor->mesh);
 				}
 			}
 
-			diffuseTextureAtlas = Texture::TextureAtlas(textures);
-
-
+			diffuseTextureAtlas = Texture::TextureAtlas(diffuseTextures);
+			normalTextureAtlas = Texture::TextureAtlas(normalTextures);
 
 		}
 

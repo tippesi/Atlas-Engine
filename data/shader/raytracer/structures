@@ -29,6 +29,7 @@ struct PackedTriangle {
 	vec4 v1;
 	vec4 v2;
 	vec4 d0;
+	vec4 d1;
 	
 };
 
@@ -80,6 +81,7 @@ struct Material {
 	float specularHardness;
 	
 	Texture diffuseTexture;
+	Texture normalTexture;
 
 };
 

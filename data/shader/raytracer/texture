@@ -1,6 +1,7 @@
 #include <structures>
 
 layout (binding = 3, rgba8) readonly uniform image2DArray diffuseTextures;
+layout (binding = 4, rgba8) readonly uniform image2DArray normalTextures;
 
 ivec2 GetTexCoord(vec2 texCoord, Texture tex) {
 	
@@ -55,6 +56,41 @@ vec4 SampleDiffuseBilinear(Texture tex, vec2 texCoord) {
 	vec4 q10 = imageLoad(diffuseTextures, ivec3(q10Tex, tex.layer));
 	vec4 q01 = imageLoad(diffuseTextures, ivec3(q01Tex, tex.layer));
 	vec4 q11 = imageLoad(diffuseTextures, ivec3(q11Tex, tex.layer));
+	
+	// Interpolate samples horizontally
+	vec4 h0 = (1.0 - x) * q00 + x * q10;
+	vec4 h1 = (1.0 - x) * q01 + x * q11;
+	
+	// Interpolate samples vertically
+	return (1.0 - y) * h0 + y * h1;	
+	
+}
+
+vec4 SampleNormalBilinear(Texture tex, vec2 texCoord) {
+	
+	if (tex.layer < 0)
+		return vec4(1.0);
+	
+	float width = float(tex.width);
+	float height = float(tex.height);
+
+	texCoord.x *= width;
+	texCoord.y *= height;
+
+	float x = texCoord.x - floor(texCoord.x);
+	float y = texCoord.y - floor(texCoord.y);
+	
+	// Calculate the four texture coordinates
+	ivec2 q00Tex = GetTexCoord(texCoord, tex);
+	ivec2 q10Tex = GetTexCoord(texCoord + vec2(1.0, 0.0), tex);
+	ivec2 q01Tex = GetTexCoord(texCoord + vec2(0.0, 1.0), tex);
+	ivec2 q11Tex = GetTexCoord(texCoord + vec2(1.0, 1.0), tex);	
+	
+	// Fetch the four texture samples
+	vec4 q00 = imageLoad(normalTextures, ivec3(q00Tex, tex.layer));
+	vec4 q10 = imageLoad(normalTextures, ivec3(q10Tex, tex.layer));
+	vec4 q01 = imageLoad(normalTextures, ivec3(q01Tex, tex.layer));
+	vec4 q11 = imageLoad(normalTextures, ivec3(q11Tex, tex.layer));
 	
 	// Interpolate samples horizontally
 	vec4 h0 = (1.0 - x) * q00 + x * q10;

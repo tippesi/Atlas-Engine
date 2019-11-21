@@ -109,6 +109,11 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		Triangle tri = UnpackTriangle(triangles.data[triangleIndex]);
 		Material mat = materials.data[tri.materialIndex];
 
+		// Orient bitangents into correct direction
+		vec3 bt0 = tri.t0.w * cross(tri.t0.xyz, tri.n0);
+		vec3 bt1 = tri.t1.w * cross(tri.t1.xyz, tri.n1);
+		vec3 bt2 = tri.t2.w * cross(tri.t2.xyz, tri.n2);
+		
 		// Interpolate normal by using barrycentric coordinates
 		vec3 normal = normalize(vec3((1.0 - barrycentric.x - barrycentric.y) * tri.n0 + 
 			barrycentric.x * tri.n1 + barrycentric.y * tri.n2));
@@ -116,13 +121,25 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 			barrycentric.x * tri.v1 + barrycentric.y * tri.v2);
 		vec2 texCoord = (1.0 - barrycentric.x - barrycentric.y) * tri.uv0 + 
 			barrycentric.x * tri.uv1 + barrycentric.y * tri.uv2;
-		
+		vec3 tangent = normalize(vec3((1.0 - barrycentric.x - barrycentric.y) * tri.t0 + 
+			barrycentric.x * tri.t1 + barrycentric.y * tri.t2));
+		vec3 bitangent = normalize(vec3((1.0 - barrycentric.x - barrycentric.y) * bt0 + 
+			barrycentric.x * bt1 + barrycentric.y * bt2));
+			
 		// Produces some problems in the bottom left corner of the Sponza scene,
 		// but fixes the cube. Should work in theory.
 		normal = dot(normal, ray.direction) <= 0.0 ? normal : normal * -1.0;
+			
+		mat3 toTangentSpace = mat3(tangent, bitangent, normal);		
 		
 		vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) * 
 			vec3(SampleDiffuseBilinear(mat.diffuseTexture, texCoord));
+			
+		// Sample normal map
+		if (mat.normalTexture.layer >= 0) {
+			normal = normalize(toTangentSpace * 
+				(2.0 * vec3(SampleNormalBilinear(mat.normalTexture, texCoord)) - 1.0));
+		}
 			
 		vec3 emissiveColor = vec3(mat.emissR, mat.emissG, mat.emissB);
 		
@@ -201,13 +218,11 @@ Triangle UnpackTriangle(PackedTriangle triangle) {
 	
 	tri.n0 = vec3(unpackUnitVector(floatBitsToInt(triangle.v0.w)));
 	tri.n1 = vec3(unpackUnitVector(floatBitsToInt(triangle.v1.w)));
-	tri.n2 = vec3(unpackUnitVector(floatBitsToInt(triangle.v2.w)));
+	tri.n2 = vec3(unpackUnitVector(floatBitsToInt(triangle.v2.w)));	
 	
-	/*
-	tri.t0 = unpackUnitVector(floatBitsToInt(triangle.d0.x));
-	tri.t1 = unpackUnitVector(floatBitsToInt(triangle.d0.y));
-	tri.t2 = unpackUnitVector(floatBitsToInt(triangle.d0.z));
-	*/
+	tri.t0 = unpackUnitVector(floatBitsToInt(triangle.d1.x));
+	tri.t1 = unpackUnitVector(floatBitsToInt(triangle.d1.y));
+	tri.t2 = unpackUnitVector(floatBitsToInt(triangle.d1.z));
 	
 	tri.uv0 = unpackHalf2x16(floatBitsToUint(triangle.d0.x));
 	tri.uv1 = unpackHalf2x16(floatBitsToUint(triangle.d0.y));
