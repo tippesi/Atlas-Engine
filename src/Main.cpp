@@ -44,6 +44,8 @@ int main(int argc, char* argv[]) {
 
 	instance->UnloadContent();
 
+	Atlas::Engine::Shutdown();
+
 	return 0;
 
 }

@@ -9,6 +9,7 @@
 #include "scene/Scene.h"
 #include "RenderTarget.h"
 #include "shader/Shader.h"
+#include "shader/ShaderManager.h"
 #include "renderer/MasterRenderer.h"
 #include "events/EventManager.h"
 #include "audio/AudioManager.h"
@@ -28,6 +29,11 @@ namespace Atlas {
          * @note All file paths handed over to the engine should be relative the asset directory
          */
 		static Context* Init(std::string assetDirectory, std::string shaderDirectory);
+
+		/**
+		 * Shuts down the engine
+		 */
+		static void Shutdown();
 
 		/**
 		 * Deletes the default window.

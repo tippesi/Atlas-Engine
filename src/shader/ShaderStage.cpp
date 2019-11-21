@@ -30,19 +30,25 @@ namespace Atlas {
 
         }
 
-        ShaderStage::ShaderStage(ShaderStage& stage) {
+        ShaderStage::ShaderStage(const ShaderStage& that) {
 
-            code = stage.code;
-            macros = stage.macros;
-            filename = stage.filename;
-            lastModified = stage.lastModified;
+			type = that.type;
+            code = that.code;
+            macros = that.macros;
+			includes = that.includes;
+            filename = that.filename;
+            lastModified = that.lastModified;
 
-            for (auto iterator = stage.constants.begin(); iterator != stage.constants.end(); iterator++) {
+#ifdef AE_SHOW_LOG
+			stageCode = that.stageCode;
+#endif
+
+            for (auto iterator = that.constants.begin(); iterator != that.constants.end(); iterator++) {
                 auto constant = new ShaderConstant((*iterator)->GetValuedString().c_str());
                 constants.push_back(constant);
             }
 
-            ID = glCreateShader(stage.type);
+            ID = glCreateShader(that.type);
 
         }
 

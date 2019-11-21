@@ -107,6 +107,8 @@ namespace Atlas {
 
             uint32_t GetID();
 
+			std::string name;
+
             std::vector<Uniform*> uniforms;
             std::vector<std::string> macros;
 

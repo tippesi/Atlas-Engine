@@ -54,6 +54,18 @@ struct Triangle {
 	
 };
 
+struct Texture {
+	
+	int layer;
+	
+	int x;
+	int y;
+	
+	int width;
+	int height;
+	
+};
+
 struct Material {
 	
 	float diffR;
@@ -67,11 +79,11 @@ struct Material {
 	float specularIntensity;
 	float specularHardness;
 	
-	int textureLayer;
-	int textureWidth;
-	int textureHeight;
+	Texture diffuseTexture;
 
 };
+
+
 
 struct BVHNode {
 	

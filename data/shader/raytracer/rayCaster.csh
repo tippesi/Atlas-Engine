@@ -122,7 +122,7 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		normal = dot(normal, ray.direction) <= 0.0 ? normal : normal * -1.0;
 		
 		vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) * 
-			vec3(SampleDiffuseBilinear(mat, texCoord));
+			vec3(SampleDiffuseBilinear(mat.diffuseTexture, texCoord));
 			
 		vec3 emissiveColor = vec3(mat.emissR, mat.emissG, mat.emissB);
 		

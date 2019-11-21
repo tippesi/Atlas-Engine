@@ -4,6 +4,8 @@
 #include "../System.h"
 #include "Renderer.h"
 
+#include "../texture/TextureAtlas.h"
+
 #include <unordered_map>
 
 namespace Atlas {
@@ -36,13 +38,24 @@ namespace Atlas {
 			void UpdateTexture(Scene::Scene* scene);
 
 			int32_t PackUnitVector(vec4 vector);
-			int32_t PackHalfFloatVector(vec2 vector);
 
 			struct GPUTriangle {
 				vec4 v0;
 				vec4 v1;
 				vec4 v2;
 				vec4 d0;
+			};
+
+			struct GPUTexture {
+
+				int32_t layer;
+
+				int32_t x;
+				int32_t y;
+
+				int32_t width;
+				int32_t height;
+
 			};
 
 			struct GPUMaterial {
@@ -52,9 +65,8 @@ namespace Atlas {
 				float specularIntensity;
 				float specularHardness;
 
-				int32_t textureLayer;
-				int32_t textureWidth;
-				int32_t textureHeight;
+				GPUTexture diffuseTexture;
+
 			};
 
 			struct GPUAABB {
@@ -91,7 +103,7 @@ namespace Atlas {
 			Buffer::Buffer materialBuffer;
 			Buffer::Buffer nodesBuffer;
 
-			Texture::Texture2DArray textureArray;
+			Texture::TextureAtlas diffuseTextureAtlas;
 
 			Shader::Shader vertexUpdateShader;
 

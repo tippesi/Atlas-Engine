@@ -140,7 +140,8 @@ namespace Atlas {
 				outAccumTexture->Bind(GL_READ_ONLY, 1);
 				inAccumTexture->Bind(GL_WRITE_ONLY, 2);
 			}
-			textureArray.Bind(GL_READ_ONLY, 3);
+			
+			diffuseTextureAtlas.texture.Bind(GL_READ_ONLY, 3);
 
 			// Bind all buffers to their binding points
 			materialBuffer.BindBase(1);
@@ -235,12 +236,19 @@ namespace Atlas {
 						gpuMaterial.specularIntensity = material.specularIntensity;
 						gpuMaterial.specularHardness = material.specularHardness;
 						if (material.HasDiffuseMap()) {
-							gpuMaterial.textureLayer = diffuseMapCount++;
-							gpuMaterial.textureWidth = material.diffuseMap->width;
-							gpuMaterial.textureHeight = material.diffuseMap->height;
+							auto slice = diffuseTextureAtlas.slices[material.diffuseMap];
+
+							gpuMaterial.diffuseTexture.layer = slice.layer;
+
+							gpuMaterial.diffuseTexture.x = slice.offset.x;
+							gpuMaterial.diffuseTexture.y = slice.offset.x;
+
+							gpuMaterial.diffuseTexture.width = slice.size.x;
+							gpuMaterial.diffuseTexture.height = slice.size.x;
+
 						}
 						else {
-							gpuMaterial.textureLayer = -1;
+							gpuMaterial.diffuseTexture.layer = -1;
 						}
 						materials.push_back(gpuMaterial);
 						materialCount++;
@@ -412,6 +420,7 @@ namespace Atlas {
 			auto actors = scene->GetMeshActors();
 
 			std::unordered_set<Mesh::Mesh*> meshes;
+			std::vector<Texture::Texture2D*> textures;
 
 			int32_t width = 0, height = 0, layers = 0;
 
@@ -425,62 +434,17 @@ namespace Atlas {
 								material.diffuseMap->width : width;
 							height = material.diffuseMap->height > height ?
 								material.diffuseMap->height : height;
+
+							textures.push_back(material.diffuseMap);
 						}
 					}
 					meshes.insert(actor->mesh);
 				}
 			}
 
-			meshes.clear();
+			diffuseTextureAtlas = Texture::TextureAtlas(textures);
 
-			textureArray = Texture::Texture2DArray(width, height, layers, AE_RGBA8);
 
-			int32_t count = 0;
-
-			for (auto& actor : actors) {
-				if (meshes.find(actor->mesh) == meshes.end()) {
-					auto& actorMaterials = actor->mesh->data.materials;
-					for (auto& material : actorMaterials) {
-						if (material.HasDiffuseMap()) {
-							
-							auto data = material.diffuseMap->GetData();
-
-							// We need four channels (OpenGL restrictions for imageSamplers
-							// in compute shaders)
-							std::vector<uint8_t> convertedData;
-
-							if (material.diffuseMap->channels == 4) {
-
-								convertedData = data;
-
-							}
-							else if (material.diffuseMap->channels == 3) {
-
-								auto pixelCount = material.diffuseMap->width *
-									material.diffuseMap->height;
-
-								convertedData.resize(pixelCount * 4);
-
-								for (int32_t i = 0; i < pixelCount; i++) {
-
-									convertedData[i * 4] = data[i * 3];
-									convertedData[i * 4 + 1] = data[i * 3 + 1];
-									convertedData[i * 4 + 2] = data[i * 3 + 2];
-									convertedData[i * 4 + 3] = 0;
-
-								}
-
-							}
-
-							textureArray.SetData(convertedData, 0, 0, count, material.diffuseMap->width,
-								material.diffuseMap->height, 1);
-							
-							count++;
-						}
-					}
-					meshes.insert(actor->mesh);
-				}
-			}
 
 		}
 
