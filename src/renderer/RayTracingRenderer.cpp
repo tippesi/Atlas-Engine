@@ -290,7 +290,6 @@ namespace Atlas {
 
 			std::vector<vec3> vertices(indexCount);
 			std::vector<vec3> normals(indexCount);
-			std::vector<vec4> tangents(indexCount);
 			std::vector<vec2> texCoords(indexCount);
 			std::vector<int32_t> materialIndices(triangleCount);
 
@@ -376,7 +375,7 @@ namespace Atlas {
 					auto normal = normalize(n0 + n1 + n2);
 
 					auto tangent = normalize(s - normal * dot(normal, s));
-					auto handedness = glm::dot(glm::cross(tangent, normal), t) < 0.0f ? -1.0f : 1.0f;
+					auto handedness = glm::dot(glm::cross(tangent, normal), t) < 0.0f ? 1.0f : -1.0f;
 
 					auto bitangent = handedness * normalize(glm::cross(tangent, normal));
 

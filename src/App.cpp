@@ -206,7 +206,7 @@ void App::Render(float deltaTime) {
     masterRenderer.RenderTexture(&viewport, &rayTraceTexture, 0.0f, 0.0f,
 		(float) viewport.width, (float) viewport.height);
 
-	if (rayTracingRenderer.GetSampleCount() == 1000)
+	if (rayTracingRenderer.GetSampleCount() == 5000)
 		rayTraceTexture.SaveToPNG("raytracing_normalmapped.png");
 	
 	
