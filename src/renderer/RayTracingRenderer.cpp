@@ -303,7 +303,6 @@ namespace Atlas {
 				auto actorIndices = actor->mesh->data.indices.Get();
 				auto actorVertices = actor->mesh->data.vertices.Get();
 				auto actorNormals = actor->mesh->data.normals.Get();
-				auto actorTangents = actor->mesh->data.tangents.Get();
 				auto actorTexCoords = actor->mesh->data.texCoords.Get();
 
 				for (auto& subData : actor->mesh->data.subData) {
@@ -318,9 +317,6 @@ namespace Atlas {
 							actorVertices[j * 3 + 2]);
 						normals[vertexCount] = vec3(actorNormals[j * 4], actorNormals[j * 4 + 1],
 							actorNormals[j * 4 + 2]);
-						if (actor->mesh->data.tangents.ContainsData())
-							tangents[vertexCount] = vec4(actorTangents[j * 4], actorTangents[j * 4 + 1],
-								actorTangents[j * 4 + 2], actorTangents[j * 4 + 3]);
 						if (actor->mesh->data.texCoords.ContainsData())
 							texCoords[vertexCount] = vec2(actorTexCoords[j * 2], actorTexCoords[j * 2 + 1]);
 						if ((vertexCount % 3) == 0) {
@@ -357,25 +353,40 @@ namespace Atlas {
 					auto n1 = normalize(vec3(matrix * vec4(normals[k * 3 + 1], 0.0f)));
 					auto n2 = normalize(vec3(matrix * vec4(normals[k * 3 + 2], 0.0f)));
 
-					auto t0 = vec4(normalize(vec3(matrix * 
-						vec4(vec3(tangents[k * 3]), 0.0f))), tangents[k * 3].w);
-					auto t1 = vec4(normalize(vec3(matrix * 
-						vec4(vec3(tangents[k * 3 + 1]), 0.0f))), tangents[k * 3 + 1].w);
-					auto t2 = vec4(normalize(vec3(matrix * 
-						vec4(vec3(tangents[k * 3 + 2]), 0.0f))), tangents[k * 3 + 2].w);
-
 					auto uv0 = texCoords[k * 3];
 					auto uv1 = texCoords[k * 3 + 1];
 					auto uv2 = texCoords[k * 3 + 2];
+
+					auto v0v1 = v1 - v0;
+					auto v0v2 = v2 - v0;
+
+					auto uv0uv1 = uv1 - uv0;
+					auto uv0uv2 = uv2 - uv0;
+
+					auto r = 1.0f / (uv0uv1.x * uv0uv2.y - uv0uv2.x * uv0uv1.y);
+
+					auto s = vec3(uv0uv2.y * v0v1.x - uv0uv1.y * v0v2.x,
+						uv0uv2.y * v0v1.y - uv0uv1.y * v0v2.y,
+						uv0uv2.y * v0v1.z - uv0uv1.y * v0v2.z) * r;
+
+					auto t = vec3(uv0uv1.x * v0v2.x - uv0uv2.x * v0v1.x,
+						uv0uv1.x * v0v2.y - uv0uv2.x * v0v1.y,
+						uv0uv1.x * v0v2.z - uv0uv2.x * v0v1.z) * r;
+
+					auto normal = normalize(n0 + n1 + n2);
+
+					auto tangent = normalize(s - normal * dot(normal, s));
+					auto handedness = glm::dot(glm::cross(tangent, normal), t) < 0.0f ? -1.0f : 1.0f;
+
+					auto bitangent = handedness * normalize(glm::cross(tangent, normal));
 
 					// Compress data
 					auto cn0 = PackUnitVector(vec4(n0, 0.0f));
 					auto cn1 = PackUnitVector(vec4(n1, 0.0f));
 					auto cn2 = PackUnitVector(vec4(n2, 0.0f));
 
-					auto ct0 = PackUnitVector(t0);
-					auto ct1 = PackUnitVector(t1);
-					auto ct2 = PackUnitVector(t2);
+					auto ct = PackUnitVector(vec4(tangent, 0.0f));
+					auto cbt = PackUnitVector(vec4(bitangent, 0.0f));
 
 					auto cuv0 = glm::packHalf2x16(uv0);
 					auto cuv1 = glm::packHalf2x16(uv1);
@@ -386,8 +397,7 @@ namespace Atlas {
 					triangles[k].v2 = vec4(v2, *(float*)& cn2);
 					triangles[k].d0 = vec4(*(float*)& cuv0, *(float*)& cuv1,
 						*(float*)& cuv2, *(float*)& materialIndices[k]);
-					triangles[k].d1 = vec4(*(float*)& ct0, *(float*)& ct1,
-						*(float*)& ct2, 0.0f);
+					triangles[k].d1 = vec4(*(float*)& ct, *(float*)& cbt, 0.0f, 0.0f);
 
 					auto min = glm::min(glm::min(triangles[k].v0, triangles[k].v1),
 						triangles[k].v2);

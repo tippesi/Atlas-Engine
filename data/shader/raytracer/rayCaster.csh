@@ -112,27 +112,20 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		float s = barrycentric.x;
 		float t = barrycentric.y;
 		float r = 1.0 - s - t;
-
-		// Orient bitangents into correct direction
-		vec3 bt0 = tri.t0.w * cross(normalize(tri.t0.xyz), normalize(tri.n0));
-		vec3 bt1 = tri.t1.w * cross(normalize(tri.t1.xyz), normalize(tri.n1));
-		vec3 bt2 = tri.t2.w * cross(normalize(tri.t2.xyz), normalize(tri.n2));
 		
 		// Interpolate normal by using barrycentric coordinates
 		vec3 position = ray.origin + intersection.x * ray.direction;
 		vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
 		vec3 normal = normalize(r * tri.n0 + s * tri.n1 + t * tri.n2);
-		vec3 tangent = normalize(r * tri.t0.xyz + s * tri.t1.xyz + t * tri.t2.xyz);
-		vec3 bitangent = normalize(r * bt0 + s * bt1 + t * bt2);
 			
 		// Produces some problems in the bottom left corner of the Sponza scene,
 		// but fixes the cube. Should work in theory.
 		normal = dot(normal, ray.direction) <= 0.0 ? normal : normal * -1.0;
-			
-		mat3 toTangentSpace = mat3(tangent, bitangent, normal);		
 		
 		vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) * 
 			vec3(SampleDiffuseBilinear(mat.diffuseTexture, texCoord));
+			
+		mat3 toTangentSpace = mat3(tri.t, tri.bt, normal);		
 			
 		// Sample normal map
 		if (mat.normalTexture.layer >= 0) {
@@ -219,9 +212,8 @@ Triangle UnpackTriangle(PackedTriangle triangle) {
 	tri.n1 = vec3(unpackUnitVector(floatBitsToInt(triangle.v1.w)));
 	tri.n2 = vec3(unpackUnitVector(floatBitsToInt(triangle.v2.w)));	
 	
-	tri.t0 = unpackUnitVector(floatBitsToInt(triangle.d1.x));
-	tri.t1 = unpackUnitVector(floatBitsToInt(triangle.d1.y));
-	tri.t2 = unpackUnitVector(floatBitsToInt(triangle.d1.z));
+	tri.t = vec3(unpackUnitVector(floatBitsToInt(triangle.d1.x)));
+	tri.bt = vec3(unpackUnitVector(floatBitsToInt(triangle.d1.y)));
 	
 	tri.uv0 = unpackHalf2x16(floatBitsToUint(triangle.d0.x));
 	tri.uv1 = unpackHalf2x16(floatBitsToUint(triangle.d0.y));

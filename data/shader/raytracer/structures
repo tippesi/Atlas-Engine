@@ -43,9 +43,8 @@ struct Triangle {
 	vec3 n1;
 	vec3 n2;
 	
-	vec4 t0;
-	vec4 t1;
-	vec4 t2;
+	vec3 t;
+	vec3 bt;
 	
 	vec2 uv0;
 	vec2 uv1;
