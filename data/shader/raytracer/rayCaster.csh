@@ -108,23 +108,22 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		
 		Triangle tri = UnpackTriangle(triangles.data[triangleIndex]);
 		Material mat = materials.data[tri.materialIndex];
+		
+		float s = barrycentric.x;
+		float t = barrycentric.y;
+		float r = 1.0 - s - t;
 
 		// Orient bitangents into correct direction
-		vec3 bt0 = tri.t0.w * cross(tri.t0.xyz, tri.n0);
-		vec3 bt1 = tri.t1.w * cross(tri.t1.xyz, tri.n1);
-		vec3 bt2 = tri.t2.w * cross(tri.t2.xyz, tri.n2);
+		vec3 bt0 = tri.t0.w * cross(normalize(tri.t0.xyz), normalize(tri.n0));
+		vec3 bt1 = tri.t1.w * cross(normalize(tri.t1.xyz), normalize(tri.n1));
+		vec3 bt2 = tri.t2.w * cross(normalize(tri.t2.xyz), normalize(tri.n2));
 		
 		// Interpolate normal by using barrycentric coordinates
-		vec3 normal = normalize(vec3((1.0 - barrycentric.x - barrycentric.y) * tri.n0 + 
-			barrycentric.x * tri.n1 + barrycentric.y * tri.n2));
-		vec3 position = vec3((1.0 - barrycentric.x - barrycentric.y) * tri.v0 + 
-			barrycentric.x * tri.v1 + barrycentric.y * tri.v2);
-		vec2 texCoord = (1.0 - barrycentric.x - barrycentric.y) * tri.uv0 + 
-			barrycentric.x * tri.uv1 + barrycentric.y * tri.uv2;
-		vec3 tangent = normalize(vec3((1.0 - barrycentric.x - barrycentric.y) * tri.t0 + 
-			barrycentric.x * tri.t1 + barrycentric.y * tri.t2));
-		vec3 bitangent = normalize(vec3((1.0 - barrycentric.x - barrycentric.y) * bt0 + 
-			barrycentric.x * bt1 + barrycentric.y * bt2));
+		vec3 position = ray.origin + intersection.x * ray.direction;
+		vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
+		vec3 normal = normalize(r * tri.n0 + s * tri.n1 + t * tri.n2);
+		vec3 tangent = normalize(r * tri.t0.xyz + s * tri.t1.xyz + t * tri.t2.xyz);
+		vec3 bitangent = normalize(r * bt0 + s * bt1 + t * bt2);
 			
 		// Produces some problems in the bottom left corner of the Sponza scene,
 		// but fixes the cube. Should work in theory.
@@ -138,7 +137,7 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		// Sample normal map
 		if (mat.normalTexture.layer >= 0) {
 			normal = normalize(toTangentSpace * 
-				(2.0 * vec3(SampleNormalBilinear(mat.normalTexture, texCoord)) - 1.0));
+				(2.0 * vec3(SampleNormalBilinear(mat.normalTexture, texCoord)) - 1.0));		
 		}
 			
 		vec3 emissiveColor = vec3(mat.emissR, mat.emissG, mat.emissB);
@@ -178,12 +177,12 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 void DirectIllumination(vec3 position, vec3 normal,
 	Material mat, out vec3 color) {
 	
-	float shadowFactor = 1.0;	
+	float shadowFactor = 1.0;
 	
 	// Shadow testing
 	Ray ray;
 	ray.direction = -light.direction;
-	ray.origin = position -light.direction * 0.01;
+	ray.origin = position + normal * 0.01;
 	ray.inverseDirection = 1.0 / ray.direction;
 	
 	vec3 intersection;

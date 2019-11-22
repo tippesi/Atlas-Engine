@@ -146,6 +146,9 @@ void App::LoadContent() {
 	rayTraceTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 	inAccumTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA32F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 	outAccumTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA32F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+	//rayTraceTexture = Atlas::Texture::Texture2D(1920 * 2, 1080 * 2, GL_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
+	//inAccumTexture = Atlas::Texture::Texture2D(1920 * 2, 1080 * 2, GL_RGBA32F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+	//outAccumTexture = Atlas::Texture::Texture2D(1920 * 2, 1080 * 2, GL_RGBA32F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 #else
     rayTraceTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
     inAccumTexture = Atlas::Texture::Texture2D(1280, 720, GL_RGBA32F, GL_CLAMP_TO_EDGE, GL_LINEAR);
@@ -202,12 +205,15 @@ void App::Render(float deltaTime) {
 
     masterRenderer.RenderTexture(&viewport, &rayTraceTexture, 0.0f, 0.0f,
 		(float) viewport.width, (float) viewport.height);
+
+	if (rayTracingRenderer.GetSampleCount() == 1000)
+		rayTraceTexture.SaveToPNG("raytracing_normalmapped.png");
 	
-	/*
+	
 	viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
     
-	masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
-	*/
+	// masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
+	
 	float averageFramerate = Atlas::Clock::GetAverage();
 
 	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms"
