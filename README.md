@@ -56,144 +56,159 @@ in the LICENSE file.
 - Try to avoid using OpenGL, use existing engine features instead
 - Reduce the number of samples used for anisotropic filtering (default is the maximum possbile number of samples)
 ## Code Example
-Here is a small introduction to the engine
 ```c
-#include <Engine.h>
-#include <input/Mouse.h>
-#include <input/Keyboard.h>
+#include "App.h"
 
-int main(int argc, char* argv[]) {
+std::string Atlas::EngineInstance::assetDirectory = "../data";
+std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
-	// After initializing the engine we will get back a window object.
-	// We also need to tell in which directory all the assets are, so that
-	// we can use relative paths later on. Note that everything about the
-	// engine is in the Atlas namespace.
-	auto window = Atlas::Engine::Init("../data", "shader", "Example application",
-			AE_WINDOWPOSITION_UNDEFINED, AE_WINDOWPOSITION_UNDEFINED, 1280, 720, AE_WINDOW_RESIZABLE);
+void App::LoadContent() {
 
-	// Load an icon for the window
+	UnlockFramerate();
+
+	renderTarget = new Atlas::RenderTarget(1920, 1080);
+
+	viewport = Atlas::Viewport(0, 0, window.GetWidth(), window.GetHeight());
+
 	auto icon = Atlas::Texture::Texture2D("icon.png");
-	window->SetIcon(&icon);
-	window->Update();
+	window.SetIcon(&icon);
+	window.Update();
 
-	// Let's set up our render target. All things get drawn to the render target
-	// before they are displayed.
-	auto renderTarget = Atlas::RenderTarget(1920, 1080);
+	font = Atlas::Font("font/roboto.ttf", 88, 10);
 
-	// We also need a master renderer
-	auto masterRenderer = Atlas::Renderer::MasterRenderer();
+	DisplayLoadingScreen();
 
-	// Now create our scene
-	auto scene = Atlas::Scene::Scene();
+	camera = Atlas::Camera(47.0f, 2.0f, .25f, 400.0f,
+		vec3(30.0f, 25.0f, 0.0f), vec2(-3.14f / 2.0f, 0.0f));
 
-	// We want to have a camera too
-	auto camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f, vec3(30.0f, 25.0f, 0.0f), vec2(-3.14f / 2.0f, 0.0f));
+	scene = Atlas::Scene::Scene(vec3(-2048.0f), vec3(2048.0f));
 
-	// Now load the meshes we later want to use to create instances of them.
-	// We can add these instances of meshes, called MeshActor to our scene.
-	auto sponzaMesh = Atlas::Mesh::Mesh("sponza/sponza.dae", AE_STATIONARY_MESH);
-	auto treeMesh = Atlas::Mesh::Mesh("tree.dae", AE_STATIONARY_MESH);
-	auto cubeMesh = Atlas::Mesh::Mesh("cube.dae", AE_MOVABLE_MESH);
+	mouseHandler = Atlas::Input::MouseHandler(&camera, 1.5f, 6.0f);
+	keyboardHandler = Atlas::Input::KeyboardHandler(&camera, 7.0f, 6.0f);
+	controllerHandler = Atlas::Input::ControllerHandler(&camera, 1.5f, 7.0f, 6.0f, 5000.0f);
 
-	// Notice that we want to move our cube later on. All meshes where we frequently want to
-	// update the positions should be AE_MOVABLE_MESH. Let's create our MeshActors then:
-	auto sponzaActor = Atlas::Actor::StaticMeshActor(&sponzaMesh, glm::scale(vec3(0.05f)));
-	auto treeActor = Atlas::Actor::StaticMeshActor(&treeMesh, glm::scale(vec3(3.0f)));
-	auto cubeActor = Atlas::Actor::MovableMeshActor(&cubeMesh);
+	Atlas::Events::EventManager::ControllerDeviceEventDelegate.Subscribe(
+		[this](Atlas::Events::ControllerDeviceEvent event) {
+		if (event.type == AE_CONTROLLER_ADDED) {
+			useControllerHandler = true;
+		}
+		else if (event.type == AE_CONTROLLER_REMOVED) {
+			useControllerHandler = false;
+		}
+	});
 
-	// We create a scene node, which we can later move around.
-	// The concept is really easy to understand: All actors of all the different types
-	// which are added to that scene node translate, rotate and scale relative to the translation,
-	// rotation and scale of that scene node.
-	auto sceneNode = Atlas::Scene::SceneNode();
+	Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(
+		[this](Atlas::Events::KeyboardEvent event) {
+		if (event.keycode == AE_KEY_ESCAPE) {
+			Exit();
+		}
+	});
 
-	// Notice that we add the scene node. The root node can also be translated, rotated and scaled.
-	// We will use this later on.
-	scene.Add(&sceneNode);
+	sponzaMesh = Atlas::Mesh::Mesh("sponza/sponza.dae");
+	sponzaActor = Atlas::Actor::StaticMeshActor(&sponzaMesh, scale(mat4(1.0f), vec3(.05f)));
 
-	// Translate the scene node
-	sceneNode.SetMatrix(glm::translate(vec3(0.0f, 1.0f, 5.0f)));
+	directionalLight = Atlas::Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
 
-	// We can also add the actors to scene without adding them to a scene node.
-	// This means that all actors added this way have an absolute translation, rotation and scale.
-	scene.Add(&sponzaActor);
-	scene.Add(&treeActor);
-
-	sceneNode.Add(&cubeActor);
-
-	// Let's also create a global directional light. This is also stationary for this example scene.
-	auto directionalLight = Atlas::Lighting::DirectionalLight(AE_STATIONARY_LIGHT);
-
-	// Now we can change this light to our needs
 	directionalLight.direction = vec3(0.0f, -1.0f, 0.1f);
 	directionalLight.ambient = 0.05f;
-	directionalLight.color = vec3(253.0f, 194.0f, 109.0f) / 255.0f;
+	directionalLight.color = vec3(253, 194, 109) / 255.0f;
 
 	// Shadow mapping that is fixed to a point
 	mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
 	directionalLight.AddShadow(200.0f, 0.01f, 4096, vec3(0.0f), orthoProjection);
 	directionalLight.GetShadow()->sampleCount = 1;
+	directionalLight.GetShadow()->sampleRange = 1.5;
+	directionalLight.AddVolumetric(renderTarget->GetWidth() / 2, renderTarget->GetHeight() / 2, 20, -0.5f);
 
-	// A shadow has to be added to work
-	directionalLight.AddVolumetric(renderTarget.width / 2, renderTarget.height / 2, 20, -0.5f);
+	pointLight0 = Atlas::Lighting::PointLight(AE_STATIONARY_LIGHT);
+	pointLight0.location = vec3(24.35f, 6.5f, 7.1f);
+	pointLight0.color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
+	pointLight0.AddShadow(0.0f, 512);
 
+	pointLight1 = Atlas::Lighting::PointLight(AE_STATIONARY_LIGHT);
+	pointLight1.location = vec3(24.35f, 6.5f, -11.0f);
+	pointLight1.color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
+	pointLight1.AddShadow(0.0f, 512);
+
+	pointLight2 = Atlas::Lighting::PointLight(AE_STATIONARY_LIGHT);
+	pointLight2.location = vec3(-31.0f, 6.5f, 7.1f);
+	pointLight2.color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
+	pointLight2.AddShadow(0.0f, 512);
+
+	pointLight3 = Atlas::Lighting::PointLight(AE_STATIONARY_LIGHT);
+	pointLight3.location = vec3(-31.0f, 6.5f, -11.0f);
+	pointLight3.color = 2.0f * vec3(255.0f, 128.0f, 0.0f) / 255.0f;
+	pointLight3.AddShadow(0.0f, 512);
+
+	scene.Add(&sponzaActor);
+	
 	scene.Add(&directionalLight);
 
-	// We also want to interact with our little application. We therefore create a keyboard and mouse
-	// handler. The handlers which are currently present in the engine are very basic but can be seen
-	// as an example on how to write your own ones.
-	auto mouseHandler = Atlas::Input::MouseHandler(&camera, 1.5f, 0.015f);
-	auto keyboardHandler = Atlas::Input::KeyboardHandler(&camera, 7.0f, 0.3f);
+	scene.Add(&pointLight0);
+	scene.Add(&pointLight1);
+	scene.Add(&pointLight2);
+	scene.Add(&pointLight3);
 
-	// We might also want to know when to exit the application. The engine has an event system build
-	// in. We use it to catch the events from the user. In this case we want to know if the user has
-	// closed the window (QuitEvent) or if the user pressed the escape button (KeyboardEvent).
-	bool quit = false;
+}
 
-	Atlas::Events::EventManager::QuitEventDelegate.Subscribe([&quit]() {quit = true;});
+void App::UnloadContent() {
 
-	Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe([&quit](Atlas::Events::KeyboardEvent event) {
-		if (event.keycode == AE_KEY_ESCAPE) {
-			quit = true;
-		}
-	});
+	delete renderTarget;
 
-	float time = 0.0f;
+}
 
-	// We now have a main loop here which does all the rendering on a regular basis.
-	// The framerate is locked as a standard but can also be unlocked via Atlas::Engine::UnlockFramerate()
-	while (!quit) {
+void App::Update(float deltaTime) {
 
-		auto deltaTime = Atlas::Engine::GetClock() - time;
-		time = Atlas::Engine::GetClock();
-
+	if (!useControllerHandler) {
 		mouseHandler.Update(&camera, deltaTime);
 		keyboardHandler.Update(&camera, deltaTime);
-
-		camera.UpdateView();
-		camera.UpdateProjection();
-
-		masterRenderer.Update();
-
-		Atlas::Engine::Update(deltaTime);
-
-		// Rotate the root node around the y-axis. This also results in a rotation
-		// of the scene node that we added to the scene.
-		scene.SetMatrix(glm::rotate((float)time / 1000.0f, vec3(0.0f, 1.0f, 0.0f)));
-
-		scene.Update(&camera, deltaTime);
-
-		// This does all our rendering for us.
-		masterRenderer.RenderScene(window, &renderTarget, &camera, &scene);
-
-		// We update the window to swap our rendered stuff to the surface
-		window->Update();
-
+	}
+	else {
+		controllerHandler.Update(&camera, deltaTime);
 	}
 
-	delete window;
+	camera.UpdateView();
+	camera.UpdateProjection();
 
-	return 0;
+	scene.Update(&camera, deltaTime);
+
+}
+
+void App::Render(float deltaTime) {	
+	
+	viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
+    
+	masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
+	
+	float averageFramerate = Atlas::Clock::GetAverage();
+
+	std::string out = "Average " + std::to_string(averageFramerate) + " ms  Currently " + std::to_string(deltaTime) + " ms";
+
+	masterRenderer.textRenderer.Render(&viewport, &font, out, 0, 0, vec4(1.0f, 0.0f, 0.0f, 1.0f), 2.5f / 10.0f);
+
+}
+
+void App::DisplayLoadingScreen() {
+
+	float textWidth, textHeight;
+	font.ComputeDimensions("Loading...", 2.5f, &textWidth, &textHeight);
+
+	window.Clear();
+
+	auto screenSize = GetScreenSize();
+
+	auto x = (float)window.GetWidth() / 2.0f - textWidth / 2.0f;
+	auto y = (float)window.GetHeight() / 2.0f - textHeight / 2.0f;
+
+	masterRenderer.textRenderer.Render(&viewport, &font, "Loading...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+
+	window.Update();
+
+}
+
+Atlas::EngineInstance* GetEngineInstance() {
+
+	return new App();
 
 }
 ```
