@@ -45,7 +45,7 @@ dynamic libraries). Therefore set the project property to **BUILD_LIBRARY**.
 ## Documentation
 If you want more information have a look into the [Documentation](https://tippesi.github.io/Atlas-Engine/index.html)
 ## License
-The source code is licensed under the BSD 3-clause license. This and the copyright notices of the dependencies are found
+The source code is licensed under the BSD 3-clause license. The license and the copyright notices of the dependencies are found
 in the LICENSE file. 
 >**Note:**
 >The files in the data folder (except the shaders) use a different license. 

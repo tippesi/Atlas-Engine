@@ -7,13 +7,7 @@
 #include <input/Controller.h>
 #include <input/Touch.h>
 
-#include <renderer/RayTracingRenderer.h>
-
-#ifndef AE_OS_ANDROID
 #define WINDOW_FLAGS AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI
-#else
-#define WINDOW_FLAGS AE_WINDOW_FULLSCREEN
-#endif
 
 class App : public Atlas::EngineInstance {
 
@@ -27,51 +21,6 @@ public:
 	virtual void Update(float deltaTime) final;
 
 	virtual void Render(float deltaTime) final;
-
-private:
-	void DisplayLoadingScreen();
-
-	Atlas::RenderTarget* renderTarget;
-	Atlas::Viewport viewport;
-
-	Atlas::Font font;
-
-	Atlas::Camera camera;
-
-	Atlas::Scene::Scene scene;
-
-	Atlas::Lighting::DirectionalLight directionalLight;
-	Atlas::Lighting::PointLight pointLight0;
-	Atlas::Lighting::PointLight pointLight1;
-	Atlas::Lighting::PointLight pointLight2;
-	Atlas::Lighting::PointLight pointLight3;
-
-	Atlas::Mesh::Mesh sponzaMesh;
-	Atlas::Mesh::Mesh treeMesh;
-	Atlas::Mesh::Mesh cubeMesh;
-	Atlas::Mesh::Mesh sunMesh;
-
-	Atlas::Actor::StaticMeshActor cubeActor;
-	Atlas::Actor::StaticMeshActor treeActor;
-	Atlas::Actor::StaticMeshActor sponzaActor;
-	Atlas::Actor::StaticMeshActor sunActor;
-
-	Atlas::Actor::AudioActor audioActor;
-
-	Atlas::Audio::AudioData audioData;
-	Atlas::Audio::AudioStream audioStream;
-
-	Atlas::Input::MouseHandler mouseHandler;
-	Atlas::Input::KeyboardHandler keyboardHandler;
-	Atlas::Input::ControllerHandler controllerHandler;
-	Atlas::Input::TouchHandler touchHandler;
-
-	bool useControllerHandler;
-
-	Atlas::Renderer::RayTracingRenderer rayTracingRenderer;
-	Atlas::Texture::Texture2D inAccumTexture;
-	Atlas::Texture::Texture2D outAccumTexture;
-	Atlas::Texture::Texture2D rayTraceTexture;
 
 };
 
