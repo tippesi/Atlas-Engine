@@ -4,20 +4,17 @@
 ![Example scene](raytraced.png)
 *Ray traced image*
 ## Introduction
-This is a cross platform engine that is available on all major platforms including Linux, Windows, MacOS and Android.
->**Note:**
->MacOS only supports OpenGL up to version 4.1. Support is temporarily disabled until Vulkan is supported by the engine.
->Only 64 bit compilation is supported
+This is a cross platform engine that is available on all major platforms including Linux, Windows and Android.
 ## Requirements
 - OpenGL 4.3 or higher
 - OpenGL ES 3.2
-## Installation
+## Set up
 Before you start compiling make sure to download the dependencies into **./dependencies**. You can either do
 this manually or use one of the available scripts. Building the engine is really convenient: You can use your
 source code and project across all supported platforms. The only thing that differs are the build tools. 
 >**Note:**
 >Debugging the resulting application in a debug configuration will result in poor performance. 
-### Linux, Windows and MacOS
+### Linux and Windows
 The installation is done using CMake. There are two options available: Start a new project with a predefined
 main file which you can edit. The second option is two use the engine as a subproject in an already existing project.
 #### New project using the engine
