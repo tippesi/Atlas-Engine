@@ -1,4 +1,4 @@
 mkdir build
 cd build
-cmake ../ -A x64
+cmake ../ -DBUILD_SHARED_LIBS=OFF -A x64
 start AtlasEngine.sln

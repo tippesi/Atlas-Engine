@@ -14,10 +14,15 @@ endif()
 # Options and compiler settings ###################################################################
 option(BUILD_LIBRARY "Build as library" OFF)
 option(OPENGL_ES "Use OpenGL ES instead of OpenGL" OFF)
+option(EXPORT_MAIN "Add main file in root of directory tree. Add ${ATLAS_ENGINE_MAIN_FILE} to your executable" OFF)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+if (CYGWIN OR MINGW)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -O3 -Wa,-mbig-obj -std=gnu++11" )
+endif()
 
 # Disable some assimp stuff #######################################################################
 set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "Override Assimp settings")
@@ -44,8 +49,10 @@ endif()
 
 if (BUILD_LIBRARY)
 message(STATUS "Building as a library")
+set(ATLAS_ENGINE_COMPILE_DEFINITIONS AE_BUILD_TYPE_LIBRARY)
 else()
 message(STATUS "Building as application")
+set(ATLAS_ENGINE_COMPILE_DEFINITIONS AE_BUILD_TYPE_APP)
 endif()
 
 # Add dependencies ################################################################################
@@ -59,14 +66,18 @@ endif()
 
 # Configure platform specific stuff ###############################################################
 if(WIN32)
-	set(ATLAS_ENGINE_COMPILE_DEFINITIONS AE_OS_WINDOWS)
+	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
 	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
     set(ATLAS_ENGINE_SYSTEM_LIBS opengl32 user32 Shlwapi)
 endif()
 
+if (MINGW)
+	set(ATLAS_ENGINE_LIBS mingw32 ${ATLAS_ENGINE_LIBS})
+endif()
+
 if(APPLE)
-	set(ATLAS_ENGINE_COMPILE_DEFINITIONS AE_OS_MACOS)
+	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_MACOS)
 
     include_directories(/System/Library/Frameworks)
     find_library(COCOA_LIBRARY Cocoa)
@@ -80,14 +91,14 @@ if(APPLE)
 endif()
 
 if(ANDROID)
-	set(ATLAS_ENGINE_COMPILE_DEFINITIONS AE_OS_ANDROID)
+	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
 
 	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 hidapi)
 	set(ATLAS_ENGINE_SYSTEM_LIBS android EGL GLESv3 m)
 endif()
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
-	set(ATLAS_ENGINE_COMPILE_DEFINITIONS AE_OS_LINUX)
+	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_LINUX)
 	
     add_definitions(${OPENGL_DEFINITIONS})
     find_package(X11 REQUIRED)
@@ -132,20 +143,25 @@ else()
 set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_API_GL)
 endif()
 
+if (EXPORT_MAIN)
+set(ATLAS_ENGINE_MAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/src/Main.cpp PARENT_SCOPE)
+list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)src\/Main\.cpp$")
+endif()
+
 # Configure linking ###############################################################################
 if(ANDROID)	
     add_library(${PROJECT_NAME} SHARED ${ATLAS_ENGINE_SOURCE_FILES})
 else()
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 if (BUILD_LIBRARY)
-    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)src\/[Aa]app.(c(pp)?|h(pp)?)$")
-    add_library(${PROJECT_NAME} STATIC ${ATLAS_ENGINE_SOURCE_FILES})
+    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)src\/[Aa]pp\.(c(pp)?|h(pp)?)$")
+    add_library(${PROJECT_NAME} ${ATLAS_ENGINE_SOURCE_FILES})
 else()
     add_executable(${PROJECT_NAME} ${ATLAS_ENGINE_SOURCE_FILES})
 endif()
 else()
-    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)src\/[Aa]pp.(c(pp)?|h(pp)?)$")
-    add_library(${PROJECT_NAME} STATIC ${ATLAS_ENGINE_SOURCE_FILES})
+    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)src\/[Aa]pp\.(c(pp)?|h(pp)?)$")
+    add_library(${PROJECT_NAME} ${ATLAS_ENGINE_SOURCE_FILES})
 endif()
 endif()
 
