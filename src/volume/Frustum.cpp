@@ -23,7 +23,7 @@ namespace Atlas {
 
 		bool Frustum::Intersects(AABB aabb) {
 
-			for (uint8_t i = 2; i < 6; i++) {
+			for (uint8_t i = 0; i < 6; i++) {
 
 				auto& normal = planes[i].normal;
 				auto& distance = planes[i].distance;
@@ -44,7 +44,7 @@ namespace Atlas {
 
 		bool Frustum::IsInside(AABB aabb) {
 
-			for (uint8_t i = 2; i < 6; i++) {
+			for (uint8_t i = 0; i < 6; i++) {
 
 				auto& normal = planes[i].normal;
 				auto& distance = planes[i].distance;

@@ -19,6 +19,8 @@ namespace Atlas {
 		public:
 			SpacePartitioning(vec3 min, vec3 max, int32_t depth);
 
+			SpacePartitioning& operator=(const SpacePartitioning& that);
+
 			void Add(Actor::MovableMeshActor* actor);
 
 			void Remove(Actor::MovableMeshActor* actor);

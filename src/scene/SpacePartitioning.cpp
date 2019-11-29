@@ -16,6 +16,25 @@ namespace Atlas {
 
 		}
 
+		SpacePartitioning& SpacePartitioning::operator=(const SpacePartitioning& that) {
+
+			if (this != &that) {
+
+				aabb = that.aabb;
+
+				staticMeshOctree = that.staticMeshOctree;
+				movableMeshOctree = that.movableMeshOctree;
+				decalOctree = that.decalOctree;
+				audioOctree = that.audioOctree;
+
+				lights = that.lights;
+
+			}
+
+			return *this;
+
+		}
+
 		void SpacePartitioning::Add(Actor::MovableMeshActor* actor) {
 
 			movableMeshOctree.Insert(actor, actor->aabb);

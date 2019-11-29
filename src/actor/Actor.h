@@ -55,8 +55,6 @@ namespace Atlas {
         private:
 			mat4 matrix;
 
-
-
         };
 
     }

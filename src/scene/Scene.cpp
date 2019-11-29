@@ -1,11 +1,11 @@
 #include "Scene.h"
-#include "FrustumCulling.h"
 
 namespace Atlas {
 
 	namespace Scene {
 
-		Scene::Scene(vec3 min, vec3 max) : SceneNode(), SpacePartitioning(min, max, 8) {
+		Scene::Scene(vec3 min, vec3 max, int32_t depth) : SceneNode(),
+			SpacePartitioning(min, max, depth) {
 
 			AddToScene(this);
 
@@ -22,6 +22,7 @@ namespace Atlas {
 			if (this != &that) {
 
 				SceneNode::operator=(that);
+				SpacePartitioning::operator=(that);
 
 				terrains = that.terrains;
 				sky = that.sky;

@@ -23,14 +23,17 @@ namespace Atlas {
 			/**
 			 * Constructs a scene object.
 			 */
-			Scene() : SceneNode(this), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 8) {}
+			Scene() : SceneNode(this), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5) {}
 
 			/**
-             * Constructs a scene object.
-			 * @param min
-			 * @param max
-             */
-			Scene(vec3 min, vec3 max);
+			 * Constructs a scene object.
+			 * @param min The minimum scene boundary.
+			 * @param max The maximum scene boundary.
+			 * @param depth The maximum depths of the octrees.
+			 * @note The boundary should be as tightly fitted to the scene as possible.
+			 * It determines the size of the octrees.
+			 */
+			Scene(vec3 min, vec3 max, int32_t depth = 5);
 
 			/**
 			 * Destructs a scene object.
