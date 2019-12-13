@@ -6,8 +6,6 @@
 #include "EventDelegate.h"
 #include "Keycodes.h"
 
-#include <SDL/include/SDL.h>
-
 namespace Atlas {
 
 	namespace Events {

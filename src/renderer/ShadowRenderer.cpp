@@ -40,12 +40,15 @@ namespace Atlas {
 					continue;
 				}
 
-				light->GetShadow()->update = false;
-
 				// We expect every cascade to have the same resolution
 				glViewport(0, 0, light->GetShadow()->resolution, light->GetShadow()->resolution);
 
-				for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
+				// We don't want to render to the long range component if it exists
+				auto componentCount = light->GetShadow()->longRange ? 
+					light->GetShadow()->componentCount - 1 : 
+					light->GetShadow()->componentCount;
+
+				for (int32_t i = 0; i < componentCount; i++) {
 
 					auto component = &light->GetShadow()->components[i];
 
@@ -56,16 +59,13 @@ namespace Atlas {
 						framebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT, &light->GetShadow()->maps, i);
 					}
 
-					glClear(GL_DEPTH_BUFFER_BIT);
-
-
 					auto inverseMatrix = glm::inverse(component->frustumMatrix);
 
 					auto corners = GetFrustumCorners(inverseMatrix);
 					auto frustum = Volume::Frustum(corners);
 
 					scene->GetRenderList(frustum, renderList);
-					renderList.UpdateBuffers();
+					renderList.UpdateBuffers(camera);
 
 					for (auto& renderListBatchesKey : renderList.orderedRenderBatches) {
 
@@ -88,6 +88,13 @@ namespace Atlas {
 							}
 
 							auto mesh = actorBatch->GetObject();
+
+							auto actorCount = renderList.actorBatchBuffers[mesh]->GetElementCount();
+
+							if (!actorCount) {
+								continue;
+							}
+
 							mesh->Bind();
 
 							if (!mesh->cullBackFaces && backFaceCulling) {
@@ -115,7 +122,7 @@ namespace Atlas {
 								}
 
 								glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
-									(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), actorBatch->GetSize());
+									(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), actorCount);
 
 							}
 

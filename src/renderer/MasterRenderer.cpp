@@ -1,5 +1,6 @@
 #include "MasterRenderer.h"
 #include "helper/GeometryHelper.h"
+#include "helper/HaltonSequence.h"
 
 namespace Atlas {
 
@@ -33,6 +34,8 @@ namespace Atlas {
 
 			GetUniforms();
 
+			haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16);
+
 		}
 
 		MasterRenderer::~MasterRenderer() {
@@ -43,12 +46,58 @@ namespace Atlas {
 
 		void MasterRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+			if (scene->postProcessing.taa) {
+				auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
+				jitter.x /= (float)target->GetWidth();
+				jitter.y /= (float)target->GetHeight();
+
+				camera->Jitter(jitter);
+			}			
+
 			glEnable(GL_DEPTH_TEST);
 			glDepthMask(GL_TRUE);
 
+			// Clear the lights depth maps
+			framebuffer.Bind();
+			auto lights = scene->GetLights();
+
+			for (auto light : lights) {
+
+				if (!light->GetShadow())
+					continue;
+				if (!light->GetShadow()->update)
+					continue;
+
+				for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
+					if (light->GetShadow()->useCubemap) {
+						framebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT,
+							&light->GetShadow()->cubemap, i);
+					}
+					else {
+						framebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT,
+							&light->GetShadow()->maps, i);
+					}
+
+					glClear(GL_DEPTH_BUFFER_BIT);
+				}
+			}
+
 			shadowRenderer.Render(viewport, target, camera, scene);
+			
+			glEnable(GL_CULL_FACE);
+
+			terrainShadowRenderer.Render(viewport, target, camera, scene);
+
+			// Shadows have been updated
+			for (auto light : lights) {
+				if (!light->GetShadow())
+					continue;
+				light->GetShadow()->update = false;
+			}
 
 			target->geometryFramebuffer.Bind(true);
+			target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
+				GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 });
 
 			glEnable(GL_CULL_FACE);
 
@@ -64,6 +113,9 @@ namespace Atlas {
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+			target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
+				GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
+
 			decalRenderer.Render(viewport, target, camera, scene);
 
 			glDisable(GL_BLEND);
@@ -73,6 +125,7 @@ namespace Atlas {
 			directionalVolumetricRenderer.Render(viewport, target, camera, scene);
 
 			target->lightingFramebuffer.Bind(true);
+			target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
 
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
@@ -88,15 +141,30 @@ namespace Atlas {
 			glDisable(GL_BLEND);
 			glEnable(GL_DEPTH_TEST);
 
-			atmosphereRenderer.Render(viewport, target, camera, scene);
+			target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
+				GL_COLOR_ATTACHMENT1 });
+
+			if (scene->sky.cubemap) {
+				skyboxRenderer.Render(viewport, target, camera, scene);
+			}
+			else {
+				atmosphereRenderer.Render(viewport, target, camera, scene);
+			}
 
 			glDepthMask(GL_TRUE);
 
 			oceanRenderer.Render(viewport, target, camera, scene);
 
-			target->lightingFramebuffer.Unbind();
-
 			glDisable(GL_DEPTH_TEST);
+
+			if (scene->postProcessing.taa) {
+				taaRenderer.Render(viewport, target, camera, scene);
+
+				target->historyFramebuffer.Unbind();
+			}
+			else {
+				target->lightingFramebuffer.Unbind();
+			}
 
 			vertexArray.Bind();
 
@@ -295,6 +363,8 @@ namespace Atlas {
 		void MasterRenderer::Update() {
 
 			textRenderer.Update();
+
+			haltonIndex = (haltonIndex + 1) % haltonSequence.size();
 
 		}
 

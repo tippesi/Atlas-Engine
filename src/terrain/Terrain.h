@@ -21,6 +21,7 @@ namespace Atlas {
 		class Terrain {
 
 		public:
+			Terrain() {}
 
 			/**
              * Constructs a Terrain object.
@@ -51,6 +52,13 @@ namespace Atlas {
              * all the cells which aren't needed any more at the moment.
              */
 			void Update(Camera* camera);
+
+			/**
+			 * Updates the list of nodes to render.
+			 * @param frustum The frustum which will be used to cull nodes.
+			 * @param The location in which direction the nodes will be sorted.
+			 */
+			void UpdateRenderlist(Volume::Frustum* frustum, vec3 location);
 
 			/**
              * Sets the distance of a specific level of detail.
@@ -105,21 +113,15 @@ namespace Atlas {
             */
 			TerrainStorageCell* GetStorageCell(float x, float z, int32_t LoD);
 
-			/**
-             * Binds the vertex array of the terrain
-             */
-			void Bind();
-
-			/**
-             * Unbinds the vertex array of the terrain
-             */
-			void Unbind();
-
 			TerrainStorage* storage;
 
-			const int32_t rootNodeSideCount;
-			const int32_t LoDCount;
-			const int32_t patchSizeFactor;
+			Texture::Texture2D heightApproximation;
+
+			int32_t bakeResolution = 512;
+
+			int32_t rootNodeSideCount;
+			int32_t LoDCount;
+			int32_t patchSizeFactor;
 
 			vec3 translation;
 			float resolution;
@@ -135,6 +137,8 @@ namespace Atlas {
 			float heightScale;
 			float displacementDistance;
 
+			Buffer::VertexArray vertexArray;
+			Buffer::VertexArray distanceVertexArray;
 			std::vector<TerrainNode*> renderList;
 
 			Common::Image8 LoDImage;
@@ -153,10 +157,9 @@ namespace Atlas {
 			std::vector<vec2> vertices;
 			std::vector<vec2> patchOffsets;
 
-			Buffer::VertexArray vertexArray;
-
 			std::vector<float> LoDDistances;
 			std::vector<TerrainNode> rootNodes;
+			std::vector<TerrainNode*> leafList;
 
 		};
 

@@ -4,9 +4,9 @@ namespace Atlas {
 
 	namespace Ocean {
 
-		OceanNode::OceanNode(vec2 location, float sideLength, float height, int32_t LoD,
+		OceanNode::OceanNode(vec2 location, float sideLength, int32_t LoD,
 			int32_t LoDCount, int32_t LoDMultiplier, ivec2 parentIndex, ivec2 localIndex) :
-			location(location), sideLength(sideLength), height(height), LoD(LoD), LoDCount(LoDCount),
+			location(location), sideLength(sideLength), LoD(LoD), LoDCount(LoDCount),
 			LoDMultiplier(LoDMultiplier), globalIndex(parentIndex + localIndex), localIndex(localIndex) {
 
 			LoDImageOffset = (int32_t)powf(2.0f, (float)(LoDCount - LoD - 1));
@@ -43,7 +43,7 @@ namespace Atlas {
 
 		}
 
-		void OceanNode::Update(Camera* camera, std::vector<float>& LoDDistances,
+		void OceanNode::Update(Camera* camera, vec3 translation, std::vector<float>& LoDDistances,
 			std::vector<OceanNode*>& leafList, Common::Image8& LoDImage) {
 
 			float calcHeight = 0.0f;
@@ -51,8 +51,8 @@ namespace Atlas {
 			auto cameraLocation = camera->thirdPerson ? camera->location -
 				camera->direction * camera->thirdPersonDistance : camera->location;
 
-			if (cameraLocation.y > height) {
-				calcHeight = height;
+			if (cameraLocation.y > translation.y) {
+				calcHeight = translation.y;
 			}
 			else {
 				if (cameraLocation.y < 0.0f) {
@@ -62,6 +62,8 @@ namespace Atlas {
 					calcHeight = camera->location.y;
 				}
 			}
+
+			auto location = vec2(translation.x, translation.z) + this->location;
 
 			// We should check every corner and the middle of the node to get the minimal distance
 			auto minDistance = glm::distance(cameraLocation, 
@@ -89,7 +91,7 @@ namespace Atlas {
 			}
 
 			for (auto& child : children) {
-				child.Update(camera, LoDDistances,
+				child.Update(camera, translation, LoDDistances,
 					leafList, LoDImage);
 			}
 
@@ -102,8 +104,7 @@ namespace Atlas {
 				for (int32_t y = 0; y < imageArea.y; y++) {
 					for (int32_t x = 0; x < imageArea.x; x++) {
 						auto offset = imageOffset + ivec2(x, y);
-						auto index = offset.y * LoDImage.width + offset.x;
-						LoDImage.data[index] = (uint8_t)LoD;
+						LoDImage.SetData(offset.x, offset.y, 0, (uint8_t)LoD);
 					}
 				}
 
@@ -117,7 +118,7 @@ namespace Atlas {
 			for (int32_t x = 0; x < 2; x++) {
 				for (int32_t z = 0; z < 2; z++) {
 					children.push_back(OceanNode(vec2(location.x + (float)x * sideLength / 2.0f, location.y + (float)z * sideLength / 2.0f),
-						sideLength / 2.0f, height, LoD + 1, LoDCount, LoDMultiplier * 2, globalIndex * 2, ivec2(x, z)));
+						sideLength / 2.0f, LoD + 1, LoDCount, LoDMultiplier * 2, globalIndex * 2, ivec2(x, z)));
 				}
 			}
 

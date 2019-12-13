@@ -4,8 +4,6 @@
 #include "../System.h"
 #include "EventDelegate.h"
 
-#include <SDL/include/SDL.h>
-
 #define AE_AUDIODEVICE_ADDED SDL_AUDIODEVICEADDED
 #define AE_AUDIODEVICE_REMOVED SDL_AUDIODEVICEREMOVED
 

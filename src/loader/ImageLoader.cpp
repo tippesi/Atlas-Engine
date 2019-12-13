@@ -20,7 +20,7 @@ namespace Atlas {
 
 		Common::Image8 ImageLoader::LoadImage(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {
 
-			Common::Image8 image;
+			
 
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
@@ -35,19 +35,25 @@ namespace Atlas {
 
             fileStream.close();
 
+			int32_t width, height, channels;
             auto data = stbi_load_from_memory((unsigned char*)buffer.data(), (int32_t)buffer.size(),
-                    &image.width, &image.height, &image.channels, forceChannels);
+                    &width, &height, &channels, forceChannels);
 
             if (forceChannels > 0) {
-                image.channels = forceChannels;
-            }
+                channels = forceChannels;
+            }			
 
             if (colorSpaceConversion) {
-                Texture::Texture::GammaToLinear(data, image.width, image.height, image.channels);
+                Texture::Texture::GammaToLinear(data, width, height, channels);
             }
 
-            image.data.assign(data, data + image.width * image.height * image.channels);
+			Common::Image8 image(width, height, channels);
+			std::vector<uint8_t> imageData(width * height * channels);
+
+            imageData.assign(data, data + width * height * channels);
 			stbi_image_free(data);
+
+			image.SetData(imageData);
 
             auto fileFormatPosition = filename.find_last_of('.') + 1;
             auto fileFormat = filename.substr(fileFormatPosition, filename.length());
@@ -77,8 +83,6 @@ namespace Atlas {
 
 		Common::Image16 ImageLoader::LoadImage16(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {
 
-			Common::Image16 image;
-
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
             if (!fileStream.is_open()) {
@@ -92,19 +96,25 @@ namespace Atlas {
 
             fileStream.close();
 
+			int32_t width, height, channels;
             auto data = stbi_load_16_from_memory((unsigned char*)buffer.data(), (int32_t)buffer.size(),
-                    &image.width, &image.height, &image.channels, forceChannels);
+                    &width, &height, &channels, forceChannels);
 
             if (forceChannels > 0) {
-                image.channels = forceChannels;
+                channels = forceChannels;
             }
 
             if (colorSpaceConversion) {
-                Texture::Texture::GammaToLinear(data, image.width, image.height, image.channels);
+                Texture::Texture::GammaToLinear(data, width, height, channels);
             }
 
-            image.data.assign(data, data + image.width * image.height * image.channels);
+			Common::Image16 image(width, height, channels);
+			std::vector<uint16_t> imageData(width * height * channels);
+
+            imageData.assign(data, data + width * height * channels);
 			stbi_image_free(data);
+
+			image.data = imageData;
 
             auto fileFormatPosition = filename.find_last_of('.') + 1;
             auto fileFormat = filename.substr(fileFormatPosition, filename.length());
@@ -139,7 +149,7 @@ namespace Atlas {
                 case AE_IMAGE_BMP: break;
                 case AE_IMAGE_PGM: SavePGM8(image, filename); break;
                 case AE_IMAGE_PNG: stbi_write_png(filename.c_str(), image.width, image.height,
-                        image.channels, image.data.data(), image.channels * image.width); break;
+                        image.channels, image.GetData().data(), image.channels * image.width); break;
                 default: break;
             }
 
@@ -175,7 +185,9 @@ namespace Atlas {
 
             imageFile << header;
 
-			for (auto data : image.data) {
+			auto imageData = image.GetData();
+
+			for (auto data : imageData) {
 				imageFile << data;
 				imageFile << " ";
 			}

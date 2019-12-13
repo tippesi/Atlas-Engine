@@ -24,9 +24,11 @@ namespace Atlas {
 
         void DirectionalLight::AddShadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection, Camera* camera) {
 
-            this->shadow = new Shadow(distance, bias, resolution, cascadeCount, splitCorrection);
+            shadow = new Shadow(distance, bias, resolution, glm::min(cascadeCount, MAX_SHADOW_CASCADE_COUNT), splitCorrection);
 
             useShadowCenter = false;
+
+			shadow->allowTerrain = true;
 
             // We want cascaded shadow mapping for directional lights
             for (int32_t i = 0; i < shadow->componentCount; i++) {
@@ -44,12 +46,38 @@ namespace Atlas {
 
             useShadowCenter = true;
 
+			shadow->allowTerrain = true;
+
             shadow->components[0].nearDistance = 0.0f;
             shadow->components[0].farDistance = distance;
             shadow->components[0].projectionMatrix = orthoProjection;
             shadow->components[0].viewMatrix = glm::lookAt(centerPoint, centerPoint + direction, vec3(0.0f, 1.0f, 0.0f));
 
         }
+
+		void DirectionalLight::AddLongRangeShadow(float distance) {
+
+			shadow->maps.Resize(shadow->resolution, shadow->resolution,
+				shadow->maps.layers + 1);
+
+			shadow->maps.Bind(GL_TEXTURE0);
+
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+
+			shadow->componentCount += 1;
+
+			auto component = ShadowComponent();
+
+			component.farDistance = distance;
+			component.nearDistance = shadow->components[shadow->components.size() - 1].farDistance;
+
+			shadow->components.push_back(component);
+
+			shadow->distance = distance;
+			shadow->longRange = true;
+
+		}
 
         void DirectionalLight::RemoveShadow() {
 
@@ -93,8 +121,7 @@ namespace Atlas {
 
         void DirectionalLight::UpdateShadowCascade(ShadowComponent* cascade, Camera* camera) {
 
-            auto cameraLocation = camera->thirdPerson ? camera->location - 
-				camera->direction * camera->thirdPersonDistance : camera->location;
+			auto cameraLocation = camera->GetLocation();
 
             auto cascadeCenter = cameraLocation + camera->direction * 
 				(cascade->nearDistance + (cascade->farDistance - cascade->nearDistance) * 0.5f);
@@ -129,11 +156,19 @@ namespace Atlas {
                 minProj.z = glm::min(minProj.z, corner.z);
             }
 
+			// Tighter frustum for normal meshes
             cascade->frustumMatrix = glm::ortho(minProj.x, 
 				maxProj.x,
 				minProj.y,
 				maxProj.y,
-				-maxProj.z - 150.0f, // We need to render stuff behind the camera
+				-maxProj.z - 300.0f, // We need to render stuff behind the camera
+				-minProj.z + 10.0f) * cascade->viewMatrix; // We need to extend a bit to hide seams at cascade splits
+
+			cascade->terrainFrustumMatrix = glm::ortho(minProj.x,
+				maxProj.x,
+				minProj.y,
+				maxProj.y,
+				-maxProj.z - 1250.0f, // We need to render stuff behind the camera
 				-minProj.z + 10.0f) * cascade->viewMatrix; // We need to extend a bit to hide seams at cascade splits
 
 			maxLength = glm::ceil(maxLength);
@@ -142,7 +177,7 @@ namespace Atlas {
 				maxLength,
 				-maxLength,
 				maxLength,
-				-maxLength - 150.0f, // We need to render stuff behind the camera
+				-maxLength - 1250.0f, // We need to render stuff behind the camera
 				maxLength + 10.0f); // We need to extend a bit to hide seams at cascade splits
 
 			glm::mat4 shadowMatrix = cascade->projectionMatrix * cascade->viewMatrix;

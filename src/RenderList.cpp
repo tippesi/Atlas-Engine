@@ -1,6 +1,8 @@
 #include <actor/MeshActor.h>
 #include "RenderList.h"
 
+#include "libraries/glm/gtx/norm.hpp"
+
 namespace Atlas {
 
 	RenderList::RenderList(int32_t type) : type(type) {
@@ -21,11 +23,14 @@ namespace Atlas {
 		auto actorBatch = new Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>(actor->mesh);
 		auto actorBatchBuffer = new Buffer::VertexBuffer(AE_FLOAT, 16, sizeof(mat4), 0,
 			AE_BUFFER_DYNAMIC_STORAGE);
+		auto impostorBuffer = new Buffer::VertexBuffer(AE_FLOAT, 16, sizeof(mat4), 0,
+			AE_BUFFER_DYNAMIC_STORAGE);
 
 		actorBatch->Add(actor);
 
 		actorBatches[actor->mesh] = actorBatch;
 		actorBatchBuffers[actor->mesh] = actorBatchBuffer;
+		impostorBuffers[actor->mesh] = impostorBuffer;
 
 		// Build up all render list batches
 		std::map<int32_t, RenderListBatch> renderListBatches;
@@ -55,31 +60,51 @@ namespace Atlas {
 
 	}
 
-	void RenderList::UpdateBuffers() {
+	void RenderList::UpdateBuffers(Camera* camera) {		
 
-		std::vector<mat4> actorMatrices;
+		auto cameraLocation = camera->GetLocation();
 
 		for (auto& actorBatchKey : actorBatches) {
+			auto mesh = actorBatchKey.first;
 			auto actorBatch = actorBatchKey.second;
-			auto actorBatchBuffer = actorBatchBuffers[actorBatchKey.first];
+			auto actorBatchBuffer = actorBatchBuffers[mesh];
+			auto impostorBuffer = impostorBuffers[mesh];
 
 			if (!actorBatch->GetSize())
 				continue;
 
-			actorBatchBuffer->SetSize(actorBatch->GetSize());
+			std::vector<mat4> actorMatrices;
+			std::vector<mat4> impostorMatrices;
 
-			actorMatrices.reserve(actorBatch->GetSize());
+			auto sqdDistance = powf(mesh->impostorDistance, 2.0f);
 
 			for (auto actor : actorBatch->actors) {
-				actorMatrices.push_back(actor->transformedMatrix);
+				auto distance = glm::distance2(
+					vec3(actor->transformedMatrix[3]),
+					cameraLocation);
+
+				if (distance < sqdDistance) {
+					actorMatrices.push_back(actor->transformedMatrix);
+				}
+				else {
+					impostorMatrices.push_back(actor->transformedMatrix);
+				}
 			}
 
-			actorBatchBuffer->SetData(actorMatrices.data(), 0,
-				actorBatch->GetSize());
+			if (actorMatrices.size()) {
+				actorBatchBuffer->SetSize(actorMatrices.size());
+				actorBatchBuffer->SetData(actorMatrices.data(), 0,
+					actorMatrices.size());
+				actorBatch->GetObject()->vertexArray.AddInstancedComponent(4,
+					actorBatchBuffer);
+			}
 
-			actorBatch->GetObject()->vertexArray.AddInstancedComponent(4, actorBatchBuffer);
+			if (impostorMatrices.size()) {
+				impostorBuffer->SetSize(impostorMatrices.size());
+				impostorBuffer->SetData(impostorMatrices.data(), 0,
+					impostorMatrices.size());
+			}
 
-			actorMatrices.clear();
 		}
 
 	}
@@ -87,13 +112,18 @@ namespace Atlas {
 	void RenderList::Clear() {
 
 		for (auto &actorBatchKey : actorBatches) {
+			auto mesh = actorBatchKey.first;
 			auto actorBatch = actorBatchKey.second;
-			auto actorBatchBuffer = actorBatchBuffers[actorBatchKey.first];
+			auto actorBatchBuffer = actorBatchBuffers[mesh];
+			auto impostorBuffer = impostorBuffers[mesh];
 
 			actorBatch->Clear();
 			actorBatchBuffer->SetSize(0);
 
 			actorBatch->GetObject()->vertexArray.DisableComponent(4);
+
+			//impostorBuffer->SetSize(0);
+
 		}
 
 	}

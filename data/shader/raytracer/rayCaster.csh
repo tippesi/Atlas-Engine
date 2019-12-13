@@ -59,6 +59,7 @@ void main() {
 	
 	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy) + pixelOffset;
 	
+	// Apply a subpixel jitter to get supersampling
 	float jitterX = random(vec2(float(sampleCount), 0.0));
 	float jitterY = random(vec2(float(sampleCount), 1.0));
 
@@ -75,15 +76,21 @@ void main() {
 	ray.origin = cameraLocation + cameraNearPlane * ray.direction;
 	
 	Radiance(ray, coord, color);
-		
-	vec4 accumColor = imageLoad(inAccumImage, pixel);
+	
+	vec4 accumColor = vec4(0.0);
+
+	// Don't sample the accumulation image when there are just
+	// invalid samples (could do reprojection in theory)
+	if (sampleCount > 0)
+		accumColor = imageLoad(inAccumImage, pixel);
 		
 	accumColor += vec4(color, 1.0);
 	
+	// Maybe we should substract the jitter to get a sharper image
 	imageStore(outAccumImage, pixel, accumColor);
 
 	imageStore(outputImage, pixel,
-		pow(accumColor / float(sampleCount), vec4(gamma)));
+		pow(accumColor / float(sampleCount + 1), vec4(gamma)));
 
 }
 
@@ -102,8 +109,9 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		barrycentric = intersection.yz;
 		
 		if (intersection.x >= INF) {			
-			color = vec3(0.0);
-			return;			
+			accumColor += SampleEnvironmentMap(ray.direction).rgb * mask;
+			color = accumColor;
+			return;	
 		}
 		
 		Triangle tri = UnpackTriangle(triangles.data[triangleIndex]);
@@ -120,7 +128,7 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 			
 		// Produces some problems in the bottom left corner of the Sponza scene,
 		// but fixes the cube. Should work in theory.
-		normal = dot(normal, ray.direction) <= 0.0 ? normal : normal * -1.0;
+		normal = dot(normal, ray.direction) < 0.0 ? normal : normal * -1.0;
 		
 		vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) * 
 			vec3(SampleDiffuseBilinear(mat.diffuseTexture, texCoord));
@@ -135,7 +143,7 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 			
 		vec3 emissiveColor = vec3(mat.emissR, mat.emissG, mat.emissB);
 		
-		vec3 direct;
+		vec3 direct = vec3(0.0);
 		DirectIllumination(position, normal, mat, direct);
 		
 		// create 2 random numbers
@@ -153,9 +161,8 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		ray.direction = normalize(u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1.0 - r2));
 		ray.inverseDirection = 1.0 / ray.direction;
 		
-		ray.origin += normal * 0.03;
-		
-		
+		ray.origin += normal * 0.05;
+
 		accumColor += (surfaceColor * direct + emissiveColor) * mask;
 		
 		mask *= surfaceColor;

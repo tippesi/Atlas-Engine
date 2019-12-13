@@ -4,8 +4,6 @@
 #include "../System.h"
 #include "EventDelegate.h"
 
-#include <SDL/include/SDL.h>
-
 #define AE_CONTROLLERBUTTON_A 				SDL_CONTROLLER_BUTTON_A
 #define AE_CONTROLLERBUTTON_B 				SDL_CONTROLLER_BUTTON_B
 #define AE_CONTROLLERBUTTON_X 				SDL_CONTROLLER_BUTTON_X

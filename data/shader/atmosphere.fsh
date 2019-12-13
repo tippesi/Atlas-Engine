@@ -1,10 +1,13 @@
-out vec3 fragColor;
+layout (location = 0) out vec3 fragColor;
+layout (location = 1) out vec2 velocity;
 
 #define PI 3.141592
 #define iSteps 8
 #define jSteps 8
 
 in vec3 fPosition;
+in vec3 ndcCurrent;
+in vec3 ndcLast;
 
 uniform vec3 cameraLocation;
 uniform vec3 sunDirection;
@@ -18,7 +21,7 @@ const float mieScaleHeight = 1.2e3f;
 
 void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kRlh, float kMie, out vec3 totalRlh, out vec3 totalMie);
 
-const float gamma = 2.2f;
+const float gamma = 2.2;
 
 void main() {
 	
@@ -49,6 +52,12 @@ void main() {
     float pMie = 3.0 / (8.0 * PI) * ((1.0 - gg) * (mumu + 1.0)) / (pow(1.0 + gg - 2.0 * mu * g, 1.5) * (2.0 + gg));
 	
 	fragColor = pow(pRlh * totalRlh + pMie * totalMie, vec3(gamma));
+	
+	// Calculate velocity
+	vec2 ndcL = ndcLast.xy / ndcLast.z;
+	vec2 ndcC = ndcCurrent.xy / ndcCurrent.z;
+
+	velocity = (ndcL - ndcC) * vec2(0.5, 0.5);
 	
 }
 

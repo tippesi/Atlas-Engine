@@ -53,17 +53,31 @@ namespace Atlas {
              */
             Texture2D& operator=(const Texture2D& that);
 
+			/**
+			 * Sets the data of the texture
+			 * @param data A vector holding the new data.
+			 */
+			void SetData(std::vector<uint8_t>& data);
+
             /**
              * Sets the data of the texture
              * @param data A vector holding the new data.
+			 * @param mipLevel The mipmap level
              */
-            void SetData(std::vector<uint8_t>& data);
+            void SetData(std::vector<uint8_t>& data, int32_t mipLevel);
+
+			/**
+			 * Sets the data of the texture
+			 * @param data A pointer to the data
+			 */
+			void SetData(std::vector<uint16_t>& data);
 
             /**
              * Sets the data of the texture
              * @param data A pointer to the data
+			 * @param mipLevel The mipmap level
              */
-            void SetData(std::vector<uint16_t>& data);
+            void SetData(std::vector<uint16_t>& data, int32_t mipLevel);
 
             /**
              * Retrieves the data of the texture from the GPU.

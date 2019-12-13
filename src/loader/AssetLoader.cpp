@@ -1,6 +1,5 @@
 #include "AssetLoader.h"
 #include "../common/Path.h"
-#include <SDL/include/SDL.h>
 
 #include <vector>
 #include <sys/stat.h>

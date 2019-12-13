@@ -21,22 +21,19 @@ namespace Atlas {
 
 	ivec2 EngineInstance::GetScreenSize() {
 
-		SDL_DisplayMode displayMode;
-		SDL_GetCurrentDisplayMode(0, &displayMode);
-
-		return ivec2(displayMode.w, displayMode.h);
+		return Engine::GetScreenSize();
 
 	}
 
 	void EngineInstance::LockFramerate() {
 
-		SDL_GL_SetSwapInterval(1);
+		Engine::LockFramerate();
 
 	}
 
 	void EngineInstance::UnlockFramerate() {
 
-		SDL_GL_SetSwapInterval(0);
+		Engine::UnlockFramerate();
 
 	}
 

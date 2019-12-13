@@ -15,24 +15,31 @@ namespace Atlas {
 			noise0 = Texture::Texture2D(N, N, AE_R8);
 			noise1 = Texture::Texture2D(N, N, AE_R8);
 			noise2 = Texture::Texture2D(N, N, AE_R8);
-			noise3 = Texture::Texture2D(N, N, AE_R8);
-
-			twiddleIndices = Texture::Texture2D((int32_t)log2((float)N), N, AE_RG32F);
+			noise3 = Texture::Texture2D(N, N, AE_R8);			
 
 			Renderer::Helper::NoiseGenerator::GenerateNoiseTexture2D(noise0);
 			Renderer::Helper::NoiseGenerator::GenerateNoiseTexture2D(noise1);
 			Renderer::Helper::NoiseGenerator::GenerateNoiseTexture2D(noise2);
 			Renderer::Helper::NoiseGenerator::GenerateNoiseTexture2D(noise3);
 
-			displacementMap = Texture::Texture2D(N, N, AE_RGBA32F, GL_REPEAT, GL_LINEAR);
-			normalMap = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);
+			displacementMap = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);
+			normalMap = Texture::Texture2D(N, N, AE_RGBA8, GL_REPEAT, GL_LINEAR, true, true);
+
+			displacementMapPrev = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);
 
 			h0K = Texture::Texture2D(N, N, AE_RGBA32F);
 
+#ifdef AE_API_GLES
+			twiddleIndices = Texture::Texture2D((int32_t)log2((float)N), N, AE_RGBA32F);
+			hTDy = Texture::Texture2D(N, N, AE_RGBA32F);
+			hTDyPingpong = Texture::Texture2D(N, N, AE_RGBA32F);
+#else
+			twiddleIndices = Texture::Texture2D((int32_t)log2((float)N), N, AE_RG32F);
 			hTDy = Texture::Texture2D(N, N, AE_RG32F);
-			hTDxz = Texture::Texture2D(N, N, AE_RGBA32F);
-
 			hTDyPingpong = Texture::Texture2D(N, N, AE_RG32F);
+#endif
+
+			hTDxz = Texture::Texture2D(N, N, AE_RGBA32F);			
 			hTDxzPingpong = Texture::Texture2D(N, N, AE_RGBA32F);
 
 			h0.AddStage(AE_COMPUTE_STAGE, "ocean/h0.csh");
@@ -67,6 +74,9 @@ namespace Atlas {
 
 			normalNUniform = normal.GetUniform("N");
 			normalLUniform = normal.GetUniform("L");
+			normalChoppyScaleUniform = normal.GetUniform("choppyScale");
+			normalDisplacementScaleUniform = normal.GetUniform("displacementScale");
+			normalTilingUniform = normal.GetUniform("tiling");
 
 			ComputeTwiddleIndices();
 			ComputeSpectrum();
@@ -128,6 +138,8 @@ namespace Atlas {
 
 		void OceanSimulation::Compute() {
 
+			displacementMapPrev.Copy(displacementMap);
+
 			ht.Bind();
 
 			htNUniform->SetValue(N);
@@ -152,9 +164,9 @@ namespace Atlas {
 			butterflyNUniform->SetValue(N);
 
 			hTDy.Bind(GL_READ_WRITE, 1);
-			hTDxz.Bind(GL_READ_WRITE, 2);
-
-			hTDyPingpong.Bind(GL_READ_WRITE, 3);
+			hTDyPingpong.Bind(GL_READ_WRITE, 2);
+			
+			hTDxz.Bind(GL_READ_WRITE, 3);			
 			hTDxzPingpong.Bind(GL_READ_WRITE, 4);
 
 			for (int32_t i = 0; i < log2n; i++) {
@@ -254,6 +266,9 @@ namespace Atlas {
 
 			normalNUniform->SetValue(N);
 			normalLUniform->SetValue(L);
+			normalChoppyScaleUniform->SetValue(choppinessScale);
+			normalDisplacementScaleUniform->SetValue(displacementScale);
+			normalTilingUniform->SetValue(tiling);
 
 			displacementMap.Bind(GL_READ_ONLY, 0);
 			normalMap.Bind(GL_WRITE_ONLY, 1);

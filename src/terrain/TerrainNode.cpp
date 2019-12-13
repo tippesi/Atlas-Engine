@@ -31,8 +31,7 @@ namespace Atlas {
 
 			auto calcHeight = 0.0f;
 
-			auto cameraLocation = camera->thirdPerson ? camera->location -
-				camera->direction * camera->thirdPersonDistance : camera->location;
+			auto cameraLocation = camera->GetLocation();
 
 			if (cameraLocation.y > height) {
 				calcHeight = height;
@@ -86,8 +85,7 @@ namespace Atlas {
 				for (int32_t y = 0; y < imageArea.y; y++) {
 					for (int32_t x = 0; x < imageArea.x; x++) {
 						auto offset = imageOffset + ivec2(x, y);
-						auto index = offset.y * LoDImage.width + offset.x;
-						LoDImage.data[index] = (uint8_t)LoD;
+						LoDImage.SetData(offset.x, offset.y, 0, (uint8_t)LoD);
 					}
 				}
 

@@ -4,8 +4,6 @@
 #include "../System.h"
 #include "EventDelegate.h"
 
-#include <SDL/include/SDL.h>
-
 namespace Atlas {
 
 	namespace Events {

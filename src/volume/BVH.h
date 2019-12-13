@@ -213,6 +213,7 @@ namespace Atlas {
 
 			auto dimension = max - min;
 
+			// Calculate cost for current node
 			auto minCost = (float)count * (dimension.x * dimension.y +
 				dimension.y * dimension.z + dimension.z * dimension.x);
 
@@ -243,6 +244,7 @@ namespace Atlas {
 					int32_t primitivesLeft = 0;
 					int32_t primitivesRight = 0;
 
+					// Iterate over data and update split bounds
 					for (size_t j = offset; j < offset + count; j++) {
 						auto primitveAABB = data[j].first;
 
@@ -276,9 +278,11 @@ namespace Atlas {
 						rightDimension.y * rightDimension.z +
 						rightDimension.z * rightDimension.x);
 
+					// Caculate cost for current split
 					auto cost = leftSurface * (float)primitivesLeft +
 						rightSurface * (float)primitivesRight;
 
+					// Check if cost has improved
 					if (cost < minCost) {
 						minCost = cost;
 						bestAxis = i;

@@ -2,6 +2,7 @@
 
 layout (binding = 3, rgba8) readonly uniform image2DArray diffuseTextures;
 layout (binding = 4, rgba8) readonly uniform image2DArray normalTextures;
+layout (binding = 5, rgba8) readonly uniform imageCube environmentMap;
 
 ivec2 GetTexCoord(vec2 texCoord, Texture tex) {
 	
@@ -99,4 +100,40 @@ vec4 SampleNormalBilinear(Texture tex, vec2 texCoord) {
 	// Interpolate samples vertically
 	return (1.0 - y) * h0 + y * h1;	
 	
+}
+
+vec4 SampleEnvironmentMap(vec3 v) {
+
+	vec3 vAbs = abs(v);
+	float ma;
+	vec2 uv;
+	float faceIndex;
+
+	if(vAbs.z >= vAbs.x && vAbs.z >= vAbs.y)
+	{
+		faceIndex = v.z < 0.0 ? 5.0 : 4.0;
+		ma = 0.5 / vAbs.z;
+		uv = vec2(v.z < 0.0 ? -v.x : v.x, -v.y);
+	}
+	else if(vAbs.y >= vAbs.x)
+	{
+		faceIndex = v.y < 0.0 ? 3.0 : 2.0;
+		ma = 0.5 / vAbs.y;
+		uv = vec2(v.x, v.y < 0.0 ? -v.z : v.z);
+	}
+	else
+	{
+		faceIndex = v.x < 0.0 ? 1.0 : 0.0;
+		ma = 0.5 / vAbs.x;
+		uv = vec2(v.x < 0.0 ? v.z : -v.z, -v.y);
+	}
+
+	uv = uv * ma + 0.5;
+
+	ivec2 size = imageSize(environmentMap);
+
+	ivec3 coord = ivec3(ivec2(vec2(size).xy * uv), int(faceIndex));
+
+	return imageLoad(environmentMap, coord);
+
 }

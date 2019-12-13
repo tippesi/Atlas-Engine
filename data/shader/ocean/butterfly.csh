@@ -3,11 +3,17 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
+#ifdef AE_API_GLES
+layout (binding = 0, rgba32f) uniform image2D twiddleIndicesTexture;
+layout (binding = 1, rgba32f) uniform image2D pingpongY0;
+layout (binding = 2, rgba32f) uniform image2D pingpongY1;
+#else
 layout (binding = 0, rg32f) uniform image2D twiddleIndicesTexture;
-
 layout (binding = 1, rg32f) uniform image2D pingpongY0;
-layout (binding = 2, rgba32f) uniform image2D pingpongXZ0;
-layout (binding = 3, rg32f) uniform image2D pingpongY1;
+layout (binding = 2, rg32f) uniform image2D pingpongY1;
+#endif
+
+layout (binding = 3, rgba32f) uniform image2D pingpongXZ0;
 layout (binding = 4, rgba32f) uniform image2D pingpongXZ1;
 
 uniform int stage;
@@ -34,7 +40,7 @@ void horizontal() {
 
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	
-	float k = mod(coord.x * preTwiddle, float(N));
+	float k = mod(float(coord.x) * preTwiddle, float(N));
 	float twiddleArgument = 2.0 * PI * k / float(N);
 	vec2 twiddleFactor = vec2(cos(twiddleArgument), sin(twiddleArgument));
 
@@ -97,7 +103,7 @@ void vertical() {
 
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	
-	float k = mod(coord.y * preTwiddle, float(N));
+	float k = mod(float(coord.y) * preTwiddle, float(N));
 	float twiddleArgument = 2.0 * PI * k / float(N);
 	vec2 twiddleFactor = vec2(cos(twiddleArgument), sin(twiddleArgument));
 	

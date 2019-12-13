@@ -3,7 +3,12 @@
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
+#ifdef AE_API_GLES
+layout (binding = 0, rgba32f) writeonly uniform image2D hTDy;
+#else
 layout (binding = 0, rg32f) writeonly uniform image2D hTDy;
+#endif
+
 layout (binding = 1, rgba32f) writeonly uniform image2D hTDxz;
 
 layout (binding = 2, rgba32f) readonly uniform image2D h0K;

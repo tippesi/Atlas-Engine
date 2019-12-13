@@ -13,6 +13,9 @@ layout(location=4)in mat4 mMatrix;
 
 out vec2 fTexCoord;
 
+out vec3 ndcCurrent;
+out vec3 ndcLast;
+
 #ifdef NORMAL_MAP
 out mat3 toTangentSpace;
 #endif
@@ -26,6 +29,9 @@ layout (std140) uniform AnimationUBO {
 #endif
 uniform mat4 pMatrix;
 uniform mat4 vMatrix;
+
+uniform mat4 pvMatrixLast;
+uniform mat4 pvMatrixCurrent;
 
 void main() {
 
@@ -41,16 +47,25 @@ void main() {
 #else
 	mat4 mvMatrix = vMatrix * mMatrix;
 #endif   
-	vec4 positionToCamera = mvMatrix * vec4(vPosition, 1.0f);
+	vec4 positionToCamera = mvMatrix * vec4(vPosition, 1.0);
 	
 	gl_Position = pMatrix * positionToCamera;
+
+	ndcCurrent = vec3(gl_Position.xy, gl_Position.w);
+	// For moving objects we need the last matrix
+	vec4 last = pvMatrixLast * mMatrix * vec4(vPosition, 1.0);
+	ndcLast = vec3(last.xy, last.w);
 	
-	fNormal = (mvMatrix * vec4(vNormal, 0.0f)).xyz;
+#ifdef WORLD_TRANSFORM
+	mvMatrix = mMatrix;
+#endif
+	
+	fNormal = (mvMatrix * vec4(vNormal, 0.0)).xyz;
 
 #ifdef NORMAL_MAP
     vec3 norm = normalize(fNormal);
 	float correctionFactor = vTangent.w;
-    vec3 tang = normalize((mvMatrix * vec4(vTangent.xyz, 0.0f)).xyz);
+    vec3 tang = normalize((mvMatrix * vec4(vTangent.xyz, 0.0)).xyz);
 	
 	vec3 bitang = correctionFactor * cross(tang, norm);
 

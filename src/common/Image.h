@@ -46,13 +46,25 @@ namespace Atlas {
 
 			Image8(int32_t width, int32_t height, int32_t channels);
 
-			ivec4 Sample(int32_t x, int32_t y);
+			void SetData(std::vector<uint8_t>& data);
 
-			ivec4 Sample(float x, float y);
+			void SetData(int32_t x, int32_t y, int32_t channel, uint8_t data);
 
-			ivec4 SampleLinear(float x, float y);
+			std::vector<uint8_t>& GetData(int32_t mipLevel = 0);
 
-			std::vector<uint8_t> data;
+			int32_t GetMipmapLevelCount();
+
+			ivec4 Sample(int32_t x, int32_t y, int32_t mipLevel = 0);
+
+			ivec4 Sample(float x, float y, int32_t mipLevel = 0);
+
+			ivec4 SampleBilinear(float x, float y, int32_t mipLevel = 0);
+
+			void GenerateMipmap();
+
+		private:
+			std::vector<std::vector<uint8_t>> data;
+			std::vector<ivec2> resolutions;
 
 		};
 

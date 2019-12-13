@@ -6,8 +6,8 @@ namespace Atlas {
 
 	namespace Ocean {
 
-		Ocean::Ocean(int32_t LoDCount, float size, float height) :
-			size(size), height(height),	simulation(512, 4000) {
+		Ocean::Ocean(int32_t LoDCount, float size, vec3 translation) :
+			size(size), translation(translation), simulation(512, 4000) {
 
 			simulation.ComputeSpectrum();
 
@@ -34,20 +34,24 @@ namespace Atlas {
 
 		void Ocean::Update(Camera* camera) {
 
+			simulation.choppinessScale = choppynessScale;
+			simulation.displacementScale = displacementScale;
+			simulation.tiling = tiling;
+
 			simulation.Compute();
 
 			std::vector<OceanNode*> leafs;
 
-			OceanNode::Update(camera, LoDDistances, leafs, LoDImage);
+			OceanNode::Update(camera, translation, LoDDistances, leafs, LoDImage);
 
 			renderList.clear();
 
 			// TODO: Check every node against the camera
 			for (auto node : leafs) {
 				auto aabb = Volume::AABB(
-					vec3(node->location.x, height, node->location.y),
-					vec3(node->location.x + node->sideLength, height + 100.0f,
-						node->location.y + node->sideLength)
+					vec3(node->location.x, -50.0, node->location.y) + translation,
+					vec3(node->location.x + node->sideLength, 50.0f,
+						node->location.y + node->sideLength) + translation
 				);
 
 				if (camera->frustum.Intersects(aabb))
@@ -58,8 +62,7 @@ namespace Atlas {
 				node->CheckNeighbourLoD(LoDImage);
 			}
 
-			auto cameraLocation = camera->thirdPerson ? camera->location - 
-				camera->direction * camera->thirdPersonDistance : camera->location;
+			auto cameraLocation = camera->GetLocation();
 
 			// Sort the list to render from front to back
 			SortNodes(renderList, cameraLocation);

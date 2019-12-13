@@ -2,8 +2,10 @@
 #define AE_POSTPROCESSING_H
 
 #include "../System.h"
+
 #include "Vignette.h"
 #include "ChromaticAberration.h"
+#include "Sharpen.h"
 
 namespace Atlas {
 
@@ -12,16 +14,15 @@ namespace Atlas {
 		class PostProcessing {
 
 		public:
-			///
-			PostProcessing();
+			float exposure = 1.0f;
+			float saturation = 1.0f;
 
-			float exposure;
-			float saturation;
+			bool filmicTonemapping = false;
+			bool taa = true;
 
-			bool filmicTonemapping;
-
-			Vignette* vignette;
-			ChromaticAberration* chromaticAberration;
+			Vignette* vignette = nullptr;
+			ChromaticAberration* chromaticAberration = nullptr;
+			Sharpen* sharpen = nullptr;
 
 		};
 

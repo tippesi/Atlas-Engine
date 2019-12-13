@@ -2,7 +2,12 @@
 #include "../common/complex"
 
 layout (local_size_x = 1, local_size_y = 16) in;
+
+#ifdef AE_API_GLES
+layout (binding = 0, rgba32f) writeonly uniform image2D twiddleIndicesTexture;
+#else
 layout (binding = 0, rg32f) writeonly uniform image2D twiddleIndicesTexture;
+#endif
 
 // The first butterfly stage we use bit-reversed indices computed
 // on the CPU.

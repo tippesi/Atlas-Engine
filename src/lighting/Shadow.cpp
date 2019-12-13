@@ -10,7 +10,6 @@ namespace Atlas {
 		Shadow::Shadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection) :
 				distance(distance), bias(bias), resolution(resolution) {
 
-			cascadeCount = glm::min(cascadeCount, MAX_SHADOW_CASCADE_COUNT);
 			splitCorrection = glm::clamp(splitCorrection, 0.0f, 1.0f);
 			componentCount = cascadeCount;
 			this->splitCorrection = splitCorrection;
@@ -19,9 +18,8 @@ namespace Atlas {
 			sampleRange = 2.2f;
 			useCubemap = false;
 
-			// GL_NEAREST fixes shadow aliasing on object edges on NVIDIA cards
 			maps = Texture::Texture2DArray(resolution, resolution, cascadeCount, 
-				AE_DEPTH16, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+				AE_DEPTH24, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 			maps.Bind(GL_TEXTURE0);
 

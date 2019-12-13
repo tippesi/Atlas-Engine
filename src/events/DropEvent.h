@@ -4,7 +4,6 @@
 #include "../System.h"
 #include "EventDelegate.h"
 
-#include <SDL/include/SDL.h>
 #include <string>
 
 #define AE_FILEDROP SDL_DROPFILE

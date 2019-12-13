@@ -59,20 +59,15 @@ namespace Atlas {
 		void RayTracingRenderer::Render(Viewport* viewport, Texture::Texture2D* texture, Texture::Texture2D* inAccumTexture,
 			Texture::Texture2D* outAccumTexture, ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene) {
 
-			if (camera->location != cameraLocation || camera->rotation != cameraRotation) {
-				
-				// Will reset the data
-				std::vector<uint8_t> data(texture->width * texture->height * 16, 0);
-				inAccumTexture->SetData(data);
-				outAccumTexture->SetData(data);
-				data.resize(texture->width * texture->height * 4);
-				texture->SetData(data);
+			if (glm::distance(camera->location, cameraLocation) > 1e-3f ||
+				glm::distance(camera->rotation, cameraRotation) > 1e-3f) {
 
 				cameraLocation = camera->location;
 				cameraRotation = camera->rotation;
 
-				sampleCount = 1;
+				sampleCount = 0;
 				imageOffset = ivec2(0);
+
 			}			
 
 			// Check if the scene has changed. A change might happen when an actor has been updated,
@@ -105,9 +100,9 @@ namespace Atlas {
 
 			auto corners = camera->GetFrustumCorners(camera->nearPlane, camera->farPlane);
 
-			originRayCasterUniform->SetValue(corners[0]);
-			rightRayCasterUniform->SetValue(corners[1] - corners[0]);
-			bottomRayCasterUniform->SetValue(corners[2] - corners[0]);
+			originRayCasterUniform->SetValue(corners[4]);
+			rightRayCasterUniform->SetValue(corners[5] - corners[4]);
+			bottomRayCasterUniform->SetValue(corners[6] - corners[4]);
 
 			cameraLocationRayCasterUniform->SetValue(cameraLocation);
 			cameraFarPlaneRayCasterUniform->SetValue(camera->farPlane);
@@ -128,8 +123,6 @@ namespace Atlas {
 			pixelOffsetRayCasterUniform->SetValue(ivec2(texture->width, texture->height) /
 				imageSubdivisions * imageOffset);
 
-
-
 			// Bind texture only for writing
 			texture->Bind(GL_WRITE_ONLY, 0);
 			if (sampleCount % 2 == 0) {
@@ -143,6 +136,10 @@ namespace Atlas {
 			
 			diffuseTextureAtlas.texture.Bind(GL_READ_ONLY, 3);
 			normalTextureAtlas.texture.Bind(GL_READ_ONLY, 4);
+
+			if (scene->sky.cubemap) {
+				scene->sky.cubemap->Bind(GL_READ_ONLY, 5);
+			}
 
 			// Bind all buffers to their binding points
 			materialBuffer.BindBase(1);

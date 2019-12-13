@@ -1,7 +1,5 @@
 #include "Clock.h"
 
-#include <SDL/include/SDL.h>
-
 namespace Atlas {
 
 	std::mutex Clock::mutex;

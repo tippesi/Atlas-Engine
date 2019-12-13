@@ -25,12 +25,13 @@ namespace Atlas {
 
 		void Add(Actor::MeshActor *actor);
 
-		void UpdateBuffers();
+		void UpdateBuffers(Camera* camera);
 
 		void Clear();
 
 		std::map<Mesh::Mesh*, Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>*> actorBatches;
 		std::map<Mesh::Mesh*, Buffer::VertexBuffer*> actorBatchBuffers;
+		std::map<Mesh::Mesh*, Buffer::VertexBuffer*> impostorBuffers;
 		std::map<int32_t, std::vector<RenderListBatch>> orderedRenderBatches;
 
 	private:

@@ -24,7 +24,7 @@ void main() {
 		discard;
 	
 #ifdef TEXTURE2D
-	color = 1.0 - exp(-texture(rectangleTexture, fTexCoord));
+	color = texture(rectangleTexture, vec2(fTexCoord));
 #elif defined(TEXTURE2D_ARRAY)
 	color = texture(rectangleTexture, vec3(fTexCoord, textureDepth));
 #else

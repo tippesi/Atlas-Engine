@@ -16,8 +16,8 @@ namespace Atlas {
 		public:
 			OceanNode() {}
 
-			OceanNode(vec2 location, float sideLength, float height, int32_t LoD, 
-				int32_t LoDCount, int32_t LoDMultiplier, ivec2 parentIndex, ivec2 localIndex);
+			OceanNode(vec2 location, float sideLength, int32_t LoD, int32_t LoDCount,
+				int32_t LoDMultiplier, ivec2 parentIndex, ivec2 localIndex);
 
 			void CheckNeighbourLoD(Common::Image8& LoDImage);
 
@@ -25,15 +25,13 @@ namespace Atlas {
 			float sideLength = 0.0f;
 			ivec2 globalIndex = ivec2(0);
 
-			float height = 0.0f;
-
 			float leftLoDStitch = 1.0f;
 			float topLoDStitch = 1.0f;
 			float rightLoDStitch = 1.0f;
 			float bottomLoDStitch = 1.0f;
 
 		protected:
-			void Update(Camera* camera, std::vector<float>& LoDDistances, 
+			void Update(Camera* camera, vec3 translation, std::vector<float>& LoDDistances, 
 				std::vector<OceanNode*>& leafList, Common::Image8& LoDImage);
 
 			std::vector<OceanNode> children;

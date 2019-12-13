@@ -4,8 +4,6 @@
 #include "../System.h"
 #include "EventDelegate.h"
 
-#include <SDL/include/SDL.h>
-
 #define AE_MOUSEBUTTON_LEFT 	SDL_BUTTON_LEFT
 #define AE_MOUSEBUTTON_MIDDLE 	SDL_BUTTON_MIDDLE
 #define AE_MOUSEBUTTON_RIGHT 	SDL_BUTTON_RIGHT

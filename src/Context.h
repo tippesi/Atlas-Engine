@@ -4,8 +4,6 @@
 #include "System.h"
 #include "Window.h"
 
-#include <SDL/include/SDL.h>
-
 namespace Atlas {
 
 	class Context {

@@ -37,7 +37,41 @@ namespace Atlas {
 		projectionMatrix = glm::perspective(glm::radians(fieldOfView), aspectRatio, nearPlane, farPlane);
 		inverseProjectionMatrix = inverse(projectionMatrix);
 
+		unjitterdProjection = projectionMatrix;
+
 		CalculateFrustum();
+
+	}
+
+	void Camera::Jitter(vec2 jitter) {
+
+		auto helper = glm::translate(mat4(1.0f), vec3(jitter, 0.0f));
+		projectionMatrix = helper * projectionMatrix;
+
+		jitterVector = jitter;
+
+		inverseProjectionMatrix = inverse(projectionMatrix);
+
+		CalculateFrustum();
+
+	}
+
+	void Camera::Unjitter() {
+
+		auto helper = glm::translate(mat4(1.0f), vec3(-jitterVector, 0.0f));
+		projectionMatrix = helper * projectionMatrix;
+
+		jitterVector = vec2(0.0f);
+
+		inverseProjectionMatrix = inverse(projectionMatrix);
+
+		CalculateFrustum();
+
+	}
+
+	vec2 Camera::GetJitter() {
+
+		return jitterVector;
 
 	}
 

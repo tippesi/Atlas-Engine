@@ -110,8 +110,10 @@ namespace Atlas {
             image.height = height;
             image.fileFormat = AE_IMAGE_PNG;
 
-            image.data = GetData(depth);
-            FlipDataHorizontally(image.data);
+            auto data = GetData(depth);
+            FlipDataHorizontally(data);
+
+			image.SetData(data);
 
             Loader::ImageLoader::SaveImage(image, filename);
 

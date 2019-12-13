@@ -15,6 +15,8 @@ namespace Atlas {
 		class OceanSimulation {
 
 		public:
+			OceanSimulation() {}
+
 			OceanSimulation(int32_t N, int32_t L);
 
 			void Compute();
@@ -26,7 +28,13 @@ namespace Atlas {
 
 			Texture::Texture2D twiddleIndices;
 
+			Texture::Texture2D displacementMapPrev;
+
 			int32_t L;
+
+			float choppinessScale = 1.0f;
+			float displacementScale = 1.0f;
+			float tiling = 1.0f;
 
 			float waveAmplitude = 1.0f;
 
@@ -79,6 +87,9 @@ namespace Atlas {
 
 			Shader::Uniform* normalNUniform;
 			Shader::Uniform* normalLUniform;
+			Shader::Uniform* normalChoppyScaleUniform;
+			Shader::Uniform* normalDisplacementScaleUniform;
+			Shader::Uniform* normalTilingUniform;
 
 		};
 

@@ -3,9 +3,6 @@
 
 #include "../System.h"
 #include "EventDelegate.h"
-#include "../../dependencies/SDL/include/SDL_events.h"
-
-#include <SDL/include/SDL.h>
 
 #define AE_FINGERMOTION SDL_FINGERMOTION
 #define AE_FINGERDOWN   SDL_FINGERDOWN

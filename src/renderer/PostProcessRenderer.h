@@ -34,6 +34,7 @@ namespace Atlas {
 			Shader::Uniform* vignettePower = nullptr;
 			Shader::Uniform* vignetteStrength = nullptr;
 			Shader::Uniform* vignetteColor = nullptr;
+			Shader::Uniform* sharpenFactor = nullptr;
 			Shader::Uniform* timeInMilliseconds = nullptr;
 
 		};

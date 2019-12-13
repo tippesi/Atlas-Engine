@@ -45,18 +45,6 @@ namespace Atlas {
 
 			/**
              *
-             * @param terrain
-             */
-			void Add(Terrain::Terrain *terrain);
-
-			/**
-             *
-             * @param terrain
-             */
-			void Remove(Terrain::Terrain *terrain);
-
-			/**
-             *
              * @param camera
 			 * @param deltaTime
              * @remark 
@@ -86,12 +74,11 @@ namespace Atlas {
 			using SceneNode::Add;
 			using SceneNode::Remove;
 
-			std::vector<Terrain::Terrain*> terrains;
+			Terrain::Terrain* terrain = nullptr;
+			Ocean::Ocean* ocean = nullptr;
 
 			Lighting::Sky sky;
 			PostProcessing::PostProcessing postProcessing;
-
-			Ocean::Ocean* ocean = nullptr;
 
 		private:
 			bool hasChanged = true;

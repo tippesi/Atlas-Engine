@@ -27,7 +27,8 @@ namespace Atlas {
             header.append(std::to_string(terrain->LoDCount) + " ");
             header.append(std::to_string(terrain->patchSizeFactor) + " ");
             header.append(std::to_string(terrain->resolution) + " ");
-            header.append(std::to_string(terrain->heightScale) + "\n");
+            header.append(std::to_string(terrain->heightScale) + " ");
+			header.append(std::to_string(terrain->bakeResolution) + "\n");
 
             fileStream << header;
 
@@ -72,8 +73,10 @@ namespace Atlas {
                         auto cell = terrain->storage->GetCell(x, y, i);
 
 						if (isLeaf) {
-							fileStream.write((char*)cell->materialIndices, sizeof(cell->materialIndices));
+							// fileStream.write((char*)cell->materialIndices, sizeof(cell->materialIndices));
 						}
+
+						fileStream.write((char*)cell->materialIndices, sizeof(cell->materialIndices));
 
                         // Here we assume that all cells are present
                         auto data = cell->heightField->GetData();
@@ -119,7 +122,8 @@ namespace Atlas {
 			auto LoDCount = ReadInt(" ", header, offset);
 			auto patchSizeFactor = ReadInt(" ", header, offset);
 			auto resolution = ReadFloat(" ", header, offset);
-			auto heightScale = ReadFloat("\r\n", header, offset);
+			auto heightScale = ReadFloat(" ", header, offset);
+			auto bakeResolution = ReadInt("\r\n", header, offset);
 
 			std::getline(fileStream, line);
 
@@ -135,6 +139,8 @@ namespace Atlas {
 
 			terrain->SetTessellationFunction(tessFactor, tessSlope, tessShift, tessMaxLevel);
 			terrain->SetDisplacementDistance(displacementDistance);
+
+			terrain->bakeResolution = bakeResolution;
 
 			std::getline(fileStream, line);
 
@@ -195,25 +201,39 @@ namespace Atlas {
 			auto isLeaf = cell->LoD == terrain->LoDCount - 1;
             auto tileResolution = 8 * terrain->patchSizeFactor + 1;
 
-			// Normal map + height map + splat map + material indices
-			auto leafNodeDataCount = (int64_t)tileResolution * tileResolution * 9 + 4 * 4;
 			// Normal map + height map + baked maps (to come)
-			auto nodeDataCount = (int64_t)tileResolution * tileResolution * 5;
+			auto nodeDataCount = (int64_t)tileResolution * tileResolution * 6 + 16;
 
             int64_t cellSideCount = (int64_t)sqrtf((float)terrain->storage->GetCellCount(cell->LoD));
 
-			auto cellPosition = (int64_t)((powf(4.0f, (float)cell->LoD - 1.0f) - 1.0f) / 3.0f) * nodeDataCount;
-			
-			// We need to consider the different size of our nodes
-			auto currLoDPos = cell->x * cellSideCount + cell->y;
-			cellPosition += isLeaf ? currLoDPos * leafNodeDataCount : currLoDPos * nodeDataCount;
+			auto downsample = (int32_t)powf(2.0f, (float)terrain->LoDCount - 1.0f);
+			auto tileSideCount = (int64_t)sqrtf((float)terrain->storage->GetCellCount(0));
+			auto normalDataResolution = 0;
 
-            fileStream.seekg(cellPosition, std::ios_base::cur);
+			auto currPos = 0;
 
-			// Now read the node data
-			if (isLeaf) {
-				fileStream.read((char*)cell->materialIndices, sizeof(cell->materialIndices));
+			// Different resolutions for each LoD
+			for (int32_t i = 0; i <= cell->LoD; i++) {
+				auto sizeFactor = glm::min(downsample, 
+					terrain->bakeResolution / (tileResolution - 1));
+				normalDataResolution = (tileResolution - 1) * sizeFactor + 3;
+				auto nodeSize = nodeDataCount + normalDataResolution
+					* normalDataResolution * 3;
+
+				if (cell->LoD == i) {
+					currPos += (cell->x * tileSideCount + cell->y) * nodeSize;
+					break;
+				}
+				
+				currPos += tileSideCount * tileSideCount * nodeSize;
+
+				downsample /= 2;
+				tileSideCount *= 2;
 			}
+
+            fileStream.seekg(currPos, std::ios_base::cur);
+
+			fileStream.read((char*)cell->materialIndices, sizeof(cell->materialIndices));
 
 			std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
             fileStream.read((char*)heightFieldData.data(), heightFieldData.size() * 2);
@@ -221,22 +241,18 @@ namespace Atlas {
 				tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
 			cell->heightField->SetData(heightFieldData);
 
-			std::vector<uint8_t> normalMapData(heightFieldData.size() * 3);
+			std::vector<uint8_t> normalMapData(normalDataResolution * 
+				normalDataResolution * 3);
             fileStream.read((char*)normalMapData.data(), normalMapData.size());
-			cell->normalMap = new Texture::Texture2D(tileResolution,
-				tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+			cell->normalMap = new Texture::Texture2D(normalDataResolution,
+				normalDataResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 			cell->normalMap->SetData(normalMapData);
 
-			if (isLeaf) {
-				std::vector<uint8_t> splatMapData(heightFieldData.size() * 4);
-				fileStream.read((char*)splatMapData.data(), splatMapData.size());
-				cell->splatMap = new Texture::Texture2D(tileResolution,
+			std::vector<uint8_t> splatMapData(heightFieldData.size() * 4);
+			fileStream.read((char*)splatMapData.data(), splatMapData.size());
+			cell->splatMap = new Texture::Texture2D(tileResolution,
 					tileResolution, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-				cell->splatMap->SetData(splatMapData);
-			}
-			else {
-
-			}
+			cell->splatMap->SetData(splatMapData);
 			
 			if (initWithHeightData) {
                 cell->heightData.resize(tileResolution * tileResolution);

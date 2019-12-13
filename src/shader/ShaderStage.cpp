@@ -58,7 +58,7 @@ namespace Atlas {
                 delete constant;
             }
 
-            glDeleteShader(type);
+            glDeleteShader(ID);
 
         }
 
@@ -78,6 +78,7 @@ namespace Atlas {
             path += filename;
 
             constants.clear();
+			includes.clear();
             code = ReadShaderFile(path, true);
 
             return true;
@@ -113,12 +114,12 @@ namespace Atlas {
             std::string composedCode;
 
 #ifdef AE_API_GL
-            composedCode.append("#version 430\n\n#define ENGINE_GL\n");
+            composedCode.append("#version 430\n\n#define AE_API_GL\n");
 #elif AE_API_GLES
             composedCode.append("#version 320 es\n\nprecision highp float;\nprecision highp sampler2D;\
 				\nprecision highp usampler2D;\nprecision highp image2D;\nprecision highp image2DArray;\
 				\nprecision highp samplerCube;\nprecision highp sampler2DArrayShadow;\nprecision highp sampler2DArray;\
-				\nprecision highp samplerCubeShadow;\nprecision highp int;\n#define ENGINE_GLES\n");
+				\nprecision highp samplerCubeShadow;\nprecision highp int;\n#define AE_API_GLES\n");
 #endif
 
             for (auto& macro : macros) {
@@ -258,6 +259,8 @@ namespace Atlas {
 
             auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
             path += filename;
+
+			path = Loader::AssetLoader::GetFullPath(path);
 
             struct stat result;
             if (stat(path.c_str(), &result) == 0) {

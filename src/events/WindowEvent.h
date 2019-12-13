@@ -4,8 +4,6 @@
 #include "../System.h"
 #include "EventDelegate.h"
 
-#include <SDL/include/SDL.h>
-
 #define AE_WINDOWEVENT_SHOWN 			SDL_WINDOWEVENT_SHOWN
 #define AE_WINDOWEVENT_HIDDEN 			SDL_WINDOWEVENT_HIDDEN
 #define AE_WINDOWEVENT_EXPOSED 			SDL_WINDOWEVENT_EXPOSED

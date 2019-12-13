@@ -26,8 +26,11 @@ namespace Atlas {
 			shader.Bind();
 
 			mat4 mvpMatrix = camera->projectionMatrix * glm::mat4(glm::mat3(camera->viewMatrix));
+			auto pvMatrixUnjittered = camera->unjitterdProjection * glm::mat4(glm::mat3(camera->viewMatrix));
 
 			modelViewProjectionMatrix->SetValue(mvpMatrix);
+			pvMatrixCurrent->SetValue(pvMatrixUnjittered);
+			pvMatrixLast->SetValue(pvMatrixPrev);
 
 			vertexArray.Bind();
 
@@ -35,11 +38,15 @@ namespace Atlas {
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 
+			pvMatrixPrev = pvMatrixUnjittered;
+
 		}
 
 		void SkyboxRenderer::GetUniforms() {
 
 			modelViewProjectionMatrix = shader.GetUniform("mvpMatrix");
+			pvMatrixLast = shader.GetUniform("pvMatrixLast");
+			pvMatrixCurrent = shader.GetUniform("pvMatrixCurrent");
 
 		}
 

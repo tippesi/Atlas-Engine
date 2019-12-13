@@ -8,10 +8,12 @@
 #include "TerrainRenderer.h"
 #include "OceanRenderer.h"
 #include "ShadowRenderer.h"
+#include "TerrainShadowRenderer.h"
 #include "DecalRenderer.h"
 #include "DirectionalVolumetricRenderer.h"
 #include "DirectionalLightRenderer.h"
 #include "PointLightRenderer.h"
+#include "TemporalAARenderer.h"
 #include "SkyboxRenderer.h"
 #include "AtmosphereRenderer.h"
 #include "PostProcessRenderer.h"
@@ -146,6 +148,8 @@ namespace Atlas {
 		private:
 			void GetUniforms();
 
+			Framebuffer framebuffer;
+
 			Buffer::VertexArray vertexArray;
 
 			Shader::Shader rectangleShader;
@@ -175,12 +179,17 @@ namespace Atlas {
 			OpaqueRenderer opaqueRenderer;
 			TerrainRenderer terrainRenderer;
 			ShadowRenderer shadowRenderer;
+			TerrainShadowRenderer terrainShadowRenderer;
 			DecalRenderer decalRenderer;
 			DirectionalVolumetricRenderer directionalVolumetricRenderer;
 			DirectionalLightRenderer directionalLightRenderer;
 			PointLightRenderer pointLightRenderer;
+			TemporalAARenderer taaRenderer;
 			SkyboxRenderer skyboxRenderer;
 			PostProcessRenderer postProcessRenderer;
+
+			std::vector<vec2> haltonSequence;
+			size_t haltonIndex = 0;
 
 		};
 

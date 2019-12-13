@@ -1,6 +1,8 @@
 #include "OceanRenderer.h"
 #include "helper/GeometryHelper.h"
 
+#include "../Clock.h"
+
 namespace Atlas {
 
 	namespace Renderer {
@@ -47,10 +49,11 @@ namespace Atlas {
 			if (!sun)
 				return;
 
-			lightDirection->SetValue(normalize(sun->direction));
+			vec3 direction = normalize(sun->direction);
+
+			lightDirection->SetValue(direction);
 			lightColor->SetValue(sun->color);
 			lightAmbient->SetValue(sun->ambient);
-
 			
 			lightScatteringFactor->SetValue(sun->GetVolumetric() ? sun->GetVolumetric()->scatteringFactor : 0.0f);
 
@@ -58,14 +61,13 @@ namespace Atlas {
 				glViewport(0, 0, sun->GetVolumetric()->map->width, sun->GetVolumetric()->map->height);
 				sun->GetVolumetric()->map->Bind(GL_TEXTURE7);
 				glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
-			}
-			
+			}			
 
 			if (sun->GetShadow()) {
 				shadowDistance->SetValue(sun->GetShadow()->distance);
 				shadowBias->SetValue(sun->GetShadow()->bias);
-				shadowSampleCount->SetValue(sun->GetShadow()->sampleCount);
-				shadowSampleRange->SetValue(sun->GetShadow()->sampleRange);
+				shadowSampleCount->SetValue(1);
+				shadowSampleRange->SetValue(1.0f);
 				shadowCascadeCount->SetValue(sun->GetShadow()->componentCount);
 				shadowResolution->SetValue(vec2((float)sun->GetShadow()->resolution));
 
@@ -80,6 +82,10 @@ namespace Atlas {
 			else {
 				shadowDistance->SetValue(0.0f);
 			}
+
+			time->SetValue(Clock::Get());
+
+			translation->SetValue(ocean->translation);
 
 			displacementScale->SetValue(ocean->displacementScale);
 			choppyScale->SetValue(ocean->choppynessScale);
@@ -111,7 +117,9 @@ namespace Atlas {
 			ocean->simulation.displacementMap.Bind(GL_TEXTURE0);
 			ocean->simulation.normalMap.Bind(GL_TEXTURE1);
 
-			foam.Bind(GL_TEXTURE2);
+			ocean->simulation.displacementMapPrev.Bind(GL_TEXTURE10);
+
+			// foam.Bind(GL_TEXTURE2);
 
 			if (scene->sky.cubemap != nullptr)
 				scene->sky.cubemap->Bind(GL_TEXTURE3);
@@ -119,19 +127,48 @@ namespace Atlas {
 			refractionTexture.Bind(GL_TEXTURE4);
 			depthTexture.Bind(GL_TEXTURE5);
 
+			// In case a terrain isn't available
+			terrainSideLength->SetValue(-1.0f);
+
+			if (scene->terrain) {
+				if (scene->terrain->heightApproximation.width > 0 &&
+					scene->terrain->heightApproximation.height > 0) {
+
+					terrainTranslation->SetValue(scene->terrain->translation);
+					terrainHeightScale->SetValue(scene->terrain->heightScale);
+					terrainSideLength->SetValue(scene->terrain->sideLength);
+
+					scene->terrain->heightApproximation.Bind(GL_TEXTURE8);
+
+				}
+			}
+
+			if (ocean->rippleTexture.width > 0 &&
+				ocean->rippleTexture.height > 0) {
+				ocean->rippleTexture.Bind(GL_TEXTURE9);
+				hasRippleTexture->SetValue(true);
+			}
+			else {
+				hasRippleTexture->SetValue(false);
+			}
+
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
 
 			inverseViewMatrix->SetValue(camera->inverseViewMatrix);
 			inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
 
+			jitterLast->SetValue(jitterPrev);
+			jitterCurrent->SetValue(camera->GetJitter());
+			pvMatrixLast->SetValue(pvMatrixPrev);
+
+			cameraLocation->SetValue(camera->GetLocation());
+
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			auto renderList = ocean->GetRenderList();
 
 			// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-			oceanHeight->SetValue(ocean->height);
 
 			for (auto node : renderList) {
 
@@ -150,18 +187,26 @@ namespace Atlas {
 
 			// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+			jitterPrev = camera->GetJitter();
+			pvMatrixPrev = camera->projectionMatrix * camera->viewMatrix;
+
 		}
 
 		void OceanRenderer::GetUniforms() {
 
 			nodeLocation = shader.GetUniform("nodeLocation");
 			nodeSideLength = shader.GetUniform("nodeSideLength");
-			oceanHeight = shader.GetUniform("oceanHeight");
 
 			viewMatrix = shader.GetUniform("vMatrix");
 			inverseViewMatrix = shader.GetUniform("ivMatrix");
 			projectionMatrix = shader.GetUniform("pMatrix");
 			inverseProjectionMatrix = shader.GetUniform("ipMatrix");
+
+			cameraLocation = shader.GetUniform("cameraLocation");
+
+			time = shader.GetUniform("time");
+
+			translation = shader.GetUniform("translation");
 
 			displacementScale = shader.GetUniform("displacementScale");
 			choppyScale = shader.GetUniform("choppyScale");
@@ -185,10 +230,20 @@ namespace Atlas {
 			shadowCascadeCount = shader.GetUniform("light.shadow.cascadeCount");
 			shadowResolution = shader.GetUniform("light.shadow.resolution");
 
-			for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
+			terrainTranslation = shader.GetUniform("terrainTranslation");
+			terrainSideLength = shader.GetUniform("terrainSideLength");
+			terrainHeightScale = shader.GetUniform("terrainHeightScale");
+
+			hasRippleTexture = shader.GetUniform("hasRippleTexture");
+
+			for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
 				cascades[i].distance = shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].distance");
 				cascades[i].lightSpace = shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].cascadeSpace");
 			}
+
+			pvMatrixLast = shader.GetUniform("pvMatrixLast");
+			jitterLast = shader.GetUniform("jitterLast");
+			jitterCurrent = shader.GetUniform("jitterCurrent");
 
 		}
 

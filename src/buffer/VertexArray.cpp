@@ -21,9 +21,17 @@ namespace Atlas {
 
 			delete indexComponent;
 
-			for (auto& key : vertexComponents)
-				delete key.second;
+			// Instanced buffers are in multiple slots
+			std::unordered_set<VertexBuffer*> buffers;
 
+			for (auto& key : vertexComponents) {
+				buffers.insert(key.second);
+			}
+
+			for (auto buffer : buffers) {
+				delete buffer;
+			}
+				
 		}
 
 		VertexArray& VertexArray::operator=(const VertexArray& that) {
@@ -34,19 +42,32 @@ namespace Atlas {
 
 				delete indexComponent;
 
-				for (auto& key : vertexComponents)
-					delete key.second;
+				// Instanced buffers are in multiple slots
+				std::unordered_set<VertexBuffer*> buffers;
+
+				for (auto& key : vertexComponents) {
+					buffers.insert(key.second);
+				}
+
+				for (auto buffer : buffers) {
+					delete buffer;
+				}
 				
 				vertexComponents.clear();
 
-				if (that.indexComponent != nullptr) {
+				if (that.indexComponent) {
 					auto buffer = new IndexBuffer(*that.indexComponent);
 					AddIndexComponent(buffer);
 				}
 
+				buffers.clear();
+
 				for (auto& key : that.vertexComponents) {
-					auto buffer = new VertexBuffer(*key.second);
-					AddComponent(key.first, buffer);
+					if (buffers.find(key.second) == buffers.end()) {
+						auto buffer = new VertexBuffer(*key.second);
+						AddComponent(key.first, buffer);
+						buffers.insert(key.second);
+					}
 				}
 
 				Unbind();
@@ -77,6 +98,8 @@ namespace Atlas {
 			glEnableVertexAttribArray(attribArray);
 			glVertexAttribPointer(attribArray, buffer->GetStride(), buffer->GetDataType(), normalized, 0, NULL);
 
+			auto prevBuffer = vertexComponents[attribArray];
+
 			vertexComponents[attribArray] = buffer;
 
 		}
@@ -87,6 +110,8 @@ namespace Atlas {
 			buffer->Bind();
 
 			int32_t bufferStride = buffer->GetStride();
+
+			auto prevBuffer = vertexComponents[attribArray];
 
 			if(bufferStride > 4) {
 

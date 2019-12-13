@@ -5,7 +5,9 @@
 #include "../Material.h"
 #include "../buffer/VertexArray.h"
 #include "../shader/ShaderConfig.h"
+
 #include "MeshData.h"
+#include "Impostor.h"
 
 #include <unordered_map>
 
@@ -62,10 +64,13 @@ namespace Atlas {
 			Shader::ShaderConfig* GetConfig(Material* material, int32_t type);
 
 			MeshData data;
+			Impostor* impostor = nullptr;
 
 			int32_t mobility;
 
 			bool cullBackFaces = true;
+
+			float impostorDistance = 300.0f;
 
 			struct MaterialConfig {
 

@@ -7,6 +7,9 @@ namespace Atlas {
 
 	Context* Engine::Init(std::string assetDirectory, std::string shaderDirectory) {
 
+#ifdef AE_NO_APP
+        SDL_SetMainReady();
+#endif
 		if (SDL_WasInit(SDL_INIT_EVERYTHING) != SDL_INIT_EVERYTHING) {
 			SDL_Init(SDL_INIT_EVERYTHING);
 		}
@@ -89,17 +92,43 @@ namespace Atlas {
 
 	}
 
-	void Engine::Shutdown() {
+    void Engine::Shutdown() {
 
-		Shader::ShaderManager::Clear();
+        Shader::ShaderManager::Clear();
 
-	}
+        SDL_DestroyWindow(defaultWindow);
 
-	void Engine::Update() {
+#ifdef AE_NO_APP
+        SDL_Quit();
+#endif
+    }
 
-		Clock::Update();
-		Events::EventManager::Update();
+    void Engine::Update() {
 
-	}
+        Clock::Update();
+        Events::EventManager::Update();
+
+    }
+
+    ivec2 Engine::GetScreenSize() {
+
+        SDL_DisplayMode displayMode;
+        SDL_GetCurrentDisplayMode(0, &displayMode);
+
+        return ivec2(displayMode.w, displayMode.h);
+
+    }
+
+    void Engine::LockFramerate() {
+
+        SDL_GL_SetSwapInterval(1);
+
+    }
+
+    void Engine::UnlockFramerate() {
+
+        SDL_GL_SetSwapInterval(0);
+
+    }
 
 }

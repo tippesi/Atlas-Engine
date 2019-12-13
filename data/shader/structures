@@ -19,7 +19,7 @@ struct Shadow {
 	int cascadeCount;
 	vec2 resolution;
 	
-	Cascade cascades[5];
+	Cascade cascades[6];
 	
 };
 

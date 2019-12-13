@@ -45,7 +45,9 @@ namespace Atlas {
 			Volume::AABB base(vec3(-1.0f), vec3(1.0f));
 			auto aabb = base.Transform(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
 
-			auto decalActors = scene->GetDecalActors(aabb);
+			base = Volume::AABB(vec3(-2048.0f), vec3(2048.0f));
+
+			auto decalActors = scene->GetDecalActors(base);
 
             for (auto& decalActor : decalActors) {
 

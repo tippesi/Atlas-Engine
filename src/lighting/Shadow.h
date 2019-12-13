@@ -22,6 +22,7 @@ namespace Atlas {
 			mat4 projectionMatrix;
 
 			mat4 frustumMatrix;
+			mat4 terrainFrustumMatrix;
 
 		};
 
@@ -49,9 +50,11 @@ namespace Atlas {
 			Texture::Texture2DArray maps;
 			Texture::Cubemap cubemap;
 
-			bool useCubemap;
-			bool allowDynamicActors;
-			bool update;
+			bool useCubemap = false;
+			bool allowDynamicActors = false;
+			bool allowTerrain = false;
+			bool longRange = false;
+			bool update = true;
 
 		};
 

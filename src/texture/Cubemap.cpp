@@ -19,9 +19,9 @@ namespace Atlas {
 		   Common::Image8 images[6];
 
 		   for (int32_t i = 0; i < 6; i++) {
-			   images[i] = Loader::ImageLoader::LoadImage(filenames[i], true, 3);
+			   images[i] = Loader::ImageLoader::LoadImage(filenames[i], true, 4);
 
-			   if (images[i].data.size() == 0) {
+			   if (images[i].GetData().size() == 0) {
 #ifdef AE_SHOW_LOG
 				   AtlasLog("    Failed to load cubemap face %d %s", i, filenames[i].c_str());
 #endif
@@ -34,11 +34,11 @@ namespace Atlas {
 		   this->height = images[0].height;
 		   this->layers = 6;
 
-		   Generate(GL_TEXTURE_CUBE_MAP, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR,
+		   Generate(GL_TEXTURE_CUBE_MAP, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR,
 			   false, true);
 
 		   for (int32_t i = 0; i < 6; i++)
-			   SetData(images[i].data, i);
+			   SetData(images[i].GetData(), i);
 
        }
 

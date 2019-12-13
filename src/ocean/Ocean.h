@@ -17,7 +17,9 @@ namespace Atlas {
 		class Ocean : public OceanNode {
 
 		public:
-			Ocean(int32_t LoDCount, float size, float height = 0.0f);
+			Ocean() {}
+
+			Ocean(int32_t LoDCount, float size, vec3 translation = vec3(0.0f));
 
 			void Update(Camera* camera);
 
@@ -31,13 +33,14 @@ namespace Atlas {
 			std::vector<OceanNode*> GetRenderList();
 
 			OceanSimulation simulation;
+			Texture::Texture2D rippleTexture;
+
+			vec3 translation = vec3(0.0f);
 
 			float displacementScale = 4.0f;
 			float choppynessScale = 4.0f;
 
 			float tiling = 32.0f;
-
-			float height;
 
 		private:
 			void SortNodes(std::vector<OceanNode*>& nodes, vec3 cameraLocation);

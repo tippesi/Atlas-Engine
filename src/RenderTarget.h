@@ -40,14 +40,31 @@ namespace Atlas {
 		 */
 		int32_t GetHeight();
 
+		/**
+		 * Swaps the history textures.
+		 * @note This is used internally for TAA.
+		 */
+		void Swap();
+
+		Texture::Texture2D* GetHistory();
+
+		Texture::Texture2D* GetVelocity();
+
 		Framebuffer geometryFramebuffer;
 		Framebuffer lightingFramebuffer;
+		Framebuffer historyFramebuffer;
 
 	private:
 		Texture::Texture2D depthTexture;
+		Texture::Texture2D velocityTexture;
+
+		Texture::Texture2D historyTexture;
+		Texture::Texture2D swapHistoryTexture;
 
 		int32_t width = 0;
 		int32_t height = 0;
+
+		bool swap = false;
 
 	};
 

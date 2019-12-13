@@ -3,8 +3,6 @@
 
 #include "../System.h"
 
-#include <SDL/include/SDL.h>
-
 typedef int32_t Keycode;
 
 #define SCANCODE_MASK (1 << 30)

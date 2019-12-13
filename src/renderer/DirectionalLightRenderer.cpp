@@ -109,7 +109,7 @@ namespace Atlas {
 			shadowCascadeCount = shader.GetUniform("light.shadow.cascadeCount");
 			shadowResolution = shader.GetUniform("light.shadow.resolution");
 
-			for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
+			for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
 				cascades[i].distance = shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].distance");
 				cascades[i].lightSpace = shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].cascadeSpace");
 			}

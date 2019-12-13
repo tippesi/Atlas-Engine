@@ -9,7 +9,8 @@
 // AE_SHOW_API_DEBUG_LOG: Prints out graphics API specific things (medium performance impact)
 
 #define AE_SHOW_LOG
-//#define AE_SHOW_API_DEBUG_LOG
+// #define AE_SHOW_API_DEBUG_LOG
+#define AE_INSTANT_SHADER_RELOAD
 
 #include <stdint.h>
 #include <string>
@@ -46,6 +47,13 @@
 #define AtlasLog(...) printf(__VA_ARGS__); printf("\n");
 
 #endif
+
+// SDL
+#ifdef AE_NO_APP
+#define SDL_MAIN_HANDLED
+#endif
+#include <SDL/include/SDL.h>
+#include <SDL/include/SDL_events.h>
 
 // GLM
 #include "libraries/glm/glm.hpp"

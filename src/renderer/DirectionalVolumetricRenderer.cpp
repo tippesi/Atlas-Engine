@@ -100,7 +100,7 @@ namespace Atlas {
 
             for (auto& light : lights) {
 
-                if (light->type != AE_DIRECTIONAL_LIGHT || light->GetShadow() == nullptr || light->GetVolumetric() == nullptr) {
+                if (light->type != AE_DIRECTIONAL_LIGHT || !light->GetShadow() || !light->GetVolumetric()) {
                     continue;
                 }
 

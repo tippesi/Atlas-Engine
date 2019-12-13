@@ -1,5 +1,7 @@
 #include "Terrain.h"
 
+#include "../renderer/helper/GeometryHelper.h"
+
 #include <algorithm>
 
 namespace Atlas {
@@ -25,6 +27,9 @@ namespace Atlas {
 
 			GeneratePatchVertexBuffer();
 			GeneratePatchOffsets();
+
+			Renderer::Helper::GeometryHelper::GenerateGridVertexArray(distanceVertexArray, 
+				8 * patchSizeFactor + 1, 1.0f);
 
 			storage = new TerrainStorage(rootNodeCount, LoDCount);
 			LoDDistances = std::vector<float>(LoDCount);
@@ -62,11 +67,15 @@ namespace Atlas {
 
 		void Terrain::Update(Camera *camera) {
 
-			std::vector<TerrainNode*> leafList;
+			leafList.clear();
 
 			for (auto& node : rootNodes)
 				node.Update(camera, LoDDistances,
 					leafList, LoDImage);
+
+		}
+
+		void Terrain::UpdateRenderlist(Volume::Frustum* frustum, vec3 location) {
 
 			renderList.clear();
 
@@ -77,7 +86,7 @@ namespace Atlas {
 						node->location.y + node->sideLength)
 				);
 
-				if (camera->frustum.Intersects(aabb))
+				if (frustum->Intersects(aabb))
 					renderList.push_back(node);
 			}
 
@@ -85,11 +94,8 @@ namespace Atlas {
 				node->CheckNeighbourLoD(LoDImage);
 			}
 
-			auto cameraLocation = camera->thirdPerson ? camera->location -
-				camera->direction * camera->thirdPersonDistance : camera->location;
-
 			// Sort the list to render from front to back
-			SortNodes(renderList, cameraLocation);
+			SortNodes(renderList, location);
 
 		}
 
@@ -258,18 +264,6 @@ namespace Atlas {
 			float zIndex = floorf(z);
 
 			return storage->GetCell((int32_t) xIndex, (int32_t) zIndex, LoD);
-
-		}
-
-		void Terrain::Bind() {
-
-			vertexArray.Bind();
-
-		}
-
-		void Terrain::Unbind() {
-
-			vertexArray.Unbind();
 
 		}
 

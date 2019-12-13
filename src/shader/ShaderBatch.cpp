@@ -102,7 +102,19 @@ namespace Atlas {
 
 		}
 
+		Shader* ShaderBatch::GetShader(int32_t shaderID) {
+
+			return configBatches[shaderID]->GetShader();
+
+		}
+
 		Uniform* ShaderBatch::GetUniform(std::string uniformName) {
+
+			// Check if equivalent uniform exists
+			for (auto uniform : uniforms) {
+				if (uniform->name == uniformName)
+					return uniform;
+			}
 
 			for (auto batchKey : configBatches) {
 				batchKey.second->GetShader()->GetUniform(uniformName);

@@ -30,6 +30,7 @@ namespace Atlas {
 			bool hasFilmicTonemappingMacro = shader.HasMacro("FILMIC_TONEMAPPING");
 			bool hasVignetteMacro = shader.HasMacro("VIGNETTE");
 			bool hasChromaticAberrationMacro = shader.HasMacro("CHROMATIC_ABERRATION");
+			bool hasSharpenMacro = shader.HasMacro("SHARPEN");
 
 			if (postProcessing->filmicTonemapping && !hasFilmicTonemappingMacro) {
 				shader.AddMacro("FILMIC_TONEMAPPING");
@@ -38,18 +39,25 @@ namespace Atlas {
 				shader.RemoveMacro("FILMIC_TONEMAPPING");
 			}
 
-			if (postProcessing->vignette != nullptr && !hasVignetteMacro) {
+			if (postProcessing->vignette && !hasVignetteMacro) {
 				shader.AddMacro("VIGNETTE");
 			}
-			else if (postProcessing->vignette == nullptr  && hasVignetteMacro) {
+			else if (!postProcessing->vignette && hasVignetteMacro) {
 				shader.RemoveMacro("VIGNETTE");
 			}
 
-			if (postProcessing->chromaticAberration != nullptr && !hasChromaticAberrationMacro) {
+			if (postProcessing->chromaticAberration && !hasChromaticAberrationMacro) {
 				shader.AddMacro("CHROMATIC_ABERRATION");
 			}
-			else if (postProcessing->chromaticAberration == nullptr && hasChromaticAberrationMacro) {
+			else if (!postProcessing->chromaticAberration && hasChromaticAberrationMacro) {
 				shader.RemoveMacro("CHROMATIC_ABERRATION");
+			}
+
+			if (postProcessing->sharpen && !hasSharpenMacro) {
+				shader.AddMacro("SHARPEN");
+			}
+			else if (!postProcessing->sharpen && hasSharpenMacro) {
+				shader.RemoveMacro("SHARPEN");
 			}
 
 			shader.Bind();
@@ -62,20 +70,29 @@ namespace Atlas {
 			saturation->SetValue(postProcessing->saturation);
 			timeInMilliseconds->SetValue(1000.0f * Clock::Get());
 
-			if (postProcessing->chromaticAberration != nullptr) {
+			if (postProcessing->chromaticAberration) {
 				float reversedValue = postProcessing->chromaticAberration->colorsReversed ? 1.0f : 0.0f;
 				aberrationStrength->SetValue(postProcessing->chromaticAberration->strength);
 				aberrationReversed->SetValue(reversedValue);
 			}
 
-			if (postProcessing->vignette != nullptr) {
+			if (postProcessing->vignette) {
 				vignetteOffset->SetValue(postProcessing->vignette->offset);
 				vignettePower->SetValue(postProcessing->vignette->power);
 				vignetteStrength->SetValue(postProcessing->vignette->strength);
 				vignetteColor->SetValue(postProcessing->vignette->color);
 			}
 
-			target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
+			if (postProcessing->sharpen) {
+				sharpenFactor->SetValue(postProcessing->sharpen->factor);
+			}
+
+			if (postProcessing->taa) {
+				target->GetHistory()->Bind(GL_TEXTURE0);
+			}
+			else {
+				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
+			}
 
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -93,6 +110,7 @@ namespace Atlas {
 			vignettePower = shader.GetUniform("vignettePower");
 			vignetteStrength = shader.GetUniform("vignetteStrength");
 			vignetteColor = shader.GetUniform("vignetteColor");
+			sharpenFactor = shader.GetUniform("sharpenFactor");
 			timeInMilliseconds = shader.GetUniform("timeInMilliseconds");
 
 		}

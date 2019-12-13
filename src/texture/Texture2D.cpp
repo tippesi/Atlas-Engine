@@ -45,7 +45,7 @@ namespace Atlas {
             Generate(GL_TEXTURE_2D, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR,
                      anisotropicFiltering, generateMipMaps);
 
-            SetData(image.data);
+            SetData(image.GetData());
 
         }
 
@@ -61,23 +61,47 @@ namespace Atlas {
 
         }
 
-        void Texture2D::SetData(std::vector<uint8_t> &data) {
+		void Texture2D::SetData(std::vector<uint8_t>& data) {
 
 			Bind();
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
-                            TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
+				TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
 
 			GenerateMipmap();
+
+		}
+
+        void Texture2D::SetData(std::vector<uint8_t> &data, int32_t mipLevel) {
+
+			auto div = (int32_t)powf(2.0f, (float)mipLevel);
+			auto width = this->width / div;
+			auto height = this->height / div;
+
+			Bind();
+            glTexSubImage2D(GL_TEXTURE_2D, mipLevel, 0, 0, width, height,
+				TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
 
         }
 
-        void Texture2D::SetData(std::vector<uint16_t> &data) {
+		void Texture2D::SetData(std::vector<uint16_t>& data) {
 
 			Bind();
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
-                            TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
+				TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
 
 			GenerateMipmap();
+
+		}
+
+        void Texture2D::SetData(std::vector<uint16_t> &data, int32_t mipLevel) {
+
+			auto div = (int32_t)powf(2.0f, (float)mipLevel);
+			auto width = this->width / div;
+			auto height = this->height / div;
+
+			Bind();
+            glTexSubImage2D(GL_TEXTURE_2D, mipLevel, 0, 0, width, height,
+				TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
 
         }
 
@@ -122,10 +146,12 @@ namespace Atlas {
 			image.channels = channels;
             image.fileFormat = AE_IMAGE_PNG;
 
-            image.data = GetData();
+            auto data = GetData();
 
 			if (flipHorizontally)
-				image.data = FlipDataHorizontally(image.data);
+				data = FlipDataHorizontally(data);
+
+			image.SetData(data);
 
             Loader::ImageLoader::SaveImage(image, filename);
 

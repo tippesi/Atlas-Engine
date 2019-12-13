@@ -11,8 +11,6 @@ uniform float patchSize;
 uniform vec2 nodeLocation;
 uniform float nodeSideLength;
 
-uniform mat4 mMatrix;
-
 uniform float leftLoD;
 uniform float topLoD;
 uniform float rightLoD;
@@ -21,7 +19,7 @@ uniform float bottomLoD;
 vec2 stitch(vec2 position) {
 	
 	// We have 8x8 patches per node
-	float nodeSize = 8.0f * patchSize;
+	float nodeSize = 8.0 * patchSize;
 	
 	if (position.x == 0.0 && leftLoD > 1.0) {
 		position.y = floor(position.y / leftLoD) * leftLoD;
@@ -51,8 +49,9 @@ void main() {
 	vec2 texCoords = localPosition;
 	texCoords /= nodeSideLength;
 	
-	float height = float(texture(heightField, texCoords).r) / 65535.0f * heightScale;
+	// The middle of the texel should match the vertex position
+	float height = float(texture(heightField, texCoords).r) / 65535.0 * heightScale;
 					
-	gl_Position =  mMatrix * vec4(position.x, height, position.y, 1.0f);
+	gl_Position =  vec4(position.x, height, position.y, 1.0);
 	
 }

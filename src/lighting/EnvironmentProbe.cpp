@@ -12,7 +12,7 @@ namespace Atlas {
 		}
 
 		EnvironmentProbe::EnvironmentProbe(int32_t width, int32_t height, vec3 position) :
-			cubemap(width, height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false),
+			cubemap(width, height, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR, false),
 			depth(width, height, AE_DEPTH24) {
 
 			SetPosition(position);

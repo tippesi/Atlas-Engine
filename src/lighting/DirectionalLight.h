@@ -19,6 +19,8 @@ namespace Atlas {
 
 			void AddShadow(float distance, float bias, int32_t resolution, vec3 centerPoint, mat4 orthoProjection);
 
+			void AddLongRangeShadow(float distance);
+
 			void RemoveShadow();
 
 			void AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor = 1.0f);

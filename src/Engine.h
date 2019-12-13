@@ -36,16 +36,27 @@ namespace Atlas {
 		static void Shutdown();
 
 		/**
-		 * Deletes the default window.
-		 * @note This method is called after an engine instance is created.
-		 */
-		static void DestroyDefaultWindow();
-
-		/**
          * Updates the engine and the system events. Must be called in thread
          * where the engine was initialized.
          */
 		static void Update();
+
+        /**
+         * Returns the size of the screen.
+         * @return An 2-component integer vector where x is the width and y is the height.
+         */
+		static ivec2 GetScreenSize();
+
+        /**
+         * Locks the frame rate to the next available target frame rate of the monitor
+         * like min(availableTargetFramerate, possibleFramerate).
+         */
+        static void LockFramerate();
+
+        /**
+         * Unlocks the framerate.
+         */
+        static void UnlockFramerate();
 
 		/**
 		 * This window is there by default and is not visible.

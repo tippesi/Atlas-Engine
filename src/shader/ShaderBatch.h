@@ -47,6 +47,12 @@ namespace Atlas {
 			void RemoveConfig(ShaderConfig* config);
 
 			/**
+			 * Returns the shader of a config batch
+			 * @param shaderID The ID of the config batch.
+			 */
+			Shader* GetShader(int32_t shaderID);
+
+			/**
              * Returns a Uniform object for a specific uniform of the shader.
              * @param uniformName The name of the uniform.
              * @return A pointer to a Uniform object if valid. Nullptr otherwise.

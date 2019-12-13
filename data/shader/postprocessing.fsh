@@ -22,10 +22,13 @@ uniform float vignettePower;
 uniform float vignetteStrength;
 uniform vec3 vignetteColor;
 #endif
+#ifdef SHARPEN
+uniform float sharpenFactor;
+#endif
 
 out vec3 color;
 
-const float gamma = 1.0f / 2.2f;
+const float gamma = 1.0f / 2.2;
 
 vec3 ACESToneMap(vec3 hdrColor) {
     float a = 2.51f;
@@ -111,7 +114,6 @@ void main() {
 #endif
 #else
 	color = texture(hdrTexture, fTexCoord).rgb;
-	
 #ifdef BLOOM
 	if (bloomPasses > 0) {
 		color += texture(bloomFirstTexture, fTexCoord).rgb;
@@ -124,9 +126,15 @@ void main() {
 	}
 #endif
 #endif
+#ifdef SHARPEN
+	vec2 resInv = 1.0 / hdrTextureResolution;
+	vec3 up = texture(hdrTexture, fTexCoord + vec2(0.0, -resInv.y)).rgb;
+	vec3 down = texture(hdrTexture, fTexCoord + vec2(0.0, resInv.y)).rgb;
+	vec3 left = texture(hdrTexture, fTexCoord + vec2(-resInv.x, 0.0)).rgb;
+	vec3 right = texture(hdrTexture, fTexCoord + vec2(resInv.x, 0.0)).rgb;
+	color = color + sharpenFactor * (4.0 * color - up - down - left - right);
+#endif
 
-	// If performance mode is activated the colors are in [0,1] range
-#ifndef ENGINE_FASTER_FRAMEBUFFERS
 	color *= exposure;
 	
 	color = clamp(color + n2rand(2.0f * fTexCoord - 1.0f) / 256.0f, 0.0f, 1.0f);
@@ -138,10 +146,10 @@ void main() {
 #else
 	color = ToneMap(color);
 #endif
-#endif	
 	color = pow(color, vec3(gamma));
 	
 	color = saturate(color, saturation);
+	
 
 #ifdef VIGNETTE	
 	float vignetteFactor = max(1.0f - max(pow(length(fPosition) - vignetteOffset, vignettePower), 0.0f)

@@ -5,6 +5,8 @@ layout(quads, fractional_even_spacing, cw) in;
 out vec2 materialTexCoords;
 out vec2 texCoords;
 out vec4 splat;
+out vec3 ndcCurrent;
+out vec3 ndcLast;
 
 uniform sampler2D splatMap;
 
@@ -15,6 +17,8 @@ uniform float displacementDistance;
 
 uniform mat4 vMatrix;
 uniform mat4 pMatrix;
+
+uniform mat4 pvMatrixLast;
 
 uniform vec3 cameraLocation;
 uniform Material materials[4];
@@ -45,7 +49,7 @@ void main(){
 	
 	splat = texture(splatMap, texCoords);
 	
-	float weight = clamp((displacementDistance - vertexDistance), 0.0f, 1.0f);
+	float weight = clamp((displacementDistance - vertexDistance), 0.0, 1.0);
 	
 	if (weight > 0.0) {
 		float displacement = (texture(materials[0].displacementMap, materialTexCoords / 4.0f).r * materials[0].displacementScale * splat.r + 
@@ -57,10 +61,11 @@ void main(){
 		position.y += displacement;
 	}
 	
-#ifndef GEOMETRY_SHADER
-	position = pMatrix * vMatrix * position;
-#endif
+	gl_Position = pMatrix * vMatrix * position;
 	
-	gl_Position = position;
+	ndcCurrent = vec3(gl_Position.xy, gl_Position.w);
+	
+	vec4 last = pvMatrixLast * position;
+	ndcLast = vec3(last.xy, last.w);
 	
 }

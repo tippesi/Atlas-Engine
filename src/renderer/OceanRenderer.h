@@ -33,7 +33,6 @@ namespace Atlas {
 
 			Shader::Uniform* nodeLocation = nullptr;
 			Shader::Uniform* nodeSideLength = nullptr;
-			Shader::Uniform* oceanHeight = nullptr;
 
 			Shader::Uniform* viewMatrix = nullptr;
 			Shader::Uniform* inverseViewMatrix = nullptr;
@@ -41,6 +40,10 @@ namespace Atlas {
 			Shader::Uniform* inverseProjectionMatrix = nullptr;
 
 			Shader::Uniform* cameraLocation = nullptr;
+
+			Shader::Uniform* time = nullptr;
+
+			Shader::Uniform* translation = nullptr;
 
 			Shader::Uniform* displacementScale = nullptr;
 			Shader::Uniform* choppyScale = nullptr;
@@ -64,10 +67,23 @@ namespace Atlas {
 			Shader::Uniform* shadowCascadeCount = nullptr;
 			Shader::Uniform* shadowResolution = nullptr;
 
+			Shader::Uniform* terrainTranslation = nullptr;
+			Shader::Uniform* terrainSideLength = nullptr;
+			Shader::Uniform* terrainHeightScale = nullptr;
+
+			Shader::Uniform* hasRippleTexture = nullptr;
+
 			struct ShadowCascadeUniform {
 				Shader::Uniform* distance;
 				Shader::Uniform* lightSpace;
-			}cascades[MAX_SHADOW_CASCADE_COUNT];
+			}cascades[MAX_SHADOW_CASCADE_COUNT + 1];
+
+			Shader::Uniform* pvMatrixLast = nullptr;
+			Shader::Uniform* jitterLast = nullptr;
+			Shader::Uniform* jitterCurrent = nullptr;
+
+			mat4 pvMatrixPrev;
+			vec2 jitterPrev;
 
 		};
 

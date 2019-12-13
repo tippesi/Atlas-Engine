@@ -43,11 +43,17 @@ namespace Atlas {
 
 		void Texture::Bind() {
 
+			if (!target)
+				return;
+
 			glBindTexture(target, ID);
 
 		}
 
 		void Texture::Bind(uint32_t unit) {
+
+			if (!target)
+				return;
 
 			glActiveTexture(unit);
 			Bind();

@@ -37,8 +37,25 @@ namespace Atlas {
 
 		/**
          * Calculates the perspective matrix based on the FoV, the aspect ratio and the near and far plane.
+		 * @note Also unjitters the projection matrix.
          */
 		void UpdateProjection();
+
+		/**
+		 * Jitters the projection matrix
+		 * @param jitter The amount of jitter
+		 */
+		void Jitter(vec2 jitter);
+
+		/**
+		 * Unjitters the projetion matrix
+		 */
+		void Unjitter();
+
+		/**
+		 * Returns the current jitter vector
+		 */
+		vec2 GetJitter();
 
 		/**
 		 * Calculates the actual camera location.
@@ -79,10 +96,14 @@ namespace Atlas {
 		mat4 inverseViewMatrix;
 		mat4 inverseProjectionMatrix;
 
+		mat4 unjitterdProjection;
+
 		Volume::Frustum frustum;
 
 	private:
 		void CalculateFrustum();
+
+		vec2 jitterVector = vec2(0.0f);
 
 	};
 

@@ -24,7 +24,8 @@ namespace Atlas {
 				SceneNode::operator=(that);
 				SpacePartitioning::operator=(that);
 
-				terrains = that.terrains;
+				terrain = that.terrain;
+				ocean = that.ocean;
 				sky = that.sky;
 				postProcessing = that.postProcessing;
 
@@ -36,25 +37,9 @@ namespace Atlas {
 
 		}
 
-		void Scene::Add(Terrain::Terrain *terrain) {
-
-			terrains.push_back(terrain);
-
-		}
-
-		void Scene::Remove(Terrain::Terrain *terrain) {
-
-			auto item = std::find(terrains.begin(), terrains.end(), terrain);
-
-			if (item != terrains.end()) {
-				terrains.erase(item);
-			}
-
-		}
-
 		void Scene::Update(Camera *camera, float deltaTime) {
 
-			for (auto &terrain : terrains) {
+			if (terrain) {
 				terrain->Update(camera);
 			}
 
@@ -75,8 +60,6 @@ namespace Atlas {
 
 			sky = Lighting::Sky();
 			postProcessing = PostProcessing::PostProcessing();
-
-			terrains.clear();
 
 			SceneNode::Clear();
 			SpacePartitioning::Clear();

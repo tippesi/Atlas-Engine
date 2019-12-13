@@ -29,8 +29,8 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
-			auto location = camera->thirdPerson ? camera->location -
-				camera->direction * camera->thirdPersonDistance : camera->location;
+			auto location = camera->GetLocation();
+			auto pvMatrixUnjittered = camera->unjitterdProjection * camera->viewMatrix;
 
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
@@ -40,9 +40,13 @@ namespace Atlas {
 			planetCenter->SetValue(-vec3(0.0f, 6371000.0f, 0.0f));
 			planetRadius->SetValue(6371000.0f);
 			atmosphereRadius->SetValue(6471000.0f);
+			pvMatrixCurrent->SetValue(pvMatrixUnjittered);
+			pvMatrixLast->SetValue(pvMatrixPrev);
 
 			glDrawElements(GL_TRIANGLES, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
 				vertexArray.GetIndexComponent()->GetDataType(), nullptr);
+
+			pvMatrixPrev = pvMatrixUnjittered;
 
 		}
 
@@ -96,6 +100,8 @@ namespace Atlas {
 			planetCenter = shader.GetUniform("planetCenter");
 			atmosphereRadius = shader.GetUniform("atmosphereRadius");
 			planetRadius = shader.GetUniform("planetRadius");
+			pvMatrixLast = shader.GetUniform("pvMatrixLast");
+			pvMatrixCurrent = shader.GetUniform("pvMatrixCurrent");
 
 		}
 
