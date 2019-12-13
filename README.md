@@ -13,8 +13,9 @@ Before you start compiling make sure to download the dependencies into **./depen
 this manually or use one of the available scripts. Building the engine is really convenient: You can use your
 source code and project across all supported platforms. The only thing that differs are the build tools. 
 >**Note:**
->Debugging the resulting application in a debug configuration will result in poor performance. 
-For more information have a look at the [Hello World](https://github.com/tippesi/Atlas-Engine/wiki/Hello-World) tutorial.
+>Debugging the resulting application in a debug configuration will result in poor performance.
+ 
+For more information on how to set up the engine have a look at the [Hello World](https://github.com/tippesi/Atlas-Engine/wiki/Hello-World) tutorial.
 ### Linux and Windows
 The installation is done using CMake. There are two options available: Start a new project with a predefined
 main file which you can edit. The second option is two use the engine as a subproject in an already existing project.
