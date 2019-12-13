@@ -2,7 +2,7 @@
 ![Example scene](rasterized.png)
 *Rasterized image using TAA*
 ![Example scene](raytraced.png)
-*Ray traced image using 10000 samples with 5 bounces*
+*Ray traced image using 3000 samples with 5 bounces*
 ## Introduction
 This is a cross platform engine that is available on all major platforms including Linux, Windows and Android.
 ## Requirements
