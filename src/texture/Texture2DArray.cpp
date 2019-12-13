@@ -104,10 +104,7 @@ namespace Atlas {
 
         void Texture2DArray::SaveToPNG(std::string filename, int32_t depth) {
 
-			Common::Image8 image;
-
-            image.width = width;
-            image.height = height;
+			Common::Image8 image(width, height, channels);
             image.fileFormat = AE_IMAGE_PNG;
 
             auto data = GetData(depth);
