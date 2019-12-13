@@ -13,8 +13,8 @@ uniform vec2 resolution;
 
 void main() {
 
-    vec3 neighborhoodMin = vec3(1e9);
-    vec3 neighborhoodMax = vec3(-1e9);
+    vec3 neighbourhoodMin = vec3(1e9);
+    vec3 neighbourhoodMax = vec3(-1e9);
 
     // Find best pixel in neighborhood
     vec2 offset = vec2(0.0);
@@ -26,8 +26,8 @@ void main() {
             vec2 currOffset = vec2(float(x), float(y)) * invResolution;
             vec2 pixelCoord = fTexCoord + currOffset;
             vec3 color = texture(lightingTexture, pixelCoord).rgb;
-            neighborhoodMin = min(neighborhoodMin, color);
-            neighborhoodMax = max(neighborhoodMax, color);
+            neighbourhoodMin = min(neighbourhoodMin, color);
+            neighbourhoodMax = max(neighbourhoodMax, color);
 
             float currDepth = texture(depthTexture, pixelCoord).r;
             if (currDepth < depth) {
@@ -43,7 +43,7 @@ void main() {
     vec3 historyColor = texture(historyTexture, uv).rgb;
     vec3 lightingColor = texture(lightingTexture, fTexCoord).rgb;
 
-    historyColor = clamp(historyColor, neighborhoodMin, neighborhoodMax);
+    historyColor = clamp(historyColor, neighbourhoodMin, neighbourhoodMax);
 
 	// Corrects subpixel sampling of history buffer
     float correction = fract(max(abs(velocity.x) * resolution.x,

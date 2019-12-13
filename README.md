@@ -40,12 +40,12 @@ There exist two options:
 - You can use the engine as a Gradle subproject.
 - You can compile the engine and all dependencies as a static library (note that some dependencies also have
 dynamic libraries). Therefore set the project property to **ATLAS_BUILD_LIBRARY**.
-### CMake optiosn
+### CMake options
 - **ATLAS_BUILD_LIBRARY** Build project as library
 - **ATLAS_BUILD_SHARED** Force project to be build as a shared library
 - **ATLAS_OPENGL_ES** Use OpenGL ES instead of OpenGL on desktop devices (for Android this option is always on)
 - **ATLAS_EXPORT_MAIN** Export the main file to be added as executable to parent project (only if main function cannot be found)
-- **ATLAS_NO_APP** Disable the engines main function and app functionality. You have to code the main function and
+- **ATLAS_NO_APP** Disables the engines main function and app functionality. You have to code the main function and
 initialize the engine yourself
 ## Documentation
 If you want more information have a look into the [Documentation](https://tippesi.github.io/Atlas-Engine-Doc/index.html)
