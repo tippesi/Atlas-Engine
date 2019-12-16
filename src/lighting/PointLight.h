@@ -11,7 +11,7 @@ namespace Atlas {
 		class PointLight : public Light {
 
 		public:
-			PointLight(int32_t mobility = AE_STATIONARY_LIGHT);
+			PointLight(int32_t mobility = AE_STATIONARY_LIGHT, float radius = 5.0f);
 
 			~PointLight();
 
@@ -26,6 +26,8 @@ namespace Atlas {
 			void Update(Camera* camera);
 
 			float GetRadius();
+
+			void SetRadius(float radius);
 
 			vec3 location;
 

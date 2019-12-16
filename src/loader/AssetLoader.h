@@ -91,6 +91,13 @@ namespace Atlas {
              */
             static std::string GetFullPath(std::string path);
 
+			/**
+			 * Checks whether the file is in the asset directory.
+			 * @param path A path to a file.
+			 * @return True if file is in asset directory, false otherwise.
+			 */
+			static bool IsFileInAssetDirectory(std::string path);
+
         private:
             static std::string GetAssetPath(std::string path);
 

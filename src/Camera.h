@@ -42,6 +42,11 @@ namespace Atlas {
 		void UpdateProjection();
 
 		/**
+		 * Updates both the projection and view matrix.
+		 */
+		void Update();
+
+		/**
 		 * Jitters the projection matrix
 		 * @param jitter The amount of jitter
 		 */

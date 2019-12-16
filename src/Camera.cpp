@@ -43,6 +43,13 @@ namespace Atlas {
 
 	}
 
+	void Camera::Update() {
+
+		UpdateView();
+		UpdateProjection();
+
+	}
+
 	void Camera::Jitter(vec2 jitter) {
 
 		auto helper = glm::translate(mat4(1.0f), vec3(jitter, 0.0f));

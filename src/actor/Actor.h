@@ -50,7 +50,7 @@ namespace Atlas {
             Volume::AABB aabb;
             mat4 transformedMatrix;
 
-            bool matrixChanged = false;
+            bool matrixChanged = true;
 
         private:
 			mat4 matrix;

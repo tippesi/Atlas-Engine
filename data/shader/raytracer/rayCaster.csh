@@ -73,7 +73,7 @@ void main() {
 	ray.direction = normalize(origin + right * coord.x 
 		+ bottom * coord.y - cameraLocation);
 	ray.inverseDirection = 1.0 / ray.direction;
-	ray.origin = cameraLocation + cameraNearPlane * ray.direction;
+	ray.origin = cameraLocation;
 	
 	Radiance(ray, coord, color);
 	
@@ -105,7 +105,7 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		vec3 intersection;
 		vec2 barrycentric = vec2(0.0);
 
-		QueryBVH(ray, 0.0, INF, triangleIndex, intersection);
+		QueryBVHClosest(ray, 0.0, INF, triangleIndex, intersection);
 		barrycentric = intersection.yz;
 		
 		if (intersection.x >= INF) {			
@@ -124,11 +124,11 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 		// Interpolate normal by using barrycentric coordinates
 		vec3 position = ray.origin + intersection.x * ray.direction;
 		vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
-		vec3 normal = normalize(r * tri.n0 + s * tri.n1 + t * tri.n2);
+		vec3 normal = r * tri.n0 + s * tri.n1 + t * tri.n2;
 			
 		// Produces some problems in the bottom left corner of the Sponza scene,
 		// but fixes the cube. Should work in theory.
-		normal = dot(normal, ray.direction) < 0.0 ? normal : normal * -1.0;
+		normal = dot(normal, ray.direction) < 0.0 ? normal : normal * -1.0;	
 		
 		vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) * 
 			vec3(SampleDiffuseBilinear(mat.diffuseTexture, texCoord));
@@ -185,10 +185,7 @@ void DirectIllumination(vec3 position, vec3 normal,
 	ray.origin = position + normal * 0.01;
 	ray.inverseDirection = 1.0 / ray.direction;
 	
-	vec3 intersection;
-	int triangleIndex = 0;
-	QueryBVH(ray, 0.0, INF, triangleIndex, intersection);
-	shadowFactor = intersection.x < INF ? 0.0 : 1.0;
+	shadowFactor = QueryBVH(ray, 0.0, INF) ? 0.0 : 1.0;
 	
 	vec3 viewDir = normalize(cameraLocation - position);
 	vec3 lightDir = -light.direction;

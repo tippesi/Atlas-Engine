@@ -190,6 +190,8 @@ namespace Atlas {
 			if (hasTangents)
 				meshData.tangents.Set(tangents);
 
+			meshData.filename = filename;
+
 		}
 
 		void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, Material& material, std::string directory) {

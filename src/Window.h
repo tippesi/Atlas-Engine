@@ -88,10 +88,16 @@ namespace Atlas {
 		int32_t GetWidth();
 
 		/**
-		 * Returns the width of the window.
-		 * @return The width of the window.
+		 * Returns the height of the window.
+		 * @return The height of the window.
 		 */
 		int32_t GetHeight();
+
+		/**
+		 * Returns the drawable size of the window.
+		 * @return The drawable size of the window.
+		 */
+		ivec2 GetDrawableSize();
 
 		/**
          * Shows the window if the window was hidden

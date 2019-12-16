@@ -37,7 +37,8 @@ namespace Atlas {
              * @param camera
              * @param scene
              */
-			void RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			void RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera,
+				Scene::Scene* scene, Texture::Texture2D* texture = nullptr);
 
 			/**
              *

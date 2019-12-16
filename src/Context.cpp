@@ -47,6 +47,12 @@ namespace Atlas {
 
 	}
 
+	void* Context::Get() {
+
+		return context;
+
+	}
+
 	void Context::LocalAPISetup() {
 
 		// If the textures aren't working as expected this line should be changed

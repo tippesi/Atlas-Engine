@@ -21,6 +21,8 @@ namespace Atlas {
 
 		void Unbind();
 
+		void* Get();
+
 		std::string name = "No name";
 
 	private:

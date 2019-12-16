@@ -96,7 +96,8 @@ namespace Atlas {
 
         Shader::ShaderManager::Clear();
 
-        SDL_DestroyWindow(defaultWindow);
+		if (defaultWindow)
+			SDL_DestroyWindow(defaultWindow);
 
 #ifdef AE_NO_APP
         SDL_Quit();

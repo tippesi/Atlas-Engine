@@ -131,6 +131,16 @@ namespace Atlas {
 
 	}
 
+	ivec2 Window::GetDrawableSize() {
+
+		ivec2 size;
+
+		SDL_GL_GetDrawableSize(sdlWindow, &size.x, &size.y);
+
+		return size;
+
+	}
+
 	void Window::Show() {
 
 		SDL_ShowWindow(sdlWindow);

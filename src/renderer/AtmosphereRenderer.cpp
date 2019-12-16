@@ -87,6 +87,7 @@ namespace Atlas {
 			glEnable(GL_DEPTH_TEST);
 
 			vertexArray.Unbind();
+			framebuffer.Unbind();
 
 		}
 

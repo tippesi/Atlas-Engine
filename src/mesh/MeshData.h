@@ -73,6 +73,8 @@ namespace Atlas {
 
 			Volume::AABB aabb;
 
+			std::string filename;
+
 		private:
 			void DeepCopy(const MeshData& that);
 

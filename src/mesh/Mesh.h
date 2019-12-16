@@ -83,6 +83,8 @@ namespace Atlas {
 
 			Buffer::VertexArray vertexArray;
 
+			std::string name;
+
 		private:
 			void InitializeVertexArray();
 

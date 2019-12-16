@@ -1,5 +1,6 @@
 #include "Mesh.h"
 #include "../loader/ModelLoader.h"
+#include "../common/Path.h"
 
 #include "../renderer/OpaqueRenderer.h"
 #include "../renderer/ShadowRenderer.h"
@@ -16,6 +17,10 @@ namespace Atlas {
 
 		Mesh::Mesh(MeshData data, int32_t mobility) : mobility(mobility), data(data) {
 
+			auto filename = Common::Path::GetFilename(data.filename);
+			auto fileTypePos = filename.find_first_of('.');
+			name = filename.substr(0, fileTypePos);
+
 			InitializeVertexArray();
 
 			for (auto& material : data.materials)
@@ -26,6 +31,10 @@ namespace Atlas {
 		Mesh::Mesh(std::string filename, int32_t mobility) : mobility(mobility) {
 
 			Loader::ModelLoader::LoadMesh(filename, data);
+
+			filename = Common::Path::GetFilename(data.filename);
+			auto fileTypePos = filename.find_first_of('.');
+			name = filename.substr(0, fileTypePos);
 
 			InitializeVertexArray();
 

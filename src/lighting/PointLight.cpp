@@ -4,13 +4,12 @@ namespace Atlas {
 
 	namespace Lighting {
 
-		PointLight::PointLight(int32_t mobility) : Light(AE_POINT_LIGHT, mobility) {
+		PointLight::PointLight(int32_t mobility, float radius) : Light(AE_POINT_LIGHT, mobility), radius(radius) {
 
 			location = vec3(0.0f, 3.0f, 0.0f);
 
 			color = vec3(1.0f);
 			ambient = 0.0f;
-			radius = 5.0f;
 
 			shadow = nullptr;
 			volumetric = nullptr;
@@ -74,6 +73,14 @@ namespace Atlas {
 		float PointLight::GetRadius() {
 
 			return radius;
+
+		}
+
+		void PointLight::SetRadius(float radius) {
+
+			if (mobility == AE_MOVABLE_LIGHT) {
+				this->radius = radius;
+			}
 
 		}
 

@@ -7,6 +7,7 @@ typedef int32_t Keycode;
 
 #define SCANCODE_MASK (1 << 30)
 #define SCANCODE_TO_KEYCODE(X)  (X | SCANCODE_MASK)
+#define KEYCODE_TO_SCANCODE(X) (X & ~(SCANCODE_MASK))
 
 enum {
 	AE_KEY_UNKNOWN = 0,

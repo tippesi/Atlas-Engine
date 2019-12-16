@@ -1,6 +1,8 @@
 #include <intersections>
 #include <structures>
 
+#define STACK_SIZE 32
+
 layout (std430, binding = 2) buffer Triangles {
 	PackedTriangle data[];
 } triangles;
@@ -9,77 +11,7 @@ layout(std430, binding = 3) buffer Nodes {
 	BVHNode data[];
 }nodes;
 
-void CheckLeaf(Ray ray, uint nodePtr, float tmin, float tmax,
-	inout int triangleIndex, inout vec3 intersection);
-
-void QueryBVH(Ray ray, float tmin, float tmax, out int triangleIndex,
-	out vec3 intersection) {
-		
-	uint stack[32];
-	uint stackPtr = uint(1);
-	
-	intersection.x = tmax;
-	
-	BVHNode node = nodes.data[0];
-	
-	do {
-		// If the pointer is -1 then there is no child.
-		uint childLPtr = node.data1;
-		uint childRPtr = node.data2;
-		
-		bool intersectL = false;
-		bool intersectR = false;
-		bool isLLeaf = false;
-		bool isRLeaf = false;
-		bool validL = false;
-		bool validR = false;
-		
-		float tL = 0.0;
-		float tR = 0.0;
-		
-		if (childLPtr > uint(0)) {
-			intersectL = Intersection(ray, 
-				nodes.data[childLPtr].aabb, tmin, tmax, tL);
-			isLLeaf = (nodes.data[childLPtr].data2 & uint(0x80000000)) > uint(0);
-			validL = tL < intersection.x;
-		}
-		
-		if (childRPtr >	uint(0)) {
-			intersectR = Intersection(ray, 
-				nodes.data[childRPtr].aabb, tmin, tmax, tR);
-			isRLeaf = (nodes.data[childRPtr].data2 & uint(0x80000000)) > uint(0);
-			validR = tR < intersection.x;
-		}
-		
-		bool traverseL = (intersectL && !isLLeaf && validL);
-		bool traverseR = (intersectR && !isRLeaf && validR);
-		
-		if(intersectL && isLLeaf && validL) {
-			CheckLeaf(ray, childLPtr, tmin, tmax, 
-				triangleIndex, intersection);
-		}
-		
-		if (intersectR && isRLeaf && validR) {
-			CheckLeaf(ray, childRPtr, tmin, tmax,
-				triangleIndex, intersection);
-		}
-		
-		if (!traverseL && !traverseR) {
-			node = nodes.data[stack[--stackPtr]];
-		}
-		else {
-			node = traverseL ? nodes.data[childLPtr] :
-				nodes.data[childRPtr];
-			if (traverseL && traverseR)
-				stack[stackPtr++] = childRPtr;
-		}
-			
-	}
-	while (stackPtr != uint(0));
-		
-}
-
-void CheckLeaf(Ray ray, uint nodePtr, float tmin, float tmax,
+void CheckLeafClosest(Ray ray, uint nodePtr, float tmin, float tmax,
 	inout int triangleIndex, inout vec3 intersection) {
 		
 	uint offset = nodes.data[nodePtr].data1;
@@ -98,5 +30,148 @@ void CheckLeaf(Ray ray, uint nodePtr, float tmin, float tmax,
 			}
 		}
 	}
+	
+}
+
+bool CheckLeaf(Ray ray, uint nodePtr, float tmin, float tmax) {
+		
+	uint offset = nodes.data[nodePtr].data1;
+	uint count = nodes.data[nodePtr].data2 & uint(0x7fffffff);
+	
+	vec3 sol, v0, v1, v2;
+	bool hit = false;
+	
+	for (uint i = offset; i < offset + count; i++) {
+		v0 = triangles.data[i].v0.xyz;
+		v1 = triangles.data[i].v1.xyz;
+		v2 = triangles.data[i].v2.xyz;
+		if (Intersection(ray, v0, v1, v2, sol)) {
+			hit = true;
+			break;
+		}
+	}
+
+	return hit;
+	
+}
+
+void QueryBVHClosest(Ray ray, float tmin, float tmax, out int triangleIndex,
+	out vec3 intersection) {
+		
+	uint stack[STACK_SIZE];
+	uint stackPtr = uint(1);
+	
+	intersection.x = tmax;
+	
+	BVHNode node = nodes.data[0];
+	
+	do {
+		// If the pointer is -1 then there is no child.
+		const uint childLPtr = node.data1;
+		const uint childRPtr = node.data2;
+		
+		float tL = 0.0;
+		float tR = 0.0;
+		
+		const bool intersectL = Intersection(ray, 
+				nodes.data[childLPtr].aabb, tmin, tmax, tL);
+		const bool isLLeaf = (nodes.data[childLPtr].data2 & uint(0x80000000)) > uint(0);
+		const bool validL = tL < intersection.x;
+		
+		const bool intersectR = Intersection(ray, 
+				nodes.data[childRPtr].aabb, tmin, tmax, tR);
+		const bool isRLeaf = (nodes.data[childRPtr].data2 & uint(0x80000000)) > uint(0);
+		const bool validR = tR < intersection.x;
+		
+		const bool traverseL = (intersectL && !isLLeaf && validL);
+		const bool traverseR = (intersectR && !isRLeaf && validR);
+		
+		if(intersectL && isLLeaf && validL) {
+			CheckLeafClosest(ray, childLPtr, tmin, tmax, 
+				triangleIndex, intersection);
+		}
+		
+		if (intersectR && isRLeaf && validR) {
+			CheckLeafClosest(ray, childRPtr, tmin, tmax,
+				triangleIndex, intersection);
+		}
+		
+		if (!traverseL && !traverseR) {
+			node = nodes.data[stack[--stackPtr]];
+		}
+		else {
+			node = traverseL ? nodes.data[childLPtr] :
+				nodes.data[childRPtr];
+			if (traverseL && traverseR) {
+				if (stackPtr < STACK_SIZE - 1) {
+					stack[stackPtr++] = childRPtr;
+				}
+			}
+		}
+			
+	}
+	while (stackPtr != uint(0));
+		
+}
+
+bool QueryBVH(Ray ray, float tmin, float tmax) {
+	
+	bool hit = false;
+
+	uint stack[STACK_SIZE];
+	uint stackPtr = uint(1);
+	
+	BVHNode node = nodes.data[0];
+	
+	do {
+		// If the pointer is -1 then there is no child.
+		const uint childLPtr = node.data1;
+		const uint childRPtr = node.data2;
+		
+		float tL = 0.0;
+		float tR = 0.0;
+		
+		const bool intersectL = Intersection(ray, 
+			nodes.data[childLPtr].aabb, tmin, tmax, tL);
+		const bool isLLeaf = (nodes.data[childLPtr].data2 & uint(0x80000000)) > uint(0);
+		
+		const bool intersectR = Intersection(ray, 
+				nodes.data[childRPtr].aabb, tmin, tmax, tR);
+		const bool isRLeaf = (nodes.data[childRPtr].data2 & uint(0x80000000)) > uint(0);
+
+		const bool traverseL = (intersectL && !isLLeaf);
+		const bool traverseR = (intersectR && !isRLeaf);
+		
+		if(intersectL && isLLeaf) {
+			if (CheckLeaf(ray, childLPtr, tmin, tmax)) {
+				hit = true;
+				break;
+			}
+		}
+		
+		if (intersectR && isRLeaf) {
+			if (CheckLeaf(ray, childRPtr, tmin, tmax)) {
+				hit = true;
+				break;
+			}
+		}
+		
+		if (!traverseL && !traverseR) {
+			node = nodes.data[stack[--stackPtr]];
+		}
+		else {
+			node = traverseL ? nodes.data[childLPtr] :
+				nodes.data[childRPtr];
+			if (traverseL && traverseR) {
+				if (stackPtr < STACK_SIZE - 1) {
+					stack[stackPtr++] = childRPtr;
+				}
+			}
+		}
+			
+	}
+	while (!hit && stackPtr != uint(0));
+
+	return hit;
 		
 }

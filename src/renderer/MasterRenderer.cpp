@@ -44,7 +44,8 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+		void MasterRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
+			Scene::Scene* scene, Texture::Texture2D* texture) {
 
 			if (scene->postProcessing.taa) {
 				auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
@@ -168,7 +169,16 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
+			if (texture) {				
+				framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, texture);
+				framebuffer.Bind();
+			}
+
 			postProcessRenderer.Render(viewport, target, camera, scene);
+
+			if (texture) {
+				framebuffer.Unbind();
+			}
 
 		}
 

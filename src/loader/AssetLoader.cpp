@@ -191,7 +191,24 @@ namespace Atlas {
 
 		std::string AssetLoader::GetFullPath(std::string path) {
 
+			if (Common::Path::IsAbsolute(path))
+				return path;
+
 			return dataDirectory + "/" + path;
+
+		}
+
+		bool AssetLoader::IsFileInAssetDirectory(std::string path) {
+
+			auto assetDir = Common::Path::GetAbsolute(assetDirectory);
+
+			path = Common::Path::GetAbsolute(path);
+
+			// File not in asset directory
+			if (path.find(assetDir) == std::string::npos)
+				return false;
+
+			return true;
 
 		}
 
