@@ -5,8 +5,6 @@
 *Ray traced image using 3000 samples with 5 bounces*
 ## Introduction
 This is a cross platform engine that is available on Linux, Windows and Android. 
->**Note:**
->This is just a hobby project made in my free time.
 ## Requirements
 - OpenGL 4.3 or higher
 - OpenGL ES 3.2
