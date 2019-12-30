@@ -34,6 +34,12 @@ namespace Atlas {
 
 			double GetPitch();
 
+			void Pause();
+
+			void Resume();
+
+			bool IsPaused();
+
 			void ApplyFormat(SDL_AudioSpec& spec);
 
 			virtual std::vector<int16_t> GetChunk(int32_t length);
@@ -45,6 +51,8 @@ namespace Atlas {
 
 			float volume = 1.0f;
 			double pitch = 1.0f;
+
+			bool pause = false;
 
 			AudioData* data;
 

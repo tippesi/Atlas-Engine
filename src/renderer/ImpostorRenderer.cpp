@@ -29,9 +29,10 @@ namespace Atlas {
 
 			vMatrix->SetValue(camera->viewMatrix);
 			pMatrix->SetValue(camera->projectionMatrix);
+			cameraLocation->SetValue(camera->GetLocation());
 			
-			pvMatrixLast->SetValue(pvMatrixPrev);
-			jitterLast->SetValue(jitterPrev);
+			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
+			jitterLast->SetValue(camera->GetLastJitter());
 			jitterCurrent->SetValue(camera->GetJitter());
 
 			right->SetValue(camera->right);
@@ -55,12 +56,11 @@ namespace Atlas {
 				min->SetValue(mesh->impostor->aabb.min);
 				max->SetValue(mesh->impostor->aabb.max);
 
+				views->SetValue(mesh->impostor->views);
+
 				glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, actorCount);
 
 			}
-
-			pvMatrixPrev = camera->projectionMatrix * camera->viewMatrix;
-			jitterPrev = camera->GetJitter();
 
 		}
 
@@ -68,12 +68,15 @@ namespace Atlas {
 
 			pMatrix = shader.GetUniform("pMatrix");
 			vMatrix = shader.GetUniform("vMatrix");
+			cameraLocation = shader.GetUniform("cameraLocation");
 
 			right = shader.GetUniform("right");
 			up = shader.GetUniform("up");
 
 			min = shader.GetUniform("minVec");
 			max = shader.GetUniform("maxVec");
+
+			views = shader.GetUniform("views");
 
 			pvMatrixLast = shader.GetUniform("pvMatrixLast");
 			jitterLast = shader.GetUniform("jitterLast");

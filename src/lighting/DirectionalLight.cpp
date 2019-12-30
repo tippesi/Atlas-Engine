@@ -124,7 +124,8 @@ namespace Atlas {
 			auto cameraLocation = camera->GetLocation();
 
             auto cascadeCenter = cameraLocation + camera->direction * 
-				(cascade->nearDistance + (cascade->farDistance - cascade->nearDistance) * 0.5f);
+				(cascade->nearDistance + (cascade->farDistance + 
+					shadow->cascadeBlendDistance - cascade->nearDistance) * 0.5f);
 
             vec3 lightDirection = normalize(direction);
 
@@ -134,7 +135,8 @@ namespace Atlas {
             vec3 up = glm::vec3(0.0000000000000001f, 1.0f, 0.0000000000000001f);
             cascade->viewMatrix = lookAt(cascadeCenter - lightDirection, cascadeCenter, up);
 
-            std::vector<vec3> corners = camera->GetFrustumCorners(cascade->nearDistance, cascade->farDistance);
+            std::vector<vec3> corners = camera->GetFrustumCorners(cascade->nearDistance, 
+				cascade->farDistance + shadow->cascadeBlendDistance);
 
             vec3 maxProj = vec3(cascade->viewMatrix * vec4(corners.at(0), 1.0f));
             vec3 minProj = maxProj;

@@ -72,7 +72,7 @@ namespace Atlas {
 		glEnable(GL_CULL_FACE);
 
 		// For debugging
-		glLineWidth(2.0f);
+		glLineWidth(1.0f);
 
 #ifdef AE_SHOW_API_DEBUG_LOG
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);

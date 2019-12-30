@@ -32,6 +32,8 @@ namespace Atlas {
 
             std::vector<int16_t> data;
 
+			std::string filename;
+
         private:
             SDL_AudioSpec spec;
 

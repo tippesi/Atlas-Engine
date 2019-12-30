@@ -79,6 +79,8 @@ struct Material {
 	float specularIntensity;
 	float specularHardness;
 	
+	float normalScale;
+	
 	Texture diffuseTexture;
 	Texture normalTexture;
 

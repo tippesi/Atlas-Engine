@@ -12,7 +12,7 @@ namespace Atlas {
 
 		AtmosphereRenderer::AtmosphereRenderer() {
 
-			Helper::GeometryHelper::GenerateSphereVertexArray(vertexArray, 200, 200);
+			Helper::GeometryHelper::GenerateSphereVertexArray(vertexArray, 50, 50);
 
 			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
 			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
@@ -30,7 +30,6 @@ namespace Atlas {
 			vertexArray.Bind();
 
 			auto location = camera->GetLocation();
-			auto pvMatrixUnjittered = camera->unjitterdProjection * camera->viewMatrix;
 
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
@@ -40,13 +39,12 @@ namespace Atlas {
 			planetCenter->SetValue(-vec3(0.0f, 6371000.0f, 0.0f));
 			planetRadius->SetValue(6371000.0f);
 			atmosphereRadius->SetValue(6471000.0f);
-			pvMatrixCurrent->SetValue(pvMatrixUnjittered);
-			pvMatrixLast->SetValue(pvMatrixPrev);
+			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
+			jitterLast->SetValue(camera->GetLastJitter());
+			jitterCurrent->SetValue(camera->GetJitter());
 
 			glDrawElements(GL_TRIANGLES, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
 				vertexArray.GetIndexComponent()->GetDataType(), nullptr);
-
-			pvMatrixPrev = pvMatrixUnjittered;
 
 		}
 
@@ -102,7 +100,8 @@ namespace Atlas {
 			atmosphereRadius = shader.GetUniform("atmosphereRadius");
 			planetRadius = shader.GetUniform("planetRadius");
 			pvMatrixLast = shader.GetUniform("pvMatrixLast");
-			pvMatrixCurrent = shader.GetUniform("pvMatrixCurrent");
+			jitterLast = shader.GetUniform("jitterLast");
+			jitterCurrent = shader.GetUniform("jitterCurrent");
 
 		}
 

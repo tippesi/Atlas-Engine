@@ -31,12 +31,20 @@ namespace Atlas {
 			static std::string GetDirectory(std::string path);
 
 			/**
-			 * Returns the filename of a path.
+			 * Returns the file name of a path.
 			 * @param path A path to a file.
-			 * @return The filename in the path.
+			 * @return The file name in the path.
 			 * @warning The paths must contain a filename.
 			 */
-			static std::string GetFilename(std::string path);
+			static std::string GetFileName(std::string path);
+
+			/**
+			 * Returns the file type of a path.
+			 * @param path A path to a file.
+			 * @return The file name in the path.
+			 * @warning The paths must contain a filename.
+			 */
+			static std::string GetFileType(std::string path);
 
 			/**
 			 * Gets the absolute and normalized path to for a relative path

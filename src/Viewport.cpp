@@ -38,7 +38,7 @@ namespace Atlas {
 
 		point.y *= -1.0f;
 
-		vec4 transformed = camera->inverseViewMatrix * camera->inverseProjectionMatrix * vec4(point, 1.0f);
+		vec4 transformed = camera->invViewMatrix * camera->invUnjitteredProjection * vec4(point, 1.0f);
 
 		transformed.w = 1.0f / transformed.w;
 		transformed.x *= transformed.w;

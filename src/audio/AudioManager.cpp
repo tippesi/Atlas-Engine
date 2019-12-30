@@ -82,6 +82,12 @@ namespace Atlas {
 
 			std::lock_guard<std::mutex> lock(mutex);
 
+			auto item = std::find(musicQueue.begin(), musicQueue.end(), stream);
+
+			if (item != musicQueue.end()) {
+				musicQueue.erase(item);
+			}
+
         }
 
         void AudioManager::Callback(void* userData, uint8_t* stream, int32_t length) {
@@ -101,6 +107,9 @@ namespace Atlas {
 			lock.unlock();
 
 			for (auto stream : queue) {
+
+				if (stream->IsPaused())
+					continue;
 
 				auto src = stream->GetChunk(length);
 

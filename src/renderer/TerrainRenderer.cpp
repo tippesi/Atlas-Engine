@@ -30,6 +30,10 @@ namespace Atlas {
 
 			GetDistanceUniforms();
 
+			terrainMaterialBuffer = Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(TerrainMaterial),
+				AE_BUFFER_DYNAMIC_STORAGE);
+			terrainMaterialBuffer.SetSize(256);
+
 		}
 
 		void TerrainRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
@@ -51,21 +55,30 @@ namespace Atlas {
 					distanceNodes.push_back(node);
 			}
 
+			auto materials = terrain->storage->GetMaterials();
+
+			std::vector<TerrainMaterial> terrainMaterials(materials.size());
+
+			for (size_t i = 0; i < materials.size(); i++) {
+				if (materials[i]) {
+					terrainMaterials[i].specularIntensity = materials[i]->specularIntensity;
+					terrainMaterials[i].specularHardness = materials[i]->specularHardness;
+					terrainMaterials[i].displacementScale = materials[i]->displacementScale;
+					terrainMaterials[i].normalScale = materials[i]->normalScale;
+				}
+				
+			}
+
+			terrainMaterialBuffer.SetData(terrainMaterials.data(), 0, terrainMaterials.size());
+
 			// First render detail nodes
 			shader.Bind();
+			terrainMaterialBuffer.BindBase(0);
 			terrain->vertexArray.Bind();
-			heightField->SetValue(0);
-			normalMap->SetValue(1);
-			diffuseMap->SetValue(2);
-			splatMap->SetValue(3);
 
-			auto mapCount = 3;
-
-			for (int32_t i = 0; i < 4; i++) {
-				materials[i].diffuseMap->SetValue(++mapCount);
-				materials[i].normalMap->SetValue(++mapCount);
-				materials[i].displacementMap->SetValue(++mapCount);
-			}
+			terrain->storage->diffuseMaps.Bind(GL_TEXTURE3);
+			terrain->storage->normalMaps.Bind(GL_TEXTURE4);
+			terrain->storage->displacementMaps.Bind(GL_TEXTURE5);
 
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
@@ -81,36 +94,18 @@ namespace Atlas {
 
 			displacementDistance->SetValue(terrain->displacementDistance);		
 
-			pvMatrixLast->SetValue(pvMatrixPrev);
-			jitterLast->SetValue(jitterPrev);
+			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
+			jitterLast->SetValue(camera->GetLastJitter());
 			jitterCurrent->SetValue(camera->GetJitter());
 
-			//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			if (terrain->wireframe)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 			for (auto node : nodes) {
 
 				node->cell->heightField->Bind(GL_TEXTURE0);
 				node->cell->normalMap->Bind(GL_TEXTURE1);
-				node->cell->splatMap->Bind(GL_TEXTURE3);
-
-				for (int32_t i = 0; i < 4; i++) {
-					auto material = node->cell->GetMaterial(i);
-					if (!material)
-						continue;
-					if (material->diffuseMap)
-						material->diffuseMap->Bind(GL_TEXTURE0 + i * 3 + 4);
-					if (material->normalMap)
-						material->normalMap->Bind(GL_TEXTURE0 + i * 3 + 5);
-					if (material->displacementMap)
-						material->displacementMap->Bind(GL_TEXTURE0 + i * 3 + 6);
-
-					materials[i].diffuseColor->SetValue(material->diffuseColor);
-
-					materials[i].specularHardness->SetValue(material->specularHardness);
-					materials[i].specularIntensity->SetValue(material->specularIntensity);
-
-					materials[i].displacementScale->SetValue(material->displacementScale);
-				}
+				node->cell->splatMap->Bind(GL_TEXTURE2);
 
 				nodeLocation->SetValue(node->location);
 				nodeSideLength->SetValue(node->sideLength);
@@ -120,7 +115,7 @@ namespace Atlas {
 				rightLoD->SetValue(node->rightLoDStitch);
 				bottomLoD->SetValue(node->bottomLoDStitch);
 
-				tileScale->SetValue(terrain->resolution * powf(2.0f, (float)(terrain->LoDCount - node->cell->LoD)));
+				tileScale->SetValue(terrain->resolution * powf(2.0f, (float)(terrain->LoDCount - node->cell->LoD) - 1.0f));
 				patchSize->SetValue((float)terrain->patchSizeFactor);
 
 				normalTexelSize->SetValue(1.0f / (float)node->cell->normalMap->width);
@@ -129,51 +124,24 @@ namespace Atlas {
 
 			}
 
-			// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
 			// Now render distance nodes
 			distanceShader.Bind();
 			terrain->distanceVertexArray.Bind();
-			distanceHeightField->SetValue(0);
-			distanceNormalMap->SetValue(1);
-			distanceDiffuseMap->SetValue(2);
-			distanceSplatMap->SetValue(3);
-
-			mapCount = 3;
-
-			for (int32_t i = 0; i < 4; i++) {
-				distanceMaterials[i].diffuseMap->SetValue(++mapCount);
-			}
 
 			distanceViewMatrix->SetValue(camera->viewMatrix);
 			distanceProjectionMatrix->SetValue(camera->projectionMatrix);
 
 			distanceHeightScale->SetValue(terrain->heightScale);
 
-			distancePvMatrixLast->SetValue(pvMatrixPrev);
-			distanceJitterLast->SetValue(jitterPrev);
+			distancePvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
+			distanceJitterLast->SetValue(camera->GetLastJitter());
 			distanceJitterCurrent->SetValue(camera->GetJitter());
-
-			// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 			for (auto node : distanceNodes) {
 
 				node->cell->heightField->Bind(GL_TEXTURE0);
 				node->cell->normalMap->Bind(GL_TEXTURE1);
-				node->cell->splatMap->Bind(GL_TEXTURE3);
-
-				for (int32_t i = 0; i < 4; i++) {
-					auto material = node->cell->GetMaterial(i);
-					if (!material)
-						continue;
-					if (material->diffuseMap)
-						material->diffuseMap->Bind(GL_TEXTURE0 + i + 4);
-
-					materials[i].diffuseColor->SetValue(material->diffuseColor);
-
-					materials[i].specularHardness->SetValue(material->specularHardness);
-					materials[i].specularIntensity->SetValue(material->specularIntensity);
-				}
+				node->cell->splatMap->Bind(GL_TEXTURE2);
 
 				distanceNodeLocation->SetValue(node->location);
 				distanceNodeSideLength->SetValue(node->sideLength);
@@ -183,7 +151,7 @@ namespace Atlas {
 				distanceRightLoD->SetValue(node->rightLoDStitch);
 				distanceBottomLoD->SetValue(node->bottomLoDStitch);
 
-				distanceTileScale->SetValue(terrain->resolution * powf(2.0f, (float)(terrain->LoDCount - node->cell->LoD)));
+				distanceTileScale->SetValue(terrain->resolution * powf(2.0f, (float)(terrain->LoDCount - node->cell->LoD) - 1.0f));
 				distancePatchSize->SetValue((float)terrain->patchSizeFactor);
 
 				distanceNormalTexelSize->SetValue(1.0f / (float)node->cell->normalMap->width);
@@ -193,18 +161,13 @@ namespace Atlas {
 
 			}
 
-			// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-			pvMatrixPrev = camera->unjitterdProjection * camera->viewMatrix;
+			if (terrain->wireframe)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		}
 
 		void TerrainRenderer::GetUniforms() {
 
-			heightField = shader.GetUniform("heightField");
-			normalMap = shader.GetUniform("normalMap");
-			diffuseMap = shader.GetUniform("diffuseMap");
-			splatMap = shader.GetUniform("splatMap");
 			heightScale = shader.GetUniform("heightScale");
 
 			offset = shader.GetUniform("offset");
@@ -232,19 +195,6 @@ namespace Atlas {
 
 			normalTexelSize = shader.GetUniform("normalTexelSize");
 
-			for (int32_t i = 0; i < 4; i++) {
-				materials[i].diffuseMap = shader.GetUniform("materials[" + std::to_string(i) + "].diffuseMap");
-				materials[i].normalMap = shader.GetUniform("materials[" + std::to_string(i) + "].normalMap");
-				materials[i].displacementMap = shader.GetUniform("materials[" + std::to_string(i) + "].displacementMap");
-
-				materials[i].diffuseColor = shader.GetUniform("materials[" + std::to_string(i) + "].diffuseColor");
-
-				materials[i].specularHardness = shader.GetUniform("materials[" + std::to_string(i) + "].specularHardness");
-				materials[i].specularIntensity = shader.GetUniform("materials[" + std::to_string(i) + "].specularIntensity");
-
-				materials[i].displacementScale = shader.GetUniform("materials[" + std::to_string(i) + "].displacementScale");
-			}
-
 			pvMatrixLast = shader.GetUniform("pvMatrixLast");
 			jitterLast = shader.GetUniform("jitterLast");
 			jitterCurrent = shader.GetUniform("jitterCurrent");
@@ -253,10 +203,6 @@ namespace Atlas {
 
 		void TerrainRenderer::GetDistanceUniforms() {
 
-			distanceHeightField = distanceShader.GetUniform("heightField");
-			distanceNormalMap = distanceShader.GetUniform("normalMap");
-			distanceDiffuseMap = distanceShader.GetUniform("diffuseMap");
-			distanceSplatMap = distanceShader.GetUniform("splatMap");
 			distanceHeightScale = distanceShader.GetUniform("heightScale");
 
 			distanceTileScale = distanceShader.GetUniform("tileScale");
@@ -272,18 +218,6 @@ namespace Atlas {
 			distanceBottomLoD = distanceShader.GetUniform("bottomLoD");
 
 			distanceNormalTexelSize = distanceShader.GetUniform("normalTexelSize");
-
-			for (int32_t i = 0; i < 4; i++) {
-				distanceMaterials[i].diffuseMap = distanceShader.GetUniform("materials[" + std::to_string(i) + "].diffuseMap");
-				distanceMaterials[i].normalMap = distanceShader.GetUniform("materials[" + std::to_string(i) + "].normalMap");
-
-				distanceMaterials[i].diffuseColor = distanceShader.GetUniform("materials[" + std::to_string(i) + "].diffuseColor");
-
-				distanceMaterials[i].specularHardness = distanceShader.GetUniform("materials[" + std::to_string(i) + "].specularHardness");
-				distanceMaterials[i].specularIntensity = distanceShader.GetUniform("materials[" + std::to_string(i) + "].specularIntensity");
-
-				distanceMaterials[i].displacementScale = distanceShader.GetUniform("materials[" + std::to_string(i) + "].displacementScale");
-			}
 
 			distancePvMatrixLast = distanceShader.GetUniform("pvMatrixLast");
 			distanceJitterLast = distanceShader.GetUniform("jitterLast");

@@ -1,47 +1,94 @@
-#include "../common/material"
+#include "terrainMaterial"
 
 layout (location = 0) out vec3 diffuse;
 layout (location = 1) out vec3 normal;
 layout (location = 2) out vec2 additional;
 layout (location = 3) out vec2 velocity;
 
+layout (binding = 1) uniform sampler2D normalMap;
+
+layout (binding = 3) uniform sampler2DArray diffuseMaps;
+layout (binding = 4) uniform sampler2DArray normalMaps;
+
+layout (binding = 0, std140) uniform UBO {
+    TerrainMaterial materials[256];
+};
+
 in vec2 materialTexCoords;
 in vec2 texCoords;
-in vec4 splat;
 in vec3 ndcCurrent;
 in vec3 ndcLast;
+flat in uvec4 materialIndicesTE;
 
 uniform mat4 vMatrix;
-uniform sampler2D normalMap;
 uniform float normalTexelSize;
 uniform float normalResFactor;
-
-uniform Material materials[4];
+uniform float tileScale;
 
 uniform vec2 jitterLast;
 uniform vec2 jitterCurrent;
 
+vec3 SampleDiffuse(vec2 off) {
+	
+	if (materialIndicesTE.x == materialIndicesTE.y && 
+		materialIndicesTE.x == materialIndicesTE.z &&
+		materialIndicesTE.x == materialIndicesTE.w)
+		return texture(diffuseMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.x))).rgb;
+
+	vec3 q00 = texture(diffuseMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.x))).rgb;
+	vec3 q10 = texture(diffuseMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.y))).rgb;
+	vec3 q01 = texture(diffuseMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.z))).rgb;
+	vec3 q11 = texture(diffuseMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.w))).rgb;
+	
+	// Interpolate samples horizontally
+	vec3 h0 = mix(q00, q10, off.x);
+	vec3 h1 = mix(q01, q11, off.x);
+	
+	// Interpolate samples vertically
+	return mix(h0, h1, off.y);	
+	
+}
+
+vec3 SampleNormal(vec2 off) {
+
+	if (materialIndicesTE.x == materialIndicesTE.y && 
+		materialIndicesTE.x == materialIndicesTE.z &&
+		materialIndicesTE.x == materialIndicesTE.w)
+		return texture(normalMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.x))).rgb;
+	
+	vec3 q00 = texture(normalMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.x))).rgb;
+	vec3 q10 = texture(normalMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.y))).rgb;
+	vec3 q01 = texture(normalMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.z))).rgb;
+	vec3 q11 = texture(normalMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.w))).rgb;
+	
+	// Interpolate samples horizontally
+	vec3 h0 = mix(q00, q10, off.x);
+	vec3 h1 = mix(q01, q11, off.x);
+	
+	// Interpolate samples vertically
+	return mix(h0, h1, off.y);	
+	
+}
+
 void main() {
 
-	diffuse = texture(materials[0].diffuseMap, materialTexCoords / 4.0).rgb * splat.r + 
-		texture(materials[1].diffuseMap, materialTexCoords / 4.0).rgb * splat.g + 
-		texture(materials[2].diffuseMap, materialTexCoords / 4.0).rgb * splat.b + 
-		texture(materials[3].diffuseMap, materialTexCoords / 4.0).rgb * splat.a;
-
-	normal = texture(materials[0].normalMap, materialTexCoords / 4.0).rgb * splat.r + 
-		texture(materials[1].normalMap, materialTexCoords / 4.0).rgb * splat.g + 
-		texture(materials[2].normalMap, materialTexCoords / 4.0).rgb * splat.b + 
-		texture(materials[3].normalMap, materialTexCoords / 4.0).rgb * splat.a;
-
-	float displacementScale = materials[0].displacementScale * splat.r + 
-		materials[1].displacementScale * splat.g + 
-		materials[2].displacementScale * splat.b + 
-		materials[3].displacementScale * splat.a;
+	uint materialIndex = materialIndicesTE.x;
+	
+	vec2 tex = materialTexCoords / tileScale;	
+	vec2 off = (tex) - floor(tex);
+	
+	diffuse = SampleDiffuse(off);
+	//diffuse = vec3(off, 0.0);
+	normal = SampleNormal(off);
+	
+	float normalScale = materials[materialIndex].normalScale;	
+	float specularIntensity = materials[materialIndex].specularIntensity;		
+	float specularHardness = materials[materialIndex].specularHardness;
 	
 	// We should move this to the tesselation evaluation shader
 	// so we only have to calculate these normals once. After that 
 	// we can pass a TBN matrix to this shader
-	vec2 tex = vec2(normalTexelSize) + texCoords * (1.0 - 3.0 * normalTexelSize)
+	tex = vec2(normalTexelSize) + texCoords * (1.0 - 3.0 * normalTexelSize)
 		+ 0.5 * normalTexelSize;
 	vec3 norm = 2.0 * texture(normalMap, tex).rgb - 1.0;
 	
@@ -52,11 +99,11 @@ void main() {
 	mat3 tbn = mat3(tang, bitang, norm);
 
 	normal = normalize(tbn * (2.0 * normal - 1.0));
-	normal = mix(norm, normal, displacementScale);
+	normal = mix(norm, normal, normalScale);
 	
 	normal = 0.5 * normalize(vec3(vMatrix * vec4(normal, 0.0))) + 0.5;
-	additional = vec2(0.0);
-
+	additional = vec2(specularIntensity, specularHardness);
+	
 	// Calculate velocity
 	vec2 ndcL = ndcLast.xy / ndcLast.z;
 	vec2 ndcC = ndcCurrent.xy / ndcCurrent.z;

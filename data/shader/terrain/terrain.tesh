@@ -1,17 +1,26 @@
-#include "../common/material"
+#include "terrainMaterial"
 
 layout(quads, fractional_even_spacing, cw) in;
 
+layout (binding = 2)  uniform usampler2D splatMap;
+layout(binding = 5) uniform sampler2DArray displacementMaps;
+
+layout (binding = 0, std140) uniform UBO {
+    TerrainMaterial materials[256];
+};
+
+flat in uvec4 materialIndicesTC[];
+
 out vec2 materialTexCoords;
 out vec2 texCoords;
-out vec4 splat;
 out vec3 ndcCurrent;
 out vec3 ndcLast;
-
-uniform sampler2D splatMap;
+flat out uvec4 materialIndicesTE;
 
 uniform vec2 nodeLocation;
 uniform float nodeSideLength;
+uniform float tileScale;
+uniform float patchSize;
 
 uniform float displacementDistance;
 
@@ -21,7 +30,38 @@ uniform mat4 pMatrix;
 uniform mat4 pvMatrixLast;
 
 uniform vec3 cameraLocation;
-uniform Material materials[4];
+
+float SampleDisplacement(vec2 off, uvec4 indices) {
+
+	if (indices.x == indices.y && 
+		indices.x == indices.z &&
+		indices.x == indices.w)
+		return texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.x))).r;
+	
+	float q00 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.x))).r;
+	float q10 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.y))).r;
+	float q01 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.z))).r;
+	float q11 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.w))).r;
+	
+	// Interpolate samples horizontally
+	float h0 = mix(q00, q10, off.x);
+	float h1 = mix(q01, q11, off.x);
+	
+	// Interpolate samples vertically
+	return mix(h0, h1, off.y);	
+	
+}
+
+float Interpolate(float q00, float q10, float q01, float q11, vec2 off) {
+
+	// Interpolate samples horizontally
+	float h0 = mix(q00, q10, off.x);
+	float h1 = mix(q01, q11, off.x);
+	
+	// Interpolate samples vertically
+	return mix(h0, h1, off.y);	
+
+}
 
 void main(){
 
@@ -45,18 +85,32 @@ void main(){
 
 	materialTexCoords = texCoords;
 	
-	texCoords /= nodeSideLength;
-	
-	splat = texture(splatMap, texCoords);
+	texCoords /= nodeSideLength;	
 	
 	float weight = clamp((displacementDistance - vertexDistance), 0.0, 1.0);
 	
+	materialIndicesTE = materialIndicesTC[0];
+	
+	uvec4 indices;
+	float texel = 1.0 / (8.0 * patchSize);
+	vec2 tex = floor(texCoords / texel) * texel;
+	indices.x = texture(splatMap, tex).r;
+	indices.y = texture(splatMap, tex + vec2(texel, 0.0)).r;
+	indices.z = texture(splatMap, tex + vec2(0.0, texel)).r;
+	indices.w = texture(splatMap, tex + vec2(texel, texel)).r;
+
 	if (weight > 0.0) {
-		float displacement = (texture(materials[0].displacementMap, materialTexCoords / 4.0f).r * materials[0].displacementScale * splat.r + 
-			texture(materials[1].displacementMap, materialTexCoords / 4.0f).r * materials[1].displacementScale * splat.g + 
-			texture(materials[2].displacementMap, materialTexCoords / 4.0f).r * materials[2].displacementScale * splat.b + 
-			texture(materials[3].displacementMap, materialTexCoords / 4.0f).r * materials[3].displacementScale * splat.a)
-			* weight;
+		tex = materialTexCoords / tileScale;	
+		vec2 off = tex - floor(tex);
+		float displacementScale = Interpolate(
+			materials[indices.x].displacementScale,
+			materials[indices.y].displacementScale,
+			materials[indices.z].displacementScale,
+			materials[indices.w].displacementScale,
+			off
+		);
+		float displacement = SampleDisplacement(off, indices)
+			* displacementScale * weight;
 		
 		position.y += displacement;
 	}

@@ -1,3 +1,5 @@
+#define SHADOW_FILTER_1x1
+
 #include "../deferred/convert"
 #include "../structures"
 #include "../shadow"

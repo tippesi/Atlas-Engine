@@ -34,9 +34,7 @@ namespace Atlas {
 
             Shader::Uniform* shadowDistance = nullptr;
             Shader::Uniform* shadowBias = nullptr;
-            Shader::Uniform* shadowSampleCount = nullptr;
-            Shader::Uniform* shadowSampleRange = nullptr;
-            Shader::Uniform* shadowSampleRandomness = nullptr;
+			Shader::Uniform* shadowCascadeBlendDistance = nullptr;
             Shader::Uniform* shadowCascadeCount = nullptr;
             Shader::Uniform* shadowResolution = nullptr;
 

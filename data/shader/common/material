@@ -12,6 +12,7 @@ struct Material {
 	float specularHardness;
 	float specularIntensity;
 	
+	float normalScale;
 	float displacementScale;
 	
 };

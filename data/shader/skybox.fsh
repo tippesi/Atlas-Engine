@@ -7,14 +7,20 @@ in vec3 fTexCoord;
 in vec3 ndcCurrent;
 in vec3 ndcLast;
 
+uniform vec2 jitterLast;
+uniform vec2 jitterCurrent;
+
 void main() {
 	
 	fragColor = texture(skyCubemap, fTexCoord).xyz;
 	
-	// Calculate velocity
+	 // Calculate velocity
 	vec2 ndcL = ndcLast.xy / ndcLast.z;
 	vec2 ndcC = ndcCurrent.xy / ndcCurrent.z;
 
-	velocity = (ndcL - ndcC) * vec2(0.5, 0.5);
+	ndcL -= jitterLast;
+	ndcC -= jitterCurrent;
+
+	velocity = (ndcL - ndcC) * 0.5;
 	
 }

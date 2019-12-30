@@ -126,6 +126,7 @@ void main() {
 	}
 #endif
 #endif
+    // Causes problems when applied without noise afterwards
 #ifdef SHARPEN
 	vec2 resInv = 1.0 / hdrTextureResolution;
 	vec3 up = texture(hdrTexture, fTexCoord + vec2(0.0, -resInv.y)).rgb;
@@ -137,7 +138,7 @@ void main() {
 
 	color *= exposure;
 	
-	color = clamp(color + n2rand(2.0f * fTexCoord - 1.0f) / 256.0f, 0.0f, 1.0f);
+	color = color + n2rand(2.0 * fTexCoord - 1.0) / 256.0;
 	
 	// Apply the tone mapping because we want the colors to be back in
 	// normal range
@@ -148,8 +149,7 @@ void main() {
 #endif
 	color = pow(color, vec3(gamma));
 	
-	color = saturate(color, saturation);
-	
+	color = saturate(color, saturation);	
 
 #ifdef VIGNETTE	
 	float vignetteFactor = max(1.0f - max(pow(length(fPosition) - vignetteOffset, vignettePower), 0.0f)

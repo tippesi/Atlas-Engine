@@ -5,10 +5,21 @@ namespace Atlas {
 
 	namespace Terrain {
 
-		TerrainStorage::TerrainStorage(int32_t rootNodeCount, int32_t LoDCount) : rootNodeCount(rootNodeCount), LoDCount(LoDCount) {
+		TerrainStorage::TerrainStorage(int32_t rootNodeCount, int32_t LoDCount, float sideLength,
+			int32_t materialResolution, int32_t materialCount) : rootNodeCount(rootNodeCount), 
+			LoDCount(LoDCount), materialResolution(materialResolution), materialCount(materialCount) {
 
 			cells.resize(LoDCount);
 			LoDSideLengths = new int32_t[LoDCount];
+
+			diffuseMaps = Atlas::Texture::Texture2DArray(materialResolution,
+				materialResolution, materialCount, AE_RGB8, GL_REPEAT, GL_LINEAR, true, true);
+			normalMaps = Atlas::Texture::Texture2DArray(materialResolution,
+				materialResolution, materialCount, AE_RGB8, GL_REPEAT, GL_LINEAR, true, true);
+			displacementMaps = Atlas::Texture::Texture2DArray(materialResolution,
+				materialResolution, materialCount, AE_R8, GL_REPEAT, GL_LINEAR, true, true);
+
+			materials.resize(materialCount);
 
 			for (int32_t i = 0; i < LoDCount; i++) {
 
@@ -20,8 +31,12 @@ namespace Atlas {
 						cells[i][x * LoDSideLengths[i] + y].x = x;
 						cells[i][x * LoDSideLengths[i] + y].y = y;
 						cells[i][x * LoDSideLengths[i] + y].LoD = i;
+						cells[i][x * LoDSideLengths[i] + y].position = vec2((float)x, (float)y) * sideLength;
 					}
 				}
+
+				sideLength /= 2.0f;
+
 			}
 
 		}
@@ -41,49 +56,32 @@ namespace Atlas {
 
 		}
 
-		int32_t TerrainStorage::GetMaterialIndex(Material* material) {
+		void TerrainStorage::AddMaterial(int32_t slot, Material* material) {
 
-			size_t count = 0;
-			while (count < materials.size()) {
-				if (material == materials[count].first)
-					break;
-				count++;
+			materials[slot] = material;
+
+			if (material->HasDiffuseMap()) {
+				diffuseMaps.Copy(*material->diffuseMap, 0, 0, 0, 0, 0, slot,
+					diffuseMaps.width, diffuseMaps.height, 1);
 			}
-
-			if (count != materials.size()) {
-				materials[count].second++;
-				return (int32_t)count;
+			if (material->HasNormalMap()) {
+				normalMaps.Copy(*material->normalMap, 0, 0, 0, 0, 0, slot,
+					normalMaps.width, normalMaps.height, 1);
 			}
-
-			materials.push_back(std::pair<Material*, int32_t>(material, 1));
-			return (int32_t)materials.size() - 1;
+			if (material->HasDisplacementMap()) {
+				displacementMaps.Copy(*material->displacementMap, 0, 0, 0, 0, 0, slot,
+					displacementMaps.width, displacementMaps.height, 1);
+			}
 
 		}
 
-		void TerrainStorage::RemoveMaterial(int32_t index) {
+		void TerrainStorage::RemoveMaterial(int32_t slot, Material* material) {
 
-			if (index >= 0 && index < (int32_t)materials.size())
-				if (!--materials[index].second)
-					materials.erase(materials.begin() + index);				
-
-		}
-
-		Material* TerrainStorage::GetMaterial(int32_t index) {
-
-			if (index >= 0 && index < (int32_t)materials.size())
-				return materials[index].first;
-
-			return nullptr;
+			materials[slot] = nullptr;
 
 		}
 
 		std::vector<Material*> TerrainStorage::GetMaterials() {
-
-			std::vector<Material*> materials;
-
-			for (auto& pair : this->materials) {
-				materials.push_back(pair.first);
-			}
 
 			return materials;
 

@@ -30,7 +30,7 @@ namespace Atlas {
 
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
-			inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
+			inverseProjectionMatrix->SetValue(camera->invProjectionMatrix);
 
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
@@ -49,7 +49,7 @@ namespace Atlas {
 
 				if (pointLight->GetShadow() != nullptr) {
 					pointLight->GetShadow()->cubemap.Bind(GL_TEXTURE4);
-					lightViewMatrix->SetValue(glm::translate(mat4(1.0f), -pointLight->location) * camera->inverseViewMatrix);
+					lightViewMatrix->SetValue(glm::translate(mat4(1.0f), -pointLight->location) * camera->invViewMatrix);
 					lightProjectionMatrix->SetValue(pointLight->GetShadow()->components[0].projectionMatrix);
 				}
 

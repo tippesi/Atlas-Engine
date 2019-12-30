@@ -26,7 +26,7 @@ namespace Atlas {
 		else
 			viewMatrix = lookAt(location - direction * thirdPersonDistance, location, up);
 
-		inverseViewMatrix = inverse(viewMatrix);
+		invViewMatrix = inverse(viewMatrix);
 
 		CalculateFrustum();
 
@@ -35,9 +35,10 @@ namespace Atlas {
 	void Camera::UpdateProjection() {
 
 		projectionMatrix = glm::perspective(glm::radians(fieldOfView), aspectRatio, nearPlane, farPlane);
-		inverseProjectionMatrix = inverse(projectionMatrix);
+		invProjectionMatrix = inverse(projectionMatrix);
 
 		unjitterdProjection = projectionMatrix;
+		invUnjitteredProjection = invProjectionMatrix;
 
 		CalculateFrustum();
 
@@ -52,33 +53,36 @@ namespace Atlas {
 
 	void Camera::Jitter(vec2 jitter) {
 
-		auto helper = glm::translate(mat4(1.0f), vec3(jitter, 0.0f));
-		projectionMatrix = helper * projectionMatrix;
+		lastJitteredMatrix = jitteredMatrix;
+		lastJitterVector = jitterVector;
+
+		auto helper = glm::translate(vec3(jitter, 0.0f));
+		projectionMatrix = helper * unjitterdProjection;
+
+		invProjectionMatrix = inverse(projectionMatrix);
+
+		CalculateFrustum();
 
 		jitterVector = jitter;
-
-		inverseProjectionMatrix = inverse(projectionMatrix);
-
-		CalculateFrustum();
-
-	}
-
-	void Camera::Unjitter() {
-
-		auto helper = glm::translate(mat4(1.0f), vec3(-jitterVector, 0.0f));
-		projectionMatrix = helper * projectionMatrix;
-
-		jitterVector = vec2(0.0f);
-
-		inverseProjectionMatrix = inverse(projectionMatrix);
-
-		CalculateFrustum();
+		jitteredMatrix = projectionMatrix * viewMatrix;
 
 	}
 
 	vec2 Camera::GetJitter() {
 
 		return jitterVector;
+
+	}
+
+	vec2 Camera::GetLastJitter() {
+
+		return lastJitterVector;
+
+	}
+
+	mat4 Camera::GetLastJitteredMatrix() {
+
+		return lastJitteredMatrix;
 
 	}
 

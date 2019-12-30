@@ -37,8 +37,8 @@ namespace Atlas {
 
             viewMatrix->SetValue(camera->viewMatrix);
             projectionMatrix->SetValue(camera->projectionMatrix);
-            inverseViewMatrix->SetValue(camera->inverseViewMatrix);
-            inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
+            inverseViewMatrix->SetValue(camera->invViewMatrix);
+            inverseProjectionMatrix->SetValue(camera->invProjectionMatrix);
 
             timeInMilliseconds->SetValue(1000.0f * Clock::Get());
 

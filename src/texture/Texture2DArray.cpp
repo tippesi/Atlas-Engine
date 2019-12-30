@@ -48,7 +48,7 @@ namespace Atlas {
 
 			Bind();
 			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, x, y, z, width, height, depth,
-				TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
+				TextureFormat::GetBaseFormat(sizedFormat), AE_UBYTE, data.data());
 
 			GenerateMipmap();
 
@@ -65,7 +65,7 @@ namespace Atlas {
 
 			Bind();
 			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, x, y, z, width, height, depth,
-				TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
+				TextureFormat::GetBaseFormat(sizedFormat), AE_USHORT, data.data());
 
 			GenerateMipmap();
 

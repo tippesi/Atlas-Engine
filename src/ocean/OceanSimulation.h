@@ -2,7 +2,7 @@
 #define AE_OCEANSIMULATION_H
 
 #include "../System.h"
-#include "../renderer/helper/NoiseGenerator.h"
+#include "../common/NoiseGenerator.h"
 #include "../texture/Texture2D.h"
 #include "../shader/Shader.h"
 

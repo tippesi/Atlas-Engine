@@ -85,6 +85,24 @@ namespace Atlas {
 
 		}
 
+		void AudioStream::Pause() {
+
+			pause = true;
+
+		}
+
+		void AudioStream::Resume() {
+
+			pause = false;
+
+		}
+
+		bool AudioStream::IsPaused() {
+
+			return pause;
+
+		}
+
 		std::vector<int16_t> AudioStream::GetChunk(int32_t length) {
 
 			std::lock_guard<std::mutex> lock(mutex);

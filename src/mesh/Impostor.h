@@ -25,9 +25,7 @@ namespace Atlas {
 			Texture::Texture2DArray normalTexture;
 
 			Volume::AABB aabb;
-			mat4 cameraMatrix;
 
-		private:
 			int32_t views = 1;
 			int32_t resolution = 64;
 

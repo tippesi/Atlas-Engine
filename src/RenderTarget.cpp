@@ -21,7 +21,7 @@ namespace Atlas {
 
 		lightingFramebuffer.Resize(width, height);
 
-		lightingFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGB16F, GL_CLAMP_TO_EDGE, GL_NEAREST);
+		lightingFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGB16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, &velocityTexture);
 		lightingFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
 

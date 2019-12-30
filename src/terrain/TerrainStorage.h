@@ -16,13 +16,14 @@ namespace Atlas {
 		class TerrainStorage {
 
 		public:
-
 			/**
              * Constructs a terrain storage object
              * @param rootNodeCount The root node count of the terrain
              * @param LoDCount The level of detail count of the terrain
+			 * @param sideLength The side length of the terrain
              */
-			TerrainStorage(int32_t rootNodeCount, int32_t LoDCount);
+			TerrainStorage(int32_t rootNodeCount, int32_t LoDCount, float sideLength, 
+				int32_t materialResolution, int32_t materialCount);
 
 			/**
              * Finds the cell to the corresponding arguments in the storage object
@@ -45,11 +46,9 @@ namespace Atlas {
              */
 			int32_t GetCellCount(int32_t LoD);
 
-			int32_t GetMaterialIndex(Material* material);
+			void AddMaterial(int32_t slot, Material* material);
 
-			void RemoveMaterial(int32_t index);
-
-			Material* GetMaterial(int32_t index);
+			void RemoveMaterial(int32_t slot, Material* material);
 
 			std::vector<Material*> GetMaterials();
 
@@ -64,13 +63,20 @@ namespace Atlas {
              */
 			std::vector<TerrainStorageCell*> unusedCells;
 
+			Texture::Texture2DArray diffuseMaps;
+			Texture::Texture2DArray normalMaps;
+			Texture::Texture2DArray displacementMaps;
+
 		private:
 			int32_t rootNodeCount;
 			int32_t LoDCount;
 
+			int32_t materialResolution;
+			int32_t materialCount;
+
 			int32_t* LoDSideLengths;
 
-			std::vector<std::pair<Material*, int32_t>> materials;
+			std::vector<Material*> materials;
 
 			std::vector<std::vector<TerrainStorageCell>> cells;
 

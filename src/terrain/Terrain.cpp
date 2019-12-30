@@ -31,14 +31,14 @@ namespace Atlas {
 			Renderer::Helper::GeometryHelper::GenerateGridVertexArray(distanceVertexArray, 
 				8 * patchSizeFactor + 1, 1.0f);
 
-			storage = new TerrainStorage(rootNodeCount, LoDCount);
-			LoDDistances = std::vector<float>(LoDCount);
-			LoDImage = Common::Image8(leafNodesSideCount, leafNodesSideCount, 1);
-
 			// 2.0f time because we generate 2 * patchSize vertices. 8.0f because we have 8 * 8 patches per node.
-			sideLength = (float)rootNodeSideCount * resolution * powf(2, (float) LoDCount - 1.0f) * 2.0f *
+			sideLength = (float)rootNodeSideCount * resolution * powf(2, (float) LoDCount - 1.0f) *
 						 patchSizeFactor * 8.0f;
 			float ratio = sideLength / (float)rootNodeSideCount;
+
+			storage = new TerrainStorage(rootNodeCount, LoDCount, sideLength, 1024, 32);
+			LoDDistances = std::vector<float>(LoDCount);
+			LoDImage = Common::Image8(leafNodesSideCount, leafNodesSideCount, 1);
 
 			auto distance = sideLength;
 
@@ -56,12 +56,12 @@ namespace Atlas {
 				}
 			}
 
-			tessellationFactor = 0.0f;
-			tessellationSlope = 1.0f;
+			tessellationFactor = 8000.0f;
+			tessellationSlope = 3.0f;
 			tessellationShift = 0.0f;
-			maxTessellationLevel = 1;
+			maxTessellationLevel = 16;
 
-			displacementDistance = 0.0f;
+			displacementDistance = 20.0f;
 
 		}
 
@@ -139,7 +139,7 @@ namespace Atlas {
 				return 0.0f;
 			}
 
-			float nodeSideLength = 16.0f * patchSizeFactor * resolution;
+			float nodeSideLength = 8.0f * patchSizeFactor * resolution;
 
 			x /= nodeSideLength;
 			z /= nodeSideLength;
@@ -255,7 +255,7 @@ namespace Atlas {
 
 		TerrainStorageCell *Terrain::GetStorageCell(float x, float z, int32_t LoD) {
 
-			float nodeSideLength = 16.0f * patchSizeFactor * resolution;
+			float nodeSideLength = 8.0f * patchSizeFactor * resolution;
 
 			x /= nodeSideLength;
 			z /= nodeSideLength;

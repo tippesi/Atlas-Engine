@@ -24,9 +24,9 @@ namespace Atlas {
         }
 
         Texture2D::Texture2D(std::string filename, bool colorSpaceConversion, bool anisotropicFiltering,
-                             bool generateMipMaps) {
+                             bool generateMipMaps, int32_t forceChannels) {
 
-            auto image = Loader::ImageLoader::LoadImage(filename, colorSpaceConversion);
+            auto image = Loader::ImageLoader::LoadImage(filename, colorSpaceConversion, forceChannels);
 
             int32_t sizedFormat;
 
@@ -65,7 +65,7 @@ namespace Atlas {
 
 			Bind();
 			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
-				TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
+				TextureFormat::GetBaseFormat(sizedFormat), AE_UBYTE, data.data());
 
 			GenerateMipmap();
 
@@ -79,7 +79,7 @@ namespace Atlas {
 
 			Bind();
             glTexSubImage2D(GL_TEXTURE_2D, mipLevel, 0, 0, width, height,
-				TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
+				TextureFormat::GetBaseFormat(sizedFormat), AE_UBYTE, data.data());
 
         }
 
@@ -87,7 +87,7 @@ namespace Atlas {
 
 			Bind();
 			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
-				TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
+				TextureFormat::GetBaseFormat(sizedFormat), AE_USHORT, data.data());
 
 			GenerateMipmap();
 
@@ -101,7 +101,7 @@ namespace Atlas {
 
 			Bind();
             glTexSubImage2D(GL_TEXTURE_2D, mipLevel, 0, 0, width, height,
-				TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
+				TextureFormat::GetBaseFormat(sizedFormat), AE_USHORT, data.data());
 
         }
 

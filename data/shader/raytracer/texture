@@ -59,11 +59,11 @@ vec4 SampleDiffuseBilinear(Texture tex, vec2 texCoord) {
 	vec4 q11 = imageLoad(diffuseTextures, ivec3(q11Tex, tex.layer));
 	
 	// Interpolate samples horizontally
-	vec4 h0 = (1.0 - x) * q00 + x * q10;
-	vec4 h1 = (1.0 - x) * q01 + x * q11;
+	vec4 h0 = mix(q00, q10, x);
+	vec4 h1 = mix(q01, q11, x);
 	
 	// Interpolate samples vertically
-	return (1.0 - y) * h0 + y * h1;	
+	return mix(h0, h1, y);
 	
 }
 
@@ -94,11 +94,11 @@ vec4 SampleNormalBilinear(Texture tex, vec2 texCoord) {
 	vec4 q11 = imageLoad(normalTextures, ivec3(q11Tex, tex.layer));
 	
 	// Interpolate samples horizontally
-	vec4 h0 = (1.0 - x) * q00 + x * q10;
-	vec4 h1 = (1.0 - x) * q01 + x * q11;
+	vec4 h0 = mix(q00, q10, x);
+	vec4 h1 = mix(q01, q11, x);
 	
 	// Interpolate samples vertically
-	return (1.0 - y) * h0 + y * h1;	
+	return mix(h0, h1, y);
 	
 }
 

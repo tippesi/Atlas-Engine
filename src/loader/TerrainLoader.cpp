@@ -18,11 +18,17 @@ namespace Atlas {
 
 			auto materials = terrain->storage->GetMaterials();
 
+			// There don't have to be all materials
+			int32_t count = 0;
+			for (auto material : materials)
+				if (material)
+					count++;
+
             // Write file header in ASCII
             std::string header, body;
 
 			header.append("AET ");
-			header.append(std::to_string(materials.size()) + " ");
+			header.append(std::to_string(count) + " ");
             header.append(std::to_string(terrain->rootNodeSideCount) + " ");
             header.append(std::to_string(terrain->LoDCount) + " ");
             header.append(std::to_string(terrain->patchSizeFactor) + " ");
@@ -53,9 +59,14 @@ namespace Atlas {
 
 			AssetLoader::MakeDirectory(materialDir);
 
+			count = 0;
 			for (auto& material : materials) {
-				MaterialLoader::SaveMaterial(material, materialDir + "/" + material->name);
-				body.append("material/" + material->name + "\n");
+				if (material) {
+					auto filename = materialDir + "/" + material->name + ".aematerial";
+					MaterialLoader::SaveMaterial(material, filename);
+					body.append(std::to_string(count) + " material/" + material->name + ".aematerial" + "\n");
+				}
+				count++;
 			}
 
 			fileStream << body;
@@ -75,8 +86,6 @@ namespace Atlas {
 						if (isLeaf) {
 							// fileStream.write((char*)cell->materialIndices, sizeof(cell->materialIndices));
 						}
-
-						fileStream.write((char*)cell->materialIndices, sizeof(cell->materialIndices));
 
                         // Here we assume that all cells are present
                         auto data = cell->heightField->GetData();
@@ -159,16 +168,21 @@ namespace Atlas {
 			for (int32_t i = 0; i < materialCount; i++) {
 				std::getline(fileStream, line);
 
+				size_t offset = 0;
+				auto slot = ReadInt(" ", line, offset);
+
 				auto pos = line.find_last_of("\r\n");
-				auto materialPath = terrainDir + "/" + line.substr(0, pos);
+				auto materialPath = terrainDir + "/" + line.substr(offset, pos - offset);
 				auto material = MaterialLoader::LoadMaterial(materialPath);
 
 				// Works because this method always adds materials that aren't
 				// in the storage yet.
-				terrain->storage->GetMaterialIndex(material);
+				terrain->storage->AddMaterial(slot, material);
 			}
 
 			fileStream.close();
+
+			terrain->filename = filename;
 
             return terrain;
 
@@ -201,8 +215,8 @@ namespace Atlas {
 			auto isLeaf = cell->LoD == terrain->LoDCount - 1;
             auto tileResolution = 8 * terrain->patchSizeFactor + 1;
 
-			// Normal map + height map + baked maps (to come)
-			auto nodeDataCount = (int64_t)tileResolution * tileResolution * 6 + 16;
+			// Height map + splat map
+			auto nodeDataCount = (int64_t)tileResolution * tileResolution * 3;
 
             int64_t cellSideCount = (int64_t)sqrtf((float)terrain->storage->GetCellCount(cell->LoD));
 
@@ -233,8 +247,6 @@ namespace Atlas {
 
             fileStream.seekg(currPos, std::ios_base::cur);
 
-			fileStream.read((char*)cell->materialIndices, sizeof(cell->materialIndices));
-
 			std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
             fileStream.read((char*)heightFieldData.data(), heightFieldData.size() * 2);
 			cell->heightField = new Texture::Texture2D(tileResolution,
@@ -248,10 +260,10 @@ namespace Atlas {
 				normalDataResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 			cell->normalMap->SetData(normalMapData);
 
-			std::vector<uint8_t> splatMapData(heightFieldData.size() * 4);
+			std::vector<uint8_t> splatMapData(heightFieldData.size());
 			fileStream.read((char*)splatMapData.data(), splatMapData.size());
 			cell->splatMap = new Texture::Texture2D(tileResolution,
-					tileResolution, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+					tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
 			cell->splatMap->SetData(splatMapData);
 			
 			if (initWithHeightData) {

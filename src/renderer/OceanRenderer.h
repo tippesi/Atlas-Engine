@@ -61,9 +61,6 @@ namespace Atlas {
 
 			Shader::Uniform* shadowDistance = nullptr;
 			Shader::Uniform* shadowBias = nullptr;
-			Shader::Uniform* shadowSampleCount = nullptr;
-			Shader::Uniform* shadowSampleRange = nullptr;
-			Shader::Uniform* shadowSampleRandomness = nullptr;
 			Shader::Uniform* shadowCascadeCount = nullptr;
 			Shader::Uniform* shadowResolution = nullptr;
 
@@ -81,9 +78,6 @@ namespace Atlas {
 			Shader::Uniform* pvMatrixLast = nullptr;
 			Shader::Uniform* jitterLast = nullptr;
 			Shader::Uniform* jitterCurrent = nullptr;
-
-			mat4 pvMatrixPrev;
-			vec2 jitterPrev;
 
 		};
 

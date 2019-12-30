@@ -12,9 +12,7 @@ struct Shadow {
 	float distance;
 	float bias;
 	
-	int sampleCount;
-	float sampleRange;
-	float sampleRandomness;
+	float cascadeBlendDistance;
 	
 	int cascadeCount;
 	vec2 resolution;

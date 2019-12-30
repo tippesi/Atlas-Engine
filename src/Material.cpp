@@ -10,6 +10,12 @@ namespace Atlas {
 
 	}
 
+	Material::Material(const Material& that) {
+
+		DeepCopy(that);
+
+	}
+
 	Material::~Material() {
 
 		DeleteTextures();
@@ -20,31 +26,7 @@ namespace Atlas {
 
 		if (this != &that) {
 
-			DeleteTextures();
-
-			diffuseMap = nullptr;
-			normalMap = nullptr;
-			specularMap = nullptr;
-			displacementMap = nullptr;
-
-			// We copy the texture instead of just the pointers
-			if (that.diffuseMap)
-				diffuseMap = new Texture::Texture2D(*that.diffuseMap);
-			if (that.normalMap)
-				normalMap = new Texture::Texture2D(*that.normalMap);
-			if (that.specularMap)
-				specularMap = new Texture::Texture2D(*that.specularMap);
-			if (that.displacementMap)
-				displacementMap = new Texture::Texture2D(*that.displacementMap);
-
-			diffuseColor = that.diffuseColor;
-			specularColor = that.specularColor;
-			ambientColor = that.ambientColor;
-
-			specularHardness = that.specularHardness;
-			specularIntensity = that.specularIntensity;
-
-			displacementScale = that.displacementScale;
+			DeepCopy(that);
 
 		}
 
@@ -73,6 +55,46 @@ namespace Atlas {
 	bool Material::HasDisplacementMap() const {
 
 		return displacementMap ? true : false;
+
+	}
+
+	void Material::DeepCopy(const Material& that) {
+
+		DeleteTextures();
+
+		diffuseMap = nullptr;
+		normalMap = nullptr;
+		specularMap = nullptr;
+		displacementMap = nullptr;
+
+		// We copy the texture instead of just the pointers
+		if (that.diffuseMap) {
+			diffuseMap = new Texture::Texture2D(*that.diffuseMap);
+			diffuseMapPath = that.diffuseMapPath;
+		}
+		if (that.normalMap) {
+			normalMap = new Texture::Texture2D(*that.normalMap);
+			normalMapPath = that.normalMapPath;
+		}
+		if (that.specularMap) {
+			specularMap = new Texture::Texture2D(*that.specularMap);
+			specularMapPath = that.specularMapPath;
+		}
+		if (that.displacementMap) {
+			displacementMap = new Texture::Texture2D(*that.displacementMap);
+			displacementMapPath = that.displacementMapPath;
+		}
+
+		diffuseColor = that.diffuseColor;
+		specularColor = that.specularColor;
+		ambientColor = that.ambientColor;
+		emissiveColor = that.emissiveColor;
+
+		specularHardness = that.specularHardness;
+		specularIntensity = that.specularIntensity;
+
+		normalScale = that.normalScale;
+		displacementScale = that.displacementScale;
 
 	}
 

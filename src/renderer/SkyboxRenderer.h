@@ -5,6 +5,8 @@
 #include "Renderer.h"
 #include "buffer/VertexArray.h"
 
+#include <unordered_map>
+
 namespace Atlas {
 
 	namespace Renderer {
@@ -22,15 +24,18 @@ namespace Atlas {
 		private:
 			void GetUniforms();
 
+			std::unordered_map<Camera*, vec3> cameraMap;
+
 			Buffer::VertexArray vertexArray;
 
 			Shader::Shader shader;
 
 			Shader::Uniform* modelViewProjectionMatrix = nullptr;
+			Shader::Uniform* cameraLocation = nullptr;
+			Shader::Uniform* cameraLocationLast = nullptr;
 			Shader::Uniform* pvMatrixLast = nullptr;
-			Shader::Uniform* pvMatrixCurrent = nullptr;
-
-			mat4 pvMatrixPrev;
+			Shader::Uniform* jitterLast = nullptr;
+			Shader::Uniform* jitterCurrent = nullptr;
 
 		};
 

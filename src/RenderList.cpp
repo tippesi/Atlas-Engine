@@ -69,6 +69,7 @@ namespace Atlas {
 			auto actorBatch = actorBatchKey.second;
 			auto actorBatchBuffer = actorBatchBuffers[mesh];
 			auto impostorBuffer = impostorBuffers[mesh];
+			auto hasImpostor = mesh->impostor != nullptr;
 
 			if (!actorBatch->GetSize())
 				continue;
@@ -83,7 +84,7 @@ namespace Atlas {
 					vec3(actor->transformedMatrix[3]),
 					cameraLocation);
 
-				if (distance < sqdDistance) {
+				if (distance < sqdDistance || !hasImpostor) {
 					actorMatrices.push_back(actor->transformedMatrix);
 				}
 				else {
@@ -119,10 +120,9 @@ namespace Atlas {
 
 			actorBatch->Clear();
 			actorBatchBuffer->SetSize(0);
+			impostorBuffer->SetSize(0);
 
 			actorBatch->GetObject()->vertexArray.DisableComponent(4);
-
-			//impostorBuffer->SetSize(0);
 
 		}
 

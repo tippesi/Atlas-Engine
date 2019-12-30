@@ -66,8 +66,6 @@ namespace Atlas {
 			if (sun->GetShadow()) {
 				shadowDistance->SetValue(sun->GetShadow()->distance);
 				shadowBias->SetValue(sun->GetShadow()->bias);
-				shadowSampleCount->SetValue(1);
-				shadowSampleRange->SetValue(1.0f);
 				shadowCascadeCount->SetValue(sun->GetShadow()->componentCount);
 				shadowResolution->SetValue(vec2((float)sun->GetShadow()->resolution));
 
@@ -76,7 +74,7 @@ namespace Atlas {
 				for (int32_t i = 0; i < sun->GetShadow()->componentCount; i++) {
 					auto cascade = &sun->GetShadow()->components[i];
 					cascades[i].distance->SetValue(cascade->farDistance);
-					cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->inverseViewMatrix);
+					cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->invViewMatrix);
 				}
 			}
 			else {
@@ -155,12 +153,12 @@ namespace Atlas {
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
 
-			inverseViewMatrix->SetValue(camera->inverseViewMatrix);
-			inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
+			inverseViewMatrix->SetValue(camera->invViewMatrix);
+			inverseProjectionMatrix->SetValue(camera->invProjectionMatrix);
 
-			jitterLast->SetValue(jitterPrev);
+			jitterLast->SetValue(camera->GetLastJitter());
 			jitterCurrent->SetValue(camera->GetJitter());
-			pvMatrixLast->SetValue(pvMatrixPrev);
+			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
 
 			cameraLocation->SetValue(camera->GetLocation());
 
@@ -186,9 +184,6 @@ namespace Atlas {
 			}
 
 			// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-			jitterPrev = camera->GetJitter();
-			pvMatrixPrev = camera->projectionMatrix * camera->viewMatrix;
 
 		}
 
@@ -224,9 +219,6 @@ namespace Atlas {
 
 			shadowDistance = shader.GetUniform("light.shadow.distance");
 			shadowBias = shader.GetUniform("light.shadow.bias");
-			shadowSampleCount = shader.GetUniform("light.shadow.sampleCount");
-			shadowSampleRange = shader.GetUniform("light.shadow.sampleRange");
-			shadowSampleRandomness = shader.GetUniform("light.shadow.sampleRandomness");
 			shadowCascadeCount = shader.GetUniform("light.shadow.cascadeCount");
 			shadowResolution = shader.GetUniform("light.shadow.resolution");
 

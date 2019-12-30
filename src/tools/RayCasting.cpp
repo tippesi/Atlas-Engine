@@ -11,20 +11,22 @@ namespace Atlas {
 
 		}
 
-		RayIntersection RayCasting::MouseRayIntersection(Viewport* viewport, Camera* camera, Terrain::Terrain* terrain) {
+		RayIntersection RayCasting::MouseRayIntersection(Viewport* viewport, Camera* camera,
+			Terrain::Terrain* terrain, vec2 mouseOffset) {
 
-			auto intersection = MouseRayTerrainIntersection(viewport, camera, terrain);
+			auto intersection = MouseRayTerrainIntersection(viewport, 
+				camera, terrain, mouseOffset);
 
 			return intersection;
 
 		}
 
 		RayIntersection RayCasting::MouseRayTerrainIntersection(Viewport* viewport, Camera* camera,
-				Terrain::Terrain* terrain) {
+				Terrain::Terrain* terrain, vec2 mouseOffset) {
 
 			const float linearStepLength = 1.0f;
 
-			auto ray = CalculateRay(viewport, camera);
+			auto ray = CalculateRay(viewport, camera, mouseOffset);
 
 			auto distance = linearStepLength;
 
@@ -92,12 +94,14 @@ namespace Atlas {
 
 		}
 
-		Volume::Ray RayCasting::CalculateRay(Viewport *viewport, Camera *camera) {
+		Volume::Ray RayCasting::CalculateRay(Viewport *viewport, Camera *camera, vec2 mouseOffset) {
 
 			Volume::Ray ray;
 
-			auto nearPoint = viewport->Unproject(vec3(mouseLocation.x, mouseLocation.y, 0.0f), camera);
-			auto farPoint = viewport->Unproject(vec3(mouseLocation.x, mouseLocation.y, 1.0f), camera);
+			auto location = vec2(mouseLocation) - mouseOffset;
+
+			auto nearPoint = viewport->Unproject(vec3(location, 0.0f), camera);
+			auto farPoint = viewport->Unproject(vec3(location, 1.0f), camera);
 
 			ray.direction = glm::normalize(farPoint - nearPoint);
 			ray.origin = nearPoint;

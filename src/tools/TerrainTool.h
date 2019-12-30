@@ -26,7 +26,11 @@ namespace Atlas {
              * @warning The input should correspond to the terrain specifications
              */
 			static Terrain::Terrain* GenerateTerrain(Common::Image16& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
-					int32_t patchSize, float resolution, float height, Material* material1, Material* material2);
+					int32_t patchSize, float resolution, float height, Material* material);
+
+			static Terrain::Terrain* GenerateTerrain(Common::Image16& heightImage, Common::Image8& splatImage,
+				int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution,
+				float height, std::vector<Material*> materials);
 
 			/**
              *
@@ -59,8 +63,7 @@ namespace Atlas {
 			static void SmoothHeight(Terrain::Terrain* terrain, int32_t size, int32_t contributingRadius,
 					float strength, vec2 position);
 
-			static void BrushMaterial(Terrain::Terrain* terrain, Kernel* kernel, float strength, vec2 position,
-			        int32_t channel);
+			static void BrushMaterial(Terrain::Terrain* terrain, vec2 position, float size, int32_t slot);
 
 		private:
 			static void GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData,

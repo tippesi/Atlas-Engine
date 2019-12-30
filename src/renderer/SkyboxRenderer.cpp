@@ -25,12 +25,24 @@ namespace Atlas {
 
 			shader.Bind();
 
-			mat4 mvpMatrix = camera->projectionMatrix * glm::mat4(glm::mat3(camera->viewMatrix));
-			auto pvMatrixUnjittered = camera->unjitterdProjection * glm::mat4(glm::mat3(camera->viewMatrix));
+			mat4 mvpMatrix = camera->projectionMatrix * camera->viewMatrix;
+
+			vec3 lastCameraLocation = vec3(0.0f);
+			auto& key = cameraMap.find(camera);
+			if (key != cameraMap.end())
+				lastCameraLocation = key->second;
+			else
+				cameraMap[camera] = camera->GetLocation();
 
 			modelViewProjectionMatrix->SetValue(mvpMatrix);
-			pvMatrixCurrent->SetValue(pvMatrixUnjittered);
-			pvMatrixLast->SetValue(pvMatrixPrev);
+			cameraLocation->SetValue(camera->GetLocation());
+			cameraLocationLast->SetValue(lastCameraLocation);
+
+			key->second = camera->GetLocation();
+
+			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
+			jitterLast->SetValue(camera->GetLastJitter());
+			jitterCurrent->SetValue(camera->GetJitter());
 
 			vertexArray.Bind();
 
@@ -38,15 +50,16 @@ namespace Atlas {
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 
-			pvMatrixPrev = pvMatrixUnjittered;
-
 		}
 
 		void SkyboxRenderer::GetUniforms() {
 
 			modelViewProjectionMatrix = shader.GetUniform("mvpMatrix");
+			cameraLocation = shader.GetUniform("cameraLocation");
+			cameraLocationLast = shader.GetUniform("cameraLocationLast");
 			pvMatrixLast = shader.GetUniform("pvMatrixLast");
-			pvMatrixCurrent = shader.GetUniform("pvMatrixCurrent");
+			jitterLast = shader.GetUniform("jitterLast");
+			jitterCurrent = shader.GetUniform("jitterCurrent");
 
 		}
 

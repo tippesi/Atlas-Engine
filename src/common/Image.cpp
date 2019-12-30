@@ -74,18 +74,18 @@ namespace Atlas {
 
 		ivec4 Image8::Sample(float x, float y, int32_t mipLevel) {
 
-			auto fwidth = (float)resolutions[mipLevel].x;
-			auto fheight = (float)resolutions[mipLevel].y;
+			auto fWidth = (float)resolutions[mipLevel].x;
+			auto fHeight = (float)resolutions[mipLevel].y;
 
-			x *= fwidth;
-			y *= fheight;
+			x *= fWidth;
+			y *= fHeight;
 
-			x = glm::clamp(x, 0.0f, fwidth - 1.0f);
-			y = glm::clamp(y, 0.0f, fheight - 1.0f);
+			x = glm::clamp(x, 0.0f, fWidth - 1.0f);
+			y = glm::clamp(y, 0.0f, fHeight - 1.0f);
 
 			ivec4 result(0);
 
-			auto index = (int32_t)(y * fwidth + x) * channels;
+			auto index = (int32_t)(y * fWidth + x) * channels;
 
 			for (int32_t i = 0; i < channels; i++)
 				result[i] = (int32_t)data[mipLevel][(size_t)index + i];
@@ -96,11 +96,11 @@ namespace Atlas {
 
 		ivec4 Image8::SampleBilinear(float x, float y, int32_t mipLevel) {
 
-			auto fwidth = (float)resolutions[mipLevel].x;
-			auto fheight = (float)resolutions[mipLevel].y;
+			auto fWidth = (float)resolutions[mipLevel].x;
+			auto fHeight = (float)resolutions[mipLevel].y;
 
-			x *= fwidth;
-			y *= fwidth;
+			x *= fWidth;
+			y *= fWidth;
 
 			auto ox = (int32_t)x;
 			auto oy = (int32_t)y;
@@ -148,14 +148,40 @@ namespace Atlas {
 
 		}
 
+		void Image16::SetData(std::vector<uint16_t>& data) {
+
+			this->data = data;
+
+		}
+
+		void Image16::SetData(int32_t x, int32_t y, int32_t channel, uint16_t data) {
+
+			int32_t index = (y * width + x) * channels;
+
+			this->data[index + channel] = data;
+
+		}
+
+		std::vector<uint16_t>& Image16::GetData() {
+
+			return data;
+
+		}
+
 		ivec4 Image16::Sample(int32_t x, int32_t y) {
 
-			if (x < 0 || y < 0 || x >= width || y >= height)
-				return ivec4(0);
+			auto width = this->width;
+			auto height = this->height;
+
+			x = x < 0 ? 0 : x;
+			x = x >= width ? width - 1 : x;
+
+			y = y < 0 ? 0 : y;
+			y = y >= height ? height - 1 : y;
 
 			ivec4 result(0);
 
-			int32_t index = y * width + x;
+			auto index = (y * width + x) * channels;
 
 			for (int32_t i = 0; i < channels; i++)
 				result[i] = (int32_t)data[(size_t)index + i];
@@ -166,24 +192,52 @@ namespace Atlas {
 
 		ivec4 Image16::Sample(float x, float y) {
 
-			auto fwidth = (float)width;
-			auto fheight = (float)height;
+			auto fWidth = (float)this->width;
+			auto fHeight = (float)this->height;
 
-			x *= fwidth;
-			y *= fheight;
+			x *= fWidth;
+			y *= fHeight;
 
-			if (x < 0.0f || y < 0.0f ||
-				x >= fwidth || y >= fheight)
-				return ivec4(0);
+			x = glm::clamp(x, 0.0f, fWidth - 1.0f);
+			y = glm::clamp(y, 0.0f, fHeight - 1.0f);
 
 			ivec4 result(0);
 
-			int32_t index = (int32_t)y * width + (int32_t)x;
+			auto index = (int32_t)(y * fWidth + x) * channels;
 
 			for (int32_t i = 0; i < channels; i++)
 				result[i] = (int32_t)data[(size_t)index + i];
 
 			return result;
+
+		}
+
+		ivec4 Image16::SampleBilinear(float x, float y) {
+
+			auto fWidth = (float)this->width;
+			auto fHeight = (float)this->height;
+
+			x *= fWidth;
+			y *= fWidth;
+
+			auto ox = (int32_t)x;
+			auto oy = (int32_t)y;
+
+			x = x - floorf(x);
+			y = y - floorf(y);
+
+			// Fetch the four texture samples
+			auto q00 = (vec4)Sample(ox, oy);
+			auto q10 = (vec4)Sample(ox + 1, oy);
+			auto q01 = (vec4)Sample(ox, oy + 1);
+			auto q11 = (vec4)Sample(ox + 1, oy + 1);
+
+			// Interpolate samples horizontally
+			auto h0 = (1.0f - x) * q00 + x * q10;
+			auto h1 = (1.0f - x) * q01 + x * q11;
+
+			// Interpolate samples vertically
+			return (ivec4)((1.0f - y) * h0 + y * h1);
 
 		}
 

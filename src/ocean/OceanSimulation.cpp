@@ -17,10 +17,20 @@ namespace Atlas {
 			noise2 = Texture::Texture2D(N, N, AE_R8);
 			noise3 = Texture::Texture2D(N, N, AE_R8);			
 
-			Renderer::Helper::NoiseGenerator::GenerateNoiseTexture2D(noise0);
-			Renderer::Helper::NoiseGenerator::GenerateNoiseTexture2D(noise1);
-			Renderer::Helper::NoiseGenerator::GenerateNoiseTexture2D(noise2);
-			Renderer::Helper::NoiseGenerator::GenerateNoiseTexture2D(noise3);
+			Common::Image8 image0(N, N, 1);
+			Common::Image8 image1(N, N, 1);
+			Common::Image8 image2(N, N, 1);
+			Common::Image8 image3(N, N, 1);
+
+			Common::NoiseGenerator::GenerateUniformNoise2D(image0);
+			Common::NoiseGenerator::GenerateUniformNoise2D(image1);
+			Common::NoiseGenerator::GenerateUniformNoise2D(image2);
+			Common::NoiseGenerator::GenerateUniformNoise2D(image3);
+
+			noise0.SetData(image0.GetData());
+			noise1.SetData(image1.GetData());
+			noise2.SetData(image2.GetData());
+			noise3.SetData(image3.GetData());
 
 			displacementMap = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);
 			normalMap = Texture::Texture2D(N, N, AE_RGBA8, GL_REPEAT, GL_LINEAR, true, true);

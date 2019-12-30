@@ -37,8 +37,11 @@ uniform mat4 ivMatrix;
 #endif
 
 uniform vec3 diffuseColor;
+
 uniform float specularIntensity;
 uniform float specularHardness;
+
+uniform float normalScale;
 
 uniform mat4 vMatrix;
 
@@ -60,7 +63,7 @@ void main() {
 		discard;
 #endif
 
-	normal = fNormal;
+	normal = normalize(fNormal);
 
 #ifdef NORMAL_MAP
 #ifdef ARRAY_MAP
@@ -68,9 +71,7 @@ void main() {
 #else
 	vec3 normalColor = texture(normalMap, fTexCoord).rgb;
 #endif
-	normal = normalize(toTangentSpace * (2.0 * normalColor - 1.0));
-#else
-	normal = normalize(normal);
+	normal = mix(normal, normalize(toTangentSpace * (2.0 * normalColor - 1.0)), normalScale);
 #endif
 
 #ifdef REFLECTION

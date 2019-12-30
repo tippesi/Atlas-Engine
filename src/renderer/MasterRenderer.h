@@ -150,6 +150,7 @@ namespace Atlas {
 			void GetUniforms();
 
 			Framebuffer framebuffer;
+			Framebuffer depthFramebuffer;
 
 			Buffer::VertexArray vertexArray;
 

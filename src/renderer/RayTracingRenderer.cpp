@@ -56,8 +56,8 @@ namespace Atlas {
 
 		}
 
-		void RayTracingRenderer::Render(Viewport* viewport, Texture::Texture2D* texture, Texture::Texture2D* inAccumTexture,
-			Texture::Texture2D* outAccumTexture, ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene) {
+		void RayTracingRenderer::Render(Viewport* viewport, RayTracerRenderTarget* renderTarget,
+			ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene) {
 
 			if (glm::distance(camera->location, cameraLocation) > 1e-3f ||
 				glm::distance(camera->rotation, cameraRotation) > 1e-3f) {
@@ -95,8 +95,8 @@ namespace Atlas {
 			rayCasterShader.Bind();
 
 			// Set all uniforms which are required by the compute shader
-			widthRayCasterUniform->SetValue(texture->width);
-			heightRayCasterUniform->SetValue(texture->height);
+			widthRayCasterUniform->SetValue(renderTarget->GetWidth());
+			heightRayCasterUniform->SetValue(renderTarget->GetHeight());
 
 			auto corners = camera->GetFrustumCorners(camera->nearPlane, camera->farPlane);
 
@@ -120,18 +120,18 @@ namespace Atlas {
 			}
 
 			sampleCountRayCasterUniform->SetValue(sampleCount);
-			pixelOffsetRayCasterUniform->SetValue(ivec2(texture->width, texture->height) /
-				imageSubdivisions * imageOffset);
+			pixelOffsetRayCasterUniform->SetValue(ivec2(renderTarget->GetWidth(),
+				renderTarget->GetHeight()) / imageSubdivisions * imageOffset);
 
 			// Bind texture only for writing
-			texture->Bind(GL_WRITE_ONLY, 0);
+			renderTarget->texture.Bind(GL_WRITE_ONLY, 0);
 			if (sampleCount % 2 == 0) {
-				inAccumTexture->Bind(GL_READ_ONLY, 1);
-				outAccumTexture->Bind(GL_WRITE_ONLY, 2);
+				renderTarget->accumTexture0.Bind(GL_READ_ONLY, 1);
+				renderTarget->accumTexture1.Bind(GL_WRITE_ONLY, 2);
 			}
 			else {
-				outAccumTexture->Bind(GL_READ_ONLY, 1);
-				inAccumTexture->Bind(GL_WRITE_ONLY, 2);
+				renderTarget->accumTexture1.Bind(GL_WRITE_ONLY, 1);
+				renderTarget->accumTexture0.Bind(GL_READ_ONLY, 2);				
 			}
 			
 			diffuseTextureAtlas.texture.Bind(GL_READ_ONLY, 3);
@@ -147,10 +147,10 @@ namespace Atlas {
 			nodesBuffer.BindBase(3);
 
 			// Dispatch the compute shader in 
-			glDispatchCompute(texture->width / 8 / imageSubdivisions.x,
-				texture->height / 8 / imageSubdivisions.y, 1);
+			glDispatchCompute(renderTarget->GetWidth() / 8 / imageSubdivisions.x,
+				renderTarget->GetHeight() / 8 / imageSubdivisions.y, 1);
 
-			texture->Unbind();
+			renderTarget->texture.Unbind();
 
 			imageOffset.x++;
 
@@ -163,6 +163,12 @@ namespace Atlas {
 				imageOffset.y = 0;
 				sampleCount++;
 			}
+
+		}
+
+		void RayTracingRenderer::ResetSampleCount() {
+
+			sampleCount = 0;
 
 		}
 
@@ -212,67 +218,12 @@ namespace Atlas {
 
 			int32_t indexCount = 0;
 			int32_t vertexCount = 0;
-			int32_t materialCount = 0;
-			uint32_t diffuseMapCount = 0;
 
-			std::unordered_set<Mesh::Mesh*> meshes;
-			std::unordered_map<Material*, int32_t> materialAccess;
-			std::vector<GPUMaterial> materials;
-
-			UpdateTexture(scene);
+			auto materialAccess = UpdateMaterials(scene);
 
 			for (auto& actor : actors) {
 				indexCount += actor->mesh->data.GetIndexCount();
 				vertexCount += actor->mesh->data.GetVertexCount();
-				if (meshes.find(actor->mesh) == meshes.end()) {
-					auto& actorMaterials = actor->mesh->data.materials;
-					for (auto& material : actorMaterials) {
-						materialAccess[&material] = materialCount;
-
-						GPUMaterial gpuMaterial;
-						
-						gpuMaterial.diffuseColor = material.diffuseColor;
-						gpuMaterial.emissiveColor = material.emissiveColor;
-						gpuMaterial.specularIntensity = material.specularIntensity;
-						gpuMaterial.specularHardness = material.specularHardness;
-						
-						if (material.HasDiffuseMap()) {
-							auto slice = diffuseTextureAtlas.slices[material.diffuseMap];
-
-							gpuMaterial.diffuseTexture.layer = slice.layer;
-
-							gpuMaterial.diffuseTexture.x = slice.offset.x;
-							gpuMaterial.diffuseTexture.y = slice.offset.x;
-
-							gpuMaterial.diffuseTexture.width = slice.size.x;
-							gpuMaterial.diffuseTexture.height = slice.size.x;
-
-						}
-						else {
-							gpuMaterial.diffuseTexture.layer = -1;
-						}
-						
-						if (material.HasNormalMap()) {
-							auto slice = normalTextureAtlas.slices[material.normalMap];
-
-							gpuMaterial.normalTexture.layer = slice.layer;
-
-							gpuMaterial.normalTexture.x = slice.offset.x;
-							gpuMaterial.normalTexture.y = slice.offset.x;
-
-							gpuMaterial.normalTexture.width = slice.size.x;
-							gpuMaterial.normalTexture.height = slice.size.x;
-
-						}
-						else {
-							gpuMaterial.normalTexture.layer = -1;
-						}
-						
-						materials.push_back(gpuMaterial);
-						materialCount++;
-					}
-					meshes.insert(actor->mesh);
-				}
 			}
 
 			auto vertexByteCount = vertexCount * sizeof(GPUTriangle);
@@ -443,10 +394,6 @@ namespace Atlas {
 
 			}
 
-			materialBuffer.Bind();
-			materialBuffer.SetSize(materials.size());
-			materialBuffer.SetData(materials.data(), 0, materials.size());
-
 			triangleBuffer.Bind();
 			triangleBuffer.SetSize(triangles.size());
 			triangleBuffer.SetData(triangles.data(), 0, triangles.size());
@@ -456,6 +403,81 @@ namespace Atlas {
 			nodesBuffer.SetData(gpuNodes.data(), 0, gpuNodes.size());
 
 			return true;
+
+		}
+
+		std::unordered_map<Material*, int32_t> RayTracingRenderer::UpdateMaterials(Scene::Scene* scene) {
+
+			auto actors = scene->GetMeshActors();
+
+			int32_t materialCount = 0;
+			uint32_t diffuseMapCount = 0;
+
+			UpdateTexture(scene);
+
+			std::unordered_set<Mesh::Mesh*> meshes;
+			std::unordered_map<Material*, int32_t> materialAccess;
+			std::vector<GPUMaterial> materials;
+
+			for (auto& actor : actors) {
+				if (meshes.find(actor->mesh) == meshes.end()) {
+					auto& actorMaterials = actor->mesh->data.materials;
+					for (auto& material : actorMaterials) {
+						materialAccess[&material] = materialCount;
+
+						GPUMaterial gpuMaterial;
+
+						gpuMaterial.diffuseColor = material.diffuseColor;
+						gpuMaterial.emissiveColor = material.emissiveColor;
+						gpuMaterial.specularIntensity = material.specularIntensity;
+						gpuMaterial.specularHardness = material.specularHardness;
+
+						gpuMaterial.normalScale = material.normalScale;
+
+						if (material.HasDiffuseMap()) {
+							auto slice = diffuseTextureAtlas.slices[material.diffuseMap];
+
+							gpuMaterial.diffuseTexture.layer = slice.layer;
+
+							gpuMaterial.diffuseTexture.x = slice.offset.x;
+							gpuMaterial.diffuseTexture.y = slice.offset.x;
+
+							gpuMaterial.diffuseTexture.width = slice.size.x;
+							gpuMaterial.diffuseTexture.height = slice.size.x;
+
+						}
+						else {
+							gpuMaterial.diffuseTexture.layer = -1;
+						}
+
+						if (material.HasNormalMap()) {
+							auto slice = normalTextureAtlas.slices[material.normalMap];
+
+							gpuMaterial.normalTexture.layer = slice.layer;
+
+							gpuMaterial.normalTexture.x = slice.offset.x;
+							gpuMaterial.normalTexture.y = slice.offset.x;
+
+							gpuMaterial.normalTexture.width = slice.size.x;
+							gpuMaterial.normalTexture.height = slice.size.x;
+
+						}
+						else {
+							gpuMaterial.normalTexture.layer = -1;
+						}
+
+						materials.push_back(gpuMaterial);
+						materialCount++;
+					}
+					meshes.insert(actor->mesh);
+				}
+			}
+
+			materialBuffer.Bind();
+			materialBuffer.SetSize(materials.size());
+			materialBuffer.SetData(materials.data(), 0, materials.size());
+
+			return materialAccess;
 
 		}
 

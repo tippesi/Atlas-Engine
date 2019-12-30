@@ -25,6 +25,7 @@ namespace Atlas {
 			ambientColorUniform = shaderBatch.GetUniform("ambientColor");
 			specularHardnessUniform = shaderBatch.GetUniform("specularHardness");
 			specularIntensityUniform = shaderBatch.GetUniform("specularIntensity");
+			normalScaleUniform = shaderBatch.GetUniform("normalScale");
 
 			pvMatrixLast = shaderBatch.GetUniform("pvMatrixLast");
 
@@ -53,10 +54,10 @@ namespace Atlas {
 				viewMatrixUniform->SetValue(camera->viewMatrix);
 				projectionMatrixUniform->SetValue(camera->projectionMatrix);
 
-				jitterLast->SetValue(jitterPrev);
+				jitterLast->SetValue(camera->GetLastJitter());
 				jitterCurrent->SetValue(camera->GetJitter());
 
-				pvMatrixLast->SetValue(pvMatrixPrev);			
+				pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());			
 
 				for (auto renderListBatch : renderListBatches) {
 
@@ -109,6 +110,7 @@ namespace Atlas {
 						ambientColorUniform->SetValue(material->ambientColor);
 						specularHardnessUniform->SetValue(material->specularHardness);
 						specularIntensityUniform->SetValue(material->specularIntensity);
+						normalScaleUniform->SetValue(material->normalScale);
 
 						glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
 							(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), actorCount);
@@ -119,16 +121,17 @@ namespace Atlas {
 
 			}
 
-			jitterPrev = camera->GetJitter();
-			pvMatrixPrev = camera->projectionMatrix * camera->viewMatrix;
-
 			impostorRenderer.Render(viewport, target, camera, &renderList);
 
 			renderList.Clear();
 
 		}
 
-		void OpaqueRenderer::RenderImpostor(Viewport* viewport, Framebuffer* framebuffer, Camera* camera, Mesh::Mesh* mesh) {
+		void OpaqueRenderer::RenderImpostor(Viewport* viewport, Framebuffer* framebuffer, std::vector<mat4> viewMatrices,
+			mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor) {
+
+			if (!viewMatrices.size())
+				return;
 
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
@@ -137,11 +140,16 @@ namespace Atlas {
 			framebuffer->Bind(true);
 
 			glDisable(GL_CULL_FACE);
-			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+			glEnable(GL_DEPTH_TEST);
+			glDepthMask(GL_TRUE);
+
+			Camera camera;
+
+			camera.viewMatrix = viewMatrices[0];
+			camera.projectionMatrix = projectionMatrix;
 
 			renderList.Add(&actor);
-			renderList.UpdateBuffers(camera);
+			renderList.UpdateBuffers(&camera);
 
 			for (auto& renderListBatchesKey : renderList.orderedRenderBatches) {
 
@@ -156,49 +164,62 @@ namespace Atlas {
 				shader->Compile();
 				shader->Bind();
 
-				viewMatrixUniform->SetValue(camera->viewMatrix);
-				projectionMatrixUniform->SetValue(camera->projectionMatrix);
+				projectionMatrixUniform->SetValue(projectionMatrix);
 
-				for (auto renderListBatch : renderListBatches) {
+				for (size_t i = 0; i < viewMatrices.size(); i++) {
 
-					auto actorBatch = renderListBatch.actorBatch;
+					glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+					glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-					// If there is no actor of that mesh visible we discard it.
-					if (!actorBatch->GetSize()) {
-						continue;
+					viewMatrixUniform->SetValue(viewMatrices[i]);
+
+					for (auto renderListBatch : renderListBatches) {
+
+						auto actorBatch = renderListBatch.actorBatch;
+
+						// If there is no actor of that mesh visible we discard it.
+						if (!actorBatch->GetSize()) {
+							continue;
+						}
+
+						auto mesh = actorBatch->GetObject();
+						mesh->Bind();
+
+						// Prepare uniform buffer here
+						// Generate all drawing commands
+						// We could also batch several materials together because they share the same shader
+
+						// Render the sub data of the mesh that use this specific shader
+						for (auto& subData : renderListBatch.subData) {
+
+							auto material = subData->material;
+
+							if (material->HasDiffuseMap())
+								material->diffuseMap->Bind(GL_TEXTURE0);
+							if (material->HasNormalMap())
+								material->normalMap->Bind(GL_TEXTURE1);
+							if (material->HasSpecularMap())
+								material->specularMap->Bind(GL_TEXTURE2);
+							if (material->HasDisplacementMap())
+								material->displacementMap->Bind(GL_TEXTURE3);
+
+							diffuseColorUniform->SetValue(material->diffuseColor);
+							specularColorUniform->SetValue(material->specularColor);
+							ambientColorUniform->SetValue(material->ambientColor);
+							specularHardnessUniform->SetValue(material->specularHardness);
+							specularIntensityUniform->SetValue(material->specularIntensity);
+
+							glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
+								(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), actorBatch->GetSize());
+
+						}
+
 					}
 
-					auto mesh = actorBatch->GetObject();
-					mesh->Bind();
-
-					// Prepare uniform buffer here
-					// Generate all drawing commands
-					// We could also batch several materials together because they share the same shader
-
-					// Render the sub data of the mesh that use this specific shader
-					for (auto& subData : renderListBatch.subData) {
-
-						auto material = subData->material;
-
-						if (material->HasDiffuseMap())
-							material->diffuseMap->Bind(GL_TEXTURE0);
-						if (material->HasNormalMap())
-							material->normalMap->Bind(GL_TEXTURE1);
-						if (material->HasSpecularMap())
-							material->specularMap->Bind(GL_TEXTURE2);
-						if (material->HasDisplacementMap())
-							material->displacementMap->Bind(GL_TEXTURE3);
-
-						diffuseColorUniform->SetValue(material->diffuseColor);
-						specularColorUniform->SetValue(material->specularColor);
-						ambientColorUniform->SetValue(material->ambientColor);
-						specularHardnessUniform->SetValue(material->specularHardness);
-						specularIntensityUniform->SetValue(material->specularIntensity);
-
-						glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
-							(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), actorBatch->GetSize());
-
-					}
+					impostor->diffuseTexture.Copy(*framebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0),
+						0, 0, 0, 0, 0, (int32_t)i, impostor->resolution, impostor->resolution, 1);
+					impostor->normalTexture.Copy(*framebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT1),
+						0, 0, 0, 0, 0, (int32_t)i, impostor->resolution, impostor->resolution, 1);
 
 				}
 

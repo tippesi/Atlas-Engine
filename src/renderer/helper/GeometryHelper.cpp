@@ -31,14 +31,19 @@ namespace Atlas {
 
 			}
 
-			void GeometryHelper::GenerateGridVertexArray(Buffer::VertexArray& vertexArray, int32_t subdivisions, float scale) {
+			void GeometryHelper::GenerateGridVertexArray(Buffer::VertexArray& vertexArray, int32_t subdivisions, float scale, bool strip) {
 
 				vertexArray.Bind();
 
 				int32_t vertexCount = subdivisions * subdivisions;
-				int32_t indexCount = (subdivisions * 2 + 2) * (subdivisions - 1);
+				int32_t indexCount = 0;
 
-				auto vertexBuffer = new Buffer::VertexBuffer(AE_FLOAT, 3, sizeof(vec3), vertexCount);
+				if (strip)
+					indexCount = (subdivisions * 2 + 2) * (subdivisions - 1);
+				else
+					indexCount = (subdivisions - 1) * (subdivisions - 1) * 6;
+				
+					auto vertexBuffer = new Buffer::VertexBuffer(AE_FLOAT, 3, sizeof(vec3), vertexCount);
 				auto indexBuffer = new Buffer::IndexBuffer(AE_UINT, sizeof(uint32_t), indexCount);
 
 				std::vector<vec3> vertices(vertexCount);
@@ -59,16 +64,33 @@ namespace Atlas {
 
 				int32_t i = 0;
 
-				for (int32_t z = 0; z < subdivisions - 1; z++) {
+				if (strip) {
 
-					indices[i++] = z * subdivisions;
+					for (int32_t z = 0; z < subdivisions - 1; z++) {
 
-					for (int32_t x = 0; x < subdivisions; x++) {
-						indices[i++] = z * subdivisions + x;
-						indices[i++] = (z + 1) * subdivisions + x;
+						indices[i++] = z * subdivisions;
+
+						for (int32_t x = 0; x < subdivisions; x++) {
+							indices[i++] = z * subdivisions + x;
+							indices[i++] = (z + 1) * subdivisions + x;
+						}
+
+						indices[i++] = (z + 1) * subdivisions + (subdivisions - 1);
+
 					}
+				}
+				else {
 
-					indices[i++] = (z + 1) * subdivisions + (subdivisions - 1);
+					for (int32_t z = 0; z < subdivisions - 1; z++) {
+						for (int32_t x = 0; x < subdivisions - 1; x++) {							
+							indices[i++] = z * subdivisions + (x + 1);
+							indices[i++] = (z + 1) * subdivisions + x;
+							indices[i++] = z * subdivisions + x;
+							indices[i++] = z * subdivisions + (x + 1);
+							indices[i++] = (z + 1) * subdivisions + (x + 1);
+							indices[i++] = (z + 1) * subdivisions + x;
+						}
+					}
 
 				}
 

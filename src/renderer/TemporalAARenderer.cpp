@@ -35,14 +35,12 @@ namespace Atlas {
 			jitter->SetValue(camera->GetJitter() * 0.5f);
 			invResolution->SetValue(1.0f / vec2((float)target->GetWidth(), (float)target->GetHeight()));
 			resolution->SetValue(vec2((float)target->GetWidth(), (float)target->GetHeight()));
-			pvMatrixLast->SetValue(pvMatrixPrev);
+			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
 			ipvMatrixCurrent->SetValue(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
 
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 			target->Swap();
-
-			pvMatrixPrev = camera->projectionMatrix * camera->viewMatrix;
 
 		}
 

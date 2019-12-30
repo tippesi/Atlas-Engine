@@ -21,7 +21,8 @@ namespace Atlas {
 
 			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
-			virtual void RenderImpostor(Viewport* viewport, Framebuffer* framebuffer, Camera* camera, Mesh::Mesh* mesh);
+			virtual void RenderImpostor(Viewport* viewport, Framebuffer* framebuffer, std::vector<mat4> viewMatrices,
+				mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor);
 
 			static void InitShaderBatch();
 
@@ -46,14 +47,12 @@ namespace Atlas {
 			Shader::Uniform* ambientColorUniform = nullptr;
 			Shader::Uniform* specularHardnessUniform = nullptr;
 			Shader::Uniform* specularIntensityUniform = nullptr;
+			Shader::Uniform* normalScaleUniform = nullptr;
 
 			Shader::Uniform* pvMatrixLast = nullptr;
 
 			Shader::Uniform* jitterCurrent = nullptr;
 			Shader::Uniform* jitterLast = nullptr;
-
-			mat4 pvMatrixPrev;
-			vec2 jitterPrev;
 
 			static Shader::ShaderBatch shaderBatch;
 			static std::mutex shaderBatchMutex;

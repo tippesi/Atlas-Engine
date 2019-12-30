@@ -199,7 +199,7 @@ namespace Atlas {
 
                 auto includeFilename = shaderCode.substr(filenamePosition, filenameEndPosition - filenamePosition);
 
-				auto shortenedFilename = Common::Path::GetFilename(includeFilename);
+				auto shortenedFilename = Common::Path::GetFileName(includeFilename);
 
 				auto codeBeforeInclude = shaderCode.substr(0, includePosition);
 				auto codeAfterInclude = shaderCode.substr(lineBreakPosition, shaderCode.length() - 1);

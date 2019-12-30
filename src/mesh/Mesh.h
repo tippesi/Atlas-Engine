@@ -38,9 +38,11 @@ namespace Atlas {
 			/**
 			 *
 			 * @param filename
+			 * @param forceTangents
 			 * @param mobility
 			 */
-			Mesh(std::string filename, int32_t mobility = AE_STATIONARY_MESH);
+			Mesh(std::string filename, bool forceTangens = false, 
+				int32_t mobility = AE_STATIONARY_MESH);
 
 			~Mesh();
 
@@ -50,6 +52,11 @@ namespace Atlas {
 			 *
 			 */
 			void UpdateData();
+
+			/**
+			 *
+			 */
+			void UpdateMaterials();
 
 			/**
 			 *
@@ -90,7 +97,7 @@ namespace Atlas {
 
 			void AddMaterial(Material* material);
 
-			void ClearMaterials();
+			void ClearMaterials(std::unordered_map<Material*, MaterialConfig*>& configs);
 
 			void DeepCopy(const Mesh& that);
 

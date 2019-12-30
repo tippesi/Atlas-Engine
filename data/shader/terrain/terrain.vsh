@@ -1,7 +1,10 @@
 layout (location = 0) in vec2 vPosition;
 layout (location = 1) in vec2 vPatchOffset;
 
-uniform usampler2D heightField;
+layout(binding = 0) uniform usampler2D heightField;
+layout(binding = 2) uniform usampler2D splatMap;
+
+flat out uvec4 materialIndicesVS;
 
 uniform float heightScale;
 
@@ -10,6 +13,7 @@ uniform float patchSize;
 
 uniform vec2 nodeLocation;
 uniform float nodeSideLength;
+uniform float normalTexelSize;
 
 uniform float leftLoD;
 uniform float topLoD;
@@ -48,6 +52,13 @@ void main() {
 	
 	vec2 texCoords = localPosition;
 	texCoords /= nodeSideLength;
+	
+	float texel = 1.0 / (8.0 * patchSize);
+	
+	materialIndicesVS.x = texture(splatMap, texCoords).r;
+	materialIndicesVS.y = texture(splatMap, texCoords + vec2(texel, 0.0)).r;
+	materialIndicesVS.z = texture(splatMap, texCoords + vec2(0.0, texel)).r;
+	materialIndicesVS.w = texture(splatMap, texCoords + vec2(texel, texel)).r;	
 	
 	// The middle of the texel should match the vertex position
 	float height = float(texture(heightField, texCoords).r) / 65535.0 * heightScale;

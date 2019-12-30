@@ -15,6 +15,8 @@ uniform float sunIntensity;
 uniform float atmosphereRadius;
 uniform float planetRadius;
 uniform vec3 planetCenter;
+uniform vec2 jitterLast;
+uniform vec2 jitterCurrent;
 
 const float rayScaleHeight = 8.0e3f;
 const float mieScaleHeight = 1.2e3f; 
@@ -51,13 +53,17 @@ void main() {
     float pRlh = 3.0 / (16.0 * PI) * (1.0 + mumu);
     float pMie = 3.0 / (8.0 * PI) * ((1.0 - gg) * (mumu + 1.0)) / (pow(1.0 + gg - 2.0 * mu * g, 1.5) * (2.0 + gg));
 	
-	fragColor = pow(pRlh * totalRlh + pMie * totalMie, vec3(gamma));
+	fragColor = max(pow(pRlh * totalRlh + pMie * totalMie, vec3(gamma)), vec3(0.0));
 	
+	// Calculate velocity
 	// Calculate velocity
 	vec2 ndcL = ndcLast.xy / ndcLast.z;
 	vec2 ndcC = ndcCurrent.xy / ndcCurrent.z;
 
-	velocity = (ndcL - ndcC) * vec2(0.5, 0.5);
+	ndcL -= jitterLast;
+	ndcC -= jitterCurrent;
+
+	velocity = (ndcL - ndcC) * 0.5;
 	
 }
 

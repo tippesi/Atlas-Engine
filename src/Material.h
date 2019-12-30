@@ -17,6 +17,8 @@ namespace Atlas {
 	public:
 		Material();
 
+		Material(const Material& that);
+
 		~Material();
 
 		Material& operator=(const Material& that);
@@ -41,6 +43,7 @@ namespace Atlas {
 		float specularHardness = 1.0f;
 		float specularIntensity = 0.0f;
 
+		float normalScale = 1.0f;
 		float displacementScale = 1.0f;
 
 		std::string diffuseMapPath;
@@ -49,6 +52,8 @@ namespace Atlas {
 		std::string displacementMapPath;
 
 	private:
+		void DeepCopy(const Material& that);
+
 		void DeleteTextures();
 
 	};

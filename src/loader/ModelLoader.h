@@ -17,7 +17,8 @@ namespace Atlas {
 		class ModelLoader {
 
 		public:
-			static void LoadMesh(std::string filename, Mesh::MeshData& meshData);
+			static void LoadMesh(std::string filename, Mesh::MeshData& meshData,
+				bool forceTangents = false);
 
 		private:
 			static void LoadMaterial(aiMaterial* assimpMaterial, Material& material, std::string directory);

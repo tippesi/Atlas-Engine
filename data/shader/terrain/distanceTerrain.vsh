@@ -1,11 +1,10 @@
 layout (location = 0) in vec3 vPosition;
 
-uniform usampler2D heightField;
-uniform sampler2D splatMap;
+layout(binding = 0) uniform usampler2D heightField;
 
 out vec2 texCoords;
+out vec2 bilinearPosition;
 out vec2 materialTexCoords;
-out vec4 splat;
 out vec3 ndcCurrent;
 out vec3 ndcLast;
 
@@ -21,6 +20,8 @@ uniform float leftLoD;
 uniform float topLoD;
 uniform float rightLoD;
 uniform float bottomLoD;
+
+uniform float normalTexelSize;
 
 uniform mat4 vMatrix;
 uniform mat4 pMatrix;
@@ -52,14 +53,14 @@ vec2 stitch(vec2 position) {
 void main() {
 	
 	vec2 localPosition = vPosition.xz;
+	bilinearPosition = localPosition;
 	
 	localPosition = stitch(localPosition) * tileScale;
 	
 	vec2 position =  nodeLocation + localPosition;
 	
-	materialTexCoords = localPosition;
-	texCoords = materialTexCoords / nodeSideLength;
-	splat = texture(splatMap, texCoords);
+	materialTexCoords = localPosition;	
+	texCoords = localPosition / nodeSideLength;
 	
 	// The middle of the texel should match the vertex position
 	float height = float(texture(heightField, texCoords).r) / 65535.0 * heightScale;	

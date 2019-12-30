@@ -26,7 +26,7 @@ void main() {
 	
 	int glyphIndex = int(characterInfo.z);
 	
-#ifdef ENGINE_GLES
+#ifdef AE_API_GLES
 	GlyphInfo glyph = glyphs1[glyphIndex];
 	if (glyphIndex > 1023) {
 		glyphIndex -= 1024;

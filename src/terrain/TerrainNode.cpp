@@ -13,8 +13,6 @@ namespace Atlas {
 
 			globalIndex = parentIndex + relativeIndex;
 
-			cell->position = location;
-
 			LoDImageOffset = (int32_t)powf(2.0f, (float)(LoDCount - LoD - 1));
 
 		}

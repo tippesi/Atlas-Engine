@@ -85,7 +85,7 @@ namespace Atlas {
 						rightLoD->SetValue(node->rightLoDStitch);
 						bottomLoD->SetValue(node->bottomLoDStitch);
 
-						tileScale->SetValue(terrain->resolution * powf(2.0f, (float)(terrain->LoDCount - node->cell->LoD)));
+						tileScale->SetValue(terrain->resolution * powf(2.0f, (float)(terrain->LoDCount - node->cell->LoD) - 1.0f));
 						patchSize->SetValue((float)terrain->patchSizeFactor);
 
 						glDrawElements(GL_TRIANGLE_STRIP, (int32_t)terrain->distanceVertexArray.GetIndexComponent()->GetElementCount(),

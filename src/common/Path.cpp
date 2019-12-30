@@ -48,10 +48,30 @@ namespace Atlas {
 
 		}
 
-		std::string Path::GetFilename(std::string path) {
+		std::string Path::GetFileName(std::string path) {
 
 			auto offset = path.find_last_of("/\\") + 1;
+
+			if (offset == std::string::npos)
+				return path;
+
 			return path.substr(offset, path.end() - path.begin() - offset);
+
+		}
+
+		std::string Path::GetFileType(std::string path) {
+
+			std::string fileType = "";
+
+			auto filename = GetFileName(path);
+			auto offset = filename.find('.');
+
+			if (offset != std::string::npos) {
+				fileType = filename.substr(offset + 1,
+					filename.end() - filename.begin() - offset);
+			}
+			
+			return fileType;
 
 		}
 

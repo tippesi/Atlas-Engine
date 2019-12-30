@@ -9,7 +9,8 @@ namespace Atlas {
 
 	namespace Loader {
 
-		void ModelLoader::LoadMesh(std::string filename, Mesh::MeshData& meshData) {
+		void ModelLoader::LoadMesh(std::string filename, Mesh::MeshData& meshData,
+			bool forceTangents) {
 
 			std::string directoryPath(filename);
 
@@ -64,6 +65,7 @@ namespace Atlas {
 				hasTexCoords = mesh->mNumUVComponents[0] > 0 ? true : hasTexCoords;
 			}
 
+			hasTangents |= forceTangents;
 			for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 				if (scene->mMaterials[i]->GetTextureCount(aiTextureType_NORMALS) > 0)
 					hasTangents = true;
@@ -224,6 +226,7 @@ namespace Atlas {
 				auto path = directory + std::string(aiPath.C_Str());
 				auto texture = new Texture::Texture2D(path, true);
 				material.diffuseMap = texture;
+				material.diffuseMapPath = path;
 			}
 			if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0) {
 				aiString aiPath;
@@ -231,6 +234,7 @@ namespace Atlas {
 				auto path = directory + std::string(aiPath.C_Str());
 				auto texture = new Texture::Texture2D(path, false);
 				material.normalMap = texture;
+				material.normalMapPath = path;
 			}
 
 		}

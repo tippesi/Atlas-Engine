@@ -97,6 +97,7 @@ namespace Atlas {
 
 			// Remove empty batches
 			if (batch->GetSize() == 0) {
+				delete batch;
 				configBatches.erase(config->shaderID);
 			}
 

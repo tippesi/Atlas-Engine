@@ -28,14 +28,19 @@ namespace Atlas {
 
 			void GetDistanceUniforms();
 
+			struct TerrainMaterial {
+				float specularIntensity;
+				float specularHardness;
+				float displacementScale;
+				float normalScale;
+			};
+
 			Shader::Shader shader;
 			Shader::Shader distanceShader;
 
-			Shader::Uniform* heightField = nullptr;
-			Shader::Uniform* normalMap = nullptr;
-			Shader::Uniform* diffuseMap = nullptr;
-			Shader::Uniform* splatMap = nullptr;
+			Buffer::Buffer terrainMaterialBuffer;
 
+			// Near shader uniforms
 			Shader::Uniform* heightScale = nullptr;
 			Shader::Uniform* offset = nullptr;
 			Shader::Uniform* tileScale = nullptr;
@@ -67,24 +72,7 @@ namespace Atlas {
 			Shader::Uniform* jitterLast = nullptr;
 			Shader::Uniform* jitterCurrent = nullptr;
 
-			struct MaterialUniform {
-				Shader::Uniform* diffuseMap;
-				Shader::Uniform* normalMap;
-				Shader::Uniform* displacementMap;
-
-				Shader::Uniform* diffuseColor;
-
-				Shader::Uniform* specularHardness;
-				Shader::Uniform* specularIntensity;
-
-				Shader::Uniform* displacementScale;
-			}materials[4], distanceMaterials[4];
-
-			Shader::Uniform* distanceHeightField = nullptr;
-			Shader::Uniform* distanceNormalMap = nullptr;
-			Shader::Uniform* distanceDiffuseMap = nullptr;
-			Shader::Uniform* distanceSplatMap = nullptr;
-
+			// Distance shader uniforms
 			Shader::Uniform* distanceHeightScale = nullptr;
 			Shader::Uniform* distanceTileScale = nullptr;
 			Shader::Uniform* distanceViewMatrix = nullptr;
@@ -104,9 +92,6 @@ namespace Atlas {
 			Shader::Uniform* distancePvMatrixLast = nullptr;
 			Shader::Uniform* distanceJitterLast = nullptr;
 			Shader::Uniform* distanceJitterCurrent = nullptr;
-
-			mat4 pvMatrixPrev;
-			vec2 jitterPrev;
 
 		};
 

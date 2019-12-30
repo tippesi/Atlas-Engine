@@ -59,7 +59,8 @@ namespace Atlas {
 			glDepthMask(GL_TRUE);
 
 			// Clear the lights depth maps
-			framebuffer.Bind();
+			depthFramebuffer.Bind();
+
 			auto lights = scene->GetLights();
 
 			for (auto light : lights) {
@@ -71,11 +72,11 @@ namespace Atlas {
 
 				for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
 					if (light->GetShadow()->useCubemap) {
-						framebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT,
+						depthFramebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT,
 							&light->GetShadow()->cubemap, i);
 					}
 					else {
-						framebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT,
+						depthFramebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT,
 							&light->GetShadow()->maps, i);
 					}
 
@@ -169,7 +170,7 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
-			if (texture) {				
+			if (texture) {
 				framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, texture);
 				framebuffer.Bind();
 			}

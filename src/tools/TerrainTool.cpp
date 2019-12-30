@@ -15,7 +15,7 @@ namespace Atlas {
 	namespace Tools {
 
 		Terrain::Terrain* TerrainTool::GenerateTerrain(Common::Image16 &heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
-											  int32_t patchSize, float resolution, float height, Material* material1, Material* material2) {
+											  int32_t patchSize, float resolution, float height, Material* material) {
 
 			// Check if everything is correct
 			int32_t maxNodesPerSide = (int32_t)powf(2.0f, (float)LoDCount - 1.0f) * rootNodeSideCount;
@@ -26,27 +26,34 @@ namespace Atlas {
 
 			auto terrain = new Terrain::Terrain(rootNodeSideCount, LoDCount, patchSize, resolution, height);
 
+			terrain->storage->AddMaterial(0, material);
+
 			// Calculate the number of vertices per tile and resize the height data to map 1:1
-			int32_t tileResolution = 8 * patchSize + 1;
+			int32_t tileResolution = 8 * patchSize;
 
 			int32_t totalResolution = tileResolution * maxNodesPerSide;
 
-			std::vector<uint16_t> heightData(totalResolution * totalResolution);
+			Common::Image16 heightMap(totalResolution, totalResolution, 1);
 
-			stbir_resize_uint16_generic(heightImage.data.data(), heightImage.width, heightImage.height,
-				heightImage.width * 2, heightData.data(), totalResolution, totalResolution, totalResolution * 2,
-				1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+			if (heightImage.width != totalResolution) {
+				stbir_resize_uint16_generic(heightImage.GetData().data(), heightImage.width, heightImage.height,
+					heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
+					1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+			}
+			else {
+				heightMap.SetData(heightImage.GetData());
+			}
 
 			// We need some room in the bottom and right for overlapping vertices
 
+			tileResolution += 1;
 			int32_t tileResolutionSquared = tileResolution * tileResolution;
 
 			std::vector<uint16_t> cellHeightData(tileResolutionSquared);
-			std::vector<uint8_t> cellSplatData(tileResolutionSquared * 4);
+			std::vector<uint8_t> cellSplatData(tileResolutionSquared);
 
 			for (size_t i = 0; i < cellSplatData.size(); i++)
-				if (i % 4 == 0)
-					cellSplatData[i] = 255;
+				cellSplatData[i] = 0;
 
 			// i is in x direction, j in y direction
 			for (int32_t i = 0; i < maxNodesPerSide; i++) {
@@ -60,7 +67,7 @@ namespace Atlas {
 					cell->normalMap = new Texture::Texture2D(tileResolution, 
 						tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 					cell->splatMap = new Texture::Texture2D(tileResolution,
-						tileResolution, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+						tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
 
 					// Now copy a tile of the original image
 					// We make sure that every tile has the same size
@@ -72,10 +79,10 @@ namespace Atlas {
 							int32_t xImage = i * (tileResolution - 1) + x;
 							int32_t yImage = j * (tileResolution - 1) + y;
 
-							auto imageOffset = yImage * totalResolution + xImage;
+							auto sample = (uint16_t)heightMap.Sample(xImage, yImage).r;
 							
-							cell->heightData[cellOffset] = (float)heightData[imageOffset] / 65535.0f;
-							cellHeightData[cellOffset] = heightData[imageOffset];
+							cell->heightData[cellOffset] = (float)sample / 65535.0f;
+							cellHeightData[cellOffset] = sample;
 
 						}
 					}
@@ -86,22 +93,97 @@ namespace Atlas {
 				}
 			}
 
-			// Iterate over all LoD level
-			for (int32_t i = 0; i < terrain->LoDCount; i++) {
+			BakeTerrain(terrain);
 
-				int32_t cellSideCount = (int32_t)sqrtf((float)terrain->storage->GetCellCount(i));
+			return terrain;
 
-				for (int32_t x = 0; x < cellSideCount; x++) {
-					for (int32_t y = 0; y < cellSideCount; y++) {
+		}
 
-						auto cell = terrain->storage->GetCell(x, y, i);
+		Terrain::Terrain* TerrainTool::GenerateTerrain(Common::Image16& heightImage, Common::Image8& splatImage,
+			int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution,
+			float height, std::vector<Material*> materials) {
 
-						cell->SetMaterial(material1, 0);
-						cell->SetMaterial(material2, 1);
+			// Check if everything is correct
+			int32_t maxNodesPerSide = (int32_t)powf(2.0f, (float)LoDCount - 1.0f) * rootNodeSideCount;
 
+			if (heightImage.height != heightImage.width || heightImage.channels != 1) {
+				throw AtlasException("Some input value wasn't following the specifications");
+			}
+
+			auto terrain = new Terrain::Terrain(rootNodeSideCount, LoDCount, patchSize, resolution, height);
+
+			int32_t count = 0;
+			for (auto material : materials) {
+				terrain->storage->AddMaterial(count++, material);
+			}
+
+			// Calculate the number of vertices per tile and resize the height data to map 1:1
+			int32_t tileResolution = 8 * patchSize;
+
+			int32_t totalResolution = tileResolution * maxNodesPerSide;
+
+			Common::Image16 heightMap(totalResolution, totalResolution, 1);
+			Common::Image8 splatMap(totalResolution, totalResolution, 1);
+
+			if (heightImage.width != totalResolution) {
+				stbir_resize_uint16_generic(heightImage.GetData().data(), heightImage.width, heightImage.height,
+					heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
+					1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+				stbir_resize_uint16_generic(heightImage.GetData().data(), heightImage.width, heightImage.height,
+					heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
+					1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+			}
+			else {
+				heightMap.SetData(heightImage.GetData());
+				splatMap.SetData(splatImage.GetData());
+			}
+
+			// We need some room in the bottom and right for overlapping vertices
+
+			tileResolution += 1;
+			int32_t tileResolutionSquared = tileResolution * tileResolution;
+
+			std::vector<uint16_t> cellHeightData(tileResolutionSquared);
+			std::vector<uint8_t> cellSplatData(tileResolutionSquared);
+
+			// i is in x direction, j in y direction
+			for (int32_t i = 0; i < maxNodesPerSide; i++) {
+				for (int32_t j = 0; j < maxNodesPerSide; j++) {
+					auto cell = terrain->storage->GetCell(i, j, LoDCount - 1);
+
+					// Create the data structures for the cell
+					cell->heightData.resize(tileResolutionSquared);
+					cell->heightField = new Texture::Texture2D(tileResolution,
+						tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+					cell->normalMap = new Texture::Texture2D(tileResolution,
+						tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+					cell->splatMap = new Texture::Texture2D(tileResolution,
+						tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+
+					// Now copy a tile of the original image
+					// We make sure that every tile has the same size
+					// We also increased resolution to make sure that
+					// adjacent cells connect to each other
+					for (int32_t y = 0; y < tileResolution; y++) {
+						for (int32_t x = 0; x < tileResolution; x++) {
+							int32_t cellOffset = y * tileResolution + x;
+							int32_t xImage = i * (tileResolution - 1) + x;
+							int32_t yImage = j * (tileResolution - 1) + y;
+
+							auto height = (uint16_t)heightMap.Sample(xImage, yImage).r;
+							auto splat = (uint8_t)splatMap.Sample(xImage, yImage).r;
+
+							cell->heightData[cellOffset] = (float)height / 65535.0f;
+							cellHeightData[cellOffset] = height;
+							cellSplatData[cellOffset] = splat;
+
+						}
 					}
-				}
 
+					cell->heightField->SetData(cellHeightData);
+					cell->splatMap->SetData(cellSplatData);
+
+				}
 			}
 
 			BakeTerrain(terrain);
@@ -121,7 +203,7 @@ namespace Atlas {
 
 			auto heightData = std::vector<uint16_t>((tileSideCount * tileResolution + 1)
 				* (tileSideCount * tileResolution + 1));
-			auto splatData = std::vector<uint8_t>(heightData.size() * 4);
+			auto splatData = std::vector<uint8_t>(heightData.size());
 
 			int32_t heightDataResolution = (int32_t)sqrtf((float)heightData.size());			
 
@@ -141,11 +223,7 @@ namespace Atlas {
 							int32_t imageOffset = (j * tileResolution + y) * heightDataResolution +
 												  i * tileResolution + x;
 							heightData[imageOffset] = (uint16_t)(cell->heightData[cellOffset] * 65535.0f);
-							splatData[imageOffset * 4] = cellSplatData[cellOffset * 4];
-							splatData[imageOffset * 4 + 1] = cellSplatData[cellOffset * 4 + 1];
-							splatData[imageOffset * 4 + 2] = cellSplatData[cellOffset * 4 + 2];
-							splatData[imageOffset * 4 + 3] = cellSplatData[cellOffset * 4 + 3];
-	
+							splatData[imageOffset] = cellSplatData[cellOffset];	
 						}
 					}
 				}
@@ -191,10 +269,7 @@ namespace Atlas {
 							auto index0 = offset0.y * currentResolution + offset0.x;
 							auto index1 = offset1.y * heightDataResolution + offset1.x;
 							resizedHeightData[index0] = heightData[index1];
-							resizedSplatData[index0 * 4 + 0] = splatData[index1 * 4 + 0];
-							resizedSplatData[index0 * 4 + 1] = splatData[index1 * 4 + 1];
-							resizedSplatData[index0 * 4 + 2] = splatData[index1 * 4 + 2];
-							resizedSplatData[index0 * 4 + 3] = splatData[index1 * 4 + 3];
+							resizedSplatData[index0] = splatData[index1];
 						}
 					}
 
@@ -258,10 +333,7 @@ namespace Atlas {
 								auto imageOffset = yImage * totalResolution + xImage;
 
 								tileHeightData[cellOffset] = resizedHeightData[imageOffset];
-								tileSplatData[cellOffset * 4] = resizedSplatData[imageOffset * 4];
-								tileSplatData[cellOffset * 4 + 1] = resizedSplatData[imageOffset * 4 + 1];
-								tileSplatData[cellOffset * 4 + 2] = resizedSplatData[imageOffset * 4 + 2];
-								tileSplatData[cellOffset * 4 + 3] = resizedSplatData[imageOffset * 4 + 3];
+								tileSplatData[cellOffset] = resizedSplatData[imageOffset];
 							}
 						}
 						
@@ -290,7 +362,7 @@ namespace Atlas {
 						}
 						if (!cell->splatMap) {
 							cell->splatMap = new Texture::Texture2D(tileResolution,
-								tileResolution, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+								tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
 						}
 
 						if (cell->normalMap->width != normalDataResolution ||
@@ -375,8 +447,8 @@ namespace Atlas {
 			// Apply the kernel on the whole data
 			position -= middleMiddle->position;
 
-			int32_t x = (int32_t)floorf(position.x / (2.0f * terrain->resolution));
-			int32_t y = (int32_t)floorf(position.y / (2.0f * terrain->resolution));
+			int32_t x = (int32_t)floorf(position.x / terrain->resolution);
+			int32_t y = (int32_t)floorf(position.y / terrain->resolution);
 
 			x += width;
 			y += height;
@@ -505,8 +577,8 @@ namespace Atlas {
 			// Apply the kernel on the whole data
 			position -= middleMiddle->position;
 
-			int32_t x = (int32_t)floorf(position.x / (2.0f * terrain->resolution));
-			int32_t y = (int32_t)floorf(position.y / (2.0f * terrain->resolution));
+			int32_t x = (int32_t)floorf(position.x / terrain->resolution);
+			int32_t y = (int32_t)floorf(position.y /terrain->resolution);
 
 			x += width;
 			y += height;
@@ -589,8 +661,7 @@ namespace Atlas {
 
 		}
 
-        void TerrainTool::BrushMaterial(Terrain::Terrain* terrain, Kernel* kernel, float strength,
-                vec2 position, int32_t channel) {
+        void TerrainTool::BrushMaterial(Terrain::Terrain* terrain, vec2 position, float size, int32_t slot) {
 
             int32_t LoD = terrain->LoDCount - 1;
 
@@ -619,9 +690,9 @@ namespace Atlas {
             int32_t width = middleMiddle->splatMap->width - 1;
             int32_t height = middleMiddle->splatMap->height - 1;
 
-            std::vector<uint8_t> combinedSplatMap(width * height * 9 * 4);
+            std::vector<uint8_t> combinedSplatMap(width * height * 9);
 
-            auto data = combinedSplatMap.data();
+            auto& data = combinedSplatMap;
 
             for (int32_t i = 0; i < 3; i++) {
                 for (int32_t j = 0; j < 3; j++) {
@@ -642,12 +713,11 @@ namespace Atlas {
                             if (x >= width * 3 || y >= height * 3)
                                 continue;
 
-                            for (int32_t m = 0; m < 4; m++) {
-                                int32_t dataOffset = (y * 3 * width + x) * 4 + m;
-                                int32_t cellOffset = (k * (width + 1) + l) * 4 + m;
+							int32_t dataOffset = y * 3 * width + x;
+							int32_t cellOffset = k * (width + 1) + l;
 
-                                data[dataOffset] = splatData[cellOffset];
-                            }
+							data[dataOffset] = splatData[cellOffset];                              
+                            
 
                         }
 
@@ -660,37 +730,20 @@ namespace Atlas {
             // Apply the kernel on the whole data
             position -= middleMiddle->position;
 
-            int32_t x = (int32_t)floorf(position.x / (2.0f * terrain->resolution));
-            int32_t y = (int32_t)floorf(position.y / (2.0f * terrain->resolution));
+            int32_t x = (int32_t)floorf(position.x / terrain->resolution);
+            int32_t y = (int32_t)floorf(position.y / terrain->resolution);
 
             x += width;
             y += height;
 
-            std::vector<std::vector<float>>* weights = nullptr;
-            std::vector<std::vector<ivec2>>* offsets = nullptr;
+			auto offset = (size - 1) / 2;
 
-            kernel->Get(weights, offsets);
-
-            for (uint32_t i = 0; i < weights->size(); i++) {
-                for (uint32_t j = 0; j < weights->size(); j++) {
-                    auto xTranslated = x + (*offsets)[i][j].x;
-                    auto yTranslated = y + (*offsets)[i][j].y;
-                    auto index = (yTranslated * width * 3 + xTranslated) * 4;
-                    auto value = glm::clamp((float)(data[index + channel]) / 255.0f
-                            + strength * (*weights)[i][j], 0.0f, 1.0f);
-                    auto sum = 0.0f;
-                    for (int32_t k = 0; k < 4; k++) {
-                        if (k == channel)
-                            continue;
-                        sum += ((float)data[index + k]) / 255.0f;
-                    }
-                    auto factor = sum ? (1.0f - value) / sum : 1.0f;
-                    for (int32_t k = 0; k < 4; k++) {
-                        if (k == channel)
-                            continue;
-                        data[index + k] = (uint8_t)(((float)data[index + k]) * factor);
-                    }
-                    data[index + channel] = (uint8_t)(glm::clamp(value * 255.0f, 0.0f, 255.0f));
+            for (uint32_t i = 0; i < size; i++) {
+                for (uint32_t j = 0; j < size; j++) {
+                    auto xTranslated = x - offset + i;
+                    auto yTranslated = y - offset + j;
+                    auto index = (int32_t)(yTranslated * width * 3 + xTranslated);
+                    data[index] = (uint8_t)slot;
                 }
             }
 
@@ -717,15 +770,13 @@ namespace Atlas {
                             if (x >= (width - 1) * 3 || y >= (height - 1) * 3)
                                 continue;
 
-                            for (int32_t m = 0; m < 4; m++) {
-                                int32_t dataOffset = (y * 3 * (width - 1) + x) * 4 + m;
-                                int32_t cellOffset = (k * width + l) * 4 + m;
+							int32_t dataOffset = y * 3 * (width - 1) + x;
+							int32_t cellOffset = k * width + l;
 
-                                // Might fail because the outer right and bottom cells (globally) always have one row less
-                                // Needs some fix with the terrain generation. We need to make sure that all terrain tiles
-                                // have the same size.
-                                splatData[cellOffset] = data[dataOffset];
-                            }
+							// Might fail because the outer right and bottom cells (globally) always have one row less
+							// Needs some fix with the terrain generation. We need to make sure that all terrain tiles
+							// have the same size.
+							splatData[cellOffset] = data[dataOffset];                            
 
                         }
                     }

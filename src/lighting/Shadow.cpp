@@ -14,8 +14,6 @@ namespace Atlas {
 			componentCount = cascadeCount;
 			this->splitCorrection = splitCorrection;
 
-			sampleCount = 16;
-			sampleRange = 2.2f;
 			useCubemap = false;
 
 			maps = Texture::Texture2DArray(resolution, resolution, cascadeCount, 
@@ -35,10 +33,7 @@ namespace Atlas {
 		Shadow::Shadow(float distance, float bias, int32_t resolution, bool useCubemap) :
 				distance(distance), bias(bias), resolution(resolution), useCubemap(useCubemap) {
 
-			sampleCount = 16;
-			sampleRange = 2;
 			splitCorrection = 0.0f;
-
 
 			if (useCubemap) {
 				componentCount = 6;

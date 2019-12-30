@@ -12,7 +12,7 @@ namespace Atlas {
 		class ImpostorTool {
 
 		public:
-			static Mesh::Impostor* GenerateImpostor(Mesh::Mesh* mesh, int32_t resolution);
+			static Mesh::Impostor* GenerateImpostor(Mesh::Mesh* mesh, int32_t views, int32_t resolution);
 
 		};
 

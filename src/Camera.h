@@ -53,14 +53,22 @@ namespace Atlas {
 		void Jitter(vec2 jitter);
 
 		/**
-		 * Unjitters the projetion matrix
-		 */
-		void Unjitter();
-
-		/**
-		 * Returns the current jitter vector
+		 * Returns the current jitter vector.
+		 * @return The current jitter vector.
 		 */
 		vec2 GetJitter();
+
+		/**
+		 * Returns the last jitter vector.
+		 * @return The last jitter vector.
+		 */
+		vec2 GetLastJitter();
+
+		/**
+		 * Returns the last jittered view projection matrix.
+		 * @return The last jittered view projection matrix.
+		 */
+		mat4 GetLastJitteredMatrix();
 
 		/**
 		 * Calculates the actual camera location.
@@ -98,10 +106,11 @@ namespace Atlas {
 		mat4 viewMatrix;
 		mat4 projectionMatrix;
 
-		mat4 inverseViewMatrix;
-		mat4 inverseProjectionMatrix;
+		mat4 invViewMatrix;
+		mat4 invProjectionMatrix;
 
 		mat4 unjitterdProjection;
+		mat4 invUnjitteredProjection;
 
 		Volume::Frustum frustum;
 
@@ -109,6 +118,10 @@ namespace Atlas {
 		void CalculateFrustum();
 
 		vec2 jitterVector = vec2(0.0f);
+		vec2 lastJitterVector = vec2(0.0f);
+
+		mat4 jitteredMatrix;
+		mat4 lastJitteredMatrix;		
 
 	};
 

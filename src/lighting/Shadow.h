@@ -35,14 +35,13 @@ namespace Atlas {
 
 			void Update();
 
-			float distance;
-			float bias;
-			float splitCorrection;
+			float distance = 300.0f;
+			float bias = 0.001f;
+			float splitCorrection = 0.95f;
+
+			float cascadeBlendDistance = 2.5f;
 
 			int32_t resolution;
-
-			int32_t sampleCount;
-			float sampleRange;
 
 			std::vector<ShadowComponent> components;
 			int32_t componentCount;

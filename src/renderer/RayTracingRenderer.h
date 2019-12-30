@@ -12,6 +12,43 @@ namespace Atlas {
 
 	namespace Renderer {
 
+		class RayTracerRenderTarget {
+
+		public:
+			RayTracerRenderTarget() {}
+
+			RayTracerRenderTarget(int32_t width, int32_t height) : width(width), height(height) {
+				texture = Texture::Texture2D(width, height, AE_RGBA8,
+					GL_CLAMP_TO_EDGE, GL_LINEAR);
+
+				accumTexture0 = Texture::Texture2D(width, height, AE_RGBA32F);
+				accumTexture1 = Texture::Texture2D(width, height, AE_RGBA32F);
+			}
+
+			void Resize(int32_t width, int32_t height) {
+				this->width = width;
+				this->height = height;
+
+				texture.Resize(width, height);
+
+				accumTexture0.Resize(width, height);
+				accumTexture1.Resize(width, height);
+			}
+
+			int32_t GetWidth() { return width; }
+			int32_t GetHeight() { return height; }
+
+			Texture::Texture2D texture;
+
+			Texture::Texture2D accumTexture0;
+			Texture::Texture2D accumTexture1;
+
+		private:
+			int32_t width = 0;
+			int32_t height = 0;
+
+		};
+
 		class RayTracingRenderer : public Renderer {
 
 		public:
@@ -19,10 +56,14 @@ namespace Atlas {
 
 			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
-			void Render(Viewport* viewport, Texture::Texture2D* texture, Texture::Texture2D* inAccumTexture,
-				Texture::Texture2D* outAccumTexture, ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene);
+			void Render(Viewport* viewport, RayTracerRenderTarget* renderTarget,
+				ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene);
 
 			bool UpdateData(Scene::Scene* scene);
+
+			std::unordered_map<Material*, int32_t> UpdateMaterials(Scene::Scene* scene);
+
+			void ResetSampleCount();
 
 			int32_t GetSampleCount();
 
@@ -65,6 +106,8 @@ namespace Atlas {
 
 				float specularIntensity;
 				float specularHardness;
+
+				float normalScale;
 
 				GPUTexture diffuseTexture;
 				GPUTexture normalTexture;

@@ -40,7 +40,7 @@ namespace Atlas {
 
             volumetricShader.Bind();
 
-            inverseProjectionMatrix->SetValue(camera->inverseProjectionMatrix);
+            inverseProjectionMatrix->SetValue(camera->invProjectionMatrix);
             target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
 
 			auto lights = scene->GetLights();
@@ -72,7 +72,7 @@ namespace Atlas {
                     if (i < light->GetShadow()->componentCount) {
 						auto cascade = &directionalLight->GetShadow()->components[i];
                         cascades[i].distance->SetValue(cascade->farDistance);
-                        cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->inverseViewMatrix);
+                        cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->invViewMatrix);
                     }
                     else {
                         cascades[i].distance->SetValue(camera->farPlane);

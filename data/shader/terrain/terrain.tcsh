@@ -1,5 +1,8 @@
 layout(vertices = 16) out;
 
+flat in uvec4 materialIndicesVS[];
+flat out uvec4 materialIndicesTC[];
+
 const int AB = 2;
 const int BC = 3;
 const int CD = 0;
@@ -43,6 +46,8 @@ bool IsTileVisible(vec3 min, vec3 max) {
 void main() {
 
 	if(gl_InvocationID == 0){
+	
+		materialIndicesTC[gl_InvocationID] = materialIndicesVS[0];
 	
 		vec3 minVec = min(gl_in[0].gl_Position.xyz,
 			min(gl_in[1].gl_Position.xyz,

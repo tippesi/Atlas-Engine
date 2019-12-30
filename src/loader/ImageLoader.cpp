@@ -114,7 +114,7 @@ namespace Atlas {
             imageData.assign(data, data + width * height * channels);
 			stbi_image_free(data);
 
-			image.data = imageData;
+			image.SetData(imageData);
 
             auto fileFormatPosition = filename.find_last_of('.') + 1;
             auto fileFormat = filename.substr(fileFormatPosition, filename.length());
@@ -214,7 +214,9 @@ namespace Atlas {
 
             imageFile << header;
 
-			for (auto data : image.data) {
+			auto imageData = image.GetData();
+
+			for (auto data : imageData) {
 				imageFile << data;
 				imageFile << " ";
 			}

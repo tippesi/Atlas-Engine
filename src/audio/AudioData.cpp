@@ -15,7 +15,7 @@ namespace Atlas {
 
 		}
 
-        AudioData::AudioData(std::string filename) {
+        AudioData::AudioData(std::string filename) : filename(filename) {
 
             uint8_t* data;
             uint32_t length;

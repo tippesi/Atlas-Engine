@@ -78,12 +78,21 @@ namespace Atlas {
 
 			Image16(int32_t width, int32_t height, int32_t channels);
 
+			void SetData(std::vector<uint16_t>& data);
+
+			void SetData(int32_t x, int32_t y, int32_t channel, uint16_t data);
+
+			std::vector<uint16_t>& GetData();
+
 			ivec4 Sample(int32_t x, int32_t y);
 
 			ivec4 Sample(float x, float y);
 
+			ivec4 SampleBilinear(float x, float y);
+
 			// TODO: ivec4 SampleLinear(float x, float y);
 
+		private:
 			std::vector<uint16_t> data;
 
 		};

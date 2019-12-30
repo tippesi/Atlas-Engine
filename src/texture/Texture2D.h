@@ -41,9 +41,10 @@ namespace Atlas {
              * @param colorSpaceConversion
              * @param anisotropicFiltering
              * @param generateMipMaps
+			 * @param forceChannels
              */
             Texture2D(std::string filename, bool colorSpaceConversion = true, bool anisotropicFiltering = true,
-				bool generateMipMaps = true);
+				bool generateMipMaps = true, int32_t forceChannels = 0);
 
             /**
              * Copies the data from another texture to the texture object.

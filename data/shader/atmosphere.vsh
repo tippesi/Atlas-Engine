@@ -15,8 +15,8 @@ uniform vec3 sunDirection;
 uniform float atmosphereRadius;
 uniform float planetRadius;
 uniform vec3 planetCenter;
+
 uniform mat4 pvMatrixLast;
-uniform mat4 pvMatrixCurrent;
 
 void main() {
 	
@@ -24,10 +24,9 @@ void main() {
 	fPosition = pos.xyz - cameraLocation;
 	gl_Position = (pMatrix * vMatrix * pos).xyww;
 	
-	// Velocity buffer (calculate with unjittered matrices)
-	vec4 current = pvMatrixCurrent * pos;
-	ndcCurrent = vec3(current.xy, current.w);
-	// For moving objects we need the last matrix
+	// Velocity buffer
+	ndcCurrent = vec3(gl_Position.xy, gl_Position.w);
+
 	vec4 last = pvMatrixLast * pos;
 	ndcLast = vec3(last.xy, last.w);
 	

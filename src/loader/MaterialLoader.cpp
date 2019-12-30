@@ -36,7 +36,7 @@ namespace Atlas {
 			std::getline(stream, line);
 
 			lastPosition = line.find_first_of(' ');
-			position = line.find_first_of("\r\n", lastPosition);
+			position = line.find_first_of("\r\n", lastPosition) - 1;
 			material->name = line.substr(lastPosition + 1, position - lastPosition);
 
 			std::getline(stream, line);
@@ -49,10 +49,16 @@ namespace Atlas {
 			material->ambientColor = ReadVector(line);
 
 			std::getline(stream, line);
+			material->emissiveColor = ReadVector(line);
+
+			std::getline(stream, line);
 			material->specularHardness = ReadFloat(line);
 
 			std::getline(stream, line);
 			material->specularIntensity = ReadFloat(line);
+
+			std::getline(stream, line);
+			material->normalScale = ReadFloat(line);
 
 			std::getline(stream, line);
 			material->displacementScale = ReadFloat(line);
@@ -68,7 +74,8 @@ namespace Atlas {
 				}
 				else if (prefix == "NMP") {
 					material->normalMapPath = ReadFilePath(line, materialDirectory);
-					material->normalMap = new Texture::Texture2D(material->normalMapPath);
+					material->normalMap = new Texture::Texture2D(material->normalMapPath,
+						false, true, true, 3);
 				}
 				else if (prefix == "SMP") {
 					material->specularMapPath = ReadFilePath(line, materialDirectory);
@@ -76,7 +83,8 @@ namespace Atlas {
 				}
 				else if (prefix == "DMP") {
 					material->displacementMapPath = ReadFilePath(line, materialDirectory);
-					material->displacementMap = new Texture::Texture2D(material->displacementMapPath);
+					material->displacementMap = new Texture::Texture2D(material->displacementMapPath,
+						false, true, true, 1);
 				}
 			}
 
@@ -116,9 +124,11 @@ namespace Atlas {
             body.append(WriteVector("DC", material->diffuseColor));
 			body.append(WriteVector("SC", material->specularColor));
 			body.append(WriteVector("AC", material->ambientColor));
+			body.append(WriteVector("EC", material->emissiveColor));
 
             body.append("SH " + std::to_string(material->specularHardness) + "\n");
             body.append("SI " + std::to_string(material->specularIntensity) + "\n");
+			body.append("NS " + std::to_string(material->normalScale) + "\n");
             body.append("DS " + std::to_string(material->displacementScale) + "\n");
 
             stream << body;

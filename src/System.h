@@ -9,7 +9,7 @@
 // AE_SHOW_API_DEBUG_LOG: Prints out graphics API specific things (medium performance impact)
 
 #define AE_SHOW_LOG
-// #define AE_SHOW_API_DEBUG_LOG
+//#define AE_SHOW_API_DEBUG_LOG
 #define AE_INSTANT_SHADER_RELOAD
 
 #include <stdint.h>

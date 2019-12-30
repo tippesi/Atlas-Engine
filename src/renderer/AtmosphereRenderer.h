@@ -41,9 +41,8 @@ namespace Atlas {
 			Shader::Uniform* atmosphereRadius = nullptr;
 			Shader::Uniform* planetRadius = nullptr;
 			Shader::Uniform* pvMatrixLast = nullptr;
-			Shader::Uniform* pvMatrixCurrent = nullptr;
-
-			mat4 pvMatrixPrev;
+			Shader::Uniform* jitterCurrent = nullptr;
+			Shader::Uniform* jitterLast = nullptr;
 
 		};
 

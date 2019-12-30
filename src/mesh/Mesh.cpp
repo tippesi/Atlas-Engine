@@ -17,7 +17,7 @@ namespace Atlas {
 
 		Mesh::Mesh(MeshData data, int32_t mobility) : mobility(mobility), data(data) {
 
-			auto filename = Common::Path::GetFilename(data.filename);
+			auto filename = Common::Path::GetFileName(data.filename);
 			auto fileTypePos = filename.find_first_of('.');
 			name = filename.substr(0, fileTypePos);
 
@@ -28,11 +28,11 @@ namespace Atlas {
 
 		}
 
-		Mesh::Mesh(std::string filename, int32_t mobility) : mobility(mobility) {
+		Mesh::Mesh(std::string filename, bool forceTangents, int32_t mobility) : mobility(mobility) {
 
-			Loader::ModelLoader::LoadMesh(filename, data);
+			Loader::ModelLoader::LoadMesh(filename, data, forceTangents);
 
-			filename = Common::Path::GetFilename(data.filename);
+			filename = Common::Path::GetFileName(data.filename);
 			auto fileTypePos = filename.find_first_of('.');
 			name = filename.substr(0, fileTypePos);
 
@@ -45,7 +45,7 @@ namespace Atlas {
 
 		Mesh::~Mesh() {
 
-			ClearMaterials();
+			ClearMaterials(configs);
 
 		}
 
@@ -53,7 +53,7 @@ namespace Atlas {
 
 			if (this != &that) {
 
-				ClearMaterials();
+				ClearMaterials(configs);
 
 				DeepCopy(that);
 
@@ -85,6 +85,23 @@ namespace Atlas {
 				vertexArray.GetComponent(3)->SetData(data.tangents.GetConvertedVoid(),
 						0, data.GetVertexCount());
 			}
+
+		}
+
+		void Mesh::UpdateMaterials() {
+
+			auto matConfigs = configs;
+
+			configs.clear();
+
+			for (auto& material : data.materials)
+				AddMaterial(&material);
+
+			// Remove other configs later in case
+			// some materials have unique shader permutations
+			// (Because this won't recompile the shaders if materials
+			// are still the same)
+			ClearMaterials(matConfigs);
 
 		}
 
@@ -174,7 +191,7 @@ namespace Atlas {
 
 		}
 
-		void Mesh::ClearMaterials() {
+		void Mesh::ClearMaterials(std::unordered_map<Material*, MaterialConfig*>& configs) {
 
 			for (auto& materialConfigKey : configs) {
 				auto materialConfig = materialConfigKey.second;

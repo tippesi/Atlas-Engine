@@ -28,6 +28,7 @@ namespace Atlas {
 
 			Shader::Uniform* vMatrix = nullptr;
 			Shader::Uniform* pMatrix = nullptr;
+			Shader::Uniform* cameraLocation = nullptr;
 
 			Shader::Uniform* up = nullptr;
 			Shader::Uniform* right = nullptr;
@@ -35,12 +36,11 @@ namespace Atlas {
 			Shader::Uniform* min = nullptr;
 			Shader::Uniform* max = nullptr;
 
+			Shader::Uniform* views = nullptr;
+
 			Shader::Uniform* pvMatrixLast = nullptr;
 			Shader::Uniform* jitterCurrent = nullptr;
 			Shader::Uniform* jitterLast = nullptr;
-
-			mat4 pvMatrixPrev;
-			vec2 jitterPrev;
 
 		};
 

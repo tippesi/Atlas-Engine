@@ -128,7 +128,7 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 			
 		// Produces some problems in the bottom left corner of the Sponza scene,
 		// but fixes the cube. Should work in theory.
-		normal = dot(normal, ray.direction) < 0.0 ? normal : normal * -1.0;	
+		normal = dot(normal, ray.direction) <= 0.0 ? normal : normal * -1.0;	
 		
 		vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) * 
 			vec3(SampleDiffuseBilinear(mat.diffuseTexture, texCoord));
@@ -137,8 +137,9 @@ void Radiance(Ray ray, vec2 coord, out vec3 color) {
 			
 		// Sample normal map
 		if (mat.normalTexture.layer >= 0) {
-			normal = normalize(toTangentSpace * 
-				(2.0 * vec3(SampleNormalBilinear(mat.normalTexture, texCoord)) - 1.0));		
+			normal = mix(normal, normalize(toTangentSpace * 
+				(2.0 * vec3(SampleNormalBilinear(mat.normalTexture, texCoord)) - 1.0)),
+				mat.normalScale);		
 		}
 			
 		vec3 emissiveColor = vec3(mat.emissR, mat.emissG, mat.emissB);

@@ -143,6 +143,10 @@ namespace Atlas {
 
 			Common::Image8 LoDImage;
 
+			std::string filename;
+
+			bool wireframe = false;
+
 		private:
 			void SortNodes(std::vector<TerrainNode*>& nodes, vec3 cameraLocation);
 
