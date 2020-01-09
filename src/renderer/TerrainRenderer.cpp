@@ -9,9 +9,6 @@ namespace Atlas {
 		std::string TerrainRenderer::tessEvalPath = "terrain/terrain.tesh";
 		std::string TerrainRenderer::fragmentPath = "terrain/terrain.fsh";
 
-		std::string TerrainRenderer::distanceVertexPath = "terrain/distanceTerrain.vsh";
-		std::string TerrainRenderer::distanceFragmentPath = "terrain/distanceTerrain.fsh";
-
 		TerrainRenderer::TerrainRenderer() {
 
 			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
@@ -23,8 +20,12 @@ namespace Atlas {
 
 			GetUniforms();
 
-			distanceShader.AddStage(AE_VERTEX_STAGE, distanceVertexPath);
-			distanceShader.AddStage(AE_FRAGMENT_STAGE, distanceFragmentPath);
+			distanceShader.AddStage(AE_VERTEX_STAGE, vertexPath);
+			distanceShader.AddStage(AE_TESSELLATION_CONTROL_STAGE, tessControlPath);
+			distanceShader.AddStage(AE_TESSELLATION_EVALUATION_STAGE, tessEvalPath);
+			distanceShader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+
+			distanceShader.AddMacro("DISTANCE");
 
 			distanceShader.Compile();
 
@@ -126,10 +127,11 @@ namespace Atlas {
 
 			// Now render distance nodes
 			distanceShader.Bind();
-			terrain->distanceVertexArray.Bind();
 
 			distanceViewMatrix->SetValue(camera->viewMatrix);
 			distanceProjectionMatrix->SetValue(camera->projectionMatrix);
+			distanceCameraLocation->SetValue(camera->location);
+			distanceFrustumPlanes->SetValue(camera->frustum.GetPlanes().data(), 6);
 
 			distanceHeightScale->SetValue(terrain->heightScale);
 
@@ -156,8 +158,7 @@ namespace Atlas {
 
 				distanceNormalTexelSize->SetValue(1.0f / (float)node->cell->normalMap->width);
 
-				glDrawElements(GL_TRIANGLE_STRIP, (int32_t)terrain->distanceVertexArray.GetIndexComponent()->GetElementCount(),
-					terrain->distanceVertexArray.GetIndexComponent()->GetDataType(), nullptr);
+				glDrawArraysInstanced(GL_PATCHES, 0, terrain->patchVertexCount, 64);
 
 			}
 
@@ -174,7 +175,6 @@ namespace Atlas {
 			tileScale = shader.GetUniform("tileScale");
 			viewMatrix = shader.GetUniform("vMatrix");
 			projectionMatrix = shader.GetUniform("pMatrix");
-			cameraLocation = shader.GetUniform("cameraLocation");
 			nodeSideLength = shader.GetUniform("nodeSideLength");
 			nodeLocation = shader.GetUniform("nodeLocation");
 			patchSize = shader.GetUniform("patchSize");
@@ -191,6 +191,7 @@ namespace Atlas {
 
 			displacementDistance = shader.GetUniform("displacementDistance");
 
+			cameraLocation = shader.GetUniform("cameraLocation");
 			frustumPlanes = shader.GetUniform("frustumPlanes");
 
 			normalTexelSize = shader.GetUniform("normalTexelSize");
@@ -216,6 +217,9 @@ namespace Atlas {
 			distanceTopLoD = distanceShader.GetUniform("topLoD");
 			distanceRightLoD = distanceShader.GetUniform("rightLoD");
 			distanceBottomLoD = distanceShader.GetUniform("bottomLoD");
+
+			distanceCameraLocation = distanceShader.GetUniform("cameraLocation");
+			distanceFrustumPlanes = distanceShader.GetUniform("frustumPlanes");
 
 			distanceNormalTexelSize = distanceShader.GetUniform("normalTexelSize");
 

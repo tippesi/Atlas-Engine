@@ -1,6 +1,7 @@
 #include "ShaderStage.h"
 #include "../loader/AssetLoader.h"
 #include "../common/Path.h"
+#include "../Log.h"
 
 #include <fstream>
 #include <sstream>
@@ -24,9 +25,7 @@ namespace Atlas {
 
             ID = glCreateShader(type);
 
-#ifdef AE_SHOW_LOG
-            AtlasLog("Loaded shader file %s", filename.c_str());
-#endif
+            Log::Message("Loaded shader file " + filename);
 
         }
 
@@ -132,9 +131,7 @@ namespace Atlas {
 
             composedCode.append(code);
 
-#ifdef AE_SHOW_LOG
 			stageCode = composedCode;
-#endif
 
             const char* convertedCode = composedCode.c_str();
 
@@ -148,10 +145,7 @@ namespace Atlas {
 
 				error = true;
 
-#ifdef AE_SHOW_LOG
-				auto log = GetErrorLog();
-				AtlasLog("%s", log.c_str());
-#endif
+				Log::Error(GetErrorLog());
 
                 return false;
 
@@ -176,10 +170,8 @@ namespace Atlas {
             shaderFile = Loader::AssetLoader::ReadFile(filename, std::ios::in);
 
             if (!shaderFile.is_open()) {
-#ifdef AE_SHOW_LOG
-				AtlasLog("Shader file %s not found", filename.c_str());
-#endif
-                throw AtlasException("Couldn't open shader file");
+				Log::Error("Shader file not found " + filename);
+				return "";
             }
 
             shaderStream << shaderFile.rdbuf();

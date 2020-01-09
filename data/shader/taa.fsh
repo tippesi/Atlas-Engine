@@ -25,7 +25,7 @@ void main() {
         for (int y = -1; y <= 1; y++) {
             vec2 currOffset = vec2(float(x), float(y)) * invResolution;
             vec2 pixelCoord = fTexCoord + currOffset;
-            vec3 color = texture(lightingTexture, pixelCoord).rgb;
+            vec3 color = texture(lightingTexture, pixelCoord + jitter).rgb;
             neighbourhoodMin = min(neighbourhoodMin, color);
             neighbourhoodMax = max(neighbourhoodMax, color);
 
@@ -41,7 +41,7 @@ void main() {
     vec2 uv = fTexCoord + velocity;
 
     vec3 historyColor = texture(historyTexture, uv).rgb;
-    vec3 lightingColor = texture(lightingTexture, fTexCoord).rgb;
+    vec3 lightingColor = texture(lightingTexture, fTexCoord + jitter).rgb;
 
     historyColor = clamp(historyColor, neighbourhoodMin, neighbourhoodMax);
 

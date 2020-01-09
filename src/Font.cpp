@@ -1,4 +1,5 @@
 #include "Font.h"
+#include "Log.h"
 
 #include "loader/AssetLoader.h"
 
@@ -19,10 +20,8 @@ namespace Atlas {
 		auto fontFile = Loader::AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
 		if (!fontFile.is_open()) {
-#ifdef AE_SHOW_LOG
-			AtlasLog("Font %s not found", filename.c_str());
-#endif
-			throw AtlasException("Couldn't open font file");
+			Log::Error("Font not found " + filename);
+			return;
 		}
 
 		auto buffer = Loader::AssetLoader::GetFileContent(fontFile);
@@ -30,7 +29,7 @@ namespace Atlas {
 		fontFile.close();
 
 		if (!stbtt_InitFont(&font, (unsigned char *) buffer.data(), 0)) {
-			throw AtlasException("Failed loading font");
+			Log::Error("Failed loading font " + filename);
 		}
 
 		glyphs.resize(AE_FONT_GLYPH_COUNT);

@@ -38,6 +38,8 @@ namespace Atlas {
 			Shader::Uniform* lightSpaceMatrixUniform = nullptr;
 			Shader::Uniform* modelMatrixUniform = nullptr;
 
+			Shader::Uniform* invertUVsUniform = nullptr;
+
 			static Shader::ShaderBatch shaderBatch;
 			static std::mutex shaderBatchMutex;
 

@@ -54,6 +54,13 @@ namespace Atlas {
              */
             static std::ofstream WriteFile(std::string filename, std::ios_base::openmode mode);
 
+			/**
+			 * Removes a file from the asset directory.
+			 * @param filename A path to the file relative to the asset directory.
+			 * @return True if successful, false otherwise.
+			 */
+			static bool RemoveFile(std::string filename);
+
             /**
              * Returns a size for a readable opened file.
              * @param stream An ifstream object.

@@ -4,7 +4,7 @@ namespace Atlas {
 
 	std::mutex Clock::mutex;
 
-	float Clock::timeStamp = 0.0f;
+	double Clock::timeStamp = 0.0;
 	float Clock::deltaTime = 0.0f;
 
 	std::vector<float> Clock::deltas;
@@ -39,6 +39,14 @@ namespace Atlas {
 
 	}
 
+	std::vector<float> Clock::GetAverageWindow() {
+
+		std::lock_guard<std::mutex> lock(mutex);
+
+		return deltas;
+
+	}
+
 	float Clock::GetAverage() {
 
 		std::lock_guard<std::mutex> lock(mutex);
@@ -62,8 +70,9 @@ namespace Atlas {
 		if (!deltas.size())
 			deltas.resize(300);
 
-		auto time = Get();
-		deltaTime = time - timeStamp;
+		auto time = (double)SDL_GetPerformanceCounter();
+		deltaTime = (float)((time - timeStamp) / (double)
+			SDL_GetPerformanceFrequency());
 
 		deltas[frameCount] = deltaTime;
 

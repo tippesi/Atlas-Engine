@@ -4,11 +4,24 @@
 // Every vec3 gets rounded up to 16 bytes, which means the structure
 // has to be a size of multiple of 16 bytes.
 
+struct PackedRay {
+
+	vec4 origin;
+	vec4 direction;
+	vec4 data;
+
+};
+
 struct Ray {
+
+	int pixelID;
 	
 	vec3 origin;
 	vec3 direction;
 	vec3 inverseDirection;
+	
+	vec3 accumColor;
+	vec3 mask;
 	
 };
 
@@ -76,10 +89,14 @@ struct Material {
 	float emissG;
 	float emissB;
 	
+	float opacity;
+	
 	float specularIntensity;
 	float specularHardness;
 	
 	float normalScale;
+	
+	bool invertUVs;
 	
 	Texture diffuseTexture;
 	Texture normalTexture;
@@ -108,4 +125,10 @@ struct Light {
 		
 	float radius;
 
+};
+
+struct DispatchIndirectCommand {
+	uint  numGroupsX;
+	uint  numGroupsY;
+	uint  numGroupsZ;
 };

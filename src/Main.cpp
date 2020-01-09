@@ -8,6 +8,12 @@ int main(int argc, char* argv[]) {
 	auto context = Atlas::Engine::Init(Atlas::EngineInstance::assetDirectory,
 		Atlas::EngineInstance::shaderDirectory);
 
+	if (!context) {
+		Atlas::Log::Warning("Shutdown of application");
+		Atlas::Engine::Shutdown();
+		return 0;
+	}
+
 	auto instance = GetEngineInstance();
 
 	// No need to clean the context up, will be released

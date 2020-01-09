@@ -90,6 +90,8 @@ namespace Atlas {
 		ambientColor = that.ambientColor;
 		emissiveColor = that.emissiveColor;
 
+		opacity = that.opacity;
+
 		specularHardness = that.specularHardness;
 		specularIntensity = that.specularIntensity;
 

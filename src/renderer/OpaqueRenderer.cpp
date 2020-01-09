@@ -27,6 +27,8 @@ namespace Atlas {
 			specularIntensityUniform = shaderBatch.GetUniform("specularIntensity");
 			normalScaleUniform = shaderBatch.GetUniform("normalScale");
 
+			invertUVsUniform = shaderBatch.GetUniform("invertUVs");
+
 			pvMatrixLast = shaderBatch.GetUniform("pvMatrixLast");
 
 			jitterLast = shaderBatch.GetUniform("jitterLast");
@@ -86,6 +88,8 @@ namespace Atlas {
 						glEnable(GL_CULL_FACE);
 						backFaceCulling = true;
 					}
+
+					invertUVsUniform->SetValue(mesh->invertUVs);
 
 					// Prepare uniform buffer here
 					// Generate all drawing commands
@@ -184,6 +188,8 @@ namespace Atlas {
 
 						auto mesh = actorBatch->GetObject();
 						mesh->Bind();
+
+						invertUVsUniform->SetValue(mesh->invertUVs);
 
 						// Prepare uniform buffer here
 						// Generate all drawing commands

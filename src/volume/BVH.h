@@ -227,7 +227,7 @@ namespace Atlas {
 				auto stop = max[i];
 
 				// If the dimension of this axis is to small continue
-				if (fabsf(stop - start) < 1e-4)
+				if (fabsf(stop - start) < 1e-3)
 					continue;
 
 				auto step = (stop - start) / (binCount / ((float)depth + 1.0f));

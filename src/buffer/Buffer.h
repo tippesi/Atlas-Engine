@@ -45,9 +45,11 @@
 #define AE_VERTEX_BUFFER			GL_ARRAY_BUFFER
 #define AE_INDEX_BUFFER				GL_ELEMENT_ARRAY_BUFFER
 #define AE_UNIFORM_BUFFER			GL_UNIFORM_BUFFER
-#define AE_COMMAND_BUFFER			GL_DRAW_INDIRECT_BUFFER
+#define AE_DRAW_INDIRECT_BUFFER		GL_DRAW_INDIRECT_BUFFER
+#define AE_DISPATCH_INDIRECT_BUFFER	GL_DISPATCH_INDIRECT_BUFFER 
 #define AE_STAGING_BUFFER			GL_COPY_READ_BUFFER
 #define AE_SHADER_STORAGE_BUFFER	GL_SHADER_STORAGE_BUFFER
+#define AE_ATOMIC_COUNTER_BUFFER	GL_ATOMIC_COUNTER_BUFFER
 
 namespace Atlas {
 
@@ -193,6 +195,23 @@ namespace Atlas {
              * @return The number of written elements
              */
 			virtual int32_t GetDataMappedAdvancement();
+
+			/**
+			 * Invalidates the buffer data.
+			 * @note The content of the data will be undefined afterwards.
+			 */
+			virtual void InvalidateData();
+
+			/**
+			 * Fills the buffer with the data.
+			 * @param sizedFormat The sized format of data (e.g. AE_R16F)
+			 * @param type The type of data (e.g. GL_UNSIGNED_INT)
+			 * @param data A pointer to the data.
+			 * @note data has to have the size of a buffer element. The
+			 * buffer will only contain content of value data afterwards.
+			 * @warning The buffer has to be bound beforehand.
+			 */
+			virtual void ClearData(int32_t sizedFormat, int32_t type, void* data);
 
 			/**
              * Copies the data of the copy buffer to this buffer.

@@ -17,6 +17,8 @@ namespace Atlas {
 			modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
 			lightSpaceMatrixUniform = shaderBatch.GetUniform("lightSpaceMatrix");
 
+			invertUVsUniform = shaderBatch.GetUniform("invertUVs");
+
 		}
 
 
@@ -105,6 +107,8 @@ namespace Atlas {
 								glEnable(GL_CULL_FACE);
 								backFaceCulling = true;
 							}
+
+							invertUVsUniform->SetValue(mesh->invertUVs);
 
 							// Prepare uniform buffer here
 							// Generate all drawing commands

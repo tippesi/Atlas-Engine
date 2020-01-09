@@ -20,7 +20,7 @@ void main() {
 
     vec4 color = texture(diffuseMap, vec3(fTexCoord, float(index))).rgba;
 
-    if (color.a < 0.2)
+    if (color.a < 0.7)
         discard;
 
     diffuse = vec4(color.rgb, 1.0);

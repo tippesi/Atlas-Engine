@@ -20,10 +20,14 @@ namespace Atlas {
 		static Audio::AudioData* GetAudio(std::string path);
 		static Terrain::Terrain* GetTerrain(std::string path);
 
+		static void AddMesh(Mesh::Mesh* mesh);
 		static void AddMaterial(Material* material);
+		static void AddAudio(Audio::AudioData* audio);
 		static void AddTerrain(Terrain::Terrain* terrain);
 
+		static void RemoveMesh(Mesh::Mesh* mesh);
 		static void RemoveMaterial(Material* material);
+		static void RemoveAudio(Audio::AudioData* audio);
 		static void RemoveTerrain(Terrain::Terrain* terrain);
 
 		static std::vector<Mesh::Mesh*> GetMeshes();

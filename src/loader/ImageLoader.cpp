@@ -1,6 +1,7 @@
 #include "ImageLoader.h"
 #include "AssetLoader.h"
 #include "../texture/Texture.h"
+#include "../Log.h"
 
 #include <algorithm>
 #include <iostream>
@@ -18,17 +19,14 @@ namespace Atlas {
 
 	namespace Loader {
 
-		Common::Image8 ImageLoader::LoadImage(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {
+		Common::Image8 ImageLoader::LoadImage(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {			
 
-			
-
+			Common::Image8 image;
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
             if (!fileStream.is_open()) {
-#ifdef AE_SHOW_LOG
-                AtlasLog("Failed to load image %s", filename.c_str());
-#endif
-                throw AtlasException("Image couldn't be loaded");
+                Log::Error("Failed to load image " + filename);
+				return image;
             }
 
             auto buffer = AssetLoader::GetFileContent(fileStream);
@@ -47,7 +45,7 @@ namespace Atlas {
                 Texture::Texture::GammaToLinear(data, width, height, channels);
             }
 
-			Common::Image8 image(width, height, channels);
+			image = Common::Image8(width, height, channels);
 			std::vector<uint8_t> imageData(width * height * channels);
 
             imageData.assign(data, data + width * height * channels);
@@ -73,9 +71,7 @@ namespace Atlas {
                 image.fileFormat = AE_IMAGE_PGM;
             }
 
-#ifdef AE_SHOW_LOG
-            AtlasLog("Loaded image %s", filename.c_str());
-#endif
+            Log::Message("Loaded image " + filename);
 
             return image;
 
@@ -83,13 +79,12 @@ namespace Atlas {
 
 		Common::Image16 ImageLoader::LoadImage16(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {
 
+			Common::Image16 image;
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
             if (!fileStream.is_open()) {
-#ifdef AE_SHOW_LOG
-                AtlasLog("Failed to load image %s", filename.c_str());
-#endif
-                throw AtlasException("Image couldn't be loaded");
+                Log::Error("Failed to load image " + filename);
+				return image;
             }
 
             auto buffer = AssetLoader::GetFileContent(fileStream);
@@ -108,7 +103,7 @@ namespace Atlas {
                 Texture::Texture::GammaToLinear(data, width, height, channels);
             }
 
-			Common::Image16 image(width, height, channels);
+			image = Common::Image16(width, height, channels);
 			std::vector<uint16_t> imageData(width * height * channels);
 
             imageData.assign(data, data + width * height * channels);
@@ -134,9 +129,7 @@ namespace Atlas {
                 image.fileFormat = AE_IMAGE_PGM;
             }
 
-#ifdef AE_SHOW_LOG
-            AtlasLog("Loaded image %s", filename.c_str());
-#endif
+            Log::Message("Loaded image " + filename);
 
             return image;
 
@@ -145,8 +138,10 @@ namespace Atlas {
         void ImageLoader::SaveImage(Common::Image8 &image, std::string filename) {
 
             switch(image.fileFormat) {
-                case AE_IMAGE_JPG: break;
-                case AE_IMAGE_BMP: break;
+				case AE_IMAGE_JPG: stbi_write_jpg(filename.c_str(), image.width, image.height,
+					image.channels, image.GetData().data(), 100); break;
+				case AE_IMAGE_BMP: stbi_write_bmp(filename.c_str(), image.width, image.height,
+					image.channels, image.GetData().data()); break;
                 case AE_IMAGE_PGM: SavePGM8(image, filename); break;
                 case AE_IMAGE_PNG: stbi_write_png(filename.c_str(), image.width, image.height,
                         image.channels, image.GetData().data(), image.channels * image.width); break;
@@ -172,7 +167,8 @@ namespace Atlas {
 			auto imageFile = AssetLoader::WriteFile(filename, std::ios::out);
 
             if (!imageFile.is_open()) {
-                throw AtlasException("Couldn't write image");
+				Log::Error("Couldn't write image " + filename);
+				return;
             }
 
             std::string header;
@@ -201,7 +197,8 @@ namespace Atlas {
 			auto imageFile = AssetLoader::WriteFile(filename, std::ios::out);
 
             if (!imageFile.is_open()) {
-                throw AtlasException("Couldn't write image");
+				Log::Error("Couldn't write image " + filename);
+				return;
             }
 
             std::string header;

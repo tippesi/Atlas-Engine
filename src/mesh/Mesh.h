@@ -91,6 +91,7 @@ namespace Atlas {
 			Buffer::VertexArray vertexArray;
 
 			std::string name;
+			bool invertUVs = false;
 
 		private:
 			void InitializeVertexArray();

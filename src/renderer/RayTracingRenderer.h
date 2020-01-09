@@ -23,6 +23,13 @@ namespace Atlas {
 
 				accumTexture0 = Texture::Texture2D(width, height, AE_RGBA32F);
 				accumTexture1 = Texture::Texture2D(width, height, AE_RGBA32F);
+
+				rayBuffer0 = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, 3 * sizeof(vec4), 0);
+				rayBuffer1 = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, 3 * sizeof(vec4), 0);
+
+				rayBuffer0.SetSize(width * height);
+				rayBuffer1.SetSize(width * height);
+
 			}
 
 			void Resize(int32_t width, int32_t height) {
@@ -33,6 +40,10 @@ namespace Atlas {
 
 				accumTexture0.Resize(width, height);
 				accumTexture1.Resize(width, height);
+
+				rayBuffer0.SetSize(width * height);
+				rayBuffer1.SetSize(width * height);
+
 			}
 
 			int32_t GetWidth() { return width; }
@@ -42,6 +53,11 @@ namespace Atlas {
 
 			Texture::Texture2D accumTexture0;
 			Texture::Texture2D accumTexture1;
+
+			Buffer::Buffer rayBuffer0;
+			Buffer::Buffer rayBuffer1;
+
+			int32_t sampleCount = 0;
 
 		private:
 			int32_t width = 0;
@@ -67,14 +83,16 @@ namespace Atlas {
 
 			int32_t GetSampleCount();
 
-			static std::string vertexUpdateComputePath;
-			static std::string BVHComputePath;
-			static std::string rayCasterComputePath;
+			static std::string primaryRayComputePath;
+			static std::string bounceUpdateComputePath;
+			static std::string rayUpdateComputePath;
+
+			int32_t bounces = 2;
 
 		private:
-			void GetVertexUpdateUniforms();
-			void GetBVHUniforms();
-			void GetRayCasterUniforms();
+			void GetPrimaryRayUniforms();
+			void GetBounceUpdateUniforms();
+			void GetRayUpdateUniforms();
 
 			void UpdateTexture(Scene::Scene* scene);
 
@@ -104,10 +122,14 @@ namespace Atlas {
 				vec3 diffuseColor;
 				vec3 emissiveColor;
 
+				float opacity;
+
 				float specularIntensity;
 				float specularHardness;
 
 				float normalScale;
+
+				bool invertUVs;
 
 				GPUTexture diffuseTexture;
 				GPUTexture normalTexture;
@@ -143,6 +165,12 @@ namespace Atlas {
 			int32_t sampleCount = 0;
 			ivec2 imageOffset = ivec2(0);
 
+			Buffer::Buffer indirectSSBOBuffer;
+
+			Buffer::Buffer indirectDispatchBuffer;
+			Buffer::Buffer counterBuffer0;
+			Buffer::Buffer counterBuffer1;
+
 			Buffer::Buffer triangleBuffer;
 			Buffer::Buffer materialBuffer;
 			Buffer::Buffer nodesBuffer;
@@ -150,31 +178,33 @@ namespace Atlas {
 			Texture::TextureAtlas diffuseTextureAtlas;
 			Texture::TextureAtlas normalTextureAtlas;
 
-			Shader::Shader vertexUpdateShader;
+			Shader::Shader primaryRayShader;
 
-			Shader::Uniform* modelMatrixVertexUpdateUniform = nullptr;
-			Shader::Uniform* triangleOffsetVertexUpdateUniform = nullptr;
-			Shader::Uniform* triangleCountVertexUpdateUniform = nullptr;
-			Shader::Uniform* xInvocationsVertexUpdateUniform = nullptr;
+			Shader::Uniform* cameraLocationPrimaryRayUniform = nullptr;
+			Shader::Uniform* originPrimaryRayUniform = nullptr;
+			Shader::Uniform* rightPrimaryRayUniform = nullptr;
+			Shader::Uniform* bottomPrimaryRayUniform = nullptr;
 
-			Shader::Shader BVHShader;
+			Shader::Uniform* sampleCountPrimaryRayUniform = nullptr;
+			Shader::Uniform* pixelOffsetPrimaryRayUniform = nullptr;
 
-			Shader::Shader rayCasterShader;
+			Shader::Uniform* tileSizePrimaryRayUniform = nullptr;
+			Shader::Uniform* resolutionPrimaryRayUniform = nullptr;
 
-			Shader::Uniform* widthRayCasterUniform = nullptr;
-			Shader::Uniform* heightRayCasterUniform = nullptr;
-			Shader::Uniform* originRayCasterUniform = nullptr;
-			Shader::Uniform* rightRayCasterUniform = nullptr;
-			Shader::Uniform* bottomRayCasterUniform = nullptr;
-			Shader::Uniform* cameraLocationRayCasterUniform = nullptr;
-			Shader::Uniform* cameraFarPlaneRayCasterUniform = nullptr;
-			Shader::Uniform* cameraNearPlaneRayCasterUniform = nullptr;
-			Shader::Uniform* triangleCountRayCasterUniform = nullptr;
-			Shader::Uniform* lightDirectionRayCasterUniform = nullptr;
-			Shader::Uniform* lightColorRayCasterUniform = nullptr;
-			Shader::Uniform* lightAmbientRayCasterUniform = nullptr;
-			Shader::Uniform* sampleCountRayCasterUniform = nullptr;
-			Shader::Uniform* pixelOffsetRayCasterUniform = nullptr;
+			Shader::Shader bounceUpdateShader;
+
+			Shader::Shader rayUpdateShader;
+
+			Shader::Uniform* cameraLocationRayUpdateUniform = nullptr;
+			
+			Shader::Uniform* lightDirectionRayUpdateUniform = nullptr;
+			Shader::Uniform* lightColorRayUpdateUniform = nullptr;
+			Shader::Uniform* lightAmbientRayUpdateUniform = nullptr;
+
+			Shader::Uniform* sampleCountRayUpdateUniform = nullptr;
+			Shader::Uniform* bounceCountRayUpdateUniform = nullptr;
+
+			Shader::Uniform* resolutionRayUpdateUniform = nullptr;
 
 		};
 

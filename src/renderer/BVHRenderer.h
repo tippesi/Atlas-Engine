@@ -162,9 +162,6 @@ namespace Atlas {
 			vertexBuffer.SetData(buffer.data(), 0, buffer.size());
 			//vertexBuffer.SetData(rightBuffer.data(), leftBuffer.size(), rightBuffer.size());
 
-			AtlasLog("%d,%d,%d,%d,%d,%d", bvhLevel, cubeCount, (int32_t)leftChildren.size(),
-				(int32_t)rightChildren.size(), (int32_t)leftBuffer.size() / 8 * 36, (int32_t)indices.size());
-
 			return leftBuffer.size() / 8 * 36;
 
 		}

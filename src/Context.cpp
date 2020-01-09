@@ -1,5 +1,6 @@
 #include "Context.h"
 #include "Engine.h"
+#include "Log.h"
 
 namespace Atlas {
 
@@ -84,6 +85,8 @@ namespace Atlas {
 	void Context::DebugCallback(GLenum source, GLenum type, GLuint ID, GLenum severity,
 		GLsizei length, const GLchar* message, const void* userParam) {
 
+		int32_t logType = Log::Type::TYPE_MESSAGE, logSeverity = Log::Severity::SEVERITY_LOW;
+
 		// Filter notifications
 		if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
 			return;
@@ -106,22 +109,32 @@ namespace Atlas {
 		output.append("\nType: ");
 
 		switch (type) {
-		case GL_DEBUG_TYPE_ERROR: output.append("Error"); break;
-		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: output.append("Deprecated behavior"); break;
-		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: output.append("Undefined behavior"); break;
-		case GL_DEBUG_TYPE_PORTABILITY: output.append("Bad portability"); break;
-		case GL_DEBUG_TYPE_PERFORMANCE: output.append("Performance issue"); break;
-		case GL_DEBUG_TYPE_OTHER: output.append("Unknown"); break;
+		case GL_DEBUG_TYPE_ERROR: output.append("Error");  
+			logType = Log::Type::TYPE_ERROR;  break;
+		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: output.append("Deprecated behavior"); 
+			logType = Log::Type::TYPE_WARNING; break;
+		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: output.append("Undefined behavior");
+			logType = Log::Type::TYPE_WARNING; break;
+		case GL_DEBUG_TYPE_PORTABILITY: output.append("Bad portability"); 
+			logType = Log::Type::TYPE_MESSAGE; break;
+		case GL_DEBUG_TYPE_PERFORMANCE: output.append("Performance issue"); 
+			logType = Log::Type::TYPE_MESSAGE; break;
+		case GL_DEBUG_TYPE_OTHER: output.append("Unknown"); 
+			logType = Log::Type::TYPE_MESSAGE; break;
 		default: break;
 		}
 
 		output.append("\nSeverity: ");
 
 		switch (severity) {
-		case GL_DEBUG_SEVERITY_HIGH: output.append("High"); break;
-		case GL_DEBUG_SEVERITY_MEDIUM: output.append("Medium"); break;
-		case GL_DEBUG_SEVERITY_LOW: output.append("Low"); break;
-		case GL_DEBUG_SEVERITY_NOTIFICATION: output.append("Notification"); break;
+		case GL_DEBUG_SEVERITY_HIGH: output.append("High"); 
+			logSeverity = Log::Severity::SEVERITY_HIGH; break;
+		case GL_DEBUG_SEVERITY_MEDIUM: output.append("Medium");  
+			logSeverity = Log::Severity::SEVERITY_MEDIUM; break;
+		case GL_DEBUG_SEVERITY_LOW: output.append("Low");  
+			logSeverity = Log::Severity::SEVERITY_LOW; break;
+		case GL_DEBUG_SEVERITY_NOTIFICATION: output.append("Notification");  
+			logSeverity = Log::Severity::SEVERITY_LOW; break;
 		default: break;
 		}
 
@@ -129,7 +142,11 @@ namespace Atlas {
 
 		output.append("\nMessage: " + std::string(message));
 
-		AtlasLog("%s", output.c_str());
+		switch (logType) {
+		case Log::Type::TYPE_MESSAGE: Log::Message(message, logSeverity); break;
+		case Log::Type::TYPE_WARNING: Log::Warning(message, logSeverity); break;
+		case Log::Type::TYPE_ERROR: Log::Error(message, logSeverity); break;
+		}
 
 	}
 

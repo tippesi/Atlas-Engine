@@ -20,9 +20,6 @@ namespace Atlas {
 			static std::string tessEvalPath;
 			static std::string fragmentPath;
 
-			static std::string distanceVertexPath;
-			static std::string distanceFragmentPath;
-
 		private:
 			void GetUniforms();
 
@@ -46,7 +43,6 @@ namespace Atlas {
 			Shader::Uniform* tileScale = nullptr;
 			Shader::Uniform* viewMatrix = nullptr;
 			Shader::Uniform* projectionMatrix = nullptr;
-			Shader::Uniform* cameraLocation = nullptr;
 			Shader::Uniform* nodeSideLength = nullptr;
 			Shader::Uniform* nodeLocation = nullptr;
 
@@ -64,6 +60,7 @@ namespace Atlas {
 
 			Shader::Uniform* displacementDistance = nullptr;
 
+			Shader::Uniform* cameraLocation = nullptr;
 			Shader::Uniform* frustumPlanes = nullptr;
 
 			Shader::Uniform* normalTexelSize = nullptr;
@@ -86,6 +83,9 @@ namespace Atlas {
 			Shader::Uniform* distanceBottomLoD = nullptr;
 
 			Shader::Uniform* distancePatchSize = nullptr;
+
+			Shader::Uniform* distanceCameraLocation = nullptr;
+			Shader::Uniform* distanceFrustumPlanes = nullptr;
 
 			Shader::Uniform* distanceNormalTexelSize = nullptr;
 

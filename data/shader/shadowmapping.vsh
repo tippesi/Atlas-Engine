@@ -10,6 +10,8 @@ layout(location=4)in mat4 mMatrix;
 
 uniform mat4 lightSpaceMatrix;
 
+uniform bool invertUVs;
+
 #ifdef ANIMATION
 #ifdef ANIMATION
 layout (std140) uniform AnimationUBO {
@@ -25,7 +27,7 @@ out vec2 fTexCoord;
 void main() {
 	
 #ifdef ALPHA
-	fTexCoord = vTexCoord;
+	fTexCoord = invertUVs ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
 #endif
 #ifdef ANIMATION
 	mat4 boneTransform = boneMatrices[vBoneIDs[0]] * vBoneWeights.x;

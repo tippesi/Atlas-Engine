@@ -53,7 +53,9 @@ namespace Atlas {
 		}
 		
 		auto material = Atlas::Loader::MaterialLoader::LoadMaterial(path);
-		materials.push_back(material);
+
+		if (material)
+			materials.push_back(material);
 		
 		return material;
 
@@ -89,15 +91,18 @@ namespace Atlas {
 		}
 
 		auto terrain = Atlas::Loader::TerrainLoader::LoadTerrain(path);
-		terrains.push_back(terrain);
 
-		std::lock_guard<std::mutex> guardMaterial(materialMutex);
+		if (terrain) {
+			terrains.push_back(terrain);
 
-		auto mats = terrain->storage->GetMaterials();
-		for (auto mat : mats) {
-			if (!mat)
-				continue;
-			materials.push_back(mat);
+			std::lock_guard<std::mutex> guardMaterial(materialMutex);
+
+			auto mats = terrain->storage->GetMaterials();
+			for (auto mat : mats) {
+				if (!mat)
+					continue;
+				materials.push_back(mat);
+			}
 		}
 
 		return terrain;

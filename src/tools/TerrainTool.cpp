@@ -1,11 +1,11 @@
 #include "TerrainTool.h"
 #include "../loader/AssetLoader.h"
+#include "../loader/ImageLoader.h"
+#include "../Log.h"
 
 #include "libraries/stb/stb_image.h"
 #include "libraries/stb/stb_image_write.h"
 #include "libraries/stb/stb_image_resize.h"
-
-#include <loader/ImageLoader.h>
 
 #include <string>
 #include <sys/stat.h>
@@ -21,7 +21,8 @@ namespace Atlas {
 			int32_t maxNodesPerSide = (int32_t)powf(2.0f, (float)LoDCount - 1.0f) * rootNodeSideCount;
 
 			if (heightImage.height != heightImage.width || heightImage.channels != 1) {
-				throw AtlasException("Some input value wasn't following the specifications");
+				Log::Error("Some input value wasn't following the specifications while generating the terrain");
+				return nullptr;
 			}
 
 			auto terrain = new Terrain::Terrain(rootNodeSideCount, LoDCount, patchSize, resolution, height);
@@ -107,7 +108,8 @@ namespace Atlas {
 			int32_t maxNodesPerSide = (int32_t)powf(2.0f, (float)LoDCount - 1.0f) * rootNodeSideCount;
 
 			if (heightImage.height != heightImage.width || heightImage.channels != 1) {
-				throw AtlasException("Some input value wasn't following the specifications");
+				Log::Error("Some input value wasn't following the specifications while generating the terrain");
+				return nullptr;
 			}
 
 			auto terrain = new Terrain::Terrain(rootNodeSideCount, LoDCount, patchSize, resolution, height);

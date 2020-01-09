@@ -43,7 +43,7 @@ namespace Atlas {
 			}
 			
 			auto projectionMatrix = glm::ortho(min.x, max.x,
-				min.y, max.y, -100.0f, 100.0f);
+				min.y, max.y, -glm::length(min), glm::length(max));
 
 			framebuffer->Unbind();
 

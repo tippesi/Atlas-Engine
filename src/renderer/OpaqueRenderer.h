@@ -49,6 +49,8 @@ namespace Atlas {
 			Shader::Uniform* specularIntensityUniform = nullptr;
 			Shader::Uniform* normalScaleUniform = nullptr;
 
+			Shader::Uniform* invertUVsUniform = nullptr;
+
 			Shader::Uniform* pvMatrixLast = nullptr;
 
 			Shader::Uniform* jitterCurrent = nullptr;

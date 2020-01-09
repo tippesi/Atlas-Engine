@@ -9,7 +9,7 @@
 // AE_SHOW_API_DEBUG_LOG: Prints out graphics API specific things (medium performance impact)
 
 #define AE_SHOW_LOG
-//#define AE_SHOW_API_DEBUG_LOG
+#define AE_SHOW_API_DEBUG_LOG
 #define AE_INSTANT_SHADER_RELOAD
 
 #include <stdint.h>
@@ -73,20 +73,5 @@ using glm::mat4;
 using glm::mat3;
 
 typedef short float16;
-
-class AtlasException : public std::exception {
-
-public:
-	AtlasException(const char* message) : msg(message) { }
-
-	const char* what() const throw()
-	{
-		return msg;
-	}
-
-private:
-	const char* msg;
-
-};
 
 #endif

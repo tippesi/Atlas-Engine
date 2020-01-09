@@ -1,6 +1,7 @@
 #include "TerrainLoader.h"
 #include "AssetLoader.h"
 #include "MaterialLoader.h"
+#include "../Log.h"
 
 #include "../common/Path.h"
 
@@ -13,7 +14,8 @@ namespace Atlas {
             auto fileStream = AssetLoader::WriteFile(filename, std::ios::out | std::ios::binary);
 
             if (!fileStream.is_open()) {
-                throw AtlasException("Couldn't write terrain file");
+                Log::Error("Couldn't write terrain file " + filename);
+				return;
             }
 
 			auto materials = terrain->storage->GetMaterials();
@@ -114,7 +116,8 @@ namespace Atlas {
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in);
 
             if (!fileStream.is_open()) {
-                throw AtlasException("Couldn't read terrain file");
+                Log::Error("Couldn't read terrain file " + filename);
+				return nullptr;
             }
 
             std::string header, line;
@@ -122,7 +125,8 @@ namespace Atlas {
             std::getline(fileStream, header);
 
             if (header.compare(0, 4, "AET ") != 0) {
-                throw AtlasException("File isn't a terrain file");
+                Log::Error("File isn't a terrain file " + filename);
+				return nullptr;
             }
 
 			size_t offset = 4;
@@ -175,9 +179,8 @@ namespace Atlas {
 				auto materialPath = terrainDir + "/" + line.substr(offset, pos - offset);
 				auto material = MaterialLoader::LoadMaterial(materialPath);
 
-				// Works because this method always adds materials that aren't
-				// in the storage yet.
-				terrain->storage->AddMaterial(slot, material);
+				if (material)
+					terrain->storage->AddMaterial(slot, material);
 			}
 
 			fileStream.close();
@@ -193,17 +196,19 @@ namespace Atlas {
 
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
-            if (!fileStream.is_open()) {
-                throw AtlasException("Couldn't read terrain file");
-            }
+			if (!fileStream.is_open()) {
+				Log::Error("Couldn't read terrain file " + filename);
+				return;
+			}
 
             std::string header, body;
 
             std::getline(fileStream, header);
 
-            if (header.compare(0, 4, "AET ") != 0) {
-                throw AtlasException("File isn't a terrain file");
-            }
+			if (header.compare(0, 4, "AET ") != 0) {
+				Log::Error("File isn't a terrain file " + filename);
+				return;
+			}
 
 			auto position = header.find_first_of(' ', 4);
 			int32_t materialCount = std::stoi(header.substr(4, position - 4));

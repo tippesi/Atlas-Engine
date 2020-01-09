@@ -1,4 +1,5 @@
 #include "Buffer.h"
+#include "../texture/TextureFormat.h"
 
 namespace Atlas {
 
@@ -207,6 +208,20 @@ namespace Atlas {
 
         }
 
+		void Buffer::InvalidateData() {
+
+			glInvalidateBufferData(ID);
+
+		}
+
+		void Buffer::ClearData(int32_t sizedFormat, int32_t type, void* data) {
+
+			glClearBufferData(this->type, sizedFormat,
+				Texture::TextureFormat::GetBaseFormat(sizedFormat),
+				type, data);
+
+		}
+
         void Buffer::Copy(const Buffer *copyBuffer, size_t readOffset, 
 			size_t writeOffset, size_t length) {
 
@@ -218,6 +233,9 @@ namespace Atlas {
 
             glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 
 				readOffset, writeOffset, length);
+
+			glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+			glBindBuffer(GL_COPY_READ_BUFFER, 0);
 
         }
 

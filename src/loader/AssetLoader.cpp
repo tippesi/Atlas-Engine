@@ -1,5 +1,6 @@
 #include "AssetLoader.h"
 #include "../common/Path.h"
+#include "../Log.h"
 
 #include <vector>
 #include <sys/stat.h>
@@ -108,6 +109,22 @@ namespace Atlas {
 
 		}
 
+		bool AssetLoader::RemoveFile(std::string filename) {
+
+			std::string path;
+
+			if (!Common::Path::IsAbsolute(filename))
+				path = GetFullPath(filename);
+			else
+				path = filename;
+
+			if (remove(path.c_str()) != 0)
+				return false;
+
+			return true;
+
+		}
+
 		size_t AssetLoader::GetFileSize(std::ifstream& stream) {
 
 			stream.seekg(0, stream.end);
@@ -161,7 +178,7 @@ namespace Atlas {
 			auto asset = AAssetManager_open(manager, assetPath.c_str(), AASSET_MODE_UNKNOWN);
 
 			if (!asset) {
-				AtlasLog("Asset not found: %s", assetPath.c_str());
+				Log::Error("Asset not found " + assetPath);
 				return;
 			}
 
@@ -169,7 +186,7 @@ namespace Atlas {
 
 			if (!stream.is_open()) {
 				AAsset_close(asset);
-				AtlasLog("Unable to copy asset");
+				Log::Error("Unable to copy asset " + assetPath);
 				return;
 			}
 

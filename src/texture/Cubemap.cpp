@@ -1,6 +1,7 @@
 #include "Cubemap.h"
 #include "../loader/ImageLoader.h"
 #include "../Framebuffer.h"
+#include "../Log.h"
 
 namespace Atlas {
 
@@ -22,10 +23,8 @@ namespace Atlas {
 			   images[i] = Loader::ImageLoader::LoadImage(filenames[i], true, 4);
 
 			   if (images[i].GetData().size() == 0) {
-#ifdef AE_SHOW_LOG
-				   AtlasLog("    Failed to load cubemap face %d %s", i, filenames[i].c_str());
-#endif
-				   throw AtlasException("Failed to load cubemap");
+				   Log::Error("    Failed to load cubemap face " + std::to_string(i) + " " + filenames[i]);
+				   return;
 			   }
 
 		   }

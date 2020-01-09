@@ -2,6 +2,8 @@
 
 #include "../shader/ShaderManager.h"
 
+#include <algorithm>
+
 namespace Atlas {
 
 	namespace Texture {
@@ -36,60 +38,150 @@ namespace Atlas {
 
 		void TextureAtlas::Update(std::vector<Texture2D*>& textures) {
 
+			if (!textures.size())
+				return;
+
 			int32_t width = 0, height = 0, layers = 0;
 
 			for (auto& texture : textures) {
-				layers++;
 				width = texture->width > width ?
 					texture->width : width;
 				height = texture->height > height ?
 					texture->height : height;
 			}
 
-			int32_t count = 0;
+			auto copy = textures;
 
-			for (auto& texture : textures) {
-				slices[texture].layer = count++;
+			std::sort(copy.begin(), copy.end(),
+				[=](Texture* tex1, Texture* tex2) -> bool {
+
+					auto pixelCount1 = tex1->width;
+					auto pixelCount2 = tex2->width;
+
+					if (pixelCount1 != pixelCount2) {
+						return pixelCount1 > pixelCount2;
+					}
+					else {
+						return tex1->height > tex2->height;
+					}
+
+				});
+
+			// Approximation of total padding by assuming to stuff
+			// the smallest texture over and over again.
+			auto smallest = copy[copy.size() - 1];
+			auto smallestSize = ivec2(smallest->width, smallest->height);
+			ivec2 totalPadding = ivec2(width, height) / smallestSize * padding;
+
+			// Add total padding to total size
+			width += totalPadding.x;
+			height += totalPadding.y;
+
+			while(copy.size()) {
+
+				auto texture = copy[0];
+				copy.erase(copy.begin());
+
+				slices[texture].layer = layers;
 				slices[texture].offset = ivec2(0);
 				slices[texture].size = ivec2(texture->width, texture->height);
+
+				ivec2 size = ivec2(texture->width, texture->height);
+				ivec2 offset = ivec2(size.x + padding, 0);
+
+				if (size.x == width && size.y == height ||
+					!copy.size()) {
+					layers++;
+					continue;
+				}
+
+				size_t outerTex = 0;
+				while (outerTex != copy.size()) {
+					outerTex = copy.size();
+
+					if (!copy.size())
+						break;
+
+					size_t innerTex = 0;
+					while (innerTex != copy.size()) {
+						innerTex = copy.size();
+
+						if (!copy.size() || offset.x == width)
+							break;
+
+						for (size_t i = 0; i < copy.size(); i++) {
+
+							auto texture = copy[i];
+
+							ivec2 remain = ivec2(width, height) - offset;
+							ivec2 texSize = ivec2(texture->width, texture->height);
+
+							if (remain.x - texSize.x >= 0 &&
+								remain.y - texSize.y >= 0 &&
+								texSize.x <= size.x &&
+								texSize.y <= size.y) {
+								slices[texture].layer = layers;
+								slices[texture].offset = offset;
+								slices[texture].size = texSize;
+								offset.x += texSize.x + padding;
+								copy.erase(copy.begin() + i);
+								break;
+							}
+
+						}
+
+					}
+
+					offset.y += size.y + padding;
+					offset.x = 0;
+
+				}
+
+				layers++;
+
 			}
 
 			texture = Texture2DArray(width, height, layers, AE_RGBA8);
 
-			for (int32_t i = 0; i < textures.size(); i++) {
+			for (auto& key : slices) {
+				auto tex = key.first;
+				auto slice = key.second;
 
-				auto data = textures[i]->GetData();
+				auto data = tex->GetData();
 
 				// We need four channels (OpenGL restrictions for imageSamplers
 				// in compute shaders)
 				std::vector<uint8_t> convertedData;
 
-				if (textures[i]->channels == 4) {
+				if (tex->channels == 4) {
 
 					convertedData = data;
 
 				}
-				else if (textures[i]->channels == 3) {
+				else if (tex->channels == 3) {
 
-					auto pixelCount = textures[i]->width *
-						textures[i]->height;
+					auto pixelCount = (size_t)slice.size.x * 
+						(size_t)slice.size.y;
 
 					convertedData.resize(pixelCount * 4);
 
-					for (int32_t i = 0; i < pixelCount; i++) {
+					for (size_t i = 0; i < pixelCount; i++) {
 
 						convertedData[i * 4] = data[i * 3];
 						convertedData[i * 4 + 1] = data[i * 3 + 1];
 						convertedData[i * 4 + 2] = data[i * 3 + 2];
-						convertedData[i * 4 + 3] = 0;
+						convertedData[i * 4 + 3] = 255;
 
 					}
 
 				}
 
-				texture.SetData(convertedData, 0, 0, i,
-					textures[i]->width,	textures[i]->height, 1);
+				if (!convertedData.size())
+					continue;
 
+				texture.SetData(convertedData, slice.offset.x, 
+					slice.offset.y, slice.layer, slice.size.x, 
+					slice.size.y, 1);
 			}
 
 		}

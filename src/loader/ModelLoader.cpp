@@ -1,6 +1,7 @@
 #include "ModelLoader.h"
 #include "ImageLoader.h"
 #include "AssetLoader.h"
+#include "../Log.h"
 
 #include <vector>
 #include <limits>
@@ -38,10 +39,8 @@ namespace Atlas {
 					aiProcess_ImproveCacheLocality);
 
 			if (!scene) {
-#ifdef AE_SHOW_LOG
-				AtlasLog("Error processing model %s", importer.GetErrorString());
-#endif
-				throw AtlasException("Model couldn't be loaded");
+				Log::Error("Error processing model " + std::string(importer.GetErrorString()));
+				return;
 			}
 
 			int32_t indexCount = 0;
@@ -208,6 +207,7 @@ namespace Atlas {
 			assimpMaterial->Get(AI_MATKEY_NAME, name);
 			assimpMaterial->Get(AI_MATKEY_SHININESS, material.specularHardness);
 			assimpMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, material.specularIntensity);
+			assimpMaterial->Get(AI_MATKEY_OPACITY, material.opacity);
 			assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
 			assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specular);
 			assimpMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ambient);

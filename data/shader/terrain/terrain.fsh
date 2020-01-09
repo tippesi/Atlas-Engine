@@ -78,10 +78,7 @@ void main() {
 	vec2 off = (tex) - floor(tex);
 	
 	diffuse = SampleDiffuse(off);
-	//diffuse = vec3(off, 0.0);
-	normal = SampleNormal(off);
-	
-	float normalScale = materials[materialIndex].normalScale;	
+
 	float specularIntensity = materials[materialIndex].specularIntensity;		
 	float specularHardness = materials[materialIndex].specularHardness;
 	
@@ -92,16 +89,22 @@ void main() {
 		+ 0.5 * normalTexelSize;
 	vec3 norm = 2.0 * texture(normalMap, tex).rgb - 1.0;
 	
+#ifndef DISTANCE
+	// Normal mapping only for near tiles
+	float normalScale = materials[materialIndex].normalScale;
+	normal = SampleNormal(off);
 	vec3 tang = vec3(1.0, 0.0, 0.0);
 	tang.y = -((norm.x*tang.x) / norm.y) - ((norm.z*tang.z) / norm.y);
 	tang = normalize(tang);
 	vec3 bitang = normalize(cross(tang, norm));
 	mat3 tbn = mat3(tang, bitang, norm);
-
 	normal = normalize(tbn * (2.0 * normal - 1.0));
 	normal = mix(norm, normal, normalScale);
+#else
+	normal = norm;
+#endif
 	
-	normal = 0.5 * normalize(vec3(vMatrix * vec4(normal, 0.0))) + 0.5;
+	normal = 0.5 * normalize(mat3(vMatrix) * normal) + 0.5;
 	additional = vec2(specularIntensity, specularHardness);
 	
 	// Calculate velocity
@@ -111,6 +114,6 @@ void main() {
 	ndcL -= jitterLast;
 	ndcC -= jitterCurrent;
 
-	velocity = (ndcL - ndcC) * vec2(0.5, 0.5);
+	velocity = (ndcL - ndcC) * 0.5;
 	
 }

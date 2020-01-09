@@ -29,10 +29,13 @@ namespace Atlas {
 
 			vec3 lastCameraLocation = vec3(0.0f);
 			auto& key = cameraMap.find(camera);
-			if (key != cameraMap.end())
+			if (key != cameraMap.end()) {
 				lastCameraLocation = key->second;
-			else
+			}
+			else {
 				cameraMap[camera] = camera->GetLocation();
+				key = cameraMap.find(camera);
+			}
 
 			modelViewProjectionMatrix->SetValue(mvpMatrix);
 			cameraLocation->SetValue(camera->GetLocation());

@@ -20,11 +20,6 @@ namespace Atlas {
 			int32_t nodesCount = (int32_t) ((powf(4.0f, (float) LoDCount) - 1.0f) / 3.0f) * rootNodeCount;
 			int32_t leafNodesSideCount = rootNodeSideCount * (int32_t)(powf(2.0f, (float)LoDCount - 1.0f));
 
-			// We can just have 2^16 nodes due to 16 bit indexing
-			if (nodesCount >= 65536) {
-				throw AtlasException("Wasn't able to create terrain due to too many nodes");
-			}
-
 			GeneratePatchVertexBuffer();
 			GeneratePatchOffsets();
 

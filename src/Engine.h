@@ -6,6 +6,7 @@
 #include "Context.h"
 #include "Camera.h"
 #include "Clock.h"
+#include "Log.h"
 #include "ResourceManager.h"
 #include "scene/Scene.h"
 #include "RenderTarget.h"

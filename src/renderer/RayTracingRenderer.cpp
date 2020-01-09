@@ -1,4 +1,5 @@
 #include "RayTracingRenderer.h"
+#include "../Log.h"
 
 #include "../volume/BVH.h"
 #include "../libraries/glm/packing.hpp"
@@ -11,9 +12,9 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string RayTracingRenderer::vertexUpdateComputePath = "raytracer/vertexUpdate.csh";
-		std::string RayTracingRenderer::BVHComputePath = "raytracer/BVHConstruction.csh";
-		std::string RayTracingRenderer::rayCasterComputePath = "raytracer/rayCaster.csh";
+		std::string RayTracingRenderer::primaryRayComputePath = "raytracer/primaryRay.csh";
+		std::string RayTracingRenderer::bounceUpdateComputePath = "raytracer/bounceUpdate.csh";
+		std::string RayTracingRenderer::rayUpdateComputePath = "raytracer/rayUpdate.csh";
 
 		RayTracingRenderer::RayTracingRenderer() {
 
@@ -21,6 +22,20 @@ namespace Atlas {
 			glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &shaderStorageLimit);
 			glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &textureUnitCount);
 			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &workGroupLimit);
+
+			indirectDispatchBuffer = Buffer::Buffer(AE_DISPATCH_INDIRECT_BUFFER, 3 *
+				sizeof(uint32_t), 0);
+			indirectSSBOBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, 3 *
+				sizeof(uint32_t), 0);
+			counterBuffer0 = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
+				sizeof(uint32_t), 0);
+			counterBuffer1 = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
+				sizeof(uint32_t), 0);
+
+			indirectSSBOBuffer.SetSize(1);
+			indirectDispatchBuffer.SetSize(1);
+			counterBuffer0.SetSize(1);
+			counterBuffer1.SetSize(1);
 
 			// Create dynamic resizable shader storage buffers
 			triangleBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUTriangle),
@@ -31,21 +46,21 @@ namespace Atlas {
 				AE_BUFFER_DYNAMIC_STORAGE);
 
 			// Load shader stages from hard drive and compile the shader
-			vertexUpdateShader.AddStage(AE_COMPUTE_STAGE, vertexUpdateComputePath);
-			vertexUpdateShader.Compile();
+			primaryRayShader.AddStage(AE_COMPUTE_STAGE, primaryRayComputePath);
+			primaryRayShader.Compile();
 
 			// Retrieve uniforms
-			GetVertexUpdateUniforms();
+			GetPrimaryRayUniforms();
 
-			BVHShader.AddStage(AE_COMPUTE_STAGE, BVHComputePath);
-			BVHShader.Compile();
+			bounceUpdateShader.AddStage(AE_COMPUTE_STAGE, bounceUpdateComputePath);
+			bounceUpdateShader.Compile();
 
-			GetBVHUniforms();
+			GetBounceUpdateUniforms();
 
-			rayCasterShader.AddStage(AE_COMPUTE_STAGE, rayCasterComputePath);
-			rayCasterShader.Compile();
+			rayUpdateShader.AddStage(AE_COMPUTE_STAGE, rayUpdateComputePath);
+			rayUpdateShader.Compile();
 
-			GetRayCasterUniforms();
+			GetRayUpdateUniforms();
 
 		}
 
@@ -59,10 +74,10 @@ namespace Atlas {
 		void RayTracingRenderer::Render(Viewport* viewport, RayTracerRenderTarget* renderTarget,
 			ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene) {
 
-			if (glm::distance(camera->location, cameraLocation) > 1e-3f ||
+			if (glm::distance(camera->GetLocation(), cameraLocation) > 1e-3f ||
 				glm::distance(camera->rotation, cameraRotation) > 1e-3f) {
 
-				cameraLocation = camera->location;
+				cameraLocation = camera->GetLocation();
 				cameraRotation = camera->rotation;
 
 				sampleCount = 0;
@@ -88,40 +103,8 @@ namespace Atlas {
 				}
 			}
 
-			auto cameraLocation = camera->thirdPerson ? camera->location -
-				camera->direction * camera->thirdPersonDistance : camera->location;
-
-			// Bind the neccessary shader to do the ray casting and light evaluation
-			rayCasterShader.Bind();
-
-			// Set all uniforms which are required by the compute shader
-			widthRayCasterUniform->SetValue(renderTarget->GetWidth());
-			heightRayCasterUniform->SetValue(renderTarget->GetHeight());
-
-			auto corners = camera->GetFrustumCorners(camera->nearPlane, camera->farPlane);
-
-			originRayCasterUniform->SetValue(corners[4]);
-			rightRayCasterUniform->SetValue(corners[5] - corners[4]);
-			bottomRayCasterUniform->SetValue(corners[6] - corners[4]);
-
-			cameraLocationRayCasterUniform->SetValue(cameraLocation);
-			cameraFarPlaneRayCasterUniform->SetValue(camera->farPlane);
-			cameraNearPlaneRayCasterUniform->SetValue(camera->nearPlane);
-
-			triangleCountRayCasterUniform->SetValue((int32_t)triangleBuffer.GetElementCount());
-
-			if (sun) {
-				lightDirectionRayCasterUniform->SetValue(normalize(sun->direction));
-				lightColorRayCasterUniform->SetValue(sun->color);
-				lightAmbientRayCasterUniform->SetValue(sun->ambient);
-			}
-			else {
-				lightColorRayCasterUniform->SetValue(vec3(0.0f));
-			}
-
-			sampleCountRayCasterUniform->SetValue(sampleCount);
-			pixelOffsetRayCasterUniform->SetValue(ivec2(renderTarget->GetWidth(),
-				renderTarget->GetHeight()) / imageSubdivisions * imageOffset);
+			ivec2 resolution = ivec2(renderTarget->GetWidth(), renderTarget->GetHeight());
+			ivec2 tileSize = resolution / imageSubdivisions;
 
 			// Bind texture only for writing
 			renderTarget->texture.Bind(GL_WRITE_ONLY, 0);
@@ -131,24 +114,123 @@ namespace Atlas {
 			}
 			else {
 				renderTarget->accumTexture1.Bind(GL_WRITE_ONLY, 1);
-				renderTarget->accumTexture0.Bind(GL_READ_ONLY, 2);				
+				renderTarget->accumTexture0.Bind(GL_READ_ONLY, 2);
 			}
-			
-			diffuseTextureAtlas.texture.Bind(GL_READ_ONLY, 3);
-			normalTextureAtlas.texture.Bind(GL_READ_ONLY, 4);
+
+			if (diffuseTextureAtlas.slices.size())
+				diffuseTextureAtlas.texture.Bind(GL_READ_ONLY, 3);
+			if (normalTextureAtlas.slices.size())
+				normalTextureAtlas.texture.Bind(GL_READ_ONLY, 4);
 
 			if (scene->sky.cubemap) {
 				scene->sky.cubemap->Bind(GL_READ_ONLY, 5);
 			}
 
-			// Bind all buffers to their binding points
-			materialBuffer.BindBase(1);
-			triangleBuffer.BindBase(2);
-			nodesBuffer.BindBase(3);
+			materialBuffer.BindBase(5);
+			triangleBuffer.BindBase(6);
+			nodesBuffer.BindBase(7);
 
-			// Dispatch the compute shader in 
-			glDispatchCompute(renderTarget->GetWidth() / 8 / imageSubdivisions.x,
-				renderTarget->GetHeight() / 8 / imageSubdivisions.y, 1);
+			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
+				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+			for (int32_t i = 0; i <= bounces; i++) {
+
+				if (!i) {
+					uint32_t rayCount = tileSize.x * tileSize.y;
+					counterBuffer0.Bind();
+					counterBuffer0.InvalidateData();
+					counterBuffer0.ClearData(AE_R32UI, GL_UNSIGNED_INT, &rayCount);
+
+					uint32_t zero = 0;
+					counterBuffer1.Bind();
+					counterBuffer1.InvalidateData();
+					counterBuffer1.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
+
+					primaryRayShader.Bind();
+
+					auto corners = camera->GetFrustumCorners(camera->nearPlane, camera->farPlane);
+
+					cameraLocationPrimaryRayUniform->SetValue(camera->GetLocation());
+
+					originPrimaryRayUniform->SetValue(corners[4]);
+					rightPrimaryRayUniform->SetValue(corners[5] - corners[4]);
+					bottomPrimaryRayUniform->SetValue(corners[6] - corners[4]);
+
+					sampleCountPrimaryRayUniform->SetValue(sampleCount);
+					pixelOffsetPrimaryRayUniform->SetValue(ivec2(renderTarget->GetWidth(),
+						renderTarget->GetHeight()) / imageSubdivisions * imageOffset);
+
+					tileSizePrimaryRayUniform->SetValue(tileSize);
+					resolutionPrimaryRayUniform->SetValue(resolution);
+
+					renderTarget->rayBuffer0.BindBase(3);
+					renderTarget->rayBuffer1.BindBase(4);
+
+					glDispatchCompute(resolution.x / 8 / imageSubdivisions.x,
+						resolution.y / 8 / imageSubdivisions.y, 1);
+
+					counterBuffer0.BindBase(0);
+					counterBuffer1.BindBase(1);
+
+					renderTarget->rayBuffer0.BindBase(4);
+					renderTarget->rayBuffer1.BindBase(3);
+				}
+				else {
+					if (i % 2 == 0) {
+						counterBuffer0.BindBase(0);
+						counterBuffer1.BindBase(1);
+
+						renderTarget->rayBuffer0.BindBase(4);
+						renderTarget->rayBuffer1.BindBase(3);
+					}
+					else {
+						counterBuffer0.BindBase(1);
+						counterBuffer1.BindBase(0);
+
+						renderTarget->rayBuffer0.BindBase(3);
+						renderTarget->rayBuffer1.BindBase(4);						
+					}
+
+					indirectSSBOBuffer.BindBase(2);
+
+					bounceUpdateShader.Bind();
+
+					glDispatchCompute(1, 1, 1);
+				}
+
+				rayUpdateShader.Bind();
+
+				cameraLocationRayUpdateUniform->SetValue(camera->GetLocation());
+
+				if (sun) {
+					lightDirectionRayUpdateUniform->SetValue(normalize(sun->direction));
+					lightColorRayUpdateUniform->SetValue(sun->color);
+					lightAmbientRayUpdateUniform->SetValue(sun->ambient);
+				}
+				else {
+					lightColorRayUpdateUniform->SetValue(vec3(0.0f));
+				}
+
+				sampleCountRayUpdateUniform->SetValue(sampleCount);
+				bounceCountRayUpdateUniform->SetValue(bounces - i);
+
+				resolutionRayUpdateUniform->SetValue(resolution);
+
+				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+				if (!i) {
+					uint32_t groupCount = (resolution.x / 8 / imageSubdivisions.x) *
+						(resolution.y / 8 / imageSubdivisions.y);
+					glDispatchCompute(groupCount, 1, 1);
+				}
+				else {
+					indirectDispatchBuffer.Copy(&indirectSSBOBuffer, 0, 0, 3 * sizeof(uint32_t));
+					
+					indirectDispatchBuffer.Bind();
+					glDispatchComputeIndirect(0);
+				}
+
+			}			
 
 			renderTarget->texture.Unbind();
 
@@ -178,37 +260,40 @@ namespace Atlas {
 
 		}
 
-		void RayTracingRenderer::GetVertexUpdateUniforms() {
+		void RayTracingRenderer::GetPrimaryRayUniforms() {
 
-			modelMatrixVertexUpdateUniform = vertexUpdateShader.GetUniform("mMatrix");
-			triangleOffsetVertexUpdateUniform = vertexUpdateShader.GetUniform("triangleOffset");
-			triangleCountVertexUpdateUniform = vertexUpdateShader.GetUniform("triangleCount");
-			xInvocationsVertexUpdateUniform = vertexUpdateShader.GetUniform("xInvocations");
+			cameraLocationPrimaryRayUniform = primaryRayShader.GetUniform("cameraLocation");
+
+			originPrimaryRayUniform = primaryRayShader.GetUniform("origin");
+			rightPrimaryRayUniform = primaryRayShader.GetUniform("right");
+			bottomPrimaryRayUniform = primaryRayShader.GetUniform("bottom");
+
+			sampleCountPrimaryRayUniform = primaryRayShader.GetUniform("sampleCount");
+			pixelOffsetPrimaryRayUniform = primaryRayShader.GetUniform("pixelOffset");
+
+			tileSizePrimaryRayUniform = primaryRayShader.GetUniform("tileSize");
+			resolutionPrimaryRayUniform = primaryRayShader.GetUniform("resolution");
 
 		}
 
-		void RayTracingRenderer::GetBVHUniforms() {
+		void RayTracingRenderer::GetBounceUpdateUniforms() {
 
 
 
 		}
 
-		void RayTracingRenderer::GetRayCasterUniforms() {
+		void RayTracingRenderer::GetRayUpdateUniforms() {
 
-			widthRayCasterUniform = rayCasterShader.GetUniform("width");
-			heightRayCasterUniform = rayCasterShader.GetUniform("height");
-			originRayCasterUniform = rayCasterShader.GetUniform("origin");
-			rightRayCasterUniform = rayCasterShader.GetUniform("right");
-			bottomRayCasterUniform = rayCasterShader.GetUniform("bottom");
-			cameraLocationRayCasterUniform = rayCasterShader.GetUniform("cameraLocation");
-			cameraFarPlaneRayCasterUniform = rayCasterShader.GetUniform("cameraFarPlane");
-			cameraNearPlaneRayCasterUniform = rayCasterShader.GetUniform("cameraNearPlane");
-			triangleCountRayCasterUniform = rayCasterShader.GetUniform("triangleCount");
-			lightDirectionRayCasterUniform = rayCasterShader.GetUniform("light.direction");
-			lightColorRayCasterUniform = rayCasterShader.GetUniform("light.color");
-			lightAmbientRayCasterUniform = rayCasterShader.GetUniform("light.ambient");
-			sampleCountRayCasterUniform = rayCasterShader.GetUniform("sampleCount");
-			pixelOffsetRayCasterUniform = rayCasterShader.GetUniform("pixelOffset");
+			cameraLocationRayUpdateUniform = rayUpdateShader.GetUniform("cameraLocation");
+			
+			lightDirectionRayUpdateUniform = rayUpdateShader.GetUniform("light.direction");
+			lightColorRayUpdateUniform = rayUpdateShader.GetUniform("light.color");
+			lightAmbientRayUpdateUniform = rayUpdateShader.GetUniform("light.ambient");
+
+			sampleCountRayUpdateUniform = rayUpdateShader.GetUniform("sampleCount");
+			bounceCountRayUpdateUniform = rayUpdateShader.GetUniform("bounceCount");
+
+			resolutionRayUpdateUniform = rayUpdateShader.GetUniform("resolution");
 
 		}
 
@@ -229,8 +314,8 @@ namespace Atlas {
 			auto vertexByteCount = vertexCount * sizeof(GPUTriangle);
 
 			if (vertexByteCount > shaderStorageLimit) {
-				AtlasLog("Scene has to many data for shader storage buffer objects\n\
-					Limit is %d bytes", shaderStorageLimit);
+				Log::Error("Scene has to many data for shader storage buffer objects\n\
+					Limit is " + std::to_string(shaderStorageLimit) + " bytes");
 				return false;
 			}
 
@@ -429,10 +514,12 @@ namespace Atlas {
 
 						gpuMaterial.diffuseColor = material.diffuseColor;
 						gpuMaterial.emissiveColor = material.emissiveColor;
+						gpuMaterial.opacity = material.opacity;
 						gpuMaterial.specularIntensity = material.specularIntensity;
 						gpuMaterial.specularHardness = material.specularHardness;
 
 						gpuMaterial.normalScale = material.normalScale;
+						gpuMaterial.invertUVs = actor->mesh->invertUVs;
 
 						if (material.HasDiffuseMap()) {
 							auto slice = diffuseTextureAtlas.slices[material.diffuseMap];
@@ -440,10 +527,10 @@ namespace Atlas {
 							gpuMaterial.diffuseTexture.layer = slice.layer;
 
 							gpuMaterial.diffuseTexture.x = slice.offset.x;
-							gpuMaterial.diffuseTexture.y = slice.offset.x;
+							gpuMaterial.diffuseTexture.y = slice.offset.y;
 
 							gpuMaterial.diffuseTexture.width = slice.size.x;
-							gpuMaterial.diffuseTexture.height = slice.size.x;
+							gpuMaterial.diffuseTexture.height = slice.size.y;
 
 						}
 						else {
@@ -456,10 +543,10 @@ namespace Atlas {
 							gpuMaterial.normalTexture.layer = slice.layer;
 
 							gpuMaterial.normalTexture.x = slice.offset.x;
-							gpuMaterial.normalTexture.y = slice.offset.x;
+							gpuMaterial.normalTexture.y = slice.offset.y;
 
 							gpuMaterial.normalTexture.width = slice.size.x;
-							gpuMaterial.normalTexture.height = slice.size.x;
+							gpuMaterial.normalTexture.height = slice.size.y;
 
 						}
 						else {

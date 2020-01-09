@@ -43,11 +43,13 @@ namespace Atlas {
 #if defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
 #ifdef AE_API_GL
 		if (!gladLoadGL()) {
-			throw AtlasException("Error initializing OpenGL");
+			Log::Error("Error initializing OpenGL");
+			return nullptr;
 		}
 #elif AE_API_GLES
         if (SDL_GL_LoadLibrary(nullptr) != 0) {
-            throw AtlasException("Error initializing OpenGL ES");
+			Log::Error("Error initializing OpenGL ES");
+			return nullptr;
         }
         gladLoadGLES2Loader(SDL_GL_GetProcAddress);
         SDL_GL_UnloadLibrary();
@@ -60,15 +62,15 @@ namespace Atlas {
 		int value;
 
 #ifdef AE_SHOW_LOG
-		AtlasLog("OpenGL Version: %s", glGetString(GL_VERSION));
+		Log::Message("OpenGL Version: " + std::string((const char*)glGetString(GL_VERSION)));
 		SDL_GL_GetAttribute(SDL_GL_RED_SIZE, &value);
-		AtlasLog("Native colorbuffer red component precision %d bits", value);
+		Log::Message("Native colorbuffer red component precision " + std::to_string(value) + " bits");
 		SDL_GL_GetAttribute(SDL_GL_GREEN_SIZE, &value);
-		AtlasLog("Native colorbuffer green component precision %d bits", value);
+		Log::Message("Native colorbuffer green component precision " + std::to_string(value) + " bits");
 		SDL_GL_GetAttribute(SDL_GL_BLUE_SIZE, &value);
-		AtlasLog("Native colorbuffer blue component precision %d bits", value);
+		Log::Message("Native colorbuffer blue component precision " + std::to_string(value) + " bits");
 		SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE, &value);
-		AtlasLog("Native depthbuffer precision %d bits", value);
+		Log::Message("Native depthbuffer precision " + std::to_string(value) + " bits");
 #endif
 
 		// Do the setup for all the classes that need static setup

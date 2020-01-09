@@ -1,4 +1,5 @@
 #include "BufferLock.h"
+#include "../Log.h"
 
 namespace Atlas {
 
@@ -62,7 +63,8 @@ namespace Atlas {
                 }
 
                 if (waitRet == GL_WAIT_FAILED) {
-                    throw AtlasException("Failed to access memory");
+                    Log::Warning("Failed to access GPU memory range");
+					return;
                 }
 
                 // Time is in nanoseconds (we might need to change the wait duration)

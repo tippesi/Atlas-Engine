@@ -1,6 +1,10 @@
 #include "terrainMaterial"
 
-layout(quads, fractional_even_spacing, cw) in;
+#ifndef DISTANCE
+layout(quads, equal_spacing, cw) in;
+#else
+layout(quads, equal_spacing, cw) in;
+#endif
 
 layout (binding = 2)  uniform usampler2D splatMap;
 layout(binding = 5) uniform sampler2DArray displacementMaps;
@@ -68,18 +72,12 @@ void main(){
     float u = gl_TessCoord.x;
     float v = gl_TessCoord.y;
 	
-	//  vec3 pos = gl_in[0].gl_Position.xyz;
-    // pos.xz += gl_TessCoord.xy * tileSize.xz;
-	// Use barrycentric coordinates to carefully calculate the height
-	
 	// world position
 	vec4 position =
-	((1.0f - u) * (1.0f - v) * gl_in[3].gl_Position +
-	u * (1.0f - v) * gl_in[0].gl_Position +
+	((1.0 - u) * (1.0 - v) * gl_in[3].gl_Position +
+	u * (1.0 - v) * gl_in[0].gl_Position +
 	u * v * gl_in[1].gl_Position +
-	(1.0f - u) * v * gl_in[2].gl_Position);
-	
-	float vertexDistance = distance(position.xyz, cameraLocation);
+	(1.0 - u) * v * gl_in[2].gl_Position);
 	
 	texCoords = vec2(position.x, position.z) - nodeLocation;
 
@@ -87,9 +85,11 @@ void main(){
 	
 	texCoords /= nodeSideLength;	
 	
-	float weight = clamp((displacementDistance - vertexDistance), 0.0, 1.0);
-	
 	materialIndicesTE = materialIndicesTC[0];
+	
+#ifndef DISTANCE
+	float vertexDistance = distance(position.xyz, cameraLocation);
+	float weight = clamp((displacementDistance - vertexDistance), 0.0, 1.0);
 	
 	uvec4 indices;
 	float texel = 1.0 / (8.0 * patchSize);
@@ -114,6 +114,7 @@ void main(){
 		
 		position.y += displacement;
 	}
+#endif
 	
 	gl_Position = pMatrix * vMatrix * position;
 	

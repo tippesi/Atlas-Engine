@@ -269,6 +269,9 @@ namespace Atlas {
         void Texture::Generate(uint32_t target, int32_t sizedFormat, int32_t wrapping,
                                int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
 
+			if (!target || !ID)
+				return;
+
             this->target = target;
             this->channels = GetChannelCount(TextureFormat::GetBaseFormat(sizedFormat));
             this->dataType = TextureFormat::GetType(sizedFormat);
@@ -300,7 +303,8 @@ namespace Atlas {
 				glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapping);
             }
 
-			ReserveStorage(mipCount);
+			if (width > 0 && height > 0 && layers > 0)
+				ReserveStorage(mipCount);
 
 			Unbind();
 

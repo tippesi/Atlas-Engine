@@ -40,6 +40,8 @@ namespace Atlas {
 		vec3 ambientColor = vec3(1.0f);
 		vec3 emissiveColor = vec3(0.0f);
 
+		float opacity = 1.0f;
+
 		float specularHardness = 1.0f;
 		float specularIntensity = 0.0f;
 

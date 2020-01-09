@@ -29,6 +29,16 @@ namespace Atlas {
 		 */
 		static void SetAverageWindow(int32_t frames);
 
+		/**
+		 * Returns the average window with the last delta values
+		 * @return The average window with the last delta values.
+		 */
+		static std::vector<float> GetAverageWindow();
+
+		/**
+		 * Returns the average time in seconds.
+		 * @return The average time in seconds
+		 */
 		static float GetAverage();
 
 		/**
@@ -39,7 +49,7 @@ namespace Atlas {
 	private:
 		static std::mutex mutex;
 
-		static float timeStamp;
+		static double timeStamp;
 		static float deltaTime;
 
 		static std::vector<float> deltas;

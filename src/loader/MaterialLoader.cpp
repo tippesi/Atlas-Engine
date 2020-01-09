@@ -1,6 +1,7 @@
 #include "MaterialLoader.h"
 #include "AssetLoader.h"
 #include "../common/Path.h"
+#include "../Log.h"
 
 #include "../libraries/stb/stb_image.h"
 #include "../libraries/stb/stb_image_write.h"
@@ -14,10 +15,8 @@ namespace Atlas {
             auto stream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
             if (!stream.is_open()) {
-#ifdef AE_SHOW_LOG
-                AtlasLog("Failed to load material %s", filename.c_str());
-#endif
-                throw AtlasException("Material couldn't be loaded");
+                Log::Error("Failed to load material " + filename);
+				return nullptr;
             }
 
 			auto material = new Material();
@@ -26,7 +25,8 @@ namespace Atlas {
 			std::getline(stream, header);
 
 			if (header.compare(0, 4, "AEM ") != 0) {
-				throw AtlasException("File isn't a material file");
+				Log::Error("File isn't a material file " + filename);
+				return nullptr;
 			}
 
 			size_t lastPosition = 4;
@@ -99,10 +99,8 @@ namespace Atlas {
             auto stream = AssetLoader::WriteFile(filename, std::ios::out | std::ios::binary);
 
             if (!stream.is_open()) {
-#ifdef AE_SHOW_LOG
-                AtlasLog("Failed to save material %s", filename.c_str());
-#endif
-                throw AtlasException("Material couldn't be loaded");
+                Log::Error("Failed to save material " + filename);
+				return;
             }
 
 			std::string header, body;

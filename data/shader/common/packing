@@ -23,3 +23,9 @@ int packUnitVector(vec4 vector) {
 	return unit;	
 	
 }
+
+int packUnitVector(vec3 vector) {
+
+	return packUnitVector(vec4(vector, 0.0));
+
+}

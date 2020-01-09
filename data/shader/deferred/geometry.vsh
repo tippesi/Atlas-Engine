@@ -30,12 +30,14 @@ layout (std140) uniform AnimationUBO {
 uniform mat4 pMatrix;
 uniform mat4 vMatrix;
 
+uniform bool invertUVs;
+
 uniform mat4 pvMatrixLast;
 uniform mat4 pvMatrixCurrent;
 
 void main() {
 
-	fTexCoord = vTexCoord;
+	fTexCoord = invertUVs ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
 	
 #ifdef ANIMATION
 	mat4 boneTransform = boneMatrices[vBoneIDs[0]] * vBoneWeights.x;
@@ -60,7 +62,7 @@ void main() {
 	mvMatrix = mMatrix;
 #endif
 	
-	fNormal = (mvMatrix * vec4(vNormal, 0.0)).xyz;
+	fNormal = mat3(mvMatrix) * vNormal;
 
 #ifdef NORMAL_MAP
     vec3 norm = normalize(fNormal);
