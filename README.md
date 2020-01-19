@@ -39,8 +39,10 @@ contains a main function.
 #### Excisting project using the engine
 There exist two options:
 - You can use the engine as a Gradle subproject.
-- You can compile the engine and all dependencies as a static library (note that some dependencies also have
-dynamic libraries). Therefore set the project property to **ATLAS_BUILD_LIBRARY**.
+- You can use the engine as a CMake subproject. Just copy the **./platform** folder to the folder
+of the CMake root project. In the **./platform/android/app/src/main/java/com/atlasengine/app** file add the root library name and load
+the project with Android Studio. The CMake project has to be compiled as a shared library. Make sure that the path to your data in the
+asset directory is correct.
 ### CMake options
 - **ATLAS_BUILD_LIBRARY** Build project as library
 - **ATLAS_BUILD_SHARED** Force project to be build as a shared library
