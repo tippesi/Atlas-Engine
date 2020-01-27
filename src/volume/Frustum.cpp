@@ -10,14 +10,28 @@ namespace Atlas {
 
 		}
 
+		Frustum::Frustum(mat4 matrix) {
+
+			Resize(matrix);
+
+		}
+
 		void Frustum::Resize(std::vector<vec3> corners) {
 
+			this->corners = corners;
 			planes[NEAR_PLANE] = Plane(corners[4], corners[5], corners[7]);
 			planes[FAR_PLANE] = Plane(corners[1], corners[0], corners[2]);
 			planes[TOP_PLANE] = Plane(corners[5], corners[4], corners[0]);
 			planes[BOTTOM_PLANE] = Plane(corners[6], corners[7], corners[3]);
 			planes[RIGHT_PLANE] = Plane(corners[7], corners[5], corners[3]);
 			planes[LEFT_PLANE] = Plane(corners[4], corners[6], corners[2]);
+
+		}
+
+		void Frustum::Resize(mat4 matrix) {
+
+			CalculateCorners(matrix);
+			Resize(corners);
 
 		}
 
@@ -73,6 +87,35 @@ namespace Atlas {
 			}
 
 			return planes;
+
+		}
+
+		std::vector<vec3> Frustum::GetCorners() {
+
+			return corners;
+
+		}
+
+		void Frustum::CalculateCorners(mat4 matrix) {
+
+			vec3 vectors[8] = {
+				vec3(-1.0f, 1.0f, 1.0f),
+				vec3(1.0f, 1.0f, 1.0f),
+				vec3(-1.0f, -1.0f, 1.0f),
+				vec3(1.0f, -1.0f, 1.0f),
+				vec3(-1.0f, 1.0f, -1.0f),
+				vec3(1.0f, 1.0f, -1.0f),
+				vec3(-1.0f, -1.0f, -1.0f),
+				vec3(1.0f, -1.0f, -1.0f)
+			};
+
+			corners.clear();
+			auto inverseMatrix = glm::inverse(matrix);
+
+			for (uint8_t i = 0; i < 8; i++) {
+				auto homogenous = inverseMatrix * vec4(vectors[i], 1.0f);
+				corners.push_back(vec3(homogenous) / homogenous.w);
+			}
 
 		}
 

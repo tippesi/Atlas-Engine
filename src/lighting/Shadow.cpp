@@ -17,7 +17,7 @@ namespace Atlas {
 			useCubemap = false;
 
 			maps = Texture::Texture2DArray(resolution, resolution, cascadeCount, 
-				AE_DEPTH24, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+				AE_DEPTH16, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 			maps.Bind(GL_TEXTURE0);
 

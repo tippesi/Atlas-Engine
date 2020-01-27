@@ -12,11 +12,12 @@ namespace Atlas {
 
 	namespace Tools {
 
-		typedef struct RayIntersection {
-			vec3 location;
-			float distance;
-			bool hasIntersected;
-		} RayIntersection;
+		struct RayIntersection {
+			vec3 location = vec3(0.0f);
+			vec3 normal = vec3(0.0f, 1.0f, 0.0f);
+			float distance = 0.0f;
+			bool hasIntersected = false;
+		};
 
 		class RayCasting {
 

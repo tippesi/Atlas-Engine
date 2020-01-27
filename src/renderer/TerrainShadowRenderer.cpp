@@ -56,14 +56,12 @@ namespace Atlas {
 						framebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT, &light->GetShadow()->maps, i);
 					}
 
-					auto inverseMatrix = glm::inverse(component->terrainFrustumMatrix);
-
-					auto corners = GetFrustumCorners(inverseMatrix);
-					auto frustum = Volume::Frustum(corners);
+					auto frustum = Volume::Frustum(component->terrainFrustumMatrix);
 
 					mat4 lightSpace = component->projectionMatrix * component->viewMatrix;
 					
 					// Use middle of near plane as camera origin
+					auto corners = frustum.GetCorners();
 					auto center = corners[4] + 0.5f * (corners[5] - corners[4])
 						+ 0.5f * (corners[6] - corners[4]);
 
@@ -114,30 +112,6 @@ namespace Atlas {
 			bottomLoD = shader.GetUniform("bottomLoD");
 
 			lightSpaceMatrix = shader.GetUniform("lightSpaceMatrix");
-
-		}
-
-		std::vector<vec3> TerrainShadowRenderer::GetFrustumCorners(mat4 inverseMatrix) {
-
-			vec3 vectors[8] = {
-				vec3(-1.0f, 1.0f, 1.0f),
-				vec3(1.0f, 1.0f, 1.0f),
-				vec3(-1.0f, -1.0f, 1.0f),
-				vec3(1.0f, -1.0f, 1.0f),
-				vec3(-1.0f, 1.0f, -1.0f),
-				vec3(1.0f, 1.0f, -1.0f),
-				vec3(-1.0f, -1.0f, -1.0f),
-				vec3(1.0f, -1.0f, -1.0f)
-			};
-
-			std::vector<vec3> corners;
-
-			for (uint8_t i = 0; i < 8; i++) {
-				auto homogenous = inverseMatrix * vec4(vectors[i], 1.0f);
-				corners.push_back(vec3(homogenous) / homogenous.w);
-			}
-
-			return corners;
 
 		}
 

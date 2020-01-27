@@ -6,6 +6,7 @@
 #include "../terrain/Terrain.h"
 #include "../lighting/Light.h"
 #include "../lighting/Sky.h"
+#include "../lighting/Fog.h"
 #include "../ocean/Ocean.h"
 #include "../postprocessing/PostProcessing.h"
 #include "../Decal.h"
@@ -78,6 +79,7 @@ namespace Atlas {
 			Ocean::Ocean* ocean = nullptr;
 
 			Lighting::Sky sky;
+			Lighting::Fog* fog = nullptr;
 			PostProcessing::PostProcessing postProcessing;
 
 		private:

@@ -44,7 +44,7 @@ namespace Atlas {
 			struct ShadowCascadeUniform {
 				Shader::Uniform* distance;
 				Shader::Uniform* lightSpace;
-			}cascades[MAX_SHADOW_CASCADE_COUNT];
+			}cascades[MAX_SHADOW_CASCADE_COUNT + 1];
 
 			// Bilateral blur shader uniforms
 			Shader::Uniform* blurDirection = nullptr;

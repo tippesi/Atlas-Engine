@@ -127,23 +127,23 @@ namespace Atlas {
 
         void Texture2D::Resize(int32_t width, int32_t height) {
 
-            this->width = width;
-            this->height = height;
+			if (width != this->width || height != this->height) {
 
-            glDeleteTextures(1, &ID);
-            glGenTextures(1, &ID);
+				this->width = width;
+				this->height = height;
 
-            Generate(GL_TEXTURE_2D, sizedFormat, wrapping, filtering, anisotropicFiltering, mipmaps);
+				glDeleteTextures(1, &ID);
+				glGenTextures(1, &ID);
+
+				Generate(GL_TEXTURE_2D, sizedFormat, wrapping, filtering, anisotropicFiltering, mipmaps);
+
+			}
 
         }
 
         void Texture2D::SaveToPNG(std::string filename, bool flipHorizontally) {
 
-            Common::Image8 image;
-
-            image.width = width;
-            image.height = height;
-			image.channels = channels;
+			Common::Image8 image(width, height, channels);
             image.fileFormat = AE_IMAGE_PNG;
 
             auto data = GetData();

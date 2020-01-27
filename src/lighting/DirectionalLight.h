@@ -15,7 +15,7 @@ namespace Atlas {
 
 			~DirectionalLight();
 
-			void AddShadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection, Camera* camera);
+			void AddShadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection);
 
 			void AddShadow(float distance, float bias, int32_t resolution, vec3 centerPoint, mat4 orthoProjection);
 

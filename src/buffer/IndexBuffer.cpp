@@ -10,10 +10,11 @@ namespace Atlas {
 
 		}
 
-        IndexBuffer::IndexBuffer(uint32_t dataType, size_t elementSize, size_t elementCount, uint32_t flags) :
-                Buffer(AE_INDEX_BUFFER, elementSize, flags), dataType(dataType) {
+        IndexBuffer::IndexBuffer(uint32_t dataType, size_t elementSize, size_t elementCount,
+			void* data, uint32_t flags) : 
+			Buffer(AE_INDEX_BUFFER, elementSize, flags, elementCount, data), dataType(dataType) {
 
-            SetSize(elementCount);
+
 
         }
 

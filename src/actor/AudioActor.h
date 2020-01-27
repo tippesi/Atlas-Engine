@@ -16,6 +16,8 @@ namespace Atlas {
 		public:
 			AudioActor() {}
 
+			AudioActor(const AudioActor& that);
+
 			AudioActor(Audio::AudioData* data);
 
 			AudioActor& operator=(const AudioActor& that);

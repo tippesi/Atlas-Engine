@@ -21,8 +21,6 @@ namespace Atlas {
 		private:
 			void GetUniforms();
 
-			std::vector<vec3> GetFrustumCorners(mat4 inverseMatrix);
-
 			Shader::Shader shader;
 
 			Framebuffer framebuffer;

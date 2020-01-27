@@ -120,7 +120,7 @@ namespace Atlas {
 
 		void MouseHandler::MouseButtonEventHandler(Events::MouseButtonEvent event) {
 
-			if (event.windowID == 0 || lock)
+			if (event.windowID == 0)
 				return;
 
 			if (event.button == activationButton && event.state == AE_BUTTON_PRESSED)

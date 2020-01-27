@@ -109,9 +109,7 @@ namespace Atlas {
 			Bind();
 			buffer->Bind();
 
-			int32_t bufferStride = buffer->GetStride();
-
-			auto prevBuffer = vertexComponents[attribArray];
+			auto bufferStride = buffer->GetStride();
 
 			if(bufferStride > 4) {
 
@@ -160,6 +158,58 @@ namespace Atlas {
 
 		}
 
+		void VertexArray::RemoveInstanceComponent(uint32_t attribArray) {
+
+			Bind();
+
+			auto buffer = vertexComponents[attribArray];
+			auto bufferStride = buffer->GetStride();
+
+			if (bufferStride > 4) {
+
+				int32_t numAttribArrays = 0;
+				int32_t internalStride = 0;
+
+				if (bufferStride % 4 == 0) { // Might be a 4x4 matrix or some other multi-4-component vector data
+					numAttribArrays = bufferStride / 4;
+					internalStride = 4;
+				}
+				else if (bufferStride % 3 == 0) { // Might be a 3x3 matrix or some other multi-3-component vector data
+					numAttribArrays = bufferStride / 3;
+					internalStride = 3;
+				}
+				else { // Everything else isn't supported. There is no use scenario to justify additional complexity
+					return;
+				}
+
+				if (attribArray + numAttribArrays > maxAttribArrayCount)
+					return;
+
+				for (int32_t i = 0; i < numAttribArrays; i++) {
+
+					glDisableVertexAttribArray(attribArray + i);
+					glVertexAttribDivisor(attribArray + i, 0);
+
+					vertexComponents.erase(attribArray + i);
+
+				}
+
+			}
+			else {
+
+				if (attribArray >= maxAttribArrayCount)
+					return;
+
+				glDisableVertexAttribArray(attribArray);
+				glVertexAttribDivisor(attribArray, 0);
+
+				vertexComponents.erase(attribArray);
+
+			}
+
+
+		}
+
 		void VertexArray::DisableComponent(uint32_t attribArray) {
 
 			Bind();
@@ -180,7 +230,27 @@ namespace Atlas {
 
 		}
 
-		void VertexArray::Bind() const {
+		void VertexArray::UpdateComponents() {
+
+			if (indexComponent) {
+				AddIndexComponent(indexComponent);
+			}
+
+			// Instanced buffers are in multiple slots
+			std::unordered_set<VertexBuffer*> buffers;
+
+			for (auto& key : vertexComponents) {
+				if (buffers.find(key.second) == buffers.end()) {
+					AddComponent(key.first, key.second);
+					buffers.insert(key.second);
+				}
+			}
+
+			Unbind();
+
+		}
+
+		void VertexArray::Bind() const {			
 
 			glBindVertexArray(ID);
 

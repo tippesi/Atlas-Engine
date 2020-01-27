@@ -129,10 +129,11 @@ namespace Atlas {
 
 				float normalScale;
 
-				bool invertUVs;
+				int32_t invertUVs;
 
 				GPUTexture diffuseTexture;
 				GPUTexture normalTexture;
+				GPUTexture specularTexture;
 			};
 
 			struct GPUAABB {
@@ -177,6 +178,7 @@ namespace Atlas {
 
 			Texture::TextureAtlas diffuseTextureAtlas;
 			Texture::TextureAtlas normalTextureAtlas;
+			Texture::TextureAtlas specularTextureAtlas;
 
 			Shader::Shader primaryRayShader;
 
@@ -205,6 +207,8 @@ namespace Atlas {
 			Shader::Uniform* bounceCountRayUpdateUniform = nullptr;
 
 			Shader::Uniform* resolutionRayUpdateUniform = nullptr;
+
+			Shader::Uniform* seedRayUpdateUniform = nullptr;
 
 		};
 

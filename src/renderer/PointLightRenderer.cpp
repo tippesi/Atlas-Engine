@@ -47,7 +47,7 @@ namespace Atlas {
 
 				auto pointLight = (Lighting::PointLight*)light;
 
-				if (pointLight->GetShadow() != nullptr) {
+				if (pointLight->GetShadow()) {
 					pointLight->GetShadow()->cubemap.Bind(GL_TEXTURE4);
 					lightViewMatrix->SetValue(glm::translate(mat4(1.0f), -pointLight->location) * camera->invViewMatrix);
 					lightProjectionMatrix->SetValue(pointLight->GetShadow()->components[0].projectionMatrix);
@@ -61,6 +61,10 @@ namespace Atlas {
 
 				glDrawElements(GL_TRIANGLES, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
 							   vertexArray.GetIndexComponent()->GetDataType(), nullptr);
+
+				if (pointLight->GetShadow()) {
+					pointLight->GetShadow()->cubemap.Unbind();
+				}
 
 			}
 

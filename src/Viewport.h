@@ -35,6 +35,8 @@ namespace Atlas {
          */
 		void Set(int32_t x, int32_t y, int32_t width, int32_t height);
 
+		vec3 Project(vec3 point, Camera* camera);
+
 		/**
          * Transforms a point from screen space pixel coordinates into world space.
          * @param point The point to be transformed.

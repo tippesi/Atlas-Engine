@@ -56,6 +56,8 @@ namespace Atlas {
              */
 			void AddInstancedComponent(uint32_t attribArray, VertexBuffer* buffer, bool normalized = false);
 
+			void RemoveInstanceComponent(uint32_t attribArray);
+
 			/**
 			 *
 			 * @param attribArray
@@ -74,6 +76,9 @@ namespace Atlas {
              * @return
              */
 			VertexBuffer* GetComponent(uint32_t attribArray);
+
+
+			void UpdateComponents();
 
 			/**
 			 * Binds the vertex array.

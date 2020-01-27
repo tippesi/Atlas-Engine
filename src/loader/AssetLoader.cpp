@@ -61,8 +61,9 @@ namespace Atlas {
 			std::ifstream stream;
 			std::string path;
 
-			if (!Common::Path::IsAbsolute(filename))
+			if (!Common::Path::IsAbsolute(filename)) {
 				path = GetFullPath(filename);
+			}
 			else
 				path = filename;
 

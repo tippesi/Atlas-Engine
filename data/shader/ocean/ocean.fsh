@@ -1,8 +1,9 @@
 #define SHADOW_FILTER_1x1
 
-#include "../deferred/convert"
+#include "../common/convert"
 #include "../structures"
 #include "../shadow"
+#include "../fog"
 
 // Lighting based on Island Demo (NVIDIA SDK 11)
 
@@ -59,7 +60,7 @@ const float shoreSoftness = 2.5;
 void main() {
 	
 	// Retrieve precalculated normals and wave folding information
-	vec3 fNormal = 2.0 * texture(normalMap, fTexCoord).rgb - 1.0;
+	vec3 fNormal = normalize(2.0 * texture(normalMap, fTexCoord).rgb - 1.0);
 	float fold = 2.0 * texture(normalMap, fTexCoord).a - 1.0;
 	
 	fNormal = fNormal;
@@ -69,7 +70,7 @@ void main() {
 	
 	vec3 depthPos = ConvertDepthToViewSpace(clipDepth, ndcCoord);
 	
-	float shadowFactor = max(CalculateCascadedShadow(light, fPosition, 1.0), light.ambient);
+	float shadowFactor = max(CalculateCascadedShadow(light, fPosition, fNormal, 1.0), light.ambient);
 	
 	// Create TBN matrix for normal mapping
 	vec3 norm = mix(vec3(0.0, 1.0, 0.0), fNormal, shoreScaling);
@@ -146,7 +147,7 @@ void main() {
 	// Calculate water color
 	float diffuseFactor = waterColorIntensity.x + waterColorIntensity.y * 
 		max(0.0, nDotL) * shadowFactor;
-	vec3 waterColor = diffuseFactor * waterBodyColor;
+	vec3 waterColor = diffuseFactor * light.color * waterBodyColor;
 	
 	// Water edges at shore sould be soft
 	fresnel *= min(1.0, waterViewDepth * shoreSoftness);
@@ -162,6 +163,10 @@ void main() {
 	// Calculate foam based on folding of wave and fade it out near shores
 	float foam = clamp(1.0 * (-fold + 0.6 - max(0.0, 1.0 - shoreScaling)), 0.0, 1.0);
 	color += vec3(foam);
+	
+	color = applyFog(color, length(fPosition), 
+		cameraLocation, eyeDir, -light.direction,
+		light.color);
 
 	// Calculate velocity
 	vec2 ndcL = ndcLast.xy / ndcLast.z;

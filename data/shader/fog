@@ -1,0 +1,29 @@
+uniform float fogScale;
+uniform float fogDistanceScale;
+uniform float fogHeight;
+uniform vec3 fogColor;
+uniform float fogScatteringPower;
+
+vec3 applyFog(vec3 pixelColor, float distance,
+	vec3 cameraLocation, vec3 viewDir, 
+	vec3 sunDir, vec3 sunColor) {
+		
+	// Calculate fog amount
+	float fogAmount = fogScale / fogDistanceScale * 
+		exp((-cameraLocation.y + fogHeight)	* fogDistanceScale)
+		* (1.0 - exp(-distance * viewDir.y * fogDistanceScale)) / viewDir.y;
+	
+	// Calculate how much sun affects the fog
+	float sunAmount = max(0.0, dot(viewDir, sunDir));
+	fogAmount = clamp(fogAmount, 0.0, 1.0);
+	
+	float nDotL = max(0.0, dot(sunDir, vec3(0.0, 1.0, 0.0)));
+	
+	// Mix sun and fog colors
+	vec3 mixedColor = mix(fogColor * nDotL, sunColor,
+		pow(sunAmount, fogScatteringPower));
+
+	// Return the pixel color 
+	return mix(pixelColor, mixedColor, fogAmount);
+	
+}

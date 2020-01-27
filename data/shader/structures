@@ -2,6 +2,7 @@
 struct Cascade {
 	
 	float distance;
+	float texelSize;
 	mat4 cascadeSpace;	
 	
 };

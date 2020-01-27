@@ -61,10 +61,7 @@ namespace Atlas {
 						framebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT, &light->GetShadow()->maps, i);
 					}
 
-					auto inverseMatrix = glm::inverse(component->frustumMatrix);
-
-					auto corners = GetFrustumCorners(inverseMatrix);
-					auto frustum = Volume::Frustum(corners);
+					auto frustum = Volume::Frustum(component->frustumMatrix);
 
 					scene->GetRenderList(frustum, renderList);
 					renderList.UpdateBuffers(camera);
@@ -90,12 +87,12 @@ namespace Atlas {
 							}
 
 							auto mesh = actorBatch->GetObject();
+							auto buffer = renderList.actorBatchBuffers[mesh];
 
-							auto actorCount = renderList.actorBatchBuffers[mesh]->GetElementCount();
-
-							if (!actorCount) {
+							if (!buffer)
 								continue;
-							}
+
+							auto actorCount = buffer->GetElementCount();
 
 							mesh->Bind();
 
@@ -164,30 +161,6 @@ namespace Atlas {
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			shaderBatch.RemoveConfig(config);
-
-		}
-
-		std::vector<vec3> ShadowRenderer::GetFrustumCorners(mat4 inverseMatrix) {
-
-			vec3 vectors[8] = {
-				vec3(-1.0f, 1.0f, 1.0f),
-				vec3(1.0f, 1.0f, 1.0f),
-				vec3(-1.0f, -1.0f, 1.0f),
-				vec3(1.0f, -1.0f, 1.0f),
-				vec3(-1.0f, 1.0f, -1.0f),
-				vec3(1.0f, 1.0f, -1.0f),
-				vec3(-1.0f, -1.0f, -1.0f),
-				vec3(1.0f, -1.0f, -1.0f)
-			};
-
-			std::vector<vec3> corners;
-
-			for (uint8_t i = 0; i < 8; i++) {
-				auto homogenous = inverseMatrix * vec4(vectors[i], 1.0f);
-				corners.push_back(vec3(homogenous) / homogenous.w);
-			}
-
-			return corners;
 
 		}
 

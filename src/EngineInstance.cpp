@@ -9,6 +9,8 @@ namespace Atlas {
 
 		LockFramerate();
 
+
+
 	}
 
 	void EngineInstance::Update() {

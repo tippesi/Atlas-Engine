@@ -116,9 +116,9 @@ namespace Atlas {
 		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: output.append("Undefined behavior");
 			logType = Log::Type::TYPE_WARNING; break;
 		case GL_DEBUG_TYPE_PORTABILITY: output.append("Bad portability"); 
-			logType = Log::Type::TYPE_MESSAGE; break;
+			logType = Log::Type::TYPE_WARNING; break;
 		case GL_DEBUG_TYPE_PERFORMANCE: output.append("Performance issue"); 
-			logType = Log::Type::TYPE_MESSAGE; break;
+			logType = Log::Type::TYPE_WARNING; break;
 		case GL_DEBUG_TYPE_OTHER: output.append("Unknown"); 
 			logType = Log::Type::TYPE_MESSAGE; break;
 		default: break;

@@ -68,23 +68,50 @@ namespace Atlas {
 
 		void Texture::Unbind() {
 
+			if (!target)
+				return;
+
 			glBindTexture(target, 0);
 
 		}
 
-        uint32_t Texture::GetID() {
+		void Texture::Unbind(uint32_t unit) {
+
+			if (!target)
+				return;
+
+			glActiveTexture(unit);
+			Unbind();
+
+		}
+
+		void Texture::SetBias(float bias) {
+
+			Bind();
+			glTexParameterf(target, GL_TEXTURE_LOD_BIAS, bias);
+			this->bias = bias;
+
+		}
+
+		float Texture::GetBias() const {
+
+			return bias;
+
+		}
+
+        uint32_t Texture::GetID() const {
 
             return ID;
 
         }
 
-        uint32_t Texture::GetDataType() {
+        uint32_t Texture::GetDataType() const {
 
             return dataType;
 
         }
 
-        int32_t Texture::GetSizedFormat() {
+        int32_t Texture::GetSizedFormat() const {
 
             return sizedFormat;
 
@@ -125,6 +152,12 @@ namespace Atlas {
 
 			if (mipmaps)
 				glGenerateMipmap(target);
+
+		}
+
+		int32_t Texture::GetMipMapLevel() const {
+
+			return (int32_t)floor(log2(glm::max((float)width, (float)height))) + 1;
 
 		}
 
@@ -172,7 +205,7 @@ namespace Atlas {
                     continue;
 
                 float value = (float)data[i] / 255.0f;
-                value = powf(value, 2.2f);
+				value = 0.76f * value * value + 0.24f * value * value * value;
                 // Before we can uncorrect it we have to bring it in normalized space
                 data[i] = (uint8_t)(value * 255.0f);
 
@@ -190,7 +223,7 @@ namespace Atlas {
                     continue;
 
                 float value = (float)data[i] / 65535.0f;
-                value = powf(value, 2.2f);
+				value = 0.76f * value * value + 0.24f * value * value * value;
                 // Before we can uncorrect it we have to bring it in normalized space
                 data[i] = (uint8_t)(value * 65535.0f);
 
@@ -257,12 +290,6 @@ namespace Atlas {
             }
 
 			return invertedData;
-
-        }
-
-        int32_t Texture::GetMipMapLevel() {
-
-            return (int32_t)floor(log2(glm::max((float)width, (float)height))) + 1;
 
         }
 

@@ -1,4 +1,5 @@
 #include "Buffer.h"
+#include "../TypeFormat.h"
 #include "../texture/TextureFormat.h"
 
 namespace Atlas {
@@ -13,8 +14,9 @@ namespace Atlas {
 
         }
 
-        Buffer::Buffer(uint32_t type, size_t elementSize, uint32_t flags) : type(type), 
-			elementSize(elementSize), flags(flags) {
+        Buffer::Buffer(uint32_t type, size_t elementSize, uint32_t flags,
+			size_t elementCount, void* data) : type(type), elementSize(elementSize),
+			flags(flags) {
 
             dynamicStorage = flags & AE_BUFFER_DYNAMIC_STORAGE;
 
@@ -29,6 +31,7 @@ namespace Atlas {
                 bufferingCount = 1;
             }
 
+			//immutableStorageSupported = false;
             immutable = (flags & AE_BUFFER_IMMUTABLE) && immutableStorageSupported;
 
             // Configure mapping and storage flags.
@@ -46,6 +49,10 @@ namespace Atlas {
             else if (!(flags & AE_BUFFER_DYNAMIC_STORAGE) && !immutable) {
                 dataFlags |= GL_STATIC_DRAW;
             }
+
+			if (elementCount) {
+				SetSize(elementCount, data);
+			}
 
         }
 
@@ -146,23 +153,30 @@ namespace Atlas {
 
         }
 
-        void Buffer::SetSize(size_t elementCount) {
+        void Buffer::SetSize(size_t elementCount, void* data) {
+
+			if (this->elementCount == elementCount) {
+				if (!data)
+					return;
+				SetData(data, 0, elementCount);
+				return;
+			}
 
             this->elementCount = elementCount;
             sizeInBytes = elementCount * elementSize * bufferingCount;
 
             if (!ID) {
-                CreateInternal();
+                CreateInternal(data);
                 return;
             }
 
             if (immutable) {
                 DestroyInternal();
-                CreateInternal();
+                CreateInternal(data);
             }
             else {
                 Bind();
-                glBufferData(type, bufferingCount * elementCount * elementSize, nullptr, dataFlags);
+                glBufferData(type, sizeInBytes, data, dataFlags);
             }
 
         }
@@ -210,15 +224,22 @@ namespace Atlas {
 
 		void Buffer::InvalidateData() {
 
+#ifdef AE_API_GL
 			glInvalidateBufferData(ID);
+#endif
 
 		}
 
 		void Buffer::ClearData(int32_t sizedFormat, int32_t type, void* data) {
 
+#ifdef AE_API_GL
 			glClearBufferData(this->type, sizedFormat,
 				Texture::TextureFormat::GetBaseFormat(sizedFormat),
 				type, data);
+#else
+			if (TypeFormat::GetSize(type) == elementSize)
+				SetData(data, 0, 1);
+#endif
 
 		}
 
@@ -314,7 +335,7 @@ namespace Atlas {
 
 		}
 
-        void Buffer::CreateInternal() {
+        void Buffer::CreateInternal(void* data) {
 
             glGenBuffers(1, &ID);
 
@@ -323,14 +344,14 @@ namespace Atlas {
             if (immutable) {
 #ifndef AE_OS_ANDROID
 #ifdef AE_API_GLES
-                glBufferStorageEXT(type, sizeInBytes, nullptr, dataFlags);
+                glBufferStorageEXT(type, sizeInBytes, data, dataFlags);
 #else
-                glBufferStorage(type, sizeInBytes, nullptr, dataFlags);
+                glBufferStorage(type, sizeInBytes, data, dataFlags);
 #endif
 #endif
             }
             else {
-                glBufferData(type, sizeInBytes, nullptr, dataFlags);
+                glBufferData(type, sizeInBytes, data, dataFlags);
             }
 
         }

@@ -1,5 +1,6 @@
 #include <Log.h>
 #include <Clock.h>
+#include <loader/AssetLoader.h>
 
 namespace Atlas {
 
@@ -37,12 +38,33 @@ namespace Atlas {
 		std::string consoleLog;
 		consoleLog.append("[" + std::to_string(entry.time) + "] ");
 		consoleLog.append(message);
-		AtlasLog(consoleLog.c_str());
+		AtlasLog("%s", consoleLog.c_str());
 #endif
 
 		std::lock_guard<std::mutex> lock(mutex);
 
 		entries.push_back(entry);
+
+	}
+
+	void Log::Save(std::string filename) {
+
+		auto stream = Loader::AssetLoader::WriteFile(filename, std::ios::out);
+
+		if (!stream.is_open()) {
+			Log::Warning("Couldn't save log to hard drive");
+			return;
+		}
+
+		for (auto entry : entries) {
+			std::string entryString;
+			entryString.append("[" + std::to_string(entry.time) + "] ");
+			entryString.append(entry.message);
+			entryString.append("\n");
+			stream << entryString;
+		}
+
+		stream.close();
 
 	}
 

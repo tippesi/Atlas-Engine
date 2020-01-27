@@ -32,8 +32,17 @@ namespace Atlas {
 			 */
 			MeshData();
 
+			/**
+			 *
+			 * @param data
+			 */
 			MeshData(const MeshData& data);
 
+			/**
+			 *
+			 * @param that
+			 * @return
+			 */
 			MeshData& operator=(const MeshData& that);
 
 			/**
@@ -59,6 +68,14 @@ namespace Atlas {
 			 */
 			int32_t GetVertexCount() const;
 
+			/**
+			 * Applies a transformation matrix to the data.
+			 * @param transform
+			 */
+			void SetTransform(mat4 transform);
+
+            std::string filename;
+
 			DataComponent<uint32_t, void> indices;
 
 			DataComponent<float, float> vertices;
@@ -73,7 +90,7 @@ namespace Atlas {
 
 			Volume::AABB aabb;
 
-			std::string filename;
+			mat4 transform;
 
 		private:
 			void DeepCopy(const MeshData& that);

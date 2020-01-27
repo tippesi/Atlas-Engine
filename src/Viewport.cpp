@@ -17,6 +17,36 @@ namespace Atlas {
 
 	}
 
+	vec3 Viewport::Project(vec3 point, Camera* camera) {
+
+		vec4 transformed = camera->unjitterdProjection * camera->viewMatrix * vec4(point, 1.0f);
+
+		transformed.w = 1.0f / transformed.w;
+		transformed.x *= transformed.w;
+		transformed.y *= transformed.w;
+		transformed.z *= transformed.w;
+
+		transformed = 0.5f * transformed + 0.5f;
+
+		transformed.y = 1.0f - transformed.y;
+
+		float fX = (float)x;
+		float fY = (float)y;
+		float fWidth = (float)width;
+		float fHeight = (float)height;
+
+		transformed = glm::clamp(transformed, 0.0f, 1.0f);
+
+		transformed.x *= fWidth;
+		transformed.y *= fHeight;
+
+		transformed.x += fX;
+		transformed.y += fY;
+
+		return vec3(transformed);
+
+	}
+
 	vec3 Viewport::Unproject(vec3 point, Camera *camera) {
 
 		float fWidth = (float) width + (float) x;
@@ -24,13 +54,8 @@ namespace Atlas {
 		float fX = (float) x;
 		float fY = (float) y;
 
-		if (point.x > fWidth || point.x < fX ||
-			point.y > fHeight || point.y < fY) {
-
-			point.x = fX + (fWidth - fX) / 2.0f;
-			point.y = fY + (fHeight - fY) / 2.0f;
-
-		}
+		point.x = glm::clamp(point.x, fX, fWidth);
+		point.y = glm::clamp(point.y, fY, fHeight);
 
 		point.z = glm::clamp(2.0f * point.z - 1.0f, -1.0f, 1.0f);
 		point.x = 2.0f * (point.x - fX) / (fWidth - fX) - 1.0f;

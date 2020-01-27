@@ -99,8 +99,10 @@ namespace Atlas {
 			jitterLast->SetValue(camera->GetLastJitter());
 			jitterCurrent->SetValue(camera->GetJitter());
 
+#ifdef AE_API_GL
 			if (terrain->wireframe)
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+#endif
 
 			for (auto node : nodes) {
 
@@ -162,8 +164,10 @@ namespace Atlas {
 
 			}
 
+#ifdef AE_API_GL
 			if (terrain->wireframe)
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif
 
 		}
 

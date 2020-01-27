@@ -33,6 +33,7 @@ namespace Atlas {
              * @param stride The number of elements of dataType per element
              * @param elementSize The size of each element in bytes
              * @param elementCount The number of elements in the vertex buffer will be filled with
+			 * @param data Optional parameter for directly filling the buffer with data
              * @param flags The flags of the vertex buffer. Shouldn't be changed unless it's really needed. See {@link Buffer.h} for more.
              * @note This is similar to
              * <a href="https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBufferData.xhtml">glBufferData</a>.
@@ -41,7 +42,7 @@ namespace Atlas {
              * and perform storage access by using a staging buffer.
              */
 			VertexBuffer(uint32_t dataType, int32_t stride, size_t elementSize, size_t elementCount,
-						 uint32_t flags = AE_BUFFER_IMMUTABLE);
+				void* data = nullptr, uint32_t flags = AE_BUFFER_IMMUTABLE);
 
 			~VertexBuffer();
 

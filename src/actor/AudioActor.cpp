@@ -4,6 +4,12 @@ namespace Atlas {
 
 	namespace Actor {
 
+		AudioActor::AudioActor(const AudioActor& that) {
+
+			operator=(that);
+
+		}
+
 		AudioActor::AudioActor(Audio::AudioData* data) : Actor(), Audio::AudioStream(data) {
 
 

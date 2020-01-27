@@ -130,6 +130,31 @@ namespace Atlas {
 		
 		}
 
+		std::vector<Actor::Actor*> SpacePartitioning::GetActors() {
+
+			std::vector<Actor::Actor*> actors;
+
+			auto meshActors = GetMeshActors();
+
+			for (auto actor : meshActors)
+				actors.push_back(actor);
+
+			std::vector<Actor::DecalActor*> decalActors;
+			decalOctree.GetData(decalActors);
+			
+			for (auto actor : decalActors)
+				actors.push_back(actor);
+
+			std::vector<Actor::AudioActor*> audioActors;
+			audioOctree.GetData(audioActors);
+
+			for (auto actor : audioActors)
+				actors.push_back(actor);
+
+			return actors;
+
+		}
+
 		std::vector<Actor::MeshActor*> SpacePartitioning::GetMeshActors() {
 
 			std::vector<Actor::MovableMeshActor*> movableActors;

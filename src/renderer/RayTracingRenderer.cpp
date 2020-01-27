@@ -1,5 +1,6 @@
 #include "RayTracingRenderer.h"
 #include "../Log.h"
+#include "../Clock.h"
 
 #include "../volume/BVH.h"
 #include "../libraries/glm/packing.hpp"
@@ -118,12 +119,14 @@ namespace Atlas {
 			}
 
 			if (diffuseTextureAtlas.slices.size())
-				diffuseTextureAtlas.texture.Bind(GL_READ_ONLY, 3);
+				diffuseTextureAtlas.texture.Bind(GL_TEXTURE3);
 			if (normalTextureAtlas.slices.size())
-				normalTextureAtlas.texture.Bind(GL_READ_ONLY, 4);
+				normalTextureAtlas.texture.Bind(GL_TEXTURE4);
+			if (specularTextureAtlas.slices.size())
+				specularTextureAtlas.texture.Bind(GL_TEXTURE5);
 
 			if (scene->sky.cubemap) {
-				scene->sky.cubemap->Bind(GL_READ_ONLY, 5);
+				scene->sky.cubemap->Bind(GL_READ_ONLY, 6);
 			}
 
 			materialBuffer.BindBase(5);
@@ -166,8 +169,12 @@ namespace Atlas {
 					renderTarget->rayBuffer0.BindBase(3);
 					renderTarget->rayBuffer1.BindBase(4);
 
-					glDispatchCompute(resolution.x / 8 / imageSubdivisions.x,
-						resolution.y / 8 / imageSubdivisions.y, 1);
+					ivec2 groupCount = resolution / 8 / imageSubdivisions;
+
+					groupCount.x += resolution.x % groupCount.x ? 1 : 0;
+					groupCount.y += resolution.y % groupCount.y ? 1 : 0;
+
+					glDispatchCompute(groupCount.x, groupCount.y, 1);
 
 					counterBuffer0.BindBase(0);
 					counterBuffer1.BindBase(1);
@@ -215,6 +222,7 @@ namespace Atlas {
 				bounceCountRayUpdateUniform->SetValue(bounces - i);
 
 				resolutionRayUpdateUniform->SetValue(resolution);
+				seedRayUpdateUniform->SetValue(Clock::Get() * (float)(i + 1));
 
 				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -294,6 +302,7 @@ namespace Atlas {
 			bounceCountRayUpdateUniform = rayUpdateShader.GetUniform("bounceCount");
 
 			resolutionRayUpdateUniform = rayUpdateShader.GetUniform("resolution");
+			seedRayUpdateUniform = rayUpdateShader.GetUniform("seed");
 
 		}
 
@@ -479,11 +488,9 @@ namespace Atlas {
 
 			}
 
-			triangleBuffer.Bind();
 			triangleBuffer.SetSize(triangles.size());
 			triangleBuffer.SetData(triangles.data(), 0, triangles.size());
 
-			nodesBuffer.Bind();
 			nodesBuffer.SetSize(gpuNodes.size());
 			nodesBuffer.SetData(gpuNodes.data(), 0, gpuNodes.size());
 
@@ -519,7 +526,7 @@ namespace Atlas {
 						gpuMaterial.specularHardness = material.specularHardness;
 
 						gpuMaterial.normalScale = material.normalScale;
-						gpuMaterial.invertUVs = actor->mesh->invertUVs;
+						gpuMaterial.invertUVs = actor->mesh->invertUVs ? 1 : 0;
 
 						if (material.HasDiffuseMap()) {
 							auto slice = diffuseTextureAtlas.slices[material.diffuseMap];
@@ -531,7 +538,6 @@ namespace Atlas {
 
 							gpuMaterial.diffuseTexture.width = slice.size.x;
 							gpuMaterial.diffuseTexture.height = slice.size.y;
-
 						}
 						else {
 							gpuMaterial.diffuseTexture.layer = -1;
@@ -547,10 +553,24 @@ namespace Atlas {
 
 							gpuMaterial.normalTexture.width = slice.size.x;
 							gpuMaterial.normalTexture.height = slice.size.y;
-
 						}
 						else {
 							gpuMaterial.normalTexture.layer = -1;
+						}
+
+						if (material.HasSpecularMap()) {
+							auto slice = specularTextureAtlas.slices[material.specularMap];
+
+							gpuMaterial.specularTexture.layer = slice.layer;
+
+							gpuMaterial.specularTexture.x = slice.offset.x;
+							gpuMaterial.specularTexture.y = slice.offset.y;
+
+							gpuMaterial.specularTexture.width = slice.size.x;
+							gpuMaterial.specularTexture.height = slice.size.y;
+						}
+						else {
+							gpuMaterial.specularTexture.layer = -1;
 						}
 
 						materials.push_back(gpuMaterial);
@@ -560,7 +580,6 @@ namespace Atlas {
 				}
 			}
 
-			materialBuffer.Bind();
 			materialBuffer.SetSize(materials.size());
 			materialBuffer.SetData(materials.data(), 0, materials.size());
 
@@ -575,6 +594,7 @@ namespace Atlas {
 			std::unordered_set<Mesh::Mesh*> meshes;
 			std::vector<Texture::Texture2D*> diffuseTextures;
 			std::vector<Texture::Texture2D*> normalTextures;
+			std::vector<Texture::Texture2D*> specularTextures;
 
 			for (auto& actor : actors) {
 				if (meshes.find(actor->mesh) == meshes.end()) {
@@ -584,6 +604,8 @@ namespace Atlas {
 							diffuseTextures.push_back(material.diffuseMap);
 						if (material.HasNormalMap())
 							normalTextures.push_back(material.normalMap);
+						if (material.HasSpecularMap())
+							specularTextures.push_back(material.specularMap);
 					}
 					meshes.insert(actor->mesh);
 				}
@@ -591,6 +613,7 @@ namespace Atlas {
 
 			diffuseTextureAtlas = Texture::TextureAtlas(diffuseTextures);
 			normalTextureAtlas = Texture::TextureAtlas(normalTextures);
+			specularTextureAtlas = Texture::TextureAtlas(specularTextures);
 
 		}
 

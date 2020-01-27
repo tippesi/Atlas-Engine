@@ -5,7 +5,7 @@ namespace Atlas {
 	RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height(height) {
 
 		// We want a shared depth and velocity texture across the geometry and lighting framebuffers
-		depthTexture = Texture::Texture2D(width, height, AE_DEPTH24, 
+		depthTexture = Texture::Texture2D(width, height, AE_DEPTH32F,
 			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
 
 		velocityTexture = Texture::Texture2D(width, height, AE_RG16F,
@@ -16,7 +16,9 @@ namespace Atlas {
 		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT1, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT2, AE_RG16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT3, &velocityTexture);
+		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT3, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT4, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &velocityTexture);
 		geometryFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
 
 		lightingFramebuffer.Resize(width, height);
@@ -25,7 +27,9 @@ namespace Atlas {
 		lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, &velocityTexture);
 		lightingFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
 
-		lightingFramebuffer.Unbind();
+		postProcessFramebuffer.Resize(width, height);
+
+		postProcessFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 		historyFramebuffer.Resize(width, height);
 
@@ -38,6 +42,8 @@ namespace Atlas {
 
 		historyFramebuffer.Unbind();
 
+		postProcessTexture = Texture::Texture2D(width, height, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
+
 	}
 
 	void RenderTarget::Resize(int32_t width, int32_t height) {
@@ -45,17 +51,16 @@ namespace Atlas {
 		geometryFramebuffer.Resize(width, height);
 		lightingFramebuffer.Resize(width, height);
 
-		geometryFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT,
-			lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT));
+		geometryFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
+		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &velocityTexture);
 
-		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT3,
-			lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3));
-
-		geometryFramebuffer.Unbind();
+		postProcessFramebuffer.Resize(width, height);
 
 		historyFramebuffer.Resize(width, height);
 
 		historyFramebuffer.Unbind();
+
+		postProcessTexture.Resize(width, height);
 
 		this->width = width;
 		this->height = height;
@@ -96,6 +101,17 @@ namespace Atlas {
 		}
 		else {
 			return &swapHistoryTexture;
+		}
+
+	}
+
+	Texture::Texture2D* RenderTarget::GetLastHistory() {
+
+		if (swap) {
+			return &swapHistoryTexture;
+		}
+		else {
+			return &historyTexture;
 		}
 
 	}

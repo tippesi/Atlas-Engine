@@ -6,6 +6,7 @@ layout(quads, equal_spacing, cw) in;
 layout(quads, equal_spacing, cw) in;
 #endif
 
+layout (binding = 1) uniform sampler2D normalMap;
 layout (binding = 2)  uniform usampler2D splatMap;
 layout(binding = 5) uniform sampler2DArray displacementMaps;
 
@@ -20,6 +21,8 @@ out vec2 texCoords;
 out vec3 ndcCurrent;
 out vec3 ndcLast;
 flat out uvec4 materialIndicesTE;
+
+uniform float normalTexelSize;
 
 uniform vec2 nodeLocation;
 uniform float nodeSideLength;
@@ -90,10 +93,14 @@ void main(){
 #ifndef DISTANCE
 	float vertexDistance = distance(position.xyz, cameraLocation);
 	float weight = clamp((displacementDistance - vertexDistance), 0.0, 1.0);
+
+	vec2 tex = vec2(normalTexelSize) + texCoords * (1.0 - 3.0 * normalTexelSize)
+		+ 0.5 * normalTexelSize;
+	vec3 norm = 2.0 * texture(normalMap, tex).rgb - 1.0;
 	
 	uvec4 indices;
 	float texel = 1.0 / (8.0 * patchSize);
-	vec2 tex = floor(texCoords / texel) * texel;
+	tex = floor(texCoords / texel) * texel;
 	indices.x = texture(splatMap, tex).r;
 	indices.y = texture(splatMap, tex + vec2(texel, 0.0)).r;
 	indices.z = texture(splatMap, tex + vec2(0.0, texel)).r;
@@ -112,7 +119,7 @@ void main(){
 		float displacement = SampleDisplacement(off, indices)
 			* displacementScale * weight;
 		
-		position.y += displacement;
+		position.xyz += norm * displacement;
 	}
 #endif
 	

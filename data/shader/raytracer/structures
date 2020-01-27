@@ -96,10 +96,11 @@ struct Material {
 	
 	float normalScale;
 	
-	bool invertUVs;
+	int invertUVs;
 	
 	Texture diffuseTexture;
 	Texture normalTexture;
+	Texture specularTexture;
 
 };
 

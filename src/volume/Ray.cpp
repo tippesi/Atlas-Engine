@@ -10,6 +10,12 @@ namespace Atlas {
 
 		}
 
+		vec3 Ray::Get(float distance) const {
+
+			return origin + distance * direction;
+
+		}
+
 		bool Ray::Intersects(AABB aabb, float tmin, float tmax) {
 
 			auto t = 0.0f;
@@ -65,6 +71,27 @@ namespace Atlas {
 			}
 
 			return false;
+
+		}
+
+		vec3 Ray::Distance(Ray ray, float& distance) {
+
+			constexpr float minFloat = std::numeric_limits<float>::min();
+
+			auto cross = glm::cross(direction, ray.direction);
+			auto denom = glm::max(glm::pow(glm::length(cross), 2.0f),
+				minFloat);
+
+			auto t = ray.origin - origin;
+			auto det0 = glm::determinant(mat3(t, ray.direction, cross));
+			auto det1 = glm::determinant(mat3(t, direction, cross));
+
+			auto t0 = det0 / denom;
+			auto t1 = det1 / denom;
+
+			distance = t1;
+
+			return ray.Get(t1);
 
 		}
 

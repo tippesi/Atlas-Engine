@@ -13,7 +13,7 @@ namespace Atlas {
 		void PerformanceCounter::Reset() {
 
 			stamps.clear();
-			stamps.push_back(Stamp());
+			Stamp();
 
 		}
 
@@ -29,6 +29,8 @@ namespace Atlas {
 					SDL_GetPerformanceFrequency();
 			}
 
+			stamps.push_back(stamp);
+
 			return stamp;
 
 		}
@@ -41,6 +43,8 @@ namespace Atlas {
 
 			stamp.delta = (stamp.stamp - inStamp.stamp) * 1000.0 / (double)
 				SDL_GetPerformanceFrequency();
+
+			stamps.push_back(stamp);
 
 			return stamp;
 
@@ -57,6 +61,8 @@ namespace Atlas {
 				stamp.delta = (stamp.stamp - prevStamp.stamp) * 1000.0 / (double)
 					SDL_GetPerformanceFrequency();
 			}
+
+			stamps.push_back(stamp);
 
 			return stamp;
 

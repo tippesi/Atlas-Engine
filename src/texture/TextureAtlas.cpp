@@ -41,13 +41,16 @@ namespace Atlas {
 			if (!textures.size())
 				return;
 
-			int32_t width = 0, height = 0, layers = 0;
+			int32_t width = 0, height = 0, 
+				layers = 0, channels = 0;
 
 			for (auto& texture : textures) {
 				width = texture->width > width ?
 					texture->width : width;
 				height = texture->height > height ?
 					texture->height : height;
+				channels = texture->channels > channels ?
+					texture->channels : channels;
 			}
 
 			auto copy = textures;
@@ -141,7 +144,16 @@ namespace Atlas {
 
 			}
 
-			texture = Texture2DArray(width, height, layers, AE_RGBA8);
+			int32_t sizedFormat;
+
+			switch (channels) {
+			case 1: sizedFormat = AE_R8; break;
+			case 2: sizedFormat = AE_RG8; break;
+			case 3: sizedFormat = AE_RGB8; break;
+			default: sizedFormat = AE_RGBA8; break;
+			}
+
+			texture = Texture2DArray(width, height, layers, sizedFormat);
 
 			for (auto& key : slices) {
 				auto tex = key.first;
@@ -149,28 +161,38 @@ namespace Atlas {
 
 				auto data = tex->GetData();
 
-				// We need four channels (OpenGL restrictions for imageSamplers
-				// in compute shaders)
 				std::vector<uint8_t> convertedData;
 
-				if (tex->channels == 4) {
+				if (tex->channels == channels) {
 
 					convertedData = data;
 
 				}
-				else if (tex->channels == 3) {
+				else {
 
 					auto pixelCount = (size_t)slice.size.x * 
 						(size_t)slice.size.y;
+					auto texChannels = tex->channels;
 
-					convertedData.resize(pixelCount * 4);
+					convertedData.resize(pixelCount * channels);
 
 					for (size_t i = 0; i < pixelCount; i++) {
 
-						convertedData[i * 4] = data[i * 3];
-						convertedData[i * 4 + 1] = data[i * 3 + 1];
-						convertedData[i * 4 + 2] = data[i * 3 + 2];
-						convertedData[i * 4 + 3] = 255;
+						for (int32_t j = 0; j < channels; j++) {
+							if (j < texChannels) {
+								convertedData[i * channels + j] =
+									data[i * texChannels + j];
+							}
+							else {
+								// Alpha channel should be always 1.0 (if there is no alpha channel)
+								if (j == 3) {
+									convertedData[i * channels + j] = 255;
+								}
+								else {
+									convertedData[i * channels + j] = 0;
+								}
+							}
+						}
 
 					}
 

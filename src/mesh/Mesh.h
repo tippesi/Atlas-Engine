@@ -76,6 +76,7 @@ namespace Atlas {
 			int32_t mobility;
 
 			bool cullBackFaces = true;
+			bool depthTest = true;
 
 			float impostorDistance = 300.0f;
 

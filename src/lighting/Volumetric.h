@@ -13,14 +13,12 @@ namespace Atlas {
 		public:
 			Volumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor = 1.0f);
 
-			~Volumetric();
-
 			int32_t sampleCount;
 			float scattering;
 			float scatteringFactor;
 
-			Texture::Texture2D* map;
-			Texture::Texture2D* blurMap;
+			Texture::Texture2D map;
+			Texture::Texture2D blurMap;
 
 		};
 

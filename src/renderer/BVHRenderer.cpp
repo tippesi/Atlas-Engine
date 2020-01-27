@@ -10,10 +10,10 @@ namespace Atlas {
 		BVHRenderer::BVHRenderer() {
 
 			indexBuffer = Buffer::IndexBuffer(AE_UINT, sizeof(uint32_t), 
-				1, AE_BUFFER_DYNAMIC_STORAGE);
+				1, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
 			vertexArray.AddIndexComponent(&indexBuffer);
 			vertexBuffer = Buffer::VertexBuffer(AE_FLOAT, 3, 
-				sizeof(vec3), 8, AE_BUFFER_DYNAMIC_STORAGE);
+				sizeof(vec3), 8, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
 			vertexArray.AddComponent(0, &vertexBuffer);
 
 			shader.AddStage(AE_VERTEX_STAGE, vertexPath);

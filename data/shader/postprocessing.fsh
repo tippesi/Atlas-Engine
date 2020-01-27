@@ -4,6 +4,7 @@ layout(binding = 0) uniform sampler2D hdrTexture;
 layout(binding = 1) uniform sampler2D bloomFirstTexture;
 layout(binding = 2) uniform sampler2D bloomSecondTexture;
 layout(binding = 3) uniform sampler2D bloomThirdTexture;
+
 uniform vec2 hdrTextureResolution;
 uniform float exposure;
 uniform float saturation;
@@ -21,9 +22,6 @@ uniform float vignetteOffset;
 uniform float vignettePower;
 uniform float vignetteStrength;
 uniform vec3 vignetteColor;
-#endif
-#ifdef SHARPEN
-uniform float sharpenFactor;
 #endif
 
 out vec3 color;
@@ -79,7 +77,8 @@ float n2rand( vec2 n )
 
 void main() {
 	
-	vec2 fTexCoord = 0.5f * fPosition + 0.5f;
+	vec2 fTexCoord = 0.5 * fPosition + 0.5;
+	fTexCoord.y = 1.0 - fTexCoord.y;
 	
 #ifdef CHROMATIC_ABERRATION
 	vec2 uvRedChannel = (fPosition - fPosition * 0.005f * aberrationStrength 
@@ -126,19 +125,10 @@ void main() {
 	}
 #endif
 #endif
-    // Causes problems when applied without noise afterwards
-#ifdef SHARPEN
-	vec2 resInv = 1.0 / hdrTextureResolution;
-	vec3 up = texture(hdrTexture, fTexCoord + vec2(0.0, -resInv.y)).rgb;
-	vec3 down = texture(hdrTexture, fTexCoord + vec2(0.0, resInv.y)).rgb;
-	vec3 left = texture(hdrTexture, fTexCoord + vec2(-resInv.x, 0.0)).rgb;
-	vec3 right = texture(hdrTexture, fTexCoord + vec2(resInv.x, 0.0)).rgb;
-	color = color + sharpenFactor * (4.0 * color - up - down - left - right);
-#endif
 
 	color *= exposure;
 	
-	color = color + n2rand(2.0 * fTexCoord - 1.0) / 256.0;
+	//color = color + n2rand(2.0 * fTexCoord - 1.0) / 256.0;
 	
 	// Apply the tone mapping because we want the colors to be back in
 	// normal range

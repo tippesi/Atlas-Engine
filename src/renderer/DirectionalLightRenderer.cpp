@@ -7,13 +7,10 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string DirectionalLightRenderer::vertexPath = "deferred/directional.vsh";
-		std::string DirectionalLightRenderer::fragmentPath = "deferred/directional.fsh";
-
 		DirectionalLightRenderer::DirectionalLightRenderer() {
 
-			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+			shader.AddStage(AE_VERTEX_STAGE, "deferred/directional.vsh");
+			shader.AddStage(AE_FRAGMENT_STAGE, "deferred/directional.fsh");
 
 			shader.AddMacro("SHADOWS");
 
@@ -31,12 +28,16 @@ namespace Atlas {
 			inverseViewMatrix->SetValue(camera->invViewMatrix);
 			inverseProjectionMatrix->SetValue(camera->invProjectionMatrix);
 
+			cameraLocation->SetValue(camera->GetLocation());
+
 			glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
 
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
-			target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3)->Bind(GL_TEXTURE3);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT4)->Bind(GL_TEXTURE4);
+			target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE5);
 
 			auto lights = scene->GetLights();
 
@@ -58,27 +59,62 @@ namespace Atlas {
 				scatteringFactor->SetValue(directionalLight->GetVolumetric() ? directionalLight->GetVolumetric()->scatteringFactor : 0.0f);
 
 				if (light->GetVolumetric()) {
-					glViewport(0, 0, directionalLight->GetVolumetric()->map->width, directionalLight->GetVolumetric()->map->height);
-					directionalLight->GetVolumetric()->map->Bind(GL_TEXTURE5);
+					glViewport(0, 0, directionalLight->GetVolumetric()->map.width, directionalLight->GetVolumetric()->map.height);
+					directionalLight->GetVolumetric()->map.Bind(GL_TEXTURE7);
 				}
 
 				if (light->GetShadow()) {
-					shadowDistance->SetValue(directionalLight->GetShadow()->distance);
+					auto distance = !light->GetShadow()->longRange ? light->GetShadow()->distance :
+						light->GetShadow()->longRangeDistance;
+					shadowDistance->SetValue(distance);
 					shadowBias->SetValue(directionalLight->GetShadow()->bias);
 					shadowCascadeBlendDistance->SetValue(directionalLight->GetShadow()->cascadeBlendDistance);
 					shadowCascadeCount->SetValue(directionalLight->GetShadow()->componentCount);
 					shadowResolution->SetValue(vec2((float)directionalLight->GetShadow()->resolution));
 
-					directionalLight->GetShadow()->maps.Bind(GL_TEXTURE6);
+					directionalLight->GetShadow()->maps.Bind(GL_TEXTURE8);
 
-					for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
-						auto cascade = &directionalLight->GetShadow()->components[i];
-						cascades[i].distance->SetValue(cascade->farDistance);
-						cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->invViewMatrix);
+					auto componentCount = directionalLight->GetShadow()->componentCount;
+
+					for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
+						if (i < componentCount) {
+							auto cascade = &directionalLight->GetShadow()->components[i];
+							auto frustum = Volume::Frustum(cascade->frustumMatrix);
+							auto corners = frustum.GetCorners();
+							auto texel = glm::max(abs(corners[0].x - corners[1].x),
+								abs(corners[1].y - corners[3].y)) / (float)light->GetShadow()->resolution;
+							cascades[i].distance->SetValue(cascade->farDistance);
+							cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->invViewMatrix);
+							cascades[i].texelSize->SetValue(texel);
+						}
+						else {
+							auto cascade = &directionalLight->GetShadow()->components[componentCount - 1];
+							cascades[i].distance->SetValue(cascade->farDistance);
+						}
 					}
 				}
 				else {
 					shadowDistance->SetValue(0.0f);
+				}
+
+				if (scene->fog && scene->fog->enable) {
+
+					auto& fog = scene->fog;
+
+					fogScale->SetValue(fog->scale);
+					fogDistanceScale->SetValue(fog->distanceScale);
+					fogHeight->SetValue(fog->height);
+					fogColor->SetValue(fog->color);
+					fogScatteringPower->SetValue(fog->scatteringPower);
+
+				}
+				else {
+
+					fogScale->SetValue(0.0f);
+					fogDistanceScale->SetValue(1.0f);
+					fogHeight->SetValue(1.0f);
+					fogScatteringPower->SetValue(1.0f);
+
 				}
 
 				glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
@@ -93,6 +129,8 @@ namespace Atlas {
 
 			inverseViewMatrix = shader.GetUniform("ivMatrix");
 			inverseProjectionMatrix = shader.GetUniform("ipMatrix");
+
+			cameraLocation = shader.GetUniform("cameraLocation");
 
 			lightDirection = shader.GetUniform("light.direction");
 			lightColor = shader.GetUniform("light.color");
@@ -109,7 +147,14 @@ namespace Atlas {
 			for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
 				cascades[i].distance = shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].distance");
 				cascades[i].lightSpace = shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].cascadeSpace");
+				cascades[i].texelSize = shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].texelSize");
 			}
+
+			fogScale = shader.GetUniform("fogScale");
+			fogDistanceScale = shader.GetUniform("fogDistanceScale");
+			fogHeight = shader.GetUniform("fogHeight");
+			fogColor = shader.GetUniform("fogColor");
+			fogScatteringPower = shader.GetUniform("fogScatteringPower");
 
 		}
 

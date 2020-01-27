@@ -237,13 +237,13 @@ namespace Atlas {
 		for (auto &componentKey : components) {
 			FramebufferComponent &component = componentKey.second;
 
-			if (component.texture != nullptr) {
+			if (component.texture) {
 				component.texture->Resize(width, height);
 				glFramebufferTexture2D(component.target, componentKey.first,
 									   GL_TEXTURE_2D, component.texture->GetID(), 0);
 			}
 
-			if (component.textureArray != nullptr) {
+			if (component.textureArray) {
 				component.textureArray->Resize(width, height, component.textureArray->layers);
 				glFramebufferTextureLayer(component.target, componentKey.first,
 										  component.textureArray->GetID(), 0, component.index);

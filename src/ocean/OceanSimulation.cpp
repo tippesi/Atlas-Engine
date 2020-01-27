@@ -173,13 +173,16 @@ namespace Atlas {
 
 			butterflyNUniform->SetValue(N);
 
-			hTDy.Bind(GL_READ_WRITE, 1);
-			hTDyPingpong.Bind(GL_READ_WRITE, 2);
-			
-			hTDxz.Bind(GL_READ_WRITE, 3);			
-			hTDxzPingpong.Bind(GL_READ_WRITE, 4);
-
 			for (int32_t i = 0; i < log2n; i++) {
+
+				if (!pingpong) {
+					hTDy.Bind(GL_READ_ONLY, 1);
+					hTDyPingpong.Bind(GL_WRITE_ONLY, 2);
+				}
+				else {
+					hTDyPingpong.Bind(GL_READ_ONLY, 1);
+					hTDy.Bind(GL_WRITE_ONLY, 2);
+				}
 
 				auto preTwiddle = (float)N / powf(2.0f, (float)i + 1.0f);
 
@@ -202,6 +205,15 @@ namespace Atlas {
 
 			for (int32_t i = 0; i < log2n; i++) {
 
+				if (!pingpong) {
+					hTDy.Bind(GL_READ_ONLY, 1);
+					hTDyPingpong.Bind(GL_WRITE_ONLY, 2);
+				}
+				else {
+					hTDyPingpong.Bind(GL_READ_ONLY, 1);
+					hTDy.Bind(GL_WRITE_ONLY, 2);
+				}
+
 				auto preTwiddle = (float)N / powf(2.0f, (float)i + 1.0f);
 
 				butterflyPreTwiddleUniform->SetValue(preTwiddle);
@@ -223,6 +235,15 @@ namespace Atlas {
 
 			for (int32_t i = 0; i < log2n; i++) {
 
+				if (!pingpong) {
+					hTDxz.Bind(GL_READ_ONLY, 3);
+					hTDxzPingpong.Bind(GL_WRITE_ONLY, 4);
+				}
+				else {
+					hTDxzPingpong.Bind(GL_READ_ONLY, 3);
+					hTDxz.Bind(GL_WRITE_ONLY, 4);
+				}
+
 				auto preTwiddle = (float)N / powf(2.0f, (float)i + 1.0f);
 
 				butterflyPreTwiddleUniform->SetValue(preTwiddle);
@@ -243,6 +264,15 @@ namespace Atlas {
 			butterflyNUniform->SetValue(N);
 
 			for (int32_t i = 0; i < log2n; i++) {
+
+				if (!pingpong) {
+					hTDxz.Bind(GL_READ_ONLY, 3);
+					hTDxzPingpong.Bind(GL_WRITE_ONLY, 4);
+				}
+				else {
+					hTDxzPingpong.Bind(GL_READ_ONLY, 3);
+					hTDxz.Bind(GL_WRITE_ONLY, 4);
+				}
 
 				auto preTwiddle = (float)N / powf(2.0f, (float)i + 1.0f);
 
@@ -266,6 +296,15 @@ namespace Atlas {
 			inversionPingpongUniform->SetValue(pingpong);
 
 			displacementMap.Bind(GL_WRITE_ONLY, 0);
+
+            if (pingpong == 0) {
+                hTDy.Bind(GL_READ_ONLY, 1);
+                hTDxz.Bind(GL_READ_ONLY, 3);
+            }
+            else {
+                hTDyPingpong.Bind(GL_READ_ONLY, 1);
+                hTDxzPingpong.Bind(GL_READ_ONLY, 3);
+            }
 
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 

@@ -48,7 +48,7 @@ namespace Atlas {
 
 		}
 
-		void AtmosphereRenderer::Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene) {
+		void AtmosphereRenderer::Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene, Lighting::DirectionalLight* sun) {
 
 			glDisable(GL_DEPTH_TEST);
 
@@ -57,7 +57,7 @@ namespace Atlas {
 			vertexArray.Bind();
 
 			cameraLocation->SetValue(probe->GetPosition());
-			sunDirection->SetValue(vec3(0.0f, -1.0f, 0.0f));
+			sunDirection->SetValue(sun->direction);
 			sunIntensity->SetValue(22.0f);
 			planetCenter->SetValue(-vec3(0.0f, 6371000.0f, 0.0f));
 			planetRadius->SetValue(6371000.0f);

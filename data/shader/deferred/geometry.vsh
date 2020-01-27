@@ -1,26 +1,27 @@
 layout(location=0)in vec3 vPosition;
 layout(location=1)in vec3 vNormal;
 layout(location=2)in vec2 vTexCoord;
+layout(location=4)in mat4 mMatrix;
 
-#ifdef NORMAL_MAP
+#if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=3)in vec4 vTangent;
 #endif
 #ifdef ANIMATION
 layout(location=4)in uvec4 vBoneIDs;
 layout(location=5)in vec4 vBoneWeights;
 #endif
-layout(location=4)in mat4 mMatrix;
 
 out vec2 fTexCoord;
 
 out vec3 ndcCurrent;
 out vec3 ndcLast;
 
-#ifdef NORMAL_MAP
+#if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 out mat3 toTangentSpace;
 #endif
 
 out vec3 fNormal;
+out vec3 fPosition;
 
 #ifdef ANIMATION
 layout (std140) uniform AnimationUBO {
@@ -50,6 +51,7 @@ void main() {
 	mat4 mvMatrix = vMatrix * mMatrix;
 #endif   
 	vec4 positionToCamera = mvMatrix * vec4(vPosition, 1.0);
+	fPosition = positionToCamera.xyz;
 	
 	gl_Position = pMatrix * positionToCamera;
 
@@ -64,12 +66,12 @@ void main() {
 	
 	fNormal = mat3(mvMatrix) * vNormal;
 
-#ifdef NORMAL_MAP
+#if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 norm = normalize(fNormal);
-	float correctionFactor = vTangent.w;
-    vec3 tang = normalize((mvMatrix * vec4(vTangent.xyz, 0.0)).xyz);
+	float correctionFactor = vTangent.w * (invertUVs ? -1.0 : 1.0);
+    vec3 tang = normalize(mat3(mvMatrix) * vTangent.xyz);
 	
-	vec3 bitang = correctionFactor * cross(tang, norm);
+	vec3 bitang = normalize(correctionFactor * cross(tang, norm));
 
 	toTangentSpace = mat3(tang, bitang, norm);
 #endif

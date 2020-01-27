@@ -11,13 +11,15 @@ namespace Atlas {
 	std::vector<Material*> ResourceManager::materials;
 	std::vector<Audio::AudioData*> ResourceManager::audios;
 	std::vector<Terrain::Terrain*> ResourceManager::terrains;
+	std::vector<Scene::Scene*> ResourceManager::scenes;
 
 	std::mutex ResourceManager::meshMutex;
 	std::mutex ResourceManager::materialMutex;
 	std::mutex ResourceManager::audioMutex;
 	std::mutex ResourceManager::terrainMutex;
+	std::mutex ResourceManager::sceneMutex;
 
-	Mesh::Mesh* ResourceManager::GetMesh(std::string path) {
+	Mesh::Mesh* ResourceManager::GetMesh(std::string path, bool forceTangents) {
 
 		path = Common::Path::GetAbsolute(path);
 
@@ -28,7 +30,7 @@ namespace Atlas {
 				return mesh;
 		}
 
-		auto mesh = new Atlas::Mesh::Mesh(path);
+		auto mesh = new Atlas::Mesh::Mesh(path, forceTangents);
 		meshes.push_back(mesh);
 
 		std::lock_guard<std::mutex> guardMaterial(materialMutex);
@@ -123,6 +125,13 @@ namespace Atlas {
 
 	}
 
+	void ResourceManager::AddScene(Scene::Scene* scene) {
+
+		std::lock_guard<std::mutex> guard(sceneMutex);
+		scenes.push_back(scene);
+
+	}
+
 	void ResourceManager::RemoveMaterial(Material* material) {
 
 		std::lock_guard<std::mutex> guard(materialMutex);
@@ -168,6 +177,12 @@ namespace Atlas {
 	std::vector<Terrain::Terrain*> ResourceManager::GetTerrains() {
 
 		return terrains;
+
+	}
+
+	std::vector<Scene::Scene*> ResourceManager::GetScenes() {
+
+		return scenes;
 
 	}
 

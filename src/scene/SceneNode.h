@@ -125,6 +125,20 @@ namespace Atlas {
 
 			virtual void Clear();
 
+			virtual std::vector<Actor::MovableMeshActor*> GetNodeMovableMeshActors();
+
+			virtual std::vector<Actor::StaticMeshActor*> GetNodeStaticMeshActors();
+
+			virtual std::vector<Actor::DecalActor*> GetNodeDecalActors();
+
+			virtual std::vector<Actor::AudioActor*> GetNodeAudioActors();
+
+			virtual std::vector<Lighting::Light*> GetNodeLights();
+
+			virtual std::vector<SceneNode*> GetNodeChildren();
+
+			std::string name;
+
 		protected:
 			/**
 			 *

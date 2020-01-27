@@ -22,7 +22,10 @@ namespace Atlas {
 
         }
 
-        void DirectionalLight::AddShadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection, Camera* camera) {
+        void DirectionalLight::AddShadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection) {
+
+			if (shadow)
+				delete shadow;
 
             shadow = new Shadow(distance, bias, resolution, glm::min(cascadeCount, MAX_SHADOW_CASCADE_COUNT), splitCorrection);
 
@@ -30,17 +33,12 @@ namespace Atlas {
 
 			shadow->allowTerrain = true;
 
-            // We want cascaded shadow mapping for directional lights
-            for (int32_t i = 0; i < shadow->componentCount; i++) {
-                shadow->components[i].nearDistance = FrustumSplitFormula(shadow->splitCorrection, camera->nearPlane, shadow->distance,
-                                                                         (float)i, (float)shadow->componentCount);
-                shadow->components[i].farDistance = FrustumSplitFormula(shadow->splitCorrection, camera->nearPlane, shadow->distance,
-                                                                        (float)i + 1, (float)shadow->componentCount);
-            }
-
         }
 
         void DirectionalLight::AddShadow(float distance, float bias, int32_t resolution, vec3 centerPoint, mat4 orthoProjection) {
+
+			if (shadow)
+				delete shadow;
 
             shadow = new Shadow(distance, bias, resolution);
 
@@ -74,7 +72,7 @@ namespace Atlas {
 
 			shadow->components.push_back(component);
 
-			shadow->distance = distance;
+			shadow->longRangeDistance = distance;
 			shadow->longRange = true;
 
 		}
@@ -104,6 +102,20 @@ namespace Atlas {
             if (shadow != nullptr) {
 
                 if (!useShadowCenter) {
+
+					auto distance = shadow->distance;
+					auto componentCount = shadow->longRange ? shadow->componentCount - 1
+						: shadow->componentCount;
+
+					// We want cascaded shadow mapping for directional lights
+					for (int32_t i = 0; i < componentCount; i++) {
+						shadow->components[i].nearDistance = FrustumSplitFormula(shadow->splitCorrection, 
+							camera->nearPlane, distance,
+							(float)i, (float)componentCount);
+						shadow->components[i].farDistance = FrustumSplitFormula(shadow->splitCorrection, 
+							camera->nearPlane, distance,
+							(float)i + 1, (float)componentCount);
+					}
 
                     for (int32_t i = 0; i < shadow->componentCount; i++) {
                         UpdateShadowCascade(&shadow->components[i], camera);

@@ -39,6 +39,8 @@ namespace Atlas {
 			vec3 color;
 			float ambient;
 
+			std::string name;
+
 		protected:
 			Light(int32_t type, int32_t mobility) : type(type), mobility(mobility) {}
 

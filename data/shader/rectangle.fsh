@@ -1,4 +1,4 @@
-layout (location = 0) out vec4 color;
+out vec4 color;
 
 #ifdef TEXTURE2D
 in vec2 fTexCoord;

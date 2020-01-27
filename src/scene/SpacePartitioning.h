@@ -43,6 +43,8 @@ namespace Atlas {
 
 			void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
 
+			std::vector<Actor::Actor*> GetActors();
+
 			std::vector<Actor::MeshActor*> GetMeshActors();
 
 			std::vector<Actor::StaticMeshActor*> GetStaticMeshActors(Volume::AABB aabb);

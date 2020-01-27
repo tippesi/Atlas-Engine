@@ -11,10 +11,12 @@ namespace Atlas {
 
 		}
 
-		VertexBuffer::VertexBuffer(uint32_t dataType, int32_t stride, size_t elementSize, size_t elementCount, uint32_t flags) :
-				Buffer(AE_VERTEX_BUFFER, elementSize, flags), dataType(dataType), stride(stride) {
+		VertexBuffer::VertexBuffer(uint32_t dataType, int32_t stride, size_t elementSize,
+			size_t elementCount, void* data, uint32_t flags) :
+			Buffer(AE_VERTEX_BUFFER, elementSize, flags, elementCount, data),
+			dataType(dataType), stride(stride) {
 
-			SetSize(elementCount);
+
 
 		}
 

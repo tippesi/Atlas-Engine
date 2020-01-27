@@ -90,24 +90,26 @@ namespace Atlas {
 
         void Texture2DArray::Resize(int32_t width, int32_t height, int32_t depth) {
 
-            this->width = width;
-            this->height = height;
-            this->layers = depth;
+			if (width != this->width || height != this->height ||
+				depth != this->layers) {
 
-            glDeleteTextures(1, &ID);
-            glGenTextures(1, &ID);
+				this->width = width;
+				this->height = height;
+				this->layers = depth;
 
-            Generate(GL_TEXTURE_2D_ARRAY, sizedFormat, wrapping,
-                     filtering, anisotropicFiltering, mipmaps);
+				glDeleteTextures(1, &ID);
+				glGenTextures(1, &ID);
+
+				Generate(GL_TEXTURE_2D_ARRAY, sizedFormat, wrapping,
+					filtering, anisotropicFiltering, mipmaps);
+
+			}
 
         }
 
         void Texture2DArray::SaveToPNG(std::string filename, int32_t depth) {
 
-			Common::Image8 image;
-
-            image.width = width;
-            image.height = height;
+			Common::Image8 image(width, height, channels);
             image.fileFormat = AE_IMAGE_PNG;
 
             auto data = GetData(depth);

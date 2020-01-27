@@ -22,9 +22,10 @@ namespace Atlas {
 			dest = GetAbsolute(dest);
 
 			// Find the first character that doesn't match
-			int32_t count = 0;
+			size_t count = 0;
+			size_t max = dest.find_last_of('/');
 
-			while (src[count] == dest[count])
+			while (src[count] == dest[count] && count <= max)
 				count++;
 
 			if (!count)
@@ -44,7 +45,12 @@ namespace Atlas {
 
 		std::string Path::GetDirectory(std::string path) {
 
-			return path.substr(0, path.find_last_of("/\\"));
+			auto pos = path.find_last_of("/\\");
+
+			if (pos == std::string::npos)
+				return "";
+
+			return path.substr(0, pos);
 
 		}
 

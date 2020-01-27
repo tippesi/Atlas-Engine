@@ -2,6 +2,7 @@
 #include "ImageLoader.h"
 #include "AssetLoader.h"
 #include "../Log.h"
+#include "../common/Path.h"
 
 #include <vector>
 #include <limits>
@@ -13,16 +14,16 @@ namespace Atlas {
 		void ModelLoader::LoadMesh(std::string filename, Mesh::MeshData& meshData,
 			bool forceTangents) {
 
-			std::string directoryPath(filename);
+			auto directoryPath = Common::Path::GetDirectory(filename);
 
-			size_t directoryPathEnd = directoryPath.find_last_of("/\\");
-
-			if (directoryPath.find_last_of("/\\") != std::string::npos)
-				directoryPath = directoryPath.substr(0, directoryPathEnd + 1);
-			else
-				directoryPath.clear();
+			if (directoryPath.length())
+			    directoryPath += "/";
 
 			AssetLoader::UnpackFile(filename);
+
+			auto fileType = Common::Path::GetFileType(filename);
+
+			auto isObj = fileType == "obj" || fileType == "OBJ";
 
 			Assimp::Importer importer;
 			importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
@@ -68,6 +69,8 @@ namespace Atlas {
 			for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 				if (scene->mMaterials[i]->GetTextureCount(aiTextureType_NORMALS) > 0)
 					hasTangents = true;
+				if (scene->mMaterials[i]->GetTextureCount(aiTextureType_HEIGHT) > 0)
+					hasTangents = true;
 			}
 
 			if (indexCount > 65535) {
@@ -112,7 +115,7 @@ namespace Atlas {
 				auto& material = meshData.materials[i];
 				auto& subData = meshData.subData[i];
 
-				LoadMaterial(scene->mMaterials[i], material, directoryPath);
+				LoadMaterial(scene->mMaterials[i], material, directoryPath, isObj);
 
 				subData.material = &material;
 				subData.indicesOffset = usedFaces * 3;
@@ -153,7 +156,7 @@ namespace Atlas {
 							tangents[usedVertices * 4] = tangent.x;
 							tangents[usedVertices * 4 + 1] = tangent.y;
 							tangents[usedVertices * 4 + 2] = tangent.z;
-							tangents[usedVertices * 4 + 3] = dotProduct < 0.0f ? -1.0f : 1.0f;
+							tangents[usedVertices * 4 + 3] = dotProduct <= 0.0f ? 1.0f : -1.0f;
 						}
 
 						if (hasTexCoords && mesh->mTextureCoords[0] != nullptr) {
@@ -195,7 +198,8 @@ namespace Atlas {
 
 		}
 
-		void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, Material& material, std::string directory) {
+		void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, Material& material, 
+			std::string directory, bool isObj) {
 
             aiString name;
 
@@ -220,21 +224,62 @@ namespace Atlas {
 			material.ambientColor = vec3(ambient.r, ambient.g, ambient.b);
 			material.emissiveColor = vec3(emissive.r, emissive.g, emissive.b);
 
+			material.displacementScale = 0.05f;
+
+			auto specIntensity = (specular.r + specular.g + specular.b) / 3.0f;
+
+			if (material.specularIntensity == 0.0f && specIntensity > 0.0f)
+				material.specularIntensity = specIntensity;
+			else if (material.specularIntensity > 0.0f && specIntensity > 0.0f)
+				material.specularIntensity *= specIntensity;
+
 			if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
 				auto texture = new Texture::Texture2D(path, true);
+				// In the rare case this happens just reload the texture with 3 channels
+				if (texture->channels == 1) {
+					delete texture;
+					texture = new Texture::Texture2D(path, true, true, true, 3);
+				}
 				material.diffuseMap = texture;
 				material.diffuseMapPath = path;
 			}
-			if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0) {
+			if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0 ||
+				(assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && isObj)) {
 				aiString aiPath;
-				assimpMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
+				if (isObj)
+					assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
+				else
+					assimpMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
 				auto texture = new Texture::Texture2D(path, false);
-				material.normalMap = texture;
-				material.normalMapPath = path;
+				// Might still be a traditional displacement map
+				if (texture->channels == 1 && isObj) {
+					material.displacementMap = texture;
+					material.displacementMapPath = path;
+				}
+				else {
+					material.normalMap = texture;
+					material.normalMapPath = path;
+				}
+			}
+			if (assimpMaterial->GetTextureCount(aiTextureType_SPECULAR) > 0) {
+				aiString aiPath;
+				assimpMaterial->GetTexture(aiTextureType_SPECULAR, 0, &aiPath);
+				auto path = directory + std::string(aiPath.C_Str());
+				auto texture = new Texture::Texture2D(path, false, true, true, 1);
+				material.specularMap = texture;
+				material.specularMapPath = path;
+			}
+			if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && !isObj) {
+				aiString aiPath;
+				assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
+				auto path = directory + std::string(aiPath.C_Str());
+				auto texture = new Texture::Texture2D(path, false, true, true, 1);
+				material.displacementMap = texture;
+				material.displacementMapPath = path;
 			}
 
 		}

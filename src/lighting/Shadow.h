@@ -36,6 +36,7 @@ namespace Atlas {
 			void Update();
 
 			float distance = 300.0f;
+			float longRangeDistance = 1024.0f;
 			float bias = 0.001f;
 			float splitCorrection = 0.95f;
 

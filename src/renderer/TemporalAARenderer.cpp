@@ -5,15 +5,12 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string TemporalAARenderer::vertexPath = "taa.vsh";
-		std::string TemporalAARenderer::fragmentPath = "taa.fsh";
-
 		TemporalAARenderer::TemporalAARenderer() {
 
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
-			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+			shader.AddStage(AE_VERTEX_STAGE, "taa.vsh");
+			shader.AddStage(AE_FRAGMENT_STAGE, "taa.fsh");
 
 			shader.Compile();
 
@@ -31,6 +28,7 @@ namespace Atlas {
 			target->GetHistory()->Bind(GL_TEXTURE0);
 			target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE1);
 			target->GetVelocity()->Bind(GL_TEXTURE2);
+			target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
 
 			jitter->SetValue(camera->GetJitter() * 0.5f);
 			invResolution->SetValue(1.0f / vec2((float)target->GetWidth(), (float)target->GetHeight()));

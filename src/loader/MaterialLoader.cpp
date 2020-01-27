@@ -63,7 +63,7 @@ namespace Atlas {
 			std::getline(stream, line);
 			material->displacementScale = ReadFloat(line);
 
-			auto materialDirectory = Common::Path::GetDirectory(AssetLoader::GetFullPath(filename));
+			auto materialDirectory = Common::Path::GetDirectory(filename);
 
 			for (int32_t i = 0; i < textureCount; i++) {
 				std::getline(stream, line);
@@ -187,7 +187,7 @@ namespace Atlas {
 			auto lastPosition = line.find_first_of(' ') + 1;
 			auto position = line.find_first_of("\r\n", lastPosition);
 			auto string = line.substr(lastPosition, position - lastPosition);
-			return Common::Path::GetAbsolute(materialDirectory + "/" + string);
+			return materialDirectory + "/" + string;
 
 		}
 

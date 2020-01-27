@@ -13,6 +13,9 @@ namespace Atlas {
 			normalTexture = Atlas::Texture::Texture2DArray(resolution,
 				resolution, views, AE_RGB8, GL_CLAMP_TO_EDGE,
 				GL_LINEAR, true, true);
+			specularTexture = Atlas::Texture::Texture2DArray(resolution,
+				resolution, views, AE_RG16F, GL_CLAMP_TO_EDGE,
+				GL_LINEAR, true, true);
 
 		}
 

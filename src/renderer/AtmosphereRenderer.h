@@ -18,7 +18,7 @@ namespace Atlas {
 
 			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
-			void Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene);
+			void Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene, Lighting::DirectionalLight* sun);
 
 			static std::string vertexPath;
 			static std::string fragmentPath;

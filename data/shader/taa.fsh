@@ -11,25 +11,40 @@ uniform vec2 jitter;
 uniform vec2 invResolution;
 uniform vec2 resolution;
 
+// Sources for further research:
+// https://de45xmedrsdbp.cloudfront.net/Resources/files/TemporalAA_small-59732822.pdf
+// http://twvideo01.ubm-us.net/o1/vault/gdc2016/Presentations/Pedersen_LasseJonFuglsang_TemporalReprojectionAntiAliasing.pdf
+// https://software.intel.com/en-us/articles/coarse-pixel-shading-with-temporal-supersampling
+// https://github.com/playdeadgames/temporal/blob/master/Assets/Shaders/TemporalReprojection.shader
+// https://community.arm.com/developer/tools-software/graphics/b/blog/posts/temporal-anti-aliasing
+
 void main() {
+
+    ivec2 pixel = ivec2(fTexCoord * resolution);
 
     vec3 neighbourhoodMin = vec3(1e9);
     vec3 neighbourhoodMax = vec3(-1e9);
 
     // Find best pixel in neighborhood
-    vec2 offset = vec2(0.0);
+    ivec2 offset = ivec2(0);
     float depth = 1.0;
+
+    vec3 lightingColor;
 
 	// Unroll this loop?
     for (int x = -1; x <= 1; x++) {
         for (int y = -1; y <= 1; y++) {
-            vec2 currOffset = vec2(float(x), float(y)) * invResolution;
-            vec2 pixelCoord = fTexCoord + currOffset;
-            vec3 color = texture(lightingTexture, pixelCoord + jitter).rgb;
+            ivec2 currOffset = ivec2(x, y);
+            ivec2 pixelCoord = pixel + currOffset;
+            vec3 color = texelFetch(lightingTexture, pixelCoord, 0).rgb;
             neighbourhoodMin = min(neighbourhoodMin, color);
             neighbourhoodMax = max(neighbourhoodMax, color);
 
-            float currDepth = texture(depthTexture, pixelCoord).r;
+            if (x == 0 && y == 0) {
+                lightingColor = color;
+            }
+
+            float currDepth = texelFetch(depthTexture, pixelCoord, 0).r;
             if (currDepth < depth) {
                 depth = currDepth;
                 offset = currOffset;
@@ -37,19 +52,22 @@ void main() {
         }
     }
 
-    vec2 velocity = texture(velocityTexture, fTexCoord).rg;
-    vec2 uv = fTexCoord + velocity;
+    vec2 velocity = texelFetch(velocityTexture, pixel + offset, 0).rg;
+    vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
 
     vec3 historyColor = texture(historyTexture, uv).rgb;
-    vec3 lightingColor = texture(lightingTexture, fTexCoord + jitter).rgb;
 
+    // Implement clipping instead of clamping and use YCoCg color space
+    // There are also some weird artifacts without using neighbourhood clamping (see edges of the image)
     historyColor = clamp(historyColor, neighbourhoodMin, neighbourhoodMax);
 
 	// Corrects subpixel sampling of history buffer
     float correction = fract(max(abs(velocity.x) * resolution.x,
 		abs(velocity.y) * resolution.y)) * 0.5;
 
-    float blendFactor = mix(0.1, 0.7, correction);
+    // We need some kind of anti-flickering mechanism (luma weighted)
+
+    float blendFactor = mix(0.05, 0.7, correction);
 
 	// Check if we sampled outside the viewport area
     blendFactor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0

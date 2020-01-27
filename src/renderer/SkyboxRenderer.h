@@ -30,12 +30,23 @@ namespace Atlas {
 
 			Shader::Shader shader;
 
-			Shader::Uniform* modelViewProjectionMatrix = nullptr;
+			Shader::Uniform* mvpMatrix = nullptr;
+			Shader::Uniform* ivMatrix = nullptr;
+			Shader::Uniform* ipMatrix = nullptr;
 			Shader::Uniform* cameraLocation = nullptr;
 			Shader::Uniform* cameraLocationLast = nullptr;
+			Shader::Uniform* lightDirection = nullptr;
+			Shader::Uniform* lightColor = nullptr;
+
 			Shader::Uniform* pvMatrixLast = nullptr;
 			Shader::Uniform* jitterLast = nullptr;
 			Shader::Uniform* jitterCurrent = nullptr;
+
+			Shader::Uniform* fogScale = nullptr;
+			Shader::Uniform* fogDistanceScale = nullptr;
+			Shader::Uniform* fogHeight = nullptr;
+			Shader::Uniform* fogColor = nullptr;
+			Shader::Uniform* fogScatteringPower = nullptr;
 
 		};
 

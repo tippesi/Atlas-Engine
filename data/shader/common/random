@@ -34,3 +34,10 @@ float random( float x ) { return floatConstruct(hash(floatBitsToUint(x))); }
 float random( vec2  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
 float random( vec3  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
 float random( vec4  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
+
+float random(vec2 coord, inout float seed) {
+	float rnd = fract(sin(seed * dot(coord,
+		vec2(12.9898, 78.233)))* 43758.5453);
+	seed += 1.0;
+	return rnd;
+}

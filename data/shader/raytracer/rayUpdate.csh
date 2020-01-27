@@ -1,13 +1,13 @@
 #include <structures>
 #include <intersections>
 #include <texture>
-#include <random>
+#include <../common/random>
 #include <BVH>
 #include <common>
 
 #include <../common/PI>
 
-#define GROUP_SHARED_MEMORY
+// #define GROUP_SHARED_MEMORY
 
 layout (local_size_x = 64) in;
 
@@ -51,6 +51,8 @@ uniform ivec2 resolution;
 
 uniform vec3 cameraLocation;
 
+uniform float seed;
+
 const float gamma = 1.0 / 2.2;
 
 shared uint activeRayMask[4];
@@ -58,7 +60,8 @@ shared uint activeRayCount;
 shared uint rayOffset;
 
 void Radiance(inout Ray ray, vec2 coord);
-void DirectIllumination(vec3 position, vec3 normal, Material material, out vec3 color);
+void DirectIllumination(Ray ray, vec3 position, vec3 normal, Material material, 
+	vec3 surfaceColor, out vec3 color);
 
 void main() {
 	
@@ -105,8 +108,9 @@ void main() {
 		if (energy < 1.0 / 1024.0 || bounceCount == 0) {
 			if (sampleCount > 0)
 				accumColor = imageLoad(inAccumImage, pixel);
-				
-			accumColor += vec4(ray.accumColor, 1.0);
+			
+			// Where does it get negative?
+			accumColor += vec4(max(ray.accumColor, vec3(0.0)), 1.0);
 			
 			// Maybe we should substract the jitter to get a sharper image
 			imageStore(outAccumImage, pixel, accumColor);
@@ -162,6 +166,7 @@ void Radiance(inout Ray ray, vec2 coord) {
 	int triangleIndex = 0;
 	vec3 intersection;
 	vec2 barrycentric = vec2(0.0);
+	float curSeed = seed;
 
 	QueryBVHClosest(ray, 0.0, INF, triangleIndex, intersection);
 	barrycentric = intersection.yz;
@@ -192,7 +197,7 @@ void Radiance(inout Ray ray, vec2 coord) {
 	vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
 	vec3 normal = r * tri.n0 + s * tri.n1 + t * tri.n2;
 		
-	texCoord = mat.invertUVs ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
+	texCoord = mat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
 	
 	// Produces some problems in the bottom left corner of the Sponza scene,
 	// but fixes the cube. Should work in theory.
@@ -200,91 +205,105 @@ void Radiance(inout Ray ray, vec2 coord) {
 		
 	vec4 textureColor = SampleDiffuseBilinear(mat.diffuseTexture, texCoord);
 	vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) * textureColor.rgb;
-			
-	mat3 toTangentSpace = mat3(tri.t, tri.bt, normal);		
+	
+	// Account for changing texture coord direction
+	vec3 bitangent = mat.invertUVs > 0 ? tri.bt : -tri.bt;
+	mat3 toTangentSpace = mat3(tri.t, bitangent, normal);		
 			
 	// Sample normal map
 	if (mat.normalTexture.layer >= 0) {
 		normal = mix(normal, normalize(toTangentSpace * 
 			(2.0 * vec3(SampleNormalBilinear(mat.normalTexture, texCoord)) - 1.0)),
 			mat.normalScale);		
-	}		
+	}
+	
+	if (mat.specularTexture.layer >= 0) {
+		mat.specularIntensity *= SampleSpecularBilinear(mat.specularTexture, texCoord).r;
+	}
 		
 	vec3 direct = vec3(0.0);
-	DirectIllumination(position, normal, mat, direct);	
+	DirectIllumination(ray, position, normal, mat, surfaceColor, direct);	
 		
 	ray.origin = position;
 	
 	float opacity = textureColor.a * mat.opacity;
 	float refractChance = 1.0 - opacity;
-	float rnd = random(vec4(float(bounceCount + 10), float(sampleCount), coord));
+	float rnd = random(coord, curSeed);
 	
 	if (rnd >= refractChance) {
-		rnd = random(vec4(float(bounceCount + 20), float(sampleCount), coord));
+		rnd = random(coord, curSeed);
 		
 		float specChance = mat.specularIntensity;
 		
 		if (rnd < specChance) {
 			vec3 refl = reflect(ray.direction, normal);
 			
-			ray.direction = HemisphereCos(refl, coord, 
-				float(sampleCount), float(bounceCount));
-			ray.direction = mix(ray.direction, refl, specChance);
+			float pdf = ((mat.specularHardness + 2) *
+				pow(dot(-ray.direction, refl), mat.specularHardness));
+			ray.direction = HemisphereCos(refl, coord, seed);
+			float roughness = 2.0 / (mat.specularHardness + 2.0);
+			ray.direction = mix(refl, ray.direction, roughness);
 			ray.inverseDirection = 1.0 / ray.direction;
+			
+			ray.accumColor += (direct * opacity) * ray.mask;
 			
 			ray.mask *= opacity * specChance;
 			ray.origin += normal * EPSILON;
 		}
 		else {
-			ray.direction = HemisphereCos(normal, coord, 
-				float(sampleCount), float(bounceCount));
+			ray.direction = HemisphereCos(normal, coord, seed);
 			ray.inverseDirection = 1.0 / ray.direction;
 				
 			ray.origin += normal * EPSILON;			
 			
-			ray.accumColor += (surfaceColor * direct * opacity) * ray.mask;
+			ray.accumColor += (direct * opacity) * ray.mask;
 				
-			ray.mask *= surfaceColor;
-			ray.mask *= dot(ray.direction, normal);
+			ray.mask *= opacity * surfaceColor ;
+			ray.mask *= dot(ray.direction, normal) * (1.0 - specChance);
 		}
 		
 	}
 	else {
 		ray.origin -= normal * EPSILON;
 		
-		ray.accumColor += (surfaceColor * direct * refractChance) * ray.mask;
+		ray.accumColor += (direct * refractChance) * ray.mask;
 		ray.mask *= mix(surfaceColor, vec3(1.0), refractChance);
 		
 	}
 
 }
 
-void DirectIllumination(vec3 position, vec3 normal,
-	Material mat, out vec3 color) {
+void DirectIllumination(Ray ray, vec3 position, vec3 normal,
+	Material mat, vec3 surfaceColor, out vec3 color) {
 	
 	float shadowFactor = 1.0;
 	
-	// Shadow testing
-	Ray ray;
-	ray.direction = -light.direction;
-	ray.origin = position + normal * EPSILON;
-	ray.inverseDirection = 1.0 / ray.direction;
-	
-	shadowFactor = QueryBVH(ray, 0.0, INF) ? 0.0 : 1.0;
-	
-	vec3 viewDir = normalize(cameraLocation - position);
+	vec3 viewDir = normalize(ray.origin - position);
 	vec3 lightDir = -light.direction;
 	
 	float nDotL = max((dot(normal, lightDir)), 0.0);
 	
+	if (nDotL > 0.0) {
+		// Shadow testing
+		ray.direction = -light.direction;
+		ray.origin = position + normal * EPSILON;
+		ray.inverseDirection = 1.0 / ray.direction;
+		shadowFactor = QueryBVH(ray, 0.0, INF) ? 0.0 : 1.0;
+	}
+	else {
+		shadowFactor = 0.0;
+	}
+	
 	vec3 specular = vec3(1.0);
-	vec3 diffuse = vec3(1.0);
+	vec3 diffuse = surfaceColor;
 	vec3 ambient = vec3(light.ambient);
 	
 	vec3 halfway = normalize(lightDir + viewDir);
 	specular *= pow(max(dot(normal, halfway), 0.0), mat.specularHardness)
 		* mat.specularIntensity;
 	
-	color = (diffuse) * nDotL * light.color * shadowFactor;
+	// k_s + k_d <= 1.0
+	color = mix(diffuse, specular, mat.specularIntensity)
+		* nDotL * light.color * shadowFactor;
 	
 }

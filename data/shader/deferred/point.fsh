@@ -1,5 +1,5 @@
 #include "../structures"
-#include "convert"
+#include <../common/convert>
 
 in vec3 fTexCoordProj;
 in vec3 viewSpacePosition;

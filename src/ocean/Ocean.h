@@ -19,7 +19,8 @@ namespace Atlas {
 		public:
 			Ocean() {}
 
-			Ocean(int32_t LoDCount, float size, vec3 translation = vec3(0.0f));
+			Ocean(int32_t LoDCount, float size, vec3 translation = vec3(0.0f),
+				int32_t N = 512, int32_t L = 4000);
 
 			void Update(Camera* camera);
 

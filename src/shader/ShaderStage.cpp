@@ -213,10 +213,12 @@ namespace Atlas {
 
             }
 
-            // Find constants in the code (we have to consider that we don't want to change the constants in functions)
+            // Find constants in the code (we have to consider that we don't 
+			//want to change the constants in functions or in function definitions)
             if (mainFile) {
 
                 int32_t openedCurlyBrackets = 0;
+				int32_t openedBrackets = 0;
 
                 for (size_t i = 0; i < shaderCode.length(); i++) {
                     if (shaderCode[i] == '{') {
@@ -225,7 +227,13 @@ namespace Atlas {
                     else if (shaderCode[i] == '}') {
                         openedCurlyBrackets--;
                     }
-                    else if (shaderCode[i] == 'c' && openedCurlyBrackets == 0) {
+					else if (shaderCode[i] == '(') {
+						openedBrackets++;
+					}
+					else if (shaderCode[i] == ')') {
+						openedBrackets--;
+					}
+                    else if (shaderCode[i] == 'c' && !openedCurlyBrackets && !openedBrackets) {
                         // Check if its a constant
                         size_t position = shaderCode.find("const ", i);
                         if (position == i) {

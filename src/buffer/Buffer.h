@@ -79,9 +79,12 @@ namespace Atlas {
              * @param type The type of the buffer, e.g VERTEX_BUFFER. See {@link Buffer.h} for more.
              * @param elementSize The size of each element in the buffer
              * @param flags The flags which should be used for the buffer. See {@link Buffer.h} for more.
+			 * @param @param elementCount The number of elements in the buffer.
+			 * @param data Optional parameter for directly filling the buffer with data
              * @remark For more information on buffer types and flags see
              */
-			Buffer(uint32_t type, size_t elementSize, uint32_t flags);
+			Buffer(uint32_t type, size_t elementSize, uint32_t flags, 
+				size_t elementCount = 0, void* data = nullptr);
 
 			virtual ~Buffer();
 
@@ -167,13 +170,14 @@ namespace Atlas {
 			/**
              * Sets the size of the buffer
              * @param elementCount The number of elements in the buffer
+			 * @param data Optional parameter for directly filling the buffer
              * @note The size of the elements was defined when the buffer was
              * constructed. If the buffer has the BUFFER_DOUBLE_BUFFERING or
              * BUFFER_TRIPLE_BUFFERING flags the size of the buffer will be
              * 2 * elementsCount * elementSize or 3 * elementsCount * elementSize
              * respectively.
              */
-			void SetSize(size_t elementCount);
+			void SetSize(size_t elementCount, void* data = nullptr);
 
 			/**
              * Sets the data of a buffer if it isn't mapped.
@@ -263,7 +267,7 @@ namespace Atlas {
 		protected:
 			virtual void DeepCopy(const Buffer& that);
 
-			void CreateInternal();
+			void CreateInternal(void* data);
 
 			void DestroyInternal();
 

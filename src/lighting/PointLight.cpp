@@ -24,6 +24,9 @@ namespace Atlas {
 
 		void PointLight::AddShadow(float bias, int32_t resolution) {
 
+			if (shadow)
+				delete shadow;
+
 			shadow = new Shadow(0.0f, bias, resolution, true);
 
 			mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, radius);

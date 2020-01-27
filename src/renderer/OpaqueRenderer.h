@@ -42,12 +42,15 @@ namespace Atlas {
 			Shader::Uniform* viewMatrixUniform = nullptr;
 			Shader::Uniform* projectionMatrixUniform = nullptr;
 
+			Shader::Uniform* cameraLocationUniform = nullptr;
 			Shader::Uniform* diffuseColorUniform = nullptr;
+			Shader::Uniform* emissiveColorUniform = nullptr;
 			Shader::Uniform* specularColorUniform = nullptr;
 			Shader::Uniform* ambientColorUniform = nullptr;
 			Shader::Uniform* specularHardnessUniform = nullptr;
 			Shader::Uniform* specularIntensityUniform = nullptr;
 			Shader::Uniform* normalScaleUniform = nullptr;
+			Shader::Uniform* displacementScaleUniform = nullptr;
 
 			Shader::Uniform* invertUVsUniform = nullptr;
 

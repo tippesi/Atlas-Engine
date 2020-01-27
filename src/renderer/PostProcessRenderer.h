@@ -23,6 +23,7 @@ namespace Atlas {
 			void GetUniforms();
 
 			Shader::Shader shader;
+			Shader::Shader sharpenShader;
 
 			Shader::Uniform* hdrTextureResolution = nullptr;
 			Shader::Uniform* exposure = nullptr;

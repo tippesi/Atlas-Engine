@@ -139,9 +139,13 @@ namespace Atlas {
 
 		void ShaderBatch::Bind(int32_t shaderID) {
 
-			boundShaderID = shaderID;
+			if (configBatches.find(shaderID) != configBatches.end()) {
 
-			configBatches[shaderID]->Bind();
+				boundShaderID = shaderID;
+
+				configBatches[shaderID]->Bind();
+
+			}
 
 		}
 

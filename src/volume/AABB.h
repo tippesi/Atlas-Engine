@@ -76,6 +76,11 @@ namespace Atlas {
 			/**
 			 * Returns the eight corners of the AABB.
 			 * @return The eight corners of the AABB.
+			 * @note The corners have the following order:
+			 * vec3(min.x, min.y, max.z), vec3(max.x, min.y, max.z),
+			 * vec3(max.x, max.y, max.z), vec3(min.x, max.y, max.z),
+			 * vec3(min.x, min.y, min.z), vec3(max.x, min.y, min.z),
+			 * vec3(max.x, max.y, min.z), vec3(min.x, max.y, min.z)
 			 */
 			std::vector<vec3> GetCorners();
 

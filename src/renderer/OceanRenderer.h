@@ -70,6 +70,12 @@ namespace Atlas {
 
 			Shader::Uniform* hasRippleTexture = nullptr;
 
+			Shader::Uniform* fogScale = nullptr;
+			Shader::Uniform* fogDistanceScale = nullptr;
+			Shader::Uniform* fogHeight = nullptr;
+			Shader::Uniform* fogColor = nullptr;
+			Shader::Uniform* fogScatteringPower = nullptr;
+
 			struct ShadowCascadeUniform {
 				Shader::Uniform* distance;
 				Shader::Uniform* lightSpace;

@@ -52,6 +52,8 @@ namespace Atlas {
 
             bool matrixChanged = true;
 
+			std::string name;
+
         private:
 			mat4 matrix;
 

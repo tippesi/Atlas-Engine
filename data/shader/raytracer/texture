@@ -1,69 +1,31 @@
 #include <structures>
+#include <../common/sample>
 
-layout (binding = 3, rgba8) readonly uniform image2DArray diffuseTextures;
-layout (binding = 4, rgba8) readonly uniform image2DArray normalTextures;
-layout (binding = 5, rgba8) readonly uniform imageCube environmentMap;
+layout (binding = 3) uniform sampler2DArray diffuseTextures;
+layout (binding = 4) uniform sampler2DArray normalTextures;
+layout (binding = 5) uniform sampler2DArray specularTextures;
+layout (binding = 6, rgba8) readonly uniform imageCube environmentMap;
 
-ivec2 GetTexCoord(vec2 texCoord, Texture tex) {
+vec2 GetTexCoord(vec2 texCoord, Texture tex, vec2 size) {
 	
-	return ivec2(mod(texCoord.x, float(tex.width)),
+	return (vec2(mod(texCoord.x, float(tex.width)),
 		mod(texCoord.y, float(tex.height))) + 
-		ivec2(tex.x, tex.y);
+		vec2(tex.x, tex.y)) / size;
 		
-}
-
-vec4 SampleDiffuse(Texture tex, vec2 texCoord) {
-	
-	if (tex.layer < 0)
-		return vec4(1.0);
-	
-	float width = float(tex.width);
-	float height = float(tex.height);
-
-	texCoord.x *= width;
-	texCoord.y *= height;
-
-	int x = int(texCoord.x - floor(texCoord.x));
-	int y = int(texCoord.y - floor(texCoord.y));
-	
-	ivec2 iTexCoord = GetTexCoord(texCoord, tex);
-
-	return imageLoad(diffuseTextures, ivec3(iTexCoord, tex.layer));
-	
 }
 
 vec4 SampleDiffuseBilinear(Texture tex, vec2 texCoord) {
 	
 	if (tex.layer < 0)
 		return vec4(1.0);
+		
+	texCoord *= vec2(tex.width, tex.height);
 	
-	float width = float(tex.width);
-	float height = float(tex.height);
-
-	texCoord.x *= width;
-	texCoord.y *= height;
-
-	float x = texCoord.x - floor(texCoord.x);
-	float y = texCoord.y - floor(texCoord.y);
+	const vec2 size = vec2(textureSize(diffuseTextures, 0));
+	texCoord = GetTexCoord(texCoord, tex, size);
 	
-	// Calculate the four texture coordinates
-	ivec2 q00Tex = GetTexCoord(texCoord, tex);
-	ivec2 q10Tex = GetTexCoord(texCoord + vec2(1.0, 0.0), tex);
-	ivec2 q01Tex = GetTexCoord(texCoord + vec2(0.0, 1.0), tex);
-	ivec2 q11Tex = GetTexCoord(texCoord + vec2(1.0, 1.0), tex);	
-	
-	// Fetch the four texture samples
-	vec4 q00 = imageLoad(diffuseTextures, ivec3(q00Tex, tex.layer));
-	vec4 q10 = imageLoad(diffuseTextures, ivec3(q10Tex, tex.layer));
-	vec4 q01 = imageLoad(diffuseTextures, ivec3(q01Tex, tex.layer));
-	vec4 q11 = imageLoad(diffuseTextures, ivec3(q11Tex, tex.layer));
-	
-	// Interpolate samples horizontally
-	vec4 h0 = mix(q00, q10, x);
-	vec4 h1 = mix(q01, q11, x);
-	
-	// Interpolate samples vertically
-	return mix(h0, h1, y);
+	return sampleTexBilinear(diffuseTextures, 
+		vec3(texCoord, float(tex.layer)), SAMPLE_REPEAT);
 	
 }
 
@@ -71,34 +33,29 @@ vec4 SampleNormalBilinear(Texture tex, vec2 texCoord) {
 	
 	if (tex.layer < 0)
 		return vec4(1.0);
+		
+	texCoord *= vec2(tex.width, tex.height);
 	
-	float width = float(tex.width);
-	float height = float(tex.height);
+	const vec2 size = vec2(textureSize(normalTextures, 0));
+	texCoord = GetTexCoord(texCoord, tex, size);
+	
+	return sampleTexBilinear(normalTextures, 
+		vec3(texCoord, float(tex.layer)), SAMPLE_REPEAT);
+	
+}
 
-	texCoord.x *= width;
-	texCoord.y *= height;
-
-	float x = texCoord.x - floor(texCoord.x);
-	float y = texCoord.y - floor(texCoord.y);
+vec4 SampleSpecularBilinear(Texture tex, vec2 texCoord) {
 	
-	// Calculate the four texture coordinates
-	ivec2 q00Tex = GetTexCoord(texCoord, tex);
-	ivec2 q10Tex = GetTexCoord(texCoord + vec2(1.0, 0.0), tex);
-	ivec2 q01Tex = GetTexCoord(texCoord + vec2(0.0, 1.0), tex);
-	ivec2 q11Tex = GetTexCoord(texCoord + vec2(1.0, 1.0), tex);	
+	if (tex.layer < 0)
+		return vec4(1.0);
+		
+	texCoord *= vec2(tex.width, tex.height);
 	
-	// Fetch the four texture samples
-	vec4 q00 = imageLoad(normalTextures, ivec3(q00Tex, tex.layer));
-	vec4 q10 = imageLoad(normalTextures, ivec3(q10Tex, tex.layer));
-	vec4 q01 = imageLoad(normalTextures, ivec3(q01Tex, tex.layer));
-	vec4 q11 = imageLoad(normalTextures, ivec3(q11Tex, tex.layer));
+	const vec2 size = vec2(textureSize(specularTextures, 0));
+	texCoord = GetTexCoord(texCoord, tex, size);
 	
-	// Interpolate samples horizontally
-	vec4 h0 = mix(q00, q10, x);
-	vec4 h1 = mix(q01, q11, x);
-	
-	// Interpolate samples vertically
-	return mix(h0, h1, y);
+	return sampleTexBilinear(specularTextures, 
+		vec3(texCoord, float(tex.layer)), SAMPLE_REPEAT);
 	
 }
 
@@ -107,23 +64,23 @@ vec4 SampleEnvironmentMap(vec3 v) {
 	vec3 vAbs = abs(v);
 	float ma;
 	vec2 uv;
-	float faceIndex;
+	int faceIndex;
 
 	if(vAbs.z >= vAbs.x && vAbs.z >= vAbs.y)
 	{
-		faceIndex = v.z < 0.0 ? 5.0 : 4.0;
+		faceIndex = v.z < 0.0 ? 5 : 4;
 		ma = 0.5 / vAbs.z;
 		uv = vec2(v.z < 0.0 ? -v.x : v.x, -v.y);
 	}
 	else if(vAbs.y >= vAbs.x)
 	{
-		faceIndex = v.y < 0.0 ? 3.0 : 2.0;
+		faceIndex = v.y < 0.0 ? 3 : 2;
 		ma = 0.5 / vAbs.y;
 		uv = vec2(v.x, v.y < 0.0 ? -v.z : v.z);
 	}
 	else
 	{
-		faceIndex = v.x < 0.0 ? 1.0 : 0.0;
+		faceIndex = v.x < 0.0 ? 1 : 0;
 		ma = 0.5 / vAbs.x;
 		uv = vec2(v.x < 0.0 ? v.z : -v.z, -v.y);
 	}
@@ -131,8 +88,9 @@ vec4 SampleEnvironmentMap(vec3 v) {
 	uv = uv * ma + 0.5;
 
 	ivec2 size = imageSize(environmentMap);
+	ivec2 pixel = clamp(ivec2(vec2(size).xy * uv - 0.5), ivec2(0), ivec2(size) - 1);
 
-	ivec3 coord = ivec3(ivec2(vec2(size).xy * uv), int(faceIndex));
+	ivec3 coord = ivec3(pixel, faceIndex);
 
 	return imageLoad(environmentMap, coord);
 

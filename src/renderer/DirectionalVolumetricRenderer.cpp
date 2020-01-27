@@ -53,9 +53,9 @@ namespace Atlas {
 
                 auto directionalLight = (Lighting::DirectionalLight*)light;
 
-                glViewport(0, 0, directionalLight->GetVolumetric()->map->width, directionalLight->GetVolumetric()->map->height);
+                glViewport(0, 0, directionalLight->GetVolumetric()->map.width, directionalLight->GetVolumetric()->map.height);
 
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, directionalLight->GetVolumetric()->map);
+                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &directionalLight->GetVolumetric()->map);
 
                 vec3 direction = normalize(vec3(camera->viewMatrix * vec4(directionalLight->direction, 0.0f)));
 
@@ -63,12 +63,12 @@ namespace Atlas {
                 shadowCascadeCount->SetValue(directionalLight->GetShadow()->componentCount);
                 sampleCount->SetValue(directionalLight->GetVolumetric()->sampleCount);
                 scattering->SetValue(glm::clamp(directionalLight->GetVolumetric()->scattering, -1.0f, 1.0f));
-                framebufferResolution->SetValue(vec2(directionalLight->GetVolumetric()->map->width,
-                                                     directionalLight->GetVolumetric()->map->height));
+                framebufferResolution->SetValue(vec2(directionalLight->GetVolumetric()->map.width,
+                                                     directionalLight->GetVolumetric()->map.height));
 
                 light->GetShadow()->maps.Bind(GL_TEXTURE1);
 
-                for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
+                for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
                     if (i < light->GetShadow()->componentCount) {
 						auto cascade = &directionalLight->GetShadow()->components[i];
                         cascades[i].distance->SetValue(cascade->farDistance);
@@ -76,7 +76,6 @@ namespace Atlas {
                     }
                     else {
                         cascades[i].distance->SetValue(camera->farPlane);
-                        cascades[i].lightSpace->SetValue(mat4(1.0f));
                     }
                 }
 
@@ -106,21 +105,21 @@ namespace Atlas {
 
                 auto directionalLight = (Lighting::DirectionalLight*)light;
 
-                glViewport(0, 0, directionalLight->GetVolumetric()->map->width, directionalLight->GetVolumetric()->map->height);
+                glViewport(0, 0, directionalLight->GetVolumetric()->map.width, directionalLight->GetVolumetric()->map.height);
 
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, directionalLight->GetVolumetric()->blurMap);
+                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &directionalLight->GetVolumetric()->blurMap);
 
-                directionalLight->GetVolumetric()->map->Bind(GL_TEXTURE0);
+                directionalLight->GetVolumetric()->map.Bind(GL_TEXTURE0);
 
-                blurDirection->SetValue(vec2(1.0f / (float)directionalLight->GetVolumetric()->map->width, 0.0f));
+                blurDirection->SetValue(vec2(1.0f / (float)directionalLight->GetVolumetric()->map.width, 0.0f));
 
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, directionalLight->GetVolumetric()->map);
+                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &directionalLight->GetVolumetric()->map);
 
-                directionalLight->GetVolumetric()->blurMap->Bind(GL_TEXTURE0);
+                directionalLight->GetVolumetric()->blurMap.Bind(GL_TEXTURE0);
 
-                blurDirection->SetValue(vec2(0.0f, 1.0f / (float)directionalLight->GetVolumetric()->map->height));
+                blurDirection->SetValue(vec2(0.0f, 1.0f / (float)directionalLight->GetVolumetric()->map.height));
 
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -137,7 +136,7 @@ namespace Atlas {
             shadowCascadeCount = volumetricShader.GetUniform("light.shadow.cascadeCount");
             framebufferResolution = volumetricShader.GetUniform("framebufferResolution");
 
-            for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT; i++) {
+            for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
                 cascades[i].distance = volumetricShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].distance");
                 cascades[i].lightSpace = volumetricShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].cascadeSpace");
             }

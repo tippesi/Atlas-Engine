@@ -6,8 +6,8 @@ namespace Atlas {
 
 	namespace Ocean {
 
-		Ocean::Ocean(int32_t LoDCount, float size, vec3 translation) :
-			size(size), translation(translation), simulation(512, 4000) {
+		Ocean::Ocean(int32_t LoDCount, float size, vec3 translation, int32_t N,
+			int32_t L) : size(size), translation(translation), simulation(N, L) {
 
 			simulation.ComputeSpectrum();
 

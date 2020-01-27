@@ -4,6 +4,8 @@
 #include "../System.h"
 #include "buffer/VertexArray.h"
 
+#include "RenderBatch.h"
+
 #include "OpaqueRenderer.h"
 #include "TerrainRenderer.h"
 #include "OceanRenderer.h"
@@ -38,7 +40,8 @@ namespace Atlas {
              * @param scene
              */
 			void RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera,
-				Scene::Scene* scene, Texture::Texture2D* texture = nullptr);
+				Scene::Scene* scene, Texture::Texture2D* texture = nullptr, 
+				RenderBatch* batch = nullptr);
 
 			/**
              *
@@ -133,6 +136,9 @@ namespace Atlas {
 			void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
 								 vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
+
+			void RenderBatched(Viewport* viewport, Camera* camera, RenderBatch* batch);
+
 			/**
              * Update of the renderer
              * @warning Must be called every frame
@@ -142,9 +148,6 @@ namespace Atlas {
 			TextRenderer textRenderer;
 			OceanRenderer oceanRenderer;
 			AtmosphereRenderer atmosphereRenderer;
-
-			static std::string vertexPath;
-			static std::string fragmentPath;
 
 		private:
 			void GetUniforms();
@@ -157,6 +160,8 @@ namespace Atlas {
 			Shader::Shader rectangleShader;
 			Shader::Shader texture2DShader;
 			Shader::Shader texture2DArrayShader;
+
+			Shader::Shader lineShader;
 
 			Shader::Uniform* rectangleProjectionMatrix = nullptr;
 			Shader::Uniform* rectangleOffset = nullptr;
@@ -177,6 +182,9 @@ namespace Atlas {
 			Shader::Uniform* texture2DArrayClipArea = nullptr;
 			Shader::Uniform* texture2DArrayBlendArea = nullptr;
 			Shader::Uniform* texture2DArrayDepth = nullptr;
+
+			Shader::Uniform* lineViewMatrix = nullptr;
+			Shader::Uniform* lineProjectionMatrix = nullptr;
 
 			OpaqueRenderer opaqueRenderer;
 			TerrainRenderer terrainRenderer;

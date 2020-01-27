@@ -1,5 +1,5 @@
 #include "structures"
-#include "deferred/convert"
+#include "common/convert"
 
 in vec2 fTexCoord;
 
@@ -30,13 +30,13 @@ float ComputeScattering(float lightDotView) {
     // Range [-1;1]
     float g = scattering;
     float gSquared = g * g;
-    float result = 1.0f -  gSquared;
-    result /= (4.0f * 3.14f * pow(1.0f + gSquared - (2.0f * g) * lightDotView, 1.5f));
+    float result = 1.0 -  gSquared;
+    result /= (4.0 * 3.14 * pow(1.0 + gSquared - (2.0 * g) * lightDotView, 1.5));
     return result;
 }
 
-const float ditherPattern[16] = float[](0.0f, 0.5f, 0.125f, 0.625f, 0.75f, 0.22f, 0.875f, 0.375f,
-		0.1875f, 0.6875f, 0.0625f, 0.5625, 0.9375f, 0.4375f, 0.8125f, 0.3125);
+const float ditherPattern[16] = float[](0.0, 0.5, 0.125, 0.625, 0.75, 0.22, 0.875, 0.375,
+		0.1875, 0.6875, 0.0625, 0.5625, 0.9375, 0.4375, 0.8125, 0.3125);
 
 float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 
@@ -69,6 +69,7 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
         cascadeIndex = distance >= light.shadow.cascades[1].distance ? 2 : cascadeIndex;
         cascadeIndex = distance >= light.shadow.cascades[2].distance ? 3 : cascadeIndex;
         cascadeIndex = distance >= light.shadow.cascades[3].distance ? 4 : cascadeIndex;
+        cascadeIndex = distance >= light.shadow.cascades[4].distance ? 5 : cascadeIndex;
         cascadeIndex = min(light.shadow.cascadeCount - 1, cascadeIndex);
 
         if (lastCascadeIndex != cascadeIndex) {
@@ -76,7 +77,8 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
             cascadeMatrix = cascadeIndex > 0 ? light.shadow.cascades[1].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 1 ? light.shadow.cascades[2].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 2 ? light.shadow.cascades[3].cascadeSpace : cascadeMatrix;
-            cascadeMatrix = cascadeIndex > 3 ? light.shadow.cascades[4].cascadeSpace : cascadeMatrix;       
+            cascadeMatrix = cascadeIndex > 3 ? light.shadow.cascades[4].cascadeSpace : cascadeMatrix;
+            cascadeMatrix = cascadeIndex > 4 ? light.shadow.cascades[5].cascadeSpace : cascadeMatrix;         
         }
 
 		lastCascadeIndex = cascadeIndex;

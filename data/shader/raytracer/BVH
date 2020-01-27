@@ -18,14 +18,16 @@ void CheckLeafClosest(Ray ray, uint nodePtr, float tmin, float tmax,
 	uint count = nodes[nodePtr].data2 & uint(0x7fffffff);
 	
 	vec3 sol, v0, v1, v2, n;
-	float d = dot(n, ray.direction);
 	
 	for (uint i = offset; i < offset + count; i++) {
 		v0 = triangles[i].v0.xyz;
 		v1 = triangles[i].v1.xyz;
 		v2 = triangles[i].v2.xyz;
+		float d = 0.0;
+#ifdef BACKFACE_CULLING
 		n = cross(v0 - v1, v0 - v2);
-		float d = dot(n, ray.direction);
+		d = dot(n, ray.direction);
+#endif
 		if (Intersection(ray, v0, v1, v2, sol) && d <= 0.0) {
 			if (sol.x < intersection.x) {
 				intersection = sol;
@@ -48,8 +50,11 @@ bool CheckLeaf(Ray ray, uint nodePtr, float tmin, float tmax) {
 		v0 = triangles[i].v0.xyz;
 		v1 = triangles[i].v1.xyz;
 		v2 = triangles[i].v2.xyz;
+		float d = 0.0;
+#ifdef BACKFACE_CULLING
 		n = cross(v0 - v1, v0 - v2);
-		float d = dot(n, ray.direction);
+		d = dot(n, ray.direction);
+#endif
 		if (Intersection(ray, v0, v1, v2, sol) && d <= 0.0) {
 			hit = true;
 			break;

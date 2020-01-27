@@ -6,6 +6,7 @@
 #include "mesh/Mesh.h"
 #include "audio/AudioData.h"
 #include "terrain/Terrain.h"
+#include "scene/Scene.h"
 #include "Material.h"
 
 #include <mutex>
@@ -15,7 +16,7 @@ namespace Atlas {
 	class ResourceManager {
 
 	public:
-		static Mesh::Mesh* GetMesh(std::string path);
+		static Mesh::Mesh* GetMesh(std::string path, bool forceTangents = false);
 		static Material* GetMaterial(std::string path);
 		static Audio::AudioData* GetAudio(std::string path);
 		static Terrain::Terrain* GetTerrain(std::string path);
@@ -24,6 +25,7 @@ namespace Atlas {
 		static void AddMaterial(Material* material);
 		static void AddAudio(Audio::AudioData* audio);
 		static void AddTerrain(Terrain::Terrain* terrain);
+		static void AddScene(Scene::Scene* scene);
 
 		static void RemoveMesh(Mesh::Mesh* mesh);
 		static void RemoveMaterial(Material* material);
@@ -34,17 +36,20 @@ namespace Atlas {
 		static std::vector<Material*> GetMaterials();
 		static std::vector<Audio::AudioData*> GetAudios();
 		static std::vector<Terrain::Terrain*> GetTerrains();
+		static std::vector<Scene::Scene*> GetScenes();
 
 	private:
 		static std::vector<Mesh::Mesh*> meshes;
 		static std::vector<Material*> materials;
 		static std::vector<Audio::AudioData*> audios;
 		static std::vector<Terrain::Terrain*> terrains;
+		static std::vector<Scene::Scene*> scenes;
 
 		static std::mutex meshMutex;
 		static std::mutex materialMutex;
 		static std::mutex audioMutex;
 		static std::mutex terrainMutex;
+		static std::mutex sceneMutex;
 
 	};
 

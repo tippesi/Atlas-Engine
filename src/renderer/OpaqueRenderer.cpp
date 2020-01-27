@@ -20,12 +20,15 @@ namespace Atlas {
 			viewMatrixUniform = shaderBatch.GetUniform("vMatrix");
 			projectionMatrixUniform = shaderBatch.GetUniform("pMatrix");
 
+			cameraLocationUniform = shaderBatch.GetUniform("cameraLocation");
 			diffuseColorUniform = shaderBatch.GetUniform("diffuseColor");
+			emissiveColorUniform = shaderBatch.GetUniform("emissiveColor");
 			specularColorUniform = shaderBatch.GetUniform("specularColor");
 			ambientColorUniform = shaderBatch.GetUniform("ambientColor");
 			specularHardnessUniform = shaderBatch.GetUniform("specularHardness");
 			specularIntensityUniform = shaderBatch.GetUniform("specularIntensity");
 			normalScaleUniform = shaderBatch.GetUniform("normalScale");
+			displacementScaleUniform = shaderBatch.GetUniform("displacementScale");
 
 			invertUVsUniform = shaderBatch.GetUniform("invertUVs");
 
@@ -41,6 +44,7 @@ namespace Atlas {
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			bool backFaceCulling = true;
+			bool depthTest = true;
 
 			scene->GetRenderList(camera->frustum, renderList);
 
@@ -71,8 +75,12 @@ namespace Atlas {
 					}
 
 					auto mesh = actorBatch->GetObject();
+					auto buffer = renderList.actorBatchBuffers[mesh];
 
-					auto actorCount = renderList.actorBatchBuffers[mesh]->GetElementCount();
+					if (!buffer)
+						continue;
+
+					auto actorCount = buffer->GetElementCount();
 
 					if (!actorCount) {
 						continue;
@@ -87,6 +95,18 @@ namespace Atlas {
 					else if (mesh->cullBackFaces && !backFaceCulling) {
 						glEnable(GL_CULL_FACE);
 						backFaceCulling = true;
+					}
+
+					if (!mesh->depthTest && depthTest) {
+						// Allows for most objects to have
+						// depth test in themselves but are always
+						// drawn no matter if something else is nearer
+						glDepthRangef(0.0f, 0.001f);
+						depthTest = false;
+					}
+					else if (mesh->depthTest && !depthTest) {
+						glDepthRangef(0.0f, 1.0f);
+						depthTest = true;
 					}
 
 					invertUVsUniform->SetValue(mesh->invertUVs);
@@ -109,12 +129,15 @@ namespace Atlas {
 						if (material->HasDisplacementMap())
 							material->displacementMap->Bind(GL_TEXTURE3);
 
+						cameraLocationUniform->SetValue(camera->GetLocation());
 						diffuseColorUniform->SetValue(material->diffuseColor);
+						emissiveColorUniform->SetValue(material->emissiveColor);
 						specularColorUniform->SetValue(material->specularColor);
 						ambientColorUniform->SetValue(material->ambientColor);
 						specularHardnessUniform->SetValue(material->specularHardness);
 						specularIntensityUniform->SetValue(material->specularIntensity);
 						normalScaleUniform->SetValue(material->normalScale);
+						displacementScaleUniform->SetValue(material->displacementScale);
 
 						glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
 							(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), actorCount);
@@ -124,6 +147,9 @@ namespace Atlas {
 				}
 
 			}
+
+			glEnable(GL_CULL_FACE);
+			glDepthRangef(0.0f, 1.0f);
 
 			impostorRenderer.Render(viewport, target, camera, &renderList);
 
@@ -209,11 +235,13 @@ namespace Atlas {
 							if (material->HasDisplacementMap())
 								material->displacementMap->Bind(GL_TEXTURE3);
 
+							//cameraLocationUniform->SetValue(vec3(viewMatrices));
 							diffuseColorUniform->SetValue(material->diffuseColor);
 							specularColorUniform->SetValue(material->specularColor);
 							ambientColorUniform->SetValue(material->ambientColor);
 							specularHardnessUniform->SetValue(material->specularHardness);
 							specularIntensityUniform->SetValue(material->specularIntensity);
+							displacementScaleUniform->SetValue(material->displacementScale);
 
 							glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
 								(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), actorBatch->GetSize());
@@ -225,6 +253,8 @@ namespace Atlas {
 					impostor->diffuseTexture.Copy(*framebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0),
 						0, 0, 0, 0, 0, (int32_t)i, impostor->resolution, impostor->resolution, 1);
 					impostor->normalTexture.Copy(*framebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT1),
+						0, 0, 0, 0, 0, (int32_t)i, impostor->resolution, impostor->resolution, 1);
+					impostor->specularTexture.Copy(*framebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT2),
 						0, 0, 0, 0, 0, (int32_t)i, impostor->resolution, impostor->resolution, 1);
 
 				}

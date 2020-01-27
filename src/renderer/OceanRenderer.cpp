@@ -58,18 +58,20 @@ namespace Atlas {
 			lightScatteringFactor->SetValue(sun->GetVolumetric() ? sun->GetVolumetric()->scatteringFactor : 0.0f);
 
 			if (sun->GetVolumetric()) {
-				glViewport(0, 0, sun->GetVolumetric()->map->width, sun->GetVolumetric()->map->height);
-				sun->GetVolumetric()->map->Bind(GL_TEXTURE7);
+				glViewport(0, 0, sun->GetVolumetric()->map.width, sun->GetVolumetric()->map.height);
+				sun->GetVolumetric()->map.Bind(GL_TEXTURE7);
 				glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
 			}			
 
 			if (sun->GetShadow()) {
-				shadowDistance->SetValue(sun->GetShadow()->distance);
+				auto distance = !sun->GetShadow()->longRange ? sun->GetShadow()->distance :
+					sun->GetShadow()->longRangeDistance;
+				shadowDistance->SetValue(distance);
 				shadowBias->SetValue(sun->GetShadow()->bias);
 				shadowCascadeCount->SetValue(sun->GetShadow()->componentCount);
 				shadowResolution->SetValue(vec2((float)sun->GetShadow()->resolution));
 
-				sun->GetShadow()->maps.Bind(GL_TEXTURE6);
+				sun->GetShadow()->maps.Bind(GL_TEXTURE8);
 
 				for (int32_t i = 0; i < sun->GetShadow()->componentCount; i++) {
 					auto cascade = &sun->GetShadow()->components[i];
@@ -166,6 +168,26 @@ namespace Atlas {
 
 			auto renderList = ocean->GetRenderList();
 
+			if (scene->fog && scene->fog->enable) {
+
+				auto& fog = scene->fog;
+
+				fogScale->SetValue(fog->scale);
+				fogDistanceScale->SetValue(fog->distanceScale);
+				fogHeight->SetValue(fog->height);
+				fogColor->SetValue(fog->color);
+				fogScatteringPower->SetValue(fog->scatteringPower);
+
+			}
+			else {
+
+				fogScale->SetValue(0.0f);
+				fogDistanceScale->SetValue(1.0f);
+				fogHeight->SetValue(1.0f);
+				fogScatteringPower->SetValue(1.0f);
+
+			}
+
 			// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 			for (auto node : renderList) {
@@ -227,6 +249,12 @@ namespace Atlas {
 			terrainHeightScale = shader.GetUniform("terrainHeightScale");
 
 			hasRippleTexture = shader.GetUniform("hasRippleTexture");
+
+			fogScale = shader.GetUniform("fogScale");
+			fogDistanceScale = shader.GetUniform("fogDistanceScale");
+			fogHeight = shader.GetUniform("fogHeight");
+			fogColor = shader.GetUniform("fogColor");
+			fogScatteringPower = shader.GetUniform("fogScatteringPower");
 
 			for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
 				cascades[i].distance = shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].distance");

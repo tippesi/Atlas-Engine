@@ -1,10 +1,10 @@
 #include <structures>
-#include <random>
+#include <../common/random>
 #include <../common/PI>
 #include <../common/packing>
 
 #define INF 1000000000000.0
-#define EPSILON 0.1
+#define EPSILON 0.001
 
 Triangle UnpackTriangle(PackedTriangle triangle) {
 	
@@ -68,7 +68,7 @@ PackedRay PackRay(Ray ray) {
 
 }
 
-vec3 HemisphereCos(vec3 dir, vec2 coord, float seed0, float seed1) {
+vec3 HemisphereCos(vec3 dir, vec2 coord, float seed) {
 	
 	// Tangent space
 	vec3 w = dir;
@@ -77,8 +77,25 @@ vec3 HemisphereCos(vec3 dir, vec2 coord, float seed0, float seed1) {
 	vec3 v = cross(w, u);
 	
 	// create 2 random numbers
-	float r1 = 2.0 * PI * random(vec4(coord, seed0, seed1));
-	float r2 = random(vec4(coord, seed0, seed1 + 1.0));
+	float r1 = 2.0 * PI * random(coord, seed);
+	float r2 = random(coord, seed);
+	float r2s = sqrt(r2);
+	
+	return normalize(u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1.0 - r2));
+	
+}
+
+vec3 HemisphereCos(vec3 dir, float exponent, vec2 coord, float seed) {
+	
+	// Tangent space
+	vec3 w = dir;
+	vec3 u = normalize(cross((abs(w.x) > 0.1 ? vec3(0.0, 1.0, 0.0)
+		: vec3(1.0, 0.0, 0.0)), w));
+	vec3 v = cross(w, u);
+	
+	// create 2 random numbers
+	float r1 = 2.0 * PI * random(coord, seed);
+	float r2 = pow(random(coord, seed), exponent);
 	float r2s = sqrt(r2);
 	
 	return normalize(u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1.0 - r2));

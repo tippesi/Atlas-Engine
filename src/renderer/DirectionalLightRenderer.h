@@ -15,9 +15,6 @@ namespace Atlas {
 
             virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
-            static std::string vertexPath;
-            static std::string fragmentPath;
-
         private:
             void GetUniforms();
 
@@ -25,6 +22,8 @@ namespace Atlas {
 
             Shader::Uniform* inverseViewMatrix = nullptr;
             Shader::Uniform* inverseProjectionMatrix = nullptr;
+
+			Shader::Uniform* cameraLocation = nullptr;
 
             Shader::Uniform* lightDirection = nullptr;
             Shader::Uniform* lightColor = nullptr;
@@ -38,9 +37,16 @@ namespace Atlas {
             Shader::Uniform* shadowCascadeCount = nullptr;
             Shader::Uniform* shadowResolution = nullptr;
 
+			Shader::Uniform* fogScale = nullptr;
+			Shader::Uniform* fogDistanceScale = nullptr;
+			Shader::Uniform* fogHeight = nullptr;
+			Shader::Uniform* fogColor = nullptr;
+			Shader::Uniform* fogScatteringPower = nullptr;
+
             struct ShadowCascadeUniform {
                 Shader::Uniform* distance;
                 Shader::Uniform* lightSpace;
+				Shader::Uniform* texelSize;
             }cascades[MAX_SHADOW_CASCADE_COUNT + 1];
 
         };

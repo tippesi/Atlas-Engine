@@ -23,11 +23,14 @@ namespace Atlas {
 
 			Texture::Texture2DArray diffuseTexture;
 			Texture::Texture2DArray normalTexture;
+			Texture::Texture2DArray specularTexture;
 
 			Volume::AABB aabb;
 
 			int32_t views = 1;
 			int32_t resolution = 64;
+
+			float cutoff = 0.7f;
 
 		};
 

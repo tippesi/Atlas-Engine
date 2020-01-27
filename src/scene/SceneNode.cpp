@@ -176,6 +176,43 @@ namespace Atlas {
 
 		}
 
+		std::vector<Actor::MovableMeshActor*> SceneNode::GetNodeMovableMeshActors() {
+
+			return movableMeshActors;
+
+		}
+
+		std::vector<Actor::StaticMeshActor*> SceneNode::GetNodeStaticMeshActors() {
+
+			return staticMeshActors;
+
+		}
+
+		std::vector<Actor::DecalActor*> SceneNode::GetNodeDecalActors() {
+
+			return decalActors;
+
+		}
+
+		std::vector<Actor::AudioActor*> SceneNode::GetNodeAudioActors() {
+
+			return audioActors;
+
+		}
+
+		std::vector<Lighting::Light*> SceneNode::GetNodeLights() {
+
+			return lights;
+
+		}
+
+		std::vector<SceneNode*> SceneNode::GetNodeChildren() {
+
+			return childNodes;
+
+		}
+
+
 		bool SceneNode::Update(Camera* camera, float deltaTime, mat4 parentTransformation,
 			bool parentTransformChanged) {
 

@@ -19,18 +19,23 @@ namespace Atlas {
 
 			GetUniforms();
 
+			sharpenShader.AddStage(AE_COMPUTE_STAGE, "sharpen.csh");
+
+			sharpenShader.Compile();
+
+			sharpenFactor = sharpenShader.GetUniform("sharpenFactor");
+
 		}
 
 		void PostProcessRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
-			glViewport(viewport->x, viewport->y, viewport->width, viewport->height);
+			target->postProcessFramebuffer.Bind();
 
 			auto postProcessing = &scene->postProcessing;
 
 			bool hasFilmicTonemappingMacro = shader.HasMacro("FILMIC_TONEMAPPING");
 			bool hasVignetteMacro = shader.HasMacro("VIGNETTE");
 			bool hasChromaticAberrationMacro = shader.HasMacro("CHROMATIC_ABERRATION");
-			bool hasSharpenMacro = shader.HasMacro("SHARPEN");
 
 			if (postProcessing->filmicTonemapping && !hasFilmicTonemappingMacro) {
 				shader.AddMacro("FILMIC_TONEMAPPING");
@@ -53,18 +58,11 @@ namespace Atlas {
 				shader.RemoveMacro("CHROMATIC_ABERRATION");
 			}
 
-			if (postProcessing->sharpen && !hasSharpenMacro) {
-				shader.AddMacro("SHARPEN");
-			}
-			else if (!postProcessing->sharpen && hasSharpenMacro) {
-				shader.RemoveMacro("SHARPEN");
-			}
-
 			shader.Bind();
 
-			hdrTextureResolution->SetValue(
-					vec2(target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->width,
-						 target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->height));
+			ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
+
+			hdrTextureResolution->SetValue(vec2(resolution));
 
 			exposure->SetValue(postProcessing->exposure);
 			saturation->SetValue(postProcessing->saturation);
@@ -83,10 +81,6 @@ namespace Atlas {
 				vignetteColor->SetValue(postProcessing->vignette->color);
 			}
 
-			if (postProcessing->sharpen) {
-				sharpenFactor->SetValue(postProcessing->sharpen->factor);
-			}
-
 			if (postProcessing->taa) {
 				target->GetHistory()->Bind(GL_TEXTURE0);
 			}
@@ -95,6 +89,27 @@ namespace Atlas {
 			}
 
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+			target->postProcessFramebuffer.Unbind();
+
+			if (postProcessing->sharpen) {
+				sharpenShader.Bind();
+
+				ivec2 groupCount = resolution / 8;
+
+				groupCount.x += resolution.x % groupCount.x ? 1 : 0;
+				groupCount.y += resolution.y % groupCount.y ? 1 : 0;
+
+				target->postProcessTexture.Bind(GL_WRITE_ONLY, 0);
+				target->postProcessFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE1);
+
+				sharpenFactor->SetValue(postProcessing->sharpen->factor);
+
+				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+				glDispatchCompute(groupCount.x, groupCount.y, 1);
+
+			}
 
 		}
 
@@ -110,7 +125,6 @@ namespace Atlas {
 			vignettePower = shader.GetUniform("vignettePower");
 			vignetteStrength = shader.GetUniform("vignetteStrength");
 			vignetteColor = shader.GetUniform("vignetteColor");
-			sharpenFactor = shader.GetUniform("sharpenFactor");
 			timeInMilliseconds = shader.GetUniform("timeInMilliseconds");
 
 		}

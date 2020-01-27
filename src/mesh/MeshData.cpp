@@ -64,6 +64,14 @@ namespace Atlas {
 
 		}
 
+		void MeshData::SetTransform(mat4 transform) {
+
+			
+
+			this->transform = transform;
+
+		}
+
 		void MeshData::DeepCopy(const MeshData& that) {
 
 			indices = that.indices;

@@ -1,0 +1,155 @@
+#define SAMPLE_NO_WRAPPING 0
+#define SAMPLE_REPEAT 1
+#define SAMPLE_CLAMP 2
+
+ivec2 GetTexCoordRepeat(ivec2 texCoord, ivec2 size) {
+	
+	return ivec2(texCoord.x % size.x,
+		texCoord.y % size.y);
+		
+}
+
+ivec2 GetTexCoordClamp(ivec2 texCoord, ivec2 size) {
+	
+	return clamp(texCoord, ivec2(0), size);
+
+}
+
+vec4 sampleTex(const in sampler2D texture, ivec2 coord, const int wrapping) {
+
+	ivec2 wrapped;
+	ivec2 texSize = textureSize(texture, 0);
+
+	if (wrapping == SAMPLE_REPEAT) {
+		wrapped = GetTexCoordRepeat(coord, texSize);
+	}
+	else if (wrapping == SAMPLE_CLAMP) {
+		wrapped = GetTexCoordClamp(coord, texSize);
+	}
+	else {
+		wrapped = coord;
+	}
+	
+	return texelFetch(texture, wrapped, 0);
+
+}
+
+vec4 sampleTex(const in sampler2D texture, vec2 coord, const int wrapping) {
+
+	ivec2 texSize = textureSize(texture, 0);
+	ivec2 texCoord = ivec2(coord * vec2(texSize) - 0.5);
+	
+	return sampleTex(texture, texCoord, wrapping);
+
+}
+
+vec4 sampleTexBilinear(const in sampler2D texture, vec2 coord, const int wrapping) {
+
+	ivec2 texSize = textureSize(texture, 0);
+	coord *= vec2(texSize) - 0.5;
+	
+	vec2 off = coord - floor(coord);
+	
+	ivec2 q00Tex, q10Tex, q01Tex, q11Tex;
+	
+	ivec2 texCoord = ivec2(coord);
+	
+	// Calculate the four texture coordinates
+	if (wrapping == SAMPLE_REPEAT) {
+		q00Tex = GetTexCoordRepeat(texCoord, texSize);
+		q10Tex = GetTexCoordRepeat(texCoord + ivec2(1, 0), texSize);
+		q01Tex = GetTexCoordRepeat(texCoord + ivec2(0, 1), texSize);
+		q11Tex = GetTexCoordRepeat(texCoord + ivec2(1, 1), texSize);	
+	}
+	else if (wrapping == SAMPLE_CLAMP) {
+		q00Tex = GetTexCoordClamp(texCoord, texSize);
+		q10Tex = GetTexCoordClamp(texCoord + ivec2(1, 0), texSize);
+		q01Tex = GetTexCoordClamp(texCoord + ivec2(0, 1), texSize);
+		q11Tex = GetTexCoordClamp(texCoord + ivec2(1, 1), texSize);	
+	}
+	else {
+		q00Tex = texCoord;
+		q10Tex = texCoord + ivec2(1, 0);
+		q01Tex = texCoord + ivec2(0, 1);
+		q11Tex = texCoord + ivec2(1, 1);
+	}
+	
+	// Fetch the four texture samples
+	vec4 q00 = texelFetch(texture, q00Tex, 0);
+	vec4 q10 = texelFetch(texture, q10Tex, 0);
+	vec4 q01 = texelFetch(texture, q01Tex, 0);
+	vec4 q11 = texelFetch(texture, q11Tex, 0);
+	
+	// Interpolate samples horizontally
+	vec4 h0 = mix(q00, q10, off.x);
+	vec4 h1 = mix(q01, q11, off.x);
+	
+	// Interpolate samples vertically
+	return mix(h0, h1, off.y);
+
+}
+
+vec4 sampleTex(const in sampler2DArray texture, ivec3 coord, const int wrapping) {
+
+	ivec2 wrapped;
+	ivec3 texSize = textureSize(texture, 0);
+
+	if (wrapping == SAMPLE_REPEAT) {
+		wrapped = GetTexCoordRepeat(coord.xy, texSize.xy);
+	}
+	else {
+		wrapped = GetTexCoordClamp(coord.xy, texSize.xy);
+	}
+	
+	return texelFetch(texture, ivec3(coord.xy, coord.z), 0);
+
+}
+
+vec4 sampleTex(const in sampler2DArray texture, vec3 coord, const int wrapping) {
+
+	ivec3 texSize = textureSize(texture, 0);
+	ivec2 texCoord = ivec2(coord.xy * vec2(texSize.xy) - 0.5);
+	
+	return sampleTex(texture, ivec3(texCoord, int(coord.z)), wrapping);
+
+}
+
+vec4 sampleTexBilinear(const in sampler2DArray texture, vec3 coord, const int wrapping) {
+
+	ivec3 texSize = textureSize(texture, 0);
+	coord.xy *= vec2(texSize.xy) - 0.5;
+	
+	vec2 off = coord.xy - floor(coord.xy);
+	
+	ivec2 q00Tex, q10Tex, q01Tex, q11Tex;
+	
+	ivec2 texCoord = ivec2(coord.xy);
+	
+	// Calculate the four texture coordinates
+	if (wrapping == SAMPLE_REPEAT) {
+		q00Tex = GetTexCoordRepeat(texCoord, texSize.xy);
+		q10Tex = GetTexCoordRepeat(texCoord + ivec2(1, 0), texSize.xy);
+		q01Tex = GetTexCoordRepeat(texCoord + ivec2(0, 1), texSize.xy);
+		q11Tex = GetTexCoordRepeat(texCoord + ivec2(1, 1), texSize.xy);	
+	}
+	else {
+		q00Tex = GetTexCoordClamp(texCoord, texSize.xy);
+		q10Tex = GetTexCoordClamp(texCoord + ivec2(1, 0), texSize.xy);
+		q01Tex = GetTexCoordClamp(texCoord + ivec2(0, 1), texSize.xy);
+		q11Tex = GetTexCoordClamp(texCoord + ivec2(1, 1), texSize.xy);	
+	}
+	
+	// Fetch the four texture samples
+	vec4 q00 = texelFetch(texture, ivec3(q00Tex, int(coord.z)), 0);
+	vec4 q10 = texelFetch(texture, ivec3(q10Tex, int(coord.z)), 0);
+	vec4 q01 = texelFetch(texture, ivec3(q01Tex, int(coord.z)), 0);
+	vec4 q11 = texelFetch(texture, ivec3(q11Tex, int(coord.z)), 0);
+	
+	// Interpolate samples horizontally
+	vec4 h0 = mix(q00, q10, off.x);
+	vec4 h1 = mix(q01, q11, off.x);
+	
+	// Interpolate samples vertically
+	return mix(h0, h1, off.y);
+
+}

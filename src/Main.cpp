@@ -1,9 +1,25 @@
 #include "Engine.h"
 #include "EngineInstance.h"
+#include "common/Path.h"
+
+#ifdef AE_OS_ANDROID
+#include <zconf.h>
+#endif
 
 extern Atlas::EngineInstance* GetEngineInstance();
 
 int main(int argc, char* argv[]) {
+
+	// Automatically change working directory to load
+	// shaders properly.
+	if (argc > 0) {
+		auto workingDir = Atlas::Common::Path::GetDirectory(argv[0]);
+#ifdef AE_OS_WINDOWS
+		_chdir(workingDir.c_str());
+#else
+		chdir(workingDir.c_str());
+#endif
+	}
 
 	auto context = Atlas::Engine::Init(Atlas::EngineInstance::assetDirectory,
 		Atlas::EngineInstance::shaderDirectory);

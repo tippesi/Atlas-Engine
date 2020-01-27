@@ -25,10 +25,10 @@ namespace Atlas {
 
 			shader.Bind();
 
-			mat4 mvpMatrix = camera->projectionMatrix * camera->viewMatrix;
+			mat4 matrix = camera->projectionMatrix * camera->viewMatrix;
 
 			vec3 lastCameraLocation = vec3(0.0f);
-			auto& key = cameraMap.find(camera);
+			auto key = cameraMap.find(camera);
 			if (key != cameraMap.end()) {
 				lastCameraLocation = key->second;
 			}
@@ -37,15 +37,54 @@ namespace Atlas {
 				key = cameraMap.find(camera);
 			}
 
-			modelViewProjectionMatrix->SetValue(mvpMatrix);
+			auto lights = scene->GetLights();
+
+			Lighting::DirectionalLight* sun = nullptr;
+
+			for (auto& light : lights) {
+				if (light->type == AE_DIRECTIONAL_LIGHT) {
+					sun = static_cast<Lighting::DirectionalLight*>(light);
+				}
+			}
+
+			if (!sun)
+				return;
+
+			mvpMatrix->SetValue(matrix);
+			ivMatrix->SetValue(camera->invViewMatrix);
+			ipMatrix->SetValue(camera->invProjectionMatrix);
+			
 			cameraLocation->SetValue(camera->GetLocation());
 			cameraLocationLast->SetValue(lastCameraLocation);
 
-			key->second = camera->GetLocation();
+			lightDirection->SetValue(normalize(sun->direction));
+			lightColor->SetValue(sun->color);
+
+			cameraMap[camera] = camera->GetLocation();
 
 			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
 			jitterLast->SetValue(camera->GetLastJitter());
 			jitterCurrent->SetValue(camera->GetJitter());
+
+			if (scene->fog && scene->fog->enable) {
+
+				auto& fog = scene->fog;
+
+				fogScale->SetValue(fog->scale);
+				fogDistanceScale->SetValue(fog->distanceScale);
+				fogHeight->SetValue(fog->height);
+				fogColor->SetValue(fog->color);
+				fogScatteringPower->SetValue(fog->scatteringPower);
+
+			}
+			else {
+
+				fogScale->SetValue(0.0f);
+				fogDistanceScale->SetValue(1.0f);
+				fogHeight->SetValue(1.0f);
+				fogScatteringPower->SetValue(1.0f);
+
+			}
 
 			vertexArray.Bind();
 
@@ -57,12 +96,23 @@ namespace Atlas {
 
 		void SkyboxRenderer::GetUniforms() {
 
-			modelViewProjectionMatrix = shader.GetUniform("mvpMatrix");
+			mvpMatrix = shader.GetUniform("mvpMatrix");
+			ivMatrix = shader.GetUniform("ivMatrix");
+			ipMatrix = shader.GetUniform("ipMatrix");
 			cameraLocation = shader.GetUniform("cameraLocation");
 			cameraLocationLast = shader.GetUniform("cameraLocationLast");
+			lightDirection = shader.GetUniform("lightDirection");
+			lightColor = shader.GetUniform("lightColor");
+
 			pvMatrixLast = shader.GetUniform("pvMatrixLast");
 			jitterLast = shader.GetUniform("jitterLast");
 			jitterCurrent = shader.GetUniform("jitterCurrent");
+
+			fogScale = shader.GetUniform("fogScale");
+			fogDistanceScale = shader.GetUniform("fogDistanceScale");
+			fogHeight = shader.GetUniform("fogHeight");
+			fogColor = shader.GetUniform("fogColor");
+			fogScatteringPower = shader.GetUniform("fogScatteringPower");
 
 		}
 

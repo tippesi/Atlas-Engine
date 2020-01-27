@@ -21,7 +21,8 @@ namespace Atlas {
 				bool forceTangents = false);
 
 		private:
-			static void LoadMaterial(aiMaterial* assimpMaterial, Material& material, std::string directory);
+			static void LoadMaterial(aiMaterial* assimpMaterial, Material& material,
+				std::string directory, bool isObj);
 
 		};
 

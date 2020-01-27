@@ -61,23 +61,30 @@ namespace Atlas {
 			 */
 			void Unbind();
 
+			/**
+			 * Unbinds any texture from the texture unit.
+			 * @param unit The texture unit which should be unbound.
+			 * @note The texture unit should be between GL_TEXTURE0-GL_TEXTURE_MAX
+			 */
+			void Unbind(uint32_t unit);
+
             /**
              * Returns the ID of the texture object.
              * @return The ID of the texture object.
              */
-            uint32_t GetID();
+            uint32_t GetID() const;
 
             /**
              * Returns the data type of the texture.
              * @return The data type, e.g AE_UBYTE
              */
-            uint32_t GetDataType();
+            uint32_t GetDataType() const;
 
             /**
              * Returns the sized format of the texture.
              * @return The sized format, e.g AE_RGB16F
              */
-            int32_t GetSizedFormat();
+            int32_t GetSizedFormat() const;
 
             /**
              * Copies a texture to the texture.
@@ -110,6 +117,25 @@ namespace Atlas {
 			 * Generates the mipmaps.
 			 */
 			void GenerateMipmap();
+
+			/**
+			 * Determines the maximum needed mipmap level.
+			 * @return The mipmap level.
+			 */
+			int32_t GetMipMapLevel() const;
+
+			/**
+			 * Sets the mipmap bias of the texture
+			 * @param bias The mipmap bias
+			 * @note Has to be in range of [0,GetMipMapLevel()]
+			 */
+            void SetBias(float bias);
+
+            /**
+             * Returns the mipmap bias of the texture
+             * @return The mipmap bias of the texture
+             */
+            float GetBias() const;
 
             /**
              * Determines the maximum anisotropy level offered by the system.
@@ -184,12 +210,6 @@ namespace Atlas {
              */
 			std::vector<uint8_t> FlipDataHorizontally(std::vector<uint8_t>& data);
 
-            /**
-             * Determines the maximum needed mipmap level.
-             * @return The mipmap level.
-             */
-            int32_t GetMipMapLevel();
-
             void Generate(uint32_t target, int32_t sizedFormat, int32_t wrapping,
                           int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
 
@@ -207,6 +227,8 @@ namespace Atlas {
 
             bool anisotropicFiltering = false;
             bool mipmaps = false;
+
+			float bias = 0.0f;
 
             static int32_t anisotropyLevel;
 

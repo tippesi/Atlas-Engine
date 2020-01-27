@@ -1,7 +1,11 @@
+#include <../common/random>
+
 layout (location = 0) out vec4 diffuse;
 layout (location = 1) out vec3 normal;
 layout (location = 2) out vec2 additional;
-layout (location = 3) out vec2 velocity;
+layout (location = 3) out vec3 geometryNormal;
+layout (location = 4) out vec3 emission;
+layout (location = 5) out vec2 velocity;
 
 #ifdef DIFFUSE_MAP
 layout(binding = 0) uniform sampler2D diffuseMap;
@@ -22,7 +26,7 @@ in vec3 fPosition;
 in vec3 ndcCurrent;
 in vec3 ndcLast;
 
-#ifdef NORMAL_MAP
+#if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 in mat3 toTangentSpace;
 #endif
 
@@ -37,40 +41,90 @@ uniform mat4 ivMatrix;
 #endif
 
 uniform vec3 diffuseColor;
+uniform vec3 emissiveColor;
 
 uniform float specularIntensity;
 uniform float specularHardness;
 
 uniform float normalScale;
+uniform float displacementScale;
 
 uniform mat4 vMatrix;
 
 uniform vec2 jitterLast;
 uniform vec2 jitterCurrent;
 
+vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) { 
+#ifdef HEIGHT_MAP
+    // number of depth layers
+    const float minLayers = 32.0;
+	const float maxLayers = 32.0;
+	float numLayers = mix(minLayers, maxLayers,  
+		abs(dot(vec3(0.0, 1.0, 0.0), viewDir)));  
+    // calculate the size of each layer
+    float layerDepth = 1.0 / numLayers;
+    // depth of current layer
+    float currentLayerDepth = 0.0;
+    // the amount to shift the texture coordinates per layer (from vector P)
+    vec2 P = viewDir.xy / viewDir.z * displacementScale; 
+    vec2 deltaTexCoords = P / numLayers;
+	vec2  currentTexCoords = texCoords;
+	
+	vec2 ddx = dFdx(texCoords);
+	vec2 ddy = dFdy(texCoords);
+	
+	float currentDepthMapValue = 1.0 - textureGrad(heightMap, currentTexCoords, ddx, ddy).r;
+	
+	while(currentLayerDepth < currentDepthMapValue) {
+		// shift texture coordinates along direction of P
+		currentTexCoords -= deltaTexCoords;
+		// get depthmap value at current texture coordinates
+		currentDepthMapValue = 1.0 - textureGrad(heightMap, currentTexCoords, ddx, ddy).r;  
+		// get depth of next layer
+		currentLayerDepth += layerDepth;  
+	}
+	
+	vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+
+	// get depth after and before collision for linear interpolation
+	float afterDepth  = currentDepthMapValue - currentLayerDepth;
+	float beforeDepth = 1.0 - textureGrad(heightMap, prevTexCoords, ddx, ddy).r - currentLayerDepth + layerDepth;
+	 
+	// interpolation of texture coordinates
+	float weight = afterDepth / (afterDepth - beforeDepth);
+	vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+
+	return finalTexCoords;
+#else
+	return vec2(1.0);
+#endif
+
+}
+
 void main() {
 	
 	vec4 textureColor = vec4(diffuseColor, 1.0);
 	
-#ifdef DIFFUSE_MAP
-#ifdef ARRAY_MAP
-	textureColor *= texture(arrayMap, vec3(fTexCoord, diffuseMapIndex));
-#else
-	textureColor *= texture(diffuseMap, fTexCoord);
+	vec2 texCoords = fTexCoord;
+	
+	// Check if usage is valid (otherwise texCoords won't be used)
+#if defined(HEIGHT_MAP) && (defined(DIFFUSE_MAP) || defined(NORMAL_MAP) || defined(SPECULAR_MAP)) 
+	vec3 viewDir = normalize(transpose(toTangentSpace) * -fPosition);
+	texCoords = ParallaxMapping(texCoords, viewDir);
 #endif
 	
+#ifdef DIFFUSE_MAP
+	textureColor *= texture(diffuseMap, texCoords);	
 	if (textureColor.a < 0.2)
 		discard;
 #endif
 
 	normal = normalize(fNormal);
 
+	geometryNormal = 0.5 * normal + 0.5;
+
 #ifdef NORMAL_MAP
-#ifdef ARRAY_MAP
-	vec3 normalColor = texture(arrayMap, vec3(fTexCoord, normalMapIndex)).rgb;
-#else
-	vec3 normalColor = texture(normalMap, fTexCoord).rgb;
-#endif
+	vec3 normalColor = texture(normalMap, texCoords).rgb;
 	normal = mix(normal, normalize(toTangentSpace * (2.0 * normalColor - 1.0)), normalScale);
 #endif
 
@@ -81,10 +135,21 @@ void main() {
 	diffuse = vec4(textureColor.rgb, 1.0);
 #endif
 
-	additional = vec2(specularIntensity, specularHardness);
+	float specularFactor = 1.0;
+
+#ifdef SPECULAR_MAP
+	specularFactor = texture(specularMap, texCoords).r;
+#endif
+
+	additional = vec2(specularIntensity * specularFactor, specularHardness);
 	
 	normal = 0.5 * normal + 0.5;
-
+	
+#ifdef EMISSIVE
+	emission = clamp(emissiveColor, vec3(0.0), vec3(1.0));
+#else
+	emission = vec3(0.0);
+#endif
 	// Calculate velocity
 	vec2 ndcL = ndcLast.xy / ndcLast.z;
 	vec2 ndcC = ndcCurrent.xy / ndcCurrent.z;
@@ -92,6 +157,6 @@ void main() {
 	ndcL -= jitterLast;
 	ndcC -= jitterCurrent;
 
-	velocity = (ndcL - ndcC) * vec2(0.5, 0.5);
+	velocity = (ndcL - ndcC) * 0.5;
 	
 }

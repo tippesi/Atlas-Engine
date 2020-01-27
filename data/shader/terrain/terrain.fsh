@@ -3,7 +3,9 @@
 layout (location = 0) out vec3 diffuse;
 layout (location = 1) out vec3 normal;
 layout (location = 2) out vec2 additional;
-layout (location = 3) out vec2 velocity;
+layout (location = 3) out vec3 geometryNormal;
+layout (location = 4) out vec3 emission;
+layout (location = 5) out vec2 velocity;
 
 layout (binding = 1) uniform sampler2D normalMap;
 
@@ -70,17 +72,40 @@ vec3 SampleNormal(vec2 off) {
 	
 }
 
-void main() {
+float Interpolate(float q00, float q10, float q01, float q11, vec2 off) {
 
-	uint materialIndex = materialIndicesTE.x;
+	// Interpolate samples horizontally
+	float h0 = mix(q00, q10, off.x);
+	float h1 = mix(q01, q11, off.x);
+	
+	// Interpolate samples vertically
+	return mix(h0, h1, off.y);	
+
+}
+
+void main() {
 	
 	vec2 tex = materialTexCoords / tileScale;	
 	vec2 off = (tex) - floor(tex);
 	
 	diffuse = SampleDiffuse(off);
+	
+	uvec4 indices = materialIndicesTE;
 
-	float specularIntensity = materials[materialIndex].specularIntensity;		
-	float specularHardness = materials[materialIndex].specularHardness;
+	float specularIntensity = Interpolate(
+			materials[indices.x].specularIntensity,
+			materials[indices.y].specularIntensity,
+			materials[indices.z].specularIntensity,
+			materials[indices.w].specularIntensity,
+			off
+		);
+	float specularHardness = Interpolate(
+			materials[indices.x].specularHardness,
+			materials[indices.y].specularHardness,
+			materials[indices.z].specularHardness,
+			materials[indices.w].specularHardness,
+			off
+		);
 	
 	// We should move this to the tesselation evaluation shader
 	// so we only have to calculate these normals once. After that 
@@ -88,10 +113,18 @@ void main() {
 	tex = vec2(normalTexelSize) + texCoords * (1.0 - 3.0 * normalTexelSize)
 		+ 0.5 * normalTexelSize;
 	vec3 norm = 2.0 * texture(normalMap, tex).rgb - 1.0;
+
+	geometryNormal = 0.5 * normalize(mat3(vMatrix) * norm) + 0.5;
 	
 #ifndef DISTANCE
 	// Normal mapping only for near tiles
-	float normalScale = materials[materialIndex].normalScale;
+	float normalScale = Interpolate(
+			materials[indices.x].normalScale,
+			materials[indices.y].normalScale,
+			materials[indices.z].normalScale,
+			materials[indices.w].normalScale,
+			off
+		);
 	normal = SampleNormal(off);
 	vec3 tang = vec3(1.0, 0.0, 0.0);
 	tang.y = -((norm.x*tang.x) / norm.y) - ((norm.z*tang.z) / norm.y);

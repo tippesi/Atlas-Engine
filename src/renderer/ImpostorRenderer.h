@@ -37,6 +37,7 @@ namespace Atlas {
 			Shader::Uniform* max = nullptr;
 
 			Shader::Uniform* views = nullptr;
+			Shader::Uniform* cutoff = nullptr;
 
 			Shader::Uniform* pvMatrixLast = nullptr;
 			Shader::Uniform* jitterCurrent = nullptr;

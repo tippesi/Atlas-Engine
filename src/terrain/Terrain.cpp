@@ -128,7 +128,14 @@ namespace Atlas {
 
 		}
 
-		float Terrain::GetHeight(float x, float z) {
+		float Terrain::GetHeight(float x, float y) {
+
+			vec3 normal, forward;
+			return GetHeight(x, y, normal, forward);
+
+		}
+
+		float Terrain::GetHeight(float x, float z, vec3& normal, vec3& forward) {
 
 			if (x < 0.0f || z < 0.0f || x > sideLength || z > sideLength) {
 				return 0.0f;
@@ -232,16 +239,31 @@ namespace Atlas {
 				heightTopRight = cell->heightData[xPosition + 1 + cell->heightField->width * (zPosition + 1)];
 			}
 
+			heightBottomLeft *= heightScale;
+			heightBottomRight *= heightScale;
+			heightTopLeft *= heightScale;
+			heightTopRight *= heightScale;
+
 			if (xCoord > zCoord) {
-				height = BarryCentric(vec3(0.0f, heightBottomLeft * heightScale, 0.0f),
-									  vec3(1.0f, heightTopLeft * heightScale, 0.0f),
-									  vec3(1.0f, heightTopRight * heightScale, 1.0f),
+				height = BarryCentric(vec3(0.0f, heightBottomLeft, 0.0f),
+									  vec3(1.0f, heightTopLeft, 0.0f),
+									  vec3(1.0f, heightTopRight, 1.0f),
 									  vec2(xCoord, zCoord));
+				forward = -glm::normalize(vec3(0.0f, heightBottomLeft, 0.0f) -
+					vec3(1.0f, heightTopLeft, 0.0f));
+				auto right = glm::normalize(vec3(1.0f, heightTopRight, 1.0f) -
+					vec3(1.0f, heightTopLeft, 0.0f));
+				normal = -glm::normalize(glm::cross(forward, right));
 			} else {
-				height = BarryCentric(vec3(0.0f, heightBottomLeft * heightScale, 0.0f),
-									  vec3(1.0f, heightTopRight * heightScale, 1.0f),
-									  vec3(0.0f, heightBottomRight * heightScale, 1.0f),
+				height = BarryCentric(vec3(0.0f, heightBottomLeft, 0.0f),
+									  vec3(1.0f, heightTopRight, 1.0f),
+									  vec3(0.0f, heightBottomRight, 1.0f),
 									  vec2(xCoord, zCoord));
+				forward = glm::normalize(vec3(1.0f, heightTopRight, 1.0f) -
+					vec3(0.0f, heightBottomRight, 1.0f));
+				auto right = -glm::normalize(vec3(0.0f, heightBottomLeft, 0.0f) -
+					vec3(0.0f, heightBottomRight, 1.0f));
+				normal = -glm::normalize(glm::cross(forward, right));
 			}
 
 			return height;
