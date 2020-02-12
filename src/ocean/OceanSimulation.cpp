@@ -146,7 +146,9 @@ namespace Atlas {
 
 		}
 
-		void OceanSimulation::Compute() {
+		void OceanSimulation::Compute(float deltaTime) {
+
+			time += deltaTime;
 
 			displacementMapPrev.Copy(displacementMap);
 
@@ -154,7 +156,7 @@ namespace Atlas {
 
 			htNUniform->SetValue(N);
 			htLUniform->SetValue(L);
-			htTimeUniform->SetValue(5.0f *  Clock::Get());
+			htTimeUniform->SetValue(simulationSpeed * time);
 
 			hTDy.Bind(GL_WRITE_ONLY, 0);
 			hTDxz.Bind(GL_WRITE_ONLY, 1);

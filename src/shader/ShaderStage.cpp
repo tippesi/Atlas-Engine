@@ -65,7 +65,7 @@ namespace Atlas {
 
             time_t comp = GetLastModified();
 
-            if (comp == lastModified ||!filename.length()) {
+            if (comp == lastModified || !filename.length()) {
                 return false;
             }
 			

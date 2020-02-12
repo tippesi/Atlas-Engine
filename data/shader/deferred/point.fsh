@@ -16,6 +16,8 @@ uniform vec3 viewSpaceLightLocation;
 uniform mat4 lvMatrix;
 uniform mat4 lpMatrix;
 
+uniform bool shadowEnabled;
+
 // Improved filtering: https://kosmonautblog.wordpress.com/2017/03/25/shadow-filtering-for-pointlights/
 
 vec3 sampleOffsetDirections[20] = vec3[]
@@ -68,11 +70,14 @@ void main() {
 	
 	int samples  = 20;
 	float diskRadius = 0.0075;
-	for(int i = 0; i < samples; i++) {
-		shadowFactor += texture(shadowCubemap, vec4(lsPosition.xyz + sampleOffsetDirections[i] * diskRadius, depth)); 
+
+	if (shadowEnabled) {
+		for(int i = 0; i < samples; i++) {
+			shadowFactor += clamp(texture(shadowCubemap, vec4(lsPosition.xyz + sampleOffsetDirections[i] * diskRadius, depth)), 0.0, 1.0); 
+		}
+		shadowFactor /= float(samples);  
 	}
-	shadowFactor /= float(samples);  
-	
+
 	diffuse = max((dot(normal, lightDir) * light.color) * shadowFactor,
 		ambient * occlusionFactor) * surfaceColor;
 

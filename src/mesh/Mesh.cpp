@@ -117,6 +117,14 @@ namespace Atlas {
 
 		}
 
+		void Mesh::SetTransform(mat4 matrix) {
+
+			data.SetTransform(matrix);
+
+			UpdateData();
+
+		}
+
 		Shader::ShaderConfig* Mesh::GetConfig(Material* material, int32_t type) {
 
 			auto key = configs.find(material);

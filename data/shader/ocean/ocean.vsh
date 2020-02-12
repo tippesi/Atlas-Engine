@@ -1,8 +1,7 @@
 layout(location=0)in vec3 vPosition;
 
 layout(binding = 0) uniform sampler2D displacementMap;
-layout(binding = 8) uniform sampler2D terrainHeight;
-layout(binding = 10) uniform sampler2D displacementMapPrev;
+layout(binding = 9) uniform sampler2D terrainHeight;
 
 out vec4 fClipSpace;
 out vec3 fPosition;
@@ -87,12 +86,6 @@ void main() {
 	shoreScaling = hasTerrain ? depthScaling : 1.0;
 	
 	vec2 vTexCoord = vec2(fPosition.x, fPosition.z) / tiling;
-
-	vec3 prevPosition = fPosition;
-
-	prevPosition.y += texture(displacementMapPrev, vTexCoord).r * displacementScale * shoreScaling;
-	prevPosition.x += texture(displacementMapPrev, vTexCoord).g * choppyScale * shoreScaling;
-	prevPosition.z += texture(displacementMapPrev, vTexCoord).b * choppyScale * shoreScaling;
 	
 	fPosition.y += texture(displacementMap, vTexCoord).r * displacementScale * shoreScaling;
 	fPosition.x += texture(displacementMap, vTexCoord).g * choppyScale * shoreScaling;

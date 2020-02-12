@@ -86,6 +86,10 @@ void main() {
 	vec2 uvGreenChannel = (fPosition - fPosition * 0.0025f * aberrationStrength) * 0.5f + 0.5f;
 	vec2 uvBlueChannel =  (fPosition - fPosition * 0.005f * aberrationStrength
 		* (1.0f - aberrationReversed)) * 0.5f + 0.5f;
+		
+	uvRedChannel.y = 1.0 - uvRedChannel.y;
+	uvGreenChannel.y = 1.0 - uvGreenChannel.y;
+	uvBlueChannel.y = 1.0 - uvBlueChannel.y;	
 	
 	color.r = texture(hdrTexture, uvRedChannel).r;
 	color.g = texture(hdrTexture, uvGreenChannel).g;

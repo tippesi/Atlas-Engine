@@ -270,6 +270,20 @@ namespace Atlas {
 
 		}
 
+		vec2 Terrain::GetGradient(float x, float z) {
+
+			vec3 normal, forward;
+			GetHeight(x, z, normal, forward);
+
+			auto right = glm::cross(forward, normal);
+
+			auto deltaX = forward.y / forward.x;
+			auto deltaZ = right.y / right.z;
+
+			return vec2(deltaX, deltaZ);
+
+		}
+
 		TerrainStorageCell *Terrain::GetStorageCell(float x, float z, int32_t LoD) {
 
 			float nodeSideLength = 8.0f * patchSizeFactor * resolution;

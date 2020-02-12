@@ -1,3 +1,5 @@
+#include <wind>
+
 layout(location=0)in vec3 vPosition;
 #ifdef ALPHA
 layout(location=2)in vec2 vTexCoord;
@@ -10,6 +12,9 @@ layout(location=4)in mat4 mMatrix;
 
 uniform mat4 lightSpaceMatrix;
 
+uniform float time;
+
+uniform bool vegetation;
 uniform bool invertUVs;
 
 #ifdef ANIMATION
@@ -39,7 +44,15 @@ void main() {
 #else
 	mat4 matrix = mMatrix;
 #endif
+
+	vec3 position = vPosition;
+
+	if (vegetation) {
+
+		position = WindAnimation(vPosition, time, mMatrix[3].xyz);
+
+	}
 	
-	gl_Position = lightSpaceMatrix * matrix * vec4(vPosition, 1.0f); 
+	gl_Position = lightSpaceMatrix * matrix * vec4(position, 1.0f); 
 	
 }

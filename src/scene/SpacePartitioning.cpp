@@ -187,11 +187,49 @@ namespace Atlas {
 
 		}
 
+		std::vector<Actor::MovableMeshActor*> SpacePartitioning::GetMovableMeshActors(Volume::Ray ray) {
+
+			constexpr float maxFloat = std::numeric_limits<float>::max();
+
+			std::vector<Actor::MovableMeshActor*> potentialActors;
+			std::vector<Actor::MovableMeshActor*> actors;
+
+			movableMeshOctree.QueryRay(potentialActors, ray);
+
+			for (auto actor : potentialActors) {
+				if (ray.Intersects(actor->aabb, 0.0f, maxFloat)) {
+					actors.push_back(actor);
+				}
+			}
+
+			return actors;
+
+		}
+
 		std::vector<Actor::StaticMeshActor*> SpacePartitioning::GetStaticMeshActors(Volume::AABB aabb) {
 
 			std::vector<Actor::StaticMeshActor*> actors;
 
 			staticMeshOctree.QueryAABB(actors, aabb);
+
+			return actors;
+
+		}
+
+		std::vector<Actor::StaticMeshActor*> SpacePartitioning::GetStaticMeshActors(Volume::Ray ray) {
+
+			constexpr float maxFloat = std::numeric_limits<float>::max();
+
+			std::vector<Actor::StaticMeshActor*> potentialActors;
+			std::vector<Actor::StaticMeshActor*> actors;
+
+			staticMeshOctree.QueryRay(potentialActors, ray);
+
+			for (auto actor : potentialActors) {
+				if (ray.Intersects(actor->aabb, 0.0f, maxFloat)) {
+					actors.push_back(actor);
+				}
+			}
 
 			return actors;
 

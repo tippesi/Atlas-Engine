@@ -17,11 +17,11 @@ namespace Atlas {
 
                 matrixChanged = false;
 
-                transformedMatrix = parentTransform * GetMatrix();
+				globalMatrix = parentTransform * GetMatrix();
 
 				Volume::AABB base(vec3(-1.0f), vec3(1.0f));
 
-				aabb = base.Transform(transformedMatrix);
+				aabb = base.Transform(globalMatrix);
 
             }
 

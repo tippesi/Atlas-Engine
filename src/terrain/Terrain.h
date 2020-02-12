@@ -107,12 +107,23 @@ namespace Atlas {
 			* Gets the height at a specific point on the terrain.
 			* @param x The x component of the point relative to the terrain origin
 			* @param z The z component of the point relative to the terrain origin
-			* @param normal The normal at the specific point.
+			* @param normal The normal at the specific point. (in positive y direction)
+			* @param forward The forward vector in positive x direction
 			* @return The height of the terrain.
 			* @note This function is computationally expensive.
 			* @warning The cell containing the height value has to be loaded.
 			*/
 			float GetHeight(float x, float y, vec3& normal, vec3& forward);
+
+			/**
+			* Gets the gradient at a specific point on the terrain.
+			* @param x The x component of the point relative to the terrain origin
+			* @param z The z component of the point relative to the terrain origin
+			* @return The gradient of the terrain.
+			* @note This function is computationally expensive.
+			* @warning The cell containing the height value has to be loaded.
+			*/
+			vec2 GetGradient(float x, float z);
 
 			/**
             * Gets the storage cell for a point on the terrain.

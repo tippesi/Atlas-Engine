@@ -51,13 +51,17 @@ namespace Atlas {
 					pointLight->GetShadow()->cubemap.Bind(GL_TEXTURE4);
 					lightViewMatrix->SetValue(glm::translate(mat4(1.0f), -pointLight->location) * camera->invViewMatrix);
 					lightProjectionMatrix->SetValue(pointLight->GetShadow()->components[0].projectionMatrix);
+					shadowEnabled->SetValue(true);
+				}
+				else {
+					shadowEnabled->SetValue(false);
 				}
 
 				viewSpaceLightLocation->SetValue(vec3(camera->viewMatrix * vec4(pointLight->location, 1.0f)));
 				lightLocation->SetValue(pointLight->location);
 				lightColor->SetValue(pointLight->color);
 				lightAmbient->SetValue(pointLight->ambient);
-				lightRadius->SetValue(pointLight->GetRadius());
+				lightRadius->SetValue(pointLight->radius);
 
 				glDrawElements(GL_TRIANGLES, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
 							   vertexArray.GetIndexComponent()->GetDataType(), nullptr);
@@ -82,6 +86,7 @@ namespace Atlas {
 			lightColor = shader.GetUniform("light.color");
 			lightAmbient = shader.GetUniform("light.ambient");
 			lightRadius = shader.GetUniform("light.radius");
+			shadowEnabled = shader.GetUniform("shadowEnabled");
 
 		}
 

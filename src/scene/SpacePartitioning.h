@@ -49,7 +49,11 @@ namespace Atlas {
 
 			std::vector<Actor::StaticMeshActor*> GetStaticMeshActors(Volume::AABB aabb);
 
+			std::vector<Actor::StaticMeshActor*> GetStaticMeshActors(Volume::Ray ray);
+
 			std::vector<Actor::MovableMeshActor*> GetMovableMeshActors(Volume::AABB aabb);
+
+			std::vector<Actor::MovableMeshActor*> GetMovableMeshActors(Volume::Ray ray);
 
 			std::vector<Actor::DecalActor*> GetDecalActors(Volume::AABB aabb);
 

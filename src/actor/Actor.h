@@ -48,7 +48,7 @@ namespace Atlas {
 				mat4 parentTransform, bool parentUpdate) = 0;
 
             Volume::AABB aabb;
-            mat4 transformedMatrix;
+            mat4 globalMatrix;
 
             bool matrixChanged = true;
 

@@ -117,8 +117,6 @@ namespace Atlas {
 			ocean->simulation.displacementMap.Bind(GL_TEXTURE0);
 			ocean->simulation.normalMap.Bind(GL_TEXTURE1);
 
-			ocean->simulation.displacementMapPrev.Bind(GL_TEXTURE10);
-
 			// foam.Bind(GL_TEXTURE2);
 
 			if (scene->sky.cubemap != nullptr)
@@ -138,14 +136,14 @@ namespace Atlas {
 					terrainHeightScale->SetValue(scene->terrain->heightScale);
 					terrainSideLength->SetValue(scene->terrain->sideLength);
 
-					scene->terrain->heightApproximation.Bind(GL_TEXTURE8);
+					scene->terrain->heightApproximation.Bind(GL_TEXTURE9);
 
 				}
 			}
 
 			if (ocean->rippleTexture.width > 0 &&
 				ocean->rippleTexture.height > 0) {
-				ocean->rippleTexture.Bind(GL_TEXTURE9);
+				ocean->rippleTexture.Bind(GL_TEXTURE10);
 				hasRippleTexture->SetValue(true);
 			}
 			else {

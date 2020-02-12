@@ -7,7 +7,7 @@ namespace Atlas {
 		Scene::Scene(vec3 min, vec3 max, int32_t depth) : SceneNode(),
 			SpacePartitioning(min, max, depth) {
 
-			AddToScene(this);
+			AddToScene(this, &meshMap);
 
 		}
 
@@ -44,7 +44,7 @@ namespace Atlas {
 			}
 
 			if (ocean)
-				ocean->Update(camera);
+				ocean->Update(camera, deltaTime);
 			
 			hasChanged = SceneNode::Update(camera, deltaTime, mat4(1.0f), false);
 

@@ -11,9 +11,9 @@ namespace Atlas {
 
 				matrixChanged = false;
 
-				transformedMatrix = parentTransform * GetMatrix();
+				globalMatrix = parentTransform * GetMatrix();
 
-				aabb = mesh->data.aabb.Transform(transformedMatrix);
+				aabb = mesh->data.aabb.Transform(globalMatrix);
 
 			}
 

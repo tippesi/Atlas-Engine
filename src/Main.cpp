@@ -2,7 +2,7 @@
 #include "EngineInstance.h"
 #include "common/Path.h"
 
-#ifdef AE_OS_ANDROID
+#if defined(AE_OS_ANDROID) || defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
 #include <zconf.h>
 #endif
 

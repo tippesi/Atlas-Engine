@@ -3,6 +3,7 @@
 
 #include "../System.h"
 #include "AABB.h"
+#include "Ray.h"
 #include "Frustum.h"
 
 #include <vector>
@@ -31,6 +32,8 @@ namespace Atlas {
             void Remove(T data, AABB aabb);
 
             void QueryAABB(std::vector<T>& data, AABB aabb);
+
+			void QueryRay(std::vector<T>& data, Ray ray);
 
 			void QueryFrustum(std::vector<T>& data, std::vector<T>& insideData, Frustum frustum);
 
@@ -136,6 +139,24 @@ namespace Atlas {
 				child.QueryAABB(data, aabb);
 
         }
+
+		template <class T>
+		void Octree<T>::QueryRay(std::vector<T>& data, Ray ray) {
+
+			constexpr float maxFloat = std::numeric_limits<float>::max();
+
+			auto scaled = this->aabb.Scale(relaxFactor);
+
+			if (!ray.Intersects(scaled, 0.0f, maxFloat))
+				return;
+
+			for (auto& ele : octreeData)
+				data.push_back(ele);
+
+			for (auto& child : children)
+				child.QueryRay(data, ray);
+
+		}
 
 		template <class T>
 		void Octree<T>::QueryFrustum(std::vector<T>& data, std::vector<T>& insideData, Frustum frustum) {

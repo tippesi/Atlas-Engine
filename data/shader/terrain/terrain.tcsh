@@ -58,8 +58,14 @@ void main() {
 			max(gl_in[2].gl_Position.xyz,
 			    gl_in[3].gl_Position.xyz)));
 				
-		maxVec.y += 2.0;
+		vec3 center = 0.5 * (minVec + maxVec);
+		vec3 dir = maxVec - center;
 		
+		// Displacement is in normal direction
+		// To fix culling we simply scale the bounding
+		// box of the current tile by a small margin
+		maxVec += dir * .25;
+		minVec -= dir * .25;
 
 		if (IsTileVisible(minVec, maxVec)) {
 	

@@ -29,7 +29,8 @@ namespace Atlas {
 			/**
 			 * 
 			 */
-			SceneNode(SpacePartitioning* partitioning) { AddToScene(partitioning); }
+			SceneNode(SpacePartitioning* partitioning, 
+				std::unordered_map<Mesh::Mesh*, int32_t>* meshMap) { AddToScene(partitioning, meshMap); }
 
 			/**
 			 * 
@@ -122,6 +123,9 @@ namespace Atlas {
 			 */
 			virtual void SetMatrix(mat4 matrix);
 
+			virtual mat4 GetMatrix() const;
+
+			virtual mat4 GetGlobalMatrix() const;
 
 			virtual void Clear();
 
@@ -144,7 +148,8 @@ namespace Atlas {
 			 *
 			 * @param scene
 			 */
-			virtual void AddToScene(SpacePartitioning* spacePartitioning);
+			virtual void AddToScene(SpacePartitioning* spacePartitioning, 
+				std::unordered_map<Mesh::Mesh*, int32_t>* meshMap);
 
 			/**
 			 *
@@ -167,7 +172,7 @@ namespace Atlas {
 			bool matrixChanged = true;
 
 			mat4 matrix;
-			mat4 transformedMatrix;
+			mat4 globalMatrix;
 
 			std::vector<SceneNode*> childNodes;
 			std::vector<Actor::MovableMeshActor*> movableMeshActors;
@@ -179,6 +184,12 @@ namespace Atlas {
 			std::vector<Actor::StaticMeshActor*> addableStaticMeshActors;
 
 			SpacePartitioning* spacePartitioning = nullptr;
+			std::unordered_map<Mesh::Mesh*, int32_t>* meshMap = nullptr;
+
+		private:
+			virtual void AddInternal(Actor::MeshActor* actor);
+
+			virtual void RemoveInternal(Actor::MeshActor* actor);
 
 		};
 

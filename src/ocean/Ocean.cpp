@@ -32,13 +32,13 @@ namespace Atlas {
 
 		}
 
-		void Ocean::Update(Camera* camera) {
+		void Ocean::Update(Camera* camera, float deltaTime) {
 
 			simulation.choppinessScale = choppynessScale;
 			simulation.displacementScale = displacementScale;
 			simulation.tiling = tiling;
 
-			simulation.Compute();
+			simulation.Compute(deltaTime);
 
 			std::vector<OceanNode*> leafs;
 

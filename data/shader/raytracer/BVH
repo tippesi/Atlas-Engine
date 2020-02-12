@@ -84,24 +84,22 @@ void QueryBVHClosest(Ray ray, float tmin, float tmax, out int triangleIndex,
 		float tR = 0.0;
 		
 		const bool intersectL = Intersection(ray, 
-				nodes[childLPtr].aabb, tmin, tmax, tL);
+				nodes[childLPtr].aabb, tmin, intersection.x, tL);
 		const bool isLLeaf = (nodes[childLPtr].data2 & uint(0x80000000)) > uint(0);
-		const bool validL = tL < intersection.x;
-		
+
 		const bool intersectR = Intersection(ray, 
-				nodes[childRPtr].aabb, tmin, tmax, tR);
+				nodes[childRPtr].aabb, tmin, intersection.x, tR);
 		const bool isRLeaf = (nodes[childRPtr].data2 & uint(0x80000000)) > uint(0);
-		const bool validR = tR < intersection.x;
 		
-		const bool traverseL = (intersectL && !isLLeaf && validL);
-		const bool traverseR = (intersectR && !isRLeaf && validR);
+		const bool traverseL = (intersectL && !isLLeaf);
+		const bool traverseR = (intersectR && !isRLeaf);
 		
-		if(intersectL && isLLeaf && validL) {
+		if(intersectL && isLLeaf) {
 			CheckLeafClosest(ray, childLPtr, tmin, tmax, 
 				triangleIndex, intersection);
 		}
 		
-		if (intersectR && isRLeaf && validR) {
+		if (intersectR && isRLeaf) {
 			CheckLeafClosest(ray, childRPtr, tmin, tmax,
 				triangleIndex, intersection);
 		}

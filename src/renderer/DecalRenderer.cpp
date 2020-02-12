@@ -57,7 +57,7 @@ namespace Atlas {
                 columnCount->SetValue(decal->columnCount);
                 animationLength->SetValue(decal->animationLength);
 
-                modelMatrix->SetValue(decalActor->transformedMatrix);
+                modelMatrix->SetValue(decalActor->globalMatrix);
 
                 color->SetValue(decalActor->color);
 

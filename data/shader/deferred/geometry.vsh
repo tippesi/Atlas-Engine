@@ -1,3 +1,5 @@
+#include <../wind>
+
 layout(location=0)in vec3 vPosition;
 layout(location=1)in vec3 vNormal;
 layout(location=2)in vec2 vTexCoord;
@@ -28,9 +30,14 @@ layout (std140) uniform AnimationUBO {
     mat4 boneMatrices[256];
 };
 #endif
+
 uniform mat4 pMatrix;
 uniform mat4 vMatrix;
 
+uniform float time;
+uniform float deltaTime;
+
+uniform bool vegetation;
 uniform bool invertUVs;
 
 uniform mat4 pvMatrixLast;
@@ -49,15 +56,26 @@ void main() {
 	mat4 mvMatrix = vMatrix * mMatrix * boneTransform;
 #else
 	mat4 mvMatrix = vMatrix * mMatrix;
-#endif   
-	vec4 positionToCamera = mvMatrix * vec4(vPosition, 1.0);
+#endif
+
+	vec3 position = vPosition;
+	vec3 lastPosition = vPosition;
+
+	if (vegetation) {
+
+		position = WindAnimation(vPosition, time, mMatrix[3].xyz);
+		lastPosition = WindAnimation(vPosition, time - deltaTime, mMatrix[3].xyz);
+
+	}
+
+	vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
 	fPosition = positionToCamera.xyz;
 	
 	gl_Position = pMatrix * positionToCamera;
 
 	ndcCurrent = vec3(gl_Position.xy, gl_Position.w);
 	// For moving objects we need the last matrix
-	vec4 last = pvMatrixLast * mMatrix * vec4(vPosition, 1.0);
+	vec4 last = pvMatrixLast * mMatrix * vec4(lastPosition, 1.0);
 	ndcLast = vec3(last.xy, last.w);
 	
 #ifdef WORLD_TRANSFORM

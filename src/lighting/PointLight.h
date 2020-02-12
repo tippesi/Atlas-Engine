@@ -25,15 +25,9 @@ namespace Atlas {
 
 			void Update(Camera* camera);
 
-			float GetRadius();
-
-			void SetRadius(float radius);
-
 			vec3 location;
 
 			float attenuation;
-
-		private:
 			float radius;
 
 		};

@@ -68,7 +68,11 @@ namespace Atlas {
 			 */
 			void Unbind() const;
 
+			void SetTransform(mat4 transform);
+
 			Shader::ShaderConfig* GetConfig(Material* material, int32_t type);
+
+			std::string name;
 
 			MeshData data;
 			Impostor* impostor = nullptr;
@@ -77,6 +81,9 @@ namespace Atlas {
 
 			bool cullBackFaces = true;
 			bool depthTest = true;
+
+			bool castShadow = true;
+			bool vegetation = false;
 
 			float impostorDistance = 300.0f;
 
@@ -91,7 +98,6 @@ namespace Atlas {
 
 			Buffer::VertexArray vertexArray;
 
-			std::string name;
 			bool invertUVs = false;
 
 		private:

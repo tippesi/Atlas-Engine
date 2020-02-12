@@ -379,7 +379,7 @@ namespace Atlas {
 
 				auto actorTriangleCount = (int32_t)actor->mesh->data.GetIndexCount() / 3;
 
-				auto matrix = actor->transformedMatrix;
+				auto matrix = actor->globalMatrix;
 
 				for (int32_t i = 0; i < actorTriangleCount; i++) {
 

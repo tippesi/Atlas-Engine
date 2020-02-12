@@ -23,7 +23,7 @@ namespace Atlas {
 				AudioStream::operator=(that);
 
 				aabb = that.aabb;
-				transformedMatrix = that.transformedMatrix;
+				globalMatrix = that.globalMatrix;
 				SetMatrix(that.GetMatrix());
 
 				cutoff = that.cutoff;
@@ -82,14 +82,14 @@ namespace Atlas {
 
 			if (matrixChanged || parentUpdate) {				
 
-				lastLocation = vec3(transformedMatrix[3]);
-				transformedMatrix = parentTransform * GetMatrix();
+				lastLocation = vec3(globalMatrix[3]);
+				globalMatrix = parentTransform * GetMatrix();
 
 			}
 
 			// We don't want to devide by zero
 			auto distance = glm::max(0.00001f, 
-				glm::distance(vec3(transformedMatrix[3]), camera.GetLocation()));
+				glm::distance(vec3(globalMatrix[3]), camera.GetLocation()));
 
 			if (!init) {
 				cameraDistance = distance;
@@ -109,7 +109,7 @@ namespace Atlas {
 					mix = 0.5f;
 				}
 				else {
-					auto direction = glm::normalize(glm::vec3(transformedMatrix[3]) - camera.GetLocation());
+					auto direction = glm::normalize(glm::vec3(globalMatrix[3]) - camera.GetLocation());
 					mix = 0.5f * glm::dot(direction, camera.right) + 0.5f;
 				}
 

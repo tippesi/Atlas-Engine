@@ -21,6 +21,7 @@ namespace Atlas {
 
 	Mesh::Mesh* ResourceManager::GetMesh(std::string path, bool forceTangents) {
 
+		path = Loader::AssetLoader::GetFullPath(path);
 		path = Common::Path::GetAbsolute(path);
 
 		std::lock_guard<std::mutex> guard(meshMutex);
@@ -45,6 +46,7 @@ namespace Atlas {
 
 	Material* ResourceManager::GetMaterial(std::string path) {
 
+		path = Loader::AssetLoader::GetFullPath(path);
 		path = Common::Path::GetAbsolute(path);
 
 		std::lock_guard<std::mutex> guard(materialMutex);
@@ -53,18 +55,19 @@ namespace Atlas {
 			if (mat->name == path)
 				return mat;
 		}
-		
+
 		auto material = Atlas::Loader::MaterialLoader::LoadMaterial(path);
 
 		if (material)
 			materials.push_back(material);
-		
+
 		return material;
 
 	}
 
 	Audio::AudioData* ResourceManager::GetAudio(std::string path) {
 
+		path = Loader::AssetLoader::GetFullPath(path);
 		path = Common::Path::GetAbsolute(path);
 
 		std::lock_guard<std::mutex> guard(audioMutex);
@@ -83,6 +86,7 @@ namespace Atlas {
 
 	Terrain::Terrain* ResourceManager::GetTerrain(std::string path) {
 
+		path = Loader::AssetLoader::GetFullPath(path);
 		path = Common::Path::GetAbsolute(path);
 
 		std::lock_guard<std::mutex> guard(terrainMutex);

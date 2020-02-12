@@ -19,7 +19,7 @@ namespace Atlas {
 
 			OceanSimulation(int32_t N, int32_t L);
 
-			void Compute();
+			void Compute(float deltaTime);
 
 			void ComputeSpectrum();
 
@@ -42,12 +42,16 @@ namespace Atlas {
 			float windSpeed = 60.0f;
 			float windDependency = 0.07f;
 
+			float simulationSpeed = 5.0f;
+
 		private:
 			void ComputeTwiddleIndices();
 
 			int32_t ReverseBits(int32_t data, int32_t bitCount);
 
 			int32_t N;
+
+			float time = 0.0f;
 
 			Shader::Shader h0;
 			Shader::Shader ht;

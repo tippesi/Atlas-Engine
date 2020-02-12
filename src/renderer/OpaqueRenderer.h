@@ -52,6 +52,10 @@ namespace Atlas {
 			Shader::Uniform* normalScaleUniform = nullptr;
 			Shader::Uniform* displacementScaleUniform = nullptr;
 
+			Shader::Uniform* timeUniform = nullptr;
+			Shader::Uniform* deltaTimeUniform = nullptr;
+
+			Shader::Uniform* vegetationUniform = nullptr;
 			Shader::Uniform* invertUVsUniform = nullptr;
 
 			Shader::Uniform* pvMatrixLast = nullptr;

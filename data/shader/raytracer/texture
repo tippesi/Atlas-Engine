@@ -25,7 +25,7 @@ vec4 SampleDiffuseBilinear(Texture tex, vec2 texCoord) {
 	texCoord = GetTexCoord(texCoord, tex, size);
 	
 	return sampleTexBilinear(diffuseTextures, 
-		vec3(texCoord, float(tex.layer)), SAMPLE_REPEAT);
+		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING);
 	
 }
 
@@ -40,7 +40,7 @@ vec4 SampleNormalBilinear(Texture tex, vec2 texCoord) {
 	texCoord = GetTexCoord(texCoord, tex, size);
 	
 	return sampleTexBilinear(normalTextures, 
-		vec3(texCoord, float(tex.layer)), SAMPLE_REPEAT);
+		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING);
 	
 }
 
@@ -55,7 +55,7 @@ vec4 SampleSpecularBilinear(Texture tex, vec2 texCoord) {
 	texCoord = GetTexCoord(texCoord, tex, size);
 	
 	return sampleTexBilinear(specularTextures, 
-		vec3(texCoord, float(tex.layer)), SAMPLE_REPEAT);
+		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING);
 	
 }
 

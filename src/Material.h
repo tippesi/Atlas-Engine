@@ -53,6 +53,9 @@ namespace Atlas {
 		std::string specularMapPath;
 		std::string displacementMapPath;
 
+		// Rendering index
+		int32_t idx;
+
 	private:
 		void DeepCopy(const Material& that);
 

@@ -28,7 +28,7 @@ namespace Atlas {
 		void SceneNode::Add(SceneNode *node) {
 
 			if (sceneSet) {
-				node->AddToScene(spacePartitioning);
+				node->AddToScene(spacePartitioning, meshMap);
 			}
 
 			childNodes.push_back(node);
@@ -53,6 +53,8 @@ namespace Atlas {
 
 			movableMeshActors.push_back(actor);
 
+			AddInternal(actor);
+
 		}
 
 		void SceneNode::Remove(Actor::MovableMeshActor *actor) {
@@ -67,11 +69,15 @@ namespace Atlas {
 				movableMeshActors.erase(item);
 			}
 
+			RemoveInternal(actor);
+
 		}
 
 		void SceneNode::Add(Actor::StaticMeshActor *actor) {
 
 			addableStaticMeshActors.push_back(actor);
+
+			AddInternal(actor);
 
 		}
 
@@ -86,6 +92,8 @@ namespace Atlas {
 			if (item != staticMeshActors.end()) {
 				staticMeshActors.erase(item);
 			}
+
+			RemoveInternal(actor);
 
 		}
 
@@ -159,9 +167,21 @@ namespace Atlas {
 
 		void SceneNode::SetMatrix(mat4 matrix) {
 
-			matrix = matrix;
+			this->matrix = matrix;
 
 			matrixChanged = true;
+
+		}
+
+		mat4 SceneNode::GetMatrix() const {
+
+			return matrix;
+
+		}
+
+		mat4 SceneNode::GetGlobalMatrix() const {
+
+			return globalMatrix;
 
 		}
 
@@ -225,12 +245,12 @@ namespace Atlas {
 			bool removed = false;
 
 			if (matrixChanged) {
-				transformedMatrix = parentTransformation * matrix;
+				globalMatrix = parentTransformation * matrix;
 				matrixChanged = false;
 			}
 
 			for (auto &node : childNodes) {
-				changed |= node->Update(camera, deltaTime, transformedMatrix, parentTransformChanged);
+				changed |= node->Update(camera, deltaTime, globalMatrix, parentTransformChanged);
 			}
 
 			// Only update the static mesh actors if the node moves (the static actors can't
@@ -270,7 +290,7 @@ namespace Atlas {
 				}
 
 				meshActor->Update(*camera, deltaTime, 
-					transformedMatrix, parentTransformChanged);
+					globalMatrix, parentTransformChanged);
 
 				if (removed) {
 					spacePartitioning->Add(meshActor);
@@ -286,7 +306,7 @@ namespace Atlas {
 				}
 
 				decalActor->Update(*camera, deltaTime, 
-					transformedMatrix, parentTransformChanged);
+					globalMatrix, parentTransformChanged);
 
 				if (removed) {
 					spacePartitioning->Add(decalActor);
@@ -301,7 +321,7 @@ namespace Atlas {
 				}
 
 				audioActor->Update(*camera, deltaTime,
-					transformedMatrix, parentTransformChanged);
+					globalMatrix, parentTransformChanged);
 
 				if (removed) {
 					spacePartitioning->Add(audioActor);
@@ -317,13 +337,22 @@ namespace Atlas {
 
 		}
 
-		void SceneNode::AddToScene(SpacePartitioning* spacePartitioning) {
+		void SceneNode::AddToScene(SpacePartitioning* spacePartitioning,
+			std::unordered_map<Mesh::Mesh*, int32_t>* meshMap) {
 
 			if (sceneSet)
 				return;
 
 			for (auto &node : childNodes) {
-				node->AddToScene(spacePartitioning);
+				node->AddToScene(spacePartitioning, meshMap);
+			}
+
+			for (auto& meshActor : movableMeshActors) {
+				AddInternal(meshActor);
+			}
+
+			for (auto& meshActor : staticMeshActors) {
+				AddInternal(meshActor);
 			}
 
 			for (auto& light : lights) {
@@ -331,6 +360,7 @@ namespace Atlas {
 			}
 
 			this->spacePartitioning = spacePartitioning;
+			this->meshMap = meshMap;
 
 			sceneSet = true;
 			matrixChanged = true;
@@ -348,10 +378,12 @@ namespace Atlas {
 
 			for (auto &meshActor : movableMeshActors) {
 				spacePartitioning->Remove(meshActor);
+				RemoveInternal(meshActor);
 			}
 
 			for (auto &meshActor : staticMeshActors) {
 				spacePartitioning->Remove(meshActor);
+				RemoveInternal(meshActor);
 			}
 
 			for (auto &decalActor : decalActors) {
@@ -369,7 +401,7 @@ namespace Atlas {
 			matrixChanged = true;
 
 			matrix = that.matrix;
-			transformedMatrix = that.transformedMatrix;
+			globalMatrix = that.globalMatrix;
 
 			movableMeshActors = that.movableMeshActors;
 			staticMeshActors = that.staticMeshActors;
@@ -382,7 +414,38 @@ namespace Atlas {
 				childNodes[i] = new SceneNode(*that.childNodes[i]);
 
 			if (spacePartitioning)
-				AddToScene(spacePartitioning);
+				AddToScene(spacePartitioning, meshMap);
+
+		}
+
+		void SceneNode::AddInternal(Actor::MeshActor* actor) {
+
+			if (!sceneSet)
+				return;
+
+			auto& res = meshMap->find(actor->mesh);
+
+			if (res == meshMap->end()) {
+				(*meshMap)[actor->mesh] = 1;
+			}
+			else {
+				res->second++;
+			}
+
+		}
+
+		void SceneNode::RemoveInternal(Actor::MeshActor* actor) {
+
+			if (!sceneSet)
+				return;
+
+			auto& res = meshMap->find(actor->mesh);
+
+			res->second--;
+
+			if (!res->second) {
+				meshMap->erase(res->first);
+			}
 
 		}
 

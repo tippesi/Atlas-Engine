@@ -35,6 +35,7 @@ namespace Atlas {
 			Shader::Uniform* lightColor = nullptr;
 			Shader::Uniform* lightAmbient = nullptr;
 			Shader::Uniform* lightRadius = nullptr;
+			Shader::Uniform* shadowEnabled = nullptr;
 
 		};
 

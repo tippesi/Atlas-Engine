@@ -36,6 +36,9 @@ namespace Atlas {
 			Shader::Uniform* lightSpaceMatrixUniform = nullptr;
 			Shader::Uniform* modelMatrixUniform = nullptr;
 
+			Shader::Uniform* timeUniform = nullptr;
+
+			Shader::Uniform* vegetationUniform = nullptr;
 			Shader::Uniform* invertUVsUniform = nullptr;
 
 			static Shader::ShaderBatch shaderBatch;

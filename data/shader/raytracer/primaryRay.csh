@@ -1,5 +1,6 @@
 #include <structures>
 #include <../common/random>
+#include <../common/indexing>
 #include <common>
 
 layout (local_size_x = 8, local_size_y = 8) in;
@@ -47,7 +48,8 @@ void main() {
 		ray.accumColor = vec3(0.0);
 		ray.mask = vec3(1.0);
 		
-		uint index = tileSize.x * pixel.y + pixel.x;
+		int groupIndex = vec2ToIndex(ivec2(gl_WorkGroupID), ivec2(gl_NumWorkGroups));
+		uint index = gl_LocalInvocationIndex + uint(groupIndex) * uint(64);
 		writeRays[index] = PackRay(ray);
 
 	}

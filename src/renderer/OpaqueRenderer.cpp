@@ -1,5 +1,7 @@
 #include "OpaqueRenderer.h"
 
+#include "../Clock.h"
+
 #include <mutex>
 
 namespace Atlas {
@@ -30,6 +32,10 @@ namespace Atlas {
 			normalScaleUniform = shaderBatch.GetUniform("normalScale");
 			displacementScaleUniform = shaderBatch.GetUniform("displacementScale");
 
+			timeUniform = shaderBatch.GetUniform("time");
+			deltaTimeUniform = shaderBatch.GetUniform("deltaTime");
+
+			vegetationUniform = shaderBatch.GetUniform("vegetation");
 			invertUVsUniform = shaderBatch.GetUniform("invertUVs");
 
 			pvMatrixLast = shaderBatch.GetUniform("pvMatrixLast");
@@ -109,6 +115,10 @@ namespace Atlas {
 						depthTest = true;
 					}
 
+					timeUniform->SetValue(Clock::Get());
+					deltaTimeUniform->SetValue(Clock::GetDelta());
+
+					vegetationUniform->SetValue(mesh->vegetation);
 					invertUVsUniform->SetValue(mesh->invertUVs);
 
 					// Prepare uniform buffer here
@@ -192,7 +202,7 @@ namespace Atlas {
 				shader->AddMacro("WORLD_TRANSFORM");
 
 				shader->Compile();
-				shader->Bind();
+				shaderBatch.Bind(shaderID);
 
 				projectionMatrixUniform->SetValue(projectionMatrix);
 

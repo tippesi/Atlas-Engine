@@ -39,8 +39,10 @@ namespace Atlas {
 						   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
 			for (uint8_t i = 0; i < 6; i++) {
+				auto viewMatrix = glm::lookAt(location, location + faces[i], ups[i]);
 				shadow->components[i].projectionMatrix = projectionMatrix;
-				shadow->components[i].viewMatrix = glm::lookAt(location, location + faces[i], ups[i]);
+				shadow->components[i].viewMatrix = viewMatrix;
+				shadow->components[i].frustumMatrix = projectionMatrix * viewMatrix;
 			}
 
 		}
@@ -67,22 +69,24 @@ namespace Atlas {
 
 		void PointLight::Update(Camera* camera) {
 
-			if (mobility == AE_MOVABLE_LIGHT && shadow != nullptr) {
+			if (mobility == AE_MOVABLE_LIGHT && shadow) {
 				shadow->Update();
-			}
 
-		}
+				mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, radius);
+				vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
+								 vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+								 vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
 
-		float PointLight::GetRadius() {
+				vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+							   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
+							   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
-			return radius;
-
-		}
-
-		void PointLight::SetRadius(float radius) {
-
-			if (mobility == AE_MOVABLE_LIGHT) {
-				this->radius = radius;
+				for (uint8_t i = 0; i < 6; i++) {
+					auto viewMatrix = glm::lookAt(location, location + faces[i], ups[i]);
+					shadow->components[i].projectionMatrix = projectionMatrix;
+					shadow->components[i].viewMatrix = viewMatrix;
+					shadow->components[i].frustumMatrix = projectionMatrix * viewMatrix;
+				}
 			}
 
 		}

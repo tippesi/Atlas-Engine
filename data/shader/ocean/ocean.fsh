@@ -16,7 +16,7 @@ layout (binding = 3) uniform samplerCube skyEnvProbe;
 layout (binding = 4) uniform sampler2D refractionTexture;
 layout (binding = 5) uniform sampler2D depthTexture;
 layout (binding = 7) uniform sampler2D volumetricTexture;
-layout (binding = 9) uniform sampler2D rippleTexture;
+layout (binding = 10) uniform sampler2D rippleTexture;
 
 in vec4 fClipSpace;
 in vec3 fPosition;
@@ -175,6 +175,6 @@ void main() {
 	ndcL -= jitterLast;
 	ndcC -= jitterCurrent;
 
-	velocity = (ndcL - ndcC) * vec2(0.5, 0.5);
+	velocity = (ndcL - ndcC) * 0.5;
 
 }

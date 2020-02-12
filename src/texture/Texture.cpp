@@ -87,9 +87,11 @@ namespace Atlas {
 
 		void Texture::SetBias(float bias) {
 
+#ifdef AE_API_GL
 			Bind();
 			glTexParameterf(target, GL_TEXTURE_LOD_BIAS, bias);
 			this->bias = bias;
+#endif
 
 		}
 

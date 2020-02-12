@@ -1,5 +1,7 @@
 #include "ShadowRenderer.h"
 
+#include "../Clock.h"
+
 namespace Atlas {
 
 	namespace Renderer {
@@ -17,6 +19,9 @@ namespace Atlas {
 			modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
 			lightSpaceMatrixUniform = shaderBatch.GetUniform("lightSpaceMatrix");
 
+			timeUniform = shaderBatch.GetUniform("time");
+
+			vegetationUniform = shaderBatch.GetUniform("vegetation");
 			invertUVsUniform = shaderBatch.GetUniform("invertUVs");
 
 		}
@@ -105,6 +110,9 @@ namespace Atlas {
 								backFaceCulling = true;
 							}
 
+							timeUniform->SetValue(Clock::Get());
+
+							vegetationUniform->SetValue(mesh->vegetation);
 							invertUVsUniform->SetValue(mesh->invertUVs);
 
 							// Prepare uniform buffer here

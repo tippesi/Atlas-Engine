@@ -201,7 +201,8 @@ namespace Atlas {
 
 			containsData = true;
 
-			DeleteData();
+			if (data != this->data)
+				DeleteData();
 
 			if (componentType == AE_COMPONENT_HALF_FLOAT) {
 				int32_t dataSize = stride * size;
