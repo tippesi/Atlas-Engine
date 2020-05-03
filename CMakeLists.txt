@@ -5,8 +5,7 @@ endif()
 project(AtlasEngine)
 cmake_minimum_required(VERSION 3.7)
 
-# Only 64 bit is supported
-###################################################################
+# Only 64 bit is supported #######################################################################
 if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 	message(FATAL_ERROR "32 bit isn't supported")
 endif()
@@ -79,6 +78,12 @@ message(STATUS "Building without app class")
 set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_NO_APP)
 else()
 message(STATUS "Building with app class")
+endif()
+
+# Add libraries for dependencies ##################################################################
+# SDL has problems with MSVC in Release Mode
+if (WIN32 AND MSVC)
+list(APPEND EXTRA_LIBS vcruntime)
 endif()
 
 # Add dependencies ################################################################################
@@ -186,7 +191,7 @@ endif()
 if (ATLAS_BUILD_SHARED)
     add_library(${PROJECT_NAME} SHARED ${ATLAS_ENGINE_SOURCE_FILES})
 else()
-	add_library(${PROJECT_NAME} ${ATLAS_ENGINE_SOURCE_FILES})
+	add_library(${PROJECT_NAME} STATIC ${ATLAS_ENGINE_SOURCE_FILES})
 endif()
 else()
     add_executable(${PROJECT_NAME} ${ATLAS_ENGINE_SOURCE_FILES})
