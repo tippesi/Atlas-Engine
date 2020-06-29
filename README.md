@@ -1,6 +1,16 @@
 # Atlas Engine
 ![Example scene](images/sponza_rasterized.png)
-*Rasterized image using an irradiance volume*
+*Rasterized image using an irradiance volume* 
+<br/>
+[![The MIT License][license-image]][license-url]
+[![Code quality][code-quality-image]][code-quality-url]
+
+[license-image]: https://img.shields.io/badge/License-MIT-yellow.svg
+[license-url]: https://opensource.org/licenses/MIT
+[code-quality-image]: https://www.code-inspector.com/project/10000/score/svg
+[code-quality-url]: https://frontend.code-inspector.com/project/10000/dashboard
+
+#### The current version is WIP which means many changes and less stability.
 ## Introduction
 This is a cross platform engine that is available on Linux, Windows and Android.
 ## Requirements
@@ -62,9 +72,9 @@ For a code example have a look at the [Wiki](https://github.com/tippesi/Atlas-En
 #### Thread safety
 Most classes are not designed to be used across different threads by default. These classes have to be protected by you as the user. But there are also classes which are known to be used in several threads. These classes are the EventManager, EventDelegate, Time, AudioManager, AudioStream and AssetLoader. They can all be savely accessed by multiple threads. Note that all methods which are static e.g. OpaqueRenderer::AddConfig(...) are always thread safe.
 ## Screenshots
-![Island scene](images/island.gif) \
+![Island scene](images/island.gif) <br/>
 *Island demo scene*
-![Island scene](images/gun.gif) \
+![Island scene](images/gun.gif) <br/>
 *PBR rendering*
 ![Example scene](images/sponza_raytraced.png)
 *Ray traced image using 3000 samples with 5 bounces*
