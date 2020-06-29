@@ -1,11 +1,14 @@
 # Atlas Engine
 [![The MIT License][license-image]][license-url]
 [![Code quality][code-quality-image]][code-quality-url]
+[![Build][build-image]][build-url]
 
 [license-image]: https://img.shields.io/badge/License-MIT-yellow.svg
 [license-url]: https://opensource.org/licenses/MIT
 [code-quality-image]: https://www.code-inspector.com/project/10000/score/svg
 [code-quality-url]: https://frontend.code-inspector.com/public/project/10000/Atlas-Engine/dashboard
+[build-image]: https://ci.appveyor.com/api/projects/status/p5rwt06036gp5fwy?svg=true
+[build-url]: https://ci.appveyor.com/api/projects/status/p5rwt06036gp5fwy
 
 ![Example scene](images/sponza_rasterized.png)
 *Rasterized image using an irradiance volume*

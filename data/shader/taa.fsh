@@ -12,10 +12,10 @@ in vec2 fTexCoord;
 uniform vec2 invResolution;
 uniform vec2 resolution;
 
-#define AA_YCOCG
-#define AA_CLIP
-#define AA_BICUBIC
-#define AA_TONE
+#define TAA_YCOCG
+#define TAA_CLIP
+#define TAA_BICUBIC
+#define TAA_TONE
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
@@ -56,7 +56,7 @@ vec3 YCoCgToRGB(vec3 YCoCg) {
 
 float Luma(vec3 color) {
 
-#ifdef AA_YCOCG
+#ifdef TAA_YCOCG
     return color.r;
 #else
     const vec3 luma = vec3(0.299, 0.587, 0.114);
@@ -83,11 +83,11 @@ vec3 FetchTexel(ivec2 texel) {
 	
 	vec3 color = texelFetch(currentTexture, texel, 0).rgb;
 
-#ifdef AA_TONE
+#ifdef TAA_TONE
 	color = Tonemap(color);
 #endif
 
-#ifdef AA_YCOCG
+#ifdef TAA_YCOCG
     color = RGBToYCoCg(color);
 #endif
 
@@ -134,9 +134,9 @@ float ClipBoundingBox(vec3 boxMin, vec3 boxMax, vec3 history, vec3 current) {
     vec3 dir = current - history;
 
     // Make sure dir isn't zero
-    dir.x = abs(dir.x) < (1.0 / 65536.0) ? (1.0 / 65536.0) : dir.x;
-    dir.y = abs(dir.y) < (1.0 / 65536.0) ? (1.0 / 65536.0) : dir.y;
-    dir.z = abs(dir.z) < (1.0 / 65536.0) ? (1.0 / 65536.0) : dir.z;
+    dir.x = abs(dir.x) < (1.0 / 32767.0) ? (1.0 / 32767.0) : dir.x;
+    dir.y = abs(dir.y) < (1.0 / 32767.0) ? (1.0 / 32767.0) : dir.y;
+    dir.z = abs(dir.z) < (1.0 / 32767.0) ? (1.0 / 32767.0) : dir.z;
 
     vec3 invDir = 1.0 / dir;
 
@@ -204,17 +204,17 @@ vec3 SampleHistory(vec2 texCoord) {
 
     vec3 historyColor;
 
-#ifdef AA_BICUBIC
+#ifdef TAA_BICUBIC
     historyColor = SampleCatmullRom(texCoord);
 #else
     historyColor = texture(historyTexture, texCoord).rgb;
 #endif
 
-#ifdef AA_TONE
+#ifdef TAA_TONE
 	historyColor = Tonemap(historyColor);
 #endif
 
-#ifdef AA_YCOCG
+#ifdef TAA_YCOCG
     historyColor = RGBToYCoCg(historyColor);
 #endif
 
@@ -271,7 +271,7 @@ void main() {
     float lumaMax = Luma(neighbourhoodMax);
 
     // Clamp/Clip the history to the neighbourhood bounding box
-#ifdef AA_CLIP
+#ifdef TAA_CLIP
     float clipBlend = ClipBoundingBox(neighbourhoodMin, neighbourhoodMax,
         historyColor, average);
     clipBlend = clamp(clipBlend, 0.0, 1.0);
@@ -296,12 +296,12 @@ void main() {
     blendFactor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 1.0 : blendFactor;
 
-#ifdef AA_YCOCG
+#ifdef TAA_YCOCG
     historyColor = YCoCgToRGB(historyColor); 
     currentColor = YCoCgToRGB(currentColor);
 #endif
 
-#ifdef AA_TONE
+#ifdef TAA_TONE
 	historyColor = InverseTonemap(historyColor);
     currentColor = InverseTonemap(currentColor);
 #endif	
