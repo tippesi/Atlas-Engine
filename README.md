@@ -9,7 +9,7 @@
 
 ![Example scene](images/sponza_rasterized.png)
 *Rasterized image using an irradiance volume*
-#### The current version is WIP which means many changes and less stability.
+#### The current version is a WIP which means many changes and less stability.
 ## Introduction
 This is a cross platform engine that is available on Linux, Windows and Android.
 ## Requirements
