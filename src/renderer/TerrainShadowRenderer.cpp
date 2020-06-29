@@ -5,13 +5,10 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string TerrainShadowRenderer::vertexPath = "terrain/shadowmapping.vsh";
-		std::string TerrainShadowRenderer::fragmentPath = "terrain/shadowmapping.fsh";
-
 		TerrainShadowRenderer::TerrainShadowRenderer() {
 
-			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+			shader.AddStage(AE_VERTEX_STAGE, "terrain/shadowmapping.vsh");
+			shader.AddStage(AE_FRAGMENT_STAGE, "terrain/shadowmapping.fsh");
 
 			shader.Compile();
 

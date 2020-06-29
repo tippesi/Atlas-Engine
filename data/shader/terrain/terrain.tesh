@@ -1,4 +1,4 @@
-#include "terrainMaterial"
+#include <terrainMaterial.hsh>
 
 #ifndef DISTANCE
 layout(quads, equal_spacing, cw) in;
@@ -8,10 +8,10 @@ layout(quads, equal_spacing, cw) in;
 
 layout (binding = 1) uniform sampler2D normalMap;
 layout (binding = 2)  uniform usampler2D splatMap;
-layout(binding = 5) uniform sampler2DArray displacementMaps;
+layout(binding = 7) uniform sampler2DArray displacementMaps;
 
 layout (binding = 0, std140) uniform UBO {
-    TerrainMaterial materials[256];
+    TerrainMaterial materials[128];
 };
 
 flat in uvec4 materialIndicesTC[];

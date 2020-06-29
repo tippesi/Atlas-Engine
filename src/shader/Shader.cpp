@@ -165,7 +165,10 @@ namespace Atlas {
                     log.append(stage->filename + "\n");
 					log.append(stage->GetErrorLog() + "\n");
                 }
-                log.append(programLog.data());
+
+                if (programLog.size())
+                    log.append(programLog.data());
+
 				Log::Error(log);
 
             }

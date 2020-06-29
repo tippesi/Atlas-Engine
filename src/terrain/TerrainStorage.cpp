@@ -12,8 +12,12 @@ namespace Atlas {
 			cells.resize(LoDCount);
 			LoDSideLengths = new int32_t[LoDCount];
 
-			diffuseMaps = Atlas::Texture::Texture2DArray(materialResolution,
+			baseColorMaps = Atlas::Texture::Texture2DArray(materialResolution,
 				materialResolution, materialCount, AE_RGB8, GL_REPEAT, GL_LINEAR, true, true);
+			roughnessMaps = Atlas::Texture::Texture2DArray(materialResolution,
+				materialResolution, materialCount, AE_R8, GL_REPEAT, GL_LINEAR, true, true);
+			aoMaps = Atlas::Texture::Texture2DArray(materialResolution,
+				materialResolution, materialCount, AE_R8, GL_REPEAT, GL_LINEAR, true, true);
 			normalMaps = Atlas::Texture::Texture2DArray(materialResolution,
 				materialResolution, materialCount, AE_RGB8, GL_REPEAT, GL_LINEAR, true, true);
 			displacementMaps = Atlas::Texture::Texture2DArray(materialResolution,
@@ -60,9 +64,17 @@ namespace Atlas {
 
 			materials[slot] = material;
 
-			if (material->HasDiffuseMap()) {
-				diffuseMaps.Copy(*material->diffuseMap, 0, 0, 0, 0, 0, slot,
-					diffuseMaps.width, diffuseMaps.height, 1);
+			if (material->HasBaseColorMap()) {
+				baseColorMaps.Copy(*material->baseColorMap, 0, 0, 0, 0, 0, slot,
+					baseColorMaps.width, baseColorMaps.height, 1);
+			}
+			if (material->HasRoughnessMap()) {
+				roughnessMaps.Copy(*material->roughnessMap, 0, 0, 0, 0, 0, slot,
+					roughnessMaps.width, roughnessMaps.height, 1);
+			}
+			if (material->HasAoMap()) {
+				aoMaps.Copy(*material->aoMap, 0, 0, 0, 0, 0, slot,
+					aoMaps.width, aoMaps.height, 1);
 			}
 			if (material->HasNormalMap()) {
 				normalMaps.Copy(*material->normalMap, 0, 0, 0, 0, 0, slot,
@@ -72,6 +84,21 @@ namespace Atlas {
 				displacementMaps.Copy(*material->displacementMap, 0, 0, 0, 0, 0, slot,
 					displacementMaps.width, displacementMaps.height, 1);
 			}
+
+			baseColorMaps.Bind();
+			baseColorMaps.GenerateMipmap();
+
+			roughnessMaps.Bind();
+			roughnessMaps.GenerateMipmap();
+
+			aoMaps.Bind();
+			aoMaps.GenerateMipmap();
+
+			normalMaps.Bind();
+			normalMaps.GenerateMipmap();
+
+			displacementMaps.Bind();
+			displacementMaps.GenerateMipmap();
 
 		}
 

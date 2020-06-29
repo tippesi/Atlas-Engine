@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <vector>
 #include <mutex>
+#include <unordered_set>
 
 namespace Atlas {
 
@@ -105,6 +106,15 @@ namespace Atlas {
 			 */
 			static bool IsFileInAssetDirectory(std::string path);
 
+			/**
+			 * Sets the loading behaviour of compressed assets.
+			 * @param alwaysReload Whether to reload assets every time the program runs
+			 * If set to true, the AssetLoader will always load the assets again. This is
+			 * interesting for debugging purposes, when one deploys the app with changes to
+			 * the assets. Normally all assets are cached and loaded from cache, when available.
+			 */
+			static void SetReloadBehaviour(bool alwaysReload = false);
+
         private:
             static std::string GetAssetPath(std::string path);
 
@@ -117,6 +127,9 @@ namespace Atlas {
 #ifdef AE_OS_ANDROID
             static AAssetManager* manager;
 #endif
+
+            static bool alwaysReload;
+            static std::unordered_set<std::string> readFiles;
 
         };
 

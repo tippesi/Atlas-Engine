@@ -26,7 +26,7 @@ uniform vec3 vignetteColor;
 
 out vec3 color;
 
-const float gamma = 1.0f / 2.2;
+const float gamma = 1.0 / 2.2;
 
 vec3 ACESToneMap(vec3 hdrColor) {
     float a = 2.51f;
@@ -45,7 +45,7 @@ vec3 ToneMap(vec3 hdrColor) {
 }
 
 vec3 saturate(vec3 color, float factor) {
-	const vec3 luma = vec3(0.299f, 0.587f, 0.114f);
+	const vec3 luma = vec3(0.299, 0.587, 0.114);
     vec3 pixelLuminance = vec3(dot(color, luma));
 	return mix(pixelLuminance, color, factor);
 }
@@ -143,11 +143,11 @@ void main() {
 #endif
 	color = pow(color, vec3(gamma));
 	
-	color = saturate(color, saturation);	
+	color = clamp(saturate(color, saturation), vec3(0.0), vec3(1.0));	
 
 #ifdef VIGNETTE	
-	float vignetteFactor = max(1.0f - max(pow(length(fPosition) - vignetteOffset, vignettePower), 0.0f)
-		* vignetteStrength, 0.0f);
+	float vignetteFactor = max(1.0 - max(pow(length(fPosition) - vignetteOffset, vignettePower), 0.0)
+		* vignetteStrength, 0.0);
 	
 	color = mix(vignetteColor, color, vignetteFactor);
 #endif

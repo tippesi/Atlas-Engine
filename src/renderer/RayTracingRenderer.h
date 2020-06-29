@@ -83,11 +83,8 @@ namespace Atlas {
 
 			int32_t GetSampleCount();
 
-			static std::string primaryRayComputePath;
-			static std::string bounceUpdateComputePath;
-			static std::string rayUpdateComputePath;
-
 			int32_t bounces = 2;
+			int32_t bvhDepth = 0;
 
 		private:
 			void GetPrimaryRayUniforms();
@@ -95,8 +92,6 @@ namespace Atlas {
 			void GetRayUpdateUniforms();
 
 			void UpdateTexture(Scene::Scene* scene);
-
-			int32_t PackUnitVector(vec4 vector);
 
 			struct GPUTriangle {
 				vec4 v0;
@@ -119,21 +114,24 @@ namespace Atlas {
 			};
 
 			struct GPUMaterial {
-				vec3 diffuseColor;
+				vec3 baseColor;
 				vec3 emissiveColor;
 
 				float opacity;
 
-				float specularIntensity;
-				float specularHardness;
+				float roughness;
+				float metalness;
+				float ao;
 
 				float normalScale;
 
 				int32_t invertUVs;
 
-				GPUTexture diffuseTexture;
+				GPUTexture baseColorTexture;
 				GPUTexture normalTexture;
-				GPUTexture specularTexture;
+				GPUTexture roughnessTexture;
+				GPUTexture metalnessTexture;
+				GPUTexture aoTexture;
 			};
 
 			struct GPUAABB {
@@ -176,9 +174,11 @@ namespace Atlas {
 			Buffer::Buffer materialBuffer;
 			Buffer::Buffer nodesBuffer;
 
-			Texture::TextureAtlas diffuseTextureAtlas;
+			Texture::TextureAtlas baseColorTextureAtlas;
 			Texture::TextureAtlas normalTextureAtlas;
-			Texture::TextureAtlas specularTextureAtlas;
+			Texture::TextureAtlas roughnessTextureAtlas;
+			Texture::TextureAtlas metalnessTextureAtlas;
+			Texture::TextureAtlas aoTextureAtlas;
 
 			Shader::Shader primaryRayShader;
 
@@ -201,7 +201,7 @@ namespace Atlas {
 			
 			Shader::Uniform* lightDirectionRayUpdateUniform = nullptr;
 			Shader::Uniform* lightColorRayUpdateUniform = nullptr;
-			Shader::Uniform* lightAmbientRayUpdateUniform = nullptr;
+			Shader::Uniform* lightIntensityRayUpdateUniform = nullptr;
 
 			Shader::Uniform* sampleCountRayUpdateUniform = nullptr;
 			Shader::Uniform* bounceCountRayUpdateUniform = nullptr;

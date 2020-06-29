@@ -18,6 +18,9 @@ namespace Atlas {
 		AAssetManager* AssetLoader::manager;
 #endif
 
+		bool AssetLoader::alwaysReload = false;
+        std::unordered_set<std::string> AssetLoader::readFiles;
+
 		void AssetLoader::Init() {
 
 #ifdef AE_OS_ANDROID
@@ -71,6 +74,15 @@ namespace Atlas {
 
 			// It might be that the file is not unpacked
 #ifdef AE_OS_ANDROID
+			if (alwaysReload && stream.is_open()) {
+			    // We only want to unpack a file once per app execution
+			    if (readFiles.find(path) == readFiles.end()) {
+			        readFiles.insert(path);
+			        stream.close();
+					RemoveFile(path);
+			    }
+			}
+
 			if (!stream.is_open()) {
 				UnpackFile(filename);
 				stream.open(path, mode);
@@ -227,6 +239,14 @@ namespace Atlas {
 				return false;
 
 			return true;
+
+		}
+
+		void AssetLoader::SetReloadBehaviour(bool alwaysReload) {
+
+            std::lock_guard<std::mutex> guard(assetLoaderMutex);
+
+		    AssetLoader::alwaysReload = alwaysReload;
 
 		}
 

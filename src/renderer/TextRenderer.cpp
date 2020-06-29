@@ -5,9 +5,6 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string TextRenderer::vertexPath = "text.vsh";
-		std::string TextRenderer::fragmentPath = "text.fsh";
-
 		TextRenderer::TextRenderer() {
 
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
@@ -16,8 +13,8 @@ namespace Atlas {
 				sizeof(vec3), 5000, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
 			vertexArray.AddInstancedComponent(1, vertexBuffer);
 
-			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+			shader.AddStage(AE_VERTEX_STAGE, "text.vsh");
+			shader.AddStage(AE_FRAGMENT_STAGE, "text.fsh");
 
 			shader.Compile();
 

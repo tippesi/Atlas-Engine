@@ -1,5 +1,6 @@
 #include "../structures"
-#include <../common/convert>
+#include <../common/convert.hsh>
+#include <../common/material.hsh>
 
 in vec3 fTexCoordProj;
 in vec3 viewSpacePosition;
@@ -7,9 +8,11 @@ out vec4 fragColor;
 
 layout(binding = 0) uniform sampler2D diffuseTexture;
 layout(binding = 1) uniform sampler2D normalTexture;
-layout(binding = 2) uniform sampler2D materialTexture;
-layout(binding = 3) uniform sampler2D depthTexture;
-layout(binding = 4) uniform samplerCubeShadow shadowCubemap;
+layout(binding = 2) uniform sampler2D geometryNormalTexture;
+layout(binding = 3) uniform sampler2D specularTexture;
+layout(binding = 4) uniform usampler2D materialIdxTexture;
+layout(binding = 5) uniform sampler2D depthTexture;
+layout(binding = 6) uniform samplerCubeShadow shadowCubemap;
 
 uniform Light light;
 uniform vec3 viewSpaceLightLocation;
@@ -31,7 +34,7 @@ vec3 sampleOffsetDirections[20] = vec3[]
 
 void main() {
 
-	vec2 texCoord = ((fTexCoordProj.xy / fTexCoordProj.z) + 1.0f) / 2.0f;
+	vec2 texCoord = ((fTexCoordProj.xy / fTexCoordProj.z) + 1.0) / 2.0;
 	
 	float depth = texture(depthTexture, texCoord).r;
 	
@@ -42,31 +45,47 @@ void main() {
 
 	vec3 fragToLight = viewSpaceLightLocation.xyz - fragPos.xyz;
 	float fragToLightDistance = length(fragToLight);
-	
-	vec3 normal = normalize(2.0f * texture(normalTexture, texCoord).rgb - 1.0f);
-	vec3 surfaceColor = texture(diffuseTexture, texCoord).rgb;
-	vec2 material = texture(materialTexture, texCoord).rg;
-	
-	// Material properties
-	float specularIntensity = material.r;
-	float specularHardness = material.g;
-	
-	float shadowFactor = 1.0f;
-	
-	vec3 specular = vec3(0.0f);
-	vec3 diffuse = vec3(1.0f);
-	vec3 ambient = vec3(light.ambient * surfaceColor);
-	vec3 volumetric = 0.0f * vec3(light.color);
 
-	float occlusionFactor = 1.0f;
+	uint materialIdx = texture(materialIdxTexture, texCoord).r;
+	Material material = UnpackMaterial(materialIdx);
+	
+	vec3 normal = normalize(2.0 * texture(normalTexture, texCoord).rgb - 1.0);
+	vec3 reconstructedNormal = normalize(2.0 * texture(geometryNormalTexture, texCoord).rgb - 1.0);
+
+	normal = material.normalMap ? normal : reconstructedNormal;
+
+	vec3 surfaceColor = texture(diffuseTexture, texCoord).rgb;
+	
+	// Specular properties
+	float specularIntensity = 0.0;
+	float specularHardness = 1.0;
+
+	if (material.specularMap) {
+		vec2 specularProp = texture(specularTexture, texCoord).rg;
+		specularIntensity = max(specularProp.r, 0.0);
+		specularHardness = max(specularProp.g, 1.0);
+	}
+	else {
+		specularIntensity = material.specularIntensity;
+		specularHardness = material.specularHardness;
+	}
+	
+	float shadowFactor = 0.0;
+	
+	vec3 specular = vec3(0.0);
+	vec3 diffuse = vec3(1.0);
+	vec3 ambient = vec3(light.ambient * surfaceColor);
+	vec3 volumetric = 0.0 * vec3(light.color);
+
+	float occlusionFactor = 1.0;
 	
 	vec3 lightDir = fragToLight / fragToLightDistance;
 	
-	vec4 lsPosition = lvMatrix * vec4(fragPos, 1.0f);
+	vec4 lsPosition = lvMatrix * vec4(fragPos, 1.0);
 	vec4 absPosition = abs(lsPosition);
 	depth = -max(absPosition.x, max(absPosition.y, absPosition.z));
-	vec4 clip = lpMatrix * vec4(0.0f, 0.0f, depth, 1.0f);	
-	depth = (clip.z - 0.005f) / clip.w * 0.5f + 0.5f;
+	vec4 clip = lpMatrix * vec4(0.0, 0.0, depth, 1.0);	
+	depth = (clip.z - 0.005) / clip.w * 0.5 + 0.5;
 	
 	int samples  = 20;
 	float diskRadius = 0.0075;
@@ -75,13 +94,12 @@ void main() {
 		for(int i = 0; i < samples; i++) {
 			shadowFactor += clamp(texture(shadowCubemap, vec4(lsPosition.xyz + sampleOffsetDirections[i] * diskRadius, depth)), 0.0, 1.0); 
 		}
-		shadowFactor /= float(samples);  
+		shadowFactor /= float(samples + 1);  
 	}
 
-	diffuse = max((dot(normal, lightDir) * light.color) * shadowFactor,
-		ambient * occlusionFactor) * surfaceColor;
+	diffuse = max(dot(normal, lightDir), 0.0) * light.color * shadowFactor * surfaceColor;
 
-	fragColor = vec4(max((diffuse + ambient) * (light.radius - fragToLightDistance) / light.radius, 0.0f) + volumetric, 1.0f);
+	fragColor = vec4(max((diffuse + ambient) * (light.radius - fragToLightDistance) / light.radius, 0.0) + volumetric, 1.0);
 
 }
 

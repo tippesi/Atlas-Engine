@@ -18,9 +18,6 @@ namespace Atlas {
 
 			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
-			static std::string vertexPath;
-			static std::string fragmentPath;
-
 		private:
 			void GetUniforms();
 

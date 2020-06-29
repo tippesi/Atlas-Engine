@@ -1,6 +1,12 @@
 struct TerrainMaterial {
-	float specularIntensity;
-	float specularHardness;
+	
+	uint idx;
+
+	float roughness;
+	float metalness;
+	float ao;
+
 	float displacementScale;
 	float normalScale;
+
 };

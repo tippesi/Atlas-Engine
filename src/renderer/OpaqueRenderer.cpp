@@ -8,9 +8,6 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string OpaqueRenderer::vertexPath = "deferred/geometry.vsh";
-		std::string OpaqueRenderer::fragmentPath = "deferred/geometry.fsh";
-
 		Shader::ShaderBatch OpaqueRenderer::shaderBatch;
 		std::mutex OpaqueRenderer::shaderBatchMutex;
 
@@ -23,14 +20,14 @@ namespace Atlas {
 			projectionMatrixUniform = shaderBatch.GetUniform("pMatrix");
 
 			cameraLocationUniform = shaderBatch.GetUniform("cameraLocation");
-			diffuseColorUniform = shaderBatch.GetUniform("diffuseColor");
-			emissiveColorUniform = shaderBatch.GetUniform("emissiveColor");
-			specularColorUniform = shaderBatch.GetUniform("specularColor");
-			ambientColorUniform = shaderBatch.GetUniform("ambientColor");
-			specularHardnessUniform = shaderBatch.GetUniform("specularHardness");
-			specularIntensityUniform = shaderBatch.GetUniform("specularIntensity");
+			baseColorUniform = shaderBatch.GetUniform("baseColor");
+			roughnessUniform = shaderBatch.GetUniform("roughness");
+			metalnessUniform = shaderBatch.GetUniform("metalness");
+			aoUniform = shaderBatch.GetUniform("ao");
 			normalScaleUniform = shaderBatch.GetUniform("normalScale");
 			displacementScaleUniform = shaderBatch.GetUniform("displacementScale");
+
+			materialIdxUniform = shaderBatch.GetUniform("materialIdx");
 
 			timeUniform = shaderBatch.GetUniform("time");
 			deltaTimeUniform = shaderBatch.GetUniform("deltaTime");
@@ -45,7 +42,8 @@ namespace Atlas {
 
 		}
 
-		void OpaqueRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+		void OpaqueRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+			Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap) {
 
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
@@ -69,7 +67,7 @@ namespace Atlas {
 				jitterLast->SetValue(camera->GetLastJitter());
 				jitterCurrent->SetValue(camera->GetJitter());
 
-				pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());			
+				pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
 
 				for (auto renderListBatch : renderListBatches) {
 
@@ -81,12 +79,17 @@ namespace Atlas {
 					}
 
 					auto mesh = actorBatch->GetObject();
-					auto buffer = renderList.actorBatchBuffers[mesh];
+					auto key = renderList.actorBatchBuffers.find(mesh);
 
-					if (!buffer)
+					if (key == renderList.actorBatchBuffers.end())
 						continue;
 
-					auto actorCount = buffer->GetElementCount();
+					auto buffers = key->second;
+
+					if (!buffers.currentMatrices)
+						continue;
+
+					auto actorCount = buffers.currentMatrices->GetElementCount();
 
 					if (!actorCount) {
 						continue;
@@ -130,24 +133,26 @@ namespace Atlas {
 
 						auto material = subData->material;
 
-						if (material->HasDiffuseMap())
-							material->diffuseMap->Bind(GL_TEXTURE0);
+						if (material->HasBaseColorMap())
+							material->baseColorMap->Bind(GL_TEXTURE0);
+						if (material->HasOpacityMap())
+							material->opacityMap->Bind(GL_TEXTURE1);
 						if (material->HasNormalMap())
-							material->normalMap->Bind(GL_TEXTURE1);
-						if (material->HasSpecularMap())
-							material->specularMap->Bind(GL_TEXTURE2);
+							material->normalMap->Bind(GL_TEXTURE2);
+						if (material->HasRoughnessMap())
+							material->roughnessMap->Bind(GL_TEXTURE3);
+						if (material->HasMetalnessMap())
+							material->metalnessMap->Bind(GL_TEXTURE4);
+						if (material->HasAoMap())
+							material->aoMap->Bind(GL_TEXTURE5);
 						if (material->HasDisplacementMap())
-							material->displacementMap->Bind(GL_TEXTURE3);
+							material->displacementMap->Bind(GL_TEXTURE6);
 
 						cameraLocationUniform->SetValue(camera->GetLocation());
-						diffuseColorUniform->SetValue(material->diffuseColor);
-						emissiveColorUniform->SetValue(material->emissiveColor);
-						specularColorUniform->SetValue(material->specularColor);
-						ambientColorUniform->SetValue(material->ambientColor);
-						specularHardnessUniform->SetValue(material->specularHardness);
-						specularIntensityUniform->SetValue(material->specularIntensity);
 						normalScaleUniform->SetValue(material->normalScale);
 						displacementScaleUniform->SetValue(material->displacementScale);
+
+						materialIdxUniform->SetValue((uint32_t)materialMap[material]);
 
 						glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
 							(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), actorCount);
@@ -161,7 +166,7 @@ namespace Atlas {
 			glEnable(GL_CULL_FACE);
 			glDepthRangef(0.0f, 1.0f);
 
-			impostorRenderer.Render(viewport, target, camera, &renderList);
+			impostorRenderer.Render(viewport, target, camera, &renderList, materialMap);
 
 			renderList.Clear();
 
@@ -191,26 +196,33 @@ namespace Atlas {
 			renderList.Add(&actor);
 			renderList.UpdateBuffers(&camera);
 
+			// Iterate through shaders and add macro
 			for (auto& renderListBatchesKey : renderList.orderedRenderBatches) {
-
 				auto shaderID = renderListBatchesKey.first;
 				auto renderListBatches = renderListBatchesKey.second;
 
 				auto shader = shaderBatch.GetShader(shaderID);
-
 				// We want normals in world space
-				shader->AddMacro("WORLD_TRANSFORM");
-
+				// And a specular map no matter what
+				shader->AddMacro("GENERATE_IMPOSTOR");
 				shader->Compile();
-				shaderBatch.Bind(shaderID);
+			}
 
-				projectionMatrixUniform->SetValue(projectionMatrix);
+			for (size_t i = 0; i < viewMatrices.size(); i++) {
 
-				for (size_t i = 0; i < viewMatrices.size(); i++) {
+				glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+				glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);		
 
-					glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-					glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+				for (auto& renderListBatchesKey : renderList.orderedRenderBatches) {
 
+					auto shaderID = renderListBatchesKey.first;
+					auto renderListBatches = renderListBatchesKey.second;
+
+					auto shader = shaderBatch.GetShader(shaderID);
+
+					shaderBatch.Bind(shaderID);
+
+					projectionMatrixUniform->SetValue(projectionMatrix);
 					viewMatrixUniform->SetValue(viewMatrices[i]);
 
 					for (auto renderListBatch : renderListBatches) {
@@ -236,21 +248,26 @@ namespace Atlas {
 
 							auto material = subData->material;
 
-							if (material->HasDiffuseMap())
-								material->diffuseMap->Bind(GL_TEXTURE0);
+							if (material->HasBaseColorMap())
+								material->baseColorMap->Bind(GL_TEXTURE0);
+							if (material->HasOpacityMap())
+								material->opacityMap->Bind(GL_TEXTURE1);
 							if (material->HasNormalMap())
-								material->normalMap->Bind(GL_TEXTURE1);
-							if (material->HasSpecularMap())
-								material->specularMap->Bind(GL_TEXTURE2);
+								material->normalMap->Bind(GL_TEXTURE2);
+							if (material->HasRoughnessMap())
+								material->roughnessMap->Bind(GL_TEXTURE3);
+							if (material->HasMetalnessMap())
+								material->metalnessMap->Bind(GL_TEXTURE4);
+							if (material->HasAoMap())
+								material->aoMap->Bind(GL_TEXTURE5);
 							if (material->HasDisplacementMap())
-								material->displacementMap->Bind(GL_TEXTURE3);
+								material->displacementMap->Bind(GL_TEXTURE6);
 
-							//cameraLocationUniform->SetValue(vec3(viewMatrices));
-							diffuseColorUniform->SetValue(material->diffuseColor);
-							specularColorUniform->SetValue(material->specularColor);
-							ambientColorUniform->SetValue(material->ambientColor);
-							specularHardnessUniform->SetValue(material->specularHardness);
-							specularIntensityUniform->SetValue(material->specularIntensity);
+							baseColorUniform->SetValue(material->baseColor);
+							roughnessUniform->SetValue(material->roughness);
+							metalnessUniform->SetValue(material->metalness);
+							aoUniform->SetValue(material->ao);
+							normalScaleUniform->SetValue(material->normalScale);
 							displacementScaleUniform->SetValue(material->displacementScale);
 
 							glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
@@ -260,19 +277,27 @@ namespace Atlas {
 
 					}
 
-					impostor->diffuseTexture.Copy(*framebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0),
-						0, 0, 0, 0, 0, (int32_t)i, impostor->resolution, impostor->resolution, 1);
-					impostor->normalTexture.Copy(*framebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT1),
-						0, 0, 0, 0, 0, (int32_t)i, impostor->resolution, impostor->resolution, 1);
-					impostor->specularTexture.Copy(*framebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT2),
-						0, 0, 0, 0, 0, (int32_t)i, impostor->resolution, impostor->resolution, 1);
-
 				}
 
-				// Remove macro again and recompile
-				shader->RemoveMacro("WORLD_TRANSFORM");
-				shader->Compile();
+				impostor->baseColorTexture.Copy(*framebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT0),
+					0, 0, 0, 0, 0, (int32_t)i, impostor->resolution, impostor->resolution, 1);
+				// Just use the geometry normals for now. We might add support for normal maps later.
+				// For now we just assume that the geometry itself has enough detail when viewed from distance
+				impostor->normalTexture.Copy(*framebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT2),
+					0, 0, 0, 0, 0, (int32_t)i, impostor->resolution, impostor->resolution, 1);
+				impostor->roughnessMetalnessAoTexture.Copy(*framebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT3),
+					0, 0, 0, 0, 0, (int32_t)i, impostor->resolution, impostor->resolution, 1);
 
+			}
+
+			// Iterate through shaders and remove macro
+			for (auto& renderListBatchesKey : renderList.orderedRenderBatches) {
+				auto shaderID = renderListBatchesKey.first;
+				auto renderListBatches = renderListBatchesKey.second;
+
+				auto shader = shaderBatch.GetShader(shaderID);
+				shader->RemoveMacro("GENERATE_IMPOSTOR");
+				shader->Compile();
 			}
 
 			renderList.Clear();
@@ -286,8 +311,8 @@ namespace Atlas {
 
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
-			shaderBatch.AddStage(AE_VERTEX_STAGE, vertexPath);
-			shaderBatch.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+			shaderBatch.AddStage(AE_VERTEX_STAGE, "deferred/geometry.vsh");
+			shaderBatch.AddStage(AE_FRAGMENT_STAGE, "deferred/geometry.fsh");
 
 		}
 

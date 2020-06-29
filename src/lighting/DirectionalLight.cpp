@@ -8,9 +8,6 @@ namespace Atlas {
 
             direction = vec3(0.0f, -1.0f, 0.0f);
 
-            color = vec3(1.0f);
-            ambient = 0.1f;
-
             shadow = nullptr;
             volumetric = nullptr;
 
@@ -28,6 +25,7 @@ namespace Atlas {
 				delete shadow;
 
             shadow = new Shadow(distance, bias, resolution, glm::min(cascadeCount, MAX_SHADOW_CASCADE_COUNT), splitCorrection);
+			shadow->bias = 3.0f;
 
             useShadowCenter = false;
 
@@ -41,6 +39,7 @@ namespace Atlas {
 				delete shadow;
 
             shadow = new Shadow(distance, bias, resolution);
+			shadow->bias = 3.0f;
 
             useShadowCenter = true;
 
@@ -49,6 +48,8 @@ namespace Atlas {
             shadow->components[0].nearDistance = 0.0f;
             shadow->components[0].farDistance = distance;
             shadow->components[0].projectionMatrix = orthoProjection;
+            shadow->components[0].frustumMatrix = orthoProjection;
+            shadow->components[0].terrainFrustumMatrix = orthoProjection;
             shadow->components[0].viewMatrix = glm::lookAt(centerPoint, centerPoint + direction, vec3(0.0f, 1.0f, 0.0f));
 
         }
@@ -84,9 +85,9 @@ namespace Atlas {
 
         }
 
-        void DirectionalLight::AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor) {
+        void DirectionalLight::AddVolumetric(int32_t width, int32_t height, int32_t sampleCount) {
 
-            volumetric = new Volumetric(width, height, sampleCount, scattering, scatteringFactor);
+            volumetric = new Volumetric(width, height, sampleCount);
 
         }
 

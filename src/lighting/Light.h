@@ -36,8 +36,8 @@ namespace Atlas {
 			int32_t type;
 			int32_t mobility;
 
-			vec3 color;
-			float ambient;
+			vec3 color = vec3(1.0f);
+			float intensity = 1.0f;
 
 			std::string name;
 

@@ -2,7 +2,7 @@
 #define AE_DIRECTIONALVOLUMETRICRENDERER_H
 
 #include "../System.h"
-#include "../Kernel.h"
+#include "../Filter.h"
 #include "Renderer.h"
 
 namespace Atlas {
@@ -27,7 +27,7 @@ namespace Atlas {
 
 			Framebuffer framebuffer;
 
-			Kernel blurKernel;
+			Filter blurFilter;
 
 			Shader::Shader volumetricShader;
 			Shader::Shader bilateralBlurShader;
@@ -36,7 +36,6 @@ namespace Atlas {
 			Shader::Uniform* lightDirection = nullptr;
 			Shader::Uniform* inverseProjectionMatrix = nullptr;
 			Shader::Uniform* sampleCount = nullptr;
-			Shader::Uniform* scattering = nullptr;
 			Shader::Uniform* framebufferResolution = nullptr;
 
 			Shader::Uniform* shadowCascadeCount = nullptr;

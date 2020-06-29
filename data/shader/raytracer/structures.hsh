@@ -20,8 +20,10 @@ struct Ray {
 	vec3 direction;
 	vec3 inverseDirection;
 	
-	vec3 accumColor;
-	vec3 mask;
+	vec3 color;
+	vec3 throughput;
+
+	//int mask;
 	
 };
 
@@ -81,9 +83,9 @@ struct Texture {
 
 struct Material {
 	
-	float diffR;
-	float diffG;
-	float diffB;
+	float baseR;
+	float baseG;
+	float baseB;
 	
 	float emissR;
 	float emissG;
@@ -91,16 +93,19 @@ struct Material {
 	
 	float opacity;
 	
-	float specularIntensity;
-	float specularHardness;
+	float roughness;
+	float metalness;
+	float ao;
 	
 	float normalScale;
 	
 	int invertUVs;
 	
-	Texture diffuseTexture;
+	Texture baseColorTexture;
 	Texture normalTexture;
-	Texture specularTexture;
+	Texture roughnessTexture;
+	Texture metalnessTexture;
+	Texture aoTexture;
 
 };
 
@@ -108,8 +113,8 @@ struct Material {
 
 struct BVHNode {
 	
+	uint data0;
 	uint data1;
-	uint data2;
 	AABB aabb;
 	
 };
@@ -120,7 +125,7 @@ struct Light {
 	vec3 direction;
 	
     vec3 color;
-	float ambient;
+	float intensity;
 	
 	float scatteringFactor;
 		

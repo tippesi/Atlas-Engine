@@ -1,9 +1,9 @@
 #define SHADOW_FILTER_1x1
 
-#include "../common/convert"
-#include "../structures"
-#include "../shadow"
-#include "../fog"
+#include <../common/convert.hsh>
+#include <../structures>
+#include <../shadow.hsh>
+#include <../fog.hsh>
 
 // Lighting based on Island Demo (NVIDIA SDK 11)
 
@@ -17,15 +17,20 @@ layout (binding = 4) uniform sampler2D refractionTexture;
 layout (binding = 5) uniform sampler2D depthTexture;
 layout (binding = 7) uniform sampler2D volumetricTexture;
 layout (binding = 10) uniform sampler2D rippleTexture;
+layout(binding = 9) uniform sampler2D terrainHeight;
 
 in vec4 fClipSpace;
 in vec3 fPosition;
 in vec3 fModelCoord;
+in vec3 fOriginalCoord;
 in vec2 fTexCoord;
 in float waterDepth;
 in float shoreScaling;
 in vec3 ndcCurrent;
 in vec3 ndcLast;
+in vec3 normalShoreWave;
+in float foamShoreWave;
+in float breakingShoreWave;
 
 uniform float time;
 
@@ -38,6 +43,9 @@ uniform vec2 jitterLast;
 uniform vec2 jitterCurrent;
 
 uniform bool hasRippleTexture;
+
+uniform vec3 terrainTranslation;
+uniform float terrainSideLength;
 
 uniform Light light;
 
@@ -61,19 +69,19 @@ void main() {
 	
 	// Retrieve precalculated normals and wave folding information
 	vec3 fNormal = normalize(2.0 * texture(normalMap, fTexCoord).rgb - 1.0);
-	float fold = 2.0 * texture(normalMap, fTexCoord).a - 1.0;
-	
-	fNormal = fNormal;
+	float fold = texture(normalMap, fTexCoord).a;
 	
 	vec2 ndcCoord = 0.5 * (fClipSpace.xy / fClipSpace.w) + 0.5;
 	float clipDepth = texture(depthTexture, ndcCoord).r;
 	
 	vec3 depthPos = ConvertDepthToViewSpace(clipDepth, ndcCoord);
 	
-	float shadowFactor = max(CalculateCascadedShadow(light, fPosition, fNormal, 1.0), light.ambient);
+	float shadowFactor = max(CalculateCascadedShadow(light, fPosition, fNormal, 1.0), 0.01);
 	
+	fNormal = mix(normalShoreWave, fNormal, shoreScaling);
+
 	// Create TBN matrix for normal mapping
-	vec3 norm = mix(vec3(0.0, 1.0, 0.0), fNormal, shoreScaling);
+	vec3 norm = fNormal;
 	vec3 tang = vec3(1.0, 0.0, 0.0);
 	tang.y = -((norm.x*tang.x) / norm.y) - ((norm.z*tang.z) / norm.y);
 	tang = normalize(tang);
@@ -91,7 +99,7 @@ void main() {
 	}
 	
 	// Scale ripples based on actual (not view) depth of water
-	float rippleScaling = clamp(1.0 - shoreScaling, 0.2, 0.8);
+	float rippleScaling = clamp(1.0 - shoreScaling, 0.2, 0.5);
 	norm = mix(fNormal, norm, rippleScaling);
 
 	vec3 eyeDir = normalize(fModelCoord - cameraLocation);
@@ -108,12 +116,12 @@ void main() {
 	// Reflection ray goes nearly below horizon
 	if (reflectionVec.y < 0.2) {
 		// Scale down fresnel based on reflection y component (to avoid secondary
-		// reflection vectors)
-		fresnel = mix(fresnel, 0.2, (0.1 - reflectionVec.y) / (0.1 - 0.4));
+		// reflection vectors)		
+		fresnel = mix(fresnel, 0.2, (0.2 - reflectionVec.y) / (0.2 + 0.4));
 	}
 
 	reflectionVec.y = max(0.0, reflectionVec.y);
-
+	
 	// Calculate sun spot
 	float specularFactor = shadowFactor * fresnel * pow(max(dot(reflectionVec,
 	 	-light.direction), 0.0), specularPower);
@@ -161,12 +169,25 @@ void main() {
 	color += scatterColor * scatterFactor;
 	
 	// Calculate foam based on folding of wave and fade it out near shores
-	float foam = clamp(1.0 * (-fold + 0.6 - max(0.0, 1.0 - shoreScaling)), 0.0, 1.0);
-	color += vec3(foam);
+	float foam = clamp(fold - max(0.0, 1.0 - shoreScaling), 0.0, 1.0);
+	foam += foamShoreWave;
+	foam = min(foam, 1.0);
+	color += vec3(mix(scatterColor * 0.1, vec3(1.0), 
+		texture(foamTexture, fOriginalCoord.xz / 8.0).r) * foam);
+
+	vec3 breakingColor = mix(vec3(1.0),
+		vec3(1.0) * max(0.0, nDotL)* shadowFactor, 0.7);
+	color = mix(color, breakingColor, breakingShoreWave);
 	
 	color = applyFog(color, length(fPosition), 
 		cameraLocation, eyeDir, -light.direction,
 		light.color);
+
+	vec2 terrainTex = (vec2(fModelCoord.xz) - vec2(terrainTranslation.xz))
+		/ terrainSideLength;
+
+	//color = vec3(texture(terrainHeight, terrainTex).ba, 0.0);
+	//color = vec3(shoreScaling);
 
 	// Calculate velocity
 	vec2 ndcL = ndcLast.xy / ndcLast.z;

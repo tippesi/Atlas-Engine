@@ -2,12 +2,12 @@
 
 #include "../Clock.h"
 
+#include "../lighting/DirectionalLight.h"
+#include "../lighting/PointLight.h"
+
 namespace Atlas {
 
 	namespace Renderer {
-
-		std::string ShadowRenderer::vertexPath = "shadowmapping.vsh";
-		std::string ShadowRenderer::fragmentPath = "shadowmapping.fsh";
 
 		Shader::ShaderBatch ShadowRenderer::shaderBatch;
 		std::mutex ShadowRenderer::shaderBatchMutex;
@@ -25,7 +25,6 @@ namespace Atlas {
 			invertUVsUniform = shaderBatch.GetUniform("invertUVs");
 
 		}
-
 
 		void ShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
@@ -54,6 +53,17 @@ namespace Atlas {
 				auto componentCount = light->GetShadow()->longRange ? 
 					light->GetShadow()->componentCount - 1 : 
 					light->GetShadow()->componentCount;
+
+				vec3 lightLocation;
+
+				if (light->type == AE_DIRECTIONAL_LIGHT) {
+					auto directionLight = static_cast<Lighting::DirectionalLight*>(light);
+					lightLocation = 1000000.0f * -normalize(directionLight->direction);
+				}
+				else if (light->type == AE_POINT_LIGHT) {
+					auto pointLight = static_cast<Lighting::PointLight*>(light);
+					lightLocation = pointLight->location;
+				}
 
 				for (int32_t i = 0; i < componentCount; i++) {
 
@@ -92,12 +102,17 @@ namespace Atlas {
 							}
 
 							auto mesh = actorBatch->GetObject();
-							auto buffer = renderList.actorBatchBuffers[mesh];
+							auto key = renderList.actorBatchBuffers.find(mesh);
 
-							if (!buffer)
+							if (key == renderList.actorBatchBuffers.end())
 								continue;
 
-							auto actorCount = buffer->GetElementCount();
+							auto buffers = key->second;
+
+							if (!buffers.currentMatrices)
+								continue;
+
+							auto actorCount = buffers.currentMatrices->GetElementCount();
 
 							mesh->Bind();
 
@@ -124,10 +139,8 @@ namespace Atlas {
 
 								auto material = subData->material;
 
-								if (material->HasDiffuseMap()) {
-									if (material->diffuseMap->channels == 4) {
-										material->diffuseMap->Bind(GL_TEXTURE0);
-									}
+								if (material->HasOpacityMap()) {
+									material->opacityMap->Bind(GL_TEXTURE0);
 								}
 
 								glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
@@ -138,6 +151,9 @@ namespace Atlas {
 						}
 
 					}
+
+					impostorRenderer.Render(viewport, target, &renderList, component->viewMatrix,
+						component->projectionMatrix, lightLocation);
 
 					renderList.Clear();
 
@@ -151,8 +167,8 @@ namespace Atlas {
 
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
-			shaderBatch.AddStage(AE_VERTEX_STAGE, vertexPath);
-			shaderBatch.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+			shaderBatch.AddStage(AE_VERTEX_STAGE, "shadowmapping.vsh");
+			shaderBatch.AddStage(AE_FRAGMENT_STAGE, "shadowmapping.fsh");
 
 		}
 

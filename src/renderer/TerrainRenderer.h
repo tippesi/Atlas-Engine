@@ -13,12 +13,10 @@ namespace Atlas {
 		public:
 			TerrainRenderer();
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {}
 
-			static std::string vertexPath;
-			static std::string tessControlPath;
-			static std::string tessEvalPath;
-			static std::string fragmentPath;
+			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+				Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap);
 
 		private:
 			void GetUniforms();
@@ -26,10 +24,16 @@ namespace Atlas {
 			void GetDistanceUniforms();
 
 			struct TerrainMaterial {
-				float specularIntensity;
-				float specularHardness;
+				uint32_t idx;
+				
+				float roughness;
+				float metalness;
+				float ao;
 				float displacementScale;
 				float normalScale;
+
+				float padding0;
+				float padding1;
 			};
 
 			Shader::Shader shader;

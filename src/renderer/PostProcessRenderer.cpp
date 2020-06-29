@@ -7,13 +7,10 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string PostProcessRenderer::vertexPath = "postprocessing.vsh";
-		std::string PostProcessRenderer::fragmentPath = "postprocessing.fsh";
-
 		PostProcessRenderer::PostProcessRenderer() {
 
-			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+			shader.AddStage(AE_VERTEX_STAGE, "postprocessing.vsh");
+			shader.AddStage(AE_FRAGMENT_STAGE, "postprocessing.fsh");
 
 			shader.Compile();
 
@@ -64,7 +61,7 @@ namespace Atlas {
 
 			hdrTextureResolution->SetValue(vec2(resolution));
 
-			exposure->SetValue(postProcessing->exposure);
+			exposure->SetValue(camera->exposure);
 			saturation->SetValue(postProcessing->saturation);
 			timeInMilliseconds->SetValue(1000.0f * Clock::Get());
 

@@ -93,31 +93,35 @@ namespace Atlas {
 				vertex[i * 3 + 2] = v.z;
 
 				if (hasNormals) {
-					auto n = vec4(normal[i * 3], normal[i * 3 + 1],
-						normal[i * 3 + 2], 0.0f);
+					auto n = vec4(normal[i * 4], normal[i * 4 + 1],
+						normal[i * 4 + 2], 0.0f);
 
 					n = vec4(normalize(vec3(matrix * n)), 0.0f);
 
-					normal[i * 3] = n.x;
-					normal[i * 3 + 1] = n.y;
-					normal[i * 3 + 2] = n.z;
+					normal[i * 4] = n.x;
+					normal[i * 4 + 1] = n.y;
+					normal[i * 4 + 2] = n.z;
 				}
 				if (hasTangents) {
-					auto t = vec4(tangent[i * 3], tangent[i * 3 + 1],
-						tangent[i * 3 + 2], 0.0f);
+					auto t = vec4(tangent[i * 4], tangent[i * 4 + 1],
+						tangent[i * 4 + 2], 0.0f);
 
 					t = vec4(normalize(vec3(matrix * t)), 0.0f);
 
-					tangent[i * 3] = t.x;
-					tangent[i * 3 + 1] = t.y;
-					tangent[i * 3 + 2] = t.z;
+					tangent[i * 4] = t.x;
+					tangent[i * 4 + 1] = t.y;
+					tangent[i * 4 + 2] = t.z;
 				}
 
 			}
 
 			vertices.Set(vertex);
-			normals.Set(normal);
-			tangents.Set(tangent);
+
+			if (hasNormals)
+				normals.Set(normal);
+
+			if(hasTangents)
+				tangents.Set(tangent);
 
 			aabb = Volume::AABB(min, max);
 

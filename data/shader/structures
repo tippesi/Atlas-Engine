@@ -29,7 +29,7 @@ struct Light {
 	vec3 direction;
 	
     vec3 color;
-	float ambient;
+	float intensity;
 	
 	float scatteringFactor;
 		

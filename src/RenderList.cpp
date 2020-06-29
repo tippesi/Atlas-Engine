@@ -69,10 +69,13 @@ namespace Atlas {
 			if (!mesh->castShadow && type == AE_SHADOW_CONFIG)
 				continue;
 
-			std::vector<mat4> actorMatrices;
+			std::vector<mat4> currentActorMatrices;
+			std::vector<mat4> lastActorMatrices;
 			std::vector<mat4> impostorMatrices;
 
-			auto sqdDistance = powf(mesh->impostorDistance, 2.0f);
+			auto typeDistance = type == AE_SHADOW_CONFIG ? 
+				mesh->impostorShadowDistance : mesh->impostorDistance;
+			auto sqdDistance = powf(typeDistance, 2.0f);
 
 			for (auto actor : actorBatch->actors) {
 				auto distance = glm::distance2(
@@ -80,28 +83,37 @@ namespace Atlas {
 					cameraLocation);
 
 				if (distance < sqdDistance || !hasImpostor) {
-					actorMatrices.push_back(actor->globalMatrix);
+					currentActorMatrices.push_back(actor->globalMatrix);
+					lastActorMatrices.push_back(actor->lastGlobalMatrix);
 				}
 				else {
 					impostorMatrices.push_back(actor->globalMatrix);
 				}
 			}
 
-			if (actorMatrices.size()) {
-				Buffer::VertexBuffer* buffer = nullptr;
+			if (currentActorMatrices.size()) {
+				ActorBatchBuffer buffers;
 				auto key = actorBatchBuffers.find(mesh);
 				if (key == actorBatchBuffers.end()) {
-					buffer = new Buffer::VertexBuffer(AE_FLOAT, 16,
-						sizeof(mat4), actorMatrices.size(), actorMatrices.data(),
+					buffers.currentMatrices = new Buffer::VertexBuffer(AE_FLOAT, 16,
+						sizeof(mat4), currentActorMatrices.size(), currentActorMatrices.data(),
 						AE_BUFFER_DYNAMIC_STORAGE);
-					actorBatchBuffers[mesh] = buffer;
+					buffers.lastMatrices = new Buffer::VertexBuffer(AE_FLOAT, 16,
+						sizeof(mat4), lastActorMatrices.size(), lastActorMatrices.data(),
+						AE_BUFFER_DYNAMIC_STORAGE);
+					actorBatchBuffers[mesh] = buffers;
 				}
 				else {
-					buffer = key->second;
-					buffer->SetSize(actorMatrices.size(), actorMatrices.data());
+					buffers = key->second;
+					buffers.currentMatrices->SetSize(currentActorMatrices.size(),
+						currentActorMatrices.data());
+					buffers.lastMatrices->SetSize(lastActorMatrices.size(),
+						lastActorMatrices.data());
 				}				
 				actorBatch->GetObject()->vertexArray.AddInstancedComponent(4,
-					buffer);
+					buffers.currentMatrices);
+				actorBatch->GetObject()->vertexArray.AddInstancedComponent(8,
+					buffers.lastMatrices);
 			}
 
 			if (impostorMatrices.size()) {
@@ -127,17 +139,20 @@ namespace Atlas {
 
 		for (auto& key : actorBatches) {
 			auto buffer = actorBatchBuffers.find(key.first);
-			if (!buffer->second)
+			if (!buffer->second.currentMatrices)
 				continue;
-			if (buffer != actorBatchBuffers.end() && buffer->second->GetSize() > 0)
+			if (buffer != actorBatchBuffers.end() && buffer->second.currentMatrices->GetSize() > 0) {
 				key.first->vertexArray.RemoveInstanceComponent(4);
+				key.first->vertexArray.RemoveInstanceComponent(8);
+			}
 			delete key.second;
 		}
 
 		for (auto& key : actorBatchBuffers) {
-			if (!key.second)
+			if (!key.second.currentMatrices)
 				continue;
-			key.second->SetSize(0);
+			key.second.currentMatrices->SetSize(0);
+			key.second.lastMatrices->SetSize(0);
 		}
 
 		for (auto& key : impostorBuffers) {

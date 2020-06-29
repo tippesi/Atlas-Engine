@@ -31,6 +31,8 @@ namespace Atlas {
 			void Update();
 
 			void SetValue(int32_t value);
+			
+			void SetValue(uint32_t value);
 
 			void SetValue(float value);
 
@@ -53,6 +55,8 @@ namespace Atlas {
 			void SetValue(ivec2 value);
 
 			void SetValue(int32_t *value, int32_t length);
+
+			void SetValue(uint32_t *value, int32_t length);
 
 			void SetValue(float *value, int32_t length);
 

@@ -21,7 +21,7 @@ namespace Atlas {
 		}
 
 		void DirectionalLightRenderer::Render(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene) {
+				Camera* camera, Scene::Scene* scene, Texture::Texture2D* dfgTexture) {
 
 			shader.Bind();
 
@@ -38,6 +38,30 @@ namespace Atlas {
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3)->Bind(GL_TEXTURE3);
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT4)->Bind(GL_TEXTURE4);
 			target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE5);
+			dfgTexture->Bind(GL_TEXTURE9);
+
+			if (scene->sky.probe) {
+				scene->sky.probe->cubemap.Bind(GL_TEXTURE10);
+			}
+
+			if (scene->sky.probe) {
+				scene->sky.probe->filteredDiffuse.Bind(GL_TEXTURE11);
+			}
+
+			volumeMin->SetValue(vec3(0.0));
+			volumeMax->SetValue(vec3(0.0));
+
+			if (scene->irradianceVolume) {
+				if (scene->irradianceVolume->bounceCount) {
+					scene->irradianceVolume->irradianceArray.Bind(GL_TEXTURE12);
+					scene->irradianceVolume->momentsArray.Bind(GL_TEXTURE13);
+					volumeMin->SetValue(scene->irradianceVolume->aabb.min);
+					volumeMax->SetValue(scene->irradianceVolume->aabb.max);
+					volumeProbeCount->SetValue(scene->irradianceVolume->probeCount);
+					volumeIrradianceRes->SetValue(scene->irradianceVolume->irrRes);
+					volumeMomentsRes->SetValue(scene->irradianceVolume->momRes);
+				}
+			}
 
 			auto lights = scene->GetLights();
 
@@ -54,9 +78,7 @@ namespace Atlas {
 
 				lightDirection->SetValue(direction);
 				lightColor->SetValue(directionalLight->color);
-				lightAmbient->SetValue(directionalLight->ambient);
-
-				scatteringFactor->SetValue(directionalLight->GetVolumetric() ? directionalLight->GetVolumetric()->scatteringFactor : 0.0f);
+				lightIntensity->SetValue(directionalLight->intensity);
 
 				if (light->GetVolumetric()) {
 					glViewport(0, 0, directionalLight->GetVolumetric()->map.width, directionalLight->GetVolumetric()->map.height);
@@ -134,7 +156,7 @@ namespace Atlas {
 
 			lightDirection = shader.GetUniform("light.direction");
 			lightColor = shader.GetUniform("light.color");
-			lightAmbient = shader.GetUniform("light.ambient");
+			lightIntensity = shader.GetUniform("light.intensity");
 
 			scatteringFactor = shader.GetUniform("light.scatteringFactor");
 
@@ -155,6 +177,12 @@ namespace Atlas {
 			fogHeight = shader.GetUniform("fogHeight");
 			fogColor = shader.GetUniform("fogColor");
 			fogScatteringPower = shader.GetUniform("fogScatteringPower");
+
+			volumeMin = shader.GetUniform("volumeMin");
+			volumeMax = shader.GetUniform("volumeMax");
+			volumeProbeCount = shader.GetUniform("volumeProbeCount");
+			volumeIrradianceRes = shader.GetUniform("volumeIrradianceRes");
+			volumeMomentsRes = shader.GetUniform("volumeMomentsRes");
 
 		}
 

@@ -4,26 +4,21 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string TerrainRenderer::vertexPath = "terrain/terrain.vsh";
-		std::string TerrainRenderer::tessControlPath = "terrain/terrain.tcsh";
-		std::string TerrainRenderer::tessEvalPath = "terrain/terrain.tesh";
-		std::string TerrainRenderer::fragmentPath = "terrain/terrain.fsh";
-
 		TerrainRenderer::TerrainRenderer() {
 
-			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-			shader.AddStage(AE_TESSELLATION_CONTROL_STAGE, tessControlPath);
-			shader.AddStage(AE_TESSELLATION_EVALUATION_STAGE, tessEvalPath);
-			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+			shader.AddStage(AE_VERTEX_STAGE, "terrain/terrain.vsh");
+			shader.AddStage(AE_TESSELLATION_CONTROL_STAGE, "terrain/terrain.tcsh");
+			shader.AddStage(AE_TESSELLATION_EVALUATION_STAGE, "terrain/terrain.tesh");
+			shader.AddStage(AE_FRAGMENT_STAGE, "terrain/terrain.fsh");
 
 			shader.Compile();
 
 			GetUniforms();
 
-			distanceShader.AddStage(AE_VERTEX_STAGE, vertexPath);
-			distanceShader.AddStage(AE_TESSELLATION_CONTROL_STAGE, tessControlPath);
-			distanceShader.AddStage(AE_TESSELLATION_EVALUATION_STAGE, tessEvalPath);
-			distanceShader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+			distanceShader.AddStage(AE_VERTEX_STAGE, "terrain/terrain.vsh");
+			distanceShader.AddStage(AE_TESSELLATION_CONTROL_STAGE, "terrain/terrain.tcsh");
+			distanceShader.AddStage(AE_TESSELLATION_EVALUATION_STAGE, "terrain/terrain.tesh");
+			distanceShader.AddStage(AE_FRAGMENT_STAGE, "terrain/terrain.fsh");
 
 			distanceShader.AddMacro("DISTANCE");
 
@@ -37,7 +32,8 @@ namespace Atlas {
 
 		}
 
-		void TerrainRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+		void TerrainRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+			Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap) {
 
 			if (!scene->terrain)
 				return;
@@ -48,7 +44,7 @@ namespace Atlas {
 
 			std::vector<Terrain::TerrainNode*> nodes;
 			std::vector<Terrain::TerrainNode*> distanceNodes;
-			
+
 			for (auto node : terrain->renderList) {
 				if (node->cell->LoD == terrain->LoDCount - 1)
 					nodes.push_back(node);
@@ -62,12 +58,14 @@ namespace Atlas {
 
 			for (size_t i = 0; i < materials.size(); i++) {
 				if (materials[i]) {
-					terrainMaterials[i].specularIntensity = materials[i]->specularIntensity;
-					terrainMaterials[i].specularHardness = materials[i]->specularHardness;
+					terrainMaterials[i].idx = (uint32_t)materialMap[materials[i]];
+					terrainMaterials[i].roughness = materials[i]->roughness;
+					terrainMaterials[i].metalness = materials[i]->metalness;
+					terrainMaterials[i].ao = materials[i]->ao;
 					terrainMaterials[i].displacementScale = materials[i]->displacementScale;
 					terrainMaterials[i].normalScale = materials[i]->normalScale;
 				}
-				
+
 			}
 
 			terrainMaterialBuffer.SetData(terrainMaterials.data(), 0, terrainMaterials.size());
@@ -77,9 +75,11 @@ namespace Atlas {
 			terrainMaterialBuffer.BindBase(0);
 			terrain->vertexArray.Bind();
 
-			terrain->storage->diffuseMaps.Bind(GL_TEXTURE3);
-			terrain->storage->normalMaps.Bind(GL_TEXTURE4);
-			terrain->storage->displacementMaps.Bind(GL_TEXTURE5);
+			terrain->storage->baseColorMaps.Bind(GL_TEXTURE3);
+			terrain->storage->roughnessMaps.Bind(GL_TEXTURE4);
+			terrain->storage->aoMaps.Bind(GL_TEXTURE5);
+			terrain->storage->normalMaps.Bind(GL_TEXTURE6);
+			terrain->storage->displacementMaps.Bind(GL_TEXTURE7);
 
 			viewMatrix->SetValue(camera->viewMatrix);
 			projectionMatrix->SetValue(camera->projectionMatrix);
@@ -93,7 +93,7 @@ namespace Atlas {
 			tessellationShift->SetValue(terrain->tessellationShift);
 			maxTessellationLevel->SetValue(terrain->maxTessellationLevel);
 
-			displacementDistance->SetValue(terrain->displacementDistance);		
+			displacementDistance->SetValue(terrain->displacementDistance);
 
 			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
 			jitterLast->SetValue(camera->GetLastJitter());

@@ -1,14 +1,8 @@
-#include "Kernel.h"
+#include "Filter.h"
 
 namespace Atlas {
 
-	Kernel::Kernel() {
-
-		changed = false;
-
-	}
-
-	void Kernel::CalculateGaussianFilter(float sigma, uint32_t size) {
+	void Filter::CalculateGaussianFilter(float sigma, uint32_t size) {
 
 		if (size % 2 == 0)
 			return;
@@ -37,10 +31,11 @@ namespace Atlas {
 		}
 
 		changed = true;
+		separable = true;
 
 	}
 
-	void Kernel::CalculateBoxFilter(uint32_t size) {
+	void Filter::CalculateBoxFilter(uint32_t size) {
 
 		if (size % 2 == 0)
 			return;
@@ -61,31 +56,32 @@ namespace Atlas {
 		}
 
 		changed = true;
+		separable = true;
 
 	}
 
-	void Kernel::Set(std::vector<std::vector<float>> &weights, std::vector<std::vector<ivec2>> &offsets) {
+	void Filter::Set(std::vector<std::vector<float>> &weights, std::vector<std::vector<ivec2>> &offsets, bool separable) {
 
 		this->weights = weights;
 		this->offsets = offsets;
+		this->separable = separable;
 
 		changed = true;
 
 	}
 
-	void Kernel::Get(std::vector<std::vector<float>> *&weights, std::vector<std::vector<ivec2>> *&offsets) {
+	void Filter::Get(std::vector<std::vector<float>>* weights, std::vector<std::vector<ivec2>>* offsets) const {
 
-		weights = &this->weights;
-		offsets = &this->offsets;
+		*weights = this->weights;
+		*offsets = this->offsets;
 
 	}
 
-	void Kernel::GetLinearized(std::vector<float> *&weights, std::vector<float> *&offsets) {
-
-		weights = &weightsLinearized;
-		offsets = &offsetsLinearized;
+	void Filter::GetLinearized(std::vector<float>* weights, std::vector<float>* offsets, bool bilinearReduction) {
 
 		if (!changed) {
+			*weights = weightsLinearized;
+			*offsets = offsetsLinearized;
 			return;
 		}
 
@@ -108,27 +104,46 @@ namespace Atlas {
 		weightsLinearized.resize(linearizedSize);
 		offsetsLinearized.resize(linearizedSize);
 
-		// Now weight the offsets in such a way that we only need half of the weights/offsets
-		// This is just useful when sampling from a texture that supports bilinear sampling.
-		weightsLinearized[0] = oneDimensionalWeights[arrayOffset - 1];
-		offsetsLinearized[0] = oneDimensionalOffsets[arrayOffset - 1];
+		if (bilinearReduction) {
 
-		int32_t index = 1;
+			// Now weight the offsets in such a way that we only need half of the weights/offsets
+			// This is just useful when sampling from a texture that supports bilinear sampling.
+			weightsLinearized[0] = oneDimensionalWeights[arrayOffset - 1];
+			offsetsLinearized[0] = oneDimensionalOffsets[arrayOffset - 1];
 
-		for (uint32_t x = arrayOffset; x < size; x += 2) {
-			float linearWeight = oneDimensionalWeights[x] + oneDimensionalWeights[x + 1];
-			float linearOffset = (oneDimensionalWeights[x] * oneDimensionalOffsets[x] +
-								  oneDimensionalWeights[x + 1] * oneDimensionalOffsets[x + 1]) / linearWeight;
-			weightsLinearized[index] = linearWeight;
-			offsetsLinearized[index] = linearOffset;
-			index++;
+			int32_t index = 1;
+
+			for (uint32_t x = arrayOffset; x < size; x += 2) {
+				float linearWeight = oneDimensionalWeights[x] + oneDimensionalWeights[x + 1];
+				float linearOffset = (oneDimensionalWeights[x] * oneDimensionalOffsets[x] +
+					oneDimensionalWeights[x + 1] * oneDimensionalOffsets[x + 1]) / linearWeight;
+				weightsLinearized[index] = linearWeight;
+				offsetsLinearized[index] = linearOffset;
+				index++;
+			}
+
 		}
+		else {
+
+			weightsLinearized = oneDimensionalWeights;
+			offsetsLinearized = oneDimensionalOffsets;
+
+		}
+
+		*weights = weightsLinearized;
+		*offsets = offsetsLinearized;
 
 		changed = false;
 
 	}
 
-	float Kernel::Gaussian(float x, float y, float mean, float sigma) {
+	bool Filter::IsSeparable() const {
+
+		return separable;
+
+	}
+
+	float Filter::Gaussian(float x, float y, float mean, float sigma) {
 
 		return expf(-0.5f * (powf((x - mean) / sigma, 2.0f) + powf((y - mean) / sigma, 2.0f))) /
 			   (2.0f * 3.141592643f * sigma * sigma);

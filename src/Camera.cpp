@@ -28,7 +28,7 @@ namespace Atlas {
 
 		invViewMatrix = inverse(viewMatrix);
 
-		CalculateFrustum();
+		UpdateFrustum();
 
 	}
 
@@ -40,7 +40,7 @@ namespace Atlas {
 		unjitterdProjection = projectionMatrix;
 		invUnjitteredProjection = invProjectionMatrix;
 
-		CalculateFrustum();
+		UpdateFrustum();
 
 	}
 
@@ -61,7 +61,7 @@ namespace Atlas {
 
 		invProjectionMatrix = inverse(projectionMatrix);
 
-		CalculateFrustum();
+		UpdateFrustum();
 
 		jitterVector = jitter;
 		jitteredMatrix = projectionMatrix * viewMatrix;
@@ -122,7 +122,7 @@ namespace Atlas {
 
 	}
 
-	void Camera::CalculateFrustum() {
+	void Camera::UpdateFrustum() {
 
 		auto corners = GetFrustumCorners(nearPlane, farPlane);
 

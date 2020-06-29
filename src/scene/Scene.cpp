@@ -66,6 +66,46 @@ namespace Atlas {
 
 		}
 
+		std::vector<Mesh::Mesh*> Scene::GetMeshes() {
+
+			std::vector<Mesh::Mesh*> meshes;
+
+			// Not really efficient, but does the job
+			for (auto& key : meshMap) {
+				meshes.push_back(key.first);
+			}
+
+			return meshes;
+
+		}
+
+		std::vector<Material*> Scene::GetMaterials() {
+
+			std::vector<Material*> materials;
+
+			if (terrain) {
+				auto terrainMaterials = terrain->storage->GetMaterials();
+
+				for (auto material : terrainMaterials) {
+					if (!material)
+						continue;
+
+					materials.push_back(material);
+				}
+				
+			}
+
+			auto meshes = GetMeshes();
+
+			for (auto mesh : meshes) {
+				for (auto& material : mesh->data.materials) {
+					materials.push_back(&material);
+				}
+			}
+
+			return materials;
+
+		}
 	}
 
 }

@@ -23,38 +23,44 @@ namespace Atlas {
 
 		Material& operator=(const Material& that);
 
-		bool HasDiffuseMap() const;
+		bool HasBaseColorMap() const;
+		bool HasOpacityMap() const;
 		bool HasNormalMap() const;
-		bool HasSpecularMap() const;
+		bool HasRoughnessMap() const;
+		bool HasMetalnessMap() const;
+		bool HasAoMap() const;
 		bool HasDisplacementMap() const;
 
 		std::string name;
 
-		Texture::Texture2D* diffuseMap = nullptr;
+		Texture::Texture2D* baseColorMap = nullptr;
+		Texture::Texture2D* opacityMap = nullptr;
 		Texture::Texture2D* normalMap = nullptr;
-		Texture::Texture2D* specularMap = nullptr;
+		Texture::Texture2D* roughnessMap = nullptr;
+		Texture::Texture2D* metalnessMap = nullptr;
+		Texture::Texture2D* aoMap = nullptr;
 		Texture::Texture2D* displacementMap = nullptr;
 
-		vec3 diffuseColor = vec3(1.0f);
-		vec3 specularColor = vec3(1.0f);
-		vec3 ambientColor = vec3(1.0f);
+		vec3 baseColor = vec3(1.0f);
 		vec3 emissiveColor = vec3(0.0f);
+		vec3 transmissiveColor = vec3(0.0f);
 
 		float opacity = 1.0f;
 
-		float specularHardness = 1.0f;
-		float specularIntensity = 0.0f;
+		float roughness = 1.0f;
+		float metalness = 0.0f;
+		float ao = 1.0f;
 
 		float normalScale = 1.0f;
 		float displacementScale = 1.0f;
 
-		std::string diffuseMapPath;
+		std::string baseColorMapPath;
+		std::string opacityMapPath;
 		std::string normalMapPath;
-		std::string specularMapPath;
+		std::string roughnessMapPath;
+		std::string metalnessMapPath;
+		std::string aoMapPath;
 		std::string displacementMapPath;
-
-		// Rendering index
-		int32_t idx;
 
 	private:
 		void DeepCopy(const Material& that);

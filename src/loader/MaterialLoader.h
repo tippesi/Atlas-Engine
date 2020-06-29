@@ -17,7 +17,11 @@ namespace Atlas {
 
             static void SaveMaterial(Material* material, std::string filename);
 
+			static Material* LoadMaterialForTerrain(std::string filename, int32_t mapResolution);
+
 		private:
+			static Material* LoadMaterialValues(std::ifstream& stream, int32_t& textureCount);
+
 			static std::string WriteVector(std::string prefix, vec3 vector);
 
 			static vec3 ReadVector(std::string line);

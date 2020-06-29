@@ -183,7 +183,7 @@ namespace Atlas {
 
         void Buffer::SetData(void *data, size_t offset, size_t length) {
 
-            if (mapped || (!dynamicStorage && immutable))
+            if (mapped || (!dynamicStorage && immutable) || !length || !data)
                 return;
 
             Bind();
@@ -200,7 +200,7 @@ namespace Atlas {
 
         void Buffer::SetDataMapped(void *data, size_t length) {
 
-            if (!mapped || !dynamicStorage)
+            if (!mapped || !dynamicStorage || !length || !data)
                 return;
 
             size_t copyLength = length * elementSize;

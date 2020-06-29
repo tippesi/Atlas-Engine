@@ -19,7 +19,10 @@ namespace Atlas {
 		public:
 			OpaqueRenderer();
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {}
+
+			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
+				Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap);
 
 			virtual void RenderImpostor(Viewport* viewport, Framebuffer* framebuffer, std::vector<mat4> viewMatrices,
 				mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor);
@@ -29,9 +32,6 @@ namespace Atlas {
 			static void AddConfig(Shader::ShaderConfig* config);
 
 			static void RemoveConfig(Shader::ShaderConfig* config);
-
-			static std::string vertexPath;
-			static std::string fragmentPath;
 
 		private:
 			RenderList renderList;
@@ -43,14 +43,13 @@ namespace Atlas {
 			Shader::Uniform* projectionMatrixUniform = nullptr;
 
 			Shader::Uniform* cameraLocationUniform = nullptr;
-			Shader::Uniform* diffuseColorUniform = nullptr;
-			Shader::Uniform* emissiveColorUniform = nullptr;
-			Shader::Uniform* specularColorUniform = nullptr;
-			Shader::Uniform* ambientColorUniform = nullptr;
-			Shader::Uniform* specularHardnessUniform = nullptr;
-			Shader::Uniform* specularIntensityUniform = nullptr;
+			Shader::Uniform* baseColorUniform = nullptr;
+			Shader::Uniform* roughnessUniform = nullptr;
+			Shader::Uniform* metalnessUniform = nullptr;
+			Shader::Uniform* aoUniform = nullptr;
 			Shader::Uniform* normalScaleUniform = nullptr;
 			Shader::Uniform* displacementScaleUniform = nullptr;
+			Shader::Uniform* materialIdxUniform = nullptr;
 
 			Shader::Uniform* timeUniform = nullptr;
 			Shader::Uniform* deltaTimeUniform = nullptr;

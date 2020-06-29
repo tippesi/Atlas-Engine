@@ -1,10 +1,10 @@
-#include <structures>
-#include <../common/random>
-#include <../common/PI>
-#include <../common/packing>
+#include <structures.hsh>
+#include <../common/random.hsh>
+#include <../common/PI.hsh>
+#include <../common/packing.hsh>
 
 #define INF 1000000000000.0
-#define EPSILON 0.001
+#define EPSILON 0.01
 
 Triangle UnpackTriangle(PackedTriangle triangle) {
 	
@@ -40,12 +40,12 @@ Ray UnpackRay(PackedRay compressed) {
 	ray.direction = compressed.direction.xyz;
 	ray.inverseDirection = 1.0 / ray.direction;
 	
-	ray.accumColor.xy = unpackHalf2x16(floatBitsToUint(compressed.data.x));
-	ray.mask.xy = unpackHalf2x16(floatBitsToUint(compressed.data.y));
+	ray.color.xy = unpackHalf2x16(floatBitsToUint(compressed.data.x));
+	ray.throughput.xy = unpackHalf2x16(floatBitsToUint(compressed.data.y));
 	vec2 comn = unpackHalf2x16(floatBitsToUint(compressed.data.z));
 
-	ray.accumColor.z = comn.x;
-	ray.mask.z = comn.y;
+	ray.color.z = comn.x;
+	ray.throughput.z = comn.y;
 	
 	return ray;
 
@@ -59,10 +59,10 @@ PackedRay PackRay(Ray ray) {
 	compressed.origin.xyz = ray.origin;
 	compressed.direction.xyz = ray.direction;
 	
-	vec2 comn = vec2(ray.accumColor.z, ray.mask.z);
-	compressed.data.x = uintBitsToFloat(packHalf2x16(ray.accumColor.xy));
-	compressed.data.y = uintBitsToFloat(packHalf2x16(ray.mask.xy));	
-	compressed.data.z = uintBitsToFloat(packHalf2x16(comn));		
+	vec2 comn = vec2(ray.color.z, ray.throughput.z);
+	compressed.data.x = uintBitsToFloat(packHalf2x16(ray.color.xy));
+	compressed.data.y = uintBitsToFloat(packHalf2x16(ray.throughput.xy));	
+	compressed.data.z = uintBitsToFloat(packHalf2x16(comn));	
 	
 	return compressed;
 
@@ -83,6 +83,27 @@ vec3 HemisphereCos(vec3 dir, vec2 coord, float seed) {
 	
 	return normalize(u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1.0 - r2));
 	
+}
+
+void ImportanceSampleCosDir(vec3 N, vec2 coord, float seed, out vec3 L,
+    out float NdotL, out float pdf) {
+
+    vec3 up = abs(N.z) < 0.999 ? vec3(0, 0, 1) : vec3(1, 0, 0);
+    vec3 tangentX = normalize(cross(up, N));
+    vec3 tangentY = cross(N, tangentX);
+
+    float u1 = random(coord, seed);
+    float u2 = random(coord, seed);
+
+    float r = sqrt(u1);
+    float phi = u2 * PI * 2.0;
+
+    L = vec3(r * cos(phi), r * sin(phi), sqrt(max(0.0, 1.0 - u1)));
+    L = normalize(tangentX * L.y + tangentY * L.x + N * L.z);
+
+    NdotL = dot(L, N);
+    pdf = NdotL / PI;
+
 }
 
 vec3 HemisphereCos(vec3 dir, float exponent, vec2 coord, float seed) {

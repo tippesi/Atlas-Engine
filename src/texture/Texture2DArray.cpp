@@ -71,6 +71,23 @@ namespace Atlas {
 
 		}
 
+		void Texture2DArray::SetData(std::vector<float>& data, int32_t depth, int32_t count) {
+
+			SetData(data, 0, 0, depth, width, height, count);
+
+		}
+
+		void Texture2DArray::SetData(std::vector<float>& data, int32_t x, int32_t y, int32_t z,
+			int32_t width, int32_t height, int32_t depth) {
+
+			Bind();
+			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, x, y, z, width, height, depth,
+				TextureFormat::GetBaseFormat(sizedFormat), AE_FLOAT, data.data());
+
+			GenerateMipmap();
+
+		}
+
         std::vector<uint8_t> Texture2DArray::GetData(int32_t depth) {
 
             auto framebuffer = Framebuffer(width, height);

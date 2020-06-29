@@ -4,7 +4,7 @@
 #include "../System.h"
 #include "../terrain/Terrain.h"
 #include "../common/Image.h"
-#include "../Kernel.h"
+#include "../Filter.h"
 
 namespace Atlas {
 
@@ -28,6 +28,7 @@ namespace Atlas {
 			static Terrain::Terrain* GenerateTerrain(Common::Image16& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
 					int32_t patchSize, float resolution, float height, Material* material);
 
+
 			static Terrain::Terrain* GenerateTerrain(Common::Image16& heightImage, Common::Image8& splatImage,
 				int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution,
 				float height, std::vector<Material*> materials);
@@ -43,14 +44,14 @@ namespace Atlas {
 			/**
              *
              * @param terrain
-             * @param kernel
+             * @param filter
              * @param strength
              * @param position
              * @warning All max LoD storage cells of the terrain and their heightData member
              * must be loaded. It is assumed that all cells have textures of the same resolution.
              * @note The kernel size needs to be smaller than 2 times the edge of a cell
              */
-			static void BrushHeight(Terrain::Terrain* terrain, Kernel* kernel, float strength, vec2 position);
+			static void BrushHeight(Terrain::Terrain* terrain, Filter* filter, float strength, vec2 position);
 
 			/**
 			 *
@@ -63,7 +64,10 @@ namespace Atlas {
 			static void SmoothHeight(Terrain::Terrain* terrain, int32_t size, int32_t contributingRadius,
 					float strength, vec2 position);
 
+
 			static void BrushMaterial(Terrain::Terrain* terrain, vec2 position, float size, int32_t slot);
+
+			static Texture::Texture2D GenerateTerrainOceanMap(Terrain::Terrain* terrain, float oceanHeight, int32_t resolution);
 
 		private:
 			static void GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData,

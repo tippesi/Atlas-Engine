@@ -46,10 +46,25 @@ namespace Atlas {
              */
 			int32_t GetCellCount(int32_t LoD);
 
+			/**
+			 *
+			 * @param slot
+			 * @param material
+			 */
 			void AddMaterial(int32_t slot, Material* material);
 
+			/**
+			 *
+			 * @param slot
+			 * @param material
+			 */
 			void RemoveMaterial(int32_t slot, Material* material);
 
+			/**
+			 *
+			 * @return
+			 * @note Material pointers might be null (empty slots)
+			 */
 			std::vector<Material*> GetMaterials();
 
 			/**
@@ -63,7 +78,9 @@ namespace Atlas {
              */
 			std::vector<TerrainStorageCell*> unusedCells;
 
-			Texture::Texture2DArray diffuseMaps;
+			Texture::Texture2DArray baseColorMaps;
+			Texture::Texture2DArray roughnessMaps;
+			Texture::Texture2DArray aoMaps;
 			Texture::Texture2DArray normalMaps;
 			Texture::Texture2DArray displacementMaps;
 

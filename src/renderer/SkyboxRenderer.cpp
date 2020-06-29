@@ -5,15 +5,12 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string SkyboxRenderer::vertexPath = "skybox.vsh";
-		std::string SkyboxRenderer::fragmentPath = "skybox.fsh";
-
 		SkyboxRenderer::SkyboxRenderer() {
 
 			Helper::GeometryHelper::GenerateCubeVertexArray(vertexArray);
 
-			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+			shader.AddStage(AE_VERTEX_STAGE, "skybox.vsh");
+			shader.AddStage(AE_FRAGMENT_STAGE, "skybox.fsh");
 
 			shader.Compile();
 
@@ -88,7 +85,7 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
-			scene->sky.cubemap->Bind(GL_TEXTURE0);
+			scene->sky.probe->cubemap.Bind(GL_TEXTURE0);
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 

@@ -6,15 +6,12 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string PointLightRenderer::vertexPath = "deferred/point.vsh";
-		std::string PointLightRenderer::fragmentPath = "deferred/point.fsh";
-
 		PointLightRenderer::PointLightRenderer() {
 
 			Helper::GeometryHelper::GenerateSphereVertexArray(vertexArray, 16, 16);
 
-			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+			shader.AddStage(AE_VERTEX_STAGE, "deferred/point.vsh");
+			shader.AddStage(AE_FRAGMENT_STAGE, "deferred/point.fsh");
 
 			shader.Compile();
 
@@ -35,7 +32,9 @@ namespace Atlas {
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
-			target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3)->Bind(GL_TEXTURE3);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT4)->Bind(GL_TEXTURE4);
+			target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE5);
 
 			auto lights = scene->GetLights();
 
@@ -48,7 +47,7 @@ namespace Atlas {
 				auto pointLight = (Lighting::PointLight*)light;
 
 				if (pointLight->GetShadow()) {
-					pointLight->GetShadow()->cubemap.Bind(GL_TEXTURE4);
+					pointLight->GetShadow()->cubemap.Bind(GL_TEXTURE6);
 					lightViewMatrix->SetValue(glm::translate(mat4(1.0f), -pointLight->location) * camera->invViewMatrix);
 					lightProjectionMatrix->SetValue(pointLight->GetShadow()->components[0].projectionMatrix);
 					shadowEnabled->SetValue(true);
@@ -60,7 +59,7 @@ namespace Atlas {
 				viewSpaceLightLocation->SetValue(vec3(camera->viewMatrix * vec4(pointLight->location, 1.0f)));
 				lightLocation->SetValue(pointLight->location);
 				lightColor->SetValue(pointLight->color);
-				lightAmbient->SetValue(pointLight->ambient);
+				//lightAmbient->SetValue(pointLight->ambient);
 				lightRadius->SetValue(pointLight->radius);
 
 				glDrawElements(GL_TRIANGLES, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),

@@ -12,7 +12,7 @@ namespace Atlas {
 
         DirectionalVolumetricRenderer::DirectionalVolumetricRenderer() {
 
-            blurKernel.CalculateBoxFilter(21);
+            blurFilter.CalculateBoxFilter(21);
 
             volumetricShader.AddStage(AE_VERTEX_STAGE, volumetricVertexPath);
             volumetricShader.AddStage(AE_FRAGMENT_STAGE, volumetricFragmentPath);
@@ -62,7 +62,6 @@ namespace Atlas {
                 lightDirection->SetValue(direction);
                 shadowCascadeCount->SetValue(directionalLight->GetShadow()->componentCount);
                 sampleCount->SetValue(directionalLight->GetVolumetric()->sampleCount);
-                scattering->SetValue(glm::clamp(directionalLight->GetVolumetric()->scattering, -1.0f, 1.0f));
                 framebufferResolution->SetValue(vec2(directionalLight->GetVolumetric()->map.width,
                                                      directionalLight->GetVolumetric()->map.height));
 
@@ -87,15 +86,15 @@ namespace Atlas {
 
             target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
 
-            std::vector<float>* kernelWeights;
-            std::vector<float>* kernelOffsets;
+            std::vector<float> kernelWeights;
+            std::vector<float> kernelOffsets;
 
-            blurKernel.GetLinearized(kernelWeights, kernelOffsets);
+            blurFilter.GetLinearized(&kernelWeights, &kernelOffsets);
 
-            weights->SetValue(kernelWeights->data(), (int32_t)kernelWeights->size());
-            offsets->SetValue(kernelOffsets->data(), (int32_t)kernelOffsets->size());
+            weights->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
+            offsets->SetValue(kernelOffsets.data(), (int32_t)kernelOffsets.size());
 
-            kernelSize->SetValue((int32_t)kernelWeights->size());
+            kernelSize->SetValue((int32_t)kernelWeights.size());
 
             for (auto& light : lights) {
 
@@ -132,7 +131,6 @@ namespace Atlas {
             lightDirection = volumetricShader.GetUniform("light.direction");
             inverseProjectionMatrix = volumetricShader.GetUniform("ipMatrix");
             sampleCount = volumetricShader.GetUniform("sampleCount");
-            scattering = volumetricShader.GetUniform("scattering");
             shadowCascadeCount = volumetricShader.GetUniform("light.shadow.cascadeCount");
             framebufferResolution = volumetricShader.GetUniform("framebufferResolution");
 

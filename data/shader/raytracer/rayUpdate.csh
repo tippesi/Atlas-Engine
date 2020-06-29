@@ -1,15 +1,17 @@
-#include <structures>
-#include <intersections>
-#include <texture>
-#include <../common/random>
-#include <BVH>
-#include <common>
+#include <structures.hsh>
+#include <intersections.hsh>
+#include <texture.hsh>
+#include <../common/random.hsh>
+#include <BVH.hsh>
+#include <common.hsh>
+#include <../brdf/brdf.hsh>
+#include <../common/utility.hsh>
 
-#include <../common/PI>
+#include <../common/PI.hsh>
 
-// #define GROUP_SHARED_MEMORY
+//#define GROUP_SHARED_MEMORY
 
-layout (local_size_x = 64) in;
+layout (local_size_x = 32) in;
 
 layout (binding = 0, rgba8) writeonly uniform image2D outputImage;
 
@@ -61,7 +63,7 @@ shared uint rayOffset;
 
 void Radiance(inout Ray ray, vec2 coord);
 void DirectIllumination(Ray ray, vec3 position, vec3 normal, Material material, 
-	vec3 surfaceColor, out vec3 color);
+	vec3 baseColor, out vec3 color);
 
 void main() {
 	
@@ -103,20 +105,24 @@ void main() {
 		
 		vec4 accumColor = vec4(0.0);
 
-		float energy = ray.mask.r + ray.mask.g + ray.mask.b;
+		float energy = ray.throughput.r + ray.throughput.g
+			 + ray.throughput.b;
 		
 		if (energy < 1.0 / 1024.0 || bounceCount == 0) {
 			if (sampleCount > 0)
 				accumColor = imageLoad(inAccumImage, pixel);
 			
 			// Where does it get negative?
-			accumColor += vec4(max(ray.accumColor, vec3(0.0)), 1.0);
+			accumColor += vec4(max(ray.color, vec3(0.0)), 1.0);
 			
 			// Maybe we should substract the jitter to get a sharper image
 			imageStore(outAccumImage, pixel, accumColor);
 
+			vec4 color = accumColor / float(sampleCount + 1);
+			color = vec4(1.0) - exp(-color);
+
 			imageStore(outputImage, pixel,
-				pow(accumColor / float(sampleCount + 1), vec4(gamma)));
+				pow(color, vec4(gamma)));
 				
 			rayActive = false;
 		}
@@ -172,8 +178,8 @@ void Radiance(inout Ray ray, vec2 coord) {
 	barrycentric = intersection.yz;
 		
 	if (intersection.x >= INF) {	
-		ray.accumColor += SampleEnvironmentMap(ray.direction).rgb * ray.mask;
-		ray.mask = vec3(0.0);
+		ray.color += SampleEnvironmentMap(ray.direction).rgb * ray.throughput;
+		ray.throughput = vec3(0.0);
 		return;	
 	}
 		
@@ -183,8 +189,8 @@ void Radiance(inout Ray ray, vec2 coord) {
 	vec3 emissiveColor = vec3(mat.emissR, mat.emissG, mat.emissB);
 		
 	if (length(emissiveColor) > 0.0001) {	
-		ray.accumColor += emissiveColor * ray.mask;
-		ray.mask = vec3(0.0);
+		ray.color += emissiveColor * ray.throughput;
+		ray.throughput = vec3(0.0);
 		return;
 	}		
 		
@@ -203,8 +209,8 @@ void Radiance(inout Ray ray, vec2 coord) {
 	// but fixes the cube. Should work in theory.
 	normal = dot(normal, ray.direction) <= 0.0 ? normal : normal * -1.0;	
 		
-	vec4 textureColor = SampleDiffuseBilinear(mat.diffuseTexture, texCoord);
-	vec3 surfaceColor = vec3(mat.diffR, mat.diffG, mat.diffB) * textureColor.rgb;
+	vec4 textureColor = SampleBaseColorBilinear(mat.baseColorTexture, texCoord);
+	vec3 baseColor = vec3(mat.baseR, mat.baseG, mat.baseB) * textureColor.rgb;
 	
 	// Account for changing texture coord direction
 	vec3 bitangent = mat.invertUVs > 0 ? tri.bt : -tri.bt;
@@ -217,73 +223,107 @@ void Radiance(inout Ray ray, vec2 coord) {
 			mat.normalScale);		
 	}
 	
-	if (mat.specularTexture.layer >= 0) {
-		mat.specularIntensity *= SampleSpecularBilinear(mat.specularTexture, texCoord).r;
-	}
+	mat.roughness *= SampleRoughnessBilinear(mat.roughnessTexture, texCoord).r;
+	mat.metalness *= SampleMetalnessBilinear(mat.metalnessTexture, texCoord).r;
+	mat.ao *= SampleAoBilinear(mat.aoTexture, texCoord).r;
 		
 	vec3 direct = vec3(0.0);
-	DirectIllumination(ray, position, normal, mat, surfaceColor, direct);	
+	DirectIllumination(ray, position, normal, mat, baseColor, direct);	
 		
 	ray.origin = position;
 	
 	float opacity = textureColor.a * mat.opacity;
 	float refractChance = 1.0 - opacity;
 	float rnd = random(coord, curSeed);
-	
+
+	float roughness = sqr(mat.roughness);
+	vec3 f0 = mix(vec3(0.04), baseColor, mat.metalness);
+
 	if (rnd >= refractChance) {
 		rnd = random(coord, curSeed);
-		
-		float specChance = mat.specularIntensity;
+
+		vec3 F = FresnelSchlick(f0, 1.0, saturate(dot(-ray.direction, normal)));
+		float specChance = dot(F, vec3(0.333));
+		specChance = 0.0;
 		
 		if (rnd < specChance) {
-			vec3 refl = reflect(ray.direction, normal);
+			vec3 refl = normalize(reflect(ray.direction, normal));
 			
-			float pdf = ((mat.specularHardness + 2) *
-				pow(dot(-ray.direction, refl), mat.specularHardness));
-			ray.direction = HemisphereCos(refl, coord, seed);
-			float roughness = 2.0 / (mat.specularHardness + 2.0);
+			float NdotL;
+			float pdf;
+			ImportanceSampleCosDir(refl, coord, seed, ray.direction,
+				NdotL, pdf);			
 			ray.direction = mix(refl, ray.direction, roughness);
+			pdf = mix(1.0, pdf, roughness);
 			ray.inverseDirection = 1.0 / ray.direction;
 			
-			ray.accumColor += (direct * opacity) * ray.mask;
-			
-			ray.mask *= opacity * specChance;
+			ray.throughput *= F / (specChance);
 			ray.origin += normal * EPSILON;
 		}
 		else {
-			ray.direction = HemisphereCos(normal, coord, seed);
+			float NdotL;
+			float pdf;
+			ImportanceSampleCosDir(normal, coord, seed, ray.direction,
+				NdotL, pdf);
 			ray.inverseDirection = 1.0 / ray.direction;
 				
 			ray.origin += normal * EPSILON;			
-			
-			ray.accumColor += (direct * opacity) * ray.mask;
 				
-			ray.mask *= opacity * surfaceColor ;
-			ray.mask *= dot(ray.direction, normal) * (1.0 - specChance);
+			ray.throughput *= baseColor;
+			ray.throughput /= (1.0 - specChance);
 		}
 		
 	}
 	else {
+		float ior = 2.0 / (1.0 - sqrt(max(f0.x, max(f0.y, f0.z)))) - 1.0;
+		vec3 refr = normalize(refract(ray.direction, normal, 1.0 - ior));
+		
+		ray.direction = HemisphereCos(refr, coord, seed);
+		ray.direction = mix(refr, ray.direction, roughness);
+		ray.inverseDirection = 1.0 / ray.direction;
+
+		ray.throughput *= mix(baseColor, vec3(1.0), refractChance);
 		ray.origin -= normal * EPSILON;
-		
-		ray.accumColor += (direct * refractChance) * ray.mask;
-		ray.mask *= mix(surfaceColor, vec3(1.0), refractChance);
-		
 	}
+
+	ray.color += max(vec3(0.0), ray.throughput * direct);
+	ray.throughput *= mat.ao;
 
 }
 
 void DirectIllumination(Ray ray, vec3 position, vec3 normal,
-	Material mat, vec3 surfaceColor, out vec3 color) {
+	Material mat, vec3 baseColor, out vec3 color) {
+
+	float perceptualRoughness = mat.roughness;
+	float metalness = mat.metalness;
+
+	vec3 N = normal;
+	vec3 V = normalize(-ray.origin - position);
+	vec3 L = -light.direction;
+	vec3 H = normalize(L + V);
+
+	float NdotL = saturate(dot(N, L));
+	float LdotH = saturate(dot(L, H));
+	float NdotH = saturate(dot(N, H));
+	float NdotV = saturate(dot(N, V));
+
+	float roughness = perceptualRoughness * perceptualRoughness;
+
+	vec3 f0 = mix(vec3(0.04), vec3(1.0), metalness);
+	float f90 = 1.0;
+
+	// Specular BRDF
+	vec3 F = FresnelSchlick(f0, f90, LdotH);
+	float G = VisibilitySmithGGXCorrelated(NdotV, NdotL, roughness);
+	float D = DistributionGGX(NdotH, roughness);
+	
+	vec3 Fr = D * G * F / PI;
+
+	// Diffuse BRDF
+	vec3 Fd = vec3((1.0 - metalness) * RenormalizedDisneyDiffuse(NdotV, NdotL, LdotH, perceptualRoughness) / PI);
 	
 	float shadowFactor = 1.0;
-	
-	vec3 viewDir = normalize(ray.origin - position);
-	vec3 lightDir = -light.direction;
-	
-	float nDotL = max((dot(normal, lightDir)), 0.0);
-	
-	if (nDotL > 0.0) {
+	if (NdotL > 0.0) {
 		// Shadow testing
 		ray.direction = -light.direction;
 		ray.origin = position + normal * EPSILON;
@@ -293,17 +333,8 @@ void DirectIllumination(Ray ray, vec3 position, vec3 normal,
 	else {
 		shadowFactor = 0.0;
 	}
-	
-	vec3 specular = vec3(1.0);
-	vec3 diffuse = surfaceColor;
-	vec3 ambient = vec3(light.ambient);
-	
-	vec3 halfway = normalize(lightDir + viewDir);
-	specular *= pow(max(dot(normal, halfway), 0.0), mat.specularHardness)
-		* mat.specularIntensity;
-	
-	// k_s + k_d <= 1.0
-	color = mix(diffuse, specular, mat.specularIntensity)
-		* nDotL * light.color * shadowFactor;
+
+	vec3 radiance = light.color * light.intensity;
+	color = (Fd + Fr) * radiance * NdotL * shadowFactor;
 	
 }

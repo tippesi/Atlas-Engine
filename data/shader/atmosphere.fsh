@@ -25,7 +25,7 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
 
 void main() {
 	
-	const float g = 0.99f;
+	const float g = 0.76f;
 	vec3 r = normalize(fPosition);
 	vec3 pSun = normalize(-sunDirection);
 	

@@ -204,47 +204,100 @@ namespace Atlas {
             aiString name;
 
 			aiColor3D diffuse;
-			aiColor3D specular;
-			aiColor3D ambient;
 			aiColor3D emissive;
+			aiColor3D specular;
+			float specularHardness;
+			float specularIntensity;
 
 			assimpMaterial->Get(AI_MATKEY_NAME, name);
-			assimpMaterial->Get(AI_MATKEY_SHININESS, material.specularHardness);
-			assimpMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, material.specularIntensity);
+			assimpMaterial->Get(AI_MATKEY_SHININESS, specularHardness);
+			assimpMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, specularIntensity);
 			assimpMaterial->Get(AI_MATKEY_OPACITY, material.opacity);
 			assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
-			assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specular);
-			assimpMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ambient);
 			assimpMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, emissive);
+			assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specular);
 
-            material.name = std::string(name.C_Str());
+			material.name = std::string(name.C_Str());
 
-			material.diffuseColor = vec3(diffuse.r, diffuse.g, diffuse.b);
-			material.specularColor = vec3(specular.r, specular.g, specular.b);
-			material.ambientColor = vec3(ambient.r, ambient.g, ambient.b);
+			material.baseColor = vec3(diffuse.r, diffuse.g, diffuse.b);
 			material.emissiveColor = vec3(emissive.r, emissive.g, emissive.b);
 
 			material.displacementScale = 0.05f;
 
-			auto specIntensity = (specular.r + specular.g + specular.b) / 3.0f;
+			// Avoid NaN
+			specularHardness = glm::max(1.0f, specularHardness);
+			material.roughness = glm::clamp(powf(1.0f / (0.5f * specularHardness + 1.0f), 0.25f), 0.0f, 1.0f);
+			material.ao = 1.0f;
 
-			if (material.specularIntensity == 0.0f && specIntensity > 0.0f)
-				material.specularIntensity = specIntensity;
-			else if (material.specularIntensity > 0.0f && specIntensity > 0.0f)
-				material.specularIntensity *= specIntensity;
+			specularIntensity = glm::clamp(specularIntensity, 0.0f, 1.0f);
+			auto specularFactor = glm::max(specular.r, glm::max(specular.g, specular.b));
+			specularIntensity *= specularFactor > 0.0f ? specularFactor : 1.0f;
 
-			if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
+			material.metalness = glm::clamp(specularIntensity, 0.0f, 1.0f);
+
+			if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0) {
+				aiString aiPath;
+				assimpMaterial->GetTexture(aiTextureType_BASE_COLOR, 0, &aiPath);
+				auto path = directory + std::string(aiPath.C_Str());
+				auto image = ImageLoader::LoadImage(path, true);
+
+				material.baseColorMap = new Texture::Texture2D(image.width, image.height, AE_RGB8,
+					GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
+
+				std::vector <uint8_t> data(image.width * image.height * 3);
+				if (image.channels == 1) {
+					auto imageData = image.GetData();
+					for (size_t i = 0; i < data.size(); i+=3) {
+						data[i + 0] = imageData[i / 3];
+						data[i + 1] = imageData[i / 3];
+						data[i + 2] = imageData[i / 3];
+					}
+				}
+				else if (image.channels == 3) {
+					data = image.GetData();
+				}
+				else if (image.channels == 4) {
+					data = image.GetChannelData(0, 3);
+					auto opacityData = image.GetChannelData(3, 1);
+					material.opacityMap = new Texture::Texture2D(image.width, image.height, AE_R8,
+						GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
+					material.opacityMap->SetData(opacityData);
+					material.opacityMapPath = path;
+				}
+				material.baseColorMap->SetData(data);
+				material.baseColorMapPath = path;
+			}
+			if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0 && !material.baseColorMap) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
-				auto texture = new Texture::Texture2D(path, true);
-				// In the rare case this happens just reload the texture with 3 channels
-				if (texture->channels == 1) {
-					delete texture;
-					texture = new Texture::Texture2D(path, true, true, true, 3);
+				auto image = ImageLoader::LoadImage(path, true);
+
+				material.baseColorMap = new Texture::Texture2D(image.width, image.height, AE_RGB8,
+					GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
+
+				std::vector <uint8_t> data(image.width * image.height * 3);
+				if (image.channels == 1) {
+					auto imageData = image.GetData();
+					for (size_t i = 0; i < data.size(); i += 3) {
+						data[i + 0] = imageData[i / 3];
+						data[i + 1] = imageData[i / 3];
+						data[i + 2] = imageData[i / 3];
+					}
 				}
-				material.diffuseMap = texture;
-				material.diffuseMapPath = path;
+				else if (image.channels == 3) {
+					data = image.GetData();
+				}
+				else if (image.channels == 4) {
+					data = image.GetChannelData(0, 3);
+					auto opacityData = image.GetChannelData(3, 1);
+					material.opacityMap = new Texture::Texture2D(image.width, image.height, AE_R8,
+						GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
+					material.opacityMap->SetData(opacityData);
+					material.opacityMapPath = path;
+				}
+				material.baseColorMap->SetData(data);
+				material.baseColorMapPath = path;
 			}
 			if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0 ||
 				(assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && isObj)) {
@@ -265,13 +318,29 @@ namespace Atlas {
 					material.normalMapPath = path;
 				}
 			}
-			if (assimpMaterial->GetTextureCount(aiTextureType_SPECULAR) > 0) {
+			if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
+				aiString aiPath;
+				assimpMaterial->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &aiPath);
+				auto path = directory + std::string(aiPath.C_Str());
+				auto texture = new Texture::Texture2D(path, false, true, true, 1);
+				material.roughnessMap = texture;
+				material.roughnessMapPath = path;
+			}
+			if (assimpMaterial->GetTextureCount(aiTextureType_METALNESS) > 0) {
+				aiString aiPath;
+				assimpMaterial->GetTexture(aiTextureType_METALNESS, 0, &aiPath);
+				auto path = directory + std::string(aiPath.C_Str());
+				auto texture = new Texture::Texture2D(path, false, true, true, 1);
+				material.metalnessMap = texture;
+				material.metalnessMapPath = path;
+			}
+			if (assimpMaterial->GetTextureCount(aiTextureType_SPECULAR) > 0 && !material.metalnessMap) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_SPECULAR, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
 				auto texture = new Texture::Texture2D(path, false, true, true, 1);
-				material.specularMap = texture;
-				material.specularMapPath = path;
+				material.metalnessMap = texture;
+				material.metalnessMapPath = path;
 			}
 			if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && !isObj) {
 				aiString aiPath;

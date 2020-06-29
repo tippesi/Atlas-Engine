@@ -1,0 +1,38 @@
+vec3 FresnelSchlick(vec3 F0, float F90, float CosTheta) {
+
+	return F0 + (vec3(F90) - F0) * pow(1.0 - CosTheta, 5.0);
+
+}
+
+float RenormalizedDisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness) {
+
+	float energyBias = mix(0.0, 0.5, linearRoughness);
+	float energyFactor = mix(1.0, 1.0 / 1.51, linearRoughness);
+	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
+	float lightScatter = FresnelSchlick(vec3(1.0), fd90, NdotL).r;
+	float viewScatter = FresnelSchlick(vec3(1.0), fd90, NdotV).r;
+
+	return lightScatter * viewScatter * energyFactor;
+
+}
+
+float VisibilitySmithGGXCorrelated(float NdotL, float NdotV, float alpha) {
+
+	float alpha2 = alpha * alpha;
+	float GGXL = NdotV * sqrt((-NdotL * alpha2 + NdotL) * NdotL + alpha2);
+	float GGXV = NdotL * sqrt((-NdotV * alpha2 + NdotV) * NdotV + alpha2);
+
+	// Avoid NaN
+	return 0.5 / (GGXL + GGXV + 0.0000001);
+
+}
+
+float DistributionGGX(float NdotH, float alpha) {
+
+	float alpha2 = alpha * alpha;
+	float f = (NdotH * alpha2 - NdotH) * NdotH + 1.0;
+
+	// Avoid NaN
+	return alpha2 / (f * f + 0.0000001);
+
+}

@@ -17,19 +17,23 @@ namespace Atlas {
 
 			EnvironmentProbe(const Texture::Cubemap& cubemap);
 
-			EnvironmentProbe(int32_t width, int32_t height, 
-				vec3 position = vec3(0.0f));
+			EnvironmentProbe(int32_t resolution, vec3 position = vec3(0.0f));
 
 			void SetPosition(vec3 position);
 
 			vec3 GetPosition();
 
-			void Filter();
+			int32_t resolution;
 
 			std::vector<mat4> matrices;
 
 			Texture::Cubemap cubemap;
-			Texture::Texture2D depth;
+			Texture::Cubemap depth;
+
+			Texture::Cubemap filteredDiffuse;
+			Texture::Cubemap filteredSpecular;
+
+			bool update = true;
 
 		private:
 			vec3 position = vec3(0.0f);

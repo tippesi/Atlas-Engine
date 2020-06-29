@@ -14,7 +14,6 @@ namespace Atlas {
 		class PostProcessing {
 
 		public:
-			float exposure = 1.0f;
 			float saturation = 1.0f;
 
 			bool filmicTonemapping = false;

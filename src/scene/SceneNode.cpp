@@ -192,6 +192,7 @@ namespace Atlas {
 			movableMeshActors.clear();
 			staticMeshActors.clear();
 			decalActors.clear();
+			audioActors.clear();
 			lights.clear();
 
 		}
@@ -273,6 +274,8 @@ namespace Atlas {
 				staticMeshActors.push_back(meshActor);
 				meshActor->Update(*camera, deltaTime,
 					parentTransformation, true);
+				// Because they won't be updated we need to do this right here
+				meshActor->lastGlobalMatrix = meshActor->globalMatrix;
 				spacePartitioning->Add(meshActor);
 
 				changed = true;
@@ -423,7 +426,7 @@ namespace Atlas {
 			if (!sceneSet)
 				return;
 
-			auto& res = meshMap->find(actor->mesh);
+			auto res = meshMap->find(actor->mesh);
 
 			if (res == meshMap->end()) {
 				(*meshMap)[actor->mesh] = 1;
@@ -439,7 +442,10 @@ namespace Atlas {
 			if (!sceneSet)
 				return;
 
-			auto& res = meshMap->find(actor->mesh);
+			auto res = meshMap->find(actor->mesh);
+
+			if (res == meshMap->end())
+				return;
 
 			res->second--;
 

@@ -27,6 +27,8 @@ namespace Atlas {
 
 			void Reset(Camera* camera);
 
+			bool IsControllerAvailable();
+
 			float sensibility = 1.5f;
 			float speed = 7.0f;
 			float reactivity = 6.0f;

@@ -1,4 +1,4 @@
-#include <fog>
+#include <fog.hsh>
 
 layout (location = 0) out vec3 colorFS;
 layout (location = 1) out vec2 velocityFS;
@@ -19,7 +19,7 @@ uniform vec2 jitterCurrent;
 
 void main() {
 	
-	colorFS = texture(skyCubemap, texCoordVS).xyz;
+	colorFS = textureLod(skyCubemap, texCoordVS, 0.0).xyz;
 	
 	const float far = 1000.0;
 	colorFS = applyFog(colorFS, far, 

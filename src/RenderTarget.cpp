@@ -14,16 +14,16 @@ namespace Atlas {
 		geometryFramebuffer.Resize(width, height);
 
 		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT1, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT2, AE_RG16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT1, AE_RGB16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT2, AE_RGB16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT3, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT4, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT4, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST);
 		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &velocityTexture);
 		geometryFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
 
 		lightingFramebuffer.Resize(width, height);
 
-		lightingFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGB16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		lightingFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, &velocityTexture);
 		lightingFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
 

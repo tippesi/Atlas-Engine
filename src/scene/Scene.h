@@ -7,6 +7,7 @@
 #include "../lighting/Light.h"
 #include "../lighting/Sky.h"
 #include "../lighting/Fog.h"
+#include "../lighting/IrradianceVolume.h"
 #include "../ocean/Ocean.h"
 #include "../postprocessing/PostProcessing.h"
 #include "../Decal.h"
@@ -47,10 +48,9 @@ namespace Atlas {
 			Scene& operator=(const Scene& that);
 
 			/**
-             *
-             * @param camera
-			 * @param deltaTime
-             * @remark 
+             * Updates the scene based on the camera and the times passed.
+             * @param camera The camera from whichs perspective the scene should be rendered later on.
+			 * @param deltaTime The time that has passed since the last update.
              */
 			void Update(Camera *camera, float deltaTime);
 
@@ -71,6 +71,20 @@ namespace Atlas {
 			void Clear();
 
 			/**
+			 * Returns all the scenes meshes
+			 * @return The meshes of the scene
+			 */
+			std::vector<Mesh::Mesh*> GetMeshes();
+
+			/**
+			 * Returns all the scenes materials
+			 * @return The materials of the scene
+			 * @note The material pointers are only valid until there
+			 * are material changes in meshes, the terrain, etc.
+			 */
+			std::vector<Material*> GetMaterials();
+
+			/**
 			 * To overload the Add and Remove methods we need to specify this
 			 * here. It would just rename the method instead.
 			 */
@@ -82,6 +96,7 @@ namespace Atlas {
 
 			Lighting::Sky sky;
 			Lighting::Fog* fog = nullptr;
+			Lighting::IrradianceVolume* irradianceVolume = nullptr;
 			PostProcessing::PostProcessing postProcessing;
 
 		private:

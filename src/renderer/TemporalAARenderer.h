@@ -23,7 +23,6 @@ namespace Atlas {
 			Buffer::VertexArray vertexArray;
 
 			Shader::Uniform* convergence;
-			Shader::Uniform* jitter;
 			Shader::Uniform* invResolution;
 			Shader::Uniform* resolution;
 

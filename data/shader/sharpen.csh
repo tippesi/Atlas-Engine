@@ -1,4 +1,4 @@
-#include <common/sample>
+#include <common/sample.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
@@ -14,8 +14,9 @@ void main() {
 	
 	if (coord.x < size.x &&
 		coord.y < size.y) {
-		
+
 		vec3 color = sampleTex(textureIn, coord, SAMPLE_CLAMP).rgb;
+
 		vec3 up = sampleTex(textureIn, coord + ivec2(0, -1), SAMPLE_CLAMP).rgb;
 		vec3 down = sampleTex(textureIn, coord + ivec2(0, 1), SAMPLE_CLAMP).rgb;
 		vec3 left = sampleTex(textureIn, coord + ivec2(-1, 0), SAMPLE_CLAMP).rgb;
@@ -26,5 +27,7 @@ void main() {
 		imageStore(textureOut, coord, vec4(color, 1.0));
 		
 	}
+
+
 
 }

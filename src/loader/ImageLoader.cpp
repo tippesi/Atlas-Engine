@@ -70,6 +70,9 @@ namespace Atlas {
             else if (fileFormat == "pgm") {
                 image.fileFormat = AE_IMAGE_PGM;
             }
+			else if (fileFormat == "hdr") {
+				image.fileFormat = AE_IMAGE_HDR;
+			}
 
             Log::Message("Loaded image " + filename);
 
@@ -128,6 +131,9 @@ namespace Atlas {
             else if (fileFormat == "pgm") {
                 image.fileFormat = AE_IMAGE_PGM;
             }
+			else if (fileFormat == "hdr") {
+				image.fileFormat = AE_IMAGE_HDR;
+			}
 
             Log::Message("Loaded image " + filename);
 
@@ -135,18 +141,94 @@ namespace Atlas {
 
         }
 
+		Common::ImageFloat ImageLoader::LoadImageFloat(std::string filename, int32_t forceChannels) {
+
+			Common::ImageFloat image;
+			auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
+
+			if (!fileStream.is_open()) {
+				Log::Error("Failed to load image " + filename);
+				return image;
+			}
+
+			auto buffer = AssetLoader::GetFileContent(fileStream);
+
+			fileStream.close();
+
+			int32_t width, height, channels;
+			auto data = stbi_loadf_from_memory((unsigned char*)buffer.data(), (int32_t)buffer.size(),
+				&width, &height, &channels, forceChannels);
+
+			if (forceChannels > 0) {
+				channels = forceChannels;
+			}
+
+			image = Common::ImageFloat(width, height, channels);
+			std::vector<float> imageData(width * height * channels);
+
+			imageData.assign(data, data + width * height * channels);
+			stbi_image_free(data);
+
+			image.SetData(imageData);
+
+			auto fileFormatPosition = filename.find_last_of('.') + 1;
+			auto fileFormat = filename.substr(fileFormatPosition, filename.length());
+
+			std::transform(fileFormat.begin(), fileFormat.end(), fileFormat.begin(), ::tolower);
+
+			if (fileFormat == "png") {
+				image.fileFormat = AE_IMAGE_PNG;
+			}
+			else if (fileFormat == "jpg" || fileFormat == "jpeg") {
+				image.fileFormat = AE_IMAGE_JPG;
+			}
+			else if (fileFormat == "bmp") {
+				image.fileFormat = AE_IMAGE_BMP;
+			}
+			else if (fileFormat == "pgm") {
+				image.fileFormat = AE_IMAGE_PGM;
+			}
+
+			Log::Message("Loaded image " + filename);
+
+			return image;
+
+		}
+
         void ImageLoader::SaveImage(Common::Image8 &image, std::string filename) {
 
-            switch(image.fileFormat) {
-				case AE_IMAGE_JPG: stbi_write_jpg(filename.c_str(), image.width, image.height,
-					image.channels, image.GetData().data(), 100); break;
-				case AE_IMAGE_BMP: stbi_write_bmp(filename.c_str(), image.width, image.height,
-					image.channels, image.GetData().data()); break;
-                case AE_IMAGE_PGM: SavePGM8(image, filename); break;
-                case AE_IMAGE_PNG: stbi_write_png(filename.c_str(), image.width, image.height,
-                        image.channels, image.GetData().data(), image.channels * image.width); break;
-                default: break;
+            std::ofstream imageStream;
+
+            if (image.fileFormat == AE_IMAGE_PGM) {
+                imageStream = AssetLoader::WriteFile(filename, std::ios::out);
             }
+            else {
+                imageStream = AssetLoader::WriteFile(filename, std::ios::out | std::ios::binary);
+            }
+
+            if (!imageStream.is_open()) {
+                Log::Error("Couldn't write image " + filename);
+                return;
+            }
+
+            auto lambda = [](void* context, void* data, int32_t size) {
+                auto imageStream = (std::ofstream*)context;
+
+                imageStream->write((char*)data, size);
+            };
+
+            switch (image.fileFormat) {
+            case AE_IMAGE_JPG: stbi_write_jpg_to_func(lambda, &imageStream, image.width,
+                image.height, image.channels, image.GetData().data(), 100); break;
+            case AE_IMAGE_BMP: stbi_write_bmp_to_func(lambda, &imageStream, image.width,
+                image.height, image.channels, image.GetData().data()); break;
+            case AE_IMAGE_PGM: SavePGM8(image, imageStream); break;
+            case AE_IMAGE_PNG: stbi_write_png_to_func(lambda, &imageStream, image.width, image.height,
+                image.channels, image.GetData().data(), image.channels * image.width); break;
+            default: break;
+            }
+
+            imageStream.close();
 
         }
 
@@ -162,14 +244,34 @@ namespace Atlas {
 
         }
 
-        void ImageLoader::SavePGM8(Common::Image8 &image, std::string filename) {
+		void ImageLoader::SaveImageFloat(Common::ImageFloat& image, std::string filename) {
 
-			auto imageFile = AssetLoader::WriteFile(filename, std::ios::out);
+			std::ofstream imageStream;
 
-            if (!imageFile.is_open()) {
+			imageStream = AssetLoader::WriteFile(filename, std::ios::out | std::ios::binary);
+
+			if (!imageStream.is_open()) {
 				Log::Error("Couldn't write image " + filename);
 				return;
-            }
+			}
+
+			auto lambda = [](void* context, void* data, int32_t size) {
+				auto imageStream = (std::ofstream*)context;
+
+				imageStream->write((char*)data, size);
+			};
+
+			switch (image.fileFormat) {
+			case AE_IMAGE_HDR: stbi_write_hdr_to_func(lambda, &imageStream, image.width,
+				image.height, image.channels, image.GetData().data()); break;
+			default: break;
+			}
+
+			imageStream.close();
+
+		}
+
+        void ImageLoader::SavePGM8(Common::Image8 &image, std::ofstream& imageStream) {
 
             std::string header;
 
@@ -179,16 +281,14 @@ namespace Atlas {
             header.append(std::to_string(image.height) + " ");
             header.append("255\n");
 
-            imageFile << header;
+            imageStream << header;
 
 			auto imageData = image.GetData();
 
 			for (auto data : imageData) {
-				imageFile << data;
-				imageFile << " ";
+                imageStream << data;
+                imageStream << " ";
 			}
-
-            imageFile.close();
 
         }
 

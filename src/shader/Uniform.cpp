@@ -31,6 +31,17 @@ namespace Atlas {
 
 		}
 
+		void Uniform::SetValue(uint32_t value) {
+
+			if (!shaderBatch) {
+				glUniform1ui(ID, value);
+			}
+			else {
+				GetBatchUniform()->SetValue(value);
+			}
+
+		}
+
 		void Uniform::SetValue(float value) {
 
 			if (!shaderBatch) {
@@ -142,6 +153,17 @@ namespace Atlas {
 
 			if (!shaderBatch) {
 				glUniform1iv(ID, length, value);
+			}
+			else {
+				GetBatchUniform()->SetValue(value, length);
+			}
+
+		}
+
+		void Uniform::SetValue(uint32_t* value, int32_t length) {
+
+			if (!shaderBatch) {
+				glUniform1uiv(ID, length, value);
 			}
 			else {
 				GetBatchUniform()->SetValue(value, length);

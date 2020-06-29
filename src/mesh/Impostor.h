@@ -4,7 +4,7 @@
 #include "../System.h"
 #include "../volume/AABB.h"
 #include "../texture/Texture2DArray.h"
-
+#include "../buffer/Buffer.h"
 
 namespace Atlas {
 
@@ -21,16 +21,30 @@ namespace Atlas {
 
 			Impostor& operator=(const Impostor& that);
 
-			Texture::Texture2DArray diffuseTexture;
-			Texture::Texture2DArray normalTexture;
-			Texture::Texture2DArray specularTexture;
+			void FillViewPlaneBuffer(std::vector<vec3> rightVectors, std::vector<vec3> upVectors);
 
-			Volume::AABB aabb;
+			Texture::Texture2DArray baseColorTexture;
+			Texture::Texture2DArray roughnessMetalnessAoTexture;
+			Texture::Texture2DArray normalTexture;
+
+			Buffer::Buffer viewPlaneBuffer;
+
+			vec3 center;
+			float radius;
 
 			int32_t views = 1;
 			int32_t resolution = 64;
 
 			float cutoff = 0.7f;
+
+			bool interpolation = false;
+			vec3 transmissiveColor = vec3(0.0f);
+
+		private:
+			struct ViewPlane {
+				vec4 right;
+				vec4 up;
+			};
 
 		};
 

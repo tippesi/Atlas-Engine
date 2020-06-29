@@ -29,8 +29,13 @@ namespace Atlas {
 
 		void Clear();
 
+		struct ActorBatchBuffer {
+			Buffer::VertexBuffer* currentMatrices = nullptr;
+			Buffer::VertexBuffer* lastMatrices = nullptr;
+		};
+
 		std::map<Mesh::Mesh*, Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>*> actorBatches;
-		std::map<Mesh::Mesh*, Buffer::VertexBuffer*> actorBatchBuffers;
+		std::map<Mesh::Mesh*, ActorBatchBuffer> actorBatchBuffers;
 		std::map<Mesh::Mesh*, Buffer::VertexBuffer*> impostorBuffers;
 		std::map<int32_t, std::vector<RenderListBatch>> orderedRenderBatches;
 

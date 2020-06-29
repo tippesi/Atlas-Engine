@@ -2,12 +2,18 @@ layout (local_size_x = 16, local_size_y = 16) in;
 
 layout (binding = 0, rgba16f) readonly uniform image2D displacementMap;
 layout (binding = 1, rgba8) writeonly uniform image2D normalMap;
+layout (binding = 2, rgba8) readonly uniform image2D historyMap;
 
 uniform int N;
 uniform int L;
 uniform float choppyScale;
 uniform float displacementScale;
 uniform float tiling;
+
+uniform float temporalWeight;
+uniform float temporalThreshold;
+
+uniform float foamOffset;
 
 vec3 AdjustScale(vec3 point) {
 
@@ -38,12 +44,17 @@ void main() {
 	top = AdjustScale(top);
 	bottom = AdjustScale(bottom);
 
+	float history = imageLoad(historyMap, coord).a;
+
 	// Calculate jacobian
 	vec2 Dx = (right.xz - left.xz) / texelSize;
 	vec2 Dy = (top.xz - bottom.xz) / texelSize;
 	float J = (1.0 + Dx.x) * (1.0 + Dy.y) - Dx.y * Dy.x;
-	
-	float fold = 0.5 * clamp(J, -1.0, 1.0) + 0.5;
+
+	float fold = -clamp(J, -1.0, 1.0) + foamOffset;
+
+	float blend = fold > temporalThreshold ? 0.0 : temporalWeight;
+	fold = mix(fold, history, blend);
 
 	vec3 normal;
 

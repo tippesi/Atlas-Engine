@@ -185,18 +185,29 @@ namespace Atlas {
 
 			auto materialConfig = new MaterialConfig;
 
-			if (material->HasDiffuseMap()) {
-				materialConfig->opaqueConfig.AddMacro("DIFFUSE_MAP");
-				if (material->diffuseMap->channels == 4)
-					materialConfig->shadowConfig.AddMacro("ALPHA");
+			if (material->HasBaseColorMap()) {
+				materialConfig->opaqueConfig.AddMacro("BASE_COLOR_MAP");
+			}
+
+			if (material->HasOpacityMap()) {
+				materialConfig->opaqueConfig.AddMacro("OPACITY_MAP");
+				materialConfig->shadowConfig.AddMacro("OPACITY_MAP");
 			}
 
 			if (material->HasNormalMap()) {
 				materialConfig->opaqueConfig.AddMacro("NORMAL_MAP");
 			}
 
-			if (material->HasSpecularMap()) {
-				materialConfig->opaqueConfig.AddMacro("SPECULAR_MAP");
+			if (material->HasRoughnessMap()) {
+				materialConfig->opaqueConfig.AddMacro("ROUGHNESS_MAP");
+			}
+
+			if (material->HasMetalnessMap()) {
+				materialConfig->opaqueConfig.AddMacro("METALNESS_MAP");
+			}
+
+			if (material->HasAoMap()) {
+				materialConfig->opaqueConfig.AddMacro("AO_MAP");
 			}
 
 			if (material->HasDisplacementMap()) {
@@ -229,6 +240,7 @@ namespace Atlas {
 
 		void Mesh::DeepCopy(const Mesh& that) {
 
+			name = that.name;
 			data = that.data;
 			mobility = that.mobility;
 			cullBackFaces = that.cullBackFaces;

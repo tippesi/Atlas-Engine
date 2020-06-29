@@ -42,7 +42,7 @@ namespace Atlas {
             channels = image.channels;
 			this->layers = 1;
 
-            Generate(GL_TEXTURE_2D, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR,
+            Generate(GL_TEXTURE_2D, sizedFormat, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
                      anisotropicFiltering, generateMipMaps);
 
             SetData(image.GetData());
@@ -104,6 +104,26 @@ namespace Atlas {
 				TextureFormat::GetBaseFormat(sizedFormat), AE_USHORT, data.data());
 
         }
+
+        void Texture2D::SetData(std::vector<float16>& data) {
+
+            Bind();
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
+                TextureFormat::GetBaseFormat(sizedFormat), AE_HALF_FLOAT, data.data());
+
+            GenerateMipmap();
+
+        }
+
+		void Texture2D::SetData(std::vector<float>& data) {
+
+			Bind();
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
+				TextureFormat::GetBaseFormat(sizedFormat), AE_FLOAT, data.data());
+
+			GenerateMipmap();
+
+		}
 
         std::vector<uint8_t> Texture2D::GetData() {
 

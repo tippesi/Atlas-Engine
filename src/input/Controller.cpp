@@ -88,6 +88,12 @@ namespace Atlas {
 
 		}
 
+		bool ControllerHandler::IsControllerAvailable() {
+
+			return controllerDevice > -1;
+
+		}
+
 		void ControllerHandler::RegisterEvents() {
 
 			auto controllerAxisEventHandler = std::bind(&ControllerHandler::ControllerAxisEventHandler,

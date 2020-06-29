@@ -71,6 +71,7 @@ namespace Atlas {
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LEQUAL);
 		glEnable(GL_CULL_FACE);
+		glDisable(GL_DITHER);
 
 		// For debugging
 		glLineWidth(1.0f);

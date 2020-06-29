@@ -13,7 +13,11 @@ namespace Atlas {
         public:
             DirectionalLightRenderer();
 
-            virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+            virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene) {}
+
+            virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
+                Scene::Scene* scene, Texture::Texture2D* dfgTexture);
 
         private:
             void GetUniforms();
@@ -27,7 +31,7 @@ namespace Atlas {
 
             Shader::Uniform* lightDirection = nullptr;
             Shader::Uniform* lightColor = nullptr;
-            Shader::Uniform* lightAmbient = nullptr;
+            Shader::Uniform* lightIntensity = nullptr;
 
             Shader::Uniform* scatteringFactor = nullptr;
 
@@ -42,6 +46,12 @@ namespace Atlas {
 			Shader::Uniform* fogHeight = nullptr;
 			Shader::Uniform* fogColor = nullptr;
 			Shader::Uniform* fogScatteringPower = nullptr;
+
+            Shader::Uniform* volumeMin = nullptr;
+            Shader::Uniform* volumeMax = nullptr;
+            Shader::Uniform* volumeProbeCount = nullptr;
+            Shader::Uniform* volumeIrradianceRes = nullptr;
+            Shader::Uniform* volumeMomentsRes = nullptr;
 
             struct ShadowCascadeUniform {
                 Shader::Uniform* distance;

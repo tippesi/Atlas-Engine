@@ -2,7 +2,7 @@
 #define AE_SKY_H
 
 #include "../System.h"
-#include "../texture/Cubemap.h"
+#include "EnvironmentProbe.h"
 #include "DirectionalLight.h"
 
 namespace Atlas {
@@ -16,7 +16,7 @@ namespace Atlas {
 
 			DirectionalLight* sun = nullptr;
 
-			Texture::Cubemap* cubemap = nullptr;
+			EnvironmentProbe* probe = nullptr;
 
 		};
 

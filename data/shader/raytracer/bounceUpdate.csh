@@ -1,4 +1,4 @@
-#include <structures>
+#include <structures.hsh>
 
 layout (local_size_x = 1) in;
 
@@ -20,7 +20,7 @@ void main() {
 	uint rayCount = readAtomic[0];
 	
 	// Assume a group size of 64 threads
-	uint groupCount = uint(ceil(float(rayCount) / 64.0));
+	uint groupCount = uint(ceil(float(rayCount) / 32.0));
 	
 	DispatchIndirectCommand dispatch;
 	

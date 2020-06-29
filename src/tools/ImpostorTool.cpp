@@ -7,11 +7,11 @@ namespace Atlas {
 
 	namespace Tools {
 
-		Mesh::Impostor* ImpostorTool::GenerateImpostor(Mesh::Mesh* mesh, Camera* camera,
-			int32_t views, int32_t resolution) {
+		Mesh::Impostor* ImpostorTool::GenerateImpostor(Mesh::Mesh* mesh, 
+			int32_t views, int32_t resolution, bool octahedron) {
 
-			// https://www.gamasutra.com/view/feature/130911/dynamic_2d_imposters_a_simple_.php?page=2
-			/*
+			const bool orthoProjection = false;
+
 			Renderer::OpaqueRenderer renderer;
 			Viewport viewport(0, 0, resolution, resolution);
 
@@ -21,166 +21,140 @@ namespace Atlas {
 			framebuffer->AddComponentTexture(GL_DEPTH_ATTACHMENT, depthTexture);
 			framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 			framebuffer->AddComponent(GL_COLOR_ATTACHMENT1, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
-			framebuffer->AddComponent(GL_COLOR_ATTACHMENT2, AE_RG16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+			framebuffer->AddComponent(GL_COLOR_ATTACHMENT2, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
+			framebuffer->AddComponent(GL_COLOR_ATTACHMENT3, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 			auto impostor = new Mesh::Impostor(views, resolution);
 
 			framebuffer->Unbind();
 
 			std::vector<mat4> viewMatrices;
-			std::vector<Volume::AABB> aabbs;
 
 			auto min = mesh->data.aabb.min;
 			auto max = mesh->data.aabb.max;
 
-			for (int32_t i = 0; i < views; i++) {
+			auto center = min * 0.5f + max * 0.5f;
+			auto radius = glm::distance(center, max);	
 
-				auto z = cosf((float)i / (float)views * 2.0f * 3.14159265f);
-				auto x = sinf((float)i / (float)views * 2.0f * 3.14159265f);
+			auto dist = 10.0f * radius;
+			float fov = 2.0f * atanf(radius / dist);
 
-				auto dir = glm::normalize(vec3(x, 0.0f, z));
+			std::vector<vec3> rightVectors;
+			std::vector<vec3> upVectors;
 
-				auto matrix = glm::lookAt(vec3(0.0f, 0.0f, 0.0f),
-					dir, vec3(0.0f, 1.0f, 0.0f));
+			for (int32_t i = 0; i < views * views; i++) {
 
-				auto aabb = mesh->data.aabb.Transform(matrix);
-				aabbs.push_back(aabb);
+				int32_t x = i % views;
+				int32_t y = i / views;
 
-				min = glm::min(min, aabb.min);
-				max = glm::max(max, aabb.max);
+				vec2 coord = vec2((float)x, (float)y) / vec2((float)(views - 1));
+				vec3 dir;
+				if (octahedron) {
+					dir = OctahedronToUnitVector(coord);
+				}
+				else {
+					dir = HemiOctahedronToUnitVector(coord);
+				}
 
-			}
+				auto eye = dir * dist + center;
 
-			// Prevent stretching on one axis
-			auto diff = max - min;
-
-			float radians = glm::radians(camera->fieldOfView);
-			float tang = tanf(radians);			
-
-			auto dim = diff.x > diff.y ? diff.x : diff.y;
-
-			auto dist = dim / tang;
-
-			for (int32_t i = 0; i < views; i++) {
-
-				auto z = cosf((float)i / (float)views * 2.0f * 3.14159265f);
-				auto x = sinf((float)i / (float)views * 2.0f * 3.14159265f);
-
-				auto min = aabbs[i].min;
-				auto diff = aabbs[i].max - aabbs[i].min;
-				diff.z = 0.0f;
-
-				auto dir = glm::normalize(vec3(x, 0.0f, z));
-				auto eye = -dir * dist + min + diff * 0.5f + dir;
+				vec3 up = vec3(0.0f, 1.0f, 0.0f);
+				vec3 right = normalize(cross(up, dir));
+				up = normalize(cross(dir, right));
 
 				auto matrix = glm::lookAt(eye,
-					eye + dir, vec3(0.0f, 1.0f, 0.0f));
+					eye - dir, vec3(0.0f, 1.0f, 0.0f));
+
+				rightVectors.push_back(right);
+				upVectors.push_back(up);
 
 				viewMatrices.push_back(matrix);
 
-			}			
+			}
 
-			auto center = min * 0.5f + max * 0.5f;
-			auto eye = vec3(center.x, center.y, max.z);		
+			mat4 projectionMatrix;
 
-			if (diff.x > diff.y) {
-				auto offset = diff.x - diff.y;
-				max.y += offset / 2.0f;
-				min.y -= offset / 2.0f;
+			if (orthoProjection) {
+
 			}
 			else {
-				auto offset = diff.y - diff.x;
-				max.x += offset / 2.0f;
-				min.x -= offset / 2.0f;
+				projectionMatrix = glm::perspective(fov,
+					1.0f, 1.0f, dist + 2.0f * radius);
 			}
-
-			auto projectionMatrix = glm::perspective(glm::radians(camera->fieldOfView), 
-				1.0f, camera->nearPlane, dist + (max.z - min.z));
 
 			renderer.RenderImpostor(&viewport, framebuffer, viewMatrices, 
 				projectionMatrix, mesh, impostor);
 
-			impostor->aabb = Volume::AABB(
-				vec3(min.x, min.y, 0.0f),
-				vec3(max.x, max.y, max.z - min.z)
-			);
+			impostor->center = center;
+			impostor->radius = radius;
+
+			impostor->FillViewPlaneBuffer(rightVectors, upVectors);
+
+			// Approximate transmission
+			for (auto& material : mesh->data.materials) {
+				impostor->transmissiveColor += material.transmissiveColor / (float)mesh->data.materials.size();
+			}
 
 			delete framebuffer;
 
-			impostor->diffuseTexture.GenerateMipmap();
+			impostor->baseColorTexture.GenerateMipmap();
+			impostor->roughnessMetalnessAoTexture.GenerateMipmap();
 			impostor->normalTexture.GenerateMipmap();
-			impostor->specularTexture.GenerateMipmap();
+
+			glFlush();
 
 			return impostor;
-			*/
-			Renderer::OpaqueRenderer renderer;
-			Viewport viewport(0, 0, resolution, resolution);
 
-			auto framebuffer = new Framebuffer(resolution, resolution);
-			auto depthTexture = new Texture::Texture2D(resolution, resolution, AE_DEPTH24,
-				GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-			framebuffer->AddComponentTexture(GL_DEPTH_ATTACHMENT, depthTexture);
-			framebuffer->AddComponent(GL_COLOR_ATTACHMENT0, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
-			framebuffer->AddComponent(GL_COLOR_ATTACHMENT1, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
-			framebuffer->AddComponent(GL_COLOR_ATTACHMENT2, AE_RG16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		}
 
-			auto impostor = new Mesh::Impostor(views, resolution);
+		vec3 ImpostorTool::HemiOctahedronToUnitVector(vec2 coord) {
 
-			auto min = mesh->data.aabb.min;
-			auto max = mesh->data.aabb.max;
-			auto center = min * 0.5f + max * 0.5f;
-			auto eye = vec3(center.x, center.y, max.z);
+			coord = 2.0f * coord - 1.0f;
+			coord = 0.5f * vec2(coord.x + coord.y, coord.x - coord.y);
 
-			auto minProj = 0.0f, maxProj = 0.0f;
+			auto y = 1.0f - glm::dot(vec2(1.0), glm::abs(coord));
 
-			// Prevent stretching on one axis
-			auto diff = max - min;
+			return normalize(vec3(coord.x, y + 0.0001f, coord.y));
 
-			if (diff.x > diff.y) {
-				auto offset = diff.x - diff.y;
-				max.y += offset / 2.0f;
-				min.y -= offset / 2.0f;
+		}
+
+		vec2 ImpostorTool::UnitVectorToHemiOctahedron(vec3 dir) {
+
+			dir.y = glm::max(dir.y, 0.0001f);
+			dir /= glm::dot(glm::abs(dir), vec3(1.0));
+
+			return glm::clamp(0.5f * vec2(dir.x + dir.z, dir.x - dir.z) + 0.5f, 0.0f, 1.0f);
+
+		}
+
+		vec3 ImpostorTool::OctahedronToUnitVector(vec2 coord) {
+
+			coord = 2.0f * coord - 1.0f;
+			auto y = 1.0f - dot(glm::abs(coord), vec2(1.0f));
+
+			// Lower hemisphere
+			if (y < 0.0f) {
+				vec2 orig = coord;
+				coord.x = (orig.x >= 0.0f ? 1.0f : -1.0f) * (1.0f - abs(orig.y));
+				coord.y = (orig.y >= 0.0f ? 1.0f : -1.0f) * (1.0f - abs(orig.x));
 			}
-			else {
-				auto offset = diff.y - diff.x;
-				max.x += offset / 2.0f;
-				min.x -= offset / 2.0f;
-			}
+			
+			return normalize(vec3(coord.x, y + 0.0001f, coord.y));
 
-			auto projectionMatrix = glm::ortho(min.x, max.x,
-				min.y, max.y, -glm::length(min), glm::length(max));
+		}
 
-			framebuffer->Unbind();
+		vec2 ImpostorTool::UnitVectorToOctahedron(vec3 dir) {
 
-			std::vector<mat4> viewMatrices;
+			dir /= glm::dot(glm::abs(dir), vec3(1.0));
 
-			for (int32_t i = 0; i < views; i++) {
-
-				auto z = cosf((float)i / (float)views * 2.0f * 3.14159265f);
-				auto x = sinf((float)i / (float)views * 2.0f * 3.14159265f);
-
-				auto dir = glm::normalize(vec3(x, 0.0f, z));
-
-				viewMatrices.push_back(glm::lookAt(vec3(0.0f, 0.0f, 0.0f),
-					dir, vec3(0.0f, 1.0f, 0.0f)));
-
+			// Lower hemisphere
+			if (dir.y < 0.0f) {
+				vec2 orig = vec2(dir.x, dir.z);
+				dir.x = (orig.x >= 0.0f ? 1.0f : -1.0f) * (1.0f - abs(orig.y));
+				dir.z = (orig.y >= 0.0f ? 1.0f : -1.0f) * (1.0f - abs(orig.x));
 			}
 
-			renderer.RenderImpostor(&viewport, framebuffer, viewMatrices,
-				projectionMatrix, mesh, impostor);
-
-			impostor->aabb = Volume::AABB(
-				vec3(min.x, min.y, 0.0f),
-				vec3(max.x, max.y, max.z - min.z)
-			);
-
-			delete framebuffer;
-
-			impostor->diffuseTexture.GenerateMipmap();
-			impostor->normalTexture.GenerateMipmap();
-			impostor->specularTexture.GenerateMipmap();
-
-			return impostor;
+			return glm::clamp(0.5f * vec2(dir.x, dir.z) + 0.5f, 0.0f, 1.0f);
 
 		}
 

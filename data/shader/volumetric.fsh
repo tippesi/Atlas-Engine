@@ -1,5 +1,5 @@
-#include "structures"
-#include "common/convert"
+#include <structures>
+#include <common/convert.hsh>
 
 in vec2 fTexCoord;
 
@@ -8,7 +8,6 @@ layout(binding = 1) uniform sampler2DArrayShadow cascadeMaps;
 
 uniform Light light;
 uniform int sampleCount;
-uniform float scattering;
 uniform vec2 framebufferResolution;
 
 out float foginess;
@@ -25,6 +24,7 @@ void main() {
 
 }
 
+/*
 // Henyey-Greenstein phase function https://www.astro.umd.edu/~jph/HG_note.pdf
 float ComputeScattering(float lightDotView) {
     // Range [-1;1]
@@ -34,6 +34,7 @@ float ComputeScattering(float lightDotView) {
     result /= (4.0 * 3.14 * pow(1.0 + gSquared - (2.0 * g) * lightDotView, 1.5));
     return result;
 }
+*/
 
 const float ditherPattern[16] = float[](0.0, 0.5, 0.125, 0.625, 0.75, 0.22, 0.875, 0.375,
 		0.1875, 0.6875, 0.0625, 0.5625, 0.9375, 0.4375, 0.8125, 0.3125);
@@ -53,8 +54,6 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 	
 	float ditherValue = ditherPattern[(int(texCoords.x) % 4) * 4 + int(texCoords.y) % 4];
 	vec3 currentPosition = stepVector * ditherValue;
-	
-	float scatteringFactor = ComputeScattering(dot(rayDirection, light.direction));
 
 	int cascadeIndex = 0;
 	int lastCascadeIndex = 0;
@@ -89,13 +88,13 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
         cascadeSpace.xyz = cascadeSpace.xyz * 0.5 + 0.5;
 
         float shadowValue = texture(cascadeMaps, vec4(cascadeSpace.xy, cascadeIndex, cascadeSpace.z));
-        foginess += scatteringFactor * shadowValue;
+        foginess += shadowValue;
 
         currentPosition += stepVector;
 
     }
 
-    float scale = min(1.0, rayLength / 300.0);
+    float scale = min(1.0, rayLength / light.shadow.distance);
 
     return foginess * scale / float(sampleCount);
 

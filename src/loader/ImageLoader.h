@@ -33,6 +33,15 @@ namespace Atlas {
             */
             static Common::Image16 LoadImage16(std::string filename, bool colorSpaceConversion, int32_t forceChannels = 0);
 
+			/**
+			* Loads an image with 32 float bits per channel.
+			* @param filename The name of the image file.
+			* @param colorSpaceConversion Whether or not gamma to linear color space conversion is needed.
+			* @param forceChannels The number of channels to be forced. Default is zero, which means no force.
+			* @return An ImageFloat object with all the important data.
+			*/
+			static Common::ImageFloat LoadImageFloat(std::string filename, int32_t forceChannels = 0);
+
             /**
              * Save an image with 8 bits per channel to the hard drive.
              * @param image The image to be stored
@@ -50,8 +59,17 @@ namespace Atlas {
              */
             static void SaveImage16(Common::Image16& image, std::string filename);
 
+			/**
+			 * Save an image with 32 float bits per channel to the hard drive.
+			 * @param image The image to be stored
+			 * @param filename The filename that the image should have
+			 * @note By changing the fileFormat in the ImageFloat object the output file changes as well. Only
+             * IMAGE_HDR is supported for now.
+			 */
+			static void SaveImageFloat(Common::ImageFloat& image, std::string filename);
+
         private:
-            static void SavePGM8(Common::Image8& image, std::string filename);
+            static void SavePGM8(Common::Image8& image, std::ofstream& imageStream);
 
             static void SavePGM16(Common::Image16& image, std::string filename);
 

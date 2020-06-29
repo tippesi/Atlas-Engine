@@ -17,15 +17,11 @@ namespace Atlas {
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
-			static std::string vertexPath;
-			static std::string fragmentPath;
-
 		private:
 			void GetUniforms();
 
 			Buffer::VertexArray vertexArray;
 
-			Texture::Texture2D foam;
 			Texture::Texture2D refractionTexture;
 			Texture::Texture2D depthTexture;
 
@@ -49,6 +45,14 @@ namespace Atlas {
 			Shader::Uniform* choppyScale = nullptr;
 			Shader::Uniform* tiling = nullptr;
 
+			Shader::Uniform* shoreWaveDistanceOffset = nullptr;
+			Shader::Uniform* shoreWaveDistanceScale = nullptr;
+			Shader::Uniform* shoreWaveAmplitude = nullptr;
+			Shader::Uniform* shoreWaveSteepness = nullptr;
+			Shader::Uniform* shoreWavePower = nullptr;
+			Shader::Uniform* shoreWaveSpeed = nullptr;
+			Shader::Uniform* shoreWaveLength = nullptr;
+
 			Shader::Uniform* leftLoD = nullptr;
 			Shader::Uniform* topLoD = nullptr;
 			Shader::Uniform* rightLoD = nullptr;
@@ -57,7 +61,6 @@ namespace Atlas {
 			Shader::Uniform* lightDirection = nullptr;
 			Shader::Uniform* lightColor = nullptr;
 			Shader::Uniform* lightAmbient = nullptr;
-			Shader::Uniform* lightScatteringFactor = nullptr;
 
 			Shader::Uniform* shadowDistance = nullptr;
 			Shader::Uniform* shadowBias = nullptr;

@@ -4,16 +4,17 @@ namespace Atlas {
 
 	namespace Lighting {
 
-		EnvironmentProbe::EnvironmentProbe(const Texture::Cubemap& cubemap) : 
-			cubemap(cubemap), depth(cubemap.width, cubemap.height, AE_DEPTH24) {
+		EnvironmentProbe::EnvironmentProbe(const Texture::Cubemap& cubemap) : resolution(cubemap.width),
+			cubemap(cubemap), depth(cubemap.width, cubemap.height, AE_R16F),
+			filteredDiffuse(32, 32, AE_RGBA16F) {
 
 			SetPosition(position);
 
 		}
 
-		EnvironmentProbe::EnvironmentProbe(int32_t width, int32_t height, vec3 position) :
-			cubemap(width, height, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR, false),
-			depth(width, height, AE_DEPTH24) {
+		EnvironmentProbe::EnvironmentProbe(int32_t res, vec3 position) : resolution(res),
+			cubemap(res, res, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR_MIPMAP_LINEAR, true),
+			depth(res, res, AE_R16F), filteredDiffuse(32, 32, AE_RGBA16F) {
 
 			SetPosition(position);
 

@@ -38,7 +38,17 @@ namespace Atlas {
 		std::string consoleLog;
 		consoleLog.append("[" + std::to_string(entry.time) + "] ");
 		consoleLog.append(message);
+#ifdef AE_OS_ANDROID
+		size_t maxLogSize = 2000;
+		for (size_t i = 0; i <= message.length() / maxLogSize; i++) {
+		    auto start = i * maxLogSize;
+		    auto end = (i + 1) * maxLogSize;
+		    end = end > message.length() ? message.length() : end;
+		    AtlasLog("%s", message.substr(start, end).c_str());
+		}
+#else
 		AtlasLog("%s", consoleLog.c_str());
+#endif
 #endif
 
 		std::lock_guard<std::mutex> lock(mutex);

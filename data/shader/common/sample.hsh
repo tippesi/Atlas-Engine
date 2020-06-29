@@ -2,6 +2,40 @@
 #define SAMPLE_REPEAT 1
 #define SAMPLE_CLAMP 2
 
+ivec3 GetTexCoordCube(vec3 dir, ivec2 size) {
+
+	vec3 dirAbs = abs(dir);
+	float ma;
+	vec2 uv;
+	int faceIndex;
+
+	if(dirAbs.z >= dirAbs.x && dirAbs.z >= dirAbs.y)
+	{
+		faceIndex = dir.z < 0.0 ? 5 : 4;
+		ma = 0.5 / dirAbs.z;
+		uv = vec2(dir.z < 0.0 ? -dir.x : dir.x, -dir.y);
+	}
+	else if(dirAbs.y >= dirAbs.x)
+	{
+		faceIndex = dir.y < 0.0 ? 3 : 2;
+		ma = 0.5 / dirAbs.y;
+		uv = vec2(dir.x, dir.y < 0.0 ? -dir.z : dir.z);
+	}
+	else
+	{
+		faceIndex = dir.x < 0.0 ? 1 : 0;
+		ma = 0.5 / dirAbs.x;
+		uv = vec2(dir.x < 0.0 ? dir.z : -dir.z, -dir.y);
+	}
+
+	uv = uv * ma + 0.5;
+
+	ivec2 pixel = clamp(ivec2(vec2(size) * uv - 0.5), ivec2(0), ivec2(size) - 1);
+
+	return ivec3(pixel, faceIndex);
+
+}
+
 ivec2 GetTexCoordRepeat(ivec2 texCoord, ivec2 size) {
 	
 	return ivec2(texCoord.x % size.x,
@@ -11,7 +45,7 @@ ivec2 GetTexCoordRepeat(ivec2 texCoord, ivec2 size) {
 
 ivec2 GetTexCoordClamp(ivec2 texCoord, ivec2 size) {
 	
-	return clamp(texCoord, ivec2(0), size);
+	return clamp(texCoord, ivec2(0), size - ivec2(1));
 
 }
 
@@ -138,6 +172,9 @@ vec4 sampleTexBilinear(const in sampler2DArray texture, vec3 coord, const int wr
 		q01Tex = GetTexCoordClamp(texCoord + ivec2(0, 1), texSize.xy);
 		q11Tex = GetTexCoordClamp(texCoord + ivec2(1, 1), texSize.xy);	
 	}
+
+	// Experiment with gather
+	// vec4 s0 = texelGather(texture, ivec3(q00Tex, int(coord.z))
 	
 	// Fetch the four texture samples
 	vec4 q00 = texelFetch(texture, ivec3(q00Tex, int(coord.z)), 0);

@@ -9,6 +9,8 @@ namespace Atlas {
 
 			if (matrixChanged || parentUpdate) {
 
+				lastGlobalMatrix = globalMatrix;
+
 				matrixChanged = false;
 
 				globalMatrix = parentTransform * GetMatrix();

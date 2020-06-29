@@ -136,8 +136,31 @@ namespace Atlas {
 			void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
 								 vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
 
-
+			/**
+			 *
+			 * @param viewport
+			 * @param camera
+			 * @param batch
+			 */
 			void RenderBatched(Viewport* viewport, Camera* camera, RenderBatch* batch);
+
+            /**
+             * Renders the scene into an environment probe
+             * @param probe The environment probe.
+             * @param target A render target to support rendering
+             * @param scene The scene which should be rendered-
+             * @note The render target must have the same resolution as the probe.
+             */
+			void RenderProbe(Lighting::EnvironmentProbe* probe, RenderTarget* target, Scene::Scene* scene);
+
+			void RenderIrradianceVolume(Scene::Scene* scene, int32_t bounces = 1);
+
+			/**
+			 * Filters an environment probe.
+			 * @param probe The environment probe.
+			 * @note A probe has to be filtered to support image based lighting
+			 */
+			void FilterProbe(Lighting::EnvironmentProbe* probe);
 
 			/**
              * Update of the renderer
@@ -150,18 +173,45 @@ namespace Atlas {
 			AtmosphereRenderer atmosphereRenderer;
 
 		private:
+			struct PackedMaterial {
+
+				int32_t baseColor;
+				int32_t emissiveColor;
+				int32_t transmissionColor;
+
+				int32_t data0;
+				int32_t data1;
+
+				int32_t features;
+
+			};
+
 			void GetUniforms();
+
+			void PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
+				std::unordered_map<void*, uint16_t>& materialMap);
+
+			void PreintegrateBRDF();
 
 			Framebuffer framebuffer;
 			Framebuffer depthFramebuffer;
 
+			Texture::Texture2D dfgPreintegrationTexture;
+
 			Buffer::VertexArray vertexArray;
+			Buffer::VertexArray cubeVertexArray;
 
 			Shader::Shader rectangleShader;
 			Shader::Shader texture2DShader;
 			Shader::Shader texture2DArrayShader;
 
 			Shader::Shader lineShader;
+
+			Shader::Shader createProbeFaceShader;
+			Shader::Shader filterDiffuseShader;
+			Shader::Shader filterSpecularShader;
+
+			Shader::Shader downsampleDepth2x;
 
 			Shader::Uniform* rectangleProjectionMatrix = nullptr;
 			Shader::Uniform* rectangleOffset = nullptr;
@@ -193,7 +243,6 @@ namespace Atlas {
 			DecalRenderer decalRenderer;
 			DirectionalVolumetricRenderer directionalVolumetricRenderer;
 			DirectionalLightRenderer directionalLightRenderer;
-			PointLightRenderer pointLightRenderer;
 			TemporalAARenderer taaRenderer;
 			SkyboxRenderer skyboxRenderer;
 			PostProcessRenderer postProcessRenderer;

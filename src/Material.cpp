@@ -1,6 +1,4 @@
 #include "Material.h"
-#include "renderer/OpaqueRenderer.h"
-#include "renderer/ShadowRenderer.h"
 
 namespace Atlas {
 
@@ -34,9 +32,15 @@ namespace Atlas {
 
 	}
 
-	bool Material::HasDiffuseMap() const {
+	bool Material::HasBaseColorMap() const {
 
-		return diffuseMap ? true : false;
+		return baseColorMap ? true : false;
+
+	}
+
+	bool Material::HasOpacityMap() const {
+
+		return opacityMap ? true : false;
 
 	}
 
@@ -46,9 +50,21 @@ namespace Atlas {
 
 	}
 
-	bool Material::HasSpecularMap() const {
+	bool Material::HasRoughnessMap() const {
 
-		return specularMap ? true : false;
+		return roughnessMap ? true : false;
+
+	}
+
+	bool Material::HasMetalnessMap() const {
+
+		return metalnessMap ? true : false;
+
+	}
+
+	bool Material::HasAoMap() const {
+
+		return aoMap ? true : false;
 
 	}
 
@@ -62,38 +78,52 @@ namespace Atlas {
 
 		DeleteTextures();
 
-		diffuseMap = nullptr;
+		baseColorMap = nullptr;
 		normalMap = nullptr;
-		specularMap = nullptr;
+		roughnessMap = nullptr;
+		metalnessMap = nullptr;
+		aoMap = nullptr;
 		displacementMap = nullptr;
 
 		// We copy the texture instead of just the pointers
-		if (that.diffuseMap) {
-			diffuseMap = new Texture::Texture2D(*that.diffuseMap);
-			diffuseMapPath = that.diffuseMapPath;
+		if (that.baseColorMap) {
+			baseColorMap = new Texture::Texture2D(*that.baseColorMap);
+			baseColorMapPath = that.baseColorMapPath;
+		}
+		if (that.opacityMap) {
+			opacityMap = new Texture::Texture2D(*that.opacityMap);
+			opacityMapPath = that.opacityMapPath;
 		}
 		if (that.normalMap) {
 			normalMap = new Texture::Texture2D(*that.normalMap);
 			normalMapPath = that.normalMapPath;
 		}
-		if (that.specularMap) {
-			specularMap = new Texture::Texture2D(*that.specularMap);
-			specularMapPath = that.specularMapPath;
+		if (that.roughnessMap) {
+			roughnessMap = new Texture::Texture2D(*that.roughnessMap);
+			roughnessMapPath = that.roughnessMapPath;
+		}
+		if (that.metalnessMap) {
+			metalnessMap = new Texture::Texture2D(*that.metalnessMap);
+			metalnessMapPath = that.metalnessMapPath;
+		}
+		if (that.aoMap) {
+			aoMap = new Texture::Texture2D(*that.aoMap);
+			aoMapPath = that.aoMapPath;
 		}
 		if (that.displacementMap) {
 			displacementMap = new Texture::Texture2D(*that.displacementMap);
 			displacementMapPath = that.displacementMapPath;
 		}
 
-		diffuseColor = that.diffuseColor;
-		specularColor = that.specularColor;
-		ambientColor = that.ambientColor;
+		baseColor = that.baseColor;
 		emissiveColor = that.emissiveColor;
+		transmissiveColor = that.transmissiveColor;
 
 		opacity = that.opacity;
 
-		specularHardness = that.specularHardness;
-		specularIntensity = that.specularIntensity;
+		roughness = that.roughness;
+		metalness = that.metalness;
+		ao = that.ao;
 
 		normalScale = that.normalScale;
 		displacementScale = that.displacementScale;
@@ -102,9 +132,12 @@ namespace Atlas {
 
 	void Material::DeleteTextures() {
 
-		delete diffuseMap;
+		delete baseColorMap;
+		delete opacityMap;
 		delete normalMap;
-		delete specularMap;
+		delete roughnessMap;
+		delete metalnessMap;
+		delete aoMap;
 		delete displacementMap;
 
 	}

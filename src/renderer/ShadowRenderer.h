@@ -4,6 +4,7 @@
 #include "../System.h"
 #include "../RenderList.h"
 #include "Renderer.h"
+#include "ImpostorShadowRenderer.h"
 #include "../shader/ShaderBatch.h"
 
 #include <mutex>
@@ -25,11 +26,10 @@ namespace Atlas {
 
 			static void RemoveConfig(Shader::ShaderConfig* config);
 
-			static std::string vertexPath;
-			static std::string fragmentPath;
-
 		private:
 			RenderList renderList;
+
+			ImpostorShadowRenderer impostorRenderer;
 
 			Framebuffer framebuffer;
 

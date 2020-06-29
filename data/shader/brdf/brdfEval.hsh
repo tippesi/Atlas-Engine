@@ -1,0 +1,47 @@
+#include <surface.hsh>
+#include <brdf.hsh>
+
+#include <../common/PI.hsh>
+#include <../common/utility.hsh>
+
+layout(binding = 9) uniform sampler2D dfgTexture;
+
+vec3 EvaluateDiffuseBRDF(Surface surface) {
+
+	// Perceptual roughness to roughness
+	float roughness = sqr(surface.material.roughness);
+
+	float disneyDiffuse = RenormalizedDisneyDiffuse(surface.NdotV,
+		surface.NdotL, surface.LdotH, roughness);
+
+	return (1.0 - surface.material.metalness) * surface.material.baseColor * 
+		disneyDiffuse * INV_PI;
+
+}
+
+vec3 EvaluateSpecularBRDF(Surface surface) {
+
+    // Perceptual roughness to roughness
+	float roughness = sqr(surface.material.roughness);
+
+    vec3 F = FresnelSchlick(surface.F0, surface.F90, surface.LdotH);
+	float G = VisibilitySmithGGXCorrelated(surface.NdotV, surface.NdotL, roughness);
+	float D = DistributionGGX(surface.NdotH, roughness);
+	
+	return D * G * F * INV_PI;
+
+}
+
+vec3 EvaluateIndirectDiffuseBRDF(Surface surface) {
+
+    float preIntegrated = texture(dfgTexture, vec2(surface.NdotV, surface.material.roughness)).b;
+    return (1.0 - surface.material.metalness) * surface.material.baseColor * preIntegrated; 
+
+}
+
+vec3 EvaluateIndirectSpecularBRDF(Surface surface) {
+
+    vec2 preIntegrated = texture(dfgTexture, vec2(surface.NdotV, surface.material.roughness)).rg;
+    return surface.F0 * preIntegrated.x + surface.F90 * preIntegrated.y;
+
+}

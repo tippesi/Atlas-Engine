@@ -133,10 +133,10 @@ namespace Atlas {
 			int32_t srcZ, int32_t destX, int32_t destY, int32_t destZ,
 			int32_t width, int32_t height, int32_t depth) {
 
-			if (width <= 0 || height <= 0 || depth <= 0 ||
+			if (width <= 0 || height <= 0 || depth <= 0 || texture.channels != channels ||
 				srcX + width > texture.width || srcY + height > texture.height ||
 				srcZ + depth > texture.layers || destX + width > this->width || 
-				destY + height > this->height || destZ + depth > this->layers)
+				destY + height > this->height || destZ + depth > this->layers )
 				return;
 
 			Bind();
@@ -326,11 +326,11 @@ namespace Atlas {
             else {
                 glTexParameteri(target, GL_TEXTURE_MIN_FILTER, filtering);
                 glTexParameteri(target, GL_TEXTURE_MAG_FILTER, filtering);
-
-				glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapping);
-				glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
-				glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapping);
             }
+
+            glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapping);
+            glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
+            glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapping);
 
 			if (width > 0 && height > 0 && layers > 0)
 				ReserveStorage(mipCount);

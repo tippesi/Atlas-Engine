@@ -17,9 +17,6 @@ namespace Atlas {
 		public:
 			BVHNode() {}
 
-			void BuildMedian(std::vector<BVHNode<T>*>& nodes, int32_t sortAxis, size_t offset, size_t count,
-				std::vector<std::pair<AABB, T>>& data, int32_t& nodeCount, int32_t depth, bool isLeftChild);
-
 			void BuildSAH(std::vector<BVHNode<T>*>& nodes, size_t offset, size_t count,
 				std::vector<std::pair<AABB, T>>& data, int32_t& nodeCount, int32_t depth, bool isLeftChild);
 
@@ -53,6 +50,7 @@ namespace Atlas {
 
 			std::vector<AABB> aabbs;
 			std::vector<T> data;
+			int32_t maxDepth = 0;
 
 		private:
 			std::vector<BVHNode<T>> nodes;
@@ -87,6 +85,7 @@ namespace Atlas {
 			// Copy nodes
 			for (auto node : nodesPointer) {
 				nodes.push_back(*node);
+				maxDepth = glm::max(node->depth, maxDepth);
 				delete node;
 			}
 
@@ -123,68 +122,6 @@ namespace Atlas {
 		}
 
 		template <class T>
-		void BVHNode<T>::BuildMedian(std::vector<BVHNode<T>*>& nodes, int32_t sortAxis, size_t offset,
-			size_t count, std::vector<std::pair<AABB, T>>& data, int32_t& nodeCount, int32_t depth, bool isLeftChild) {
-
-			this->depth = depth;
-			this->isLeftChild = isLeftChild;
-
-			// Calculate AABB for node
-			auto min = vec3(std::numeric_limits<float>::max());
-			auto max = vec3(-std::numeric_limits<float>::max());
-
-			for (size_t i = offset; i < offset + count; i++) {
-				min = glm::min(min, data[i].first.min);
-				max = glm::max(max, data[i].first.max);
-			}
-
-			aabb = AABB(min, max);
-
-			// Check if data is big enough to continue splitting
-			if (count > 4) {
-
-				// Sort in place
-				std::sort(data.begin() + offset, data.begin() + offset + count,
-					[=](std::pair<AABB, T> data1, std::pair<AABB, T> data2) -> bool {
-
-						auto aabb1 = data1.first;
-						auto aabb2 = data2.first;
-
-						auto center1 = 0.5f * (aabb1.max + aabb1.min);
-						auto center2 = 0.5f * (aabb2.max + aabb2.min);
-
-						return center1[sortAxis] < center2[sortAxis];
-
-					});
-
-				// Split by splitting the data in half
-				auto split = count / 2;
-
-				if (split > 0) {
-					leftChild = nodeCount++;
-					nodes.push_back(new BVHNode<T>());
-					nodes[leftChild]->BuildMedian(nodes, (sortAxis + 1) % 3,
-						offset, split, data, nodeCount, depth + 1, true);
-				}
-
-				if (split < count) {
-					rightChild = nodeCount++;
-					nodes.push_back(new BVHNode<T>());
-					nodes[rightChild]->BuildMedian(nodes, (sortAxis + 1) % 3,
-						offset + split, count - split, data, nodeCount, depth + 1, false);
-				}
-
-			}
-			else {
-
-				dataOffset = (int32_t)offset;
-				dataCount = (int32_t)count;
-
-			}
-
-		}
-
-		template <class T>
 		void BVHNode<T>::BuildSAH(std::vector<BVHNode<T>*>& nodes, size_t offset, size_t count, 
 			std::vector<std::pair<AABB, T>>& data, int32_t& nodeCount, int32_t depth, bool isLeftChild) {
 
@@ -205,7 +142,7 @@ namespace Atlas {
 			aabb = AABB(min, max);
 
 			// Create leaf node
-			if (count <= 2) {
+			if (count <= 1) {
 				dataOffset = (int32_t)offset;
 				dataCount = (int32_t)count;
 				return;
@@ -264,7 +201,7 @@ namespace Atlas {
 					}
 
 					// We don't want to have useless partitionings
-					if (primitivesLeft <= 1 || primitivesRight <= 1)
+					if (primitivesLeft <= 0 || primitivesRight <= 0)
 						continue;
 
 					auto leftDimension = aabbLeft.max - aabbLeft.min;

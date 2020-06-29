@@ -1,24 +1,14 @@
-#ifdef ALPHA
-#ifdef ARRAY_MAP
-layout(binding = 0) uniform sampler2DArray arrayMap;
-uniform float diffuseMapIndex;
-#else
-layout(binding = 0) uniform sampler2D diffuseMap;
-#endif
+#ifdef OPACITY_MAP
+layout(binding = 0) uniform sampler2D opacityMap;
 
-in vec2 fTexCoord;
+in vec2 texCoordVS;
 #endif
 
 void main() {
 	
-#ifdef ALPHA
-#ifdef ARRAY_MAP
-	float alpha = texture(arrayMap, vec3(fTexCoord, diffuseMapIndex)).a;
-#else
-	float alpha = texture(diffuseMap, fTexCoord).a;
-#endif
-	
-	if(alpha < 0.2f)
+#ifdef OPACITY_MAP
+	float opacity = texture(opacityMap, texCoordVS).r;	
+	if(opacity < 0.2)
 		discard;
 #endif
 	

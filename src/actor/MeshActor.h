@@ -17,6 +17,8 @@ namespace Atlas {
 
 			Mesh::Mesh* mesh;
 
+			mat4 lastGlobalMatrix;
+
 		protected:
 			MeshActor(Mesh::Mesh* mesh) : mesh(mesh) {}
 

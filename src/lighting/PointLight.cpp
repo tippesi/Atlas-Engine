@@ -8,9 +8,6 @@ namespace Atlas {
 
 			location = vec3(0.0f, 3.0f, 0.0f);
 
-			color = vec3(1.0f);
-			ambient = 0.0f;
-
 			shadow = nullptr;
 			volumetric = nullptr;
 
@@ -56,7 +53,7 @@ namespace Atlas {
 
 		void PointLight::AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor) {
 
-			volumetric = new Volumetric(width, height, sampleCount, scattering, scatteringFactor);
+			volumetric = new Volumetric(width, height, sampleCount);
 
 		}
 

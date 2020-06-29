@@ -32,9 +32,6 @@ namespace Atlas {
 
 			void Update();
 
-			static std::string vertexPath;
-			static std::string fragmentPath;
-
 		private:
 			void GetUniforms();
 

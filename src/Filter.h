@@ -9,13 +9,13 @@ namespace Atlas {
     /**
      * Manages convolution matrices.
      */
-    class Kernel {
+    class Filter {
 
     public:
         /**
-         * Constructs a Kernel.
+         * Constructs a Filter.
          */
-        Kernel();
+        Filter() {}
 
         /**
          * Calculates a gaussian convolution matrix.
@@ -38,23 +38,25 @@ namespace Atlas {
          * Sets the convolution matrix.
          * @param weights The weights for the convolution matrix.
          * @param offsets The offsets for the convolution matrix.
+         * @param separable Whether or not the convolution matrix is separable
          * @note The size of the weights and the offsets should be odd in every dimension.
          */
-        void Set(std::vector<std::vector<float>> &weights, std::vector<std::vector<ivec2>> &offsets);
+        void Set(std::vector<std::vector<float>>& weights, std::vector<std::vector<ivec2>>& offsets, bool separable = false);
 
         /**
          * Returns the convolution matrix.
-         * @param weights A pointer which will contain the weights.
-         * @param offsets A pointer which will contain the offsets.
-         * @note The input pointers shouldn't have anything allocated and shouldn't be deleted later on.
+         * @param weights A pointer to a weight matrix which will contain the weights.
+         * @param offsets A pointer to an offset matrix which will contain the offsets.
+         * @note The input pointers should point to allocated memory.
          */
-        void Get(std::vector<std::vector<float>> *&weights, std::vector<std::vector<ivec2>> *&offsets);
+        void Get(std::vector<std::vector<float>>* weights, std::vector<std::vector<ivec2>>* offsets) const;
 
         /**
          * Returns the linearized convolution matrix.
-         * @param weights A pointer which will contain the weights.
-         * @param offsets A pointer which will contain the offsets.
-         * @note The input pointers shouldn't have anything allocated and shouldn't be deleted later on.
+         * @param weights A pointer to a weight vector which will contain the weights.
+         * @param offsets A pointer to a offset vector which will contain the offsets.
+         * @param bilinearReduction Should be set to true if bilinear sampling is supported by the hardware.
+         * @note The input pointers should point to allocated memory.
          * @remark This method should only be used if the filter is separable
          * (explanation <a href="https://en.wikipedia.org/wiki/Separable_filter">here</a>) and if the sampling
          * supports bilinear interpolation. Linearized means that the convolution matrix is reduced to a
@@ -63,7 +65,13 @@ namespace Atlas {
          * Additionally the samples of the linearized matrix are cut by half by weighting the offsets in such a
          * way that the new samples are always between two of the original samples.
          */
-        void GetLinearized(std::vector<float> *&weights, std::vector<float> *&offsets);
+        void GetLinearized(std::vector<float>* weights, std::vector<float>* offsets, bool bilinearReduction = true);
+
+        /**
+         * Returns whether or not the convolution matrix is separable
+         * @return Whether or not the convolution matrix is separable
+         */
+        bool IsSeparable() const;
 
     private:
         float Gaussian(float x, float y, float mean, float sigma);
@@ -74,7 +82,8 @@ namespace Atlas {
         std::vector<float> weightsLinearized;
         std::vector<float> offsetsLinearized;
 
-        bool changed;
+        bool changed = false;
+        bool separable = false;
 
     };
 

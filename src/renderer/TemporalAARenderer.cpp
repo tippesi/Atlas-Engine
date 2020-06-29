@@ -30,7 +30,6 @@ namespace Atlas {
 			target->GetVelocity()->Bind(GL_TEXTURE2);
 			target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
 
-			jitter->SetValue(camera->GetJitter() * 0.5f);
 			invResolution->SetValue(1.0f / vec2((float)target->GetWidth(), (float)target->GetHeight()));
 			resolution->SetValue(vec2((float)target->GetWidth(), (float)target->GetHeight()));
 			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
@@ -45,7 +44,6 @@ namespace Atlas {
 		void TemporalAARenderer::GetUniforms() {
 
 			convergence = shader.GetUniform("convergence");
-			jitter = shader.GetUniform("jitter");
 			invResolution = shader.GetUniform("invResolution");
 			resolution = shader.GetUniform("resolution");
 

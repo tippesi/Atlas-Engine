@@ -32,15 +32,22 @@ namespace Atlas {
 
 			int32_t L;
 
-			float choppinessScale = 1.0f;
-			float displacementScale = 1.0f;
-			float tiling = 1.0f;
+			float choppinessScale = 3.0f;
+			float displacementScale = 4.0f;
+			float tiling = 64.0f;
 
 			float waveAmplitude = 1.0f;
 
 			vec2 windDirection = vec2(0.8f, 0.6f);
 			float windSpeed = 60.0f;
-			float windDependency = 0.07f;
+			float windDependency = 0.9f;
+
+			float foamTemporalWeight = 0.985f;
+			float foamTemporalThreshold = 0.6f;
+
+			float foamOffset = 0.85f;
+			float foamScale = 1.5f;
+			float foamSize = 4.0f;
 
 			float simulationSpeed = 5.0f;
 
@@ -94,6 +101,9 @@ namespace Atlas {
 			Shader::Uniform* normalChoppyScaleUniform;
 			Shader::Uniform* normalDisplacementScaleUniform;
 			Shader::Uniform* normalTilingUniform;
+			Shader::Uniform* normalFoamTemporalWeightUniform;
+			Shader::Uniform* normalFoamTemporalThresholdUniform;
+			Shader::Uniform* normalFoamOffsetUniform;
 
 		};
 

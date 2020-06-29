@@ -88,8 +88,16 @@ namespace Atlas {
          */
 		std::vector<vec3> GetFrustumCorners(float nearPlane, float farPlane);
 
+		/**
+		 * Updates the view frustum of the camera.
+		 * @note This is automatically updated by calling Update()
+		 */
+		void UpdateFrustum();
+
 		vec3 location = vec3(0.0f);
 		vec2 rotation = vec2(0.0f);
+
+		float exposure = 1.0f;
 
 		float fieldOfView = 45.0f;
 		float aspectRatio = 2.0f;
@@ -115,8 +123,6 @@ namespace Atlas {
 		Volume::Frustum frustum;
 
 	private:
-		void CalculateFrustum();
-
 		vec2 jitterVector = vec2(0.0f);
 		vec2 lastJitterVector = vec2(0.0f);
 

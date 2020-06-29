@@ -10,6 +10,8 @@
 #include "../actor/DecalActor.h"
 #include "../actor/AudioActor.h"
 
+#include "../lighting/Light.h"
+
 namespace Atlas {
 
 	namespace Scene {

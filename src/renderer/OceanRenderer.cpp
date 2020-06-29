@@ -7,17 +7,12 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string OceanRenderer::vertexPath = "ocean/ocean.vsh";
-		std::string OceanRenderer::fragmentPath = "ocean/ocean.fsh";
-
 		OceanRenderer::OceanRenderer() {
 
 			Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 129, 1.0f / 128.0f);
 
-			// foam = Texture::Texture2D("foam.jpg", false);
-
-			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+			shader.AddStage(AE_VERTEX_STAGE, "ocean/ocean.vsh");
+			shader.AddStage(AE_FRAGMENT_STAGE, "ocean/ocean.fsh");
 
 			shader.Compile();
 
@@ -53,9 +48,7 @@ namespace Atlas {
 
 			lightDirection->SetValue(direction);
 			lightColor->SetValue(sun->color);
-			lightAmbient->SetValue(sun->ambient);
-			
-			lightScatteringFactor->SetValue(sun->GetVolumetric() ? sun->GetVolumetric()->scatteringFactor : 0.0f);
+			lightAmbient->SetValue(0.0f);
 
 			if (sun->GetVolumetric()) {
 				glViewport(0, 0, sun->GetVolumetric()->map.width, sun->GetVolumetric()->map.height);
@@ -91,6 +84,14 @@ namespace Atlas {
 			choppyScale->SetValue(ocean->choppynessScale);
 			tiling->SetValue(ocean->tiling);
 
+			shoreWaveDistanceOffset->SetValue(ocean->shoreWaveDistanceOffset);
+			shoreWaveDistanceScale->SetValue(ocean->shoreWaveDistanceScale);
+			shoreWaveAmplitude->SetValue(ocean->shoreWaveAmplitude);
+			shoreWaveSteepness->SetValue(ocean->shoreWaveSteepness);
+			shoreWavePower->SetValue(ocean->shoreWavePower);
+			shoreWaveSpeed->SetValue(ocean->shoreWaveSpeed);
+			shoreWaveLength->SetValue(ocean->shoreWaveLength);
+
 			// Update local texture copies
 			auto texture = target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0);
 
@@ -117,10 +118,10 @@ namespace Atlas {
 			ocean->simulation.displacementMap.Bind(GL_TEXTURE0);
 			ocean->simulation.normalMap.Bind(GL_TEXTURE1);
 
-			// foam.Bind(GL_TEXTURE2);
+			ocean->foamTexture.Bind(GL_TEXTURE2);
 
-			if (scene->sky.cubemap != nullptr)
-				scene->sky.cubemap->Bind(GL_TEXTURE3);
+			if (!scene->sky.probe)
+				scene->sky.probe->cubemap.Bind(GL_TEXTURE3);
 
 			refractionTexture.Bind(GL_TEXTURE4);
 			depthTexture.Bind(GL_TEXTURE5);
@@ -129,14 +130,14 @@ namespace Atlas {
 			terrainSideLength->SetValue(-1.0f);
 
 			if (scene->terrain) {
-				if (scene->terrain->heightApproximation.width > 0 &&
-					scene->terrain->heightApproximation.height > 0) {
+				if (scene->terrain->shoreLine.width > 0 &&
+					scene->terrain->shoreLine.height > 0) {
 
 					terrainTranslation->SetValue(scene->terrain->translation);
 					terrainHeightScale->SetValue(scene->terrain->heightScale);
 					terrainSideLength->SetValue(scene->terrain->sideLength);
 
-					scene->terrain->heightApproximation.Bind(GL_TEXTURE9);
+					scene->terrain->shoreLine.Bind(GL_TEXTURE9);
 
 				}
 			}
@@ -186,7 +187,10 @@ namespace Atlas {
 
 			}
 
-			// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+#ifdef AE_API_GL
+			if (ocean->wireframe)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+#endif
 
 			for (auto node : renderList) {
 
@@ -203,7 +207,10 @@ namespace Atlas {
 
 			}
 
-			// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#ifdef AE_API_GL
+			if (ocean->wireframe)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif
 
 		}
 
@@ -227,6 +234,14 @@ namespace Atlas {
 			choppyScale = shader.GetUniform("choppyScale");
 			tiling = shader.GetUniform("tiling");
 
+			shoreWaveDistanceOffset = shader.GetUniform("shoreWaveDistanceOffset");
+			shoreWaveDistanceScale = shader.GetUniform("shoreWaveDistanceScale");
+			shoreWaveAmplitude = shader.GetUniform("shoreWaveAmplitude");
+			shoreWaveSteepness = shader.GetUniform("shoreWaveSteepness");
+			shoreWavePower = shader.GetUniform("shoreWavePower");
+			shoreWaveSpeed = shader.GetUniform("shoreWaveSpeed");
+			shoreWaveLength = shader.GetUniform("shoreWaveLength");
+
 			leftLoD = shader.GetUniform("leftLoD");
 			topLoD = shader.GetUniform("topLoD");
 			rightLoD = shader.GetUniform("rightLoD");
@@ -235,7 +250,6 @@ namespace Atlas {
 			lightDirection = shader.GetUniform("light.direction");
 			lightColor = shader.GetUniform("light.color");
 			lightAmbient = shader.GetUniform("light.ambient");
-			lightScatteringFactor = shader.GetUniform("light.scatteringFactor");
 
 			shadowDistance = shader.GetUniform("light.shadow.distance");
 			shadowBias = shader.GetUniform("light.shadow.bias");

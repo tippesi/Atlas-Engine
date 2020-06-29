@@ -87,6 +87,9 @@ namespace Atlas {
 			normalChoppyScaleUniform = normal.GetUniform("choppyScale");
 			normalDisplacementScaleUniform = normal.GetUniform("displacementScale");
 			normalTilingUniform = normal.GetUniform("tiling");
+			normalFoamTemporalWeightUniform = normal.GetUniform("temporalWeight");
+			normalFoamTemporalThresholdUniform = normal.GetUniform("temporalThreshold");
+			normalFoamOffsetUniform = normal.GetUniform("foamOffset");
 
 			ComputeTwiddleIndices();
 			ComputeSpectrum();
@@ -118,6 +121,9 @@ namespace Atlas {
 
 			h0K.Bind(GL_WRITE_ONLY, 0);
 
+			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
+				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
 			glDispatchCompute(N / 16, N / 16, 1);
 
 		}
@@ -142,6 +148,9 @@ namespace Atlas {
 			twiddleIndices.Bind(GL_WRITE_ONLY, 0);
 			buffer.BindBase(1);
 
+			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
+				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
 			glDispatchCompute(bitCount, N / 16, 1);
 
 		}
@@ -162,6 +171,9 @@ namespace Atlas {
 			hTDxz.Bind(GL_WRITE_ONLY, 1);
 
 			h0K.Bind(GL_READ_ONLY, 2);
+
+			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
+				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			glDispatchCompute(N / 16, N / 16, 1);
 
@@ -320,9 +332,15 @@ namespace Atlas {
 			normalChoppyScaleUniform->SetValue(choppinessScale);
 			normalDisplacementScaleUniform->SetValue(displacementScale);
 			normalTilingUniform->SetValue(tiling);
+			normalFoamTemporalWeightUniform->SetValue(foamTemporalWeight);
+			normalFoamTemporalThresholdUniform->SetValue(foamTemporalThreshold);
+			normalFoamOffsetUniform->SetValue(foamOffset);
+
+			auto normalMapCopy = normalMap;
 
 			displacementMap.Bind(GL_READ_ONLY, 0);
 			normalMap.Bind(GL_WRITE_ONLY, 1);
+			normalMapCopy.Bind(GL_READ_ONLY, 2);
 
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 

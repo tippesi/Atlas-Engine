@@ -1,6 +1,6 @@
-#include <structures>
+#include <structures.hsh>
 
-bool Intersection(Ray ray, AABB aabb, float tmin, float tmax, out float t) {
+bool IntersectAABB(Ray ray, AABB aabb, float tmin, float tmax) {
 	
 	vec3 minVec = vec3(aabb.minX, aabb.minY, aabb.minZ);
 	vec3 maxVec = vec3(aabb.maxX, aabb.maxY, aabb.maxZ);
@@ -14,13 +14,11 @@ bool Intersection(Ray ray, AABB aabb, float tmin, float tmax, out float t) {
 	float tminf = max(tmin, max(tsmall.x, max(tsmall.y, tsmall.z)));
 	float tmaxf = min(tmax, min(tbig.x, min(tbig.y, tbig.z)));
 	
-	t = tminf;
-	
 	return (tminf <= tmaxf);
 
 }
 
-bool Intersection(Ray ray, vec3 v0, vec3 v1, vec3 v2,
+bool IntersectTriangle(Ray ray, vec3 v0, vec3 v1, vec3 v2,
 	out vec3 sol) {
 
 	vec3 e0 = v1 - v0;

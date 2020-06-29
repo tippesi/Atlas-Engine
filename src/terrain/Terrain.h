@@ -38,7 +38,7 @@ namespace Atlas {
              * maximum lod which is Lod6 we have a total of pow(4, 6) * 9 = 36864 nodes. If we have a patchSizeFactor of 4
              * we have 4 * pow(2 * 4, 2) = 64 vertices per patch. This results in a maximum vertex count of
              * around 600 mio. If we take the square root we get the number of vertices per side: sqrt(603979776) = 24576. If we set
-             * the resolution to 0.5 we get a total of 12288 units per terrain side. The size of map is therefore roughly
+             * the resolution to 0.5 we get a total of 12288 units per terrain side. The size of the map is therefore roughly
              * 150 kilounits^2.
              */
 			Terrain(int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSizeFactor, float resolution, float height);
@@ -49,7 +49,7 @@ namespace Atlas {
              * @note After calling this method the storage->requestedCells list contains all the
              * StorageCells which are needed by the terrain. If these StorageCells aren't loaded the terrain
              * can't increase the level of detail of the specific nodes. The storage->unusedCells list contains
-             * all the cells which aren't needed any more at the moment.
+             * all the cells which aren't needed any more at the moment. (Caching might be needed)
              */
 			void Update(Camera* camera);
 
@@ -137,7 +137,7 @@ namespace Atlas {
 
 			TerrainStorage* storage;
 
-			Texture::Texture2D heightApproximation;
+			Texture::Texture2D shoreLine;
 
 			int32_t bakeResolution = 512;
 

@@ -3,7 +3,7 @@
 
 #include "../System.h"
 #include "../TypeFormat.h"
-#include "Packing.h"
+#include "../common/Packing.h"
 
 #include <type_traits>
 
@@ -219,7 +219,7 @@ namespace Atlas {
 				for (int32_t i = 0; i < size; i++) {
 					vec4 vector = vec4(data[dataCounter], data[dataCounter + 1],
 									   data[dataCounter + 2], data[dataCounter + 3]);
-					internalData[i] = packNormalizedFloat_2_10_10_10_REV(vector);
+					internalData[i] = Common::Packing::PackNormalizedFloat3x10_1x2(vector);
 					dataCounter += 4;
 				}
 			}

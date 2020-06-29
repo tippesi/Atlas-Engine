@@ -86,6 +86,7 @@ namespace Atlas {
 			bool vegetation = false;
 
 			float impostorDistance = 300.0f;
+			float impostorShadowDistance = 100.0f;
 
 			struct MaterialConfig {
 

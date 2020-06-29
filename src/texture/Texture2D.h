@@ -23,15 +23,15 @@ namespace Atlas {
 			Texture2D(const Texture2D& that);
 
             /**
-             * Constructs a Texture2D object.
-             * @param width
-             * @param height
-             * @param sizedFormat
-             * @param wrapping
-             * @param filtering
-             * @param anisotropicFiltering
-             * @param generateMipMaps
-             */
+			 * Construct a Texture2D object.
+			 * @param width The width of the texture.
+			 * @param height The height of the texture.
+			 * @param sizedFormat The sized texture format. See {@link TextureFormat.h} for more.
+			 * @param wrapping The wrapping of the texture. Controls texture border behaviour.
+			 * @param filtering The filtering of the texture.
+			 * @param anisotropicFiltering Whether or not anisotropic filtering is used.
+			 * @param generateMipMaps Whether or not mipmap can be used. Generate using GenerateMipmap()
+			 */
             Texture2D(int32_t width, int32_t height, int32_t sizedFormat, int32_t wrapping = GL_CLAMP_TO_EDGE, 
 				int32_t filtering = GL_NEAREST, bool anisotropicFiltering = false, bool generateMipMaps = false);
 
@@ -79,6 +79,18 @@ namespace Atlas {
 			 * @param mipLevel The mipmap level
              */
             void SetData(std::vector<uint16_t>& data, int32_t mipLevel);
+
+            /**
+             * Sets the data of the texture
+             * @param data A pointer to the data
+             */
+            void SetData(std::vector<float16>& data);
+
+			/**
+			 * Sets the data of the texture
+			 * @param data A pointer to the data
+			 */
+			void SetData(std::vector<float>& data);
 
             /**
              * Retrieves the data of the texture from the GPU.

@@ -1,5 +1,5 @@
 #include "../structures"
-#include <../common/convert>
+#include <../common/convert.hsh>
 
 in vec3 fTexCoordProj;
 in mat4 inverseModelMatrix;

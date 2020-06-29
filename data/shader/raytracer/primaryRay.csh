@@ -1,7 +1,7 @@
-#include <structures>
-#include <../common/random>
-#include <../common/indexing>
-#include <common>
+#include <structures.hsh>
+#include <../common/random.hsh>
+#include <../common/indexing.hsh>
+#include <common.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
@@ -45,8 +45,8 @@ void main() {
 			+ bottom * coord.y - cameraLocation);
 		ray.origin = cameraLocation;
 		
-		ray.accumColor = vec3(0.0);
-		ray.mask = vec3(1.0);
+		ray.color = vec3(0.0);
+		ray.throughput = vec3(1.0);
 		
 		int groupIndex = vec2ToIndex(ivec2(gl_WorkGroupID), ivec2(gl_NumWorkGroups));
 		uint index = gl_LocalInvocationIndex + uint(groupIndex) * uint(64);

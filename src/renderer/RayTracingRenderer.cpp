@@ -1,10 +1,9 @@
 #include "RayTracingRenderer.h"
 #include "../Log.h"
 #include "../Clock.h"
+#include "../common/Packing.h"
 
 #include "../volume/BVH.h"
-#include "../libraries/glm/packing.hpp"
-#include "../libraries/glm/gtc/packing.hpp"
 
 #include <unordered_set>
 #include <unordered_map>
@@ -12,10 +11,6 @@
 namespace Atlas {
 
 	namespace Renderer {
-
-		std::string RayTracingRenderer::primaryRayComputePath = "raytracer/primaryRay.csh";
-		std::string RayTracingRenderer::bounceUpdateComputePath = "raytracer/bounceUpdate.csh";
-		std::string RayTracingRenderer::rayUpdateComputePath = "raytracer/rayUpdate.csh";
 
 		RayTracingRenderer::RayTracingRenderer() {
 
@@ -47,18 +42,18 @@ namespace Atlas {
 				AE_BUFFER_DYNAMIC_STORAGE);
 
 			// Load shader stages from hard drive and compile the shader
-			primaryRayShader.AddStage(AE_COMPUTE_STAGE, primaryRayComputePath);
+			primaryRayShader.AddStage(AE_COMPUTE_STAGE, "raytracer/primaryRay.csh");
 			primaryRayShader.Compile();
 
 			// Retrieve uniforms
 			GetPrimaryRayUniforms();
 
-			bounceUpdateShader.AddStage(AE_COMPUTE_STAGE, bounceUpdateComputePath);
+			bounceUpdateShader.AddStage(AE_COMPUTE_STAGE, "raytracer/bounceUpdate.csh");
 			bounceUpdateShader.Compile();
 
 			GetBounceUpdateUniforms();
 
-			rayUpdateShader.AddStage(AE_COMPUTE_STAGE, rayUpdateComputePath);
+			rayUpdateShader.AddStage(AE_COMPUTE_STAGE, "raytracer/rayUpdate.csh");
 			rayUpdateShader.Compile();
 
 			GetRayUpdateUniforms();
@@ -118,23 +113,24 @@ namespace Atlas {
 				renderTarget->accumTexture0.Bind(GL_READ_ONLY, 2);
 			}
 
-			if (diffuseTextureAtlas.slices.size())
-				diffuseTextureAtlas.texture.Bind(GL_TEXTURE3);
+			if (baseColorTextureAtlas.slices.size())
+				baseColorTextureAtlas.texture.Bind(GL_TEXTURE3);
 			if (normalTextureAtlas.slices.size())
 				normalTextureAtlas.texture.Bind(GL_TEXTURE4);
-			if (specularTextureAtlas.slices.size())
-				specularTextureAtlas.texture.Bind(GL_TEXTURE5);
+			if (roughnessTextureAtlas.slices.size())
+				roughnessTextureAtlas.texture.Bind(GL_TEXTURE5);
+			if (metalnessTextureAtlas.slices.size())
+				metalnessTextureAtlas.texture.Bind(GL_TEXTURE6);
+			if (aoTextureAtlas.slices.size())
+				aoTextureAtlas.texture.Bind(GL_TEXTURE7);
 
-			if (scene->sky.cubemap) {
-				scene->sky.cubemap->Bind(GL_READ_ONLY, 6);
+			if (scene->sky.probe) {
+				scene->sky.probe->cubemap.Bind(GL_READ_ONLY, 4);
 			}
 
 			materialBuffer.BindBase(5);
 			triangleBuffer.BindBase(6);
-			nodesBuffer.BindBase(7);
-
-			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
-				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			nodesBuffer.BindBase(7);			
 
 			for (int32_t i = 0; i <= bounces; i++) {
 
@@ -174,6 +170,9 @@ namespace Atlas {
 					groupCount.x += resolution.x % groupCount.x ? 1 : 0;
 					groupCount.y += resolution.y % groupCount.y ? 1 : 0;
 
+					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
+						GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
 					glDispatchCompute(groupCount.x, groupCount.y, 1);
 
 					counterBuffer0.BindBase(0);
@@ -202,6 +201,9 @@ namespace Atlas {
 
 					bounceUpdateShader.Bind();
 
+					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
+						GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
 					glDispatchCompute(1, 1, 1);
 				}
 
@@ -212,7 +214,7 @@ namespace Atlas {
 				if (sun) {
 					lightDirectionRayUpdateUniform->SetValue(normalize(sun->direction));
 					lightColorRayUpdateUniform->SetValue(sun->color);
-					lightAmbientRayUpdateUniform->SetValue(sun->ambient);
+					lightIntensityRayUpdateUniform->SetValue(sun->intensity);
 				}
 				else {
 					lightColorRayUpdateUniform->SetValue(vec3(0.0f));
@@ -227,8 +229,8 @@ namespace Atlas {
 				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 				if (!i) {
-					uint32_t groupCount = (resolution.x / 8 / imageSubdivisions.x) *
-						(resolution.y / 8 / imageSubdivisions.y);
+					uint32_t groupCount = (resolution.x / 4 / imageSubdivisions.x) *
+						(resolution.y / 4 / imageSubdivisions.y);
 					glDispatchCompute(groupCount, 1, 1);
 				}
 				else {
@@ -296,7 +298,7 @@ namespace Atlas {
 			
 			lightDirectionRayUpdateUniform = rayUpdateShader.GetUniform("light.direction");
 			lightColorRayUpdateUniform = rayUpdateShader.GetUniform("light.color");
-			lightAmbientRayUpdateUniform = rayUpdateShader.GetUniform("light.ambient");
+			lightIntensityRayUpdateUniform = rayUpdateShader.GetUniform("light.intensity");
 
 			sampleCountRayUpdateUniform = rayUpdateShader.GetUniform("sampleCount");
 			bounceCountRayUpdateUniform = rayUpdateShader.GetUniform("bounceCount");
@@ -422,12 +424,12 @@ namespace Atlas {
 					auto bitangent = handedness * normalize(glm::cross(tangent, normal));
 
 					// Compress data
-					auto cn0 = PackUnitVector(vec4(n0, 0.0f));
-					auto cn1 = PackUnitVector(vec4(n1, 0.0f));
-					auto cn2 = PackUnitVector(vec4(n2, 0.0f));
+					auto cn0 = Common::Packing::PackSignedVector3x10_1x2(vec4(n0, 0.0f));
+					auto cn1 = Common::Packing::PackSignedVector3x10_1x2(vec4(n1, 0.0f));
+					auto cn2 = Common::Packing::PackSignedVector3x10_1x2(vec4(n2, 0.0f));
 
-					auto ct = PackUnitVector(vec4(tangent, 0.0f));
-					auto cbt = PackUnitVector(vec4(bitangent, 0.0f));
+					auto ct = Common::Packing::PackSignedVector3x10_1x2(vec4(tangent, 0.0f));
+					auto cbt = Common::Packing::PackSignedVector3x10_1x2(vec4(bitangent, 0.0f));
 
 					auto cuv0 = glm::packHalf2x16(uv0);
 					auto cuv1 = glm::packHalf2x16(uv1);
@@ -463,6 +465,7 @@ namespace Atlas {
 			// Temporaray data
 			triangles = bvh.data;
 			aabbs = bvh.aabbs;
+			bvhDepth = bvh.maxDepth;
 
 			auto nodes = bvh.GetTree();
 
@@ -519,28 +522,31 @@ namespace Atlas {
 
 						GPUMaterial gpuMaterial;
 
-						gpuMaterial.diffuseColor = material.diffuseColor;
+						gpuMaterial.baseColor = material.baseColor;
 						gpuMaterial.emissiveColor = material.emissiveColor;
+
 						gpuMaterial.opacity = material.opacity;
-						gpuMaterial.specularIntensity = material.specularIntensity;
-						gpuMaterial.specularHardness = material.specularHardness;
+
+						gpuMaterial.roughness = material.roughness;
+						gpuMaterial.metalness = material.metalness;
+						gpuMaterial.ao = material.ao;
 
 						gpuMaterial.normalScale = material.normalScale;
 						gpuMaterial.invertUVs = actor->mesh->invertUVs ? 1 : 0;
 
-						if (material.HasDiffuseMap()) {
-							auto slice = diffuseTextureAtlas.slices[material.diffuseMap];
+						if (material.HasBaseColorMap()) {
+							auto slice = baseColorTextureAtlas.slices[material.baseColorMap];
 
-							gpuMaterial.diffuseTexture.layer = slice.layer;
+							gpuMaterial.baseColorTexture.layer = slice.layer;
 
-							gpuMaterial.diffuseTexture.x = slice.offset.x;
-							gpuMaterial.diffuseTexture.y = slice.offset.y;
+							gpuMaterial.baseColorTexture.x = slice.offset.x;
+							gpuMaterial.baseColorTexture.y = slice.offset.y;
 
-							gpuMaterial.diffuseTexture.width = slice.size.x;
-							gpuMaterial.diffuseTexture.height = slice.size.y;
+							gpuMaterial.baseColorTexture.width = slice.size.x;
+							gpuMaterial.baseColorTexture.height = slice.size.y;
 						}
 						else {
-							gpuMaterial.diffuseTexture.layer = -1;
+							gpuMaterial.baseColorTexture.layer = -1;
 						}
 
 						if (material.HasNormalMap()) {
@@ -558,19 +564,49 @@ namespace Atlas {
 							gpuMaterial.normalTexture.layer = -1;
 						}
 
-						if (material.HasSpecularMap()) {
-							auto slice = specularTextureAtlas.slices[material.specularMap];
+						if (material.HasRoughnessMap()) {
+							auto slice = roughnessTextureAtlas.slices[material.roughnessMap];
 
-							gpuMaterial.specularTexture.layer = slice.layer;
+							gpuMaterial.roughnessTexture.layer = slice.layer;
 
-							gpuMaterial.specularTexture.x = slice.offset.x;
-							gpuMaterial.specularTexture.y = slice.offset.y;
+							gpuMaterial.roughnessTexture.x = slice.offset.x;
+							gpuMaterial.roughnessTexture.y = slice.offset.y;
 
-							gpuMaterial.specularTexture.width = slice.size.x;
-							gpuMaterial.specularTexture.height = slice.size.y;
+							gpuMaterial.roughnessTexture.width = slice.size.x;
+							gpuMaterial.roughnessTexture.height = slice.size.y;
 						}
 						else {
-							gpuMaterial.specularTexture.layer = -1;
+							gpuMaterial.roughnessTexture.layer = -1;
+						}
+
+						if (material.HasMetalnessMap()) {
+							auto slice = metalnessTextureAtlas.slices[material.metalnessMap];
+
+							gpuMaterial.metalnessTexture.layer = slice.layer;
+
+							gpuMaterial.metalnessTexture.x = slice.offset.x;
+							gpuMaterial.metalnessTexture.y = slice.offset.y;
+
+							gpuMaterial.metalnessTexture.width = slice.size.x;
+							gpuMaterial.metalnessTexture.height = slice.size.y;
+						}
+						else {
+							gpuMaterial.metalnessTexture.layer = -1;
+						}
+
+						if (material.HasAoMap()) {
+							auto slice = aoTextureAtlas.slices[material.aoMap];
+
+							gpuMaterial.aoTexture.layer = slice.layer;
+
+							gpuMaterial.aoTexture.x = slice.offset.x;
+							gpuMaterial.aoTexture.y = slice.offset.y;
+
+							gpuMaterial.aoTexture.width = slice.size.x;
+							gpuMaterial.aoTexture.height = slice.size.y;
+						}
+						else {
+							gpuMaterial.aoTexture.layer = -1;
 						}
 
 						materials.push_back(gpuMaterial);
@@ -592,41 +628,36 @@ namespace Atlas {
 			auto actors = scene->GetMeshActors();
 
 			std::unordered_set<Mesh::Mesh*> meshes;
-			std::vector<Texture::Texture2D*> diffuseTextures;
+			std::vector<Texture::Texture2D*> baseColorTextures;
 			std::vector<Texture::Texture2D*> normalTextures;
-			std::vector<Texture::Texture2D*> specularTextures;
+			std::vector<Texture::Texture2D*> roughnessTextures;
+			std::vector<Texture::Texture2D*> metalnessTextures;
+			std::vector<Texture::Texture2D*> aoTextures;
 
 			for (auto& actor : actors) {
 				if (meshes.find(actor->mesh) == meshes.end()) {
 					auto& actorMaterials = actor->mesh->data.materials;
 					for (auto& material : actorMaterials) {
-						if (material.HasDiffuseMap())
-							diffuseTextures.push_back(material.diffuseMap);
+						if (material.HasBaseColorMap())
+							baseColorTextures.push_back(material.baseColorMap);
 						if (material.HasNormalMap())
 							normalTextures.push_back(material.normalMap);
-						if (material.HasSpecularMap())
-							specularTextures.push_back(material.specularMap);
+						if (material.HasRoughnessMap())
+							roughnessTextures.push_back(material.roughnessMap);
+						if (material.HasMetalnessMap())
+							metalnessTextures.push_back(material.metalnessMap);
+						if (material.HasAoMap())
+							aoTextures.push_back(material.aoMap);
 					}
 					meshes.insert(actor->mesh);
 				}
 			}
 
-			diffuseTextureAtlas = Texture::TextureAtlas(diffuseTextures);
+			baseColorTextureAtlas = Texture::TextureAtlas(baseColorTextures);
 			normalTextureAtlas = Texture::TextureAtlas(normalTextures);
-			specularTextureAtlas = Texture::TextureAtlas(specularTextures);
-
-		}
-
-		int32_t RayTracingRenderer::PackUnitVector(vec4 vector) {
-
-			int32_t packed = 0;
-
-			packed |= (int32_t)((vector.x * 0.5f + 0.5f) * 1023.0f) << 0;
-			packed |= (int32_t)((vector.y * 0.5f + 0.5f) * 1023.0f) << 10;
-			packed |= (int32_t)((vector.z * 0.5f + 0.5f) * 1023.0f) << 20;
-			packed |= (int32_t)((vector.w * 0.5f + 0.5f) * 2.0f) << 30;
-
-			return packed;
+			roughnessTextureAtlas = Texture::TextureAtlas(roughnessTextures);
+			metalnessTextureAtlas = Texture::TextureAtlas(metalnessTextures);
+			aoTextureAtlas = Texture::TextureAtlas(aoTextures);
 
 		}
 

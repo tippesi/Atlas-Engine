@@ -1,5 +1,6 @@
 #include "MaterialLoader.h"
 #include "AssetLoader.h"
+#include "ImageLoader.h"
 #include "../common/Path.h"
 #include "../Log.h"
 
@@ -19,67 +20,43 @@ namespace Atlas {
 				return nullptr;
             }
 
-			auto material = new Material();
-			std::string header, line;
+			int32_t textureCount = 0;
+			auto material = LoadMaterialValues(stream, textureCount);
 
-			std::getline(stream, header);
-
-			if (header.compare(0, 4, "AEM ") != 0) {
+			if (!material) {
 				Log::Error("File isn't a material file " + filename);
 				return nullptr;
 			}
 
-			size_t lastPosition = 4;
-			auto position = header.find_first_of('\n', lastPosition);
-			auto textureCount = std::stoi(header.substr(lastPosition, position - lastPosition));
-
-			std::getline(stream, line);
-
-			lastPosition = line.find_first_of(' ');
-			position = line.find_first_of("\r\n", lastPosition) - 1;
-			material->name = line.substr(lastPosition + 1, position - lastPosition);
-
-			std::getline(stream, line);
-			material->diffuseColor = ReadVector(line);
-
-			std::getline(stream, line);
-			material->specularColor = ReadVector(line);
-
-			std::getline(stream, line);
-			material->ambientColor = ReadVector(line);
-
-			std::getline(stream, line);
-			material->emissiveColor = ReadVector(line);
-
-			std::getline(stream, line);
-			material->specularHardness = ReadFloat(line);
-
-			std::getline(stream, line);
-			material->specularIntensity = ReadFloat(line);
-
-			std::getline(stream, line);
-			material->normalScale = ReadFloat(line);
-
-			std::getline(stream, line);
-			material->displacementScale = ReadFloat(line);
-
 			auto materialDirectory = Common::Path::GetDirectory(filename);
 
+			std::string line;
 			for (int32_t i = 0; i < textureCount; i++) {
 				std::getline(stream, line);
 				auto prefix = line.substr(0, 3);
-				if (prefix == "AMP") {
-					material->diffuseMapPath = ReadFilePath(line, materialDirectory);
-					material->diffuseMap = new Texture::Texture2D(material->diffuseMapPath);
+				if (prefix == "BMP") {
+					material->baseColorMapPath = ReadFilePath(line, materialDirectory);
+					material->baseColorMap = new Texture::Texture2D(material->baseColorMapPath);
 				}
 				else if (prefix == "NMP") {
 					material->normalMapPath = ReadFilePath(line, materialDirectory);
 					material->normalMap = new Texture::Texture2D(material->normalMapPath,
 						false, true, true, 3);
 				}
-				else if (prefix == "SMP") {
-					material->specularMapPath = ReadFilePath(line, materialDirectory);
-					material->specularMap = new Texture::Texture2D(material->specularMapPath);
+				else if (prefix == "RMP") {
+					material->roughnessMapPath = ReadFilePath(line, materialDirectory);
+					material->roughnessMap = new Texture::Texture2D(material->roughnessMapPath,
+						false, true, true, 1);
+				}
+				else if (prefix == "MMP") {
+					material->metalnessMapPath = ReadFilePath(line, materialDirectory);
+					material->metalnessMap = new Texture::Texture2D(material->metalnessMapPath,
+						false, true, true, 1);
+				}
+				else if (prefix == "AMP") {
+					material->aoMapPath = ReadFilePath(line, materialDirectory);
+					material->aoMap = new Texture::Texture2D(material->aoMapPath,
+						false, true, true, 1);
 				}
 				else if (prefix == "DMP") {
 					material->displacementMapPath = ReadFilePath(line, materialDirectory);
@@ -108,10 +85,12 @@ namespace Atlas {
 
 			header.append("AEM ");
 
-			textureCount = material->HasDiffuseMap() ? textureCount + 1 : textureCount;
-			textureCount = material->HasNormalMap() ? textureCount + 1 : textureCount;
-			textureCount = material->HasSpecularMap() ? textureCount + 1 : textureCount;
-			textureCount = material->HasDisplacementMap() ? textureCount + 1 : textureCount;
+			textureCount += material->HasBaseColorMap() ? 1 : 0;
+			textureCount += material->HasNormalMap() ? 1 : 0;
+			textureCount += material->HasRoughnessMap() ? 1 : 0;
+			textureCount += material->HasMetalnessMap() ? 1 : 0;
+			textureCount += material->HasAoMap() ? 1 : 0;
+			textureCount += material->HasDisplacementMap() ? 1 : 0;
 
 			header.append(std::to_string(textureCount) + "\n");
 
@@ -119,13 +98,12 @@ namespace Atlas {
 
 			body.append("N " + material->name + "\n");
 
-            body.append(WriteVector("DC", material->diffuseColor));
-			body.append(WriteVector("SC", material->specularColor));
-			body.append(WriteVector("AC", material->ambientColor));
+            body.append(WriteVector("BC", material->baseColor));
 			body.append(WriteVector("EC", material->emissiveColor));
 
-            body.append("SH " + std::to_string(material->specularHardness) + "\n");
-            body.append("SI " + std::to_string(material->specularIntensity) + "\n");
+            body.append("RN " + std::to_string(material->roughness) + "\n");
+            body.append("MN " + std::to_string(material->metalness) + "\n");
+            body.append("AO " + std::to_string(material->ao) + "\n");
 			body.append("NS " + std::to_string(material->normalScale) + "\n");
             body.append("DS " + std::to_string(material->displacementScale) + "\n");
 
@@ -133,18 +111,153 @@ namespace Atlas {
 
 			auto materialPath = AssetLoader::GetFullPath(filename);
 
-			if (material->HasDiffuseMap())
-				stream << "AMP " + Common::Path::GetRelative(materialPath, material->diffuseMapPath) + "\n";
+			if (material->HasBaseColorMap())
+				stream << "BMP " + Common::Path::GetRelative(materialPath, material->baseColorMapPath) + "\n";
 			if (material->HasNormalMap())
 				stream << "NMP " + Common::Path::GetRelative(materialPath, material->normalMapPath) + "\n";
-			if (material->HasSpecularMap())
-				stream << "SMP " + Common::Path::GetRelative(materialPath, material->specularMapPath) + "\n";
+			if (material->HasRoughnessMap())
+				stream << "RMP " + Common::Path::GetRelative(materialPath, material->roughnessMapPath) + "\n";
+			if (material->HasMetalnessMap())
+				stream << "MMP " + Common::Path::GetRelative(materialPath, material->metalnessMapPath) + "\n";
+			if (material->HasAoMap())
+				stream << "AMP " + Common::Path::GetRelative(materialPath, material->aoMapPath) + "\n";
 			if (material->HasDisplacementMap())
 				stream << "DMP " + Common::Path::GetRelative(materialPath, material->displacementMapPath) + "\n";
 
             stream.close();
 
         }
+
+		Material* MaterialLoader::LoadMaterialForTerrain(std::string filename, int32_t mapResolution) {
+
+			auto stream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
+
+			if (!stream.is_open()) {
+				Log::Error("Failed to load material " + filename);
+				return nullptr;
+			}
+
+			int32_t textureCount = 0;
+			auto material = LoadMaterialValues(stream, textureCount);
+
+			if (!material) {
+				Log::Error("File isn't a material file " + filename);
+				return nullptr;
+			}
+
+			auto materialDirectory = Common::Path::GetDirectory(filename);
+
+			std::string line;
+			for (int32_t i = 0; i < textureCount; i++) {
+				std::getline(stream, line);
+				auto prefix = line.substr(0, 3);
+				if (prefix == "BMP") {
+					material->baseColorMapPath = ReadFilePath(line, materialDirectory);
+					auto image = ImageLoader::LoadImage(material->baseColorMapPath, true, 3);
+					if (image.width != mapResolution || image.height != mapResolution)
+						image.Resize(mapResolution, mapResolution);
+					material->baseColorMap = new Texture::Texture2D(image.width,
+						image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					material->baseColorMap->SetData(image.GetData());
+				}
+				else if (prefix == "NMP") {
+					material->normalMapPath = ReadFilePath(line, materialDirectory);
+					auto image = ImageLoader::LoadImage(material->normalMapPath, false, 3);
+					if (image.width != mapResolution || image.height != mapResolution)
+						image.Resize(mapResolution, mapResolution);
+					material->normalMap = new Texture::Texture2D(image.width,
+						image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					material->normalMap->SetData(image.GetData());
+				}
+				else if (prefix == "RMP") {
+					material->roughnessMapPath = ReadFilePath(line, materialDirectory);
+					auto image = ImageLoader::LoadImage(material->roughnessMapPath, false, 1);
+					if (image.width != mapResolution || image.height != mapResolution)
+						image.Resize(mapResolution, mapResolution);
+					material->roughnessMap = new Texture::Texture2D(image.width,
+						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					material->roughnessMap->SetData(image.GetData());
+				}
+				else if (prefix == "MMP") {
+					material->metalnessMapPath = ReadFilePath(line, materialDirectory);
+					auto image = ImageLoader::LoadImage(material->metalnessMapPath, false, 1);
+					if (image.width != mapResolution || image.height != mapResolution)
+						image.Resize(mapResolution, mapResolution);
+					material->metalnessMap = new Texture::Texture2D(image.width,
+						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					material->metalnessMap->SetData(image.GetData());
+				}
+				else if (prefix == "AMP") {
+					material->aoMapPath = ReadFilePath(line, materialDirectory);
+					auto image = ImageLoader::LoadImage(material->aoMapPath, false, 1);
+					if (image.width != mapResolution || image.height != mapResolution)
+						image.Resize(mapResolution, mapResolution);
+					material->aoMap = new Texture::Texture2D(image.width,
+						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					material->aoMap->SetData(image.GetData());
+				}
+				else if (prefix == "DMP") {
+					material->displacementMapPath = ReadFilePath(line, materialDirectory);
+					auto image = ImageLoader::LoadImage(material->displacementMapPath, false, 1);
+					if (image.width != mapResolution || image.height != mapResolution)
+						image.Resize(mapResolution, mapResolution);
+					material->displacementMap = new Texture::Texture2D(image.width,
+						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					material->displacementMap->SetData(image.GetData());
+				}
+			}
+
+			stream.close();
+
+			return material;
+
+		}
+
+		Material* MaterialLoader::LoadMaterialValues(std::ifstream& stream, int32_t& textureCount) {
+
+			auto material = new Material();
+			std::string header, line;
+
+			std::getline(stream, header);
+
+			if (header.compare(0, 4, "AEM ") != 0) {
+				return nullptr;
+			}
+
+			size_t lastPosition = 4;
+			auto position = header.find_first_of('\n', lastPosition);
+			textureCount = std::stoi(header.substr(lastPosition, position - lastPosition));
+
+			std::getline(stream, line);
+
+			lastPosition = line.find_first_of(' ');
+			position = line.find_first_of("\r\n", lastPosition) - 1;
+			material->name = line.substr(lastPosition + 1, position - lastPosition);
+
+			std::getline(stream, line);
+			material->baseColor = ReadVector(line);
+
+			std::getline(stream, line);
+			material->emissiveColor = ReadVector(line);
+
+			std::getline(stream, line);
+			material->roughness = ReadFloat(line);
+
+			std::getline(stream, line);
+			material->metalness = ReadFloat(line);
+
+			std::getline(stream, line);
+			material->ao = ReadFloat(line);
+
+			std::getline(stream, line);
+			material->normalScale = ReadFloat(line);
+
+			std::getline(stream, line);
+			material->displacementScale = ReadFloat(line);
+
+			return material;
+
+		}
 
 		std::string MaterialLoader::WriteVector(std::string prefix, vec3 vector) {
 

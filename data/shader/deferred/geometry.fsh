@@ -1,50 +1,55 @@
-#include <../common/random>
+#include <../common/random.hsh>
 
-layout (location = 0) out vec4 diffuse;
-layout (location = 1) out vec3 normal;
-layout (location = 2) out vec2 additional;
-layout (location = 3) out vec3 geometryNormal;
-layout (location = 4) out vec3 emission;
-layout (location = 5) out vec2 velocity;
+#ifdef GENERATE_IMPOSTOR
+layout (location = 0) out vec4 baseColorFS;
+#else
+layout (location = 0) out vec3 baseColorFS;
+#endif
+layout (location = 1) out vec3 normalFS;
+layout (location = 2) out vec3 geometryNormalFS;
+layout (location = 3) out vec3 roughnessMetalnessAoFS;
+layout (location = 4) out uint materialIdxFS;
+layout (location = 5) out vec2 velocityFS;
 
-#ifdef DIFFUSE_MAP
-layout(binding = 0) uniform sampler2D diffuseMap;
+#ifdef BASE_COLOR_MAP
+layout(binding = 0) uniform sampler2D baseColorMap;
+#endif
+#ifdef OPACITY_MAP
+layout(binding = 1) uniform sampler2D opacityMap;
 #endif
 #ifdef NORMAL_MAP
-layout(binding = 1) uniform sampler2D normalMap;
+layout(binding = 2) uniform sampler2D normalMap;
 #endif
-#ifdef SPECULAR_MAP
-layout(binding = 2) uniform sampler2D specularMap;
+#ifdef ROUGHNESS_MAP
+layout(binding = 3) uniform sampler2D roughnessMap;
+#endif
+#ifdef METALNESS_MAP
+layout(binding = 4) uniform sampler2D metalnessMap;
+#endif
+#ifdef AO_MAP
+layout(binding = 5) uniform sampler2D aoMap;
 #endif
 #ifdef HEIGHT_MAP
-layout(binding = 3) uniform sampler2D heightMap;
+layout(binding = 6) uniform sampler2D heightMap;
 #endif
 
-in vec2 fTexCoord;
-in vec3 fNormal;
-in vec3 fPosition;
-in vec3 ndcCurrent;
-in vec3 ndcLast;
+in vec3 positionVS;
+in vec3 normalVS;
+in vec2 texCoordVS;
+
+in vec3 ndcCurrentVS;
+in vec3 ndcLastVS;
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 in mat3 toTangentSpace;
 #endif
 
-
-#ifdef REFLECTION
-in vec3 fPosition;
+#ifdef GENERATE_IMPOSTOR
+uniform vec3 baseColor;
+uniform float roughness;
+uniform float metalness;
+uniform float ao;
 #endif
-
-#ifdef REFLECTION
-uniform samplerCube environmentCube;
-uniform mat4 ivMatrix;
-#endif
-
-uniform vec3 diffuseColor;
-uniform vec3 emissiveColor;
-
-uniform float specularIntensity;
-uniform float specularHardness;
 
 uniform float normalScale;
 uniform float displacementScale;
@@ -54,9 +59,11 @@ uniform mat4 vMatrix;
 uniform vec2 jitterLast;
 uniform vec2 jitterCurrent;
 
+uniform uint materialIdx;
+
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) { 
 #ifdef HEIGHT_MAP
-    // number of depth layers
+    // number of depth layers (changes are a bit distracting right now)
     const float minLayers = 32.0;
 	const float maxLayers = 32.0;
 	float numLayers = mix(minLayers, maxLayers,  
@@ -103,60 +110,83 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 
 void main() {
 	
-	vec4 textureColor = vec4(diffuseColor, 1.0);
-	
-	vec2 texCoords = fTexCoord;
+	vec2 texCoords = texCoordVS;
 	
 	// Check if usage is valid (otherwise texCoords won't be used)
-#if defined(HEIGHT_MAP) && (defined(DIFFUSE_MAP) || defined(NORMAL_MAP) || defined(SPECULAR_MAP)) 
-	vec3 viewDir = normalize(transpose(toTangentSpace) * -fPosition);
+#if defined(HEIGHT_MAP) && (defined(BASE_COLOR_MAP) || defined(NORMAL_MAP) || defined(ROUGHNESS_MAP) || defined(METALNESS_MAP) || defined(AO_MAP)) 
+	vec3 viewDir = normalize(transpose(toTangentSpace) * -positionVS);
 	texCoords = ParallaxMapping(texCoords, viewDir);
 #endif
-	
-#ifdef DIFFUSE_MAP
-	textureColor *= texture(diffuseMap, texCoords);	
-	if (textureColor.a < 0.2)
+
+#ifdef GENERATE_IMPOSTOR
+	baseColorFS = vec4(1.0);
+#endif
+
+#ifdef OPACITY_MAP
+	float opacity = texture(opacityMap, texCoords).r;
+	if (opacity < 0.2)
 		discard;
 #endif
 
-	normal = normalize(fNormal);
+#ifdef BASE_COLOR_MAP
+	vec3 textureColor = texture(baseColorMap, texCoords).rgb;
+#ifdef GENERATE_IMPOSTOR
+	baseColorFS *= vec4(textureColor.rgb, 1.0);
+#else
+	baseColorFS = textureColor.rgb;
+#endif
+#endif
 
-	geometryNormal = 0.5 * normal + 0.5;
+#ifdef GENERATE_IMPOSTOR
+	baseColorFS *= vec4(baseColor, 1.0);
+#endif
+
+	geometryNormalFS = normalize(normalVS);
 
 #ifdef NORMAL_MAP
 	vec3 normalColor = texture(normalMap, texCoords).rgb;
-	normal = mix(normal, normalize(toTangentSpace * (2.0 * normalColor - 1.0)), normalScale);
+	normalFS = mix(geometryNormalFS, normalize(toTangentSpace * (2.0 * normalColor - 1.0)), normalScale);
+	normalFS = 0.5 * normalFS + 0.5;
 #endif
 
-#ifdef REFLECTION
-    vec3 R = mat3(ivMatrix) * reflect(normalize(fPosition), normal);
-    diffuse = vec4(mix(textureColor.rgb, textureLod(environmentCube, R, specularHardness / 50.0).rgb, reflectivity), 1.0);
+	geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
+
+#ifdef GENERATE_IMPOSTOR
+	float roughnessFactor = roughness;
+	float metalnessFactor = metalness;
+	float aoFactor = ao;
 #else
-	diffuse = vec4(textureColor.rgb, 1.0);
+	float roughnessFactor = 1.0;
+	float metalnessFactor = 1.0;
+	float aoFactor = 1.0;
 #endif
 
-	float specularFactor = 1.0;
-
-#ifdef SPECULAR_MAP
-	specularFactor = texture(specularMap, texCoords).r;
+#ifdef ROUGHNESS_MAP
+	roughnessFactor *= texture(roughnessMap, texCoords).r;
+	roughnessMetalnessAoFS.r = roughnessFactor;
+#endif
+#ifdef METALNESS_MAP
+	metalnessFactor *= texture(metalnessMap, texCoords).r;
+	roughnessMetalnessAoFS.g = metalnessFactor;
+#endif
+#ifdef AO_MAP
+	aoFactor *= texture(aoMap, texCoords).r;
+	roughnessMetalnessAoFS.b = aoFactor;
 #endif
 
-	additional = vec2(specularIntensity * specularFactor, specularHardness);
-	
-	normal = 0.5 * normal + 0.5;
-	
-#ifdef EMISSIVE
-	emission = clamp(emissiveColor, vec3(0.0), vec3(1.0));
-#else
-	emission = vec3(0.0);
+#ifdef GENERATE_IMPOSTOR
+	roughnessMetalnessAoFS = vec3(roughnessFactor,
+		metalnessFactor, aoFactor);
 #endif
 	// Calculate velocity
-	vec2 ndcL = ndcLast.xy / ndcLast.z;
-	vec2 ndcC = ndcCurrent.xy / ndcCurrent.z;
+	vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
+	vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
 	ndcL -= jitterLast;
 	ndcC -= jitterCurrent;
 
-	velocity = (ndcL - ndcC) * 0.5;
+	velocityFS = (ndcL - ndcC) * 0.5;
+
+	materialIdxFS = materialIdx;
 	
 }

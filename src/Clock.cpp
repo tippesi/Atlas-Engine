@@ -63,15 +63,6 @@ namespace Atlas {
 
 	}
 
-	void Clock::ResetAverage() {
-
-		totalFrames = 0;
-		frameCount = 0;
-
-		deltas.assign(deltas.size(), 0);
-
-	}
-
 	void Clock::Update() {
 
 		std::lock_guard<std::mutex> lock(mutex);

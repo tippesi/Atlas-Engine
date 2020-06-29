@@ -1,0 +1,153 @@
+#include <intersections.hsh>
+#include <structures.hsh>
+
+#define STACK_SIZE 34
+
+layout (std430, binding = 6) buffer Triangles {
+	PackedTriangle triangles[];
+};
+
+layout(std430, binding = 7) buffer Nodes {
+	BVHNode nodes[];
+};
+
+shared uint stack[STACK_SIZE][32];
+
+void CheckLeafClosest(Ray ray,  BVHNode node, float tmin, float tmax,
+	inout int triangleIndex, inout vec3 intersection) {
+		
+	uint offset = node.data0;
+	uint count = node.data1 & uint(0x7fffffff);
+	
+	vec3 sol, v0, v1, v2, n;
+	
+	for (uint i = offset; i < offset + count; i++) {
+		v0 = triangles[i].v0.xyz;
+		v1 = triangles[i].v1.xyz;
+		v2 = triangles[i].v2.xyz;
+		float d = 0.0;
+#ifdef BACKFACE_CULLING
+		n = cross(v0 - v1, v0 - v2);
+		d = dot(n, ray.direction);
+#endif
+		if (IntersectTriangle(ray, v0, v1, v2, sol) && d <= 0.0) {
+			if (sol.x < intersection.x) {
+				intersection = sol;
+				triangleIndex = int(i);
+			}
+		}
+	}
+	
+}
+
+bool CheckLeaf(Ray ray, BVHNode node, float tmin, float tmax) {
+		
+	uint offset = node.data0;
+	uint count = node.data1 & uint(0x7fffffff);
+	
+	vec3 sol, v0, v1, v2, n;
+	bool hit = false;
+	
+	for (uint i = offset; i < offset + count; i++) {
+		v0 = triangles[i].v0.xyz;
+		v1 = triangles[i].v1.xyz;
+		v2 = triangles[i].v2.xyz;
+		float d = 0.0;
+#ifdef BACKFACE_CULLING
+		n = cross(v0 - v1, v0 - v2);
+		d = dot(n, ray.direction);
+#endif
+		if (IntersectTriangle(ray, v0, v1, v2, sol) && d <= 0.0) {
+			hit = true;
+			break;
+		}
+	}
+
+	return hit;
+	
+}
+
+void QueryBVHClosest(Ray ray, float tMin, float tMax, out int triangleIndex,
+	out vec3 intersection) {
+	
+	uint stackPtr = uint(1);
+	uint threadID = gl_LocalInvocationID.x;
+	stack[0][threadID] = 0;
+	
+	intersection.x = tMax;
+	
+	do {	
+	
+		BVHNode node = nodes[stack[--stackPtr][threadID]];
+	
+		bool intersectNode = IntersectAABB(ray, 
+				node.aabb, tMin, intersection.x);
+		bool isLeaf = (node.data1 & uint(0x80000000)) > uint(0);
+		
+		bool traverseNode = intersectNode && !isLeaf;
+		
+		if(intersectNode && isLeaf) {
+			CheckLeafClosest(ray, node,
+				tMin, tMax, triangleIndex, intersection);
+		}
+		
+		if (traverseNode) {
+			if (stackPtr + 1 < STACK_SIZE) {
+				uint childLPtr = node.data0;
+				uint childRPtr = node.data1;
+				stack[stackPtr++][threadID] = childLPtr;
+				stack[stackPtr++][threadID] = childRPtr;
+			}
+			else  {
+				break;
+			}
+		}
+			
+	}
+	while (stackPtr != uint(0));
+		
+}
+
+bool QueryBVH(Ray ray, float tMin, float tMax) {
+	
+	bool hit = false;
+
+	uint stackPtr = uint(1);
+	uint threadID = gl_LocalInvocationID.x;
+	stack[0][threadID] = 0;
+	
+	do {	
+	
+		BVHNode node = nodes[stack[--stackPtr][threadID]];
+	
+		bool intersectNode = IntersectAABB(ray, 
+				node.aabb, tMin, tMax);
+		bool isLeaf = (node.data1 & uint(0x80000000)) > uint(0);
+		
+		bool traverseNode = intersectNode && !isLeaf;
+		
+		if(intersectNode && isLeaf) {
+			if (CheckLeaf(ray, node, tMin, tMax)) {
+				hit = true;
+				break;
+			}
+		}
+		
+		if (traverseNode) {
+			if (stackPtr + 1 < STACK_SIZE) {
+				uint childLPtr = node.data0;
+				uint childRPtr = node.data1;
+				stack[stackPtr++][threadID] = childLPtr;
+				stack[stackPtr++][threadID] = childRPtr;
+			}
+			else  {
+				break;
+			}
+		}
+			
+	}
+	while (!hit && stackPtr != uint(0));
+
+	return hit;
+		
+}

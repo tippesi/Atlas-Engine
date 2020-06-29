@@ -34,14 +34,26 @@ namespace Atlas {
 			std::vector<OceanNode*> GetRenderList();
 
 			OceanSimulation simulation;
+
 			Texture::Texture2D rippleTexture;
+			Texture::Texture2D foamTexture;
 
 			vec3 translation = vec3(0.0f);
 
 			float displacementScale = 4.0f;
-			float choppynessScale = 4.0f;
+			float choppynessScale = 3.0f;
 
-			float tiling = 32.0f;
+			float tiling = 64.0f;
+
+			float shoreWaveDistanceOffset = 100.0f;
+			float shoreWaveDistanceScale = 30.0f;
+			float shoreWaveAmplitude = 1.0f;
+			float shoreWaveSteepness = 1.5f;
+			float shoreWavePower = 4.0f;
+			float shoreWaveSpeed = 5.0f;
+			float shoreWaveLength = 5.0f;
+
+			bool wireframe = false;
 
 		private:
 			void SortNodes(std::vector<OceanNode*>& nodes, vec3 cameraLocation);

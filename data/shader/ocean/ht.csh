@@ -1,5 +1,5 @@
-#include "../common/PI"
-#include "../common/complex"
+#include <../common/PI.hsh>
+#include <../common/complex.hsh>
 
 layout (local_size_x = 16, local_size_y = 16) in;
 

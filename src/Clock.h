@@ -42,11 +42,6 @@ namespace Atlas {
 		static float GetAverage();
 
 		/**
-		 * Resets the averaged time.
-		 */
-		static void ResetAverage();
-
-		/**
 	     * Updates the time. Is called by the engine.
 		 */
 		static void Update();

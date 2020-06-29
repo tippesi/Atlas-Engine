@@ -5,38 +5,44 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string ImpostorRenderer::vertexPath = "impostor.vsh";
-		std::string ImpostorRenderer::fragmentPath = "impostor.fsh";
-
 		ImpostorRenderer::ImpostorRenderer() {
 
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
-			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
+			shader.AddStage(AE_VERTEX_STAGE, "impostor/impostor.vsh");
+			shader.AddStage(AE_FRAGMENT_STAGE, "impostor/impostor.fsh");
 
 			shader.Compile();
 
 			GetUniforms();
 
+			interpolationShader.AddStage(AE_VERTEX_STAGE, "impostor/impostor.vsh");
+			interpolationShader.AddStage(AE_FRAGMENT_STAGE, "impostor/impostor.fsh");
+
+			interpolationShader.AddMacro("INTERPOLATION");
+
+			interpolationShader.Compile();
+
+			GetInterpolationUniforms();
+
 		}
 
-		void ImpostorRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, RenderList* renderList) {
+		void ImpostorRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
+			RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap) {
 
-			shader.Bind();
+			glDisable(GL_CULL_FACE);
 
 			vertexArray.Bind();
 
-			vMatrix->SetValue(camera->viewMatrix);
-			pMatrix->SetValue(camera->projectionMatrix);
-			cameraLocation->SetValue(camera->GetLocation());
-			
-			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
-			jitterLast->SetValue(camera->GetLastJitter());
-			jitterCurrent->SetValue(camera->GetJitter());
+			shader.Bind();
 
-			right->SetValue(camera->right);
-			up->SetValue(vec3(0.0f, 1.0f, 0.0f));
+			vMatrixShader->SetValue(camera->viewMatrix);
+			pMatrixShader->SetValue(camera->projectionMatrix);
+			cameraLocationShader->SetValue(camera->GetLocation());
+			
+			pvMatrixLastShader->SetValue(camera->GetLastJitteredMatrix());
+			jitterLastShader->SetValue(camera->GetLastJitter());
+			jitterCurrentShader->SetValue(camera->GetJitter());
 
 			for (auto& key : renderList->impostorBuffers) {
 
@@ -47,44 +53,120 @@ namespace Atlas {
 				if (!buffer)
 					continue;
 
+				if (mesh->impostor->interpolation)
+					continue;
+
 				auto actorCount = buffer->GetElementCount();
 
 				vertexArray.AddInstancedComponent(1, buffer);
 
-				mesh->impostor->diffuseTexture.Bind(GL_TEXTURE0);
-				mesh->impostor->normalTexture.Bind(GL_TEXTURE1);
-				mesh->impostor->specularTexture.Bind(GL_TEXTURE2);
+				mesh->impostor->baseColorTexture.Bind(GL_TEXTURE0);
+				mesh->impostor->roughnessMetalnessAoTexture.Bind(GL_TEXTURE1);
+				mesh->impostor->normalTexture.Bind(GL_TEXTURE2);
 
-				min->SetValue(mesh->impostor->aabb.min);
-				max->SetValue(mesh->impostor->aabb.max);
+				// Base 0 is used by the materials
+				mesh->impostor->viewPlaneBuffer.BindBase(1);
 
-				views->SetValue(mesh->impostor->views);
-				cutoff->SetValue(mesh->impostor->cutoff);
+				centerShader->SetValue(mesh->impostor->center);
+				radiusShader->SetValue(mesh->impostor->radius);
 
-				glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, actorCount);
+				viewsShader->SetValue(mesh->impostor->views);
+				cutoffShader->SetValue(mesh->impostor->cutoff);
+				materialIdxShader->SetValue((uint32_t)materialMap[mesh->impostor]);
+
+				glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, (GLsizei)actorCount);
 
 			}
+
+			interpolationShader.Bind();
+
+			cameraRightInterpolationShader->SetValue(camera->right);
+			cameraUpInterpolationShader->SetValue(camera->up);
+
+			vMatrixInterpolationShader->SetValue(camera->viewMatrix);
+			pMatrixInterpolationShader->SetValue(camera->projectionMatrix);
+			cameraLocationInterpolationShader->SetValue(camera->GetLocation());
+
+			pvMatrixLastInterpolationShader->SetValue(camera->GetLastJitteredMatrix());
+			jitterLastInterpolationShader->SetValue(camera->GetLastJitter());
+			jitterCurrentInterpolationShader->SetValue(camera->GetJitter());
+
+			for (auto& key : renderList->impostorBuffers) {
+
+				auto mesh = key.first;
+				auto buffer = key.second;
+
+				// If there aren't any impostors there won't be a buffer
+				if (!buffer)
+					continue;
+
+				if (!mesh->impostor->interpolation)
+					continue;
+
+				auto actorCount = buffer->GetElementCount();
+
+				vertexArray.AddInstancedComponent(1, buffer);
+
+				mesh->impostor->baseColorTexture.Bind(GL_TEXTURE0);
+				mesh->impostor->roughnessMetalnessAoTexture.Bind(GL_TEXTURE1);
+				mesh->impostor->normalTexture.Bind(GL_TEXTURE2);
+
+				// Base 0 is used by the materials
+				mesh->impostor->viewPlaneBuffer.BindBase(1);
+
+				centerInterpolationShader->SetValue(mesh->impostor->center);
+				radiusInterpolationShader->SetValue(mesh->impostor->radius);
+
+				viewsInterpolationShader->SetValue(mesh->impostor->views);
+				cutoffInterpolationShader->SetValue(mesh->impostor->cutoff);
+				materialIdxInterpolationShader->SetValue((uint32_t)materialMap[mesh->impostor]);
+
+				glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, (GLsizei)actorCount);
+
+			}
+
+			glEnable(GL_CULL_FACE);
 
 		}
 
 		void ImpostorRenderer::GetUniforms() {
 
-			pMatrix = shader.GetUniform("pMatrix");
-			vMatrix = shader.GetUniform("vMatrix");
-			cameraLocation = shader.GetUniform("cameraLocation");
+			pMatrixShader = shader.GetUniform("pMatrix");
+			vMatrixShader = shader.GetUniform("vMatrix");
+			cameraLocationShader = shader.GetUniform("cameraLocation");
 
-			right = shader.GetUniform("right");
-			up = shader.GetUniform("up");
+			centerShader = shader.GetUniform("center");
+			radiusShader = shader.GetUniform("radius");
 
-			min = shader.GetUniform("minVec");
-			max = shader.GetUniform("maxVec");
+			viewsShader = shader.GetUniform("views");
+			cutoffShader = shader.GetUniform("cutoff");
+			materialIdxShader = shader.GetUniform("materialIdx");
 
-			views = shader.GetUniform("views");
-			cutoff = shader.GetUniform("cutoff");
+			pvMatrixLastShader = shader.GetUniform("pvMatrixLast");
+			jitterLastShader = shader.GetUniform("jitterLast");
+			jitterCurrentShader = shader.GetUniform("jitterCurrent");
 
-			pvMatrixLast = shader.GetUniform("pvMatrixLast");
-			jitterLast = shader.GetUniform("jitterLast");
-			jitterCurrent = shader.GetUniform("jitterCurrent");
+		}
+
+		void ImpostorRenderer::GetInterpolationUniforms() {
+
+			pMatrixInterpolationShader = interpolationShader.GetUniform("pMatrix");
+			vMatrixInterpolationShader = interpolationShader.GetUniform("vMatrix");
+			cameraLocationInterpolationShader = interpolationShader.GetUniform("cameraLocation");
+
+			centerInterpolationShader = interpolationShader.GetUniform("center");
+			radiusInterpolationShader = interpolationShader.GetUniform("radius");
+
+			cameraRightInterpolationShader = interpolationShader.GetUniform("cameraRight");
+			cameraUpInterpolationShader = interpolationShader.GetUniform("cameraUp");
+
+			viewsInterpolationShader = interpolationShader.GetUniform("views");
+			cutoffInterpolationShader = interpolationShader.GetUniform("cutoff");
+			materialIdxInterpolationShader = interpolationShader.GetUniform("materialIdx");
+
+			pvMatrixLastInterpolationShader = interpolationShader.GetUniform("pvMatrixLast");
+			jitterLastInterpolationShader = interpolationShader.GetUniform("jitterLast");
+			jitterCurrentInterpolationShader = interpolationShader.GetUniform("jitterCurrent");
 
 		}
 

@@ -1,4 +1,4 @@
-#include <common/random>
+#include <common/random.hsh>
 
 #define SIDE_TO_SIDE_FREQ1 1.975
 #define SIDE_TO_SIDE_FREQ2 0.793

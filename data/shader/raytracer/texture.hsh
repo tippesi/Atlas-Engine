@@ -1,0 +1,100 @@
+#include <structures.hsh>
+#include <../common/sample.hsh>
+
+layout (binding = 3) uniform sampler2DArray baseColorTextures;
+layout (binding = 4) uniform sampler2DArray normalTextures;
+layout (binding = 5) uniform sampler2DArray roughnessTextures;
+layout (binding = 6) uniform sampler2DArray metalnessTextures;
+layout (binding = 7) uniform sampler2DArray aoTextures;
+layout (binding = 4, rgba16f) readonly uniform imageCube environmentMap;
+
+vec2 GetTexCoord(vec2 texCoord, Texture tex, vec2 size) {
+	
+	return (vec2(mod(texCoord.x, float(tex.width)),
+		mod(texCoord.y, float(tex.height))) + 
+		vec2(tex.x, tex.y)) / size;
+		
+}
+
+vec4 SampleBaseColorBilinear(Texture tex, vec2 texCoord) {
+	
+	if (tex.layer < 0)
+		return vec4(1.0);
+		
+	texCoord *= vec2(tex.width, tex.height);
+	
+	const vec2 size = vec2(textureSize(baseColorTextures, 0));
+	texCoord = GetTexCoord(texCoord, tex, size);
+	
+	return sampleTexBilinear(baseColorTextures, 
+		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING);
+	
+}
+
+vec4 SampleNormalBilinear(Texture tex, vec2 texCoord) {
+	
+	if (tex.layer < 0)
+		return vec4(1.0);
+		
+	texCoord *= vec2(tex.width, tex.height);
+	
+	const vec2 size = vec2(textureSize(normalTextures, 0));
+	texCoord = GetTexCoord(texCoord, tex, size);
+	
+	return sampleTexBilinear(normalTextures, 
+		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING);
+	
+}
+
+float SampleRoughnessBilinear(Texture tex, vec2 texCoord) {
+	
+	if (tex.layer < 0)
+		return 1.0;
+		
+	texCoord *= vec2(tex.width, tex.height);
+	
+	const vec2 size = vec2(textureSize(roughnessTextures, 0));
+	texCoord = GetTexCoord(texCoord, tex, size);
+	
+	return sampleTexBilinear(roughnessTextures, 
+		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING).r;
+	
+}
+
+float SampleMetalnessBilinear(Texture tex, vec2 texCoord) {
+	
+	if (tex.layer < 0)
+		return 1.0;
+		
+	texCoord *= vec2(tex.width, tex.height);
+	
+	const vec2 size = vec2(textureSize(metalnessTextures, 0));
+	texCoord = GetTexCoord(texCoord, tex, size);
+	
+	return sampleTexBilinear(metalnessTextures, 
+		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING).r;
+	
+}
+
+float SampleAoBilinear(Texture tex, vec2 texCoord) {
+	
+	if (tex.layer < 0)
+		return 1.0;
+		
+	texCoord *= vec2(tex.width, tex.height);
+	
+	const vec2 size = vec2(textureSize(aoTextures, 0));
+	texCoord = GetTexCoord(texCoord, tex, size);
+	
+	return sampleTexBilinear(aoTextures, 
+		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING).r;
+	
+}
+
+vec4 SampleEnvironmentMap(vec3 v) {
+
+	ivec2 size = imageSize(environmentMap);
+
+	return imageLoad(environmentMap, GetTexCoordCube(v, size));
+
+}
