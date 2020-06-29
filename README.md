@@ -1,15 +1,14 @@
 # Atlas Engine
-![Example scene](images/sponza_rasterized.png)
-*Rasterized image using an irradiance volume* 
-<br/>
 [![The MIT License][license-image]][license-url]
 [![Code quality][code-quality-image]][code-quality-url]
 
 [license-image]: https://img.shields.io/badge/License-MIT-yellow.svg
 [license-url]: https://opensource.org/licenses/MIT
 [code-quality-image]: https://www.code-inspector.com/project/10000/score/svg
-[code-quality-url]: https://frontend.code-inspector.com/project/10000/dashboard
+[code-quality-url]: https://frontend.code-inspector.com/public/project/10000/Atlas-Engine/dashboard
 
+![Example scene](images/sponza_rasterized.png)
+*Rasterized image using an irradiance volume*
 #### The current version is WIP which means many changes and less stability.
 ## Introduction
 This is a cross platform engine that is available on Linux, Windows and Android.
