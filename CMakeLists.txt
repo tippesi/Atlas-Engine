@@ -5,7 +5,8 @@ endif()
 project(AtlasEngine)
 cmake_minimum_required(VERSION 3.7)
 
-# Only 64 bit is supported #######################################################################
+# Only 64 bit is supported
+###################################################################
 if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 	message(FATAL_ERROR "32 bit isn't supported")
 endif()
@@ -80,19 +81,19 @@ else()
 message(STATUS "Building with app class")
 endif()
 
-# Add libraries for dependencies ##################################################################
-# SDL has problems with MSVC in Release Mode
-if (WIN32 AND MSVC)
-list(APPEND EXTRA_LIBS vcruntime)
-endif()
+# Set dependencies location #######################################################################
+set (ASSIMP_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Assimp)
+set (SDL_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/SDL)
+set (HIDAPI_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Hidapi)
+set (GLAD_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Glad)
 
 # Add dependencies ################################################################################
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Assimp EXCLUDE_FROM_ALL)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/SDL EXCLUDE_FROM_ALL)
+add_subdirectory(${ASSIMP_LOCATION})
+add_subdirectory(${SDL_LOCATION})
 if (ANDROID)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Hidapi EXCLUDE_FROM_ALL)
+add_subdirectory(${HIDAPI_LOCATION})
 else()
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Glad EXCLUDE_FROM_ALL)
+add_subdirectory(${GLAD_LOCATION})
 endif()
 
 # Configure platform specific stuff ###############################################################
@@ -191,7 +192,7 @@ endif()
 if (ATLAS_BUILD_SHARED)
     add_library(${PROJECT_NAME} SHARED ${ATLAS_ENGINE_SOURCE_FILES})
 else()
-	add_library(${PROJECT_NAME} STATIC ${ATLAS_ENGINE_SOURCE_FILES})
+	add_library(${PROJECT_NAME} ${ATLAS_ENGINE_SOURCE_FILES})
 endif()
 else()
     add_executable(${PROJECT_NAME} ${ATLAS_ENGINE_SOURCE_FILES})
