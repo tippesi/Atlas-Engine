@@ -16,7 +16,7 @@
 ## Introduction
 This is a cross platform engine that is available on Linux, Windows and Android.
 ## Requirements
-- OpenGL 4.3 or higher
+- OpenGL 4.3
 - OpenGL ES 3.2
 ## Set up
 Before you start compiling make sure to download the dependencies into **./dependencies**. You can either do
