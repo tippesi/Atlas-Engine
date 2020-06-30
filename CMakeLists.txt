@@ -46,12 +46,12 @@ set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "Override Assimp tools settings" FO
 # Find OpenGL #####################################################################################
 if (ANDROID)
 set(ATLAS_OPENGL_ES ON)
-find_library(OpenGL)
+find_library(OpenGL REQUIRED)
 # Workaround for issue 6
 find_library(ANDROID_DL_LIBRARY NAMES libdl.so dl)
 endif()
 if (NOT ATLAS_OPENGL_ES)
-find_package(OpenGL)
+find_package(OpenGL REQUIRED)
 set(OpenGL_GL_PREFERENCE GLVND)
 endif()
 
