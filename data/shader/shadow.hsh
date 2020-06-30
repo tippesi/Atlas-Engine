@@ -173,7 +173,7 @@ float CalculateCascadedShadow(Light light, vec3 fragmentPosition, vec3 normal, f
 	texelSize = cascadeIndex > 3 ? light.shadow.cascades[4].texelSize : texelSize;
 	texelSize = cascadeIndex > 4 ? light.shadow.cascades[5].texelSize : texelSize;
 	
-	fragmentPosition += light.shadow.bias * texelSize * normal;
+	fragmentPosition += light.shadow.bias * texelSize * normal * cosTheta;
 
 	float visibility = cascadeLookup(light, float(cascadeIndex),
 		cascadeMatrix, fragmentPosition);

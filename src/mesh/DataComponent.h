@@ -47,6 +47,7 @@ namespace Atlas {
 		 * @remarks DataComponent is responsible to automatically convert the the of type S
 		 * into a defined component type. This makes it easy to reduce the amount of data on
  		 * the GPU, while being easy to program. See {@link DataComponent.h} for the supported component types.
+		 * Needs to change
  		 */
 		template <class S, class T> class DataComponent {
 
