@@ -17,7 +17,7 @@ namespace Atlas {
 
 		sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_OPENGL);
 
-		if (sdlWindow == nullptr) {
+		if (!sdlWindow) {
 			Log::Error("Error initializing window");
 			return;
 		}
