@@ -96,9 +96,7 @@ namespace Atlas {
 			// We only use 16 bit audio internally
 			length /= 2;
 
-			std::vector<int16_t> dest(length);
-
-			std::memset(dest.data(), 0, length * 2);
+			std::vector<int16_t> dest(length, 0);
 
 			// Compute music first
 			std::unique_lock<std::mutex> lock(mutex);

@@ -81,6 +81,11 @@ else()
 message(STATUS "Building with app class")
 endif()
 
+# Workaround for SDL issue in Visual Studio
+if (MSVC)
+list(APPEND EXTRA_LIBS vcruntime)
+endif()
+
 # Set dependencies location #######################################################################
 set (ASSIMP_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Assimp)
 set (SDL_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/SDL)
