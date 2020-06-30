@@ -8,7 +8,7 @@
 [code-quality-image]: https://www.code-inspector.com/project/10000/score/svg
 [code-quality-url]: https://frontend.code-inspector.com/public/project/10000/Atlas-Engine/dashboard
 [build-image]: https://ci.appveyor.com/api/projects/status/p5rwt06036gp5fwy?svg=true
-[build-url]: https://ci.appveyor.com/api/projects/status/p5rwt06036gp5fwy
+[build-url]: https://ci.appveyor.com/project/tippesi/atlas-engine
 
 ![Example scene](images/sponza_rasterized.png)
 *Rasterized image using an irradiance volume*
