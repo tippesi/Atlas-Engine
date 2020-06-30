@@ -3,6 +3,8 @@
 
 #include "../audio/AudioManager.h"
 
+#include <algorithm>
+
 namespace Atlas {
 
 	namespace Scene {

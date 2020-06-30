@@ -5,6 +5,8 @@
 #include "loader/MaterialLoader.h"
 #include "loader/TerrainLoader.h"
 
+#include <algorithm>
+
 namespace Atlas {
 
 	std::vector<Mesh::Mesh*> ResourceManager::meshes;

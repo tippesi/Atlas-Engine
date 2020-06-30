@@ -1,6 +1,7 @@
 #include "AudioManager.h"
 
 #include <SDL_audio.h>
+#include <algorithm>
 
 namespace Atlas {
 
