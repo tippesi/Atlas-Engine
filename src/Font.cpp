@@ -92,7 +92,7 @@ namespace Atlas {
 			stbtt_GetCodepointHMetrics(&font, i, &glyph->advance, 0);
 			glyph->advance = (int32_t) ((float) glyph->advance * scale);
 
-			if (data[i] == nullptr) {
+			if (!data[i]) {
 				glyph->height = 0;
 				glyph->width = 0;
 				glyph->offset = vec2(0.0f);
