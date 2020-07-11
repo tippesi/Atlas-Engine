@@ -68,7 +68,7 @@ void main() {
 
     texCoordVS = 0.5 * vPosition + 0.5;
 	
-	vec3 pos = mMatrix[3].xyz;
+	vec3 pos = mMatrix * vec4(0.0, 0.0, 0.0, 1.0);
 	vec3 dir = normalize(cameraLocation - pos);
 
     float frames = float(views);
