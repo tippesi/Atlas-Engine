@@ -12,7 +12,7 @@ namespace Atlas {
         class Actor {
 
         public:
-			Actor() {}
+            Actor() = default;
             /**
              * Virtual destructor of the actor object.
              */
@@ -22,7 +22,7 @@ namespace Atlas {
              * Sets the transformation matrix of an actor relative to its parent
              * @param matrix A 4x4 matrix that contains the transformation of the actor.
              */
-            inline void SetMatrix(mat4 matrix) { this->matrix = matrix; matrixChanged = true; };
+            inline virtual void SetMatrix(mat4 matrix) { this->matrix = matrix; matrixChanged = true; };
 
             /**
              * Returns the transformation matrix relative to its parent
@@ -48,14 +48,14 @@ namespace Atlas {
 				mat4 parentTransform, bool parentUpdate) = 0;
 
             Volume::AABB aabb;
-            mat4 globalMatrix;
+            mat4 globalMatrix = mat4(1.0f);
 
             bool matrixChanged = true;
 
 			std::string name;
 
         private:
-			mat4 matrix;
+			mat4 matrix = mat4(1.0f);
 
         };
 

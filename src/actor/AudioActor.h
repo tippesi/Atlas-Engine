@@ -14,7 +14,7 @@ namespace Atlas {
 		class AudioActor : public Actor, public Audio::AudioStream {
 
 		public:
-			AudioActor() {}
+			AudioActor() = default;
 
 			AudioActor(const AudioActor& that);
 

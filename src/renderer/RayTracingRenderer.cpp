@@ -167,8 +167,8 @@ namespace Atlas {
 
 					ivec2 groupCount = resolution / 8 / imageSubdivisions;
 
-					groupCount.x += resolution.x % groupCount.x ? 1 : 0;
-					groupCount.y += resolution.y % groupCount.y ? 1 : 0;
+					groupCount.x += (resolution.x % groupCount.x ? 1 : 0);
+					groupCount.y += (resolution.y % groupCount.y ? 1 : 0);
 
 					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
 						GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -419,28 +419,38 @@ namespace Atlas {
 					auto normal = normalize(n0 + n1 + n2);
 
 					auto tangent = normalize(s - normal * dot(normal, s));
-					auto handedness = glm::dot(glm::cross(tangent, normal), t) < 0.0f ? 1.0f : -1.0f;
+					auto handedness = (glm::dot(glm::cross(tangent, normal), t) < 0.0f ? 1.0f : -1.0f);
 
 					auto bitangent = handedness * normalize(glm::cross(tangent, normal));
 
 					// Compress data
-					auto cn0 = Common::Packing::PackSignedVector3x10_1x2(vec4(n0, 0.0f));
-					auto cn1 = Common::Packing::PackSignedVector3x10_1x2(vec4(n1, 0.0f));
-					auto cn2 = Common::Packing::PackSignedVector3x10_1x2(vec4(n2, 0.0f));
+					auto pn0 = Common::Packing::PackSignedVector3x10_1x2(vec4(n0, 0.0f));
+					auto pn1 = Common::Packing::PackSignedVector3x10_1x2(vec4(n1, 0.0f));
+					auto pn2 = Common::Packing::PackSignedVector3x10_1x2(vec4(n2, 0.0f));
 
-					auto ct = Common::Packing::PackSignedVector3x10_1x2(vec4(tangent, 0.0f));
-					auto cbt = Common::Packing::PackSignedVector3x10_1x2(vec4(bitangent, 0.0f));
+					auto pt = Common::Packing::PackSignedVector3x10_1x2(vec4(tangent, 0.0f));
+					auto pbt = Common::Packing::PackSignedVector3x10_1x2(vec4(bitangent, 0.0f));
 
-					auto cuv0 = glm::packHalf2x16(uv0);
-					auto cuv1 = glm::packHalf2x16(uv1);
-					auto cuv2 = glm::packHalf2x16(uv2);
+					auto puv0 = glm::packHalf2x16(uv0);
+					auto puv1 = glm::packHalf2x16(uv1);
+					auto puv2 = glm::packHalf2x16(uv2);
 
-					triangles[k].v0 = vec4(v0, *(float*)& cn0);
-					triangles[k].v1 = vec4(v1, *(float*)& cn1);
-					triangles[k].v2 = vec4(v2, *(float*)& cn2);
-					triangles[k].d0 = vec4(*(float*)& cuv0, *(float*)& cuv1,
-						*(float*)& cuv2, *(float*)& materialIndices[k]);
-					triangles[k].d1 = vec4(*(float*)& ct, *(float*)& cbt, 0.0f, 0.0f);
+					auto cn0 = reinterpret_cast<float&>(pn0);
+					auto cn1 = reinterpret_cast<float&>(pn1);
+					auto cn2 = reinterpret_cast<float&>(pn2);
+
+					auto ct = reinterpret_cast<float&>(pt);
+					auto cbt = reinterpret_cast<float&>(pbt);
+
+					auto cuv0 = reinterpret_cast<float&>(puv0);
+					auto cuv1 = reinterpret_cast<float&>(puv1);
+					auto cuv2 = reinterpret_cast<float&>(puv2);
+
+					triangles[k].v0 = vec4(v0, cn0);
+					triangles[k].v1 = vec4(v1, cn1);
+					triangles[k].v2 = vec4(v2, cn2);
+					triangles[k].d0 = vec4(cuv0, cuv1, cuv2, reinterpret_cast<float&>(materialIndices[k]));
+					triangles[k].d1 = vec4( ct, cbt, 0.0f, 0.0f);
 
 					auto min = glm::min(glm::min(triangles[k].v0, triangles[k].v1),
 						triangles[k].v2);

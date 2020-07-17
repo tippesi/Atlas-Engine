@@ -35,8 +35,8 @@ namespace Atlas {
             immutable = (flags & AE_BUFFER_IMMUTABLE) && immutableStorageSupported;
 
             // Configure mapping and storage flags.
-            mapFlags |= (flags & AE_BUFFER_MAP_READ ? GL_MAP_READ_BIT : 0);
-            mapFlags |= (flags & AE_BUFFER_MAP_WRITE ? GL_MAP_WRITE_BIT : 0);
+            mapFlags |= ((flags & AE_BUFFER_MAP_READ) ? GL_MAP_READ_BIT : 0);
+            mapFlags |= ((flags & AE_BUFFER_MAP_WRITE) ? GL_MAP_WRITE_BIT : 0);
 
             if (flags & AE_BUFFER_DYNAMIC_STORAGE && immutable) {
                 dataFlags |= GL_DYNAMIC_STORAGE_BIT_EXT | GL_MAP_COHERENT_BIT_EXT

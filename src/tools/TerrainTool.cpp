@@ -883,9 +883,6 @@ namespace Atlas {
 
 			}
 
-			std::vector<std::vector<float>> weights;
-			std::vector<std::vector<ivec2>> offsets;
-
 			Atlas::Filter filter;
 			filter.CalculateGaussianFilter(31.0f / 6.0f, 31);
 			

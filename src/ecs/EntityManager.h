@@ -124,7 +124,7 @@ namespace Atlas {
 		template<typename Comp, typename ...Args>
 		Comp& EntityManager::Emplace(Entity entity, Args&&... args) {
 
-			auto& pool = pools.Get<Comp>();
+			const auto& pool = pools.Get<Comp>();
 
 			return pool.Emplace(entity, std::forward<Args>(args)...);
 

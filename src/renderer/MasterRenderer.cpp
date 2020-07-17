@@ -610,7 +610,7 @@ namespace Atlas {
 				createProbeFaceShader.GetUniform("ipMatrix")->SetValue(camera.invProjectionMatrix);
 
 				int32_t groupCount = probe->resolution / 8;
-				groupCount += probe->resolution % groupCount ? 1 : 0;
+				groupCount += (probe->resolution % groupCount ? 1 : 0);
 
 				probe->cubemap.Bind(GL_WRITE_ONLY, 0);
 				probe->depth.Bind(GL_WRITE_ONLY, 1);
@@ -911,7 +911,7 @@ namespace Atlas {
 			dfgPreintegrationTexture = Texture::Texture2D(res, res, AE_RGBA16F);
 
 			int32_t groupCount = res / 8;
-			groupCount += res % groupCount ? 1 : 0;
+			groupCount += (res % groupCount ? 1 : 0);
 
 			dfgPreintegrationTexture.Bind(GL_WRITE_ONLY, 0);
 

@@ -11,9 +11,9 @@ namespace Atlas {
         class DecalActor : public Actor {
 
 		public:
-			DecalActor() {}
+            DecalActor() = default;
 
-            DecalActor(Decal* decal);
+            explicit DecalActor(Decal* decal);
 
             void Update(Camera camera, float deltaTime,
 				mat4 parentTransform, bool parentUpdate) override;

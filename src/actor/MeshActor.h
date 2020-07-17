@@ -15,12 +15,12 @@ namespace Atlas {
 			void Update(Camera camera, float deltaTime,
 				mat4 parentTransform, bool parentUpdate) override;
 
-			Mesh::Mesh* mesh;
+			Mesh::Mesh* mesh = nullptr;
 
-			mat4 lastGlobalMatrix;
+			mat4 lastGlobalMatrix = mat4(1.0);
 
 		protected:
-			MeshActor(Mesh::Mesh* mesh) : mesh(mesh) {}
+			explicit MeshActor(Mesh::Mesh* mesh) : mesh(mesh) {}
 
 		};
 
