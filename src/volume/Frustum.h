@@ -17,7 +17,7 @@ namespace Atlas {
 		    /**
 		     * Constructs a Frustum object.
 		     */
-			Frustum() {}
+			Frustum() = default;
 
             /**
              * Constructs a Frustum object.
@@ -27,13 +27,13 @@ namespace Atlas {
              * Far plane: Upper left, upper right, bottom left, bottom right
              * Near plane: Upper left, upper right, bottom left, bottom right
              */
-			Frustum(std::vector<vec3> corners);
+			explicit Frustum(std::vector<vec3> corners);
 
 			/**
 			 * Constructs a Frustum object.
 			 * @param matrix The view projection matrix of the frustum.
 			 */
-			Frustum(mat4 matrix);
+			explicit Frustum(mat4 matrix);
 
 			/**
 			 * Resizes the frustum.

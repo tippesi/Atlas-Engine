@@ -132,6 +132,8 @@ namespace Atlas {
 				return;
 			}
 
+            //std::copy()
+
 			for (auto& ele : octreeData)
 			    data.push_back(ele);
 

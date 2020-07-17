@@ -21,15 +21,15 @@ namespace Atlas {
 
 			void AddLongRangeShadow(float distance);
 
-			void RemoveShadow();
+			void RemoveShadow() override;
 
 			void AddVolumetric(int32_t width, int32_t height, int32_t sampleCount);
 
-			void RemoveVolumetric();
+			void RemoveVolumetric() override;
 
-			void Update(Camera* camera);
+			void Update(Camera* camera) override;
 
-			vec3 direction;
+			vec3 direction = vec3(0.0f, -1.0f, 0.0f);
 
 		private:
 			void UpdateShadowCascade(ShadowComponent* cascade, Camera* camera);
@@ -37,7 +37,7 @@ namespace Atlas {
 			float FrustumSplitFormula(float correction, float nearDist, float farDist, float splitIndex, float splitCount);
 
 			vec3 shadowCenter;
-			bool useShadowCenter;
+			bool useShadowCenter = true;
 
 		};
 

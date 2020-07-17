@@ -13,11 +13,11 @@ namespace Atlas {
 		class EnvironmentProbe {
 
 		public:
-			EnvironmentProbe() {}
+			EnvironmentProbe() = default;
 
-			EnvironmentProbe(const Texture::Cubemap& cubemap);
+			explicit EnvironmentProbe(const Texture::Cubemap& cubemap);
 
-			EnvironmentProbe(int32_t resolution, vec3 position = vec3(0.0f));
+			explicit EnvironmentProbe(int32_t resolution, vec3 position = vec3(0.0f));
 
 			void SetPosition(vec3 position);
 

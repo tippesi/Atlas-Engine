@@ -6,10 +6,7 @@ namespace Atlas {
 
 		PointLight::PointLight(int32_t mobility, float radius) : Light(AE_POINT_LIGHT, mobility), radius(radius) {
 
-			location = vec3(0.0f, 3.0f, 0.0f);
 
-			shadow = nullptr;
-			volumetric = nullptr;
 
 		}
 
@@ -26,21 +23,7 @@ namespace Atlas {
 
 			shadow = new Shadow(0.0f, bias, resolution, true);
 
-			mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, radius);
-			vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
-							 vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-							 vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
-
-			vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-						   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
-						   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
-
-			for (uint8_t i = 0; i < 6; i++) {
-				auto viewMatrix = glm::lookAt(location, location + faces[i], ups[i]);
-				shadow->components[i].projectionMatrix = projectionMatrix;
-				shadow->components[i].viewMatrix = viewMatrix;
-				shadow->components[i].frustumMatrix = projectionMatrix * viewMatrix;
-			}
+			Update(nullptr);
 
 		}
 

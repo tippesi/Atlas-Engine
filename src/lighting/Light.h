@@ -44,8 +44,8 @@ namespace Atlas {
 		protected:
 			Light(int32_t type, int32_t mobility) : type(type), mobility(mobility) {}
 
-			Shadow* shadow;
-			Volumetric* volumetric;
+			Shadow* shadow = nullptr;
+			Volumetric* volumetric = nullptr;
 
 		};
 

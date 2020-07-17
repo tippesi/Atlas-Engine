@@ -453,7 +453,7 @@ namespace Atlas {
 			if (batch->GetTriangleCount()) {
 				batch->BindTriangleBuffer();
 
-				glDrawArrays(GL_TRIANGLES, 0, batch->GetTriangleCount() * 3);
+				glDrawArrays(GL_TRIANGLES, 0, GLsizei(batch->GetTriangleCount() * 3));
 			}
 
 		}

@@ -6,10 +6,7 @@ namespace Atlas {
 
         DirectionalLight::DirectionalLight(int32_t mobility) : Light(AE_DIRECTIONAL_LIGHT, mobility) {
 
-            direction = vec3(0.0f, -1.0f, 0.0f);
 
-            shadow = nullptr;
-            volumetric = nullptr;
 
         }
 
@@ -198,7 +195,6 @@ namespace Atlas {
 			glm::mat4 shadowMatrix = cascade->projectionMatrix * cascade->viewMatrix;
 			glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 			shadowOrigin = shadowMatrix * shadowOrigin;
-			auto storedW = shadowOrigin.w;
 			shadowOrigin = shadowOrigin * (float)shadow->resolution / 2.0f;
 
 			glm::vec4 roundedOrigin = glm::round(shadowOrigin);

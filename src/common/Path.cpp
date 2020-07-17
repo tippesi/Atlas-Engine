@@ -33,7 +33,7 @@ namespace Atlas {
 
 			dest = dest.substr(count, dest.size());
 
-			for (int32_t i = count; i < src.size(); i++)
+			for (size_t i = count; i < src.size(); i++)
 				if (src[i] == '/' || src[i] == '\\')
 					result.append("../");
 
