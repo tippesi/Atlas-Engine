@@ -21,7 +21,7 @@ namespace Atlas {
 		class ControllerAxisEvent {
 
 		public:
-			ControllerAxisEvent(SDL_ControllerAxisEvent event) {
+			explicit ControllerAxisEvent(SDL_ControllerAxisEvent event) {
 
 				axis = event.axis;
 				value = event.value;

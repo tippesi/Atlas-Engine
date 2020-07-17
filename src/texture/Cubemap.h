@@ -16,13 +16,13 @@ namespace Atlas {
 			/**
 			 * Constructs a Cubemap object.
 			 */
-			Cubemap() {}
+            Cubemap() = default;
 
 			/**
              * Constructs a Cubemap object.
 			 * @param that Another Cubemap object.
              */
-			Cubemap(const Cubemap& that);
+            Cubemap(const Cubemap& that);
 
             /**
              * Constructs a Cubemap object.

@@ -14,7 +14,7 @@ namespace Atlas {
 		public:
 			KeyboardHandler();
 
-			KeyboardHandler(const KeyboardHandler& that);
+			explicit KeyboardHandler(const KeyboardHandler& that);
 
 			KeyboardHandler(Camera* camera, float speed, float reactivity);
 

@@ -14,7 +14,7 @@ namespace Atlas {
 		public:
 			ControllerHandler();
 
-			ControllerHandler(const ControllerHandler& that);
+			explicit ControllerHandler(const ControllerHandler& that);
 
 			ControllerHandler(Camera* camera, float sensibility, float speed, float reactivity,
 					float threshold, int32_t device = -1);

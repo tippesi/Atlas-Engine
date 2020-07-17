@@ -336,7 +336,7 @@ namespace Atlas {
 			normalFoamTemporalThresholdUniform->SetValue(foamTemporalThreshold);
 			normalFoamOffsetUniform->SetValue(foamOffset);
 
-			auto normalMapCopy = normalMap;
+			auto normalMapCopy(normalMap);
 
 			displacementMap.Bind(GL_READ_ONLY, 0);
 			normalMap.Bind(GL_WRITE_ONLY, 1);

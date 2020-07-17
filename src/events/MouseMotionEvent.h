@@ -14,7 +14,7 @@ namespace Atlas {
 		class MouseMotionEvent {
 
 		public:
-			MouseMotionEvent(SDL_MouseMotionEvent event) {
+			explicit MouseMotionEvent(SDL_MouseMotionEvent event) {
 
 				windowID = event.windowID;
 				x = event.x;

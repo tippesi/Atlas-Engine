@@ -17,7 +17,7 @@ namespace Atlas {
         class AudioDeviceEvent {
 
         public:
-            AudioDeviceEvent(SDL_AudioDeviceEvent event) {
+            explicit AudioDeviceEvent(SDL_AudioDeviceEvent event) {
 
                 type = event.type;
                 device = event.which;

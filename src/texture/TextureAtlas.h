@@ -18,7 +18,7 @@ namespace Atlas {
 			 * Constructs a TextureAtlas object.
 			 * @note Texture atlases are only available as AE_RGBA8.
 			 */
-			TextureAtlas() {}
+			TextureAtlas() = default;
 
 			/**
 			 * Constructs a TextureAtlas object.

@@ -19,7 +19,7 @@ namespace Atlas {
         	/**
         	 * Constructs an AABB object.
         	 */
-            AABB() {};
+            AABB() = default;
 
             /**
              * Constructs an AABB object.

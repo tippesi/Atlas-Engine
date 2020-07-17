@@ -12,7 +12,7 @@ namespace Atlas {
 		/**
 		 * Constructs a RenderTarget object.
 		 */
-		RenderTarget() {}
+		RenderTarget() = default;
 
 		/**
 		 * Constructs a RenderTarget object.

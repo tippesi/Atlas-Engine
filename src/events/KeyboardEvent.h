@@ -15,7 +15,7 @@ namespace Atlas {
 		class KeyboardEvent {
 
 		public:
-			KeyboardEvent(SDL_KeyboardEvent event) {
+			explicit KeyboardEvent(SDL_KeyboardEvent event) {
 
 				windowID = event.windowID;
 				keycode = event.keysym.sym;

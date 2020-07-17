@@ -30,7 +30,7 @@ namespace Atlas {
 		class ControllerButtonEvent {
 
 		public:
-			ControllerButtonEvent(SDL_ControllerButtonEvent event) {
+			explicit ControllerButtonEvent(SDL_ControllerButtonEvent event) {
 
 				button = event.button;
 				state = event.state;

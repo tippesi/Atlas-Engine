@@ -1,5 +1,5 @@
-#ifndef ECSPOOL_H
-#define ECSPOOL_H
+#ifndef AE_ECSPOOL_H
+#define AE_ECSPOOL_H
 
 #include "Storage.h"
 
@@ -13,7 +13,7 @@ namespace Atlas {
 		class Pool : public Storage {
 
 		public:
-			Pool() {}
+			Pool() = default;
 
 			template<typename... Args>
 			Comp& Emplace(const Entity entity, Args&&... args);

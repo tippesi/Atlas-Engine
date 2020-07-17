@@ -10,9 +10,9 @@ namespace Atlas {
 		class MatrixDecomposition {
 
 		public:
-			MatrixDecomposition() {}
+			MatrixDecomposition() = default;
 
-			MatrixDecomposition(mat4 matrix);
+			explicit MatrixDecomposition(mat4 matrix);
 
 			void Decompose(mat4 matrix);
 

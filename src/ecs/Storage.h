@@ -1,5 +1,5 @@
-#ifndef ECSSTORAGE_H
-#define ECSSTORAGE_H
+#ifndef AE_ECSSTORAGE_H
+#define AE_ECSSTORAGE_H
 
 #include "Entity.h"
 
@@ -14,7 +14,7 @@ namespace Atlas {
 			using Page = std::vector<uint32_t>;
 
 		public:
-			Storage() {}
+			Storage() = default;
 
 			Entity& operator[](size_t idx);
 

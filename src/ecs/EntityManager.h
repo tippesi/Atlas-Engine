@@ -1,5 +1,5 @@
-#ifndef ECSENTITYMANAGER_H
-#define ECSENTITYMANAGER_H
+#ifndef AE_ECSENTITYMANAGER_H
+#define AE_ECSENTITYMANAGER_H
 
 #include "Entity.h"
 #include "Pools.h"
@@ -19,7 +19,7 @@ namespace Atlas {
 			/**
 			 * Constructs an EntityManager object.
 			 */
-			EntityManager() {}
+			EntityManager() = default;
 
 			/**
 			 * Creates a new entity

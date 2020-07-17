@@ -13,9 +13,9 @@ namespace Atlas {
 		class Impostor {
 
 		public:
-			Impostor() {}
+			Impostor() = default;
 
-			Impostor(const Impostor& that);
+			explicit Impostor(const Impostor& that);
 
 			Impostor(int32_t views, int32_t resolution);
 
@@ -29,8 +29,8 @@ namespace Atlas {
 
 			Buffer::Buffer viewPlaneBuffer;
 
-			vec3 center;
-			float radius;
+			vec3 center = vec3(0.0f);
+			float radius = 1.0f;
 
 			int32_t views = 1;
 			int32_t resolution = 64;

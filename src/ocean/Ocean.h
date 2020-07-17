@@ -17,7 +17,7 @@ namespace Atlas {
 		class Ocean : public OceanNode {
 
 		public:
-			Ocean() {}
+			Ocean() = default;
 
 			Ocean(int32_t LoDCount, float size, vec3 translation = vec3(0.0f),
 				int32_t N = 512, int32_t L = 4000);

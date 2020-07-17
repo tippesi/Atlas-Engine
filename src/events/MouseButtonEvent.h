@@ -20,7 +20,7 @@ namespace Atlas {
 		class MouseButtonEvent {
 
 		public:
-			MouseButtonEvent(SDL_MouseButtonEvent event) {
+			explicit MouseButtonEvent(SDL_MouseButtonEvent event) {
 
 				windowID = event.windowID;
 				state = event.state;

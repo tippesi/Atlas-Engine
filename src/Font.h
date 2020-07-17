@@ -42,7 +42,7 @@ namespace Atlas {
 		/**
 		 * Constructs a font object.
 		 */
-		Font() {}
+		Font() = default;
 
 		/**
          * Loads a true type font from a file.

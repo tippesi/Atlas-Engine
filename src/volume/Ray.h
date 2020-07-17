@@ -11,7 +11,7 @@ namespace Atlas {
 		class Ray {
 
 		public:
-			Ray() {}
+			Ray() = default;
 
 			Ray(vec3 origin, vec3 direction);
 
@@ -27,7 +27,7 @@ namespace Atlas {
 
 			vec3 Distance(Ray ray, float& distance);
 
-			vec3 origin;
+			vec3 origin = vec3(0.0f);
 			vec3 direction = vec3(0.0f, 1.0f, 0.0f);
 
 		private:

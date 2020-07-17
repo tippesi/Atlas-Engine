@@ -1,5 +1,5 @@
-#ifndef ECSENTITY_H
-#define ECSENTITY_H
+#ifndef AE_ECSENTITY_H
+#define AE_ECSENTITY_H
 
 #include <cstdint>
 

@@ -22,7 +22,7 @@ namespace Atlas {
         template <class T> class Octree {
 
         public:
-            Octree() {}
+            Octree() = default;
 
             Octree(AABB aabb, int32_t depth, float relaxFactor = 2.0f);
 

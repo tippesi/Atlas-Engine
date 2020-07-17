@@ -21,7 +21,7 @@ namespace Atlas {
         class DropEvent {
 
         public:
-            DropEvent(SDL_DropEvent event) {
+            explicit DropEvent(SDL_DropEvent event) {
 
                 windowID = event.windowID;
                 if (event.file)

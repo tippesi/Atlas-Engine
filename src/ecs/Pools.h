@@ -1,5 +1,5 @@
-#ifndef ECSPOOLS_H
-#define ECSPOOLS_H
+#ifndef AE_ECSPOOLS_H
+#define AE_ECSPOOLS_H
 
 #include "Pool.h"
 #include "TypeIndex.h"
@@ -15,7 +15,7 @@ namespace Atlas {
 		class Pools {
 
 		public:
-			Pools() {}
+			Pools() = default;
 
 			template<typename Comp>
 			Pool<Comp>& Get();

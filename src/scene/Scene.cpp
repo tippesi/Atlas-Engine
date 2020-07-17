@@ -7,7 +7,7 @@ namespace Atlas {
 		Scene::Scene(vec3 min, vec3 max, int32_t depth) : SceneNode(),
 			SpacePartitioning(min, max, depth) {
 
-			AddToScene(this, &meshMap);
+			AddToScene(this, &rootMeshMap);
 
 		}
 
@@ -71,7 +71,7 @@ namespace Atlas {
 			std::vector<Mesh::Mesh*> meshes;
 
 			// Not really efficient, but does the job
-			for (auto& key : meshMap) {
+			for (auto& key : rootMeshMap) {
 				meshes.push_back(key.first);
 			}
 

@@ -16,7 +16,7 @@ namespace Atlas {
 			/**
 			 * Constructs a CubemapArray object.
 			 */
-			CubemapArray() {}
+			CubemapArray() = default;
 
 			/**
 			 * Constructs a CubemapArray object.

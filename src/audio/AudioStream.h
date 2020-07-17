@@ -16,7 +16,7 @@ namespace Atlas {
         public:
 			AudioStream() : data(nullptr) {}
 
-            AudioStream(AudioData* data) : data(data) {}
+			explicit AudioStream(AudioData* data) : data(data) {}
 
 			AudioStream& operator=(const AudioStream& that);
 

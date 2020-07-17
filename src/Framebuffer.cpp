@@ -40,6 +40,8 @@ namespace Atlas {
 
 	}
 
+	/*
+	TODO
 	Framebuffer& Framebuffer::operator=(Framebuffer &that) {
 
 		if (this != &that) {
@@ -52,6 +54,7 @@ namespace Atlas {
 		return *this;
 
 	}
+	*/
 
 	void Framebuffer::AddComponent(int32_t attachment, int32_t sizedFormat, int32_t wrapping,
 								   int32_t filtering, uint32_t target) {

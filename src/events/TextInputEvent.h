@@ -16,7 +16,7 @@ namespace Atlas {
 		class TextInputEvent {
 
 		public:
-			TextInputEvent(SDL_TextInputEvent event) {
+			explicit TextInputEvent(SDL_TextInputEvent event) {
 
 				windowID = event.windowID;
 

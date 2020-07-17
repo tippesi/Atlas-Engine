@@ -15,7 +15,7 @@ namespace Atlas {
 		template <class T> class BVHNode {
 
 		public:
-			BVHNode() {}
+			BVHNode() = default;
 
 			void BuildSAH(std::vector<BVHNode<T>*>& nodes, size_t offset, size_t count,
 				std::vector<std::pair<AABB, T>>& data, int32_t& nodeCount, int32_t depth, bool isLeftChild);
@@ -40,7 +40,7 @@ namespace Atlas {
 		template <class T> class BVH {
 
 		public:
-			BVH() {}
+			BVH() = default;
 
 			BVH(std::vector<AABB> aabbs, std::vector<T> data);
 

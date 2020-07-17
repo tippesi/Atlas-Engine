@@ -1,5 +1,5 @@
-#ifndef ECSTYPEINDEX_H
-#define ECSTYPEINDEX_H
+#ifndef AE_ECSTYPEINDEX_H
+#define AE_ECSTYPEINDEX_H
 
 #include <cstdint>
 

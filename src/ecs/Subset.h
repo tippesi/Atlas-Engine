@@ -1,5 +1,5 @@
-#ifndef ECSSUBSET_H
-#define ECSSUBSET_H
+#ifndef AE_ECSSUBSET_H
+#define AE_ECSSUBSET_H
 
 #include "Pool.h"
 
@@ -86,7 +86,7 @@ namespace Atlas {
 
 			};
 
-			Subset() {}
+			Subset() = default;
 
 			Subset(std::tuple<Pool<Comp>*...> pools) : pools(pools) {
 

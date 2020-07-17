@@ -15,7 +15,7 @@ namespace Atlas {
         class ClockEvent {
 
         public:
-            ClockEvent(float dtime) {
+            explicit ClockEvent(float dtime) {
 
                 this->dtime = dtime;
 

@@ -14,7 +14,7 @@ namespace Atlas {
 		class OceanNode {
 
 		public:
-			OceanNode() {}
+			OceanNode() = default;
 
 			OceanNode(vec2 location, float sideLength, int32_t LoD, int32_t LoDCount,
 				int32_t LoDMultiplier, ivec2 parentIndex, ivec2 localIndex);

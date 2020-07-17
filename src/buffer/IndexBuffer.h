@@ -22,7 +22,7 @@ namespace Atlas {
 			 * @note The state of the other buffer won't be copied (e.g. if the
 			 * other buffer is mapped this buffer won't be mapped automatically)
 			 */
-			IndexBuffer(const IndexBuffer& that);
+            explicit IndexBuffer(const IndexBuffer& that);
 
             /**
              * Constructs an IndexBuffer object.

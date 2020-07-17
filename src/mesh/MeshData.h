@@ -36,7 +36,7 @@ namespace Atlas {
 			 *
 			 * @param data
 			 */
-			MeshData(const MeshData& data);
+			explicit MeshData(const MeshData& data);
 
 			/**
 			 *

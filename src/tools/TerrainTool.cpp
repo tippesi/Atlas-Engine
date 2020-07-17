@@ -888,7 +888,7 @@ namespace Atlas {
 			
 			image.ApplyFilter(filter);
 
-			auto shoreTexture = Texture::Texture2D(resolution, resolution, AE_RGBA8,
+			Texture::Texture2D shoreTexture(resolution, resolution, AE_RGBA8,
 				GL_CLAMP_TO_BORDER, GL_LINEAR);
 
 			shoreTexture.SetData(image.GetData());

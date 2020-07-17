@@ -37,7 +37,7 @@ namespace Atlas {
 		 * @param that
 		 * @return
 		 */
-		Framebuffer& operator=(Framebuffer &that);
+		//Framebuffer& operator=(Framebuffer &that);
 
 		/**
          *

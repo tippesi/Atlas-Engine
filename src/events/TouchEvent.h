@@ -18,7 +18,7 @@ namespace Atlas {
         class TouchEvent {
 
         public:
-            TouchEvent(SDL_TouchFingerEvent event) {
+            explicit TouchEvent(SDL_TouchFingerEvent event) {
 
                 finger = event.fingerId;
 

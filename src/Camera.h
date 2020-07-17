@@ -16,7 +16,7 @@ namespace Atlas {
 	class Camera {
 
 	public:
-		Camera() {}
+		Camera() = default;
 
 		/**
          * Constructs a Camera object.
@@ -111,14 +111,14 @@ namespace Atlas {
 		vec3 up = vec3(0.0f, 1.0f, 0.0f);
 		vec3 right = vec3(1.0f, 0.0f, 0.0f);
 
-		mat4 viewMatrix;
-		mat4 projectionMatrix;
+		mat4 viewMatrix = mat4(1.0f);
+		mat4 projectionMatrix = mat4(1.0f);
 
-		mat4 invViewMatrix;
-		mat4 invProjectionMatrix;
+		mat4 invViewMatrix = mat4(1.0f);
+		mat4 invProjectionMatrix = mat4(1.0f);
 
-		mat4 unjitterdProjection;
-		mat4 invUnjitteredProjection;
+		mat4 unjitterdProjection = mat4(0.0f);
+		mat4 invUnjitteredProjection = mat4(0.0f);
 
 		Volume::Frustum frustum;
 
@@ -126,8 +126,8 @@ namespace Atlas {
 		vec2 jitterVector = vec2(0.0f);
 		vec2 lastJitterVector = vec2(0.0f);
 
-		mat4 jitteredMatrix;
-		mat4 lastJitteredMatrix;		
+		mat4 jitteredMatrix = mat4(0.0f);
+		mat4 lastJitteredMatrix = mat4(0.0f);
 
 	};
 

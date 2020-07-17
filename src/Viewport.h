@@ -15,7 +15,7 @@ namespace Atlas {
 		/**
 		 * Constructs a Viewport object.
 		 */
-		Viewport() {}
+		Viewport() = default;
 
 		/**
          * Constructs a Viewport object.

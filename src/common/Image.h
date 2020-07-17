@@ -25,7 +25,7 @@ namespace Atlas {
 		class Image {
 
 		public:
-			Image() {}
+			Image() = default;
 
 			Image(int32_t width, int32_t height, int32_t channels) :
 				width(width), height(height), channels(channels) {}
@@ -44,7 +44,7 @@ namespace Atlas {
 		class Image8 : public Image {
 
 		public:
-			Image8() {}
+			Image8() = default;
 
 			Image8(int32_t width, int32_t height, int32_t channels);
 
@@ -83,7 +83,7 @@ namespace Atlas {
 		class Image16 : public Image {
 
 		public:
-			Image16() {}
+			Image16() = default;
 
 			Image16(int32_t width, int32_t height, int32_t channels);
 

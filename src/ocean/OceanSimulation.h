@@ -15,7 +15,7 @@ namespace Atlas {
 		class OceanSimulation {
 
 		public:
-			OceanSimulation() {}
+			OceanSimulation() = default;
 
 			OceanSimulation(int32_t N, int32_t L);
 

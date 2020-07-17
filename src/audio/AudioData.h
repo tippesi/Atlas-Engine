@@ -18,7 +18,7 @@ namespace Atlas {
         public:
 			AudioData();
 
-            AudioData(std::string filename);
+            explicit AudioData(std::string filename);
 
 			void ApplyFormat(SDL_AudioSpec& formatSpec);
 

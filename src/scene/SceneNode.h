@@ -22,9 +22,9 @@ namespace Atlas {
 			/**
              *
              */
-			SceneNode() {}
+			SceneNode() = default;
 
-			SceneNode(const SceneNode& that);
+			explicit SceneNode(const SceneNode& that);
 
 			/**
 			 * 

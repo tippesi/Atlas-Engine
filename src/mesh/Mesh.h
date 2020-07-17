@@ -24,9 +24,9 @@ namespace Atlas {
 		class Mesh {
 
 		public:
-			Mesh() {}
+			Mesh() = default;
 
-			Mesh(const Mesh& that);
+			explicit Mesh(const Mesh& that);
 
 			/**
 			 *
@@ -72,7 +72,7 @@ namespace Atlas {
 
 			Shader::ShaderConfig* GetConfig(Material* material, int32_t type);
 
-			std::string name;
+			std::string name = "";
 
 			MeshData data;
 			Impostor* impostor = nullptr;

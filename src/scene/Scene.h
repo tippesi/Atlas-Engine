@@ -27,7 +27,7 @@ namespace Atlas {
 			/**
 			 * Constructs a scene object.
 			 */
-			Scene() : SceneNode(this, &meshMap), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5) {}
+			Scene() : SceneNode(this, &rootMeshMap), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5) {}
 
 			/**
 			 * Constructs a scene object.
@@ -100,7 +100,7 @@ namespace Atlas {
 			PostProcessing::PostProcessing postProcessing;
 
 		private:
-			std::unordered_map<Mesh::Mesh*, int32_t> meshMap;
+			std::unordered_map<Mesh::Mesh*, int32_t> rootMeshMap;
 
 			bool hasChanged = true;
 

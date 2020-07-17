@@ -14,13 +14,13 @@ namespace Atlas {
 			/**
 			 * Constructs a Texture2D object.
 			 */
-			Texture2D() {}
+            Texture2D() = default;
 
             /**
              * Constructs a Texture2D object.
 			 * @param that Another Texture2D object.
              */
-			Texture2D(const Texture2D& that);
+            Texture2D(const Texture2D& that);
 
             /**
 			 * Construct a Texture2D object.

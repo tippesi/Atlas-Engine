@@ -72,7 +72,7 @@ namespace Atlas {
 			 * @note The state of the other buffer won't be copied (e.g. if the
 			 * other buffer is mapped this buffer won't be mapped automatically)
 			 */
-			Buffer(const Buffer& that);
+            explicit Buffer(const Buffer& that);
 
 			/**
              * Constructs a Buffer object.

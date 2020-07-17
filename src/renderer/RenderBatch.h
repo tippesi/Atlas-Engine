@@ -45,7 +45,7 @@ namespace Atlas {
 			std::vector<vec3> lineVertexData;
 			std::vector<vec3> lineColorData;
 
-			float lineWidth;
+			float lineWidth = 1.0f;
 
 			bool lineDataValid = true;
 

@@ -18,7 +18,7 @@ namespace Atlas {
 		class ControllerDeviceEvent {
 
 		public:
-			ControllerDeviceEvent(SDL_ControllerDeviceEvent event) {
+			explicit ControllerDeviceEvent(SDL_ControllerDeviceEvent event) {
 
 				type = event.type;
 				device = event.which;

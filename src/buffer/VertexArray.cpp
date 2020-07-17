@@ -72,6 +72,8 @@ namespace Atlas {
 
 				Unbind();
 
+				maxAttribArrayCount = that.maxAttribArrayCount;
+
 			}
 
 			return *this;

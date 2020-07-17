@@ -28,7 +28,7 @@ namespace Atlas {
 		class WindowEvent {
 
 		public:
-			WindowEvent(SDL_WindowEvent event) {
+			explicit WindowEvent(SDL_WindowEvent event) {
 				windowID = event.windowID;
 				type = event.event;
 				data = ivec2(event.data1, event.data2);
