@@ -14,7 +14,7 @@ namespace Atlas {
 		public:
 			DirectionalVolumetricRenderer();
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 			static std::string volumetricVertexPath;
 			static std::string volumetricFragmentPath;
@@ -41,8 +41,8 @@ namespace Atlas {
 			Shader::Uniform* shadowCascadeCount = nullptr;
 
 			struct ShadowCascadeUniform {
-				Shader::Uniform* distance;
-				Shader::Uniform* lightSpace;
+				Shader::Uniform* distance = nullptr;
+				Shader::Uniform* lightSpace = nullptr;
 			}cascades[MAX_SHADOW_CASCADE_COUNT + 1];
 
 			// Bilateral blur shader uniforms

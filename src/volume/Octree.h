@@ -9,6 +9,7 @@
 #include <vector>
 #include <unordered_set>
 #include <algorithm>
+#include <iterator>
 
 namespace Atlas {
 
@@ -132,10 +133,7 @@ namespace Atlas {
 				return;
 			}
 
-            //std::copy()
-
-			for (auto& ele : octreeData)
-			    data.push_back(ele);
+            std::copy(octreeData.begin(), octreeData.end(), back_inserter(data));
 
 			for (auto& child : children)
 				child.QueryAABB(data, aabb);
@@ -152,8 +150,7 @@ namespace Atlas {
 			if (!ray.Intersects(scaled, 0.0f, maxFloat))
 				return;
 
-			for (auto& ele : octreeData)
-				data.push_back(ele);
+            std::copy(octreeData.begin(), octreeData.end(), back_inserter(data));
 
 			for (auto& child : children)
 				child.QueryRay(data, ray);
@@ -175,9 +172,7 @@ namespace Atlas {
 				return;
 			}
 
-			for (auto& ele : octreeData) {
-				data.push_back(ele);
-			}
+            std::copy(octreeData.begin(), octreeData.end(), back_inserter(data));
 
 			for (auto& child : children)
 				child.QueryFrustum(data, insideData, frustum);
@@ -187,8 +182,7 @@ namespace Atlas {
 		template <class T>
 		void Octree<T>::GetData(std::vector<T>& data) const {
 
-			for (auto& ele : octreeData)
-				data.push_back(ele);
+            std::copy(octreeData.begin(), octreeData.end(), back_inserter(data));
 
 			for (auto& child : children)
 				child.GetData(data);

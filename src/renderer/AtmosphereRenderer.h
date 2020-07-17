@@ -16,7 +16,7 @@ namespace Atlas {
 		public:
 			AtmosphereRenderer();
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 			void Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene, Lighting::DirectionalLight* sun);
 

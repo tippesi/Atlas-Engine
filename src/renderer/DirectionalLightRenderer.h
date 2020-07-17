@@ -13,10 +13,10 @@ namespace Atlas {
         public:
             DirectionalLightRenderer();
 
-            virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene) {}
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene) final {}
 
-            virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
                 Scene::Scene* scene, Texture::Texture2D* dfgTexture);
 
         private:
@@ -54,9 +54,9 @@ namespace Atlas {
             Shader::Uniform* volumeMomentsRes = nullptr;
 
             struct ShadowCascadeUniform {
-                Shader::Uniform* distance;
-                Shader::Uniform* lightSpace;
-				Shader::Uniform* texelSize;
+                Shader::Uniform* distance = nullptr;
+                Shader::Uniform* lightSpace = nullptr;
+				Shader::Uniform* texelSize = nullptr;
             }cascades[MAX_SHADOW_CASCADE_COUNT + 1];
 
         };

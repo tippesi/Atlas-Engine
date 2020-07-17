@@ -155,7 +155,7 @@ namespace Atlas {
 						materialIdxUniform->SetValue((uint32_t)materialMap[material]);
 
 						glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
-							(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), actorCount);
+							(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), GLsizei(actorCount));
 
 					}
 

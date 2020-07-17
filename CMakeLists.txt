@@ -42,6 +42,7 @@ endif()
 # Disable some assimp stuff #######################################################################
 set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "Override Assimp settings" FORCE)
 set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "Override Assimp tools settings" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "Override Assimp tools settings" FORCE) # Doesn't work with C++17
 
 # Find OpenGL #####################################################################################
 if (ANDROID)
@@ -84,6 +85,11 @@ endif()
 # Workaround for SDL issue in Visual Studio
 if (MSVC)
 list(APPEND EXTRA_LIBS vcruntime)
+endif()
+
+# Workaround for assimp std::iterator deprecation warnings
+if (MSVC)
+add_compile_definitions(_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
 endif()
 
 # Set dependencies location #######################################################################

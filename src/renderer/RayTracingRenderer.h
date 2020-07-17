@@ -27,8 +27,8 @@ namespace Atlas {
 				rayBuffer0 = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, 3 * sizeof(vec4), 0);
 				rayBuffer1 = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, 3 * sizeof(vec4), 0);
 
-				rayBuffer0.SetSize(width * height);
-				rayBuffer1.SetSize(width * height);
+				rayBuffer0.SetSize(size_t(width) * size_t(height));
+				rayBuffer1.SetSize(size_t(width) * size_t(height));
 
 			}
 
@@ -41,8 +41,8 @@ namespace Atlas {
 				accumTexture0.Resize(width, height);
 				accumTexture1.Resize(width, height);
 
-				rayBuffer0.SetSize(width * height);
-				rayBuffer1.SetSize(width * height);
+				rayBuffer0.SetSize(size_t(width) * size_t(height));
+				rayBuffer1.SetSize(size_t(width) * size_t(height));
 
 			}
 
@@ -70,7 +70,7 @@ namespace Atlas {
 		public:
 			RayTracingRenderer();
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 			void Render(Viewport* viewport, RayTracerRenderTarget* renderTarget,
 				ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene);

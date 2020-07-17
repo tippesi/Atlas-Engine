@@ -13,9 +13,9 @@ namespace Atlas {
 		public:
 			ImpostorRenderer();
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {}
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
 				RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap);
 
 		private:

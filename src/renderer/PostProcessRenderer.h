@@ -14,7 +14,7 @@ namespace Atlas {
 		public:
 			PostProcessRenderer();
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 		private:
 			void GetUniforms();

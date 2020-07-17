@@ -14,7 +14,7 @@ namespace Atlas {
             BlurRenderer(std::string vertexSource, std::string fragmentSource, int32_t channelCount, float* kernelOffsets,
                          float* kernelWeights, int32_t kernelSize, bool bilateral = false);
 
-            virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
             void Render(Texture::Texture2D* texture, Texture::Texture2D* swapTexture, Texture::Texture2D* depthTexture);
 
@@ -25,7 +25,7 @@ namespace Atlas {
             float* kernelWeights = nullptr;
             int32_t kernelSize;
 
-            bool bilateralBlur;
+            bool bilateralBlur = true;
 
             Framebuffer framebuffer;
 

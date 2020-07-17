@@ -18,7 +18,7 @@ namespace Atlas {
 		public:
 			ShadowRenderer();
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 			static void InitShaderBatch();
 

@@ -13,9 +13,9 @@ namespace Atlas {
 		public:
 			ImpostorShadowRenderer();
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {}
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, RenderList* renderList,
+			void Render(Viewport* viewport, RenderTarget* target, RenderList* renderList,
 				mat4 viewMatrix, mat4 projectionMatrix, vec3 location);
 
 		private:

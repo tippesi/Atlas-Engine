@@ -13,7 +13,7 @@ namespace Atlas {
 		public:
 			TemporalAARenderer();
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 		private:
 			void GetUniforms();
@@ -22,9 +22,9 @@ namespace Atlas {
 
 			Buffer::VertexArray vertexArray;
 
-			Shader::Uniform* convergence;
-			Shader::Uniform* invResolution;
-			Shader::Uniform* resolution;
+			Shader::Uniform* convergence = nullptr;
+			Shader::Uniform* invResolution = nullptr;
+			Shader::Uniform* resolution = nullptr;
 
 			Shader::Uniform* pvMatrixLast = nullptr;
 			Shader::Uniform* ipvMatrixCurrent = nullptr;

@@ -227,15 +227,15 @@ namespace Atlas {
 
 			auto downsample = (int32_t)powf(2.0f, (float)terrain->LoDCount - 1.0f);
 			auto tileSideCount = (int64_t)sqrtf((float)terrain->storage->GetCellCount(0));
-			auto normalDataResolution = 0;
+			auto normalDataResolution = int64_t(0);
 
-			auto currPos = 0;
+			auto currPos = int64_t(0);
 
 			// Different resolutions for each LoD
 			for (int32_t i = 0; i <= cell->LoD; i++) {
-				auto sizeFactor = glm::min(downsample, 
-					terrain->bakeResolution / (tileResolution - 1));
-				normalDataResolution = (tileResolution - 1) * sizeFactor + 3;
+				auto sizeFactor = int64_t(glm::min(downsample, 
+					terrain->bakeResolution / (tileResolution - 1)));
+				normalDataResolution = int64_t(tileResolution - 1) * sizeFactor + 3;
 				auto nodeSize = nodeDataCount + normalDataResolution
 					* normalDataResolution * 3;
 

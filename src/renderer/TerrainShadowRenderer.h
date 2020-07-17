@@ -13,7 +13,7 @@ namespace Atlas {
 		public:
 			TerrainShadowRenderer();
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 		private:
 			void GetUniforms();
@@ -22,19 +22,19 @@ namespace Atlas {
 
 			Framebuffer framebuffer;
 
-			Shader::Uniform* heightScale;
-			Shader::Uniform* tileScale;
-			Shader::Uniform* patchSize;
+			Shader::Uniform* heightScale = nullptr;
+			Shader::Uniform* tileScale = nullptr;
+			Shader::Uniform* patchSize = nullptr;
 
-			Shader::Uniform* nodeLocation;
-			Shader::Uniform* nodeSideLength;
+			Shader::Uniform* nodeLocation = nullptr;
+			Shader::Uniform* nodeSideLength = nullptr;
 
-			Shader::Uniform* leftLoD;
-			Shader::Uniform* topLoD;
-			Shader::Uniform* rightLoD;
-			Shader::Uniform* bottomLoD;
+			Shader::Uniform* leftLoD = nullptr;
+			Shader::Uniform* topLoD = nullptr;
+			Shader::Uniform* rightLoD = nullptr;
+			Shader::Uniform* bottomLoD = nullptr;
 
-			Shader::Uniform* lightSpaceMatrix;
+			Shader::Uniform* lightSpaceMatrix = nullptr;
 
 
 		};

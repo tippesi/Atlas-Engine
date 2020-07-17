@@ -15,7 +15,7 @@ namespace Atlas {
 		public:
 			OceanRenderer();
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 		private:
 			void GetUniforms();
@@ -80,8 +80,8 @@ namespace Atlas {
 			Shader::Uniform* fogScatteringPower = nullptr;
 
 			struct ShadowCascadeUniform {
-				Shader::Uniform* distance;
-				Shader::Uniform* lightSpace;
+				Shader::Uniform* distance = nullptr;
+				Shader::Uniform* lightSpace = nullptr;
 			}cascades[MAX_SHADOW_CASCADE_COUNT + 1];
 
 			Shader::Uniform* pvMatrixLast = nullptr;

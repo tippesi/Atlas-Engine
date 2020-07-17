@@ -19,12 +19,12 @@ namespace Atlas {
 		public:
 			OpaqueRenderer();
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {}
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
 				Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap);
 
-			virtual void RenderImpostor(Viewport* viewport, Framebuffer* framebuffer, std::vector<mat4> viewMatrices,
+			void RenderImpostor(Viewport* viewport, Framebuffer* framebuffer, std::vector<mat4> viewMatrices,
 				mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor);
 
 			static void InitShaderBatch();

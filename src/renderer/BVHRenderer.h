@@ -16,7 +16,7 @@ namespace Atlas {
 		public:
 			BVHRenderer();
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 			template<class T>
 			void Render(Viewport* viewport, Camera* camera, Volume::BVH<T>* bvh, 
@@ -37,11 +37,11 @@ namespace Atlas {
 
 			Shader::Shader shader;
 
-			Shader::Uniform* viewMatrix;
-			Shader::Uniform* projectionMatrix;
-			Shader::Uniform* modelMatrix;
+			Shader::Uniform* viewMatrix = nullptr;
+			Shader::Uniform* projectionMatrix = nullptr;
+			Shader::Uniform* modelMatrix = nullptr;
 
-			Shader::Uniform* color;
+			Shader::Uniform* color = nullptr;
 
 		};
 
