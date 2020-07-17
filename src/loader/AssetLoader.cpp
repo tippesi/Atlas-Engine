@@ -49,7 +49,7 @@ namespace Atlas {
 
 		}
 
-		void AssetLoader::SetAssetDirectory(std::string directory) {
+		void AssetLoader::SetAssetDirectory(const std::string& directory) {
 
 			assetDirectory = directory;
 
@@ -98,8 +98,6 @@ namespace Atlas {
 			std::ofstream stream;
 
 			std::string path;
-
-			auto position = filename.find(dataDirectory);
 
 			if (!Common::Path::IsAbsolute(filename))
 				path = GetFullPath(filename);
@@ -181,7 +179,7 @@ namespace Atlas {
 
 		}
 
-		void AssetLoader::UnpackFile(std::string filename) {
+		void AssetLoader::UnpackFile(const std::string& filename) {
 
 			std::lock_guard<std::mutex> guard(assetLoaderMutex);
 

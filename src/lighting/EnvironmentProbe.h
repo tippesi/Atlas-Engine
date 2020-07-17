@@ -15,7 +15,7 @@ namespace Atlas {
 		public:
 			EnvironmentProbe() = default;
 
-			explicit EnvironmentProbe(const Texture::Cubemap& cubemap);
+			EnvironmentProbe(const Texture::Cubemap& cubemap);
 
 			explicit EnvironmentProbe(int32_t resolution, vec3 position = vec3(0.0f));
 

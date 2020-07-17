@@ -167,8 +167,8 @@ namespace Atlas {
 
 					ivec2 groupCount = resolution / 8 / imageSubdivisions;
 
-					groupCount.x += (resolution.x % groupCount.x ? 1 : 0);
-					groupCount.y += (resolution.y % groupCount.y ? 1 : 0);
+					groupCount.x += ((resolution.x % groupCount.x) ? 1 : 0);
+					groupCount.y += ((resolution.y % groupCount.y) ? 1 : 0);
 
 					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
 						GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -474,7 +474,6 @@ namespace Atlas {
 
 			// Temporaray data
 			triangles = bvh.data;
-			aabbs = bvh.aabbs;
 			bvhDepth = bvh.maxDepth;
 
 			auto nodes = bvh.GetTree();
@@ -516,7 +515,6 @@ namespace Atlas {
 			auto actors = scene->GetMeshActors();
 
 			int32_t materialCount = 0;
-			uint32_t diffuseMapCount = 0;
 
 			UpdateTexture(scene);
 

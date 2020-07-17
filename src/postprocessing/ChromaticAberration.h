@@ -13,7 +13,7 @@ namespace Atlas {
 			///
 			/// \param strength
 			/// \param colorsReversed
-			ChromaticAberration(float strength, bool colorsReversed = false) :
+			explicit ChromaticAberration(float strength, bool colorsReversed = false) :
 					strength(strength), colorsReversed(colorsReversed) {};
 
 			float strength;

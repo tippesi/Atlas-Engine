@@ -25,7 +25,7 @@ namespace Atlas {
 			 * @note The state of the other buffer won't be copied (e.g. if the
 			 * other buffer is mapped this buffer won't be mapped automatically)
 			 */
-			explicit VertexBuffer(const VertexBuffer& that);
+			VertexBuffer(const VertexBuffer& that);
 
 			/**
              * Constructs a VertexBuffer object.

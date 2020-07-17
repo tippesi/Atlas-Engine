@@ -35,7 +35,7 @@ namespace Atlas {
              * @warning All files that are loaded with the engine should be stored in
              * the asset directory.
              */
-            static void SetAssetDirectory(std::string directory);
+            static void SetAssetDirectory(const std::string& directory);
 
             /**
              * Opens a file for reading from the asset directory.
@@ -90,7 +90,7 @@ namespace Atlas {
              * @note This is only needed for Android right now and is done automatically
              * by the asset loader.
              */
-            static void UnpackFile(std::string filename);
+            static void UnpackFile(const std::string& filename);
 
             /**
              * Returns the full path of a path relative to the asset directory.

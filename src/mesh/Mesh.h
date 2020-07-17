@@ -26,14 +26,14 @@ namespace Atlas {
 		public:
 			Mesh() = default;
 
-			explicit Mesh(const Mesh& that);
+			Mesh(const Mesh& that);
 
 			/**
 			 *
 			 * @param filename
 			 * @param mobility
 			 */
-			Mesh(MeshData data, int32_t mobility = AE_STATIONARY_MESH);
+			explicit Mesh(MeshData data, int32_t mobility = AE_STATIONARY_MESH);
 
 			/**
 			 *

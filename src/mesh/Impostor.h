@@ -15,7 +15,7 @@ namespace Atlas {
 		public:
 			Impostor() = default;
 
-			explicit Impostor(const Impostor& that);
+			Impostor(const Impostor& that);
 
 			Impostor(int32_t views, int32_t resolution);
 

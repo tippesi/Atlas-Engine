@@ -15,7 +15,7 @@ namespace Atlas {
 		class IrradianceVolume {
 
 		public:
-			IrradianceVolume() {}
+			IrradianceVolume() = default;
 
 			IrradianceVolume(Volume::AABB aabb, ivec3 probeCount);
 

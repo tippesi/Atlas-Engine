@@ -57,7 +57,7 @@ namespace Atlas {
 			 */
 			DataComponent() = default;
 
-			explicit DataComponent(const DataComponent& that);
+			DataComponent(const DataComponent& that);
 
 			/**
              * Constructs a DataComponent object.

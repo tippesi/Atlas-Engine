@@ -18,9 +18,9 @@ namespace Atlas {
 
 			mat4 Compose();
 
-			vec3 translation;
-			vec3 rotation;
-			vec3 scale;
+			vec3 translation = vec3(0.0f);
+			vec3 rotation = vec3(0.0f);
+			vec3 scale = vec3(1.0f);
 
 		};
 

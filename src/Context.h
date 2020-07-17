@@ -9,9 +9,9 @@ namespace Atlas {
 	class Context {
 
 	public:
-		Context() {}
+		Context() = default;
 
-		Context(SDL_Window* window);
+		explicit Context(SDL_Window* window);
 
 		~Context();
 

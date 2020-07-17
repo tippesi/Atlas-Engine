@@ -94,8 +94,8 @@ namespace Atlas {
 
 				ivec2 groupCount = resolution / 8;
 
-				groupCount.x += (resolution.x % groupCount.x ? 1 : 0);
-				groupCount.y += (resolution.y % groupCount.y ? 1 : 0);
+				groupCount.x += ((resolution.x % groupCount.x) ? 1 : 0);
+				groupCount.y += ((resolution.y % groupCount.y) ? 1 : 0);
 
 				target->postProcessTexture.Bind(GL_WRITE_ONLY, 0);
 				target->postProcessFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE1);

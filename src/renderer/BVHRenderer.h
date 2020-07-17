@@ -125,16 +125,12 @@ namespace Atlas {
 
 			for (auto& node : leftChildren) {
 				auto corners = node.aabb.GetCorners();
-				for (auto ele : corners) {
-					leftBuffer.push_back(ele);
-				}
+				std::copy(corners.begin(), corners.end(), back_inserter(leftBuffer));
 			}
 
 			for (auto& node : rightChildren) {
 				auto corners = node.aabb.GetCorners();
-				for (auto ele : corners) {
-					rightBuffer.push_back(ele);
-				}
+				std::copy(corners.begin(), corners.end(), back_inserter(rightBuffer));
 			}
 
 			std::vector<uint32_t> indices;
@@ -149,11 +145,8 @@ namespace Atlas {
 
 			std::vector<vec3> buffer;
 
-			for (auto& ele : leftBuffer)
-				buffer.push_back(ele);
-
-			for (auto& ele : rightBuffer)
-				buffer.push_back(ele);
+			std::copy(leftBuffer.begin(), leftBuffer.end(), back_inserter(buffer));
+			std::copy(rightBuffer.begin(), rightBuffer.end(), back_inserter(buffer));
 
 			indexBuffer.SetSize(indices.size());
 			vertexBuffer.SetSize(buffer.size());

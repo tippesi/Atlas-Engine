@@ -14,7 +14,7 @@ namespace Atlas {
         public:
 			TouchHandler();
 
-			explicit TouchHandler(const TouchHandler& that);
+			TouchHandler(const TouchHandler& that);
 
 			TouchHandler(Camera* camera, float sensibility, float speed, float reactivity);
 

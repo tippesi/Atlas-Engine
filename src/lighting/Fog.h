@@ -10,7 +10,7 @@ namespace Atlas {
 		class Fog {
 
 		public:
-			Fog() {}
+			Fog() = default;
 
 			bool enable = true;
 

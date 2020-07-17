@@ -28,9 +28,9 @@ namespace Atlas {
 
 			std::lock_guard<std::mutex> guard(handlerMutex);
 
-			ClockEvent event(Clock::GetDelta());
+			ClockEvent clockEvent(Clock::GetDelta());
 
-			ClockEventDelegate.Fire(event);
+			ClockEventDelegate.Fire(clockEvent);
 
 			SDL_Event e;
 

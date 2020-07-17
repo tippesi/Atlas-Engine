@@ -15,7 +15,7 @@ namespace Atlas {
         /**
          * Constructs a Filter.
          */
-        Filter() {}
+        Filter() = default;
 
         /**
          * Calculates a gaussian convolution matrix.

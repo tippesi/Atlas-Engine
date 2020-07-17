@@ -17,7 +17,7 @@ namespace Atlas {
 	public:
 		Material();
 
-		explicit Material(const Material& that);
+		Material(const Material& that);
 
 		~Material();
 

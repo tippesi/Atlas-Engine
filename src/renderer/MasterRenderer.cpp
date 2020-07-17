@@ -524,14 +524,14 @@ namespace Atlas {
 					if (!light->GetShadow()->update)
 						continue;
 
-					for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
+					for (int32_t j = 0; j < light->GetShadow()->componentCount; j++) {
 						if (light->GetShadow()->useCubemap) {
 							depthFramebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT,
-								&light->GetShadow()->cubemap, i);
+								&light->GetShadow()->cubemap, j);
 						}
 						else {
 							depthFramebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT,
-								&light->GetShadow()->maps, i);
+								&light->GetShadow()->maps, j);
 						}
 
 						glClear(GL_DEPTH_BUFFER_BIT);
@@ -610,7 +610,7 @@ namespace Atlas {
 				createProbeFaceShader.GetUniform("ipMatrix")->SetValue(camera.invProjectionMatrix);
 
 				int32_t groupCount = probe->resolution / 8;
-				groupCount += (probe->resolution % groupCount ? 1 : 0);
+				groupCount += ((probe->resolution % groupCount) ? 1 : 0);
 
 				probe->cubemap.Bind(GL_WRITE_ONLY, 0);
 				probe->depth.Bind(GL_WRITE_ONLY, 1);
@@ -657,9 +657,6 @@ namespace Atlas {
 			auto target = new RenderTarget(256, 256);
 
 			ivec3 probeCount = volume->probeCount;
-
-			vec3 volumeSize = volume->size;
-			vec3 cellSize = volume->cellSize;
 
 			for (int32_t i = 0; i < bounces; i++) {
 
@@ -911,7 +908,7 @@ namespace Atlas {
 			dfgPreintegrationTexture = Texture::Texture2D(res, res, AE_RGBA16F);
 
 			int32_t groupCount = res / 8;
-			groupCount += (res % groupCount ? 1 : 0);
+			groupCount += ((res % groupCount) ? 1 : 0);
 
 			dfgPreintegrationTexture.Bind(GL_WRITE_ONLY, 0);
 
