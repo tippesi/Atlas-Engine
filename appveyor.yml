@@ -1,9 +1,5 @@
 version: 0.0.{build}
-max_jobs: 4
-platform: x64
-﻿configuration:
-  - Debug
-  - Release
+max_jobs: 4  
 environment:
   matrix:
 
@@ -16,6 +12,12 @@ environment:
   - job_name: Linux build
     appveyor_build_worker_image: Ubuntu    
   
+platform: x64
+
+﻿configuration:
+  - Debug
+  - Release  
+
 for:
 -
   matrix:
