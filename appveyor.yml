@@ -57,7 +57,7 @@ for:
     - mkdir C:\android-sdk-windows
     - 7z x commandlinetools-win-6609375_latest.zip -oC:\android-sdk-windows\cmdline-tools > nul 
     - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --licenses
-    - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --install "cmake;3.10.2" "ndk;18b"
+    - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --install "cmake;3.10.2.4988404" "ndk;18.1.5063045"
   build_script:
   - ps: Write-Host "Android build script"
   - ps: cd dependencies
