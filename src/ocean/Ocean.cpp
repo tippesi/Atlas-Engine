@@ -12,7 +12,7 @@ namespace Atlas {
 			simulation.ComputeSpectrum();
 
 			int32_t imageSize = (int32_t)powf(2, (float)LoDCount - 1.0f);
-			LoDImage = Common::Image8(imageSize, imageSize, 1);
+			LoDImage = Common::Image<uint8_t>(imageSize, imageSize, 1);
 
 			location = vec2(-size / 2.0f);
 			sideLength = size;

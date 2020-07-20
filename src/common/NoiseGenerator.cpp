@@ -7,7 +7,7 @@ namespace Atlas {
 
 	namespace Common {
 
-		void NoiseGenerator::GenerateUniformNoise2D(Image8& image) {
+		void NoiseGenerator::GenerateUniformNoise2D(Image<uint8_t>& image) {
 
 			auto& data = image.GetData();
 
@@ -17,7 +17,7 @@ namespace Atlas {
 
 		}
 
-		void NoiseGenerator::GenerateUniformNoise2D(Image16& image) {
+		void NoiseGenerator::GenerateUniformNoise2D(Image<uint16_t>& image) {
 
 			auto& data = image.GetData();
 
@@ -27,7 +27,7 @@ namespace Atlas {
 
 		}
 
-		void NoiseGenerator::GeneratePerlinNoise2D(Image8& image, std::vector<float> amplitudes,
+		void NoiseGenerator::GeneratePerlinNoise2D(Image<uint8_t>& image, std::vector<float> amplitudes,
 			uint32_t seed, float exp) {
 
 			const PerlinNoise noise(seed);
@@ -57,7 +57,7 @@ namespace Atlas {
 
 		}
 
-		void NoiseGenerator::GeneratePerlinNoise2D(Image16& image, std::vector<float> amplitudes, 
+		void NoiseGenerator::GeneratePerlinNoise2D(Image<uint16_t>& image, std::vector<float> amplitudes,
 			uint32_t seed, float exp) {
 
 			const PerlinNoise noise(seed);

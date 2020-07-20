@@ -22,7 +22,7 @@ namespace Atlas {
              * @param forceChannels The number of channels to be forced. Default is zero, which means no force.
              * @return An Image object with all the important data.
              */
-            static Common::Image8 LoadImage(std::string filename, bool colorSpaceConversion, int32_t forceChannels = 0);
+            static Common::Image<uint8_t> LoadImage(std::string filename, bool colorSpaceConversion, int32_t forceChannels = 0);
 
             /**
             * Loads an image with 16 bits per channel.
@@ -31,7 +31,7 @@ namespace Atlas {
             * @param forceChannels The number of channels to be forced. Default is zero, which means no force.
             * @return An Image16 object with all the important data.
             */
-            static Common::Image16 LoadImage16(std::string filename, bool colorSpaceConversion, int32_t forceChannels = 0);
+            static Common::Image<uint16_t> LoadImage16(std::string filename, bool colorSpaceConversion, int32_t forceChannels = 0);
 
 			/**
 			* Loads an image with 32 float bits per channel.
@@ -40,7 +40,7 @@ namespace Atlas {
 			* @param forceChannels The number of channels to be forced. Default is zero, which means no force.
 			* @return An ImageFloat object with all the important data.
 			*/
-			static Common::ImageFloat LoadImageFloat(std::string filename, int32_t forceChannels = 0);
+			static Common::Image<float> LoadImageFloat(std::string filename, int32_t forceChannels = 0);
 
             /**
              * Save an image with 8 bits per channel to the hard drive.
@@ -48,7 +48,7 @@ namespace Atlas {
              * @param filename The filename that the image should have
              * @note By changing the fileFormat in the Image object the output file changes as well.
              */
-            static void SaveImage(Common::Image8& image, std::string filename);
+            static void SaveImage(Common::Image<uint8_t>& image, std::string filename);
 
             /**
              * Save an image with 16 bits per channel to the hard drive.
@@ -57,7 +57,7 @@ namespace Atlas {
              * @note By changing the fileFormat in the Image16 object the output file changes as well. Only
              * IMAGE_PGM is supported for now.
              */
-            static void SaveImage16(Common::Image16& image, std::string filename);
+            static void SaveImage16(Common::Image<uint16_t>& image, std::string filename);
 
 			/**
 			 * Save an image with 32 float bits per channel to the hard drive.
@@ -66,12 +66,12 @@ namespace Atlas {
 			 * @note By changing the fileFormat in the ImageFloat object the output file changes as well. Only
              * IMAGE_HDR is supported for now.
 			 */
-			static void SaveImageFloat(Common::ImageFloat& image, std::string filename);
+			static void SaveImageFloat(Common::Image<float>& image, std::string filename);
 
         private:
-            static void SavePGM8(Common::Image8& image, std::ofstream& imageStream);
+            static void SavePGM8(Common::Image<uint8_t>& image, std::ofstream& imageStream);
 
-            static void SavePGM16(Common::Image16& image, std::string filename);
+            static void SavePGM16(Common::Image<uint16_t>& image, std::string filename);
 
         };
 

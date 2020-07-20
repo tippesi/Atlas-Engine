@@ -92,7 +92,7 @@ namespace Atlas {
 				ivec2 size = ivec2(texture->width, texture->height);
 				ivec2 offset = ivec2(size.x + padding, 0);
 
-				if (size.x == width && size.y == height ||
+				if ((size.x == width && size.y == height) ||
 					!copy.size()) {
 					layers++;
 					continue;

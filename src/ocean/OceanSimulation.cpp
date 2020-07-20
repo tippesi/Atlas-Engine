@@ -17,10 +17,10 @@ namespace Atlas {
 			noise2 = Texture::Texture2D(N, N, AE_R8);
 			noise3 = Texture::Texture2D(N, N, AE_R8);			
 
-			Common::Image8 image0(N, N, 1);
-			Common::Image8 image1(N, N, 1);
-			Common::Image8 image2(N, N, 1);
-			Common::Image8 image3(N, N, 1);
+			Common::Image<uint8_t> image0(N, N, 1);
+			Common::Image<uint8_t> image1(N, N, 1);
+			Common::Image<uint8_t> image2(N, N, 1);
+			Common::Image<uint8_t> image3(N, N, 1);
 
 			Common::NoiseGenerator::GenerateUniformNoise2D(image0);
 			Common::NoiseGenerator::GenerateUniformNoise2D(image1);

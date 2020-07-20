@@ -29,7 +29,7 @@ namespace Atlas {
 		}
 
 		inline Entity ToEntity(Entity position, Entity version) {
-			return (position & EntityConfig::positionMask) | (version << EntityConfig::versionShift) & EntityConfig::versionMask;
+			return (position & EntityConfig::positionMask) | ((version << EntityConfig::versionShift) & EntityConfig::versionMask);
 		}
 
 	}

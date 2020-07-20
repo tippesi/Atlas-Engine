@@ -33,7 +33,7 @@ vec3 GetIrradianceCoord(ivec3 probeIndex, vec3 dir) {
 	vec3 coord = vec3(irrRes * vec2(probeIndex.xz) + vec2(1.5), float(probeIndex.y));
 	coord.xy *= texelSize;
 
-	vec2 localCoord = UnitVectorToOctahedron(dir) * float(volumeIrradianceRes - 1.0) * texelSize;
+	vec2 localCoord = UnitVectorToOctahedron(dir) * float(volumeIrradianceRes - 1) * texelSize;
 	coord.xy += localCoord;
 
 	return coord;
@@ -50,7 +50,7 @@ vec3 GetMomentsCoord(ivec3 probeIndex, vec3 dir) {
 	vec3 coord = vec3(momRes * vec2(probeIndex.xz) + vec2(1.5), float(probeIndex.y));
 	coord.xy *= texelSize;
 
-	vec2 localCoord = UnitVectorToOctahedron(dir) * float(volumeMomentsRes - 1.0) * texelSize;
+	vec2 localCoord = UnitVectorToOctahedron(dir) * float(volumeMomentsRes - 1) * texelSize;
 	coord.xy += localCoord;
 
 	return coord;

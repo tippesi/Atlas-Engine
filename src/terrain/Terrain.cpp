@@ -33,7 +33,7 @@ namespace Atlas {
 
 			storage = new TerrainStorage(rootNodeCount, LoDCount, sideLength, 1024, 32);
 			LoDDistances = std::vector<float>(LoDCount);
-			LoDImage = Common::Image8(leafNodesSideCount, leafNodesSideCount, 1);
+			LoDImage = Common::Image<uint8_t>(leafNodesSideCount, leafNodesSideCount, 1);
 
 			auto distance = sideLength;
 

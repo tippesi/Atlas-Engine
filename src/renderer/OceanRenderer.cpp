@@ -120,7 +120,7 @@ namespace Atlas {
 
 			ocean->foamTexture.Bind(GL_TEXTURE2);
 
-			if (!scene->sky.probe)
+			if (scene->sky.probe)
 				scene->sky.probe->cubemap.Bind(GL_TEXTURE3);
 
 			refractionTexture.Bind(GL_TEXTURE4);

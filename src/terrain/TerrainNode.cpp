@@ -25,7 +25,7 @@ namespace Atlas {
 		}
 
 		void TerrainNode::Update(Camera* camera, std::vector<float>& LoDDistances,
-			std::vector<TerrainNode*>& leafList, Common::Image8& LoDImage) {
+			std::vector<TerrainNode*>& leafList, Common::Image<uint8_t>& LoDImage) {
 
 			auto calcHeight = 0.0f;
 
@@ -92,7 +92,7 @@ namespace Atlas {
 
 		}
 
-		void TerrainNode::CheckNeighbourLoD(Common::Image8& LoDImage) {
+		void TerrainNode::CheckNeighbourLoD(Common::Image<uint8_t>& LoDImage) {
 
 			ivec2 imageOffset = globalIndex * LoDImageOffset;
 			ivec2 imageArea = ivec2(LoDImage.width, LoDImage.height) / LoDMultiplier;

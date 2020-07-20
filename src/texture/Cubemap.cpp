@@ -18,7 +18,7 @@ namespace Atlas {
                         std::string bottom, std::string front, std::string back) {
 
            std::string filenames[] = { right, left, top, bottom, front, back };
-		   Common::Image8 images[6];
+		   Common::Image<uint8_t> images[6];
 
 		   for (int32_t i = 0; i < 6; i++) {
 			   images[i] = Loader::ImageLoader::LoadImage(filenames[i], true, 4);
@@ -44,7 +44,7 @@ namespace Atlas {
 
 	   Cubemap::Cubemap(std::string filename, int32_t resolution) {
 
-		   Common::ImageFloat image = Loader::ImageLoader::LoadImageFloat(filename, 3);
+		   auto image = Loader::ImageLoader::LoadImageFloat(filename, 3);
 
 		   if (image.GetData().size() == 0) {
 			   Log::Error("Failed to load cubemap image " + filename);
@@ -67,7 +67,7 @@ namespace Atlas {
 						  vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 0.0f, 1.0f),
 						  vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
-		   Common::ImageFloat faceImage(resolution, resolution, 3);
+		   Common::Image<float> faceImage(resolution, resolution, 3);
 		   faceImage.fileFormat = AE_IMAGE_HDR;
 
 		   for (uint8_t i = 0; i < 6; i++) {

@@ -25,11 +25,11 @@ namespace Atlas {
              * @return A pointer to a Terrain object.
              * @warning The input should correspond to the terrain specifications
              */
-			static Terrain::Terrain* GenerateTerrain(Common::Image16& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
+			static Terrain::Terrain* GenerateTerrain(Common::Image<uint16_t>& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
 					int32_t patchSize, float resolution, float height, Material* material);
 
 
-			static Terrain::Terrain* GenerateTerrain(Common::Image16& heightImage, Common::Image8& splatImage,
+			static Terrain::Terrain* GenerateTerrain(Common::Image<uint16_t>& heightImage, Common::Image<uint8_t>& splatImage,
 				int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution,
 				float height, std::vector<Material*> materials);
 

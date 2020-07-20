@@ -163,7 +163,7 @@ namespace Atlas {
 			Buffer::VertexArray distanceVertexArray;
 			std::vector<TerrainNode*> renderList;
 
-			Common::Image8 LoDImage;
+			Common::Image<uint8_t> LoDImage;
 
 			std::string filename;
 

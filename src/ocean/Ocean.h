@@ -60,7 +60,7 @@ namespace Atlas {
 
 			std::vector<OceanNode*> renderList;
 
-			Common::Image8 LoDImage;
+			Common::Image<uint8_t> LoDImage;
 
 			std::vector<float> LoDDistances;
 

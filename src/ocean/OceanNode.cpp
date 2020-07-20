@@ -13,7 +13,7 @@ namespace Atlas {
 
 		}
 
-		void OceanNode::CheckNeighbourLoD(Common::Image8& LoDImage) {
+		void OceanNode::CheckNeighbourLoD(Common::Image<uint8_t>& LoDImage) {
 
 			ivec2 imageOffset = globalIndex * LoDImageOffset;
 			ivec2 imageArea = ivec2(LoDImage.width, LoDImage.height) / LoDMultiplier;
@@ -44,7 +44,7 @@ namespace Atlas {
 		}
 
 		void OceanNode::Update(Camera* camera, vec3 translation, std::vector<float>& LoDDistances,
-			std::vector<OceanNode*>& leafList, Common::Image8& LoDImage) {
+			std::vector<OceanNode*>& leafList, Common::Image<uint8_t>& LoDImage) {
 
 			float calcHeight = 0.0f;
 

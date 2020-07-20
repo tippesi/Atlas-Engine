@@ -21,9 +21,9 @@ namespace Atlas {
 			~TerrainNode();
 
 			void Update(Camera* camera, std::vector<float>& LoDDistances, 
-				std::vector<TerrainNode*>& leafList, Common::Image8& LoDImage);
+				std::vector<TerrainNode*>& leafList, Common::Image<uint8_t>& LoDImage);
 
-			void CheckNeighbourLoD(Common::Image8& LoDImage);
+			void CheckNeighbourLoD(Common::Image<uint8_t>& LoDImage);
 
 			vec2 location;
 			float sideLength;

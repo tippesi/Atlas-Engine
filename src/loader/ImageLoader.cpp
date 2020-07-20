@@ -19,9 +19,9 @@ namespace Atlas {
 
 	namespace Loader {
 
-		Common::Image8 ImageLoader::LoadImage(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {			
+		Common::Image<uint8_t> ImageLoader::LoadImage(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {			
 
-			Common::Image8 image;
+			Common::Image<uint8_t> image;
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
             if (!fileStream.is_open()) {
@@ -45,7 +45,7 @@ namespace Atlas {
                 Texture::Texture::GammaToLinear(data, width, height, channels);
             }
 
-			image = Common::Image8(width, height, channels);
+			image = Common::Image<uint8_t>(width, height, channels);
 			std::vector<uint8_t> imageData(width * height * channels);
 
             imageData.assign(data, data + width * height * channels);
@@ -80,9 +80,9 @@ namespace Atlas {
 
         }
 
-		Common::Image16 ImageLoader::LoadImage16(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {
+		Common::Image<uint16_t> ImageLoader::LoadImage16(std::string filename, bool colorSpaceConversion, int32_t forceChannels) {
 
-			Common::Image16 image;
+            Common::Image<uint16_t> image;
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
             if (!fileStream.is_open()) {
@@ -106,7 +106,7 @@ namespace Atlas {
                 Texture::Texture::GammaToLinear(data, width, height, channels);
             }
 
-			image = Common::Image16(width, height, channels);
+			image = Common::Image<uint16_t>(width, height, channels);
 			std::vector<uint16_t> imageData(width * height * channels);
 
             imageData.assign(data, data + width * height * channels);
@@ -141,9 +141,9 @@ namespace Atlas {
 
         }
 
-		Common::ImageFloat ImageLoader::LoadImageFloat(std::string filename, int32_t forceChannels) {
+		Common::Image<float> ImageLoader::LoadImageFloat(std::string filename, int32_t forceChannels) {
 
-			Common::ImageFloat image;
+			Common::Image<float> image;
 			auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
 			if (!fileStream.is_open()) {
@@ -163,7 +163,7 @@ namespace Atlas {
 				channels = forceChannels;
 			}
 
-			image = Common::ImageFloat(width, height, channels);
+			image = Common::Image<float>(width, height, channels);
 			std::vector<float> imageData(width * height * channels);
 
 			imageData.assign(data, data + width * height * channels);
@@ -195,7 +195,7 @@ namespace Atlas {
 
 		}
 
-        void ImageLoader::SaveImage(Common::Image8 &image, std::string filename) {
+        void ImageLoader::SaveImage(Common::Image<uint8_t>&image, std::string filename) {
 
             std::ofstream imageStream;
 
@@ -232,7 +232,7 @@ namespace Atlas {
 
         }
 
-        void ImageLoader::SaveImage16(Common::Image16 &image, std::string filename) {
+        void ImageLoader::SaveImage16(Common::Image<uint16_t> &image, std::string filename) {
 
             switch(image.fileFormat) {
                 case AE_IMAGE_JPG: break;
@@ -244,7 +244,7 @@ namespace Atlas {
 
         }
 
-		void ImageLoader::SaveImageFloat(Common::ImageFloat& image, std::string filename) {
+		void ImageLoader::SaveImageFloat(Common::Image<float>& image, std::string filename) {
 
 			std::ofstream imageStream;
 
@@ -271,7 +271,7 @@ namespace Atlas {
 
 		}
 
-        void ImageLoader::SavePGM8(Common::Image8 &image, std::ofstream& imageStream) {
+        void ImageLoader::SavePGM8(Common::Image<uint8_t>&image, std::ofstream& imageStream) {
 
             std::string header;
 
@@ -292,7 +292,7 @@ namespace Atlas {
 
         }
 
-        void ImageLoader::SavePGM16(Common::Image16 &image, std::string filename) {
+        void ImageLoader::SavePGM16(Common::Image<uint16_t>&image, std::string filename) {
 
 			auto imageFile = AssetLoader::WriteFile(filename, std::ios::out);
 

@@ -14,7 +14,7 @@ namespace Atlas {
 
 	namespace Tools {
 
-		Terrain::Terrain* TerrainTool::GenerateTerrain(Common::Image16 &heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
+		Terrain::Terrain* TerrainTool::GenerateTerrain(Common::Image<uint16_t>&heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
 											  int32_t patchSize, float resolution, float height, Material* material) {
 
 			// Check if everything is correct
@@ -34,7 +34,7 @@ namespace Atlas {
 
 			int32_t totalResolution = tileResolution * maxNodesPerSide;
 
-			Common::Image16 heightMap(totalResolution, totalResolution, 1);
+			Common::Image<uint16_t> heightMap(totalResolution, totalResolution, 1);
 
 			if (heightImage.width != totalResolution) {
 				stbir_resize_uint16_generic(heightImage.GetData().data(), heightImage.width, heightImage.height,
@@ -100,7 +100,7 @@ namespace Atlas {
 
 		}
 
-		Terrain::Terrain* TerrainTool::GenerateTerrain(Common::Image16& heightImage, Common::Image8& splatImage,
+		Terrain::Terrain* TerrainTool::GenerateTerrain(Common::Image<uint16_t>& heightImage, Common::Image<uint8_t>& splatImage,
 			int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution,
 			float height, std::vector<Material*> materials) {
 
@@ -124,8 +124,8 @@ namespace Atlas {
 
 			int32_t totalResolution = tileResolution * maxNodesPerSide;
 
-			Common::Image16 heightMap(totalResolution, totalResolution, 1);
-			Common::Image8 splatMap(totalResolution, totalResolution, 1);
+			Common::Image<uint16_t> heightMap(totalResolution, totalResolution, 1);
+			Common::Image<uint8_t> splatMap(totalResolution, totalResolution, 1);
 
 			if (heightImage.width != totalResolution) {
 				stbir_resize_uint16_generic(heightImage.GetData().data(), heightImage.width, heightImage.height,
@@ -291,19 +291,19 @@ namespace Atlas {
 					normalDataResolution * 3);
 
 				auto resizedNormalDataResolution = 0;
-				Common::Image8 resizedNormalMap;
+				Common::Image<uint8_t> resizedNormalMap;
 
 				downsample /= sizeFactor;
 
 				if (downsample == 1) {
-					resizedNormalMap = Common::Image8(heightDataResolution,
+					resizedNormalMap = Common::Image<uint8_t>(heightDataResolution,
 						heightDataResolution, 3);
 					resizedNormalMap.SetData(normalData);
 					resizedNormalDataResolution = heightDataResolution;
 				}
 				else {
 					resizedNormalDataResolution = tileSideCountLod * (normalDataResolution - 3) + 1;
-					resizedNormalMap = Common::Image8(resizedNormalDataResolution,
+					resizedNormalMap = Common::Image<uint8_t>(resizedNormalDataResolution,
 						resizedNormalDataResolution, 3);
 					for (int32_t y = 0; y < resizedNormalDataResolution; y++) {
 						for (int32_t x = 0; x < resizedNormalDataResolution; x++) {
@@ -831,7 +831,7 @@ namespace Atlas {
 				heightDataResolution * 4, resizedHeightData.data(), resolution, resolution, resolution * 4,
 				1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
 			
-			Common::Image8 image(resolution, resolution, 4);
+			Common::Image<uint8_t> image(resolution, resolution, 4);
 			auto maxDistance = 2.0f * (float)heightDataResolution * (float)heightDataResolution;
 
 			for (int32_t y = 0; y < resolution; y++) {
