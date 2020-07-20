@@ -51,8 +51,8 @@ for:
       - job_name: Android build
       
   install:
-    - appveyor DownloadFile https://dl.google.com/android/repository/platform-tools-latest-windows.zip
-    - 7z x platform-tools-latest-windows.zip -o C:\android-sdk-windows > nul
+    - appveyor DownloadFile https://dl.google.com/android/repository/commandlinetools-win-6609375_latest.zip
+    - 7z x commandlinetools-win-6609375_latest.zip -o C:\\android-sdk-windows > nul
     - yes | C:\\android-sdk-windows\tools\bin\sdkmanager.bat --licenses
       
   build_script:
