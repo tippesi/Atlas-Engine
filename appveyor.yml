@@ -29,7 +29,8 @@ for:
   - ps: cd ../
   - ps: mkdir build
   - ps: cd build
-  - ps: cmake ../
+  - ps: cmake -Wno-dev ../
+  - ps: Write-Host "Starting build"
   - ps: make
 -
   matrix:
@@ -43,7 +44,8 @@ for:
   - ps: cd ../
   - ps: mkdir build
   - ps: cd build
-  - ps: cmake ../ -DBUILD_SHARED_LIBS=OFF -A x64 
+  - ps: cmake -Wno-dev ../ -DBUILD_SHARED_LIBS=OFF -A x64
+  - ps: Write-Host "Starting build"
   - ps: MSBuild.exe ALL_BUILD.vcxproj
 -
   matrix:
@@ -52,13 +54,14 @@ for:
       
   install:
     - appveyor DownloadFile https://dl.google.com/android/repository/commandlinetools-win-6609375_latest.zip
-    - 7z x commandlinetools-win-6609375_latest.zip -o C:\\android-sdk-windows > nul
+    - 7z x commandlinetools-win-6609375_latest.zip -oC:\\android-sdk-windows > nul
     - yes | C:\\android-sdk-windows\tools\bin\sdkmanager.bat --licenses
       
   build_script:
   - ps: Write-Host "Android build script"
   - ps: $env:ANDROID_HOME="C:\\android-sdk-windows"
   - ps: cd platform/android
+  - ps: Write-Host "Starting build"
   - ps: gradlew.bat assemble
   
 deploy: off
