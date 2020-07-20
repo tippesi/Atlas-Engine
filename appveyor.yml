@@ -74,6 +74,6 @@ for:
   - ps: $env:ANDROID_NDK_HOME="C:\\android-sdk-windows\\ndk-bundle"
   - ps: cd platform/android
   - ps: Write-Host "Starting build"
-  - ps: ./gradlew.bat assemble
+  - ps: ./gradlew.bat assemble --quiet
   
 deploy: off
