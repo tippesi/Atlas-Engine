@@ -91,6 +91,20 @@ for:
       
       cd platform/android
       
-      ./gradlew.bat assemble --warning-mode=none
+      if ($CONFIGURATION -eq "Release")
+      
+      {
+      
+      ./gradlew.bat assembleRelease --warning-mode=none
+      
+      }
+      
+      else
+      
+      {
+      
+      ./gradlew.bat assembleDebug --warning-mode=none
+      
+      }
   
 deploy: off
