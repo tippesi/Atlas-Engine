@@ -26,17 +26,23 @@ for:
       - job_name: Linux build
       
   build_script:
-  - ps: |
-      Write-Host "Linux build script"
+  - ps: >-
       cd dependencies
+      
       sudo apt-get update
+      
       sudo apt-get --assume-yes install libglu1-mesa-dev freeglut3-dev mesa-common-dev
+      
       sh download_dependencies.sh
+      
       cd ../
+      
       mkdir build
+      
       cd build
+      
       cmake -Wno-dev ../
-      Write-Host "Starting build"
+      
       make
 -
   matrix:
@@ -44,15 +50,19 @@ for:
       - job_name: Windows build
       
   build_script:
-  - ps: |
-      Write-Host "Windows build script"
+  - ps: >-
       cd dependencies
+      
       ./download_dependencies.ps1
+      
       cd ../
+      
       mkdir build
+      
       cd build
+      
       cmake -Wno-dev ../ -DBUILD_SHARED_LIBS=OFF -A x64
-      Write-Host "Starting build"
+      
       MSBuild.exe ALL_BUILD.vcxproj
 -
   matrix:
@@ -68,15 +78,19 @@ for:
     - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --licenses
     - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --install "cmake;3.10.2.4988404" "ndk;18.1.5063045"
   build_script:
-  - ps: |
-      Write-Host "Android build script"
+  - ps: >-
       cd dependencies
+      
       ./download_dependencies.ps1
+      
       cd ../
+      
       $env:ANDROID_HOME="C:\\android-sdk-windows"
+      
       $env:ANDROID_NDK_HOME="C:\\android-sdk-windows\\ndk-bundle"
+      
       cd platform/android
-      Write-Host "Starting build"
-      ./gradlew.bat assemble
+      
+      ./gradlew.bat assemble --warning-mode=none
   
 deploy: off
