@@ -24,31 +24,30 @@ for:
       
   build_script:
   - ps:
-    - "Linux build script" | Out-Host
-    - cd dependencies
-    - sudo apt-get update
-    - sudo apt-get --assume-yes install libglu1-mesa-dev freeglut3-dev mesa-common-dev
-    - sh download_dependencies.sh
-    - cd ../
-    - mkdir build
-    - cd build
-    - cmake ../
-    - make
+  - ps: Write-Host "Linux build script"
+  - ps: cd dependencies
+  - ps: sudo apt-get update
+  - ps: sudo apt-get --assume-yes install libglu1-mesa-dev freeglut3-dev mesa-common-dev
+  - ps: sh download_dependencies.sh
+  - ps: cd ../
+  - ps: mkdir build
+  - ps: cd build
+  - ps: cmake ../
+  - ps: make
 -
   matrix:
     only:
       - job_name: Windows build
       
   build_script:
-  - ps:
-    - "Windows build script" | Out-Host
-    - cd dependencies
-    - ./download_dependencies.ps1
-    - cd ../
-    - mkdir build
-    - cd build
-    - cmake ../ -DBUILD_SHARED_LIBS=OFF -A x64 
-    - MSBuild.exe ALL_BUILD.vcxproj
+  - ps: Write-Host "Windows build script"
+  - ps: cd dependencies
+  - ps: ./download_dependencies.ps1
+  - ps: cd ../
+  - ps: mkdir build
+  - ps: cd build
+  - ps: cmake ../ -DBUILD_SHARED_LIBS=OFF -A x64 
+  - ps: MSBuild.exe ALL_BUILD.vcxproj
 -
   matrix:
     only:
@@ -60,9 +59,8 @@ for:
     - yes | C:\android-sdk-windows\tools\bin\sdkmanager.bat --licenses
       
   build_script:
-  - ps:
-    - "Android build script" | Out-Host
-    - cd platform/android
-    - gradlew.bat assemble
+  - ps: Write-Host "Android build script"
+  - ps: cd platform/android
+  - ps: gradlew.bat assemble
   
 deploy: off
