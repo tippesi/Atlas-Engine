@@ -56,7 +56,7 @@ for:
     - appveyor DownloadFile https://dl.google.com/android/repository/commandlinetools-win-6609375_latest.zip
     - mkdir C:\android-sdk-windows
     - 7z x commandlinetools-win-6609375_latest.zip -oC:\android-sdk-windows\cmdline-tools > nul 
-    - cmd: C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --licenses
+    - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --licenses
   build_script:
   - ps: Write-Host "Android build script"
   - ps: $env:ANDROID_HOME="C:\\android-sdk-windows"
