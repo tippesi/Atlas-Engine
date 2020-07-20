@@ -57,8 +57,12 @@ for:
     - mkdir C:\android-sdk-windows
     - 7z x commandlinetools-win-6609375_latest.zip -oC:\android-sdk-windows\cmdline-tools > nul 
     - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --licenses
+    - C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat cmake;3.10.2
   build_script:
   - ps: Write-Host "Android build script"
+  - ps: cd dependencies
+  - ps: ./download_dependencies.ps1
+  - ps: cd ../
   - ps: $env:ANDROID_HOME="C:\\android-sdk-windows"
   - ps: cd platform/android
   - ps: Write-Host "Starting build"
