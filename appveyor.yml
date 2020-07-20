@@ -1,6 +1,9 @@
 version: 0.0.{build}
 max_jobs: 4
 platform: x64
+﻿configuration:
+  - Debug
+  - Release
 environment:
   matrix:
 
@@ -52,6 +55,8 @@ for:
     only:
       - job_name: Android build
       
+  # Installation of current tools. Needs to be copied into %ANDROID_HOME%/cmdline-tools. 
+  # Versions of CMake and NDK might change in the future. Check sdkmanager.bat --list
   install:
     - appveyor DownloadFile https://dl.google.com/android/repository/commandlinetools-win-6609375_latest.zip
     - mkdir C:\android-sdk-windows
@@ -66,6 +71,6 @@ for:
   - ps: $env:ANDROID_HOME="C:\\android-sdk-windows"
   - ps: cd platform/android
   - ps: Write-Host "Starting build"
-  - ps: ./gradlew.bat --info assemble
+  - ps: ./gradlew.bat assemble
   
 deploy: off
