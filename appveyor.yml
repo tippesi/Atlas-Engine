@@ -23,31 +23,32 @@ for:
       - job_name: Linux build
       
   build_script:
-  - ps: >-
-      cd dependencies
-      sudo apt-get update
-      sudo apt-get --assume-yes install libglu1-mesa-dev freeglut3-dev mesa-common-dev
-      sh download_dependencies.sh
-      cd ../
-      mkdir build
-      cd build
-      cmake ../
-      make
+  - ps:
+    - "Linux build script" | Out-Host
+    - cd dependencies
+    - sudo apt-get update
+    - sudo apt-get --assume-yes install libglu1-mesa-dev freeglut3-dev mesa-common-dev
+    - sh download_dependencies.sh
+    - cd ../
+    - mkdir build
+    - cd build
+    - cmake ../
+    - make
 -
   matrix:
     only:
       - job_name: Windows build
       
   build_script:
-  - ps: >-
-      cd dependencies
-      ./download_dependencies.ps1
-      cd ../
-      mkdir build
-      cd build
-      cmake ../
-      cmake ../ -DBUILD_SHARED_LIBS=OFF -A x64 
-      MSBuild.exe ALL_BUILD.vcxproj
+  - ps:
+    - "Windows build script" | Out-Host
+    - cd dependencies
+    - ./download_dependencies.ps1
+    - cd ../
+    - mkdir build
+    - cd build
+    - cmake ../ -DBUILD_SHARED_LIBS=OFF -A x64 
+    - MSBuild.exe ALL_BUILD.vcxproj
 -
   matrix:
     only:
@@ -59,6 +60,8 @@ for:
     - yes | C:\android-sdk-windows\tools\bin\sdkmanager.bat --licenses
       
   build_script:
+  - ps:
+    - "Android build script" | Out-Host
     - cd platform/android
     - gradlew.bat assemble
   
