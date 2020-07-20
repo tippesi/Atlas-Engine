@@ -62,6 +62,6 @@ for:
   - ps: $env:ANDROID_HOME="C:\\android-sdk-windows"
   - ps: cd platform/android
   - ps: Write-Host "Starting build"
-  - ps: gradlew.bat --info assemble
+  - ps: ./gradlew.bat --info assemble
   
 deploy: off
