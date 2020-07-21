@@ -55,7 +55,7 @@ namespace Atlas {
 			void SetData(const Cubemap& that, int32_t depth);
 
 		protected:
-			void ReserveStorage(int32_t mipCount);
+			void ReserveStorage(int32_t mipCount) override;
 
 		};
 

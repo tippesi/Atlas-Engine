@@ -1,5 +1,7 @@
 #include "Clock.h"
 
+#include <numeric>
+
 namespace Atlas {
 
 	std::mutex Clock::mutex;
@@ -51,10 +53,7 @@ namespace Atlas {
 
 		std::lock_guard<std::mutex> lock(mutex);
 
-		float average = 0.0f;
-
-		for (auto delta : deltas)
-			average += delta;
+		auto average = std::accumulate(deltas.begin(), deltas.end(), 0);
 
 		auto size = deltas.size() < totalFrames ?
 			(float)deltas.size() : (float)totalFrames;

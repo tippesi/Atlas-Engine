@@ -182,125 +182,57 @@ namespace Atlas {
 
 			twiddleIndices.Bind(GL_READ_ONLY, 0);
 
-			// Horizontal
-			horizontalButterfly.Bind();
+			for (uint8_t j = 0; j < 4; j++) {
 
-			butterflyNUniform->SetValue(N);
-
-			for (int32_t i = 0; i < log2n; i++) {
-
-				if (!pingpong) {
-					hTDy.Bind(GL_READ_ONLY, 1);
-					hTDyPingpong.Bind(GL_WRITE_ONLY, 2);
-				}
-				else {
-					hTDyPingpong.Bind(GL_READ_ONLY, 1);
-					hTDy.Bind(GL_WRITE_ONLY, 2);
+				// The first two passes calculate the height,
+				// while the second two passes calculate choppyness.
+				switch (j) {
+				case 0: horizontalButterfly.Bind();  break;
+				case 1: verticalButterfly.Bind(); break;
+				case 2: choppyHorizontalButterfly.Bind(); break;
+				case 3: choppyVerticalButterfly.Bind(); break;
+				default: break;
 				}
 
-				auto preTwiddle = (float)N / powf(2.0f, (float)i + 1.0f);
+				butterflyNUniform->SetValue(N);
 
-				butterflyPreTwiddleUniform->SetValue(preTwiddle);
+				for (int32_t i = 0; i < log2n; i++) {
 
-				butterflyStageUniform->SetValue(i);
-				butterflyPingpongUniform->SetValue(pingpong);
+					// Different binding points for the height and choppyness passes
+					if (j < 2) {
+						if (!pingpong) {
+							hTDy.Bind(GL_READ_ONLY, 1);
+							hTDyPingpong.Bind(GL_WRITE_ONLY, 2);
+						}
+						else {
+							hTDyPingpong.Bind(GL_READ_ONLY, 1);
+							hTDy.Bind(GL_WRITE_ONLY, 2);
+						}
+					}
+					else {
+						if (!pingpong) {
+							hTDxz.Bind(GL_READ_ONLY, 3);
+							hTDxzPingpong.Bind(GL_WRITE_ONLY, 4);
+						}
+						else {
+							hTDxzPingpong.Bind(GL_READ_ONLY, 3);
+							hTDxz.Bind(GL_WRITE_ONLY, 4);
+						}
+					}
 
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+					auto preTwiddle = (float)N / powf(2.0f, (float)i + 1.0f);
 
-				glDispatchCompute(N / 8, N / 8, 1);
+					butterflyPreTwiddleUniform->SetValue(preTwiddle);
 
-				pingpong = (pingpong + 1) % 2;
-			}
+					butterflyStageUniform->SetValue(i);
+					butterflyPingpongUniform->SetValue(pingpong);
 
-			// Vertical
-			verticalButterfly.Bind();
+					glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-			butterflyNUniform->SetValue(N);
+					glDispatchCompute(N / 8, N / 8, 1);
 
-			for (int32_t i = 0; i < log2n; i++) {
-
-				if (!pingpong) {
-					hTDy.Bind(GL_READ_ONLY, 1);
-					hTDyPingpong.Bind(GL_WRITE_ONLY, 2);
+					pingpong = (pingpong + 1) % 2;
 				}
-				else {
-					hTDyPingpong.Bind(GL_READ_ONLY, 1);
-					hTDy.Bind(GL_WRITE_ONLY, 2);
-				}
-
-				auto preTwiddle = (float)N / powf(2.0f, (float)i + 1.0f);
-
-				butterflyPreTwiddleUniform->SetValue(preTwiddle);
-
-				butterflyStageUniform->SetValue(i);
-				butterflyPingpongUniform->SetValue(pingpong);
-
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-				glDispatchCompute(N / 8, N / 8, 1);
-
-				pingpong = (pingpong + 1) % 2;
-			}
-
-			// Horizontal
-			choppyHorizontalButterfly.Bind();
-
-			butterflyNUniform->SetValue(N);
-
-			for (int32_t i = 0; i < log2n; i++) {
-
-				if (!pingpong) {
-					hTDxz.Bind(GL_READ_ONLY, 3);
-					hTDxzPingpong.Bind(GL_WRITE_ONLY, 4);
-				}
-				else {
-					hTDxzPingpong.Bind(GL_READ_ONLY, 3);
-					hTDxz.Bind(GL_WRITE_ONLY, 4);
-				}
-
-				auto preTwiddle = (float)N / powf(2.0f, (float)i + 1.0f);
-
-				butterflyPreTwiddleUniform->SetValue(preTwiddle);
-
-				butterflyStageUniform->SetValue(i);
-				butterflyPingpongUniform->SetValue(pingpong);
-
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-				glDispatchCompute(N / 8, N / 8, 1);
-
-				pingpong = (pingpong + 1) % 2;
-			}
-
-			// Vertical
-			choppyVerticalButterfly.Bind();
-
-			butterflyNUniform->SetValue(N);
-
-			for (int32_t i = 0; i < log2n; i++) {
-
-				if (!pingpong) {
-					hTDxz.Bind(GL_READ_ONLY, 3);
-					hTDxzPingpong.Bind(GL_WRITE_ONLY, 4);
-				}
-				else {
-					hTDxzPingpong.Bind(GL_READ_ONLY, 3);
-					hTDxz.Bind(GL_WRITE_ONLY, 4);
-				}
-
-				auto preTwiddle = (float)N / powf(2.0f, (float)i + 1.0f);
-
-				butterflyPreTwiddleUniform->SetValue(preTwiddle);
-
-				butterflyStageUniform->SetValue(i);
-				butterflyPingpongUniform->SetValue(pingpong);
-
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-				glDispatchCompute(N / 8, N / 8, 1);
-
-				pingpong = (pingpong + 1) % 2;
-
 			}
 
 			// Inverse and correct the texture

@@ -136,7 +136,7 @@ namespace Atlas {
             void SaveToPNG(std::string filename, int32_t depth);
 
         protected:
-            void ReserveStorage(int32_t mipCount);
+            void ReserveStorage(int32_t mipCount) override;
 
         };
 

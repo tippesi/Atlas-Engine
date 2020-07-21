@@ -59,90 +59,42 @@ namespace Atlas {
 	void Framebuffer::AddComponent(int32_t attachment, int32_t sizedFormat, int32_t wrapping,
 								   int32_t filtering, uint32_t target) {
 
-		FramebufferComponent component;
-
-		auto search = components.find(attachment);
-
-		if (search != components.end()) {
-			component = search->second;
-			// Check if the component texture was created internally
-			if (component.internalTexture)
-				delete component.texture;
-		}
+		auto component = GetComponent(attachment);
 
 		component.texture = new Texture::Texture2D(width, height, sizedFormat, wrapping, filtering, false, false);
-		component.textureArray = nullptr;
-		component.cubemap = nullptr;
 		component.internalTexture = true;
-		component.index = 0;
 		component.target = target;
 
 		Bind();
 
 		glFramebufferTexture2D(target, attachment, GL_TEXTURE_2D, component.texture->GetID(), 0);
 
-		components[attachment] = component;
-
-		if (attachment >= GL_COLOR_ATTACHMENT0 && attachment <= GL_COLOR_ATTACHMENT15 &&
-			search == components.end() && !drawBuffersSet) {
-			drawBuffers.push_back(attachment);
-			glDrawBuffers((GLsizei) drawBuffers.size(), &drawBuffers[0]);
-		}
+		UpdateDrawBuffers(attachment);
+		components[attachment] = component;		
 
 	}
 
 	void Framebuffer::AddComponentTexture(int32_t attachment, Texture::Texture2D *texture, uint32_t target) {
 
-		FramebufferComponent component;
-
-		auto search = components.find(attachment);
-
-		if (search != components.end()) {
-			component = search->second;
-			// Check if the component texture was created internally
-			if (component.internalTexture)
-				delete component.texture;
-		}
+		auto component = GetComponent(attachment);
 
 		component.texture = texture;
-		component.textureArray = nullptr;
-		component.cubemap = nullptr;
-		component.internalTexture = false;
-		component.index = 0;
 		component.target = target;
 
 		Bind();
 
 		glFramebufferTexture2D(target, attachment, GL_TEXTURE_2D, component.texture->GetID(), 0);
 
+		UpdateDrawBuffers(attachment);
 		components[attachment] = component;
-
-		if (attachment >= GL_COLOR_ATTACHMENT0 && attachment <= GL_COLOR_ATTACHMENT15 &&
-			search == components.end() && !drawBuffersSet) {
-			drawBuffers.push_back(attachment);
-			glDrawBuffers((GLsizei) drawBuffers.size(), &drawBuffers[0]);
-		}
 
 	}
 
-	void
-	Framebuffer::AddComponentTextureArray(int32_t attachment, Texture::Texture2DArray *texture, int32_t layer, uint32_t target) {
+	void Framebuffer::AddComponentTextureArray(int32_t attachment, Texture::Texture2DArray *texture, int32_t layer, uint32_t target) {
 
-		FramebufferComponent component;
+		auto component = GetComponent(attachment);
 
-		auto search = components.find(attachment);
-
-		if (search != components.end()) {
-			component = search->second;
-			// Check if the component texture was created internally
-			if (component.internalTexture)
-				delete component.texture;
-		}
-
-		component.texture = nullptr;
 		component.textureArray = texture;
-		component.cubemap = nullptr;
-		component.internalTexture = false;
 		component.index = layer;
 		component.target = target;
 
@@ -150,47 +102,24 @@ namespace Atlas {
 
 		glFramebufferTextureLayer(target, attachment, texture->GetID(), 0, layer);
 
+		UpdateDrawBuffers(attachment);
 		components[attachment] = component;
-
-		if (attachment >= GL_COLOR_ATTACHMENT0 && attachment <= GL_COLOR_ATTACHMENT15 &&
-			search == components.end() && !drawBuffersSet) {
-			drawBuffers.push_back(attachment);
-			glDrawBuffers((GLsizei) drawBuffers.size(), &drawBuffers[0]);
-		}
 
 	}
 
 	void Framebuffer::AddComponentCubemap(int32_t attachment, Texture::Cubemap *cubemap, int32_t face, uint32_t target) {
 
-		FramebufferComponent component;
+		auto component = GetComponent(attachment);
 
-		auto search = components.find(attachment);
-
-		if (search != components.end()) {
-			component = search->second;
-			// Check if the component texture was created internally
-			if (component.internalTexture)
-				delete component.texture;
-		}
-
-		component.texture = nullptr;
-		component.textureArray = nullptr;
 		component.cubemap = cubemap;
-		component.internalTexture = false;
-		component.index = 0;
 		component.target = target;
 
 		Bind();
 
 		glFramebufferTexture2D(target, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, cubemap->GetID(), 0);
 
+		UpdateDrawBuffers(attachment);
 		components[attachment] = component;
-
-		if (attachment >= GL_COLOR_ATTACHMENT0 && attachment <= GL_COLOR_ATTACHMENT15 &&
-			search == components.end() && !drawBuffersSet) {
-			drawBuffers.push_back(attachment);
-			glDrawBuffers((GLsizei) drawBuffers.size(), &drawBuffers[0]);
-		}
 
 	}
 
@@ -238,7 +167,7 @@ namespace Atlas {
 		this->height = height;
 
 		for (auto &componentKey : components) {
-			FramebufferComponent &component = componentKey.second;
+			auto &component = componentKey.second;
 
 			if (component.texture) {
 				component.texture->Resize(width, height);
@@ -284,6 +213,35 @@ namespace Atlas {
 		glDrawBuffers((int32_t)drawBuffers.size(), drawBuffers.data());
 
 		drawBuffersSet = true;
+
+	}
+
+	Framebuffer::Component Framebuffer::GetComponent(int32_t attachment) {
+
+		Component component;
+
+		auto search = components.find(attachment);
+
+		if (search != components.end()) {
+			component = search->second;
+			// Check if the component texture was created internally
+			if (component.internalTexture)
+				delete component.texture;
+		}
+
+		return component;
+
+	}
+
+	void Framebuffer::UpdateDrawBuffers(int32_t attachment) {
+
+		auto search = components.find(attachment);
+
+		if (attachment >= GL_COLOR_ATTACHMENT0 && attachment <= GL_COLOR_ATTACHMENT15 &&
+			search == components.end() && !drawBuffersSet) {
+			drawBuffers.push_back(attachment);
+			glDrawBuffers((GLsizei)drawBuffers.size(), &drawBuffers[0]);
+		}
 
 	}
 

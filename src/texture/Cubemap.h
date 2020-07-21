@@ -90,7 +90,7 @@ namespace Atlas {
 			std::vector<uint8_t> GetData(int32_t layer);
 
 		protected:
-			void ReserveStorage(int32_t mipCount);
+			void ReserveStorage(int32_t mipCount) override;
 
         };
 

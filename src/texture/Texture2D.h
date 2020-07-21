@@ -43,7 +43,7 @@ namespace Atlas {
              * @param generateMipMaps
 			 * @param forceChannels
              */
-            Texture2D(std::string filename, bool colorSpaceConversion = true, bool anisotropicFiltering = true,
+            explicit Texture2D(std::string filename, bool colorSpaceConversion = true, bool anisotropicFiltering = true,
 				bool generateMipMaps = true, int32_t forceChannels = 0);
 
             /**
@@ -118,7 +118,7 @@ namespace Atlas {
             void SaveToPNG(std::string filename, bool flipHorizontally = false);
 
         protected:
-            void ReserveStorage(int32_t mipCount);
+            void ReserveStorage(int32_t mipCount) override;
 
         };
 

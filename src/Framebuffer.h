@@ -131,20 +131,24 @@ namespace Atlas {
 		/**
          * Represents an added component
          */
-		struct FramebufferComponent {
-			Texture::Texture2D *texture; // If the component is a Texture2D
-			Texture::Texture2DArray *textureArray; // If the component is a Texture2DArray
-			Texture::Cubemap *cubemap; // If the component is a Cubemap
-			int32_t index; // The index in the cubemap (face) or the Texture2DArray layer
-			uint32_t target; // The target to which the component was set
-			bool internalTexture; // Whether or not this is a texture that was created internally
+		struct Component {
+			Texture::Texture2D* texture = nullptr; // If the component is a Texture2D
+			Texture::Texture2DArray* textureArray = nullptr; // If the component is a Texture2DArray
+			Texture::Cubemap* cubemap = nullptr; // If the component is a Cubemap
+			int32_t index = 0; // The index in the cubemap (face) or the Texture2DArray layer
+			uint32_t target = 0; // The target to which the component was set
+			bool internalTexture = false; // Whether or not this is a texture that was created internally
 		};
+
+		Component GetComponent(int32_t attachment);
+
+		void UpdateDrawBuffers(int32_t attachment);
 
 		uint32_t ID;
 
 		bool drawBuffersSet;
 
-		std::unordered_map<int32_t, FramebufferComponent> components;
+		std::unordered_map<int32_t, Component> components;
 		std::vector<uint32_t> drawBuffers;
 
 		static uint32_t boundFramebufferID;
