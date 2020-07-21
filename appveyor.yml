@@ -3,27 +3,44 @@ max_jobs: 4
 
 platform: x64
 
-configuration:
-  - Debug
-  - Release
-
 environment:
   matrix:
 
-  - job_name: Android build
+  - job_name: Android build Release
+  - job_group: Android build
+    configuration: Release
+    appveyor_build_worker_image: Visual Studio 2019
+    
+  - job_name: Android build Debug
+  - job_group: Android build
+    configuration: Debug
     appveyor_build_worker_image: Visual Studio 2019
 
-  - job_name: Windows build
+  - job_name: Windows build Release
+  - job_group: Windows build
+    configuration: Release
     appveyor_build_worker_image: Visual Studio 2019
 
-  - job_name: Linux build
+  - job_name: Windows build Debug
+  - job_group: Windows build
+    configuration: Debug
+    appveyor_build_worker_image: Visual Studio 2019
+    
+  - job_name: Linux build Release
+  - job_group: Linux build
+    configuration: Release
+    appveyor_build_worker_image: Ubuntu
+
+  - job_name: Linux build Debug
+  - job_group: Linux build
+    configuration: Debug
     appveyor_build_worker_image: Ubuntu
   
 for:
 -
   matrix:
     only:
-      - job_name: Linux build
+      - job_group: Linux build
       
   build_script:
   - ps: |
@@ -39,7 +56,7 @@ for:
 -
   matrix:
     only:
-      - job_name: Windows build
+      - job_group: Windows build
       
   build_script:
   - ps: |
@@ -53,7 +70,7 @@ for:
 -
   matrix:
     only:
-      - job_name: Android build
+      - job_group: Android build
       
   # Installation of current tools. Needs to be copied into %ANDROID_HOME%/cmdline-tools. 
   # Versions of CMake and NDK might change in the future. Check sdkmanager.bat --list
@@ -71,8 +88,8 @@ for:
       $env:ANDROID_HOME="C:\\android-sdk-windows"      
       $env:ANDROID_NDK_HOME="C:\\android-sdk-windows\\ndk-bundle"      
       cd platform/android
-      Write-Host $CONFIGURATION
-      if ($CONFIGURATION -eq "release")      
+      Write-Host $Env:CONFIGURATION
+      if ($Env:CONFIGURATION -eq "release")      
       {      
       ./gradlew.bat assembleRelease --warning-mode=none      
       }      
