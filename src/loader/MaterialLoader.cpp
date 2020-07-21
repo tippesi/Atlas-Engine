@@ -10,15 +10,14 @@
 namespace Atlas {
 
     namespace Loader {
+		Material* MaterialLoader::LoadMaterial(std::string filename, int32_t mapResolution) {
 
-        Material* MaterialLoader::LoadMaterial(std::string filename) {
+			auto stream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
-            auto stream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
-
-            if (!stream.is_open()) {
-                Log::Error("Failed to load material " + filename);
+			if (!stream.is_open()) {
+				Log::Error("Failed to load material " + filename);
 				return nullptr;
-            }
+			}
 
 			int32_t textureCount = 0;
 			auto material = LoadMaterialValues(stream, textureCount);
@@ -36,40 +35,74 @@ namespace Atlas {
 				auto prefix = line.substr(0, 3);
 				if (prefix == "BMP") {
 					material->baseColorMapPath = ReadFilePath(line, materialDirectory);
-					material->baseColorMap = new Texture::Texture2D(material->baseColorMapPath);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->baseColorMapPath, true, 3);
+					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
+						image.Resize(mapResolution, mapResolution);
+					material->baseColorMap = new Texture::Texture2D(image.width,
+						image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					material->baseColorMap->SetData(image.GetData());
+				}
+				if (prefix == "OMP") {
+					material->opacityMapPath = ReadFilePath(line, materialDirectory);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->opacityMapPath, false, 1);
+					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
+						image.Resize(mapResolution, mapResolution);
+					material->baseColorMap = new Texture::Texture2D(image.width,
+						image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					material->baseColorMap->SetData(image.GetData());
 				}
 				else if (prefix == "NMP") {
 					material->normalMapPath = ReadFilePath(line, materialDirectory);
-					material->normalMap = new Texture::Texture2D(material->normalMapPath,
-						false, true, true, 3);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->normalMapPath, false, 3);
+					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
+						image.Resize(mapResolution, mapResolution);
+					material->normalMap = new Texture::Texture2D(image.width,
+						image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					material->normalMap->SetData(image.GetData());
 				}
 				else if (prefix == "RMP") {
 					material->roughnessMapPath = ReadFilePath(line, materialDirectory);
-					material->roughnessMap = new Texture::Texture2D(material->roughnessMapPath,
-						false, true, true, 1);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->roughnessMapPath, false, 1);
+					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
+						image.Resize(mapResolution, mapResolution);
+					material->roughnessMap = new Texture::Texture2D(image.width,
+						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					material->roughnessMap->SetData(image.GetData());
 				}
 				else if (prefix == "MMP") {
 					material->metalnessMapPath = ReadFilePath(line, materialDirectory);
-					material->metalnessMap = new Texture::Texture2D(material->metalnessMapPath,
-						false, true, true, 1);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->metalnessMapPath, false, 1);
+					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
+						image.Resize(mapResolution, mapResolution);
+					material->metalnessMap = new Texture::Texture2D(image.width,
+						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					material->metalnessMap->SetData(image.GetData());
 				}
 				else if (prefix == "AMP") {
 					material->aoMapPath = ReadFilePath(line, materialDirectory);
-					material->aoMap = new Texture::Texture2D(material->aoMapPath,
-						false, true, true, 1);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->aoMapPath, false, 1);
+					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
+						image.Resize(mapResolution, mapResolution);
+					material->aoMap = new Texture::Texture2D(image.width,
+						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					material->aoMap->SetData(image.GetData());
 				}
 				else if (prefix == "DMP") {
 					material->displacementMapPath = ReadFilePath(line, materialDirectory);
-					material->displacementMap = new Texture::Texture2D(material->displacementMapPath,
-						false, true, true, 1);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->displacementMapPath, false, 1);
+					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
+						image.Resize(mapResolution, mapResolution);
+					material->displacementMap = new Texture::Texture2D(image.width,
+						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+					material->displacementMap->SetData(image.GetData());
 				}
 			}
 
-            stream.close();
+			stream.close();
 
 			return material;
 
-        }
+		}
 
         void MaterialLoader::SaveMaterial(Material *material, std::string filename) {
 
@@ -113,6 +146,8 @@ namespace Atlas {
 
 			if (material->HasBaseColorMap())
 				stream << "BMP " + Common::Path::GetRelative(materialPath, material->baseColorMapPath) + "\n";
+			if (material->HasOpacityMap())
+				stream << "OMP " + Common::Path::GetRelative(materialPath, material->opacityMapPath) + "\n";
 			if (material->HasNormalMap())
 				stream << "NMP " + Common::Path::GetRelative(materialPath, material->normalMapPath) + "\n";
 			if (material->HasRoughnessMap())
@@ -127,91 +162,6 @@ namespace Atlas {
             stream.close();
 
         }
-
-		Material* MaterialLoader::LoadMaterialForTerrain(std::string filename, int32_t mapResolution) {
-
-			auto stream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
-
-			if (!stream.is_open()) {
-				Log::Error("Failed to load material " + filename);
-				return nullptr;
-			}
-
-			int32_t textureCount = 0;
-			auto material = LoadMaterialValues(stream, textureCount);
-
-			if (!material) {
-				Log::Error("File isn't a material file " + filename);
-				return nullptr;
-			}
-
-			auto materialDirectory = Common::Path::GetDirectory(filename);
-
-			std::string line;
-			for (int32_t i = 0; i < textureCount; i++) {
-				std::getline(stream, line);
-				auto prefix = line.substr(0, 3);
-				if (prefix == "BMP") {
-					material->baseColorMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage<uint8_t>(material->baseColorMapPath, true, 3);
-					if (image.width != mapResolution || image.height != mapResolution)
-						image.Resize(mapResolution, mapResolution);
-					material->baseColorMap = new Texture::Texture2D(image.width,
-						image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
-					material->baseColorMap->SetData(image.GetData());
-				}
-				else if (prefix == "NMP") {
-					material->normalMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage<uint8_t>(material->normalMapPath, false, 3);
-					if (image.width != mapResolution || image.height != mapResolution)
-						image.Resize(mapResolution, mapResolution);
-					material->normalMap = new Texture::Texture2D(image.width,
-						image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
-					material->normalMap->SetData(image.GetData());
-				}
-				else if (prefix == "RMP") {
-					material->roughnessMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage<uint8_t>(material->roughnessMapPath, false, 1);
-					if (image.width != mapResolution || image.height != mapResolution)
-						image.Resize(mapResolution, mapResolution);
-					material->roughnessMap = new Texture::Texture2D(image.width,
-						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
-					material->roughnessMap->SetData(image.GetData());
-				}
-				else if (prefix == "MMP") {
-					material->metalnessMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage<uint8_t>(material->metalnessMapPath, false, 1);
-					if (image.width != mapResolution || image.height != mapResolution)
-						image.Resize(mapResolution, mapResolution);
-					material->metalnessMap = new Texture::Texture2D(image.width,
-						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
-					material->metalnessMap->SetData(image.GetData());
-				}
-				else if (prefix == "AMP") {
-					material->aoMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage<uint8_t>(material->aoMapPath, false, 1);
-					if (image.width != mapResolution || image.height != mapResolution)
-						image.Resize(mapResolution, mapResolution);
-					material->aoMap = new Texture::Texture2D(image.width,
-						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
-					material->aoMap->SetData(image.GetData());
-				}
-				else if (prefix == "DMP") {
-					material->displacementMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage<uint8_t>(material->displacementMapPath, false, 1);
-					if (image.width != mapResolution || image.height != mapResolution)
-						image.Resize(mapResolution, mapResolution);
-					material->displacementMap = new Texture::Texture2D(image.width,
-						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
-					material->displacementMap->SetData(image.GetData());
-				}
-			}
-
-			stream.close();
-
-			return material;
-
-		}
 
 		Material* MaterialLoader::LoadMaterialValues(std::ifstream& stream, int32_t& textureCount) {
 

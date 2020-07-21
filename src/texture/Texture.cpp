@@ -305,9 +305,9 @@ namespace Atlas {
 
 		void Texture::DeepCopy(const Texture& that) {
 
-			this->width = that.width;
-			this->height = that.height;
-			this->layers = that.layers;
+			width = that.width;
+			height = that.height;
+			layers = that.layers;
 
 			Generate(that.target, that.sizedFormat, that.wrapping, that.filtering,
 				that.anisotropicFiltering, that.mipmaps);

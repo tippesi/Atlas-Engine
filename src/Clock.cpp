@@ -53,7 +53,7 @@ namespace Atlas {
 
 		std::lock_guard<std::mutex> lock(mutex);
 
-		auto average = std::accumulate(deltas.begin(), deltas.end(), 0);
+		auto average = std::accumulate(deltas.begin(), deltas.end(), 0.0f);
 
 		auto size = deltas.size() < totalFrames ?
 			(float)deltas.size() : (float)totalFrames;

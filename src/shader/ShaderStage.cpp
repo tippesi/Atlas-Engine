@@ -14,7 +14,7 @@ namespace Atlas {
 
         std::string ShaderStage::sourceDirectory = "";
 
-        ShaderStage::ShaderStage(int32_t type, std::string filename) : type(type), filename(filename) {
+        ShaderStage::ShaderStage(int32_t type, const std::string& filename) : type(type), filename(filename) {
 
             auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
             path += filename;
@@ -31,23 +31,7 @@ namespace Atlas {
 
         ShaderStage::ShaderStage(const ShaderStage& that) {
 
-			type = that.type;
-            code = that.code;
-            macros = that.macros;
-			includes = that.includes;
-            filename = that.filename;
-            lastModified = that.lastModified;
-
-#ifdef AE_SHOW_LOG
-			stageCode = that.stageCode;
-#endif
-
-            for (auto iterator = that.constants.begin(); iterator != that.constants.end(); iterator++) {
-                auto constant = new ShaderConstant((*iterator)->GetValuedString().c_str());
-                constants.push_back(constant);
-            }
-
-            ID = glCreateShader(that.type);
+            DeepCopy(that);
 
         }
 
@@ -84,25 +68,29 @@ namespace Atlas {
 
         }
 
-        void ShaderStage::AddMacro(std::string macro) {
+        void ShaderStage::AddMacro(const std::string& macro) {
 
             macros.push_back(macro);
 
         }
 
-        void ShaderStage::RemoveMacro(std::string macro) {
+        void ShaderStage::RemoveMacro(const std::string& macro) {
 
-            macros.remove(macro);
+            auto item = std::find(macros.begin(), macros.end(), macro);
+
+            if (item != macros.end()) {
+                macros.erase(item);
+            }
 
         }
 
-        ShaderConstant* ShaderStage::GetConstant(std::string constant) {
+        ShaderConstant* ShaderStage::GetConstant(const std::string& name) {
 
-            for (std::list<ShaderConstant*>::iterator iterator = constants.begin(); iterator != constants.end(); iterator++) {
-                if ((*iterator)->GetName() == constant) {
-                    return *iterator;
-                }
-            }
+            auto constant = std::find_if(constants.begin(), constants.end(), 
+                [name](ShaderConstant* constant) { return constant->GetName() == name; });
+
+            if (constant != constants.end())
+                return *constant;
 
             return nullptr;
 
@@ -155,13 +143,61 @@ namespace Atlas {
 
         }
 
-        void ShaderStage::SetSourceDirectory(std::string directory) {
+        void ShaderStage::SetSourceDirectory(const std::string& directory) {
 
             sourceDirectory = directory;
 
         }
 
-        std::string ShaderStage::ReadShaderFile(std::string filename, bool mainFile) {
+        std::string ShaderStage::GetErrorLog() {
+
+            std::string log;
+
+            int32_t shaderLogLength, length;
+            glGetShaderiv(ID, GL_INFO_LOG_LENGTH, &shaderLogLength);
+
+            if (!shaderLogLength)
+                return "No error";
+
+            auto shaderLog = std::vector<char>(shaderLogLength);
+            glGetShaderInfoLog(ID, shaderLogLength, &length, shaderLog.data());
+
+            if (type == AE_VERTEX_STAGE) {
+                log.append("Compiling vertex stage failed.");
+            }
+            else if (type == AE_FRAGMENT_STAGE) {
+                log.append("Compiling fragment stage failed.");
+            }
+            else if (type == AE_GEOMETRY_STAGE) {
+                log.append("Compiling geometry stage failed.");
+            }
+            else if (type == AE_TESSELLATION_CONTROL_STAGE) {
+                log.append("Compiling tessellation control stage failed.");
+            }
+            else if (type == AE_TESSELLATION_EVALUATION_STAGE) {
+                log.append("Compiling tessellation evaluation stage failed.");
+            }
+            else if (type == AE_COMPUTE_STAGE) {
+                log.append("Compiling compute stage failed.");
+            }
+
+            log.append("\nFile: " + filename);
+            log.append("\nError: " + std::string(shaderLog.data()));
+
+            int32_t lineCount = 1;
+            size_t pos = 0, lastPos = 0;
+
+            while ((pos = stageCode.find('\n', lastPos)) != std::string::npos) {
+                log.append("[" + std::to_string(lineCount++) + "] ");
+                log.append(stageCode.substr(lastPos, pos - lastPos + 1));
+                lastPos = pos + 1;
+            }
+
+            return log;
+
+        }
+
+        std::string ShaderStage::ReadShaderFile(const std::string& filename, bool mainFile) {
 
             std::string shaderCode;
             std::ifstream shaderFile;
@@ -271,53 +307,27 @@ namespace Atlas {
 
         }
 
-		std::string ShaderStage::GetErrorLog() {
+        void ShaderStage::DeepCopy(const ShaderStage& that) {
 
-			std::string log;
+            type = that.type;
+            code = that.code;
+            macros = that.macros;
+            includes = that.includes;
+            filename = that.filename;
+            lastModified = that.lastModified;
 
-			int32_t shaderLogLength, length;
-			glGetShaderiv(ID, GL_INFO_LOG_LENGTH, &shaderLogLength);
+#ifdef AE_SHOW_LOG
+            stageCode = that.stageCode;
+#endif
 
-			if (!shaderLogLength)
-			    return "No error";
+            for (auto iterator = that.constants.begin(); iterator != that.constants.end(); iterator++) {
+                auto constant = new ShaderConstant((*iterator)->GetValuedString().c_str());
+                constants.push_back(constant);
+            }
 
-			auto shaderLog = std::vector<char>(shaderLogLength);
-			glGetShaderInfoLog(ID, shaderLogLength, &length, shaderLog.data());
+            ID = glCreateShader(that.type);
 
-			if (type == AE_VERTEX_STAGE) {
-				log.append("Compiling vertex stage failed.");
-			}
-			else if (type == AE_FRAGMENT_STAGE) {
-				log.append("Compiling fragment stage failed.");
-			}
-			else if (type == AE_GEOMETRY_STAGE) {
-				log.append("Compiling geometry stage failed.");
-			}
-			else if (type == AE_TESSELLATION_CONTROL_STAGE) {
-				log.append("Compiling tessellation control stage failed.");
-			}
-			else if (type == AE_TESSELLATION_EVALUATION_STAGE) {
-				log.append("Compiling tessellation evaluation stage failed.");
-			}
-			else if (type == AE_COMPUTE_STAGE) {
-				log.append("Compiling compute stage failed.");
-			}
-
-			log.append("\nFile: " + filename);
-			log.append("\nError: " + std::string(shaderLog.data()));
-
-			int32_t lineCount = 1;
-			size_t pos = 0, lastPos = 0;
-
-			while ((pos = stageCode.find('\n', lastPos)) != std::string::npos) {
-				log.append("[" + std::to_string(lineCount++) + "] ");
-				log.append(stageCode.substr(lastPos, pos - lastPos + 1));
-				lastPos = pos + 1;
-			}
-
-			return log;
-
-		}
+        }
 
     }
 

@@ -4,7 +4,7 @@
 #include "../System.h"
 #include "ShaderConstant.h"
 
-#include <list>
+#include <vector>
 #include <string>
 #include <set>
 
@@ -30,7 +30,7 @@ namespace Atlas {
              * @param type The type of the stage. See {@link ShaderStage.h} for more.
              * @param filename The name of the GLSL file
              */
-			ShaderStage(int32_t type, std::string filename);
+			ShaderStage(int32_t type, const std::string& filename);
 
 			/**
              * Constructs a ShaderStage object.
@@ -53,20 +53,20 @@ namespace Atlas {
              * Adds a macro to the shader stage.
              * @param macro The macro to be added.
              */
-			void AddMacro(std::string macro);
+			void AddMacro(const std::string& macro);
 
 			/**
              * Removes a macro from the shader stage.
              * @param macro The macro to be removed.
              */
-			void RemoveMacro(std::string macro);
+			void RemoveMacro(const std::string& macro);
 
 			/**
              * Returns a ShaderConstant object for a specific constant of the shader stage.
              * @param constant The name of the constant.
              * @return A pointer to a ShaderConstant object if valid. Nullptr otherwise.
              */
-			ShaderConstant* GetConstant(std::string constant);
+			ShaderConstant* GetConstant(const std::string& constant);
 
 			/**
             * Compiles the shader stage.
@@ -78,7 +78,7 @@ namespace Atlas {
              * Sets the root shader source/binary directory for all shader files.
              * @param directory The path to the directory
              */
-			static void SetSourceDirectory(std::string directory);
+			static void SetSourceDirectory(const std::string& directory);
 
 #ifdef AE_SHOW_LOG
 			std::string GetErrorLog();
@@ -90,17 +90,19 @@ namespace Atlas {
 			std::string filename;
 
 		private:
-			std::string ReadShaderFile(std::string filename, bool mainFile);
+			std::string ReadShaderFile(const std::string& filename, bool mainFile);
 
 			time_t GetLastModified();
+
+			void DeepCopy(const ShaderStage& that);
 
 #ifdef AE_SHOW_LOG
 			std::string stageCode;
 #endif
 
 			std::string code;
-			std::list<std::string> macros;
-			std::list<ShaderConstant*> constants;
+			std::vector<std::string> macros;
+			std::vector<ShaderConstant*> constants;
 			std::set<std::string> includes;
 
 			time_t lastModified;

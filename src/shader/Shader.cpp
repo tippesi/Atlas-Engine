@@ -28,7 +28,7 @@ namespace Atlas {
 
         }
 
-        void Shader::AddStage(int32_t type, std::string filename) {
+        void Shader::AddStage(int32_t type, const std::string& filename) {
 
             auto source = new ShaderStage(type, filename);
 
@@ -54,7 +54,7 @@ namespace Atlas {
 
         }
 
-        Uniform* Shader::GetUniform(std::string uniformName) {
+        Uniform* Shader::GetUniform(const std::string& uniformName) {
 
 			// Check if we have the uniform cached
 			for (auto& uniform : uniforms)
@@ -71,7 +71,7 @@ namespace Atlas {
 
         }
 
-        void Shader::AddMacro(std::string macro) {
+        void Shader::AddMacro(const std::string& macro) {
 
             isCompiled = false;
 
@@ -83,7 +83,7 @@ namespace Atlas {
 
         }
 
-        void Shader::RemoveMacro(std::string macro) {
+        void Shader::RemoveMacro(const std::string& macro) {
 
             for (auto& stage : stages) {
                 stage->RemoveMacro(macro);
@@ -99,7 +99,7 @@ namespace Atlas {
 
         }
 
-        bool Shader::HasMacro(std::string macro) {
+        bool Shader::HasMacro(const std::string& macro) {
 
             for (auto& compMacro : macros) {
                 if (compMacro == macro) {

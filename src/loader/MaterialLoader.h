@@ -13,11 +13,9 @@ namespace Atlas {
         class MaterialLoader {
 
 		public:
-            static Material* LoadMaterial(std::string filename);
+            static Material* LoadMaterial(std::string filename, int32_t mapResolution = 0);
 
             static void SaveMaterial(Material* material, std::string filename);
-
-			static Material* LoadMaterialForTerrain(std::string filename, int32_t mapResolution);
 
 		private:
 			static Material* LoadMaterialValues(std::ifstream& stream, int32_t& textureCount);

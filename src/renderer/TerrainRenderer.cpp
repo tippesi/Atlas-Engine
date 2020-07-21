@@ -46,7 +46,7 @@ namespace Atlas {
 			std::vector<Terrain::TerrainNode*> distanceNodes;
 
 			for (auto node : terrain->renderList) {
-				if (node->cell->LoD == terrain->LoDCount - 1)
+				if (node->cell->LoD >= terrain->LoDCount - 4)
 					nodes.push_back(node);
 				else
 					distanceNodes.push_back(node);

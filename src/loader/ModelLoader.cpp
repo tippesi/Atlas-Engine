@@ -235,9 +235,13 @@ namespace Atlas {
 
 			material.metalness = glm::clamp(specularIntensity, 0.0f, 1.0f);
 
-			if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0) {
+			if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0 ||
+				assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 				aiString aiPath;
-				assimpMaterial->GetTexture(aiTextureType_BASE_COLOR, 0, &aiPath);
+				if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0)
+					assimpMaterial->GetTexture(aiTextureType_BASE_COLOR, 0, &aiPath);
+				else
+					assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
 				auto image = ImageLoader::LoadImage<uint8_t>(path, true);
 
@@ -248,38 +252,6 @@ namespace Atlas {
 				if (image.channels == 1) {
 					auto imageData = image.GetData();
 					for (size_t i = 0; i < data.size(); i+=3) {
-						data[i + 0] = imageData[i / 3];
-						data[i + 1] = imageData[i / 3];
-						data[i + 2] = imageData[i / 3];
-					}
-				}
-				else if (image.channels == 3) {
-					data = image.GetData();
-				}
-				else if (image.channels == 4) {
-					data = image.GetChannelData(0, 3);
-					auto opacityData = image.GetChannelData(3, 1);
-					material.opacityMap = new Texture::Texture2D(image.width, image.height, AE_R8,
-						GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
-					material.opacityMap->SetData(opacityData);
-					material.opacityMapPath = path;
-				}
-				material.baseColorMap->SetData(data);
-				material.baseColorMapPath = path;
-			}
-			if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0 && !material.baseColorMap) {
-				aiString aiPath;
-				assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
-				auto path = directory + std::string(aiPath.C_Str());
-				auto image = ImageLoader::LoadImage<uint8_t>(path, true);
-
-				material.baseColorMap = new Texture::Texture2D(image.width, image.height, AE_RGB8,
-					GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
-
-				std::vector <uint8_t> data(image.width * image.height * 3);
-				if (image.channels == 1) {
-					auto imageData = image.GetData();
-					for (size_t i = 0; i < data.size(); i += 3) {
 						data[i + 0] = imageData[i / 3];
 						data[i + 1] = imageData[i / 3];
 						data[i + 2] = imageData[i / 3];
