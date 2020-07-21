@@ -21,7 +21,7 @@ namespace Atlas {
 		   Common::Image<uint8_t> images[6];
 
 		   for (int32_t i = 0; i < 6; i++) {
-			   images[i] = Loader::ImageLoader::LoadImage(filenames[i], true, 4);
+			   images[i] = Loader::ImageLoader::LoadImage<uint8_t>(filenames[i], true, 4);
 
 			   if (images[i].GetData().size() == 0) {
 				   Log::Error("    Failed to load cubemap face " + std::to_string(i) + " " + filenames[i]);
@@ -44,7 +44,7 @@ namespace Atlas {
 
 	   Cubemap::Cubemap(std::string filename, int32_t resolution) {
 
-		   auto image = Loader::ImageLoader::LoadImageFloat(filename, 3);
+		   auto image = Loader::ImageLoader::LoadImage<float>(filename, 3);
 
 		   if (image.GetData().size() == 0) {
 			   Log::Error("Failed to load cubemap image " + filename);

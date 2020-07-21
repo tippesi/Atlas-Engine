@@ -239,7 +239,7 @@ namespace Atlas {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_BASE_COLOR, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
-				auto image = ImageLoader::LoadImage(path, true);
+				auto image = ImageLoader::LoadImage<uint8_t>(path, true);
 
 				material.baseColorMap = new Texture::Texture2D(image.width, image.height, AE_RGB8,
 					GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
@@ -271,7 +271,7 @@ namespace Atlas {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
-				auto image = ImageLoader::LoadImage(path, true);
+				auto image = ImageLoader::LoadImage<uint8_t>(path, true);
 
 				material.baseColorMap = new Texture::Texture2D(image.width, image.height, AE_RGB8,
 					GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);

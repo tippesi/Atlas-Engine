@@ -26,7 +26,7 @@ namespace Atlas {
         Texture2D::Texture2D(std::string filename, bool colorSpaceConversion, bool anisotropicFiltering,
                              bool generateMipMaps, int32_t forceChannels) {
 
-            auto image = Loader::ImageLoader::LoadImage(filename, colorSpaceConversion, forceChannels);
+            auto image = Loader::ImageLoader::LoadImage<uint8_t>(filename, colorSpaceConversion, forceChannels);
 
             int32_t sizedFormat;
 

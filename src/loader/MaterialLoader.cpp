@@ -153,7 +153,7 @@ namespace Atlas {
 				auto prefix = line.substr(0, 3);
 				if (prefix == "BMP") {
 					material->baseColorMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage(material->baseColorMapPath, true, 3);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->baseColorMapPath, true, 3);
 					if (image.width != mapResolution || image.height != mapResolution)
 						image.Resize(mapResolution, mapResolution);
 					material->baseColorMap = new Texture::Texture2D(image.width,
@@ -162,7 +162,7 @@ namespace Atlas {
 				}
 				else if (prefix == "NMP") {
 					material->normalMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage(material->normalMapPath, false, 3);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->normalMapPath, false, 3);
 					if (image.width != mapResolution || image.height != mapResolution)
 						image.Resize(mapResolution, mapResolution);
 					material->normalMap = new Texture::Texture2D(image.width,
@@ -171,7 +171,7 @@ namespace Atlas {
 				}
 				else if (prefix == "RMP") {
 					material->roughnessMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage(material->roughnessMapPath, false, 1);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->roughnessMapPath, false, 1);
 					if (image.width != mapResolution || image.height != mapResolution)
 						image.Resize(mapResolution, mapResolution);
 					material->roughnessMap = new Texture::Texture2D(image.width,
@@ -180,7 +180,7 @@ namespace Atlas {
 				}
 				else if (prefix == "MMP") {
 					material->metalnessMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage(material->metalnessMapPath, false, 1);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->metalnessMapPath, false, 1);
 					if (image.width != mapResolution || image.height != mapResolution)
 						image.Resize(mapResolution, mapResolution);
 					material->metalnessMap = new Texture::Texture2D(image.width,
@@ -189,7 +189,7 @@ namespace Atlas {
 				}
 				else if (prefix == "AMP") {
 					material->aoMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage(material->aoMapPath, false, 1);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->aoMapPath, false, 1);
 					if (image.width != mapResolution || image.height != mapResolution)
 						image.Resize(mapResolution, mapResolution);
 					material->aoMap = new Texture::Texture2D(image.width,
@@ -198,7 +198,7 @@ namespace Atlas {
 				}
 				else if (prefix == "DMP") {
 					material->displacementMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage(material->displacementMapPath, false, 1);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->displacementMapPath, false, 1);
 					if (image.width != mapResolution || image.height != mapResolution)
 						image.Resize(mapResolution, mapResolution);
 					material->displacementMap = new Texture::Texture2D(image.width,

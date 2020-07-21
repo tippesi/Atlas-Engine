@@ -10,7 +10,20 @@
 #include <type_traits>
 
 /**
- * Image file formats
+ * Image file formats.
+ * Not all formats support all image types.
+ * For saving images the following types are supported:
+ * AE_IMAGE_PNG: uint8_t
+ * AE_IMAGE_JPG: uint8_t
+ * AE_IMAGE_BMP: uint8_t
+ * AE_IMAGE_PGM: uint8_t, uint16_t
+ * AE_IMAGE_HDR: float
+ * For reading images the following types are supported:
+ * AE_IMAGE_PNG: uint8_t, uint16_t
+ * AE_IMAGE_JPG: uint8_t
+ * AE_IMAGE_BMP: uint8_t
+ * AE_IMAGE_PGM: uint8_t, uint16_t
+ * AE_IMAGE_HDR: float
  */
 #define AE_IMAGE_PNG 0
 #define AE_IMAGE_JPG 1
@@ -500,6 +513,45 @@ namespace Atlas {
 						}
 					}
 
+				}
+
+			}
+
+			/**
+			 * Converts the image data from gamma to linear color space.
+			 * @note Converting the image data will result in a loss of data
+			 * of the mipmap chain. Call GenerateMipmap() to generate it again.
+			 */
+			void GammaToLinear() {
+
+				auto& data = mipLevels[0].data;
+				int32_t size = int32_t(data.size());
+
+				for (int32_t i = 0; i < size; i++) {
+					// Don't correct the alpha values
+					if (channels == 4 && (i + 1) % 4 == 0)
+						continue;
+
+					float value = float(data[i]);
+
+					if constexpr (std::is_same_v<T, uint8_t>) {
+						value /= 255.0f;
+					}
+					else if constexpr (std::is_same_v<T, uint16_t>) {
+						value /= 65535.0f;
+					}
+
+					value = 0.76f * value * value + 0.24f * value * value * value;
+
+					if constexpr (std::is_same_v<T, uint8_t>) {
+						data[i] = T(value * 255.0f);
+					}
+					else if constexpr (std::is_same_v<T, uint16_t>) {
+						data[i] = T(value * 65535.0f);
+					}
+					else if constexpr (std::is_same_v<T, float>) {
+						data[i] = T(value);
+					}
 				}
 
 			}

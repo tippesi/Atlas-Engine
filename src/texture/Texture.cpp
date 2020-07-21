@@ -197,42 +197,6 @@ namespace Atlas {
 
         }
 
-        void Texture::GammaToLinear(uint8_t* data, int32_t width, int32_t height, int32_t channels) {
-
-            int32_t size = width * height * channels;
-
-            for (int32_t i = 0; i < size; i++) {
-                // Don't correct the alpha values
-                if (channels == 4 && (i + 1) % 4 == 0)
-                    continue;
-
-                float value = (float)data[i] / 255.0f;
-				value = 0.76f * value * value + 0.24f * value * value * value;
-                // Before we can uncorrect it we have to bring it in normalized space
-                data[i] = (uint8_t)(value * 255.0f);
-
-            }
-
-        }
-
-        void Texture::GammaToLinear(uint16_t* data, int32_t width, int32_t height, int32_t channels) {
-
-            int32_t size = width * height * channels;
-
-            for (int32_t i = 0; i < size; i++) {
-                // Don't correct the alpha values
-                if (channels == 4 && (i + 1) % 4 == 0)
-                    continue;
-
-                float value = (float)data[i] / 65535.0f;
-				value = 0.76f * value * value + 0.24f * value * value * value;
-                // Before we can uncorrect it we have to bring it in normalized space
-                data[i] = (uint8_t)(value * 65535.0f);
-
-            }
-
-        }
-
         int32_t Texture::GetChannelCount(int32_t baseFormat) {
 
             switch(baseFormat) {
