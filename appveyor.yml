@@ -71,6 +71,7 @@ for:
   matrix:
     only:
       - job_group: Android build
+        configuration: Release
       
   # Installation of current tools. Needs to be copied into %ANDROID_HOME%/cmdline-tools. 
   # Versions of CMake and NDK might change in the future. Check sdkmanager.bat --list
@@ -81,21 +82,39 @@ for:
     - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --licenses
     - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --install "cmake;3.10.2.4988404" "ndk;18.1.5063045"
   build_script:
-  - ps: |
-      cd dependencies      
-      ./download_dependencies.ps1      
-      cd ../      
-      $env:ANDROID_HOME="C:\\android-sdk-windows"      
-      $env:ANDROID_NDK_HOME="C:\\android-sdk-windows\\ndk-bundle"
-      $env:JAVA_HOME="C:\\Program Files\\Java\\jdk1.8.0"
-      cd platform/android
-      if ($Env:CONFIGURATION -eq "release")      
-      {      
-      ./gradlew.bat assembleRelease --warning-mode=none      
-      }      
-      else      
-      {      
-      ./gradlew.bat assembleDebug --warning-mode=none      
-      }
+    - ps: |
+        cd dependencies      
+        ./download_dependencies.ps1      
+        cd ../      
+        $env:ANDROID_HOME="C:\\android-sdk-windows"      
+        $env:ANDROID_NDK_HOME="C:\\android-sdk-windows\\ndk-bundle"
+        $env:JAVA_HOME="C:\\Program Files\\Java\\jdk1.8.0"
+        cd platform/android    
+    - gradlew.bat assembleRelease --warning-mode=none
+
+-
+  matrix:
+    only:
+      - job_group: Android build
+        configuration: Debug
+      
+  # Installation of current tools. Needs to be copied into %ANDROID_HOME%/cmdline-tools. 
+  # Versions of CMake and NDK might change in the future. Check sdkmanager.bat --list
+  install:
+    - appveyor DownloadFile https://dl.google.com/android/repository/commandlinetools-win-6609375_latest.zip
+    - mkdir C:\android-sdk-windows
+    - 7z x commandlinetools-win-6609375_latest.zip -oC:\android-sdk-windows\cmdline-tools > nul 
+    - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --licenses
+    - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --install "cmake;3.10.2.4988404" "ndk;18.1.5063045"
+  build_script:
+    - ps: |
+        cd dependencies      
+        ./download_dependencies.ps1      
+        cd ../      
+        $env:ANDROID_HOME="C:\\android-sdk-windows"      
+        $env:ANDROID_NDK_HOME="C:\\android-sdk-windows\\ndk-bundle"
+        $env:JAVA_HOME="C:\\Program Files\\Java\\jdk1.8.0"
+        cd platform/android    
+    - gradlew.bat assembleDebug
   
 deploy: off

@@ -119,7 +119,7 @@ namespace Atlas {
 
 		for (int32_t i = font.fontstart; i < codepointCount; i++) {
 
-			if (data[i] == nullptr)
+			if (!data[i])
 				continue;
 
 			auto glyph = &glyphs[i];
@@ -161,7 +161,7 @@ namespace Atlas {
 
 	Glyph *Font::GetGlyph(char character) {
 
-		uint8_t characterIndex = (uint8_t) character;
+		auto characterIndex = size_t(character);
 
 		if (characterIndex > AE_FONT_GLYPH_COUNT)
 			return nullptr;
