@@ -86,9 +86,9 @@ for:
       ./download_dependencies.ps1      
       cd ../      
       $env:ANDROID_HOME="C:\\android-sdk-windows"      
-      $env:ANDROID_NDK_HOME="C:\\android-sdk-windows\\ndk-bundle"      
+      $env:ANDROID_NDK_HOME="C:\\android-sdk-windows\\ndk-bundle"
+      $env:JAVA_HOME="C:\\Program Files\\Java\\jdk1.8.0"
       cd platform/android
-      Write-Host $Env:CONFIGURATION
       if ($Env:CONFIGURATION -eq "release")      
       {      
       ./gradlew.bat assembleRelease --warning-mode=none      
