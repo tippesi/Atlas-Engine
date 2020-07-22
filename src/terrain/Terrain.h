@@ -159,6 +159,10 @@ namespace Atlas {
 			float heightScale;
 			float displacementDistance;
 
+			// Controls the LOD level, when a node is being labeled as detailed
+			// Every LOD >= LodCount - detailNodeIdx is rendered with the detail shader.
+			int32_t detailNodeIdx = 2;
+
 			Buffer::VertexArray vertexArray;
 			Buffer::VertexArray distanceVertexArray;
 			std::vector<TerrainNode*> renderList;

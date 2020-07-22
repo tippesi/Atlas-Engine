@@ -72,8 +72,8 @@ namespace Atlas {
 			for (int32_t x = 0; x < 4; x++) {
 				for (int32_t y = 0; y < 4; y++) {
 					minDistance = glm::min(minDistance, glm::distance(cameraLocation,
-						vec3(location.x + (float)x * sideLength * 0.5f, calcHeight,
-							 location.y + (float)y * sideLength * 0.5f)));
+						vec3(location.x + (float)x * sideLength * 0.3333f, calcHeight,
+							 location.y + (float)y * sideLength * 0.3333f)));
 				}
 			}
 

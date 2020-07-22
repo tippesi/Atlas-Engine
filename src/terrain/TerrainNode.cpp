@@ -44,17 +44,23 @@ namespace Atlas {
 			}
 
 			// We should check every corner and the middle of the node to get the minimal distance
-			float minDistance = glm::distance(cameraLocation, vec3(location.x + sideLength / 2.0f, 
+			float minDistance = glm::distance(cameraLocation, vec3(location.x + sideLength / 2.0f,
 				calcHeight, location.y + sideLength / 2.0f));
 
-			for (int32_t x = 0; x < 4; x++) {
-				for (int32_t y = 0; y < 4; y++) {
-					auto point = vec3(location.x + float(x) * sideLength * 0.5f,
-							0.0f, location.y + float(y) * sideLength * 0.5f);
+			// Check if the camera is inside the current node
+			if (location.x <= cameraLocation.x && location.x + sideLength >= cameraLocation.x &&
+				location.y <= cameraLocation.z && location.y + sideLength >= cameraLocation.z) {
 
-					minDistance = glm::min(minDistance, glm::distance(cameraLocation,
-						vec3(location.x + (float)x * sideLength * 0.5f, calcHeight,
-							 location.y + (float)y * sideLength * 0.5f)));
+				minDistance = abs(cameraLocation.y - calcHeight);
+
+			}
+			else {
+				for (int32_t x = 0; x < 4; x++) {
+					for (int32_t y = 0; y < 4; y++) {
+						minDistance = glm::min(minDistance, glm::distance(cameraLocation,
+							vec3(location.x + float(x) * sideLength * 0.3333f, calcHeight,
+								location.y + float(y) * sideLength * 0.3333f)));
+					}
 				}
 			}
 

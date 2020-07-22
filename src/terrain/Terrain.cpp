@@ -137,9 +137,8 @@ namespace Atlas {
 
 		float Terrain::GetHeight(float x, float z, vec3& normal, vec3& forward) {
 
-			if (x < 0.0f || z < 0.0f || x > sideLength || z > sideLength) {
+			if (x < 0.0f || z < 0.0f || x > sideLength || z > sideLength)
 				return 0.0f;
-			}
 
 			float nodeSideLength = 8.0f * patchSizeFactor * resolution;
 
@@ -149,11 +148,10 @@ namespace Atlas {
 			float xIndex = floorf(x);
 			float zIndex = floorf(z);
 
-			auto cell = storage->GetCell((int32_t) xIndex, (int32_t) zIndex, LoDCount - 1);
+			auto cell = storage->GetCell(int32_t(xIndex), int32_t(zIndex), LoDCount - 1);
 
-			if (!cell) {
+			if (!cell)
 				return 0.0f;
-			}
 
 			x -= xIndex;
 			z -= zIndex;
@@ -168,8 +166,8 @@ namespace Atlas {
 			auto xCoord = x - xIndex;
 			auto zCoord = z - zIndex;
 
-			int32_t xPosition = (int32_t) xIndex;
-			int32_t zPosition = (int32_t) zIndex;
+			int32_t xPosition = int32_t(xIndex);
+			int32_t zPosition = int32_t(zIndex);
 
 			float height = 0.0f;
 
