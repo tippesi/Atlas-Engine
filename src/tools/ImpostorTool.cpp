@@ -101,8 +101,6 @@ namespace Atlas {
 			impostor->roughnessMetalnessAoTexture.GenerateMipmap();
 			impostor->normalTexture.GenerateMipmap();
 
-			glFlush();
-
 			return impostor;
 
 		}

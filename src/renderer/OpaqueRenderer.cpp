@@ -288,6 +288,8 @@ namespace Atlas {
 				impostor->roughnessMetalnessAoTexture.Copy(*framebuffer->GetComponentTexture(GL_COLOR_ATTACHMENT3),
 					0, 0, 0, 0, 0, (int32_t)i, impostor->resolution, impostor->resolution, 1);
 
+				glFlush();
+
 			}
 
 			// Iterate through shaders and remove macro

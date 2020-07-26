@@ -31,26 +31,19 @@ const ivec2 offsets[9] = ivec2[9](
 
 vec3 neighbourhood[9];
 
+
+const mat3 RGBToYCoCgMatrix = mat3(0.25, 0.5, -0.25, 0.5, 0.0, 0.5, 0.25, -0.5, -0.25);
+const mat3 YCoCgToRGBMatrix = mat3(1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, 1.0, -1.0);
+
 vec3 RGBToYCoCg(vec3 RGB) {
 
-    float Y = dot(RGB, vec3(1, 2,  1)) * 0.25;
-    float Co = dot(RGB, vec3(2, 0, -2)) * 0.25;
-	float Cg = dot(RGB, vec3(-1, 2, -1)) * 0.25;
-
-    return vec3(Y, Co, Cg);
+	return RGBToYCoCgMatrix * RGB;
 
 }
 
 vec3 YCoCgToRGB(vec3 YCoCg) {
 
-    float Y = YCoCg.x;
-	float Co = YCoCg.y;
-	float Cg = YCoCg.z;
-	float R = Y + Co - Cg;
-	float G = Y + Cg;
-	float B = Y - Co - Cg;
-
-    return vec3(R, G, B);
+	return YCoCgToRGBMatrix * YCoCg;
 
 }
 
