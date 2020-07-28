@@ -20,7 +20,7 @@ namespace Atlas {
 
             explicit AudioData(std::string filename);
 
-			void ApplyFormat(SDL_AudioSpec& formatSpec);
+			void ApplyFormat(const SDL_AudioSpec& formatSpec);
 
             bool Convert(uint32_t frequency, uint8_t channels, uint32_t format);
 

@@ -57,12 +57,12 @@ namespace Atlas {
 
             /**
              * Returns a Uniform object for a specific uniform of the shader.
-             * @param uniformName The name of the uniform.
+             * @param name The name of the uniform.
              * @return A pointer to a Uniform object if valid. Nullptr otherwise.
              * @note All uniforms are managed by the shader. This means that
              * they get released from memory if the shader gets destructed.
              */
-            Uniform* GetUniform(const std::string& uniformName);
+            Uniform* GetUniform(const std::string& name);
 
             /**
              * Adds a macro to the shader.

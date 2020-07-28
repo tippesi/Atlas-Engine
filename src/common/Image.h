@@ -85,7 +85,7 @@ namespace Atlas {
 			 * @note Updating the data won't result in an update of
 			 * the mipmap chain. Always call GenerateMipmap() for that.
 			 */
-			void SetData(std::vector<T>& data) {
+			void SetData(const std::vector<T>& data) {
 
 				mipLevels[0].data = data;
 
@@ -304,47 +304,46 @@ namespace Atlas {
 			 */
 			void GenerateMipmap() {
 
-				auto width = this->width;
-				auto height = this->height;
+				ivec2 dim = ivec2(width, height);
 
 				// Max mipmap level count
-				auto mipLevel = size_t(floor(log2(glm::max(float(width),
-					float(height))))) + 1;
+				auto mipLevel = size_t(floor(log2(glm::max(float(dim.x),
+					float(dim.y))))) + 1;
 
 				mipLevels.resize(mipLevel);
 
 				for (int32_t i = 0; i < mipLevels.size(); i++) {
-					mipLevels[i].width = width;
-					mipLevels[i].height = height;
-					mipLevels[i].data.resize(width * height * channels);
-					width /= 2;
-					height /= 2;
+					mipLevels[i].width = dim.x;
+					mipLevels[i].height = dim.y;
+					mipLevels[i].data.resize(dim.x * dim.y * channels);
+					dim.x /= 2;
+					dim.y /= 2;
 				}
 
 				for (int32_t i = 1; i < mipLevels.size(); i++) {
-					width /= 2;
-					height /= 2;
+					dim.x /= 2;
+					dim.y /= 2;
 					if constexpr (std::is_same_v<T, uint8_t>) {
-						stbir_resize_uint8_generic(mipLevels[i - 1].data.data(), width * 2,
-							height * 2, width * 2 * channels,
-							mipLevels[i].data.data(), width,
-							height, width * channels, channels, -1, 0,
+						stbir_resize_uint8_generic(mipLevels[i - 1].data.data(), dim.x * 2,
+							dim.y * 2, dim.x * 2 * channels,
+							mipLevels[i].data.data(), dim.x,
+							dim.y, dim.x * channels, channels, -1, 0,
 							STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT,
 							STBIR_COLORSPACE_LINEAR, nullptr);
 					}
 					else if constexpr (std::is_same_v<T, uint16_t>) {
-						stbir_resize_uint16_generic(mipLevels[i - 1].data.data(), width * 2,
-							height * 2, width * 4 * channels,
-							mipLevels[i].data.data(), width,
-							height, width * 2 * channels, channels, -1, 0,
+						stbir_resize_uint16_generic(mipLevels[i - 1].data.data(), dim.x * 2,
+							dim.y * 2, dim.x * 4 * channels,
+							mipLevels[i].data.data(), dim.x,
+							dim.y, dim.x * 2 * channels, channels, -1, 0,
 							STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT,
 							STBIR_COLORSPACE_LINEAR, nullptr);
 					}
 					else if constexpr (std::is_same_v<T, float>) {
-						stbir_resize_float_generic(mipLevels[i - 1].data.data(), width * 2,
-							height * 2, width * 8 * channels,
-							mipLevels[i].data.data(), width,
-							height, width * 4 * channels, channels, -1, 0,
+						stbir_resize_float_generic(mipLevels[i - 1].data.data(), dim.x * 2,
+							dim.y * 2, dim.x * 8 * channels,
+							mipLevels[i].data.data(), dim.x,
+							dim.y, dim.x * 4 * channels, channels, -1, 0,
 							STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT,
 							STBIR_COLORSPACE_LINEAR, nullptr);
 					}

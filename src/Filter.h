@@ -41,7 +41,8 @@ namespace Atlas {
          * @param separable Whether or not the convolution matrix is separable
          * @note The size of the weights and the offsets should be odd in every dimension.
          */
-        void Set(std::vector<std::vector<float>>& weights, std::vector<std::vector<ivec2>>& offsets, bool separable = false);
+        void Set(const std::vector<std::vector<float>>& weights, 
+			const std::vector<std::vector<ivec2>>& offsets, bool separable = false);
 
         /**
          * Returns the convolution matrix.
@@ -49,7 +50,8 @@ namespace Atlas {
          * @param offsets A pointer to an offset matrix which will contain the offsets.
          * @note The input pointers should point to allocated memory.
          */
-        void Get(std::vector<std::vector<float>>* weights, std::vector<std::vector<ivec2>>* offsets) const;
+        void Get(std::vector<std::vector<float>>* weights, 
+			std::vector<std::vector<ivec2>>* offsets) const;
 
         /**
          * Returns the linearized convolution matrix.

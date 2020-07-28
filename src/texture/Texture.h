@@ -190,7 +190,7 @@ namespace Atlas {
              * @param data The data to be flipped.
 			 * @return The flipped data.
              */
-			std::vector<uint8_t> FlipDataHorizontally(std::vector<uint8_t>& data);
+			std::vector<uint8_t> FlipDataHorizontally(const std::vector<uint8_t>& data);
 
             void Generate(uint32_t target, int32_t sizedFormat, int32_t wrapping,
                           int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);

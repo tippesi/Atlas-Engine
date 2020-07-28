@@ -60,7 +60,7 @@ namespace Atlas {
 
 	}
 
-	void Filter::Set(std::vector<std::vector<float>> &weights, std::vector<std::vector<ivec2>> &offsets, bool separable) {
+	void Filter::Set(const std::vector<std::vector<float>> &weights, const std::vector<std::vector<ivec2>> &offsets, bool separable) {
 
 		this->weights = weights;
 		this->offsets = offsets;

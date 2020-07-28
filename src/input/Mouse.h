@@ -51,8 +51,8 @@ namespace Atlas {
 
 			vec2 rotation = vec2(0.0f);
 
-			int32_t mouseMotionEventHandle;
-			int32_t mouseButtonEventHandle;
+			int32_t mouseMotionEventHandle = -1;
+			int32_t mouseButtonEventHandle = -1;
 
 		};
 

@@ -7,6 +7,8 @@
 
 #include "../libraries/perlin noise/PerlinNoise.h"
 
+#include <algorithm>
+
 namespace Atlas {
 
 	namespace Common {
@@ -41,10 +43,7 @@ namespace Atlas {
 
 				auto& data = image.GetData();
 
-				auto amplitude = 0.0f;
-
-				for (auto ampli : amplitudes)
-					amplitude += ampli;
+				auto amplitude = std::accumulate(amplitudes.begin(), amplitudes.end(), 0.0f);
 
 				amplitude = 1.0f / amplitude;
 

@@ -2,10 +2,12 @@
 #define AE_EVENTDELEGATE_H
 
 #include "../System.h"
+
 #include <functional>
 #include <map>
 #include <mutex>
 #include <vector>
+#include <algorithm>
 
 namespace Atlas {
 
@@ -87,9 +89,8 @@ namespace Atlas {
 
 			auto copy = std::vector<std::function<void(Args ...)>>();
 
-			for (const auto &handleKey : handler) {
-				copy.push_back(handleKey.second);
-			}
+			std::transform(handler.begin(), handler.end(), std::back_inserter(copy),
+				[](const auto& it) -> std::function<void(Args ...)> { return it.second; });
 
 			lock.unlock();
 

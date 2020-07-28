@@ -127,7 +127,7 @@ namespace Atlas {
 
         }
 
-		void AudioManager::Mix(std::vector<int16_t>& dest, std::vector<int16_t>& src) {
+		void AudioManager::Mix(std::vector<int16_t>& dest, const std::vector<int16_t>& src) {
 
 			const int16_t maxAudioValue = ((1 << (16 - 1)) - 1);
 			const int16_t minAudioValue = -(1 << (16 - 1));

@@ -50,7 +50,7 @@ namespace Atlas {
 
         }
 
-		void AudioData::ApplyFormat(SDL_AudioSpec& formatSpec) {
+		void AudioData::ApplyFormat(const SDL_AudioSpec& formatSpec) {
 
 			if (formatSpec.channels == spec.channels &&  formatSpec.format == spec.format &&
 				formatSpec.freq == spec.freq) {

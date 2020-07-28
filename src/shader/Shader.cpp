@@ -46,26 +46,28 @@ namespace Atlas {
 
         ShaderStage* Shader::GetStage(int32_t type) {
 
-            for (auto& stage : stages) {
-                if (stage->type == type) {
-                    return stage;
-                }
-            }
+			auto it = std::find_if(stages.begin(), stages.end(),
+				[type](const auto& stage) { return stage->type == type; });
+
+			if (it != stages.end())
+				return *it;
 
             return nullptr;
 
         }
 
-        Uniform* Shader::GetUniform(const std::string& uniformName) {
+        Uniform* Shader::GetUniform(const std::string& name) {
 
 			// Check if we have the uniform cached
-			for (auto& uniform : uniforms)
-				if (uniform->name == uniformName)
-					return uniform;
+			auto it = std::find_if(uniforms.begin(), uniforms.end(),
+				[name](const auto& uniform) { return uniform->name == name; });
+
+			if (it != uniforms.end())
+				return *it;
 			
             Bind();
 
-            Uniform* uniform = new Uniform(ID, uniformName);
+            Uniform* uniform = new Uniform(ID, name);
 
             uniforms.push_back(uniform);
 

@@ -25,7 +25,7 @@ namespace Atlas {
              * @note The shader will be managed by the shader configuration batch.
              * This means that it wiil be released from memory if the batch gets destructed.
              */
-			ShaderConfigBatch(Shader* shader);
+			explicit ShaderConfigBatch(Shader* shader);
 
 			/**
              * Destructs a ShaderConfigBatch object.

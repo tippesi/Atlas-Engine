@@ -59,7 +59,7 @@ namespace Atlas {
              * @note All uniforms are managed by the shader batch. This means that
              * they get released from memory if the shader batch gets destructed.
              */
-			Uniform* GetUniform(std::string uniformName);
+			Uniform* GetUniform(const std::string name);
 
 			/**
 			 * Binds the shader of a config batch.

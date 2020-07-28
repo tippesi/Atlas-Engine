@@ -106,22 +106,23 @@ namespace Atlas {
 
 		}
 
-		Uniform* ShaderBatch::GetUniform(std::string uniformName) {
+		Uniform* ShaderBatch::GetUniform(const std::string name) {
 
 			// Check if equivalent uniform exists
-			for (auto uniform : uniforms) {
-				if (uniform->name == uniformName)
-					return uniform;
-			}
+			auto it = std::find_if(uniforms.begin(), uniforms.end(),
+				[name](const auto& uniform) { return uniform->name == name; });
+
+			if (it != uniforms.end())
+				return *it;
 
 			for (auto batchKey : configBatches) {
-				batchKey.second->GetShader()->GetUniform(uniformName);
+				batchKey.second->GetShader()->GetUniform(name);
 			}
 
 			// We don't care about the shader ID because the uniform object
 			// is just a layer of abstraction for the renderer unlike the create
 			// uniforms in the loop above.
-			auto uniform = new Uniform(0, uniformName, this, (int32_t)uniforms.size());
+			auto uniform = new Uniform(0, name, this, (int32_t)uniforms.size());
 			uniforms.push_back(uniform);
 
 			return uniform;

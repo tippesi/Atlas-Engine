@@ -53,9 +53,9 @@ namespace Atlas {
 
 			int32_t controllerDevice = -1;
 
-			int32_t controllerAxisEventHandle;
-			int32_t controllerButtonEventHandle;
-			int32_t controllerDeviceEventHandle;
+			int32_t controllerAxisEventHandle = -1;
+			int32_t controllerButtonEventHandle = -1;
+			int32_t controllerDeviceEventHandle = -1;
 
 		};
 

@@ -178,14 +178,14 @@ namespace Atlas {
 
 		bool hasFocus = false;
 
-		int32_t windowEventSubcriberID;
-		int32_t keyboardEventSubscriberID;
-		int32_t mouseButtonEventSubscriberID;
-		int32_t mouseMotionEventSubscriberID;
-		int32_t mouseWheelEventSubscriberID;
-		int32_t controllerAxisEventSubscriberID;
-		int32_t controllerButtonEventSubscriberID;
-		int32_t dropEventSubscriberID;
+		int32_t windowEventSubcriberID = -1;
+		int32_t keyboardEventSubscriberID = -1;
+		int32_t mouseButtonEventSubscriberID = -1;
+		int32_t mouseMotionEventSubscriberID = -1;
+		int32_t mouseWheelEventSubscriberID = -1;
+		int32_t controllerAxisEventSubscriberID = -1;
+		int32_t controllerButtonEventSubscriberID = -1;
+		int32_t dropEventSubscriberID = -1;
 
 	};
 

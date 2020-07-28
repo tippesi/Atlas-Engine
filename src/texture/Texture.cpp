@@ -237,7 +237,7 @@ namespace Atlas {
 
         }
 
-		std::vector<uint8_t> Texture::FlipDataHorizontally(std::vector <uint8_t> &data) {
+		std::vector<uint8_t> Texture::FlipDataHorizontally(const std::vector <uint8_t> &data) {
 
             auto invertedData = std::vector<uint8_t>(width * height * channels);
 

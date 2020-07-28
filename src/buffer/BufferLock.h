@@ -44,7 +44,7 @@ namespace Atlas {
                 size_t offset;
                 size_t length;
 
-                bool Overlaps(LockRange& range) {
+                bool Overlaps(const LockRange& range) {
                     return offset < range.offset + range.length
                            && range.offset < offset + length;
                 }

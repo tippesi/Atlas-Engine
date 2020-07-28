@@ -114,7 +114,7 @@ namespace Atlas {
 
 						for (size_t i = 0; i < copy.size(); i++) {
 
-							auto texture = copy[i];
+							texture = copy[i];
 
 							ivec2 remain = ivec2(width, height) - offset;
 							ivec2 texSize = ivec2(texture->width, texture->height);

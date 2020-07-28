@@ -39,7 +39,7 @@ namespace Atlas {
 			vec3 location = vec3(0.0f);
 			vec2 movement = vec2(0.0f);
 
-			int32_t eventHandle;
+			int32_t eventHandle = -1;
 
 		};
 
