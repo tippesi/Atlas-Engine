@@ -1,13 +1,18 @@
-struct complex {
+/**
+ * Implements complex number.
+ */
+
+
+struct Complex {
 
 	float real;
 	float imag;
 
 };
 
-complex mul(complex c0, complex c1) {
+Complex mul(Complex c0, Complex c1) {
 
-	complex c;
+	Complex c;
 	c.real = c0.real * c1.real - c0.imag * c1.imag;
 	c.imag = c0.real * c1.imag + c0.imag * c1.real;
 	return c;
@@ -28,17 +33,15 @@ vec4 mul(vec4 c0, vec4 c1) {
 		);
 }
 
-complex add(complex c0, complex c1) {
+Complex add(Complex c0, Complex c1) {
 
-	complex c;
-	c.real = c0.real + c1.real;
-	c.imag = c0.imag + c1.imag;
-	return c;
+	return Complex(c0.real + c1.real,
+		c0.imag + c1.imag);
 
 }
 
-complex conj(complex c) {
+Complex conj(Complex c) {
 
-	return complex(c.real, -c.imag);
+	return Complex(c.real, -c.imag);
 
 }

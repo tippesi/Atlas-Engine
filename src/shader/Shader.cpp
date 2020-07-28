@@ -1,6 +1,8 @@
 #include "Shader.h"
 #include "../Log.h"
 
+#include <algorithm>
+
 namespace Atlas {
 
 	namespace Shader {
@@ -89,25 +91,19 @@ namespace Atlas {
                 stage->RemoveMacro(macro);
             }
 
-            for (auto iterator = macros.begin(); iterator != macros.end(); iterator++) {
-                if (macro == *iterator) {
-                    macros.erase(iterator);
-                    isCompiled = false;
-                    return;
-                }
-            }
+			auto it = std::find(macros.begin(), macros.end(), macro);
+
+			if (it != macros.end()) {
+				macros.erase(it);
+				isCompiled = false;
+			}
 
         }
 
         bool Shader::HasMacro(const std::string& macro) {
 
-            for (auto& compMacro : macros) {
-                if (compMacro == macro) {
-                    return true;
-                }
-            }
-
-            return false;
+			return std::any_of(macros.begin(), macros.end(),
+				[macro](const auto& value) { return value == macro; });
 
         }
 

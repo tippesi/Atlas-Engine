@@ -33,10 +33,7 @@ namespace Atlas {
 				return;
 			}
 
-			std::sort(config->macros.begin(), config->macros.end());
-
-			for (auto configBatchKey : configBatches) {
-				auto configBatch = configBatchKey.second;
+			for (auto& [key, configBatch] : configBatches) {
 				if (configBatch->GetShader()->macros.size() != config->macros.size()) {
 					continue;
 				}

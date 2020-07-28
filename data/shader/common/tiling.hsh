@@ -1,0 +1,41 @@
+/**
+ * Can be used to control the execution order of work groups in compute shaders.
+ * See https://developer.nvidia.com/blog/optimizing-compute-shaders-for-l2-locality-using-thread-group-id-swizzling/ for more.
+ * Needs more testing, doesn't seem to improve anything (Maybe shaders not L2 limited)
+ */
+
+#include <indexing.hsh>
+
+// Right now this only works in x direction
+// and only when the group size has two dimensions
+ ivec2 GetGroupOffset2D(int tileGroupCount) {
+
+     ivec2 columnSize = ivec2(tileGroupCount, int(gl_NumWorkGroups.y));
+     int groupIndex = vec2ToIndex(ivec2(gl_WorkGroupID), ivec2(gl_NumWorkGroups));
+
+     int columnCount = columnSize.x * columnSize.y;
+     int columnOffset = groupIndex / columnCount;
+
+     groupIndex %= columnCount;
+
+     return (indexToVec2(groupIndex, columnSize) + 
+        ivec2(columnOffset * columnSize.x, 0)) * ivec2(gl_WorkGroupSize);
+
+ }
+
+ // Right now this only works in x direction
+// and only when the group size has two dimensions
+ ivec2 GetGroupOffset1D(int tileGroupCount) {
+
+     ivec2 columnSize = ivec2(tileGroupCount, int(gl_NumWorkGroups.y));
+     int groupIndex = int(gl_WorkGroupID.x);
+
+     int columnCount = columnSize.x * columnSize.y;
+     int columnOffset = groupIndex / columnCount;
+
+     groupIndex %= columnCount;
+
+     return (indexToVec2(groupIndex, columnSize) + 
+        ivec2(columnOffset * columnSize.x, 0)) * ivec2(gl_WorkGroupSize);
+
+ }

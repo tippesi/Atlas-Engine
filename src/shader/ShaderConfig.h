@@ -22,7 +22,7 @@ namespace Atlas {
 			/**
              * Constructs a ShaderConfig object.
              */
-			ShaderConfig();
+			ShaderConfig() = default;
 
 			/**
              * Adds a macro to the config.
@@ -48,10 +48,10 @@ namespace Atlas {
              */
 			void ClearMacros();
 
-			int32_t shaderID;
+			int32_t shaderID = 0;
 			std::vector<std::string> macros;
 
-			bool added;
+			bool added = false;
 
 		};
 

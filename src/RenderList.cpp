@@ -12,10 +12,10 @@ namespace Atlas {
 
 	void RenderList::Add(Actor::MeshActor *actor) {
 
-		auto actorBatchKey = actorBatches.find(actor->mesh);
+		auto actorBatchIt = actorBatches.find(actor->mesh);
 
-		if (actorBatchKey != actorBatches.end()) {
-			actorBatchKey->second->Add(actor);
+		if (actorBatchIt != actorBatches.end()) {
+			actorBatchIt->second->Add(actor);
 			return;
 		}
 
@@ -58,9 +58,7 @@ namespace Atlas {
 
 		auto cameraLocation = camera->GetLocation();
 
-		for (auto& actorBatchKey : actorBatches) {
-			auto mesh = actorBatchKey.first;
-			auto actorBatch = actorBatchKey.second;
+		for (auto& [mesh, actorBatch] : actorBatches) {
 			auto hasImpostor = mesh->impostor != nullptr;
 
 			if (!actorBatch->GetSize())
@@ -93,8 +91,8 @@ namespace Atlas {
 
 			if (currentActorMatrices.size()) {
 				ActorBatchBuffer buffers;
-				auto key = actorBatchBuffers.find(mesh);
-				if (key == actorBatchBuffers.end()) {
+				auto it = actorBatchBuffers.find(mesh);
+				if (it == actorBatchBuffers.end()) {
 					buffers.currentMatrices = new Buffer::VertexBuffer(AE_FLOAT, 16,
 						sizeof(mat4), currentActorMatrices.size(), currentActorMatrices.data(),
 						AE_BUFFER_DYNAMIC_STORAGE);
@@ -104,7 +102,7 @@ namespace Atlas {
 					actorBatchBuffers[mesh] = buffers;
 				}
 				else {
-					buffers = key->second;
+					buffers = it->second;
 					buffers.currentMatrices->SetSize(currentActorMatrices.size(),
 						currentActorMatrices.data());
 					buffers.lastMatrices->SetSize(lastActorMatrices.size(),
@@ -137,28 +135,28 @@ namespace Atlas {
 
 	void RenderList::Clear() {
 
-		for (auto& key : actorBatches) {
-			auto buffer = actorBatchBuffers.find(key.first);
+		for (auto& [mesh, actorBatch] : actorBatches) {
+			auto buffer = actorBatchBuffers.find(mesh);
 			if (!buffer->second.currentMatrices)
 				continue;
 			if (buffer != actorBatchBuffers.end() && buffer->second.currentMatrices->GetSize() > 0) {
-				key.first->vertexArray.RemoveInstanceComponent(4);
-				key.first->vertexArray.RemoveInstanceComponent(8);
+				mesh->vertexArray.RemoveInstanceComponent(4);
+				mesh->vertexArray.RemoveInstanceComponent(8);
 			}
-			delete key.second;
+			delete actorBatch;
 		}
 
-		for (auto& key : actorBatchBuffers) {
-			if (!key.second.currentMatrices)
+		for (auto& [mesh, actorBatchBuffer] : actorBatchBuffers) {
+			if (!actorBatchBuffer.currentMatrices)
 				continue;
-			key.second.currentMatrices->SetSize(0);
-			key.second.lastMatrices->SetSize(0);
+			actorBatchBuffer.currentMatrices->SetSize(0);
+			actorBatchBuffer.lastMatrices->SetSize(0);
 		}
 
-		for (auto& key : impostorBuffers) {
-			if (!key.second)
+		for (auto& [mesh, impostorBuffer] : impostorBuffers) {
+			if (!impostorBuffer)
 				continue;
-			key.second->SetSize(0);
+			impostorBuffer->SetSize(0);
 		}
 
 		actorBatches.clear();

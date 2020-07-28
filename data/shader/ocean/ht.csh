@@ -30,30 +30,30 @@ void main() {
 	
 	float w = sqrt(g * k);
 	
-	complex h0k = complex(imageLoad(h0K, ivec2(gl_GlobalInvocationID.xy)).r,
+	Complex h0k = Complex(imageLoad(h0K, ivec2(gl_GlobalInvocationID.xy)).r,
 		imageLoad(h0K, ivec2(gl_GlobalInvocationID.xy)).g);
-	complex h0mk = conj(complex(imageLoad(h0K, ivec2(gl_GlobalInvocationID.xy)).b,
+	Complex h0mk = conj(Complex(imageLoad(h0K, ivec2(gl_GlobalInvocationID.xy)).b,
 		imageLoad(h0K, ivec2(gl_GlobalInvocationID.xy)).a));
 		
 	float c = cos(w * time);
 	float s = sin(w * time);
 	
-	complex eiwt = complex(c, s);
-	complex eiwtConj = complex(c, -s);
+	Complex eiwt = Complex(c, s);
+	Complex eiwtConj = Complex(c, -s);
 	
-	complex hkt_dy = add(mul(h0k, eiwt), mul(h0mk, eiwtConj));
+	Complex hkt_dy = add(mul(h0k, eiwt), mul(h0mk, eiwtConj));
 	
-	complex dx = complex(0.0, -waveVector.x / k);
-	complex hkt_dx = mul(dx, hkt_dy);
+	Complex dx = Complex(0.0, -waveVector.x / k);
+	Complex hkt_dx = mul(dx, hkt_dy);
 	
-	complex dz = complex(0.0, -waveVector.y / k);
-	complex hkt_dz = mul(dz, hkt_dy);
+	Complex dz = Complex(0.0, -waveVector.y / k);
+	Complex hkt_dz = mul(dz, hkt_dy);
 	
 	if (waveVector.x == 0.0 &&
 		waveVector.y == 0.0) {
-		hkt_dy = complex(0.0, 0.0);
-		hkt_dx = complex(0.0, 0.0);
-		hkt_dz = complex(0.0, 0.0);
+		hkt_dy = Complex(0.0, 0.0);
+		hkt_dx = Complex(0.0, 0.0);
+		hkt_dz = Complex(0.0, 0.0);
 	}
 	
 	imageStore(hTDy, ivec2(gl_GlobalInvocationID.xy), 

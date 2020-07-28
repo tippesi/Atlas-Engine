@@ -4,6 +4,8 @@
 #include "../System.h"
 #include "Renderer.h"
 
+#include "../shader/ShaderBatch.h"
+
 namespace Atlas {
 
 	namespace Renderer {
@@ -21,8 +23,6 @@ namespace Atlas {
 		private:
 			void GetUniforms();
 
-			void GetDistanceUniforms();
-
 			struct TerrainMaterial {
 				uint32_t idx;
 				
@@ -36,12 +36,13 @@ namespace Atlas {
 				float padding1;
 			};
 
-			Shader::Shader shader;
-			Shader::Shader distanceShader;
+			Shader::ShaderBatch shaderBatch;
+
+			Shader::ShaderConfig detailConfig;
+			Shader::ShaderConfig distanceConfig;
 
 			Buffer::Buffer terrainMaterialBuffer;
 
-			// Near shader uniforms
 			Shader::Uniform* heightScale = nullptr;
 			Shader::Uniform* offset = nullptr;
 			Shader::Uniform* tileScale = nullptr;
@@ -72,30 +73,6 @@ namespace Atlas {
 			Shader::Uniform* pvMatrixLast = nullptr;
 			Shader::Uniform* jitterLast = nullptr;
 			Shader::Uniform* jitterCurrent = nullptr;
-
-			// Distance shader uniforms
-			Shader::Uniform* distanceHeightScale = nullptr;
-			Shader::Uniform* distanceTileScale = nullptr;
-			Shader::Uniform* distanceViewMatrix = nullptr;
-			Shader::Uniform* distanceProjectionMatrix = nullptr;
-			Shader::Uniform* distanceNodeSideLength = nullptr;
-			Shader::Uniform* distanceNodeLocation = nullptr;
-
-			Shader::Uniform* distanceLeftLoD = nullptr;
-			Shader::Uniform* distanceTopLoD = nullptr;
-			Shader::Uniform* distanceRightLoD = nullptr;
-			Shader::Uniform* distanceBottomLoD = nullptr;
-
-			Shader::Uniform* distancePatchSize = nullptr;
-
-			Shader::Uniform* distanceCameraLocation = nullptr;
-			Shader::Uniform* distanceFrustumPlanes = nullptr;
-
-			Shader::Uniform* distanceNormalTexelSize = nullptr;
-
-			Shader::Uniform* distancePvMatrixLast = nullptr;
-			Shader::Uniform* distanceJitterLast = nullptr;
-			Shader::Uniform* distanceJitterCurrent = nullptr;
 
 		};
 

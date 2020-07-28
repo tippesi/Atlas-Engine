@@ -1,6 +1,7 @@
-#include <common/sample.hsh>
-
 layout (local_size_x = 8, local_size_y = 8) in;
+
+#include <common/sample.hsh>
+#include <common/tiling.hsh>
 
 layout (binding = 0, rgba8) writeonly uniform image2D textureOut;
 layout (binding = 1) uniform sampler2D textureIn;
@@ -10,7 +11,8 @@ uniform float sharpenFactor;
 void main() {
 
 	ivec2 size = textureSize(textureIn, 0);
-	ivec2 coord = ivec2(gl_GlobalInvocationID);
+	ivec2 groupOffset = GetGroupOffset2D(8);
+	ivec2 coord = ivec2(gl_LocalInvocationID) + groupOffset;
 	
 	if (coord.x < size.x &&
 		coord.y < size.y) {

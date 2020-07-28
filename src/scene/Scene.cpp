@@ -71,8 +71,8 @@ namespace Atlas {
 			std::vector<Mesh::Mesh*> meshes;
 
 			// Not really efficient, but does the job
-			for (auto& key : rootMeshMap) {
-				meshes.push_back(key.first);
+			for (auto& [mesh, count] : rootMeshMap) {
+				meshes.push_back(mesh);
 			}
 
 			return meshes;

@@ -43,10 +43,10 @@ namespace Atlas {
 				node->RemoveFromScene();
 			}
 
-			auto item = std::find(childNodes.begin(), childNodes.end(), node);
+			auto it = std::find(childNodes.begin(), childNodes.end(), node);
 
-			if (item != childNodes.end()) {
-				childNodes.erase(item);
+			if (it != childNodes.end()) {
+				childNodes.erase(it);
 			}
 
 		}
@@ -65,10 +65,10 @@ namespace Atlas {
 				spacePartitioning->Remove(actor);
 			}
 
-			auto item = std::find(movableMeshActors.begin(), movableMeshActors.end(), actor);
+			auto it = std::find(movableMeshActors.begin(), movableMeshActors.end(), actor);
 
-			if (item != movableMeshActors.end()) {
-				movableMeshActors.erase(item);
+			if (it != movableMeshActors.end()) {
+				movableMeshActors.erase(it);
 			}
 
 			RemoveInternal(actor);
@@ -89,10 +89,10 @@ namespace Atlas {
 				spacePartitioning->Remove(actor);
 			}
 
-			auto item = std::find(staticMeshActors.begin(), staticMeshActors.end(), actor);
+			auto it = std::find(staticMeshActors.begin(), staticMeshActors.end(), actor);
 
-			if (item != staticMeshActors.end()) {
-				staticMeshActors.erase(item);
+			if (it != staticMeshActors.end()) {
+				staticMeshActors.erase(it);
 			}
 
 			RemoveInternal(actor);
@@ -111,10 +111,10 @@ namespace Atlas {
 				spacePartitioning->Remove(actor);
 			}
 
-			auto item = std::find(decalActors.begin(), decalActors.end(), actor);
+			auto it = std::find(decalActors.begin(), decalActors.end(), actor);
 
-			if (item != decalActors.end()) {
-				decalActors.erase(item);
+			if (it != decalActors.end()) {
+				decalActors.erase(it);
 			}
 
 		}
@@ -133,10 +133,10 @@ namespace Atlas {
 				spacePartitioning->Remove(actor);
 			}
 
-			auto item = std::find(audioActors.begin(), audioActors.end(), actor);
+			auto it = std::find(audioActors.begin(), audioActors.end(), actor);
 
-			if (item != audioActors.end()) {
-				audioActors.erase(item);
+			if (it != audioActors.end()) {
+				audioActors.erase(it);
 			}
 
 			Atlas::Audio::AudioManager::RemoveMusic(actor);
@@ -159,10 +159,10 @@ namespace Atlas {
 				spacePartitioning->Remove(light);
 			}
 
-			auto item = std::find(lights.begin(), lights.end(), light);
+			auto it = std::find(lights.begin(), lights.end(), light);
 
-			if (item != lights.end()) {
-				lights.erase(item);
+			if (it != lights.end()) {
+				lights.erase(it);
 			}
 
 		}
@@ -428,13 +428,13 @@ namespace Atlas {
 			if (!sceneSet)
 				return;
 
-			auto res = meshMap->find(actor->mesh);
+			auto& it = meshMap->find(actor->mesh);
 
-			if (res == meshMap->end()) {
+			if (it == meshMap->end()) {
 				(*meshMap)[actor->mesh] = 1;
 			}
 			else {
-				res->second++;
+				it->second++;
 			}
 
 		}
@@ -444,15 +444,15 @@ namespace Atlas {
 			if (!sceneSet)
 				return;
 
-			auto res = meshMap->find(actor->mesh);
+			auto it = meshMap->find(actor->mesh);
 
-			if (res == meshMap->end())
+			if (it == meshMap->end())
 				return;
 
-			res->second--;
+			it->second--;
 
-			if (!res->second) {
-				meshMap->erase(res->first);
+			if (!it->second) {
+				meshMap->erase(it->first);
 			}
 
 		}

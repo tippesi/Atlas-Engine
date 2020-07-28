@@ -142,10 +142,10 @@ namespace Atlas {
 
 		std::lock_guard<std::mutex> guard(materialMutex);
 
-		auto item = std::find(materials.begin(), materials.end(), material);
+		auto it = std::find(materials.begin(), materials.end(), material);
 
-		if (item != materials.end()) {
-			materials.erase(item);
+		if (it != materials.end()) {
+			materials.erase(it);
 		}
 
 	}
@@ -154,10 +154,10 @@ namespace Atlas {
 
 		std::lock_guard<std::mutex> guard(terrainMutex);
 
-		auto item = std::find(terrains.begin(), terrains.end(), terrain);
+		auto it = std::find(terrains.begin(), terrains.end(), terrain);
 
-		if (item != terrains.end()) {
-			terrains.erase(item);
+		if (it != terrains.end()) {
+			terrains.erase(it);
 		}
 
 	}
