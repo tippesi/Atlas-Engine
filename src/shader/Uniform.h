@@ -23,7 +23,7 @@ namespace Atlas {
              * @param shaderBatch The shader batch the uniform abstracts, if uniform abstracts access of a shader batch
              * @param ID The ID of the uniform in the shader batch, if uniform abstracts access of a shader batch
              */
-			Uniform(uint32_t shaderID, std::string uniformName, ShaderBatch* shaderBatch = nullptr, int32_t ID = 0);
+			Uniform(uint32_t shaderID, const std::string& name, ShaderBatch* shaderBatch = nullptr, int32_t ID = 0);
 
 			/**
              * Updates the ID of the uniform.

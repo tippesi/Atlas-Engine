@@ -32,7 +32,7 @@ namespace Atlas {
              * @note All components are managed by the shader. This means that they
              * get released from memory if the shader gets destructed.
              */
-			void AddStage(int32_t type, std::string filename);
+			void AddStage(int32_t type, const std::string& filename);
 
 			/**
              * Adds a shader config to the batch.
@@ -59,7 +59,7 @@ namespace Atlas {
              * @note All uniforms are managed by the shader batch. This means that
              * they get released from memory if the shader batch gets destructed.
              */
-			Uniform* GetUniform(const std::string name);
+			Uniform* GetUniform(const std::string& name);
 
 			/**
 			 * Binds the shader of a config batch.

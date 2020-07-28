@@ -62,11 +62,11 @@ namespace Atlas {
 
 				buffers.clear();
 
-				for (auto& key : that.vertexComponents) {
-					if (buffers.find(key.second) == buffers.end()) {
-						auto buffer = new VertexBuffer(*key.second);
-						AddComponent(key.first, buffer);
-						buffers.insert(key.second);
+				for (auto& [attribArray, buffer] : that.vertexComponents) {
+					if (buffers.find(buffer) == buffers.end()) {
+						auto copy = new VertexBuffer(*buffer);
+						AddComponent(attribArray, copy);
+						buffers.insert(buffer);
 					}
 				}
 
@@ -98,9 +98,7 @@ namespace Atlas {
 			buffer->Bind();
 
 			glEnableVertexAttribArray(attribArray);
-			glVertexAttribPointer(attribArray, buffer->GetStride(), buffer->GetDataType(), normalized, 0, NULL);
-
-			auto prevBuffer = vertexComponents[attribArray];
+			glVertexAttribPointer(attribArray, buffer->GetStride(), buffer->GetDataType(), normalized, 0, nullptr);
 
 			vertexComponents[attribArray] = buffer;
 
@@ -151,7 +149,7 @@ namespace Atlas {
 					return;
 
 				glEnableVertexAttribArray(attribArray);
-				glVertexAttribPointer(attribArray, buffer->GetStride(), buffer->GetDataType(), normalized, 0, NULL);
+				glVertexAttribPointer(attribArray, buffer->GetStride(), buffer->GetDataType(), normalized, 0, nullptr);
 				glVertexAttribDivisor(attribArray, 1);
 
 				vertexComponents[attribArray] = buffer;
@@ -170,15 +168,12 @@ namespace Atlas {
 			if (bufferStride > 4) {
 
 				int32_t numAttribArrays = 0;
-				int32_t internalStride = 0;
 
 				if (bufferStride % 4 == 0) { // Might be a 4x4 matrix or some other multi-4-component vector data
 					numAttribArrays = bufferStride / 4;
-					internalStride = 4;
 				}
 				else if (bufferStride % 3 == 0) { // Might be a 3x3 matrix or some other multi-3-component vector data
 					numAttribArrays = bufferStride / 3;
-					internalStride = 3;
 				}
 				else { // Everything else isn't supported. There is no use scenario to justify additional complexity
 					return;

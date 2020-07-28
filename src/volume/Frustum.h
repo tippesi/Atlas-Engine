@@ -27,7 +27,7 @@ namespace Atlas {
              * Far plane: Upper left, upper right, bottom left, bottom right
              * Near plane: Upper left, upper right, bottom left, bottom right
              */
-			explicit Frustum(std::vector<vec3> corners);
+			explicit Frustum(const std::vector<vec3>& corners);
 
 			/**
 			 * Constructs a Frustum object.

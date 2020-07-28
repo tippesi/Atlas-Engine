@@ -17,29 +17,15 @@ namespace Atlas {
 
 		Mesh::Mesh(MeshData data, int32_t mobility) : mobility(mobility), data(data) {
 
-			auto filename = Common::Path::GetFileName(data.filename);
-			auto fileTypePos = filename.find_first_of('.');
-			name = filename.substr(0, fileTypePos);
-
-			InitializeVertexArray();
-
-			for (auto& material : data.materials)
-				AddMaterial(&material);
+			InitializeInternal();
 
 		}
 
-		Mesh::Mesh(std::string filename, bool forceTangents, int32_t mobility) : mobility(mobility) {
+		Mesh::Mesh(const std::string& filename, bool forceTangents, int32_t mobility) : mobility(mobility) {
 
 			Loader::ModelLoader::LoadMesh(filename, data, forceTangents);
 
-			filename = Common::Path::GetFileName(data.filename);
-			auto fileTypePos = filename.find_first_of('.');
-			name = filename.substr(0, fileTypePos);
-
-			InitializeVertexArray();
-
-			for (auto& material : data.materials)
-				AddMaterial(&material);
+			InitializeInternal();
 
 		}
 
@@ -139,6 +125,19 @@ namespace Atlas {
 			case AE_SHADOW_CONFIG: return &matConfig->shadowConfig;
 			default: return nullptr;
 			}
+
+		}
+
+		void Mesh::InitializeInternal() {
+
+			auto filename = Common::Path::GetFileName(data.filename);
+			auto fileTypePos = filename.find_first_of('.');
+			name = filename.substr(0, fileTypePos);
+
+			InitializeVertexArray();
+
+			for (auto& material : data.materials)
+				AddMaterial(&material);
 
 		}
 

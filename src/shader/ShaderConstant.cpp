@@ -4,7 +4,7 @@ namespace Atlas {
 
 	namespace Shader {
 
-		ShaderConstant::ShaderConstant(std::string constantString) {
+		ShaderConstant::ShaderConstant(const std::string& constantString) {
 
 			size_t constEndPosition = constantString.find(' ');
 			size_t typePosition = constantString.find_first_not_of(' ', constEndPosition);

@@ -28,20 +28,20 @@ namespace Atlas {
              * Adds a macro to the config.
              * @param macro The macro to be added.
              */
-			void AddMacro(std::string macro);
+			void AddMacro(const std::string& macro);
 
 			/**
              * Removes a macro from the config.
              * @param macro The macro to be removed.
              */
-			void RemoveMacro(std::string macro);
+			void RemoveMacro(const std::string& macro);
 
 			/**
              * Checks if a macro is present in the config.
              * @param macro The macro to be checked.
              * @return True if present, false otherwise.
              */
-			bool HasMacro(std::string macro);
+			bool HasMacro(const std::string& macro);
 
 			/**
              * Removes all macros from the config.

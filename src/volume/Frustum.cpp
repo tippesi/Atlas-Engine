@@ -4,7 +4,7 @@ namespace Atlas {
 
 	namespace Volume {
 
-		Frustum::Frustum(std::vector<vec3> corners) {
+		Frustum::Frustum(const std::vector<vec3>& corners) {
 
 			Resize(corners);
 

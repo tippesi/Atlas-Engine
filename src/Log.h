@@ -37,21 +37,21 @@ namespace Atlas {
 		 * @param message The message of the log entry.
 		 * @param severity The severity of the log entry.
 		 */
-		static void Message(std::string message, int32_t severity = SEVERITY_LOW);
+		static void Message(const std::string& message, int32_t severity = SEVERITY_LOW);
 
 		/**
 		 * Creates a log entry of type warning.
 		 * @param message The message of the log entry.
 		 * @param severity The severity of the log entry.
 		 */
-		static void Warning(std::string message, int32_t severity = SEVERITY_MEDIUM);
+		static void Warning(const std::string& message, int32_t severity = SEVERITY_MEDIUM);
 
 		/**
 		 * Creates a log entry of type error.
 		 * @param message The message of the log entry.
 		 * @param severity The severity of the log entry.
 		 */
-		static void Error(std::string message, int32_t severity = SEVERITY_HIGH);
+		static void Error(const std::string& message, int32_t severity = SEVERITY_HIGH);
 
 		/**
 		 * Returns all log entries.
@@ -63,10 +63,10 @@ namespace Atlas {
 		 * Save the log to the hard drive.
 		 * @param filename The filename of the log.
 		 */
-		static void Save(std::string filename);
+		static void Save(const std::string& filename);
 
 	private:
-		static void AddEntry(std::string message, int32_t severity, int32_t type);
+		static void AddEntry(const std::string& message, int32_t severity, int32_t type);
 
 		static std::vector<Entry> entries;
 		static std::mutex mutex;

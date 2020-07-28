@@ -41,7 +41,7 @@ namespace Atlas {
 			 * @param forceTangents
 			 * @param mobility
 			 */
-			Mesh(std::string filename, bool forceTangens = false, 
+			explicit Mesh(const std::string& filename, bool forceTangens = false, 
 				int32_t mobility = AE_STATIONARY_MESH);
 
 			~Mesh();
@@ -102,6 +102,8 @@ namespace Atlas {
 			bool invertUVs = false;
 
 		private:
+			void InitializeInternal();
+
 			void InitializeVertexArray();
 
 			void AddMaterial(Material* material);

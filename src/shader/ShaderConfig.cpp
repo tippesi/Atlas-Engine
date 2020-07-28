@@ -6,7 +6,7 @@ namespace Atlas {
 
 	namespace Shader {
 
-		void ShaderConfig::AddMacro(std::string macro) {
+		void ShaderConfig::AddMacro(const std::string& macro) {
 
 			macros.push_back(macro);
 
@@ -14,7 +14,7 @@ namespace Atlas {
 
 		}
 
-		void ShaderConfig::RemoveMacro(std::string macro) {
+		void ShaderConfig::RemoveMacro(const std::string& macro) {
 
 			auto it = std::find(macros.begin(), macros.end(), macro);
 
@@ -23,7 +23,7 @@ namespace Atlas {
 
 		}
 
-		bool ShaderConfig::HasMacro(std::string macro) {
+		bool ShaderConfig::HasMacro(const std::string& macro) {
 
 			return std::any_of(macros.begin(), macros.end(),
 				[macro](const auto& value) { return value == macro; });

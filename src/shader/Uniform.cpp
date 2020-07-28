@@ -5,11 +5,11 @@ namespace Atlas {
 
 	namespace Shader {
 
-		Uniform::Uniform(uint32_t shaderID, std::string uniformName, ShaderBatch* shaderBatch, int32_t ID) :  
-			shaderID(shaderID), name(uniformName), shaderBatch(shaderBatch), ID(ID) {
+		Uniform::Uniform(uint32_t shaderID, const std::string& name, ShaderBatch* shaderBatch, int32_t ID) :  
+			shaderID(shaderID), name(name), shaderBatch(shaderBatch), ID(ID) {
 
 			if (!shaderBatch) {
-				this->ID = glGetUniformLocation(shaderID, uniformName.c_str());
+				this->ID = glGetUniformLocation(shaderID, name.c_str());
 			}
 
 		}

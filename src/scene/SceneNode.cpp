@@ -428,7 +428,7 @@ namespace Atlas {
 			if (!sceneSet)
 				return;
 
-			auto& it = meshMap->find(actor->mesh);
+			auto it = meshMap->find(actor->mesh);
 
 			if (it == meshMap->end()) {
 				(*meshMap)[actor->mesh] = 1;

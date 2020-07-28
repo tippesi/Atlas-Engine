@@ -19,7 +19,7 @@ namespace Atlas {
 
 		}
 
-		void ShaderBatch::AddStage(int32_t type, std::string filename){
+		void ShaderBatch::AddStage(int32_t type, const std::string& filename){
 
 			auto source = new ShaderStage(type, filename);
 
@@ -106,7 +106,7 @@ namespace Atlas {
 
 		}
 
-		Uniform* ShaderBatch::GetUniform(const std::string name) {
+		Uniform* ShaderBatch::GetUniform(const std::string& name) {
 
 			// Check if equivalent uniform exists
 			auto it = std::find_if(uniforms.begin(), uniforms.end(),

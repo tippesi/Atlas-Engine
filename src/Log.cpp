@@ -7,15 +7,15 @@ namespace Atlas {
 	std::vector<Log::Entry> Log::entries;
 	std::mutex Log::mutex;
 
-	void Log::Message(std::string message, int32_t severity) {
+	void Log::Message(const std::string& message, int32_t severity) {
 		AddEntry(message, severity, Type::TYPE_MESSAGE);
 	}
 
-	void Log::Warning(std::string message, int32_t severity) {
+	void Log::Warning(const std::string& message, int32_t severity) {
 		AddEntry(message, severity, Type::TYPE_WARNING);
 	}
 
-	void Log::Error(std::string message, int32_t severity) {
+	void Log::Error(const std::string& message, int32_t severity) {
 		AddEntry(message, severity, Type::TYPE_ERROR);
 	}
 
@@ -24,7 +24,7 @@ namespace Atlas {
 		return entries;
 	}
 
-	void Log::AddEntry(std::string message, int32_t severity, int32_t type) {
+	void Log::AddEntry(const std::string& message, int32_t severity, int32_t type) {
 
 		Entry entry;
 
@@ -57,7 +57,7 @@ namespace Atlas {
 
 	}
 
-	void Log::Save(std::string filename) {
+	void Log::Save(const std::string& filename) {
 
 		auto stream = Loader::AssetLoader::WriteFile(filename, std::ios::out);
 

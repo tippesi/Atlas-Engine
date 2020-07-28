@@ -21,7 +21,7 @@ namespace Atlas {
 		class ShaderConstant {
 
 		public:
-			explicit ShaderConstant(std::string constantString);
+			explicit ShaderConstant(const std::string& name);
 
 			void SetValue(float value);
 
