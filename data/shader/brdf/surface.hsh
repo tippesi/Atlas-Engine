@@ -1,6 +1,8 @@
 #include <../common/material.hsh>
 
 struct Surface {
+    vec3 P;
+
     vec3 V;
     vec3 N;
     vec3 L;
@@ -17,6 +19,20 @@ struct Surface {
     Material material;
 };
 
+void UpdateSurface(inout Surface surface) {
+
+    surface.H = normalize(surface.L + surface.V);
+
+    surface.NdotL = saturate(dot(surface.N, surface.L));
+	surface.LdotH = saturate(dot(surface.L, surface.H));
+	surface.NdotH = saturate(dot(surface.N, surface.H));
+	surface.NdotV = saturate(dot(surface.N, surface.V));
+
+    surface.F0 = mix(vec3(0.04), surface.material.baseColor,
+        surface.material.metalness);
+
+}
+
 Surface CreateSurface(vec3 V, vec3 N, vec3 L, Material material) {
 
     Surface surface;
@@ -24,16 +40,11 @@ Surface CreateSurface(vec3 V, vec3 N, vec3 L, Material material) {
     surface.V = V;
     surface.N = N;
     surface.L = L;
-    surface.H = normalize(L + V);
-
-    surface.NdotL = saturate(dot(surface.N, surface.L));
-	surface.LdotH = saturate(dot(surface.L, surface.H));
-	surface.NdotH = saturate(dot(surface.N, surface.H));
-	surface.NdotV = saturate(dot(surface.N, surface.V));
-
-    surface.F0 = mix(vec3(0.04), material.baseColor, material.metalness);
 
     surface.material = material;
+    surface.F90 = 1.0;
+
+    UpdateSurface(surface);
 
     return surface;
 

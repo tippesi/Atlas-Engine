@@ -5,7 +5,6 @@
 #include <../shadow.hsh>
 #include <../fog.hsh>
 
-#include <../common/indexing.hsh>
 #include <../common/convert.hsh>
 #include <../common/material.hsh>
 #include <../common/utility.hsh>
@@ -205,8 +204,6 @@ void main() {
 
 	vec3 direct = directDiffuse + directSpecular;
 
-
-	float sumWeight = 0.0;
 	// Indirect diffuse BRDF
 	vec3 worldNormal = normalize(vec3(ivMatrix * vec4(geometryNormal, 0.0)));
 	vec3 prefilteredDiffuse = texture(diffuseProbe, worldNormal).rgb;
@@ -240,7 +237,7 @@ void main() {
 
 #ifdef SHADOWS	
 	shadowFactor = CalculateCascadedShadow(light, fragPos,
-		geometryNormal, max(surface.NdotL, 0.0)); 
+		geometryNormal, 1.0 - max(surface.NdotL, 0.0)); 
 	
 	volumetric = vec3(texture(volumetricTexture, texCoordVS).r);
 #endif
@@ -262,7 +259,5 @@ void main() {
 	colorFS = vec4(applyFog(colorFS.rgb, length(fragPos), 
 		cameraLocation, mat3(ivMatrix) * -surface.V, 
 		mat3(ivMatrix) * -light.direction, light.color), 1.0);
-
-	//colorFS = vec4(vec3(sumWeight), 1.0);
 
 }

@@ -41,7 +41,7 @@ in vec3 ndcCurrentVS;
 in vec3 ndcLastVS;
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
-in mat3 toTangentSpace;
+in mat3 TBN;
 #endif
 
 #ifdef GENERATE_IMPOSTOR
@@ -114,7 +114,7 @@ void main() {
 	
 	// Check if usage is valid (otherwise texCoords won't be used)
 #if defined(HEIGHT_MAP) && (defined(BASE_COLOR_MAP) || defined(NORMAL_MAP) || defined(ROUGHNESS_MAP) || defined(METALNESS_MAP) || defined(AO_MAP)) 
-	vec3 viewDir = normalize(transpose(toTangentSpace) * -positionVS);
+	vec3 viewDir = normalize(transpose(TBN) * -positionVS);
 	texCoords = ParallaxMapping(texCoords, viewDir);
 #endif
 
@@ -145,7 +145,7 @@ void main() {
 
 #ifdef NORMAL_MAP
 	vec3 normalColor = texture(normalMap, texCoords).rgb;
-	normalFS = mix(geometryNormalFS, normalize(toTangentSpace * (2.0 * normalColor - 1.0)), normalScale);
+	normalFS = mix(geometryNormalFS, normalize(TBN * (2.0 * normalColor - 1.0)), normalScale);
 	normalFS = 0.5 * normalFS + 0.5;
 #endif
 

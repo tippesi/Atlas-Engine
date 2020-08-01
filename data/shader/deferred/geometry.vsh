@@ -31,7 +31,7 @@ out vec3 ndcCurrentVS;
 out vec3 ndcLastVS;
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
-out mat3 toTangentSpace;
+out mat3 TBN;
 #endif
 
 // Uniforms
@@ -90,7 +90,7 @@ void main() {
 	vec3 bitangent = normalize(correctionFactor * 
 		cross(tangent, normal));
 
-	toTangentSpace = mat3(tangent, bitangent, normal);
+	TBN = mat3(tangent, bitangent, normal);
 #endif
 	
 }

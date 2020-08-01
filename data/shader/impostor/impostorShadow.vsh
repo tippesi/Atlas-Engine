@@ -1,4 +1,4 @@
-#include <../common/indexing.hsh>
+#include <../common/flatten.hsh>
 #include <../common/utility.hsh>
 #include <../common/octahedron.hsh>
 
@@ -37,7 +37,7 @@ void main() {
 	vec2 octahedron = UnitVectorToHemiOctahedron(normalize(dir));
 	vec2 coord = round(octahedron * (frames - 1.0));
 	
-	indexVS = vec2ToIndex(ivec2(coord), ivec2(frames));
+	indexVS = Flatten2D(ivec2(coord), ivec2(frames));
 	
     vec2 position = vPosition.xy * radius;
 

@@ -44,7 +44,7 @@ namespace Atlas {
 
 	   Cubemap::Cubemap(std::string filename, int32_t resolution) {
 
-		   auto image = Loader::ImageLoader::LoadImage<float>(filename, 3);
+		   auto image = Loader::ImageLoader::LoadImage<float>(filename, false, 3);
 
 		   if (image.GetData().size() == 0) {
 			   Log::Error("Failed to load cubemap image " + filename);
@@ -55,7 +55,7 @@ namespace Atlas {
 		   this->height = resolution;
 		   this->layers = 6;
 
-		   Generate(GL_TEXTURE_CUBE_MAP, AE_RGB16F, GL_CLAMP_TO_EDGE, GL_LINEAR_MIPMAP_LINEAR,
+		   Generate(GL_TEXTURE_CUBE_MAP, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR_MIPMAP_LINEAR,
 			   false, true);
 
 		   mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
@@ -67,7 +67,7 @@ namespace Atlas {
 						  vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 0.0f, 1.0f),
 						  vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
-		   Common::Image<float> faceImage(resolution, resolution, 3);
+		   Common::Image<float> faceImage(resolution, resolution, 4);
 		   faceImage.fileFormat = AE_IMAGE_HDR;
 
 		   for (uint8_t i = 0; i < 6; i++) {
@@ -93,11 +93,14 @@ namespace Atlas {
 					   uv *= invAtan;
 					   uv += 0.5f;
 
-					   vec3 sample = vec3(image.SampleBilinear(uv.x, uv.y));
+					   vec3 sample = glm::clamp(vec3(image.SampleBilinear(uv.x, uv.y)), 
+						   vec3(0.0f), vec3(65500.0f));
 
 					   faceImage.SetData(x, y, 0, sample.x);
 					   faceImage.SetData(x, y, 1, sample.y);
 					   faceImage.SetData(x, y, 2, sample.z);
+					   faceImage.SetData(x, y, 3, 0.0f);
+
 				   }
 			   }
 

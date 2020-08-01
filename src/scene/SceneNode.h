@@ -171,8 +171,8 @@ namespace Atlas {
 			bool sceneSet = false;
 			bool matrixChanged = true;
 
-			mat4 matrix;
-			mat4 globalMatrix;
+			mat4 matrix = mat4{ 1.0f };
+			mat4 globalMatrix = mat4{ 1.0f };
 
 			std::vector<SceneNode*> childNodes;
 			std::vector<Actor::MovableMeshActor*> movableMeshActors;

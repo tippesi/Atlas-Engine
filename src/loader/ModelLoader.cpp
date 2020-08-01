@@ -28,6 +28,9 @@ namespace Atlas {
 			Assimp::Importer importer;
 			importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
 
+			// Use aiProcess_GenSmoothNormals in case model lacks normals and smooth normals are needed
+			// Use aiProcess_GenNormals in case model lacks normals and flat normals are needed
+			// Right now we just use flat normals everytime normals are missing.
 			const aiScene* scene = importer.ReadFile(AssetLoader::GetFullPath(filename),
 					aiProcess_CalcTangentSpace |
 					aiProcess_JoinIdenticalVertices |
@@ -35,7 +38,7 @@ namespace Atlas {
 					aiProcess_OptimizeGraph |
 					aiProcess_OptimizeMeshes |
 					aiProcess_RemoveRedundantMaterials |
-					aiProcess_GenSmoothNormals |
+					aiProcess_GenNormals |
 					aiProcess_LimitBoneWeights |
 					aiProcess_ImproveCacheLocality);
 

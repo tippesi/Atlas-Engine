@@ -1,4 +1,4 @@
-#include <../common/indexing.hsh>
+#include <../common/flatten.hsh>
 #include <../common/utility.hsh>
 #include <../common/octahedron.hsh>
 
@@ -87,24 +87,24 @@ void main() {
 	vec4 weights = InterpolateTriangle(coord);
 
 	if (weights.w < 1.0) {
-		index0VS = vec2ToIndex(ivec2(coord), ivec2(frames));
-		index1VS = vec2ToIndex(ivec2(coord) + ivec2(0, 1), ivec2(frames));
-		index2VS = vec2ToIndex(ivec2(coord) + ivec2(1, 1), ivec2(frames));
+		index0VS = Flatten2D(ivec2(coord), ivec2(frames));
+		index1VS = Flatten2D(ivec2(coord) + ivec2(0, 1), ivec2(frames));
+		index2VS = Flatten2D(ivec2(coord) + ivec2(1, 1), ivec2(frames));
 		weight0VS = weights.x;
 		weight1VS = weights.y;
 		weight2VS = weights.z;
 	}
 	else {
-		index0VS = vec2ToIndex(ivec2(coord), ivec2(frames));
-		index1VS = vec2ToIndex(ivec2(coord) + ivec2(1, 0), ivec2(frames));
-		index2VS = vec2ToIndex(ivec2(coord) + ivec2(1, 1), ivec2(frames));
+		index0VS = Flatten2D(ivec2(coord), ivec2(frames));
+		index1VS = Flatten2D(ivec2(coord) + ivec2(1, 0), ivec2(frames));
+		index2VS = Flatten2D(ivec2(coord) + ivec2(1, 1), ivec2(frames));
 		weight0VS = weights.x;
 		weight1VS = weights.y;
 		weight2VS = weights.z;
 	}
 #else
 	vec2 coord = floor(octahedron * (frames - 1.0));
-	indexVS = vec2ToIndex(ivec2(coord), ivec2(frames));
+	indexVS = Flatten2D(ivec2(coord), ivec2(frames));
 #endif
 	
     vec2 position = vPosition.xy * radius;

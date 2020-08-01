@@ -29,18 +29,18 @@ out vec3 color;
 const float gamma = 1.0 / 2.2;
 
 vec3 ACESToneMap(vec3 hdrColor) {
-    float a = 2.51f;
-    float b = 0.03f;
-    float c = 2.43f;
-    float d = 0.59f;
-    float e = 0.14f;
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
     return clamp((hdrColor*(a*hdrColor+b))/
-		(hdrColor*(c*hdrColor+d)+e), 0.0f, 1.0f);
+		(hdrColor*(c*hdrColor+d)+e), 0.0, 1.0);
 }
 
 vec3 ToneMap(vec3 hdrColor) {
 	
-	return vec3(1.0f) - exp(-hdrColor);
+	return vec3(1.0) - exp(-hdrColor);
 	
 }
 

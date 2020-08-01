@@ -1,12 +1,14 @@
 #include <structures.hsh>
 #include <../common/sample.hsh>
 
-layout (binding = 3) uniform sampler2DArray baseColorTextures;
-layout (binding = 4) uniform sampler2DArray normalTextures;
-layout (binding = 5) uniform sampler2DArray roughnessTextures;
-layout (binding = 6) uniform sampler2DArray metalnessTextures;
-layout (binding = 7) uniform sampler2DArray aoTextures;
-layout (binding = 4, rgba16f) readonly uniform imageCube environmentMap;
+layout (binding = 3, rgba16f) readonly uniform imageCube environmentMap;
+
+layout (binding = 4) uniform sampler2DArray baseColorTextures;
+layout (binding = 5) uniform sampler2DArray opacityTextures;
+layout (binding = 6) uniform sampler2DArray normalTextures;
+layout (binding = 7) uniform sampler2DArray roughnessTextures;
+layout (binding = 8) uniform sampler2DArray metalnessTextures;
+layout (binding = 9) uniform sampler2DArray aoTextures;
 
 vec2 GetTexCoord(vec2 texCoord, Texture tex, vec2 size) {
 	
@@ -16,10 +18,10 @@ vec2 GetTexCoord(vec2 texCoord, Texture tex, vec2 size) {
 		
 }
 
-vec4 SampleBaseColorBilinear(Texture tex, vec2 texCoord) {
+vec3 SampleBaseColorBilinear(Texture tex, vec2 texCoord) {
 	
 	if (tex.layer < 0)
-		return vec4(1.0);
+		return vec3(1.0);
 		
 	texCoord *= vec2(tex.width, tex.height);
 	
@@ -27,14 +29,29 @@ vec4 SampleBaseColorBilinear(Texture tex, vec2 texCoord) {
 	texCoord = GetTexCoord(texCoord, tex, size);
 	
 	return sampleTexBilinear(baseColorTextures, 
-		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING);
+		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING).rgb;
 	
 }
 
-vec4 SampleNormalBilinear(Texture tex, vec2 texCoord) {
+float SampleOpacityBilinear(Texture tex, vec2 texCoord) {
 	
 	if (tex.layer < 0)
-		return vec4(1.0);
+		return 1.0;
+		
+	texCoord *= vec2(tex.width, tex.height);
+	
+	const vec2 size = vec2(textureSize(opacityTextures, 0));
+	texCoord = GetTexCoord(texCoord, tex, size);
+	
+	return sampleTexBilinear(opacityTextures, 
+		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING).r;
+	
+}
+
+vec3 SampleNormalBilinear(Texture tex, vec2 texCoord) {
+	
+	if (tex.layer < 0)
+		return vec3(1.0);
 		
 	texCoord *= vec2(tex.width, tex.height);
 	
@@ -42,7 +59,7 @@ vec4 SampleNormalBilinear(Texture tex, vec2 texCoord) {
 	texCoord = GetTexCoord(texCoord, tex, size);
 	
 	return sampleTexBilinear(normalTextures, 
-		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING);
+		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING).rgb;
 	
 }
 

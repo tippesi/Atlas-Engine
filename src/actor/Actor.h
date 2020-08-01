@@ -47,8 +47,8 @@ namespace Atlas {
             virtual void Update(Camera camera, float deltaTime, 
 				mat4 parentTransform, bool parentUpdate) = 0;
 
-            Volume::AABB aabb;
-            mat4 globalMatrix = mat4(1.0f);
+            Volume::AABB aabb = Volume::AABB{ vec3{-1.0f}, vec3{1.0f} };
+            mat4 globalMatrix = mat4{ 1.0f };
 
             bool matrixChanged = true;
 

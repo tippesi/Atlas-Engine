@@ -4,6 +4,8 @@
 // Every vec3 gets rounded up to 16 bytes, which means the structure
 // has to be a size of multiple of 16 bytes.
 
+#define INVALID_RAY_ID -1
+
 struct PackedRay {
 
 	vec4 origin;
@@ -81,7 +83,7 @@ struct Texture {
 	
 };
 
-struct Material {
+struct RaytraceMaterial {
 	
 	float baseR;
 	float baseG;
@@ -102,6 +104,7 @@ struct Material {
 	int invertUVs;
 	
 	Texture baseColorTexture;
+	Texture opacityTexture;
 	Texture normalTexture;
 	Texture roughnessTexture;
 	Texture metalnessTexture;

@@ -113,20 +113,21 @@ namespace Atlas {
 				renderTarget->accumTexture0.Bind(GL_READ_ONLY, 2);
 			}
 
-			if (baseColorTextureAtlas.slices.size())
-				baseColorTextureAtlas.texture.Bind(GL_TEXTURE3);
-			if (normalTextureAtlas.slices.size())
-				normalTextureAtlas.texture.Bind(GL_TEXTURE4);
-			if (roughnessTextureAtlas.slices.size())
-				roughnessTextureAtlas.texture.Bind(GL_TEXTURE5);
-			if (metalnessTextureAtlas.slices.size())
-				metalnessTextureAtlas.texture.Bind(GL_TEXTURE6);
-			if (aoTextureAtlas.slices.size())
-				aoTextureAtlas.texture.Bind(GL_TEXTURE7);
+			if (scene->sky.probe)
+				scene->sky.probe->cubemap.Bind(GL_READ_ONLY, 3);
 
-			if (scene->sky.probe) {
-				scene->sky.probe->cubemap.Bind(GL_READ_ONLY, 4);
-			}
+			if (baseColorTextureAtlas.slices.size())
+				baseColorTextureAtlas.texture.Bind(GL_TEXTURE4);
+			if (opacityTextureAtlas.slices.size())
+				opacityTextureAtlas.texture.Bind(GL_TEXTURE5);
+			if (normalTextureAtlas.slices.size())
+				normalTextureAtlas.texture.Bind(GL_TEXTURE6);
+			if (roughnessTextureAtlas.slices.size())
+				roughnessTextureAtlas.texture.Bind(GL_TEXTURE7);
+			if (metalnessTextureAtlas.slices.size())
+				metalnessTextureAtlas.texture.Bind(GL_TEXTURE8);
+			if (aoTextureAtlas.slices.size())
+				aoTextureAtlas.texture.Bind(GL_TEXTURE9);
 
 			materialBuffer.BindBase(5);
 			triangleBuffer.BindBase(6);
@@ -165,10 +166,11 @@ namespace Atlas {
 					renderTarget->rayBuffer0.BindBase(3);
 					renderTarget->rayBuffer1.BindBase(4);
 
-					ivec2 groupCount = resolution / 8 / imageSubdivisions;
+					auto tileResolution = resolution / imageSubdivisions;
+					auto groupCount = tileResolution / 8;
 
-					groupCount.x += ((resolution.x % groupCount.x) ? 1 : 0);
-					groupCount.y += ((resolution.y % groupCount.y) ? 1 : 0);
+					groupCount.x += ((groupCount.x * 8 == tileResolution.x) ? 0 : 1);
+					groupCount.y += ((groupCount.y * 8 == tileResolution.y) ? 0 : 1);
 
 					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
 						GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -224,13 +226,18 @@ namespace Atlas {
 				bounceCountRayUpdateUniform->SetValue(bounces - i);
 
 				resolutionRayUpdateUniform->SetValue(resolution);
-				seedRayUpdateUniform->SetValue(Clock::Get() * (float)(i + 1));
+				seedRayUpdateUniform->SetValue(float(rand()) / float(RAND_MAX));
 
-				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
+					GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 				if (!i) {
-					uint32_t groupCount = (resolution.x / 4 / imageSubdivisions.x) *
-						(resolution.y / 4 / imageSubdivisions.y);
+					auto tileResolution = resolution / imageSubdivisions;
+					auto tilePixelCount = tileResolution.x * tileResolution.y;
+					auto groupCount = tilePixelCount / 32;
+
+					groupCount += ((tilePixelCount % groupCount) ? 1 : 0);
+					
 					glDispatchCompute(groupCount, 1, 1);
 				}
 				else {
@@ -557,6 +564,21 @@ namespace Atlas {
 							gpuMaterial.baseColorTexture.layer = -1;
 						}
 
+						if (material.HasOpacityMap()) {
+							auto slice = opacityTextureAtlas.slices[material.opacityMap];
+
+							gpuMaterial.opacityTexture.layer = slice.layer;
+
+							gpuMaterial.opacityTexture.x = slice.offset.x;
+							gpuMaterial.opacityTexture.y = slice.offset.y;
+
+							gpuMaterial.opacityTexture.width = slice.size.x;
+							gpuMaterial.opacityTexture.height = slice.size.y;
+						}
+						else {
+							gpuMaterial.opacityTexture.layer = -1;
+						}
+
 						if (material.HasNormalMap()) {
 							auto slice = normalTextureAtlas.slices[material.normalMap];
 
@@ -637,6 +659,7 @@ namespace Atlas {
 
 			std::unordered_set<Mesh::Mesh*> meshes;
 			std::vector<Texture::Texture2D*> baseColorTextures;
+			std::vector<Texture::Texture2D*> opacityTextures;
 			std::vector<Texture::Texture2D*> normalTextures;
 			std::vector<Texture::Texture2D*> roughnessTextures;
 			std::vector<Texture::Texture2D*> metalnessTextures;
@@ -648,6 +671,8 @@ namespace Atlas {
 					for (auto& material : actorMaterials) {
 						if (material.HasBaseColorMap())
 							baseColorTextures.push_back(material.baseColorMap);
+						if (material.HasOpacityMap())
+							opacityTextures.push_back(material.opacityMap);
 						if (material.HasNormalMap())
 							normalTextures.push_back(material.normalMap);
 						if (material.HasRoughnessMap())
@@ -662,6 +687,7 @@ namespace Atlas {
 			}
 
 			baseColorTextureAtlas = Texture::TextureAtlas(baseColorTextures);
+			opacityTextureAtlas = Texture::TextureAtlas(opacityTextures);
 			normalTextureAtlas = Texture::TextureAtlas(normalTextures);
 			roughnessTextureAtlas = Texture::TextureAtlas(roughnessTextures);
 			metalnessTextureAtlas = Texture::TextureAtlas(metalnessTextures);

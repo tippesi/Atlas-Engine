@@ -128,6 +128,7 @@ namespace Atlas {
 				int32_t invertUVs;
 
 				GPUTexture baseColorTexture;
+				GPUTexture opacityTexture;
 				GPUTexture normalTexture;
 				GPUTexture roughnessTexture;
 				GPUTexture metalnessTexture;
@@ -175,6 +176,7 @@ namespace Atlas {
 			Buffer::Buffer nodesBuffer;
 
 			Texture::TextureAtlas baseColorTextureAtlas;
+			Texture::TextureAtlas opacityTextureAtlas;
 			Texture::TextureAtlas normalTextureAtlas;
 			Texture::TextureAtlas roughnessTextureAtlas;
 			Texture::TextureAtlas metalnessTextureAtlas;

@@ -1,0 +1,27 @@
+ivec2 Unflatten2D(int index, ivec2 size) {
+
+	return ivec2(index % size.x, index / size.x);
+
+}
+
+int Flatten2D(ivec2 coord, ivec2 size) {
+	
+	return coord.y * size.x + coord.x;
+	
+}
+
+ivec3 Unflatten3D(int index, ivec3 size) {
+
+	int z = index / (size.x * size.y);
+	index -= (size.x * size.y * z);
+
+	return ivec3(Unflatten2D(index, size.xy), z);
+
+}
+
+int Flatten3D(ivec3 coord, ivec3 size) {
+
+	return coord.z * size.x * size.y + 
+		Flatten2D(coord.xy, size.xy);
+
+}

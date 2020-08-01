@@ -4,21 +4,21 @@
  * Needs more testing, doesn't seem to improve anything (Maybe shaders not L2 limited)
  */
 
-#include <indexing.hsh>
+#include <flatten.hsh>
 
 // Right now this only works in x direction
 // and only when the group size has two dimensions
  ivec2 GetGroupOffset2D(int tileGroupCount) {
 
      ivec2 columnSize = ivec2(tileGroupCount, int(gl_NumWorkGroups.y));
-     int groupIndex = vec2ToIndex(ivec2(gl_WorkGroupID), ivec2(gl_NumWorkGroups));
+     int groupIndex = Flatten2D(ivec2(gl_WorkGroupID), ivec2(gl_NumWorkGroups));
 
      int columnCount = columnSize.x * columnSize.y;
      int columnOffset = groupIndex / columnCount;
 
      groupIndex %= columnCount;
 
-     return (indexToVec2(groupIndex, columnSize) + 
+     return (Unflatten2D(groupIndex, columnSize) + 
         ivec2(columnOffset * columnSize.x, 0)) * ivec2(gl_WorkGroupSize);
 
  }
@@ -35,7 +35,7 @@
 
      groupIndex %= columnCount;
 
-     return (indexToVec2(groupIndex, columnSize) + 
+     return (Unflatten2D(groupIndex, columnSize) + 
         ivec2(columnOffset * columnSize.x, 0)) * ivec2(gl_WorkGroupSize);
 
  }

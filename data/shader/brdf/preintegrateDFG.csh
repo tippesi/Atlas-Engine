@@ -20,7 +20,7 @@ vec3 DFG(float NdotV, float alpha) {
 
         vec2 Xi = Hammersley(i, sampleCount);
 
-        // Specular pre-intergration
+        // Specular pre-integration
         vec3 H = ImportanceSampleGGX(Xi, N, alpha);
         vec3 L = normalize(2.0 * dot(V, H) * H - V);
 
