@@ -1,5 +1,4 @@
 #include "Texture2D.h"
-#include "../Framebuffer.h"
 #include "../loader/ImageLoader.h"
 
 namespace Atlas {
@@ -24,30 +23,33 @@ namespace Atlas {
         }
 
         Texture2D::Texture2D(std::string filename, bool colorSpaceConversion, bool anisotropicFiltering,
-                             bool generateMipMaps, int32_t forceChannels) {
-
-            auto image = Loader::ImageLoader::LoadImage<uint8_t>(filename, colorSpaceConversion, forceChannels);
-
-            int32_t sizedFormat;
-
-            switch (image.channels) {
-                case 4: sizedFormat = AE_RGBA8; break;
-                case 3: sizedFormat = AE_RGB8; break;
-                case 2: sizedFormat = AE_RG8; break;
-                case 1: sizedFormat = AE_R8; break;
-            }
-
-            width = image.width;
-            height = image.height;
-            channels = image.channels;
-			this->layers = 1;
-
-            Generate(GL_TEXTURE_2D, sizedFormat, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
-                     anisotropicFiltering, generateMipMaps);
-
-            SetData(image.GetData());
+			bool generateMipMaps, int32_t forceChannels) : Texture2D(Loader::ImageLoader::LoadImage<uint8_t>(filename,
+			colorSpaceConversion, forceChannels), anisotropicFiltering, generateMipMaps) {
 
         }
+
+		Texture2D::Texture2D(Common::Image<uint8_t>& image, bool anisotropicFiltering, bool generateMipMaps) {
+
+			int32_t sizedFormat;
+
+			switch (image.channels) {
+			case 4: sizedFormat = AE_RGBA8; break;
+			case 3: sizedFormat = AE_RGB8; break;
+			case 2: sizedFormat = AE_RG8; break;
+			case 1: sizedFormat = AE_R8; break;
+			}
+
+			width = image.width;
+			height = image.height;
+			channels = image.channels;
+			this->layers = 1;
+
+			Generate(GL_TEXTURE_2D, sizedFormat, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
+				anisotropicFiltering, generateMipMaps);
+
+			SetData(image.GetData());
+
+		}
 
         Texture2D& Texture2D::operator=(const Texture2D &that) {
 
@@ -125,26 +127,6 @@ namespace Atlas {
 
 		}
 
-        std::vector<uint8_t> Texture2D::GetData() {
-
-            auto framebuffer = Framebuffer(width, height);
-
-            std::vector<uint8_t> data(width * height * channels * TypeFormat::GetSize(dataType));
-
-			if (TextureFormat::GetBaseFormat(sizedFormat) != AE_DEPTH)
-				framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, this);
-			else
-				framebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, this);
-
-            glReadPixels(0, 0, width, height,
-                    TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
-
-            framebuffer.Unbind();
-
-            return data;
-
-        }
-
         void Texture2D::Resize(int32_t width, int32_t height) {
 
 			if (width != this->width || height != this->height) {
@@ -158,22 +140,6 @@ namespace Atlas {
 				Generate(GL_TEXTURE_2D, sizedFormat, wrapping, filtering, anisotropicFiltering, mipmaps);
 
 			}
-
-        }
-
-        void Texture2D::SaveToPNG(std::string filename, bool flipHorizontally) {
-
-			Common::Image<uint8_t> image(width, height, channels);
-            image.fileFormat = AE_IMAGE_PNG;
-
-            auto data = GetData();
-
-			if (flipHorizontally)
-				data = FlipDataHorizontally(data);
-
-			image.SetData(data);
-
-            Loader::ImageLoader::SaveImage(image, filename);
 
         }
 

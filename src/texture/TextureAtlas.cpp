@@ -159,7 +159,7 @@ namespace Atlas {
 				auto tex = key.first;
 				auto slice = key.second;
 
-				auto data = tex->GetData();
+				auto data = tex->GetData<uint8_t>();
 
 				std::vector<uint8_t> convertedData;
 

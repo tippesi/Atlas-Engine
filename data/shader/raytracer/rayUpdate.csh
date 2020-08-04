@@ -222,7 +222,7 @@ void EvaluateBounce(inout Ray ray, vec2 coord) {
 
 			ray.inverseDirection = 1.0 / ray.direction;
 			
-			ray.throughput *= F / specChance;
+			ray.throughput = ray.throughput * F / specChance;
 			ray.origin += surface.N * EPSILON;
 		}
 		else {
@@ -240,14 +240,8 @@ void EvaluateBounce(inout Ray ray, vec2 coord) {
 		
 	}
 	else {
-		float ior = 2.0 / (1.0 - sqrt(max(f0.x, max(f0.y, f0.z)))) - 1.0;
-		vec3 refr = normalize(refract(ray.direction, surface.N, 1.0 - ior));
-		
-		ray.direction = HemisphereCos(refr, coord, seed);
-		ray.direction = mix(refr, ray.direction, roughness);
-		ray.inverseDirection = 1.0 / ray.direction;
-
 		ray.throughput *= mix(mat.baseColor, vec3(1.0), refractChance);
+	
 		ray.origin -= surface.N * EPSILON;
 	}
 

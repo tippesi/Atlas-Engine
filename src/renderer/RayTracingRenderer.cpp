@@ -79,7 +79,7 @@ namespace Atlas {
 				sampleCount = 0;
 				imageOffset = ivec2(0);
 
-			}			
+			}		
 
 			// Check if the scene has changed. A change might happen when an actor has been updated,
 			// new actors have been added or old actors have been removed. If this happens we update

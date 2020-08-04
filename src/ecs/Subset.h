@@ -52,20 +52,20 @@ namespace Atlas {
 
 				}
 
-				bool operator!=(const Iterator& iterator) const {
+				inline bool operator!=(const Iterator& iterator) const {
 
 					return idx != iterator.idx;
 
 				}
 
-				const Entity& operator*() const {
+				inline const Entity& operator*() const {
 
 					return entity;
 
 				}
 
 			private:
-				bool HasAllComponents() {
+				inline bool HasAllComponents() {
 
 					entity = (*mainStorage)[idx];
 					bool valid = true;

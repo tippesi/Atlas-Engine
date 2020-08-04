@@ -10,6 +10,12 @@
 
 namespace Atlas {
 
+	namespace Texture {
+		class Texture2D;
+		class Texture2DArray;
+		class Cubemap;
+	}
+
 	class Framebuffer {
 
 	public:

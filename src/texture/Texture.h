@@ -138,6 +138,15 @@ namespace Atlas {
             float GetBias() const;
 
             /**
+             * Retrieves the data of the texture from the GPU.
+             * @param depth The depth where the data should be retrieved.
+             * @return A vector holding the data.
+             * @note Only uint8_t, uint16_t and float are supported typenames.
+             */
+            template<typename T>
+            std::vector<T> GetData(int32_t depth = 0);
+
+            /**
              * Determines the maximum anisotropy level offered by the system.
              * @return The maximum anisotropy level
              */
@@ -185,13 +194,6 @@ namespace Atlas {
              */
             virtual void ReserveStorage(int32_t mipCount) = 0;
 
-            /**
-             * Flips texture data horizontally.
-             * @param data The data to be flipped.
-			 * @return The flipped data.
-             */
-			std::vector<uint8_t> FlipDataHorizontally(const std::vector<uint8_t>& data);
-
             void Generate(uint32_t target, int32_t sizedFormat, int32_t wrapping,
                           int32_t filtering, bool anisotropicFiltering, bool generateMipMaps);
 
@@ -217,6 +219,56 @@ namespace Atlas {
             static bool anisotropicFilteringSupported;
 
         };
+
+        template<typename T>
+        std::vector<T> Texture::GetData(int32_t depth) {
+
+            static_assert(std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> ||
+                std::is_same_v<T, float>, "Unsupported type. Supported are uint8_t, uint16_t and float");
+
+            // We need to use raw OpenGL here, because forward declaring the framebuffer won't work
+            uint32_t framebufferID;
+            glGenFramebuffers(1, &framebufferID);
+            glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
+
+            if (target == GL_TEXTURE_2D) {
+                if (TextureFormat::GetBaseFormat(sizedFormat) != AE_DEPTH)
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                        GL_TEXTURE_2D, ID, 0);
+                else
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                        GL_TEXTURE_2D, ID, 0);
+            }
+            else if (target == GL_TEXTURE_2D_ARRAY) {
+                if (TextureFormat::GetBaseFormat(sizedFormat) != AE_DEPTH)
+                    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                        ID, 0, depth);
+                else
+                    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                        ID, 0, depth);
+            }
+
+            std::vector<T> data(width * height * channels);
+
+            if constexpr (std::is_same_v<T, uint8_t>) {
+                glReadPixels(0, 0, width, height, TextureFormat::GetBaseFormat(sizedFormat),
+                    GL_UNSIGNED_BYTE, data.data());
+            }
+            else if constexpr (std::is_same_v<T, uint16_t>) {
+                glReadPixels(0, 0, width, height, TextureFormat::GetBaseFormat(sizedFormat),
+                    GL_UNSIGNED_SHORT, data.data());
+            }
+            else if constexpr (std::is_same_v<T, float>) {
+                glReadPixels(0, 0, width, height, TextureFormat::GetBaseFormat(sizedFormat),
+                    GL_FLOAT, data.data());
+            }
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDeleteFramebuffers(1, &framebufferID);
+
+            return data;
+
+        }
 
     }
 

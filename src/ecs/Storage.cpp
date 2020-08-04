@@ -4,18 +4,6 @@ namespace Atlas {
 
 	namespace ECS {
 
-		Entity& Storage::operator[](size_t idx) {
-
-			return packedData[idx];
-
-		}
-
-		const Entity& Storage::operator[](size_t idx) const {
-
-			return packedData[idx];
-
-		}
-
 		void Storage::Emplace(const Entity entity) {
 
 			auto idx = EntityToIdx(entity);
@@ -57,41 +45,6 @@ namespace Atlas {
 			// Don't forget to invalidate the data
 			pageData[pageIdx][offsetIdx] = EntityConfig::InvalidEntity;
 			packedData.pop_back();
-
-		}
-
-		bool Storage::Contains(const Entity entity) const {
-
-			auto idx = EntityToIdx(entity);
-			auto page = GetPage(idx);
-
-			return page < pageTableSize&& pageData[page].size() &&
-				pageData[page][GetOffset(idx)] != EntityConfig::InvalidEntity;
-
-		}
-
-		size_t Storage::Size() const {
-
-			return packedData.size();
-
-		}
-
-		size_t Storage::GetPage(uint32_t idx) const {
-
-			return size_t(idx >> pageSizePowOf2);
-
-		}
-
-		size_t Storage::GetOffset(uint32_t idx) const {
-
-			return size_t(idx & (pageSize - 1));
-
-		}
-
-		size_t Storage::GetIndex(const Entity entity) const {
-
-			auto idx = EntityToIdx(entity);
-			return pageData[GetPage(idx)][GetOffset(idx)];
 
 		}
 

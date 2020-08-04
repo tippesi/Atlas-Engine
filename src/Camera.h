@@ -94,8 +94,8 @@ namespace Atlas {
 		 */
 		void UpdateFrustum();
 
-		vec3 location = vec3(0.0f);
-		vec2 rotation = vec2(0.0f);
+		vec3 location = vec3{ 0.0f };
+		vec2 rotation = vec2{ 0.0f };
 
 		float exposure = 1.0f;
 
@@ -107,27 +107,27 @@ namespace Atlas {
 		bool thirdPerson = false;
 		float thirdPersonDistance = 15.0f;
 
-		vec3 direction = vec3(0.0f, 0.0f, -1.0f);
-		vec3 up = vec3(0.0f, 1.0f, 0.0f);
-		vec3 right = vec3(1.0f, 0.0f, 0.0f);
+		vec3 direction = vec3{ 0.0f, 0.0f, -1.0f };
+		vec3 up = vec3{ 0.0f, 1.0f, 0.0f };
+		vec3 right = vec3{ 1.0f, 0.0f, 0.0f };
 
-		mat4 viewMatrix = mat4(1.0f);
-		mat4 projectionMatrix = mat4(1.0f);
+		mat4 viewMatrix = mat4{ 1.0f };
+		mat4 projectionMatrix = mat4{ 1.0f };
 
-		mat4 invViewMatrix = mat4(1.0f);
-		mat4 invProjectionMatrix = mat4(1.0f);
+		mat4 invViewMatrix = mat4{ 1.0f };
+		mat4 invProjectionMatrix = mat4{ 1.0f };
 
-		mat4 unjitterdProjection = mat4(0.0f);
-		mat4 invUnjitteredProjection = mat4(0.0f);
+		mat4 unjitterdProjection = mat4{ 1.0f };
+		mat4 invUnjitteredProjection = mat4{ 1.0f };
 
 		Volume::Frustum frustum;
 
 	private:
-		vec2 jitterVector = vec2(0.0f);
-		vec2 lastJitterVector = vec2(0.0f);
+		vec2 jitterVector = vec2{ 0.0f };
+		vec2 lastJitterVector = vec2{ 0.0f };
 
-		mat4 jitteredMatrix = mat4(0.0f);
-		mat4 lastJitteredMatrix = mat4(0.0f);
+		mat4 jitteredMatrix = mat4{ 1.0f };
+		mat4 lastJitteredMatrix = mat4{ 1.0f };
 
 	};
 

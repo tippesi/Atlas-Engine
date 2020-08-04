@@ -88,23 +88,6 @@ namespace Atlas {
 
 		}
 
-        std::vector<uint8_t> Texture2DArray::GetData(int32_t depth) {
-
-            auto framebuffer = Framebuffer(width, height);
-
-            std::vector<uint8_t> data(width * height * channels * TypeFormat::GetSize(dataType));
-
-            framebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, this, depth);
-
-            glReadPixels(0, 0, width, height,
-                    TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
-
-            framebuffer.Unbind();
-
-            return data;
-
-        }
-
         void Texture2DArray::Resize(int32_t width, int32_t height, int32_t depth) {
 
 			if (width != this->width || height != this->height ||
@@ -129,10 +112,8 @@ namespace Atlas {
 			Common::Image<uint8_t> image(width, height, channels);
             image.fileFormat = AE_IMAGE_PNG;
 
-            auto data = GetData(depth);
-            FlipDataHorizontally(data);
-
-			image.SetData(data);
+			image.SetData(GetData<uint8_t>(depth));
+			image.FlipHorizontally();
 
             Loader::ImageLoader::SaveImage(image, filename);
 

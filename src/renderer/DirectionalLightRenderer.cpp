@@ -103,11 +103,11 @@ namespace Atlas {
 							auto cascade = &directionalLight->GetShadow()->components[i];
 							auto frustum = Volume::Frustum(cascade->frustumMatrix);
 							auto corners = frustum.GetCorners();
-							auto texel = glm::max(abs(corners[0].x - corners[1].x),
+							auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
 								abs(corners[1].y - corners[3].y)) / (float)light->GetShadow()->resolution;
 							cascades[i].distance->SetValue(cascade->farDistance);
 							cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->invViewMatrix);
-							cascades[i].texelSize->SetValue(texel);
+							cascades[i].texelSize->SetValue(texelSize);
 						}
 						else {
 							auto cascade = &directionalLight->GetShadow()->components[componentCount - 1];

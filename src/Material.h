@@ -52,7 +52,7 @@ namespace Atlas {
 		float ao = 1.0f;
 
 		float normalScale = 1.0f;
-		float displacementScale = 1.0f;
+		float displacementScale = 0.01f;
 
 		std::string baseColorMapPath;
 		std::string opacityMapPath;

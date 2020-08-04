@@ -39,6 +39,8 @@ struct PackedMaterial {
 	int emissiveColor;
 	int transmissiveColor;
 
+	float emissiveIntensity;
+
 	int data0;
 	int data1;
 
@@ -57,7 +59,7 @@ Material UnpackMaterial(uint idx) {
 	Material material;
 
 	material.baseColor = vec3(unpackColorVector(compressed.baseColor));
-	material.emissiveColor = vec3(unpackColorVector(compressed.emissiveColor));
+	material.emissiveColor = vec3(unpackColorVector(compressed.emissiveColor)) * compressed.emissiveIntensity;
 	material.transmissiveColor = vec3(unpackColorVector(compressed.transmissiveColor));
 
 	vec4 data0 = unpackColorVector(compressed.data0);

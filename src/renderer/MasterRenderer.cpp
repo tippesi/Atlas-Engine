@@ -610,7 +610,7 @@ namespace Atlas {
 				createProbeFaceShader.GetUniform("ipMatrix")->SetValue(camera.invProjectionMatrix);
 
 				int32_t groupCount = probe->resolution / 8;
-				groupCount += ((probe->resolution % groupCount) ? 1 : 0);
+				groupCount += ((groupCount * 8 == probe->resolution) ? 0 : 1);
 
 				probe->cubemap.Bind(GL_WRITE_ONLY, 0);
 				probe->depth.Bind(GL_WRITE_ONLY, 1);
@@ -823,9 +823,14 @@ namespace Atlas {
 			for (auto material : sceneMaterials) {
 				PackedMaterial packed;
 
+				auto emissiveIntensity = glm::max(glm::max(material->emissiveColor.r,
+					material->emissiveColor.g), material->emissiveColor.b);
+
 				packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->baseColor, 0.0f));
-				packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->emissiveColor, 0.0f));
+				packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->emissiveColor / emissiveIntensity, 0.0f));
 				packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->transmissiveColor, 0.0f));
+
+				packed.emissiveIntensity = emissiveIntensity;
 
 				vec4 data0, data1;
 

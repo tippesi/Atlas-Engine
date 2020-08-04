@@ -237,28 +237,6 @@ namespace Atlas {
 
         }
 
-		std::vector<uint8_t> Texture::FlipDataHorizontally(const std::vector <uint8_t> &data) {
-
-            auto invertedData = std::vector<uint8_t>(width * height * channels);
-
-            int32_t dataIndex = width * (height - 1) * channels + channels;
-
-            for (int32_t i = 0; i < width * height * channels - channels; i++) {
-
-                if (dataIndex % (width * channels) == 0) {
-                    dataIndex = dataIndex - 2 * width * channels;
-                }
-
-                invertedData[dataIndex] = data[i];
-
-                dataIndex++;
-
-            }
-
-			return invertedData;
-
-        }
-
         void Texture::Generate(uint32_t target, int32_t sizedFormat, int32_t wrapping,
                                int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
 

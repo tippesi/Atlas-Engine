@@ -84,7 +84,7 @@ namespace Atlas {
 
 	void Window::SetIcon(Texture::Texture2D *icon) {
 
-		auto data = icon->GetData();
+		auto data = icon->GetData<uint8_t>();
 
 		SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(data.data(), icon->width, icon->height, icon->channels * 8,
 														icon->channels * icon->width,

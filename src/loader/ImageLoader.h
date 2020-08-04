@@ -103,7 +103,7 @@ namespace Atlas {
             }
 
             /**
-             * Save an image with 8 bits per channel to the hard drive.
+             * Save an image to the hard drive.
              * @param image The image to be stored
              * @param filename The filename that the image should have
              * @note By changing the fileFormat in the Image object the output file changes as well.
@@ -154,7 +154,7 @@ namespace Atlas {
                         SavePGM(image, imageStream);
                     }
                 }
-                else if (image.fileFormat == AE_IMAGE_PNG) {
+                else if (image.fileFormat == AE_IMAGE_HDR) {
                     if constexpr (std::is_same_v<T, float>) {
                         stbi_write_hdr_to_func(lambda, &imageStream, image.width,
                             image.height, image.channels, image.GetData().data());

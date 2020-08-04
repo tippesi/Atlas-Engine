@@ -90,15 +90,15 @@ namespace Atlas {
 						}
 
                         // Here we assume that all cells are present
-                        auto data = cell->heightField->GetData();
+                        auto heightData = cell->heightField->GetData<uint16_t>();
+
+                        fileStream.write((char*)heightData.data(), heightData.size() * 2);
+
+                        auto data = cell->normalMap->GetData<uint8_t>();
 
                         fileStream.write((char*)data.data(), data.size());
 
-                        data = cell->normalMap->GetData();
-
-                        fileStream.write((char*)data.data(), data.size());
-
-						data = cell->splatMap->GetData();
+						data = cell->splatMap->GetData<uint8_t>();
 
 						fileStream.write((char*)data.data(), data.size());
 

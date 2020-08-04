@@ -213,7 +213,7 @@ namespace Atlas {
 			for (int32_t i = 0; i < tileSideCount; i++) {
 				for (int32_t j = 0; j < tileSideCount; j++) {
 					auto cell = terrain->storage->GetCell(i, j, terrain->LoDCount - 1);
-					auto cellSplatData = cell->splatMap->GetData();
+					auto cellSplatData = cell->splatMap->GetData<uint8_t>();
 
 					// Now copy a tile of the original image
 					// We make sure that every tile has the same size
@@ -704,7 +704,7 @@ namespace Atlas {
 					if (cell == nullptr)
 						continue;
 
-					cellDatas[i * 3 + j] = cell->splatMap->GetData();
+					cellDatas[i * 3 + j] = cell->splatMap->GetData<uint8_t>();
 					auto& splatData = cellDatas[i * 3 + j];
 
 					for (int32_t k = 0; k < height + 1; k++) {
@@ -808,7 +808,7 @@ namespace Atlas {
 			for (int32_t i = 0; i < tileSideCount; i++) {
 				for (int32_t j = 0; j < tileSideCount; j++) {
 					auto cell = terrain->storage->GetCell(i, j, terrain->LoDCount - 1);
-					auto cellSplatData = cell->splatMap->GetData();
+					auto cellSplatData = cell->splatMap->GetData<uint8_t>();
 
 					// Now copy a tile of the original image
 					// We make sure that every tile has the same size

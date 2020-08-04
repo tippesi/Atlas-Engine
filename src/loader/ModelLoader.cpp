@@ -225,7 +225,7 @@ namespace Atlas {
 			material.baseColor = vec3(diffuse.r, diffuse.g, diffuse.b);
 			material.emissiveColor = vec3(emissive.r, emissive.g, emissive.b);
 
-			material.displacementScale = 0.05f;
+			material.displacementScale = 0.01f;
 
 			// Avoid NaN
 			specularHardness = glm::max(1.0f, specularHardness);
@@ -282,11 +282,15 @@ namespace Atlas {
 				else
 					assimpMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
-				auto texture = new Texture::Texture2D(path, false);
+				auto image = ImageLoader::LoadImage<uint8_t>(path);
+				auto texture = new Texture::Texture2D(image);
 				// Might still be a traditional displacement map
 				if (texture->channels == 1 && isObj) {
 					material.displacementMap = texture;
 					material.displacementMapPath = path;
+					image = ApplySobelFilter(image);
+					material.normalMap = new Texture::Texture2D(image);
+					material.normalMapPath = path;
 				}
 				else {
 					material.normalMap = texture;

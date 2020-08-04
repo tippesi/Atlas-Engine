@@ -66,8 +66,7 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
     // number of depth layers (changes are a bit distracting right now)
     const float minLayers = 32.0;
 	const float maxLayers = 32.0;
-	float numLayers = mix(minLayers, maxLayers,  
-		abs(dot(vec3(0.0, 1.0, 0.0), viewDir)));  
+	float numLayers = 16;  
     // calculate the size of each layer
     float layerDepth = 1.0 / numLayers;
     // depth of current layer
@@ -99,7 +98,7 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 	 
 	// interpolation of texture coordinates
 	float weight = afterDepth / (afterDepth - beforeDepth);
-	vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+	vec2 finalTexCoords = mix(currentTexCoords, prevTexCoords, weight);
 
 	return finalTexCoords;
 #else

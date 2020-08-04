@@ -56,7 +56,7 @@ vec3 GetMomentsCoord(ivec3 probeIndex, vec3 dir) {
 
 }
 
-vec4 GetLocalIrradiance(vec3 view, mat4 ivMatrix, vec3 N, out float blubWeight) {
+vec4 GetLocalIrradiance(vec3 view, mat4 ivMatrix, vec3 N) {
 
 	vec3 position = vec3(ivMatrix * vec4(view, 1.0));
 
@@ -207,7 +207,7 @@ void main() {
 	// Indirect diffuse BRDF
 	vec3 worldNormal = normalize(vec3(ivMatrix * vec4(geometryNormal, 0.0)));
 	vec3 prefilteredDiffuse = texture(diffuseProbe, worldNormal).rgb;
-	vec4 prefilteredDiffuseLocal = GetLocalIrradiance(fragPos, ivMatrix, worldNormal, sumWeight);
+	vec4 prefilteredDiffuseLocal = GetLocalIrradiance(fragPos, ivMatrix, worldNormal);
 	prefilteredDiffuse = prefilteredDiffuseLocal.rgb + prefilteredDiffuse * prefilteredDiffuseLocal.a;
 	vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface);
 
@@ -229,15 +229,18 @@ void main() {
 
 		// Indirect diffuse BRDF backside
 		prefilteredDiffuse = texture(diffuseProbe, -worldNormal).rgb;
-		prefilteredDiffuseLocal = GetLocalIrradiance(fragPos, ivMatrix, -worldNormal, sumWeight);
+		prefilteredDiffuseLocal = GetLocalIrradiance(fragPos, ivMatrix, -worldNormal);
 		prefilteredDiffuse = prefilteredDiffuseLocal.rgb + prefilteredDiffuse * prefilteredDiffuseLocal.a;
 		indirect += material.transmissiveColor * prefilteredDiffuse * 
 			EvaluateIndirectDiffuseBRDF(backSurface) * material.ao;
 	}
 
-#ifdef SHADOWS	
+#ifdef SHADOWS
+	// Using NdotL generates artifacts. A seperate issue: Close geometry also exhibits
+	// artifacts. My guess right now is that this is caused by the variation
+	// of normals in view space. World space normals might be more stable.
 	shadowFactor = CalculateCascadedShadow(light, fragPos,
-		geometryNormal, 1.0 - max(surface.NdotL, 0.0)); 
+		geometryNormal, 1.0); 
 	
 	volumetric = vec3(texture(volumetricTexture, texCoordVS).r);
 #endif
@@ -252,7 +255,7 @@ void main() {
 	vec3 radiance = light.color * light.intensity;
 	colorFS = vec4(direct * radiance * surface.NdotL * shadowFactor + indirect, 1.0);
 
-	if (length(material.emissiveColor) > 0.01) {	
+	if (dot(material.emissiveColor, vec3(1.0)) > 0.01) {	
 		colorFS = vec4(material.emissiveColor, 1.0);
 	}
 	

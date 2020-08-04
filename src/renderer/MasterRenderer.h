@@ -179,6 +179,8 @@ namespace Atlas {
 				int32_t emissiveColor;
 				int32_t transmissionColor;
 
+				float emissiveIntensity;
+
 				int32_t data0;
 				int32_t data1;
 

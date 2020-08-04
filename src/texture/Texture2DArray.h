@@ -112,13 +112,6 @@ namespace Atlas {
                 int32_t width, int32_t height, int32_t depth);
 
             /**
-             * Retrieves the data of the texture from the GPU.
-             * @param depth The depth where the data should be retrieved.
-             * @return A vector holding the data.
-             */
-            std::vector<uint8_t> GetData(int32_t depth);
-
-            /**
              * Resizes the texture
              * @param width The new width of the texture.
              * @param height The new height of the texture.
