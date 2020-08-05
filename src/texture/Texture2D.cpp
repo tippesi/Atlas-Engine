@@ -1,5 +1,4 @@
 #include "Texture2D.h"
-#include "../loader/ImageLoader.h"
 
 namespace Atlas {
 
@@ -23,31 +22,17 @@ namespace Atlas {
         }
 
         Texture2D::Texture2D(std::string filename, bool colorSpaceConversion, bool anisotropicFiltering,
-			bool generateMipMaps, int32_t forceChannels) : Texture2D(Loader::ImageLoader::LoadImage<uint8_t>(filename,
-			colorSpaceConversion, forceChannels), anisotropicFiltering, generateMipMaps) {
+			bool generateMipMaps, int32_t forceChannels) {
+
+			auto image = Loader::ImageLoader::LoadImage<uint8_t>(filename,
+					colorSpaceConversion, forceChannels);
+			InitializeInternal(image, anisotropicFiltering, generateMipMaps);
 
         }
 
 		Texture2D::Texture2D(Common::Image<uint8_t>& image, bool anisotropicFiltering, bool generateMipMaps) {
 
-			int32_t sizedFormat;
-
-			switch (image.channels) {
-			case 4: sizedFormat = AE_RGBA8; break;
-			case 3: sizedFormat = AE_RGB8; break;
-			case 2: sizedFormat = AE_RG8; break;
-			case 1: sizedFormat = AE_R8; break;
-			}
-
-			width = image.width;
-			height = image.height;
-			channels = image.channels;
-			this->layers = 1;
-
-			Generate(GL_TEXTURE_2D, sizedFormat, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
-				anisotropicFiltering, generateMipMaps);
-
-			SetData(image.GetData());
+			InitializeInternal(image, anisotropicFiltering, generateMipMaps);
 
 		}
 
@@ -148,6 +133,30 @@ namespace Atlas {
             glTexStorage2D(GL_TEXTURE_2D, mipCount, sizedFormat, width, height);
 
         }
+
+        void Texture2D::InitializeInternal(Atlas::Common::Image<uint8_t> &image,
+        	bool anisotropicFilterin, bool generateMipMaps) {
+
+			int32_t sizedFormat;
+
+			switch (image.channels) {
+				case 4: sizedFormat = AE_RGBA8; break;
+				case 3: sizedFormat = AE_RGB8; break;
+				case 2: sizedFormat = AE_RG8; break;
+				case 1: sizedFormat = AE_R8; break;
+			}
+
+			width = image.width;
+			height = image.height;
+			channels = image.channels;
+			this->layers = 1;
+
+			Generate(GL_TEXTURE_2D, sizedFormat, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
+					 anisotropicFiltering, generateMipMaps);
+
+			SetData(image.GetData());
+
+		}
 
     }
 

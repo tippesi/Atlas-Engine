@@ -241,7 +241,7 @@ namespace Atlas {
 		}
 
 		template<typename T>
-		Image<T>::MipLevel<T>& Image<T>::GetMipLevel(int32_t mipLevel) {
+		typename Image<T>::template MipLevel<T>& Image<T>::GetMipLevel(int32_t mipLevel) {
 
 			return mipLevels[mipLevel];
 

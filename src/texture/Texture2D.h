@@ -5,6 +5,7 @@
 #include "Texture.h"
 
 #include "../common/Image.h"
+#include "../loader/ImageLoader.h"
 
 namespace Atlas {
 
@@ -122,6 +123,10 @@ namespace Atlas {
 
         protected:
             void ReserveStorage(int32_t mipCount) override;
+
+        private:
+            void InitializeInternal(Common::Image<uint8_t>& image, bool anisotropicFilterin,
+                    bool generateMipMaps);
 
         };
 
