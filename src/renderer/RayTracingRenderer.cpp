@@ -8,6 +8,9 @@
 #include <unordered_set>
 #include <unordered_map>
 
+#define DIRECTIONAL_LIGHT 0
+#define TRIANGLE_LIGHT 1
+
 namespace Atlas {
 
 	namespace Renderer {
@@ -38,8 +41,10 @@ namespace Atlas {
 				AE_BUFFER_DYNAMIC_STORAGE);
 			materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUMaterial),
 				AE_BUFFER_DYNAMIC_STORAGE);
-			nodesBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUBVHNode),
+			nodeBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUBVHNode),
 				AE_BUFFER_DYNAMIC_STORAGE);
+			lightBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPULight),
+				AE_BUFFER_DYNAMIC_STORAGE, 512);
 
 			// Load shader stages from hard drive and compile the shader
 			primaryRayShader.AddStage(AE_COMPUTE_STAGE, "raytracer/primaryRay.csh");
@@ -48,13 +53,13 @@ namespace Atlas {
 			// Retrieve uniforms
 			GetPrimaryRayUniforms();
 
-			bounceUpdateShader.AddStage(AE_COMPUTE_STAGE, "raytracer/bounceUpdate.csh");
-			bounceUpdateShader.Compile();
+			bounceDispatchShader.AddStage(AE_COMPUTE_STAGE, "raytracer/bounceDispatch.csh");
+			bounceDispatchShader.Compile();
 
 			GetBounceUpdateUniforms();
 
-			rayUpdateShader.AddStage(AE_COMPUTE_STAGE, "raytracer/rayUpdate.csh");
-			rayUpdateShader.Compile();
+			bounceUpdateShader.AddStage(AE_COMPUTE_STAGE, "raytracer/bounceUpdate.csh");
+			bounceUpdateShader.Compile();
 
 			GetRayUpdateUniforms();
 
@@ -70,6 +75,8 @@ namespace Atlas {
 		void RayTracingRenderer::Render(Viewport* viewport, RayTracerRenderTarget* renderTarget,
 			ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene) {
 
+			const size_t lightCount = 512;
+
 			if (glm::distance(camera->GetLocation(), cameraLocation) > 1e-3f ||
 				glm::distance(camera->rotation, cameraRotation) > 1e-3f) {
 
@@ -79,7 +86,7 @@ namespace Atlas {
 				sampleCount = 0;
 				imageOffset = ivec2(0);
 
-			}		
+			}
 
 			// Check if the scene has changed. A change might happen when an actor has been updated,
 			// new actors have been added or old actors have been removed. If this happens we update
@@ -87,7 +94,7 @@ namespace Atlas {
 			if (scene->HasChanged())
 				if (!UpdateData(scene)) // Only proceed if GPU data is valid
 					return;
-
+			/*
 			// Retrieve the first directional light source of the scene
 			auto lights = scene->GetLights();
 
@@ -97,6 +104,38 @@ namespace Atlas {
 				if (light->type == AE_DIRECTIONAL_LIGHT) {
 					sun = static_cast<Lighting::DirectionalLight*>(light);
 				}
+			}
+			*/
+
+			// Randomly select lights (only at image offset 0)
+			if (imageOffset.x == 0 && imageOffset.y == 0) {
+				std::vector<GPULight> selectedLights;
+				if (lights.size() > lightCount) {
+					for (size_t i = 0; i < lightBuffer.GetElementCount(); i++) {
+						auto rnd = float(rand()) / float(RAND_MAX);
+
+						auto sum = 0.0f;
+						for (auto& light : lights) {
+							sum += light.data1.y;
+							if (rnd < sum) {
+								selectedLights.push_back(light);
+								break;
+							}
+						}
+					}
+
+					for (auto& light : selectedLights) {
+						light.data1.y *= float(selectedLights.size());
+					}
+				}
+				else {
+					for (auto light : lights) {
+						light.data1.y = 1.0f;
+						selectedLights.push_back(light);
+					}
+				}
+
+				lightBuffer.SetSize(selectedLights.size(), selectedLights.data());
 			}
 
 			ivec2 resolution = ivec2(renderTarget->GetWidth(), renderTarget->GetHeight());
@@ -129,9 +168,10 @@ namespace Atlas {
 			if (aoTextureAtlas.slices.size())
 				aoTextureAtlas.texture.Bind(GL_TEXTURE9);
 
-			materialBuffer.BindBase(5);
-			triangleBuffer.BindBase(6);
-			nodesBuffer.BindBase(7);			
+			lightBuffer.BindBase(5);
+			materialBuffer.BindBase(6);			
+			triangleBuffer.BindBase(7);
+			nodeBuffer.BindBase(8);			
 
 			for (int32_t i = 0; i <= bounces; i++) {
 
@@ -201,7 +241,7 @@ namespace Atlas {
 
 					indirectSSBOBuffer.BindBase(2);
 
-					bounceUpdateShader.Bind();
+					bounceDispatchShader.Bind();
 
 					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
 						GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -209,24 +249,16 @@ namespace Atlas {
 					glDispatchCompute(1, 1, 1);
 				}
 
-				rayUpdateShader.Bind();
+				bounceUpdateShader.Bind();
 
-				cameraLocationRayUpdateUniform->SetValue(camera->GetLocation());
+				maxBouncesBounceUpdateUniform->SetValue(bounces);
 
-				if (sun) {
-					lightDirectionRayUpdateUniform->SetValue(normalize(sun->direction));
-					lightColorRayUpdateUniform->SetValue(sun->color);
-					lightIntensityRayUpdateUniform->SetValue(sun->intensity);
-				}
-				else {
-					lightColorRayUpdateUniform->SetValue(vec3(0.0f));
-				}
+				sampleCountBounceUpdateUniform->SetValue(sampleCount);
+				bounceCountBounceUpdateUniform->SetValue(i);
+				lightCountBounceUpdateUniform->SetValue(int32_t(lightBuffer.GetElementCount()));
 
-				sampleCountRayUpdateUniform->SetValue(sampleCount);
-				bounceCountRayUpdateUniform->SetValue(bounces - i);
-
-				resolutionRayUpdateUniform->SetValue(resolution);
-				seedRayUpdateUniform->SetValue(float(rand()) / float(RAND_MAX));
+				resolutionBounceUpdateUniform->SetValue(resolution);
+				seedBounceUpdateUniform->SetValue(float(rand()) / float(RAND_MAX));
 
 				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
 					GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -301,17 +333,14 @@ namespace Atlas {
 
 		void RayTracingRenderer::GetRayUpdateUniforms() {
 
-			cameraLocationRayUpdateUniform = rayUpdateShader.GetUniform("cameraLocation");
-			
-			lightDirectionRayUpdateUniform = rayUpdateShader.GetUniform("light.direction");
-			lightColorRayUpdateUniform = rayUpdateShader.GetUniform("light.color");
-			lightIntensityRayUpdateUniform = rayUpdateShader.GetUniform("light.intensity");
+			maxBouncesBounceUpdateUniform = bounceUpdateShader.GetUniform("maxBounces");
 
-			sampleCountRayUpdateUniform = rayUpdateShader.GetUniform("sampleCount");
-			bounceCountRayUpdateUniform = rayUpdateShader.GetUniform("bounceCount");
+			sampleCountBounceUpdateUniform = bounceUpdateShader.GetUniform("sampleCount");
+			bounceCountBounceUpdateUniform = bounceUpdateShader.GetUniform("bounceCount");
+			lightCountBounceUpdateUniform = bounceUpdateShader.GetUniform("lightCount");
 
-			resolutionRayUpdateUniform = rayUpdateShader.GetUniform("resolution");
-			seedRayUpdateUniform = rayUpdateShader.GetUniform("seed");
+			resolutionBounceUpdateUniform = bounceUpdateShader.GetUniform("resolution");
+			seedBounceUpdateUniform = bounceUpdateShader.GetUniform("seed");
 
 		}
 
@@ -322,7 +351,10 @@ namespace Atlas {
 			int32_t indexCount = 0;
 			int32_t vertexCount = 0;
 
-			auto materialAccess = UpdateMaterials(scene);
+			std::vector<GPUMaterial> materials;
+			auto materialAccess = UpdateMaterials(scene, materials);
+			// Finish OpenGL commands instantly to free RAM
+			glFinish();
 
 			for (auto& actor : actors) {
 				indexCount += actor->mesh->data.GetIndexCount();
@@ -378,11 +410,11 @@ namespace Atlas {
 
 			}
 
-			std::vector<GPUTriangle> triangles(triangleCount);
-
-			triangleCount = 0;
+			std::vector<Triangle> triangles(triangleCount);
 
 			std::vector<Volume::AABB> aabbs;
+
+			triangleCount = 0;
 
 			for (auto& actor : actors) {
 
@@ -395,74 +427,24 @@ namespace Atlas {
 					auto k = i + triangleCount;
 
 					// Transform everything
-					auto v0 = vec3(matrix * vec4(vertices[k * 3], 1.0f));
-					auto v1 = vec3(matrix * vec4(vertices[k * 3 + 1], 1.0f));
-					auto v2 = vec3(matrix * vec4(vertices[k * 3 + 2], 1.0f));
+					triangles[k].v0 = vec3(matrix * vec4(vertices[k * 3], 1.0f));
+					triangles[k].v1 = vec3(matrix * vec4(vertices[k * 3 + 1], 1.0f));
+					triangles[k].v2 = vec3(matrix * vec4(vertices[k * 3 + 2], 1.0f));
 
-					auto n0 = normalize(vec3(matrix * vec4(normals[k * 3], 0.0f)));
-					auto n1 = normalize(vec3(matrix * vec4(normals[k * 3 + 1], 0.0f)));
-					auto n2 = normalize(vec3(matrix * vec4(normals[k * 3 + 2], 0.0f)));
+					triangles[k].n0 = normalize(vec3(matrix * vec4(normals[k * 3], 0.0f)));
+					triangles[k].n1 = normalize(vec3(matrix * vec4(normals[k * 3 + 1], 0.0f)));
+					triangles[k].n2 = normalize(vec3(matrix * vec4(normals[k * 3 + 2], 0.0f)));
 
-					auto uv0 = texCoords[k * 3];
-					auto uv1 = texCoords[k * 3 + 1];
-					auto uv2 = texCoords[k * 3 + 2];
+					triangles[k].uv0 = texCoords[k * 3];
+					triangles[k].uv1 = texCoords[k * 3 + 1];
+					triangles[k].uv2 = texCoords[k * 3 + 2];
 
-					auto v0v1 = v1 - v0;
-					auto v0v2 = v2 - v0;
+					triangles[k].materialIdx = materialIndices[k];
 
-					auto uv0uv1 = uv1 - uv0;
-					auto uv0uv2 = uv2 - uv0;
-
-					auto r = 1.0f / (uv0uv1.x * uv0uv2.y - uv0uv2.x * uv0uv1.y);
-
-					auto s = vec3(uv0uv2.y * v0v1.x - uv0uv1.y * v0v2.x,
-						uv0uv2.y * v0v1.y - uv0uv1.y * v0v2.y,
-						uv0uv2.y * v0v1.z - uv0uv1.y * v0v2.z) * r;
-
-					auto t = vec3(uv0uv1.x * v0v2.x - uv0uv2.x * v0v1.x,
-						uv0uv1.x * v0v2.y - uv0uv2.x * v0v1.y,
-						uv0uv1.x * v0v2.z - uv0uv2.x * v0v1.z) * r;
-
-					auto normal = normalize(n0 + n1 + n2);
-
-					auto tangent = normalize(s - normal * dot(normal, s));
-					auto handedness = (glm::dot(glm::cross(tangent, normal), t) < 0.0f ? 1.0f : -1.0f);
-
-					auto bitangent = handedness * normalize(glm::cross(tangent, normal));
-
-					// Compress data
-					auto pn0 = Common::Packing::PackSignedVector3x10_1x2(vec4(n0, 0.0f));
-					auto pn1 = Common::Packing::PackSignedVector3x10_1x2(vec4(n1, 0.0f));
-					auto pn2 = Common::Packing::PackSignedVector3x10_1x2(vec4(n2, 0.0f));
-
-					auto pt = Common::Packing::PackSignedVector3x10_1x2(vec4(tangent, 0.0f));
-					auto pbt = Common::Packing::PackSignedVector3x10_1x2(vec4(bitangent, 0.0f));
-
-					auto puv0 = glm::packHalf2x16(uv0);
-					auto puv1 = glm::packHalf2x16(uv1);
-					auto puv2 = glm::packHalf2x16(uv2);
-
-					auto cn0 = reinterpret_cast<float&>(pn0);
-					auto cn1 = reinterpret_cast<float&>(pn1);
-					auto cn2 = reinterpret_cast<float&>(pn2);
-
-					auto ct = reinterpret_cast<float&>(pt);
-					auto cbt = reinterpret_cast<float&>(pbt);
-
-					auto cuv0 = reinterpret_cast<float&>(puv0);
-					auto cuv1 = reinterpret_cast<float&>(puv1);
-					auto cuv2 = reinterpret_cast<float&>(puv2);
-
-					triangles[k].v0 = vec4(v0, cn0);
-					triangles[k].v1 = vec4(v1, cn1);
-					triangles[k].v2 = vec4(v2, cn2);
-					triangles[k].d0 = vec4(cuv0, cuv1, cuv2, reinterpret_cast<float&>(materialIndices[k]));
-					triangles[k].d1 = vec4( ct, cbt, 0.0f, 0.0f);
-
-					auto min = glm::min(glm::min(triangles[k].v0, triangles[k].v1),
-						triangles[k].v2);
-					auto max = glm::max(glm::max(triangles[k].v0, triangles[k].v1),
-						triangles[k].v2);
+					auto min = glm::min(glm::min(triangles[k].v0,
+						triangles[k].v1), triangles[k].v2);
+					auto max = glm::max(glm::max(triangles[k].v0,
+						triangles[k].v1), triangles[k].v2);
 
 					aabbs.push_back(Volume::AABB(min, max));
 
@@ -472,25 +454,93 @@ namespace Atlas {
 
 			}
 
-			vertices.clear();
-			normals.clear();
-			texCoords.clear();
+			// Force memory to be cleared
+			vertices.swap(std::vector<vec3>());
+			normals.swap(std::vector<vec3>());
+			texCoords.swap(std::vector<vec2>());
+			materialIndices.swap(std::vector<int32_t>());
+
+			//CutTriangles(aabbs, triangles);
+
+			std::vector<GPUTriangle> gpuTriangles;
+
+			for(auto triangle : triangles) {
+
+				auto v0v1 = triangle.v1 - triangle.v0;
+				auto v0v2 = triangle.v2 - triangle.v0;
+
+				auto uv0uv1 = triangle.uv1 - triangle.uv0;
+				auto uv0uv2 = triangle.uv2 - triangle.uv0;
+
+				auto r = 1.0f / (uv0uv1.x * uv0uv2.y - uv0uv2.x * uv0uv1.y);
+
+				auto s = vec3(uv0uv2.y * v0v1.x - uv0uv1.y * v0v2.x,
+					uv0uv2.y * v0v1.y - uv0uv1.y * v0v2.y,
+					uv0uv2.y * v0v1.z - uv0uv1.y * v0v2.z) * r;
+
+				auto t = vec3(uv0uv1.x * v0v2.x - uv0uv2.x * v0v1.x,
+					uv0uv1.x * v0v2.y - uv0uv2.x * v0v1.y,
+					uv0uv1.x * v0v2.z - uv0uv2.x * v0v1.z) * r;
+
+				auto normal = glm::normalize(triangle.n0 + triangle.n1 + triangle.n2);
+
+				auto tangent = glm::normalize(s - normal * dot(normal, s));
+				auto handedness = (glm::dot(glm::cross(tangent, normal), t) < 0.0f ? 1.0f : -1.0f);
+
+				auto bitangent = handedness * glm::normalize(glm::cross(tangent, normal));
+
+				// Compress data
+				auto pn0 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n0, 0.0f));
+				auto pn1 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n1, 0.0f));
+				auto pn2 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n2, 0.0f));
+
+				auto pt = Common::Packing::PackSignedVector3x10_1x2(vec4(tangent, 0.0f));
+				auto pbt = Common::Packing::PackSignedVector3x10_1x2(vec4(bitangent, 0.0f));
+
+				auto puv0 = glm::packHalf2x16(triangle.uv0);
+				auto puv1 = glm::packHalf2x16(triangle.uv1);
+				auto puv2 = glm::packHalf2x16(triangle.uv2);
+
+				auto cn0 = reinterpret_cast<float&>(pn0);
+				auto cn1 = reinterpret_cast<float&>(pn1);
+				auto cn2 = reinterpret_cast<float&>(pn2);
+
+				auto ct = reinterpret_cast<float&>(pt);
+				auto cbt = reinterpret_cast<float&>(pbt);
+
+				auto cuv0 = reinterpret_cast<float&>(puv0);
+				auto cuv1 = reinterpret_cast<float&>(puv1);
+				auto cuv2 = reinterpret_cast<float&>(puv2);
+
+				GPUTriangle gpuTriangle;
+
+				gpuTriangle.v0 = vec4(triangle.v0, cn0);
+				gpuTriangle.v1 = vec4(triangle.v1, cn1);
+				gpuTriangle.v2 = vec4(triangle.v2, cn2);
+				gpuTriangle.d0 = vec4(cuv0, cuv1, cuv2, reinterpret_cast<float&>(triangle.materialIdx));
+				gpuTriangle.d1 = vec4(ct, cbt, 0.0f, 0.0f);
+
+				gpuTriangles.push_back(gpuTriangle);
+
+			}
+
+			triangles.swap(std::vector<Triangle>());
 
 			// Generate BVH
-			auto bvh = Volume::BVH<GPUTriangle>(aabbs, triangles);
+			auto bvh = Volume::BVH<GPUTriangle>(aabbs, gpuTriangles);
 
-			// Temporaray data
-			triangles = bvh.data;
-			bvhDepth = bvh.maxDepth;
+			// Upload triangles
+			triangleBuffer.SetSize(bvh.data.size());
+			triangleBuffer.SetData(bvh.data.data(), 0, bvh.data.size());
 
-			auto nodes = bvh.GetTree();
+			// Free memory and upload data instantly
+			bvh.data.swap(std::vector<GPUTriangle>());
+			glFinish();
 
-			// Copy to GPU format
+			auto& nodes = bvh.GetTree();
 			auto gpuNodes = std::vector<GPUBVHNode>(nodes.size());
-
-			// Copy nodes
+			// Copy to GPU format
 			for (size_t i = 0; i < nodes.size(); i++) {
-
 				if (nodes[i].dataCount) {
 					// Leaf node (0x80000000 signalizes a leaf node)
 					gpuNodes[i].leaf.dataOffset = nodes[i].dataOffset;
@@ -504,20 +554,136 @@ namespace Atlas {
 
 				gpuNodes[i].aabb.min = nodes[i].aabb.min;
 				gpuNodes[i].aabb.max = nodes[i].aabb.max;
+			}
+
+			// Free original node memory
+			nodes.swap(std::vector<Volume::BVHNode<GPUTriangle>>());
+
+			// Upload nodes instantly
+			nodeBuffer.SetSize(gpuNodes.size());
+			nodeBuffer.SetData(gpuNodes.data(), 0, gpuNodes.size());
+			glFinish();
+
+			// Triangle lights
+			for (size_t i = 0; i < gpuTriangles.size(); i++) {
+				auto& triangle = gpuTriangles[i];
+				auto idx = reinterpret_cast<int32_t&>(triangle.d0.w);
+				auto& material = materials[idx];
+
+				auto radiance = material.emissiveColor;
+				auto brightness = dot(radiance, vec3(0.3333f));
+
+				if (brightness > 0.0f) {
+					// Extract normal information again
+					auto cn0 = reinterpret_cast<int32_t&>(triangle.v0.w);
+					auto cn1 = reinterpret_cast<int32_t&>(triangle.v1.w);
+					auto cn2 = reinterpret_cast<int32_t&>(triangle.v2.w);
+
+					auto n0 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn0));
+					auto n1 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn1));
+					auto n2 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn2));
+
+					// Compute neccessary information
+					auto P = (vec3(triangle.v0) + vec3(triangle.v1) + vec3(triangle.v2)) / 3.0f;
+					auto N = (n0 + n1 + n2) / 3.0f;
+
+					auto a = glm::distance(vec3(triangle.v1), vec3(triangle.v0));
+					auto b = glm::distance(vec3(triangle.v2), vec3(triangle.v0));
+					auto c = glm::distance(vec3(triangle.v1), vec3(triangle.v2));
+					auto p = 0.5f * (a + b + c);
+					auto area = glm::sqrt(p * (p - a) * (p - b) * (p - c));
+
+					auto weight = area * brightness;
+
+					// Compress light
+					auto pn = Common::Packing::PackSignedVector3x10_1x2(vec4(N, 0.0f));
+					auto cn = reinterpret_cast<float&>(pn);
+
+					uint32_t data = 0;
+					data |= (TRIANGLE_LIGHT << 28u);
+					data |= uint32_t(i);
+					auto cd = reinterpret_cast<float&>(data);
+
+					GPULight light;
+					light.data0 = vec4(P, radiance.r);
+					light.data1 = vec4(cd, weight, area, radiance.g);
+					light.N = vec4(N, radiance.b);
+
+					lights.push_back(light);
+				}
+			}
+
+			// Find other light sources
+			auto lightSources = scene->GetLights();
+
+			for (auto light : lightSources) {
+				
+				auto radiance = light->color * light->intensity;
+				auto brightness = dot(radiance, vec3(0.3333f));
+
+				vec3 P = vec3(0.0f);
+				vec3 N = vec3(0.0f);
+				float weight = 0.0f;
+				float area = 0.0f;
+
+				uint32_t data = 0;
+
+				// Parse individual light information based on type
+				if (light->type == AE_DIRECTIONAL_LIGHT) {
+					auto dirLight = static_cast<Lighting::DirectionalLight*>(light);
+					data |= (DIRECTIONAL_LIGHT << 28u);
+					weight = brightness;
+					N = dirLight->direction;
+				}
+				else if (light->type == AE_POINT_LIGHT) {
+
+				}
+
+				data |= uint32_t(lights.size());
+				auto cd = reinterpret_cast<float&>(data);
+
+				GPULight gpuLight;
+				gpuLight.data0 = vec4(P, radiance.r);
+				gpuLight.data1 = vec4(cd, weight, area, radiance.g);
+				gpuLight.N = vec4(N, radiance.b);
+
+				lights.push_back(gpuLight);				
 
 			}
 
-			triangleBuffer.SetSize(triangles.size());
-			triangleBuffer.SetData(triangles.data(), 0, triangles.size());
+			// Find the maximum weight
+			auto maxWeight = 0.0f;
+			for (auto& light : lights) {
+				maxWeight = glm::max(maxWeight, light.data1.y);
+			}
 
-			nodesBuffer.SetSize(gpuNodes.size());
-			nodesBuffer.SetData(gpuNodes.data(), 0, gpuNodes.size());
+			// Calculate min weight and adjust lights based on it
+			auto minWeight = 0.02f * maxWeight;
+			// Also calculate the total weight
+			auto totalWeight = 0.0f;
+
+			for (auto& light : lights) {
+				light.data1.y = glm::max(light.data1.y, minWeight);
+				totalWeight += light.data1.y;
+			}
+
+			for (auto& light : lights) {
+				light.data1.y /= totalWeight;
+			}
 
 			return true;
 
 		}
 
-		std::unordered_map<Material*, int32_t> RayTracingRenderer::UpdateMaterials(Scene::Scene* scene) {
+		void RayTracingRenderer::UpdateMaterials(Scene::Scene* scene) {
+
+			std::vector<GPUMaterial> materials;
+			UpdateMaterials(scene, materials);
+
+		}
+
+		std::unordered_map<Material*, int32_t> RayTracingRenderer::UpdateMaterials(Scene::Scene* scene,
+			std::vector<GPUMaterial>& materials) {
 
 			auto actors = scene->GetMeshActors();
 
@@ -527,7 +693,6 @@ namespace Atlas {
 
 			std::unordered_set<Mesh::Mesh*> meshes;
 			std::unordered_map<Material*, int32_t> materialAccess;
-			std::vector<GPUMaterial> materials;
 
 			for (auto& actor : actors) {
 				if (meshes.find(actor->mesh) == meshes.end()) {
@@ -693,6 +858,151 @@ namespace Atlas {
 			metalnessTextureAtlas = Texture::TextureAtlas(metalnessTextures);
 			aoTextureAtlas = Texture::TextureAtlas(aoTextures);
 
+		}
+
+		void RayTracingRenderer::CutTriangles(std::vector<Volume::AABB>& aabbs, std::vector<Triangle>& triangles) {
+
+			const float threshold = 1.0f / 16.0f;
+
+			auto min = vec3(std::numeric_limits<float>::max());
+			auto max = vec3(-std::numeric_limits<float>::max());
+
+			for (auto& aabb : aabbs) {
+				min = glm::min(aabb.min, min);
+				max = glm::max(aabb.max, max);
+			}
+
+			auto diff = max - min;
+
+			bool foundAll = false;
+			size_t idx = 0;
+			std::vector<Triangle> cutTriangles;
+
+			// Find triangles which are too large
+			while (!foundAll) {
+				for (int32_t j = 0; j < 3; j++) {
+					auto size = aabbs[idx].max[j] - aabbs[idx].min[j];
+					// Compare each axis to a relative threshold
+					if (size > threshold * diff[j]) {
+						cutTriangles.push_back(triangles[idx]);
+						// Remove from global array
+						triangles[idx] = triangles[triangles.size() - 1];
+						aabbs[idx] = aabbs[aabbs.size() - 1];
+						triangles.pop_back();
+						aabbs.pop_back();
+						// Need to check the moved item
+						idx--;
+						// Exit inner loop
+						break;
+					}
+				}
+				foundAll = ++idx == triangles.size();
+			}
+
+			// Find triangles with no area
+
+			while (cutTriangles.size()) {
+				foundAll = false;
+				idx = 0;
+				// Find triangles which are too small to be cutted
+				while (!foundAll) {
+					auto& tri = cutTriangles[idx];
+					Volume::AABB aabb(glm::min(tri.v0, glm::min(tri.v1, tri.v2)),
+						glm::max(tri.v0, glm::max(tri.v1, tri.v2)));
+					uint32_t smallAxisCount = 0;
+					for (int32_t j = 0; j < 3; j++) {
+						auto size = aabb.max[j] - aabb.min[j];
+						// Compare each axis to a relative threshold
+						if (size <= threshold * diff[j]) {
+							smallAxisCount++;
+						}
+					}
+					// All three axis have to be below the threshold
+					if (smallAxisCount == 3) {
+						// Add to global array
+						triangles.push_back(tri);
+						aabbs.push_back(aabb);
+						// Remove from cut
+						cutTriangles[idx] = cutTriangles[cutTriangles.size() - 1];
+						cutTriangles.pop_back();
+						// Need to check the moved item
+						idx--;
+					}
+					foundAll = ++idx == cutTriangles.size();
+				}
+
+				std::vector<Triangle> cuttedTriangles;
+
+				// Cut triangles
+				for (size_t i = 0; i < cutTriangles.size(); i++) {
+					auto& tri = cutTriangles[i];
+					Volume::AABB aabb(glm::min(tri.v0, glm::min(tri.v1, tri.v2)),
+						glm::max(tri.v0, glm::max(tri.v1, tri.v2)));
+					auto maxExtend = 0.0f;
+					int32_t maxAxis = 0;
+					// Find largest axiss
+					for (int32_t j = 0; j < 3; j++) {
+						auto size = aabb.max[j] - aabb.min[j];
+						if (size > maxExtend) {
+							maxExtend = size;
+							maxAxis = j;
+						}
+					}
+					// Cut in half
+					maxExtend /= 2.0f;
+					auto cuttingPoint = 0.5f * (aabb.min[maxAxis] + aabb.max[maxAxis]);
+					// Find vertices on negative and positive side
+					// of cutting point. Need to find the side with
+					// only one vertex
+					int32_t negativeSide = 0;
+					negativeSide += tri.v0[maxAxis] < cuttingPoint ? 1 : 0;
+					negativeSide += tri.v1[maxAxis] < cuttingPoint ? 1 : 0;
+					negativeSide += tri.v2[maxAxis] < cuttingPoint ? 1 : 0;
+
+					// Find index of the single vertex
+					int32_t singleIdx = 0;
+					if (negativeSide < 2) {
+						singleIdx = tri.v1[maxAxis] < cuttingPoint ? 1 : singleIdx;
+						singleIdx = tri.v2[maxAxis] < cuttingPoint ? 2 : singleIdx;
+					}
+					else {
+						singleIdx = tri.v1[maxAxis] >= cuttingPoint ? 1 : singleIdx;
+						singleIdx = tri.v2[maxAxis] >= cuttingPoint ? 2 : singleIdx;
+					}
+
+					// Construct a triangle with new order in mind
+					Triangle t;
+					switch (singleIdx) {
+					case 0: t.v0 = tri.v0; t.v1 = tri.v1; t.v2 = tri.v2;
+						t.n0 = tri.n0; t.n1 = tri.n1; t.n2 = tri.n2;
+						t.uv0 = tri.uv0; t.uv1 = tri.uv1; t.uv2 = tri.uv2; break;
+					case 1: t.v0 = tri.v1; t.v1 = tri.v0; t.v2 = tri.v2;
+						t.n0 = tri.n1; t.n1 = tri.n0; t.n2 = tri.n2;
+						t.uv0 = tri.uv1; t.uv1 = tri.uv0; t.uv2 = tri.uv2; break;
+					case 2: t.v0 = tri.v2; t.v1 = tri.v1; t.v2 = tri.v0;
+						t.n0 = tri.n2; t.n1 = tri.n1; t.n2 = tri.n0;
+						t.uv0 = tri.uv2; t.uv1 = tri.uv1; t.uv2 = tri.uv0; break;
+					}
+					t.materialIdx = tri.materialIdx;
+
+					// Calculate edges and distance t on edge to cutting point
+					auto e0 = t.v1 - t.v0;
+					auto e1 = t.v2 - t.v0;
+
+					auto t0 = (cuttingPoint - t.v0[maxAxis]) / e0[maxAxis];
+					auto t1 = (cuttingPoint - t.v0[maxAxis]) / e1[maxAxis];
+
+					// With v0, v1, v2, p0, p1 we can now create three triangles
+					// which have their max/mins at the cutting points
+					cuttedTriangles.push_back(t.Subdivide(vec2(0.0f, 0.0f), vec2(t0, 0.0f), vec2(0.0f, t1)));
+					cuttedTriangles.push_back(t.Subdivide(vec2(t0, 0.0f), vec2(1.0, 0.0f), vec2(0.0f, 1.0f)));
+					cuttedTriangles.push_back(t.Subdivide(vec2(0.0f, 1.0f), vec2(t0, 0.0f), vec2(0.0f, t1)));
+				}
+
+				cutTriangles = cuttedTriangles;
+
+			}
+			
 		}
 
 	}

@@ -18,11 +18,11 @@ namespace Atlas {
 
 		public:
 			static void LoadMesh(std::string filename, Mesh::MeshData& meshData,
-				bool forceTangents = false);
+				bool forceTangents = false, int32_t maxTextureResolution = 4096);
 
 		private:
 			static void LoadMaterial(aiMaterial* assimpMaterial, Material& material,
-				std::string directory, bool isObj);
+				std::string directory, bool isObj, int32_t maxTextureResolution);
 
 			template<typename T>
 			static Common::Image<T> ApplySobelFilter(Common::Image<T>& image, const float strength = 1.0f) {

@@ -21,9 +21,10 @@ namespace Atlas {
 
 		}
 
-		Mesh::Mesh(const std::string& filename, bool forceTangents, int32_t mobility) : mobility(mobility) {
+		Mesh::Mesh(const std::string& filename, bool forceTangents, int32_t maxTextureResolution,
+			int32_t mobility) : mobility(mobility) {
 
-			Loader::ModelLoader::LoadMesh(filename, data, forceTangents);
+			Loader::ModelLoader::LoadMesh(filename, data, forceTangents, maxTextureResolution);
 
 			InitializeInternal();
 

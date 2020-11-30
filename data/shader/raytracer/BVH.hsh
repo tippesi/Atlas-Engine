@@ -3,11 +3,11 @@
 
 #define STACK_SIZE 34
 
-layout (std430, binding = 6) buffer Triangles {
+layout (std430, binding = 7) buffer Triangles {
 	PackedTriangle triangles[];
 };
 
-layout(std430, binding = 7) buffer Nodes {
+layout(std430, binding = 8) buffer Nodes {
 	BVHNode nodes[];
 };
 
@@ -30,7 +30,8 @@ void CheckLeafClosest(Ray ray,  BVHNode node, float tmin, float tmax,
 		n = cross(v0 - v1, v0 - v2);
 		d = dot(n, ray.direction);
 #endif
-		if (IntersectTriangle(ray, v0, v1, v2, sol) && d <= 0.0) {
+		bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
+		if (intersect && sol.x < tmax && d <= 0.0) {
 			if (sol.x < intersection.x) {
 				intersection = sol;
 				triangleIndex = int(i);
@@ -57,7 +58,8 @@ bool CheckLeaf(Ray ray, BVHNode node, float tmin, float tmax) {
 		n = cross(v0 - v1, v0 - v2);
 		d = dot(n, ray.direction);
 #endif
-		if (IntersectTriangle(ray, v0, v1, v2, sol) && d <= 0.0) {
+		bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
+		if (intersect && sol.x < tmax && d <= 0.0) {
 			hit = true;
 			break;
 		}
@@ -70,9 +72,9 @@ bool CheckLeaf(Ray ray, BVHNode node, float tmin, float tmax) {
 void QueryBVHClosest(Ray ray, float tMin, float tMax, out int triangleIndex,
 	out vec3 intersection) {
 	
-	uint stackPtr = uint(1);
+	uint stackPtr = 1u;
 	uint threadID = gl_LocalInvocationID.x;
-	stack[0][threadID] = 0;
+	stack[0][threadID] = 0u;
 	
 	intersection.x = tMax;
 	
@@ -82,7 +84,7 @@ void QueryBVHClosest(Ray ray, float tMin, float tMax, out int triangleIndex,
 	
 		bool intersectNode = IntersectAABB(ray, 
 				node.aabb, tMin, intersection.x);
-		bool isLeaf = (node.data1 & uint(0x80000000)) > uint(0);
+		bool isLeaf = (node.data1 & uint(0x80000000)) > 0u;
 		
 		bool traverseNode = intersectNode && !isLeaf;
 		
@@ -92,7 +94,7 @@ void QueryBVHClosest(Ray ray, float tMin, float tMax, out int triangleIndex,
 		}
 		
 		if (traverseNode) {
-			if (stackPtr + 1 < STACK_SIZE) {
+			if (stackPtr + 1u < uint(STACK_SIZE)) {
 				uint childLPtr = node.data0;
 				uint childRPtr = node.data1;
 				stack[stackPtr++][threadID] = childLPtr;
@@ -104,7 +106,7 @@ void QueryBVHClosest(Ray ray, float tMin, float tMax, out int triangleIndex,
 		}
 			
 	}
-	while (stackPtr != uint(0));
+	while (stackPtr != 0u);
 		
 }
 
@@ -112,9 +114,9 @@ bool QueryBVH(Ray ray, float tMin, float tMax) {
 	
 	bool hit = false;
 
-	uint stackPtr = uint(1);
+	uint stackPtr = 1u;
 	uint threadID = gl_LocalInvocationID.x;
-	stack[0][threadID] = 0;
+	stack[0][threadID] = 0u;
 	
 	do {	
 	
@@ -122,7 +124,7 @@ bool QueryBVH(Ray ray, float tMin, float tMax) {
 	
 		bool intersectNode = IntersectAABB(ray, 
 				node.aabb, tMin, tMax);
-		bool isLeaf = (node.data1 & uint(0x80000000)) > uint(0);
+		bool isLeaf = (node.data1 & uint(0x80000000)) > 0u;
 		
 		bool traverseNode = intersectNode && !isLeaf;
 		
@@ -134,7 +136,7 @@ bool QueryBVH(Ray ray, float tMin, float tMax) {
 		}
 		
 		if (traverseNode) {
-			if (stackPtr + 1 < STACK_SIZE) {
+			if (stackPtr + 1u < uint(STACK_SIZE)) {
 				uint childLPtr = node.data0;
 				uint childRPtr = node.data1;
 				stack[stackPtr++][threadID] = childLPtr;
@@ -146,7 +148,7 @@ bool QueryBVH(Ray ray, float tMin, float tMax) {
 		}
 			
 	}
-	while (!hit && stackPtr != uint(0));
+	while (!hit && stackPtr != 0u);
 
 	return hit;
 		

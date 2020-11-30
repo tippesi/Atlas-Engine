@@ -25,11 +25,11 @@ vec3 SampleBaseColorBilinear(Texture tex, vec2 texCoord) {
 		
 	texCoord *= vec2(tex.width, tex.height);
 	
-	const vec2 size = vec2(textureSize(baseColorTextures, 0));
+	vec2 size = vec2(textureSize(baseColorTextures, 0));
 	texCoord = GetTexCoord(texCoord, tex, size);
 	
 	return sampleTexBilinear(baseColorTextures, 
-		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING).rgb;
+		vec3(texCoord, float(tex.layer)), SAMPLE_CLAMP).rgb;
 	
 }
 
@@ -40,11 +40,11 @@ float SampleOpacityBilinear(Texture tex, vec2 texCoord) {
 		
 	texCoord *= vec2(tex.width, tex.height);
 	
-	const vec2 size = vec2(textureSize(opacityTextures, 0));
+	vec2 size = vec2(textureSize(opacityTextures, 0));
 	texCoord = GetTexCoord(texCoord, tex, size);
 	
 	return sampleTexBilinear(opacityTextures, 
-		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING).r;
+		vec3(texCoord, float(tex.layer)), SAMPLE_CLAMP).r;
 	
 }
 
@@ -55,11 +55,11 @@ vec3 SampleNormalBilinear(Texture tex, vec2 texCoord) {
 		
 	texCoord *= vec2(tex.width, tex.height);
 	
-	const vec2 size = vec2(textureSize(normalTextures, 0));
+	vec2 size = vec2(textureSize(normalTextures, 0));
 	texCoord = GetTexCoord(texCoord, tex, size);
 	
 	return sampleTexBilinear(normalTextures, 
-		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING).rgb;
+		vec3(texCoord, float(tex.layer)), SAMPLE_CLAMP).rgb;
 	
 }
 
@@ -70,11 +70,11 @@ float SampleRoughnessBilinear(Texture tex, vec2 texCoord) {
 		
 	texCoord *= vec2(tex.width, tex.height);
 	
-	const vec2 size = vec2(textureSize(roughnessTextures, 0));
+	vec2 size = vec2(textureSize(roughnessTextures, 0));
 	texCoord = GetTexCoord(texCoord, tex, size);
 	
 	return sampleTexBilinear(roughnessTextures, 
-		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING).r;
+		vec3(texCoord, float(tex.layer)), SAMPLE_CLAMP).r;
 	
 }
 
@@ -85,11 +85,11 @@ float SampleMetalnessBilinear(Texture tex, vec2 texCoord) {
 		
 	texCoord *= vec2(tex.width, tex.height);
 	
-	const vec2 size = vec2(textureSize(metalnessTextures, 0));
+	vec2 size = vec2(textureSize(metalnessTextures, 0));
 	texCoord = GetTexCoord(texCoord, tex, size);
 	
 	return sampleTexBilinear(metalnessTextures, 
-		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING).r;
+		vec3(texCoord, float(tex.layer)), SAMPLE_CLAMP).r;
 	
 }
 
@@ -100,11 +100,11 @@ float SampleAoBilinear(Texture tex, vec2 texCoord) {
 		
 	texCoord *= vec2(tex.width, tex.height);
 	
-	const vec2 size = vec2(textureSize(aoTextures, 0));
+	vec2 size = vec2(textureSize(aoTextures, 0));
 	texCoord = GetTexCoord(texCoord, tex, size);
 	
 	return sampleTexBilinear(aoTextures, 
-		vec3(texCoord, float(tex.layer)), SAMPLE_NO_WRAPPING).r;
+		vec3(texCoord, float(tex.layer)), SAMPLE_CLAMP).r;
 	
 }
 

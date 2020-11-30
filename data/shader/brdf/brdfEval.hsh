@@ -9,7 +9,7 @@ layout(binding = 9) uniform sampler2D dfgTexture;
 vec3 EvaluateDiffuseBRDF(Surface surface) {
 
 	// Perceptual roughness to roughness
-	float roughness = sqr(surface.material.roughness);
+	float roughness = max(sqr(surface.material.roughness), 0.00001);
 
 	float disneyDiffuse = RenormalizedDisneyDiffuse(surface.NdotV,
 		surface.NdotL, surface.LdotH, roughness);
@@ -22,13 +22,13 @@ vec3 EvaluateDiffuseBRDF(Surface surface) {
 vec3 EvaluateSpecularBRDF(Surface surface) {
 
     // Perceptual roughness to roughness
-	float roughness = sqr(surface.material.roughness);
+	float roughness = max(sqr(surface.material.roughness), 0.00001);
 
     vec3 F = FresnelSchlick(surface.F0, surface.F90, surface.LdotH);
 	float G = VisibilitySmithGGXCorrelated(surface.NdotV, surface.NdotL, roughness);
 	float D = DistributionGGX(surface.NdotH, roughness);
 	
-	return D * G * F * INV_PI;
+	return F * D * G * INV_PI;
 
 }
 

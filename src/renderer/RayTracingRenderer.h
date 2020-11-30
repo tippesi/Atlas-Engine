@@ -77,21 +77,53 @@ namespace Atlas {
 
 			bool UpdateData(Scene::Scene* scene);
 
-			std::unordered_map<Material*, int32_t> UpdateMaterials(Scene::Scene* scene);
+			void UpdateMaterials(Scene::Scene* scene);
 
 			void ResetSampleCount();
 
 			int32_t GetSampleCount();
 
-			int32_t bounces = 2;
+			int32_t bounces = 10;
 			int32_t bvhDepth = 0;
 
 		private:
-			void GetPrimaryRayUniforms();
-			void GetBounceUpdateUniforms();
-			void GetRayUpdateUniforms();
+			struct Triangle {
+				vec3 v0;
+				vec3 v1;
+				vec3 v2;
 
-			void UpdateTexture(Scene::Scene* scene);
+				vec3 n0;
+				vec3 n1;
+				vec3 n2;
+
+				vec2 uv0;
+				vec2 uv1;
+				vec2 uv2;
+
+				int32_t materialIdx;
+
+				Triangle Subdivide(vec2 b0, vec2 b1, vec2 b2) {
+
+					Triangle sub;
+
+					sub.v0 = (1.0f - b0.x - b0.y) * v0 + b0.x * v1 + b0.y * v2;
+					sub.v1 = (1.0f - b1.x - b1.y) * v0 + b1.x * v1 + b1.y * v2;
+					sub.v2 = (1.0f - b2.x - b2.y) * v0 + b2.x * v1 + b2.y * v2;
+
+					sub.n0 = (1.0f - b0.x - b0.y) * n0 + b0.x * n1 + b0.y * n2;
+					sub.n1 = (1.0f - b1.x - b1.y) * n0 + b1.x * n1 + b1.y * n2;
+					sub.n2 = (1.0f - b2.x - b2.y) * n0 + b2.x * n1 + b2.y * n2;
+
+					sub.uv0 = (1.0f - b0.x - b0.y) * uv0 + b0.x * uv1 + b0.y * uv2;
+					sub.uv1 = (1.0f - b1.x - b1.y) * uv0 + b1.x * uv1 + b1.y * uv2;
+					sub.uv2 = (1.0f - b2.x - b2.y) * uv0 + b2.x * uv1 + b2.y * uv2;
+
+					sub.materialIdx = materialIdx;
+
+					return sub;
+
+				}
+			};
 
 			struct GPUTriangle {
 				vec4 v0;
@@ -151,9 +183,26 @@ namespace Atlas {
 						uint32_t dataOffset;
 						uint32_t dataCount;
 					}leaf;
-				};				
+				};
 				GPUAABB aabb;
 			};
+
+			struct GPULight {
+				vec4 data0;
+				vec4 data1;
+				vec4 N;
+			};
+
+			void GetPrimaryRayUniforms();
+			void GetBounceUpdateUniforms();
+			void GetRayUpdateUniforms();
+
+			void UpdateTexture(Scene::Scene* scene);
+
+			std::unordered_map<Material*, int32_t> UpdateMaterials(Scene::Scene* scene,
+				std::vector<GPUMaterial>& gpuMaterials);
+
+			void CutTriangles(std::vector<Volume::AABB>& aabbs, std::vector<Triangle>& triangles);
 
 			int32_t workGroupLimit;
 			int32_t shaderStorageLimit;
@@ -165,6 +214,8 @@ namespace Atlas {
 			int32_t sampleCount = 0;
 			ivec2 imageOffset = ivec2(0);
 
+			std::vector<GPULight> lights;
+
 			Buffer::Buffer indirectSSBOBuffer;
 
 			Buffer::Buffer indirectDispatchBuffer;
@@ -173,7 +224,8 @@ namespace Atlas {
 
 			Buffer::Buffer triangleBuffer;
 			Buffer::Buffer materialBuffer;
-			Buffer::Buffer nodesBuffer;
+			Buffer::Buffer nodeBuffer;
+			Buffer::Buffer lightBuffer;
 
 			Texture::TextureAtlas baseColorTextureAtlas;
 			Texture::TextureAtlas opacityTextureAtlas;
@@ -195,22 +247,19 @@ namespace Atlas {
 			Shader::Uniform* tileSizePrimaryRayUniform = nullptr;
 			Shader::Uniform* resolutionPrimaryRayUniform = nullptr;
 
+			Shader::Shader bounceDispatchShader;
+
 			Shader::Shader bounceUpdateShader;
 
-			Shader::Shader rayUpdateShader;
+			Shader::Uniform* maxBouncesBounceUpdateUniform = nullptr;
 
-			Shader::Uniform* cameraLocationRayUpdateUniform = nullptr;
-			
-			Shader::Uniform* lightDirectionRayUpdateUniform = nullptr;
-			Shader::Uniform* lightColorRayUpdateUniform = nullptr;
-			Shader::Uniform* lightIntensityRayUpdateUniform = nullptr;
+			Shader::Uniform* sampleCountBounceUpdateUniform = nullptr;
+			Shader::Uniform* bounceCountBounceUpdateUniform = nullptr;
+			Shader::Uniform* lightCountBounceUpdateUniform = nullptr;
 
-			Shader::Uniform* sampleCountRayUpdateUniform = nullptr;
-			Shader::Uniform* bounceCountRayUpdateUniform = nullptr;
+			Shader::Uniform* resolutionBounceUpdateUniform = nullptr;
 
-			Shader::Uniform* resolutionRayUpdateUniform = nullptr;
-
-			Shader::Uniform* seedRayUpdateUniform = nullptr;
+			Shader::Uniform* seedBounceUpdateUniform = nullptr;
 
 		};
 

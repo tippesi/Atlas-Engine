@@ -16,7 +16,7 @@ struct PackedRay {
 
 struct Ray {
 
-	int pixelID;
+	int ID;
 	
 	vec3 origin;
 	vec3 direction;
@@ -25,7 +25,7 @@ struct Ray {
 	vec3 color;
 	vec3 throughput;
 
-	//int mask;
+	vec2 data;
 	
 };
 
@@ -112,8 +112,6 @@ struct RaytraceMaterial {
 
 };
 
-
-
 struct BVHNode {
 	
 	uint data0;
@@ -122,18 +120,31 @@ struct BVHNode {
 	
 };
 
+struct PackedLight {
+	vec4 data0;
+	vec4 data1;
+	vec4 N;
+};
+
 struct Light {
+	vec3 P;
+	vec3 N;
 
-    vec3 location;
-	vec3 direction;
-	
-    vec3 color;
-	float intensity;
-	
-	float scatteringFactor;
-		
-	float radius;
+	vec3 radiance;
 
+    uint type;
+	uint idx;
+
+	float pdf;
+	float area;
+	float brightness;
+};
+
+struct LightSample {
+	vec3 P;
+	vec3 N;
+
+	float pdf;
 };
 
 struct DispatchIndirectCommand {

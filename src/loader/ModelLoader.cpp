@@ -12,12 +12,12 @@ namespace Atlas {
 	namespace Loader {
 
 		void ModelLoader::LoadMesh(std::string filename, Mesh::MeshData& meshData,
-			bool forceTangents) {
+			bool forceTangents, int32_t maxTextureResolution) {
 
 			auto directoryPath = Common::Path::GetDirectory(filename);
 
 			if (directoryPath.length())
-			    directoryPath += "/";
+				directoryPath += "/";
 
 			AssetLoader::UnpackFile(filename);
 
@@ -32,15 +32,15 @@ namespace Atlas {
 			// Use aiProcess_GenNormals in case model lacks normals and flat normals are needed
 			// Right now we just use flat normals everytime normals are missing.
 			const aiScene* scene = importer.ReadFile(AssetLoader::GetFullPath(filename),
-					aiProcess_CalcTangentSpace |
-					aiProcess_JoinIdenticalVertices |
-					aiProcess_Triangulate |
-					aiProcess_OptimizeGraph |
-					aiProcess_OptimizeMeshes |
-					aiProcess_RemoveRedundantMaterials |
-					aiProcess_GenNormals |
-					aiProcess_LimitBoneWeights |
-					aiProcess_ImproveCacheLocality);
+				aiProcess_CalcTangentSpace |
+				aiProcess_JoinIdenticalVertices |
+				aiProcess_Triangulate |
+				aiProcess_OptimizeGraph |
+				aiProcess_OptimizeMeshes |
+				aiProcess_RemoveRedundantMaterials |
+				aiProcess_GenNormals |
+				aiProcess_LimitBoneWeights |
+				aiProcess_ImproveCacheLocality);
 
 			if (!scene) {
 				Log::Error("Error processing model " + std::string(importer.GetErrorString()));
@@ -118,7 +118,7 @@ namespace Atlas {
 				auto& material = meshData.materials[i];
 				auto& subData = meshData.subData[i];
 
-				LoadMaterial(scene->mMaterials[i], material, directoryPath, isObj);
+				LoadMaterial(scene->mMaterials[i], material, directoryPath, isObj, maxTextureResolution);
 
 				subData.material = &material;
 				subData.indicesOffset = usedFaces * 3;
@@ -152,7 +152,7 @@ namespace Atlas {
 
 							vec3 estimatedBitangent = normalize(cross(tangent, normal));
 							vec3 correctBitangent = normalize(vec3(mesh->mBitangents[j].x, mesh->mBitangents[j].y,
-																   mesh->mBitangents[j].z));
+								mesh->mBitangents[j].z));
 
 							float dotProduct = dot(estimatedBitangent, correctBitangent);
 
@@ -201,10 +201,10 @@ namespace Atlas {
 
 		}
 
-		void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, Material& material, 
-			std::string directory, bool isObj) {
+		void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, Material& material,
+			std::string directory, bool isObj, int32_t maxTextureResolution) {
 
-            aiString name;
+			aiString name;
 
 			aiColor3D diffuse;
 			aiColor3D emissive;
@@ -237,7 +237,7 @@ namespace Atlas {
 			specularIntensity *= specularFactor > 0.0f ? specularFactor : 1.0f;
 
 			material.metalness = glm::clamp(specularIntensity, 0.0f, 1.0f);
-
+			
 			if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0 ||
 				assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 				aiString aiPath;
@@ -246,7 +246,7 @@ namespace Atlas {
 				else
 					assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
-				auto image = ImageLoader::LoadImage<uint8_t>(path, true);
+				auto image = ImageLoader::LoadImage<uint8_t>(path, true, 0, maxTextureResolution);
 
 				material.baseColorMap = new Texture::Texture2D(image.width, image.height, AE_RGB8,
 					GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
@@ -254,7 +254,7 @@ namespace Atlas {
 				std::vector <uint8_t> data(image.width * image.height * 3);
 				if (image.channels == 1) {
 					auto imageData = image.GetData();
-					for (size_t i = 0; i < data.size(); i+=3) {
+					for (size_t i = 0; i < data.size(); i += 3) {
 						data[i + 0] = imageData[i / 3];
 						data[i + 1] = imageData[i / 3];
 						data[i + 2] = imageData[i / 3];
@@ -282,7 +282,7 @@ namespace Atlas {
 				else
 					assimpMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
-				auto image = ImageLoader::LoadImage<uint8_t>(path);
+				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 0, maxTextureResolution);
 				auto texture = new Texture::Texture2D(image);
 				// Might still be a traditional displacement map
 				if (texture->channels == 1 && isObj) {
@@ -301,7 +301,8 @@ namespace Atlas {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
-				auto texture = new Texture::Texture2D(path, false, true, true, 1);
+				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
+				auto texture = new Texture::Texture2D(image, true, true);
 				material.roughnessMap = texture;
 				material.roughnessMapPath = path;
 			}
@@ -309,7 +310,8 @@ namespace Atlas {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_METALNESS, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
-				auto texture = new Texture::Texture2D(path, false, true, true, 1);
+				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
+				auto texture = new Texture::Texture2D(image, true, true);
 				material.metalnessMap = texture;
 				material.metalnessMapPath = path;
 			}
@@ -317,7 +319,8 @@ namespace Atlas {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_SPECULAR, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
-				auto texture = new Texture::Texture2D(path, false, true, true, 1);
+				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
+				auto texture = new Texture::Texture2D(image, true, true);
 				material.metalnessMap = texture;
 				material.metalnessMapPath = path;
 			}
@@ -325,11 +328,12 @@ namespace Atlas {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
 				auto path = directory + std::string(aiPath.C_Str());
-				auto texture = new Texture::Texture2D(path, false, true, true, 1);
+				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
+				auto texture = new Texture::Texture2D(image, true, true);
 				material.displacementMap = texture;
 				material.displacementMapPath = path;
 			}
-
+			
 		}
 
 	}

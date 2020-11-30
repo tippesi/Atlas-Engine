@@ -39,7 +39,7 @@ void main() {
 		
 		Ray ray;
 		
-		ray.pixelID = Flatten2D(pixel, resolution);
+		ray.ID = Flatten2D(pixel, resolution);
 		
 		ray.direction = normalize(origin + right * coord.x 
 			+ bottom * coord.y - cameraLocation);
@@ -53,24 +53,24 @@ void main() {
 		// Calculate number of groups that don't have overlapping pixels
 		ivec2 perfectGroupCount = tileSize / ivec2(gl_WorkGroupSize);				
 
-		uint index = 0;
+		int index = 0;
 
 		ivec2 workGroupId = ivec2(gl_WorkGroupID);
 
-		// Arrange rays in an good way. (E.g. similiar rays in a group)
+		// Arrange rays in a good way. (E.g. similiar rays in a group)
 		if (all(lessThan(workGroupId, perfectGroupCount))) {
 			int groupIndex = Flatten2D(ivec2(gl_WorkGroupID), perfectGroupCount);
-			index = gl_LocalInvocationIndex + uint(groupIndex) * uint(64);
+			index = int(gl_LocalInvocationIndex) + groupIndex * 64;
 		}
 		else if (workGroupId.x >= perfectGroupCount.x &&
 			workGroupId.y < perfectGroupCount.y) {
-			uint offset = perfectGroupCount.x * perfectGroupCount.y * uint(64);
+			int offset = perfectGroupCount.x * perfectGroupCount.y * 64;
 			ivec2 localID = ivec2(gl_GlobalInvocationID) - ivec2(perfectGroupCount.x, 0) * ivec2(8);
 			index = Flatten2D(localID, overlappingPixels) + offset;
 		}
 		else {
 			int overlappingRight = overlappingPixels.x * int(perfectGroupCount.y) * 8;
-			uint offset = perfectGroupCount.x * perfectGroupCount.y * uint(64) + uint(overlappingRight);
+			int offset = perfectGroupCount.x * perfectGroupCount.y * 64 + overlappingRight;
 			ivec2 localID = ivec2(gl_GlobalInvocationID) - ivec2(0, perfectGroupCount.y) * ivec2(8);
 			index = Flatten2D(localID.yx, overlappingPixels.yx) + offset;
 		}

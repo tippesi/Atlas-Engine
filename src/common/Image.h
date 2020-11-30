@@ -100,6 +100,12 @@ namespace Atlas {
 			std::vector<T>& GetData();
 
 			/**
+			 * Check whether or not the image constains data.
+			 * @return Whether or not the image constains data.
+			 */
+			bool HasData();
+
+			/**
 			 * Returns the mipmap level structure at a given level.
 			 * @param mipLevel The mipmap level which should be returned.
 			 * @return The mipmap level structure at level mipLevel.
@@ -237,6 +243,14 @@ namespace Atlas {
 		std::vector<T>& Image<T>::GetData() {
 
 			return mipLevels[0].data;
+
+		}
+
+		template<typename T>
+		bool Image<T>::HasData() {
+
+			return mipLevels.size() > 0 &&
+				GetData().size() > 0;
 
 		}
 

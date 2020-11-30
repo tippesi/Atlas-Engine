@@ -16,7 +16,7 @@
 
 namespace Atlas {
 
-	namespace Loader {
+    namespace Loader {
 
         class ImageLoader {
 
@@ -26,10 +26,12 @@ namespace Atlas {
              * @param filename The name of the image file.
              * @param colorSpaceConversion Whether or not gamma to linear color space conversion is needed.
              * @param forceChannels The number of channels to be forced. Default is zero, which means no force.
+             * @param maxImageResolution The maximum resolution on both axis of the image. If larger it gets resized.
              * @return An Image object with all the important data.
              */
             template<typename T>
-            static Common::Image<T> LoadImage(std::string filename, bool colorSpaceConversion = false, int32_t forceChannels = 0) {
+            static Common::Image<T> LoadImage(std::string filename, bool colorSpaceConversion = false, int32_t forceChannels = 0,
+                int32_t maxImageResolution = 8192) {
 
                 Common::Image<T> image;
                 auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
@@ -70,6 +72,13 @@ namespace Atlas {
                 stbi_image_free(static_cast<T*>(data));
 
                 image.SetData(imageData);
+
+                if (image.width > maxImageResolution ||
+                    image.height > maxImageResolution) {
+                    width = width > maxImageResolution ? maxImageResolution : width;
+                    height = height > maxImageResolution ? maxImageResolution : height;
+                    image.Resize(width, height);
+                }
 
                 if (colorSpaceConversion) {
                     image.GammaToLinear();
@@ -184,7 +193,7 @@ namespace Atlas {
                 }
                 else if constexpr (std::is_same_v<T, uint16_t>) {
                     header.append("65535\n");
-                }                
+                }
 
                 imageStream << header;
 

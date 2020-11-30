@@ -107,7 +107,7 @@ namespace Atlas {
             composedCode.append("#version 320 es\n\nprecision highp float;\nprecision highp sampler2D;\
 				\nprecision highp usampler2D;\nprecision highp image2D;\nprecision highp image2DArray;\
 				\nprecision highp samplerCube;\nprecision highp sampler2DArrayShadow;\nprecision highp sampler2DArray;\
-				\nprecision highp samplerCubeShadow;\nprecision highp int;\n#define AE_API_GLES\n");
+				\nprecision highp samplerCubeShadow;\nprecision highp imageCube;\nprecision highp int;\n#define AE_API_GLES\n");
 #endif
 
             for (auto& macro : macros) {

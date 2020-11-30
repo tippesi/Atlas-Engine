@@ -32,7 +32,7 @@ namespace Atlas {
 			 * @param that Another TextureAtlas object.
 			 * @note Texture atlases are only available as AE_RGBA8.
 			 */
-			explicit TextureAtlas(std::vector<Texture2D*>& textures, int32_t padding = 0);
+			explicit TextureAtlas(std::vector<Texture2D*>& textures, int32_t padding = 1);
 
 			/**
 			 * Copies the data from another texture atlas to the texture atlas object.
@@ -56,7 +56,7 @@ namespace Atlas {
 			std::map<Texture2D*, Slice> slices;
 
 		private:
-			int32_t padding = 0;
+			int32_t padding = 1;
 
 		};
 

@@ -17,8 +17,8 @@ namespace Atlas {
 		public:
 			BVHNode() = default;
 
-			void BuildSAH(std::vector<BVHNode<T>*>& nodes, size_t offset, size_t count,
-				std::vector<std::pair<AABB, T>>& data, int32_t& nodeCount, int32_t depth, bool isLeftChild);
+			void BuildSAH(std::vector<BVHNode<T>*>& nodes, size_t offset, size_t count, std::vector<AABB>& aabbs,
+				std::vector<T>& data, int32_t& nodeCount, int32_t depth, bool isLeftChild);
 
 			void GetIntersection(Ray ray, std::vector<BVHNode<T>>& nodes,
 				std::vector<AABB>& aabbs, std::vector<T>& data,
@@ -42,11 +42,14 @@ namespace Atlas {
 		public:
 			BVH() = default;
 
-			BVH(std::vector<AABB> aabbs, std::vector<T> data);
+			/**
+			 * @note The contructor works on the input data and sorts it.
+			 */
+			BVH(std::vector<AABB>& aabbs, std::vector<T>& data);
 
 			std::vector<T> GetIntersection(Ray ray);
 
-			std::vector<BVHNode<T>> GetTree();
+			std::vector<BVHNode<T>>& GetTree();
 
 			std::vector<AABB> aabbs;
 			std::vector<T> data;
@@ -58,18 +61,10 @@ namespace Atlas {
 		};
 
 		template <class T>
-		BVH<T>::BVH(std::vector<AABB> aabbs, std::vector<T> data) {
+		BVH<T>::BVH(std::vector<AABB>& aabbs, std::vector<T>& data) {
 
 			if (aabbs.size() != data.size())
 				return;
-
-			std::vector<std::pair<AABB, T>> nodeData;
-
-			for (size_t i = 0; i < aabbs.size(); i++) {
-				nodeData.push_back(std::pair<AABB, T>(
-					aabbs[i], data[i]
-					));
-			}
 
 			int32_t nodeCount = 1;
 
@@ -79,8 +74,8 @@ namespace Atlas {
 			std::vector<BVHNode<T>*> nodesPointer;
 
 			nodesPointer.push_back(new BVHNode<T>());
-			nodesPointer[0]->BuildSAH(nodesPointer, 0, nodeData.size(),
-				nodeData, nodeCount, 0, true);
+			nodesPointer[0]->BuildSAH(nodesPointer, 0, aabbs.size(),
+				aabbs, data, nodeCount, 0, true);
 
 			// Copy nodes
 			for (auto node : nodesPointer) {
@@ -90,13 +85,8 @@ namespace Atlas {
 			}
 
 			// Copy data
-			this->aabbs.resize(aabbs.size());
-			this->data.resize(data.size());
-
-			for (size_t i = 0; i < nodeData.size(); i++) {
-				this->aabbs[i] = nodeData[i].first;
-				this->data[i] = nodeData[i].second;
-			}
+			this->aabbs = aabbs;
+			this->data = data;
 
 		}
 
@@ -115,15 +105,15 @@ namespace Atlas {
 		}
 
 		template <class T>
-		std::vector<BVHNode<T>> BVH<T>::GetTree() {
+		std::vector<BVHNode<T>>& BVH<T>::GetTree() {
 
 			return nodes;
 
 		}
 
 		template <class T>
-		void BVHNode<T>::BuildSAH(std::vector<BVHNode<T>*>& nodes, size_t offset, size_t count, 
-			std::vector<std::pair<AABB, T>>& data, int32_t& nodeCount, int32_t depth, bool isLeftChild) {
+		void BVHNode<T>::BuildSAH(std::vector<BVHNode<T>*>& nodes, size_t offset, size_t count, std::vector<AABB>& aabbs,
+			std::vector<T>& data, int32_t& nodeCount, int32_t depth, bool isLeftChild) {
 
 			const float binCount = 64.0f;
 
@@ -135,8 +125,8 @@ namespace Atlas {
 			auto max = vec3(-std::numeric_limits<float>::max());
 
 			for (size_t i = offset; i < offset + count; i++) {
-				min = glm::min(min, data[i].first.min);
-				max = glm::max(max, data[i].first.max);
+				min = glm::min(min, aabbs[i].min);
+				max = glm::max(max, aabbs[i].max);
 			}
 
 			aabb = AABB(min, max);
@@ -183,19 +173,19 @@ namespace Atlas {
 
 					// Iterate over data and update split bounds
 					for (size_t j = offset; j < offset + count; j++) {
-						auto primitveAABB = data[j].first;
+						auto& primitveAABB = aabbs[j];
 
 						auto center = 0.5f * (primitveAABB.min + primitveAABB.max);
 						auto value = center[i];
 
 						if (value < split) {
-							aabbLeft.min = glm::min(aabbLeft.min, data[j].first.min);
-							aabbLeft.max = glm::max(aabbLeft.max, data[j].first.max);
+							aabbLeft.min = glm::min(aabbLeft.min, aabbs[j].min);
+							aabbLeft.max = glm::max(aabbLeft.max, aabbs[j].max);
 							primitivesLeft++;
 						}
 						else {
-							aabbRight.min = glm::min(aabbRight.min, data[j].first.min);
-							aabbRight.max = glm::max(aabbRight.max, data[j].first.max);
+							aabbRight.min = glm::min(aabbRight.min, aabbs[j].min);
+							aabbRight.max = glm::max(aabbRight.max, aabbs[j].max);
 							primitivesRight++;
 						}
 					}
@@ -237,50 +227,75 @@ namespace Atlas {
 				return;
 			}
 
-			// Create temporary vectors
-			std::vector<std::pair<AABB, T>> leftData, rightData;
-
+			// Find split index
+			size_t splitIdx = 0;
 			for (size_t i = offset; i < offset + count; i++) {
-				auto primitveAABB = data[i].first;
+				auto& primitveAABB = aabbs[i];
 
 				auto center = 0.5f * (primitveAABB.min + primitveAABB.max);
 				auto value = center[bestAxis];
 
 				if (value < bestSplit) {
-					leftData.push_back(data[i]);
+					splitIdx++;
+				}
+			}
+
+			// Sort the data and aabb array based on split in O(n) in-place
+			bool leftIncrement = true;
+			auto leftIdx = offset;
+			auto rightIdx = offset + splitIdx;
+
+			auto carryover = false;
+			T carryoverData;
+			AABB carryoverAABB;
+
+			// Just one condition needs to be true for the array to be sorted
+			while (leftIdx < offset + splitIdx && rightIdx < offset + count) {
+				auto& idx = leftIncrement ? leftIdx : rightIdx;
+				if (carryover) {
+					data[idx] = carryoverData;
+					aabbs[idx] = carryoverAABB;
+					carryover = false;
+					idx++;
+				}
+
+				auto& primitveAABB = aabbs[idx];
+				auto center = 0.5f * (primitveAABB.min + primitveAABB.max);
+				auto value = center[bestAxis];
+
+				if (value >= bestSplit && leftIncrement) {
+					leftIncrement = false;
+					carryoverData = data[idx];
+					carryoverAABB = aabbs[idx];
+					continue;
+				}
+				else if (value < bestSplit && !leftIncrement) {
+					leftIncrement = true;
+					auto tmpData = data[idx];
+					auto tmpAABB = aabbs[idx];
+					data[idx] = carryoverData;
+					aabbs[idx] = carryoverAABB;
+					carryoverData = tmpData;
+					carryoverAABB = tmpAABB;
+					carryover = true;
 				}
 				else {
-					rightData.push_back(data[i]);
+					idx++;
 				}
 			}
 
-			auto split = leftData.size();
-
-			// Copy left data
-			for (size_t i = offset; i < offset + split; i++) {
-				data[i] = leftData[i - offset];
-			}
-
-			// Copy right data
-			for (size_t i = offset + split; i < offset + count; i++) {
-				data[i] = rightData[i - offset - split];
-			}
-
-			leftData.clear();
-			rightData.clear();
-
-			if (split > 0) {
+			if (splitIdx > 0) {
 				leftChild = nodeCount++;
 				nodes.push_back(new BVHNode<T>());
-				nodes[leftChild]->BuildSAH(nodes, offset, split,
-					data, nodeCount, depth + 1, true);
+				nodes[leftChild]->BuildSAH(nodes, offset, splitIdx,
+					aabbs, data, nodeCount, depth + 1, true);
 			}
 
-			if (split < count) {
+			if (splitIdx < count) {
 				rightChild = nodeCount++;
 				nodes.push_back(new BVHNode<T>());
-				nodes[rightChild]->BuildSAH(nodes, offset + split, count - split,
-					data, nodeCount, depth + 1, false);
+				nodes[rightChild]->BuildSAH(nodes, offset + splitIdx, count - splitIdx,
+					aabbs, data, nodeCount, depth + 1, false);
 			}
 
 		}

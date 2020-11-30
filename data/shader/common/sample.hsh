@@ -1,4 +1,3 @@
-#define SAMPLE_NO_WRAPPING 0
 #define SAMPLE_REPEAT 1
 #define SAMPLE_CLAMP 2
 
@@ -30,7 +29,7 @@ ivec3 GetTexCoordCube(vec3 dir, ivec2 size) {
 
 	uv = uv * ma + 0.5;
 
-	ivec2 pixel = clamp(ivec2(vec2(size) * uv - 0.5), ivec2(0), ivec2(size) - 1);
+	ivec2 pixel = clamp(ivec2(vec2(size - 1) * uv + 0.5), ivec2(0), ivec2(size) - 1);
 
 	return ivec3(pixel, faceIndex);
 
@@ -70,8 +69,8 @@ vec4 sampleTex(const in sampler2D texture, ivec2 coord, const int wrapping) {
 
 vec4 sampleTex(const in sampler2D texture, vec2 coord, const int wrapping) {
 
-	ivec2 texSize = textureSize(texture, 0);
-	ivec2 texCoord = ivec2(coord * vec2(texSize) - 0.5);
+	ivec2 texSize = textureSize(texture, 0) - ivec2(1);
+	ivec2 texCoord = ivec2(coord * vec2(texSize) + 0.5);
 	
 	return sampleTex(texture, texCoord, wrapping);
 
@@ -79,8 +78,8 @@ vec4 sampleTex(const in sampler2D texture, vec2 coord, const int wrapping) {
 
 vec4 sampleTexBilinear(const in sampler2D texture, vec2 coord, const int wrapping) {
 
-	ivec2 texSize = textureSize(texture, 0);
-	coord *= vec2(texSize) - 0.5;
+	ivec2 texSize = textureSize(texture, 0) - ivec2(1);
+	coord *= vec2(texSize) + 0.5;
 	
 	vec2 off = coord - floor(coord);
 	
@@ -95,17 +94,11 @@ vec4 sampleTexBilinear(const in sampler2D texture, vec2 coord, const int wrappin
 		q01Tex = GetTexCoordRepeat(texCoord + ivec2(0, 1), texSize);
 		q11Tex = GetTexCoordRepeat(texCoord + ivec2(1, 1), texSize);	
 	}
-	else if (wrapping == SAMPLE_CLAMP) {
+	else {
 		q00Tex = GetTexCoordClamp(texCoord, texSize);
 		q10Tex = GetTexCoordClamp(texCoord + ivec2(1, 0), texSize);
 		q01Tex = GetTexCoordClamp(texCoord + ivec2(0, 1), texSize);
 		q11Tex = GetTexCoordClamp(texCoord + ivec2(1, 1), texSize);	
-	}
-	else {
-		q00Tex = texCoord;
-		q10Tex = texCoord + ivec2(1, 0);
-		q01Tex = texCoord + ivec2(0, 1);
-		q11Tex = texCoord + ivec2(1, 1);
 	}
 	
 	// Fetch the four texture samples
@@ -141,8 +134,8 @@ vec4 sampleTex(const in sampler2DArray texture, ivec3 coord, const int wrapping)
 
 vec4 sampleTex(const in sampler2DArray texture, vec3 coord, const int wrapping) {
 
-	ivec3 texSize = textureSize(texture, 0);
-	ivec2 texCoord = ivec2(coord.xy * vec2(texSize.xy) - 0.5);
+	ivec3 texSize = textureSize(texture, 0) - ivec3(1, 1, 0);
+	ivec2 texCoord = ivec2(coord.xy * vec2(texSize.xy) + 0.5);
 	
 	return sampleTex(texture, ivec3(texCoord, int(coord.z)), wrapping);
 
@@ -150,8 +143,8 @@ vec4 sampleTex(const in sampler2DArray texture, vec3 coord, const int wrapping) 
 
 vec4 sampleTexBilinear(const in sampler2DArray texture, vec3 coord, const int wrapping) {
 
-	ivec3 texSize = textureSize(texture, 0);
-	coord.xy *= vec2(texSize.xy) - 0.5;
+	ivec3 texSize = textureSize(texture, 0) - ivec3(1, 1, 0);
+	coord.xy *= vec2(texSize.xy) + 0.5;
 	
 	vec2 off = coord.xy - floor(coord.xy);
 	

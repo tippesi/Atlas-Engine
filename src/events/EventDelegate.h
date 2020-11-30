@@ -8,6 +8,7 @@
 #include <mutex>
 #include <vector>
 #include <algorithm>
+#include <iterator>
 
 namespace Atlas {
 
