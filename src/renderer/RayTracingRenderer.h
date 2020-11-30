@@ -46,8 +46,8 @@ namespace Atlas {
 
 			}
 
-			int32_t GetWidth() { return width; }
-			int32_t GetHeight() { return height; }
+			int32_t GetWidth() const { return width; }
+			int32_t GetHeight() const { return height; }
 
 			Texture::Texture2D texture;
 
@@ -81,10 +81,11 @@ namespace Atlas {
 
 			void ResetSampleCount();
 
-			int32_t GetSampleCount();
+			int32_t GetSampleCount() const;
 
 			int32_t bounces = 10;
 			int32_t bvhDepth = 0;
+			int32_t lightCount = 512;
 
 		private:
 			struct Triangle {

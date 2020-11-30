@@ -44,7 +44,7 @@ namespace Atlas {
 			nodeBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUBVHNode),
 				AE_BUFFER_DYNAMIC_STORAGE);
 			lightBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPULight),
-				AE_BUFFER_DYNAMIC_STORAGE, 512);
+				AE_BUFFER_DYNAMIC_STORAGE, lightCount);
 
 			// Load shader stages from hard drive and compile the shader
 			primaryRayShader.AddStage(AE_COMPUTE_STAGE, "raytracer/primaryRay.csh");
@@ -75,8 +75,6 @@ namespace Atlas {
 		void RayTracingRenderer::Render(Viewport* viewport, RayTracerRenderTarget* renderTarget,
 			ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene) {
 
-			const size_t lightCount = 512;
-
 			if (glm::distance(camera->GetLocation(), cameraLocation) > 1e-3f ||
 				glm::distance(camera->rotation, cameraRotation) > 1e-3f) {
 
@@ -94,22 +92,11 @@ namespace Atlas {
 			if (scene->HasChanged())
 				if (!UpdateData(scene)) // Only proceed if GPU data is valid
 					return;
-			/*
-			// Retrieve the first directional light source of the scene
-			auto lights = scene->GetLights();
 
-			Lighting::DirectionalLight* sun = nullptr;
-
-			for (auto& light : lights) {
-				if (light->type == AE_DIRECTIONAL_LIGHT) {
-					sun = static_cast<Lighting::DirectionalLight*>(light);
-				}
-			}
-			*/
+			std::vector<GPULight> selectedLights;
 
 			// Randomly select lights (only at image offset 0)
 			if (imageOffset.x == 0 && imageOffset.y == 0) {
-				std::vector<GPULight> selectedLights;
 				if (lights.size() > lightCount) {
 					for (size_t i = 0; i < lightBuffer.GetElementCount(); i++) {
 						auto rnd = float(rand()) / float(RAND_MAX);
@@ -135,7 +122,7 @@ namespace Atlas {
 					}
 				}
 
-				lightBuffer.SetSize(selectedLights.size(), selectedLights.data());
+				lightBuffer.SetData(selectedLights.data(), 0, selectedLights.size());
 			}
 
 			ivec2 resolution = ivec2(renderTarget->GetWidth(), renderTarget->GetHeight());
@@ -255,7 +242,7 @@ namespace Atlas {
 
 				sampleCountBounceUpdateUniform->SetValue(sampleCount);
 				bounceCountBounceUpdateUniform->SetValue(i);
-				lightCountBounceUpdateUniform->SetValue(int32_t(lightBuffer.GetElementCount()));
+				lightCountBounceUpdateUniform->SetValue(int32_t(selectedLights.size()));
 
 				resolutionBounceUpdateUniform->SetValue(resolution);
 				seedBounceUpdateUniform->SetValue(float(rand()) / float(RAND_MAX));
@@ -303,7 +290,7 @@ namespace Atlas {
 
 		}
 
-		int32_t RayTracingRenderer::GetSampleCount() {
+		int32_t RayTracingRenderer::GetSampleCount() const {
 
 			return sampleCount;
 
@@ -455,12 +442,18 @@ namespace Atlas {
 			}
 
 			// Force memory to be cleared
-			vertices.swap(std::vector<vec3>());
-			normals.swap(std::vector<vec3>());
-			texCoords.swap(std::vector<vec2>());
-			materialIndices.swap(std::vector<int32_t>());
+			vertices.clear();
+			normals.clear();
+			texCoords.clear();
+			materialIndices.clear();
+			vertices.shrink_to_fit();
+			normals.shrink_to_fit();
+			texCoords.shrink_to_fit();
+			materialIndices.shrink_to_fit();
 
-			//CutTriangles(aabbs, triangles);
+			// Triangle size does not seem to affect
+			// BVH traversal to make it worth reducing
+			// CutTriangles(aabbs, triangles);
 
 			std::vector<GPUTriangle> gpuTriangles;
 
@@ -524,7 +517,8 @@ namespace Atlas {
 
 			}
 
-			triangles.swap(std::vector<Triangle>());
+			triangles.clear();
+			triangles.shrink_to_fit();
 
 			// Generate BVH
 			auto bvh = Volume::BVH<GPUTriangle>(aabbs, gpuTriangles);
@@ -534,7 +528,8 @@ namespace Atlas {
 			triangleBuffer.SetData(bvh.data.data(), 0, bvh.data.size());
 
 			// Free memory and upload data instantly
-			bvh.data.swap(std::vector<GPUTriangle>());
+			bvh.data.clear();
+			bvh.data.shrink_to_fit();
 			glFinish();
 
 			auto& nodes = bvh.GetTree();
@@ -557,7 +552,8 @@ namespace Atlas {
 			}
 
 			// Free original node memory
-			nodes.swap(std::vector<Volume::BVHNode<GPUTriangle>>());
+			nodes.clear();
+			nodes.shrink_to_fit();
 
 			// Upload nodes instantly
 			nodeBuffer.SetSize(gpuNodes.size());

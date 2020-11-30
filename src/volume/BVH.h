@@ -271,12 +271,8 @@ namespace Atlas {
 				}
 				else if (value < bestSplit && !leftIncrement) {
 					leftIncrement = true;
-					auto tmpData = data[idx];
-					auto tmpAABB = aabbs[idx];
-					data[idx] = carryoverData;
-					aabbs[idx] = carryoverAABB;
-					carryoverData = tmpData;
-					carryoverAABB = tmpAABB;
+					std::swap(data[idx], carryoverData);
+					std::swap(aabbs[idx], carryoverAABB);
 					carryover = true;
 				}
 				else {

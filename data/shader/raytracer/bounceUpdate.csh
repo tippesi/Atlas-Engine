@@ -209,7 +209,7 @@ void EvaluateBounce(inout Ray ray) {
 	vec3 radiance = ray.throughput * EvaluateDirectLight(surface, ray);
 	// Clamp indirect radiance
 	if (bounceCount > 0) {
-		const float radianceLimit = 1.0;
+		const float radianceLimit = 10.0;
 		float radianceMax = max(max(radiance.r, 
 			max(radiance.g, radiance.b)), radianceLimit);
 		radiance *= radianceLimit / radianceMax;
