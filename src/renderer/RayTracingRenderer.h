@@ -195,7 +195,6 @@ namespace Atlas {
 			};
 
 			void GetPrimaryRayUniforms();
-			void GetBounceUpdateUniforms();
 			void GetRayUpdateUniforms();
 
 			void UpdateTexture(Scene::Scene* scene);

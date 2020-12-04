@@ -56,8 +56,6 @@ namespace Atlas {
 			bounceDispatchShader.AddStage(AE_COMPUTE_STAGE, "raytracer/bounceDispatch.csh");
 			bounceDispatchShader.Compile();
 
-			GetBounceUpdateUniforms();
-
 			bounceUpdateShader.AddStage(AE_COMPUTE_STAGE, "raytracer/bounceUpdate.csh");
 			bounceUpdateShader.Compile();
 
@@ -309,12 +307,6 @@ namespace Atlas {
 
 			tileSizePrimaryRayUniform = primaryRayShader.GetUniform("tileSize");
 			resolutionPrimaryRayUniform = primaryRayShader.GetUniform("resolution");
-
-		}
-
-		void RayTracingRenderer::GetBounceUpdateUniforms() {
-
-
 
 		}
 

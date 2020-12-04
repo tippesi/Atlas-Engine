@@ -320,7 +320,8 @@ vec3 EvaluateDirectLight(Surface surface, Ray ray) {
 	}
 	
 	// Evaluate the BRDF
-	vec3 reflectance = EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);		
+	vec3 reflectance = EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
+	reflectance *= surface.material.opacity;
 	radiance *= solidAngle;
 
 	// Check for visibilty. This is important to get an
