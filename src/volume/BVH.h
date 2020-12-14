@@ -115,7 +115,7 @@ namespace Atlas {
 		void BVHNode<T>::BuildSAH(std::vector<BVHNode<T>*>& nodes, size_t offset, size_t count, std::vector<AABB>& aabbs,
 			std::vector<T>& data, int32_t& nodeCount, int32_t depth, bool isLeftChild) {
 
-			const float binCount = 64.0f;
+			const double binCount = 64.0f;
 
 			this->depth = depth;
 			this->isLeftChild = isLeftChild;
@@ -150,17 +150,18 @@ namespace Atlas {
 			// Iterate over 3 axises
 			for (int32_t i = 0; i < 3; i++) {
 
-				auto start = min[i];
-				auto stop = max[i];
+				auto start = double(min[i]);
+				auto stop = double(max[i]);
 
 				// If the dimension of this axis is to small continue
-				if (fabsf(stop - start) < 1e-3)
+				if (fabs(stop - start) < 1e-4)
 					continue;
 
-				auto step = (stop - start) / (binCount / ((float)depth + 1.0f));
+				// We use double precision here as the step size could be too small for floats
+				auto step = (stop - start) / (binCount / (double(depth) + 1.0));
 
 				// Iterate over all possible splits of the bins
-				for (float split = start + step; split < stop - step; split += step) {
+				for (auto split = start + step; split < stop - step; split += step) {
 
 					Volume::AABB aabbLeft(vec3(std::numeric_limits<float>::max()),
 						vec3(-std::numeric_limits<float>::max()));
@@ -213,7 +214,7 @@ namespace Atlas {
 					if (cost < minCost) {
 						minCost = cost;
 						bestAxis = i;
-						bestSplit = split;
+						bestSplit = float(split);
 					}
 
 				}

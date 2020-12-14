@@ -471,7 +471,8 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, vec3 intersection) {
 	
 	// Produces some problems in the bottom left corner of the Sponza scene,
 	// but fixes the cube. Should work in theory.
-	normal = dot(normal, ray.direction) <= 0.0 ? normal : normal * -1.0;	
+	bool flipNormal = dot(normal, ray.direction) > 0.0;
+	normal *= flipNormal ? -1.0 : 1.0;
 		
 	mat.baseColor *= SampleBaseColorBilinear(rayMat.baseColorTexture, texCoord);
 	mat.opacity *= SampleOpacityBilinear(rayMat.opacityTexture, texCoord);
@@ -482,6 +483,7 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, vec3 intersection) {
 	
 	// Account for changing texture coord direction
 	vec3 bitangent = rayMat.invertUVs > 0 ? tri.bt : -tri.bt;
+	// bitangent *= flipNormal ? -1.0 : 1.0;
 	mat3 TBN = mat3(tri.t, bitangent, normal);
 	
 	// Sample normal map

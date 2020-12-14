@@ -25,7 +25,7 @@ namespace Atlas {
 				std::string directory, bool isObj, int32_t maxTextureResolution);
 
 			template<typename T>
-			static Common::Image<T> ApplySobelFilter(Common::Image<T>& image, const float strength = 1.0f) {
+			static Common::Image<T> ApplySobelFilter(const Common::Image<T>& image, const float strength = 1.0f) {
 
 				Common::Image<T> filtered(image.width, image.height, 3);
 

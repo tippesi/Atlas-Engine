@@ -103,14 +103,14 @@ namespace Atlas {
 			 * Check whether or not the image constains data.
 			 * @return Whether or not the image constains data.
 			 */
-			bool HasData();
+			bool HasData() const;
 
 			/**
 			 * Returns the mipmap level structure at a given level.
 			 * @param mipLevel The mipmap level which should be returned.
 			 * @return The mipmap level structure at level mipLevel.
 			 */
-			MipLevel<T>& GetMipLevel(int32_t mipLevel);
+			MipLevel<T>& GetMipLevel(int32_t mipLevel) const;
 
 			/**
 			 * Returns the selected channel data of the whole image.
@@ -123,13 +123,13 @@ namespace Atlas {
 			 * At each pixel, this data range will be copied in the to be returned data.
 			 */
 			std::vector<T> GetChannelData(int32_t channelOffset,
-				int32_t channelCount, int32_t mipLevel = 0);
+				int32_t channelCount, int32_t mipLevel = 0) const;
 
 			/**
 			 * Returns the number of mipmap levels the image has.
 			 * @return The number of mipmap levels the image has.
 			 */
-			int32_t GetMipmapLevelCount();
+			int32_t GetMipmapLevelCount() const;
 
 			/**
 			 * Sanples the image at a given position.
@@ -140,7 +140,7 @@ namespace Atlas {
 			 * will depend on the type T of the image. In case of an integer image
 			 * it will be an ivec4, for a floating point image it will be a vec4.
 			 */
-			decltype(auto) Sample(int32_t x, int32_t y, int32_t mipLevel = 0);
+			decltype(auto) Sample(int32_t x, int32_t y, int32_t mipLevel = 0) const;
 
 			/**
 			 * Sanples the image at a given position.
@@ -151,7 +151,7 @@ namespace Atlas {
 			 * will depend on the type T of the image. In case of an integer image
 			 * it will be an ivec4, for a floating point image it will be a vec4.
 			 */
-			decltype(auto) Sample(float x, float y, int32_t mipLevel = 0);
+			decltype(auto) Sample(float x, float y, int32_t mipLevel = 0) const;
 
 			/**
 			 * Bilinear sanples the image at a given position.
@@ -162,7 +162,7 @@ namespace Atlas {
 			 * will depend on the type T of the image. In case of an integer image
 			 * it will be an ivec4, for a floating point image it will be a vec4.
 			 */
-			decltype(auto) SampleBilinear(float x, float y, int32_t mipLevel = 0);
+			decltype(auto) SampleBilinear(float x, float y, int32_t mipLevel = 0) const;
 
 			/**
 			 * Generates the mipmap chain.
@@ -202,7 +202,7 @@ namespace Atlas {
 			 * Determines the maximum pixel value depending on the format type T.
 			 * @return The maximum pixel value depending on the format type T.
 			 */
-			inline float MaxPixelValue();
+			inline float MaxPixelValue() const;
 
 			int32_t width = 0;
 			int32_t height = 0;
@@ -247,15 +247,15 @@ namespace Atlas {
 		}
 
 		template<typename T>
-		bool Image<T>::HasData() {
+		bool Image<T>::HasData() const {
 
 			return mipLevels.size() > 0 &&
-				GetData().size() > 0;
+				mipLevels[0].data.size() > 0;
 
 		}
 
 		template<typename T>
-		typename Image<T>::template MipLevel<T>& Image<T>::GetMipLevel(int32_t mipLevel) {
+		typename Image<T>::template MipLevel<T>& Image<T>::GetMipLevel(int32_t mipLevel) const {
 
 			return mipLevels[mipLevel];
 
@@ -263,7 +263,7 @@ namespace Atlas {
 
 		template<typename T>
 		std::vector<T> Image<T>::GetChannelData(int32_t channelOffset,
-			int32_t channelCount, int32_t mipLevel) {
+			int32_t channelCount, int32_t mipLevel) const {
 
 			std::vector<T> channelData;
 
@@ -283,14 +283,14 @@ namespace Atlas {
 		}
 
 		template<typename T>
-		int32_t Image<T>::GetMipmapLevelCount() {
+		int32_t Image<T>::GetMipmapLevelCount() const {
 
 			return int32_t(mipLevels.size());
 
 		}
 
 		template<typename T>
-		decltype(auto) Image<T>::Sample(int32_t x, int32_t y, int32_t mipLevel) {
+		decltype(auto) Image<T>::Sample(int32_t x, int32_t y, int32_t mipLevel) const {
 
 			auto& level = mipLevels[mipLevel];
 
@@ -325,7 +325,7 @@ namespace Atlas {
 		}
 
 		template<typename T>
-		decltype(auto) Image<T>::Sample(float x, float y, int32_t mipLevel) {
+		decltype(auto) Image<T>::Sample(float x, float y, int32_t mipLevel) const {
 
 			auto& level = mipLevels[mipLevel];
 
@@ -360,7 +360,7 @@ namespace Atlas {
 		}
 
 		template<typename T>
-		decltype(auto) Image<T>::SampleBilinear(float x, float y, int32_t mipLevel) {
+		decltype(auto) Image<T>::SampleBilinear(float x, float y, int32_t mipLevel) const {
 
 			auto& level = mipLevels[mipLevel];
 
@@ -643,7 +643,7 @@ namespace Atlas {
 		}
 
 		template<typename T>
-		inline float Image<T>::MaxPixelValue() {
+		inline float Image<T>::MaxPixelValue() const {
 
 			if constexpr (std::is_same_v<T, uint8_t>) {
 				return 255.0f;

@@ -552,6 +552,8 @@ namespace Atlas {
 			nodeBuffer.SetData(gpuNodes.data(), 0, gpuNodes.size());
 			glFinish();
 
+			lights.clear();
+
 			// Triangle lights
 			for (size_t i = 0; i < gpuTriangles.size(); i++) {
 				auto& triangle = gpuTriangles[i];
