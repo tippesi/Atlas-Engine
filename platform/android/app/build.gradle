@@ -9,7 +9,7 @@ else {
 
 android {
     compileSdkVersion 26
-    ndkVersion "ndk;18.1.5063045"
+    ndkVersion "18.1.5063045"
     defaultConfig {
         if (buildAsApplication) {
             applicationId "org.atlasengine.app"
