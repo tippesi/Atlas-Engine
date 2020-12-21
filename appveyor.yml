@@ -78,19 +78,21 @@ for:
   install:
     - appveyor DownloadFile https://dl.google.com/android/repository/commandlinetools-win-6609375_latest.zip
     - mkdir C:\android-sdk-windows
+    - mkdir C:\ndk
     - 7z x commandlinetools-win-6609375_latest.zip -oC:\android-sdk-windows\cmdline-tools > nul 
     - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --licenses
-    - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --install "cmake;3.10.2.4988404" "ndk;18.1.5063045"
+    - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --install "cmake;3.10.2.4988404"
+    - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --install --sdk_root=C:\ndk "ndk;18.1.5063045"
   build_script:
     - ps: |
         cd dependencies      
         ./download_dependencies.ps1      
         cd ../      
         $env:ANDROID_HOME="C:\\android-sdk-windows"      
-        $env:ANDROID_NDK_HOME="C:\\android-sdk-windows\\ndk-bundle"
+        $env:ANDROID_NDK_HOME="C:\\ndk\\ndk-bundle"
         $env:JAVA_HOME="C:\\Program Files\\Java\\jdk1.8.0"
         cd platform/android    
-    - gradlew.bat assembleRelease --warning-mode=none --offline
+    - gradlew.bat assembleRelease --warning-mode=none
 
 -
   matrix:
@@ -103,16 +105,18 @@ for:
   install:
     - appveyor DownloadFile https://dl.google.com/android/repository/commandlinetools-win-6609375_latest.zip
     - mkdir C:\android-sdk-windows
+    - mkdir C:\ndk
     - 7z x commandlinetools-win-6609375_latest.zip -oC:\android-sdk-windows\cmdline-tools > nul 
     - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --licenses
-    - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --install "cmake;3.10.2.4988404" "ndk;18.1.5063045"
+    - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --install "cmake;3.10.2.4988404"
+    - yes | C:\android-sdk-windows\cmdline-tools\tools\bin\sdkmanager.bat --install --sdk_root=C:\ndk "ndk;18.1.5063045"
   build_script:
     - ps: |
         cd dependencies      
         ./download_dependencies.ps1      
         cd ../      
         $env:ANDROID_HOME="C:\\android-sdk-windows"      
-        $env:ANDROID_NDK_HOME="C:\\android-sdk-windows\\ndk-bundle"
+        $env:ANDROID_NDK_HOME="C:\\ndk\\ndk-bundle"
         $env:JAVA_HOME="C:\\Program Files\\Java\\jdk1.8.0"
         cd platform/android    
     - gradlew.bat assembleDebug
