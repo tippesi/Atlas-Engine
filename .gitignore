@@ -8,6 +8,7 @@ dependencies/SDL
 dependencies/Assimp
 .idea
 .gradle
+.cxx
 .externalNativeBuild
 platform/android/app/app.iml
 platform/android/android.iml

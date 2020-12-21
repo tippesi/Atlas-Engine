@@ -23,7 +23,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 if (CYGWIN OR MINGW)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -O3 -Wa,-mbig-obj -std=gnu++11" )
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -O3 -std=gnu++11" )
 endif()
 
 # Validate options ################################################################################
@@ -85,6 +85,9 @@ endif()
 # Workaround for SDL issue in Visual Studio
 if (MSVC)
 list(APPEND EXTRA_LIBS vcruntime)
+endif()
+if (ANDROID)
+    list(APPEND EXTRA_LIBS dl)
 endif()
 
 # Workaround for assimp std::iterator deprecation warnings
