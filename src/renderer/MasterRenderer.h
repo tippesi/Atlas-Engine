@@ -250,7 +250,7 @@ namespace Atlas {
 			TemporalAARenderer taaRenderer;
 			SkyboxRenderer skyboxRenderer;
 			PostProcessRenderer postProcessRenderer;
-			DDGIRenderer irradianceVolumeRenderer;
+			DDGIRenderer ddgiRenderer;
 			SSAORenderer ssaoRenderer;
 			RTAORenderer rtaoRenderer;
 

@@ -1,7 +1,7 @@
 #include "App.h"
 
-std::string Atlas::EngineInstance::assetDirectory = "../../data";
-std::string Atlas::EngineInstance::shaderDirectory = "shader";
+const std::string Atlas::EngineInstance::assetDirectory = "../../data";
+const std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
 

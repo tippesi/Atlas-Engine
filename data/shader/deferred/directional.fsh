@@ -176,7 +176,7 @@ void main() {
 	indirect *= occlusionFactor;
 	
 	vec3 radiance = light.color * light.intensity;
-	colorFS = vec4(direct * radiance * surface.NdotL * shadowFactor + indirect + light.color * 0.0 *volumetric, 1.0);
+	colorFS = vec4(direct * radiance * surface.NdotL * shadowFactor + indirect + light.color * volumetric, 1.0);
 
 	if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.01) {	
 		colorFS += vec4(surface.material.emissiveColor, 1.0);

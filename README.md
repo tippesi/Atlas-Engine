@@ -10,7 +10,7 @@
 [build-image]: https://ci.appveyor.com/api/projects/status/p5rwt06036gp5fwy?svg=true
 [build-url]: https://ci.appveyor.com/project/tippesi/atlas-engine
 
-![Example scene](images/sponza_rasterized.png)
+![Example scene](wiki/images/sponza_rasterized.png)
 *Rasterized image using an irradiance volume*
 #### The current version is a WIP which means many changes and less stability.
 ## Introduction
@@ -75,9 +75,9 @@ in the LICENSE file.
 ## Code Example
 For a code example have a look at the [Wiki](https://github.com/tippesi/Atlas-Engine/wiki/Code-example).
 ## Screenshots
-![Island scene](images/island.gif) <br/>
+![Island scene](wiki/images/island.gif) <br/>
 *Island demo scene*
-![Island scene](images/gun.gif) <br/>
+![Island scene](wiki/images/gun.gif) <br/>
 *PBR rendering*
-![Example scene](images/sponza_raytraced.png)
+![Example scene](wiki/images/sponza_raytraced.png)
 *Ray traced image using 3000 samples with 5 bounces*

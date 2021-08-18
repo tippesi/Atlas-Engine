@@ -54,8 +54,7 @@ void main() {
     bool downBorder = pix.y == probeResWithBorder - 1;
 
     if (leftBorder || rightBorder || upBorder || downBorder) {
-        ivec2 offset = 
-        (pix, leftBorder, rightBorder, upBorder, downBorder);
+        ivec2 offset = OctMapStitch(pix, leftBorder, rightBorder, upBorder, downBorder);
         ivec2 base = (ivec2(gl_FragCoord) / ivec2(probeResWithBorder)) * probeResWithBorder;
 
         colorFS = texelFetch(volume, ivec3(base + offset, volumeLayer), 0);

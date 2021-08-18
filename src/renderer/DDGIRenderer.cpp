@@ -1,4 +1,4 @@
-#include "IrradianceVolumeRenderer.h"
+#include "DDGIRenderer.h"
 
 #include "helper/GeometryHelper.h"
 
