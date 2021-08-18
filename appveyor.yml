@@ -6,15 +6,15 @@ platform: x64
 environment:
   matrix:
 
-  - job_name: Android build Release
-    job_group: Android build
-    configuration: Release
-    appveyor_build_worker_image: Visual Studio 2019
+  #- job_name: Android build Release
+  #  job_group: Android build
+  #  configuration: Release
+  #  appveyor_build_worker_image: Visual Studio 2019
     
-  - job_name: Android build Debug
-    job_group: Android build
-    configuration: Debug
-    appveyor_build_worker_image: Visual Studio 2019
+  #- job_name: Android build Debug
+  #  job_group: Android build
+  #  configuration: Debug
+  #  appveyor_build_worker_image: Visual Studio 2019
 
   - job_name: Windows build Release
     job_group: Windows build

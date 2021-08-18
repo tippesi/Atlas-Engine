@@ -14,7 +14,7 @@
 *Rasterized image using an irradiance volume*
 #### The current version is a WIP which means many changes and less stability.
 ## Introduction
-This is a cross platform engine that is available on Linux, Windows and Android.
+This is a cross platform engine that is available on Linux and Windows.
 ## Requirements
 - OpenGL 4.3
 - OpenGL ES 3.2
@@ -39,6 +39,7 @@ There exist two options:
 CMakeLists.txt of your project. Afterwards add **target_link_libraries(YOUR_TARGET ... AtlasEngine)**. You should be fine.
 - You can compile the engine and all dependencies as a static library (note that some dependencies also have
 dynamic libraries). Therefore use the **ATLAS_BUILD_LIBRARY** option when using CMake.
+<!---
 ### Android
 You can compile the engine using Gradle either with or without AndroidStudio.
 The Gradle project can be found in **./platform/android**. Open it before you proceed.
@@ -56,10 +57,11 @@ There exist two options:
 of the CMake root project. In the **./platform/android/app/src/main/java/com/atlasengine/app** file add the root library name and load
 the project with Android Studio. The CMake project has to be compiled as a shared library. Make sure that the path to your data in the
 asset directory is correct.
+-->
 ### CMake build options
 - **ATLAS_BUILD_LIBRARY** Build project as library
 - **ATLAS_BUILD_SHARED** Force project to be build as a shared library
-- **ATLAS_OPENGL_ES** Use OpenGL ES instead of OpenGL on desktop devices (for Android this option is always on)
+- **ATLAS_OPENGL_ES** Use OpenGL ES instead of OpenGL on desktop devices
 - **ATLAS_EXPORT_MAIN** Export the main file to be added as executable to parent project (only if main function cannot be found)
 - **ATLAS_NO_APP** Disables the engines main function and app functionality. You have to code the main function and
 initialize the engine yourself
