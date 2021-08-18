@@ -10,8 +10,8 @@
 [build-image]: https://ci.appveyor.com/api/projects/status/p5rwt06036gp5fwy?svg=true
 [build-url]: https://ci.appveyor.com/project/tippesi/atlas-engine
 
-![Example scene](wiki/images/sponza_rasterized.png)
-*Rasterized image using real time global illumination*
+![GI scene](wiki/images/gi.gif) <br/>
+*Realtime GI demo scene* <br/>
 #### The current version is a WIP which means many changes and less stability.
 ## Introduction
 This is a cross platform engine that is available on Linux and Windows.
@@ -75,11 +75,11 @@ in the LICENSE file.
 ## Code Example
 For a code example have a look at the [Wiki](https://github.com/tippesi/Atlas-Engine/wiki/Code-example).
 ## Screenshots
-![Island scene](wiki/images/gi.gif) <br/>
-*Realtime GI demo scene* <br/>
+![Example scene](wiki/images/sponza_rasterized.png) <br/>
+*Rasterized image using real time global illumination* <br/>
 ![Island scene](wiki/images/island.gif) <br/>
 *Island demo scene using the terrain and ocean systems* <br/>
-![Island scene](wiki/images/gun.gif) <br/>
+![Gun scene](wiki/images/gun.gif) <br/>
 *PBR rendering* <br/>
 ![Example scene](wiki/images/sponza_raytraced.png)
 *Path traced scene*
