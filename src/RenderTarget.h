@@ -52,6 +52,8 @@ namespace Atlas {
 
 		Texture::Texture2D* GetVelocity();
 
+		Texture::Texture2D* GetLastVelocity();
+
 		Framebuffer geometryFramebuffer;
 		Framebuffer lightingFramebuffer;
 		Framebuffer postProcessFramebuffer;
@@ -61,7 +63,9 @@ namespace Atlas {
 
 	private:
 		Texture::Texture2D depthTexture;
+
 		Texture::Texture2D velocityTexture;
+		Texture::Texture2D swapVelocityTexture;
 
 		Texture::Texture2D historyTexture;
 		Texture::Texture2D swapHistoryTexture;

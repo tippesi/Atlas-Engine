@@ -182,9 +182,6 @@ namespace Atlas {
                 log.append("Compiling compute stage failed.");
             }
 
-            log.append("\nFile: " + filename);
-            log.append("\nError: " + std::string(shaderLog.data()));
-
             int32_t lineCount = 1;
             size_t pos = 0, lastPos = 0;
 
@@ -193,6 +190,9 @@ namespace Atlas {
                 log.append(stageCode.substr(lastPos, pos - lastPos + 1));
                 lastPos = pos + 1;
             }
+
+            log.append("\nFile: " + filename);
+            log.append("\nError: " + std::string(shaderLog.data()));
 
             return log;
 

@@ -83,6 +83,7 @@ namespace Atlas {
 		Texture::Texture::GetMaxAnisotropyLevel();
 
 		Loader::AssetLoader::Init();
+		Common::Random::Init();
 
 		Audio::AudioManager::Configure(48000, 2, 1024);
 

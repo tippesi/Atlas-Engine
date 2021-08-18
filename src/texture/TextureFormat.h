@@ -43,6 +43,7 @@
 #define AE_RGB8 GL_RGB8
 #define AE_RGB8I GL_RGB8I
 #define AE_RGB8UI GL_RGB8UI
+#define AE_R11G11B10F GL_R11F_G11F_B10F 
 #define AE_RGB16F GL_RGB16F
 #define AE_RGB16I GL_RGB16I
 #define AE_RGB16UI GL_RGB16UI
@@ -101,6 +102,7 @@ namespace Atlas {
                     case AE_RGB8: return AE_RGB;
                     case AE_RGB8I: return AE_RGB_INT;
                     case AE_RGB8UI: return AE_RGB_INT;
+                    case AE_R11G11B10F: return AE_RGB;
                     case AE_RGB16F: return AE_RGB;
                     case AE_RGB16I: return AE_RGB_INT;
                     case AE_RGB16UI: return AE_RGB_INT;
@@ -153,6 +155,7 @@ namespace Atlas {
                     case AE_RGB8: return AE_UBYTE;
                     case AE_RGB8I: return AE_BYTE;
                     case AE_RGB8UI: return AE_UBYTE;
+                    case AE_R11G11B10F: return AE_FLOAT;
                     case AE_RGB16F: return AE_HALF_FLOAT;
                     case AE_RGB16I: return AE_SHORT;
                     case AE_RGB16UI: return AE_USHORT;

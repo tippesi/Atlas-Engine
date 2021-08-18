@@ -34,18 +34,8 @@ struct Material {
 };
 
 struct PackedMaterial {
-
-	int baseColor;
-	int emissiveColor;
-	int transmissiveColor;
-
-	float emissiveIntensity;
-
-	int data0;
-	int data1;
-
-	int features;
-
+	vec4 data0;
+	vec4 data1;
 };
 
 layout (std430, binding = 0) buffer PackedMaterials {
@@ -55,15 +45,16 @@ layout (std430, binding = 0) buffer PackedMaterials {
 Material UnpackMaterial(uint idx) {
 
 	PackedMaterial compressed = packedMaterials[idx];
-
+	
 	Material material;
 
-	material.baseColor = vec3(unpackColorVector(compressed.baseColor));
-	material.emissiveColor = vec3(unpackColorVector(compressed.emissiveColor)) * compressed.emissiveIntensity;
-	material.transmissiveColor = vec3(unpackColorVector(compressed.transmissiveColor));
+	material.baseColor = vec3(unpackColorVector(floatBitsToInt(compressed.data0.x)));
+	material.emissiveColor = vec3(unpackColorVector(floatBitsToInt(compressed.data0.y)))
+		 * compressed.data0.w;
+	material.transmissiveColor = vec3(unpackColorVector(floatBitsToInt(compressed.data0.z)));
 
-	vec4 data0 = unpackColorVector(compressed.data0);
-	vec4 data1 = unpackColorVector(compressed.data1);
+	vec4 data0 = unpackColorVector(floatBitsToInt(compressed.data1.x));
+	vec4 data1 = unpackColorVector(floatBitsToInt(compressed.data1.y));
 
 	material.opacity = data0.x;
 
@@ -74,13 +65,14 @@ Material UnpackMaterial(uint idx) {
 	material.normalScale = data0.y;
 	material.displacementScale = data0.z;
 
-	material.baseColorMap = (compressed.features & FEATURE_BASE_COLOR_MAP) > 0;
-	material.opacityMap = (compressed.features & FEATURE_OPACITY_MAP) > 0;
-	material.normalMap = (compressed.features & FEATURE_NORMAL_MAP) > 0;
-	material.roughnessMap = (compressed.features & FEATURE_ROUGHNESS_MAP) > 0;
-	material.metalnessMap = (compressed.features & FEATURE_METALNESS_MAP) > 0;
-	material.aoMap = (compressed.features & FEATURE_AO_MAP) > 0;
-	material.transmissive = (compressed.features & FEATURE_TRANSMISSION) > 0;
+	int features = floatBitsToInt(compressed.data1.z);
+	material.baseColorMap = (features & FEATURE_BASE_COLOR_MAP) > 0;
+	material.opacityMap = (features & FEATURE_OPACITY_MAP) > 0;
+	material.normalMap = (features & FEATURE_NORMAL_MAP) > 0;
+	material.roughnessMap = (features & FEATURE_ROUGHNESS_MAP) > 0;
+	material.metalnessMap = (features & FEATURE_METALNESS_MAP) > 0;
+	material.aoMap = (features & FEATURE_AO_MAP) > 0;
+	material.transmissive = (features & FEATURE_TRANSMISSION) > 0;
 
 	return material;
 

@@ -14,8 +14,8 @@ namespace Atlas {
 
 		}
 
-		TextureAtlas::TextureAtlas(std::vector<Texture2D*>& textures, 
-			int32_t padding) : padding(padding) {
+		TextureAtlas::TextureAtlas(std::vector<Texture2D*>& textures, int32_t padding,
+			int32_t downscale) : padding(padding), downscale(downscale) {
 
 			Update(textures);
 
@@ -41,83 +41,104 @@ namespace Atlas {
 			if (!textures.size())
 				return;
 
+			// Use structure to allow for downscaling without
+			// invalidating the original textures and without
+			// needing to copy them
+			struct TextureStructure {
+				int32_t width;
+				int32_t height;
+				int32_t channels;
+				Texture2D* texture;
+			};
+
+			std::vector<TextureStructure> textureStructures;
+
+			for (auto texture : textures) {
+				textureStructures.emplace_back(
+					TextureStructure{
+					texture->width / downscale,
+					texture->height / downscale,
+					texture->channels,
+					texture
+					}
+				);
+			};
+
 			int32_t width = 0, height = 0, 
 				layers = 0, channels = 0;
 
-			for (auto& texture : textures) {
-				width = texture->width > width ?
-					texture->width : width;
-				height = texture->height > height ?
-					texture->height : height;
-				channels = texture->channels > channels ?
-					texture->channels : channels;
+			for (auto& texture : textureStructures) {
+				width = texture.width > width ?
+					texture.width : width;
+				height = texture.height > height ?
+					texture.height : height;
+				channels = texture.channels > channels ?
+					texture.channels : channels;
 			}
 
-			auto copy = textures;
-
-			std::sort(copy.begin(), copy.end(),
-				[=](Texture* tex1, Texture* tex2) -> bool {
-
-					auto pixelCount1 = tex1->width;
-					auto pixelCount2 = tex2->width;
+			std::sort(textureStructures.begin(), textureStructures.end(),
+				[=](auto& texStruct1, auto& texStruct2) -> bool {
+					auto pixelCount1 = texStruct1.width;
+					auto pixelCount2 = texStruct2.width;
 
 					if (pixelCount1 != pixelCount2) {
 						return pixelCount1 > pixelCount2;
 					}
 					else {
-						return tex1->height > tex2->height;
+						return texStruct1.height > texStruct2.height;
 					}
-
 				});
 
 			// Approximation of total padding by assuming to stuff
 			// the smallest texture over and over again.
-			auto smallest = copy[copy.size() - 1];
-			auto smallestSize = ivec2(smallest->width, smallest->height);
+			auto& smallest = textureStructures[textureStructures.size() - 1];
+			auto smallestSize = ivec2(smallest.width, smallest.height);
 			ivec2 totalPadding = ivec2(width, height) / smallestSize * padding;
 
 			// Add total padding to total size
 			width += totalPadding.x;
 			height += totalPadding.y;
 
-			while(copy.size()) {
+			while(textureStructures.size()) {
 
-				auto texture = copy[0];
-				copy.erase(copy.begin());
+				auto textureStruct = textureStructures[0];
+				auto texture = textureStruct.texture;
+				textureStructures.erase(textureStructures.begin());
 
 				slices[texture].layer = layers;
 				slices[texture].offset = ivec2(0);
-				slices[texture].size = ivec2(texture->width, texture->height);
+				slices[texture].size = ivec2(textureStruct.width, textureStruct.height);
 
-				ivec2 size = ivec2(texture->width, texture->height);
+				ivec2 size = ivec2(textureStruct.width, textureStruct.height);
 				ivec2 offset = ivec2(size.x + padding, 0);
 
 				if ((size.x == width && size.y == height) ||
-					!copy.size()) {
+					!textureStructures.size()) {
 					layers++;
 					continue;
 				}
 
 				size_t outerTex = 0;
-				while (outerTex != copy.size()) {
-					outerTex = copy.size();
+				while (outerTex != textureStructures.size()) {
+					outerTex = textureStructures.size();
 
-					if (!copy.size())
+					if (!textureStructures.size())
 						break;
 
 					size_t innerTex = 0;
-					while (innerTex != copy.size()) {
-						innerTex = copy.size();
+					while (innerTex != textureStructures.size()) {
+						innerTex = textureStructures.size();
 
-						if (!copy.size() || offset.x == width)
+						if (!textureStructures.size() || offset.x == width)
 							break;
 
-						for (size_t i = 0; i < copy.size(); i++) {
+						for (size_t i = 0; i < textureStructures.size(); i++) {
 
-							texture = copy[i];
+							textureStruct = textureStructures[i];
+							texture = textureStruct.texture;
 
 							ivec2 remain = ivec2(width, height) - offset;
-							ivec2 texSize = ivec2(texture->width, texture->height);
+							ivec2 texSize = ivec2(textureStruct.width, textureStruct.height);
 
 							if (remain.x - texSize.x >= 0 &&
 								remain.y - texSize.y >= 0 &&
@@ -127,7 +148,7 @@ namespace Atlas {
 								slices[texture].offset = offset;
 								slices[texture].size = texSize;
 								offset.x += texSize.x + padding;
-								copy.erase(copy.begin() + i);
+								textureStructures.erase(textureStructures.begin() + i);
 								break;
 							}
 
@@ -153,7 +174,7 @@ namespace Atlas {
 			default: sizedFormat = AE_RGBA8; break;
 			}
 
-			texture = Texture2DArray(width, height, layers, sizedFormat);
+			texture = Texture2DArray(width, height, layers, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 			for (auto& key : slices) {
 				auto tex = key.first;
@@ -170,8 +191,8 @@ namespace Atlas {
 				}
 				else {
 
-					auto pixelCount = (size_t)slice.size.x * 
-						(size_t)slice.size.y;
+					auto pixelCount = (size_t)tex->width * 
+						(size_t)tex->height;
 					auto texChannels = tex->channels;
 
 					convertedData.resize(pixelCount * channels);
@@ -200,6 +221,12 @@ namespace Atlas {
 
 				if (!convertedData.size())
 					continue;
+
+				// Downscale the texture data
+				Common::Image<uint8_t> image(tex->width, tex->height, tex->channels);
+				image.SetData(convertedData);
+				image.Resize(slice.size.x, slice.size.y);
+				convertedData = image.GetData();
 
 				texture.SetData(convertedData, slice.offset.x, 
 					slice.offset.y, slice.layer, slice.size.x, 

@@ -8,12 +8,14 @@
 #include "../lighting/Sky.h"
 #include "../lighting/Fog.h"
 #include "../lighting/IrradianceVolume.h"
+#include "../lighting/SSAO.h"
 #include "../ocean/Ocean.h"
 #include "../postprocessing/PostProcessing.h"
 #include "../Decal.h"
 
 #include "SceneNode.h"
 #include "SpacePartitioning.h"
+#include "RTData.h"
 
 #include <unordered_map>
 
@@ -23,11 +25,14 @@ namespace Atlas {
 
 		class Scene : public SceneNode, public SpacePartitioning {
 
+			friend class Renderer::Helper::RayTracingHelper;
+
 		public:
 			/**
 			 * Constructs a scene object.
 			 */
-			Scene() : SceneNode(this, &rootMeshMap), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5) {}
+			Scene() : SceneNode(this, &rootMeshMap), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5), 
+				rayTracingData(this) {}
 
 			/**
 			 * Constructs a scene object.
@@ -84,6 +89,12 @@ namespace Atlas {
 			 */
 			std::vector<Material*> GetMaterials();
 
+			/*
+			 * Builds the BVH and texture atlases.
+			 * @note The scene needs to be updated first.
+			 */
+			void BuildRTStructures();
+
 			/**
 			 * To overload the Add and Remove methods we need to specify this
 			 * here. It would just rename the method instead.
@@ -97,9 +108,12 @@ namespace Atlas {
 			Lighting::Sky sky;
 			Lighting::Fog* fog = nullptr;
 			Lighting::IrradianceVolume* irradianceVolume = nullptr;
+			Lighting::SSAO* ssao = nullptr;
 			PostProcessing::PostProcessing postProcessing;
 
 		private:
+			RTData rayTracingData;
+
 			std::unordered_map<Mesh::Mesh*, int32_t> rootMeshMap;
 
 			bool hasChanged = true;

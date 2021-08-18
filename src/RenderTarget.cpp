@@ -10,6 +10,8 @@ namespace Atlas {
 
 		velocityTexture = Texture::Texture2D(width, height, AE_RG16F,
 			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+		swapVelocityTexture = Texture::Texture2D(width, height, AE_RG16F,
+			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
 
 		geometryFramebuffer.Resize(width, height);
 
@@ -83,9 +85,13 @@ namespace Atlas {
 
 		if (swap) {
 			historyFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &historyTexture);
+			geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &velocityTexture);
+			lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, &velocityTexture);
 		}
 		else {
 			historyFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &swapHistoryTexture);
+			geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &swapVelocityTexture);
+			lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, &swapVelocityTexture);
 		}
 
 		historyFramebuffer.Unbind();
@@ -118,7 +124,23 @@ namespace Atlas {
 
 	Texture::Texture2D* RenderTarget::GetVelocity() {
 
-		return &velocityTexture;
+		if (swap) {
+			return &velocityTexture;
+		}
+		else {
+			return &swapVelocityTexture;
+		}
+
+	}
+
+	Texture::Texture2D* RenderTarget::GetLastVelocity() {
+
+		if (swap) {
+			return &swapVelocityTexture;
+		}
+		else {
+			return &velocityTexture;
+		}
 
 	}
 

@@ -2,6 +2,8 @@
 #include <../common/random.hsh>
 #include <../common/PI.hsh>
 #include <../common/packing.hsh>
+#include <../common/utility.hsh>
+#include <../common/octahedron.hsh>
 
 #define INF 1000000000000.0
 #define EPSILON 0.001
@@ -9,8 +11,7 @@
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1
 
-Triangle UnpackTriangle(PackedTriangle triangle) {
-	
+Triangle UnpackTriangle(PackedTriangle triangle) {	
 	Triangle tri;
 
 	tri.v0 = triangle.v0.xyz;
@@ -30,47 +31,62 @@ Triangle UnpackTriangle(PackedTriangle triangle) {
 	
 	tri.materialIndex = floatBitsToInt(triangle.d0.w);
 	
-	return tri;
-	
+	return tri;	
 }
 
 Ray UnpackRay(PackedRay compressed) {
-
 	Ray ray;
 	
 	ray.ID = floatBitsToInt(compressed.origin.w);
 	ray.origin = compressed.origin.xyz;
-	ray.direction = compressed.direction.xyz;
+
+	ray.hitID = floatBitsToInt(compressed.hit.y);
+	ray.hitDistance = compressed.hit.x;
+	
+	ray.direction = Cartesian(compressed.hit.zw);
 	ray.inverseDirection = 1.0 / ray.direction;
-	
-	ray.color.xy = unpackHalf2x16(floatBitsToUint(compressed.data.x));
-	ray.throughput.xy = unpackHalf2x16(floatBitsToUint(compressed.data.y));
-	vec2 comn = unpackHalf2x16(floatBitsToUint(compressed.data.z));
 
-	ray.color.z = comn.x;
-	ray.throughput.z = comn.y;
-
-	ray.data = vec2(compressed.direction.w, compressed.data.w);
-	
 	return ray;
-
 }
 
 PackedRay PackRay(Ray ray) {
-
 	PackedRay compressed;
 	
 	compressed.origin.w = intBitsToFloat(ray.ID);
 	compressed.origin.xyz = ray.origin;
-	compressed.direction.xyz = ray.direction;
-	
-	vec2 comn = vec2(ray.color.z, ray.throughput.z);
-	compressed.data.x = uintBitsToFloat(packHalf2x16(ray.color.xy));
-	compressed.data.y = uintBitsToFloat(packHalf2x16(ray.throughput.xy));	
-	compressed.data.z = uintBitsToFloat(packHalf2x16(comn));	
+
+	compressed.hit.x = ray.hitDistance;
+	compressed.hit.y = intBitsToFloat(ray.hitID);
+
+	vec2 dir = Spherical(ray.direction);
+	compressed.hit.zw = dir;
 	
 	return compressed;
+}
 
+
+RayPayload UnpackRayPayload(PackedRayPayload compressed) {
+	RayPayload payload;
+
+	payload.radiance.xy = unpackHalf2x16(floatBitsToUint(compressed.data.x));
+	payload.throughput.xy = unpackHalf2x16(floatBitsToUint(compressed.data.y));
+	vec2 comn = unpackHalf2x16(floatBitsToUint(compressed.data.z));
+
+	payload.radiance.z = comn.x;
+	payload.throughput.z = comn.y;
+	
+	return payload;
+}
+
+PackedRayPayload PackRayPayload(RayPayload payload) {
+	PackedRayPayload compressed;
+
+	vec2 comn = vec2(payload.radiance.z, payload.throughput.z);
+	compressed.data.x = uintBitsToFloat(packHalf2x16(payload.radiance.xy));
+	compressed.data.y = uintBitsToFloat(packHalf2x16(payload.throughput.xy));	
+	compressed.data.z = uintBitsToFloat(packHalf2x16(comn));
+
+	return compressed;
 }
 
 Light UnpackLight(PackedLight compressed) {
@@ -92,12 +108,5 @@ Light UnpackLight(PackedLight compressed) {
 	light.brightness = dot(light.radiance, vec3(0.33333));
 
 	return light;
-
-}
-
-void groupMemoryBarrierWithSync() {
-
-	barrier();
-	groupMemoryBarrier();
 
 }

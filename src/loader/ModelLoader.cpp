@@ -214,7 +214,6 @@ namespace Atlas {
 
 			assimpMaterial->Get(AI_MATKEY_NAME, name);
 			assimpMaterial->Get(AI_MATKEY_SHININESS, specularHardness);
-			assimpMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, specularIntensity);
 			assimpMaterial->Get(AI_MATKEY_OPACITY, material.opacity);
 			assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
 			assimpMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, emissive);
@@ -232,10 +231,7 @@ namespace Atlas {
 			material.roughness = glm::clamp(powf(1.0f / (0.5f * specularHardness + 1.0f), 0.25f), 0.0f, 1.0f);
 			material.ao = 1.0f;
 
-			specularIntensity = glm::clamp(specularIntensity, 0.0f, 1.0f);
-			auto specularFactor = glm::max(specular.r, glm::max(specular.g, specular.b));
-			specularIntensity *= specularFactor > 0.0f ? specularFactor : 1.0f;
-
+			specularIntensity = glm::max(specular.r, glm::max(specular.g, specular.b));
 			material.metalness = glm::clamp(specularIntensity, 0.0f, 1.0f);
 			
 			if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0 ||
@@ -274,6 +270,16 @@ namespace Atlas {
 				material.baseColorMap->SetData(data);
 				material.baseColorMapPath = path;
 			}
+			if (assimpMaterial->GetTextureCount(aiTextureType_OPACITY) > 0) {
+				aiString aiPath;
+				assimpMaterial->GetTexture(aiTextureType_OPACITY, 0, &aiPath);
+				auto path = directory + std::string(aiPath.C_Str());
+				auto image = ImageLoader::LoadImage<uint8_t>(path, true, 1, maxTextureResolution);
+				material.opacityMap = new Texture::Texture2D(image.width, image.height, AE_R8,
+					GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
+				material.opacityMap->SetData(image.GetData());
+				material.opacityMapPath = path;
+			}
 			if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0 ||
 				(assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && isObj)) {
 				aiString aiPath;
@@ -288,7 +294,7 @@ namespace Atlas {
 				if (texture->channels == 1 && isObj) {
 					material.displacementMap = texture;
 					material.displacementMapPath = path;
-					image = ApplySobelFilter(image);
+					image = ApplySobelFilter(image, 0.5f);
 					material.normalMap = new Texture::Texture2D(image);
 					material.normalMapPath = path;
 				}

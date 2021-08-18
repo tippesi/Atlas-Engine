@@ -20,6 +20,9 @@
 #include "AtmosphereRenderer.h"
 #include "PostProcessRenderer.h"
 #include "TextRenderer.h"
+#include "DDGIRenderer.h"
+#include "SSAORenderer.h"
+#include "RTAORenderer.h"
 
 namespace Atlas {
 
@@ -153,8 +156,6 @@ namespace Atlas {
              */
 			void RenderProbe(Lighting::EnvironmentProbe* probe, RenderTarget* target, Scene::Scene* scene);
 
-			void RenderIrradianceVolume(Scene::Scene* scene, int32_t bounces = 1);
-
 			/**
 			 * Filters an environment probe.
 			 * @param probe The environment probe.
@@ -185,6 +186,7 @@ namespace Atlas {
 				int32_t data1;
 
 				int32_t features;
+				int32_t unused;
 
 			};
 
@@ -248,6 +250,9 @@ namespace Atlas {
 			TemporalAARenderer taaRenderer;
 			SkyboxRenderer skyboxRenderer;
 			PostProcessRenderer postProcessRenderer;
+			DDGIRenderer irradianceVolumeRenderer;
+			SSAORenderer ssaoRenderer;
+			RTAORenderer rtaoRenderer;
 
 			std::vector<vec2> haltonSequence;
 			size_t haltonIndex = 0;

@@ -2,17 +2,31 @@
 
 bool IntersectAABB(Ray ray, AABB aabb, float tmin, float tmax) {
 	
-	vec3 minVec = vec3(aabb.minX, aabb.minY, aabb.minZ);
-	vec3 maxVec = vec3(aabb.maxX, aabb.maxY, aabb.maxZ);
-
-	vec3 t0 = (minVec - ray.origin) * ray.inverseDirection;
-	vec3 t1 = (maxVec - ray.origin) * ray.inverseDirection;
+	vec3 t0 = (aabb.min - ray.origin) * ray.inverseDirection;
+	vec3 t1 = (aabb.max - ray.origin) * ray.inverseDirection;
 	
 	vec3 tsmall = min(t0, t1);
 	vec3 tbig = max(t0, t1);
 	
 	float tminf = max(tmin, max(tsmall.x, max(tsmall.y, tsmall.z)));
 	float tmaxf = min(tmax, min(tbig.x, min(tbig.y, tbig.z)));
+	
+	return (tminf <= tmaxf);
+
+}
+
+bool IntersectAABB(Ray ray, AABB aabb, float tmin, float tmax, out float dist) {
+
+	vec3 t0 = (aabb.min - ray.origin) * ray.inverseDirection;
+	vec3 t1 = (aabb.max - ray.origin) * ray.inverseDirection;
+	
+	vec3 tsmall = min(t0, t1);
+	vec3 tbig = max(t0, t1);
+	
+	float tminf = max(tmin, max(tsmall.x, max(tsmall.y, tsmall.z)));
+	float tmaxf = min(tmax, min(tbig.x, min(tbig.y, tbig.z)));
+
+	dist = tminf;
 	
 	return (tminf <= tmaxf);
 

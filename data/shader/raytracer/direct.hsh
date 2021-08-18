@@ -1,0 +1,107 @@
+#include <lights.hsh>
+#include <common.hsh>
+#include <../common/random.hsh>
+
+layout (std430, binding = 8) buffer Lights {
+	PackedLight lights[];
+};
+
+uniform int lightCount;
+
+int GetLightCount() {
+    return lightCount;
+}
+
+Light GetLight(Surface surface, float seed0, float seed1, out float lightPdf) {
+    // Weight the lights in the light array based on their approximated
+	// contribution to the shading point. Note that we can use a minimum
+	// weight for each light to control the variance.
+    Light light;
+	float totalWeight = 0.0;
+	for (int i = 0; i < lightCount; i++) {
+		light = UnpackLight(lights[i]);
+		float weight = 1.0;
+		if (light.type == uint(TRIANGLE_LIGHT)) {
+			vec3 pointToLight = light.P - surface.P;
+			float sqrDistance = dot(pointToLight, pointToLight);
+			float lightDistance = sqrt(sqrDistance);
+
+			vec3 L = normalize(pointToLight);
+			float NdotL = max(dot(light.N, -L), 0.0);
+
+			weight = light.brightness * light.area * NdotL / sqrDistance;
+		}
+		else if (light.type == uint(DIRECTIONAL_LIGHT)) {
+			weight = light.brightness;
+		}
+		weight = clamp(weight, 0.0000001, 1.0);
+		totalWeight += weight;
+	}
+	
+	float rnd = random(seed0, seed1) * totalWeight;
+
+	float sum = 0.0;
+
+	// We can now find a light based on the random number. Lights
+	// with a higher weight will be evaluated more often. To reduce
+	// register pressure we recalculate the weights instead of storing
+	// them in an array in the first loop.
+	lightPdf = 1.0;
+	for (int i = 0; i < lightCount && rnd > sum; i++) {
+		light = UnpackLight(lights[i]);
+		if (light.type == uint(TRIANGLE_LIGHT)) {		
+			vec3 pointToLight = light.P - surface.P;
+			float sqrDistance = dot(pointToLight, pointToLight);
+			float lightDistance = sqrt(sqrDistance);
+
+			vec3 L = normalize(pointToLight);
+			float NdotL = max(dot(light.N, -L), 0.0);
+
+			lightPdf = light.brightness * light.area * NdotL / sqrDistance;
+		}
+		else if (light.type == uint(DIRECTIONAL_LIGHT)) {
+			lightPdf = light.brightness;
+		}
+		lightPdf = clamp(lightPdf, 0.0000001, 1.0);
+		sum += lightPdf;
+	}
+	
+	// Calculate the new probability for the selected light
+	lightPdf = lightPdf / totalWeight * light.pdf;
+    return light;
+}
+
+void SampleLight(Light light, inout Surface surface, float seed0, float seed1, 
+    out float solidAngle, out float dist) {
+    // Draw a sample on the light and update the surface
+	// Here we differentiate between area and punctual lights.
+	if (light.type == uint(TRIANGLE_LIGHT)) { // Area lights
+		LightSample lightSample;
+
+		float r0 = random(seed0, seed1);
+		float r1 = random(seed0, seed1);
+
+		if (light.type == uint(TRIANGLE_LIGHT)) {
+			Triangle tri = UnpackTriangle(triangles[light.idx]);
+			lightSample = SampleTriangleLight(light, tri, surface, r0, r1);
+		}
+
+		vec3 pointToLight = lightSample.P - surface.P;
+		float sqrDistance = dot(pointToLight, pointToLight);
+		dist = sqrt(sqrDistance);
+
+		surface.L = pointToLight / dist;
+		UpdateSurface(surface);
+
+		float NdotL = max(dot(lightSample.N, -surface.L), 0.0);
+		solidAngle = NdotL / (sqrDistance * lightSample.pdf);	
+	}
+	else  { // Punctual lights
+		solidAngle = 1.0;
+		if (light.type == uint(DIRECTIONAL_LIGHT)) {
+			surface.L = normalize(-light.N);
+			UpdateSurface(surface);
+            dist = INF;
+		}
+	}
+}

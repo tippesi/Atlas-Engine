@@ -1,3 +1,5 @@
+// Dummy vertex shader for all the fragment shader
+
 layout(location=0) in vec2 vPosition;
 
 void main() {

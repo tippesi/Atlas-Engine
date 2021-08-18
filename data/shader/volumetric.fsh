@@ -16,7 +16,7 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords);
 
 void main() {
 
-    float depth = texture(depthTexture, fTexCoord).r;
+    float depth = textureLod(depthTexture, fTexCoord, 0).r;
 
     vec3 fragPos = ConvertDepthToViewSpace(depth, fTexCoord);
 
@@ -87,15 +87,19 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 
         cascadeSpace.xyz = cascadeSpace.xyz * 0.5 + 0.5;
 
-        float shadowValue = texture(cascadeMaps, vec4(cascadeSpace.xy, cascadeIndex, cascadeSpace.z));
+        float shadowValue = textureGrad(cascadeMaps, 
+            vec4(cascadeSpace.xy, cascadeIndex, cascadeSpace.z), 
+            vec2(0, 0),
+    	    vec2(0, 0));
         foginess += shadowValue;
 
         currentPosition += stepVector;
 
     }
 
-    float scale = min(1.0, rayLength / light.shadow.distance);
+    float shadowDistance = light.shadow.cascades[light.shadow.cascadeCount - 1].distance;
+    float scale = min(1.0, rayLength / shadowDistance);
 
-    return foginess * scale / float(sampleCount);
+    return foginess / float(sampleCount) * scale;
 
 }

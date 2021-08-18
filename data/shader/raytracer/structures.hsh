@@ -7,36 +7,34 @@
 #define INVALID_RAY_ID -1
 
 struct PackedRay {
-
 	vec4 origin;
-	vec4 direction;
-	vec4 data;
+	vec4 hit;
+};
 
+struct PackedRayPayload {
+	vec4 data;
 };
 
 struct Ray {
-
 	int ID;
 	
 	vec3 origin;
 	vec3 direction;
 	vec3 inverseDirection;
-	
-	vec3 color;
-	vec3 throughput;
 
-	vec2 data;
-	
+	int hitID;
+	float hitDistance;	
+};
+
+struct RayPayload {
+	vec3 radiance;
+	vec3 throughput;
 };
 
 struct AABB {
 	
-	float minX;
-	float minY;
-	float minZ;
-	float maxX;
-	float maxY;
-	float maxZ;
+	vec3 min;
+	vec3 max;
 	
 };
 
@@ -110,14 +108,6 @@ struct RaytraceMaterial {
 	Texture metalnessTexture;
 	Texture aoTexture;
 
-};
-
-struct BVHNode {
-	
-	uint data0;
-	uint data1;
-	AABB aabb;
-	
 };
 
 struct PackedLight {

@@ -6,16 +6,23 @@ layout(binding = 0) uniform sampler2D historyTexture;
 layout(binding = 1) uniform sampler2D currentTexture;
 layout(binding = 2) uniform sampler2D velocityTexture;
 layout(binding = 3) uniform sampler2D depthTexture;
+layout(binding = 4) uniform sampler2D lastVelocityTexture;
 
 in vec2 fTexCoord;
 
 uniform vec2 invResolution;
 uniform vec2 resolution;
 
+uniform float clipCorrectionThreshold = 0.0001;
+uniform float clipCorrectionFactor = 0.3;
+
+uniform float minVelocityBlend = 0.05;
+uniform float maxVelocityBlend = 0.5;
+
 #define TAA_YCOCG
-#define TAA_CLIP
-#define TAA_BICUBIC
-#define TAA_TONE
+#define TAA_CLIP // Use clip instead of clamping for better ghosting prevention, introduces more flickering
+#define TAA_BICUBIC // Nearly always use the bicubic sampling for better quality and sharpness under movement
+//#define TAA_TONE // Somehow introduces more flickering as well
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
@@ -262,28 +269,44 @@ void main() {
     float lumaCurrent = Luma(currentColor);
     float lumaMin = Luma(neighbourhoodMin);
     float lumaMax = Luma(neighbourhoodMax);
+    vec2 lastVelocity = texelFetch(lastVelocityTexture, velocityPixel, 0).rg;
 
     // Clamp/Clip the history to the neighbourhood bounding box
 #ifdef TAA_CLIP
+    // Calculate a clip correction when pixel is stationary or near stationary
+    // to avoid flickering. To calculate the "flow" through the pixel we need
+    // the last pixel value as well. 
+    float clipCorrection = abs(dot(lastVelocity, vec2(1.0)) + 
+        dot(velocity, vec2(1.0))) > clipCorrectionThreshold ? 1.0 : clipCorrectionFactor;
+    // NOTE: We could probably use the lastHistoryTexture here to further enhance
+    // the quality and reduce light ghosting, by surpressing flickering using more 
+    // history information. We could also use the "flow" to better estimate the velocity
+    // blending down below. Further testing is required. We could also use a better neighbourhood
+    // selection to find better bounds for the clipping, i.e. use different neighbourhood 
+    // sampling pattern.    
     float clipBlend = ClipBoundingBox(neighbourhoodMin, neighbourhoodMax,
         historyColor, average);
-    clipBlend = clamp(clipBlend, 0.0, 1.0);
+    clipBlend = saturate(clipBlend * clipCorrection);
     historyColor = mix(historyColor, average, clipBlend);
 #else
     historyColor = clamp(historyColor, neighbourhoodMin, neighbourhoodMax);
 #endif
-	
+
     // Track subpixel velocity movement
+    float lastCorrection = fract(max(abs(lastVelocity.x) * resolution.x,
+		abs(lastVelocity.y) * resolution.y)) * 0.5;
 	float correction = fract(max(abs(velocity.x) * resolution.x,
 		abs(velocity.y) * resolution.y)) * 0.5;
+    correction = max(lastCorrection, correction);
+    float blendFactor = mix(minVelocityBlend, maxVelocityBlend, correction);
 
-    float blendFactor = mix(0.05, 0.7, correction);
-
-    // Calculate distance to clamp/clip event
+#ifndef TAA_CLIP
+    // Calculate distance to clamp event
     float distToClamp = 4.0 * abs(min(lumaHistory - lumaMin, lumaMax - lumaHistory)
         / (lumaMax - lumaMin + 0.00001));
 
     blendFactor *= mix(0.0, 1.0, saturate(distToClamp));
+#endif
 
 	// Check if we sampled outside the viewport area
     blendFactor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0

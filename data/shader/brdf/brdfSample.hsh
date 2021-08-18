@@ -1,0 +1,68 @@
+#include <surface.hsh>
+#include <brdf.hsh>
+#include <brdfEval.hsh>
+
+#include <../common/PI.hsh>
+#include <../common/utility.hsh>
+
+BRDFSample SampleDiffuseBRDF(inout Surface surface, vec2 rand) {
+    BRDFSample brdfSample;
+
+    float theta = sqrt(rand.x);
+    float phi = 2.0 * PI * rand.y;
+
+    vec3 L;
+    L.x = cos(phi) * sin(theta);
+    L.y = sin(phi) * sin(theta);
+    L.z = cos(theta);
+
+    vec3 N = surface.N;
+    vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent = normalize(cross(up, N));
+    vec3 bitangent = cross(N, tangent);
+
+    surface.L = normalize(tangent * L.x + bitangent * L.y + N * L.z);
+    UpdateSurface(surface);
+
+    brdfSample.L = surface.L;
+    brdfSample.pdf = surface.NdotL / PI;
+    brdfSample.reflectance = EvaluateDiffuseBRDF(surface);
+    
+    return brdfSample;
+}
+
+BRDFSample SampleSpecularBRDF(inout Surface surface, vec2 rand) {
+    BRDFSample brdfSample;
+
+    float alpha = sqr(surface.material.roughness);
+    float alpha2 = sqr(alpha);
+
+    float theta = acos(sqrt((1.0 - rand.x) / ((alpha2 - 1.0) * rand.x + 1.0)));
+    float phi = 2.0 * PI * rand.y;
+
+    vec3 M = Cartesian(vec2(theta, phi));
+
+    vec3 N = surface.N;
+    vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent = normalize(cross(up, N));
+    vec3 bitangent = cross(N, tangent);
+
+    M = normalize(tangent * M.x + bitangent * M.y + N * M.z);
+    surface.L = 2.0 * dot(surface.V, M) * M - surface.V;
+
+    UpdateSurface(surface);
+
+    brdfSample.pdf = 1.0;
+    brdfSample.reflectance = vec3(0.0);
+
+    if (surface.NdotL > 0.0 && surface.LdotH > 0.0) {
+        vec3 F = FresnelSchlick(surface.F0, surface.F90, surface.LdotH);
+        float V = VisibilitySmithGGXCorrelated(surface.NdotV, surface.NdotL, alpha);
+
+        brdfSample.L = surface.L;
+        brdfSample.pdf = surface.NdotH / (4.0 * abs(dot(surface.V, M)));
+        brdfSample.reflectance = F * V;
+    }
+
+    return brdfSample;
+}

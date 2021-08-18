@@ -18,6 +18,7 @@
 #include "lighting/DirectionalLight.h"
 #include "lighting/PointLight.h"
 #include "loader/AssetLoader.h"
+#include "common/RandomHelper.h"
 
 namespace Atlas {
 

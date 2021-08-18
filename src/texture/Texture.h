@@ -37,14 +37,14 @@ namespace Atlas {
 			/**
 			 * Binds the texture as a sampler to the active texture unit
 			 */
-			void Bind();
+			void Bind() const;
 
 			/**
 			 * Binds the texture as a sampler to a texture unit.
 			 * @param unit The texture unit the texture should be bound to.
 			 * @note The texture unit should be between GL_TEXTURE0-GL_TEXTURE_MAX
 			 */
-			void Bind(uint32_t unit);
+			void Bind(uint32_t unit) const;
 
 			/**
 			 * Binds the texture to an image binding point (specified in shader)
@@ -54,19 +54,19 @@ namespace Atlas {
 			 * @note If the texture has multiple layers, e.g. it is a Texture2DArray
 			 * then all layers will be made available.
 			 */
-			void Bind(uint32_t access, uint32_t unit, int32_t level = 0);
+			void Bind(uint32_t access, uint32_t unit, int32_t level = 0) const;
 
 			/**
 			 * Unbinds any texture from the textures target.
 			 */
-			void Unbind();
+			void Unbind() const;
 
 			/**
 			 * Unbinds any texture from the texture unit.
 			 * @param unit The texture unit which should be unbound.
 			 * @note The texture unit should be between GL_TEXTURE0-GL_TEXTURE_MAX
 			 */
-			void Unbind(uint32_t unit);
+			void Unbind(uint32_t unit) const;
 
             /**
              * Returns the ID of the texture object.

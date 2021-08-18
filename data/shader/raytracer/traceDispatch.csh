@@ -1,16 +1,9 @@
 #include <structures.hsh>
+#include <buffers.hsh>
 
 layout (local_size_x = 1) in;
 
-layout(std430, binding = 0) buffer ReadAtomic {
-	uint readAtomic[];
-};
-
-layout(std430, binding = 1) buffer WriteAtomic {
-	uint writeAtomic[];
-};
-
-layout (std430, binding = 2) buffer IndirectCommands {
+layout (std430, binding = 4) buffer IndirectCommands {
 	DispatchIndirectCommand indirectCommands[];
 };
 

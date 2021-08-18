@@ -51,6 +51,7 @@ namespace Atlas {
             mat4 globalMatrix = mat4{ 1.0f };
 
             bool matrixChanged = true;
+            bool visible = true;
 
 			std::string name;
 

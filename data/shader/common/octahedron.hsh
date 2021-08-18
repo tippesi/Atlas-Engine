@@ -15,7 +15,7 @@ vec3 HemiOctahedronToUnitVector(vec2 coord) {
 	coord = 0.5 * vec2(coord.x + coord.y, coord.x - coord.y);
 
 	float y = 1.0 - dot(vec2(1.0), abs(coord));
-	return normalize(vec3(coord.x, y + 0.0001, coord.y));
+	return normalize(vec3(coord.x, y, coord.y));
 
 }
 
@@ -46,6 +46,6 @@ vec3 OctahedronToUnitVector(vec2 coord) {
 		coord.y = (orig.y >= 0.0 ? 1.0 : -1.0) * (1.0 - abs(orig.x));
 	}
 
-	return normalize(vec3(coord.x, y + 0.0001, coord.y));
+	return normalize(vec3(coord.x, y, coord.y));
 
 }

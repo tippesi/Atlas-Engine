@@ -13,6 +13,7 @@ namespace Atlas {
 			shader.AddStage(AE_FRAGMENT_STAGE, "deferred/directional.fsh");
 
 			shader.AddMacro("SHADOWS");
+			shader.AddMacro("SSAO");
 
 			shader.Compile();
 
@@ -51,15 +52,21 @@ namespace Atlas {
 			volumeMin->SetValue(vec3(0.0));
 			volumeMax->SetValue(vec3(0.0));
 
-			if (scene->irradianceVolume) {
-				if (scene->irradianceVolume->bounceCount) {
-					scene->irradianceVolume->irradianceArray.Bind(GL_TEXTURE12);
-					scene->irradianceVolume->momentsArray.Bind(GL_TEXTURE13);
-					volumeMin->SetValue(scene->irradianceVolume->aabb.min);
-					volumeMax->SetValue(scene->irradianceVolume->aabb.max);
-					volumeProbeCount->SetValue(scene->irradianceVolume->probeCount);
-					volumeIrradianceRes->SetValue(scene->irradianceVolume->irrRes);
-					volumeMomentsRes->SetValue(scene->irradianceVolume->momRes);
+			{
+				auto volume = scene->irradianceVolume;
+				auto [irradianceArray, momentsArray] = volume->internal.GetCurrentProbes();
+				if (volume && volume->enable) {
+					irradianceArray.Bind(GL_TEXTURE12);
+					momentsArray.Bind(GL_TEXTURE13);
+					volume->internal.probeStateBuffer.BindBase(1);
+					volumeMin->SetValue(volume->aabb.min);
+					volumeMax->SetValue(volume->aabb.max);
+					volumeProbeCount->SetValue(volume->probeCount);
+					volumeIrradianceRes->SetValue(volume->irrRes);
+					volumeMomentsRes->SetValue(volume->momRes);
+					shader.GetUniform("volumeBias")->SetValue(volume->bias);
+					shader.GetUniform("volumeGamma")->SetValue(volume->gamma);
+					shader.GetUniform("cellSize")->SetValue(volume->cellSize);
 				}
 			}
 
@@ -137,6 +144,14 @@ namespace Atlas {
 					fogHeight->SetValue(1.0f);
 					fogScatteringPower->SetValue(1.0f);
 
+				}
+
+				if (scene->ssao && scene->ssao->enable) {
+					scene->ssao->map.Bind(GL_TEXTURE6);
+					shader.GetUniform("aoStrength")->SetValue(scene->ssao->strength);					
+				}
+				else {
+					shader.GetUniform("aoStrength")->SetValue(0.001f);
 				}
 
 				glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);

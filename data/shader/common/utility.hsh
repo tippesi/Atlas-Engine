@@ -1,4 +1,5 @@
 // Contains useful functions
+#include <PI.hsh>
 
 float saturate(float value) {
 
@@ -46,4 +47,70 @@ vec4 sqr(vec4 value) {
 
 	return value * value;
 
+}
+
+float sum(vec2 value) {
+
+	return dot(value, vec2(1.0));
+
+}
+
+float sum(vec3 value) {
+
+	return dot(value, vec3(1.0));
+
+}
+
+float sum(vec4 value) {
+
+	return dot(value, vec4(1.0));
+
+}
+
+float max3(vec3 value) {
+
+	return max(value.x, max(value.y, value.z));
+
+}
+
+float max4(vec4 value) {
+
+	return max(value.x, max(value.y, max(value.z, value.w)));
+
+}
+
+float min3(vec3 value) {
+
+	return min(value.x, min(value.y, value.z));
+
+}
+
+float min4(vec4 value) {
+
+	return min(value.x, min(value.y, min(value.z, value.w)));
+
+}
+
+vec3 Cartesian(vec2 spherical) {
+	float sinTheta = sin(spherical.x);
+	return normalize(vec3(
+		sinTheta * cos(spherical.y),
+		sinTheta * sin(spherical.y),
+		cos(spherical.x)
+	));
+}
+
+float atan2(in float y, in float x)
+{
+    return x == 0.0 ? sign(y)*PI/2 : atan(y, x);
+}
+
+vec2 Spherical(vec3 cartesian) {
+	float phi = atan(cartesian.y,cartesian.x);
+	float theta = atan(length(cartesian.xy),cartesian.z);
+	return vec2(theta, phi);
+}
+
+bool isnan3(vec3 value) {
+	return isnan(value.x) || isnan(value.y) || isnan(value.z);
 }

@@ -10,7 +10,7 @@
 
 #define AE_SHOW_LOG
 //#define AE_SHOW_API_DEBUG_LOG
-//#define AE_INSTANT_SHADER_RELOAD
+#define AE_INSTANT_SHADER_RELOAD
 
 #include <stdint.h>
 #include <string>

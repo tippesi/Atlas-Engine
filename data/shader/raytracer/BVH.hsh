@@ -3,21 +3,47 @@
 
 #define STACK_SIZE 34
 
-layout (std430, binding = 7) buffer Triangles {
+struct PackedBVHNode {
+	vec4 data0;
+	vec4 data1;
+};
+
+struct BVHNode {
+	
+	uint data0;
+	uint data1;
+	AABB aabb;
+	
+};
+
+layout (std430, binding = 6) buffer Triangles {
 	PackedTriangle triangles[];
 };
 
-layout(std430, binding = 8) buffer Nodes {
-	BVHNode nodes[];
+layout(std430, binding = 7) buffer Nodes {
+	PackedBVHNode nodes[];
 };
+
+BVHNode UnpackNode(PackedBVHNode compressed) {
+	BVHNode node;
+
+	node.data0 = floatBitsToUint(compressed.data0.x);
+	node.data1 = floatBitsToUint(compressed.data0.y);
+
+	node.aabb.min = vec3(compressed.data0.z,
+		compressed.data0.w, compressed.data1.x);
+	node.aabb.max = vec3(compressed.data1.y,
+		compressed.data1.z, compressed.data1.w);
+
+	return node;
+}
 
 shared uint stack[STACK_SIZE][32];
 
-void CheckLeafClosest(Ray ray,  BVHNode node, float tmin, float tmax,
-	inout int triangleIndex, inout vec3 intersection) {
+void CheckLeafClosest(inout Ray ray,  BVHNode node, float tmin, float tmax) {
 		
-	uint offset = node.data0;
-	uint count = node.data1 & uint(0x7fffffff);
+	uint count = node.data0 & uint(0x1fffffff);
+	uint offset = node.data1;
 	
 	vec3 sol, v0, v1, v2, n;
 	
@@ -31,20 +57,20 @@ void CheckLeafClosest(Ray ray,  BVHNode node, float tmin, float tmax,
 		d = dot(n, ray.direction);
 #endif
 		bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
-		if (intersect && sol.x < tmax && d <= 0.0) {
-			if (sol.x < intersection.x) {
-				intersection = sol;
-				triangleIndex = int(i);
+		if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {
+			if (sol.x < ray.hitDistance) {
+				ray.hitDistance = sol.x;
+				ray.hitID = int(i);
 			}
 		}
 	}
 	
 }
 
-bool CheckLeaf(Ray ray, BVHNode node, float tmin, float tmax) {
+bool CheckLeaf(inout Ray ray, BVHNode node, float tmin, float tmax) {
 		
-	uint offset = node.data0;
-	uint count = node.data1 & uint(0x7fffffff);
+	uint count = node.data0 & uint(0x1fffffff);
+	uint offset = node.data1;
 	
 	vec3 sol, v0, v1, v2, n;
 	bool hit = false;
@@ -59,8 +85,10 @@ bool CheckLeaf(Ray ray, BVHNode node, float tmin, float tmax) {
 		d = dot(n, ray.direction);
 #endif
 		bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
-		if (intersect && sol.x < tmax && d <= 0.0) {
+		if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {			
 			hit = true;
+			ray.hitDistance = sol.x;
+			ray.hitID = int(i);
 			break;
 		}
 	}
@@ -69,48 +97,289 @@ bool CheckLeaf(Ray ray, BVHNode node, float tmin, float tmax) {
 	
 }
 
-void QueryBVHClosest(Ray ray, float tMin, float tMax, out int triangleIndex,
-	out vec3 intersection) {
+void HitClosest(inout Ray ray, float tMin, float tMax) {
 	
 	uint stackPtr = 1u;
-	uint threadID = gl_LocalInvocationID.x;
-	stack[0][threadID] = 0u;
+	uint threadID = gl_LocalInvocationIndex;
+	stack[0][threadID] = 0;
 	
-	intersection.x = tMax;
+	ray.hitDistance = tMax;
+	uint nodeIdx = 0;
+
+	bool first = true;
 	
-	do {	
-	
-		BVHNode node = nodes[stack[--stackPtr][threadID]];
-	
-		bool intersectNode = IntersectAABB(ray, 
-				node.aabb, tMin, intersection.x);
-		bool isLeaf = (node.data1 & uint(0x80000000)) > 0u;
+	while (stackPtr != 0u || first) {
+		if (nodeIdx == 0) first = false;
+		BVHNode node = UnpackNode(nodes[nodeIdx]);
 		
-		bool traverseNode = intersectNode && !isLeaf;
-		
-		if(intersectNode && isLeaf) {
-			CheckLeafClosest(ray, node,
-				tMin, tMax, triangleIndex, intersection);
+		if((node.data0 & uint(0x80000000)) > 0u) {
+			CheckLeafClosest(ray, node, tMin, ray.hitDistance);
+			nodeIdx = stack[--stackPtr][threadID];
 		}
-		
-		if (traverseNode) {
+		else {
+			uint childLPtr = nodeIdx + 1;
+			uint childRPtr = node.data1;
+
+			float hitL = tMax, hitR = tMax;
+			BVHNode nodeL = UnpackNode(nodes[childLPtr]);
+			BVHNode nodeR = UnpackNode(nodes[childRPtr]);
+
+			bool intersectL = IntersectAABB(ray, 
+				nodeL.aabb, tMin, ray.hitDistance, hitL);		
+			bool intersectR = IntersectAABB(ray, 
+				nodeR.aabb, tMin, ray.hitDistance, hitR);
+
 			if (stackPtr + 1u < uint(STACK_SIZE)) {
-				uint childLPtr = node.data0;
-				uint childRPtr = node.data1;
-				stack[stackPtr++][threadID] = childLPtr;
-				stack[stackPtr++][threadID] = childRPtr;
+				if (intersectR && intersectL) {
+					if (hitL < hitR) {
+						stack[stackPtr++][threadID] = childRPtr;
+						nodeIdx = childLPtr;
+					}
+					else {
+						stack[stackPtr++][threadID] = childLPtr;
+						nodeIdx = childRPtr;
+					}
+				}
+				else if (intersectR && !intersectL) {
+					nodeIdx = childRPtr;
+				}
+				else if (!intersectR && intersectL) {
+					nodeIdx = childLPtr;
+				}
+				else {
+					nodeIdx = stack[--stackPtr][threadID];
+				}
 			}
 			else  {
 				break;
 			}
 		}
-			
 	}
-	while (stackPtr != 0u);
 		
 }
 
-bool QueryBVH(Ray ray, float tMin, float tMax) {
+bool HitAny(inout Ray ray, float tMin, float tMax) {
+	
+	bool hit = false;
+
+	uint stackPtr = 1u;
+	uint threadID = gl_LocalInvocationIndex;
+	stack[0][threadID] = 0u;
+	
+	uint nodeIdx = 0;
+	bool first = true;
+	
+	while (stackPtr != 0u || first) {
+		if (nodeIdx == 0) first = false;
+		BVHNode node = UnpackNode(nodes[nodeIdx]);
+		
+		if((node.data0 & uint(0x80000000)) > 0u) {
+			if (CheckLeaf(ray, node, tMin, tMax)) {
+				hit = true;
+				break;
+			}
+			nodeIdx = stack[--stackPtr][threadID];
+		}
+		else {
+			uint childLPtr = nodeIdx + 1;
+			uint childRPtr = node.data1;
+
+			BVHNode nodeL = UnpackNode(nodes[childLPtr]);
+			BVHNode nodeR = UnpackNode(nodes[childRPtr]);
+
+			bool intersectL = IntersectAABB(ray, 
+				nodeL.aabb, tMin, tMax);		
+			bool intersectR = IntersectAABB(ray, 
+				nodeR.aabb, tMin, tMax);
+
+			if (stackPtr + 1u < uint(STACK_SIZE)) {
+				if (intersectR && intersectL) {					
+					stack[stackPtr++][threadID] = childLPtr;
+					nodeIdx = childRPtr;
+				}
+				else if (intersectR && !intersectL) {
+					nodeIdx = childRPtr;
+				}
+				else if (!intersectR && intersectL) {
+					nodeIdx = childLPtr;
+				}
+				else {
+					nodeIdx = stack[--stackPtr][threadID];
+				}
+			}
+			else  {
+				break;
+			}
+		}
+	}	
+
+	return hit;
+		
+}
+
+/*
+#include <intersections.hsh>
+#include <structures.hsh>
+
+#define STACK_SIZE 34
+
+struct PackedBVHNode {
+	vec4 data0;
+	vec4 data1;
+};
+
+struct BVHNode {
+	
+	uint data0;
+	uint data1;
+	AABB aabb;
+	
+};
+
+layout (std430, binding = 6) buffer Triangles {
+	PackedTriangle triangles[];
+};
+
+layout(std430, binding = 7) buffer Nodes {
+	PackedBVHNode nodes[];
+};
+
+BVHNode UnpackNode(PackedBVHNode compressed) {
+	BVHNode node;
+
+	node.data0 = floatBitsToUint(compressed.data0.x);
+	node.data1 = floatBitsToUint(compressed.data0.y);
+
+	node.aabb.min = vec3(compressed.data0.z,
+		compressed.data0.w, compressed.data1.x);
+	node.aabb.max = vec3(compressed.data1.y,
+		compressed.data1.z, compressed.data1.w);
+
+	return node;
+}
+
+shared uint stack[STACK_SIZE][32];
+
+void CheckLeafClosest(inout Ray ray,  BVHNode node, float tmin, float tmax) {
+		
+	uint count = node.data0 & uint(0x1fffffff);
+	uint offset = node.data1;
+	
+	vec3 sol, v0, v1, v2, n;
+	
+	for (uint i = offset; i < offset + count; i++) {
+		v0 = triangles[i].v0.xyz;
+		v1 = triangles[i].v1.xyz;
+		v2 = triangles[i].v2.xyz;
+		float d = 0.0;
+#ifdef BACKFACE_CULLING
+		n = cross(v0 - v1, v0 - v2);
+		d = dot(n, ray.direction);
+#endif
+		bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
+		if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {
+			if (sol.x < ray.hit.x) {
+				ray.hit = sol;
+				ray.hitID = int(i);
+			}
+		}
+	}
+	
+}
+
+bool CheckLeaf(inout Ray ray, BVHNode node, float tmin, float tmax) {
+		
+	uint count = node.data0 & uint(0x1fffffff);
+	uint offset = node.data1;
+	
+	vec3 sol, v0, v1, v2, n;
+	bool hit = false;
+	
+	for (uint i = offset; i < offset + count; i++) {
+		v0 = triangles[i].v0.xyz;
+		v1 = triangles[i].v1.xyz;
+		v2 = triangles[i].v2.xyz;
+		float d = 0.0;
+#ifdef BACKFACE_CULLING
+		n = cross(v0 - v1, v0 - v2);
+		d = dot(n, ray.direction);
+#endif
+		bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
+		if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {
+			
+			hit = true;
+			ray.hit = sol;
+			ray.hitID = int(i);
+			break;
+		}
+	}
+
+	return hit;
+	
+}
+
+void HitClosest(inout Ray ray, float tMin, float tMax) {
+	
+	uint stackPtr = 1u;
+	uint threadID = gl_LocalInvocationID.x;
+	stack[0][threadID] = 0;
+	
+	ray.hit.x = tMax;
+	uint nodeIdx = 0;
+
+	bool first = true;
+	
+	while (stackPtr != 0u || first) {
+		if (nodeIdx == 0) first = false;
+		BVHNode node = UnpackNode(nodes[nodeIdx]);
+		
+		if((node.data0 & uint(0x80000000)) > 0u) {
+			CheckLeafClosest(ray, node, tMin, ray.hit.x);
+			nodeIdx = stack[--stackPtr][threadID];
+		}
+		else {
+			uint childLPtr = nodeIdx + 1;
+			uint childRPtr = node.data1;
+
+			float hitL = tMax, hitR = tMax;
+			BVHNode nodeL = UnpackNode(nodes[childLPtr]);
+			BVHNode nodeR = UnpackNode(nodes[childRPtr]);
+
+			bool intersectL = IntersectAABB(ray, 
+				nodeL.aabb, tMin, ray.hit.x, hitL);		
+			bool intersectR = IntersectAABB(ray, 
+				nodeR.aabb, tMin, ray.hit.x, hitR);
+
+			if (stackPtr + 1u < uint(STACK_SIZE)) {
+				if (intersectR && intersectL) {
+					if (hitL < hitR) {
+						stack[stackPtr++][threadID] = childRPtr;
+						nodeIdx = childLPtr;
+					}
+					else {
+						stack[stackPtr++][threadID] = childLPtr;
+						nodeIdx = childRPtr;
+					}
+				}
+				else if (intersectR && !intersectL) {
+					nodeIdx = childRPtr;
+				}
+				else if (!intersectR && intersectL) {
+					nodeIdx = childLPtr;
+				}
+				else {
+					nodeIdx = stack[--stackPtr][threadID];
+				}
+			}
+			else  {
+				break;
+			}
+		}
+	}
+		
+}
+
+bool HitAny(inout Ray ray, float tMin, float tMax) {
 	
 	bool hit = false;
 
@@ -118,38 +387,54 @@ bool QueryBVH(Ray ray, float tMin, float tMax) {
 	uint threadID = gl_LocalInvocationID.x;
 	stack[0][threadID] = 0u;
 	
-	do {	
+	uint nodeIdx = 0;
+	bool first = true;
 	
-		BVHNode node = nodes[stack[--stackPtr][threadID]];
-	
-		bool intersectNode = IntersectAABB(ray, 
-				node.aabb, tMin, tMax);
-		bool isLeaf = (node.data1 & uint(0x80000000)) > 0u;
+	while (stackPtr != 0u || first) {
+		if (nodeIdx == 0) first = false;
+		BVHNode node = UnpackNode(nodes[nodeIdx]);
 		
-		bool traverseNode = intersectNode && !isLeaf;
-		
-		if(intersectNode && isLeaf) {
+		if((node.data0 & uint(0x80000000)) > 0u) {
 			if (CheckLeaf(ray, node, tMin, tMax)) {
 				hit = true;
 				break;
 			}
+			nodeIdx = stack[--stackPtr][threadID];
 		}
-		
-		if (traverseNode) {
+		else {
+			uint childLPtr = nodeIdx + 1;
+			uint childRPtr = node.data1;
+
+			BVHNode nodeL = UnpackNode(nodes[childLPtr]);
+			BVHNode nodeR = UnpackNode(nodes[childRPtr]);
+
+			bool intersectL = IntersectAABB(ray, 
+				nodeL.aabb, tMin, tMax);		
+			bool intersectR = IntersectAABB(ray, 
+				nodeR.aabb, tMin, tMax);
+
 			if (stackPtr + 1u < uint(STACK_SIZE)) {
-				uint childLPtr = node.data0;
-				uint childRPtr = node.data1;
-				stack[stackPtr++][threadID] = childLPtr;
-				stack[stackPtr++][threadID] = childRPtr;
+				if (intersectR && intersectL) {					
+					stack[stackPtr++][threadID] = childLPtr;
+					nodeIdx = childRPtr;
+				}
+				else if (intersectR && !intersectL) {
+					nodeIdx = childRPtr;
+				}
+				else if (!intersectR && intersectL) {
+					nodeIdx = childLPtr;
+				}
+				else {
+					nodeIdx = stack[--stackPtr][threadID];
+				}
 			}
 			else  {
 				break;
 			}
 		}
-			
-	}
-	while (!hit && stackPtr != 0u);
+	}	
 
 	return hit;
 		
 }
+*/

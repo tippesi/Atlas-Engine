@@ -306,7 +306,7 @@ namespace Atlas {
 			auto index = (y * width + x) * channels;
 
 			if constexpr (std::is_integral_v<T>) {
-				ivec4 result(0);
+				glm::ivec4 result(0);
 
 				for (int32_t i = 0; i < channels; i++)
 					result[i] = int32_t(level.data[index + i]);
@@ -314,7 +314,7 @@ namespace Atlas {
 				return result;
 			}
 			else {
-				vec4 result(0);
+				glm::vec4 result(0);
 
 				for (int32_t i = 0; i < channels; i++)
 					result[i] = float(level.data[index + i]);
@@ -341,7 +341,7 @@ namespace Atlas {
 			auto index = int32_t(y * fWidth + x) * channels;
 
 			if constexpr (std::is_integral_v<T>) {
-				ivec4 result(0);
+				glm::ivec4 result(0);
 
 				for (int32_t i = 0; i < channels; i++)
 					result[i] = int32_t(level.data[index + i]);
@@ -349,7 +349,7 @@ namespace Atlas {
 				return result;
 			}
 			else {
-				vec4 result(0);
+				glm::vec4 result(0);
 
 				for (int32_t i = 0; i < channels; i++)
 					result[i] = float(level.data[index + i]);
@@ -377,17 +377,17 @@ namespace Atlas {
 			y = y - floorf(y);
 
 			// Fetch the four texture samples
-			auto q00 = vec4(Sample(ox, oy, mipLevel));
-			auto q10 = vec4(Sample(ox + 1, oy, mipLevel));
-			auto q01 = vec4(Sample(ox, oy + 1, mipLevel));
-			auto q11 = vec4(Sample(ox + 1, oy + 1, mipLevel));
+			auto q00 = glm::vec4(Sample(ox, oy, mipLevel));
+			auto q10 = glm::vec4(Sample(ox + 1, oy, mipLevel));
+			auto q01 = glm::vec4(Sample(ox, oy + 1, mipLevel));
+			auto q11 = glm::vec4(Sample(ox + 1, oy + 1, mipLevel));
 
 			// Interpolate samples horizontally
 			auto h0 = (1.0f - x) * q00 + x * q10;
 			auto h1 = (1.0f - x) * q01 + x * q11;
 
 			if constexpr (std::is_integral_v<T>) {
-				return ivec4((1.0f - y) * h0 + y * h1);
+				return glm::ivec4((1.0f - y) * h0 + y * h1);
 			}
 			else {
 				return (1.0f - y) * h0 + y * h1;
@@ -510,24 +510,20 @@ namespace Atlas {
 				for (int32_t y = 0; y < height; y++) {
 					for (int32_t x = 0; x < width; x++) {
 
-						vec4 color = vec4(0.0f);
+						auto color = glm::vec4(0.0f);
 
 						for (int32_t i = 0; i < weights.size(); i++) {
 							int32_t off = x + int32_t(offsets[i]);
-							color += vec4(Sample(off, y)) * weights[i];
+							color += glm::vec4(Sample(off, y)) * weights[i];
 						}
 
 						if constexpr (std::is_integral_v<T>) {
-							tmp.SetData(x, y, 0, T(glm::round(color.x)));
-							tmp.SetData(x, y, 1, T(glm::round(color.y)));
-							tmp.SetData(x, y, 2, T(glm::round(color.z)));
-							tmp.SetData(x, y, 3, T(glm::round(color.w)));
+							for (int32_t i = 0; i < channels; i++)
+								tmp.SetData(x, y, i, T(glm::round(color[i])));
 						}
 						else {
-							tmp.SetData(x, y, 0, T(color.x));
-							tmp.SetData(x, y, 1, T(color.y));
-							tmp.SetData(x, y, 2, T(color.z));
-							tmp.SetData(x, y, 3, T(color.w));
+							for (int32_t i = 0; i < channels; i++)
+								tmp.SetData(x, y, i, T(color[i]));
 						}
 
 					}
@@ -537,24 +533,20 @@ namespace Atlas {
 				for (int32_t y = 0; y < height; y++) {
 					for (int32_t x = 0; x < width; x++) {
 
-						vec4 color = vec4(0.0f);
+						auto color = glm::vec4(0.0f);
 
 						for (int32_t i = 0; i < weights.size(); i++) {
 							int32_t off = y + (int32_t)offsets[i];
-							color += (vec4)tmp.Sample(x, off) * weights[i];
+							color += glm::vec4(tmp.Sample(x, off)) * weights[i];
 						}
 
 						if constexpr (std::is_integral_v<T>) {
-							SetData(x, y, 0, T(glm::round(color.x)));
-							SetData(x, y, 1, T(glm::round(color.y)));
-							SetData(x, y, 2, T(glm::round(color.z)));
-							SetData(x, y, 3, T(glm::round(color.w)));
+							for (int32_t i = 0; i < channels; i++)
+								tmp.SetData(x, y, i, T(glm::round(color[i])));
 						}
 						else {
-							SetData(x, y, 0, T(color.x));
-							SetData(x, y, 1, T(color.y));
-							SetData(x, y, 2, T(color.z));
-							SetData(x, y, 3, T(color.w));
+							for (int32_t i = 0; i < channels; i++)
+								tmp.SetData(x, y, i, T(color[i]));
 						}
 
 					}
@@ -564,34 +556,30 @@ namespace Atlas {
 			else {
 
 				std::vector<std::vector<float>> weights;
-				std::vector<std::vector<ivec2>> offsets;
+				std::vector<std::vector<glm::ivec2>> offsets;
 
 				filter.Get(&weights, &offsets);
 
 				for (int32_t y = 0; y < height; y++) {
 					for (int32_t x = 0; x < width; x++) {
 
-						vec4 color = vec4(0.0f);
+						auto color = glm::vec4(0.0f);
 
 						for (uint32_t i = 0; i < weights.size(); i++) {
 							for (uint32_t j = 0; j < weights.size(); j++) {
 								int32_t offX = x + offsets[i][j].x;
 								int32_t offY = y + offsets[i][j].y;
-								color += (vec4)tmp.Sample(offX, offY) * weights[i][j];
+								color += glm::vec4(tmp.Sample(offX, offY)) * weights[i][j];
 							}
 						}
 
 						if constexpr (std::is_integral_v<T>) {
-							SetData(x, y, 0, T(glm::round(color.x)));
-							SetData(x, y, 1, T(glm::round(color.y)));
-							SetData(x, y, 2, T(glm::round(color.z)));
-							SetData(x, y, 3, T(glm::round(color.w)));
+							for (int32_t i = 0; i < channels; i++)
+								tmp.SetData(x, y, i, T(glm::round(color[i])));
 						}
 						else {
-							SetData(x, y, 0, T(color.x));
-							SetData(x, y, 1, T(color.y));
-							SetData(x, y, 2, T(color.z));
-							SetData(x, y, 3, T(color.w));
+							for (int32_t i = 0; i < channels; i++)
+								tmp.SetData(x, y, i, T(color[i]));
 						}
 
 					}

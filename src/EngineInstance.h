@@ -54,13 +54,13 @@ namespace Atlas {
 		/**
 		 * Needs to be implemented by the user.
 		 */
-		static std::string assetDirectory;
+		const static std::string assetDirectory;
 
 		/**
 		 * Needs to be implemented by the user.
 		 * @note This path must be relative to the asset directory
 		 */
-		static std::string shaderDirectory;
+		const static std::string shaderDirectory;
 
 		/**
 		 * The main window to which the context is attached to

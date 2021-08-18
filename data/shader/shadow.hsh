@@ -7,12 +7,14 @@ float offsetLookup(vec2 flooredUV, float u, float v, float cascadeIndex,
 
 	vec2 uv = 0.5 * (flooredUV + vec2(u, v) * texelSize) + 0.5;
 
-	return texture(cascadeMaps,
-		vec4(uv, cascadeIndex, depth + bias));
+	return textureGrad(cascadeMaps,
+		vec4(uv, cascadeIndex, depth + bias), 
+		vec2(0, 0),
+    	vec2(0, 0));
 
 }
 
-float cascadeLookup(Light light, float cascadeIndex, mat4 cascadeTransform, vec3 fragmentPosition, float texelSize) {
+float cascadeLookup(Light light, float cascadeIndex, mat4 cascadeTransform, vec3 fragmentPosition, float bias) {
 
 	vec4 shadowCoords = cascadeTransform * vec4(fragmentPosition, 1.0);
 	shadowCoords.xyz /= shadowCoords.w;
@@ -21,8 +23,8 @@ float cascadeLookup(Light light, float cascadeIndex, mat4 cascadeTransform, vec3
 	
 	shadowCoords.z = shadowCoords.z * 0.5 + 0.5;
 	
-	if (fadeout > 0.999)
-		return 1.0f;
+	if (abs(fadeout - 1.0) < 1e-6)
+		return 1.0;
 
 	vec2 res = light.shadow.resolution;
 	vec2 resInv = 1.0 / res;
@@ -39,7 +41,7 @@ float cascadeLookup(Light light, float cascadeIndex, mat4 cascadeTransform, vec3
 	float visibility = 0.0;
 
 #ifdef SHADOW_FILTER_1x1
-    visibility += offsetLookup(shadowCoords.xy, 0.0, 0.0, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
+    visibility += offsetLookup(shadowCoords.xy, 0.0, 0.0, float(cascadeIndex), resInv, shadowCoords.z, bias);
 #endif
 #ifdef SHADOW_FILTER_3x3
 	float uw0 = (3.0 - 2.0 * s);
@@ -54,10 +56,10 @@ float cascadeLookup(Light light, float cascadeIndex, mat4 cascadeTransform, vec3
     float v0 = (2.0 - t) / vw0 - 1.0;
     float v1 = t / vw1 + 1.0;
 
-    visibility += uw0 * vw0 * offsetLookup(flooredUV, u0, v0, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw1 * vw0 * offsetLookup(flooredUV, u1, v0, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw0 * vw1 * offsetLookup(flooredUV, u0, v1, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw1 * vw1 * offsetLookup(flooredUV, u1, v1, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
+    visibility += uw0 * vw0 * offsetLookup(flooredUV, u0, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw1 * vw0 * offsetLookup(flooredUV, u1, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw0 * vw1 * offsetLookup(flooredUV, u0, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw1 * vw1 * offsetLookup(flooredUV, u1, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
 
     visibility /= 16.0;
 #endif
@@ -78,17 +80,17 @@ float cascadeLookup(Light light, float cascadeIndex, mat4 cascadeTransform, vec3
     float v1 = (3.0 + t) / vw1;
     float v2 = t / vw2 + 2.0;
 
-    visibility += uw0 * vw0 * offsetLookup(flooredUV, u0, v0, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw1 * vw0 * offsetLookup(flooredUV, u1, v0, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw2 * vw0 * offsetLookup(flooredUV, u2, v0, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
+    visibility += uw0 * vw0 * offsetLookup(flooredUV, u0, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw1 * vw0 * offsetLookup(flooredUV, u1, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw2 * vw0 * offsetLookup(flooredUV, u2, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
 
-    visibility += uw0 * vw1 * offsetLookup(flooredUV, u0, v1, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw1 * vw1 * offsetLookup(flooredUV, u1, v1, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw2 * vw1 * offsetLookup(flooredUV, u2, v1, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
+    visibility += uw0 * vw1 * offsetLookup(flooredUV, u0, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw1 * vw1 * offsetLookup(flooredUV, u1, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw2 * vw1 * offsetLookup(flooredUV, u2, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
 
-    visibility += uw0 * vw2 * offsetLookup(flooredUV, u0, v2, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw1 * vw2 * offsetLookup(flooredUV, u1, v2, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw2 * vw2 * offsetLookup(flooredUV, u2, v2, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
+    visibility += uw0 * vw2 * offsetLookup(flooredUV, u0, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw1 * vw2 * offsetLookup(flooredUV, u1, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw2 * vw2 * offsetLookup(flooredUV, u2, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
 
 	visibility /= 144.0;
 #endif
@@ -113,25 +115,25 @@ float cascadeLookup(Light light, float cascadeIndex, mat4 cascadeTransform, vec3
     float v2 = -(7.0 * t + 5.0) / vw2 + 1.0;
     float v3 = -t / vw3 + 3.0;
 
-    visibility += uw0 * vw0 * offsetLookup(flooredUV, u0, v0, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw1 * vw0 * offsetLookup(flooredUV, u1, v0, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw2 * vw0 * offsetLookup(flooredUV, u2, v0, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw3 * vw0 * offsetLookup(flooredUV, u3, v0, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
+    visibility += uw0 * vw0 * offsetLookup(flooredUV, u0, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw1 * vw0 * offsetLookup(flooredUV, u1, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw2 * vw0 * offsetLookup(flooredUV, u2, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw3 * vw0 * offsetLookup(flooredUV, u3, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
 
-    visibility += uw0 * vw1 * offsetLookup(flooredUV, u0, v1, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw1 * vw1 * offsetLookup(flooredUV, u1, v1, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw2 * vw1 * offsetLookup(flooredUV, u2, v1, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw3 * vw1 * offsetLookup(flooredUV, u3, v1, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
+    visibility += uw0 * vw1 * offsetLookup(flooredUV, u0, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw1 * vw1 * offsetLookup(flooredUV, u1, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw2 * vw1 * offsetLookup(flooredUV, u2, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw3 * vw1 * offsetLookup(flooredUV, u3, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
 
-    visibility += uw0 * vw2 * offsetLookup(flooredUV, u0, v2, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw1 * vw2 * offsetLookup(flooredUV, u1, v2, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw2 * vw2 * offsetLookup(flooredUV, u2, v2, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw3 * vw2 * offsetLookup(flooredUV, u3, v2, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
+    visibility += uw0 * vw2 * offsetLookup(flooredUV, u0, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw1 * vw2 * offsetLookup(flooredUV, u1, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw2 * vw2 * offsetLookup(flooredUV, u2, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw3 * vw2 * offsetLookup(flooredUV, u3, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
 
-    visibility += uw0 * vw3 * offsetLookup(flooredUV, u0, v3, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw1 * vw3 * offsetLookup(flooredUV, u1, v3, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw2 * vw3 * offsetLookup(flooredUV, u2, v3, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
-    visibility += uw3 * vw3 * offsetLookup(flooredUV, u3, v3, float(cascadeIndex), resInv, shadowCoords.z, texelSize);
+    visibility += uw0 * vw3 * offsetLookup(flooredUV, u0, v3, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw1 * vw3 * offsetLookup(flooredUV, u1, v3, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw2 * vw3 * offsetLookup(flooredUV, u2, v3, float(cascadeIndex), resInv, shadowCoords.z, bias);
+    visibility += uw3 * vw3 * offsetLookup(flooredUV, u3, v3, float(cascadeIndex), resInv, shadowCoords.z, bias);
 
     visibility /= 2704.0;
 #endif
@@ -191,7 +193,7 @@ float CalculateCascadedShadow(Light light, vec3 fragmentPosition, vec3 normal, f
             / light.shadow.cascadeBlendDistance;
 		blend = clamp(blend, 0.0, 1.0);
 
-		if (blend < 1.0) {
+		if (blend <= 1.0) {
 		
 			cascadeIndex += 1;
 			fragmentPosition -= light.shadow.bias * texelSize * normal;
@@ -219,5 +221,4 @@ float CalculateCascadedShadow(Light light, vec3 fragmentPosition, vec3 normal, f
 #endif
 
 	return visibility;
-	
 }

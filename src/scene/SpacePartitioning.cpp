@@ -113,21 +113,23 @@ namespace Atlas {
 				insideStaticActors, frustum);
 
 			for (auto& actor : movableActors) {
-				if (frustum.Intersects(actor->aabb))
+				if (actor->visible && frustum.Intersects(actor->aabb))
 					renderList.Add(actor);
 			}
 
 			for (auto& actor : insideMovableActors)
-				renderList.Add(actor);
+				if (actor->visible)
+					renderList.Add(actor);
 
 			for (auto& actor : staticActors) {
-				if (frustum.Intersects(actor->aabb)) {
+				if (actor->visible && frustum.Intersects(actor->aabb)) {
 					renderList.Add(actor);
 				}
 			}
 
 			for (auto& actor : insideStaticActors)
-				renderList.Add(actor);
+				if (actor->visible)
+					renderList.Add(actor);
 		
 		}
 

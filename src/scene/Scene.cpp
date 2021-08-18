@@ -5,7 +5,7 @@ namespace Atlas {
 	namespace Scene {
 
 		Scene::Scene(vec3 min, vec3 max, int32_t depth) : SceneNode(),
-			SpacePartitioning(min, max, depth) {
+			SpacePartitioning(min, max, depth), rayTracingData(this) {
 
 			AddToScene(this, &rootMeshMap);
 
@@ -104,6 +104,12 @@ namespace Atlas {
 			}
 
 			return materials;
+
+		}
+
+		void Scene::BuildRTStructures() {
+
+			rayTracingData.Update();
 
 		}
 	}

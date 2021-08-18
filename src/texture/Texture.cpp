@@ -41,7 +41,7 @@ namespace Atlas {
 
         }
 
-		void Texture::Bind() {
+		void Texture::Bind() const {
 
 			if (!target)
 				return;
@@ -50,7 +50,7 @@ namespace Atlas {
 
 		}
 
-		void Texture::Bind(uint32_t unit) {
+		void Texture::Bind(uint32_t unit) const {
 
 			if (!target)
 				return;
@@ -60,13 +60,13 @@ namespace Atlas {
 
 		}
 
-		void Texture::Bind(uint32_t access, uint32_t unit, int32_t level) {
+		void Texture::Bind(uint32_t access, uint32_t unit, int32_t level) const {
 
 			glBindImageTexture(unit, ID, level, layers > 1, 0, access, sizedFormat);
 
 		}
 
-		void Texture::Unbind() {
+		void Texture::Unbind() const {
 
 			if (!target)
 				return;
@@ -75,7 +75,7 @@ namespace Atlas {
 
 		}
 
-		void Texture::Unbind(uint32_t unit) {
+		void Texture::Unbind(uint32_t unit) const {
 
 			if (!target)
 				return;

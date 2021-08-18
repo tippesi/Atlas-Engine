@@ -12,6 +12,42 @@ namespace Atlas {
 
 	namespace Lighting {
 
+		class InternalIrradianceVolume {
+		public:
+			InternalIrradianceVolume() = default;
+
+			InternalIrradianceVolume(ivec2 irrRes, ivec2 momRes, ivec3 probeCount);
+
+			void SetRayCount(uint32_t rayCount, uint32_t rayCountInactive);
+
+			void SwapTextures();
+
+			std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&>
+				GetCurrentProbes() const;
+
+			std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&>
+				GetLastProbes() const;
+
+			void ClearProbes(ivec2 irrRes, ivec2 momRes, ivec3 probeCount);
+
+			Buffer::Buffer rayDirBuffer;
+			Buffer::Buffer rayDirInactiveBuffer;
+			Buffer::Buffer probeStateBuffer;
+			Buffer::Buffer probeStateTemporalBuffer;
+
+		private:
+			void FillRayBuffers();
+
+			Texture::Texture2DArray irradianceArray0;
+			Texture::Texture2DArray momentsArray0;
+
+			Texture::Texture2DArray irradianceArray1;
+			Texture::Texture2DArray momentsArray1;
+
+			int32_t swapIdx = 0;
+
+		};
+
 		class IrradianceVolume {
 
 		public:
@@ -25,19 +61,33 @@ namespace Atlas {
 
 			vec3 GetProbeLocation(ivec3 probeIndex);
 
+			void SetAABB(Volume::AABB aabb);
+
+			void SetRayCount(uint32_t rayCount, uint32_t rayCountInactive);
+
+			void ClearProbes();
+
 			Volume::AABB aabb;
 			ivec3 probeCount;
 
 			vec3 size;
 			vec3 cellSize;
 
-			int32_t bounceCount = 0;
+			int32_t irrRes = 6;
+			int32_t momRes = 14;
 
-			int32_t irrRes = 16;
-			int32_t momRes = 16;
+			uint32_t rayCount = 100;
+			uint32_t rayCountInactive = 32;
 
-			Texture::Texture2DArray irradianceArray;
-			Texture::Texture2DArray momentsArray;
+			float hysteresis = 0.98f;
+			float bias = 0.3f;
+			float sharpness = 50.0f;
+
+			float gamma = 5.0f;
+
+			bool enable = true;
+
+			InternalIrradianceVolume internal;
 
 		};
 

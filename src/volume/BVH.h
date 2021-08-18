@@ -18,7 +18,7 @@ namespace Atlas {
 			BVHNode() = default;
 
 			void BuildSAH(std::vector<BVHNode<T>*>& nodes, size_t offset, size_t count, std::vector<AABB>& aabbs,
-				std::vector<T>& data, int32_t& nodeCount, int32_t depth, bool isLeftChild);
+				std::vector<T>& data, int32_t& nodeCount, int32_t depth);
 
 			void GetIntersection(Ray ray, std::vector<BVHNode<T>>& nodes,
 				std::vector<AABB>& aabbs, std::vector<T>& data,
@@ -33,7 +33,7 @@ namespace Atlas {
 			int32_t dataCount = 0;
 
 			int32_t depth = 0;
-			bool isLeftChild = false;
+			uint8_t splitAxis = 0;
 
 		};
 
@@ -75,7 +75,7 @@ namespace Atlas {
 
 			nodesPointer.push_back(new BVHNode<T>());
 			nodesPointer[0]->BuildSAH(nodesPointer, 0, aabbs.size(),
-				aabbs, data, nodeCount, 0, true);
+				aabbs, data, nodeCount, 0);
 
 			// Copy nodes
 			for (auto node : nodesPointer) {
@@ -113,12 +113,11 @@ namespace Atlas {
 
 		template <class T>
 		void BVHNode<T>::BuildSAH(std::vector<BVHNode<T>*>& nodes, size_t offset, size_t count, std::vector<AABB>& aabbs,
-			std::vector<T>& data, int32_t& nodeCount, int32_t depth, bool isLeftChild) {
+			std::vector<T>& data, int32_t& nodeCount, int32_t depth) {
 
-			const double binCount = 64.0f;
+			const float binCount = 64.0f;
 
 			this->depth = depth;
-			this->isLeftChild = isLeftChild;
 
 			// Calculate AABB for node
 			auto min = vec3(std::numeric_limits<float>::max());
@@ -150,18 +149,17 @@ namespace Atlas {
 			// Iterate over 3 axises
 			for (int32_t i = 0; i < 3; i++) {
 
-				auto start = double(min[i]);
-				auto stop = double(max[i]);
+				auto start = min[i];
+				auto stop = max[i];
 
 				// If the dimension of this axis is to small continue
-				if (fabs(stop - start) < 1e-4)
+				if (fabsf(stop - start) < 1e-3)
 					continue;
 
-				// We use double precision here as the step size could be too small for floats
-				auto step = (stop - start) / (binCount / (double(depth) + 1.0));
+				auto step = (stop - start) / (binCount / ((float)depth + 1.0f));
 
 				// Iterate over all possible splits of the bins
-				for (auto split = start + step; split < stop - step; split += step) {
+				for (float split = start + step; split < stop - step; split += step) {
 
 					Volume::AABB aabbLeft(vec3(std::numeric_limits<float>::max()),
 						vec3(-std::numeric_limits<float>::max()));
@@ -214,7 +212,7 @@ namespace Atlas {
 					if (cost < minCost) {
 						minCost = cost;
 						bestAxis = i;
-						bestSplit = float(split);
+						bestSplit = split;
 					}
 
 				}
@@ -284,15 +282,17 @@ namespace Atlas {
 			if (splitIdx > 0) {
 				leftChild = nodeCount++;
 				nodes.push_back(new BVHNode<T>());
+				nodes[leftChild]->splitAxis = uint8_t(bestAxis);
 				nodes[leftChild]->BuildSAH(nodes, offset, splitIdx,
-					aabbs, data, nodeCount, depth + 1, true);
+					aabbs, data, nodeCount, depth + 1);
 			}
 
 			if (splitIdx < count) {
 				rightChild = nodeCount++;
 				nodes.push_back(new BVHNode<T>());
+				nodes[rightChild]->splitAxis = uint8_t(bestAxis);
 				nodes[rightChild]->BuildSAH(nodes, offset + splitIdx, count - splitIdx,
-					aabbs, data, nodeCount, depth + 1, false);
+					aabbs, data, nodeCount, depth + 1);
 			}
 
 		}

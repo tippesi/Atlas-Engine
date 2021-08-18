@@ -4,3 +4,10 @@ void groupMemoryBarrierWithSync() {
 	groupMemoryBarrier();
 
 }
+
+void groupSharedMemoryBarrierWithSync() {
+
+	barrier();
+	memoryBarrierShared();
+
+}

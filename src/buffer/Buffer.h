@@ -100,7 +100,7 @@ namespace Atlas {
 			/**
              * Binds the buffer to the target specified in the constructor.
              */
-			virtual void Bind();
+			virtual void Bind() const;
 
 			/**
              * Binds a certain range of the buffer to the target.
@@ -108,7 +108,7 @@ namespace Atlas {
              * @param length The number of elements to be bound.
              * @param base The base point the buffer should be bound to. Default is 0.
              */
-			virtual void BindRange(size_t offset, size_t length, int32_t base = 0);
+			virtual void BindRange(size_t offset, size_t length, int32_t base = 0) const;
 
 			/**
              * Binds the buffer to a base point
@@ -116,12 +116,12 @@ namespace Atlas {
              * @note This method is equivalent to the Bind() method, except that
              * it additionally binds the buffer to a base point.
              */
-			virtual void BindBase(int32_t base);
+			virtual void BindBase(int32_t base) const;
 
 			/**
              * Unbinds any buffer from the target.
              */
-			virtual void Unbind();
+			virtual void Unbind() const;
 
 			/**
              * Maps the data of the buffer into the memory.

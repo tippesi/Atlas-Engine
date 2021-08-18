@@ -9,6 +9,8 @@ struct Surface {
     vec3 L;
     vec3 H;
 
+    vec3 geometryNormal;
+
     float NdotL;
     float LdotH;
     float NdotH;
@@ -21,6 +23,10 @@ struct Surface {
 };
 
 void UpdateSurface(inout Surface surface) {
+
+    surface.L = normalize(surface.L);
+    surface.V = normalize(surface.V);
+    surface.N = normalize(surface.N);
 
     surface.H = normalize(surface.L + surface.V);
 

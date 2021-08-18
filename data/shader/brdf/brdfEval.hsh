@@ -28,7 +28,7 @@ vec3 EvaluateSpecularBRDF(Surface surface) {
 	float G = VisibilitySmithGGXCorrelated(surface.NdotV, surface.NdotL, roughness);
 	float D = DistributionGGX(surface.NdotH, roughness);
 	
-	return F * D * G * INV_PI;
+	return F * D * G;
 
 }
 

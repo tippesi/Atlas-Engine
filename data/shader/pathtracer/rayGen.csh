@@ -1,13 +1,11 @@
-#include <structures.hsh>
+#include <../raytracer/structures.hsh>
+#include <../raytracer/common.hsh>
+#include <../raytracer/buffers.hsh>
+#include <../raytracer/tracing.hsh>
 #include <../common/random.hsh>
 #include <../common/flatten.hsh>
-#include <common.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
-
-layout (std430, binding = 4) buffer WriteRays {
-	PackedRay writeRays[];
-};
 
 // Camera
 uniform vec3 cameraLocation;
@@ -44,9 +42,8 @@ void main() {
 		ray.direction = normalize(origin + right * coord.x 
 			+ bottom * coord.y - cameraLocation);
 		ray.origin = cameraLocation;
-		
-		ray.color = vec3(0.0);
-		ray.throughput = vec3(1.0);
+
+		ray.hitID = 0;
 
 		// Calculate number of potential overlapping pixels at the borders of a tile
 		ivec2 overlappingPixels = tileSize % ivec2(gl_WorkGroupSize);
@@ -75,8 +72,7 @@ void main() {
 			index = Flatten2D(localID.yx, overlappingPixels.yx) + offset;
 		}
 
-		writeRays[index] = PackRay(ray);
-
+		WriteRay(ray, uint(index));
 	}
 
 }

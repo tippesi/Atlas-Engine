@@ -1,0 +1,57 @@
+#include <../common/material.hsh>
+#include <../common/convert.hsh>
+#include <../brdf/surface.hsh>
+
+layout(binding = 0) uniform sampler2D baseColorTexture;
+layout(binding = 1) uniform sampler2D normalTexture;
+layout(binding = 2) uniform sampler2D geometryNormalTexture;
+layout(binding = 3) uniform sampler2D roughnessMetalnessAoTexture;
+layout(binding = 4) uniform usampler2D materialIdxTexture;
+layout(binding = 5) uniform sampler2D depthTexture;
+layout(binding = 6) uniform sampler2D aoTexture;
+layout(binding = 7) uniform sampler2D volumetricTexture;
+layout(binding = 10) uniform samplerCube specularProbe;
+layout(binding = 11) uniform samplerCube diffuseProbe;
+
+Material GetMaterial(vec2 texCoord) {
+    uint materialIdx = texture(materialIdxTexture, texCoord).r;
+	Material material = UnpackMaterial(materialIdx);
+
+	if (material.baseColorMap) {
+		material.baseColor *= texture(baseColorTexture, texCoord).rgb;
+	}
+	if (material.roughnessMap) {
+		material.roughness *= texture(roughnessMetalnessAoTexture, texCoord).r;
+	}
+	if (material.metalnessMap) {
+		material.metalness *= texture(roughnessMetalnessAoTexture, texCoord).g;
+	}
+	if (material.aoMap) {
+		material.ao *= texture(roughnessMetalnessAoTexture, texCoord).b;
+	}
+    return material;
+}
+
+Surface GetSurface(vec2 texCoord, float depth, vec3 L, out vec3 geometryNormal) {
+    vec3 fragPos = ConvertDepthToViewSpace(depth, texCoord);
+
+	vec3 normal = normalize(2.0 * texture(normalTexture, texCoord).rgb - 1.0);
+	geometryNormal = normalize(2.0 * texture(geometryNormalTexture, texCoord).rgb - 1.0);
+
+    Material material = GetMaterial(texCoord);
+	normal = material.normalMap ? normal : geometryNormal;
+	
+	L = normalize(L);
+	vec3 V = normalize(-fragPos);
+	vec3 N = normal;
+
+	Surface surface = CreateSurface(V, N, L, material);
+
+    surface.P = fragPos;
+    return surface;
+}
+
+Surface GetSurface(vec2 texCoord, float depth, vec3 L) {
+    vec3 geometryNormal;
+    return GetSurface(texCoord, depth, L, geometryNormal);
+}

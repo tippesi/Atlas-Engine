@@ -1,0 +1,170 @@
+#include <common.hsh>
+#include <texture.hsh>
+#include <buffers.hsh>
+#include <bvh.hsh>
+#include <intersections.hsh>
+
+#include <../brdf/surface.hsh>
+#include <../common/utility.hsh>
+
+// We use double buffering for the ray and payload buffers,
+// which means the buffer has an actual size of rayBufferSize * 2
+// Also note that the payload offset is different from the ray offset
+// as rays are written two times per bounce or execution, while payloads
+// are just written by the shader of the user
+uniform uint rayBufferSize;
+uniform uint rayBufferOffset;
+uniform uint rayPayloadBufferOffset;
+
+bool IsRayInvocationValid() {
+    return gl_GlobalInvocationID.x < readAtomic[0];
+}
+
+bool IsRayIndexValid(uint idx) {
+    return idx < readAtomic[0];
+}
+
+Ray ReadRay() {
+	uint idx = (1u - rayBufferOffset) * rayBufferSize + gl_GlobalInvocationID.x;
+    return UnpackRay(rays[idx]);
+}
+
+RayPayload ReadRayPayload() {
+	uint idx = (1u - rayPayloadBufferOffset) * rayBufferSize + gl_GlobalInvocationID.x;
+	return UnpackRayPayload(rayPayloads[idx]);
+}
+
+Ray ReadRay(uint idx) {
+	idx += (1u - rayBufferOffset) * rayBufferSize;
+    return UnpackRay(rays[idx]);
+}
+
+RayPayload ReadRayPayload(uint idx) {
+	idx += (1u - rayPayloadBufferOffset) * rayBufferSize;
+	return UnpackRayPayload(rayPayloads[idx]);
+}
+
+void WriteRay(Ray ray) {
+	uint offset = rayBufferOffset * rayBufferSize;
+    uint idx = atomicAdd(writeAtomic[0], uint(1)) + offset;
+	rays[idx] = PackRay(ray);
+}
+
+void WriteRay(Ray ray, RayPayload payload) {
+	uint rayOffset = rayBufferOffset * rayBufferSize;
+	uint payloadOffset = rayPayloadBufferOffset * rayBufferSize;
+    uint idx = atomicAdd(writeAtomic[0], uint(1));
+	rays[idx + rayOffset] = PackRay(ray);
+	rayPayloads[idx + payloadOffset] = PackRayPayload(payload);
+}
+
+void WriteRay(Ray ray, uint idx) {
+	idx += rayBufferOffset * rayBufferSize;
+	atomicAdd(writeAtomic[0], uint(1));
+	rays[idx] = PackRay(ray);
+}
+
+void WriteRay(Ray ray, RayPayload payload, uint idx) {
+	uint rayOffset = rayBufferOffset * rayBufferSize;
+	uint payloadOffset = rayPayloadBufferOffset * rayBufferSize;
+    atomicAdd(writeAtomic[0], uint(1));
+	rays[idx + rayOffset] = PackRay(ray);
+	rayPayloads[idx + payloadOffset] = PackRayPayload(payload);
+}
+
+Material GetTriangleMaterial(Triangle tri, out RaytraceMaterial rayMat) {
+	Material mat;
+	rayMat = materials[tri.materialIndex];
+
+	mat.baseColor = vec3(rayMat.baseR, rayMat.baseG, rayMat.baseB);
+	mat.emissiveColor = vec3(rayMat.emissR, rayMat.emissG, rayMat.emissB);
+	mat.transmissiveColor = vec3(0.0);
+
+	mat.opacity = rayMat.opacity;
+
+	mat.roughness = rayMat.roughness;
+	mat.metalness = rayMat.metalness;
+	mat.ao = rayMat.ao;
+	
+	mat.normalScale = rayMat.normalScale;
+	mat.displacementScale = 0.0;
+
+	return mat;
+}
+
+Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool backfaceHit) {
+
+	Surface surface;
+	RaytraceMaterial rayMat;
+	Material mat = GetTriangleMaterial(tri, rayMat);
+
+	// The ray doesn't provide us with the barrycentric coordinates
+	// so we intersect again.
+	vec3 sol;
+	IntersectTriangle(ray, tri.v0, tri.v1, tri.v2, sol);
+
+	float dist = sol.x;
+	vec2 barrycentric = sol.yz;
+
+	float s = barrycentric.x;
+	float t = barrycentric.y;
+	float r = 1.0 - s - t;
+		
+	// Interpolate normal by using barrycentric coordinates
+	vec3 position = ray.origin + dist * ray.direction;
+	vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
+	vec3 normal = normalize(r * tri.n0 + s * tri.n1 + t * tri.n2);
+		
+	texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
+	
+	// Produces some problems in the bottom left corner of the Sponza scene,
+	// but fixes the cube. Should work in theory.
+	vec3 triangleNormal = normalize(cross(tri.v0 - tri.v1, tri.v0 - tri.v2));
+	bool flipNormal = dot(triangleNormal, ray.direction) > 0.0;
+	backfaceHit = flipNormal;
+	normal *= flipNormal ? -1.0 : 1.0;
+
+	vec3 geometryNormal = normal;
+		
+	mat.baseColor *= SampleBaseColorBilinear(rayMat.baseColorTexture, texCoord);
+	mat.opacity *= SampleOpacityBilinear(rayMat.opacityTexture, texCoord);
+	
+	mat.roughness *= SampleRoughnessBilinear(rayMat.roughnessTexture, texCoord);
+	mat.metalness *= SampleMetalnessBilinear(rayMat.metalnessTexture, texCoord);
+	mat.ao *= SampleAoBilinear(rayMat.aoTexture, texCoord);
+	
+	// Account for changing texture coord direction
+	vec3 bitangent = rayMat.invertUVs > 0 ? tri.bt : -tri.bt;
+	mat3 TBN = mat3(tri.t, bitangent, normal);
+	
+	// Sample normal map
+	if (rayMat.normalTexture.layer >= 0 && useNormalMaps) {
+		vec3 texNormal = 2.0 * SampleNormalBilinear(rayMat.normalTexture, texCoord) - 1.0;
+		texNormal = TBN * texNormal;
+		// Make sure we don't divide by zero
+		// The normalize function crashes the program in case of vec3(0.0)
+		texNormal /= max(length(texNormal), 0.00001);
+		normal = mix(normal, texNormal, saturate(mat.normalScale));
+
+		normal = dot(normal, triangleNormal) < 0.0 ? -normal : normal;
+	}
+	
+	surface.P = position;
+	surface.V = -ray.direction;
+	surface.N = normalize(normal);
+	surface.material = mat;
+
+	surface.geometryNormal = geometryNormal;
+
+	surface.F0 = mix(vec3(0.04), surface.material.baseColor,
+        surface.material.metalness);
+	surface.F90 = 1.0;
+
+	return surface;
+
+}
+
+Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps) {
+	bool normalFlipped;
+	return GetSurfaceParameters(tri, ray, useNormalMaps, normalFlipped);
+}

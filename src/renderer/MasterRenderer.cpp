@@ -67,6 +67,14 @@ namespace Atlas {
 		void MasterRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
 			Scene::Scene* scene, Texture::Texture2D* texture, RenderBatch* batch) {
 
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_CULL_FACE);
+
+			ddgiRenderer.TraceAndUpdateProbes(scene);
+
+			glEnable(GL_DEPTH_TEST);
+			glEnable(GL_CULL_FACE);
+
 			std::vector<PackedMaterial> materials;
 			std::unordered_map<void*, uint16_t> materialMap;
 
@@ -80,7 +88,7 @@ namespace Atlas {
 				jitter.x /= (float)target->GetWidth();
 				jitter.y /= (float)target->GetHeight();
 
-				camera->Jitter(jitter * 0.99f);
+				camera->Jitter(jitter * 0.999f);
 			}
 
 			if (scene->sky.probe) {
@@ -168,6 +176,8 @@ namespace Atlas {
 			vertexArray.Bind();
 
 			directionalVolumetricRenderer.Render(viewport, target, camera, scene);
+
+			ssaoRenderer.Render(viewport, target, camera, scene);
 
 			target->lightingFramebuffer.Bind(true);
 			target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
@@ -488,7 +498,7 @@ namespace Atlas {
 						   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
 						   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
-			Camera camera(90.0f, 1.0f, 0.01f, 1000.0f);
+			Camera camera(90.0f, 1.0f, 0.5f, 1000.0f);
 			camera.UpdateProjection();
 
 			glEnable(GL_DEPTH_TEST);
@@ -630,113 +640,6 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::RenderIrradianceVolume(Scene::Scene* scene, int32_t bounces) {
-
-			// This whole function is pretty ineffective. Should use raytracing instead.
-			auto volume = scene->irradianceVolume;
-
-			if (!volume)
-				return;
-
-			Shader::Shader irradianceShader;
-			Shader::Shader momentsShader;
-
-			irradianceShader.AddStage(AE_VERTEX_STAGE, "irradiancevolume/filtering.vsh");
-			irradianceShader.AddStage(AE_FRAGMENT_STAGE, "irradiancevolume/filtering.fsh");
-			irradianceShader.AddMacro("IRRADIANCE");
-			irradianceShader.Compile();
-
-			momentsShader.AddStage(AE_VERTEX_STAGE, "irradiancevolume/filtering.vsh");
-			momentsShader.AddStage(AE_FRAGMENT_STAGE, "irradiancevolume/filtering.fsh");
-			momentsShader.Compile();
-
-			Framebuffer irradianceFrameuffer;
-			Framebuffer momentsFramebuffer;
-
-			Lighting::EnvironmentProbe probe(256);
-			auto target = new RenderTarget(256, 256);
-
-			ivec3 probeCount = volume->probeCount;
-
-			for (int32_t i = 0; i < bounces; i++) {
-
-				auto tempVolume = *scene->irradianceVolume;
-
-				for (int32_t y = 0; y < probeCount.y; y++) {
-
-					irradianceFrameuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, &tempVolume.irradianceArray, y);
-					glClear(GL_COLOR_BUFFER_BIT);
-
-					momentsFramebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, &tempVolume.momentsArray, y);
-					glClear(GL_COLOR_BUFFER_BIT);
-
-					for (int32_t j = 0; j < probeCount.x * probeCount.z; j++) {
-
-						int32_t z = j / volume->probeCount.x;
-						int32_t x = j % volume->probeCount.x;
-
-						ivec3 offset = ivec3(x, y, z);
-						vec3 pos = volume->GetProbeLocation(offset);
-
-						probe.SetPosition(pos);
-						RenderProbe(&probe, target, scene);
-						probe.cubemap.Bind();
-						probe.cubemap.GenerateMipmap();
-
-						glDisable(GL_DEPTH_TEST);
-						glDisable(GL_CULL_FACE);
-
-						vertexArray.Bind();
-
-						auto imgOff = volume->GetIrradianceArrayOffset(offset);
-						glViewport(imgOff.x, imgOff.y, volume->irrRes, volume->irrRes);				
-
-						irradianceFrameuffer.Bind();
-
-						irradianceShader.Bind();
-						irradianceShader.GetUniform("probeOffset")->SetValue(offset);
-						irradianceShader.GetUniform("probeRes")->SetValue(volume->irrRes);
-
-						probe.cubemap.Bind(GL_TEXTURE0);
-
-						glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-						imgOff = volume->GetMomentsArrayOffset(offset);
-						glViewport(imgOff.x, imgOff.y, volume->momRes, volume->momRes);
-
-						momentsFramebuffer.Bind();
-
-						momentsShader.Bind();
-						momentsShader.GetUniform("probeOffset")->SetValue(offset);
-						momentsShader.GetUniform("probeRes")->SetValue(volume->momRes);
-
-						probe.depth.Bind(GL_TEXTURE0);
-
-						glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-						glEnable(GL_DEPTH_TEST);
-						glEnable(GL_CULL_FACE);
-
-						// glFlush() leads to memory buildup (up to 4 Gb) while being faster (when increasing sample count in IrrdianceCalc)
-						// Buildup depends on the number of samples taken in the Irradiance shader function
-						// Note: glFlush() only guarantees, that the commands are being executed in finite time
-						// glFinsh() is slower (acts like a command fence) but no buildup
-						// On the other hand we can't just generate new commands without finishing or flushing
-						glFinish();
-
-					}
-				}
-
-				*scene->irradianceVolume = tempVolume;
-
-				volume->bounceCount++;
-
-			}
-
-			delete target;
-
-		}
-
 		void MasterRenderer::FilterProbe(Lighting::EnvironmentProbe* probe) {
 
 			mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
@@ -779,6 +682,8 @@ namespace Atlas {
 		}
 
 		void MasterRenderer::Update() {
+
+			static auto framecounter = 0;
 
 			textRenderer.Update();
 

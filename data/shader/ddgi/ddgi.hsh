@@ -1,0 +1,192 @@
+// Based on DDGI: 
+// Majercik, Zander, et al. "Dynamic diffuse global illumination with ray-traced irradiance fields."
+// Journal of Computer Graphics Techniques Vol 8.2 (2019).
+// Majercik, Zander, et al. "Scaling Probe-Based Real-Time Dynamic Global Illumination for Production."
+// arXiv preprint arXiv:2009.10796 (2020).
+
+#include <../common/octahedron.hsh>
+#include <../common/utility.hsh>
+#include <../common/flatten.hsh>
+
+#define PROBE_STATE_NEW 0
+#define PROBE_STATE_ACTIVE 1
+#define PROBE_STATE_INACTIVE 2
+
+layout(binding = 12) uniform sampler2DArray irradianceVolume;
+layout(binding = 13) uniform sampler2DArray momentsVolume;
+
+layout(std430, binding = 9) buffer ProbeStates {
+	uint probeStates[];
+};
+
+uniform vec3 volumeMin;
+uniform vec3 volumeMax;
+uniform ivec3 volumeProbeCount;
+uniform vec3 cellSize;
+
+uniform float volumeBias;
+
+uniform int volumeIrradianceRes;
+uniform int volumeMomentsRes;
+
+uniform uint rayCount = 100;
+uniform uint inactiveRayCount = 32;
+
+uniform float volumeGamma = 5.0;
+
+struct RayHit {
+	vec3 direction;
+	vec3 radiance;
+	float hitDistance;
+};
+
+struct PackedRayHit {
+	vec4 data;
+};
+
+RayHit UnpackRayHit(PackedRayHit compressed) {
+	RayHit hit;
+
+	hit.direction.xy = unpackHalf2x16(floatBitsToUint(compressed.data.x));
+	hit.radiance.xy = unpackHalf2x16(floatBitsToUint(compressed.data.y));
+	vec2 comn = unpackHalf2x16(floatBitsToUint(compressed.data.z));
+
+	hit.direction.z = comn.x;
+	hit.radiance.z = comn.y;
+
+	hit.hitDistance = compressed.data.w;
+
+	return hit;
+}
+
+PackedRayHit PackRayHit(RayHit hit) {
+	PackedRayHit compressed;
+
+	// Maximum possible value for float16 is 65.5 * 10^4
+	hit.radiance = min(hit.radiance, 3200.0);
+
+	vec2 comn = vec2(hit.direction.z, hit.radiance.z);
+	compressed.data.x = uintBitsToFloat(packHalf2x16(hit.direction.xy));
+	compressed.data.y = uintBitsToFloat(packHalf2x16(hit.radiance.xy));
+	compressed.data.z = uintBitsToFloat(packHalf2x16(comn));
+	compressed.data.w = hit.hitDistance;
+
+	return compressed;
+}
+
+uint GetProbeRayCount(uint state) {
+	return state == PROBE_STATE_INACTIVE ? inactiveRayCount : rayCount;
+}
+
+vec3 GetProbePosition(ivec3 probeIdx) {
+	return volumeMin + vec3(probeIdx) * cellSize;
+}
+
+ivec3 GetNearestProbe(vec3 position) {
+	vec3 localPosition = position - volumeMin;
+	return ivec3(round(localPosition / cellSize));
+}
+
+uint GetProbeIdx(ivec3 probe) {
+	return Flatten3D(probe.xzy, volumeProbeCount.xzy);
+}
+
+bool IsInsideVolume(vec3 position) {
+	return !any(lessThan(position, volumeMin))
+		&& !any(greaterThan(position, volumeMax));
+}
+
+vec3 GetProbeCoord(ivec3 probeIndex, vec2 octCoord, vec2 probeRes, vec2 texelSize, float volumeRes) {
+
+	vec3 coord = vec3(probeRes * vec2(probeIndex.xz) + vec2(1.0), float(probeIndex.y));
+	coord.xy *= texelSize;
+
+	vec2 localCoord = octCoord * float(volumeRes) * texelSize;
+	coord.xy += localCoord;
+
+	return coord;
+
+}
+
+// This function is for compute shaders
+vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N) {
+
+	float minAxialDistance = min3(cellSize);
+	vec3 biasedP = P + (0.7 * N - 0.3 * V) * (0.75 * minAxialDistance) * volumeBias;
+
+	vec2 irrRes = vec2(volumeIrradianceRes + 2);
+	vec2 totalResolution = vec2(volumeProbeCount.xz) * irrRes;
+	vec2 irrTexelSize = 1.0 / totalResolution;
+	vec2 irrOctCoord = UnitVectorToOctahedron(N);
+
+	vec2 momRes = vec2(volumeMomentsRes + 2);
+	totalResolution = vec2(volumeProbeCount.xz) * momRes;
+	vec2 momTexelSize = 1.0 / totalResolution;
+
+	vec3 localPosition = biasedP - volumeMin;
+	ivec3 baseCell = ivec3(localPosition / cellSize);
+
+	float sumWeight = 0.0;
+	vec3 sumIrradiance = vec3(0.0);
+
+	float sumWeightCheb = 0.0;
+	vec3 sumIrradianceCheb = vec3(0.0);
+
+	vec3 alpha = localPosition / cellSize - vec3(baseCell);
+
+	for (int i = 0; i < 8; i++) {
+		ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
+		ivec3 gridCell = min(baseCell + offset, volumeProbeCount - ivec3(1));
+
+		uint probeState = probeStates[GetProbeIdx(gridCell)];
+		if (probeState == PROBE_STATE_INACTIVE) continue;
+
+		vec3 probePos = vec3(gridCell) * cellSize + volumeMin;
+		vec3 pointToProbe = probePos - P;
+		vec3 L = normalize(pointToProbe);
+
+		vec3 biasedProbeToPosition = biasedP - probePos;
+		float biasedDistToProbe = length(biasedProbeToPosition);
+		biasedProbeToPosition /= biasedDistToProbe;
+
+		vec3 trilinear = mix(vec3(1.0) - alpha, alpha, vec3(offset));
+
+		// Should be used when the chebyshev test is weighted more
+		//float weight = sqr((dot(L, geometryNormal) + 1.0) * 0.5) + 0.2;
+		float weight = saturate(dot(L, N));
+
+		vec2 momOctCoord = UnitVectorToOctahedron(biasedProbeToPosition);
+		vec3 momCoord = GetProbeCoord(gridCell, momOctCoord, momRes, momTexelSize, volumeMomentsRes);
+		vec2 temp = textureLod(momentsVolume, momCoord, 0).rg;
+		float mean = temp.x;
+		float mean2 = temp.y;
+
+		float weightCheb = weight;
+
+		if (biasedDistToProbe > mean) {			
+			float variance = abs(mean * mean - mean2);
+			float visibility = variance / (variance + sqr(biasedDistToProbe - mean));
+			weight *= max(0.05, visibility * visibility * visibility);
+		}
+
+		weight = max(0.000001, weight);
+		weightCheb = max(0.000001, weightCheb);
+
+		float trilinearWeight = trilinear.x * trilinear.y * trilinear.z;
+		weight *= trilinearWeight;
+		weightCheb *= trilinearWeight;
+
+		vec3 irrCoord = GetProbeCoord(gridCell, irrOctCoord, irrRes, irrTexelSize, volumeIrradianceRes);
+		vec3 irradiance = pow(textureLod(irradianceVolume, irrCoord, 0).rgb, vec3(0.5 * volumeGamma));
+
+		sumIrradiance += weight * irradiance;
+		sumIrradianceCheb += weightCheb * irradiance;
+		sumWeight += weight;
+		sumWeightCheb += weightCheb;
+	}
+
+	if (sumWeight == 0.0) return vec4(0.0, 0.0, 0.0, 0.0);
+	return vec4(mix(sqr(sumIrradianceCheb / sumWeightCheb),
+		sqr(sumIrradiance / sumWeight), saturate(sqrt(sumWeight))), 0.0);
+
+}
