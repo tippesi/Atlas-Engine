@@ -23,7 +23,7 @@ namespace Atlas {
 
 			void RemoveShadow() override;
 
-			void AddVolumetric(int32_t width, int32_t height, int32_t sampleCount);
+			void AddVolumetric(int32_t width, int32_t height, int32_t sampleCount = 10, float intensity = 1.0f);
 
 			void RemoveVolumetric() override;
 

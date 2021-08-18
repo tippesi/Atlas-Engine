@@ -172,7 +172,7 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
 	float raySeed = float(ray.ID);
 
 	float refractChance = clamp(1.0 - mat.opacity, 0.1, 0.9);
-	refractChance = mat.opacity == 0.0 ? 0.0 : refractChance;
+	refractChance = mat.opacity == 1.0 ? 0.0 : refractChance;
 
 	float rnd = saturate(random(raySeed, curSeed));
 

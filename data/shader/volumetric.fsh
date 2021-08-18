@@ -9,6 +9,7 @@ layout(binding = 1) uniform sampler2DArrayShadow cascadeMaps;
 uniform Light light;
 uniform int sampleCount;
 uniform vec2 framebufferResolution;
+uniform float intensity;
 
 out float foginess;
 
@@ -98,7 +99,7 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
     }
 
     float shadowDistance = light.shadow.cascades[light.shadow.cascadeCount - 1].distance;
-    float scale = min(1.0, rayLength / shadowDistance);
+    float scale = min(1.0, rayLength / shadowDistance) * intensity;
 
     return foginess / float(sampleCount) * scale;
 

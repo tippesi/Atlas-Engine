@@ -11,9 +11,11 @@ namespace Atlas {
 		class Volumetric {
 
 		public:
-			Volumetric(int32_t width, int32_t height, int32_t sampleCount);
+			Volumetric(int32_t width, int32_t height,
+				int32_t sampleCount = 10, float intensity = 1.0f);
 
-			int32_t sampleCount;
+			int32_t sampleCount = 10;
+			float intensity = 1.0f;
 
 			Texture::Texture2D map;
 			Texture::Texture2D blurMap;

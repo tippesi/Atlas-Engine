@@ -10,16 +10,16 @@ namespace Atlas {
 		static uint64_t const increment = 1442695040888963407u;
 
 		inline uint32_t rotr32(uint32_t x, unsigned r) {
-			return x >> r | x << (-r & 31);
+			return x >> r | x << (-r & 31u);
 		}
 
 		inline uint32_t pcg32(void) {
 			uint64_t x = state;
-			unsigned count = (unsigned)(x >> 59);
+			unsigned count = (unsigned)(x >> 59u);
 
 			state = x * multiplier + increment;
 			x ^= x >> 18;
-			return rotr32((uint32_t)(x >> 27), count);
+			return rotr32((uint32_t)(x >> 27u), count);
 		}
 
 		void pcg32_init(uint64_t seed) {
