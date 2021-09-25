@@ -46,7 +46,6 @@ namespace Atlas {
 
 			renderList.clear();
 
-			// TODO: Check every node against the camera
 			for (auto node : leafs) {
 				auto aabb = Volume::AABB(
 					vec3(node->location.x, -50.0, node->location.y) + translation,

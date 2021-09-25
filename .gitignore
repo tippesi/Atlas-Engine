@@ -16,3 +16,4 @@ platform/android/app/app.iml
 platform/android/android.iml
 assets
 data/sanmiguel
+cmake-build-relwithdebinfo

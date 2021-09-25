@@ -57,7 +57,7 @@ namespace Atlas {
          * Returns the linearized convolution matrix.
          * @param weights A pointer to a weight vector which will contain the weights.
          * @param offsets A pointer to a offset vector which will contain the offsets.
-         * @param bilinearReduction Should be set to true if bilinear sampling is supported by the hardware.
+         * @param linearReduction Should be set to true if linear sampling is supported by the hardware.
          * @note The input pointers should point to allocated memory.
          * @remark This method should only be used if the filter is separable
          * (explanation <a href="https://en.wikipedia.org/wiki/Separable_filter">here</a>) and if the sampling
@@ -67,7 +67,7 @@ namespace Atlas {
          * Additionally the samples of the linearized matrix are cut by half by weighting the offsets in such a
          * way that the new samples are always between two of the original samples.
          */
-        void GetLinearized(std::vector<float>* weights, std::vector<float>* offsets, bool bilinearReduction = true);
+        void GetLinearized(std::vector<float>* weights, std::vector<float>* offsets, bool linearReduction = true);
 
         /**
          * Returns whether or not the convolution matrix is separable

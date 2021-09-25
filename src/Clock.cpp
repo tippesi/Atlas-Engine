@@ -35,9 +35,7 @@ namespace Atlas {
 		std::lock_guard<std::mutex> lock(mutex);
 
 		deltas.resize(frames);
-		
-		for (size_t i = 0; i < deltas.size(); i++)
-			deltas[i] = 0.0f;
+        std::fill(deltas.begin(), deltas.end(), 0.0f);
 
 	}
 

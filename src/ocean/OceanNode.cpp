@@ -9,7 +9,7 @@ namespace Atlas {
 			location(location), sideLength(sideLength), LoD(LoD), LoDCount(LoDCount),
 			LoDMultiplier(LoDMultiplier), globalIndex(parentIndex + localIndex), localIndex(localIndex) {
 
-			LoDImageOffset = (int32_t)powf(2.0f, (float)(LoDCount - LoD - 1));
+			LoDImageOffset = (int32_t)powf(2.0f, float(LoDCount - LoD - 1));
 
 		}
 
@@ -33,7 +33,7 @@ namespace Atlas {
 					continue;
 				}
 				auto sample = LoDImage.Sample(offsets[i].x, offsets[i].y);
-				neighbourLoD[i] = (LoD - sample.x) > 0 ? (float)(LoD - sample.x) : 0.0f;
+				neighbourLoD[i] = (LoD - sample.x) > 0 ? float(LoD - sample.x) : 0.0f;
 			}
 
 			leftLoDStitch = powf(2.0f, neighbourLoD[0]);
@@ -117,7 +117,7 @@ namespace Atlas {
 
 			for (int32_t x = 0; x < 2; x++) {
 				for (int32_t z = 0; z < 2; z++) {
-					children.push_back(OceanNode(vec2(location.x + (float)x * sideLength / 2.0f, location.y + (float)z * sideLength / 2.0f),
+					children.push_back(OceanNode(vec2(location.x + float(x) * sideLength / 2.0f, location.y + float(z) * sideLength / 2.0f),
 						sideLength / 2.0f, LoD + 1, LoDCount, LoDMultiplier * 2, globalIndex * 2, ivec2(x, z)));
 				}
 			}

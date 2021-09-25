@@ -63,9 +63,6 @@ namespace Atlas {
 				if (!actor->visible)
 					continue;
 
-				auto actorIndexCount = actor->mesh->data.GetIndexCount();
-				auto actorVertexCount = actor->mesh->data.GetVertexCount();
-
 				auto actorIndices = actor->mesh->data.indices.Get();
 				auto actorVertices = actor->mesh->data.vertices.Get();
 				auto actorNormals = actor->mesh->data.normals.Get();
