@@ -6,6 +6,7 @@
 #include "Vignette.h"
 #include "ChromaticAberration.h"
 #include "Sharpen.h"
+#include "TAA.h"
 
 namespace Atlas {
 
@@ -17,11 +18,11 @@ namespace Atlas {
 			float saturation = 1.0f;
 
 			bool filmicTonemapping = false;
-			bool taa = true;
 
-			Vignette* vignette = nullptr;
-			ChromaticAberration* chromaticAberration = nullptr;
-			Sharpen* sharpen = nullptr;
+			TAA taa;
+			Vignette vignette;
+			ChromaticAberration chromaticAberration;
+			Sharpen sharpen;
 
 		};
 

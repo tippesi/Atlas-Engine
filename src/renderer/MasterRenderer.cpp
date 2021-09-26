@@ -52,7 +52,7 @@ namespace Atlas {
 
 			downsampleDepth2x.AddStage(AE_COMPUTE_STAGE, "downsampleDepth2x.csh");
 
-			haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16);
+			haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16 + 1);
 
 			PreintegrateBRDF();
 
@@ -83,12 +83,13 @@ namespace Atlas {
 			auto materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(PackedMaterial), 0,
 				materials.size(), materials.data());
 
-			if (scene->postProcessing.taa) {
-				auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
+			auto& taa = scene->postProcessing.taa;
+			if (taa.enable) {
+				auto jitter = 2.0f * haltonSequence[haltonIndex + 1] - 1.0f;
 				jitter.x /= (float)target->GetWidth();
 				jitter.y /= (float)target->GetHeight();
 
-				camera->Jitter(jitter * 0.999f);
+				camera->Jitter(jitter * taa.jitterRange);
 			}
 
 			if (scene->sky.probe) {
@@ -211,7 +212,7 @@ namespace Atlas {
 
 			glDisable(GL_DEPTH_TEST);
 
-			if (scene->postProcessing.taa) {
+			if (taa.enable) {
 				taaRenderer.Render(viewport, target, camera, scene);
 
 				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -233,7 +234,8 @@ namespace Atlas {
 
 			Atlas::Texture::Texture2D* postTex;
 
-			if (scene->postProcessing.sharpen) {
+			auto& sharpen = scene->postProcessing.sharpen;
+			if (sharpen.enable) {
 				postTex = &target->postProcessTexture;
 				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			}

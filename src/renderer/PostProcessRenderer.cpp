@@ -28,30 +28,35 @@ namespace Atlas {
 
 			target->postProcessFramebuffer.Bind();
 
-			auto postProcessing = &scene->postProcessing;
+			auto& postProcessing = scene->postProcessing;
+
+			auto& chromaticAberration = postProcessing.chromaticAberration;
+			auto& vignette = postProcessing.vignette;
+			auto& taa = postProcessing.taa;
+			auto& sharpen = postProcessing.sharpen;
 
 			bool hasFilmicTonemappingMacro = shader.HasMacro("FILMIC_TONEMAPPING");
 			bool hasVignetteMacro = shader.HasMacro("VIGNETTE");
 			bool hasChromaticAberrationMacro = shader.HasMacro("CHROMATIC_ABERRATION");
 
-			if (postProcessing->filmicTonemapping && !hasFilmicTonemappingMacro) {
+			if (postProcessing.filmicTonemapping && !hasFilmicTonemappingMacro) {
 				shader.AddMacro("FILMIC_TONEMAPPING");
 			}
-			else if (!postProcessing->filmicTonemapping && hasFilmicTonemappingMacro) {
+			else if (!postProcessing.filmicTonemapping && hasFilmicTonemappingMacro) {
 				shader.RemoveMacro("FILMIC_TONEMAPPING");
 			}
 
-			if (postProcessing->vignette && !hasVignetteMacro) {
+			if (postProcessing.vignette.enable && !hasVignetteMacro) {
 				shader.AddMacro("VIGNETTE");
 			}
-			else if (!postProcessing->vignette && hasVignetteMacro) {
+			else if (!postProcessing.vignette.enable && hasVignetteMacro) {
 				shader.RemoveMacro("VIGNETTE");
 			}
 
-			if (postProcessing->chromaticAberration && !hasChromaticAberrationMacro) {
+			if (postProcessing.chromaticAberration.enable && !hasChromaticAberrationMacro) {
 				shader.AddMacro("CHROMATIC_ABERRATION");
 			}
-			else if (!postProcessing->chromaticAberration && hasChromaticAberrationMacro) {
+			else if (!postProcessing.chromaticAberration.enable && hasChromaticAberrationMacro) {
 				shader.RemoveMacro("CHROMATIC_ABERRATION");
 			}
 
@@ -62,23 +67,23 @@ namespace Atlas {
 			hdrTextureResolution->SetValue(vec2(resolution));
 
 			exposure->SetValue(camera->exposure);
-			saturation->SetValue(postProcessing->saturation);
+			saturation->SetValue(postProcessing.saturation);
 			timeInMilliseconds->SetValue(1000.0f * Clock::Get());
 
-			if (postProcessing->chromaticAberration) {
-				float reversedValue = postProcessing->chromaticAberration->colorsReversed ? 1.0f : 0.0f;
-				aberrationStrength->SetValue(postProcessing->chromaticAberration->strength);
+			if (chromaticAberration.enable) {
+				float reversedValue = chromaticAberration.colorsReversed ? 1.0f : 0.0f;
+				aberrationStrength->SetValue(chromaticAberration.strength);
 				aberrationReversed->SetValue(reversedValue);
 			}
 
-			if (postProcessing->vignette) {
-				vignetteOffset->SetValue(postProcessing->vignette->offset);
-				vignettePower->SetValue(postProcessing->vignette->power);
-				vignetteStrength->SetValue(postProcessing->vignette->strength);
-				vignetteColor->SetValue(postProcessing->vignette->color);
+			if (vignette.enable) {
+				vignetteOffset->SetValue(vignette.offset);
+				vignettePower->SetValue(vignette.power);
+				vignetteStrength->SetValue(vignette.strength);
+				vignetteColor->SetValue(vignette.color);
 			}
 
-			if (postProcessing->taa) {
+			if (taa.enable) {
 				target->GetHistory()->Bind(GL_TEXTURE0);
 			}
 			else {
@@ -89,7 +94,7 @@ namespace Atlas {
 
 			target->postProcessFramebuffer.Unbind();
 
-			if (postProcessing->sharpen) {
+			if (sharpen.enable) {
 				sharpenShader.Bind();
 
 				ivec2 groupCount = resolution / 8;
@@ -100,7 +105,7 @@ namespace Atlas {
 				target->postProcessTexture.Bind(GL_WRITE_ONLY, 0);
 				target->postProcessFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE1);
 
-				sharpenFactor->SetValue(postProcessing->sharpen->factor);
+				sharpenFactor->SetValue(sharpen.factor);
 
 				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 

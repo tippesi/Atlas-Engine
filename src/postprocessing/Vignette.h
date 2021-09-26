@@ -10,13 +10,17 @@ namespace Atlas {
 		class Vignette {
 
 		public:
+			Vignette() = default;
+
 			///
 			/// \param offset
 			/// \param power
 			/// \param strength
 			/// \param color
 			Vignette(float offset, float power, float strength, vec3 color = vec3(0.0f)) :
-					offset(offset), power(power), strength(strength), color(color) { };
+					enable(true), offset(offset), power(power), strength(strength), color(color) { };
+
+			bool enable = false;
 
 			float offset;
 			float power;

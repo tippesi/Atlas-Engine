@@ -90,17 +90,17 @@ void UpdateIrradiance() {
 
             float probeHysteresis = hysteresis;
 
-            /*
-            if (abs(max3(result.xyz - lastResult)) > 0.5) {
-                probeHysteresis = max(0.0, probeHysteresis - 0.10);
+            // This might need some tweaking, but seems to work reasonably well
+            // for a low amount of rays, which means a higher amount of rays should
+            // work as well
+            if (max3(result.xyz - lastResult) > 0.2) {
+                probeHysteresis = max(0.0, probeHysteresis - 0.01);
             }
-            */
             
             if (probeState == PROBE_STATE_NEW) {
                 resultOut = result.xyz;
             }
-            else {
-                
+            else {                
                 resultOut = mix(result.xyz, lastResult, probeHysteresis);
             }
         }

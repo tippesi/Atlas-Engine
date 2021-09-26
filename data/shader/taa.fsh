@@ -14,7 +14,7 @@ uniform vec2 invResolution;
 uniform vec2 resolution;
 
 uniform float clipCorrectionThreshold = 0.0001;
-uniform float clipCorrectionFactor = 0.3;
+uniform float clipCorrectionFactor = 1.0;
 
 uniform float minVelocityBlend = 0.05;
 uniform float maxVelocityBlend = 0.5;
@@ -256,6 +256,10 @@ void main() {
     vec3 neighbourhoodMin = 0.5 * (boxMin + crossMin);
     vec3 neighbourhoodMax = 0.5 * (boxMax + crossMax);
     vec3 average = 0.5 * (boxAverage + crossAverage);
+
+    const float range = 1.0;
+    neighbourhoodMin = average - range * (average - neighbourhoodMin);
+    neighbourhoodMax = average + range * (neighbourhoodMax - average);
 
     ivec2 velocityPixel = clamp(pixel + offset, ivec2(0), ivec2(resolution) - ivec2(1));
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
