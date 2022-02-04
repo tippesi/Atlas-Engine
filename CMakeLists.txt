@@ -158,7 +158,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	
 	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
-	set(ATLAS_ENGINE_SYSTEM_LIBS X11 Xxf86vm GL dl pthread)
+	set(ATLAS_ENGINE_SYSTEM_LIBS X11 GL dl pthread)
 endif()
 
 # Add source files ################################################################################

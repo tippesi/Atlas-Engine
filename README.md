@@ -1,14 +1,11 @@
 # Atlas Engine
 [![The MIT License][license-image]][license-url]
 [![Code quality][code-quality-image]][code-quality-url]
-[![Build][build-image]][build-url]
 
 [license-image]: https://img.shields.io/badge/License-MIT-yellow.svg
 [license-url]: https://opensource.org/licenses/MIT
-[code-quality-image]: https://www.code-inspector.com/project/10000/score/svg
-[code-quality-url]: https://frontend.code-inspector.com/public/project/10000/Atlas-Engine/dashboard
-[build-image]: https://ci.appveyor.com/api/projects/status/p5rwt06036gp5fwy?svg=true
-[build-url]: https://ci.appveyor.com/project/tippesi/atlas-engine
+[code-quality-image]: https://api.codiga.io/project/10000/score/svg
+[code-quality-url]: https://app.codiga.io/public/project/10000/Atlas-Engine/dashboard
 
 ![GI scene](wiki/images/gi.gif) <br/>
 *Realtime GI demo scene* <br/>

@@ -1,0 +1,91 @@
+name: Build pipeline
+
+on:
+  push:
+    branches: 
+      - '*'
+  pull_request:
+    branches: [ master ]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE_DEBUG: Debug
+  BUILD_TYPE_RELEASE: Release
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    name: Build on Windows
+    # Run both builds in parallel and don't cancel if one fails
+    strategy:
+      matrix:
+        build-type: [Debug, Release]
+      fail-fast: false
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    
+    - name: Download dependencies
+      shell: pwsh
+      run: |
+        cd dependencies
+        ./download_dependencies.ps1 -SkipCertificateCheck
+
+    - name: Configure CMake
+      # Configure CMake in a 'build' subdirectory. 
+      run: cmake -B ${{github.workspace}}/build -S ${{github.workspace}} -DCMAKE_BUILD_TYPE=${{matrix.build-type}}
+
+    - name: Build in ${{matrix.build-type}} configuration
+      # Build with a maximum core count of 16, if available
+      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build-type}} --parallel 16 -- /maxcpucount:16
+      
+  linux-build:
+    runs-on: ubuntu-latest
+    name: Build on Linux
+    # Run both builds in parallel and don't cancel if one fails
+    strategy:
+      matrix:
+         build-type: [Debug, Release]
+      fail-fast: false
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    
+    - name: Download dependencies
+      shell: bash
+      run: |
+        cd dependencies
+        sh download_dependencies.sh
+        sudo apt-get install libgl1-mesa-dev
+
+    - name: Configure CMake
+      # Configure CMake in a 'build' subdirectory. 
+      run: cmake -B ${{github.workspace}}/build -S ${{github.workspace}} -DCMAKE_BUILD_TYPE=${{matrix.build-type}}
+
+    - name: Build in ${{matrix.build-type}} configuration
+      # Build with a maximum core count of 16, if available
+      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build-type}} --parallel 16 -- -j 16
+
+  code-quality:
+    runs-on: ubuntu-latest
+    name: Check code quality
+    needs: [windows-build, linux-build]
+    
+    steps:
+    - name: Check code meets quality standards
+      id: codiga
+      uses: codiga/github-action@master
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        codiga_api_token: ${{ secrets.CODIGA_API_TOKEN }}
+        force_ref: 'none'
+        min_quality_grade: 'GOOD'
+        min_quality_score: '85'
+        max_defects_rate: '0.01'
+        max_complex_functions_rate: '0.03'
+        max_long_functions_rate: '0.2'
+        project_name: 'Atlas-Engine'
+        max_timeout_sec: '600'
+    
