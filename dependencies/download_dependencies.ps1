@@ -1,6 +1,6 @@
 $file = "SDL.zip"
 
-Invoke-WebRequest -Uri "https://www.libsdl.org/release/SDL2-2.0.9.zip" -OutFile $file -TimeoutSec 5
+Invoke-WebRequest -Uri "https://www.libsdl.org/release/SDL2-2.0.9.zip" -OutFile $file -TimeoutSec 120
 
 # Unzip the file to specified location
 $location = Get-Location
@@ -12,7 +12,7 @@ rename-item "SDL2-2.0.9" "SDL"
 
 $file = "Assimp.zip"
 
-Invoke-WebRequest -Uri "https://github.com/assimp/assimp/archive/v5.0.1.zip" -OutFile $file -TimeoutSec 10
+Invoke-WebRequest -Uri "https://github.com/assimp/assimp/archive/v5.0.1.zip" -OutFile $file -TimeoutSec 120
 
 # Unzip the file to specified location
 $location = Get-Location
