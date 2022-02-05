@@ -25,20 +25,32 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-    
+      
+    - name: Setup Microsoft Visual C++ CLI
+      uses: ilammy/msvc-dev-cmd@v1
+        
+    - name: Setup Ninja
+      uses: ashutoshvarma/setup-ninja@master
+      with:
+        # ninja version to download. Default: 1.10.0
+        version: 1.10.0
+        
     - name: Download dependencies
       shell: pwsh
       run: |
         cd dependencies
         ./download_dependencies.ps1 -SkipCertificateCheck
 
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. 
-      run: cmake -B ${{github.workspace}}/build -S ${{github.workspace}} -DCMAKE_BUILD_TYPE=${{matrix.build-type}}
-
-    - name: Build in ${{matrix.build-type}} configuration
-      # Build with a maximum core count of 16, if available
-      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build-type}} --parallel 16 -- /maxcpucount:16
+    - name: Build ${{ matrix.build-type }} configuration with CMake
+      uses: ashutoshvarma/action-cmake-build@master
+      with:
+        build-dir: ${{ github.workspace }}/build
+        source-dir: ${{ github.workspace }}
+        cc: "cl"
+        cxx: "cl"
+        configure-options: -G Ninja
+        parallel: 16
+        build-type: ${{ matrix.build-type }}
       
   linux-build:
     runs-on: ubuntu-latest
@@ -52,6 +64,12 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+      
+    - name: Setup Ninja
+      uses: ashutoshvarma/setup-ninja@master
+      with:
+        # ninja version to download. Default: 1.10.0
+        version: 1.10.0
     
     - name: Download dependencies
       shell: bash
@@ -60,13 +78,17 @@ jobs:
         sh download_dependencies.sh
         sudo apt-get install libgl1-mesa-dev
 
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. 
-      run: cmake -B ${{github.workspace}}/build -S ${{github.workspace}} -DCMAKE_BUILD_TYPE=${{matrix.build-type}}
-
-    - name: Build in ${{matrix.build-type}} configuration
-      # Build with a maximum core count of 16, if available
-      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build-type}} --parallel 16 -- -j 16
+    # https://github.com/marketplace/actions/setup-ninja
+    - name: Build ${{ matrix.build-type }} configuration with CMake
+      uses: ashutoshvarma/action-cmake-build@master
+      with:
+        build-dir: ${{ github.workspace }}/build
+        source-dir: ${{ github.workspace }}
+        cc: "gcc"
+        cxx: "g++"
+        configure-options: -G Ninja
+        parallel: 16
+        build-type: ${{ matrix.build-type }}
 
   code-quality:
     runs-on: ubuntu-latest
