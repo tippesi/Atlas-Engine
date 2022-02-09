@@ -30,8 +30,6 @@ namespace Atlas {
 
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
-			bool backFaceCulling = true;
-
 			framebuffer.Bind();
 
 			auto lights = scene->GetLights();
@@ -66,6 +64,11 @@ namespace Atlas {
 				}
 
 				for (int32_t i = 0; i < componentCount; i++) {
+
+					// We need to reset the culling since the impostor renderer can
+					// change the culling up
+					bool backFaceCulling = true;
+					glEnable(GL_CULL_FACE);
 
 					auto component = &light->GetShadow()->components[i];
 

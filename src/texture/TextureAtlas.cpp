@@ -92,7 +92,7 @@ namespace Atlas {
 			// Approximation of total padding by assuming to stuff
 			// the smallest texture over and over again.
 			auto& smallest = textureStructures[textureStructures.size() - 1];
-			auto smallestSize = ivec2(smallest.width, smallest.height);
+			auto smallestSize = glm::max(ivec2(smallest.width, smallest.height), glm::ivec2(1));
 			ivec2 totalPadding = ivec2(width, height) / smallestSize * padding;
 
 			// Add total padding to total size

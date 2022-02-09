@@ -79,6 +79,9 @@ namespace Atlas {
 
 			int32_t boundShaderID;
 
+		private:
+			int32_t totalBatchCounter = 0;
+
 		};
 
 

@@ -73,7 +73,8 @@ namespace Atlas {
 				shader->GetUniform(uniform->name);
 			}
 
-			batch->ID = (int32_t)configBatches.size();
+			// This should never reach 2+ billion
+			batch->ID = (int32_t)totalBatchCounter++;
 
 			batch->Add(config);
 			config->added = true;

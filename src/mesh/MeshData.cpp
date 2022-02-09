@@ -145,6 +145,9 @@ namespace Atlas {
 
 			aabb = that.aabb;
 
+			materials.clear();
+			subData.clear();
+
 			materials.resize(that.materials.size());
 			subData.resize(that.subData.size());
 
