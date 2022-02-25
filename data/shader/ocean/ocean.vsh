@@ -54,7 +54,7 @@ uniform mat4 pvMatrixLast;
 
 const float shoreStartScaling = 15.0;
 const float shoreOffsetScaling = 5.0;
-const float minShoreScaling = 0.0;
+const float minShoreScaling = 0.3;
 
 vec3 stitch(vec3 position) {
 	
@@ -104,20 +104,13 @@ vec3 CalculateGerstner(vec3 position) {
 
 	float waveIndex = (rad - 1.5 * PI) / (2.0 * PI);
 
-	float modulation = 0.0;
-
-	if (mod(floor(waveIndex), 3.0) == 0.0) {
-		modulation = 1.0;
-	}
-	if (mod(floor(waveIndex), 8.0) == 0.0) {
-		modulation = 1.0;
-	}
-
+	float modulation = saturate(sin(position.x / 20.0) + cos(position.z / 10.0));
+	
 	float distanceScale = saturate(1.0 - (distance(cameraLocation, position)
 		 - shoreWaveDistanceOffset) / shoreWaveDistanceScale);
 
-	float amplitude = shoreWaveAmplitude * scale * modulation * distanceScale;
-	float steepness = shoreWaveSteepness * scale * modulation * distanceScale;
+	float amplitude = 1.0 * shoreWaveAmplitude * scale * modulation * distanceScale;
+	float steepness = 1.5 * shoreWaveSteepness * scale * modulation * distanceScale;
 
 	vec3 offset;
 

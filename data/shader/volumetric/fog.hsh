@@ -1,0 +1,34 @@
+uniform float fogDensity;
+uniform float fogHeightFalloff;
+uniform float fogHeight;
+uniform float fogScatteringAnisotropy;
+uniform vec3 fogColor;
+uniform bool fogEnabled;
+
+// https://developer.amd.com/wordpress/media/2012/10/Wenzel-Real-time_Atmospheric_Effects_in_Games.pdf
+float ComputeVolumetricFog(vec3 viewPos, vec3 worldPos) {
+	viewPos.y -= fogHeight;
+	worldPos.y -= fogHeight;
+
+	vec3 viewToWorldPos = worldPos - viewPos;
+
+	float fogIntegration = length(viewToWorldPos) * 
+		exp(-fogHeightFalloff * viewPos.y);
+
+	float t = fogHeightFalloff * viewToWorldPos.y;
+	if (abs(t) > 0.0001) {
+		fogIntegration *= (1.0 - exp(-t)) / t;
+	}
+
+	return exp(-fogDensity * fogIntegration);
+}
+
+// Henyey-Greenstein phase function https://www.astro.umd.edu/~jph/HG_note.pdf
+float ComputeScattering(float lightDotView) {
+    // Range [-1;1]
+    float g = fogScatteringAnisotropy;
+    float g2 = g * g;
+    float result = 1.0 - g2;
+    result /= (4.0 * 3.14 * pow(1.0 + g2 - (2.0 * g) * lightDotView, 1.5));
+    return result;
+}

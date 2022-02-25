@@ -31,17 +31,17 @@ namespace Atlas {
 
 			auto location = camera->GetLocation();
 
-			viewMatrix->SetValue(camera->viewMatrix);
-			projectionMatrix->SetValue(camera->projectionMatrix);
-			cameraLocation->SetValue(location);
-			sunDirection->SetValue(vec3(0.0f, -1.0f, 0.0f));
-			sunIntensity->SetValue(22.0f);
-			planetCenter->SetValue(-vec3(0.0f, 6371000.0f, 0.0f));
-			planetRadius->SetValue(6371000.0f);
-			atmosphereRadius->SetValue(6471000.0f);
-			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
-			jitterLast->SetValue(camera->GetLastJitter());
-			jitterCurrent->SetValue(camera->GetJitter());
+			shader.GetUniform("vMatrix")->SetValue(camera->viewMatrix);
+			shader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
+			shader.GetUniform("cameraLocation")->SetValue(location);
+			shader.GetUniform("sunDirection")->SetValue(vec3(0.0f, -1.0f, 0.0f));
+			shader.GetUniform("sunIntensity")->SetValue(22.0f);
+			shader.GetUniform("planetCenter")->SetValue(-vec3(0.0f, 6371000.0f, 0.0f));
+			shader.GetUniform("planetRadius")->SetValue(6371000.0f);
+			shader.GetUniform("atmosphereRadius")->SetValue(6471000.0f);
+            shader.GetUniform("pvMatrixLast")->SetValue(camera->GetLastJitteredMatrix());
+			shader.GetUniform("jitterLast")->SetValue(camera->GetLastJitter());
+			shader.GetUniform("jitterCurrent")->SetValue(camera->GetJitter());
 
 			glDrawElements(GL_TRIANGLES, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
 				vertexArray.GetIndexComponent()->GetDataType(), nullptr);

@@ -85,6 +85,13 @@ namespace Atlas {
 
 		}
 
+        bool Texture::IsValid() const {
+
+            return width > 0 && height > 0 &&
+                channels > 0 && layers > 0;
+
+        }
+
 		void Texture::SetBias(float bias) {
 
 #ifdef AE_API_GL

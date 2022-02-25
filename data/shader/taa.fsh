@@ -1,6 +1,7 @@
 #include <common/utility.hsh>
+#include <common/PI.hsh>
 
-layout(location = 0) out vec3 history;
+layout(location = 0) out vec4 result;
 
 layout(binding = 0) uniform sampler2D historyTexture;
 layout(binding = 1) uniform sampler2D currentTexture;
@@ -13,8 +14,10 @@ in vec2 fTexCoord;
 uniform vec2 invResolution;
 uniform vec2 resolution;
 
+uniform vec2 jitter;
+
 uniform float clipCorrectionThreshold = 0.0001;
-uniform float clipCorrectionFactor = 1.0;
+uniform float clipCorrectionFactor = 0.1;
 
 uniform float minVelocityBlend = 0.05;
 uniform float maxVelocityBlend = 0.5;
@@ -22,7 +25,7 @@ uniform float maxVelocityBlend = 0.5;
 #define TAA_YCOCG
 #define TAA_CLIP // Use clip instead of clamping for better ghosting prevention, introduces more flickering
 #define TAA_BICUBIC // Nearly always use the bicubic sampling for better quality and sharpness under movement
-//#define TAA_TONE // Somehow introduces more flickering as well
+#define TAA_TONE // Somehow introduces more flickering as well
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
@@ -37,7 +40,6 @@ const ivec2 offsets[9] = ivec2[9](
 );
 
 vec3 neighbourhood[9];
-
 
 const mat3 RGBToYCoCgMatrix = mat3(0.25, 0.5, -0.25, 0.5, 0.0, 0.5, 0.25, -0.5, -0.25);
 const mat3 YCoCgToRGBMatrix = mat3(1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, 1.0, -1.0);
@@ -81,7 +83,7 @@ vec3 FetchTexel(ivec2 texel) {
 
     texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
 	
-	vec3 color = texelFetch(currentTexture, texel, 0).rgb;
+	vec3 color = max(texelFetch(currentTexture, texel, 0).rgb, 0);
 
 #ifdef TAA_TONE
 	color = Tonemap(color);
@@ -148,7 +150,7 @@ float ClipBoundingBox(vec3 boxMin, vec3 boxMax, vec3 history, vec3 current) {
 
 }
 
-vec3 SampleCatmullRom(vec2 uv) {
+vec4 SampleCatmullRom(vec2 uv) {
 
     // http://advances.realtimerendering.com/s2016/Filmic%20SMAA%20v7.pptx
     // Credit: Jorge Jimenez (SIGGRAPH 2016)
@@ -184,42 +186,90 @@ vec3 SampleCatmullRom(vec2 uv) {
     float weight3 = w3.x * w12.y;
     float weight4 = w12.x * w3.y;
 
-    vec3 sample0 = texture(historyTexture, uv0).rgb * weight0;
-    vec3 sample1 = texture(historyTexture, uv1).rgb * weight1;
-    vec3 sample2 = texture(historyTexture, uv2).rgb * weight2;
-    vec3 sample3 = texture(historyTexture, uv3).rgb * weight3;
-    vec3 sample4 = texture(historyTexture, uv4).rgb * weight4;
+    vec4 sample0 = texture(historyTexture, uv0) * weight0;
+    vec4 sample1 = texture(historyTexture, uv1) * weight1;
+    vec4 sample2 = texture(historyTexture, uv2) * weight2;
+    vec4 sample3 = texture(historyTexture, uv3) * weight3;
+    vec4 sample4 = texture(historyTexture, uv4) * weight4;
 
     float totalWeight = weight0 + weight1 + 
         weight2 + weight3 + weight4;
 
-    vec3 totalSample = sample0 + sample1 +
+    vec4 totalSample = sample0 + sample1 +
         sample2 + sample3 + sample4;
 
     return totalSample / totalWeight;    
 
 }
 
-vec3 SampleHistory(vec2 texCoord) {
+vec4 SampleHistory(vec2 texCoord) {
 
-    vec3 historyColor;
+    vec4 historyColor;
 
 #ifdef TAA_BICUBIC
     historyColor = SampleCatmullRom(texCoord);
 #else
-    historyColor = texture(historyTexture, texCoord).rgb;
+    historyColor = texture(historyTexture, texCoord);
 #endif
 
 #ifdef TAA_TONE
-	historyColor = Tonemap(historyColor);
+	historyColor.rgb = Tonemap(historyColor.rgb);
 #endif
 
 #ifdef TAA_YCOCG
-    historyColor = RGBToYCoCg(historyColor);
+    historyColor.rgb = RGBToYCoCg(historyColor.rgb);
 #endif
 
     return historyColor;
 
+}
+
+float FilterBlackmanHarris(float x) {
+    x = 1.0 - abs(x);
+
+    const float a0 = 0.35875;
+    const float a1 = 0.48829;
+    const float a2 = 0.14128;
+    const float a3 = 0.01168;
+    return saturate(a0 - a1 * cos(PI * x) + a2 * cos(2 * PI * x) - a3 * cos(3 * PI * x));
+}
+
+vec3 SampleCurrent() {
+
+    vec3 filtered = vec3(0.0);
+
+    float sumWeights = 0.0;
+    for (int i = 0; i < 9; i++) {
+        vec3 color = InverseTonemap(YCoCgToRGB(neighbourhood[i]));
+        vec2 offset = vec2(offsets[i]);
+
+        float weight = exp(-2.29 * (offset.x * offset.x + offset.y * offset.y));
+        //float weight = FilterBlackmanHarris(offset.x) * FilterBlackmanHarris(offset.y);
+
+        filtered += color * weight;
+        sumWeights += weight;
+    }
+
+    return RGBToYCoCg(Tonemap(max(filtered / sumWeights, 0.0)));
+
+}
+
+void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
+    vec3 m1 = vec3(0.0);
+    vec3 m2 = vec3(0.0);
+    for (int i = 0; i < 9; i++) {
+        vec3 color = neighbourhood[i];
+        
+        m1 += color;
+        m2 += color * color;
+    }
+
+    float oneDividedBySampleCount = 1.0 / 9.0;
+    float gamma = 1.0;
+    vec3 mu = m1 * oneDividedBySampleCount;
+    vec3 sigma = sqrt(abs((m2 * oneDividedBySampleCount) - (mu * mu)));
+    aabbMin = mu - gamma * sigma;
+    aabbMax = mu + gamma * sigma;
 }
 
 void main() {
@@ -245,17 +295,18 @@ void main() {
     vec3 boxMin = min(tl, min(tc, min(tr, min(ml, min(mc, min(mr, min(bl, min(bc, br))))))));
     vec3 boxMax = max(tl, max(tc, max(tr, max(ml, max(mc, max(mr, max(bl, max(bc, br))))))));
 
-    vec3 boxAverage = (tl + tc + tr + ml + mc + mr + bl + bc + br) / 9.0;
-
     // 5 sample cross pattern
     vec3 crossMin = min(tc, min(ml, min(mc, min(mr, bc))));
 	vec3 crossMax = max(tc, max(ml, max(mc, max(mr, bc))));
-    vec3 crossAverage = (tc + ml + mc + mr + bc) / 5.0;
 
     // Average both bounding boxes to get a more rounded shape
     vec3 neighbourhoodMin = 0.5 * (boxMin + crossMin);
     vec3 neighbourhoodMax = 0.5 * (boxMax + crossMax);
-    vec3 average = 0.5 * (boxAverage + crossAverage);
+    
+    //ComputeVarianceMinMax(neighbourhoodMin, neighbourhoodMax);
+    vec3 average = 0.5 * (neighbourhoodMin + neighbourhoodMax);
+
+    ComputeVarianceMinMax(neighbourhoodMin, neighbourhoodMax);
 
     const float range = 1.0;
     neighbourhoodMin = average - range * (average - neighbourhoodMin);
@@ -266,8 +317,11 @@ void main() {
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
 
     // Maybe we might want to filter the current input pixel
-    vec3 historyColor = SampleHistory(uv);
-    vec3 currentColor = mc;
+    vec4 history = SampleHistory(uv);
+    float clipCorrection = saturate(texelFetch(historyTexture, pixel, 0).a);
+
+    vec3 historyColor = history.rgb;
+    vec3 currentColor = SampleCurrent();
 
     float lumaHistory = Luma(historyColor);
     float lumaCurrent = Luma(currentColor);
@@ -277,21 +331,13 @@ void main() {
 
     // Clamp/Clip the history to the neighbourhood bounding box
 #ifdef TAA_CLIP
-    // Calculate a clip correction when pixel is stationary or near stationary
-    // to avoid flickering. To calculate the "flow" through the pixel we need
-    // the last pixel value as well. 
-    float clipCorrection = abs(dot(lastVelocity, vec2(1.0)) + 
-        dot(velocity, vec2(1.0))) > clipCorrectionThreshold ? 1.0 : clipCorrectionFactor;
-    // NOTE: We could probably use the lastHistoryTexture here to further enhance
-    // the quality and reduce light ghosting, by surpressing flickering using more 
-    // history information. We could also use the "flow" to better estimate the velocity
-    // blending down below. Further testing is required. We could also use a better neighbourhood
-    // selection to find better bounds for the clipping, i.e. use different neighbourhood 
-    // sampling pattern.    
     float clipBlend = ClipBoundingBox(neighbourhoodMin, neighbourhoodMax,
-        historyColor, average);
-    clipBlend = saturate(clipBlend * clipCorrection);
-    historyColor = mix(historyColor, average, clipBlend);
+        historyColor, currentColor);
+    float adjClipBlend = saturate(clipBlend);
+    clipCorrection = clipBlend > 0.97 ? 1.0 : clipCorrection + 0.005;
+    historyColor = mix(historyColor, currentColor, adjClipBlend);
+    //historyColor = clip_aabb(neighbourhoodMin, neighbourhoodMax,
+      //  historyColor, average);
 #else
     historyColor = clamp(historyColor, neighbourhoodMin, neighbourhoodMax);
 #endif
@@ -304,14 +350,6 @@ void main() {
     correction = max(lastCorrection, correction);
     float blendFactor = mix(minVelocityBlend, maxVelocityBlend, correction);
 
-#ifndef TAA_CLIP
-    // Calculate distance to clamp event
-    float distToClamp = 4.0 * abs(min(lumaHistory - lumaMin, lumaMax - lumaHistory)
-        / (lumaMax - lumaMin + 0.00001));
-
-    blendFactor *= mix(0.0, 1.0, saturate(distToClamp));
-#endif
-
 	// Check if we sampled outside the viewport area
     blendFactor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 1.0 : blendFactor;
@@ -322,21 +360,29 @@ void main() {
 #endif
 
 #ifdef TAA_TONE
-	historyColor = InverseTonemap(historyColor);
-    currentColor = InverseTonemap(currentColor);
-#endif	
+	historyColor.rgb = InverseTonemap(historyColor.rgb);
+    currentColor.rgb = InverseTonemap(currentColor.rgb);
+#endif  
 
-    history = mix(historyColor, currentColor, blendFactor);
+    const vec3 luma = vec3(0.299, 0.587, 0.114);
+    float weightHistory = (1.0 - blendFactor) / (1.0 + dot(historyColor.rgb, luma));
+    float weightCurrent =  blendFactor / (1.0 + dot(currentColor.rgb, luma));
+
+    result.rgb = historyColor.rgb * weightHistory + 
+        currentColor.rgb * weightCurrent;
+
+    result.rgb /= (weightHistory + weightCurrent);
 
     // Some components might have a value of -0.0 which produces
     // errors later on while rendering (postprocessing saturate)
-    history = abs(history);
+    result.rgb = abs(result.rgb);
+    result.a = clipCorrection;
 
     // Some stuff in the pipeline produces NaNs
-    if (isnan(history.x) == true ||
-        isnan(history.y) == true ||
-        isnan(history.z) == true) {
-        history = vec3(1, 0, 0);
+    if (isnan(result.r) == true ||
+        isnan(result.g) == true ||
+        isnan(result.b) == true) {
+        result.rgb = vec3(1, 0, 0);
     }
 
 }

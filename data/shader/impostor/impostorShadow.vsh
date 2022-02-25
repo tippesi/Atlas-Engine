@@ -3,7 +3,6 @@
 #include <../common/octahedron.hsh>
 
 layout(location=0) in vec2 vPosition;
-layout(location=1) in mat4 mMatrix;
 
 struct ViewPlane {
     vec4 right;
@@ -12,6 +11,10 @@ struct ViewPlane {
 
 layout (std430, binding = 1) buffer ViewPlanes {
 	ViewPlane viewPlanes[];
+};
+
+layout(std430, binding = 2) buffer Matrices {
+	mat4 matrices[];
 };
 
 out vec2 texCoordVS;
@@ -27,6 +30,8 @@ uniform float radius;
 uniform int views;
 
 void main() {
+
+    mat4 mMatrix = matrices[gl_InstanceID];
 
     texCoordVS = 0.5 * vPosition + 0.5;
 	

@@ -1,0 +1,40 @@
+#include <flatten.hsh>
+/*
+layout(std430, binding = 0) buffer LayoutCounter {
+	uint layoutCounter[];
+};
+*/
+layout(binding = 0) uniform atomic_uint layoutCounter;
+
+shared int layoutOffset;
+
+void IncrementLayoutCounter() {
+    if (gl_LocalInvocationIndex == 0) {
+        layoutOffset = int(atomicCounterIncrement(layoutCounter));
+    }
+    barrier();
+}
+
+ivec2 GetScanlineLayout(int width, int height, int lines) {
+    IncrementLayoutCounter();
+
+    int columns = width / int(gl_WorkGroupSize.x);
+    columns += width % int(gl_WorkGroupSize.x) != 0 ? 1 : 0;
+
+    int column = layoutOffset / lines;
+    int columnIdx = layoutOffset % lines;
+
+    ivec2 offset = Unflatten2D(column, ivec2(columns, 1));
+    offset *= ivec2(int(gl_WorkGroupSize.x), lines * int(gl_WorkGroupSize.y));
+    offset.y += columnIdx * int(gl_WorkGroupSize.y);
+
+    return offset + ivec2(gl_LocalInvocationID.xy);
+}
+
+ivec2 GetQuadraticLayout(int width, int height, uvec2 groups) {
+    IncrementLayoutCounter();
+
+    
+
+    return ivec2(0);
+}

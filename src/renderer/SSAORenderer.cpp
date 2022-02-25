@@ -2,25 +2,29 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         SSAORenderer::SSAORenderer() {
 
-            blurFilter.CalculateBoxFilter(11);
+            blurFilter.CalculateBoxFilter(3);
 
-            ssaoShader.AddStage(AE_VERTEX_STAGE, "deferred/ssao.vsh");
-            ssaoShader.AddStage(AE_FRAGMENT_STAGE, "deferred/ssao.fsh");
+            ssaoShader.AddStage(AE_COMPUTE_STAGE, "ao/ssao.csh");
 
             ssaoShader.Compile();
 
-            bilateralBlurShader.AddStage(AE_VERTEX_STAGE, "bilateralBlur.vsh");
-            bilateralBlurShader.AddStage(AE_FRAGMENT_STAGE, "bilateralBlur.fsh");
+            horizontalBlurShader.AddStage(AE_COMPUTE_STAGE, "bilateralBlur.csh");
+            horizontalBlurShader.AddMacro("HORIZONTAL");
+            horizontalBlurShader.AddMacro("DEPTH_WEIGHT");
+            horizontalBlurShader.Compile();
 
-            bilateralBlurShader.AddMacro("BILATERAL");
-            bilateralBlurShader.AddMacro("BLUR_R");
+            verticalBlurShader.AddStage(AE_COMPUTE_STAGE, "bilateralBlur.csh");
+            verticalBlurShader.AddMacro("VERTICAL");
+            verticalBlurShader.AddMacro("DEPTH_WEIGHT");
+            verticalBlurShader.Compile();
 
-            bilateralBlurShader.Compile();
-
+            atomicCounterBuffer = Buffer::Buffer(AE_ATOMIC_COUNTER_BUFFER, sizeof(uint32_t), 0);
+            atomicCounterBuffer.SetSize(1);
+            InvalidateCounterBuffer();
         }
 
         void SSAORenderer::Render(Viewport* viewport, RenderTarget* target,
@@ -29,12 +33,13 @@ namespace Atlas {
             auto ssao = scene->ssao;
             if (!ssao || !ssao->enable) return;
 
-            framebuffer.Bind();
+            ivec2 res = ivec2(target->ssaoTexture.width, target->ssaoTexture.height);
 
             // Calculate SSAO
             {
-                glViewport(0, 0, ssao->map.width, ssao->map.height);
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &ssao->map);
+                ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
+                groupCount.x += ((res.x % 8 == 0) ? 0 : 1);
+                groupCount.y += ((res.y % 8 == 0) ? 0 : 1);
 
                 ssaoShader.Bind();
 
@@ -44,55 +49,73 @@ namespace Atlas {
                 ssaoShader.GetUniform("sampleCount")->SetValue(ssao->sampleCount);
                 ssaoShader.GetUniform("samples")->SetValue(ssao->samples.data(), int32_t(ssao->samples.size()));
                 ssaoShader.GetUniform("radius")->SetValue(ssao->radius);
-                ssaoShader.GetUniform("resolution")->SetValue(vec2(float(ssao->map.width), float(ssao->map.height)));
+                ssaoShader.GetUniform("strength")->SetValue(ssao->strength);
+                ssaoShader.GetUniform("resolution")->SetValue(vec2(res));
 
                 // Bind the geometry normal texure and depth texture
-                target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE0);
-                target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
-                
-                ssao->noiseTexture.Bind(GL_TEXTURE2);
+                target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE1);
+                target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE2);
 
-                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                ssao->noiseTexture.Bind(GL_TEXTURE3);
+
+                target->ssaoTexture.Bind(GL_WRITE_ONLY, 0);
+                atomicCounterBuffer.BindBase(0);
+
+                glDispatchCompute(groupCount.x, groupCount.y, 1);
             }
 
-            // Blur SSAO
             {
-                bilateralBlurShader.Bind();
+                const int32_t groupSize = 256;
 
                 target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
 
                 std::vector<float> kernelWeights;
                 std::vector<float> kernelOffsets;
 
-                blurFilter.GetLinearized(&kernelWeights, &kernelOffsets);
+                blurFilter.GetLinearized(&kernelWeights, &kernelOffsets, false);
 
-                bilateralBlurShader.GetUniform("weight")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
-                bilateralBlurShader.GetUniform("offset")->SetValue(kernelOffsets.data(), (int32_t)kernelOffsets.size());
+                ivec2 groupCount = ivec2(res.x / groupSize, res.y);
+                groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
 
-                bilateralBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size());
+                horizontalBlurShader.Bind();
 
-                glViewport(0, 0, ssao->map.width, ssao->map.height);
+                horizontalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
+                horizontalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
 
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &ssao->blurMap);
-                ssao->map.Bind(GL_TEXTURE0);
+                target->ssaoTexture.Bind(GL_TEXTURE0);
+                target->swapSsaoTexture.Bind(GL_WRITE_ONLY, 0);
 
-                bilateralBlurShader.GetUniform("blurDirection")->SetValue(
-                    vec2(1.0f / float(ssao->map.width), 0.0f)
-                );
+                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                glDispatchCompute(groupCount.x, groupCount.y, 1);
 
-                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                groupCount = ivec2(res.x, res.y / groupSize);
+                groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &ssao->map);
-                ssao->blurMap.Bind(GL_TEXTURE0);
+                verticalBlurShader.Bind();
 
-                bilateralBlurShader.GetUniform("blurDirection")->SetValue(
-                    vec2(0.0f, 1.0f / float(ssao->map.height))
-                );
+                verticalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
+                verticalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
 
-                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                target->swapSsaoTexture.Bind(GL_TEXTURE0);
+                target->ssaoTexture.Bind(GL_WRITE_ONLY, 0);
+
+                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                glDispatchCompute(groupCount.x, groupCount.y, 1);
             }
+            
+            InvalidateCounterBuffer();
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         }
 
-	}
+        void SSAORenderer::InvalidateCounterBuffer() {
+
+            uint32_t zero = 0;
+            atomicCounterBuffer.Bind();
+            atomicCounterBuffer.InvalidateData();
+            atomicCounterBuffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
+
+        }
+
+    }
 
 }

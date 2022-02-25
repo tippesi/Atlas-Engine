@@ -1,7 +1,7 @@
 #include <intersections.hsh>
 #include <structures.hsh>
 
-#define STACK_SIZE 34
+#define STACK_SIZE 32
 
 struct PackedBVHNode {
 	vec4 data0;

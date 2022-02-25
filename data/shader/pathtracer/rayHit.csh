@@ -33,6 +33,8 @@ uniform ivec2 resolution;
 
 uniform float seed;
 
+uniform float exposure;
+
 const float gamma = 1.0 / 2.2;
 
 void EvaluateBounce(inout Ray ray, inout RayPayload payload);
@@ -68,7 +70,7 @@ void main() {
 			accumColor += vec4(payload.radiance, 1.0);			
 			imageStore(outAccumImage, pixel, accumColor);
 			
-			vec3 color = accumColor.rgb / float(sampleCount + 1);
+			vec3 color = accumColor.rgb * exposure / float(sampleCount + 1);
 			color = vec3(1.0) - exp(-color);
 			//color = color / (vec3(1.0) + color);
 
@@ -86,9 +88,10 @@ void EvaluateBounce(inout Ray ray, inout RayPayload payload) {
 	
 	// If we didn't find a triangle along the ray,
 	// we add the contribution of the environment map
-	if (ray.hitID == -1) {	
+	if (ray.hitID == -1) {
+		// Clamp env map, since there is only a uniform sampling for now
 		payload.radiance += min(SampleEnvironmentMap(ray.direction).rgb * 
-			payload.throughput, vec3(1.0));
+			payload.throughput, vec3(10.0));
 		payload.throughput = vec3(0.0);
 		return;	
 	}
@@ -108,7 +111,7 @@ void EvaluateBounce(inout Ray ray, inout RayPayload payload) {
 		* EvaluateDirectLight(surface);
 	
 	// Clamp indirect radiance
-	// This has to be used cautious and might be the reason
+	// This has to be used cautiously and might be the reason
 	// for some artifacting happening (e.g. Sponza arches)
 	// When the propability of an indirect sample is low,
 	// the contribution might be reduced by this and the lighting
@@ -227,9 +230,9 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
 	ray.inverseDirection = 1.0 / ray.direction;
 	payload.throughput *= mat.ao;
 
-	// Russain roulette (and avoid division by zero)
+	// Russain roulette, terminate rays with a chance of one percent
 	float probability = clamp(max(payload.throughput.r,
-		max(payload.throughput.g, payload.throughput.b)), 0.0001, 0.99);
+		max(payload.throughput.g, payload.throughput.b)), 0.01, 0.99);
 
 	if (random(raySeed, curSeed) > probability) {
 		payload.throughput = vec3(0.0);

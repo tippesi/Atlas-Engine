@@ -1,5 +1,6 @@
 #include "DDGIRenderer.h"
 
+#include "../common/RandomHelper.h"
 #include "helper/GeometryHelper.h"
 
 namespace Atlas {
@@ -37,10 +38,10 @@ namespace Atlas {
 		}
 
 		void DDGIRenderer::TraceAndUpdateProbes(Scene::Scene* scene) {
-			if (!scene->irradianceVolume)
-				return;
-
 			auto volume = scene->irradianceVolume;
+			if (!volume || !volume->enable || !volume->update)
+				return;
+			
 			auto& internalVolume = volume->internal;
 			internalVolume.SwapTextures();
 
@@ -59,10 +60,6 @@ namespace Atlas {
 				helper.SetScene(scene, 8);
 			}
 
-			// Currently the BVH structure doesn't support fast rebuilds
-			//if (scene->HasChanged())
-				//helper.SetScene(scene, 8);
-
 			auto [irradianceArray, momentsArray] = internalVolume.GetCurrentProbes();
 			auto [lastIrradianceArray, lastMomentsArray] = internalVolume.GetLastProbes();
 
@@ -71,19 +68,22 @@ namespace Atlas {
 			auto& probeStateBuffer = internalVolume.probeStateBuffer;
 			auto& probeStateTemporalBuffer = internalVolume.probeStateTemporalBuffer;
 
+			helper.SetScene(scene, 8, volume->sampleEmissives);
 			helper.UpdateLights();
 
 			probeStateBuffer.BindBase(9);
 
 			helper.DispatchRayGen(&rayGenShader, volume->probeCount,
 				[&]() {
+					using namespace Common;
+
 					auto theta = acosf(2.0f * float(rand()) / float(RAND_MAX) - 1.0f);
 					auto phi = glm::two_pi<float>() * float(rand()) / float(RAND_MAX);
 
 					auto dir = glm::vec3(
-						sinf(theta) * cosf(phi),
-						sinf(theta) * sinf(phi),
-						cosf(theta)
+						2.0f * Random::CanonicalUniform() - 1.0f,
+						2.0f * Random::CanonicalUniform() - 1.0f,
+						2.0f * Random::CanonicalUniform() - 1.0f
 					);
 
 					auto epsilon = glm::two_pi<float>() * float(rand()) / float(RAND_MAX);

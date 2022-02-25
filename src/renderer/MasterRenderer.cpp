@@ -50,8 +50,6 @@ namespace Atlas {
 			filterDiffuseShader.AddStage(AE_VERTEX_STAGE, "brdf/filterProbe.vsh");
 			filterDiffuseShader.AddStage(AE_FRAGMENT_STAGE, "brdf/filterProbe.fsh");
 
-			downsampleDepth2x.AddStage(AE_COMPUTE_STAGE, "downsampleDepth2x.csh");
-
 			haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16 + 1);
 
 			PreintegrateBRDF();
@@ -176,9 +174,8 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
-			directionalVolumetricRenderer.Render(viewport, target, camera, scene);
-
 			ssaoRenderer.Render(viewport, target, camera, scene);
+			//rtaoRenderer.Render(viewport, target, camera, scene);
 
 			target->lightingFramebuffer.Bind(true);
 			target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
@@ -187,6 +184,8 @@ namespace Atlas {
 			glClear(GL_COLOR_BUFFER_BIT);
 
 			directionalLightRenderer.Render(viewport, target, camera, scene, &dfgPreintegrationTexture);
+
+			indirectLightRenderer.Render(viewport, target, camera, scene);
 
 			glEnable(GL_DEPTH_TEST);
 
@@ -211,6 +210,15 @@ namespace Atlas {
 			oceanRenderer.Render(viewport, target, camera, scene);
 
 			glDisable(GL_DEPTH_TEST);
+
+			glDisable(GL_CULL_FACE);
+			glCullFace(GL_BACK);
+			glDepthMask(GL_FALSE);
+			glDisable(GL_DEPTH_TEST);
+
+			vertexArray.Bind();
+
+			volumetricRenderer.Render(viewport, target, camera, scene);
 
 			if (taa.enable) {
 				taaRenderer.Render(viewport, target, camera, scene);
@@ -597,8 +605,6 @@ namespace Atlas {
 
 				vertexArray.Bind();
 
-				directionalVolumetricRenderer.Render(&viewport, target, &camera, scene);
-
 				target->lightingFramebuffer.Bind(true);
 				target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
 
@@ -615,6 +621,15 @@ namespace Atlas {
 				glDepthMask(GL_TRUE);
 
 				oceanRenderer.Render(&viewport, target, &camera, scene);
+
+				glDisable(GL_CULL_FACE);
+				glCullFace(GL_BACK);
+				glDepthMask(GL_FALSE);
+				glDisable(GL_DEPTH_TEST);
+
+				vertexArray.Bind();
+
+				volumetricRenderer.Render(&viewport, target, &camera, scene);
 
 				createProbeFaceShader.Bind();
 

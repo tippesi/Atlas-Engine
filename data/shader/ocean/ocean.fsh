@@ -3,7 +3,6 @@
 #include <../common/convert.hsh>
 #include <../structures>
 #include <../shadow.hsh>
-#include <../fog.hsh>
 
 // Lighting based on Island Demo (NVIDIA SDK 11)
 
@@ -49,9 +48,10 @@ uniform float terrainSideLength;
 
 uniform Light light;
 
-const vec3 waterBodyColor = pow(vec3(0.1,0.4, 0.7), vec3(2.2));
-const vec3 scatterColor = pow(vec3(0.3,0.7,0.6), vec3(2.2));
-const vec2 waterColorIntensity = pow(vec2(0.1, 0.2), vec2(2.2));
+uniform vec3 waterBodyColor = pow(vec3(0.1,0.9, 0.9), vec3(2.2));
+uniform vec3 deepWaterBodyColor = pow(vec3(0.1,0.15, 0.5), vec3(2.2));
+uniform vec3 scatterColor = pow(vec3(0.3,0.7,0.6), vec3(2.2));
+uniform vec2 waterColorIntensity = pow(vec2(0.4, 0.6), vec2(2.2));
 
 // Control water scattering at crests
 const float scatterIntensity = 1.5;
@@ -63,7 +63,7 @@ const float specularPower = 500.0;
 const float specularIntensity = 350.0;
 
 // Shore softness (lower is softer)
-const float shoreSoftness = 2.5;
+const float shoreSoftness = 7.5;
 
 void main() {
 	
@@ -136,9 +136,9 @@ void main() {
 	
 	scatterFactor *= pow(max(0.0, 1.0 - nDotL), 8.0);
 
-	scatterFactor += shadowFactor * 2.5 * waterColorIntensity.y
-		 * max(0.0, waveHeight) * max(0.0, nDotE) * 
-		 max(0.0, 1.0 + eyeDir.y);
+	//scatterFactor += shadowFactor * 2.5 * waterColorIntensity.y
+	//	 * max(0.0, waveHeight) * max(0.0, nDotE) * 
+	//	 max(0.0, 1.0 + eyeDir.y);
 
 	// Calculate water depth based on the viewer (ray from camera to ground)
 	float waterViewDepth = max(0.0, fPosition.z - depthPos.z);
@@ -155,13 +155,13 @@ void main() {
 	// Calculate water color
 	float diffuseFactor = waterColorIntensity.x + waterColorIntensity.y * 
 		max(0.0, nDotL) * shadowFactor;
-	vec3 waterColor = diffuseFactor * light.color * waterBodyColor;
+	vec3 waterColor = diffuseFactor * light.color * mix(deepWaterBodyColor, waterBodyColor, min(1.0 , exp(-waterViewDepth / 10.0)));
 	
 	// Water edges at shore sould be soft
 	fresnel *= min(1.0, waterViewDepth * shoreSoftness);
 
 	// Update refraction color based on water depth (exponential falloff)
-	refractionColor = mix(waterColor, refractionColor, min(1.0 , 1.0 * exp(-waterViewDepth / 8.0)));
+	refractionColor = mix(waterColor, refractionColor, min(1.0 , exp(-waterViewDepth / 2.0)));
 	
 	// Mix relection and refraction and add sun spot
 	color = mix(refractionColor, reflectionColor, fresnel);
@@ -178,10 +178,6 @@ void main() {
 	vec3 breakingColor = mix(vec3(1.0),
 		vec3(1.0) * max(0.0, nDotL)* shadowFactor, 0.7);
 	color = mix(color, breakingColor, breakingShoreWave);
-	
-	color = applyFog(color, length(fPosition), 
-		cameraLocation, eyeDir, -light.direction,
-		light.color);
 
 	vec2 terrainTex = (vec2(fModelCoord.xz) - vec2(terrainTranslation.xz))
 		/ terrainSideLength;

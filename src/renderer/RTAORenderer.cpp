@@ -9,7 +9,7 @@ namespace Atlas {
             const int32_t filterSize = 21;
 			blurFilter.CalculateGaussianFilter(float(filterSize) / 6.0f, filterSize);
 
-            rtaoShader.AddStage(AE_COMPUTE_STAGE, "rtao.csh");
+            rtaoShader.AddStage(AE_COMPUTE_STAGE, "ao/rtao.csh");
             rtaoShader.Compile();
 
 			bilateralBlurShader.AddStage(AE_VERTEX_STAGE, "bilateralBlur.vsh");
@@ -29,15 +29,17 @@ namespace Atlas {
 
             helper.SetScene(scene, 8);
 
+            ivec2 res = ivec2(target->ssaoTexture.width, target->ssaoTexture.height);
+
             // Calculate RTAO
             {
-                ivec2 groupCount = ivec2(ssao->map.width / 8, ssao->map.height / 4);
-                groupCount.x += ((groupCount.x * 8 == ssao->map.width) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 4 == ssao->map.height) ? 0 : 1);
+                ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
+                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
                 helper.DispatchAndHit(&rtaoShader, ivec3(groupCount, 1), 
                     [=]() {
-                        ssao->map.Bind(GL_WRITE_ONLY, 3);
+                        target->ssaoTexture.Bind(GL_WRITE_ONLY, 3);
 
                         // Bind the geometry normal texure and depth texture
                         target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE0);
@@ -51,15 +53,14 @@ namespace Atlas {
 
                         rtaoShader.GetUniform("sampleCount")->SetValue(ssao->sampleCount);
                         rtaoShader.GetUniform("radius")->SetValue(ssao->radius);
-                        rtaoShader.GetUniform("resolution")->SetValue(ivec2(ssao->map.width, ssao->map.height));
-
+                        rtaoShader.GetUniform("resolution")->SetValue(res);
 
                     });
             }
 
             framebuffer.Bind();
 
-            // Blur SSAO
+            // Blur AO
             {
                 bilateralBlurShader.Bind();
 
@@ -75,23 +76,23 @@ namespace Atlas {
 
                 bilateralBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size());
 
-                glViewport(0, 0, ssao->map.width, ssao->map.height);
+                glViewport(0, 0, res.x, res.y);
 
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &ssao->blurMap);
-                ssao->map.Bind(GL_TEXTURE0);
+                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &target->swapSsaoTexture);
+                target->ssaoTexture.Bind(GL_TEXTURE0);
 
                 bilateralBlurShader.GetUniform("blurDirection")->SetValue(
-                    vec2(1.0f / float(ssao->map.width), 0.0f)
+                    vec2(1.0f / float(res.x), 0.0f)
                 );
 
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &ssao->map);
-                ssao->blurMap.Bind(GL_TEXTURE0);
+                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &target->ssaoTexture);
+                target->swapSsaoTexture.Bind(GL_TEXTURE0);
 
                 bilateralBlurShader.GetUniform("blurDirection")->SetValue(
-                    vec2(0.0f, 1.0f / float(ssao->map.height))
+                    vec2(0.0f, 1.0f / float(res.y))
                 );
 
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

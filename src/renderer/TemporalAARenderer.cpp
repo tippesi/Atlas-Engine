@@ -35,6 +35,7 @@ namespace Atlas {
 			resolution->SetValue(vec2((float)target->GetWidth(), (float)target->GetHeight()));
 			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
 			ipvMatrixCurrent->SetValue(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
+			shader.GetUniform("jitter")->SetValue(camera->GetJitter());
 
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

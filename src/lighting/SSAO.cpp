@@ -8,21 +8,18 @@ namespace Atlas {
 
 		using namespace Common;
 
-		SSAO::SSAO(int32_t width, int32_t height, uint32_t sampleCount) {
+		SSAO::SSAO(uint32_t sampleCount) : sampleCount(sampleCount) {
 
 			noiseTexture = Texture::Texture2D(4, 4, GL_RG16F, GL_REPEAT, GL_NEAREST);
 
 			// Generate vec2 noise (4 * 4 * 2 floats)
 			std::vector<float> noise;
-			for (uint32_t i = 0; i < 32; i++)
+			for (uint32_t i = 0; i < noiseTexture.width * noiseTexture.height * 2; i++)
 				noise.push_back(Random::CanonicalUniform());
 
 			noiseTexture.SetData(noise);
 
 			SetSampleCount(sampleCount);
-
-			map = Texture::Texture2D(width, height, GL_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-			blurMap = Texture::Texture2D(width, height, GL_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 		}
 

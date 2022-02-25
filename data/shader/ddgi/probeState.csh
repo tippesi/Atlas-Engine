@@ -51,7 +51,7 @@ void main() {
     uint probeRayCount = GetProbeRayCount(probeState);
     // Use an extended size to avoid potential flickering
     // due to not having full sampling of the environment
-    float extendedSize = cellLength * 2.0;
+    float extendedSize = cellLength * 1.0;
 
     uint idx = atomicAdd(increment, uint(1));
     while(idx < probeRayCount) {
@@ -73,7 +73,7 @@ void main() {
         probeState = PROBE_STATE_INACTIVE;
         float percentageBackface = float(backFaceHits) / float(probeRayCount);
         temporalInfo.x = max(0.0, temporalInfo.x - 1.0);
-        if (inCellHits > 0u) {
+        if (inCellHits > 0u && percentageBackface < 0.2) {
             // Keep the state for 20 frames
             temporalInfo.x = 20.0;
         }

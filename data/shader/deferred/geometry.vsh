@@ -18,9 +18,13 @@ layout(location=2) in vec2 vTexCoord;
 layout(location=3) in vec4 vTangent;
 #endif
 
-// Per instance attributes
-layout(location=4) in mat4 mMatrix;
-layout(location=8) in mat4 mMatrixLast;
+layout(std430, binding = 2) buffer CurrentMatrices {
+	mat4 currentMatrices[];
+};
+
+layout(std430, binding = 3) buffer LastMatrices {
+	mat4 lastMatrices[];
+};
 
 // Vertex out parameters
 out vec3 positionVS;
@@ -49,6 +53,9 @@ uniform mat4 pvMatrixCurrent;
 
 // Functions
 void main() {
+
+	mat4 mMatrix = currentMatrices[gl_InstanceID];
+	mat4 mMatrixLast = lastMatrices[gl_InstanceID];
 
 	texCoordVS = invertUVs ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
 	

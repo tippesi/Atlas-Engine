@@ -34,9 +34,9 @@ namespace Atlas {
 
 		}
 
-		void PointLight::AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float scattering, float scatteringFactor) {
+		void PointLight::AddVolumetric(RenderResolution resolution, int32_t sampleCount, float scattering, float scatteringFactor) {
 
-			volumetric = new Volumetric(width, height, sampleCount);
+			volumetric = new Volumetric(resolution, sampleCount);
 
 		}
 

@@ -263,7 +263,6 @@ namespace Atlas {
 				
 				// Shade rays
 				{
-
 					hitShader->Bind();
 
 					hitShader->GetUniform("lightCount")->SetValue(int32_t(selectedLights.size()));

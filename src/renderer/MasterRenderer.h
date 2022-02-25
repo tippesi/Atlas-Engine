@@ -12,17 +12,19 @@
 #include "ShadowRenderer.h"
 #include "TerrainShadowRenderer.h"
 #include "DecalRenderer.h"
-#include "DirectionalVolumetricRenderer.h"
 #include "DirectionalLightRenderer.h"
 #include "PointLightRenderer.h"
+#include "IndirectLightRenderer.h"
 #include "TemporalAARenderer.h"
 #include "SkyboxRenderer.h"
 #include "AtmosphereRenderer.h"
 #include "PostProcessRenderer.h"
+#include "GBufferDownscaleRenderer.h"
 #include "TextRenderer.h"
 #include "DDGIRenderer.h"
 #include "SSAORenderer.h"
 #include "RTAORenderer.h"
+#include "VolumetricRenderer.h"
 
 namespace Atlas {
 
@@ -215,8 +217,6 @@ namespace Atlas {
 			Shader::Shader filterDiffuseShader;
 			Shader::Shader filterSpecularShader;
 
-			Shader::Shader downsampleDepth2x;
-
 			Shader::Uniform* rectangleProjectionMatrix = nullptr;
 			Shader::Uniform* rectangleOffset = nullptr;
 			Shader::Uniform* rectangleScale = nullptr;
@@ -245,14 +245,17 @@ namespace Atlas {
 			ShadowRenderer shadowRenderer;
 			TerrainShadowRenderer terrainShadowRenderer;
 			DecalRenderer decalRenderer;
-			DirectionalVolumetricRenderer directionalVolumetricRenderer;
 			DirectionalLightRenderer directionalLightRenderer;
+			IndirectLightRenderer indirectLightRenderer;
+
 			TemporalAARenderer taaRenderer;
 			SkyboxRenderer skyboxRenderer;
 			PostProcessRenderer postProcessRenderer;
+			GBufferDownscaleRenderer downscaleRenderer;
 			DDGIRenderer ddgiRenderer;
 			SSAORenderer ssaoRenderer;
 			RTAORenderer rtaoRenderer;
+			VolumetricRenderer volumetricRenderer;
 
 			std::vector<vec2> haltonSequence;
 			size_t haltonIndex = 0;

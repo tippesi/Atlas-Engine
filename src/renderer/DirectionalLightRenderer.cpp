@@ -49,27 +49,6 @@ namespace Atlas {
 				scene->sky.probe->filteredDiffuse.Bind(GL_TEXTURE11);
 			}
 
-			volumeMin->SetValue(vec3(0.0));
-			volumeMax->SetValue(vec3(0.0));
-
-			{
-				auto volume = scene->irradianceVolume;
-				auto [irradianceArray, momentsArray] = volume->internal.GetCurrentProbes();
-				if (volume && volume->enable) {
-					irradianceArray.Bind(GL_TEXTURE12);
-					momentsArray.Bind(GL_TEXTURE13);
-					volume->internal.probeStateBuffer.BindBase(1);
-					volumeMin->SetValue(volume->aabb.min);
-					volumeMax->SetValue(volume->aabb.max);
-					volumeProbeCount->SetValue(volume->probeCount);
-					volumeIrradianceRes->SetValue(volume->irrRes);
-					volumeMomentsRes->SetValue(volume->momRes);
-					shader.GetUniform("volumeBias")->SetValue(volume->bias);
-					shader.GetUniform("volumeGamma")->SetValue(volume->gamma);
-					shader.GetUniform("cellSize")->SetValue(volume->cellSize);
-				}
-			}
-
 			auto lights = scene->GetLights();
 
 			// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
@@ -86,11 +65,6 @@ namespace Atlas {
 				lightDirection->SetValue(direction);
 				lightColor->SetValue(directionalLight->color);
 				lightIntensity->SetValue(directionalLight->intensity);
-
-				if (light->GetVolumetric()) {
-					glViewport(0, 0, directionalLight->GetVolumetric()->map.width, directionalLight->GetVolumetric()->map.height);
-					directionalLight->GetVolumetric()->map.Bind(GL_TEXTURE7);
-				}
 
 				if (light->GetShadow()) {
 					auto distance = !light->GetShadow()->longRange ? light->GetShadow()->distance :
@@ -124,34 +98,6 @@ namespace Atlas {
 				}
 				else {
 					shadowDistance->SetValue(0.0f);
-				}
-
-				if (scene->fog && scene->fog->enable) {
-
-					auto& fog = scene->fog;
-
-					fogScale->SetValue(fog->scale);
-					fogDistanceScale->SetValue(fog->distanceScale);
-					fogHeight->SetValue(fog->height);
-					fogColor->SetValue(fog->color);
-					fogScatteringPower->SetValue(fog->scatteringPower);
-
-				}
-				else {
-
-					fogScale->SetValue(0.0f);
-					fogDistanceScale->SetValue(1.0f);
-					fogHeight->SetValue(1.0f);
-					fogScatteringPower->SetValue(1.0f);
-
-				}
-
-				if (scene->ssao && scene->ssao->enable) {
-					scene->ssao->map.Bind(GL_TEXTURE6);
-					shader.GetUniform("aoStrength")->SetValue(scene->ssao->strength);					
-				}
-				else {
-					shader.GetUniform("aoStrength")->SetValue(0.001f);
 				}
 
 				glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);

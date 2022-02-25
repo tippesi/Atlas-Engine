@@ -151,5 +151,6 @@ void main() {
 	
 	color = mix(vignetteColor, color, vignetteFactor);
 #endif
+	//color = vec3(texture(hdrTexture, fTexCoord).a);
 	
 }

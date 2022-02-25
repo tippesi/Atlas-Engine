@@ -52,6 +52,7 @@ namespace Atlas {
 
             bool matrixChanged = true;
             bool visible = true;
+            bool dontCull = false;
 
 			std::string name;
 

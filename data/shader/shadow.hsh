@@ -1,3 +1,5 @@
+#extension GL_EXT_texture_shadow_lod : require
+
 layout(binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 
 // Filtering based on http://the-witness.net/news/2013/09/shadow-mapping-summary-part-1/
@@ -7,10 +9,8 @@ float offsetLookup(vec2 flooredUV, float u, float v, float cascadeIndex,
 
 	vec2 uv = 0.5 * (flooredUV + vec2(u, v) * texelSize) + 0.5;
 
-	return textureGrad(cascadeMaps,
-		vec4(uv, cascadeIndex, depth + bias), 
-		vec2(0, 0),
-    	vec2(0, 0));
+	return textureLod(cascadeMaps,
+		vec4(uv, cascadeIndex, depth + bias), 0);
 
 }
 

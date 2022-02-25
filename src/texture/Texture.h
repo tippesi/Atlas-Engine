@@ -69,6 +69,15 @@ namespace Atlas {
 			void Unbind(uint32_t unit) const;
 
             /**
+             * Validates a texture.
+             * @return True, if the texture is considered valid, false otherwise
+             * @note The validity is checked by checking the width,
+             * height, channels and layers of the texture. No data is
+             * validated with this method.
+             */
+            bool IsValid() const;
+
+            /**
              * Returns the ID of the texture object.
              * @return The ID of the texture object.
              */

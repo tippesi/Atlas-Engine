@@ -9,8 +9,8 @@ namespace Atlas {
 
             blurFilter.CalculateBoxFilter(21);
 
-            volumetricShader.AddStage(AE_VERTEX_STAGE, "volumetric.vsh");
-            volumetricShader.AddStage(AE_FRAGMENT_STAGE, "volumetric.fsh");
+            volumetricShader.AddStage(AE_VERTEX_STAGE, "volumetric/volumetric.vsh");
+            volumetricShader.AddStage(AE_FRAGMENT_STAGE, "volumetric/volumetric.fsh");
 
             volumetricShader.Compile();
 
@@ -36,6 +36,8 @@ namespace Atlas {
 
 			auto lights = scene->GetLights();
 
+            ivec2 res = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
+
             for (auto& light : lights) {
 
                 auto volumetric = light->GetVolumetric();
@@ -45,17 +47,18 @@ namespace Atlas {
 
                 auto directionalLight = (Lighting::DirectionalLight*)light;
 
-                glViewport(0, 0, volumetric->map.width, volumetric->map.height);
 
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &volumetric->map);
+                glViewport(0, 0, res.x, res.y);
+
+                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &target->volumetricTexture);
 
                 vec3 direction = normalize(vec3(camera->viewMatrix * vec4(directionalLight->direction, 0.0f)));
 
                 volumetricShader.GetUniform("light.direction")->SetValue(direction);
                 volumetricShader.GetUniform("light.shadow.cascadeCount")->SetValue(shadow->componentCount);
                 volumetricShader.GetUniform("sampleCount")->SetValue(volumetric->sampleCount);
-                volumetricShader.GetUniform("framebufferResolution")->SetValue(vec2(volumetric->map.width, volumetric->map.height));
-                volumetricShader.GetUniform("intensity")->SetValue(volumetric->intensity);
+                volumetricShader.GetUniform("framebufferResolution")->SetValue(vec2(res));
+                volumetricShader.GetUniform("intensity")->SetValue(volumetric->intensity * light->intensity);
 
                 light->GetShadow()->maps.Bind(GL_TEXTURE1);
 
@@ -96,18 +99,19 @@ namespace Atlas {
 
                 if (light->type != AE_DIRECTIONAL_LIGHT || !volumetric || !shadow) continue;
 
-                glViewport(0, 0, volumetric->map.width, volumetric->map.height);
+                glViewport(0, 0, res.x, res.y);
 
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &volumetric->blurMap);
+                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &target->swapVolumetricTexture);
 
-                volumetric->map.Bind(GL_TEXTURE0);
-                bilateralBlurShader.GetUniform("blurDirection")->SetValue(vec2(1.0f / (float)volumetric->map.width, 0.0f));
+                target->volumetricTexture.Bind(GL_TEXTURE0);
+                bilateralBlurShader.GetUniform("blurDirection")->SetValue(vec2(1.0f / float(res.x), 0.0f));
+
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &volumetric->map);
+                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &target->volumetricTexture);
 
-                volumetric->blurMap.Bind(GL_TEXTURE0);
-                bilateralBlurShader.GetUniform("blurDirection")->SetValue(vec2(0.0f, 1.0f / (float)volumetric->map.height));
+                target->swapVolumetricTexture.Bind(GL_TEXTURE0);
+                bilateralBlurShader.GetUniform("blurDirection")->SetValue(vec2(0.0f, 1.0f / float(res.y)));
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
             }

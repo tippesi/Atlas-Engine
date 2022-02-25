@@ -35,9 +35,9 @@ namespace Atlas {
 
 		historyFramebuffer.Resize(width, height);
 
-		historyTexture = Texture::Texture2D(width, height, AE_RGB16F,
+		historyTexture = Texture::Texture2D(width, height, AE_RGBA16F,
 			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-		swapHistoryTexture = Texture::Texture2D(width, height, AE_RGB16F,
+		swapHistoryTexture = Texture::Texture2D(width, height, AE_RGBA16F,
 				GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 		historyFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &historyTexture);
@@ -45,6 +45,17 @@ namespace Atlas {
 		historyFramebuffer.Unbind();
 
 		postProcessTexture = Texture::Texture2D(width, height, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
+
+		SetSSAOResolution(FULL_RES);
+		SetVolumetricResolution(FULL_RES);
+
+		ivec2 halfRes = GetRelativeResolution(HALF_RES);
+		depthDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		normalDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+
+		ivec2 quaterRes = GetRelativeResolution(QUATER_RES);
+		depthDownsampled4xTexture = Texture::Texture2D(quaterRes.x, quaterRes.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		normalDownsampled4xTexture = Texture::Texture2D(quaterRes.x, quaterRes.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 	}
 
@@ -66,6 +77,17 @@ namespace Atlas {
 
 		this->width = width;
 		this->height = height;
+
+		SetSSAOResolution(ssaoResolution);
+		SetVolumetricResolution(volumetricResolution);
+
+		ivec2 halfRes = GetRelativeResolution(HALF_RES);
+		depthDownsampled2xTexture.Resize(halfRes.x, halfRes.y);
+		normalDownsampled2xTexture.Resize(halfRes.x, halfRes.y);
+
+		ivec2 quaterRes = GetRelativeResolution(QUATER_RES);
+		depthDownsampled4xTexture.Resize(quaterRes.x, quaterRes.y);
+		normalDownsampled4xTexture.Resize(quaterRes.x, quaterRes.y);
 
 	}
 
@@ -97,6 +119,70 @@ namespace Atlas {
 		historyFramebuffer.Unbind();
 
 		swap = !swap;
+
+	}
+
+	ivec2 RenderTarget::GetRelativeResolution(RenderResolution resolution) {
+
+		int32_t factor = 1;
+
+		switch (resolution) {
+		case HALF_RES: factor = 2; break;
+		case QUATER_RES: factor = 4; break;
+		default: break;
+		}
+
+		return ivec2(width / factor, height / factor);
+
+	}
+
+	void RenderTarget::SetSSAOResolution(RenderResolution resolution) {
+
+		auto res = GetRelativeResolution(resolution);
+
+		ssaoTexture = Texture::Texture2D(res.x, res.y, AE_R16F);
+		swapSsaoTexture = Texture::Texture2D(res.x, res.y, AE_R16F);
+
+	}
+
+	RenderResolution RenderTarget::GetSSAOResolution() {
+
+		return ssaoResolution;
+
+	}
+
+	void RenderTarget::SetVolumetricResolution(RenderResolution resolution) {
+
+		auto res = GetRelativeResolution(resolution);
+
+		volumetricTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
+		swapVolumetricTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
+
+	}
+
+	RenderResolution RenderTarget::GetVolumetricResolution() {
+
+		return volumetricResolution;
+
+	}
+
+	Texture::Texture2D& RenderTarget::GetDownsampledDepthTexture(RenderResolution resolution) {
+
+		switch (resolution) {
+		case HALF_RES: return depthDownsampled2xTexture;
+		case QUATER_RES: return depthDownsampled4xTexture;
+		default: return depthTexture;
+		}
+
+	}
+
+	Texture::Texture2D& RenderTarget::GetDownsampledNormalTexture(RenderResolution resolution) {
+
+		switch (resolution) {
+		case HALF_RES: return normalDownsampled2xTexture;
+		case QUATER_RES: return normalDownsampled4xTexture;
+		default: return normalTexture;
+		}
 
 	}
 

@@ -6,6 +6,12 @@
 
 namespace Atlas {
 
+	enum RenderResolution {
+		FULL_RES = 0,
+		HALF_RES,
+		QUATER_RES
+	};
+
 	class RenderTarget {
 
 	public:
@@ -46,6 +52,36 @@ namespace Atlas {
 		 */
 		void Swap();
 
+		/**
+		 * Returns the relative resolution based on the render target resolution
+		 * @param resolution The resolution "factor" for the relative resolution
+		 */
+		ivec2 GetRelativeResolution(RenderResolution resolution);
+
+		/*
+		 * Sets the render resolution for screen space ambient occlusion
+		 */
+		void SetSSAOResolution(RenderResolution resolution);
+
+		/*
+		 * Gets the render resolution for screen space ambient occlusion
+		 */
+		RenderResolution GetSSAOResolution();
+
+		/*
+		 * Sets the rende resolution for volumetric effetcs
+		 */
+		void SetVolumetricResolution(RenderResolution resolution);
+
+		/*
+		 * Gets the render resolution for volumetric effetcs
+		 */
+		RenderResolution GetVolumetricResolution();
+
+		Texture::Texture2D& GetDownsampledDepthTexture(RenderResolution resolution);
+
+		Texture::Texture2D& GetDownsampledNormalTexture(RenderResolution resolution);
+
 		Texture::Texture2D* GetHistory();
 
 		Texture::Texture2D* GetLastHistory();
@@ -61,8 +97,21 @@ namespace Atlas {
 
 		Texture::Texture2D postProcessTexture;
 
+		Texture::Texture2D ssaoTexture;
+		Texture::Texture2D swapSsaoTexture;
+
+		Texture::Texture2D volumetricTexture;
+		Texture::Texture2D swapVolumetricTexture;
+
 	private:
 		Texture::Texture2D depthTexture;
+		Texture::Texture2D normalTexture;
+
+		Texture::Texture2D depthDownsampled2xTexture;
+		Texture::Texture2D depthDownsampled4xTexture;
+
+		Texture::Texture2D normalDownsampled2xTexture;
+		Texture::Texture2D normalDownsampled4xTexture;
 
 		Texture::Texture2D velocityTexture;
 		Texture::Texture2D swapVelocityTexture;
@@ -72,6 +121,9 @@ namespace Atlas {
 
 		int32_t width = 0;
 		int32_t height = 0;
+
+		RenderResolution ssaoResolution;
+		RenderResolution volumetricResolution;
 
 		bool swap = false;
 

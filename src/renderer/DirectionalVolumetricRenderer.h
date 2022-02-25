@@ -9,7 +9,7 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		class DirectionalVolumetricRenderer : public Renderer{
+		class DirectionalVolumetricRenderer : public Renderer {
 
 		public:
 			DirectionalVolumetricRenderer();

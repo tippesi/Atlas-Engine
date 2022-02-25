@@ -21,36 +21,51 @@ namespace Atlas {
              * Constructs an ActoBatch object.
              * @param object The object of which the batch should be created.
              */
-            ActorBatch(S object);
+            ActorBatch(S object) : object(object) {}
 
             /**
              * Adds an actor to the batch
              * @param actor The actor to be added
              */
-            void Add(T actor);
+            inline void Add(T actor) {
+                actors.push_back(actor);
+            }
 
             /**
              * Removes an actor from the batch
              * @param actor The actor to be removed
              */
-            void Remove(T actor);
+            inline void Remove(T actor) {
+                for (auto iterator = actors.begin(); iterator != actors.end(); iterator++) {
+                    if (*iterator == actor) {
+                        actors.erase(iterator);
+                        return;
+                    }
+                }
+            }
 
             /**
              * Returns the number of actors in the batch.
              * @return An integer with the number of actors
              */
-            int32_t GetSize();
+            inline int32_t GetSize() {
+                return int32_t(actors.size());
+            }
 
             /**
              * Returns the object that was used to create the batch
              * @return The object that was used to create the batch
              */
-            S GetObject();
+            inline S GetObject() {
+                return object;
+            }
 
             /**
              * Removes all actors from the batch.
              */
-            void Clear();
+            inline void Clear() {
+                actors.clear();
+            }
 
             std::vector<T> actors;
 
@@ -58,53 +73,6 @@ namespace Atlas {
             const S object;
 
         };
-
-        template <class S, class T>
-        ActorBatch<S, T>::ActorBatch(S object) : object(object) {
-
-
-
-        }
-
-        template <class S, class T>
-        void ActorBatch<S, T>::Add(T actor) {
-
-            actors.push_back(actor);
-
-        }
-
-        template <class S, class T>
-        void ActorBatch<S, T>::Remove(T actor) {
-
-            for (auto iterator = actors.begin(); iterator != actors.end(); iterator++) {
-                if (*iterator == actor) {
-                    actors.erase(iterator);
-                    return;
-                }
-            }
-
-        }
-
-        template <class S, class T>
-        int32_t ActorBatch<S, T>::GetSize() {
-
-            return (int32_t)actors.size();
-
-        }
-
-        template <class S, class T>
-        S ActorBatch<S, T>::GetObject() {
-
-            return object;
-
-        }
-
-        template <class S, class T>
-        void ActorBatch<S, T>::Clear() {
-
-            actors.clear();
-
-        }
 
     }
 

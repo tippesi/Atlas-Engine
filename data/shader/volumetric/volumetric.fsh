@@ -1,5 +1,9 @@
-#include <structures>
-#include <common/convert.hsh>
+#extension GL_EXT_texture_shadow_lod : require
+
+#include <../structures>
+#include <../common/convert.hsh>
+#include <../common/utility.hsh>
+#include <fog.hsh>
 
 in vec2 fTexCoord;
 
@@ -10,37 +14,28 @@ uniform Light light;
 uniform int sampleCount;
 uniform vec2 framebufferResolution;
 uniform float intensity;
+uniform mat4 ivMatrix;
 
-out float foginess;
+out vec3 fog;
 
-float ComputeVolumetric(vec3 fragPos, vec2 texCoords);
+vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords);
 
 void main() {
 
-    float depth = textureLod(depthTexture, fTexCoord, 0).r;
+    float depth = textureLod(depthTexture, fTexCoord, 0.0).r;
 
     vec3 fragPos = ConvertDepthToViewSpace(depth, fTexCoord);
 
-    foginess = ComputeVolumetric(fragPos, fTexCoord);
+    fog = ComputeVolumetric(fragPos, fTexCoord);
 
 }
-
-/*
-// Henyey-Greenstein phase function https://www.astro.umd.edu/~jph/HG_note.pdf
-float ComputeScattering(float lightDotView) {
-    // Range [-1;1]
-    float g = scattering;
-    float gSquared = g * g;
-    float result = 1.0 -  gSquared;
-    result /= (4.0 * 3.14 * pow(1.0 + gSquared - (2.0 * g) * lightDotView, 1.5));
-    return result;
-}
-*/
 
 const float ditherPattern[16] = float[](0.0, 0.5, 0.125, 0.625, 0.75, 0.22, 0.875, 0.375,
 		0.1875, 0.6875, 0.0625, 0.5625, 0.9375, 0.4375, 0.8125, 0.3125);
 
-float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
+vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
+
+    vec3 viewPosition = vec3(ivMatrix * vec4(fragPos, 1.0));
 
     // We compute this in view space
     vec3 rayVector = fragPos;
@@ -49,7 +44,7 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
     float stepLength = rayLength / float(sampleCount);
     vec3 stepVector = rayDirection * stepLength;
  
-    float foginess = 0.0;
+    vec3 foginess = vec3(0.0);
 	
 	texCoords = (0.5 * texCoords + 0.5) * framebufferResolution;
 	
@@ -65,11 +60,13 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 		float distance = -currentPosition.z;
 		
 		int cascadeIndex = 0;
+        
         cascadeIndex = distance >= light.shadow.cascades[0].distance ? 1 : cascadeIndex;
         cascadeIndex = distance >= light.shadow.cascades[1].distance ? 2 : cascadeIndex;
         cascadeIndex = distance >= light.shadow.cascades[2].distance ? 3 : cascadeIndex;
         cascadeIndex = distance >= light.shadow.cascades[3].distance ? 4 : cascadeIndex;
         cascadeIndex = distance >= light.shadow.cascades[4].distance ? 5 : cascadeIndex;
+        
         cascadeIndex = min(light.shadow.cascadeCount - 1, cascadeIndex);
 
         if (lastCascadeIndex != cascadeIndex) {
@@ -88,19 +85,20 @@ float ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 
         cascadeSpace.xyz = cascadeSpace.xyz * 0.5 + 0.5;
 
-        float shadowValue = textureGrad(cascadeMaps, 
-            vec4(cascadeSpace.xy, cascadeIndex, cascadeSpace.z), 
-            vec2(0, 0),
-    	    vec2(0, 0));
-        foginess += shadowValue;
+        float shadowValue = textureLod(cascadeMaps, 
+            vec4(cascadeSpace.xy, cascadeIndex, cascadeSpace.z), 0);
+
+        vec3 worldPosition = vec3(ivMatrix * vec4(currentPosition, 1.0));
+        
+        float fogAmount = fogEnabled ? (1.0 - saturate(ComputeVolumetricFog(viewPosition, worldPosition))) : 1.0;
+        float NdotL = dot(rayDirection, light.direction);
+
+        foginess += shadowValue * fogAmount * ComputeScattering(NdotL) * light.color;
 
         currentPosition += stepVector;
 
     }
 
-    float shadowDistance = light.shadow.cascades[light.shadow.cascadeCount - 1].distance;
-    float scale = min(1.0, rayLength / shadowDistance) * intensity;
-
-    return foginess / float(sampleCount) * scale;
+    return foginess / float(sampleCount) * intensity;
 
 }

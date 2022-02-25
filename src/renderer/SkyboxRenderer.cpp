@@ -63,26 +63,6 @@ namespace Atlas {
 			jitterLast->SetValue(camera->GetLastJitter());
 			jitterCurrent->SetValue(camera->GetJitter());
 
-			if (scene->fog && scene->fog->enable) {
-
-				auto& fog = scene->fog;
-
-				fogScale->SetValue(fog->scale);
-				fogDistanceScale->SetValue(fog->distanceScale);
-				fogHeight->SetValue(fog->height);
-				fogColor->SetValue(fog->color);
-				fogScatteringPower->SetValue(fog->scatteringPower);
-
-			}
-			else {
-
-				fogScale->SetValue(0.0f);
-				fogDistanceScale->SetValue(1.0f);
-				fogHeight->SetValue(1.0f);
-				fogScatteringPower->SetValue(1.0f);
-
-			}
-
 			vertexArray.Bind();
 
 			scene->sky.probe->cubemap.Bind(GL_TEXTURE0);

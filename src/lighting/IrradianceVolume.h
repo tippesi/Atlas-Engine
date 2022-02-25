@@ -85,7 +85,11 @@ namespace Atlas {
 
 			float gamma = 5.0f;
 
+			float strength = 1.0f;
+
 			bool enable = true;
+			bool update = true;
+			bool sampleEmissives = false;
 
 			InternalIrradianceVolume internal;
 

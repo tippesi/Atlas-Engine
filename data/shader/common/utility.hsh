@@ -73,7 +73,19 @@ float max3(vec3 value) {
 
 }
 
+int max3(ivec3 value) {
+
+	return max(value.x, max(value.y, value.z));
+
+}
+
 float max4(vec4 value) {
+
+	return max(value.x, max(value.y, max(value.z, value.w)));
+
+}
+
+int max4(ivec4 value) {
 
 	return max(value.x, max(value.y, max(value.z, value.w)));
 

@@ -1,32 +1,32 @@
-#ifndef AE_SSAORENDERER_H
-#define AE_SSAORENDERER_H
+#ifndef AE_VOLUMETRICRENDERER_H
+#define AE_VOLUMETRICRENDERER_H
 
 #include "../System.h"
+#include "../Filter.h"
 #include "Renderer.h"
 
 namespace Atlas {
 
 	namespace Renderer {
 
-		class SSAORenderer : public Renderer {
+		class VolumetricRenderer : public Renderer {
 
 		public:
-			SSAORenderer();
+			VolumetricRenderer();
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 		private:
-			void InvalidateCounterBuffer();
-
-			Buffer::Buffer atomicCounterBuffer;
-
 			Framebuffer framebuffer;
+
 			Filter blurFilter;
 
-			Shader::Shader ssaoShader;
-
+			Shader::Shader volumetricShader;
+			
 			Shader::Shader horizontalBlurShader;
 			Shader::Shader verticalBlurShader;
+
+			Shader::Shader volumetricResolveShader;
 
 		};
 

@@ -112,22 +112,22 @@ namespace Atlas {
 			staticMeshOctree.QueryFrustum(staticActors,
 				insideStaticActors, frustum);
 
-			for (auto& actor : movableActors) {
-				if (actor->visible && frustum.Intersects(actor->aabb))
+			for (auto actor : movableActors) {
+				if (actor->dontCull || actor->visible && frustum.Intersects(actor->aabb))
 					renderList.Add(actor);
 			}
 
-			for (auto& actor : insideMovableActors)
+			for (auto actor : insideMovableActors)
 				if (actor->visible)
 					renderList.Add(actor);
 
-			for (auto& actor : staticActors) {
-				if (actor->visible && frustum.Intersects(actor->aabb)) {
+			for (auto actor : staticActors) {
+				if (actor->dontCull || actor->visible && frustum.Intersects(actor->aabb)) {
 					renderList.Add(actor);
 				}
 			}
 
-			for (auto& actor : insideStaticActors)
+			for (auto actor : insideStaticActors)
 				if (actor->visible)
 					renderList.Add(actor);
 		

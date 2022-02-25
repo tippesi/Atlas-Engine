@@ -38,6 +38,8 @@ namespace Atlas {
 			Texture::Texture2D rippleTexture;
 			Texture::Texture2D foamTexture;
 
+			bool enable = true;
+
 			vec3 translation = vec3(0.0f);
 
 			float displacementScale = 4.0f;

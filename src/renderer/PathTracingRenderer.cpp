@@ -104,6 +104,8 @@ namespace Atlas {
 
 						resolutionRayHitUniform->SetValue(resolution);
 						seedRayHitUniform->SetValue(float(rand()) / float(RAND_MAX));
+
+						rayHitShader.GetUniform("exposure")->SetValue(camera->exposure);
 					}
 					);
 			}

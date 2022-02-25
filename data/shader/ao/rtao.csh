@@ -1,11 +1,11 @@
-#include <raytracer/structures.hsh>
-#include <raytracer/common.hsh>
-#include <raytracer/buffers.hsh>
-#include <raytracer/tracing.hsh>
-#include <raytracer/bvh.hsh>
-#include <common/random.hsh>
-#include <common/flatten.hsh>
-#include <common/convert.hsh>
+#include <../raytracer/structures.hsh>
+#include <../raytracer/common.hsh>
+#include <../raytracer/buffers.hsh>
+#include <../raytracer/tracing.hsh>
+#include <../raytracer/bvh.hsh>
+#include <../common/random.hsh>
+#include <../common/flatten.hsh>
+#include <../common/convert.hsh>
 
 layout (local_size_x = 8, local_size_y = 4) in;
 
@@ -83,11 +83,12 @@ void main() {
 
         mat3 TBN = mat3(tangent, bitangent, worldNorm);
 
-        for (uint i = 0; i < 4; i++) {
-            float fibIdx = round(float(12) * random(vec3(texCoord, float(i))));
+        const int sampleCount = 32;
+        for (uint i = 0; i < sampleCount; i++) {
+            float fibIdx = round(float(sampleCount) * random(vec3(texCoord, float(i))));
             Ray ray;
             ray.origin = worldPos + worldNorm * EPSILON;
-            ray.direction = normalize(worldNorm + normalize(TBN * fibonacciSphere(fibIdx, float(12))));
+            ray.direction = normalize(worldNorm + normalize(TBN * fibonacciSphere(fibIdx, float(sampleCount))));
             ray.inverseDirection = 1.0 / ray.direction;
 
             ray.hitID = -1;
@@ -95,12 +96,12 @@ void main() {
 
             HitClosest(ray, 0.0, radius);
 
-            ao += ray.hitDistance < radius ? saturate(ray.hitDistance / radius) : 1.0;
+            ao += ray.hitID > 0 ? saturate(radius - sqr(ray.hitDistance)) : 0.0;
         }
 
-        ao /= float(4);
+        float result = pow(1.0 - (ao / float(sampleCount)), 2.0);
 
-        imageStore(rtaoImage, pixel, vec4(ao, 0.0, 0.0, 0.0));
+        imageStore(rtaoImage, pixel, vec4(result, 0.0, 0.0, 0.0));
 	}
 
 }

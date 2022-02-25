@@ -34,6 +34,8 @@ namespace Atlas {
 
 		void Ocean::Update(Camera* camera, float deltaTime) {
 
+			if (!enable) return;
+
 			simulation.choppinessScale = choppynessScale;
 			simulation.displacementScale = displacementScale;
 			simulation.tiling = tiling;

@@ -34,6 +34,8 @@ uniform uint inactiveRayCount = 32;
 
 uniform float volumeGamma = 5.0;
 
+uniform bool volumeEnabled;
+
 struct RayHit {
 	vec3 direction;
 	vec3 radiance;
@@ -108,11 +110,10 @@ vec3 GetProbeCoord(ivec3 probeIndex, vec2 octCoord, vec2 probeRes, vec2 texelSiz
 
 }
 
-// This function is for compute shaders
-vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N) {
+vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 
 	float minAxialDistance = min3(cellSize);
-	vec3 biasedP = P + (0.7 * N - 0.3 * V) * (0.75 * minAxialDistance) * volumeBias;
+	vec3 biasedP = P + (0.7 * geometryNormal - 0.3 * V) * (0.75 * minAxialDistance) * volumeBias;
 
 	vec2 irrRes = vec2(volumeIrradianceRes + 2);
 	vec2 totalResolution = vec2(volumeProbeCount.xz) * irrRes;
@@ -153,7 +154,7 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N) {
 
 		// Should be used when the chebyshev test is weighted more
 		//float weight = sqr((dot(L, geometryNormal) + 1.0) * 0.5) + 0.2;
-		float weight = saturate(dot(L, N));
+		float weight = saturate(dot(L, geometryNormal));
 
 		vec2 momOctCoord = UnitVectorToOctahedron(biasedProbeToPosition);
 		vec3 momCoord = GetProbeCoord(gridCell, momOctCoord, momRes, momTexelSize, volumeMomentsRes);
@@ -166,7 +167,7 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N) {
 		if (biasedDistToProbe > mean) {			
 			float variance = abs(mean * mean - mean2);
 			float visibility = variance / (variance + sqr(biasedDistToProbe - mean));
-			weight *= max(0.05, visibility * visibility * visibility);
+			weight *= max(0.0, visibility * visibility * visibility);
 		}
 
 		weight = max(0.000001, weight);
@@ -187,6 +188,11 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N) {
 
 	if (sumWeight == 0.0) return vec4(0.0, 0.0, 0.0, 0.0);
 	return vec4(mix(sqr(sumIrradianceCheb / sumWeightCheb),
-		sqr(sumIrradiance / sumWeight), saturate(sqrt(sumWeight))), 0.0);
+		sqr(sumIrradiance / sumWeight), 1.0), 0.0);
 
+}
+
+vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N) {
+	// Use "normal" normal as geometry normal 
+	return GetLocalIrradiance(P, V, N, N);
 }

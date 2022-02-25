@@ -82,9 +82,9 @@ namespace Atlas {
 
         }
 
-        void DirectionalLight::AddVolumetric(int32_t width, int32_t height, int32_t sampleCount, float intensity) {
+        void DirectionalLight::AddVolumetric(int32_t sampleCount, float intensity) {
 
-            volumetric = new Volumetric(width, height, sampleCount, intensity);
+            volumetric = new Volumetric(sampleCount, intensity);
 
         }
 

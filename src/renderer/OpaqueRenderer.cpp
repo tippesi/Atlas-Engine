@@ -96,6 +96,8 @@ namespace Atlas {
 					}
 
 					mesh->Bind();
+					buffers.currentMatrices->BindBase(2);
+					buffers.lastMatrices->BindBase(3);
 
 					if (!mesh->cullBackFaces && backFaceCulling) {
 						glDisable(GL_CULL_FACE);
@@ -235,7 +237,16 @@ namespace Atlas {
 						}
 
 						auto mesh = actorBatch->GetObject();
+						auto key = renderList.actorBatchBuffers.find(mesh);
+
+						if (key == renderList.actorBatchBuffers.end())
+							continue;
+
+						auto buffers = key->second;
+
 						mesh->Bind();
+						buffers.currentMatrices->BindBase(2);
+						buffers.lastMatrices->BindBase(3);
 
 						invertUVsUniform->SetValue(mesh->invertUVs);
 

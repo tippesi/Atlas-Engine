@@ -22,7 +22,7 @@ namespace Atlas {
 
 		void OceanRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
-			if (!scene->ocean)
+			if (!scene->ocean || !scene->ocean->enable)
 				return;
 
 			auto ocean = scene->ocean;
@@ -51,8 +51,9 @@ namespace Atlas {
 			lightAmbient->SetValue(0.0f);
 
 			if (sun->GetVolumetric()) {
-				glViewport(0, 0, sun->GetVolumetric()->map.width, sun->GetVolumetric()->map.height);
-				sun->GetVolumetric()->map.Bind(GL_TEXTURE7);
+				ivec2 res = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
+				glViewport(0, 0, res.x, res.x);
+				target->volumetricTexture.Bind(GL_TEXTURE7);
 				glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
 			}			
 
@@ -166,26 +167,6 @@ namespace Atlas {
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			auto renderList = ocean->GetRenderList();
-
-			if (scene->fog && scene->fog->enable) {
-
-				auto& fog = scene->fog;
-
-				fogScale->SetValue(fog->scale);
-				fogDistanceScale->SetValue(fog->distanceScale);
-				fogHeight->SetValue(fog->height);
-				fogColor->SetValue(fog->color);
-				fogScatteringPower->SetValue(fog->scatteringPower);
-
-			}
-			else {
-
-				fogScale->SetValue(0.0f);
-				fogDistanceScale->SetValue(1.0f);
-				fogHeight->SetValue(1.0f);
-				fogScatteringPower->SetValue(1.0f);
-
-			}
 
 #ifdef AE_API_GL
 			if (ocean->wireframe)

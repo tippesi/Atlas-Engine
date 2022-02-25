@@ -52,11 +52,13 @@ namespace Atlas {
 					light->GetShadow()->componentCount - 1 : 
 					light->GetShadow()->componentCount;
 
+				bool isDirectionalLight = false;
 				vec3 lightLocation;
 
 				if (light->type == AE_DIRECTIONAL_LIGHT) {
 					auto directionLight = static_cast<Lighting::DirectionalLight*>(light);
 					lightLocation = 1000000.0f * -normalize(directionLight->direction);
+					isDirectionalLight = true;
 				}
 				else if (light->type == AE_POINT_LIGHT) {
 					auto pointLight = static_cast<Lighting::PointLight*>(light);
@@ -118,6 +120,7 @@ namespace Atlas {
 							auto actorCount = buffers.currentMatrices->GetElementCount();
 
 							mesh->Bind();
+							buffers.currentMatrices->BindBase(2);
 
 							if (!mesh->cullBackFaces && backFaceCulling) {
 								glDisable(GL_CULL_FACE);

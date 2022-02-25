@@ -61,14 +61,13 @@ namespace Atlas {
 
 					auto actorCount = buffer->GetElementCount();
 
-					vertexArray.AddInstancedComponent(1, buffer);
-
 					mesh->impostor->baseColorTexture.Bind(GL_TEXTURE0);
 					mesh->impostor->roughnessMetalnessAoTexture.Bind(GL_TEXTURE1);
 					mesh->impostor->normalTexture.Bind(GL_TEXTURE2);
 
 					// Base 0 is used by the materials
 					mesh->impostor->viewPlaneBuffer.BindBase(1);
+					buffer->BindBase(2);
 
 					center->SetValue(mesh->impostor->center);
 					radius->SetValue(mesh->impostor->radius);

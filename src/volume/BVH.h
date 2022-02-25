@@ -115,7 +115,7 @@ namespace Atlas {
 		void BVHNode<T>::BuildSAH(std::vector<BVHNode<T>*>& nodes, size_t offset, size_t count, std::vector<AABB>& aabbs,
 			std::vector<T>& data, int32_t& nodeCount, int32_t depth) {
 
-			const float binCount = 64.0f;
+			const float binCount = 128.0f;
 
 			this->depth = depth;
 
@@ -131,7 +131,7 @@ namespace Atlas {
 			aabb = AABB(min, max);
 
 			// Create leaf node
-			if (count <= 1) {
+			if (count <= 4) {
 				dataOffset = (int32_t)offset;
 				dataCount = (int32_t)count;
 				return;

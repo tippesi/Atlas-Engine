@@ -85,6 +85,8 @@ namespace Atlas {
 			bool castShadow = true;
 			bool vegetation = false;
 
+			int32_t allowedShadowCascades = 6;
+
 			float impostorDistance = 300.0f;
 			float impostorShadowDistance = 100.0f;
 

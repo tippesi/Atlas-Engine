@@ -76,7 +76,7 @@ vec3 EvaluateHit(inout Ray ray) {
 	radiance += EvaluateDirectLight(surface);
 
 	// Need to sample the volume later for infinite bounces:
-	vec3 indirect =  2.0 * EvaluateIndirectDiffuseBRDF(surface) *
+	vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) *
 		GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
 	radiance += IsInsideVolume(surface.P) ? indirect : vec3(0.0);
 
