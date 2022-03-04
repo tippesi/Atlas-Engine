@@ -19,14 +19,11 @@ namespace Atlas {
 
 				indirectDispatchBuffer = Buffer::Buffer(AE_DISPATCH_INDIRECT_BUFFER, 3 *
 					sizeof(uint32_t), 0);
-				indirectSSBOBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, 3 *
-					sizeof(uint32_t), 0);
 				counterBuffer0 = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
 					sizeof(uint32_t), 0);
 				counterBuffer1 = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
 					sizeof(uint32_t), 0);
 
-				indirectSSBOBuffer.SetSize(1);
 				indirectDispatchBuffer.SetSize(1);
 				counterBuffer0.SetSize(1);
 				counterBuffer1.SetSize(1);
@@ -237,16 +234,14 @@ namespace Atlas {
 						counterBuffer1.BindBase(0);
 					}
 
-					indirectSSBOBuffer.BindBase(4);
+					indirectDispatchBuffer.BindBaseAs(AE_SHADER_STORAGE_BUFFER, 4);
 					traceDispatchShader.Bind();
 
 					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 					glDispatchCompute(1, 1, 1);
-
-					indirectDispatchBuffer.Copy(&indirectSSBOBuffer, 0, 0, 3 * sizeof(uint32_t));
-					indirectDispatchBuffer.Bind();
 				}
 
+				indirectDispatchBuffer.Bind();
 				rayBuffer.BindBase(2);
 				rayPayloadBuffer.BindBase(3);
 				
@@ -257,7 +252,7 @@ namespace Atlas {
 					traceClosestShader.GetUniform("rayBufferOffset")->SetValue(uint32_t(0));
 					traceClosestShader.GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
 
-					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+					glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 					glDispatchComputeIndirect(0);
 				}		
 				

@@ -1,4 +1,5 @@
 #include <terrainMaterial.hsh>
+#include <../common/utility.hsh>
 
 layout (location = 0) out vec3 baseColorFS;
 layout (location = 1) out vec3 normalFS;
@@ -8,7 +9,7 @@ layout (location = 4) out uint materialIdxFS;
 layout (location = 5) out vec2 velocityFS;
 
 layout (binding = 1) uniform sampler2D normalMap;
-
+layout (binding = 2) uniform usampler2D splatMap;
 layout (binding = 3) uniform sampler2DArray baseColorMaps;
 layout (binding = 4) uniform sampler2DArray roughnessMaps;
 layout (binding = 5) uniform sampler2DArray aoMaps;
@@ -28,21 +29,18 @@ uniform mat4 vMatrix;
 uniform float normalTexelSize;
 uniform float normalResFactor;
 uniform float tileScale;
+uniform float patchSize;
+uniform float nodeSideLength;
 
 uniform vec2 jitterLast;
 uniform vec2 jitterCurrent;
 
-vec3 SampleBaseColor(vec2 off) {
+vec3 SampleBaseColor(vec2 off, uvec4 indices) {
 	
-	if (materialIndicesTE.x == materialIndicesTE.y && 
-		materialIndicesTE.x == materialIndicesTE.z &&
-		materialIndicesTE.x == materialIndicesTE.w)
-		return texture(baseColorMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.x))).rgb;
-
-	vec3 q00 = texture(baseColorMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.x))).rgb;
-	vec3 q10 = texture(baseColorMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.y))).rgb;
-	vec3 q01 = texture(baseColorMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.z))).rgb;
-	vec3 q11 = texture(baseColorMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.w))).rgb;
+	vec3 q00 = texture(baseColorMaps, vec3(materialTexCoords / 4.0, float(indices.x))).rgb;
+	vec3 q10 = indices.y != indices.x ? texture(baseColorMaps, vec3(materialTexCoords / 4.0, float(indices.y))).rgb : q00;
+	vec3 q01 = indices.z != indices.x ? texture(baseColorMaps, vec3(materialTexCoords / 4.0, float(indices.z))).rgb : q00;
+	vec3 q11 = indices.w != indices.x ? texture(baseColorMaps, vec3(materialTexCoords / 4.0, float(indices.w))).rgb : q00;
 	
 	// Interpolate samples horizontally
 	vec3 h0 = mix(q00, q10, off.x);
@@ -53,17 +51,12 @@ vec3 SampleBaseColor(vec2 off) {
 	
 }
 
-float SampleRoughness(vec2 off) {
+float SampleRoughness(vec2 off, uvec4 indices) {
 	
-	if (materialIndicesTE.x == materialIndicesTE.y && 
-		materialIndicesTE.x == materialIndicesTE.z &&
-		materialIndicesTE.x == materialIndicesTE.w)
-		return texture(roughnessMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.x))).r;
-
-	float q00 = texture(roughnessMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.x))).r;
-	float q10 = texture(roughnessMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.y))).r;
-	float q01 = texture(roughnessMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.z))).r;
-	float q11 = texture(roughnessMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.w))).r;
+	float q00 = texture(roughnessMaps, vec3(materialTexCoords / 4.0, float(indices.x))).r;
+	float q10 = texture(roughnessMaps, vec3(materialTexCoords / 4.0, float(indices.y))).r;
+	float q01 = texture(roughnessMaps, vec3(materialTexCoords / 4.0, float(indices.z))).r;
+	float q11 = texture(roughnessMaps, vec3(materialTexCoords / 4.0, float(indices.w))).r;
 	
 	// Interpolate samples horizontally
 	float h0 = mix(q00, q10, off.x);
@@ -74,17 +67,13 @@ float SampleRoughness(vec2 off) {
 	
 }
 
-float SampleAo(vec2 off) {
+float SampleAo(vec2 off, uvec4 indices) {
 	
-	if (materialIndicesTE.x == materialIndicesTE.y && 
-		materialIndicesTE.x == materialIndicesTE.z &&
-		materialIndicesTE.x == materialIndicesTE.w)
-		return texture(aoMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.x))).r;
+	float q00 = texture(aoMaps, vec3(materialTexCoords / 4.0, float(indices.x))).r;
 
-	float q00 = texture(aoMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.x))).r;
-	float q10 = texture(aoMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.y))).r;
-	float q01 = texture(aoMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.z))).r;
-	float q11 = texture(aoMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.w))).r;
+	float q10 = texture(aoMaps, vec3(materialTexCoords / 4.0, float(indices.y))).r;
+	float q01 = texture(aoMaps, vec3(materialTexCoords / 4.0, float(indices.z))).r;
+	float q11 = texture(aoMaps, vec3(materialTexCoords / 4.0, float(indices.w))).r;
 	
 	// Interpolate samples horizontally
 	float h0 = mix(q00, q10, off.x);
@@ -95,17 +84,12 @@ float SampleAo(vec2 off) {
 	
 }
 
-vec3 SampleNormal(vec2 off) {
+vec3 SampleNormal(vec2 off, uvec4 indices) {
 
-	if (materialIndicesTE.x == materialIndicesTE.y && 
-		materialIndicesTE.x == materialIndicesTE.z &&
-		materialIndicesTE.x == materialIndicesTE.w)
-		return texture(normalMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.x))).rgb;
-	
-	vec3 q00 = texture(normalMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.x))).rgb;
-	vec3 q10 = texture(normalMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.y))).rgb;
-	vec3 q01 = texture(normalMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.z))).rgb;
-	vec3 q11 = texture(normalMaps, vec3(materialTexCoords / 4.0, float(materialIndicesTE.w))).rgb;
+	vec3 q00 = texture(normalMaps, vec3(materialTexCoords / 4.0, float(indices.x))).rgb;
+	vec3 q10 = texture(normalMaps, vec3(materialTexCoords / 4.0, float(indices.y))).rgb;
+	vec3 q01 = texture(normalMaps, vec3(materialTexCoords / 4.0, float(indices.z))).rgb;
+	vec3 q11 = texture(normalMaps, vec3(materialTexCoords / 4.0, float(indices.w))).rgb;
 	
 	// Interpolate samples horizontally
 	vec3 h0 = mix(q00, q10, off.x);
@@ -128,13 +112,31 @@ float Interpolate(float q00, float q10, float q01, float q11, vec2 off) {
 }
 
 void main() {
-	
+
+	uvec4 indices;
+	vec2 coords = materialTexCoords;
+
 	vec2 tex = materialTexCoords / tileScale;	
-	vec2 off = (tex) - floor(tex);
+	vec2 off = tex - floor(tex);
+
+	off = vec2(off.x + (0.5 * sin(coords.y)
+		+ 0.7 * cos(coords.y)) / tileScale,
+		off.y + (0.4 * cos(coords.x * 2.0) + 0.6 * cos(coords.x)) / tileScale);
+		
+	vec2 splatOffset = floor(off);
+	off = off - floor(off);
+
+	float texel = 1.0 / (8.0 * patchSize);
+	tex = (floor(coords / nodeSideLength / texel) + splatOffset) * texel;
+	indices.x = textureLod(splatMap, tex, 0).r;
+	indices.y = textureLod(splatMap, tex + vec2(texel, 0.0), 0).r;
+	indices.z = textureLod(splatMap, tex + vec2(0.0, texel), 0).r;
+	indices.w = textureLod(splatMap, tex + vec2(texel, texel), 0).r;
 	
-	baseColorFS = SampleBaseColor(off);
 	
-	uvec4 indices = materialIndicesTE;
+	//indices = materialIndicesTE;
+
+	baseColorFS = SampleBaseColor(off, indices);
 
 	float roughness = Interpolate(
 			materials[indices.x].roughness,
@@ -178,7 +180,7 @@ void main() {
 			materials[indices.w].normalScale,
 			off
 		);
-	normalFS = SampleNormal(off);
+	normalFS = SampleNormal(off, indices);
 	vec3 tang = vec3(1.0, 0.0, 0.0);
 	tang.y = -((norm.x*tang.x) / norm.y) - ((norm.z*tang.z) / norm.y);
 	tang = normalize(tang);
@@ -186,8 +188,8 @@ void main() {
 	mat3 tbn = mat3(tang, bitang, norm);
 	normalFS = normalize(tbn * (2.0 * normalFS - 1.0));
 	normalFS = mix(norm, normalFS, normalScale);
-	ao *= SampleAo(off);
-	roughness *= SampleRoughness(off);
+	ao *= SampleAo(off, indices);
+	roughness *= SampleRoughness(off, indices);
 #else
 	normalFS = norm;
 #endif	

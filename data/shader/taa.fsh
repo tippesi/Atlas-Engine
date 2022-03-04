@@ -20,7 +20,7 @@ uniform float clipCorrectionThreshold = 0.0001;
 uniform float clipCorrectionFactor = 0.1;
 
 uniform float minVelocityBlend = 0.05;
-uniform float maxVelocityBlend = 0.5;
+uniform float maxVelocityBlend = 0.7;
 
 #define TAA_YCOCG
 #define TAA_CLIP // Use clip instead of clamping for better ghosting prevention, introduces more flickering
@@ -243,8 +243,8 @@ vec3 SampleCurrent() {
         vec3 color = InverseTonemap(YCoCgToRGB(neighbourhood[i]));
         vec2 offset = vec2(offsets[i]);
 
-        float weight = exp(-2.29 * (offset.x * offset.x + offset.y * offset.y));
-        //float weight = FilterBlackmanHarris(offset.x) * FilterBlackmanHarris(offset.y);
+        //float weight = exp(-2.29 * (offset.x * offset.x + offset.y * offset.y));
+        float weight = FilterBlackmanHarris(offset.x) * FilterBlackmanHarris(offset.y);
 
         filtered += color * weight;
         sumWeights += weight;
@@ -336,8 +336,6 @@ void main() {
     float adjClipBlend = saturate(clipBlend);
     clipCorrection = clipBlend > 0.97 ? 1.0 : clipCorrection + 0.005;
     historyColor = mix(historyColor, currentColor, adjClipBlend);
-    //historyColor = clip_aabb(neighbourhoodMin, neighbourhoodMax,
-      //  historyColor, average);
 #else
     historyColor = clamp(historyColor, neighbourhoodMin, neighbourhoodMax);
 #endif

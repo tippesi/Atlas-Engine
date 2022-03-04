@@ -1,4 +1,4 @@
-#include <structures.hsh>
+#include <../common/indirectcommand.hsh>
 #include <buffers.hsh>
 
 layout (local_size_x = 1) in;

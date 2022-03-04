@@ -71,6 +71,10 @@ namespace Atlas {
 
                 blurFilter.GetLinearized(&kernelWeights, &kernelOffsets);
 
+                auto mean = (kernelWeights.size() - 1) / 2;
+                kernelWeights = std::vector<float>(kernelWeights.begin() + mean, kernelWeights.end());
+                kernelOffsets = std::vector<float>(kernelOffsets.begin() + mean, kernelOffsets.end());
+
                 bilateralBlurShader.GetUniform("weight")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
                 bilateralBlurShader.GetUniform("offset")->SetValue(kernelOffsets.data(), (int32_t)kernelOffsets.size());
 

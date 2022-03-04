@@ -107,6 +107,8 @@ namespace Atlas {
 
 		for (auto& [mesh, actorBatch] : actorBatches) {
 			auto hasImpostor = mesh->impostor != nullptr;
+			auto needsHistory = mesh->mobility != AE_STATIONARY_MESH
+				&& type != AE_SHADOW_CONFIG;
 
 			if (!actorBatch->GetSize())
 				continue;
@@ -134,7 +136,7 @@ namespace Atlas {
 
 					if (distance < sqdDistance || !hasImpostor) {
 						currentActorMatrices.push_back(actor->globalMatrix);
-						lastActorMatrices.push_back(actor->lastGlobalMatrix);
+						if (needsHistory) lastActorMatrices.push_back(actor->lastGlobalMatrix);
 					}
 					else {
 						impostorMatrices.push_back(actor->globalMatrix);
@@ -144,28 +146,32 @@ namespace Atlas {
 			else {
 				for (auto actor : actorBatch->actors) {
 					currentActorMatrices.push_back(actor->globalMatrix);
-					lastActorMatrices.push_back(actor->lastGlobalMatrix);
+					if (mesh->mobility != AE_STATIONARY_MESH) {
+						lastActorMatrices.push_back(actor->lastGlobalMatrix);
+					}
 				}
 			}
 			
 			if (currentActorMatrices.size()) {
-				ActorBatchBuffer buffers;
+				Buffers buffers;
 				auto it = actorBatchBuffers.find(mesh);
 				if (it == actorBatchBuffers.end()) {
 					buffers.currentMatrices = new Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
 						sizeof(mat4), AE_BUFFER_DYNAMIC_STORAGE, currentActorMatrices.size(),
 						currentActorMatrices.data());
-					buffers.lastMatrices = new Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
-						sizeof(mat4), AE_BUFFER_DYNAMIC_STORAGE, lastActorMatrices.size(),
-						lastActorMatrices.data());
+					if (needsHistory)
+						buffers.lastMatrices = new Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
+							sizeof(mat4), AE_BUFFER_DYNAMIC_STORAGE, lastActorMatrices.size(),
+							lastActorMatrices.data());
 					actorBatchBuffers[mesh] = buffers;
 				}
 				else {
 					buffers = it->second;
 					buffers.currentMatrices->SetSize(currentActorMatrices.size(),
 						currentActorMatrices.data());
-					buffers.lastMatrices->SetSize(lastActorMatrices.size(),
-						lastActorMatrices.data());
+					if (needsHistory)
+						buffers.lastMatrices->SetSize(lastActorMatrices.size(),
+							lastActorMatrices.data());
 				}
 			}
 
@@ -194,9 +200,11 @@ namespace Atlas {
 		for (auto& [mesh, actorBatch] : actorBatches) {
 			auto it0 = actorBatchBuffers.find(mesh);
 			if (it0 != actorBatchBuffers.end() && !actorBatch->GetSize()) {
+				auto needsHistory = mesh->mobility != AE_STATIONARY_MESH
+					&& type != AE_SHADOW_CONFIG;
 				if (it0->second.currentMatrices && it0->second.currentMatrices->GetElementCount()) {
 					it0->second.currentMatrices->SetSize(0);
-					it0->second.lastMatrices->SetSize(0);
+					if (needsHistory) it0->second.lastMatrices->SetSize(0);
 				}
 			}
 			auto it1 = impostorBuffers.find(mesh);

@@ -1,4 +1,5 @@
 #include <../wind.hsh>
+#include <buffers.hsh>
 
 // New naming convention:
 // Vertex attributes v[Name]
@@ -17,14 +18,6 @@ layout(location=2) in vec2 vTexCoord;
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=3) in vec4 vTangent;
 #endif
-
-layout(std430, binding = 2) buffer CurrentMatrices {
-	mat4 currentMatrices[];
-};
-
-layout(std430, binding = 3) buffer LastMatrices {
-	mat4 lastMatrices[];
-};
 
 // Vertex out parameters
 out vec3 positionVS;
@@ -45,7 +38,6 @@ uniform mat4 vMatrix;
 uniform float time;
 uniform float deltaTime;
 
-uniform bool vegetation;
 uniform bool invertUVs;
 uniform bool staticMesh;
 
@@ -55,23 +47,15 @@ uniform mat4 pvMatrixCurrent;
 // Functions
 void main() {
 
-	mat4 mMatrix = currentMatrices[gl_InstanceID];
-	mat4 mMatrixLast = staticMesh ? mMatrix : lastMatrices[gl_InstanceID];
-
+	Instance instance = culledInstanceData[gl_InstanceID];
 	texCoordVS = invertUVs ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
 	
-	mat4 mvMatrix = vMatrix * mMatrix;
+	mat4 mvMatrix = vMatrix;
 
 	// Move any animation code to their own compute shaders
-	vec3 position = vPosition;
-	vec3 lastPosition = vPosition;
+	vec3 position = instance.position.xyz + vPosition;
 
-	if (vegetation) {
-
-		position = WindAnimation(vPosition, time, mMatrix[3].xyz);
-		lastPosition = WindAnimation(vPosition, time - deltaTime, mMatrix[3].xyz);
-
-	}
+	position = instance.position.xyz + WindAnimation(vPosition, time, instance.position.xyz);
 
 	vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
 	positionVS = positionToCamera.xyz;
@@ -81,12 +65,9 @@ void main() {
 	// Needed for velocity buffer calculation 
 	ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
 	// For moving objects we need the last frames matrix
-	vec4 last = pvMatrixLast * mMatrixLast * vec4(lastPosition, 1.0);
+	vec3 lastPosition = position;
+	vec4 last = pvMatrixLast * vec4(lastPosition, 1.0);
 	ndcLastVS = vec3(last.xy, last.w);
-	
-#ifdef GENERATE_IMPOSTOR
-	mvMatrix = mMatrix;
-#endif
 	
 	normalVS = mat3(mvMatrix) * vNormal;
 

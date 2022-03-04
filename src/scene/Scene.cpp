@@ -96,6 +96,10 @@ namespace Atlas {
 			}
 
 			auto meshes = GetMeshes();
+			if (vegetation) {
+				auto vegMeshes = vegetation->GetMeshes();
+				meshes.insert(meshes.end(), vegMeshes.begin(), vegMeshes.end());
+			}
 
 			for (auto mesh : meshes) {
 				for (auto& material : mesh->data.materials) {

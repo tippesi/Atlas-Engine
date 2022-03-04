@@ -16,6 +16,7 @@
 #include "SceneNode.h"
 #include "SpacePartitioning.h"
 #include "RTData.h"
+#include "Vegetation.h"
 
 #include <unordered_map>
 
@@ -104,6 +105,7 @@ namespace Atlas {
 
 			Terrain::Terrain* terrain = nullptr;
 			Ocean::Ocean* ocean = nullptr;
+			Vegetation* vegetation = nullptr;
 
 			Lighting::Sky sky;
 			Lighting::Fog* fog = nullptr;

@@ -48,7 +48,7 @@ uniform float terrainSideLength;
 
 uniform Light light;
 
-uniform vec3 waterBodyColor = pow(vec3(0.1,0.9, 0.9), vec3(2.2));
+uniform vec3 waterBodyColor = pow(vec3(0.1, 1.0, 0.7), vec3(2.2));
 uniform vec3 deepWaterBodyColor = pow(vec3(0.1,0.15, 0.5), vec3(2.2));
 uniform vec3 scatterColor = pow(vec3(0.3,0.7,0.6), vec3(2.2));
 uniform vec2 waterColorIntensity = pow(vec2(0.4, 0.6), vec2(2.2));

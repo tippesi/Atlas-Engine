@@ -41,7 +41,7 @@ namespace Atlas {
 			 * @param forceTangents
 			 * @param mobility
 			 */
-			explicit Mesh(const std::string& filename, bool forceTangens = false, 
+			explicit Mesh(const std::string& filename, bool forceTangents = false, 
 				int32_t maxTextureResolution = 4096, int32_t mobility = AE_STATIONARY_MESH);
 
 			~Mesh();

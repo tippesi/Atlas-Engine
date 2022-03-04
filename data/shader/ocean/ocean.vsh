@@ -91,7 +91,7 @@ vec3 CalculateGerstner(vec3 position) {
 
 	// Avoid scaling by water depth. Resolution artifacts become obvious.
 	float scale = clamp(1.0 - shoreDistance, 0.0, 1.0);
-	scale *= clamp(shoreDistance * 3.0, 0.0, 1.0);
+	scale *= clamp(shoreDistance * 10.0, 0.0, 1.0);
 
 	// Should be uniforms
 	float waveLength = shoreWaveLength / 100.0;
@@ -110,7 +110,7 @@ vec3 CalculateGerstner(vec3 position) {
 		 - shoreWaveDistanceOffset) / shoreWaveDistanceScale);
 
 	float amplitude = 1.0 * shoreWaveAmplitude * scale * modulation * distanceScale;
-	float steepness = 1.5 * shoreWaveSteepness * scale * modulation * distanceScale;
+	float steepness = 1.0 * shoreWaveSteepness * scale * modulation * distanceScale;
 
 	vec3 offset;
 

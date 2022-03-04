@@ -80,6 +80,12 @@ namespace Atlas {
 
         }
 
+        void Buffer::BindAs(uint32_t target) const {
+
+            glBindBuffer(target, ID);
+
+        }
+
         void Buffer::BindRange(size_t offset, size_t length, int32_t base) const {
 
             glBindBufferRange(type, base, ID, offset * elementSize,
@@ -90,6 +96,12 @@ namespace Atlas {
         void Buffer::BindBase(int32_t base) const {
 
             glBindBufferBase(type, base, ID);
+
+        }
+
+        void Buffer::BindBaseAs(uint32_t target, int32_t base) const {
+
+            glBindBufferBase(target, base, ID);
 
         }
 

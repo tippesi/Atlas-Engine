@@ -7,7 +7,7 @@ layout(quads, equal_spacing, cw) in;
 #endif
 
 layout (binding = 1) uniform sampler2D normalMap;
-layout (binding = 2)  uniform usampler2D splatMap;
+layout (binding = 2) uniform usampler2D splatMap;
 layout(binding = 7) uniform sampler2DArray displacementMaps;
 
 layout (binding = 0, std140) uniform UBO {

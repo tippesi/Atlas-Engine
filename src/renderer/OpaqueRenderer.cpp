@@ -95,9 +95,11 @@ namespace Atlas {
 						continue;
 					}
 
+					auto staticMesh = mesh->mobility == AE_STATIONARY_MESH;
+
 					mesh->Bind();
 					buffers.currentMatrices->BindBase(2);
-					buffers.lastMatrices->BindBase(3);
+					if (!staticMesh) buffers.lastMatrices->BindBase(3);
 
 					if (!mesh->cullBackFaces && backFaceCulling) {
 						glDisable(GL_CULL_FACE);
@@ -123,6 +125,7 @@ namespace Atlas {
 					timeUniform->SetValue(Clock::Get());
 					deltaTimeUniform->SetValue(Clock::GetDelta());
 
+					shaderBatch.GetUniform("staticMesh")->SetValue(staticMesh);
 					vegetationUniform->SetValue(mesh->vegetation);
 					invertUVsUniform->SetValue(mesh->invertUVs);
 
@@ -246,7 +249,7 @@ namespace Atlas {
 
 						mesh->Bind();
 						buffers.currentMatrices->BindBase(2);
-						buffers.lastMatrices->BindBase(3);
+						if (mesh->mobility != AE_STATIONARY_MESH) buffers.lastMatrices->BindBase(3);
 
 						invertUVsUniform->SetValue(mesh->invertUVs);
 

@@ -74,6 +74,10 @@ namespace Atlas {
 
                 blurFilter.GetLinearized(&kernelWeights, &kernelOffsets, false);
 
+                auto mean = (kernelWeights.size() - 1) / 2;
+                kernelWeights = std::vector<float>(kernelWeights.begin() + mean, kernelWeights.end());
+                kernelOffsets = std::vector<float>(kernelOffsets.begin() + mean, kernelOffsets.end());
+
                 ivec2 groupCount = ivec2(res.x / groupSize, res.y);
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
 

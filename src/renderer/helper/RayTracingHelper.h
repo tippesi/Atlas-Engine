@@ -57,7 +57,6 @@ namespace Atlas {
 				Shader::Shader traceClosestShader;
 				Shader::Shader traceAnyShader;
 
-				Buffer::Buffer indirectSSBOBuffer;
 				Buffer::Buffer indirectDispatchBuffer;
 
 				Buffer::Buffer counterBuffer0;

@@ -25,6 +25,7 @@
 #include "SSAORenderer.h"
 #include "RTAORenderer.h"
 #include "VolumetricRenderer.h"
+#include "VegetationRenderer.h"
 
 namespace Atlas {
 
@@ -243,6 +244,7 @@ namespace Atlas {
 			OpaqueRenderer opaqueRenderer;
 			TerrainRenderer terrainRenderer;
 			ShadowRenderer shadowRenderer;
+			VegetationRenderer vegetationRenderer;
 			TerrainShadowRenderer terrainShadowRenderer;
 			DecalRenderer decalRenderer;
 			DirectionalLightRenderer directionalLightRenderer;

@@ -1,0 +1,13 @@
+struct DispatchIndirectCommand {
+	uint  numGroupsX;
+	uint  numGroupsY;
+	uint  numGroupsZ;
+};
+
+struct DrawElementsIndirectCommand {
+	uint  count;
+	uint  instanceCount;
+	uint  firstIndex;
+	uint  baseVertex;
+	uint  baseInstance;
+};

@@ -4,9 +4,7 @@ namespace Atlas {
 
 	void Filter::CalculateGaussianFilter(float sigma, uint32_t size) {
 
-		if (size % 2 == 0)
-			return;
-
+		size = 2 * size + 1;
 		float weightSum = 0.0f;
 		float mean = (float) size / 2.0f;
 		ivec2 offset((size - 1) / 2);
@@ -37,9 +35,7 @@ namespace Atlas {
 
 	void Filter::CalculateBoxFilter(uint32_t size) {
 
-		if (size % 2 == 0)
-			return;
-
+		size = 2 * size + 1;
 		float partialWeight = 1.0f / (float) (size * size);
 		ivec2 offset((size - 1) / 2);
 

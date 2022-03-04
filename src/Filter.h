@@ -21,7 +21,8 @@ namespace Atlas {
          * Calculates a gaussian convolution matrix.
          * @param sigma The sigma used for the gaussian function.
          * @param size The diameter of the convolution matrix.
-         * @note The size argument must always be an odd number, with size > 1.
+         * @note This doesn't create a filter of size size, but creates
+         * a filter with the size 2 * size + 1, with mean = size
          * @remark See <a href="https://en.wikipedia.org/wiki/Gaussian_blur">Gaussian blur</a> for more.
          */
         void CalculateGaussianFilter(float sigma, uint32_t size);
@@ -29,7 +30,8 @@ namespace Atlas {
         /**
          * Calculates a box convolution matrix.
          * @param size The diameter of the convolution matrix.
-         * @note The size argument must always be an odd number, with size > 1.
+         * @note This doesn't create a filter of size size, but creates
+         * a filter with the size 2 * size + 1, with mean = size
          * @remark See <a href="https://en.wikipedia.org/wiki/Box_blur">Box blur</a> for more.
          */
         void CalculateBoxFilter(uint32_t size);

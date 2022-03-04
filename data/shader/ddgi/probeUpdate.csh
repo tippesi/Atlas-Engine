@@ -94,9 +94,18 @@ void UpdateIrradiance() {
             // for a low amount of rays, which means a higher amount of rays should
             // work as well
             if (max3(result.xyz - lastResult) > 0.2) {
-                probeHysteresis = max(0.0, probeHysteresis - 0.01);
+                //probeHysteresis = max(0.0, probeHysteresis - 0.01);
             }
-            
+            /*
+            if (max3(lastResult - result.xyz) > 0.2) {
+                probeHysteresis = max(0.0, probeHysteresis - 0.75);
+            }
+
+            vec3 delta = result.xyz - lastResult;
+            if (length(delta) > 1.0) {
+                result.xyz = lastResult + (delta * 0.25);
+            }
+            */
             if (probeState == PROBE_STATE_NEW) {
                 resultOut = result.xyz;
             }

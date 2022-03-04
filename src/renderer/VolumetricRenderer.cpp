@@ -7,7 +7,8 @@ namespace Atlas {
 
         VolumetricRenderer::VolumetricRenderer() {
 
-            blurFilter.CalculateBoxFilter(3);
+            const int32_t filterSize = 6;
+            blurFilter.CalculateBoxFilter(filterSize);
 
             volumetricShader.AddStage(AE_VERTEX_STAGE, "volumetric/volumetric.vsh");
             volumetricShader.AddStage(AE_FRAGMENT_STAGE, "volumetric/volumetric.fsh");
@@ -109,6 +110,10 @@ namespace Atlas {
                 std::vector<float> kernelOffsets;
 
                 blurFilter.GetLinearized(&kernelWeights, &kernelOffsets, false);
+
+                auto mean = (kernelWeights.size() - 1) / 2;
+                kernelWeights = std::vector<float>(kernelWeights.begin() + mean, kernelWeights.end());
+                kernelOffsets = std::vector<float>(kernelOffsets.begin() + mean, kernelOffsets.end());
 
                 ivec2 groupCount = ivec2(res.x / groupSize, res.y);
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);

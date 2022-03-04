@@ -68,6 +68,8 @@ namespace Atlas {
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
 
+			vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera);
+
 			ddgiRenderer.TraceAndUpdateProbes(scene);
 
 			glEnable(GL_DEPTH_TEST);
@@ -131,7 +133,7 @@ namespace Atlas {
 			
 			glEnable(GL_CULL_FACE);
 
-			glCullFace(GL_FRONT);
+			//glCullFace(GL_FRONT);
 
 			terrainShadowRenderer.Render(viewport, target, camera, scene);
 
@@ -153,11 +155,13 @@ namespace Atlas {
 
 			glEnable(GL_CULL_FACE);
 
-			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);			
+			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 			opaqueRenderer.Render(viewport, target, camera, scene, materialMap);
 
 			terrainRenderer.Render(viewport, target, camera, scene, materialMap);
+
+			vegetationRenderer.Render(viewport, target, camera, scene, materialMap);
 
 			glEnable(GL_CULL_FACE);
 			glDepthMask(GL_FALSE);

@@ -18,7 +18,6 @@ uniform float weights[80];
 
 uniform float depthSensitivity = 10000.0;
 
-shared uint counter;
 #ifdef BLUR_RGB
 shared vec3 inputs[320];
 #else
@@ -27,12 +26,6 @@ shared float inputs[320];
 shared float depths[320];
 
 void LoadGroupSharedData() {
-    // Set shared counter to zero by thread 0
-    if (gl_LocalInvocationIndex == 0) {
-        counter = 0;
-    }
-
-    barrier();
 
     uint dataSize = 2u * uint(kernelSize) + 256u;
 
@@ -46,26 +39,24 @@ void LoadGroupSharedData() {
 #endif
 
     // Cooperatively load data into shared memory
-    uint localCounter = atomicAdd(counter, 1u);
-    while (localCounter < dataSize) {
+    uint workGroupOffset = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    for(uint i = gl_LocalInvocationIndex; i < dataSize; i += workGroupOffset) {
         ivec2 localOffset = offset;
 #ifdef HORIZONTAL
-        localOffset.x += int(localCounter);
+        localOffset.x += int(i);
 #else
-        localOffset.y += int(localCounter);
+        localOffset.y += int(i);
 #endif  
 #ifdef BLUR_RGB
         vec3 localInput = texelFetch(inputTexture, localOffset, 0).rgb;
 #else
         float localInput = texelFetch(inputTexture, localOffset, 0).r;
 #endif
-        inputs[localCounter] = localInput;
+        inputs[i] = localInput;
 #ifdef DEPTH_WEIGHT
         float localDepth = texelFetch(depthTexture, localOffset, 0).r;
-        depths[localCounter] = localDepth;
+        depths[i] = localDepth;
 #endif
-
-        localCounter = atomicAdd(counter, 1u);
     }
 
     barrier();
@@ -75,8 +66,8 @@ void main() {
 
     LoadGroupSharedData();
 
-    if (gl_GlobalInvocationID.x > imageSize(outputImage).x ||
-        gl_GlobalInvocationID.y > imageSize(outputImage).y)
+    if (gl_GlobalInvocationID.x >= imageSize(outputImage).x ||
+        gl_GlobalInvocationID.y >= imageSize(outputImage).y)
         return;
 
     // Get offset of the group in image

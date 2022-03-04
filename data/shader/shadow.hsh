@@ -175,7 +175,8 @@ float CalculateCascadedShadow(Light light, vec3 fragmentPosition, vec3 normal, f
 	texelSize = cascadeIndex > 3 ? light.shadow.cascades[4].texelSize : texelSize;
 	texelSize = cascadeIndex > 4 ? light.shadow.cascades[5].texelSize : texelSize;
 	
-	fragmentPosition += light.shadow.bias * texelSize * normal * cosTheta;
+	vec3 bias = light.shadow.bias * texelSize * normal * max(1.0 - cosTheta, 0.1);
+	fragmentPosition += bias;
 
 	float visibility = cascadeLookup(light, float(cascadeIndex),
 		cascadeMatrix, fragmentPosition, 0.0);
@@ -196,7 +197,7 @@ float CalculateCascadedShadow(Light light, vec3 fragmentPosition, vec3 normal, f
 		if (blend <= 1.0) {
 		
 			cascadeIndex += 1;
-			fragmentPosition -= light.shadow.bias * texelSize * normal;
+			fragmentPosition -= bias;
 			
 			mat4 cascadeMatrix = light.shadow.cascades[0].cascadeSpace;
 			cascadeMatrix = cascadeIndex > 0 ? light.shadow.cascades[1].cascadeSpace : cascadeMatrix;
@@ -211,8 +212,9 @@ float CalculateCascadedShadow(Light light, vec3 fragmentPosition, vec3 normal, f
 			texelSize = cascadeIndex > 2 ? light.shadow.cascades[3].texelSize : texelSize;
 			texelSize = cascadeIndex > 3 ? light.shadow.cascades[4].texelSize : texelSize;
 			texelSize = cascadeIndex > 4 ? light.shadow.cascades[5].texelSize : texelSize;
-			
-			fragmentPosition += light.shadow.bias * texelSize * normal;
+
+			bias = light.shadow.bias * texelSize * normal * max(1.0 - cosTheta, 0.1);			
+			fragmentPosition += bias;
 			
 			visibility = mix(cascadeLookup(light, float(cascadeIndex),
 				cascadeMatrix, fragmentPosition, 0.0), visibility, blend);	
