@@ -55,14 +55,14 @@ void main() {
 	*/
 #ifdef SHADOWS
 	shadowFactor = CalculateCascadedShadow(light, surface.P,
-		geometryNormal, 1.0); 
+		geometryNormal, saturate(dot(-light.direction, geometryNormal))); 
 #endif
 	
 	vec3 radiance = light.color * light.intensity;
 	colorFS = vec4(direct * radiance * surface.NdotL * shadowFactor, 1.0);
 
 	if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.01) {	
-		colorFS += vec4(surface.material.emissiveColor, 1.0);
+		colorFS += vec4(surface.material.emissiveColor, 0.0);
 	}
 
 	/*

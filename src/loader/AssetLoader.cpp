@@ -59,6 +59,15 @@ namespace Atlas {
 
 		}
 
+		bool AssetLoader::FileExists(const std::string& filename) {
+
+			auto assetDir = Common::Path::GetAbsolute(assetDirectory);
+
+			std::ifstream stream(assetDir + "/" + filename);
+			return stream.good();
+
+		}
+
 		std::ifstream AssetLoader::ReadFile(std::string filename, std::ios_base::openmode mode) {
 
 			std::ifstream stream;

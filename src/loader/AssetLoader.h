@@ -38,6 +38,12 @@ namespace Atlas {
             static void SetAssetDirectory(const std::string& directory);
 
             /**
+             * Check whether a file exists in the asset directory
+             * @return True if file exists, false otherwise
+             */
+            static bool FileExists(const std::string& filename);
+
+            /**
              * Opens a file for reading from the asset directory.
              * @param filename A path to the file relative to the asset directory.
              * @param mode The mode in which the file should be opened, e.g. std::ios::binary

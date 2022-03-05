@@ -17,3 +17,6 @@ platform/android/android.iml
 assets
 data/sanmiguel
 cmake-build-relwithdebinfo
+data/cornell
+data/bistro
+dependencies/Imgui/imgui

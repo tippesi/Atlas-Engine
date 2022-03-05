@@ -68,7 +68,8 @@ namespace Atlas {
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
 
-			vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera);
+			if (scene->vegetation)
+				vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera);
 
 			ddgiRenderer.TraceAndUpdateProbes(scene);
 

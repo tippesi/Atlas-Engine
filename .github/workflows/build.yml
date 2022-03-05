@@ -44,13 +44,25 @@ jobs:
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
         with:
-          build-dir: ${{ github.workspace }}/build
+          build-dir: ${{ github.workspace }}/build/${{ matrix.build-type }}
           source-dir: ${{ github.workspace }}
           cc: "cl"
           cxx: "cl"
-          configure-options: -G Ninja -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF
+          configure-options: -G Ninja -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF -DATLAS_DEMO=ON
           parallel: 16
           build-type: ${{ matrix.build-type }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Application Windows ${{ matrix.build-type }}
+          path: |
+            data/shader
+            README.md
+            LICENSE
+            ${{ github.workspace }}/build/**/AtlasEngineDemo.exe
+            ${{ github.workspace }}/build/**/*.dll
+            !**/CMakeFiles
   
   linux-build:
     runs-on: ubuntu-latest
@@ -82,13 +94,25 @@ jobs:
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
         with:
-          build-dir: ${{ github.workspace }}/build
+          build-dir: ${{ github.workspace }}/build/${{ matrix.build-type }}
           source-dir: ${{ github.workspace }}
           cc: "gcc"
           cxx: "g++"
-          configure-options: -G Ninja -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF
+          configure-options: -G Ninja -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF -DATLAS_DEMO=ON
           parallel: 16
           build-type: ${{ matrix.build-type }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Application Linux ${{ matrix.build-type }}
+          path: |
+            data/
+            README.md
+            LICENSE
+            ${{ github.workspace }}/build/**/AtlasEngineDemo
+            ${{ github.workspace }}/build/**/*.so
+            !**/CMakeFiles
 
   code-quality:
     runs-on: ubuntu-latest

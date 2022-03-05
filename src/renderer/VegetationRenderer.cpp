@@ -19,6 +19,8 @@ namespace Atlas {
 		void VegetationRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
 			Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap) {
 
+			if (!scene->vegetation) return;
+
 			glDisable(GL_CULL_FACE);
 
 			auto& vegetation = *scene->vegetation;
