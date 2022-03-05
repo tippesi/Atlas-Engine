@@ -1,11 +1,4 @@
-name: Build pipeline
-
-on:
-  push:
-    branches:
-      - '*'
-  pull_request:
-    branches: [master]
+name: Release pipeline
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -48,7 +41,7 @@ jobs:
           source-dir: ${{ github.workspace }}
           cc: "cl"
           cxx: "cl"
-          configure-options: -G Ninja -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF -DATLAS_DEMO=ON
+          configure-options: -G Ninja -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -57,10 +50,10 @@ jobs:
         with:
           name: Atlas Engine Demo Windows ${{ matrix.build-type }}
           path: |
-            data
+            data/shader
             README.md
             LICENSE
-            ${{ github.workspace }}/build/**/AtlasEngineDemo.exe
+            ${{ github.workspace }}/build/**/AtlasEngine.exe
             ${{ github.workspace }}/build/**/*.dll
             !**/CMakeFiles
   
@@ -98,7 +91,7 @@ jobs:
           source-dir: ${{ github.workspace }}
           cc: "gcc"
           cxx: "g++"
-          configure-options: -G Ninja -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF -DATLAS_DEMO=ON
+          configure-options: -G Ninja -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -107,30 +100,58 @@ jobs:
         with:
           name: Atlas Engine Demo Linux ${{ matrix.build-type }}
           path: |
-            data
+            data/
             README.md
             LICENSE
-            ${{ github.workspace }}/build/**/AtlasEngineDemo
+            ${{ github.workspace }}/build/**/AtlasEngine
             ${{ github.workspace }}/build/**/*.so
             !**/CMakeFiles
 
-  code-quality:
+  release:
     runs-on: ubuntu-latest
-    name: Check code quality
+    name: Create a new release
     needs: [windows-build, linux-build]
 
     steps:
-      - name: Check code meets quality standards
-        id: codiga
-        uses: codiga/github-action@master
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v3
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          codiga_api_token: ${{ secrets.CODIGA_API_TOKEN }}
-          force_ref: 'none'
-          min_quality_grade: 'GOOD'
-          min_quality_score: '85'
-          max_defects_rate: '0.01'
-          max_complex_functions_rate: '0.03'
-          max_long_functions_rate: '0.2'
-          project_name: 'Atlas-Engine'
-          max_timeout_sec: '1200'
+          name: Atlas Engine Demo Windows Release
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: Atlas Engine Demo Linux Release
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Windows Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./Atlas Engine Demo Windows Release.zip
+          asset_name: Atlas Engine Demo Windows Release.zip
+          asset_content_type: application/zip
+
+      - name: Upload Linux Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./Atlas Engine Demo Linux Release.zip
+          asset_name: Atlas Engine Demo Linux Release.zip
+          asset_content_type: application/zip
