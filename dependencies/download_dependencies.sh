@@ -12,6 +12,10 @@ rm v5.0.1
 
 # Download Imgui version 1.87
 curl -O "https://github.com/ocornut/imgui/archive/refs/tags/v1.87.zip"
+for entry in /*
+do
+  echo "$entry"
+done
 unzip v1.87.zip
 mv imgui-1.87 Imgui/imgui
 rm v1.87.zip

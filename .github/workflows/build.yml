@@ -53,6 +53,7 @@ jobs:
           build-type: ${{ matrix.build-type }}
 
       - name: Upload artifact
+        if: ${{ matrix.build-type == "Release" }}
         uses: actions/upload-artifact@v2
         with:
           name: Atlas Engine Demo Windows ${{ matrix.build-type }}
@@ -103,6 +104,7 @@ jobs:
           build-type: ${{ matrix.build-type }}
 
       - name: Upload artifact
+        if: ${{ matrix.build-type == "Release" }}
         uses: actions/upload-artifact@v2
         with:
           name: Atlas Engine Demo Linux ${{ matrix.build-type }}
