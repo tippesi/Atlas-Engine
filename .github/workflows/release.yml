@@ -48,7 +48,7 @@ jobs:
           build-type: ${{ matrix.build-type }}
 
       - name: Upload artifact
-        if: ${{ matrix.build-type == "Release" }}
+        if: ${{ matrix.build-type == 'Release' }}
         uses: actions/upload-artifact@v2
         with:
           name: Atlas Engine Demo Windows ${{ matrix.build-type }}
@@ -56,7 +56,7 @@ jobs:
             data/shader
             README.md
             LICENSE
-            ${{ github.workspace }}/build/**/AtlasEngine.exe
+            ${{ github.workspace }}/build/**/AtlasEngineDemo.exe
             ${{ github.workspace }}/build/**/*.dll
             !**/CMakeFiles
   
@@ -99,7 +99,7 @@ jobs:
           build-type: ${{ matrix.build-type }}
 
       - name: Upload artifact
-        if: ${{ matrix.build-type == "Release" }}
+        if: ${{ matrix.build-type == 'Release' }}
         uses: actions/upload-artifact@v2
         with:
           name: Atlas Engine Demo Linux ${{ matrix.build-type }}
@@ -107,7 +107,7 @@ jobs:
             data/
             README.md
             LICENSE
-            ${{ github.workspace }}/build/**/AtlasEngine
+            ${{ github.workspace }}/build/**/AtlasEngineDemo
             ${{ github.workspace }}/build/**/*.so
             !**/CMakeFiles
 
