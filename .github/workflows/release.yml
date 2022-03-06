@@ -155,7 +155,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: "${{ github.workspace }}/Atlas Engine Demo Windows.zip"
-          asset_name: "Atlas Engine Demo Windows Release.zip"
+          asset_name: "AtlasEngineDemoWindows.zip"
           asset_content_type: application/zip
 
       - name: Upload Linux Asset
@@ -165,5 +165,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: "${{ github.workspace }}/Atlas Engine Demo Linux.zip"
-          asset_name: "Atlas Engine Demo Linux.zip"
+          asset_name: "AtlasEngineDemoLinux.zip"
           asset_content_type: application/zip

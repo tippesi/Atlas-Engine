@@ -38,14 +38,18 @@ namespace Atlas {
 		void PathTracingRenderer::Render(Viewport* viewport, PathTracerRenderTarget* renderTarget,
 			ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene) {
 
+			auto width = renderTarget->GetWidth();
+			auto height = renderTarget->GetHeight();
+
 			if (glm::distance(camera->GetLocation(), cameraLocation) > 1e-3f ||
-				glm::distance(camera->rotation, cameraRotation) > 1e-3f) {
+				glm::distance(camera->rotation, cameraRotation) > 1e-3f ||
+				helper.GetRayBuffer()->GetElementCount() != 2 * width * height) {
 				cameraLocation = camera->GetLocation();
 				cameraRotation = camera->rotation;
 
 				sampleCount = 0;
 				imageOffset = ivec2(0);
-				helper.SetRayBufferSize(renderTarget->GetWidth() * renderTarget->GetHeight());
+				helper.SetRayBufferSize(width * height);
 			}
 
 			// Check if the scene has changed. A change might happen when an actor has been updated,
@@ -54,7 +58,7 @@ namespace Atlas {
 			helper.SetScene(scene, 1, true);
 			helper.UpdateLights();
 
-			ivec2 resolution = ivec2(renderTarget->GetWidth(), renderTarget->GetHeight());
+			ivec2 resolution = ivec2(width, height);
 			ivec2 tileSize = resolution / imageSubdivisions;
 
 			// Bind texture only for writing

@@ -10,7 +10,8 @@ void App::LoadContent() {
 
 	UnlockFramerate();
 
-	renderTarget = new Atlas::RenderTarget(1280 * 2, 720 * 2);
+	renderTarget = new Atlas::RenderTarget(1920, 1080);
+	pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
 
 	auto icon = Atlas::Texture::Texture2D("icon.png");
 	window.SetIcon(&icon);
@@ -58,7 +59,6 @@ void App::LoadContent() {
 
 	LoadScene();
 
-	rayTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1280 * 2, 720 * 2);
 	scene.postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
 	// Use against TAA smoothing
 	scene.postProcessing.sharpen.enable = true;
@@ -174,13 +174,13 @@ void App::Render(float deltaTime) {
 	if (animateLight) directionalLight.direction = vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));	
 	
 	if (pathTrace) {
-		viewport.Set(0, 0, rayTraceTarget.GetWidth(), rayTraceTarget.GetHeight());
-		rayTracingRenderer.Render(&viewport, &rayTraceTarget, ivec2(1, 1), &camera, &scene);
+		viewport.Set(0, 0, pathTraceTarget.GetWidth(), pathTraceTarget.GetHeight());
+		pathTracingRenderer.Render(&viewport, &pathTraceTarget, ivec2(1, 1), &camera, &scene);
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
 			GL_SHADER_STORAGE_BARRIER_BIT);
 
 		viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
-		masterRenderer.RenderTexture(&viewport, &rayTraceTarget.texture, 0.0f, 0.0f,
+		masterRenderer.RenderTexture(&viewport, &pathTraceTarget.texture, 0.0f, 0.0f,
 			(float)viewport.width, (float)viewport.height);
 	}
 	else {
@@ -217,25 +217,27 @@ void App::Render(float deltaTime) {
 			ImGui::Text(("Current frametime: " + std::to_string(deltaTime * 1000.0f) + " ms").c_str());
 			ImGui::Text(("Camera location: " + vecToString(camera.location)).c_str());
 
-			const char* items[] = { "Cornell box", "Sponza", "Bistro", "San Miguel", "Medieval"};
-			int item_current = static_cast<int>(sceneSelection);
-			ImGui::Combo("Select scene", &item_current, items, IM_ARRAYSIZE(items));
+			{
+				const char* items[] = { "Cornell box", "Sponza", "Bistro", "San Miguel", "Medieval" };
+				int currentItem = static_cast<int>(sceneSelection);
+				ImGui::Combo("Select scene", &currentItem, items, IM_ARRAYSIZE(items));
 
-			if (item_current != sceneSelection) {
-				auto newSceneSelection = static_cast<SceneSelection>(item_current);
-				if (IsSceneAvailable(newSceneSelection)) {
-					sceneSelection = newSceneSelection;
-					UnloadScene();
-					LoadScene();
-				}
-				else {
-					openSceneNotFoundPopup = true;
+				if (currentItem != sceneSelection) {
+					auto newSceneSelection = static_cast<SceneSelection>(currentItem);
+					if (IsSceneAvailable(newSceneSelection)) {
+						sceneSelection = newSceneSelection;
+						UnloadScene();
+						LoadScene();
+					}
+					else {
+						openSceneNotFoundPopup = true;
+					}
 				}
 			}
 
 			ImGui::Checkbox("Pathtrace", &pathTrace);
 
-			if (pathTrace) ImGui::SliderInt("Pathtrace bounces", &rayTracingRenderer.bounces, 0, 100);
+			if (pathTrace) ImGui::SliderInt("Pathtrace bounces", &pathTracingRenderer.bounces, 0, 100);
 
 			if (ImGui::CollapsingHeader("General")) {
 				static bool fullscreenMode = false;
@@ -265,6 +267,22 @@ void App::Render(float deltaTime) {
 					}
 					fullscreenMode = fullscreen;
 				}
+
+				const char* items[] = { "1280x720", "1920x1080", "2560x1440", "3840x2160" };
+				static int resolution = 1;
+				int currentItem = resolution;
+				ImGui::Combo("Resolution", &currentItem, items, IM_ARRAYSIZE(items));
+
+				if (currentItem != resolution) {
+					resolution = currentItem;
+					switch (resolution) {
+					case 0: SetResolution(1280, 720); break;
+					case 1: SetResolution(1920, 1080); break;
+					case 2: SetResolution(2560, 1440); break;
+					case 3: SetResolution(3840, 2160); break;
+					}
+				}
+
 			}
 
 			if (ImGui::CollapsingHeader("Irradiance volume")) {
@@ -370,6 +388,7 @@ void App::DisplayLoadingScreen() {
 	float x = windowSize.x / 2 - textWidth / 2;
 	float y = windowSize.y / 2 - textHeight / 2;
 
+	viewport.Set(0, 0, windowSize.x, windowSize.y);
 	masterRenderer.textRenderer.Render(&viewport, &font, "Loading...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
 	window.Update();
@@ -532,6 +551,13 @@ void App::UnloadScene() {
 
 	delete scene.sky.probe;
 	delete scene.irradianceVolume;
+
+}
+
+void App::SetResolution(int32_t width, int32_t height) {
+
+	renderTarget->Resize(width, height);
+	pathTraceTarget.Resize(width, height);
 
 }
 

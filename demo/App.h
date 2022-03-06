@@ -40,9 +40,11 @@ private:
 	bool LoadScene();
 	void UnloadScene();
 
+	void SetResolution(int32_t width, int32_t height);
+
 	SceneSelection sceneSelection = SPONZA;
 
-	Atlas::Renderer::PathTracerRenderTarget rayTraceTarget;
+	Atlas::Renderer::PathTracerRenderTarget pathTraceTarget;
 	Atlas::RenderTarget* renderTarget;
 	Atlas::Viewport viewport;
 
@@ -53,10 +55,6 @@ private:
 	Atlas::Scene::Scene scene;
 
 	Atlas::Lighting::DirectionalLight directionalLight;
-	Atlas::Lighting::PointLight pointLight0;
-	Atlas::Lighting::PointLight pointLight1;
-	Atlas::Lighting::PointLight pointLight2;
-	Atlas::Lighting::PointLight pointLight3;
 
 	Atlas::Mesh::Mesh mesh;
 	Atlas::Mesh::Mesh sphere;
@@ -77,7 +75,7 @@ private:
 	int32_t windowWidth;
 	int32_t windowHeight;
 
-	Atlas::Renderer::PathTracingRenderer rayTracingRenderer;
+	Atlas::Renderer::PathTracingRenderer pathTracingRenderer;
 
 	ImguiWrapper imguiWrapper;
 

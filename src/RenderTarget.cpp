@@ -70,8 +70,17 @@ namespace Atlas {
 		postProcessFramebuffer.Resize(width, height);
 
 		historyFramebuffer.Resize(width, height);
-
 		historyFramebuffer.Unbind();
+
+		// We have to also resize the other part of the history
+		if (swap) {
+			historyTexture.Resize(width, height);
+			velocityTexture.Resize(width, height);
+		}
+		else {
+			swapHistoryTexture.Resize(width, height);
+			swapVelocityTexture.Resize(width, height);
+		}
 
 		postProcessTexture.Resize(width, height);
 
