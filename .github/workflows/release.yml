@@ -1,6 +1,12 @@
 name: Release pipeline
 
-on: workflow_dispatch
+on: 
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release version'
+        required: true
+        default: '0.1.0'
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -14,7 +20,7 @@ jobs:
     # Run both builds in parallel and don't cancel if one fails
     strategy:
       matrix:
-        build-type: [Debug, Release]
+        build-type: [Release]
       fail-fast: false
 
     steps:
@@ -48,10 +54,9 @@ jobs:
           build-type: ${{ matrix.build-type }}
 
       - name: Upload artifact
-        if: ${{ matrix.build-type == 'Release' }}
         uses: actions/upload-artifact@v2
         with:
-          name: Atlas Engine Demo Windows ${{ matrix.build-type }}
+          name: Atlas Engine Demo Windows
           path: |
             data/shader
             README.md
@@ -66,7 +71,7 @@ jobs:
     # Run both builds in parallel and don't cancel if one fails
     strategy:
       matrix:
-         build-type: [Debug, Release]
+         build-type: [Release]
       fail-fast: false
 
     steps:
@@ -99,10 +104,9 @@ jobs:
           build-type: ${{ matrix.build-type }}
 
       - name: Upload artifact
-        if: ${{ matrix.build-type == 'Release' }}
         uses: actions/upload-artifact@v2
         with:
-          name: Atlas Engine Demo Linux ${{ matrix.build-type }}
+          name: Atlas Engine Demo Linux
           path: |
             data/
             README.md
@@ -117,15 +121,21 @@ jobs:
     needs: [windows-build, linux-build]
 
     steps:
-      - name: Download Windows artifact
+      - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
-          name: Atlas Engine Demo Windows Release
+          path: ${{ github.workspace }}
+      
+      - name: Install zip
+        uses: montudor/action-zip@v1
 
-      - name: Download Linux artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: Atlas Engine Demo Linux Release
+      - name: Zip Windows artifact
+        run: zip -r Atlas Engine Demo Windows.zip Atlas Engine Demo Windows
+        working-directory: ${{ github.workspace }}
+
+      - name: Zip Linux artifact
+        run: zip -r Atlas Engine Demo Linux.zip ${{ github.workspace }}/Atlas Engine Demo Linux
+        working-directory: ${{ github.workspace }}
 
       - name: Create release
         id: create_release
@@ -133,8 +143,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ github.event.inputs.release_version }}
+          release_name: Release ${{ github.event.inputs.release_version }}
           draft: false
           prerelease: false
 
@@ -143,8 +153,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./Atlas Engine Demo Windows Release.zip
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/Atlas Engine Demo Windows.zip
           asset_name: Atlas Engine Demo Windows Release.zip
           asset_content_type: application/zip
 
@@ -153,7 +163,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./Atlas Engine Demo Linux Release.zip
-          asset_name: Atlas Engine Demo Linux Release.zip
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/Atlas Engine Demo Linux.zip
+          asset_name: Atlas Engine Demo Linux.zip
           asset_content_type: application/zip
