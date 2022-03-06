@@ -11,11 +11,7 @@ mv assimp-5.0.1 Assimp
 rm v5.0.1
 
 # Download Imgui version 1.87
-curl -O "https://github.com/ocornut/imgui/archive/refs/tags/v1.87.zip"
-for entry in /*
-do
-  echo "$entry"
-done
-unzip v1.87.zip
+curl -O "https://codeload.github.com/ocornut/imgui/zip/refs/tags/v1.87"
+unzip v1.87
 mv imgui-1.87 Imgui/imgui
-rm v1.87.zip
+rm v1.87
