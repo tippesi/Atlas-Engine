@@ -5,7 +5,6 @@
 #include "../../shader/Shader.h"
 #include "../../scene/Scene.h"
 #include "../../buffer/Buffer.h"
-#include "../texture/TextureAtlas.h"
 #include <functional>
 
 
