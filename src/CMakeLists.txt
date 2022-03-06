@@ -46,6 +46,20 @@ if (MINGW)
 	set(ATLAS_ENGINE_LIBS mingw32 ${ATLAS_ENGINE_LIBS})
 endif()
 
+if(APPLE)
+	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_MACOS)
+
+	include_directories(/System/Library/Frameworks)
+	find_library(COCOA_LIBRARY Cocoa)
+	find_library(OpenGL_LIBRARY OpenGL)
+	find_library(IOKit_LIBRARY IOKit)
+	find_library(CoreVideo_LIBRARY CoreVideo)
+	mark_as_advanced(COCOA_LIBRARY OpenGL_LIBRARY)
+
+	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
+	set(ATLAS_ENGINE_SYSTEM_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
+endif()
+
 if(ANDROID)
 	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
 

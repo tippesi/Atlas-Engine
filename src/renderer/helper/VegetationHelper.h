@@ -1,7 +1,7 @@
 #ifndef AE_VEGETATIONHELPER_H
 #define AE_VEGETATIONHELPER_H
 
-#include "../System.h"
+#include "../../System.h"
 #include "../../shader/Shader.h"
 #include "../../scene/Vegetation.h"
 #include "../../buffer/Buffer.h"
