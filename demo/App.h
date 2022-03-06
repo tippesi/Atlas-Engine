@@ -6,7 +6,7 @@
 #include <input/Keyboard.h>
 #include <input/Controller.h>
 #include <input/Touch.h>
-#include <imgui/ImguiWrapper.h>
+#include <Imgui/ImguiWrapper.h>
 
 #include <renderer/PathTracingRenderer.h>
 
