@@ -130,11 +130,11 @@ jobs:
         uses: montudor/action-zip@v1
 
       - name: Zip Windows artifact
-        run: zip -r Atlas Engine Demo Windows.zip Atlas Engine Demo Windows
+        run: zip -r "Atlas Engine Demo Windows.zip" "Atlas Engine Demo Windows"
         working-directory: ${{ github.workspace }}
 
       - name: Zip Linux artifact
-        run: zip -r Atlas Engine Demo Linux.zip ${{ github.workspace }}/Atlas Engine Demo Linux
+        run: zip -r "Atlas Engine Demo Linux.zip" "Atlas Engine Demo Linux"
         working-directory: ${{ github.workspace }}
 
       - name: Create release
@@ -154,8 +154,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/Atlas Engine Demo Windows.zip
-          asset_name: Atlas Engine Demo Windows Release.zip
+          asset_path: "${{ github.workspace }}/Atlas Engine Demo Windows.zip"
+          asset_name: "Atlas Engine Demo Windows Release.zip"
           asset_content_type: application/zip
 
       - name: Upload Linux Asset
@@ -164,6 +164,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/Atlas Engine Demo Linux.zip
-          asset_name: Atlas Engine Demo Linux.zip
+          asset_path: "${{ github.workspace }}/Atlas Engine Demo Linux.zip"
+          asset_name: "Atlas Engine Demo Linux.zip"
           asset_content_type: application/zip
