@@ -1,6 +1,7 @@
 # Atlas Engine
 [![The MIT License][license-image]][license-url]
 [![Code quality][code-quality-image]][code-quality-url]
+[![Latest build](https://github.com/tippesi/Atlas-Engine/actions/workflows/build.yml/badge.svg)](https://github.com/tippesi/Atlas-Engine/actions/workflows/build.yml)
 
 [license-image]: https://img.shields.io/badge/License-MIT-yellow.svg
 [license-url]: https://opensource.org/licenses/MIT
@@ -11,31 +12,20 @@
 *Realtime GI demo scene* <br/>
 #### The current version is a WIP which means many changes and less stability.
 ## Introduction
-This is a cross platform engine that is available on Linux and Windows.
+This is a cross platform toy engine that is available on Linux and Windows.
 ## Requirements
 - OpenGL 4.3
 - OpenGL ES 3.2
 - C++17 compatible compiler
 ## Set up
 Before you start compiling make sure to download the dependencies into **./dependencies**. You can either do
-this manually or use one of the available scripts. Building the engine is really convenient: You can use your
-source code and project across all supported platforms. The only thing that differs are the build tools. 
->**Note:**
->Debugging the resulting application in a debug configuration will result in poor performance.
- 
-For more information on how to set up the engine have a look at the [Hello World](https://github.com/tippesi/Atlas-Engine/wiki/Hello-World) tutorial.
-### Linux and Windows
-There are two options available: Start a new project with a predefined
-main file which you can edit. The second option is two use the engine as a subproject in an already existing project.
-#### New project using the engine
-After running CMake you can find the main file at **./src/main.cpp**. Just start your project there, it already
-contains a main function.
-#### Excisting project using the engine
-There exist two options:
-- You can use the engine as a CMake subproject. Just go ahead and use **add_subdirectory** in the root
-CMakeLists.txt of your project. Afterwards add **target_link_libraries(YOUR_TARGET ... AtlasEngine)**. You should be fine.
-- You can compile the engine and all dependencies as a static library (note that some dependencies also have
-dynamic libraries). Therefore use the **ATLAS_BUILD_LIBRARY** option when using CMake.
+this manually or use one of the available scripts. The build process is then done using CMake.
+### Compiling the demo application
+Run CMake with the option ATLAS_DEMO=ON to include the demo application in the project. For easier use, the vsbuild.bat does exactly
+that and launches Visual Studio afterwards. After launching the IDE, set AtlasEngineDemo as your target.
+### Including the library into your own project
+It is possible to compile the engine either as a shared or static library. Set the ATLAS_BUILD_SHARED option accordingly. To make
+the library work with its dependencies, the root CMakeLists.txt of this repository has to be added as a subdirectory.
 <!---
 ### Android
 You can compile the engine using Gradle either with or without AndroidStudio.
@@ -56,12 +46,12 @@ the project with Android Studio. The CMake project has to be compiled as a share
 asset directory is correct.
 -->
 ### CMake build options
-- **ATLAS_BUILD_LIBRARY** Build project as library
 - **ATLAS_BUILD_SHARED** Force project to be build as a shared library
 - **ATLAS_OPENGL_ES** Use OpenGL ES instead of OpenGL on desktop devices
 - **ATLAS_EXPORT_MAIN** Export the main file to be added as executable to parent project (only if main function cannot be found)
 - **ATLAS_NO_APP** Disables the engines main function and app functionality. You have to code the main function and
 initialize the engine yourself
+- **ATLAS_IMGUI** Enables the [ImGui](https://github.com/ocornut/imgui) integration. Is enabled by default if the demo project is build.
 ## Documentation
 If you want more information have a look into the [Documentation](https://tippesi.github.io/Atlas-Engine-Doc/index.html).
 ## License
@@ -70,7 +60,7 @@ in the LICENSE file.
 >**Note:**
 >The files in the data folder (except the shaders) use a different license. 
 ## Code Example
-For a code example have a look at the [Wiki](https://github.com/tippesi/Atlas-Engine/wiki/Code-example).
+For a code example have a look at the [demo application](https://github.com/tippesi/Atlas-Engine/tree/master/demo).
 ## Screenshots
 ![Example scene](wiki/images/sponza_rasterized.png) <br/>
 *Rasterized image using real time global illumination* <br/>
