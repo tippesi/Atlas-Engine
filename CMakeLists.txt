@@ -13,6 +13,11 @@ endif()
 
 # Options and compiler settings ###################################################################
 option(ATLAS_DEMO "Build demo executable" OFF)
+option(ATLAS_IMGUI "Activate ImGui integration" OFF)
+
+if (ATLAS_DEMO)
+set (ATLAS_IMGUI ON)
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -74,7 +79,10 @@ else()
 add_subdirectory(${GLAD_LOCATION})
 endif()
 add_subdirectory(${ATLAS_LOCATION})
-if (ATLAS_DEMO)
+
+if (ATLAS_IMGUI)
 add_subdirectory(${IMGUI_LOCATION})
+endif()
+if (ATLAS_DEMO)
 add_subdirectory(${DEMO_LOCATION})
 endif()

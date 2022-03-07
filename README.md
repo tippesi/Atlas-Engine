@@ -25,7 +25,8 @@ Run CMake with the option ATLAS_DEMO=ON to include the demo application in the p
 that and launches Visual Studio afterwards. After launching the IDE, set AtlasEngineDemo as your target.
 ### Including the library into your own project
 It is possible to compile the engine either as a shared or static library. Set the ATLAS_BUILD_SHARED option accordingly. To make
-the library work with its dependencies, the root CMakeLists.txt of this repository has to be added as a subdirectory.
+the library work with its dependencies, the root CMakeLists.txt of this repository has to be added as a subdirectory. As an entry
+point to create an application from scratch take a look at the [Hello World tutorial](https://github.com/tippesi/Atlas-Engine/wiki/Hello-World). For reference, the source folder contains an empty [app header](https://github.com/tippesi/Atlas-Engine/blob/master/src/App.h) and an empty [app source](https://github.com/tippesi/Atlas-Engine/blob/master/src/App.cpp).
 <!---
 ### Android
 You can compile the engine using Gradle either with or without AndroidStudio.

@@ -19,6 +19,8 @@ void App::LoadContent() {
 
 	font = Atlas::Font("font/roboto.ttf", 44, 10);
 
+	DisplayLoadingScreen();
+
 	camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f,
 		vec3(30.0f, 25.0f, 0.0f), vec2(-3.14f / 2.0f, 0.0f));
 
@@ -40,27 +42,20 @@ void App::LoadContent() {
 	directionalLight = Atlas::Lighting::DirectionalLight(AE_MOVABLE_LIGHT);
 	directionalLight.direction = vec3(0.0f, -1.0f, 1.0f);
 	directionalLight.color = vec3(253, 194, 109) / 255.0f;
-
-	// Cascaded shadow mapping
 	directionalLight.AddShadow(150.0f, 1.1f, 1024, 5, 0.8f);
 	directionalLight.AddVolumetric(10, 0.28f);
-
 	scene.Add(&directionalLight);
 
 	scene.ssao = new Atlas::Lighting::SSAO(32);
 
 	scene.fog = new Atlas::Lighting::Fog();
-
 	scene.fog->enable = true;
 	scene.fog->density = 0.0002f;
 	scene.fog->heightFalloff = 0.0284f;
 	scene.fog->height = 0.0f;
 	scene.fog->scatteringAnisotropy = 0.0f;
 
-	LoadScene();
-
 	scene.postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
-	// Use against TAA smoothing
 	scene.postProcessing.sharpen.enable = true;
 	scene.postProcessing.sharpen.factor = 0.15f;
 
@@ -70,22 +65,7 @@ void App::LoadContent() {
 	sphere.data.materials[0].metalness = 0.0;
 	sphere.data.materials[0].baseColor = vec3(1.0);
 
-	scene.Update(&camera, 1.0f);
-	scene.BuildRTStructures();
-	
-	auto volume = scene.irradianceVolume;
-	volume->hysteresis = 0.99f;
-
-	int32_t probeCount = volume->probeCount.x * volume->probeCount.y *
-		volume->probeCount.z;
-
-	for (int32_t j = 0; j < probeCount; j++) {
-		auto actor = new Atlas::Actor::MovableMeshActor(&sphere);
-		actor->visible = false;
-		sphereActors.push_back(actor);
-
-		scene.Add(actor);
-	}
+	LoadScene();
 
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -128,9 +108,9 @@ void App::Update(float deltaTime) {
 		static bool renderSpheres = false;
 		if (renderSpheres != spheresVisible) {
 			renderSpheres = spheresVisible;
-			for (auto actor : sphereActors)
+			for (auto& actor : probeActors)
 			{
-				actor->visible = renderSpheres;
+				actor.visible = renderSpheres;
 			}
 		}
 		if (renderSpheres) {
@@ -153,7 +133,7 @@ void App::Update(float deltaTime) {
 				ivec3 offset = ivec3(x, y, z);
 				vec3 pos = scene.irradianceVolume->GetProbeLocation(offset);
 
-				sphereActors[j]->SetMatrix(glm::translate(pos));
+				probeActors[j].SetMatrix(glm::translate(pos));
 			}
 		}
 	}
@@ -271,7 +251,7 @@ void App::Render(float deltaTime) {
 				const char* items[] = { "1280x720", "1920x1080", "2560x1440", "3840x2160" };
 				static int resolution = 1;
 				int currentItem = resolution;
-				ImGui::Combo("Resolution", &currentItem, items, IM_ARRAYSIZE(items));
+				ImGui::Combo("Resolution##Rendering", &currentItem, items, IM_ARRAYSIZE(items));
 
 				if (currentItem != resolution) {
 					resolution = currentItem;
@@ -285,12 +265,33 @@ void App::Render(float deltaTime) {
 
 			}
 
-			if (ImGui::CollapsingHeader("Irradiance volume")) {
+			if (ImGui::CollapsingHeader("DDGI")) {
 				ImGui::Text(("Probe count: " + vecToString(volume->probeCount)).c_str());
 				ImGui::Checkbox("Enable volume", &volume->enable);
 				ImGui::Checkbox("Update volume", &volume->update);
 				ImGui::Checkbox("Visualize probes", &spheresVisible);
 				ImGui::Checkbox("Sample emissives", &volume->sampleEmissives);
+
+				const char* items[] = { "5x5x5", "10x10x10", "20x20x20", "30x30x30" };
+				int currentItem = 0;
+				if (volume->probeCount == ivec3(5)) currentItem = 0;
+				if (volume->probeCount == ivec3(10)) currentItem = 1;
+				if (volume->probeCount == ivec3(20)) currentItem = 2;
+				if (volume->probeCount == ivec3(30)) currentItem = 3;
+				auto prevItem = currentItem;
+				ImGui::Combo("Resolution##DDGI", &currentItem, items, IM_ARRAYSIZE(items));
+
+				if (currentItem != prevItem) {
+					RemoveProbeActors();
+					switch (currentItem) {
+					case 0: volume->SetProbeCount(ivec3(5)); break;
+					case 1: volume->SetProbeCount(ivec3(10)); break;
+					case 2: volume->SetProbeCount(ivec3(20)); break;
+					case 3: volume->SetProbeCount(ivec3(30)); break;
+					}
+					AddProbeActors();
+				}
+
 				ImGui::SliderFloat("Strength##DDGI", &volume->strength, 0.0f, 5.0f);
 				ImGui::Separator();
 				ImGui::Text("AABB");
@@ -410,6 +411,8 @@ bool App::LoadScene() {
 	bool successful = false;
 
 	DisplayLoadingScreen();
+
+	RemoveProbeActors();
 
 	Atlas::Texture::Cubemap sky;
 	//else sky = Atlas::Texture::Cubemap("moonlit_golf_4k.hdr", 1024);
@@ -537,6 +540,8 @@ bool App::LoadScene() {
 	scene.Update(&camera, 1.0f);
 	scene.BuildRTStructures();
 
+	AddProbeActors();
+
 	// Reset input handlers
 	keyboardHandler.Reset(&camera);
 	mouseHandler.Reset(&camera);
@@ -551,6 +556,34 @@ void App::UnloadScene() {
 
 	delete scene.sky.probe;
 	delete scene.irradianceVolume;
+
+}
+
+void App::AddProbeActors() {
+
+	auto volume = scene.irradianceVolume;
+	int32_t probeCount = volume->probeCount.x * volume->probeCount.y *
+		volume->probeCount.z;
+
+	for (int32_t j = 0; j < probeCount; j++) {
+		auto actor = Atlas::Actor::MovableMeshActor(&sphere);
+		actor.visible = spheresVisible;
+		probeActors.push_back(actor);
+	}
+
+	for (auto& actor : probeActors) {
+		scene.Add(&actor);
+	}
+
+}
+
+void App::RemoveProbeActors() {
+
+	for (auto& actor : probeActors) {
+		scene.Remove(&actor);
+	}
+
+	probeActors.clear();
 
 }
 

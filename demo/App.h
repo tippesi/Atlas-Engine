@@ -40,6 +40,9 @@ private:
 	bool LoadScene();
 	void UnloadScene();
 
+	void AddProbeActors();
+	void RemoveProbeActors();
+
 	void SetResolution(int32_t width, int32_t height);
 
 	SceneSelection sceneSelection = SPONZA;
@@ -66,7 +69,7 @@ private:
 	Atlas::Input::MouseHandler mouseHandler;
 	Atlas::Input::KeyboardHandler keyboardHandler;
 
-	std::vector<Atlas::Actor::MovableMeshActor*> sphereActors;
+	std::vector<Atlas::Actor::MovableMeshActor> probeActors;
 
 	bool renderUI = true;
 	bool renderEnvProbe = true;

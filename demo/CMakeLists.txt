@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.7)
 project(AtlasEngineDemo)
 
+# Note: For this project, the root CMakeLists.txt turns
+# the ATLAS_IMGUI and ATLAS_EXPORT_MAIN options on.
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/)
 
 file(GLOB_RECURSE DEMO_SOURCE_FILES
@@ -10,6 +13,8 @@ file(GLOB_RECURSE DEMO_SOURCE_FILES
 		"*.hpp"
         )
 
+# Required: Set both the source and dependency directories 
+# as include directories
 include_directories(../src)
 include_directories(../dependencies)
 
@@ -24,6 +29,12 @@ foreach(SOURCE_FILE IN ITEMS ${DEMO_SOURCE_FILES})
     source_group("${SOURCE_PATH_CONVERTED}" FILES "${SOURCE_FILE}")
 endforeach()  
 
+# We use the exported main file from the AtlasEngine library to able to use
+# the app class. Alternatively, you can write a main function yourself.
+# To export the main file the ATLAS_EXPORT_MAIN option has to be turned on.
 add_executable(${PROJECT_NAME} ${DEMO_SOURCE_FILES} ${ATLAS_ENGINE_MAIN_FILE})
+# Required: Add the compile definitions of the library, such that includes work properly
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
+# We want to use both ImGui and the AtlasEngine. For ImGui, the ATLAS_IMGUI option
+# needs to be turned on.
 target_link_libraries (${PROJECT_NAME} AtlasEngine Imgui)

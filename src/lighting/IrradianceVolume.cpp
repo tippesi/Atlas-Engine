@@ -64,6 +64,23 @@ namespace Atlas {
 		
 		}
 
+		void IrradianceVolume::SetProbeCount(ivec3 probeCount) {
+
+			this->probeCount = probeCount;
+
+			auto irrRes = ivec2(this->irrRes + 2);
+			irrRes.x *= probeCount.x;
+			irrRes.y *= probeCount.z;
+
+			auto momRes = ivec2(this->momRes + 2);
+			momRes.x *= probeCount.x;
+			momRes.y *= probeCount.z;
+
+			internal = InternalIrradianceVolume(irrRes, momRes, probeCount);
+			internal.SetRayCount(rayCount, rayCountInactive);
+
+		}
+
 		void IrradianceVolume::ClearProbes() {
 
 			auto irrRes = ivec2(this->irrRes + 2);

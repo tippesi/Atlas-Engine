@@ -65,6 +65,8 @@ namespace Atlas {
 
 			void SetRayCount(uint32_t rayCount, uint32_t rayCountInactive);
 
+			void SetProbeCount(ivec3 probeCount);
+
 			void ClearProbes();
 
 			Volume::AABB aabb;
