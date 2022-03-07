@@ -1,4 +1,5 @@
 #include "Texture.h"
+#include "../Extensions.h"
 
 #include "../libraries/stb/stb_image.h"
 #include "../libraries/stb/stb_image_write.h"
@@ -9,7 +10,6 @@ namespace Atlas {
     namespace Texture {
 
         int32_t Texture::anisotropyLevel = 0;
-        bool Texture::anisotropicFilteringSupported = false;
 
         Texture::Texture() {
 
@@ -172,7 +172,7 @@ namespace Atlas {
 
         int32_t Texture::GetMaxAnisotropyLevel() {
 
-            if (anisotropicFilteringSupported) {
+            if (Extensions::IsSupported("GL_EXT_texture_filter_anisotropic")) {
 
                 float maxAnisotropy;
                 glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
@@ -226,20 +226,6 @@ namespace Atlas {
                 case 2: return AE_RG8;
                 case 4: return AE_RGBA8;
                 default: return AE_RGB8;
-            }
-
-        }
-
-        void Texture::CheckExtensions() {
-
-            int32_t extensionCount = 0;
-            glGetIntegerv(GL_NUM_EXTENSIONS, &extensionCount);
-
-            for (int32_t i = 0; i < extensionCount; i++) {
-                const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, i);
-                if (strcmp(extension, "GL_EXT_texture_filter_anisotropic") == 0) {
-                    anisotropicFilteringSupported = true;
-                }
             }
 
         }

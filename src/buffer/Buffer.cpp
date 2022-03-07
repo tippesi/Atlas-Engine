@@ -1,12 +1,11 @@
 #include "Buffer.h"
 #include "../TypeFormat.h"
 #include "../texture/TextureFormat.h"
+#include "../Extensions.h"
 
 namespace Atlas {
 
     namespace Buffer {
-
-        bool Buffer::immutableStorageSupported = false;
 
         Buffer::Buffer(const Buffer& that) {
 
@@ -32,7 +31,7 @@ namespace Atlas {
             }
 
 			//immutableStorageSupported = false;
-            immutable = (flags & AE_BUFFER_IMMUTABLE) && immutableStorageSupported;
+            immutable = (flags & AE_BUFFER_IMMUTABLE) && IsImmutableStorageSupported();
 
             // Configure mapping and storage flags.
             mapFlags |= ((flags & AE_BUFFER_MAP_READ) ? GL_MAP_READ_BIT : 0);
@@ -296,31 +295,15 @@ namespace Atlas {
 
         }
 
-        void Buffer::CheckExtensions() {
-
-            int32_t extensionCount = 0;
-            glGetIntegerv(GL_NUM_EXTENSIONS, &extensionCount);
-
-            for (int32_t i = 0; i < extensionCount; i++) {
-                const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, i);
-                if (strcmp(extension, "GL_ARB_buffer_storage") == 0) {
-                    immutableStorageSupported = true;
-                }
-                if (strcmp(extension, "GL_EXT_buffer_storage") == 0) {
-                    immutableStorageSupported = true;
-                }
-            }
-
-#ifdef AE_OS_ANDROID
-			// It is not properly supported only since API 28
-            immutableStorageSupported = false;
-#endif
-
-        }
-
         bool Buffer::IsImmutableStorageSupported() {
 
-            return immutableStorageSupported;
+#ifndef AE_OS_ANDROID
+            return Extensions::IsSupported("GL_ARB_buffer_storage") ||
+                Extensions::IsSupported("GL_EXT_buffer_storage");
+#else
+            return false;
+#endif
+
 
         }
 

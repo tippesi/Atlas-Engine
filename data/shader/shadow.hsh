@@ -1,4 +1,6 @@
+#ifdef AE_TEXTURE_SHADOW_LOD
 #extension GL_EXT_texture_shadow_lod : require
+#endif
 
 layout(binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 
@@ -9,8 +11,14 @@ float offsetLookup(vec2 flooredUV, float u, float v, float cascadeIndex,
 
 	vec2 uv = 0.5 * (flooredUV + vec2(u, v) * texelSize) + 0.5;
 
-	return textureLod(cascadeMaps,
-		vec4(uv, cascadeIndex, depth + bias), 0);
+#ifdef AE_TEXTURE_SHADOW_LOD
+    // This fixes issues that can occur at cascade borders
+    return textureLod(cascadeMaps, 
+        vec4(uv, cascadeIndex, depth + bias), 0);
+#else
+    return texture(cascadeMaps, 
+        vec4(uv, cascadeIndex, depth + bias));
+#endif
 
 }
 

@@ -2,6 +2,7 @@
 #include "../loader/AssetLoader.h"
 #include "../common/Path.h"
 #include "../Log.h"
+#include "../Extensions.h"
 
 #include <fstream>
 #include <sstream>
@@ -109,6 +110,9 @@ namespace Atlas {
 				\nprecision highp samplerCube;\nprecision highp sampler2DArrayShadow;\nprecision highp sampler2DArray;\
 				\nprecision highp samplerCubeShadow;\nprecision highp imageCube;\nprecision highp int;\n#define AE_API_GLES\n");
 #endif
+            if (Extensions::IsSupported("GL_EXT_texture_shadow_lod")) {
+                composedCode.append("#define AE_TEXTURE_SHADOW_LOD\n");
+            }
 
             for (auto& macro : macros) {
                 composedCode.append("#define " + macro + "\n");

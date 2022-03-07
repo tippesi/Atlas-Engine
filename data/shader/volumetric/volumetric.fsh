@@ -1,4 +1,6 @@
+#ifdef AE_TEXTURE_SHADOW_LOD
 #extension GL_EXT_texture_shadow_lod : require
+#endif
 
 #include <../structures>
 #include <../common/convert.hsh>
@@ -85,8 +87,14 @@ vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 
         cascadeSpace.xyz = cascadeSpace.xyz * 0.5 + 0.5;
 
+#ifdef AE_TEXTURE_SHADOW_LOD
+        // This fixes issues that can occur at cascade borders
         float shadowValue = textureLod(cascadeMaps, 
             vec4(cascadeSpace.xy, cascadeIndex, cascadeSpace.z), 0);
+#else
+        float shadowValue = texture(cascadeMaps, 
+            vec4(cascadeSpace.xy, cascadeIndex, cascadeSpace.z));
+#endif
 
         vec3 worldPosition = vec3(ivMatrix * vec4(currentPosition, 1.0));
         

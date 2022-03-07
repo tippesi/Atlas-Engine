@@ -34,6 +34,7 @@ namespace Atlas {
 
 			vegetationUniform = shaderBatch.GetUniform("vegetation");
 			invertUVsUniform = shaderBatch.GetUniform("invertUVs");
+			staticMeshUniform = shaderBatch.GetUniform("staticMesh");
 
 			pvMatrixLast = shaderBatch.GetUniform("pvMatrixLast");
 
@@ -125,7 +126,7 @@ namespace Atlas {
 					timeUniform->SetValue(Clock::Get());
 					deltaTimeUniform->SetValue(Clock::GetDelta());
 
-					shaderBatch.GetUniform("staticMesh")->SetValue(staticMesh);
+					staticMeshUniform->SetValue(staticMesh);
 					vegetationUniform->SetValue(mesh->vegetation);
 					invertUVsUniform->SetValue(mesh->invertUVs);
 

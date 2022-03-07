@@ -1,4 +1,5 @@
 #include "Engine.h"
+#include "Extensions.h"
 
 namespace Atlas {
 
@@ -78,8 +79,7 @@ namespace Atlas {
 #endif
 
 		// Do the setup for all the classes that need static setup
-		Texture::Texture::CheckExtensions();
-		Buffer::Buffer::CheckExtensions();
+		Extensions::Process();
 		Texture::Texture::GetMaxAnisotropyLevel();
 
 		Loader::AssetLoader::Init();

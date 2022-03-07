@@ -12,13 +12,15 @@ namespace Atlas {
             rtaoShader.AddStage(AE_COMPUTE_STAGE, "ao/rtao.csh");
             rtaoShader.Compile();
 
-			bilateralBlurShader.AddStage(AE_VERTEX_STAGE, "bilateralBlur.vsh");
-			bilateralBlurShader.AddStage(AE_FRAGMENT_STAGE, "bilateralBlur.fsh");
+            horizontalBlurShader.AddStage(AE_COMPUTE_STAGE, "bilateralBlur.csh");
+            horizontalBlurShader.AddMacro("HORIZONTAL");
+            horizontalBlurShader.AddMacro("DEPTH_WEIGHT");
+            horizontalBlurShader.Compile();
 
-			bilateralBlurShader.AddMacro("BILATERAL");
-			bilateralBlurShader.AddMacro("BLUR_R");
-
-			bilateralBlurShader.Compile();
+            verticalBlurShader.AddStage(AE_COMPUTE_STAGE, "bilateralBlur.csh");
+            verticalBlurShader.AddMacro("VERTICAL");
+            verticalBlurShader.AddMacro("DEPTH_WEIGHT");
+            verticalBlurShader.Compile();
 
 		}
 
@@ -60,47 +62,48 @@ namespace Atlas {
 
             framebuffer.Bind();
 
-            // Blur AO
             {
-                bilateralBlurShader.Bind();
+                const int32_t groupSize = 256;
 
                 target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
 
                 std::vector<float> kernelWeights;
                 std::vector<float> kernelOffsets;
 
-                blurFilter.GetLinearized(&kernelWeights, &kernelOffsets);
+                blurFilter.GetLinearized(&kernelWeights, &kernelOffsets, false);
 
                 auto mean = (kernelWeights.size() - 1) / 2;
                 kernelWeights = std::vector<float>(kernelWeights.begin() + mean, kernelWeights.end());
                 kernelOffsets = std::vector<float>(kernelOffsets.begin() + mean, kernelOffsets.end());
 
-                bilateralBlurShader.GetUniform("weight")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
-                bilateralBlurShader.GetUniform("offset")->SetValue(kernelOffsets.data(), (int32_t)kernelOffsets.size());
+                ivec2 groupCount = ivec2(res.x / groupSize, res.y);
+                groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
 
-                bilateralBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size());
+                horizontalBlurShader.Bind();
 
-                glViewport(0, 0, res.x, res.y);
+                horizontalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
+                horizontalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
 
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &target->swapSsaoTexture);
                 target->ssaoTexture.Bind(GL_TEXTURE0);
-
-                bilateralBlurShader.GetUniform("blurDirection")->SetValue(
-                    vec2(1.0f / float(res.x), 0.0f)
-                );
+                target->swapSsaoTexture.Bind(GL_WRITE_ONLY, 0);
 
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                glDispatchCompute(groupCount.x, groupCount.y, 1);
 
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &target->ssaoTexture);
+                groupCount = ivec2(res.x, res.y / groupSize);
+                groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
+
+                verticalBlurShader.Bind();
+
+                verticalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
+                verticalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
+
                 target->swapSsaoTexture.Bind(GL_TEXTURE0);
+                target->ssaoTexture.Bind(GL_WRITE_ONLY, 0);
 
-                bilateralBlurShader.GetUniform("blurDirection")->SetValue(
-                    vec2(0.0f, 1.0f / float(res.y))
-                );
-
-                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-            }            
+                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                glDispatchCompute(groupCount.x, groupCount.y, 1);
+            }
 
 		}
 

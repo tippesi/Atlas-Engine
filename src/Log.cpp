@@ -47,7 +47,14 @@ namespace Atlas {
 		    AtlasLog("%s", message.substr(start, end).c_str());
 		}
 #else
+		// Color code console output
+		switch (severity) {
+		case Type::TYPE_WARNING: printf("\033[1;33m"); break;
+		case Type::TYPE_ERROR: printf("\033[1;31m"); break;
+		}
 		AtlasLog("%s", consoleLog.c_str());
+		// Reset color back to white
+		printf("\033[0;37m");
 #endif
 #endif
 

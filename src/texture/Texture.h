@@ -183,11 +183,6 @@ namespace Atlas {
              */
             static int32_t GetSuggestedFormat(int32_t channelCount);
 
-            /**
-             * Checks the available extensions which the class might use
-             */
-            static void CheckExtensions();
-
             int32_t width = 0;
             int32_t height = 0;
 
@@ -224,8 +219,6 @@ namespace Atlas {
 			float bias = 0.0f;
 
             static int32_t anisotropyLevel;
-
-            static bool anisotropicFilteringSupported;
 
         };
 

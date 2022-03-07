@@ -269,11 +269,6 @@ namespace Atlas {
 			virtual size_t GetSize();
 
 			/**
-             * Checks for extensions. Is being called by the engine
-             */
-			static void CheckExtensions();
-
-			/**
              * Returns whether immutable storage and therefore persistent mapping is available.
              * @return True if immutable storage is supported, false otherwise
              */
@@ -310,8 +305,6 @@ namespace Atlas {
 			size_t bufferingIndex = 0;
 
 			BufferLock bufferLock;
-
-			static bool immutableStorageSupported;
 
 		};
 
