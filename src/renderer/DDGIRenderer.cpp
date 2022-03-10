@@ -239,14 +239,8 @@ namespace Atlas {
 				return;
 
 			glDisable(GL_CULL_FACE);
-
-			// Need a base color map to write the base color target
-			probeDebugMaterial.baseColorMap = new Texture::Texture2D(1, 1, AE_RGB8);
-			probeDebugMaterial.baseColorMap->SetData(std::vector<uint8_t>{ 1, 1, 1 });
-
-			probeDebugActiveMaterial.baseColorMap = probeDebugMaterial.baseColorMap;
+            
 			probeDebugActiveMaterial.emissiveColor = vec3(0.0f, 1.0f, 0.0f);
-			probeDebugInactiveMaterial.baseColorMap = probeDebugMaterial.baseColorMap;
 			probeDebugInactiveMaterial.emissiveColor = vec3(1.0f, 0.0f, 0.0f);
 
 			sphereArray.Bind();
