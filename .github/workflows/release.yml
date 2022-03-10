@@ -89,6 +89,7 @@ jobs:
         run: |
           cd dependencies
           sh download_dependencies.sh
+          sudo apt-get update
           sudo apt-get install libgl1-mesa-dev
 
       # https://github.com/marketplace/actions/setup-ninja
