@@ -37,6 +37,12 @@ void App::LoadContent() {
 			if (event.keycode == AE_KEY_F11 && event.state == AE_BUTTON_RELEASED) {
 				renderUI = !renderUI;
 			}
+			if (event.keycode == AE_KEY_LSHIFT && event.state == AE_BUTTON_PRESSED) {
+				keyboardHandler.speed = cameraSpeed * 4.0f;
+			}
+			if (event.keycode == AE_KEY_LSHIFT && event.state == AE_BUTTON_RELEASED) {
+				keyboardHandler.speed = cameraSpeed;
+			}
 		});
 	
 	directionalLight = Atlas::Lighting::DirectionalLight(AE_MOVABLE_LIGHT);
@@ -58,12 +64,6 @@ void App::LoadContent() {
 	scene.postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
 	scene.postProcessing.sharpen.enable = true;
 	scene.postProcessing.sharpen.factor = 0.15f;
-
-	sphere = Atlas::Mesh::Mesh("sphere.dae", AE_MOVABLE_MESH);
-	sphere.SetTransform(glm::scale(mat4(1.0f), vec3(0.09f)));
-	sphere.data.materials[0].roughness = 1.0;
-	sphere.data.materials[0].metalness = 0.0;
-	sphere.data.materials[0].baseColor = vec3(1.0);
 
 	LoadScene();
 
@@ -103,40 +103,6 @@ void App::Update(float deltaTime) {
 
 	camera.UpdateView();
 	camera.UpdateProjection();
-
-	{
-		static bool renderSpheres = false;
-		if (renderSpheres != spheresVisible) {
-			renderSpheres = spheresVisible;
-			for (auto& actor : probeActors)
-			{
-				actor.visible = renderSpheres;
-			}
-		}
-		if (renderSpheres) {
-			auto volume = scene.irradianceVolume;
-
-			int32_t probeCount = volume->probeCount.x * volume->probeCount.y *
-				volume->probeCount.z;
-
-			vec3 volumeSize = volume->aabb.max - volume->aabb.min;
-			vec3 cellSize = volumeSize / vec3(volume->probeCount - ivec3(1));
-			vec3 halfCell = cellSize * 0.5f;
-
-			for (int32_t j = 0; j < probeCount; j++) {
-				int32_t off = j;
-				int32_t z = off / (volume->probeCount.x * volume->probeCount.y);
-				off -= (z * volume->probeCount.x * volume->probeCount.y);
-				int32_t y = off / volume->probeCount.x;
-				int32_t x = off % volume->probeCount.x;
-
-				ivec3 offset = ivec3(x, y, z);
-				vec3 pos = scene.irradianceVolume->GetProbeLocation(offset);
-
-				probeActors[j].SetMatrix(glm::translate(pos));
-			}
-		}
-	}
 
 	scene.Update(&camera, deltaTime);
 
@@ -198,7 +164,7 @@ void App::Render(float deltaTime) {
 			ImGui::Text(("Camera location: " + vecToString(camera.location)).c_str());
 
 			{
-				const char* items[] = { "Cornell box", "Sponza", "Bistro", "San Miguel", "Medieval" };
+				const char* items[] = { "Cornell box", "Sponza", "Bistro", "San Miguel", "Medieval", "Pica Pica"};
 				int currentItem = static_cast<int>(sceneSelection);
 				ImGui::Combo("Select scene", &currentItem, items, IM_ARRAYSIZE(items));
 
@@ -267,9 +233,10 @@ void App::Render(float deltaTime) {
 
 			if (ImGui::CollapsingHeader("DDGI")) {
 				ImGui::Text(("Probe count: " + vecToString(volume->probeCount)).c_str());
+				ImGui::Text(("Cell size: " + vecToString(volume->cellSize)).c_str());
 				ImGui::Checkbox("Enable volume", &volume->enable);
 				ImGui::Checkbox("Update volume", &volume->update);
-				ImGui::Checkbox("Visualize probes", &spheresVisible);
+				ImGui::Checkbox("Visualize probes", &volume->debug);
 				ImGui::Checkbox("Sample emissives", &volume->sampleEmissives);
 
 				const char* items[] = { "5x5x5", "10x10x10", "20x20x20", "30x30x30" };
@@ -282,14 +249,12 @@ void App::Render(float deltaTime) {
 				ImGui::Combo("Resolution##DDGI", &currentItem, items, IM_ARRAYSIZE(items));
 
 				if (currentItem != prevItem) {
-					RemoveProbeActors();
 					switch (currentItem) {
 					case 0: volume->SetProbeCount(ivec3(5)); break;
 					case 1: volume->SetProbeCount(ivec3(10)); break;
 					case 2: volume->SetProbeCount(ivec3(20)); break;
 					case 3: volume->SetProbeCount(ivec3(30)); break;
 					}
-					AddProbeActors();
 				}
 
 				ImGui::SliderFloat("Strength##DDGI", &volume->strength, 0.0f, 5.0f);
@@ -324,7 +289,9 @@ void App::Render(float deltaTime) {
 				ImGui::SliderFloat("Strength", &ssao->strength, 0.0f, 20.0f, "%.3f", 2.0f);
 			}
 			if (ImGui::CollapsingHeader("Camera")) {
-				ImGui::SliderFloat("Exposure", &camera.exposure, 0.0f, 10.0f);
+				ImGui::SliderFloat("Exposure##Camera", &camera.exposure, 0.0f, 10.0f);
+				ImGui::SliderFloat("Speed##Camera", &cameraSpeed, 0.0f, 20.0f);
+				keyboardHandler.speed = cameraSpeed;
 			}
 			if (ImGui::CollapsingHeader("Fog")) {
 				ImGui::Checkbox("Enable##Fog", &fog->enable);
@@ -403,6 +370,7 @@ bool App::IsSceneAvailable(SceneSelection selection) {
 	case BISTRO: return Atlas::Loader::AssetLoader::FileExists("bistro/mesh/exterior.obj");
 	case SANMIGUEL: return Atlas::Loader::AssetLoader::FileExists("sanmiguel/san-miguel.obj");
 	case MEDIEVAL: return Atlas::Loader::AssetLoader::FileExists("medieval/scene.fbx");
+	case PICAPICA: return Atlas::Loader::AssetLoader::FileExists("pica pica/mesh/scene.gltf");
 	}
 }
 
@@ -412,10 +380,7 @@ bool App::LoadScene() {
 
 	DisplayLoadingScreen();
 
-	RemoveProbeActors();
-
 	Atlas::Texture::Cubemap sky;
-	//else sky = Atlas::Texture::Cubemap("moonlit_golf_4k.hdr", 1024);
 
 	if (sceneSelection == CORNELL) {
 		if (!Atlas::Loader::AssetLoader::FileExists("cornell/CornellBox-Original.obj")) return false;
@@ -529,6 +494,28 @@ bool App::LoadScene() {
 
 		scene.fog->enable = true;
 	}
+	else if (sceneSelection == PICAPICA) {
+		if (!Atlas::Loader::AssetLoader::FileExists("pica pica/mesh/scene.gltf")) return false;
+
+		mesh = Atlas::Mesh::Mesh("pica pica/mesh/scene.gltf", false, 2048);
+		mesh.invertUVs = true;
+
+		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
+		//mesh.cullBackFaces = false;
+
+		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
+
+		// Other scene related settings apart from the mesh
+		directionalLight.intensity = 10.0f;
+		directionalLight.GetVolumetric()->intensity = 0.08f;
+		scene.irradianceVolume->SetRayCount(128, 32);
+
+		// Setup camera
+		camera.location = vec3(30.0f, 25.0f, 0.0f);
+		camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
+
+		scene.fog->enable = true;
+	}
 
 	meshActor = Atlas::Actor::StaticMeshActor(&mesh, mat4(1.0f));
 
@@ -539,8 +526,6 @@ bool App::LoadScene() {
 	camera.Update();
 	scene.Update(&camera, 1.0f);
 	scene.BuildRTStructures();
-
-	AddProbeActors();
 
 	// Reset input handlers
 	keyboardHandler.Reset(&camera);
@@ -556,34 +541,6 @@ void App::UnloadScene() {
 
 	delete scene.sky.probe;
 	delete scene.irradianceVolume;
-
-}
-
-void App::AddProbeActors() {
-
-	auto volume = scene.irradianceVolume;
-	int32_t probeCount = volume->probeCount.x * volume->probeCount.y *
-		volume->probeCount.z;
-
-	for (int32_t j = 0; j < probeCount; j++) {
-		auto actor = Atlas::Actor::MovableMeshActor(&sphere);
-		actor.visible = spheresVisible;
-		probeActors.push_back(actor);
-	}
-
-	for (auto& actor : probeActors) {
-		scene.Add(&actor);
-	}
-
-}
-
-void App::RemoveProbeActors() {
-
-	for (auto& actor : probeActors) {
-		scene.Remove(&actor);
-	}
-
-	probeActors.clear();
 
 }
 

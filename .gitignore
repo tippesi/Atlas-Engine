@@ -20,3 +20,5 @@ cmake-build-relwithdebinfo
 data/cornell
 data/bistro
 dependencies/Imgui/imgui
+data/pica pica
+data/medieval

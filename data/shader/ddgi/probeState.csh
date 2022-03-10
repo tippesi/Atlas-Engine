@@ -42,7 +42,7 @@ void main() {
         increment = 0u;
         backFaceHits = 0u;
         inCellHits = 0u;
-        probeState = probeStates[baseIdx];
+        probeState = floatBitsToUint(probeStates[baseIdx].w);
         temporalInfo = temporalInfos[baseIdx];
     }
 
@@ -80,7 +80,7 @@ void main() {
         if (temporalInfo.x > 0.0) {
             probeState = PROBE_STATE_ACTIVE;
         }
-        probeStates[baseIdx] = probeState;
+        probeStates[baseIdx].w = uintBitsToFloat(probeState);
         temporalInfos[baseIdx] = temporalInfo;
     }
 

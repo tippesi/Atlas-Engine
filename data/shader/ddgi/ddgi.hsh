@@ -16,7 +16,7 @@ layout(binding = 12) uniform sampler2DArray irradianceVolume;
 layout(binding = 13) uniform sampler2DArray momentsVolume;
 
 layout(std430, binding = 9) buffer ProbeStates {
-	uint probeStates[];
+	vec4 probeStates[];
 };
 
 uniform vec3 volumeMin;
@@ -84,6 +84,10 @@ vec3 GetProbePosition(ivec3 probeIdx) {
 	return volumeMin + vec3(probeIdx) * cellSize;
 }
 
+vec3 GetProbeOffset(uint idx) {
+	return probeStates[idx].xyz;
+}
+
 ivec3 GetNearestProbe(vec3 position) {
 	vec3 localPosition = position - volumeMin;
 	return ivec3(round(localPosition / cellSize));
@@ -91,6 +95,10 @@ ivec3 GetNearestProbe(vec3 position) {
 
 uint GetProbeIdx(ivec3 probe) {
 	return Flatten3D(probe.xzy, volumeProbeCount.xzy);
+}
+
+ivec3 GetProbeGridCoord(uint idx) {
+	return Unflatten3D(int(idx), volumeProbeCount.xzy).xzy;
 }
 
 bool IsInsideVolume(vec3 position) {
@@ -139,10 +147,13 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 		ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
 		ivec3 gridCell = min(baseCell + offset, volumeProbeCount - ivec3(1));
 
-		uint probeState = probeStates[GetProbeIdx(gridCell)];
-		if (probeState == PROBE_STATE_INACTIVE) continue;
+		vec4 probeState = probeStates[GetProbeIdx(gridCell)];
+		uint state = floatBitsToUint(probeState.w);
+		if (state == PROBE_STATE_INACTIVE) continue;
 
-		vec3 probePos = vec3(gridCell) * cellSize + volumeMin;
+		vec3 probeOffset = probeState.xyz;
+
+		vec3 probePos = vec3(gridCell) * cellSize + probeOffset + volumeMin;
 		vec3 pointToProbe = probePos - P;
 		vec3 L = normalize(pointToProbe);
 
@@ -154,7 +165,8 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 
 		// Should be used when the chebyshev test is weighted more
 		//float weight = sqr((dot(L, geometryNormal) + 1.0) * 0.5) + 0.2;
-		float weight = saturate(dot(L, geometryNormal));
+		float weight = dot(L, geometryNormal);
+		if (weight < 0.0) continue;
 
 		vec2 momOctCoord = UnitVectorToOctahedron(biasedProbeToPosition);
 		vec3 momCoord = GetProbeCoord(gridCell, momOctCoord, momRes, momTexelSize, volumeMomentsRes);

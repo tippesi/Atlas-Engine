@@ -29,8 +29,7 @@ layout(std430, binding = 5) buffer RayDirsInactiveProbes {
 
 shared uint increment;
 shared uint probeState;
-
-// Possibly load the rays into thread shared memory to improve performance.
+shared vec3 probeOffset;
 
 void main() {
 
@@ -38,7 +37,8 @@ void main() {
 
 	if (gl_LocalInvocationID.x == 0u) {
         increment = 0u;
-        probeState = probeStates[baseIdx];
+        probeState = floatBitsToUint(probeStates[baseIdx].w);
+        probeOffset = probeStates[baseIdx].xyz;
     }
 
     barrier();
@@ -51,7 +51,7 @@ void main() {
 		Ray ray;
 
         ray.ID = int(rayBaseIdx + idx);
-		ray.origin = GetProbePosition(ivec3(gl_WorkGroupID));
+		ray.origin = GetProbePosition(ivec3(gl_WorkGroupID)) + probeOffset;
 		ray.direction = normalize(randomRotation * 
             (probeState == PROBE_STATE_INACTIVE ? rayDirsInactiveProbes[idx].xyz : rayDirs[idx].xyz));
 

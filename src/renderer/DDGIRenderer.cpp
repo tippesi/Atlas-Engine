@@ -10,6 +10,7 @@ namespace Atlas {
 		DDGIRenderer::DDGIRenderer() {
 
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
+			Helper::GeometryHelper::GenerateSphereVertexArray(sphereArray, 10, 10);
 
 			rayHitBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
 				AE_BUFFER_DYNAMIC_STORAGE);
@@ -23,12 +24,20 @@ namespace Atlas {
 			probeStateShader.AddStage(AE_COMPUTE_STAGE, "ddgi/probeState.csh");
 			probeStateShader.Compile();
 
-			probeUpdateShader.AddStage(AE_COMPUTE_STAGE, "ddgi/probeUpdate.csh");
-			probeUpdateShader.Compile();
+			probeIrradianceUpdateShader.AddStage(AE_COMPUTE_STAGE, "ddgi/probeUpdate.csh");
+			probeIrradianceUpdateShader.AddMacro("IRRADIANCE");
+			probeIrradianceUpdateShader.Compile();
+
+			probeMomentsUpdateShader.AddStage(AE_COMPUTE_STAGE, "ddgi/probeUpdate.csh");
+			probeMomentsUpdateShader.Compile();
 
 			copyEdgeShader.AddStage(AE_VERTEX_STAGE, "ddgi/dummy.vsh");
 			copyEdgeShader.AddStage(AE_FRAGMENT_STAGE, "ddgi/copyEdge.fsh");
 			copyEdgeShader.Compile();
+
+			probeDebugShader.AddStage(AE_VERTEX_STAGE, "ddgi/probeDebug.vsh");
+			probeDebugShader.AddStage(AE_FRAGMENT_STAGE, "ddgi/probeDebug.fsh");
+			probeDebugShader.Compile();
 
 		}
 
@@ -137,15 +146,30 @@ namespace Atlas {
 				irradianceArray.Bind(GL_WRITE_ONLY, 0);
 				momentsArray.Bind(GL_WRITE_ONLY, 1);
 
-				probeUpdateShader.Bind();
-				probeUpdateShader.GetUniform("irrProbeRes")->SetValue(volume->irrRes);
-				probeUpdateShader.GetUniform("momProbeRes")->SetValue(volume->momRes);
-				probeUpdateShader.GetUniform("rayCount")->SetValue(rayCount);
-				probeUpdateShader.GetUniform("rayCountInactive")->SetValue(rayCountInactive);
-				probeUpdateShader.GetUniform("hysteresis")->SetValue(volume->hysteresis);
-				probeUpdateShader.GetUniform("cellSize")->SetValue(volume->cellSize);
-				probeUpdateShader.GetUniform("volumeGamma")->SetValue(volume->gamma);
-				probeUpdateShader.GetUniform("depthSharpness")->SetValue(volume->sharpness);
+				probeIrradianceUpdateShader.Bind();
+				probeIrradianceUpdateShader.GetUniform("irrProbeRes")->SetValue(volume->irrRes);
+				probeIrradianceUpdateShader.GetUniform("momProbeRes")->SetValue(volume->momRes);
+				probeIrradianceUpdateShader.GetUniform("rayCount")->SetValue(rayCount);
+				probeIrradianceUpdateShader.GetUniform("rayCountInactive")->SetValue(rayCountInactive);
+				probeIrradianceUpdateShader.GetUniform("hysteresis")->SetValue(volume->hysteresis);
+				probeIrradianceUpdateShader.GetUniform("cellSize")->SetValue(volume->cellSize);
+				probeIrradianceUpdateShader.GetUniform("volumeGamma")->SetValue(volume->gamma);
+				probeIrradianceUpdateShader.GetUniform("depthSharpness")->SetValue(volume->sharpness);
+
+				glDispatchCompute(probeCount.x, probeCount.y, probeCount.z);
+
+				irradianceArray.Bind(GL_WRITE_ONLY, 0);
+				momentsArray.Bind(GL_WRITE_ONLY, 1);
+
+				probeMomentsUpdateShader.Bind();
+				probeMomentsUpdateShader.GetUniform("irrProbeRes")->SetValue(volume->irrRes);
+				probeMomentsUpdateShader.GetUniform("momProbeRes")->SetValue(volume->momRes);
+				probeMomentsUpdateShader.GetUniform("rayCount")->SetValue(rayCount);
+				probeMomentsUpdateShader.GetUniform("rayCountInactive")->SetValue(rayCountInactive);
+				probeMomentsUpdateShader.GetUniform("hysteresis")->SetValue(volume->hysteresis);
+				probeMomentsUpdateShader.GetUniform("cellSize")->SetValue(volume->cellSize);
+				probeMomentsUpdateShader.GetUniform("volumeGamma")->SetValue(volume->gamma);
+				probeMomentsUpdateShader.GetUniform("depthSharpness")->SetValue(volume->sharpness);
 
 				glDispatchCompute(probeCount.x, probeCount.y, probeCount.z);
 			}
@@ -204,6 +228,59 @@ namespace Atlas {
 			}
 
 			helper.InvalidateRayBuffer();
+
+		}
+
+		void DDGIRenderer::DebugProbes(Viewport* viewport, RenderTarget* target,
+			Camera* camera, Scene::Scene* scene, std::unordered_map<void*, uint16_t>& materialMap) {
+
+			auto volume = scene->irradianceVolume;
+			if (!volume || !volume->enable || !volume->update || !volume->debug)
+				return;
+
+			glDisable(GL_CULL_FACE);
+
+			// Need a base color map to write the base color target
+			probeDebugMaterial.baseColorMap = new Texture::Texture2D(1, 1, AE_RGB8);
+			probeDebugMaterial.baseColorMap->SetData(std::vector<uint8_t>{ 1, 1, 1 });
+
+			probeDebugActiveMaterial.baseColorMap = probeDebugMaterial.baseColorMap;
+			probeDebugActiveMaterial.emissiveColor = vec3(0.0f, 1.0f, 0.0f);
+			probeDebugInactiveMaterial.baseColorMap = probeDebugMaterial.baseColorMap;
+			probeDebugInactiveMaterial.emissiveColor = vec3(1.0f, 0.0f, 0.0f);
+
+			sphereArray.Bind();
+			probeDebugShader.Bind();
+
+			volume->internal.probeStateBuffer.BindBase(9);
+
+			probeDebugShader.GetUniform("vMatrix")->SetValue(camera->viewMatrix);
+			probeDebugShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
+			probeDebugShader.GetUniform("pvMatrixLast")->SetValue(camera->GetLastJitteredMatrix());
+
+			probeDebugShader.GetUniform("jitterLast")->SetValue(camera->GetLastJitter());
+			probeDebugShader.GetUniform("jitterCurrent")->SetValue(camera->GetJitter());
+
+			probeDebugShader.GetUniform("probeMaterialIdx")->SetValue(uint32_t(materialMap[&probeDebugMaterial]));
+			probeDebugShader.GetUniform("probeActiveMaterialIdx")->SetValue(uint32_t(materialMap[&probeDebugActiveMaterial]));
+			probeDebugShader.GetUniform("probeInactiveMaterialIdx")->SetValue(uint32_t(materialMap[&probeDebugInactiveMaterial]));
+
+			probeDebugShader.GetUniform("volumeMin")->SetValue(volume->aabb.min);
+			probeDebugShader.GetUniform("volumeMax")->SetValue(volume->aabb.max);
+			probeDebugShader.GetUniform("volumeProbeCount")->SetValue(volume->probeCount);
+
+			probeDebugShader.GetUniform("cellSize")->SetValue(volume->cellSize);
+			probeDebugShader.GetUniform("cellLength")->SetValue(glm::length(volume->cellSize));
+
+			auto [irradianceArray, momentsArray] = volume->internal.GetCurrentProbes();
+			irradianceArray.Bind(GL_TEXTURE12);
+			momentsArray.Bind(GL_TEXTURE13);
+
+			auto instanceCount = volume->probeCount.x * volume->probeCount.y * volume->probeCount.z;
+			glDrawElementsInstanced(GL_TRIANGLES, (int32_t)sphereArray.GetIndexComponent()->GetElementCount(),
+				sphereArray.GetIndexComponent()->GetDataType(), nullptr, instanceCount);
+
+			glEnable(GL_CULL_FACE);
 
 		}
 

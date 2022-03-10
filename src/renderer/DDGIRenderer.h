@@ -19,6 +19,15 @@ namespace Atlas {
 
 			void TraceAndUpdateProbes(Scene::Scene* scene);
 
+			void DebugProbes(Viewport* viewport, RenderTarget* target,
+				Camera* camera, Scene::Scene* scene, 
+				std::unordered_map<void*, uint16_t>& materialMap);
+
+			// Used for debugging
+			Material probeDebugMaterial;
+			Material probeDebugActiveMaterial;
+			Material probeDebugInactiveMaterial;
+
 		private:
 			Framebuffer irradianceFramebuffer;
 			Framebuffer momentsFramebuffer;
@@ -26,14 +35,18 @@ namespace Atlas {
 			Buffer::Buffer rayHitBuffer;
 
 			Buffer::VertexArray vertexArray;
+			Buffer::VertexArray sphereArray;
 
 			Helper::RayTracingHelper helper;
+
+			Shader::Shader probeDebugShader;
 
 			Shader::Shader rayGenShader;
 			Shader::Shader rayHitShader;
 
 			Shader::Shader probeStateShader;
-			Shader::Shader probeUpdateShader;
+			Shader::Shader probeIrradianceUpdateShader;
+			Shader::Shader probeMomentsUpdateShader;
 			Shader::Shader copyEdgeShader;
 
 		};

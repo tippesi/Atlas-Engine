@@ -75,8 +75,8 @@ namespace Atlas {
 			vec3 size;
 			vec3 cellSize;
 
-			int32_t irrRes = 6;
-			int32_t momRes = 14;
+			const int32_t irrRes = 6;
+			const int32_t momRes = 14;
 
 			uint32_t rayCount = 100;
 			uint32_t rayCountInactive = 32;
@@ -92,6 +92,7 @@ namespace Atlas {
 			bool enable = true;
 			bool update = true;
 			bool sampleEmissives = false;
+			bool debug = false;
 
 			InternalIrradianceVolume internal;
 

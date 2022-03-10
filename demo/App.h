@@ -31,7 +31,8 @@ private:
 		SPONZA,
 		BISTRO,
 		SANMIGUEL,
-		MEDIEVAL
+		MEDIEVAL,
+		PICAPICA
 	};
 
 	void DisplayLoadingScreen();
@@ -39,9 +40,6 @@ private:
 	bool IsSceneAvailable(SceneSelection selection);
 	bool LoadScene();
 	void UnloadScene();
-
-	void AddProbeActors();
-	void RemoveProbeActors();
 
 	void SetResolution(int32_t width, int32_t height);
 
@@ -60,7 +58,6 @@ private:
 	Atlas::Lighting::DirectionalLight directionalLight;
 
 	Atlas::Mesh::Mesh mesh;
-	Atlas::Mesh::Mesh sphere;
 
 	Atlas::Actor::StaticMeshActor meshActor;
 
@@ -69,14 +66,14 @@ private:
 	Atlas::Input::MouseHandler mouseHandler;
 	Atlas::Input::KeyboardHandler keyboardHandler;
 
-	std::vector<Atlas::Actor::MovableMeshActor> probeActors;
-
 	bool renderUI = true;
 	bool renderEnvProbe = true;
 	bool spheresVisible = false;
 	
 	int32_t windowWidth;
 	int32_t windowHeight;
+
+	float cameraSpeed = 7.0f;
 
 	Atlas::Renderer::PathTracingRenderer pathTracingRenderer;
 

@@ -101,7 +101,7 @@ namespace Atlas {
 				AE_BUFFER_DYNAMIC_STORAGE);
 			rayDirInactiveBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
 				AE_BUFFER_DYNAMIC_STORAGE);
-			probeStateBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(uint32_t),
+			probeStateBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
 				AE_BUFFER_DYNAMIC_STORAGE, probeCount.x * probeCount.y * probeCount.z);
 			probeStateTemporalBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
 				AE_BUFFER_DYNAMIC_STORAGE, probeCount.x * probeCount.y * probeCount.z);
@@ -233,9 +233,11 @@ namespace Atlas {
 
 			}
 
+
 			// Fill probe state buffer with values of 0 (indicates a new probe)
-			std::vector<uint32_t> probeStates(probeStateBuffer.GetElementCount());
-			std::fill(probeStates.begin(), probeStates.end(), 0);
+			uint32_t zero = 0;
+			std::vector<vec4> probeStates(probeStateBuffer.GetElementCount());
+			std::fill(probeStates.begin(), probeStates.end(), vec4(vec3(0.0f), reinterpret_cast<float&>(zero)));
 			probeStateBuffer.SetData(probeStates.data(), 0, probeStates.size());
 
 			std::vector<vec4> probeStatesTemporal(probeStateTemporalBuffer.GetElementCount());

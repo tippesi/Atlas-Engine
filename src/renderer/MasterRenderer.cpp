@@ -160,6 +160,8 @@ namespace Atlas {
 
 			opaqueRenderer.Render(viewport, target, camera, scene, materialMap);
 
+			ddgiRenderer.DebugProbes(viewport, target, camera, scene, materialMap);
+
 			terrainRenderer.Render(viewport, target, camera, scene, materialMap);
 
 			vegetationRenderer.Render(viewport, target, camera, scene, materialMap);
@@ -744,6 +746,13 @@ namespace Atlas {
 			std::unordered_map<void*, uint16_t>& materialMap) {
 
 			auto sceneMaterials = scene->GetMaterials();
+
+			// For debugging purpose
+			if (scene->irradianceVolume && scene->irradianceVolume->debug) {
+				sceneMaterials.push_back(&ddgiRenderer.probeDebugMaterial);
+				sceneMaterials.push_back(&ddgiRenderer.probeDebugActiveMaterial);
+				sceneMaterials.push_back(&ddgiRenderer.probeDebugInactiveMaterial);
+			}
 
 			uint16_t idx = 0;
 
