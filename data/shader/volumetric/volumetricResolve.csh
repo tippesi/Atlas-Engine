@@ -13,11 +13,11 @@ uniform vec3 cameraLocation;
 
 void main() {
 
-    if (gl_GlobalInvocationID.x > imageSize(resolveImage).x ||
-        gl_GlobalInvocationID.y > imageSize(resolveImage).y)
+    ivec2 pixel = ivec2(gl_GlobalInvocationID);
+    if (pixel.x > imageSize(resolveImage).x ||
+        pixel.y > imageSize(resolveImage).y)
         return;
 
-    ivec2 pixel = ivec2(gl_GlobalInvocationID);
 	vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(resolveImage));
 
 	float depth = texelFetch(depthTexture, pixel, 0).r;

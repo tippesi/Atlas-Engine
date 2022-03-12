@@ -17,8 +17,6 @@ namespace Atlas {
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 		private:
-			Framebuffer framebuffer;
-
 			Filter blurFilter;
 
 			Shader::Shader volumetricShader;
