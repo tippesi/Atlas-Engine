@@ -5,8 +5,7 @@
 #include "../texture/Texture2D.h"
 #include "Image.h"
 
-#include "../libraries/perlin noise/PerlinNoise.h"
-
+#include <perlin noise/PerlinNoise.h>
 #include <algorithm>
 
 namespace Atlas {

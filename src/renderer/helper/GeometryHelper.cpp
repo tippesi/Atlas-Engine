@@ -1,5 +1,4 @@
 #include "GeometryHelper.h"
-#include "../TypeFormat.h"
 
 namespace Atlas {
 

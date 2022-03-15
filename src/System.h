@@ -56,10 +56,10 @@
 #include <SDL/include/SDL_events.h>
 
 // GLM
-#include "libraries/glm/glm.hpp"
-#include "libraries/glm/gtc/type_ptr.hpp"
-#include "libraries/glm/gtx/common.hpp"
-#include "libraries/glm/gtx/transform.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/common.hpp>
+#include <glm/gtx/transform.hpp>
 
 // Important definitions
 using glm::vec4;

@@ -92,8 +92,6 @@ file(GLOB_RECURSE ATLAS_ENGINE_SOURCE_FILES
 		"*.h"
 		"*.hpp"
         )
-		
-list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "^.*\/libraries\/")
 
 # Grouping source files into tree structure #######################################################
 foreach(SOURCE_FILE IN ITEMS ${ATLAS_ENGINE_SOURCE_FILES})
@@ -140,9 +138,7 @@ target_include_directories(${PROJECT_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/../dependencies
 	${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/Assimp/include
 	${CMAKE_CURRENT_BINARY_DIR}/../dependencies/Assimp/include
-	${CMAKE_CURRENT_SOURCE_DIR}
-	PRIVATE
-	${CMAKE_CURRENT_SOURCE_DIR}/libraries)
+	${CMAKE_CURRENT_SOURCE_DIR})
 	
 # Link libraries ##################################################################################
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${ATLAS_ENGINE_LIBS} LINK_PRIVATE ${ATLAS_ENGINE_SYSTEM_LIBS})

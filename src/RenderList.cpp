@@ -1,7 +1,7 @@
 #include <actor/MeshActor.h>
 #include "RenderList.h"
 
-#include "libraries/glm/gtx/norm.hpp"
+#include <glm/gtx/norm.hpp>
 
 namespace Atlas {
 

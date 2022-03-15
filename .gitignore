@@ -22,3 +22,4 @@ data/bistro
 dependencies/Imgui/imgui
 data/pica pica
 data/medieval
+.DS_Store

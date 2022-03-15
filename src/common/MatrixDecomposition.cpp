@@ -1,7 +1,7 @@
 #include "MatrixDecomposition.h"
 
-#include "../libraries/glm/gtx/matrix_decompose.hpp"
-#include "../libraries/glm/gtx/euler_angles.hpp"
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/euler_angles.hpp>
 
 namespace Atlas {
 

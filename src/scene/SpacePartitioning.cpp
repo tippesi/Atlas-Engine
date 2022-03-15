@@ -1,6 +1,6 @@
 #include "SpacePartitioning.h"
 
-#include "../libraries/glm/gtx/norm.hpp"
+#include <glm/gtx/norm.hpp>
 #include <algorithm>
 
 namespace Atlas {

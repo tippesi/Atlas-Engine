@@ -1,5 +1,5 @@
 #include "RayTracingHelper.h"
-#include "../volume/BVH.h"
+#include "../../volume/BVH.h"
 
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1

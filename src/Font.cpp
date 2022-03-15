@@ -7,8 +7,7 @@
 #include <sstream>
 
 #define STB_TRUETYPE_IMPLEMENTATION
-#include "../libraries/stb/stb_truetype.h"
-#include "../libraries/stb/stb_image_write.h"
+#include <stb/stb_truetype.h>
 
 namespace Atlas {
 

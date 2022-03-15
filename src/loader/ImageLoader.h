@@ -11,8 +11,8 @@
 #include <iostream>
 #include <fstream>
 
-#include "libraries/stb/stb_image.h"
-#include "libraries/stb/stb_image_write.h"
+#include <stb/stb_image.h>
+#include <stb/stb_image_write.h>
 
 namespace Atlas {
 
