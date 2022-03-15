@@ -14,6 +14,12 @@ namespace Atlas {
 			shader.AddMacro("OPACITY_MAP");
 			shader.Compile();
 
+			depthShader.AddStage(AE_VERTEX_STAGE, "vegetation/depth.vsh");
+			depthShader.AddStage(AE_FRAGMENT_STAGE, "vegetation/depth.fsh");
+
+			depthShader.AddMacro("OPACITY_MAP");
+			depthShader.Compile();
+
 		}
 
 		void VegetationRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
@@ -27,10 +33,21 @@ namespace Atlas {
 
 			auto meshes = vegetation.GetMeshes();
 
-			shader.Bind();
-
 			auto commandBuffer = helper.GetCommandBuffer();
 			commandBuffer->Bind();
+			/*
+			auto depthTexture = target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT);
+			framebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, depthTexture);
+			framebuffer.Bind();
+			DepthPrepass(vegetation, meshes, camera);
+
+			target->geometryFramebuffer.Bind();
+
+			glDepthMask(GL_FALSE);
+			glDepthFunc(GL_EQUAL);
+			*/
+
+			shader.Bind();
 
 			shader.GetUniform("vMatrix")->SetValue(camera->viewMatrix);
 			shader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
@@ -41,8 +58,6 @@ namespace Atlas {
 
 			shader.GetUniform("time")->SetValue(Clock::Get());
 			shader.GetUniform("deltaTime")->SetValue(Clock::GetDelta());
-
-			shader.GetUniform("cameraLocation")->SetValue(camera->GetLocation());
 
 			glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 
@@ -76,14 +91,55 @@ namespace Atlas {
 					shader.GetUniform("materialIdx")->SetValue((uint32_t)materialMap[material]);
 
 					auto offset = helper.GetCommandBufferOffset(*mesh, subData);
-					glMultiDrawElementsIndirect(mesh->data.primitiveType, mesh->data.indices.GetType(),
-						(void*)(sizeof(Helper::VegetationHelper::DrawElementsIndirectCommand) * offset), 1, 0);
+					glDrawElementsIndirect(mesh->data.primitiveType, mesh->data.indices.GetType(),
+						(void*)(sizeof(Helper::VegetationHelper::DrawElementsIndirectCommand) * offset));
 				}
 			}
 
 			commandBuffer->Unbind();
 
 			glEnable(GL_CULL_FACE);
+			glDepthMask(GL_TRUE);
+			glDepthFunc(GL_LEQUAL);
+
+		}
+
+		void VegetationRenderer::DepthPrepass(Scene::Vegetation& vegetation, std::vector<Mesh::VegetationMesh*>& meshes, Camera* camera) {
+
+			glColorMask(false, false, false, false);
+
+			depthShader.Bind();
+
+			depthShader.GetUniform("vMatrix")->SetValue(camera->viewMatrix);
+			depthShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
+
+			depthShader.GetUniform("time")->SetValue(Clock::Get());
+			depthShader.GetUniform("deltaTime")->SetValue(Clock::GetDelta());
+
+			glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
+
+			// How we order the execution of rendering commands doesn't matter here
+			for (auto mesh : meshes) {
+				mesh->Bind();
+				auto buffers = vegetation.GetBuffers(mesh);
+
+				buffers->culledInstanceData.BindBase(4);
+
+				depthShader.GetUniform("invertUVs")->SetValue(mesh->invertUVs);
+
+				for (auto& subData : mesh->data.subData) {
+					auto material = subData.material;
+
+					if (material->HasOpacityMap())
+						material->opacityMap->Bind(GL_TEXTURE1);
+
+					auto offset = helper.GetCommandBufferOffset(*mesh, subData);
+					glDrawElementsIndirect(mesh->data.primitiveType, mesh->data.indices.GetType(),
+						(void*)(sizeof(Helper::VegetationHelper::DrawElementsIndirectCommand) * offset));
+				}
+			}
+
+			glColorMask(true, true, true, true);
 
 		}
 

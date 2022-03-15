@@ -15,7 +15,7 @@
 class App : public Atlas::EngineInstance {
 
 public:
-	App() : EngineInstance("Atlas Engine", 1280, 720, WINDOW_FLAGS) {}
+	App() : EngineInstance("Atlas Engine Demo", 1280, 720, WINDOW_FLAGS) {}
 
 	virtual void LoadContent() final;
 

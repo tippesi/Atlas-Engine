@@ -21,8 +21,13 @@ namespace Atlas {
 
 			Helper::VegetationHelper helper;
 
-		private:			
+		private:
+			void DepthPrepass(Scene::Vegetation& vegetation, std::vector<Mesh::VegetationMesh*>& meshes, Camera* camera);
+
+			Framebuffer framebuffer;
+
 			Shader::Shader shader;
+			Shader::Shader depthShader;
 
 		};
 

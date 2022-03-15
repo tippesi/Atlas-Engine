@@ -36,10 +36,8 @@ uniform mat4 pMatrix;
 uniform mat4 vMatrix;
 
 uniform float time;
-uniform float deltaTime;
 
 uniform bool invertUVs;
-uniform bool staticMesh;
 
 uniform mat4 pvMatrixLast;
 uniform mat4 pvMatrixCurrent;
@@ -52,7 +50,6 @@ void main() {
 	
 	mat4 mvMatrix = vMatrix;
 
-	// Move any animation code to their own compute shaders
 	vec3 position = instance.position.xyz + vPosition;
 
 	position = instance.position.xyz + WindAnimation(vPosition, time, instance.position.xyz);

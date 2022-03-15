@@ -10,9 +10,7 @@ namespace Atlas {
             const int32_t filterSize = 6;
             blurFilter.CalculateBoxFilter(filterSize);
 
-            volumetricShader.AddStage(AE_VERTEX_STAGE, "volumetric/volumetric.vsh");
-            volumetricShader.AddStage(AE_FRAGMENT_STAGE, "volumetric/volumetric.fsh");
-
+            volumetricShader.AddStage(AE_COMPUTE_STAGE, "volumetric/volumetric.csh");
             volumetricShader.Compile();
 
             horizontalBlurShader.AddStage(AE_COMPUTE_STAGE, "bilateralBlur.csh");
@@ -35,8 +33,6 @@ namespace Atlas {
         void VolumetricRenderer::Render(Viewport* viewport, RenderTarget* target,
             Camera* camera, Scene::Scene* scene) {
 
-            framebuffer.Bind();
-
             volumetricShader.Bind();
 
             volumetricShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
@@ -47,7 +43,18 @@ namespace Atlas {
 
             ivec2 res = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
 
+            target->volumetricTexture.Bind(GL_WRITE_ONLY, 2);
+
+            // This loop doesn't really work, we only support one directional light for now.
+            // Later we want to process most of the lights all at once using tiled deferred shading
             for (auto& light : lights) {
+                const int32_t groupSize = 8;
+
+                res = ivec2(target->GetWidth(), target->GetHeight());
+
+                ivec2 groupCount = res / groupSize;
+                groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
+                groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
                 auto volumetric = light->GetVolumetric();
                 auto shadow = light->GetShadow();
@@ -55,11 +62,6 @@ namespace Atlas {
                 if (light->type != AE_DIRECTIONAL_LIGHT || !volumetric || !shadow) continue;
 
                 auto directionalLight = (Lighting::DirectionalLight*)light;
-
-                glViewport(0, 0, res.x, res.y);
-
-                framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &target->volumetricTexture);
-
                 vec3 direction = normalize(vec3(camera->viewMatrix * vec4(directionalLight->direction, 0.0f)));
 
                 volumetricShader.GetUniform("light.direction")->SetValue(direction);
@@ -97,8 +99,8 @@ namespace Atlas {
                     }
                 }
 
-                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
+                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                glDispatchCompute(groupCount.x, groupCount.y, 1);
             }
 
             {

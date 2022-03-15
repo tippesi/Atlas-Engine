@@ -6,7 +6,7 @@ namespace Atlas {
 
         SSAORenderer::SSAORenderer() {
 
-            blurFilter.CalculateBoxFilter(3);
+            blurFilter.CalculateBoxFilter(6);
 
             ssaoShader.AddStage(AE_COMPUTE_STAGE, "ao/ssao.csh");
 
