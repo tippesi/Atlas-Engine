@@ -241,7 +241,7 @@ namespace Atlas {
 					assimpMaterial->GetTexture(aiTextureType_BASE_COLOR, 0, &aiPath);
 				else
 					assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
-				auto path = directory + std::string(aiPath.C_Str());
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
 				auto image = ImageLoader::LoadImage<uint8_t>(path, true, 0, maxTextureResolution);
 
 				material.baseColorMap = new Texture::Texture2D(image.width, image.height, AE_RGB8,
@@ -273,7 +273,7 @@ namespace Atlas {
 			if (assimpMaterial->GetTextureCount(aiTextureType_OPACITY) > 0) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_OPACITY, 0, &aiPath);
-				auto path = directory + std::string(aiPath.C_Str());
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
 				auto image = ImageLoader::LoadImage<uint8_t>(path, true, 1, maxTextureResolution);
 				material.opacityMap = new Texture::Texture2D(image.width, image.height, AE_R8,
 					GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
@@ -287,7 +287,7 @@ namespace Atlas {
 					assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
 				else
 					assimpMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
-				auto path = directory + std::string(aiPath.C_Str());
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
 				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 0, maxTextureResolution);
 				auto texture = new Texture::Texture2D(image);
 				// Might still be a traditional displacement map
@@ -306,7 +306,7 @@ namespace Atlas {
 			if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &aiPath);
-				auto path = directory + std::string(aiPath.C_Str());
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
 				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
 				auto texture = new Texture::Texture2D(image, true, true);
 				material.roughnessMap = texture;
@@ -315,7 +315,7 @@ namespace Atlas {
 			if (assimpMaterial->GetTextureCount(aiTextureType_METALNESS) > 0) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_METALNESS, 0, &aiPath);
-				auto path = directory + std::string(aiPath.C_Str());
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
 				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
 				auto texture = new Texture::Texture2D(image, true, true);
 				material.metalnessMap = texture;
@@ -324,7 +324,7 @@ namespace Atlas {
 			if (assimpMaterial->GetTextureCount(aiTextureType_SPECULAR) > 0 && !material.metalnessMap) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_SPECULAR, 0, &aiPath);
-				auto path = directory + std::string(aiPath.C_Str());
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
 				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
 				auto texture = new Texture::Texture2D(image, true, true);
 				material.metalnessMap = texture;
@@ -333,7 +333,7 @@ namespace Atlas {
 			if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && !isObj) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
-				auto path = directory + std::string(aiPath.C_Str());
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
 				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
 				auto texture = new Texture::Texture2D(image, true, true);
 				material.displacementMap = texture;

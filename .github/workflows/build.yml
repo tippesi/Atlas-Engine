@@ -114,7 +114,7 @@ jobs:
             README.md
             LICENSE
             ${{ github.workspace }}/build/**/AtlasEngineDemo
-            ${{ github.workspace }}/build/**/*.so
+            ${{ github.workspace }}/build/**/*.so*
             !**/CMakeFiles
 
   code-quality:

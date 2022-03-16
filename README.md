@@ -23,6 +23,8 @@ this manually or use one of the available scripts. The build process is then don
 ### Compiling the demo application
 Run CMake with the option ATLAS_DEMO=ON to include the demo application in the project. For easier use, the vsbuild.bat does exactly
 that and launches Visual Studio afterwards. After launching the IDE, set AtlasEngineDemo as your target.
+>**Note:**
+>In order to start the application properly you might need to change the asset directory in the [demo source file](https://github.com/tippesi/Atlas-Engine/blob/master/demo/App.cpp).
 ### Including the library into your own project
 It is possible to compile the engine either as a shared or static library. Set the ATLAS_BUILD_SHARED option accordingly. To make
 the library work with its dependencies, the root CMakeLists.txt of this repository has to be added as a subdirectory. As an entry

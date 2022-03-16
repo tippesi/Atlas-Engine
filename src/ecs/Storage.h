@@ -1,6 +1,7 @@
 #ifndef AE_ECSSTORAGE_H
 #define AE_ECSSTORAGE_H
 
+#include "../System.h"
 #include "Entity.h"
 
 #include <vector>

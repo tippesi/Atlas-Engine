@@ -13,6 +13,7 @@
 // #define AE_INSTANT_SHADER_RELOAD
 
 #include <stdint.h>
+#include <stddef.h>
 #include <string>
 #include <math.h>
 #include <exception>
