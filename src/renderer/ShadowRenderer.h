@@ -27,6 +27,8 @@ namespace Atlas {
 			static void RemoveConfig(Shader::ShaderConfig* config);
 
 		private:
+			void AdjustFaceCulling(bool cullFaces, bool& state);
+
 			RenderList renderList;
 
 			ImpostorShadowRenderer impostorRenderer;

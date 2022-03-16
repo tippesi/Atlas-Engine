@@ -128,6 +128,8 @@ namespace Atlas {
 		normalScale = that.normalScale;
 		displacementScale = that.displacementScale;
 
+		twoSided = that.twoSided;
+
 	}
 
 	void Material::DeleteTextures() {

@@ -24,6 +24,7 @@ uniform vec2 jitterCurrent;
 uniform uint probeMaterialIdx;
 uniform uint probeActiveMaterialIdx;
 uniform uint probeInactiveMaterialIdx;
+uniform uint probeOffsetMaterialIdx;
 
 void main() {
 
@@ -57,6 +58,7 @@ void main() {
 
 	velocityFS = (ndcL - ndcC) * 0.5;
 
-	materialIdxFS = moments.x < 0.5 ? probeActiveMaterialIdx : probeInactiveMaterialIdx;
+	materialIdxFS = GetProbeState(instanceID) == PROBE_STATE_ACTIVE ? probeActiveMaterialIdx : probeInactiveMaterialIdx;
+	materialIdxFS = moments.x < 0.6 ? probeOffsetMaterialIdx : materialIdxFS;
 	
 }

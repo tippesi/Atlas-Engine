@@ -32,6 +32,10 @@ set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "Override Assimp settings" FORCE)
 set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "Override Assimp tools settings" FORCE)
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "Override Assimp tools settings" FORCE) # Doesn't work with C++17
 
+# Set SDL options #################################################################################
+set(SDL_SHARED ON CACHE BOOL "Override SDL settings" FORCE)
+set(SDL_STATIC ON CACHE BOOL "Override SDL settings" FORCE)
+
 # Find OpenGL #####################################################################################
 if (ANDROID)
 set(ATLAS_OPENGL_ES ON)

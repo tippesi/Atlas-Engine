@@ -752,6 +752,7 @@ namespace Atlas {
 				sceneMaterials.push_back(&ddgiRenderer.probeDebugMaterial);
 				sceneMaterials.push_back(&ddgiRenderer.probeDebugActiveMaterial);
 				sceneMaterials.push_back(&ddgiRenderer.probeDebugInactiveMaterial);
+				sceneMaterials.push_back(&ddgiRenderer.probeDebugOffsetMaterial);
 			}
 
 			uint16_t idx = 0;

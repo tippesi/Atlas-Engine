@@ -121,7 +121,7 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
 	// but fixes the cube. Should work in theory.
 	vec3 triangleNormal = normalize(cross(tri.v0 - tri.v1, tri.v0 - tri.v2));
 	bool flipNormal = dot(triangleNormal, ray.direction) > 0.0;
-	backfaceHit = flipNormal;
+	backfaceHit = rayMat.twoSided > 0 ? false : flipNormal;
 	normal *= flipNormal ? -1.0 : 1.0;
 
 	vec3 geometryNormal = normal;

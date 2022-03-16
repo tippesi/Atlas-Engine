@@ -19,6 +19,10 @@ layout(std430, binding = 9) buffer ProbeStates {
 	vec4 probeStates[];
 };
 
+layout(std430, binding = 10) buffer ProbeOffsets {
+	vec4 probeOffsets[];
+};
+
 uniform vec3 volumeMin;
 uniform vec3 volumeMax;
 uniform ivec3 volumeProbeCount;
@@ -31,6 +35,8 @@ uniform int volumeMomentsRes;
 
 uniform uint rayCount = 100;
 uniform uint inactiveRayCount = 32;
+
+uniform float hysteresis = 0.99;
 
 uniform float volumeGamma = 5.0;
 
@@ -84,8 +90,12 @@ vec3 GetProbePosition(ivec3 probeIdx) {
 	return volumeMin + vec3(probeIdx) * cellSize;
 }
 
+uint GetProbeState(uint idx) {
+	return floatBitsToUint(probeStates[idx].x);
+}
+
 vec3 GetProbeOffset(uint idx) {
-	return probeStates[idx].xyz;
+	return probeOffsets[idx].xyz;
 }
 
 ivec3 GetNearestProbe(vec3 position) {
@@ -147,12 +157,11 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 		ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
 		ivec3 gridCell = min(baseCell + offset, volumeProbeCount - ivec3(1));
 
-		vec4 probeState = probeStates[GetProbeIdx(gridCell)];
-		uint state = floatBitsToUint(probeState.w);
-		if (state == PROBE_STATE_INACTIVE) continue;
+		uint probeIdx = GetProbeIdx(gridCell);
+		uint probeState = GetProbeState(probeIdx);
+		if (probeState == PROBE_STATE_INACTIVE) continue;
 
-		vec3 probeOffset = probeState.xyz;
-
+		vec3 probeOffset = probeOffsets[probeIdx].xyz;
 		vec3 probePos = vec3(gridCell) * cellSize + probeOffset + volumeMin;
 		vec3 pointToProbe = probePos - P;
 		vec3 L = normalize(pointToProbe);

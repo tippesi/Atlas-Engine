@@ -27,7 +27,6 @@ layout(std430, binding = 5) buffer RayDirsInactiveProbes {
 	vec4 rayDirsInactiveProbes[];
 };
 
-shared uint increment;
 shared uint probeState;
 shared vec3 probeOffset;
 
@@ -36,9 +35,8 @@ void main() {
     uint baseIdx = GetProbeIdx(ivec3(gl_WorkGroupID));
 
 	if (gl_LocalInvocationID.x == 0u) {
-        increment = 0u;
-        probeState = floatBitsToUint(probeStates[baseIdx].w);
-        probeOffset = probeStates[baseIdx].xyz;
+        probeState = floatBitsToUint(probeStates[baseIdx].x);
+        probeOffset = probeOffsets[baseIdx].xyz;
     }
 
     barrier();
@@ -46,16 +44,15 @@ void main() {
     uint rayBaseIdx = baseIdx * rayCount;
     uint probeRayCount = GetProbeRayCount(probeState);
 
-    uint idx = atomicAdd(increment, uint(1));
-    while(idx < probeRayCount) {
+    uint workGroupOffset = gl_WorkGroupSize.x;
+    for(uint i = gl_LocalInvocationIndex; i < probeRayCount; i += workGroupOffset) {
 		Ray ray;
 
-        ray.ID = int(rayBaseIdx + idx);
+        ray.ID = int(rayBaseIdx + i);
 		ray.origin = GetProbePosition(ivec3(gl_WorkGroupID)) + probeOffset;
 		ray.direction = normalize(randomRotation * 
-            (probeState == PROBE_STATE_INACTIVE ? rayDirsInactiveProbes[idx].xyz : rayDirs[idx].xyz));
+            (probeState == PROBE_STATE_INACTIVE ? rayDirsInactiveProbes[i].xyz : rayDirs[i].xyz));
 
 		WriteRay(ray);
-        idx = atomicAdd(increment, uint(1));
     }
 }

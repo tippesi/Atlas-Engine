@@ -32,7 +32,7 @@ newmtl vase_round
 	map_Kd textures\vase_round.png
 	map_bump textures\vase_round_bump.png
 
-newmtl Material__57
+newmtl plant
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000

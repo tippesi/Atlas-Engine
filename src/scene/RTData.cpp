@@ -359,7 +359,9 @@ namespace Atlas {
 						gpuMaterial.ao = material.ao;
 
 						gpuMaterial.normalScale = material.normalScale;
+
 						gpuMaterial.invertUVs = actor->mesh->invertUVs ? 1 : 0;
+						gpuMaterial.twoSided = material.twoSided ? 1 : 0;
 
 						if (material.HasBaseColorMap()) {
 							auto slice = baseColorTextureAtlas.slices[material.baseColorMap];

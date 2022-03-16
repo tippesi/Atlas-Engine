@@ -47,6 +47,7 @@ uniform float deltaTime;
 
 uniform bool vegetation;
 uniform bool invertUVs;
+uniform bool twoSided;
 uniform bool staticMesh;
 
 uniform mat4 pvMatrixLast;
@@ -62,7 +63,6 @@ void main() {
 	
 	mat4 mvMatrix = vMatrix * mMatrix;
 
-	// Move any animation code to their own compute shaders
 	vec3 position = vPosition;
 	vec3 lastPosition = vPosition;
 
@@ -89,6 +89,8 @@ void main() {
 #endif
 	
 	normalVS = mat3(mvMatrix) * vNormal;
+	// We want the normal always two face the camera for two sided materials
+	normalVS *= twoSided ? -dot(normalVS, positionVS) : 1.0;
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 normal = normalize(normalVS);

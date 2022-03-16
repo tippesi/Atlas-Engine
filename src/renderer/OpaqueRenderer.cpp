@@ -35,6 +35,7 @@ namespace Atlas {
 			vegetationUniform = shaderBatch.GetUniform("vegetation");
 			invertUVsUniform = shaderBatch.GetUniform("invertUVs");
 			staticMeshUniform = shaderBatch.GetUniform("staticMesh");
+			twoSidedUniform = shaderBatch.GetUniform("twoSided");
 
 			pvMatrixLast = shaderBatch.GetUniform("pvMatrixLast");
 
@@ -102,15 +103,6 @@ namespace Atlas {
 					buffers.currentMatrices->BindBase(2);
 					if (!staticMesh) buffers.lastMatrices->BindBase(3);
 
-					if (!mesh->cullBackFaces && backFaceCulling) {
-						glDisable(GL_CULL_FACE);
-						backFaceCulling = false;
-					}
-					else if (mesh->cullBackFaces && !backFaceCulling) {
-						glEnable(GL_CULL_FACE);
-						backFaceCulling = true;
-					}
-
 					if (!mesh->depthTest && depthTest) {
 						// Allows for most objects to have
 						// depth test in themselves but are always
@@ -139,6 +131,9 @@ namespace Atlas {
 
 						auto material = subData->material;
 
+						AdjustFaceCulling(!material->twoSided && mesh->cullBackFaces,
+							backFaceCulling);
+
 						if (material->HasBaseColorMap())
 							material->baseColorMap->Bind(GL_TEXTURE0);
 						if (material->HasOpacityMap())
@@ -158,6 +153,7 @@ namespace Atlas {
 						normalScaleUniform->SetValue(material->normalScale);
 						displacementScaleUniform->SetValue(material->displacementScale);
 
+						twoSidedUniform->SetValue(material->twoSided);
 						materialIdxUniform->SetValue((uint32_t)materialMap[material]);
 
 						glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
@@ -253,6 +249,8 @@ namespace Atlas {
 						if (mesh->mobility != AE_STATIONARY_MESH) buffers.lastMatrices->BindBase(3);
 
 						invertUVsUniform->SetValue(mesh->invertUVs);
+						// We *always* want to render impostors two sided
+						twoSidedUniform->SetValue(true);
 
 						// Prepare uniform buffer here
 						// Generate all drawing commands
@@ -346,6 +344,19 @@ namespace Atlas {
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			shaderBatch.RemoveConfig(config);
+
+		}
+
+		void OpaqueRenderer::AdjustFaceCulling(bool cullFaces, bool& state) {
+
+			if (!cullFaces && state) {
+				glDisable(GL_CULL_FACE);
+				state = false;
+			}
+			else if (cullFaces && !state) {
+				glEnable(GL_CULL_FACE);
+				state = true;
+			}
 
 		}
 

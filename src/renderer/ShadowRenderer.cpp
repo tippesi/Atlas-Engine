@@ -122,15 +122,6 @@ namespace Atlas {
 							mesh->Bind();
 							buffers.currentMatrices->BindBase(2);
 
-							if (!mesh->cullBackFaces && backFaceCulling) {
-								glDisable(GL_CULL_FACE);
-								backFaceCulling = false;
-							}
-							else if (mesh->cullBackFaces && !backFaceCulling) {
-								glEnable(GL_CULL_FACE);
-								backFaceCulling = true;
-							}
-
 							timeUniform->SetValue(Clock::Get());
 
 							vegetationUniform->SetValue(mesh->vegetation);
@@ -144,6 +135,9 @@ namespace Atlas {
 							for (auto& subData : renderListBatch.subData) {
 
 								auto material = subData->material;
+
+								AdjustFaceCulling(!material->twoSided && mesh->cullBackFaces,
+									backFaceCulling);
 
 								if (material->HasOpacityMap()) {
 									material->opacityMap->Bind(GL_TEXTURE0);
@@ -191,6 +185,19 @@ namespace Atlas {
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			shaderBatch.RemoveConfig(config);
+
+		}
+
+		void ShadowRenderer::AdjustFaceCulling(bool cullFaces, bool& state) {
+
+			if (!cullFaces && state) {
+				glDisable(GL_CULL_FACE);
+				state = false;
+			}
+			else if (cullFaces && !state) {
+				glEnable(GL_CULL_FACE);
+				state = true;
+			}
 
 		}
 

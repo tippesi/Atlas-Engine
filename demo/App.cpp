@@ -270,6 +270,11 @@ void App::Render(float deltaTime) {
 				auto prevGamma = volume->gamma;
 				ImGui::SliderFloat("Gamma exponent", &volume->gamma, 0.0f, 10.0f, "%.3f", 2.0f);
 				if (prevGamma != volume->gamma) volume->ClearProbes();
+				ImGui::Separator();
+				if (ImGui::Button("Reset probe offsets")) {
+					volume->ResetProbeOffsets();
+				}
+				ImGui::Checkbox("Optimize probes", &volume->optimizeProbes);
 			}
 			if (ImGui::CollapsingHeader("Light")) {
 				ImGui::Checkbox("Animate", &animateLight);
@@ -371,6 +376,7 @@ bool App::IsSceneAvailable(SceneSelection selection) {
 	case SANMIGUEL: return Atlas::Loader::AssetLoader::FileExists("sanmiguel/san-miguel.obj");
 	case MEDIEVAL: return Atlas::Loader::AssetLoader::FileExists("medieval/scene.fbx");
 	case PICAPICA: return Atlas::Loader::AssetLoader::FileExists("pica pica/mesh/scene.gltf");
+	default: return false;
 	}
 }
 
@@ -381,6 +387,7 @@ bool App::LoadScene() {
 	DisplayLoadingScreen();
 
 	Atlas::Texture::Cubemap sky;
+	directionalLight.direction = vec3(0.0f, -1.0f, 1.0f);
 
 	if (sceneSelection == CORNELL) {
 		if (!Atlas::Loader::AssetLoader::FileExists("cornell/CornellBox-Original.obj")) return false;
@@ -390,7 +397,6 @@ bool App::LoadScene() {
 		mesh.SetTransform(scale(mat4(1.0f), vec3(10.0f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.10f), ivec3(20));
 		scene.irradianceVolume->sampleEmissives = true;
-		mesh.cullBackFaces = false;
 
 		// Other scene related settings apart from the mesh
 		directionalLight.intensity = 0.0f;
@@ -410,7 +416,6 @@ bool App::LoadScene() {
 		mesh.invertUVs = true;
 		mesh.SetTransform(scale(mat4(1.0f), vec3(.05f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(0.90f), ivec3(20));
-		mesh.cullBackFaces = true;
 
 		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
 
@@ -432,7 +437,6 @@ bool App::LoadScene() {
 		mesh.invertUVs = true;
 		mesh.SetTransform(scale(mat4(1.0f), vec3(.01f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(0.90f), ivec3(20));
-		mesh.cullBackFaces = false;
 
 		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
 
@@ -454,18 +458,19 @@ bool App::LoadScene() {
 		mesh.invertUVs = true;
 		mesh.SetTransform(scale(mat4(1.0f), vec3(2.0f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
-		mesh.cullBackFaces = false;
 
 		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
 
 		// Other scene related settings apart from the mesh
-		directionalLight.intensity = 10.0f;
+		directionalLight.intensity = 100.0f;
 		directionalLight.GetVolumetric()->intensity = 0.28f;
+		directionalLight.direction = vec3(0.0f, -1.0f, -1.0f);
 		scene.irradianceVolume->SetRayCount(32, 32);
 
 		// Setup camera
 		camera.location = vec3(30.0f, 25.0f, 0.0f);
 		camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
+		camera.exposure = 2.5f;
 
 		scene.fog->enable = true;
 	}
@@ -479,7 +484,6 @@ bool App::LoadScene() {
 		for (auto& material : mesh.data.materials) material.metalness = 0.0f;
 
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
-		//mesh.cullBackFaces = false;
 
 		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
 
@@ -501,7 +505,6 @@ bool App::LoadScene() {
 		mesh.invertUVs = true;
 
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
-		//mesh.cullBackFaces = false;
 
 		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
 

@@ -27,6 +27,7 @@ namespace Atlas {
 			Material probeDebugMaterial;
 			Material probeDebugActiveMaterial;
 			Material probeDebugInactiveMaterial;
+			Material probeDebugOffsetMaterial;
 
 		private:
 			Framebuffer irradianceFramebuffer;

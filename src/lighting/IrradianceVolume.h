@@ -30,10 +30,12 @@ namespace Atlas {
 
 			void ClearProbes(ivec2 irrRes, ivec2 momRes, ivec3 probeCount);
 
+			void ResetProbeOffsets();
+
 			Buffer::Buffer rayDirBuffer;
 			Buffer::Buffer rayDirInactiveBuffer;
+			Buffer::Buffer probeOffsetBuffer;
 			Buffer::Buffer probeStateBuffer;
-			Buffer::Buffer probeStateTemporalBuffer;
 
 		private:
 			void FillRayBuffers();
@@ -69,6 +71,8 @@ namespace Atlas {
 
 			void ClearProbes();
 
+			void ResetProbeOffsets();
+
 			Volume::AABB aabb;
 			ivec3 probeCount;
 
@@ -93,6 +97,7 @@ namespace Atlas {
 			bool update = true;
 			bool sampleEmissives = false;
 			bool debug = false;
+			bool optimizeProbes = true;
 
 			InternalIrradianceVolume internal;
 

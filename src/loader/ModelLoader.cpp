@@ -339,6 +339,12 @@ namespace Atlas {
 				material.displacementMap = texture;
 				material.displacementMapPath = path;
 			}
+
+			// Probably foliage
+			if (material.HasOpacityMap() ||
+				material.opacity < 1.0f) {
+				material.twoSided = true;
+			}
 			
 		}
 

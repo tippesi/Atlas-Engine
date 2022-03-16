@@ -75,12 +75,13 @@ namespace Atlas {
 			auto& rayDirBuffer = internalVolume.rayDirBuffer;
 			auto& rayDirInactiveBuffer = internalVolume.rayDirInactiveBuffer;
 			auto& probeStateBuffer = internalVolume.probeStateBuffer;
-			auto& probeStateTemporalBuffer = internalVolume.probeStateTemporalBuffer;
+			auto& probeOffsetBuffer = internalVolume.probeOffsetBuffer;
 
 			helper.SetScene(scene, 8, volume->sampleEmissives);
 			helper.UpdateLights();
 
 			probeStateBuffer.BindBase(9);
+			probeOffsetBuffer.BindBase(10);
 
 			helper.DispatchRayGen(&rayGenShader, volume->probeCount,
 				[&]() {
@@ -170,6 +171,7 @@ namespace Atlas {
 				probeMomentsUpdateShader.GetUniform("cellSize")->SetValue(volume->cellSize);
 				probeMomentsUpdateShader.GetUniform("volumeGamma")->SetValue(volume->gamma);
 				probeMomentsUpdateShader.GetUniform("depthSharpness")->SetValue(volume->sharpness);
+				probeMomentsUpdateShader.GetUniform("optimizeProbes")->SetValue(volume->optimizeProbes);
 
 				glDispatchCompute(probeCount.x, probeCount.y, probeCount.z);
 			}
@@ -181,8 +183,7 @@ namespace Atlas {
 				probeStateShader.GetUniform("rayCountInactive")->SetValue(rayCountInactive);
 				probeStateShader.GetUniform("cellLength")->SetValue(glm::length(volume->cellSize));
 				probeStateShader.GetUniform("cellSize")->SetValue(volume->cellSize);
-
-				probeStateTemporalBuffer.BindBase(1);
+				probeStateShader.GetUniform("hysteresis")->SetValue(volume->hysteresis);
 
 				glDispatchCompute(probeCount.x, probeCount.y, probeCount.z);
 			}
@@ -242,6 +243,7 @@ namespace Atlas {
             
 			probeDebugActiveMaterial.emissiveColor = vec3(0.0f, 1.0f, 0.0f);
 			probeDebugInactiveMaterial.emissiveColor = vec3(1.0f, 0.0f, 0.0f);
+			probeDebugOffsetMaterial.emissiveColor = vec3(0.0f, 0.0f, 1.0f);
 
 			sphereArray.Bind();
 			probeDebugShader.Bind();
@@ -258,6 +260,7 @@ namespace Atlas {
 			probeDebugShader.GetUniform("probeMaterialIdx")->SetValue(uint32_t(materialMap[&probeDebugMaterial]));
 			probeDebugShader.GetUniform("probeActiveMaterialIdx")->SetValue(uint32_t(materialMap[&probeDebugActiveMaterial]));
 			probeDebugShader.GetUniform("probeInactiveMaterialIdx")->SetValue(uint32_t(materialMap[&probeDebugInactiveMaterial]));
+			probeDebugShader.GetUniform("probeOffsetMaterialIdx")->SetValue(uint32_t(materialMap[&probeDebugOffsetMaterial]));
 
 			probeDebugShader.GetUniform("volumeMin")->SetValue(volume->aabb.min);
 			probeDebugShader.GetUniform("volumeMax")->SetValue(volume->aabb.max);
@@ -269,6 +272,9 @@ namespace Atlas {
 			auto [irradianceArray, momentsArray] = volume->internal.GetCurrentProbes();
 			irradianceArray.Bind(GL_TEXTURE12);
 			momentsArray.Bind(GL_TEXTURE13);
+
+			volume->internal.probeStateBuffer.BindBase(9);
+			volume->internal.probeOffsetBuffer.BindBase(10);
 
 			auto instanceCount = volume->probeCount.x * volume->probeCount.y * volume->probeCount.z;
 			glDrawElementsInstanced(GL_TRIANGLES, (int32_t)sphereArray.GetIndexComponent()->GetElementCount(),

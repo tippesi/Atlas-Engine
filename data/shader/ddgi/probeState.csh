@@ -21,17 +21,12 @@ layout(std430, binding = 0) buffer RayHits {
 	PackedRayHit hits[];
 };
 
-layout(std430, binding = 1) buffer ProbeStateTemporal {
-	vec4 temporalInfos[];
-};
-
 uniform float cellLength;
 
-shared uint increment;
 shared uint probeState;
 shared uint backFaceHits;
 shared uint inCellHits;
-shared vec4 temporalInfo;
+shared float temporalPercentageBackface;
 
 void main() {
 
@@ -39,11 +34,10 @@ void main() {
     uint rayBaseIdx = baseIdx * rayCount;
 
 	if (gl_LocalInvocationID.x == 0u) {
-        increment = 0u;
         backFaceHits = 0u;
         inCellHits = 0u;
-        probeState = floatBitsToUint(probeStates[baseIdx].w);
-        temporalInfo = temporalInfos[baseIdx];
+        probeState = GetProbeState(baseIdx);
+        temporalPercentageBackface = probeStates[baseIdx].y;
     }
 
     barrier();
@@ -53,9 +47,9 @@ void main() {
     // due to not having full sampling of the environment
     float extendedSize = cellLength * 1.0;
 
-    uint idx = atomicAdd(increment, uint(1));
-    while(idx < probeRayCount) {
-		RayHit hit = UnpackRayHit(hits[rayBaseIdx + idx]);
+    uint workGroupOffset = gl_WorkGroupSize.x;
+    for(uint i = gl_LocalInvocationIndex; i < probeRayCount; i += workGroupOffset) {
+		RayHit hit = UnpackRayHit(hits[rayBaseIdx + i]);
 
         bool backface = hit.hitDistance <= 0.0;
         if (backface) {
@@ -64,24 +58,22 @@ void main() {
         if (hit.hitDistance < extendedSize && !backface) {
             atomicAdd(inCellHits, uint(1));
         }
-        idx = atomicAdd(increment, uint(1));
     }
 
     barrier();
 
     if (gl_LocalInvocationID.x == 0u) {
         probeState = PROBE_STATE_INACTIVE;
+
         float percentageBackface = float(backFaceHits) / float(probeRayCount);
-        temporalInfo.x = max(0.0, temporalInfo.x - 1.0);
-        if (inCellHits > 0u && percentageBackface < 0.2) {
-            // Keep the state for 20 frames
-            temporalInfo.x = 20.0;
-        }
-        if (temporalInfo.x > 0.0) {
+        temporalPercentageBackface = mix(percentageBackface, temporalPercentageBackface, hysteresis);
+        // Use temporally stable information to decide probe state
+        if (inCellHits > 0u && temporalPercentageBackface < 0.2) {
             probeState = PROBE_STATE_ACTIVE;
         }
-        probeStates[baseIdx].w = uintBitsToFloat(probeState);
-        temporalInfos[baseIdx] = temporalInfo;
+
+        probeStates[baseIdx].x = uintBitsToFloat(probeState);
+        probeStates[baseIdx].y = temporalPercentageBackface;
     }
 
 }

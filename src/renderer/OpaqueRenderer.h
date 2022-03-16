@@ -34,6 +34,8 @@ namespace Atlas {
 			static void RemoveConfig(Shader::ShaderConfig* config);
 
 		private:
+			void AdjustFaceCulling(bool cullFaces, bool& state);
+
 			RenderList renderList;
 
 			ImpostorRenderer impostorRenderer;
@@ -53,10 +55,11 @@ namespace Atlas {
 
 			Shader::Uniform* timeUniform = nullptr;
 			Shader::Uniform* deltaTimeUniform = nullptr;
-			Shader::Uniform* staticMeshUniform = nullptr;
 
 			Shader::Uniform* vegetationUniform = nullptr;
 			Shader::Uniform* invertUVsUniform = nullptr;
+			Shader::Uniform* staticMeshUniform = nullptr;
+			Shader::Uniform* twoSidedUniform = nullptr;
 
 			Shader::Uniform* pvMatrixLast = nullptr;
 

@@ -68,6 +68,7 @@ namespace Atlas {
 				float normalScale;
 
 				int32_t invertUVs;
+				int32_t twoSided;
 
 				GPUTexture baseColorTexture;
 				GPUTexture opacityTexture;

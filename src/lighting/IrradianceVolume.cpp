@@ -95,6 +95,12 @@ namespace Atlas {
 
 		}
 
+		void IrradianceVolume::ResetProbeOffsets() {
+
+			internal.ResetProbeOffsets();
+
+		}
+
 		InternalIrradianceVolume::InternalIrradianceVolume(ivec2 irrRes, ivec2 momRes, ivec3 probeCount) {
 
 			rayDirBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
@@ -103,7 +109,7 @@ namespace Atlas {
 				AE_BUFFER_DYNAMIC_STORAGE);
 			probeStateBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
 				AE_BUFFER_DYNAMIC_STORAGE, probeCount.x * probeCount.y * probeCount.z);
-			probeStateTemporalBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
+			probeOffsetBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
 				AE_BUFFER_DYNAMIC_STORAGE, probeCount.x * probeCount.y * probeCount.z);
 
 			irradianceArray0 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y, AE_RGBA16F,
@@ -240,11 +246,16 @@ namespace Atlas {
 			std::fill(probeStates.begin(), probeStates.end(), vec4(vec3(0.0f), reinterpret_cast<float&>(zero)));
 			probeStateBuffer.SetData(probeStates.data(), 0, probeStates.size());
 
-			std::vector<vec4> probeStatesTemporal(probeStateTemporalBuffer.GetElementCount());
-			std::fill(probeStatesTemporal.begin(), probeStatesTemporal.end(), vec4(0.0f));
-			probeStateTemporalBuffer.SetData(probeStatesTemporal.data(), 0, probeStatesTemporal.size());
+			ResetProbeOffsets();
 		}
 
+		void InternalIrradianceVolume::ResetProbeOffsets() {
+
+			std::vector<vec4> probeOffsets(probeOffsetBuffer.GetElementCount());
+			std::fill(probeOffsets.begin(), probeOffsets.end(), vec4(0.0f, 0.0f, 0.0f, 1.0f));
+			probeOffsetBuffer.SetData(probeOffsets.data(), 0, probeOffsets.size());
+
+		}
 	}
 
 }

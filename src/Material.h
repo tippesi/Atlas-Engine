@@ -62,6 +62,8 @@ namespace Atlas {
 		std::string aoMapPath;
 		std::string displacementMapPath;
 
+		bool twoSided = false;
+
 	private:
 		void DeepCopy(const Material& that);
 

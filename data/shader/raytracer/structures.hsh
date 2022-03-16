@@ -100,6 +100,7 @@ struct RaytraceMaterial {
 	float normalScale;
 	
 	int invertUVs;
+	int twoSided;
 	
 	Texture baseColorTexture;
 	Texture opacityTexture;

@@ -35,8 +35,7 @@ layout (binding = 1, rg16f) writeonly uniform image2DArray moment;
 uniform int irrProbeRes;
 uniform int momProbeRes;
 uniform float depthSharpness;
-
-uniform float hysteresis = 0.99;
+uniform bool optimizeProbes;
 
 shared vec3 rayDirections[sharedSize];
 #ifdef IRRADIANCE
@@ -49,8 +48,8 @@ void main() {
 
     uint baseIdx = Flatten3D(ivec3(gl_WorkGroupID.xzy), ivec3(gl_NumWorkGroups.xzy));
 
-    uint probeState = floatBitsToUint(probeStates[baseIdx].w);
-    vec3 probeOffset = probeStates[baseIdx].xyz;
+    uint probeState = floatBitsToUint(probeStates[baseIdx].x);
+    vec4 probeOffset = probeOffsets[baseIdx];
 
     uint rayBaseIdx = baseIdx * rayCount;
     uint probeRayCount = GetProbeRayCount(probeState);
@@ -75,7 +74,7 @@ void main() {
     float maxDepth = cellLength * 0.75;
 
     vec4 result = vec4(0.0);
-    vec3 newProbeOffset = probeOffset;
+    vec3 newProbeOffset = probeOffset.xyz;
     for (uint i = 0; i < probeRayCount; i += sharedSize) {
         // We might not have a multiple of shared size in terms of rays
         uint loadRayCount = min(sharedSize, probeRayCount - i);
@@ -110,8 +109,14 @@ void main() {
 
             const float probeOffsetDistance = 0.6;
             dist = rayDistances[j];
-            if (abs(dist) < probeOffsetDistance) {
-				newProbeOffset -= rayDirections[j] * dist * 0.1;
+            // Remember: Negative distances means backface hits.
+            // Meaning we want to get probes from backfaces to the 
+            // front and want to get a certain distance to these front
+            // faces to gather more useful information per probe.
+            // Each probe is dampend by its own factor, which is
+            // reduced in each frame to stop them from moving indefinitely
+            if (abs(dist) < probeOffsetDistance && optimizeProbes) {
+				newProbeOffset -= rayDirections[j] * (sign(dist) * probeOffsetDistance - dist) * 0.1 * probeOffset.w;
 			}
 
             weight = pow(weight, depthSharpness);
@@ -155,9 +160,11 @@ void main() {
         }
 
     imageStore(moment, volumeCoord, vec4(resultOut, 0.0, 0.0));
-    if (gl_LocalInvocationIndex == 0) {
+    if (gl_LocalInvocationIndex == 0 && optimizeProbes) {
         vec3 maxOffset = cellSize * 0.5;
-        probeStates[baseIdx].xyz = clamp(newProbeOffset, -maxOffset, maxOffset);
+        probeOffset.xyz = clamp(newProbeOffset, -maxOffset, maxOffset);
+        probeOffset.w = max(0.0, probeOffset.w - 0.01);
+        probeOffsets[baseIdx] = probeOffset;
     }
 #endif
 
