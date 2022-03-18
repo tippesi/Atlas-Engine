@@ -152,16 +152,26 @@ void App::Render(float deltaTime) {
 
 		bool openSceneNotFoundPopup = false;
 
-		auto vecToString = [](auto vec) -> std::string {
-			return std::to_string(vec.x) + ", "
-				+ std::to_string(vec.y) + ", "
-				+ std::to_string(vec.z);
+		auto floatToString = [](auto number) -> std::string {
+			auto str = std::to_string(number);
+			auto pos = str.find(".");
+			if (pos != std::string::npos)
+				return str.substr(0, pos + 4);
+			return str;
+		};
+
+		auto vecToString = [=](auto vec) -> std::string {
+			return floatToString(vec.x) + ", "
+				+ floatToString(vec.y) + ", "
+				+ floatToString(vec.z);
 		};
 
 		if (ImGui::Begin("Settings", (bool*)0, 0)) {
 			ImGui::Text(("Average frametime: " + std::to_string(averageFramerate * 1000.0f) + " ms").c_str());
 			ImGui::Text(("Current frametime: " + std::to_string(deltaTime * 1000.0f) + " ms").c_str());
 			ImGui::Text(("Camera location: " + vecToString(camera.location)).c_str());
+			ImGui::Text(("Scene dimensions: " + vecToString(mesh.data.aabb.min) + " to " + vecToString(mesh.data.aabb.max)).c_str());
+			ImGui::Text(("Scene triangle count: " + std::to_string(mesh.data.GetIndexCount() / 3)).c_str());
 
 			{
 				const char* items[] = { "Cornell box", "Sponza", "Bistro", "San Miguel", "Medieval", "Pica Pica"};

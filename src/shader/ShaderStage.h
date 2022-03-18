@@ -90,7 +90,18 @@ namespace Atlas {
 			std::string filename;
 
 		private:
+			// Preprocessor directives can be encapsulated by ifdefs,
+			// we have to take care of that.
+			struct Extension {
+				std::string extension;
+				std::vector<std::string> ifdefs;
+			};
+
 			std::string ReadShaderFile(const std::string& filename, bool mainFile);
+
+			std::string ExtractIncludes(const std::string& filename, std::string& code);
+
+			std::vector<std::string> ExtractExtensions(std::vector<std::string> codeLines);
 
 			time_t GetLastModified();
 
@@ -104,6 +115,7 @@ namespace Atlas {
 			std::vector<std::string> macros;
 			std::vector<ShaderConstant*> constants;
 			std::set<std::string> includes;
+			std::vector<Extension> extensions;
 
 			time_t lastModified;
 

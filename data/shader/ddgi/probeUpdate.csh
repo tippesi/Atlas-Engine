@@ -115,9 +115,12 @@ void main() {
             // faces to gather more useful information per probe.
             // Each probe is dampend by its own factor, which is
             // reduced in each frame to stop them from moving indefinitely
-            if (abs(dist) < probeOffsetDistance && optimizeProbes) {
-				newProbeOffset -= rayDirections[j] * (sign(dist) * probeOffsetDistance - dist) * 0.1 * probeOffset.w;
-			}
+            if (probeOffset.w > 0.0) {
+                float sig = sign(dist);
+                if (abs(dist) < probeOffsetDistance && optimizeProbes) {
+                    newProbeOffset -= rayDirections[j] * (sig * probeOffsetDistance - dist) * 0.1 * probeOffset.w;
+                }
+            }
 
             weight = pow(weight, depthSharpness);
             if (weight >= 0.00000001) {

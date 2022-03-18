@@ -64,6 +64,7 @@ namespace Atlas {
 
             constants.clear();
 			includes.clear();
+            extensions.clear();
             code = ReadShaderFile(path, true);
 
             return true;
@@ -116,6 +117,14 @@ namespace Atlas {
 
             for (auto& macro : macros) {
                 composedCode.append("#define " + macro + "\n");
+            }
+
+            for (auto& extension : extensions) {
+                for (auto& ifdef : extension.ifdefs)
+                    composedCode += ifdef + "\n\r";
+                composedCode += extension.extension + "\n\r";
+                for (size_t i = 0; i < extension.ifdefs.size(); i++)
+                    composedCode += "#endif\n\r";
             }
 
             for (auto& constant : constants) {
@@ -216,47 +225,24 @@ namespace Atlas {
             }
 
             shaderStream << shaderFile.rdbuf();
+            
+            std::string line;
+            std::vector<std::string> lines;
+            while (std::getline(shaderStream, line)) lines.push_back(line);
+
             shaderFile.close();
-            shaderCode = shaderStream.str();
 
-			auto directory = Common::Path::GetDirectory(filename) + "/";
+            lines = ExtractExtensions(lines);
 
-            // Copy all includes into the code
-            while (shaderCode.find("#include ") != std::string::npos) {
-
-                size_t includePosition = shaderCode.find("#include ");
-                size_t lineBreakPosition = shaderCode.find("\n", includePosition);
-
-                size_t filenamePosition = shaderCode.find_first_of("\"<", includePosition) + 1;
-                size_t filenameEndPosition = shaderCode.find_first_of("\">", filenamePosition);
-
-                auto includeFilename = shaderCode.substr(filenamePosition, filenameEndPosition - filenamePosition);
-
-				auto shortenedFilename = Common::Path::GetFileName(includeFilename);
-
-				auto codeBeforeInclude = shaderCode.substr(0, includePosition);
-				auto codeAfterInclude = shaderCode.substr(lineBreakPosition, shaderCode.length() - 1);
-
-				// Check for multiple includes of a file
-				if (includes.find(shortenedFilename) == includes.end()) {
-
-					includes.insert(shortenedFilename);
-					auto includeCode = ReadShaderFile(directory + includeFilename, false);
-
-					shaderCode = codeBeforeInclude + includeCode + codeAfterInclude;
-
-				}
-				else {
-
-					shaderCode = codeBeforeInclude + codeAfterInclude;
-
-				}
-
+            for (auto& line : lines) {
+                shaderCode += line + "\n\r";
             }
+
+            shaderCode = ExtractIncludes(filename, shaderCode);
 
             // Find constants in the code (we have to consider that we don't 
 			//want to change the constants in functions or in function definitions)
-            if (mainFile) {
+            if (mainFile) {               
 
                 int32_t openedCurlyBrackets = 0;
 				int32_t openedBrackets = 0;
@@ -296,6 +282,147 @@ namespace Atlas {
 
         }
 
+        std::string ShaderStage::ExtractIncludes(const std::string& filename, std::string& code) {
+
+            auto directory = Common::Path::GetDirectory(filename) + "/";
+
+            // Copy all includes into the code
+            while (code.find("#include ") != std::string::npos) {
+
+                size_t includePosition = code.find("#include ");
+                size_t lineBreakPosition = code.find("\n", includePosition);
+
+                size_t filenamePosition = code.find_first_of("\"<", includePosition) + 1;
+                size_t filenameEndPosition = code.find_first_of("\">", filenamePosition);
+
+                auto includeFilename = code.substr(filenamePosition, filenameEndPosition - filenamePosition);
+
+                auto shortenedFilename = Common::Path::GetFileName(includeFilename);
+
+                auto codeBeforeInclude = code.substr(0, includePosition);
+                auto codeAfterInclude = code.substr(lineBreakPosition, code.length() - 1);
+
+                // Check for multiple includes of a file
+                if (includes.find(shortenedFilename) == includes.end()) {
+
+                    includes.insert(shortenedFilename);
+                    auto includeCode = ReadShaderFile(directory + includeFilename, false);
+
+                    code = codeBeforeInclude + includeCode + codeAfterInclude;
+
+                }
+                else {
+
+                    code = codeBeforeInclude + codeAfterInclude;
+
+                }
+
+            }
+
+            return code;
+
+        }
+
+        std::vector<std::string> ShaderStage::ExtractExtensions(std::vector<std::string> codeLines) {
+
+            std::vector<std::string> lines;
+            std::vector<std::string> ifdefs;
+
+            size_t continuousBuildup = 0;
+            bool multilineComment = false;
+            auto multilineCommentPos = 0;
+            // Extract extensions from shader code
+            for (auto& line : codeLines) {
+                auto comment = false;
+                auto commentPos = 0;
+                if (!multilineComment) {
+                    commentPos = line.find_first_of("//");
+                    comment = commentPos != std::string::npos;
+                    multilineCommentPos = line.find_first_of("/*");
+                    multilineComment = multilineCommentPos != std::string::npos;
+                }
+
+                // A multiline comment close needs to be on it's own line
+                // or on the same line shouldn't be an directive
+                if (multilineComment) {
+                    if (line.find("*/") != std::string::npos) {
+                        multilineComment = false;
+                        multilineCommentPos = 0;
+                    }
+                }
+                else {
+
+                    bool validExtension = false;
+                    // Note: We will only allow one directive per line
+                    // Doesn't really support #else right now
+                    auto directives = 0;
+                    auto directivePos = line.find("#ifdef ");
+                    if (directivePos != std::string::npos &&
+                        (!comment || directivePos < commentPos)) {
+                        directives++;
+                        continuousBuildup++;
+                    }
+
+                    directivePos = line.find("#if ");
+                    if (directivePos != std::string::npos &&
+                        (!comment || directivePos < commentPos)) {
+                        directives++;
+                        continuousBuildup++;
+                    }
+
+                    directivePos = line.find("#ifndef ");
+                    if (directivePos != std::string::npos &&
+                        (!comment || directivePos < commentPos)) {
+                        directives++;
+                        continuousBuildup++;
+                    }
+
+                    if (directives > 0) ifdefs.push_back(line);
+
+                    directivePos = line.find("#endif");
+                    if (directivePos != std::string::npos &&
+                        (!comment || directivePos < commentPos)) {
+                        directives++;
+                        continuousBuildup++;
+                        ifdefs.pop_back();
+                    }
+
+                    directivePos = line.find("#extension ");
+                    if (directivePos != std::string::npos &&
+                        (!comment || directivePos < commentPos)) {
+                        directives++;
+                        validExtension = true;
+                        extensions.push_back({ line, ifdefs });
+                    }
+
+                    if (directives > 1) continuousBuildup++;
+
+                    auto emptyLine = line.find_first_not_of(" \n\r\t") == std::string::npos;
+                    if (directives == 0 && emptyLine) continuousBuildup++;
+                    if (directives == 0 && !emptyLine) {
+                        // Remove all directive lines after a continous buildup of if(defs)
+                        // Needs to have at least 3 lines to complete a valid buildup
+                        if (!ifdefs.size() && continuousBuildup >= 3) {
+                            for (size_t i = 0; i < continuousBuildup; i++)
+                                lines.pop_back();
+                        }
+                        continuousBuildup = 0;
+                    }
+
+                    // If we have a valid directive, we don't want to include
+                    // it in the lines of code
+                    if (validExtension) continue;
+
+                }
+
+                lines.push_back(line);
+
+            }
+
+            return lines;
+
+        }
+
         time_t ShaderStage::GetLastModified() {
 
             auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
@@ -318,6 +445,7 @@ namespace Atlas {
             code = that.code;
             macros = that.macros;
             includes = that.includes;
+            extensions = that.extensions;
             filename = that.filename;
             lastModified = that.lastModified;
 
