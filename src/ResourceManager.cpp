@@ -3,6 +3,7 @@
 
 #include "loader/AssetLoader.h"
 #include "loader/MaterialLoader.h"
+#include "loader/ModelLoader.h"
 #include "loader/TerrainLoader.h"
 
 #include <algorithm>
@@ -33,7 +34,8 @@ namespace Atlas {
 				return mesh;
 		}
 
-		auto mesh = new Atlas::Mesh::Mesh(path, forceTangents);
+		auto meshData = Loader::ModelLoader::LoadMesh(path, forceTangents);
+		auto mesh = new Atlas::Mesh::Mesh(meshData);
 		meshes.push_back(mesh);
 
 		std::lock_guard<std::mutex> guardMaterial(materialMutex);

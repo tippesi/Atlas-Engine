@@ -21,6 +21,8 @@ namespace Atlas {
 			uint32_t indicesCount;
 			
 			Material* material;
+
+			Volume::AABB aabb;
 		
 		};
 
@@ -76,12 +78,12 @@ namespace Atlas {
 
             std::string filename;
 
-			DataComponent<uint32_t, void> indices;
+			DataComponent<uint32_t> indices;
 
-			DataComponent<float, float> vertices;
-			DataComponent<float, float16> texCoords;
-			DataComponent<float, uint32_t> normals;
-			DataComponent<float, uint32_t> tangents;
+			DataComponent<vec3> vertices;
+			DataComponent<vec2> texCoords;
+			DataComponent<vec4> normals;
+			DataComponent<vec4> tangents;
 
 			std::vector<Material> materials;
 			std::vector<MeshSubData> subData;

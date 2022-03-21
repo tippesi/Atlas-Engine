@@ -63,10 +63,10 @@ namespace Atlas {
 				if (!actor->visible)
 					continue;
 
-				auto actorIndices = actor->mesh->data.indices.Get();
-				auto actorVertices = actor->mesh->data.vertices.Get();
-				auto actorNormals = actor->mesh->data.normals.Get();
-				auto actorTexCoords = actor->mesh->data.texCoords.Get();
+				auto& actorIndices = actor->mesh->data.indices.Get();
+				auto& actorVertices = actor->mesh->data.vertices.Get();
+				auto& actorNormals = actor->mesh->data.normals.Get();
+				auto& actorTexCoords = actor->mesh->data.texCoords.Get();
 
 				for (auto& subData : actor->mesh->data.subData) {
 
@@ -76,12 +76,10 @@ namespace Atlas {
 
 					for (uint32_t i = 0; i < count; i++) {
 						auto j = actorIndices[i + offset];
-						vertices[vertexCount] = vec3(actorVertices[j * 3], actorVertices[j * 3 + 1],
-							actorVertices[j * 3 + 2]);
-						normals[vertexCount] = vec3(actorNormals[j * 4], actorNormals[j * 4 + 1],
-							actorNormals[j * 4 + 2]);
+						vertices[vertexCount] = actorVertices[j];
+						normals[vertexCount] = vec3(actorNormals[j]);
 						if (actor->mesh->data.texCoords.ContainsData())
-							texCoords[vertexCount] = vec2(actorTexCoords[j * 2], actorTexCoords[j * 2 + 1]);
+							texCoords[vertexCount] = vec2(actorTexCoords[j]);
 						if ((vertexCount % 3) == 0) {
 							materialIndices[vertexCount / 3] = materialIndex;
 						}

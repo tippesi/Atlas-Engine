@@ -55,6 +55,7 @@ asset directory is correct.
 - **ATLAS_NO_APP** Disables the engines main function and app functionality. You have to code the main function and
 initialize the engine yourself
 - **ATLAS_IMGUI** Enables the [ImGui](https://github.com/ocornut/imgui) integration. Is enabled by default if the demo project is build.
+- **ATLAS_ASSIMP** Enables the [Assimp](https://github.com/assimp/assimp) integration. Is enabled by default.
 ## Documentation
 If you want more information have a look into the [Documentation](https://tippesi.github.io/Atlas-Engine-Doc/index.html).
 ## License

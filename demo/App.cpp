@@ -48,7 +48,8 @@ void App::LoadContent() {
 	directionalLight = Atlas::Lighting::DirectionalLight(AE_MOVABLE_LIGHT);
 	directionalLight.direction = vec3(0.0f, -1.0f, 1.0f);
 	directionalLight.color = vec3(253, 194, 109) / 255.0f;
-	directionalLight.AddShadow(150.0f, 1.1f, 1024, 5, 0.8f);
+	mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
+	directionalLight.AddShadow(200.0f, 3.0f, 4096, vec3(0.0f), orthoProjection);
 	directionalLight.AddVolumetric(10, 0.28f);
 	scene.Add(&directionalLight);
 
@@ -334,6 +335,8 @@ void App::Render(float deltaTime) {
 				ImGui::Text("Use left mouse click + mouse movement to look around");
 				ImGui::Text("Use F11 to hide/unhide the UI");
 			}
+
+			ImGui::End();
 		}
 
 		if (openSceneNotFoundPopup) {
@@ -383,7 +386,7 @@ bool App::IsSceneAvailable(SceneSelection selection) {
 	case CORNELL: return Atlas::Loader::AssetLoader::FileExists("cornell/CornellBox-Original.obj");
 	case SPONZA: return Atlas::Loader::AssetLoader::FileExists("sponza/sponza.obj");
 	case BISTRO: return Atlas::Loader::AssetLoader::FileExists("bistro/mesh/exterior.obj");
-	case SANMIGUEL: return Atlas::Loader::AssetLoader::FileExists("sanmiguel/san-miguel.obj");
+	case SANMIGUEL: return Atlas::Loader::AssetLoader::FileExists("sanmiguel/san-miguel-low-poly.obj");
 	case MEDIEVAL: return Atlas::Loader::AssetLoader::FileExists("medieval/scene.fbx");
 	case PICAPICA: return Atlas::Loader::AssetLoader::FileExists("pica pica/mesh/scene.gltf");
 	default: return false;
@@ -402,7 +405,8 @@ bool App::LoadScene() {
 	if (sceneSelection == CORNELL) {
 		if (!Atlas::Loader::AssetLoader::FileExists("cornell/CornellBox-Original.obj")) return false;
 
-		mesh = Atlas::Mesh::Mesh("cornell/CornellBox-Original.obj");
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("cornell/CornellBox-Original.obj");
+		mesh = Atlas::Mesh::Mesh(meshData);
 		mesh.invertUVs = true;
 		mesh.SetTransform(scale(mat4(1.0f), vec3(10.0f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.10f), ivec3(20));
@@ -422,7 +426,8 @@ bool App::LoadScene() {
 	else if (sceneSelection == SPONZA) {
 		if (!Atlas::Loader::AssetLoader::FileExists("sponza/sponza.obj")) return false;
 
-		mesh = Atlas::Mesh::Mesh("sponza/sponza.obj");
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("sponza/sponza.obj");
+		mesh = Atlas::Mesh::Mesh(meshData);
 		mesh.invertUVs = true;
 		mesh.SetTransform(scale(mat4(1.0f), vec3(.05f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(0.90f), ivec3(20));
@@ -443,9 +448,10 @@ bool App::LoadScene() {
 	else if (sceneSelection == BISTRO) {
 		if (!Atlas::Loader::AssetLoader::FileExists("bistro/mesh/exterior.obj")) return false;
 
-		mesh = Atlas::Mesh::Mesh("bistro/mesh/exterior.obj", false, 2048);
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("bistro/mesh/exterior.obj", false, 2048);
+		mesh = Atlas::Mesh::Mesh(meshData);
 		mesh.invertUVs = true;
-		mesh.SetTransform(scale(mat4(1.0f), vec3(.01f)));
+		mesh.SetTransform(scale(mat4(1.0f), vec3(.015f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(0.90f), ivec3(20));
 
 		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
@@ -456,15 +462,16 @@ bool App::LoadScene() {
 		scene.irradianceVolume->SetRayCount(32, 32);
 
 		// Setup camera
-		camera.location = vec3(30.0f, 25.0f, 0.0f);
-		camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
+		camera.location = vec3(-21.0f, 8.0f, 1.0f);
+		camera.rotation = vec2(3.14f / 2.0f, 0.0f);
 
 		scene.fog->enable = true;
 	}
 	else if (sceneSelection == SANMIGUEL) {
-		if (!Atlas::Loader::AssetLoader::FileExists("sanmiguel/san-miguel.obj")) return false;
+		if (!Atlas::Loader::AssetLoader::FileExists("sanmiguel/san-miguel-low-poly.obj")) return false;
 
-		mesh = Atlas::Mesh::Mesh("sanmiguel/san-miguel.obj", false, 2048);
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("sanmiguel/san-miguel-low-poly.obj", false, 2048);
+		mesh = Atlas::Mesh::Mesh(meshData);
 		mesh.invertUVs = true;
 		mesh.SetTransform(scale(mat4(1.0f), vec3(2.0f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
@@ -475,11 +482,11 @@ bool App::LoadScene() {
 		directionalLight.intensity = 100.0f;
 		directionalLight.GetVolumetric()->intensity = 0.28f;
 		directionalLight.direction = vec3(0.0f, -1.0f, -1.0f);
-		scene.irradianceVolume->SetRayCount(32, 32);
+		scene.irradianceVolume->SetRayCount(128, 32);
 
 		// Setup camera
-		camera.location = vec3(30.0f, 25.0f, 0.0f);
-		camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
+		camera.location = vec3(45.0f, 26.0f, 17.0f);
+		camera.rotation = vec2(-4.14f / 2.0f, -.6f);
 		camera.exposure = 2.5f;
 
 		scene.fog->enable = true;
@@ -487,7 +494,8 @@ bool App::LoadScene() {
 	else if (sceneSelection == MEDIEVAL) {
 		if (!Atlas::Loader::AssetLoader::FileExists("medieval/scene.fbx")) return false;
 
-		mesh = Atlas::Mesh::Mesh("medieval/scene.fbx", false, 2048);
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("medieval/scene.fbx");
+		mesh = Atlas::Mesh::Mesh(meshData);
 		mesh.invertUVs = true;
 		mesh.SetTransform(scale(glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)), vec3(2.0f)));
 		// Metalness is set to 0.9f
@@ -511,7 +519,8 @@ bool App::LoadScene() {
 	else if (sceneSelection == PICAPICA) {
 		if (!Atlas::Loader::AssetLoader::FileExists("pica pica/mesh/scene.gltf")) return false;
 
-		mesh = Atlas::Mesh::Mesh("pica pica/mesh/scene.gltf", false, 2048);
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("pica pica/mesh/scene.gltf");
+		mesh = Atlas::Mesh::Mesh(meshData);
 		mesh.invertUVs = true;
 
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));

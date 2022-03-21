@@ -3,7 +3,7 @@
 
 #include "../System.h"
 #include "../mesh/MeshData.h"
-#include "../scene/SceneNode.h"
+#include "../scene/Scene.h"
 
 #include <Assimp/include/assimp/Importer.hpp>
 #include <Assimp/include/assimp/scene.h>
@@ -17,12 +17,16 @@ namespace Atlas {
 		class ModelLoader {
 
 		public:
-			static void LoadMesh(std::string filename, Mesh::MeshData& meshData,
+			static Mesh::MeshData LoadMesh(std::string filename,
 				bool forceTangents = false, int32_t maxTextureResolution = 4096);
 
 		private:
 			static void LoadMaterial(aiMaterial* assimpMaterial, Material& material,
 				std::string directory, bool isObj, int32_t maxTextureResolution);
+
+			//static void ProcessNode(aiNode node, )
+
+            static std::string GetDirectoryPath(std::string filename);
 
 			template<typename T>
 			static Common::Image<T> ApplySobelFilter(const Common::Image<T>& image, const float strength = 1.0f) {

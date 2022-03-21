@@ -86,7 +86,7 @@ namespace Atlas {
 
 			auto& taa = scene->postProcessing.taa;
 			if (taa.enable) {
-				auto jitter = 2.0f * haltonSequence[haltonIndex + 1] - 1.0f;
+				auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
 				jitter.x /= (float)target->GetWidth();
 				jitter.y /= (float)target->GetHeight();
 

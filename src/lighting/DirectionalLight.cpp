@@ -22,7 +22,6 @@ namespace Atlas {
 				delete shadow;
 
             shadow = new Shadow(distance, bias, resolution, glm::min(cascadeCount, MAX_SHADOW_CASCADE_COUNT), splitCorrection);
-			shadow->bias = 3.0f;
 
             useShadowCenter = false;
 
@@ -36,9 +35,9 @@ namespace Atlas {
 				delete shadow;
 
             shadow = new Shadow(distance, bias, resolution);
-			shadow->bias = 3.0f;
 
             useShadowCenter = true;
+			shadowCenter = centerPoint;
 
 			shadow->allowTerrain = true;
 
@@ -120,6 +119,9 @@ namespace Atlas {
                     }
 
                 }
+				else {
+					shadow->components[0].viewMatrix = glm::lookAt(shadowCenter, shadowCenter + direction, vec3(0.0f, 1.0f, 0.0f));
+				}
 
                 if (mobility == AE_MOVABLE_LIGHT) {
                     shadow->Update();

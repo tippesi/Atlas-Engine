@@ -11,41 +11,38 @@ namespace Atlas {
 
 	namespace Loader {
 
-		void ModelLoader::LoadMesh(std::string filename, Mesh::MeshData& meshData,
+		Mesh::MeshData ModelLoader::LoadMesh(std::string filename,
 			bool forceTangents, int32_t maxTextureResolution) {
 
-			auto directoryPath = Common::Path::GetDirectory(filename);
+			Mesh::MeshData meshData;
 
-			if (directoryPath.length())
-				directoryPath += "/";
+            auto directoryPath = GetDirectoryPath(filename);
 
-			AssetLoader::UnpackFile(filename);
+            AssetLoader::UnpackFile(filename);
 
-			auto fileType = Common::Path::GetFileType(filename);
+            auto fileType = Common::Path::GetFileType(filename);
+            bool isObj = fileType == "obj" || fileType == "OBJ";
 
-			auto isObj = fileType == "obj" || fileType == "OBJ";
+            Assimp::Importer importer;
+            importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
 
-			Assimp::Importer importer;
-			importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
+            // Use aiProcess_GenSmoothNormals in case model lacks normals and smooth normals are needed
+            // Use aiProcess_GenNormals in case model lacks normals and flat normals are needed
+            // Right now we just use flat normals everytime normals are missing.
+            const aiScene* scene = importer.ReadFile(AssetLoader::GetFullPath(filename),
+                                                     aiProcess_CalcTangentSpace |
+                                                     aiProcess_JoinIdenticalVertices |
+                                                     aiProcess_Triangulate |
+                                                     aiProcess_OptimizeGraph |
+                                                     aiProcess_OptimizeMeshes |
+                                                     aiProcess_RemoveRedundantMaterials |
+                                                     aiProcess_GenNormals |
+                                                     aiProcess_LimitBoneWeights |
+                                                     aiProcess_ImproveCacheLocality);
 
-			// Use aiProcess_GenSmoothNormals in case model lacks normals and smooth normals are needed
-			// Use aiProcess_GenNormals in case model lacks normals and flat normals are needed
-			// Right now we just use flat normals everytime normals are missing.
-			const aiScene* scene = importer.ReadFile(AssetLoader::GetFullPath(filename),
-				aiProcess_CalcTangentSpace |
-				aiProcess_JoinIdenticalVertices |
-				aiProcess_Triangulate |
-				aiProcess_OptimizeGraph |
-				aiProcess_OptimizeMeshes |
-				aiProcess_RemoveRedundantMaterials |
-				aiProcess_GenNormals |
-				aiProcess_LimitBoneWeights |
-				aiProcess_ImproveCacheLocality);
-
-			if (!scene) {
-				Log::Error("Error processing model " + std::string(importer.GetErrorString()));
-				return;
-			}
+            if (!scene) {
+                Log::Error("Error processing model " + std::string(importer.GetErrorString()));
+            }
 
 			int32_t indexCount = 0;
 			int32_t vertexCount = 0;
@@ -76,17 +73,17 @@ namespace Atlas {
 					hasTangents = true;
 			}
 
-			if (indexCount > 65535) {
-				meshData.indices.SetType(AE_COMPONENT_UNSIGNED_INT);
+			if (vertexCount > 65535) {
+				meshData.indices.SetType(Mesh::ComponentFormat::UnsignedInt);
 			}
 			else {
-				meshData.indices.SetType(AE_COMPONENT_UNSIGNED_SHORT);
+				meshData.indices.SetType(Mesh::ComponentFormat::UnsignedShort);
 			}
 
-			meshData.vertices.SetType(AE_COMPONENT_FLOAT);
-			meshData.normals.SetType(AE_COMPONENT_PACKED_FLOAT);
-			meshData.texCoords.SetType(AE_COMPONENT_HALF_FLOAT);
-			meshData.tangents.SetType(AE_COMPONENT_PACKED_FLOAT);
+			meshData.vertices.SetType(Mesh::ComponentFormat::Float);
+			meshData.normals.SetType(Mesh::ComponentFormat::PackedFloat);
+			meshData.texCoords.SetType(Mesh::ComponentFormat::HalfFloat);
+			meshData.tangents.SetType(Mesh::ComponentFormat::PackedFloat);
 
 			meshData.SetIndexCount(indexCount);
 			meshData.SetVertexCount(vertexCount);
@@ -104,11 +101,12 @@ namespace Atlas {
 			uint32_t usedVertices = 0;
 			uint32_t loadedVertices = 0;
 
-			uint32_t* indices = new uint32_t[indexCount];
-			float* vertices = new float[vertexCount * 3];
-			float* normals = new float[vertexCount * 4];
-			float* texCoords = hasTexCoords ? new float[vertexCount * 2] : nullptr;
-			float* tangents = hasTangents ? new float[vertexCount * 4] : nullptr;
+            std::vector<uint32_t> indices(indexCount);
+
+            std::vector<vec3> vertices(vertexCount);
+            std::vector<vec2> texCoords(hasTexCoords ? vertexCount : 0);
+            std::vector<vec4> normals(vertexCount);
+            std::vector<vec4> tangents(hasTangents ? vertexCount : 0);
 
 			meshData.subData = std::vector<Mesh::MeshSubData>(scene->mNumMaterials);
 			meshData.materials = std::vector<Material>(scene->mNumMaterials);
@@ -118,7 +116,8 @@ namespace Atlas {
 				auto& material = meshData.materials[i];
 				auto& subData = meshData.subData[i];
 
-				LoadMaterial(scene->mMaterials[i], material, directoryPath, isObj, maxTextureResolution);
+				LoadMaterial(scene->mMaterials[i], material,
+                             directoryPath, isObj, maxTextureResolution);
 
 				subData.material = &material;
 				subData.indicesOffset = usedFaces * 3;
@@ -127,44 +126,38 @@ namespace Atlas {
 					// Copy vertices
 					for (uint32_t j = 0; j < mesh->mNumVertices; j++) {
 
-						vertices[usedVertices * 3] = mesh->mVertices[j].x;
-						vertices[usedVertices * 3 + 1] = mesh->mVertices[j].y;
-						vertices[usedVertices * 3 + 2] = mesh->mVertices[j].z;
+                        vec3 vertex = vec3(mesh->mVertices[j].x, mesh->mVertices[j].y,
+                                           mesh->mVertices[j].z);
 
-						max.x = glm::max(mesh->mVertices[j].x, max.x);
-						max.y = glm::max(mesh->mVertices[j].y, max.y);
-						max.z = glm::max(mesh->mVertices[j].z, max.z);
+                        vertices[usedVertices] = vertex;
 
-						min.x = glm::min(mesh->mVertices[j].x, min.x);
-						min.y = glm::min(mesh->mVertices[j].y, min.y);
-						min.z = glm::min(mesh->mVertices[j].z, min.z);
+                        max = glm::max(vertex, max);
+                        min = glm::min(vertex, min);
 
-						vec3 normal = normalize(vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z));
+						vec3 normal = vec3(mesh->mNormals[j].x, mesh->mNormals[j].y,
+                                           mesh->mNormals[j].z);
+                        normal = normalize(normal);
 
-						normals[usedVertices * 4] = normal.x;
-						normals[usedVertices * 4 + 1] = normal.y;
-						normals[usedVertices * 4 + 2] = normal.z;
-						normals[usedVertices * 4 + 3] = 0.0f;
+						normals[usedVertices] = vec4(normal, 0.0f);
 
 						if (hasTangents && mesh->mTangents != nullptr) {
-							vec3 tangent = vec3(mesh->mTangents[j].x, mesh->mTangents[j].y, mesh->mTangents[j].z);
+							vec3 tangent = vec3(mesh->mTangents[j].x, mesh->mTangents[j].y,
+                                                mesh->mTangents[j].z);
 							tangent = normalize(tangent - normal * dot(normal, tangent));
 
 							vec3 estimatedBitangent = normalize(cross(tangent, normal));
-							vec3 correctBitangent = normalize(vec3(mesh->mBitangents[j].x, mesh->mBitangents[j].y,
-								mesh->mBitangents[j].z));
+							vec3 correctBitangent = vec3(mesh->mBitangents[j].x, mesh->mBitangents[j].y,
+                                                         mesh->mBitangents[j].z);
+                            correctBitangent = normalize(correctBitangent);
 
 							float dotProduct = dot(estimatedBitangent, correctBitangent);
 
-							tangents[usedVertices * 4] = tangent.x;
-							tangents[usedVertices * 4 + 1] = tangent.y;
-							tangents[usedVertices * 4 + 2] = tangent.z;
-							tangents[usedVertices * 4 + 3] = dotProduct <= 0.0f ? 1.0f : -1.0f;
+                            tangents[usedVertices] = vec4(tangent, dotProduct <= 0.0f ? -1.0f : 1.0f);
 						}
 
 						if (hasTexCoords && mesh->mTextureCoords[0] != nullptr) {
-							texCoords[usedVertices * 2] = mesh->mTextureCoords[0][j].x;
-							texCoords[usedVertices * 2 + 1] = mesh->mTextureCoords[0][j].y;
+                            texCoords[usedVertices] = vec2(mesh->mTextureCoords[0][j].x,
+                                                           mesh->mTextureCoords[0][j].y);
 						}
 
 						usedVertices++;
@@ -198,6 +191,8 @@ namespace Atlas {
 				meshData.tangents.Set(tangents);
 
 			meshData.filename = filename;
+
+			return meshData;
 
 		}
 
@@ -347,6 +342,17 @@ namespace Atlas {
 			}
 			
 		}
+
+        std::string ModelLoader::GetDirectoryPath(std::string filename) {
+
+            auto directoryPath = Common::Path::GetDirectory(filename);
+
+            if (directoryPath.length())
+                directoryPath += "/";
+
+            return directoryPath;
+
+        }
 
 	}
 

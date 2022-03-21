@@ -1,5 +1,4 @@
 #include "Mesh.h"
-#include "../loader/ModelLoader.h"
 #include "../common/Path.h"
 
 #include "../renderer/OpaqueRenderer.h"
@@ -16,15 +15,6 @@ namespace Atlas {
 		}
 
 		Mesh::Mesh(MeshData data, int32_t mobility) : mobility(mobility), data(data) {
-
-			InitializeInternal();
-
-		}
-
-		Mesh::Mesh(const std::string& filename, bool forceTangents, int32_t maxTextureResolution,
-			int32_t mobility) : mobility(mobility) {
-
-			Loader::ModelLoader::LoadMesh(filename, data, forceTangents, maxTextureResolution);
 
 			InitializeInternal();
 
@@ -72,6 +62,12 @@ namespace Atlas {
 				vertexArray.GetComponent(3)->SetData(data.tangents.GetConvertedVoid(),
 						0, data.GetVertexCount());
 			}
+
+			data.indices.ClearConverted();
+			data.vertices.ClearConverted();
+			data.normals.ClearConverted();
+			data.texCoords.ClearConverted();
+			data.tangents.ClearConverted();
 
 		}
 
@@ -146,6 +142,8 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
+			auto type = data.indices.GetType();
+
 			if (data.indices.ContainsData()) {
 				auto indices = new Buffer::IndexBuffer(data.indices.GetType(),
 					data.indices.GetElementSize(), data.GetIndexCount(), 
@@ -176,6 +174,12 @@ namespace Atlas {
 					data.GetVertexCount(), data.tangents.GetConvertedVoid());
 				vertexArray.AddComponent(3, tangents);
 			}
+
+			data.indices.ClearConverted();
+			data.vertices.ClearConverted();
+			data.normals.ClearConverted();
+			data.texCoords.ClearConverted();
+			data.tangents.ClearConverted();
 
 			vertexArray.Unbind();
 

@@ -35,15 +35,6 @@ namespace Atlas {
 			 */
 			explicit Mesh(MeshData data, int32_t mobility = AE_STATIONARY_MESH);
 
-			/**
-			 *
-			 * @param filename
-			 * @param forceTangents
-			 * @param mobility
-			 */
-			explicit Mesh(const std::string& filename, bool forceTangents = false, 
-				int32_t maxTextureResolution = 4096, int32_t mobility = AE_STATIONARY_MESH);
-
 			~Mesh();
 
 			Mesh& operator=(const Mesh& that);

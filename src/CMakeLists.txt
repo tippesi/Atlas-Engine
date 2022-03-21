@@ -5,12 +5,6 @@ endif()
 project(AtlasEngine)
 cmake_minimum_required(VERSION 3.7)
 
-# Options and compiler settings ###################################################################
-option(ATLAS_BUILD_SHARED "Force build as shared library" OFF)
-option(ATLAS_OPENGL_ES "Use OpenGL ES instead of OpenGL" OFF)
-option(ATLAS_EXPORT_MAIN "Add main file in root of directory tree. Add ${ATLAS_ENGINE_MAIN_FILE} to your executable" OFF)
-option(ATLAS_NO_APP "Disables the engines main function" OFF)
-
 # Validate options ################################################################################
 if (ATLAS_NO_APP AND ATLAS_EXPORT_MAIN)
 set (ATLAS_EXPORT_MAIN OFF)
@@ -114,6 +108,10 @@ endif()
 if (ATLAS_EXPORT_MAIN)
 set(ATLAS_ENGINE_MAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp CACHE INTERNAL "Make main global")
 list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)Main\.cpp$")
+endif()
+
+if (NOT ATLAS_ASSIMP)
+list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)ModelLoader\.(c(pp)?|h(pp)?)$")
 endif()
 
 # Configure linking ###############################################################################

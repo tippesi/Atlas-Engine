@@ -16,13 +16,6 @@ namespace Atlas {
 
 		}
 
-		VegetationMesh::VegetationMesh(const std::string& filename, bool forceTangents, int32_t maxTextureResolution, int32_t mobility) :
-			Mesh(filename, forceTangents, maxTextureResolution, mobility) {
-
-
-
-		}
-
 	}
 
 }

@@ -12,8 +12,14 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 endif()
 
 # Options and compiler settings ###################################################################
+# Options and compiler settings ###################################################################
+option(ATLAS_BUILD_SHARED "Force build as shared library" OFF)
+option(ATLAS_OPENGL_ES "Use OpenGL ES instead of OpenGL" OFF)
+option(ATLAS_EXPORT_MAIN "Add main file in root of directory tree. Add ${ATLAS_ENGINE_MAIN_FILE} to your executable" OFF)
+option(ATLAS_NO_APP "Disables the engines main function" OFF)
 option(ATLAS_DEMO "Build demo executable" OFF)
 option(ATLAS_IMGUI "Activate ImGui integration" OFF)
+option(ATLAS_ASSIMP "Activate Assimp integration" ON)
 
 if (ATLAS_DEMO)
 set (ATLAS_IMGUI ON)
@@ -75,7 +81,9 @@ set (ATLAS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set (DEMO_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/demo)
 
 # Add dependencies ################################################################################
+if(ATLAS_ASSIMP)
 add_subdirectory(${ASSIMP_LOCATION})
+endif()
 add_subdirectory(${SDL_LOCATION})
 if (ANDROID)
 add_subdirectory(${HIDAPI_LOCATION})

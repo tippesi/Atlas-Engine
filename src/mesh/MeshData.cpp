@@ -12,12 +12,12 @@ namespace Atlas {
 
 		MeshData::MeshData() {
 
-			indices = DataComponent<uint32_t, void>(AE_COMPONENT_UNSIGNED_INT, 1);
+            indices = DataComponent<uint32_t>(ComponentFormat::UnsignedInt);
 
-			vertices = DataComponent<float, float>(AE_COMPONENT_FLOAT, 3);
-			texCoords = DataComponent<float, float16>(AE_COMPONENT_FLOAT, 2);
-			normals = DataComponent<float, uint32_t>(AE_COMPONENT_FLOAT, 4);
-			tangents = DataComponent<float, uint32_t>(AE_COMPONENT_FLOAT, 4);
+            vertices = DataComponent<vec3>(ComponentFormat::Float);
+            texCoords = DataComponent<vec2>(ComponentFormat::HalfFloat);
+            normals = DataComponent<vec4>(ComponentFormat::PackedFloat);
+            tangents = DataComponent<vec4>(ComponentFormat::PackedFloat);
 
 		}
 
@@ -35,8 +35,6 @@ namespace Atlas {
 
 		void MeshData::SetIndexCount(int32_t count) {
 
-			indices.SetSize(count);
-
 			indexCount = count;
 
 		}
@@ -48,11 +46,6 @@ namespace Atlas {
 		}
 
 		void MeshData::SetVertexCount(int32_t count) {
-
-			vertices.SetSize(count);
-			texCoords.SetSize(count);
-			normals.SetSize(count);
-			tangents.SetSize(count);
 
 			vertexCount = count;
 
@@ -69,48 +62,39 @@ namespace Atlas {
 			auto hasNormals = normals.ContainsData();
 			auto hasTangents = tangents.ContainsData();
 
-			auto vertex = vertices.Get();
-			auto normal = normals.Get();
-			auto tangent = tangents.Get();
+			auto& vertex = vertices.Get();
+			auto& normal = normals.Get();
+			auto& tangent = tangents.Get();
 
-			auto matrix = transform /** glm::inverse(this->transform)*/;
+			auto matrix = transform;
 
 			auto min = vec3(std::numeric_limits<float>::max());
 			auto max = vec3(-std::numeric_limits<float>::max());
 
 			for (int32_t i = 0; i < vertexCount; i++) {
 
-				auto v = vec4(vertex[i * 3], vertex[i * 3 + 1],
-					vertex[i * 3 + 2], 1.0f);
+				auto v = vec4(vertex[i], 1.0f);
 
 				v = matrix * v;
 
 				min = glm::min(min, vec3(v));
 				max = glm::max(max, vec3(v));
 
-				vertex[i * 3] = v.x;
-				vertex[i * 3 + 1] = v.y;
-				vertex[i * 3 + 2] = v.z;
+				vertex[i] = v;
 
 				if (hasNormals) {
-					auto n = vec4(normal[i * 4], normal[i * 4 + 1],
-						normal[i * 4 + 2], 0.0f);
+					auto n = vec4(vec3(normal[i]), 0.0f);
 
-					n = vec4(normalize(vec3(matrix * n)), 0.0f);
+					n = vec4(normalize(vec3(matrix * n)), normal[i].w);
 
-					normal[i * 4] = n.x;
-					normal[i * 4 + 1] = n.y;
-					normal[i * 4 + 2] = n.z;
+                    normal[i] = n;
 				}
 				if (hasTangents) {
-					auto t = vec4(tangent[i * 4], tangent[i * 4 + 1],
-						tangent[i * 4 + 2], 0.0f);
+                    auto t = vec4(vec3(tangent[i]), 0.0f);
 
-					t = vec4(normalize(vec3(matrix * t)), 0.0f);
+                    t = vec4(normalize(vec3(matrix * t)), tangent[i].w);
 
-					tangent[i * 4] = t.x;
-					tangent[i * 4 + 1] = t.y;
-					tangent[i * 4 + 2] = t.z;
+                    tangent[i] = t;
 				}
 
 			}
