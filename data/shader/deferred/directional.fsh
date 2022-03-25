@@ -22,7 +22,7 @@ uniform vec3 cameraDirection;
 
 void main() {
 	
-	float depth = texture(depthTexture, texCoordVS).r;
+	float depth = textureLod(depthTexture, texCoordVS, 0).r;
 	
 	if (depth == 1.0)
 		discard;

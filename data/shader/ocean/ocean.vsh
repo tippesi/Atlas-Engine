@@ -1,10 +1,11 @@
 #include <../common/utility.hsh>
 #include <../common/PI.hsh>
+#include <sharedUniforms.hsh>
+#include <shoreInteraction.hsh>
 
 layout(location=0)in vec3 vPosition;
 
 layout(binding = 0) uniform sampler2D displacementMap;
-layout(binding = 9) uniform sampler2D terrainHeight;
 
 out vec4 fClipSpace;
 out vec3 fPosition;
@@ -16,8 +17,6 @@ out float shoreScaling;
 out vec3 ndcCurrent;
 out vec3 ndcLast;
 out vec3 normalShoreWave;
-out float foamShoreWave;
-out float breakingShoreWave;
 
 uniform vec2 nodeLocation;
 uniform float nodeSideLength;
@@ -25,30 +24,15 @@ uniform vec3 translation;
 
 uniform mat4 vMatrix;
 uniform mat4 pMatrix;
-uniform vec3 cameraLocation;
 
 uniform float choppyScale;
 uniform float displacementScale;
 uniform float tiling;
 
-uniform float shoreWaveDistanceOffset;
-uniform float shoreWaveDistanceScale;
-uniform float shoreWaveAmplitude;
-uniform float shoreWaveSteepness;
-uniform float shoreWavePower;
-uniform float shoreWaveSpeed;
-uniform float shoreWaveLength;
-
 uniform float leftLoD;
 uniform float topLoD;
 uniform float rightLoD;
 uniform float bottomLoD;
-
-uniform vec3 terrainTranslation;
-uniform float terrainSideLength;
-uniform float terrainHeightScale;
-
-uniform float time;
 
 uniform mat4 pvMatrixLast;
 
@@ -81,58 +65,9 @@ vec3 stitch(vec3 position) {
 	
 }
 
-vec3 CalculateGerstner(vec3 position) {
-
-	vec2 terrainTex = (vec2(position.xz) - vec2(terrainTranslation.xz))
-		/ terrainSideLength;
-
-	float shoreDistance = texture(terrainHeight, terrainTex).g;
-	vec2 shoreGradient = normalize(2.0 * texture(terrainHeight, terrainTex).ba - 1.0);
-
-	// Avoid scaling by water depth. Resolution artifacts become obvious.
-	float scale = clamp(1.0 - shoreDistance, 0.0, 1.0);
-	scale *= clamp(shoreDistance * 10.0, 0.0, 1.0);
-
-	// Should be uniforms
-	float waveLength = shoreWaveLength / 100.0;
-	float speed = shoreWaveSpeed / 100.0;
-
-	float w = 1.0 / waveLength;
-	float phi = speed * w;
-
-	float rad = w * shoreDistance + phi * time;
-
-	float waveIndex = (rad - 1.5 * PI) / (2.0 * PI);
-
-	float modulation = saturate(sin(position.x / 20.0) + cos(position.z / 10.0));
-	
-	float distanceScale = saturate(1.0 - (distance(cameraLocation, position)
-		 - shoreWaveDistanceOffset) / shoreWaveDistanceScale);
-
-	float amplitude = 1.0 * shoreWaveAmplitude * scale * modulation * distanceScale;
-	float steepness = 1.0 * shoreWaveSteepness * scale * modulation * distanceScale;
-
-	vec3 offset;
-
-	float gamma = shoreWavePower;
-	offset.y = amplitude * pow(0.5 * sin(rad) + 0.5, gamma);
-	offset.xz = -shoreGradient * steepness * amplitude * pow(0.5 * cos(rad) + 0.5, gamma);
-
-	// Move these calculations to the fragment shader
-	foamShoreWave = pow(max(-cos(rad), 0.0), 1.0) * 1.0 * max(scale - 0.3, 0.0) * modulation;
-	breakingShoreWave = saturate(pow(max(sin(rad + 0.4), 0.0), 2.0) * 2.0 * max(scale - 0.3, 0.0)) * modulation;
-
-	foamShoreWave = saturate(foamShoreWave);
-	breakingShoreWave = saturate(breakingShoreWave);
-
-	return offset;
-
-}
-
 void main() {
 	
 	waterDepth = shoreStartScaling;
-	foamShoreWave = 0.0;
 	
 	fPosition = stitch(vPosition) * nodeSideLength + 
 		vec3(nodeLocation.x, 0.0, nodeLocation.y) + translation;
@@ -147,10 +82,10 @@ void main() {
 
 	if (hasTerrain && terrainTex.x >= 0.0 && terrainTex.y >= 0.0
 		&& terrainTex.x <= 1.0 && terrainTex.y <= 1.0) {
-		waterDepth = fPosition.y - texture(terrainHeight, terrainTex).r 
+		waterDepth = fPosition.y - textureLod(terrainHeight, terrainTex, 0.0).r 
 			* terrainHeightScale + terrainTranslation.y;
-		shoreDistance = texture(terrainHeight, terrainTex).g;
-		shoreGradient = normalize(2.0 * texture(terrainHeight, terrainTex).ba - 1.0);
+		shoreDistance = textureLod(terrainHeight, terrainTex, 0.0).g;
+		shoreGradient = normalize(2.0 * textureLod(terrainHeight, terrainTex, 0.0).ba - 1.0);
 	}
 	
 	float depthScaling = clamp((waterDepth - shoreOffsetScaling) / 
@@ -161,9 +96,9 @@ void main() {
 
 	fOriginalCoord = fPosition;
 	
-	fPosition.y += texture(displacementMap, vTexCoord).r * displacementScale * shoreScaling;
-	fPosition.x += texture(displacementMap, vTexCoord).g * choppyScale * shoreScaling;
-	fPosition.z += texture(displacementMap, vTexCoord).b * choppyScale * shoreScaling;
+	fPosition.y += textureLod(displacementMap, vTexCoord, 0.0).r * displacementScale * shoreScaling;
+	fPosition.x += textureLod(displacementMap, vTexCoord, 0.0).g * choppyScale * shoreScaling;
+	fPosition.z += textureLod(displacementMap, vTexCoord, 0.0).b * choppyScale * shoreScaling;
 
 	vec3 dx = vec3(0.1, 0.0, 0.0) + CalculateGerstner(fPosition + vec3(0.1, 0.0, 0.0));
 	vec3 dz = vec3(0.0, 0.0, 0.1) + CalculateGerstner(fPosition + vec3(0.0, 0.0, 0.1));

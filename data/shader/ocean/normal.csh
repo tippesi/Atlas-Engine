@@ -1,8 +1,8 @@
 layout (local_size_x = 16, local_size_y = 16) in;
 
 layout (binding = 0, rgba16f) readonly uniform image2D displacementMap;
-layout (binding = 1, rgba8) writeonly uniform image2D normalMap;
-layout (binding = 2, rgba8) readonly uniform image2D historyMap;
+layout (binding = 1, rgba16f) writeonly uniform image2D normalMap;
+layout (binding = 2, rgba16f) readonly uniform image2D historyMap;
 
 uniform int N;
 uniform int L;
@@ -30,7 +30,8 @@ void main() {
 	vec2 fCoord = vec2(coord);
 	float fN = float(N);
 	
-	float texelSize = 2.0 * tiling / fN;
+	float tileSize = tiling / float(N);
+	float invTileSize = 1.0 / tileSize;
 	
 	vec3 center = imageLoad(displacementMap, coord).grb;
 	vec3 left = imageLoad(displacementMap, ivec2(mod(fCoord.x - 1.0, fN), coord.y)).grb;
@@ -47,19 +48,19 @@ void main() {
 	float history = imageLoad(historyMap, coord).a;
 
 	// Calculate jacobian
-	vec2 Dx = (right.xz - left.xz) / texelSize;
-	vec2 Dy = (top.xz - bottom.xz) / texelSize;
+	vec2 Dx = (right.xz - left.xz) * invTileSize;
+	vec2 Dy = (top.xz - bottom.xz) * invTileSize;
 	float J = (1.0 + Dx.x) * (1.0 + Dy.y) - Dx.y * Dy.x;
 
 	float fold = -clamp(J, -1.0, 1.0) + foamOffset;
 
-	float blend = fold > temporalThreshold ? 0.0 : temporalWeight;
+	float blend = fold > temporalThreshold ? 0.0 : 0.0;
 	fold = mix(fold, history, blend);
 
 	vec3 normal;
 
 	normal.x = left.y - right.y;
-	normal.y = texelSize;
+	normal.y = 2.0 * tileSize;
 	normal.z = bottom.y - top.y;
 
 	normal = 0.5 * normalize(normal) + 0.5;

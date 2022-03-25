@@ -67,6 +67,7 @@ void main() {
 	ndcLastVS = vec3(last.xy, last.w);
 	
 	normalVS = mat3(mvMatrix) * vNormal;
+	normalVS *= -dot(normalVS, positionVS);
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 normal = normalize(normalVS);

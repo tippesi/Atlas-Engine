@@ -1,8 +1,12 @@
 #define SHADOW_FILTER_1x1
 
 #include <../common/convert.hsh>
+#include <../common/utility.hsh>
 #include <../structures>
 #include <../shadow.hsh>
+
+#include <sharedUniforms.hsh>
+#include <shoreInteraction.hsh>
 
 // Lighting based on Island Demo (NVIDIA SDK 11)
 
@@ -16,7 +20,6 @@ layout (binding = 4) uniform sampler2D refractionTexture;
 layout (binding = 5) uniform sampler2D depthTexture;
 layout (binding = 7) uniform sampler2D volumetricTexture;
 layout (binding = 10) uniform sampler2D rippleTexture;
-layout(binding = 9) uniform sampler2D terrainHeight;
 
 in vec4 fClipSpace;
 in vec3 fPosition;
@@ -28,13 +31,8 @@ in float shoreScaling;
 in vec3 ndcCurrent;
 in vec3 ndcLast;
 in vec3 normalShoreWave;
-in float foamShoreWave;
-in float breakingShoreWave;
-
-uniform float time;
 
 uniform vec3 translation;
-uniform vec3 cameraLocation;
 uniform mat4 ivMatrix;
 uniform mat4 vMatrix;
 
@@ -42,9 +40,6 @@ uniform vec2 jitterLast;
 uniform vec2 jitterCurrent;
 
 uniform bool hasRippleTexture;
-
-uniform vec3 terrainTranslation;
-uniform float terrainSideLength;
 
 uniform Light light;
 
@@ -72,7 +67,7 @@ void main() {
 	float fold = texture(normalMap, fTexCoord).a;
 	
 	vec2 ndcCoord = 0.5 * (fClipSpace.xy / fClipSpace.w) + 0.5;
-	float clipDepth = texture(depthTexture, ndcCoord).r;
+	float clipDepth = textureLod(depthTexture, ndcCoord, 0.0).r;
 	
 	vec3 depthPos = ConvertDepthToViewSpace(clipDepth, ndcCoord);
 	
@@ -92,34 +87,26 @@ void main() {
 	vec3 rippleNormal = vec3(0.0, 1.0, 0.0);
 
 	if (hasRippleTexture) {
-		rippleNormal = normalize(2.0 * texture(rippleTexture, 50.0 * fTexCoord - vec2(time * 0.2)).rgb - 1.0);
-		rippleNormal += normalize(2.0 * texture(rippleTexture, 50.0 * fTexCoord * 0.5 + vec2(time * 0.05)).rgb - 1.0);
+		rippleNormal = normalize(2.0 * texture(rippleTexture, 200.0 * fTexCoord - vec2(time * 0.2)).rgb - 1.0);
+		rippleNormal += normalize(2.0 * texture(rippleTexture, 200.0 * fTexCoord * 0.5 + vec2(time * 0.05)).rgb - 1.0);
 		// Won't work with rippleNormal = vec3(0.0, 1.0, 0.0). Might be worth an investigation
 		norm = normalize(tbn * rippleNormal);
 	}
 	
 	// Scale ripples based on actual (not view) depth of water
-	float rippleScaling = clamp(1.0 - shoreScaling, 0.2, 0.5);
-	norm = mix(fNormal, norm, rippleScaling);
+	float rippleScaling = clamp(1.0 - shoreScaling, 0.2, 0.7);
+	norm = normalize(mix(fNormal, norm, rippleScaling));
 
 	vec3 eyeDir = normalize(fModelCoord - cameraLocation);
 
 	float nDotL = dot(norm, -light.direction);
-	float nDotE = dot(norm, -eyeDir);
+	float nDotE = saturate(dot(norm, -eyeDir));
 
 	// Calculate fresnel factor
-	float fresnel = clamp(0.09 + (1.0 - 0.09) * pow(1.0 - nDotE, 4.0), 0.0, 1.0);
+	float fresnel = 0.02 + (1.0 - 0.02) * pow(1.0 - nDotE, 5.0);
 	
 	// Calculate reflection vector	
 	vec3 reflectionVec = reflect(eyeDir, norm);
-	
-	// Reflection ray goes nearly below horizon
-	if (reflectionVec.y < 0.2) {
-		// Scale down fresnel based on reflection y component (to avoid secondary
-		// reflection vectors)		
-		fresnel = mix(fresnel, 0.2, (0.2 - reflectionVec.y) / (0.2 + 0.4));
-	}
-
 	reflectionVec.y = max(0.0, reflectionVec.y);
 	
 	// Calculate sun spot
@@ -163,21 +150,28 @@ void main() {
 	// Update refraction color based on water depth (exponential falloff)
 	refractionColor = mix(waterColor, refractionColor, min(1.0 , exp(-waterViewDepth / 2.0)));
 	
+	vec2 shoreInteraction = CalculateShoreInteraction(fModelCoord);
+
+	// Calculate foam based on folding of wave and fade it out near shores
+	float foam = 0.0;
+	foam += shoreInteraction.x;
+	foam = min(foam, 1.0);
+
+	// Fade the reflection out caused by foam
+	reflectionColor *= 1.0 - 1.0 * foam;
+
 	// Mix relection and refraction and add sun spot
+	//color = vec3(fresnel);
 	color = mix(refractionColor, reflectionColor, fresnel);
 	color += specularIntensity * fresnel * specularFactor * light.color;
 	color += scatterColor * scatterFactor;
 	
-	// Calculate foam based on folding of wave and fade it out near shores
-	float foam = clamp(fold - max(0.0, 1.0 - shoreScaling), 0.0, 1.0);
-	foam += foamShoreWave;
-	foam = min(foam, 1.0);
-	color += vec3(mix(scatterColor * 0.1, vec3(1.0), 
-		texture(foamTexture, fOriginalCoord.xz / 8.0).r) * foam);
+	color = mix(color, vec3(mix(scatterColor * 0.1, vec3(1.0), 
+		texture(foamTexture, fOriginalCoord.xz / 8.0).r)), foam);
 
 	vec3 breakingColor = mix(vec3(1.0),
 		vec3(1.0) * max(0.0, nDotL)* shadowFactor, 0.7);
-	color = mix(color, breakingColor, breakingShoreWave);
+	color = mix(color, breakingColor, shoreInteraction.y);
 
 	vec2 terrainTex = (vec2(fModelCoord.xz) - vec2(terrainTranslation.xz))
 		/ terrainSideLength;

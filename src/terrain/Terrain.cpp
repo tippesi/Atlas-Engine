@@ -145,29 +145,29 @@ namespace Atlas {
 			x /= nodeSideLength;
 			z /= nodeSideLength;
 
-			float xIndex = floorf(x);
-			float zIndex = floorf(z);
+			float xPosition = floorf(x);
+			float zPosition = floorf(z);
 
-			auto cell = storage->GetCell(int32_t(xIndex), int32_t(zIndex), LoDCount - 1);
+			auto cell = storage->GetCell(int32_t(xPosition), int32_t(zPosition), LoDCount - 1);
 
 			if (!cell)
 				return 0.0f;
 
-			x -= xIndex;
-			z -= zIndex;
+			x -= xPosition;
+			z -= zPosition;
 
 			// Cells have overlapping edges (last pixels are on next cell)
 			x *= float(cell->heightField->width - 1);
 			z *= float(cell->heightField->height - 1);
 
-			xIndex = floorf(x);
-			zIndex = floorf(z);
+			xPosition = floorf(x);
+			zPosition = floorf(z);
 
-			auto xCoord = x - xIndex;
-			auto zCoord = z - zIndex;
+			auto xCoord = x - xPosition;
+			auto zCoord = z - zPosition;
 
-			int32_t xPosition = int32_t(xIndex);
-			int32_t zPosition = int32_t(zIndex);
+			int32_t xIndex = int32_t(xPosition);
+			int32_t zIndex = int32_t(zPosition);
 
 			float height = 0.0f;
 
@@ -182,10 +182,65 @@ namespace Atlas {
             topLeft is in x direction
             bottomRight is in z direction
             */
-			float heightBottomLeft = cell->heightData[xPosition + cell->heightField->width * zPosition];
-			float heightBottomRight = cell->heightData[xPosition + 1 + cell->heightField->width * zPosition];
-			float heightTopRight = cell->heightData[xPosition + cell->heightField->width * (zPosition + 1)];
-			float heightTopLeft = cell->heightData[xPosition + 1 + cell->heightField->width * (zPosition + 1)];
+			float heightBottomLeft = cell->heightData[xIndex + cell->heightField->width * zIndex];
+			float heightBottomRight = 0.0f;
+			float heightTopRight = 0.0f;
+			float heightTopLeft = 0.0f;
+
+			// Check if we must sample from a neighbour node (allows for errors while retrieving the height information at the edge of the terrain)
+			if (zIndex + 1 == cell->heightField->height &&
+				xIndex + 1 == cell->heightField->width) {
+				auto neighbourCell = storage->GetCell(xIndex + 1, zIndex + 1, LoDCount - 1);
+
+				if (!neighbourCell) {
+					heightTopLeft = heightBottomLeft;
+					heightTopRight = heightBottomLeft;
+					heightBottomRight = heightBottomLeft;
+				}
+				else {
+					heightTopLeft = neighbourCell->heightData[1];
+					heightBottomRight = neighbourCell->heightData[neighbourCell->heightField->width];
+					heightTopRight = neighbourCell->heightData[neighbourCell->heightField->width + 1];
+				}
+			}
+			else if (zIndex + 1 == cell->heightField->height) {
+
+				heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField->width * zIndex];
+
+				auto neighbourCell = storage->GetCell(xIndex, zIndex + 1, LoDCount - 1);
+
+				if (neighbourCell == nullptr) {
+					heightBottomRight = heightBottomLeft;
+					heightTopRight = heightTopLeft;
+				}
+				else {
+					heightBottomRight = neighbourCell->heightData[xIndex];
+					heightTopRight = neighbourCell->heightData[xIndex + 1];
+				}
+
+			}
+			else if (xIndex + 1 == cell->heightField->width) {
+
+				heightBottomRight = cell->heightData[xIndex + cell->heightField->width * (zIndex + 1)];
+
+				auto neighbourCell = storage->GetCell(xIndex + 1, zIndex, LoDCount - 1);
+
+				if (neighbourCell == nullptr) {
+					heightTopLeft = heightBottomLeft;
+					heightTopRight = heightBottomRight;
+				}
+				else {
+					heightTopLeft = neighbourCell->heightData[zIndex * neighbourCell->heightField->width];
+					heightTopRight = neighbourCell->heightData[(zIndex + 1) *
+						neighbourCell->heightField->width];
+				}
+
+			}
+			else {
+				heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField->width * zIndex];
+				heightBottomRight = cell->heightData[xIndex + cell->heightField->width * (zIndex + 1)];
+				heightTopRight = cell->heightData[xIndex + 1 + cell->heightField->width * (zIndex + 1)];
+			}
 
 			heightBottomLeft *= heightScale;
 			heightBottomRight *= heightScale;

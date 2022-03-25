@@ -17,6 +17,7 @@ layout(std430, binding = 2) buffer Matrices {
 	mat4 matrices[];
 };
 
+out vec3 positionVS;
 out vec2 texCoordVS;
 out vec3 ndcCurrentVS;
 out vec3 ndcLastVS;
@@ -136,9 +137,10 @@ void main() {
 #endif
 
     vec4 modelPosition = vec4((normalize(up.xyz) * position.y
-        + normalize(right.xyz) * position.x) + center, 1.0);	
+        + normalize(right.xyz) * position.x) + center, 1.0);
+	positionVS = vec3(vMatrix * mMatrix * modelPosition);
 
-    gl_Position =  pMatrix * vMatrix * mMatrix * modelPosition;
+    gl_Position =  pMatrix * vec4(positionVS, 1.0);
 
     ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
 	// For moving objects we need the last matrix

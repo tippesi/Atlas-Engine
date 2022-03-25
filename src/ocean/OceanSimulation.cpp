@@ -33,11 +33,11 @@ namespace Atlas {
 			noise3.SetData(image3.GetData());
 
 			displacementMap = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);
-			normalMap = Texture::Texture2D(N, N, AE_RGBA8, GL_REPEAT, GL_LINEAR, true, true);
+			normalMap = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);
 
 			displacementMapPrev = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);
 
-			h0K = Texture::Texture2D(N, N, AE_RGBA32F);
+			h0K = Texture::Texture2D(N, N, AE_RG32F);
 
 #ifdef AE_API_GLES
 			twiddleIndices = Texture::Texture2D((int32_t)log2((float)N), N, AE_RGBA32F);
@@ -45,30 +45,20 @@ namespace Atlas {
 			hTDyPingpong = Texture::Texture2D(N, N, AE_RGBA32F);
 #else
 			twiddleIndices = Texture::Texture2D((int32_t)log2((float)N), N, AE_RG32F);
-			hTDy = Texture::Texture2D(N, N, AE_RG32F);
-			hTDyPingpong = Texture::Texture2D(N, N, AE_RG32F);
+			hTD = Texture::Texture2D(N, N, AE_RGBA32F);
+			hTDPingpong = Texture::Texture2D(N, N, AE_RGBA32F);
 #endif
-
-			hTDxz = Texture::Texture2D(N, N, AE_RGBA32F);			
-			hTDxzPingpong = Texture::Texture2D(N, N, AE_RGBA32F);
 
 			h0.AddStage(AE_COMPUTE_STAGE, "ocean/h0.csh");
 			ht.AddStage(AE_COMPUTE_STAGE, "ocean/ht.csh");
 			twiddle.AddStage(AE_COMPUTE_STAGE, "ocean/twiddleIndices.csh");
 			horizontalButterfly.AddStage(AE_COMPUTE_STAGE, "ocean/butterfly.csh");
 			verticalButterfly.AddStage(AE_COMPUTE_STAGE, "ocean/butterfly.csh");
-			choppyHorizontalButterfly.AddStage(AE_COMPUTE_STAGE, "ocean/butterfly.csh");
-			choppyVerticalButterfly.AddStage(AE_COMPUTE_STAGE, "ocean/butterfly.csh");
 			inversion.AddStage(AE_COMPUTE_STAGE, "ocean/inversion.csh");
 			normal.AddStage(AE_COMPUTE_STAGE, "ocean/normal.csh");
 
 			horizontalButterfly.AddMacro("HORIZONTAL");
 			verticalButterfly.AddMacro("VERTICAL");
-
-			choppyHorizontalButterfly.AddMacro("HORIZONTAL");
-			choppyHorizontalButterfly.AddMacro("CHOPPY");
-			choppyVerticalButterfly.AddMacro("VERTICAL");
-			choppyVerticalButterfly.AddMacro("CHOPPY");
 
 			htNUniform = ht.GetUniform("N");
 			htLUniform = ht.GetUniform("L");
@@ -98,21 +88,15 @@ namespace Atlas {
 
 		void OceanSimulation::ComputeSpectrum() {
 
-			auto NUniform = h0.GetUniform("N");
-			auto LUniform = h0.GetUniform("L");
-			auto AUniform = h0.GetUniform("A");
-			auto wUniform = h0.GetUniform("w");
-			auto windspeedUniform = h0.GetUniform("windspeed");
-			auto windDependencyUniform = h0.GetUniform("windDependency");
-
 			h0.Bind();
 
-			NUniform->SetValue(N);
-			LUniform->SetValue(L);
-			AUniform->SetValue(waveAmplitude);
-			wUniform->SetValue(windDirection);
-			windspeedUniform->SetValue(windSpeed);
-			windDependencyUniform->SetValue(windDependency);
+			h0.GetUniform("N")->SetValue(N);
+			h0.GetUniform("L")->SetValue(L);
+			h0.GetUniform("A")->SetValue(waveAmplitude);
+			h0.GetUniform("w")->SetValue(windDirection);
+			h0.GetUniform("windspeed")->SetValue(windSpeed);
+			h0.GetUniform("windDependency")->SetValue(windDependency);
+			h0.GetUniform("waveSurpression")->SetValue(waveSurpression);
 
 			noise0.Bind(GL_TEXTURE2);
 			noise1.Bind(GL_TEXTURE3);
@@ -159,6 +143,8 @@ namespace Atlas {
 
 			time += deltaTime;
 
+			if (!update) return;
+
 			displacementMapPrev.Copy(displacementMap);
 
 			ht.Bind();
@@ -167,10 +153,8 @@ namespace Atlas {
 			htLUniform->SetValue(L);
 			htTimeUniform->SetValue(simulationSpeed * time);
 
-			hTDy.Bind(GL_WRITE_ONLY, 0);
-			hTDxz.Bind(GL_WRITE_ONLY, 1);
-
-			h0K.Bind(GL_READ_ONLY, 2);
+			hTD.Bind(GL_WRITE_ONLY, 0);
+			h0K.Bind(GL_READ_ONLY, 1);
 
 			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
 				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -182,15 +166,13 @@ namespace Atlas {
 
 			twiddleIndices.Bind(GL_READ_ONLY, 0);
 
-			for (uint8_t j = 0; j < 4; j++) {
+			for (uint8_t j = 0; j < 2; j++) {
 
 				// The first two passes calculate the height,
 				// while the second two passes calculate choppyness.
 				switch (j) {
 				case 0: horizontalButterfly.Bind();  break;
 				case 1: verticalButterfly.Bind(); break;
-				case 2: choppyHorizontalButterfly.Bind(); break;
-				case 3: choppyVerticalButterfly.Bind(); break;
 				default: break;
 				}
 
@@ -198,26 +180,13 @@ namespace Atlas {
 
 				for (int32_t i = 0; i < log2n; i++) {
 
-					// Different binding points for the height and choppyness passes
-					if (j < 2) {
-						if (!pingpong) {
-							hTDy.Bind(GL_READ_ONLY, 1);
-							hTDyPingpong.Bind(GL_WRITE_ONLY, 2);
-						}
-						else {
-							hTDyPingpong.Bind(GL_READ_ONLY, 1);
-							hTDy.Bind(GL_WRITE_ONLY, 2);
-						}
+					if (!pingpong) {
+						hTD.Bind(GL_READ_ONLY, 1);
+						hTDPingpong.Bind(GL_WRITE_ONLY, 2);
 					}
 					else {
-						if (!pingpong) {
-							hTDxz.Bind(GL_READ_ONLY, 3);
-							hTDxzPingpong.Bind(GL_WRITE_ONLY, 4);
-						}
-						else {
-							hTDxzPingpong.Bind(GL_READ_ONLY, 3);
-							hTDxz.Bind(GL_WRITE_ONLY, 4);
-						}
+						hTDPingpong.Bind(GL_READ_ONLY, 1);
+						hTD.Bind(GL_WRITE_ONLY, 2);
 					}
 
 					auto preTwiddle = (float)N / powf(2.0f, (float)i + 1.0f);
@@ -228,7 +197,6 @@ namespace Atlas {
 					butterflyPingpongUniform->SetValue(pingpong);
 
 					glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
 					glDispatchCompute(N / 8, N / 8, 1);
 
 					pingpong = (pingpong + 1) % 2;
@@ -244,16 +212,13 @@ namespace Atlas {
 			displacementMap.Bind(GL_WRITE_ONLY, 0);
 
             if (pingpong == 0) {
-                hTDy.Bind(GL_READ_ONLY, 1);
-                hTDxz.Bind(GL_READ_ONLY, 3);
+                hTD.Bind(GL_READ_ONLY, 1);
             }
             else {
-                hTDyPingpong.Bind(GL_READ_ONLY, 1);
-                hTDxzPingpong.Bind(GL_READ_ONLY, 3);
+                hTDPingpong.Bind(GL_READ_ONLY, 1);
             }
 
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
 			glDispatchCompute(N / 16, N / 16, 1);
 
 			// Calculate normals

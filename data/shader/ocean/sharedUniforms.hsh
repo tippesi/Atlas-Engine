@@ -1,0 +1,2 @@
+uniform float time;
+uniform vec3 cameraLocation;

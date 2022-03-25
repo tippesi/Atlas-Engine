@@ -37,6 +37,7 @@ namespace Atlas {
 			float tiling = 64.0f;
 
 			float waveAmplitude = 1.0f;
+			float waveSurpression = 0.001f;
 
 			vec2 windDirection = vec2(0.8f, 0.6f);
 			float windSpeed = 60.0f;
@@ -49,7 +50,9 @@ namespace Atlas {
 			float foamScale = 1.5f;
 			float foamSize = 4.0f;
 
-			float simulationSpeed = 5.0f;
+			float simulationSpeed = 1.0f;
+
+			bool update = true;
 
 		private:
 			void ComputeTwiddleIndices();
@@ -65,8 +68,6 @@ namespace Atlas {
 			Shader::Shader twiddle;
 			Shader::Shader horizontalButterfly;
 			Shader::Shader verticalButterfly;
-			Shader::Shader choppyHorizontalButterfly;
-			Shader::Shader choppyVerticalButterfly;
 			Shader::Shader inversion;
 			Shader::Shader normal;
 
@@ -78,11 +79,8 @@ namespace Atlas {
 
 			Texture::Texture2D h0K;
 
-			Texture::Texture2D hTDy;
-			Texture::Texture2D hTDxz;
-
-			Texture::Texture2D hTDyPingpong;
-			Texture::Texture2D hTDxzPingpong;
+			Texture::Texture2D hTD;
+			Texture::Texture2D hTDPingpong;
 
 			Shader::Uniform* htNUniform;
 			Shader::Uniform* htLUniform;

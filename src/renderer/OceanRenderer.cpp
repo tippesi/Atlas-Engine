@@ -168,6 +168,8 @@ namespace Atlas {
 
 			auto renderList = ocean->GetRenderList();
 
+			glDisable(GL_CULL_FACE);
+
 #ifdef AE_API_GL
 			if (ocean->wireframe)
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -192,6 +194,8 @@ namespace Atlas {
 			if (ocean->wireframe)
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 #endif
+
+			glEnable(GL_CULL_FACE);
 
 		}
 

@@ -8,6 +8,7 @@ layout(binding = 0) uniform sampler2DArray baseColorMap;
 layout(binding = 1) uniform sampler2DArray roughnessMetalnessAoMap;
 layout(binding = 2) uniform sampler2DArray normalMap;
 
+in vec3 positionVS;
 in vec2 texCoordVS;
 in vec3 ndcCurrentVS;
 in vec3 ndcLastVS;
@@ -65,7 +66,10 @@ void main() {
 	normalFS = 2.0 * texture(normalMap, vec3(texCoordVS, float(indexVS))).rgb - 1.0;
 #endif
 
-    normalFS = 0.5 * normalize(vec3(vMatrix * vec4(normalFS, 0.0))) + 0.5;
+    normalFS = normalize(vec3(vMatrix * vec4(normalFS, 0.0)));
+    // We want the normal always two face the camera for two sided materials
+	normalFS *= -dot(normalFS, positionVS);
+    normalFS = 0.5 * normalFS + 0.5;
 
 #ifdef INTERPOLATION
     vec3 matInfo0 = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(index0VS))).rgb;
