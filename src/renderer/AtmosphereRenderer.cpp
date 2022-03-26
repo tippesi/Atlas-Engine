@@ -25,6 +25,8 @@ namespace Atlas {
 
 		void AtmosphereRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+			Profiler::BeginQuery("Atmosphere");
+
 			shader.Bind();
 
 			vertexArray.Bind();
@@ -45,6 +47,8 @@ namespace Atlas {
 
 			glDrawElements(GL_TRIANGLES, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
 				vertexArray.GetIndexComponent()->GetDataType(), nullptr);
+
+			Profiler::EndQuery();
 
 		}
 

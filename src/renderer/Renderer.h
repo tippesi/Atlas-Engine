@@ -6,6 +6,7 @@
 #include "../Camera.h"
 #include "../scene/Scene.h"
 #include "../Viewport.h"
+#include "../Profiler.h"
 
 namespace Atlas {
 

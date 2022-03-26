@@ -65,6 +65,8 @@ namespace Atlas {
 		void MasterRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
 			Scene::Scene* scene, Texture::Texture2D* texture, RenderBatch* batch) {
 
+			Profiler::BeginQuery("Render scene");
+
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
 
@@ -268,6 +270,8 @@ namespace Atlas {
 				RenderTexture(viewport, postTex, 0.0f, 0.0f,
 					(float)viewport->width, (float)viewport->height);
 			}
+
+			Profiler::EndQuery();
 
 		}
 

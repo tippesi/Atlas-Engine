@@ -20,6 +20,8 @@ namespace Atlas {
 
 		void SkyboxRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+			Profiler::BeginQuery("Skybox");
+
 			shader.Bind();
 
 			mat4 matrix = camera->projectionMatrix * camera->viewMatrix;
@@ -68,6 +70,8 @@ namespace Atlas {
 			scene->sky.probe->cubemap.Bind(GL_TEXTURE0);
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
+
+			Profiler::EndQuery();
 
 		}
 

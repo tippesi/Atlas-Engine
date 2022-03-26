@@ -1,5 +1,6 @@
 #include "Engine.h"
 #include "Extensions.h"
+#include "Profiler.h"
 
 namespace Atlas {
 
@@ -114,6 +115,7 @@ namespace Atlas {
     void Engine::Update() {
 
         Clock::Update();
+		Profiler::Update();
         Events::EventManager::Update();
 
     }

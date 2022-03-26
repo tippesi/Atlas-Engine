@@ -335,6 +335,59 @@ void App::Render(float deltaTime) {
 				ImGui::Text("Use left mouse click + mouse movement to look around");
 				ImGui::Text("Use F11 to hide/unhide the UI");
 			}
+			if (ImGui::CollapsingHeader("Profiler")) {
+
+				const char* items[] = { "Chronologically", "Max time", "Min time" };
+				static int item = 0;
+				ImGui::Combo("Sort##Performance", &item, items, IM_ARRAYSIZE(items));
+
+				Atlas::Profiler::OrderBy order;
+				switch (item) {
+				case 1: order = Atlas::Profiler::OrderBy::MAX_TIME; break;
+				case 2: order = Atlas::Profiler::OrderBy::MIN_TIME; break;
+				default: order = Atlas::Profiler::OrderBy::CHRONO; break;
+				}
+
+				std::function<void(Atlas::Profiler::Query&)> displayQuery;
+				displayQuery = [&displayQuery](Atlas::Profiler::Query& query) {
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+
+					ImGuiTreeNodeFlags expandable = 0;
+					if (!query.children.size()) expandable = ImGuiTreeNodeFlags_NoTreePushOnOpen |
+						ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet;
+
+					bool open = ImGui::TreeNodeEx(query.name.c_str(), expandable | ImGuiTreeNodeFlags_SpanFullWidth);
+					ImGui::TableNextColumn();
+					ImGui::Text("%f", double(query.timer.elapsedTime) / 1000000.0);
+					// ImGui::TableNextColumn();
+					// ImGui::TextUnformatted(node->Type);
+
+					if (open && query.children.size()) {
+						for (auto& child : query.children)
+							displayQuery(child);
+						ImGui::TreePop();
+					}
+
+				};
+
+				static ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody;
+
+				if (ImGui::BeginTable("PerfTable", 2, flags))
+				{
+					// The first column will use the default _WidthStretch when ScrollX is Off and _WidthFixed when ScrollX is On
+					ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+					ImGui::TableSetupColumn("Elapsed (ms)", ImGuiTableColumnFlags_NoHide);
+					//ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_NoHide);
+					ImGui::TableHeadersRow();
+
+					auto queries = Atlas::Profiler::GetQueriesAverage(64, order);
+					for (auto& query : queries)
+						displayQuery(query);
+
+					ImGui::EndTable();
+				}
+			}
 
 			ImGui::End();
 		}

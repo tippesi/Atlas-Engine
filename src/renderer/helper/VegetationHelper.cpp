@@ -1,4 +1,5 @@
 #include "VegetationHelper.h"
+#include "../../Profiler.h"
 
 namespace Atlas {
 
@@ -33,6 +34,8 @@ namespace Atlas {
 
 			void VegetationHelper::PrepareInstanceBuffer(Scene::Vegetation& vegetation, Camera* camera) {
 
+				Profiler::BeginQuery("Culling");
+
 				auto meshes = vegetation.GetMeshes();
 
 				// Check if the vegetation meshes have changed
@@ -45,10 +48,14 @@ namespace Atlas {
 				meshSubdataInformationBuffer.BindBase(1);
 				lodCounterBuffer.BindBase(2);
 
+				Profiler::BeginQuery("Coarse");
+
 				// Cull unseen vegetation and count lods
 				{
 					
 				}
+
+				Profiler::EndAndBeginQuery("Detail");
 
 				int32_t instanceCount = 0;
 
@@ -79,6 +86,8 @@ namespace Atlas {
 					}
 				}
 
+				Profiler::EndAndBeginQuery("Command buffer update");
+
 				// Prepare the command buffer
 				{
 					instanceDrawCallShader.Bind();
@@ -100,6 +109,9 @@ namespace Atlas {
 
 				// Reset lod counter buffer
 				if (lodCounterBuffer.GetElementCount()) ResetCounterBuffer();
+
+				Profiler::EndQuery();
+				Profiler::EndQuery();
 
 			}
 

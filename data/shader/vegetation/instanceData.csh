@@ -42,7 +42,7 @@ void main() {
     Instance instance = instanceData[idx];
 
     cull = !IsInstanceVisible(instance, meshInfo) ||
-        distance(instance.position.xyz, cameraLocation) > 200.0;
+        distance(instance.position.xyz, cameraLocation) > 100.0;
 
     if (!cull) {
         uint instanceOffset = atomicAdd(lodCounters[counterIdx], 1u);

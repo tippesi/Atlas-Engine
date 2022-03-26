@@ -26,6 +26,10 @@ namespace Atlas {
 
 		void PostProcessRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+			Profiler::BeginQuery("Postprocessing");
+
+			Profiler::BeginQuery("Main");
+
 			target->postProcessFramebuffer.Bind();
 
 			auto& postProcessing = scene->postProcessing;
@@ -94,7 +98,11 @@ namespace Atlas {
 
 			target->postProcessFramebuffer.Unbind();
 
+			Profiler::EndQuery();
+
 			if (sharpen.enable) {
+				Profiler::BeginQuery("Sharpen");
+
 				sharpenShader.Bind();
 
 				ivec2 groupCount = resolution / 8;
@@ -111,7 +119,10 @@ namespace Atlas {
 
 				glDispatchCompute(groupCount.x, groupCount.y, 1);
 
+				Profiler::EndQuery();
 			}
+
+			Profiler::EndQuery();
 
 		}
 

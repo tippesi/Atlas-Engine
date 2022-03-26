@@ -24,6 +24,8 @@ namespace Atlas {
 		void DirectionalLightRenderer::Render(Viewport* viewport, RenderTarget* target,
 				Camera* camera, Scene::Scene* scene, Texture::Texture2D* dfgTexture) {
 
+			Profiler::BeginQuery("Directional lights");
+
 			shader.Bind();
 
 			inverseViewMatrix->SetValue(camera->invViewMatrix);
@@ -105,6 +107,8 @@ namespace Atlas {
 				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 			}
+
+			Profiler::EndQuery();
 
 		}
 

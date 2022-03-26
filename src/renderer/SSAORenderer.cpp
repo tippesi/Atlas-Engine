@@ -33,10 +33,14 @@ namespace Atlas {
             auto ssao = scene->ssao;
             if (!ssao || !ssao->enable) return;
 
+            Profiler::BeginQuery("Render SSAO");
+
             ivec2 res = ivec2(target->ssaoTexture.width, target->ssaoTexture.height);
 
             // Calculate SSAO
             {
+                Profiler::BeginQuery("Main pass");
+
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
                 groupCount.x += ((res.x % 8 == 0) ? 0 : 1);
                 groupCount.y += ((res.y % 8 == 0) ? 0 : 1);
@@ -62,9 +66,13 @@ namespace Atlas {
                 atomicCounterBuffer.BindBase(0);
 
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
+
+                Profiler::EndQuery();
             }
 
             {
+                Profiler::BeginQuery("Bilateral blur");
+
                 const int32_t groupSize = 256;
 
                 target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
@@ -105,10 +113,15 @@ namespace Atlas {
 
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
+
+                Profiler::EndQuery();
             }
             
             InvalidateCounterBuffer();
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+            Profiler::EndQuery();
+
         }
 
         void SSAORenderer::InvalidateCounterBuffer() {

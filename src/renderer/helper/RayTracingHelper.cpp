@@ -1,5 +1,6 @@
 #include "RayTracingHelper.h"
 #include "../../volume/BVH.h"
+#include "../../Profiler.h"
 
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1
@@ -223,8 +224,11 @@ namespace Atlas {
 					lightBuffer.BindBase(8);
 				}
 
+				Profiler::BeginQuery("Setup command buffer");
+
 				// Set up command buffer, reset ray count
 				{
+
 					if (dispatchCounter % 2 == 0) {
 						counterBuffer0.BindBase(0);
 						counterBuffer1.BindBase(1);
@@ -245,8 +249,11 @@ namespace Atlas {
 				rayBuffer.BindBase(2);
 				rayPayloadBuffer.BindBase(3);
 				
+				Profiler::EndAndBeginQuery("Trace rays");
+
 				// Trace rays for closest intersection
 				{
+
 					traceClosestShader.Bind();
 
 					traceClosestShader.GetUniform("rayBufferOffset")->SetValue(uint32_t(0));
@@ -254,7 +261,9 @@ namespace Atlas {
 
 					glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 					glDispatchComputeIndirect(0);
-				}		
+				}
+
+				Profiler::EndAndBeginQuery("Execute hit shader");
 				
 				// Shade rays
 				{
@@ -271,6 +280,8 @@ namespace Atlas {
 						GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 					glDispatchComputeIndirect(0);
 				}
+
+				Profiler::EndQuery();
 
 				dispatchCounter++;
 

@@ -33,6 +33,8 @@ namespace Atlas {
         void VolumetricRenderer::Render(Viewport* viewport, RenderTarget* target,
             Camera* camera, Scene::Scene* scene) {
 
+            Profiler::BeginQuery("Render volumetric");
+
             volumetricShader.Bind();
 
             volumetricShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
@@ -44,6 +46,8 @@ namespace Atlas {
             ivec2 res = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
 
             target->volumetricTexture.Bind(GL_WRITE_ONLY, 2);
+
+            Profiler::BeginQuery("Raymarching");
 
             // This loop doesn't really work, we only support one directional light for now.
             // Later we want to process most of the lights all at once using tiled deferred shading
@@ -103,7 +107,11 @@ namespace Atlas {
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
             }
 
+            Profiler::EndQuery();
+
             {
+                Profiler::BeginQuery("Bilateral blur");
+
                 const int32_t groupSize = 256;
 
                 target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
@@ -144,9 +152,13 @@ namespace Atlas {
 
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
+
+                Profiler::EndQuery();
             }
 
             {
+                Profiler::BeginQuery("Resolve");
+
                 const int32_t groupSize = 8;
 
                 res = ivec2(target->GetWidth(), target->GetHeight());
@@ -183,9 +195,13 @@ namespace Atlas {
 
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
+
+                Profiler::EndQuery();
             }
 
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+            Profiler::EndQuery();
 
         }
 

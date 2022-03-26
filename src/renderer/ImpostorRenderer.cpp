@@ -24,6 +24,8 @@ namespace Atlas {
 		void ImpostorRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
 			RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap) {
 
+			Profiler::BeginQuery("Impostors");
+
 			glDisable(GL_CULL_FACE);
 
 			vertexArray.Bind();
@@ -83,6 +85,8 @@ namespace Atlas {
 			}
 
 			glEnable(GL_CULL_FACE);
+
+			Profiler::EndQuery();
 
 		}
 

@@ -30,6 +30,8 @@ namespace Atlas {
 			if (!scene->terrain)
 				return;
 
+			Profiler::BeginQuery("Terrain");
+
 			auto terrain = scene->terrain;
 
 			terrain->UpdateRenderlist(&camera->frustum, camera->GetLocation());
@@ -82,9 +84,11 @@ namespace Atlas {
 
 				switch (i) {
 				case 0: shaderBatch.Bind(&detailConfig);
+					Profiler::BeginQuery("Detail");
 					nodes = detailNodes;
 					break;
 				case 1: shaderBatch.Bind(&distanceConfig);
+					Profiler::BeginQuery("Distance");
 					nodes = distanceNodes;
 					break;
 				default: break;
@@ -131,12 +135,16 @@ namespace Atlas {
 
 				}
 
+				Profiler::EndQuery();
+
 			}
 
 #ifdef AE_API_GL
 			if (terrain->wireframe)
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 #endif
+
+			Profiler::EndQuery();
 
 		}
 

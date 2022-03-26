@@ -50,6 +50,8 @@ namespace Atlas {
 			auto volume = scene->irradianceVolume;
 			if (!volume || !volume->enable || !volume->update)
 				return;
+
+			Profiler::BeginQuery("DDGI");
 			
 			auto& internalVolume = volume->internal;
 			internalVolume.SwapTextures();
@@ -62,6 +64,8 @@ namespace Atlas {
 			auto rayCountInactive = volume->rayCountInactive;
 
 			auto totalRayCount = rayCount * totalProbeCount;
+
+			Profiler::BeginQuery("Scene update");
 
 			if (totalRayCount != rayHitBuffer.GetElementCount()) {
 				helper.SetRayBufferSize(totalRayCount);
@@ -82,6 +86,8 @@ namespace Atlas {
 
 			probeStateBuffer.BindBase(9);
 			probeOffsetBuffer.BindBase(10);
+
+			Profiler::EndAndBeginQuery("Ray generation");
 
 			helper.DispatchRayGen(&rayGenShader, volume->probeCount,
 				[&]() {
@@ -113,6 +119,8 @@ namespace Atlas {
 				}
 			);
 
+			Profiler::EndAndBeginQuery("Ray evaluation");
+
 			lastIrradianceArray.Bind(GL_TEXTURE12);
 			lastMomentsArray.Bind(GL_TEXTURE13);
 
@@ -137,6 +145,8 @@ namespace Atlas {
 			);
 
 			rayHitBuffer.BindBase(0);
+			
+			Profiler::EndAndBeginQuery("Update probes");
 
 			ivec3 probeCount = volume->probeCount;
 
@@ -176,6 +186,8 @@ namespace Atlas {
 				glDispatchCompute(probeCount.x, probeCount.y, probeCount.z);
 			}
 
+			Profiler::EndAndBeginQuery("Update probe states");
+
 			// Update the states of the probes
 			{
 				probeStateShader.Bind();
@@ -187,6 +199,8 @@ namespace Atlas {
 
 				glDispatchCompute(probeCount.x, probeCount.y, probeCount.z);
 			}
+
+			Profiler::EndAndBeginQuery("Update probe edges");
 
 			// Copy the probe edges
 			{
@@ -229,6 +243,9 @@ namespace Atlas {
 			}
 
 			helper.InvalidateRayBuffer();
+
+			Profiler::EndQuery();
+			Profiler::EndQuery();
 
 		}
 

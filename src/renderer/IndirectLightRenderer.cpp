@@ -14,6 +14,8 @@ namespace Atlas {
 		void IndirectLightRenderer::Render(Viewport* viewport, RenderTarget* target,
 			Camera* camera, Scene::Scene* scene) {
 
+			Profiler::BeginQuery("Indirect lighting");
+
 			shader.Bind();
 			
 			auto volume = scene->irradianceVolume;
@@ -57,6 +59,8 @@ namespace Atlas {
 
 			glDispatchCompute(groupCount.x, groupCount.y, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+			Profiler::EndQuery();
 
 		}
 

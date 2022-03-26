@@ -21,6 +21,8 @@ namespace Atlas {
 			if (!scene->terrain)
 				return;
 
+			Profiler::BeginQuery("Terrain shadows");
+
 			auto terrain = scene->terrain;
 
 			framebuffer.Bind();
@@ -91,6 +93,8 @@ namespace Atlas {
 				}
 
 			}
+
+			Profiler::EndQuery();
 
 		}
 

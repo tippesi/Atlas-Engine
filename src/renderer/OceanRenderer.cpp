@@ -25,6 +25,8 @@ namespace Atlas {
 			if (!scene->ocean || !scene->ocean->enable)
 				return;
 
+			Profiler::BeginQuery("Ocean");
+
 			auto ocean = scene->ocean;
 
 			shader.Bind();
@@ -196,6 +198,8 @@ namespace Atlas {
 #endif
 
 			glEnable(GL_CULL_FACE);
+
+			Profiler::EndQuery();
 
 		}
 

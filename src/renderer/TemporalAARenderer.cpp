@@ -14,11 +14,11 @@ namespace Atlas {
 
 			shader.Compile();
 
-			GetUniforms();
-
 		}
 
 		void TemporalAARenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+
+			Profiler::BeginQuery("TAA");
 
 			shader.Bind();
 			vertexArray.Bind();
@@ -31,26 +31,17 @@ namespace Atlas {
 			target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
 			target->GetLastVelocity()->Bind(GL_TEXTURE4);
 
-			invResolution->SetValue(1.0f / vec2((float)target->GetWidth(), (float)target->GetHeight()));
-			resolution->SetValue(vec2((float)target->GetWidth(), (float)target->GetHeight()));
-			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
-			ipvMatrixCurrent->SetValue(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
+			shader.GetUniform("invResolution")->SetValue(1.0f / vec2((float)target->GetWidth(), (float)target->GetHeight()));
+			shader.GetUniform("resolution")->SetValue(vec2((float)target->GetWidth(), (float)target->GetHeight()));
+			shader.GetUniform("pvMatrixLast")->SetValue(camera->GetLastJitteredMatrix());
+			shader.GetUniform("ipvMatrixCurrent")->SetValue(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
 			shader.GetUniform("jitter")->SetValue(camera->GetJitter());
 
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 			target->Swap();
 
-		}
-
-		void TemporalAARenderer::GetUniforms() {
-
-			convergence = shader.GetUniform("convergence");
-			invResolution = shader.GetUniform("invResolution");
-			resolution = shader.GetUniform("resolution");
-
-			pvMatrixLast = shader.GetUniform("pvMatrixLast");
-			ipvMatrixCurrent = shader.GetUniform("ipvMatrixCurrent");
+			Profiler::EndQuery();
 
 		}
 

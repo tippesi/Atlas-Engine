@@ -27,6 +27,8 @@ namespace Atlas {
 
 			if (!scene->vegetation) return;
 
+			Profiler::BeginQuery("Vegetation");
+
 			glDisable(GL_CULL_FACE);
 
 			auto& vegetation = *scene->vegetation;
@@ -101,6 +103,8 @@ namespace Atlas {
 			glEnable(GL_CULL_FACE);
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LEQUAL);
+
+			Profiler::EndQuery();
 
 		}
 

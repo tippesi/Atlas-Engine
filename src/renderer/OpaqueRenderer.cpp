@@ -47,13 +47,16 @@ namespace Atlas {
 		void OpaqueRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
 			Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap) {
 
+			Profiler::BeginQuery("Opaque geometry");
+
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			bool backFaceCulling = true;
 			bool depthTest = true;
 
-			scene->GetRenderList(camera->frustum, renderList);
+			Profiler::BeginQuery("Main pass");
 
+			scene->GetRenderList(camera->frustum, renderList);
 			renderList.UpdateBuffers(camera);
 
 			for (auto& renderListBatchesKey : renderList.orderedRenderBatches) {
@@ -165,12 +168,16 @@ namespace Atlas {
 
 			}
 
+			Profiler::EndQuery();
+
 			glEnable(GL_CULL_FACE);
 			glDepthRangef(0.0f, 1.0f);
 
 			impostorRenderer.Render(viewport, target, camera, &renderList, materialMap);
 
 			renderList.Clear();
+
+			Profiler::EndQuery();
 
 		}
 

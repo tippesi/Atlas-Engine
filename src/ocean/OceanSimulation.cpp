@@ -1,6 +1,7 @@
 #include "OceanSimulation.h"
 #include "../Clock.h"
 #include "../buffer/Buffer.h"
+#include "../Profiler.h"
 
 #include <vector>
 
@@ -88,6 +89,8 @@ namespace Atlas {
 
 		void OceanSimulation::ComputeSpectrum() {
 
+			Profiler::BeginQuery("Compute ocean spectrum");
+
 			h0.Bind();
 
 			h0.GetUniform("N")->SetValue(N);
@@ -109,6 +112,8 @@ namespace Atlas {
 				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			glDispatchCompute(N / 16, N / 16, 1);
+
+			Profiler::EndQuery();
 
 		}
 
@@ -141,11 +146,15 @@ namespace Atlas {
 
 		void OceanSimulation::Compute(float deltaTime) {
 
+			Profiler::BeginQuery("Compute ocean simulation");
+
 			time += deltaTime;
 
 			if (!update) return;
 
 			displacementMapPrev.Copy(displacementMap);
+
+			Profiler::BeginQuery("Compute h(t)");
 
 			ht.Bind();
 
@@ -161,8 +170,12 @@ namespace Atlas {
 
 			glDispatchCompute(N / 16, N / 16, 1);
 
+			Profiler::EndQuery();
+
 			int32_t pingpong = 0;
 			int32_t log2n = (int32_t)log2f((float)N);
+
+			Profiler::BeginQuery("Perform iFFT");
 
 			twiddleIndices.Bind(GL_READ_ONLY, 0);
 
@@ -203,6 +216,10 @@ namespace Atlas {
 				}
 			}
 
+			Profiler::EndQuery();
+
+			Profiler::BeginQuery("Compute heightfield/displacement");
+
 			// Inverse and correct the texture
 			inversion.Bind();
 
@@ -220,6 +237,10 @@ namespace Atlas {
 
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			glDispatchCompute(N / 16, N / 16, 1);
+
+			Profiler::EndQuery();
+
+			Profiler::BeginQuery("Compute normal map");
 
 			// Calculate normals
 			normal.Bind();
@@ -245,8 +266,12 @@ namespace Atlas {
 
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+			Profiler::BeginQuery("Build normal map mips");
 			normalMap.Bind();
 			normalMap.GenerateMipmap();
+			Profiler::EndQuery();
+			Profiler::EndQuery();
+			Profiler::EndQuery();
 
 		}
 

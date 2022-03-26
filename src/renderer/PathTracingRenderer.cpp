@@ -38,6 +38,8 @@ namespace Atlas {
 		void PathTracingRenderer::Render(Viewport* viewport, PathTracerRenderTarget* renderTarget,
 			ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene) {
 
+			Profiler::BeginQuery("Path tracing");
+
 			auto width = renderTarget->GetWidth();
 			auto height = renderTarget->GetHeight();
 
@@ -78,6 +80,8 @@ namespace Atlas {
 			groupCount.x += ((groupCount.x * 8 == tileResolution.x) ? 0 : 1);
 			groupCount.y += ((groupCount.y * 8 == tileResolution.y) ? 0 : 1);
 
+			Profiler::BeginQuery("Ray generation");
+
 			helper.DispatchRayGen(&rayGenShader, ivec3(groupCount.x, groupCount.y, 1),
 				[=]() {
 					auto corners = camera->GetFrustumCorners(camera->nearPlane, camera->farPlane);
@@ -99,6 +103,9 @@ namespace Atlas {
 
 			
 			for (int32_t i = 0; i <= bounces; i++) {
+
+				Profiler::EndAndBeginQuery("Bounce " + std::to_string(i + 1));
+
 				helper.DispatchHitClosest(&rayHitShader,
 					[=]() {
 						maxBouncesRayHitUniform->SetValue(bounces);
@@ -113,6 +120,8 @@ namespace Atlas {
 					}
 					);
 			}
+
+			Profiler::EndQuery();
 
 			renderTarget->texture.Unbind();
 
@@ -129,6 +138,8 @@ namespace Atlas {
 			}
 
 			helper.InvalidateRayBuffer();
+
+			Profiler::EndQuery();
 
 		}
 

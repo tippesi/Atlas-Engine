@@ -28,6 +28,8 @@ namespace Atlas {
 
 		void ShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+			Profiler::BeginQuery("Shadows");
+
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			framebuffer.Bind();
@@ -160,6 +162,8 @@ namespace Atlas {
 				}
 
 			}
+
+			Profiler::EndQuery();
 
 		}
 
