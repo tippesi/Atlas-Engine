@@ -25,7 +25,7 @@ namespace Atlas {
 			size_t count = 0;
 			size_t max = dest.find_last_of('/');
 
-			while (src[count] == dest[count] && count <= max)
+			while (count <= max && src[count] == dest[count])
 				count++;
 
 			if (!count)

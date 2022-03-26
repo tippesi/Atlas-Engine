@@ -58,7 +58,7 @@ namespace Atlas {
          * @note The query name needs to be unique at the current
          * level of the query tree
          */
-		static void BeginQuery(const std::string name);
+		static void BeginQuery(const std::string& name);
 
         /**
          * End a query.
@@ -73,7 +73,7 @@ namespace Atlas {
          * @note This internally just calls EndQuery() and BeginQuery()
          * afterwards to improve usability
          */
-		static void EndAndBeginQuery(const std::string name);
+		static void EndAndBeginQuery(const std::string& name);
 
         /**
          * Gets the queries of the last frame

@@ -150,7 +150,7 @@ namespace Atlas {
 
 		}
 
-		void AudioStream::ApplyFormat(SDL_AudioSpec& spec) {
+		void AudioStream::ApplyFormat(const SDL_AudioSpec& spec) {
 
 			std::lock_guard<std::mutex> lock(mutex);
 

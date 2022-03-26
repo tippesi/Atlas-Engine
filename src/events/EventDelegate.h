@@ -76,10 +76,7 @@ namespace Atlas {
 		void EventDelegate<Args...>::Unsubscribe(uint32_t subscriberID) {
 
 			std::lock_guard<std::mutex> guard(mutex);
-
-			if (handler.find(subscriberID) != handler.end()) {
-				handler.erase(subscriberID);
-			}
+            handler.erase(subscriberID);
 
 		}
 

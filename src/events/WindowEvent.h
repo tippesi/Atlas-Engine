@@ -28,10 +28,10 @@ namespace Atlas {
 		class WindowEvent {
 
 		public:
-			explicit WindowEvent(SDL_WindowEvent event) {
+			explicit WindowEvent(SDL_WindowEvent event) :
+                data(event.data1, event.data2) {
 				windowID = event.windowID;
 				type = event.event;
-				data = ivec2(event.data1, event.data2);
 			}
 
 			/**

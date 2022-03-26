@@ -1,6 +1,6 @@
 name: Release pipeline
 
-on: 
+on:
   workflow_dispatch:
     inputs:
       release_version:
@@ -64,14 +64,14 @@ jobs:
             ${{ github.workspace }}/build/**/AtlasEngineDemo.exe
             ${{ github.workspace }}/build/**/*.dll
             !**/CMakeFiles
-  
+
   linux-build:
     runs-on: ubuntu-latest
     name: Build on Linux
     # Run both builds in parallel and don't cancel if one fails
     strategy:
       matrix:
-         build-type: [Release]
+        build-type: [Release]
       fail-fast: false
 
     steps:
@@ -126,7 +126,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           path: ${{ github.workspace }}
-      
+
       - name: Install zip
         uses: montudor/action-zip@v1
 

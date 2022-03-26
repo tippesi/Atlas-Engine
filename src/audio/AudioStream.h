@@ -40,7 +40,7 @@ namespace Atlas {
 
 			bool IsPaused();
 
-			void ApplyFormat(SDL_AudioSpec& spec);
+			void ApplyFormat(const SDL_AudioSpec& spec);
 
 			virtual std::vector<int16_t> GetChunk(int32_t length);
 

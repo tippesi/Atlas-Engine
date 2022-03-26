@@ -64,7 +64,7 @@ jobs:
             ${{ github.workspace }}/build/**/AtlasEngineDemo.exe
             ${{ github.workspace }}/build/**/*.dll
             !**/CMakeFiles
-  
+
   linux-build:
     runs-on: ubuntu-latest
     name: Build on Linux

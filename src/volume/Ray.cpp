@@ -4,9 +4,10 @@ namespace Atlas {
 
 	namespace Volume {
 
-		Ray::Ray(vec3 origin, vec3 direction) : origin(origin), direction(direction) {
+		Ray::Ray(vec3 origin, vec3 direction) : origin(origin),
+            direction(direction), inverseDirection(1.0f / direction) {
 
-			inverseDirection = 1.0f / direction;
+
 
 		}
 
@@ -85,8 +86,7 @@ namespace Atlas {
 			auto t = ray.origin - origin;
 			auto det0 = glm::determinant(mat3(t, ray.direction, cross));
 			auto det1 = glm::determinant(mat3(t, direction, cross));
-
-			auto t0 = det0 / denom;
+            
 			auto t1 = det1 / denom;
 
 			distance = t1;

@@ -15,7 +15,7 @@ namespace Atlas {
 
 	bool Profiler::activate = true;
 
-	void Profiler::BeginQuery(const std::string name) {
+	void Profiler::BeginQuery(const std::string& name) {
 
 		if (!activate) return;
 
@@ -62,7 +62,7 @@ namespace Atlas {
 		}
 	}
 
-	void Profiler::EndAndBeginQuery(const std::string name) {
+	void Profiler::EndAndBeginQuery(const std::string& name) {
 
 		if (!activate) return;
 
@@ -74,7 +74,7 @@ namespace Atlas {
 	std::vector<Profiler::Query> Profiler::GetQueries(OrderBy order) {
 
 		EvaluateHistroy();
-		auto& queries = GetLatestHistory();
+        auto queries = GetLatestHistory();
 
 		if (order != OrderBy::CHRONO)
 			OrderQueries(queries, order);
@@ -128,8 +128,8 @@ namespace Atlas {
 			query.timer.endId = -1;
 		}
 
-		for (auto& query : query.children)
-			EvaluateQuery(query);
+		for (auto& child : query.children)
+			EvaluateQuery(child);
 
 	}
 
