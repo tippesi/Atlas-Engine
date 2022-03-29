@@ -36,6 +36,13 @@ namespace Atlas {
 					AE_BUFFER_DYNAMIC_STORAGE);
 				rayPayloadBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
 					AE_BUFFER_DYNAMIC_STORAGE);
+				rayBinCounterBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(uint32_t),
+					AE_BUFFER_DYNAMIC_STORAGE);
+				rayBinOffsetBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(uint32_t),
+					AE_BUFFER_DYNAMIC_STORAGE);
+
+				rayBinCounterBuffer.SetSize(64);
+				rayBinOffsetBuffer.SetSize(64);
 
 				traceDispatchShader.AddStage(AE_COMPUTE_STAGE, "raytracer/traceDispatch.csh");
 				traceDispatchShader.Compile();
@@ -45,6 +52,12 @@ namespace Atlas {
 
 				traceAnyShader.AddStage(AE_COMPUTE_STAGE, "raytracer/traceAny.csh");
 				traceAnyShader.Compile();
+
+				binningShader.AddStage(AE_COMPUTE_STAGE, "raytracer/binning.csh");
+				binningShader.Compile();
+
+				binningOffsetShader.AddStage(AE_COMPUTE_STAGE, "raytracer/binningOffset.csh");
+				binningOffsetShader.Compile();
 
 			}
 
@@ -140,7 +153,8 @@ namespace Atlas {
 
 			}
 
-			void RayTracingHelper::DispatchRayGen(Shader::Shader* rayGenShader, glm::ivec3 dimensions, std::function<void(void)> prepare) {
+			void RayTracingHelper::DispatchRayGen(Shader::Shader* rayGenShader, glm::ivec3 dimensions, 
+				bool binning, std::function<void(void)> prepare) {
 
 				dispatchCounter = 0;
 
@@ -185,9 +199,12 @@ namespace Atlas {
 				rayBuffer.BindBase(2);
 				rayPayloadBuffer.BindBase(3);
 
+				rayBinCounterBuffer.BindBase(11);
+
 				rayGenShader->GetUniform("lightCount")->SetValue(int32_t(selectedLights.size()));
 				rayGenShader->GetUniform("rayBufferOffset")->SetValue(uint32_t(1));
 				rayGenShader->GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
+				rayGenShader->GetUniform("useRayBinning")->SetValue(binning);
 
 				prepare();
 
@@ -197,7 +214,8 @@ namespace Atlas {
 
 			}
 
-			void RayTracingHelper::DispatchHitClosest(Shader::Shader* hitShader, std::function<void(void)> prepare) {
+			void RayTracingHelper::DispatchHitClosest(Shader::Shader* hitShader, 
+				bool binning, std::function<void(void)> prepare) {
 
 				auto& rtData = scene->rayTracingData;
 
@@ -228,6 +246,8 @@ namespace Atlas {
 
 				// Set up command buffer, reset ray count
 				{
+					indirectDispatchBuffer.BindBaseAs(AE_SHADER_STORAGE_BUFFER, 4);
+					traceDispatchShader.Bind();
 
 					if (dispatchCounter % 2 == 0) {
 						counterBuffer0.BindBase(0);
@@ -238,9 +258,6 @@ namespace Atlas {
 						counterBuffer1.BindBase(0);
 					}
 
-					indirectDispatchBuffer.BindBaseAs(AE_SHADER_STORAGE_BUFFER, 4);
-					traceDispatchShader.Bind();
-
 					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 					glDispatchCompute(1, 1, 1);
 				}
@@ -248,15 +265,49 @@ namespace Atlas {
 				indirectDispatchBuffer.Bind();
 				rayBuffer.BindBase(2);
 				rayPayloadBuffer.BindBase(3);
+
+				if (binning) {
+
+					Profiler::EndAndBeginQuery("Binning offsets");
+
+					// Calculate binning offsets
+					{
+						binningOffsetShader.Bind();
+
+						rayBinCounterBuffer.BindBase(11);
+						rayBinOffsetBuffer.BindBase(12);
+
+						glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+						glDispatchCompute(1, 1, 1);
+					}
+
+					Profiler::EndAndBeginQuery("Binning rays");
+
+					// Order rays by their bins
+					{
+						binningShader.Bind();
+
+						binningShader.GetUniform("rayBufferOffset")->SetValue(uint32_t(dispatchCounter % 2));
+						binningShader.GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
+
+						glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+						glDispatchComputeIndirect(0);
+
+						uint32_t zero = 0;
+						rayBinCounterBuffer.Bind();
+						rayBinCounterBuffer.InvalidateData();
+						rayBinCounterBuffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
+					}
+
+				}
 				
 				Profiler::EndAndBeginQuery("Trace rays");
 
 				// Trace rays for closest intersection
 				{
-
 					traceClosestShader.Bind();
 
-					traceClosestShader.GetUniform("rayBufferOffset")->SetValue(uint32_t(0));
+					traceClosestShader.GetUniform("rayBufferOffset")->SetValue(uint32_t(binning ? 1 - dispatchCounter % 2 : 0));
 					traceClosestShader.GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
 
 					glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
@@ -270,9 +321,12 @@ namespace Atlas {
 					hitShader->Bind();
 
 					hitShader->GetUniform("lightCount")->SetValue(int32_t(selectedLights.size()));
-					hitShader->GetUniform("rayBufferOffset")->SetValue(uint32_t(1));
+					hitShader->GetUniform("rayBufferOffset")->SetValue(uint32_t(binning ? dispatchCounter % 2 : 1));
 					hitShader->GetUniform("rayPayloadBufferOffset")->SetValue(uint32_t(dispatchCounter) % 2);
 					hitShader->GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
+					hitShader->GetUniform("useRayBinning")->SetValue(binning);
+
+					rayBinCounterBuffer.BindBase(11);
 
 					prepare();
 

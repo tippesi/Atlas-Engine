@@ -87,14 +87,14 @@ void main() {
 	vec3 rippleNormal = vec3(0.0, 1.0, 0.0);
 
 	if (hasRippleTexture) {
-		rippleNormal = normalize(2.0 * texture(rippleTexture, 200.0 * fTexCoord - vec2(time * 0.2)).rgb - 1.0);
-		rippleNormal += normalize(2.0 * texture(rippleTexture, 200.0 * fTexCoord * 0.5 + vec2(time * 0.05)).rgb - 1.0);
+		rippleNormal = normalize(2.0 * texture(rippleTexture, 50.0 * fTexCoord - vec2(time * 0.2)).rgb - 1.0);
+		rippleNormal += normalize(2.0 * texture(rippleTexture, 50.0 * fTexCoord * 0.5 + vec2(time * 0.05)).rgb - 1.0);
 		// Won't work with rippleNormal = vec3(0.0, 1.0, 0.0). Might be worth an investigation
 		norm = normalize(tbn * rippleNormal);
 	}
 	
 	// Scale ripples based on actual (not view) depth of water
-	float rippleScaling = clamp(1.0 - shoreScaling, 0.2, 0.7);
+	float rippleScaling = clamp(1.0 - shoreScaling, 0.1, 0.5);
 	norm = normalize(mix(fNormal, norm, rippleScaling));
 
 	vec3 eyeDir = normalize(fModelCoord - cameraLocation);

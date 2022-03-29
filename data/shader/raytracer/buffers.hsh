@@ -19,3 +19,11 @@ layout (std430, binding = 3) buffer RayPayloads {
 layout (std430, binding = 5) buffer Materials {
 	RaytraceMaterial materials[];
 };
+
+layout(std430, binding = 11) buffer RayBinCounters {
+	uint rayBinCounters[];
+};
+
+layout(std430, binding = 12) buffer RayBinOffsets {
+	uint rayBinOffsets[];
+};

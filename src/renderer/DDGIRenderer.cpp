@@ -89,7 +89,7 @@ namespace Atlas {
 
 			Profiler::EndAndBeginQuery("Ray generation");
 
-			helper.DispatchRayGen(&rayGenShader, volume->probeCount,
+			helper.DispatchRayGen(&rayGenShader, volume->probeCount, false,
 				[&]() {
 					using namespace Common;
 
@@ -124,7 +124,7 @@ namespace Atlas {
 			lastIrradianceArray.Bind(GL_TEXTURE12);
 			lastMomentsArray.Bind(GL_TEXTURE13);
 
-			helper.DispatchHitClosest(&rayHitShader,
+			helper.DispatchHitClosest(&rayHitShader, false,
 				[&]() {
 					rayHitShader.GetUniform("seed")->SetValue(float(rand()) / float(RAND_MAX));
 

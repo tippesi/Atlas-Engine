@@ -82,7 +82,7 @@ namespace Atlas {
 
 			Profiler::BeginQuery("Ray generation");
 
-			helper.DispatchRayGen(&rayGenShader, ivec3(groupCount.x, groupCount.y, 1),
+			helper.DispatchRayGen(&rayGenShader, ivec3(groupCount.x, groupCount.y, 1), false,
 				[=]() {
 					auto corners = camera->GetFrustumCorners(camera->nearPlane, camera->farPlane);
 
@@ -104,9 +104,9 @@ namespace Atlas {
 			
 			for (int32_t i = 0; i <= bounces; i++) {
 
-				Profiler::EndAndBeginQuery("Bounce " + std::to_string(i + 1));
+				Profiler::EndAndBeginQuery("Bounce " + std::to_string(i));
 
-				helper.DispatchHitClosest(&rayHitShader,
+				helper.DispatchHitClosest(&rayHitShader, false,
 					[=]() {
 						maxBouncesRayHitUniform->SetValue(bounces);
 

@@ -28,9 +28,9 @@ namespace Atlas {
 
 				void DispatchAndHit(Shader::Shader* dispatchAndHitShader, glm::ivec3 dimensions, std::function<void(void)> prepare);
 
-				void DispatchRayGen(Shader::Shader* rayGenShader, glm::ivec3 dimensions, std::function<void(void)> prepare);
+				void DispatchRayGen(Shader::Shader* rayGenShader, glm::ivec3 dimensions, bool binning, std::function<void(void)> prepare);
 
-				void DispatchHitClosest(Shader::Shader* hitShader, std::function<void(void)> prepare);
+				void DispatchHitClosest(Shader::Shader* hitShader, bool binning, std::function<void(void)> prepare);
 
 				void DispatchHitAny(Shader::Shader* hitShader, std::function<void(void)> prepare);
 
@@ -56,6 +56,9 @@ namespace Atlas {
 				Shader::Shader traceClosestShader;
 				Shader::Shader traceAnyShader;
 
+				Shader::Shader binningOffsetShader;
+				Shader::Shader binningShader;
+
 				Buffer::Buffer indirectDispatchBuffer;
 
 				Buffer::Buffer counterBuffer0;
@@ -64,6 +67,8 @@ namespace Atlas {
 				Buffer::Buffer rayBuffer;
 				Buffer::Buffer rayPayloadBuffer;
 
+				Buffer::Buffer rayBinCounterBuffer;
+				Buffer::Buffer rayBinOffsetBuffer;
 				
 				Buffer::Buffer lightBuffer;
 

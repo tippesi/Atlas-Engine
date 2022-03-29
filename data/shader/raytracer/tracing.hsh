@@ -6,6 +6,8 @@
 
 #include <../brdf/surface.hsh>
 #include <../common/utility.hsh>
+#include <../common/octahedron.hsh>
+#include <../common/flatten.hsh>
 
 // We use double buffering for the ray and payload buffers,
 // which means the buffer has an actual size of rayBufferSize * 2
@@ -15,6 +17,20 @@
 uniform uint rayBufferSize;
 uniform uint rayBufferOffset;
 uniform uint rayPayloadBufferOffset;
+uniform bool useRayBinning;
+
+uint DetermineRayBin(Ray ray) {
+	ivec2 coord = ivec2(UnitVectorToOctahedron(ray.direction) * 8.0);
+	return Flatten2D(coord, ivec2(8));
+}
+
+Ray AddRayToBin(Ray ray) {
+	if (!useRayBinning) return ray;
+	uint bin = DetermineRayBin(ray);
+	atomicAdd(rayBinCounters[bin], 1u);
+	ray.hitID = int(bin);
+	return ray;
+}
 
 bool IsRayInvocationValid() {
     return gl_GlobalInvocationID.x < readAtomic[0];
@@ -45,12 +61,14 @@ RayPayload ReadRayPayload(uint idx) {
 }
 
 void WriteRay(Ray ray) {
+	ray = AddRayToBin(ray);
 	uint offset = rayBufferOffset * rayBufferSize;
     uint idx = atomicAdd(writeAtomic[0], uint(1)) + offset;
 	rays[idx] = PackRay(ray);
 }
 
 void WriteRay(Ray ray, RayPayload payload) {
+	ray = AddRayToBin(ray);
 	uint rayOffset = rayBufferOffset * rayBufferSize;
 	uint payloadOffset = rayPayloadBufferOffset * rayBufferSize;
     uint idx = atomicAdd(writeAtomic[0], uint(1));
@@ -59,12 +77,14 @@ void WriteRay(Ray ray, RayPayload payload) {
 }
 
 void WriteRay(Ray ray, uint idx) {
+	ray = AddRayToBin(ray);
 	idx += rayBufferOffset * rayBufferSize;
 	atomicAdd(writeAtomic[0], uint(1));
 	rays[idx] = PackRay(ray);
 }
 
 void WriteRay(Ray ray, RayPayload payload, uint idx) {
+	ray = AddRayToBin(ray);
 	uint rayOffset = rayBufferOffset * rayBufferSize;
 	uint payloadOffset = rayPayloadBufferOffset * rayBufferSize;
     atomicAdd(writeAtomic[0], uint(1));
