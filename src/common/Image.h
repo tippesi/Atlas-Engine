@@ -595,15 +595,14 @@ namespace Atlas {
 			auto& data = mipLevels[0].data;
 			int32_t size = int32_t(data.size());
 
+			auto invMaxPixelValue = 1.0f / MaxPixelValue();
+			bool hasAlpha = channels == 4;
+
 			for (int32_t i = 0; i < size; i++) {
 				// Don't correct the alpha values
-				if (channels == 4 && (i + 1) % 4 == 0)
-					continue;
+				if (hasAlpha && (i + 1) % 4 == 0) continue;
 
-				float value = float(data[i]);
-
-				value /= MaxPixelValue();
-
+				float value = float(data[i]) * invMaxPixelValue;
 				value = 0.76f * value * value + 0.24f * value * value * value;
 
 				data[i] = T(value * MaxPixelValue());

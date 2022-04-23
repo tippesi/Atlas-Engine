@@ -106,8 +106,9 @@ namespace Atlas {
 			};
 
 			std::vector<Triangle> triangles(triangleCount);
-
-			std::vector<Volume::AABB> aabbs;
+			
+			std::vector<Volume::AABB> aabbs(triangleCount);
+			std::vector<Volume::BVHTriangle> bvhTriangles(triangleCount);
 
 			triangleCount = 0;
 
@@ -143,7 +144,12 @@ namespace Atlas {
 					auto max = glm::max(glm::max(triangles[k].v0,
 						triangles[k].v1), triangles[k].v2);
 
-					aabbs.push_back(Volume::AABB(min, max));
+					bvhTriangles[k].v0 = triangles[k].v0;
+					bvhTriangles[k].v1 = triangles[k].v1;
+					bvhTriangles[k].v2 = triangles[k].v2;
+					bvhTriangles[k].idx = k;
+
+					aabbs[k] = Volume::AABB(min, max);
 
 				}
 
@@ -161,9 +167,14 @@ namespace Atlas {
 			texCoords.shrink_to_fit();
 			materialIndices.shrink_to_fit();
 
+			// Generate BVH
+			auto bvh = Volume::BVH(aabbs, bvhTriangles);
+
 			std::vector<GPUTriangle> gpuTriangles;
 
-			for (auto& triangle : triangles) {
+			for (auto& bvhTriangle : bvh.data) {
+
+				auto& triangle = triangles[bvhTriangle.idx];
 
 				auto v0v1 = triangle.v1 - triangle.v0;
 				auto v0v2 = triangle.v2 - triangle.v0;
@@ -226,31 +237,27 @@ namespace Atlas {
 			triangles.clear();
 			triangles.shrink_to_fit();
 
-			// Generate BVH
-			auto bvh = Volume::BVH<GPUTriangle>(aabbs, gpuTriangles);
-
-			// Upload triangles
-			triangleBuffer.SetSize(bvh.data.size());
-			triangleBuffer.SetData(bvh.data.data(), 0, bvh.data.size());
-
 			// Free memory and upload data instantly
 			bvh.data.clear();
 			bvh.data.shrink_to_fit();
+
+			// Upload triangles
+			triangleBuffer.SetSize(gpuTriangles.size());
+			triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
+
 			glFinish();
 
 			auto& nodes = bvh.GetTree();
 			auto gpuNodes = std::vector<GPUBVHNode>(nodes.size());
 			// Copy to GPU format
 			for (size_t i = 0; i < nodes.size(); i++) {
-				if (nodes[i].dataCount) {
-					// Leaf node (0x80000000 signalizes a leaf node)
-					gpuNodes[i].leaf.dataCount = 0x80000000 | nodes[i].dataCount;
-					gpuNodes[i].leaf.dataOffset = nodes[i].dataOffset;
+				if (nodes[i].leaf.dataCount) {
+					gpuNodes[i].leaf.dataCount = nodes[i].leaf.dataCount;
+					gpuNodes[i].leaf.dataOffset = nodes[i].leaf.dataOffset;
 				}
 				else {
-					// Inner node
-					gpuNodes[i].inner.leftChild = nodes[i].leftChild;
-					gpuNodes[i].inner.rightChild = nodes[i].rightChild;
+					gpuNodes[i].inner.leftChild = nodes[i].inner.leftChild;
+					gpuNodes[i].inner.rightChild = nodes[i].inner.rightChild;
 				}
 
 				gpuNodes[i].aabb.min = nodes[i].aabb.min;

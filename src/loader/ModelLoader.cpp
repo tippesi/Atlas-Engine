@@ -123,6 +123,7 @@ namespace Atlas {
 				subData.indicesOffset = usedFaces * 3;
 
 				for (auto mesh : meshSorted[i]) {
+				
 					// Copy vertices
 					for (uint32_t j = 0; j < mesh->mNumVertices; j++) {
 

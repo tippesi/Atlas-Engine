@@ -21,7 +21,7 @@ namespace Atlas {
 
 	float Clock::GetDelta() {
 
-		std::lock_guard<std::mutex> lock(mutex);
+		std::scoped_lock<std::mutex> lock(mutex);
 
 		return deltaTime;
 
@@ -32,7 +32,7 @@ namespace Atlas {
 		if (frames <= 0)
 			return;
 
-		std::lock_guard<std::mutex> lock(mutex);
+		std::scoped_lock<std::mutex> lock(mutex);
 
 		deltas.resize(frames);
         std::fill(deltas.begin(), deltas.end(), 0.0f);
@@ -41,7 +41,7 @@ namespace Atlas {
 
 	std::vector<float> Clock::GetAverageWindow() {
 
-		std::lock_guard<std::mutex> lock(mutex);
+		std::scoped_lock<std::mutex> lock(mutex);
 
 		return deltas;
 
@@ -49,20 +49,28 @@ namespace Atlas {
 
 	float Clock::GetAverage() {
 
-		std::lock_guard<std::mutex> lock(mutex);
+		std::scoped_lock<std::mutex> lock(mutex);
 
-		auto average = std::accumulate(deltas.begin(), deltas.end(), 0.0f);
-
-		auto size = deltas.size() < totalFrames ?
-			(float)deltas.size() : (float)totalFrames;
+		auto size = std::min(deltas.size(), totalFrames);
+		auto average = std::accumulate(deltas.begin(), deltas.end() - 
+			(deltas.size() - size), 0.0f);
 
 		return average / size;
 
 	}
 
+	void Clock::ResetAverage() {
+
+		std::scoped_lock<std::mutex> lock(mutex);
+
+		std::fill(deltas.begin(), deltas.end(), 0.0f);
+		totalFrames = 0;
+
+	}
+
 	void Clock::Update() {
 
-		std::lock_guard<std::mutex> lock(mutex);
+		std::scoped_lock<std::mutex> lock(mutex);
 
 		if (!deltas.size())
 			deltas.resize(300);

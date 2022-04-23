@@ -1,7 +1,6 @@
 #ifndef AE_BVH_H
 #define AE_BVH_H
 
-#include "../System.h"
 #include "AABB.h"
 #include "Ray.h"
 
@@ -10,338 +9,132 @@
 
 namespace Atlas {
 
-	namespace Volume {
+    namespace Volume {
 
-		template <class T> class BVHNode {
+        class BVHTriangle {
+        public:
+            vec3 v0;
+            vec3 v1;
+            vec3 v2;
+            uint32_t idx;
+        };
 
-		public:
-			BVHNode() = default;
+        class BVHNode {
+        public:
+            BVHNode() {}
 
-			void BuildSAH(std::vector<BVHNode<T>*>& nodes, size_t offset, size_t count, std::vector<AABB>& aabbs,
-				std::vector<T>& data, int32_t& nodeCount, int32_t depth);
+            struct Inner {
+                uint32_t leftChild;
+                uint32_t rightChild;
+            };
+            struct Leaf {
+                uint32_t dataCount;
+                uint32_t dataOffset;
+            };
 
-			void GetIntersection(Ray ray, std::vector<BVHNode<T>>& nodes,
-				std::vector<AABB>& aabbs, std::vector<T>& data,
-				std::vector<T>& intersections);
+            union {
+                Inner inner;
+                Leaf leaf = { 0, 0 };
+            };
 
-			AABB aabb;
+            AABB aabb;
 
-			int32_t leftChild = 0;
-			int32_t rightChild = 0;
+        };
 
-			int32_t dataOffset = 0;
-			int32_t dataCount = 0;
+        class BVHBuilder {
 
-			int32_t depth = 0;
-			uint8_t splitAxis = 0;
+        public:
+            struct Ref {
+                uint32_t idx = 0;
+                AABB aabb = InitialAABB();
+            };
 
-		};
+            BVHBuilder(const AABB aabb, const std::vector<Ref> refs,
+                uint32_t depth, const float minOverlap, const uint32_t binCount = 128);
 
-		template <class T> class BVH {
+            ~BVHBuilder();
 
-		public:
-			BVH() = default;
+            void Build(const std::vector<BVHTriangle>& data);
 
-			/**
-			 * @note The contructor works on the input data and sorts it.
-			 */
-			BVH(std::vector<AABB>& aabbs, std::vector<T>& data);
+            void Flatten(std::vector<BVHNode>& nodes, std::vector<Ref>& refs);
 
-			std::vector<T> GetIntersection(Ray ray);
+            BVHBuilder* leftChild = nullptr;
+            BVHBuilder* rightChild = nullptr;
 
-			std::vector<BVHNode<T>>& GetTree();
+            uint32_t depth;
+            uint32_t binCount;
 
-			std::vector<AABB> aabbs;
-			std::vector<T> data;
-			int32_t maxDepth = 0;
+            float minOverlap;
+            float nodeCost;
 
-		private:
-			std::vector<BVHNode<T>> nodes;
+            AABB aabb;
+            std::vector<Ref> refs;
 
-		};
+        private:
+            struct Bin {
+            public:
+                AABB aabb = InitialAABB();
+                uint32_t primitiveCount = 0;
 
-		template <class T>
-		BVH<T>::BVH(std::vector<AABB>& aabbs, std::vector<T>& data) {
+                uint32_t enter = 0;
+                uint32_t exit = 0;
+            };
 
-			if (aabbs.size() != data.size())
-				return;
+            struct Split {
+                float cost = std::numeric_limits<float>::max();
+                int32_t axis = -1;
+                uint32_t binIdx = 0;
+                float pos = 0.0f;
 
-			int32_t nodeCount = 1;
+                AABB leftAABB = InitialAABB();
+                AABB rightAABB = InitialAABB();
+            };
 
-			// We need to use pointers first and copy memory later
-			// because when the vector resizes we still work on elements
-			// of that vector which leads to errors.
-			std::vector<BVHNode<T>*> nodesPointer;
+            Split FindObjectSplit();
 
-			nodesPointer.push_back(new BVHNode<T>());
-			nodesPointer[0]->BuildSAH(nodesPointer, 0, aabbs.size(),
-				aabbs, data, nodeCount, 0);
+            void PerformObjectSplit(std::vector<Ref>& rightRefs,
+                std::vector<Ref>& leftRefs, Split& split);
 
-			// Copy nodes
-			for (auto node : nodesPointer) {
-				nodes.push_back(*node);
-				maxDepth = glm::max(node->depth, maxDepth);
-				delete node;
-			}
+            Split FindSpatialSplit(const std::vector<BVHTriangle>& data);
 
-			// Copy data
-			this->aabbs = aabbs;
-			this->data = data;
+            void PerformSpatialSplit(const std::vector<BVHTriangle>& data,
+                std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs, Split& split);
 
-		}
+            void SplitReference(const BVHTriangle triangle, Ref currentRef,
+                Ref& leftRef, Ref& rightRef, const float planePos, const int32_t axis);
 
-		template <class T>
-		std::vector<T> BVH<T>::GetIntersection(Ray ray) {
+            static AABB InitialAABB();
 
-			std::vector<T> intersections;
+        };
 
-			if (nodes.size()) {
-				nodes[0].GetIntersection(ray, nodes, aabbs, 
-					data, intersections);
-			}
 
-			return intersections;
+        class BVH {
 
-		}
+        public:
+            BVH() = default;
 
-		template <class T>
-		std::vector<BVHNode<T>>& BVH<T>::GetTree() {
+            BVH(std::vector<AABB>& aabbs, std::vector<BVHTriangle>& data);
 
-			return nodes;
+            bool GetIntersection(Ray ray, BVHTriangle& closest,
+                glm::vec3& intersection);
 
-		}
+            bool GetIntersection(Ray ray, BVHTriangle& closest,
+                glm::vec3& intersection, float max);
 
-		template <class T>
-		void BVHNode<T>::BuildSAH(std::vector<BVHNode<T>*>& nodes, size_t offset, size_t count, std::vector<AABB>& aabbs,
-			std::vector<T>& data, int32_t& nodeCount, int32_t depth) {
+            bool GetIntersectionAny(Ray ray, float max);
 
-			const float binCount = 128.0f;
+            std::vector<BVHNode> GetTree();
 
-			this->depth = depth;
+            void Clear();
 
-			// Calculate AABB for node
-			auto min = vec3(std::numeric_limits<float>::max());
-			auto max = vec3(-std::numeric_limits<float>::max());
+            std::vector<AABB> aabbs;
+            std::vector<BVHTriangle> data;
 
-			for (size_t i = offset; i < offset + count; i++) {
-				min = glm::min(min, aabbs[i].min);
-				max = glm::max(max, aabbs[i].max);
-			}
+            std::vector<BVHNode> nodes;
 
-			aabb = AABB(min, max);
+        };
 
-			// Create leaf node
-			if (count <= 4) {
-				dataOffset = (int32_t)offset;
-				dataCount = (int32_t)count;
-				return;
-			}
-
-			auto dimension = max - min;
-
-			// Calculate cost for current node
-			auto minCost = (float)count * (dimension.x * dimension.y +
-				dimension.y * dimension.z + dimension.z * dimension.x);
-
-			int32_t bestAxis = -1;
-			auto bestSplit = std::numeric_limits<float>::max();
-
-			// Iterate over 3 axises
-			for (int32_t i = 0; i < 3; i++) {
-
-				auto start = min[i];
-				auto stop = max[i];
-
-				// If the dimension of this axis is to small continue
-				if (fabsf(stop - start) < 1e-3)
-					continue;
-
-				auto step = (stop - start) / (binCount / ((float)depth + 1.0f));
-
-				// Iterate over all possible splits of the bins
-				for (float split = start + step; split < stop - step; split += step) {
-
-					Volume::AABB aabbLeft(vec3(std::numeric_limits<float>::max()),
-						vec3(-std::numeric_limits<float>::max()));
-					Volume::AABB aabbRight(vec3(std::numeric_limits<float>::max()),
-						vec3(-std::numeric_limits<float>::max()));
-
-					// Primitives in left and right bounding boxes
-					int32_t primitivesLeft = 0;
-					int32_t primitivesRight = 0;
-
-					// Iterate over data and update split bounds
-					for (size_t j = offset; j < offset + count; j++) {
-						auto& primitveAABB = aabbs[j];
-
-						auto center = 0.5f * (primitveAABB.min + primitveAABB.max);
-						auto value = center[i];
-
-						if (value < split) {
-							aabbLeft.min = glm::min(aabbLeft.min, aabbs[j].min);
-							aabbLeft.max = glm::max(aabbLeft.max, aabbs[j].max);
-							primitivesLeft++;
-						}
-						else {
-							aabbRight.min = glm::min(aabbRight.min, aabbs[j].min);
-							aabbRight.max = glm::max(aabbRight.max, aabbs[j].max);
-							primitivesRight++;
-						}
-					}
-
-					// We don't want to have useless partitionings
-					if (primitivesLeft <= 0 || primitivesRight <= 0)
-						continue;
-
-					auto leftDimension = aabbLeft.max - aabbLeft.min;
-					auto rightDimension = aabbRight.max - aabbRight.min;
-
-					auto leftSurface = (leftDimension.x * leftDimension.y +
-						leftDimension.y * leftDimension.z +
-						leftDimension.z * leftDimension.x);
-
-					auto rightSurface = (rightDimension.x * rightDimension.y +
-						rightDimension.y * rightDimension.z +
-						rightDimension.z * rightDimension.x);
-
-					// Caculate cost for current split
-					auto cost = leftSurface * (float)primitivesLeft +
-						rightSurface * (float)primitivesRight;
-
-					// Check if cost has improved
-					if (cost < minCost) {
-						minCost = cost;
-						bestAxis = i;
-						bestSplit = split;
-					}
-
-				}
-
-			}
-
-			// If we haven't found a cost improvement we create a leaf node
-			if (bestAxis < 0) {
-				dataOffset = (int32_t)offset;
-				dataCount = (int32_t)count;
-				return;
-			}
-
-			// Find split index
-			size_t splitIdx = 0;
-			for (size_t i = offset; i < offset + count; i++) {
-				auto& primitveAABB = aabbs[i];
-
-				auto center = 0.5f * (primitveAABB.min + primitveAABB.max);
-				auto value = center[bestAxis];
-
-				if (value < bestSplit) {
-					splitIdx++;
-				}
-			}
-
-			// Sort the data and aabb array based on split in O(n) in-place
-			bool leftIncrement = true;
-			auto leftIdx = offset;
-			auto rightIdx = offset + splitIdx;
-
-			auto carryover = false;
-			T carryoverData;
-			AABB carryoverAABB;
-
-			// Just one condition needs to be true for the array to be sorted
-			while (leftIdx < offset + splitIdx && rightIdx < offset + count) {
-				auto& idx = leftIncrement ? leftIdx : rightIdx;
-				if (carryover) {
-					data[idx] = carryoverData;
-					aabbs[idx] = carryoverAABB;
-					carryover = false;
-					idx++;
-				}
-
-				auto& primitveAABB = aabbs[idx];
-				auto center = 0.5f * (primitveAABB.min + primitveAABB.max);
-				auto value = center[bestAxis];
-
-				if (value >= bestSplit && leftIncrement) {
-					leftIncrement = false;
-					carryoverData = data[idx];
-					carryoverAABB = aabbs[idx];
-					continue;
-				}
-				else if (value < bestSplit && !leftIncrement) {
-					leftIncrement = true;
-					std::swap(data[idx], carryoverData);
-					std::swap(aabbs[idx], carryoverAABB);
-					carryover = true;
-				}
-				else {
-					idx++;
-				}
-			}
-
-			if (splitIdx > 0) {
-				leftChild = nodeCount++;
-				nodes.push_back(new BVHNode<T>());
-				nodes[leftChild]->splitAxis = uint8_t(bestAxis);
-				nodes[leftChild]->BuildSAH(nodes, offset, splitIdx,
-					aabbs, data, nodeCount, depth + 1);
-			}
-
-			if (splitIdx < count) {
-				rightChild = nodeCount++;
-				nodes.push_back(new BVHNode<T>());
-				nodes[rightChild]->splitAxis = uint8_t(bestAxis);
-				nodes[rightChild]->BuildSAH(nodes, offset + splitIdx, count - splitIdx,
-					aabbs, data, nodeCount, depth + 1);
-			}
-
-		}
-
-		template <class T>
-		void BVHNode<T>::GetIntersection(Ray ray, std::vector<BVHNode<T>>& nodes,
-			std::vector<AABB>& aabbs, std::vector<T>& data,
-			std::vector<T>& intersections) {
-
-			auto max = std::numeric_limits<float>::max();
-
-			auto leftIntersect = false;
-			auto rightIntersect = false;
-
-			auto leftT = max;
-			auto rightT = max;
-
-			if (leftChild > 0) {
-				leftIntersect = ray.Intersects(nodes[leftChild].aabb,
-					0.0f, max, leftT);
-			}
-
-			if (rightChild > 0) {
-				rightIntersect = ray.Intersects(nodes[rightChild].aabb,
-					0.0f, max, rightT);
-			}
-
-			for (size_t i = dataOffset; i < dataOffset + dataCount; i++) {
-				if (ray.Intersects(aabbs[i], 0.0f, max))
-					intersections.push_back(data[i]);
-			}
-
-			if (leftT < rightT) {
-				if (leftIntersect)
-					nodes[leftChild].GetIntersection(ray, nodes, aabbs, data, intersections);
-				if(rightIntersect)
-					nodes[rightChild].GetIntersection(ray, nodes, aabbs, data, intersections);
-
-			}
-			else {
-				if (rightIntersect)
-					nodes[rightChild].GetIntersection(ray, nodes, aabbs, data, intersections);
-				if (leftIntersect)
-					nodes[leftChild].GetIntersection(ray, nodes, aabbs, data, intersections);
-			}
-
-		}
-
-	}
+    }
 
 }
 

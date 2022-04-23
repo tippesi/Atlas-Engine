@@ -76,6 +76,35 @@ namespace Atlas {
 
 		}
 
+		void AABB::Grow(AABB aabb) {
+
+			max = glm::max(max, aabb.max);
+			min = glm::min(min, aabb.min);
+
+		}
+
+		void AABB::Grow(glm::vec3 vector) {
+
+			max = glm::max(vector, max);
+			min = glm::min(vector, min);
+
+		}
+
+		void AABB::Intersect(AABB aabb) {
+
+			min = glm::max(min, aabb.min);
+			max = glm::min(max, aabb.max);
+
+		}
+
+		float AABB::GetSurfaceArea() const {
+			auto dimension = max - min;
+
+			return 2.0f * (dimension.x * dimension.y +
+				dimension.y * dimension.z +
+				dimension.z * dimension.x);
+		}
+
 		std::vector<vec3> AABB::GetCorners() {
 
 			std::vector<vec3> corners;

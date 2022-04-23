@@ -26,9 +26,10 @@ bool IntersectAABB(Ray ray, AABB aabb, float tmin, float tmax, out float dist) {
 	float tminf = max(tmin, max(tsmall.x, max(tsmall.y, tsmall.z)));
 	float tmaxf = min(tmax, min(tbig.x, min(tbig.y, tbig.z)));
 
-	dist = tminf;
+	bool intersect = (tminf <= tmaxf);
+	dist = intersect ? tminf : tmax;
 	
-	return (tminf <= tmaxf);
+	return intersect;
 
 }
 

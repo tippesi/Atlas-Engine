@@ -73,6 +73,14 @@ namespace Atlas {
 			 */
 			AABB Scale(float scale);
 
+            void Grow(AABB aabb);
+
+            void Grow(vec3 vector);
+
+            void Intersect(AABB aabb);
+
+            float GetSurfaceArea() const;
+
 			/**
 			 * Returns the eight corners of the AABB.
 			 * @return The eight corners of the AABB.
