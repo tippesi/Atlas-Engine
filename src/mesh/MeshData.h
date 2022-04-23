@@ -17,6 +17,8 @@ namespace Atlas {
 
 		struct MeshSubData {
 
+			std::string name;
+
 			uint32_t indicesOffset;
 			uint32_t indicesCount;
 			

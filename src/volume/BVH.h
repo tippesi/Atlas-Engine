@@ -123,7 +123,7 @@ namespace Atlas {
 
             bool GetIntersectionAny(Ray ray, float max);
 
-            std::vector<BVHNode> GetTree();
+            std::vector<BVHNode>& GetTree();
 
             void Clear();
 

@@ -1,3 +1,5 @@
+// Based on: Spatial Splits in Bounding Volume Hierarchies, Stich et. al.
+// https://www.nvidia.in/docs/IO/77714/sbvh.pdf
 #include <numeric>
 #include <thread>
 #include "BVH.h"
@@ -179,7 +181,7 @@ namespace Atlas {
 
         }
 
-        std::vector<BVHNode> BVH::GetTree() {
+        std::vector<BVHNode>& BVH::GetTree() {
 
             return nodes;
 
