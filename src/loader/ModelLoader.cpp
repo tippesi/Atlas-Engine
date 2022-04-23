@@ -6,13 +6,14 @@
 
 #include <vector>
 #include <limits>
+#include <functional>
 
 namespace Atlas {
 
 	namespace Loader {
 
 		Mesh::MeshData ModelLoader::LoadMesh(std::string filename,
-			bool forceTangents, int32_t maxTextureResolution) {
+			bool forceTangents, mat4 transform, int32_t maxTextureResolution) {
 
 			Mesh::MeshData meshData;
 
@@ -51,19 +52,34 @@ namespace Atlas {
 			bool hasTangents = false;
 			bool hasTexCoords = false;
 
-			std::vector<std::vector<aiMesh*>> meshSorted(scene->mNumMaterials);
+			struct AssimpMesh {
+				aiMesh* mesh;
+				mat4 transform;
+			};
 
-			for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
-				auto mesh = scene->mMeshes[i];
+			std::vector<std::vector<AssimpMesh>> meshSorted(scene->mNumMaterials);
 
-				meshSorted[mesh->mMaterialIndex].push_back(mesh);
+			std::function<void(aiNode*, mat4)> traverseNodeTree;
+			traverseNodeTree = [&](aiNode* node, mat4 accTransform) {
+				accTransform = accTransform * glm::transpose(glm::make_mat4(&node->mTransformation.a1));
+				for (uint32_t i = 0; i < node->mNumMeshes; i++) {
+					auto mesh = scene->mMeshes[i];
 
-				indexCount += (mesh->mNumFaces * 3);
-				vertexCount += mesh->mNumVertices;
-				bonesCount += mesh->mNumBones;
+					meshSorted[mesh->mMaterialIndex].push_back({ mesh, accTransform });
 
-				hasTexCoords = mesh->mNumUVComponents[0] > 0 ? true : hasTexCoords;
-			}
+					indexCount += (mesh->mNumFaces * 3);
+					vertexCount += mesh->mNumVertices;
+					bonesCount += mesh->mNumBones;
+
+					hasTexCoords = mesh->mNumUVComponents[0] > 0 ? true : hasTexCoords;
+				}
+
+				for (uint32_t i = 0; i < node->mNumChildren; i++) {
+					traverseNodeTree(node->mChildren[i], accTransform);
+				}
+			};
+
+			traverseNodeTree(scene->mRootNode, transform);
 
 			hasTangents |= forceTangents;
 			for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
@@ -122,33 +138,36 @@ namespace Atlas {
 				subData.material = &material;
 				subData.indicesOffset = usedFaces * 3;
 
-				for (auto mesh : meshSorted[i]) {
+				for (auto assimpMesh : meshSorted[i]) {
 				
+					auto mesh = assimpMesh.mesh;
+					auto matrix = assimpMesh.transform;
+
 					// Copy vertices
 					for (uint32_t j = 0; j < mesh->mNumVertices; j++) {
 
-                        vec3 vertex = vec3(mesh->mVertices[j].x, mesh->mVertices[j].y,
-                                           mesh->mVertices[j].z);
+                        vec3 vertex = vec3(matrix * vec4(mesh->mVertices[j].x, 
+							mesh->mVertices[j].y, mesh->mVertices[j].z, 1.0f));
 
                         vertices[usedVertices] = vertex;
 
                         max = glm::max(vertex, max);
                         min = glm::min(vertex, min);
 
-						vec3 normal = vec3(mesh->mNormals[j].x, mesh->mNormals[j].y,
-                                           mesh->mNormals[j].z);
+						vec3 normal = vec3(matrix * vec4(mesh->mNormals[j].x, mesh->mNormals[j].y,
+							mesh->mNormals[j].z, 0.0f));
                         normal = normalize(normal);
 
 						normals[usedVertices] = vec4(normal, 0.0f);
 
 						if (hasTangents && mesh->mTangents != nullptr) {
-							vec3 tangent = vec3(mesh->mTangents[j].x, mesh->mTangents[j].y,
-                                                mesh->mTangents[j].z);
+							vec3 tangent = vec3(matrix * vec4(mesh->mTangents[j].x, 
+								mesh->mTangents[j].y, mesh->mTangents[j].z, 0.0f));
 							tangent = normalize(tangent - normal * dot(normal, tangent));
 
 							vec3 estimatedBitangent = normalize(cross(tangent, normal));
-							vec3 correctBitangent = vec3(mesh->mBitangents[j].x, mesh->mBitangents[j].y,
-                                                         mesh->mBitangents[j].z);
+							vec3 correctBitangent = vec3(matrix * vec4(mesh->mBitangents[j].x,
+								mesh->mBitangents[j].y, mesh->mBitangents[j].z, 0.0f));
                             correctBitangent = normalize(correctBitangent);
 
 							float dotProduct = dot(estimatedBitangent, correctBitangent);
@@ -199,6 +218,8 @@ namespace Atlas {
 
 		void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, Material& material,
 			std::string directory, bool isObj, int32_t maxTextureResolution) {
+
+			bool roughnessMetalnessTexture = false;
 
 			aiString name;
 
@@ -303,18 +324,30 @@ namespace Atlas {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &aiPath);
 				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
-				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
-				auto texture = new Texture::Texture2D(image, true, true);
-				material.roughnessMap = texture;
+				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 0, maxTextureResolution);
+				if (image.channels > 1) {
+					auto roughnessData = image.GetChannelData(1, 1);
+					auto metalnessData = image.GetChannelData(2, 1);
+					material.roughnessMap = new Texture::Texture2D(image.width, image.height, AE_R8,
+						GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
+					material.roughnessMap->SetData(roughnessData);
+					material.metalnessMap = new Texture::Texture2D(image.width, image.height, AE_R8,
+						GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
+					material.metalnessMap->SetData(metalnessData);
+					material.metalnessMapPath = path;
+					roughnessMetalnessTexture = true;
+				}
+				else {
+					material.roughnessMap = new Texture::Texture2D(image, true, true);
+				}
 				material.roughnessMapPath = path;
 			}
-			if (assimpMaterial->GetTextureCount(aiTextureType_METALNESS) > 0) {
+			if (assimpMaterial->GetTextureCount(aiTextureType_METALNESS) > 0 && !roughnessMetalnessTexture) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_METALNESS, 0, &aiPath);
 				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
 				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
-				auto texture = new Texture::Texture2D(image, true, true);
-				material.metalnessMap = texture;
+				material.metalnessMap = new Texture::Texture2D(image, true, true);
 				material.metalnessMapPath = path;
 			}
 			if (assimpMaterial->GetTextureCount(aiTextureType_SPECULAR) > 0 && !material.metalnessMap) {
@@ -331,8 +364,7 @@ namespace Atlas {
 				assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
 				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
 				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
-				auto texture = new Texture::Texture2D(image, true, true);
-				material.displacementMap = texture;
+				material.displacementMap = new Texture::Texture2D(image, true, true);
 				material.displacementMapPath = path;
 			}
 

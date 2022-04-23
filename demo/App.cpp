@@ -111,8 +111,9 @@ void App::Update(float deltaTime) {
 
 void App::Render(float deltaTime) {
 
+	static bool firstFrame = true;
 	static bool animateLight = false;
-	static bool pathTrace = false;
+	static bool pathTrace = true;
 	static bool showAo = false;
 	static bool slowMode = false;
 	
@@ -167,15 +168,23 @@ void App::Render(float deltaTime) {
 				+ floatToString(vec.z);
 		};
 
+		uint32_t triangleCount = 0;
+		auto sceneAABB = meshes.front().data.aabb;
+		for (auto& mesh : meshes) {
+			sceneAABB.Grow(mesh.data.aabb);
+			triangleCount += mesh.data.GetIndexCount() / 3;
+		}
+
 		if (ImGui::Begin("Settings", (bool*)0, 0)) {
 			ImGui::Text(("Average frametime: " + std::to_string(averageFramerate * 1000.0f) + " ms").c_str());
 			ImGui::Text(("Current frametime: " + std::to_string(deltaTime * 1000.0f) + " ms").c_str());
 			ImGui::Text(("Camera location: " + vecToString(camera.location)).c_str());
-			ImGui::Text(("Scene dimensions: " + vecToString(mesh.data.aabb.min) + " to " + vecToString(mesh.data.aabb.max)).c_str());
-			ImGui::Text(("Scene triangle count: " + std::to_string(mesh.data.GetIndexCount() / 3)).c_str());
+			ImGui::Text(("Scene dimensions: " + vecToString(sceneAABB.min) + " to " + vecToString(sceneAABB.max)).c_str());
+			ImGui::Text(("Scene triangle count: " + std::to_string(triangleCount)).c_str());
 
 			{
-				const char* items[] = { "Cornell box", "Sponza", "Bistro", "San Miguel", "Medieval", "Pica Pica"};
+				const char* items[] = { "Cornell box", "Sponza", "Bistro", 
+					"San Miguel", "Medieval", "Pica Pica", "New Sponza"};
 				int currentItem = static_cast<int>(sceneSelection);
 				ImGui::Combo("Select scene", &currentItem, items, IM_ARRAYSIZE(items));
 
@@ -307,6 +316,7 @@ void App::Render(float deltaTime) {
 			if (ImGui::CollapsingHeader("Camera")) {
 				ImGui::SliderFloat("Exposure##Camera", &camera.exposure, 0.0f, 10.0f);
 				ImGui::SliderFloat("Speed##Camera", &cameraSpeed, 0.0f, 20.0f);
+				ImGui::SliderFloat("FOV##Camera", &camera.fieldOfView, 0.0f, 90.0f);
 				keyboardHandler.speed = cameraSpeed;
 			}
 			if (ImGui::CollapsingHeader("Fog")) {
@@ -412,6 +422,13 @@ void App::Render(float deltaTime) {
 
 	if (slowMode) { using namespace std::chrono_literals; std::this_thread::sleep_for(60ms); }
 
+	if (firstFrame) {
+		// We want to get rid of the current average
+		// window which includes the loading times
+		Atlas::Clock::ResetAverage();
+		firstFrame = false;
+	}
+
 
 }
 
@@ -442,6 +459,7 @@ bool App::IsSceneAvailable(SceneSelection selection) {
 	case SANMIGUEL: return Atlas::Loader::AssetLoader::FileExists("sanmiguel/san-miguel-low-poly.obj");
 	case MEDIEVAL: return Atlas::Loader::AssetLoader::FileExists("medieval/scene.fbx");
 	case PICAPICA: return Atlas::Loader::AssetLoader::FileExists("pica pica/mesh/scene.gltf");
+	case NEWSPONZA: return Atlas::Loader::AssetLoader::FileExists("newsponza/NewSponza_Main_Blender_glTF.gltf");
 	default: return false;
 	}
 }
@@ -456,10 +474,12 @@ bool App::LoadScene() {
 	directionalLight.direction = vec3(0.0f, -1.0f, 1.0f);
 
 	if (sceneSelection == CORNELL) {
-		if (!Atlas::Loader::AssetLoader::FileExists("cornell/CornellBox-Original.obj")) return false;
+		meshes.reserve(1);
 
 		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("cornell/CornellBox-Original.obj");
-		mesh = Atlas::Mesh::Mesh(meshData);
+		meshes.push_back(Atlas::Mesh::Mesh { meshData });
+
+		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
 		mesh.SetTransform(scale(mat4(1.0f), vec3(10.0f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.10f), ivec3(20));
@@ -477,10 +497,12 @@ bool App::LoadScene() {
 		scene.fog->enable = false;
 	}
 	else if (sceneSelection == SPONZA) {
-		if (!Atlas::Loader::AssetLoader::FileExists("sponza/sponza.obj")) return false;
+		meshes.reserve(1);
 
 		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("sponza/sponza.obj");
-		mesh = Atlas::Mesh::Mesh(meshData);
+		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+
+		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
 		mesh.SetTransform(scale(mat4(1.0f), vec3(.05f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(0.90f), ivec3(20));
@@ -499,10 +521,12 @@ bool App::LoadScene() {
 		scene.fog->enable = true;
 	}
 	else if (sceneSelection == BISTRO) {
-		if (!Atlas::Loader::AssetLoader::FileExists("bistro/mesh/exterior.obj")) return false;
+		meshes.reserve(1);
 
-		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("bistro/mesh/exterior.obj", false, 2048);
-		mesh = Atlas::Mesh::Mesh(meshData);
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("bistro/mesh/exterior.obj", false, mat4(1.0f), 2048);
+		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+
+		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
 		mesh.SetTransform(scale(mat4(1.0f), vec3(.015f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(0.90f), ivec3(20));
@@ -521,11 +545,14 @@ bool App::LoadScene() {
 		scene.fog->enable = true;
 	}
 	else if (sceneSelection == SANMIGUEL) {
-		if (!Atlas::Loader::AssetLoader::FileExists("sanmiguel/san-miguel-low-poly.obj")) return false;
+		meshes.reserve(1);
 
-		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("sanmiguel/san-miguel-low-poly.obj", false, 2048);
-		mesh = Atlas::Mesh::Mesh(meshData);
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("sanmiguel/san-miguel-low-poly.obj", false, mat4(1.0f), 2048);
+		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+
+		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
+		mesh.cullBackFaces = false;
 		mesh.SetTransform(scale(mat4(1.0f), vec3(2.0f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
 
@@ -545,10 +572,12 @@ bool App::LoadScene() {
 		scene.fog->enable = true;
 	}
 	else if (sceneSelection == MEDIEVAL) {
-		if (!Atlas::Loader::AssetLoader::FileExists("medieval/scene.fbx")) return false;
+		meshes.reserve(1);
 
 		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("medieval/scene.fbx");
-		mesh = Atlas::Mesh::Mesh(meshData);
+		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+
+		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
 		mesh.SetTransform(scale(glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)), vec3(2.0f)));
 		// Metalness is set to 0.9f
@@ -570,10 +599,12 @@ bool App::LoadScene() {
 		scene.fog->enable = true;
 	}
 	else if (sceneSelection == PICAPICA) {
-		if (!Atlas::Loader::AssetLoader::FileExists("pica pica/mesh/scene.gltf")) return false;
+		meshes.reserve(1);
 
 		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("pica pica/mesh/scene.gltf");
-		mesh = Atlas::Mesh::Mesh(meshData);
+		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+
+		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
 
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
@@ -591,10 +622,46 @@ bool App::LoadScene() {
 
 		scene.fog->enable = true;
 	}
+	else if (sceneSelection == NEWSPONZA) {
+		meshes.reserve(3);
 
-	meshActor = Atlas::Actor::StaticMeshActor(&mesh, mat4(1.0f));
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/NewSponza_Main_Blender_glTF.gltf", 
+			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
+		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+		meshes.back().invertUVs = true;
 
-	scene.Add(&meshActor);
+		meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/NewSponza_100sOfCandles_glTF_OmniLights.gltf", 
+			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
+		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+		meshes.back().invertUVs = true;
+
+		meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/NewSponza_Curtains_glTF.gltf", 
+			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
+		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+		meshes.back().invertUVs = true;
+		meshes.back().cullBackFaces = false;
+
+		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(meshes.front().data.aabb.Scale(1.05f), ivec3(20));
+
+		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
+
+		// Other scene related settings apart from the mesh
+		directionalLight.intensity = 100.0f;
+		directionalLight.GetVolumetric()->intensity = 0.28f;
+		scene.irradianceVolume->SetRayCount(128, 32);
+
+		// Setup camera
+		camera.location = vec3(30.0f, 25.0f, 0.0f);
+		camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
+
+		scene.fog->enable = true;
+	}
+
+	actors.reserve(meshes.size());
+	for (auto& mesh : meshes) {
+		actors.push_back({ &mesh, mat4(1.0f) });
+		scene.Add(&actors.back());
+	}
 
 	scene.sky.probe = new Atlas::Lighting::EnvironmentProbe(sky);
 
@@ -606,13 +673,18 @@ bool App::LoadScene() {
 	keyboardHandler.Reset(&camera);
 	mouseHandler.Reset(&camera);
 
+	Atlas::Clock::ResetAverage();
+
 	return successful;
 
 }
 
 void App::UnloadScene() {
 
-	scene.Remove(&meshActor);
+	for (auto& actor : actors) scene.Remove(&actor);
+
+	actors.clear();
+	meshes.clear();
 
 	delete scene.sky.probe;
 	delete scene.irradianceVolume;

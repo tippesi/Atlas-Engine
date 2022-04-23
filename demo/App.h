@@ -33,7 +33,8 @@ private:
 		BISTRO,
 		SANMIGUEL,
 		MEDIEVAL,
-		PICAPICA
+		PICAPICA,
+		NEWSPONZA
 	};
 
 	void DisplayLoadingScreen();
@@ -44,7 +45,7 @@ private:
 
 	void SetResolution(int32_t width, int32_t height);
 
-	SceneSelection sceneSelection = SPONZA;
+	SceneSelection sceneSelection = NEWSPONZA;
 
 	Atlas::Renderer::PathTracerRenderTarget pathTraceTarget;
 	Atlas::RenderTarget* renderTarget;
@@ -58,9 +59,8 @@ private:
 
 	Atlas::Lighting::DirectionalLight directionalLight;
 
-	Atlas::Mesh::Mesh mesh;
-
-	Atlas::Actor::StaticMeshActor meshActor;
+	std::vector<Atlas::Mesh::Mesh> meshes;
+	std::vector<Atlas::Actor::StaticMeshActor> actors;
 
 	Atlas::Lighting::EnvironmentProbe probe;
 

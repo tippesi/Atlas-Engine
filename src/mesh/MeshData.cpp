@@ -115,6 +115,8 @@ namespace Atlas {
 
 		void MeshData::DeepCopy(const MeshData& that) {
 
+			filename = that.filename;
+
 			indices = that.indices;
 
 			vertices = that.vertices;

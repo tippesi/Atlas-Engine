@@ -68,9 +68,9 @@ For a code example have a look at the [demo application](https://github.com/tipp
 ## Screenshots
 ![Example scene](wiki/images/sponza_rasterized.png) <br/>
 *Rasterized image using real time global illumination* <br/>
+![Example scene](wiki/images/sponza_pathtraced.png)
+*Path traced scene*
 ![Island scene](wiki/images/island.gif) <br/>
 *Island demo scene using the terrain and ocean systems* <br/>
 ![Gun scene](wiki/images/gun.gif) <br/>
 *PBR rendering* <br/>
-![Example scene](wiki/images/sponza_raytraced.png)
-*Path traced scene*

@@ -18,7 +18,8 @@ namespace Atlas {
 
 		public:
 			static Mesh::MeshData LoadMesh(std::string filename,
-				bool forceTangents = false, int32_t maxTextureResolution = 4096);
+				bool forceTangents = false, mat4 transform = mat4(1.0f),
+				int32_t maxTextureResolution = 4096);
 
 		private:
 			static void LoadMaterial(aiMaterial* assimpMaterial, Material& material,
