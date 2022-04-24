@@ -23,7 +23,7 @@ uniform float minVelocityBlend = 0.05;
 uniform float maxVelocityBlend = 0.7;
 
 #define TAA_YCOCG
-#define TAA_CLIP // Use clip instead of clamping for better ghosting prevention, introduces more flickering
+//#define TAA_CLIP // Use clip instead of clamping for better ghosting prevention, introduces more flickering
 #define TAA_BICUBIC // Nearly always use the bicubic sampling for better quality and sharpness under movement
 #define TAA_TONE // Somehow introduces more flickering as well
 
@@ -308,13 +308,14 @@ void main() {
 
     ComputeVarianceMinMax(neighbourhoodMin, neighbourhoodMax);
 
-    const float range = 1.0;
-    neighbourhoodMin = average - range * (average - neighbourhoodMin);
-    neighbourhoodMax = average + range * (neighbourhoodMax - average);
-
     ivec2 velocityPixel = clamp(pixel + offset, ivec2(0), ivec2(resolution) - ivec2(1));
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
+
+    float range = 1.4;
+    range += mix(0.6, 2.7, saturate(1.0 - 1000.0 * length(velocity)));
+    neighbourhoodMin = average - range * (average - neighbourhoodMin);
+    neighbourhoodMax = average + range * (neighbourhoodMax - average);
 
     // Maybe we might want to filter the current input pixel
     vec4 history = SampleHistory(uv);
@@ -334,7 +335,7 @@ void main() {
     float clipBlend = ClipBoundingBox(neighbourhoodMin, neighbourhoodMax,
         historyColor, currentColor);
     float adjClipBlend = saturate(clipBlend);
-    clipCorrection = clipBlend > 0.97 ? 1.0 : clipCorrection + 0.005;
+    clipCorrection = clipBlend > 0.97 ? 0.0 : clipCorrection + 0.005;
     historyColor = mix(historyColor, currentColor, adjClipBlend);
 #else
     historyColor = clamp(historyColor, neighbourhoodMin, neighbourhoodMax);
@@ -345,7 +346,7 @@ void main() {
 		abs(lastVelocity.y) * resolution.y)) * 0.5;
 	float correction = fract(max(abs(velocity.x) * resolution.x,
 		abs(velocity.y) * resolution.y)) * 0.5;
-    correction = max(lastCorrection, correction);
+    correction = saturate(max(correction, lastCorrection));
     float blendFactor = mix(minVelocityBlend, maxVelocityBlend, correction);
 
 	// Check if we sampled outside the viewport area

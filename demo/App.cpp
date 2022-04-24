@@ -339,6 +339,9 @@ void App::Render(float deltaTime) {
 				ImGui::Text("Sharpen filter");
 				ImGui::Checkbox("Enable##Sharpen", &scene.postProcessing.sharpen.enable);
 				ImGui::SliderFloat("Sharpness", &scene.postProcessing.sharpen.factor, 0.0f, 1.0f);
+				ImGui::Separator();
+				ImGui::Text("Image effects");
+				ImGui::SliderFloat("Saturation##Postprocessing", &scene.postProcessing.saturation, 0.0f, 1.0f);
 			}
 			if (ImGui::CollapsingHeader("Controls")) {
 				ImGui::Text("Use WASD for movement");
