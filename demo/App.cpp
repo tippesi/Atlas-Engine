@@ -176,6 +176,7 @@ void App::Render(float deltaTime) {
 		}
 
 		if (ImGui::Begin("Settings", (bool*)0, 0)) {
+			if(pathTrace) ImGui::Text(("Samples: " + std::to_string(pathTracingRenderer.GetSampleCount())).c_str());
 			ImGui::Text(("Average frametime: " + std::to_string(averageFramerate * 1000.0f) + " ms").c_str());
 			ImGui::Text(("Current frametime: " + std::to_string(deltaTime * 1000.0f) + " ms").c_str());
 			ImGui::Text(("Camera location: " + vecToString(camera.location)).c_str());
@@ -341,7 +342,7 @@ void App::Render(float deltaTime) {
 				ImGui::SliderFloat("Sharpness", &scene.postProcessing.sharpen.factor, 0.0f, 1.0f);
 				ImGui::Separator();
 				ImGui::Text("Image effects");
-				ImGui::SliderFloat("Saturation##Postprocessing", &scene.postProcessing.saturation, 0.0f, 1.0f);
+				ImGui::SliderFloat("Saturation##Postprocessing", &scene.postProcessing.saturation, 0.0f, 2.0f);
 			}
 			if (ImGui::CollapsingHeader("Controls")) {
 				ImGui::Text("Use WASD for movement");
@@ -577,12 +578,11 @@ bool App::LoadScene() {
 	else if (sceneSelection == MEDIEVAL) {
 		meshes.reserve(1);
 
-		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("medieval/scene.fbx");
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("medieval/scene.fbx", false, glm::scale(mat4(1.0f), vec3(2.0f)));
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
 		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
-		mesh.SetTransform(scale(glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)), vec3(2.0f)));
 		// Metalness is set to 0.9f
 		for (auto& material : mesh.data.materials) material.metalness = 0.0f;
 
@@ -604,7 +604,8 @@ bool App::LoadScene() {
 	else if (sceneSelection == PICAPICA) {
 		meshes.reserve(1);
 
-		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("pica pica/mesh/scene.gltf");
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("pica pica/mesh/scene.gltf", false,
+			glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)));
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
 		auto& mesh = meshes.back();
@@ -627,7 +628,6 @@ bool App::LoadScene() {
 	}
 	else if (sceneSelection == NEWSPONZA) {
 		meshes.reserve(3);
-
 		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/NewSponza_Main_Blender_glTF.gltf", 
 			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
@@ -637,7 +637,6 @@ bool App::LoadScene() {
 			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 		meshes.back().invertUVs = true;
-
 		meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/NewSponza_Curtains_glTF.gltf", 
 			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });

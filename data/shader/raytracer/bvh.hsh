@@ -1,5 +1,7 @@
+#include <common.hsh>
 #include <intersections.hsh>
 #include <structures.hsh>
+#include <surface.hsh>
 
 #define STACK_SIZE 32
 
@@ -97,6 +99,36 @@ bool CheckLeaf(inout Ray ray, BVHNode node, float tmin, float tmax) {
 	
 }
 
+float CheckLeafTransparency(inout Ray ray, BVHNode node, float tmin, float tmax, float transparency) {
+
+	uint count = node.data0 & uint(0x1fffffff);
+	uint offset = node.data1;
+	
+	vec3 sol, v0, v1, v2, n;
+	bool hit = false;
+	
+	for (uint i = offset; i < offset + count; i++) {
+		v0 = triangles[i].v0.xyz;
+		v1 = triangles[i].v1.xyz;
+		v2 = triangles[i].v2.xyz;
+		float d = 0.0;
+#ifdef BACKFACE_CULLING
+		n = cross(v0 - v1, v0 - v2);
+		d = dot(n, ray.direction);
+#endif
+		bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
+		if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {
+			ray.hitDistance = sol.x;
+			ray.hitID = int(i);
+			Triangle tri = UnpackTriangle(triangles[i]);
+			transparency *= (1.0 - GetOpacity(tri, sol.yz));
+		}
+	}
+
+	return transparency;
+
+}
+
 void HitClosest(inout Ray ray, float tMin, float tMax) {
 	
 	uint stackPtr = 1u;
@@ -186,5 +218,53 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
 	}	
 
 	return hit;
+		
+}
+
+float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
+	
+	float transparency = 1.0;
+
+	uint stackPtr = 1u;
+	uint threadID = gl_LocalInvocationIndex;
+	stack[0][threadID] = 0u;
+	
+	uint nodeIdx = 0;
+	
+	while (stackPtr != 0u) {
+		BVHNode node = UnpackNode(nodes[nodeIdx]);
+		
+		if((node.data0 & uint(0x80000000)) > 0u) {
+			transparency *= CheckLeafTransparency(ray, node, tMin, tMax, transparency);
+			if (transparency < 0.000001) {
+				transparency = 0.0;
+				break;
+			}
+			nodeIdx = stack[--stackPtr][threadID];
+		}
+		else {
+			if (stackPtr + 1u >= uint(STACK_SIZE)) break;
+
+			uint childLPtr = nodeIdx + 1;
+			uint childRPtr = node.data1;
+
+			BVHNode nodeL = UnpackNode(nodes[childLPtr]);
+			BVHNode nodeR = UnpackNode(nodes[childRPtr]);
+
+			bool intersectL = IntersectAABB(ray, 
+				nodeL.aabb, tMin, tMax);		
+			bool intersectR = IntersectAABB(ray, 
+				nodeR.aabb, tMin, tMax);
+
+			nodeIdx = intersectR ? childRPtr : childLPtr;
+			nodeIdx = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodeIdx;
+
+			if (intersectR && intersectL) {
+				stack[stackPtr++][threadID] = childLPtr;
+			}
+		}
+	}	
+
+	return transparency;
 		
 }

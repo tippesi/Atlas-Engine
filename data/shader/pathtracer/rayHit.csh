@@ -40,7 +40,7 @@ const float gamma = 1.0 / 2.2;
 void EvaluateBounce(inout Ray ray, inout RayPayload payload);
 vec3 EvaluateDirectLight(inout Surface surface);
 void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayload payload);
-bool CheckVisibility(Surface surface, float lightDistance);
+float CheckVisibility(Surface surface, float lightDistance);
 
 void main() {
 	
@@ -152,8 +152,7 @@ vec3 EvaluateDirectLight(inout Surface surface) {
 	// Check for visibilty. This is important to get an
 	// estimate of the solid angle of the light from point P
 	// on the surface.
-	if (CheckVisibility(surface, lightDistance) == false)
-		radiance = vec3(0.0);
+	radiance *= CheckVisibility(surface, lightDistance);
 	
 	return reflectance * radiance * surface.NdotL / lightPdf;
 
@@ -248,17 +247,17 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
 
 }
 
-bool CheckVisibility(Surface surface, float lightDistance) {
+float CheckVisibility(Surface surface, float lightDistance) {
 
 	if (surface.NdotL > 0.0) {
 		Ray ray;
 		ray.direction = surface.L;
 		ray.origin = surface.P + surface.N * EPSILON;
 		ray.inverseDirection = 1.0 / ray.direction;
-		return HitAny(ray, 0.0, lightDistance - 2.0 * EPSILON) == false;
+		return HitAnyShadow(ray, 0.0, lightDistance - 2.0 * EPSILON);
 	}
 	else {
-		return false;
+		return 0.0;
 	}
 
 }

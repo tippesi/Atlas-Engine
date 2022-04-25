@@ -121,10 +121,10 @@ namespace Atlas {
 
             for (auto& extension : extensions) {
                 for (auto& ifdef : extension.ifdefs)
-                    composedCode += ifdef + "\n\r";
-                composedCode += extension.extension + "\n\r";
+                    composedCode += ifdef + "\n";
+                composedCode += extension.extension + "\n";
                 for (size_t i = 0; i < extension.ifdefs.size(); i++)
-                    composedCode += "#endif\n\r";
+                    composedCode += "#endif\n";
             }
 
             for (auto& constant : constants) {
@@ -132,6 +132,7 @@ namespace Atlas {
             }
 
             composedCode.append(code);
+            composedCode.erase(std::remove(composedCode.begin(), composedCode.end(), '\r'), composedCode.end());
 
 			stageCode = composedCode;
 
@@ -296,17 +297,19 @@ namespace Atlas {
                 size_t filenameEndPosition = code.find_first_of("\">", filenamePosition);
 
                 auto includeFilename = code.substr(filenamePosition, filenameEndPosition - filenamePosition);
-
-                auto shortenedFilename = Common::Path::GetFileName(includeFilename);
+                auto includePath = directory + includeFilename;
+                
+                includePath = Loader::AssetLoader::GetFullPath(includePath);
+                includePath = Common::Path::Normalize(includePath);
 
                 auto codeBeforeInclude = code.substr(0, includePosition);
                 auto codeAfterInclude = code.substr(lineBreakPosition, code.length() - 1);
 
                 // Check for multiple includes of a file
-                if (includes.find(shortenedFilename) == includes.end()) {
+                if (includes.find(includePath) == includes.end()) {
 
-                    includes.insert(shortenedFilename);
-                    auto includeCode = ReadShaderFile(directory + includeFilename, false);
+                    includes.insert(includePath);
+                    auto includeCode = ReadShaderFile(includePath, false);
 
                     code = codeBeforeInclude + includeCode + codeAfterInclude;
 

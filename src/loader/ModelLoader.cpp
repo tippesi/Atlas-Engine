@@ -228,6 +228,11 @@ namespace Atlas {
 			aiColor3D specular;
 			float specularHardness;
 			float specularIntensity;
+			float metalness;
+			bool twoSided;
+
+			int32_t shadingModel;
+			assimpMaterial->Get(AI_MATKEY_SHADING_MODEL, shadingModel);
 
 			assimpMaterial->Get(AI_MATKEY_NAME, name);
 			assimpMaterial->Get(AI_MATKEY_SHININESS, specularHardness);
@@ -235,6 +240,8 @@ namespace Atlas {
 			assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
 			assimpMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, emissive);
 			assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specular);
+			assimpMaterial->Get(AI_MATKEY_METALLIC_FACTOR, metalness);
+			assimpMaterial->Get(AI_MATKEY_TWOSIDED, twoSided);
 
 			material.name = std::string(name.C_Str());
 
@@ -248,8 +255,10 @@ namespace Atlas {
 			material.roughness = glm::clamp(powf(1.0f / (0.5f * specularHardness + 1.0f), 0.25f), 0.0f, 1.0f);
 			material.ao = 1.0f;
 
-			specularIntensity = glm::max(specular.r, glm::max(specular.g, specular.b));
-			material.metalness = glm::clamp(specularIntensity, 0.0f, 1.0f);
+			metalness = metalness == 0.0f ? glm::max(specular.r, glm::max(specular.g, specular.b)) : metalness;
+			material.metalness = glm::clamp(metalness, 0.0f, 1.0f);
+
+			material.twoSided = twoSided;
 			
 			if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0 ||
 				assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
@@ -291,7 +300,7 @@ namespace Atlas {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_OPACITY, 0, &aiPath);
 				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
-				auto image = ImageLoader::LoadImage<uint8_t>(path, true, 1, maxTextureResolution);
+				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
 				material.opacityMap = new Texture::Texture2D(image.width, image.height, AE_R8,
 					GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
 				material.opacityMap->SetData(image.GetData());
@@ -311,14 +320,14 @@ namespace Atlas {
 				if (texture->channels == 1 && isObj) {
 					material.displacementMap = texture;
 					material.displacementMapPath = path;
-					image = ApplySobelFilter(image, 0.5f);
+					image = ApplySobelFilter(image);
 					material.normalMap = new Texture::Texture2D(image);
-					material.normalMapPath = path;
 				}
 				else {
 					material.normalMap = texture;
-					material.normalMapPath = path;
 				}
+				material.normalScale = 0.5f;
+				material.normalMapPath = path;
 			}
 			if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
 				aiString aiPath;
