@@ -59,8 +59,8 @@ initialize the engine yourself
 ## Documentation
 If you want more information have a look into the [Documentation](https://tippesi.github.io/Atlas-Engine-Doc/index.html).
 ## License
-The source code is licensed under the MIT license. The license and the copyright notices of the dependencies can be found
-in the LICENSE file. 
+The source code is licensed under the MIT license. The copyright notices of the dependencies can be found
+in the LICENSE.md file in the dependency directory. 
 >**Note:**
 >The files in the data folder (except the shaders) use a different license. 
 ## Code Example
