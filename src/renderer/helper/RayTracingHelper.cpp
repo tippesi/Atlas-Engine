@@ -88,7 +88,7 @@ namespace Atlas {
 					auto lightCount = lightBuffer.GetElementCount();
 					selectedLights.clear();
 					// Randomly select lights (only at image offset 0)
-					if (lights.size() > 0) {
+					if (lights.size() > lightCount) {
 						std::vector<float> weights;
 						weights.reserve(lights.size());
 						for (auto& light : lights) {

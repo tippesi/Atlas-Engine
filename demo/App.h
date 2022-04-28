@@ -30,11 +30,11 @@ private:
 	enum SceneSelection {
 		CORNELL = 0,
 		SPONZA,
-		BISTRO,
 		SANMIGUEL,
+		NEWSPONZA,
+		BISTRO,
 		MEDIEVAL,
-		PICAPICA,
-		NEWSPONZA
+		PICAPICA
 	};
 
 	void DisplayLoadingScreen();

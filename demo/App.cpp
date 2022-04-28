@@ -53,7 +53,7 @@ void App::LoadContent() {
 	directionalLight.AddVolumetric(10, 0.28f);
 	scene.Add(&directionalLight);
 
-	scene.ssao = new Atlas::Lighting::SSAO(32);
+	scene.ssao = new Atlas::Lighting::SSAO(16);
 
 	scene.fog = new Atlas::Lighting::Fog();
 	scene.fog->enable = true;
@@ -82,7 +82,7 @@ void App::LoadContent() {
 
 void App::UnloadContent() {
 
-
+	UnloadScene();
 
 }
 
@@ -184,8 +184,8 @@ void App::Render(float deltaTime) {
 			ImGui::Text(("Scene triangle count: " + std::to_string(triangleCount)).c_str());
 
 			{
-				const char* items[] = { "Cornell box", "Sponza", "Bistro", 
-					"San Miguel", "Medieval", "Pica Pica", "New Sponza"};
+				const char* items[] = { "Cornell box", "Sponza", "San Miguel",
+					"New Sponza", "Bistro", "Medieval", "Pica Pica" };
 				int currentItem = static_cast<int>(sceneSelection);
 				ImGui::Combo("Select scene", &currentItem, items, IM_ARRAYSIZE(items));
 
@@ -463,7 +463,10 @@ bool App::IsSceneAvailable(SceneSelection selection) {
 	case SANMIGUEL: return Atlas::Loader::AssetLoader::FileExists("sanmiguel/san-miguel-low-poly.obj");
 	case MEDIEVAL: return Atlas::Loader::AssetLoader::FileExists("medieval/scene.fbx");
 	case PICAPICA: return Atlas::Loader::AssetLoader::FileExists("pica pica/mesh/scene.gltf");
-	case NEWSPONZA: return Atlas::Loader::AssetLoader::FileExists("newsponza/NewSponza_Main_Blender_glTF.gltf");
+	case NEWSPONZA: return Atlas::Loader::AssetLoader::FileExists("newsponza/Main/NewSponza_Main_Blender_glTF.gltf") &&
+		Atlas::Loader::AssetLoader::FileExists("newsponza/PKG_D_Candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf") &&
+		Atlas::Loader::AssetLoader::FileExists("newsponza/PKG_A_Curtains/NewSponza_Curtains_glTF.gltf") && 
+		Atlas::Loader::AssetLoader::FileExists("newsponza/PKG_B_Ivy/NewSponza_IvyGrowth_glTF.gltf");
 	default: return false;
 	}
 }
@@ -556,7 +559,6 @@ bool App::LoadScene() {
 
 		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
-		mesh.cullBackFaces = false;
 		mesh.SetTransform(scale(mat4(1.0f), vec3(2.0f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
 
@@ -627,21 +629,26 @@ bool App::LoadScene() {
 		scene.fog->enable = true;
 	}
 	else if (sceneSelection == NEWSPONZA) {
-		meshes.reserve(3);
-		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/NewSponza_Main_Blender_glTF.gltf", 
+		meshes.reserve(4);
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/Main/NewSponza_Main_Blender_glTF.gltf", 
 			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 		meshes.back().invertUVs = true;
 
-		meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/NewSponza_100sOfCandles_glTF_OmniLights.gltf", 
+		meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/PKG_D_Candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", 
 			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 		meshes.back().invertUVs = true;
-		meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/NewSponza_Curtains_glTF.gltf", 
+		meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/PKG_A_Curtains/NewSponza_Curtains_glTF.gltf", 
 			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 		meshes.back().invertUVs = true;
 		meshes.back().cullBackFaces = false;
+		meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/PKG_B_Ivy/NewSponza_IvyGrowth_glTF.gltf",
+			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
+		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+		meshes.back().invertUVs = true;
+
 
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(meshes.front().data.aabb.Scale(1.05f), ivec3(20));
 

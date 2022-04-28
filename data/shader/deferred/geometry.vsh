@@ -88,9 +88,7 @@ void main() {
 	mvMatrix = mMatrix;
 #endif
 	
-	normalVS = mat3(mvMatrix) * vNormal;
-	// We want the normal always two face the camera for two sided materials
-	normalVS *= twoSided ? -dot(normalVS, positionVS) : 1.0;
+	normalVS = mat3(mvMatrix) * vNormal;	
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 normal = normalize(normalVS);

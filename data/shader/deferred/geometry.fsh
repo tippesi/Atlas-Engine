@@ -60,6 +60,7 @@ uniform vec2 jitterLast;
 uniform vec2 jitterCurrent;
 
 uniform uint materialIdx;
+uniform bool twoSided;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) { 
 #ifdef HEIGHT_MAP
@@ -145,9 +146,15 @@ void main() {
 #ifdef NORMAL_MAP
 	vec3 normalColor = texture(normalMap, texCoords).rgb;
 	normalFS = mix(geometryNormalFS, normalize(TBN * (2.0 * normalColor - 1.0)), normalScale);
+	// We want the normal always to face the camera for two sided materials
+	//geometryNormalFS *= twoSided ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
+	normalFS = dot(normalFS, geometryNormalFS) < 0.0 ? -normalFS : normalFS;
 	normalFS = 0.5 * normalFS + 0.5;
+#else
+	// We want the normal always to face the camera for two sided materials
+	//geometryNormalFS *= twoSided ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
 #endif
-
+	
 	geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
 
 #ifdef GENERATE_IMPOSTOR
