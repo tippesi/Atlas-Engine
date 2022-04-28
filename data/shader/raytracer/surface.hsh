@@ -55,7 +55,6 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
 	vec3 triangleNormal = normalize(cross(tri.v0 - tri.v1, tri.v0 - tri.v2));
 	bool flipNormal = dot(triangleNormal, ray.direction) > 0.0;
 	backfaceHit = rayMat.twoSided > 0 ? false : flipNormal;
-	normal *= flipNormal ? -1.0 : 1.0;
 	triangleNormal *= flipNormal ? -1.0 : 1.0;
 
 	vec3 geometryNormal = normal;
@@ -79,9 +78,9 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
 		// The normalize function crashes the program in case of vec3(0.0)
 		texNormal /= max(length(texNormal), 0.00001);
 		normal = mix(normal, texNormal, saturate(mat.normalScale));
-
-		//normal = dot(normal, triangleNormal) < 0.0 ? -normal : normal;
 	}
+
+	normal = dot(normal, triangleNormal) < 0.0 ? -normal : normal;
 	
 	surface.P = position;
 	surface.V = -ray.direction;

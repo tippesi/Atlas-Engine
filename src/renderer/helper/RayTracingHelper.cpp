@@ -1,4 +1,6 @@
 #include "RayTracingHelper.h"
+#include "../../common/RandomHelper.h"
+#include "../../common/Piecewise.h"
 #include "../../volume/BVH.h"
 #include "../../Profiler.h"
 
@@ -86,18 +88,21 @@ namespace Atlas {
 					auto lightCount = lightBuffer.GetElementCount();
 					selectedLights.clear();
 					// Randomly select lights (only at image offset 0)
-					if (lights.size() > lightCount) {
-						for (size_t i = 0; i < lightCount; i++) {
-							auto rnd = float(rand()) / float(RAND_MAX);
+					if (lights.size() > 0) {
+						std::vector<float> weights;
+						weights.reserve(lights.size());
+						for (auto& light : lights) {
+							weights.push_back(light.data1.y);
+						}
 
-							auto sum = 0.0f;
-							for (auto& light : lights) {
-								sum += light.data1.y;
-								if (rnd < sum) {
-									selectedLights.push_back(light);
-									break;
-								}
-							}
+						auto piecewiseDistribution = Common::Piecewise1D(weights);
+
+						for (size_t i = 0; i < lightCount; i++) {							
+							float pdf = 0.0f;
+							int32_t offset = 0;
+							piecewiseDistribution.Sample(pdf, offset);
+
+							selectedLights.push_back(lights[offset]);
 						}
 
 						for (auto& light : selectedLights) {
@@ -164,17 +169,20 @@ namespace Atlas {
 					selectedLights.clear();
 					// Randomly select lights (only at image offset 0)
 					if (lights.size() > lightCount) {
-						for (size_t i = 0; i < lightCount; i++) {
-							auto rnd = float(rand()) / float(RAND_MAX);
+						std::vector<float> weights;
+						weights.reserve(lights.size());
+						for (auto& light : lights) {
+							weights.push_back(light.data1.y);
+						}
 
-							auto sum = 0.0f;
-							for (auto& light : lights) {
-								sum += light.data1.y;
-								if (rnd < sum) {
-									selectedLights.push_back(light);
-									break;
-								}
-							}
+						auto piecewiseDistribution = Common::Piecewise1D(weights);
+
+						for (size_t i = 0; i < lightCount; i++) {
+							float pdf = 0.0f;
+							int32_t offset = 0;
+							piecewiseDistribution.Sample(pdf, offset);
+
+							selectedLights.push_back(lights[offset]);
 						}
 
 						for (auto& light : selectedLights) {
@@ -412,7 +420,7 @@ namespace Atlas {
 				}
 
 				// Calculate min weight and adjust lights based on it
-				auto minWeight = 0.02f * maxWeight;
+				auto minWeight = 0.005f * maxWeight;
 				// Also calculate the total weight
 				auto totalWeight = 0.0f;
 

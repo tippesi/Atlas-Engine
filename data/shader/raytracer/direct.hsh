@@ -16,10 +16,11 @@ Light GetLight(Surface surface, float seed0, float seed1, out float lightPdf) {
     // Weight the lights in the light array based on their approximated
 	// contribution to the shading point. Note that we can use a minimum
 	// weight for each light to control the variance.
-    Light light;
+    Light selectedLight;
 	float totalWeight = 0.0;
+	lightPdf = 1.0;
 	for (int i = 0; i < lightCount; i++) {
-		light = UnpackLight(lights[i]);
+		Light light = UnpackLight(lights[i]);
 		float weight = 1.0;
 		if (light.type == uint(TRIANGLE_LIGHT)) {
 			vec3 pointToLight = light.P - surface.P;
@@ -36,39 +37,18 @@ Light GetLight(Surface surface, float seed0, float seed1, out float lightPdf) {
 		}
 		weight = clamp(weight, 0.0000001, 1.0);
 		totalWeight += weight;
-	}
-	
-	float rnd = random(seed0, seed1) * totalWeight;
 
-	float sum = 0.0;
+		float rnd = random(seed0, seed1);
 
-	// We can now find a light based on the random number. Lights
-	// with a higher weight will be evaluated more often. To reduce
-	// register pressure we recalculate the weights instead of storing
-	// them in an array in the first loop.
-	lightPdf = 1.0;
-	for (int i = 0; i < lightCount && rnd > sum; i++) {
-		light = UnpackLight(lights[i]);
-		if (light.type == uint(TRIANGLE_LIGHT)) {		
-			vec3 pointToLight = light.P - surface.P;
-			float sqrDistance = dot(pointToLight, pointToLight);
-			float lightDistance = sqrt(sqrDistance);
-
-			vec3 L = normalize(pointToLight);
-			float NdotL = max(dot(light.N, -L), 0.0);
-
-			lightPdf = light.brightness * light.area * NdotL / sqrDistance;
+		if (rnd < weight / totalWeight) {
+			lightPdf = weight;
+			selectedLight = light;
 		}
-		else if (light.type == uint(DIRECTIONAL_LIGHT)) {
-			lightPdf = light.brightness;
-		}
-		lightPdf = clamp(lightPdf, 0.0000001, 1.0);
-		sum += lightPdf;
 	}
 	
 	// Calculate the new probability for the selected light
-	lightPdf = lightPdf / totalWeight * light.pdf;
-    return light;
+	lightPdf = lightPdf / totalWeight * selectedLight.pdf;
+    return selectedLight;
 }
 
 void SampleLight(Light light, inout Surface surface, float seed0, float seed1, 
