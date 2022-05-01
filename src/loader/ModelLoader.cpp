@@ -133,7 +133,7 @@ namespace Atlas {
 				auto& subData = meshData.subData[i];
 
 				LoadMaterial(scene->mMaterials[i], material,
-                             directoryPath, isObj, maxTextureResolution);
+					directoryPath, isObj, hasTangents, maxTextureResolution);
 
 				subData.material = &material;
 				subData.indicesOffset = usedFaces * 3;
@@ -217,7 +217,7 @@ namespace Atlas {
 		}
 
 		void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, Material& material,
-			std::string directory, bool isObj, int32_t maxTextureResolution) {
+			std::string directory, bool isObj, bool hasTangents, int32_t maxTextureResolution) {
 
 			bool roughnessMetalnessTexture = false;
 
@@ -306,8 +306,9 @@ namespace Atlas {
 				material.opacityMap->SetData(image.GetData());
 				material.opacityMapPath = path;
 			}
-			if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0 ||
-				(assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && isObj)) {
+			if ((assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0 ||
+				(assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && isObj))
+				&& hasTangents) {
 				aiString aiPath;
 				if (isObj)
 					assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
@@ -368,7 +369,7 @@ namespace Atlas {
 				material.metalnessMap = texture;
 				material.metalnessMapPath = path;
 			}
-			if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && !isObj) {
+			if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && !isObj && hasTangents) {
 				aiString aiPath;
 				assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
 				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
@@ -376,7 +377,7 @@ namespace Atlas {
 				material.displacementMap = new Texture::Texture2D(image, true, true);
 				material.displacementMapPath = path;
 			}
-
+			
 			// Probably foliage
 			if (material.HasOpacityMap() ||
 				material.opacity < 1.0f) {

@@ -23,7 +23,7 @@ namespace Atlas {
 
 		private:
 			static void LoadMaterial(aiMaterial* assimpMaterial, Material& material,
-				std::string directory, bool isObj, int32_t maxTextureResolution);
+				std::string directory, bool isObj, bool hasTangents, int32_t maxTextureResolution);
 
 			//static void ProcessNode(aiNode node, )
 
