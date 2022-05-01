@@ -514,7 +514,7 @@ bool App::LoadScene() {
 		mesh.SetTransform(scale(mat4(1.0f), vec3(.05f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(0.90f), ivec3(20));
 
-		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
+		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
 		// Other scene related settings apart from the mesh
 		directionalLight.intensity = 100.0f;
@@ -538,7 +538,7 @@ bool App::LoadScene() {
 		mesh.SetTransform(scale(mat4(1.0f), vec3(.015f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(0.90f), ivec3(20));
 
-		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
+		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
 		// Other scene related settings apart from the mesh
 		directionalLight.intensity = 100.0f;
@@ -562,7 +562,7 @@ bool App::LoadScene() {
 		mesh.SetTransform(scale(mat4(1.0f), vec3(2.0f)));
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
 
-		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
+		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
 		// Other scene related settings apart from the mesh
 		directionalLight.intensity = 100.0f;
@@ -590,7 +590,7 @@ bool App::LoadScene() {
 
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
 
-		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
+		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
 		// Other scene related settings apart from the mesh
 		directionalLight.intensity = 10.0f;
@@ -615,7 +615,7 @@ bool App::LoadScene() {
 
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
 
-		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
+		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
 		// Other scene related settings apart from the mesh
 		directionalLight.intensity = 10.0f;
@@ -634,7 +634,6 @@ bool App::LoadScene() {
 			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 		meshes.back().invertUVs = true;
-
 		meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/PKG_D_Candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", 
 			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
@@ -649,10 +648,9 @@ bool App::LoadScene() {
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 		meshes.back().invertUVs = true;
 
-
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(meshes.front().data.aabb.Scale(1.05f), ivec3(20));
 
-		sky = Atlas::Texture::Cubemap("environment.hdr", 1024);
+		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
 		// Other scene related settings apart from the mesh
 		directionalLight.intensity = 100.0f;

@@ -70,6 +70,12 @@ namespace Atlas {
             AABB aabb;
             std::vector<Ref> refs;
 
+            static uint32_t maxDepth;
+            static uint32_t minTriangles;
+            static uint32_t maxTriangles;
+            static uint32_t spatialSplitCount;
+            static float totalSurfaceArea;
+
         private:
             struct Bin {
             public:
@@ -102,6 +108,10 @@ namespace Atlas {
 
             void SplitReference(const BVHTriangle triangle, Ref currentRef,
                 Ref& leftRef, Ref& rightRef, const float planePos, const int32_t axis);
+
+            Split PerformMedianSplit(std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs);
+
+            void CreateLeaf();
 
             static AABB InitialAABB();
 

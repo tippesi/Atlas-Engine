@@ -8,7 +8,15 @@ namespace Atlas {
 
     namespace Volume {
 
+        uint32_t BVHBuilder::maxDepth = 0;
+        uint32_t BVHBuilder::maxTriangles = 0;
+        uint32_t BVHBuilder::minTriangles = 10000;
+        uint32_t BVHBuilder::spatialSplitCount = 0;
+        float BVHBuilder::totalSurfaceArea = 0.0f;
+
         BVH::BVH(std::vector<AABB>& aabbs, std::vector<BVHTriangle>& data) {
+
+            auto start = clock();
 
             if (aabbs.size() != data.size())
                 return;
@@ -194,6 +202,8 @@ namespace Atlas {
             // Calculate cost for current node
             nodeCost = float(refs.size()) * this->aabb.GetSurfaceArea();
 
+            totalSurfaceArea += this->aabb.GetSurfaceArea();
+
         }
 
         BVHBuilder::~BVHBuilder() {
@@ -205,8 +215,10 @@ namespace Atlas {
 
         void BVHBuilder::Build(const std::vector<BVHTriangle>& data) {
 
+            const size_t refCount = 4;
             // Create leaf node
-            if (refs.size() <= 4 || depth >= 32) {
+            if (refs.size() <= refCount || depth >= 32) {
+                CreateLeaf();
                 return;
             }
 
@@ -222,12 +234,6 @@ namespace Atlas {
                 }
             }
 
-            // If we haven't found a cost improvement we create a leaf node
-            if ((objectSplit.axis < 0 || objectSplit.cost >= nodeCost) &&
-                (spatialSplit.axis < 0 || spatialSplit.cost >= nodeCost)) {
-                return;
-            }
-
             std::vector<Ref> leftRefs;
             std::vector<Ref> rightRefs;
 
@@ -235,23 +241,32 @@ namespace Atlas {
             rightRefs.reserve(refs.size() / 2);
 
             Split split;
-            if (spatialSplit.cost < objectSplit.cost) {
-                PerformSpatialSplit(data, rightRefs, leftRefs, spatialSplit);
-                split = spatialSplit;
+            // If we haven't found a cost improvement we create a leaf node
+            if ((objectSplit.axis < 0 || objectSplit.cost >= nodeCost) &&
+                (spatialSplit.axis < 0 || spatialSplit.cost >= nodeCost)) {
+                if (refs.size() >= 2 * refCount) {
+                    split = PerformMedianSplit(rightRefs, leftRefs);
+                }
+                else {
+                    CreateLeaf();
+                    return;
+                }
             }
+            else {
+                if (spatialSplit.cost < objectSplit.cost) {
+                    PerformSpatialSplit(data, rightRefs, leftRefs, spatialSplit);
+                    split = spatialSplit;
+                }
 
-            if (objectSplit.cost <= spatialSplit.cost ||
-                !leftRefs.size() || !rightRefs.size()) {
-                leftRefs.clear();
-                rightRefs.clear();                
-                PerformObjectSplit(rightRefs, leftRefs, objectSplit);
-                split = objectSplit;
-            }
-
-            // This might still happen after an object split
-            // due to floating point inaccuracies
-            if (!leftRefs.size() || !rightRefs.size()) {
-                return;
+                if (objectSplit.cost <= spatialSplit.cost) {
+                    leftRefs.clear();
+                    rightRefs.clear();
+                    PerformObjectSplit(rightRefs, leftRefs, objectSplit);
+                    split = objectSplit;
+                }
+                else {
+                    spatialSplitCount++;
+                }
             }
 
             refs.clear();
@@ -296,11 +311,11 @@ namespace Atlas {
 
         }
 
-        
+
         BVHBuilder::Split BVHBuilder::FindObjectSplit() {
 
             Split split;
-            const auto depthBinCount = binCount / (depth + 1);
+            const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
 
             std::vector<Bin> bins(depthBinCount);
             std::vector<AABB> rightAABBs(bins.size());
@@ -382,11 +397,11 @@ namespace Atlas {
             return split;
 
         }
- 
+
         void BVHBuilder::PerformObjectSplit(std::vector<Ref>& rightRefs,
             std::vector<Ref>& leftRefs, Split& split) {
 
-            const auto depthBinCount = binCount / (depth + 1);
+            const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
 
             auto start = aabb.min[split.axis];
             auto stop = aabb.max[split.axis];
@@ -414,7 +429,7 @@ namespace Atlas {
         BVHBuilder::Split BVHBuilder::FindSpatialSplit(const std::vector<BVHTriangle>& data) {
 
             Split split;
-            const auto depthBinCount = binCount / (depth + 1);
+            const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
 
             std::vector<Bin> bins(depthBinCount);
             std::vector<AABB> rightAABBs(bins.size());
@@ -436,7 +451,7 @@ namespace Atlas {
                 auto stop = aabb.max[i];
 
                 // If the dimension of this axis is to small continue
-                if (fabs(stop - start) < 1e-4)
+                if (fabsf(stop - start) < 1e-3f)
                     continue;
 
                 auto binSize = (stop - start) / float(depthBinCount);
@@ -482,8 +497,8 @@ namespace Atlas {
                 }
 
                 AABB leftAABB = InitialAABB();
-                uint32_t primitivesRight = 0;
-                uint32_t primitivesLeft = uint32_t(refs.size());
+                uint32_t primitivesRight = uint32_t(refs.size());
+                uint32_t primitivesLeft = 0;
 
                 // Sweep from left to right and attempt to
                 // find cost improvement
@@ -494,7 +509,6 @@ namespace Atlas {
                     primitivesRight -= bins[j - 1].exit;
 
                     const auto rightAABB = rightAABBs[j - 1];
-                    const auto primitivesRight = uint32_t(refs.size()) - primitivesLeft;
 
                     if (!primitivesLeft || !primitivesRight) continue;
 
@@ -526,7 +540,7 @@ namespace Atlas {
         void BVHBuilder::PerformSpatialSplit(const std::vector<BVHTriangle>& data,
             std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs, Split& split) {
 
-            const auto depthBinCount = binCount / (depth + 1);
+            const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
 
             auto start = aabb.min[split.axis];
             auto stop = aabb.max[split.axis];
@@ -599,6 +613,45 @@ namespace Atlas {
 
             leftRef.aabb.Intersect(currentRef.aabb);
             rightRef.aabb.Intersect(currentRef.aabb);
+
+        }
+
+        BVHBuilder::Split BVHBuilder::PerformMedianSplit(std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs) {
+
+            Split split;
+
+            auto dimensions = aabb.max - aabb.min;
+            auto axis = dimensions.x > dimensions.y ? dimensions.x > dimensions.z ? 0 : 2 :
+                dimensions.y > dimensions.z ? 1 : 2;
+            std::sort(refs.begin(), refs.end(), [&](const Ref& ref0, const Ref& ref1) {
+                auto center0 = ref0.aabb.max[axis] - ref0.aabb.min[axis];
+                auto center1 = ref1.aabb.max[axis] - ref1.aabb.min[axis];
+                return center0 < center1;
+                });
+
+            auto splitIdx = uint32_t(refs.size() / 2);
+
+            for (uint32_t i = 0; i < splitIdx; i++) {
+                const auto& ref = refs[i];
+                split.leftAABB.Grow(ref.aabb);
+                leftRefs.push_back(ref);
+            }
+
+            for (uint32_t i = splitIdx; i < uint32_t(refs.size()); i++) {
+                const auto& ref = refs[i];
+                split.rightAABB.Grow(ref.aabb);
+                rightRefs.push_back(ref);
+            }
+
+            return split;
+
+        }
+
+        void BVHBuilder::CreateLeaf() {
+
+            maxDepth = std::max(depth, maxDepth);
+            minTriangles = std::min(uint32_t(refs.size()), minTriangles);
+            maxTriangles = std::max(uint32_t(refs.size()), maxTriangles);
 
         }
 
