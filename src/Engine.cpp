@@ -22,7 +22,6 @@ namespace Atlas {
 
 		defaultWindow = SDL_CreateWindow("", 0, 0, 1, 1, AE_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
 
-#ifdef AE_API_GL
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -30,16 +29,7 @@ namespace Atlas {
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
 		SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
-#elif AE_API_GLES
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    
-        SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    
-        SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
-#endif
+
 #ifdef AE_SHOW_API_DEBUG_LOG
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 #endif
@@ -47,19 +37,10 @@ namespace Atlas {
 		auto setupContext = SDL_GL_CreateContext(defaultWindow);
 
 #if defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
-#ifdef AE_API_GL
 		if (!gladLoadGL()) {
 			Log::Error("Error initializing OpenGL");
 			return nullptr;
 		}
-#elif AE_API_GLES
-        if (SDL_GL_LoadLibrary(nullptr) != 0) {
-			Log::Error("Error initializing OpenGL ES");
-			return nullptr;
-        }
-        gladLoadGLES2Loader(SDL_GL_GetProcAddress);
-        SDL_GL_UnloadLibrary();
-#endif
 #endif
 
 		SDL_GL_DeleteContext(setupContext);

@@ -15,7 +15,6 @@
 This is a cross platform toy engine that is available on Linux and Windows.
 ## Requirements
 - OpenGL 4.3
-- OpenGL ES 3.2
 - C++17 compatible compiler
 ## Set up
 Before you start compiling make sure to download the dependencies into **./dependencies**. You can either do
