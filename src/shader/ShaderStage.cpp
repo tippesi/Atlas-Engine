@@ -103,7 +103,7 @@ namespace Atlas {
 
             std::string composedCode;
 
-            composedCode.append("#version 430\n\n#define AE_API_GL\n");
+            composedCode.append("#version 460\n\n#define AE_API_GL\n");
 
             if (Extensions::IsSupported("GL_EXT_texture_shadow_lod")) {
                 composedCode.append("#define AE_TEXTURE_SHADOW_LOD\n");

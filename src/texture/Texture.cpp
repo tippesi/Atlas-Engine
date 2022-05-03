@@ -170,21 +170,16 @@ namespace Atlas {
 
         int32_t Texture::GetMaxAnisotropyLevel() {
 
-            if (Extensions::IsSupported("GL_EXT_texture_filter_anisotropic")) {
+            float maxAnisotropy;
+            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
 
-                float maxAnisotropy;
-                glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+            if (!anisotropyLevel)
+                anisotropyLevel = (int32_t)maxAnisotropy;
+            else
+                anisotropyLevel = glm::min(anisotropyLevel, (int32_t)maxAnisotropy);
 
-                if (!anisotropyLevel)
-                    anisotropyLevel = (int32_t)maxAnisotropy;
-                else
-                    anisotropyLevel = glm::min(anisotropyLevel, (int32_t)maxAnisotropy);
+            return int32_t(maxAnisotropy);
 
-                return (int32_t)maxAnisotropy;
-
-            }
-
-            return 0;
 
         }
 
