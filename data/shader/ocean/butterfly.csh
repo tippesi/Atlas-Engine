@@ -3,11 +3,7 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
-#ifdef AE_API_GLES
 layout (binding = 0, rg32f) readonly uniform image2D twiddleIndicesTexture;
-#else
-layout (binding = 0, rg32f) readonly uniform image2D twiddleIndicesTexture;
-#endif
 
 layout (binding = 1, rgba32f) readonly uniform image2D pingpong0;
 layout (binding = 2, rgba32f) writeonly uniform image2D pingpong1;

@@ -40,15 +40,9 @@ namespace Atlas {
 
 			h0K = Texture::Texture2D(N, N, AE_RG32F);
 
-#ifdef AE_API_GLES
-			twiddleIndices = Texture::Texture2D((int32_t)log2((float)N), N, AE_RGBA32F);
-			hTDy = Texture::Texture2D(N, N, AE_RGBA32F);
-			hTDyPingpong = Texture::Texture2D(N, N, AE_RGBA32F);
-#else
 			twiddleIndices = Texture::Texture2D((int32_t)log2((float)N), N, AE_RG32F);
 			hTD = Texture::Texture2D(N, N, AE_RGBA32F);
 			hTDPingpong = Texture::Texture2D(N, N, AE_RGBA32F);
-#endif
 
 			h0.AddStage(AE_COMPUTE_STAGE, "ocean/h0.csh");
 			ht.AddStage(AE_COMPUTE_STAGE, "ocean/ht.csh");

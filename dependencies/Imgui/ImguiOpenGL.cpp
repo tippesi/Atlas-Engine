@@ -78,7 +78,7 @@
 #include "TargetConditionals.h"
 #endif
 
-#if !defined(IMGUI_IMPL_OPENGL_ES2) && !defined(IMGUI_IMPL_OPENGL_ES3) && defined(AE_API_GLES)
+#if !defined(IMGUI_IMPL_OPENGL_ES2) && !defined(IMGUI_IMPL_OPENGL_ES3)
 #define IMGUI_IMPL_OPENGL_ES3
 #endif
 

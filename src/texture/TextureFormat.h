@@ -8,7 +8,6 @@
 #include "../TypeFormat.h"
 
 // Unsized texture formats
-#if defined(AE_API_GLES) || defined(AE_API_GL)
 #define AE_R GL_RED
 #define AE_RG GL_RG
 #define AE_RGB GL_RGB
@@ -18,10 +17,8 @@
 #define AE_RGB_INT GL_RGB_INTEGER
 #define AE_RGBA_INT GL_RGBA_INTEGER
 #define AE_DEPTH GL_DEPTH_COMPONENT
-#endif
 
 // Sized texture formats
-#if defined(AE_API_GLES) || defined(AE_API_GL)
 #define AE_R8 GL_R8
 #define AE_R8I GL_R8I
 #define AE_R8UI GL_R8UI
@@ -64,7 +61,6 @@
 #define AE_DEPTH16 GL_DEPTH_COMPONENT16
 #define AE_DEPTH24 GL_DEPTH_COMPONENT24
 #define AE_DEPTH32F GL_DEPTH_COMPONENT32F
-#endif
 
 namespace Atlas {
 

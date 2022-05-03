@@ -26,15 +26,7 @@ void main() {
 	
 	int glyphIndex = int(characterInfo.z);
 	
-#ifdef AE_API_GLES
-	GlyphInfo glyph = glyphs1[glyphIndex];
-	if (glyphIndex > 1023) {
-		glyphIndex -= 1024;
-		glyph = glyphs2[glyphIndex];
-	}
-#else
 	GlyphInfo glyph = glyphIndex > 1023 ? glyphs2[glyphIndex - 1024] : glyphs1[glyphIndex];
-#endif
 	
 	vec2 position = (vPosition + 1.0) / 2.0;
 	fScreenPosition = position * glyph.size * textScale + characterInfo.xy * textScale + textOffset;

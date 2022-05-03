@@ -268,12 +268,6 @@ namespace Atlas {
              */
 			virtual size_t GetSize();
 
-			/**
-             * Returns whether immutable storage and therefore persistent mapping is available.
-             * @return True if immutable storage is supported, false otherwise
-             */
-			static bool IsImmutableStorageSupported();
-
 		protected:
 			virtual void DeepCopy(const Buffer& that);
 

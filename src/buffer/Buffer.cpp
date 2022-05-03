@@ -30,8 +30,7 @@ namespace Atlas {
                 bufferingCount = 1;
             }
 
-			//immutableStorageSupported = false;
-            immutable = (flags & AE_BUFFER_IMMUTABLE) && IsImmutableStorageSupported();
+            immutable = (flags & AE_BUFFER_IMMUTABLE);
 
             // Configure mapping and storage flags.
             mapFlags |= ((flags & AE_BUFFER_MAP_READ) ? GL_MAP_READ_BIT : 0);
@@ -235,22 +234,15 @@ namespace Atlas {
 
 		void Buffer::InvalidateData() {
 
-#ifdef AE_API_GL
 			glInvalidateBufferData(ID);
-#endif
 
 		}
 
 		void Buffer::ClearData(int32_t sizedFormat, int32_t type, void* data) {
 
-#ifdef AE_API_GL
 			glClearBufferData(this->type, sizedFormat,
 				Texture::TextureFormat::GetBaseFormat(sizedFormat),
 				type, data);
-#else
-			if (TypeFormat::GetSize(type) == elementSize)
-				SetData(data, 0, 1);
-#endif
 
 		}
 
@@ -292,18 +284,6 @@ namespace Atlas {
         size_t Buffer::GetSize() {
 
             return sizeInBytes;
-
-        }
-
-        bool Buffer::IsImmutableStorageSupported() {
-
-#ifndef AE_OS_ANDROID
-            return Extensions::IsSupported("GL_ARB_buffer_storage") ||
-                Extensions::IsSupported("GL_EXT_buffer_storage");
-#else
-            return false;
-#endif
-
 
         }
 
