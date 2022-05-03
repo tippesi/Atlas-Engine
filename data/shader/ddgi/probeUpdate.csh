@@ -29,7 +29,7 @@ layout(std430, binding = 0) buffer RayHits {
 
 const uint sharedSize = 64;
 
-layout (binding = 0, rgba16f) writeonly uniform image2DArray irradiance;
+layout (binding = 0, rgb10_a2) writeonly uniform image2DArray irradiance;
 layout (binding = 1, rg16f) writeonly uniform image2DArray moment;
 
 uniform int irrProbeRes;

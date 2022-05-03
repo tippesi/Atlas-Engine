@@ -208,8 +208,13 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 	}
 
 	if (sumWeight == 0.0) return vec4(0.0, 0.0, 0.0, 0.0);
-	return vec4(mix(sqr(sumIrradianceCheb / sumWeightCheb),
+	vec4 irradiance = vec4(mix(sqr(sumIrradianceCheb / sumWeightCheb),
 		sqr(sumIrradiance / sumWeight), 1.0), 0.0);
+
+	// Due to the texture format we loose a bit of energy
+	irradiance *= 1.0989;
+
+	return irradiance;
 
 }
 
