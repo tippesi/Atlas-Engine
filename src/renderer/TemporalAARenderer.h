@@ -21,7 +21,7 @@ namespace Atlas {
 
 			Buffer::VertexArray vertexArray;
 
-			mat4 pvMatrixPrev;
+			mat4 pvMatrixPrev = mat4(1.0f);
 
 		};
 

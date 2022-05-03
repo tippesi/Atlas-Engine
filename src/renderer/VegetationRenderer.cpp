@@ -11,7 +11,7 @@ namespace Atlas {
 			shader.AddStage(AE_FRAGMENT_STAGE, "vegetation/vegetation.fsh");
 
 			shader.AddMacro("BASE_COLOR_MAP");
-			shader.AddMacro("OPACITY_MAP");
+			//shader.AddMacro("OPACITY_MAP");
 			shader.Compile();
 
 			depthShader.AddStage(AE_VERTEX_STAGE, "vegetation/depth.vsh");
@@ -37,17 +37,20 @@ namespace Atlas {
 
 			auto commandBuffer = helper.GetCommandBuffer();
 			commandBuffer->Bind();
-			/*
+
+			auto time = Clock::Get();
+			auto deltaTime = Clock::GetDelta();
+			
+			// Remember to disable the alpha test for the main path when using the prepass
 			auto depthTexture = target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT);
 			framebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, depthTexture);
 			framebuffer.Bind();
-			DepthPrepass(vegetation, meshes, camera);
+			DepthPrepass(vegetation, meshes, camera, time, deltaTime);
 
 			target->geometryFramebuffer.Bind();
 
 			glDepthMask(GL_FALSE);
 			glDepthFunc(GL_EQUAL);
-			*/
 
 			shader.Bind();
 
@@ -58,8 +61,8 @@ namespace Atlas {
 			shader.GetUniform("jitterLast")->SetValue(camera->GetLastJitter());
 			shader.GetUniform("jitterCurrent")->SetValue(camera->GetJitter());
 
-			shader.GetUniform("time")->SetValue(Clock::Get());
-			shader.GetUniform("deltaTime")->SetValue(Clock::GetDelta());
+			shader.GetUniform("time")->SetValue(time);
+			shader.GetUniform("deltaTime")->SetValue(deltaTime);
 
 			glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 
@@ -108,7 +111,8 @@ namespace Atlas {
 
 		}
 
-		void VegetationRenderer::DepthPrepass(Scene::Vegetation& vegetation, std::vector<Mesh::VegetationMesh*>& meshes, Camera* camera) {
+		void VegetationRenderer::DepthPrepass(Scene::Vegetation& vegetation, std::vector<Mesh::VegetationMesh*>& meshes, 
+			Camera* camera, float time, float deltaTime) {
 
 			glColorMask(false, false, false, false);
 
@@ -117,8 +121,8 @@ namespace Atlas {
 			depthShader.GetUniform("vMatrix")->SetValue(camera->viewMatrix);
 			depthShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
 
-			depthShader.GetUniform("time")->SetValue(Clock::Get());
-			depthShader.GetUniform("deltaTime")->SetValue(Clock::GetDelta());
+			depthShader.GetUniform("time")->SetValue(time);
+			depthShader.GetUniform("deltaTime")->SetValue(deltaTime);
 
 			glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 

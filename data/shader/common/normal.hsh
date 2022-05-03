@@ -1,0 +1,7 @@
+vec3 CalculateFaceNormal(vec3 position) {
+
+    vec3 xTangent = dFdx(position);
+    vec3 yTangent = dFdy(position);
+    return normalize(cross(xTangent, yTangent));
+
+}

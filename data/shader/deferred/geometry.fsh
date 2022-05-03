@@ -147,12 +147,11 @@ void main() {
 	vec3 normalColor = texture(normalMap, texCoords).rgb;
 	normalFS = mix(geometryNormalFS, normalize(TBN * (2.0 * normalColor - 1.0)), normalScale);
 	// We want the normal always to face the camera for two sided materials
-	//geometryNormalFS *= twoSided ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
-	normalFS = dot(normalFS, geometryNormalFS) < 0.0 ? -normalFS : normalFS;
+	geometryNormalFS *= twoSided ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
 	normalFS = 0.5 * normalFS + 0.5;
 #else
 	// We want the normal always to face the camera for two sided materials
-	//geometryNormalFS *= twoSided ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
+	geometryNormalFS *= twoSided ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
 #endif
 	
 	geometryNormalFS = 0.5 * geometryNormalFS + 0.5;

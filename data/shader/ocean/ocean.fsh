@@ -2,6 +2,7 @@
 
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
+#include <../common/stencil.hsh>
 #include <../structures>
 #include <../shadow.hsh>
 
@@ -12,6 +13,7 @@
 
 layout (location = 0) out vec3 color;
 layout (location = 1) out vec2 velocity;
+layout (location = 2) out uint stencil;
 
 layout(binding = 1) uniform sampler2D normalMap;
 layout (binding = 2) uniform sampler2D foamTexture;
@@ -94,7 +96,7 @@ void main() {
 	}
 	
 	// Scale ripples based on actual (not view) depth of water
-	float rippleScaling = clamp(1.0 - shoreScaling, 0.1, 0.5);
+	float rippleScaling = clamp(1.0 - shoreScaling, 0.1, 0.2);
 	norm = normalize(mix(fNormal, norm, rippleScaling));
 
 	vec3 eyeDir = normalize(fModelCoord - cameraLocation);
@@ -161,7 +163,6 @@ void main() {
 	reflectionColor *= 1.0 - 1.0 * foam;
 
 	// Mix relection and refraction and add sun spot
-	//color = vec3(fresnel);
 	color = mix(refractionColor, reflectionColor, fresnel);
 	color += specularIntensity * fresnel * specularFactor * light.color;
 	color += scatterColor * scatterFactor;
@@ -187,5 +188,9 @@ void main() {
 	ndcC -= jitterCurrent;
 
 	velocity = (ndcL - ndcC) * 0.5;
+
+	StencilFeatures features;
+	features.responsivePixel = true;
+	stencil = EncodeStencilFeatures(features);
 
 }

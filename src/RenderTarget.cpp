@@ -13,6 +13,9 @@ namespace Atlas {
 		swapVelocityTexture = Texture::Texture2D(width, height, AE_RG16F,
 			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
 
+		stencilTexture = Texture::Texture2D(width, height, AE_R8UI,
+			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+
 		geometryFramebuffer.Resize(width, height);
 
 		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
@@ -21,12 +24,14 @@ namespace Atlas {
 		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT3, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT4, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST);
 		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &velocityTexture);
+		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT6, &stencilTexture);
 		geometryFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
 
 		lightingFramebuffer.Resize(width, height);
 
 		lightingFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, &velocityTexture);
+		lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT2, &stencilTexture);
 		lightingFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
 
 		postProcessFramebuffer.Resize(width, height);
@@ -66,6 +71,7 @@ namespace Atlas {
 
 		geometryFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
 		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &velocityTexture);
+		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT6, &stencilTexture);
 
 		postProcessFramebuffer.Resize(width, height);
 

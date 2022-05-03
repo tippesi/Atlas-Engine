@@ -30,6 +30,7 @@ namespace Atlas {
 			target->GetVelocity()->Bind(GL_TEXTURE2);
 			target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
 			target->GetLastVelocity()->Bind(GL_TEXTURE4);
+			target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE5);
 
 			shader.GetUniform("invResolution")->SetValue(1.0f / vec2((float)target->GetWidth(), (float)target->GetHeight()));
 			shader.GetUniform("resolution")->SetValue(vec2((float)target->GetWidth(), (float)target->GetHeight()));

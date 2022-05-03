@@ -106,6 +106,7 @@ namespace Atlas {
 	private:
 		Texture::Texture2D depthTexture;
 		Texture::Texture2D normalTexture;
+		Texture::Texture2D stencilTexture;
 
 		Texture::Texture2D depthDownsampled2xTexture;
 		Texture::Texture2D depthDownsampled4xTexture;

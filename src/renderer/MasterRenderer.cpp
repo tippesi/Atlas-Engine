@@ -136,8 +136,6 @@ namespace Atlas {
 			
 			glEnable(GL_CULL_FACE);
 
-			//glCullFace(GL_FRONT);
-
 			terrainShadowRenderer.Render(viewport, target, camera, scene);
 
 			glCullFace(GL_BACK);
@@ -154,10 +152,11 @@ namespace Atlas {
 			target->geometryFramebuffer.Bind(true);
 			target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
 				GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,
-				GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 });
+				GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6 });
 
 			glEnable(GL_CULL_FACE);
 
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 			opaqueRenderer.Render(viewport, target, camera, scene, materialMap);
@@ -199,7 +198,7 @@ namespace Atlas {
 			glEnable(GL_DEPTH_TEST);
 
 			target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-				GL_COLOR_ATTACHMENT1 });
+				GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
 
 			if (batch) {
 				glDepthMask(GL_TRUE);

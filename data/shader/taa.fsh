@@ -1,13 +1,15 @@
 #include <common/utility.hsh>
 #include <common/PI.hsh>
+#include <common/stencil.hsh>
 
-layout(location = 0) out vec4 result;
+layout(location = 0) out vec3 result;
 
 layout(binding = 0) uniform sampler2D historyTexture;
 layout(binding = 1) uniform sampler2D currentTexture;
 layout(binding = 2) uniform sampler2D velocityTexture;
 layout(binding = 3) uniform sampler2D depthTexture;
 layout(binding = 4) uniform sampler2D lastVelocityTexture;
+layout(binding = 5) uniform usampler2D stencilTexture;
 
 in vec2 fTexCoord;
 
@@ -16,11 +18,8 @@ uniform vec2 resolution;
 
 uniform vec2 jitter;
 
-uniform float clipCorrectionThreshold = 0.0001;
-uniform float clipCorrectionFactor = 0.1;
-
 uniform float minVelocityBlend = 0.05;
-uniform float maxVelocityBlend = 0.7;
+uniform float maxVelocityBlend = 0.8;
 
 #define TAA_YCOCG
 //#define TAA_CLIP // Use clip instead of clamping for better ghosting prevention, introduces more flickering
@@ -312,20 +311,22 @@ void main() {
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
 
-    float range = 1.4;
-    range += mix(0.6, 2.7, saturate(1.0 - 1000.0 * length(velocity)));
-    neighbourhoodMin = average - range * (average - neighbourhoodMin);
-    neighbourhoodMax = average + range * (neighbourhoodMax - average);
-
     // Maybe we might want to filter the current input pixel
     vec4 history = SampleHistory(uv);
-    float clipCorrection = saturate(texelFetch(historyTexture, pixel, 0).a);
 
     vec3 historyColor = history.rgb;
     vec3 currentColor = SampleCurrent();
 
     float lumaHistory = Luma(historyColor);
     float lumaCurrent = Luma(currentColor);
+
+    float historyContrast = saturate(abs(lumaCurrent - lumaHistory) / max3(vec3(0.2, lumaCurrent, lumaHistory)));
+    float range = 1.4;
+    float localAntiFlicker = mix(0.6, 3.0, saturate(1.0 - 1000.0 * length(velocity)));
+    range += mix(0.0, localAntiFlicker, historyContrast);
+    neighbourhoodMin = average - range * (average - neighbourhoodMin);
+    neighbourhoodMax = average + range * (neighbourhoodMax - average);
+
     float lumaMin = Luma(neighbourhoodMin);
     float lumaMax = Luma(neighbourhoodMax);
     vec2 lastVelocity = texelFetch(lastVelocityTexture, velocityPixel, 0).rg;
@@ -335,7 +336,6 @@ void main() {
     float clipBlend = ClipBoundingBox(neighbourhoodMin, neighbourhoodMax,
         historyColor, currentColor);
     float adjClipBlend = saturate(clipBlend);
-    clipCorrection = clipBlend > 0.97 ? 0.0 : clipCorrection + 0.005;
     historyColor = mix(historyColor, currentColor, adjClipBlend);
 #else
     historyColor = clamp(historyColor, neighbourhoodMin, neighbourhoodMax);
@@ -361,7 +361,10 @@ void main() {
 #ifdef TAA_TONE
 	historyColor.rgb = InverseTonemap(historyColor.rgb);
     currentColor.rgb = InverseTonemap(currentColor.rgb);
-#endif  
+#endif
+
+    StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
+    blendFactor = features.responsivePixel ? 0.5 : blendFactor;
 
     const vec3 luma = vec3(0.299, 0.587, 0.114);
     float weightHistory = (1.0 - blendFactor) / (1.0 + dot(historyColor.rgb, luma));
@@ -375,7 +378,6 @@ void main() {
     // Some components might have a value of -0.0 which produces
     // errors later on while rendering (postprocessing saturate)
     result.rgb = abs(result.rgb);
-    result.a = clipCorrection;
 
     // Some stuff in the pipeline produces NaNs
     if (isnan(result.r) == true ||

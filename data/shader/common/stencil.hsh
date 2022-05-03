@@ -1,0 +1,27 @@
+struct StencilFeatures {
+    bool responsivePixel;
+};
+
+uint EncodeStencilFeatures(StencilFeatures features) {
+
+    const uint responsivePixel = (1 << 0);
+
+    uint data = 0;
+
+    data |= features.responsivePixel ? responsivePixel : 0;
+
+    return data;
+
+}
+
+StencilFeatures DecodeStencilFeatures(uint data) {
+
+    const uint responsivePixel = (1 << 0);
+
+    StencilFeatures features;
+
+    features.responsivePixel = (data & responsivePixel) > 0u;
+
+    return features;
+
+}
