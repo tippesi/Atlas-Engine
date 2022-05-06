@@ -11,11 +11,17 @@ void main() {
         PackedRay packedRay = rays[idx];
         Ray ray = UnpackRay(packedRay);
 
+        idx = (1u - rayPayloadBufferOffset) * rayBufferSize + gl_GlobalInvocationID.x;
+        PackedRayPayload packedPayload = rayPayloads[idx];
+
         uint bin = uint(ray.hitID);
         idx = atomicAdd(rayBinCounters[bin], 1u) + rayBinOffsets[bin];
 
         uint offset = rayBufferOffset * rayBufferSize;
         rays[offset + idx] = packedRay;
+
+        offset = rayPayloadBufferOffset * rayBufferSize;
+        rayPayloads[offset + idx] = packedPayload;
     }
 
 }

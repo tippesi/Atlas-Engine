@@ -162,6 +162,8 @@ namespace Atlas {
 				bool binning, std::function<void(void)> prepare) {
 
 				dispatchCounter = 0;
+				rayOffsetCounter = 0;
+				payloadOffsetCounter = 0;
 
 				// Select lights once per initial ray dispatch
 				{
@@ -210,7 +212,7 @@ namespace Atlas {
 				rayBinCounterBuffer.BindBase(11);
 
 				rayGenShader->GetUniform("lightCount")->SetValue(int32_t(selectedLights.size()));
-				rayGenShader->GetUniform("rayBufferOffset")->SetValue(uint32_t(1));
+				rayGenShader->GetUniform("rayBufferOffset")->SetValue(uint32_t(rayOffsetCounter++));
 				rayGenShader->GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
 				rayGenShader->GetUniform("useRayBinning")->SetValue(binning);
 
@@ -295,7 +297,8 @@ namespace Atlas {
 					{
 						binningShader.Bind();
 
-						binningShader.GetUniform("rayBufferOffset")->SetValue(uint32_t(dispatchCounter % 2));
+						binningShader.GetUniform("rayBufferOffset")->SetValue(uint32_t(rayOffsetCounter++ % 2));
+						binningShader.GetUniform("rayPayloadBufferOffset")->SetValue(uint32_t(payloadOffsetCounter++ % 2));
 						binningShader.GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
 
 						glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
@@ -315,7 +318,7 @@ namespace Atlas {
 				{
 					traceClosestShader.Bind();
 
-					traceClosestShader.GetUniform("rayBufferOffset")->SetValue(uint32_t(binning ? 1 - dispatchCounter % 2 : 0));
+					traceClosestShader.GetUniform("rayBufferOffset")->SetValue(uint32_t(rayOffsetCounter++ % 2));
 					traceClosestShader.GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
 
 					glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
@@ -329,8 +332,8 @@ namespace Atlas {
 					hitShader->Bind();
 
 					hitShader->GetUniform("lightCount")->SetValue(int32_t(selectedLights.size()));
-					hitShader->GetUniform("rayBufferOffset")->SetValue(uint32_t(binning ? dispatchCounter % 2 : 1));
-					hitShader->GetUniform("rayPayloadBufferOffset")->SetValue(uint32_t(dispatchCounter) % 2);
+					hitShader->GetUniform("rayBufferOffset")->SetValue(uint32_t(rayOffsetCounter++ % 2));
+					hitShader->GetUniform("rayPayloadBufferOffset")->SetValue(uint32_t(payloadOffsetCounter++ % 2));
 					hitShader->GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
 					hitShader->GetUniform("useRayBinning")->SetValue(binning);
 

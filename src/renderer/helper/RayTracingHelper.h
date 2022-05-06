@@ -72,7 +72,10 @@ namespace Atlas {
 				
 				Buffer::Buffer lightBuffer;
 
-				int32_t dispatchCounter;
+				int32_t dispatchCounter = 0;
+				int32_t rayOffsetCounter = 0;
+				int32_t payloadOffsetCounter = 0;
+
 				int32_t textureDownscale;
 				bool useEmissivesAsLights = false;
 
