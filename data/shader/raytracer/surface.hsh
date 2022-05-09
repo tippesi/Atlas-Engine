@@ -18,6 +18,8 @@ Material GetTriangleMaterial(Triangle tri, out RaytraceMaterial rayMat) {
 	mat.roughness = rayMat.roughness;
 	mat.metalness = rayMat.metalness;
 	mat.ao = rayMat.ao;
+
+	mat.reflectance = rayMat.reflectance;
 	
 	mat.normalScale = rayMat.normalScale;
 	mat.displacementScale = 0.0;

@@ -22,6 +22,7 @@ namespace Atlas {
 			meshToActorMap[actor->mesh] = std::vector<Actor::VegetationActor*>{ actor };
 			meshToBufferMap[actor->mesh] = new Buffers {
 				Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4), AE_BUFFER_IMMUTABLE),
+				Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4), AE_BUFFER_IMMUTABLE),
 				Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4), AE_BUFFER_IMMUTABLE)
 			};
 
@@ -54,6 +55,7 @@ namespace Atlas {
 			}
 
 			buffers->culledInstanceData.SetSize(instanceData.size());
+			buffers->binnedInstanceData.SetSize(instanceData.size());
 			buffers->instanceData.SetSize(instanceData.size(), instanceData.data());
 
 		}

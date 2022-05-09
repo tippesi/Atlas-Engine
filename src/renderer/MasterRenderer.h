@@ -187,9 +187,9 @@ namespace Atlas {
 
 				int32_t data0;
 				int32_t data1;
+				int32_t data2;
 
 				int32_t features;
-				int32_t unused;
 
 			};
 

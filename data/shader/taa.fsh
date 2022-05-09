@@ -19,7 +19,7 @@ uniform vec2 resolution;
 uniform vec2 jitter;
 
 uniform float minVelocityBlend = 0.05;
-uniform float maxVelocityBlend = 0.8;
+uniform float maxVelocityBlend = 0.5;
 
 #define TAA_YCOCG
 //#define TAA_CLIP // Use clip instead of clamping for better ghosting prevention, introduces more flickering
@@ -309,6 +309,8 @@ void main() {
 
     ivec2 velocityPixel = clamp(pixel + offset, ivec2(0), ivec2(resolution) - ivec2(1));
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
+    vec2 lastVelocity = texelFetch(lastVelocityTexture, velocityPixel, 0).rg;
+
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
 
     // Maybe we might want to filter the current input pixel
@@ -329,7 +331,6 @@ void main() {
 
     float lumaMin = Luma(neighbourhoodMin);
     float lumaMax = Luma(neighbourhoodMax);
-    vec2 lastVelocity = texelFetch(lastVelocityTexture, velocityPixel, 0).rg;
 
     // Clamp/Clip the history to the neighbourhood bounding box
 #ifdef TAA_CLIP
@@ -341,17 +342,8 @@ void main() {
     historyColor = clamp(historyColor, neighbourhoodMin, neighbourhoodMax);
 #endif
 
-    // Track subpixel velocity movement
-    float lastCorrection = fract(max(abs(lastVelocity.x) * resolution.x,
-		abs(lastVelocity.y) * resolution.y)) * 0.5;
-	float correction = fract(max(abs(velocity.x) * resolution.x,
-		abs(velocity.y) * resolution.y)) * 0.5;
-    correction = saturate(max(correction, lastCorrection));
-    float blendFactor = mix(minVelocityBlend, maxVelocityBlend, correction);
-
-	// Check if we sampled outside the viewport area
-    blendFactor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
-         || uv.y > 1.0) ? 1.0 : blendFactor;
+    float blendFactor = mix(minVelocityBlend, maxVelocityBlend, 
+        saturate(1000.0 * max(length(velocity), length(lastVelocity))));
 
 #ifdef TAA_YCOCG
     historyColor = YCoCgToRGB(historyColor); 
@@ -365,6 +357,10 @@ void main() {
 
     StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
     blendFactor = features.responsivePixel ? 0.5 : blendFactor;
+
+    // Check if we sampled outside the viewport area
+    blendFactor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
+         || uv.y > 1.0) ? 1.0 : blendFactor;
 
     const vec3 luma = vec3(0.299, 0.587, 0.114);
     float weightHistory = (1.0 - blendFactor) / (1.0 + dot(historyColor.rgb, luma));

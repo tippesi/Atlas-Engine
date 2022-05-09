@@ -35,6 +35,8 @@ namespace Atlas {
 					uint32_t baseInstance;
 				};
 
+				const uint32_t binCount = 64;
+
 			private:
 				struct MeshInformation {
 					vec4 aabbMin;
@@ -49,14 +51,19 @@ namespace Atlas {
 
 				void GenerateBuffers(Scene::Vegetation& vegetation);
 
-				void ResetCounterBuffer();
+				void ResetCounterBuffer(Buffer::Buffer& buffer);
 
 				Shader::Shader instanceCullingShader;
-				Shader::Shader instanceDataShader;
+				Shader::Shader instanceBinningShader;
+				Shader::Shader instanceBinningOffsetShader;
 				Shader::Shader instanceDrawCallShader;
 
 				Buffer::Buffer indirectDrawCallBuffer;
-				Buffer::Buffer lodCounterBuffer;
+
+				Buffer::Buffer instanceCounterBuffer;
+				
+				Buffer::Buffer binCounterBuffer;
+				Buffer::Buffer binOffsetBuffer;
 
 				Buffer::Buffer meshInformationBuffer;
 				Buffer::Buffer meshSubdataInformationBuffer;

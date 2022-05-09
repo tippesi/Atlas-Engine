@@ -363,6 +363,8 @@ namespace Atlas {
 						gpuMaterial.metalness = material.metalness;
 						gpuMaterial.ao = material.ao;
 
+						gpuMaterial.reflectance = material.reflectance;
+
 						gpuMaterial.normalScale = material.normalScale;
 
 						gpuMaterial.invertUVs = actor->mesh->invertUVs ? 1 : 0;

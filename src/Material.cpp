@@ -125,6 +125,8 @@ namespace Atlas {
 		metalness = that.metalness;
 		ao = that.ao;
 
+		reflectance = that.reflectance;
+
 		normalScale = that.normalScale;
 		displacementScale = that.displacementScale;
 

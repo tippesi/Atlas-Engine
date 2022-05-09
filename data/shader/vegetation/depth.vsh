@@ -21,7 +21,7 @@ uniform bool invertUVs;
 // Functions
 void main() {
 
-	Instance instance = culledInstanceData[gl_InstanceID];
+	Instance instance = instanceData[gl_InstanceID + gl_BaseInstance];
 	texCoordVS = invertUVs ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
 	
 	mat4 mvMatrix = vMatrix;

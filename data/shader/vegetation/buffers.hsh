@@ -9,18 +9,26 @@ layout(std430, binding = 1) buffer MeshSubdataInformations {
 	MeshSubdataInformation meshSubdataInformations[];
 };
 
-layout (std430, binding = 2) buffer LodCounters {
-	uint lodCounters[];
+layout (std430, binding = 2) buffer BinCounters {
+	uint binCounters[];
 };
 
-layout(std430, binding = 3) buffer InstanceData {
+layout (std430, binding = 3) buffer BinOffsets {
+	uint binOffsets[];
+};
+
+layout(std430, binding = 4) buffer InstanceCounters {
+	uint instanceCounters[];
+};
+
+layout(std430, binding = 5) buffer InstanceData {
 	Instance instanceData[];
 };
 
-layout (std430, binding = 4) buffer CulledInstanceData {
-	Instance culledInstanceData[];
+layout (std430, binding = 6) buffer InstanceDataSwap {
+	Instance instanceDataSwap[];
 };
 
-layout (std430, binding = 5) buffer IndirectCommands {
+layout (std430, binding = 7) buffer IndirectCommands {
 	DrawElementsIndirectCommand indirectCommands[];
 };

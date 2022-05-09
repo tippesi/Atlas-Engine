@@ -38,41 +38,34 @@ void main() {
 	vec3 directSpecular = EvaluateSpecularBRDF(surface);
 
 	vec3 direct = directDiffuse + directSpecular;
-	/*
-	if (surface.material.transmissive) {
-		Surface backSurface = CreateSurface(surface.V, -surface.N, surface.L, surface.material);
-
-		// Direct diffuse BRDF backside
-		direct += surface.material.transmissiveColor * EvaluateDiffuseBRDF(backSurface);
-
-		// Indirect diffuse BRDF backside
-		prefilteredDiffuse = texture(diffuseProbe, -worldNormal).rgb;
-		prefilteredDiffuseLocal = GetLocalIrradiance(surface.P, ivMatrix, -worldNormal);
-		prefilteredDiffuse = prefilteredDiffuseLocal.rgb + prefilteredDiffuse * prefilteredDiffuseLocal.a;
-		indirect += surfacce.material.transmissiveColor * prefilteredDiffuse * 
-			EvaluateIndirectDiffuseBRDF(backSurface) * surface.material.ao;
-	}
-	*/
+	
 #ifdef SHADOWS
+	// Only need to test in the direction of the light and can the be used
+	// for both the transmission and reflection. The inversion is only done
+	// for transmissive materials
+	vec3 shadowNormal = surface.material.transmissive ? dot(-light.direction, geometryNormal) < 0.0 ? 
+		-geometryNormal : geometryNormal : geometryNormal;
 	shadowFactor = CalculateCascadedShadow(light, surface.P,
-		geometryNormal, saturate(dot(-light.direction, geometryNormal))); 
+		shadowNormal, saturate(dot(-light.direction, shadowNormal))); 
 #endif
 	
 	vec3 radiance = light.color * light.intensity;
 	colorFS = vec4(direct * radiance * surface.NdotL * shadowFactor, 1.0);
 
+	if (surface.material.transmissive) {
+		Surface backSurface = CreateSurface(surface.V, -surface.N, surface.L, surface.material);
+
+		float viewDependency = saturate(dot(-surface.V, surface.L));
+		viewDependency = sqr(viewDependency);
+
+		// Direct diffuse BRDF backside
+		direct = surface.material.transmissiveColor * EvaluateDiffuseBRDF(backSurface);
+		colorFS += vec4(direct * radiance * backSurface.NdotL * shadowFactor, 1.0);
+	}
+
 	if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.01) {	
 		colorFS += vec4(surface.material.emissiveColor, 0.0);
 	}
 
-	/*
-	ivec3 nearestProbe = GetNearestProbe(worldPosition);
-	vec3 nearestProbePosition = GetProbePosition(nearestProbe);
-	uint nearestProbeState = probeStates[GetProbeIdx(nearestProbe)];
-	if (distance(nearestProbePosition, worldPosition) <= 0.1) {
-		colorFS = nearestProbeState == PROBE_STATE_INACTIVE ? vec4(1.0, 0.0, 0.0, 1.0) : vec4(0.0, 1.0, 0.0, 1.0);
-		colorFS = nearestProbeState == PROBE_STATE_NEW ? vec4(0.0, 0.0, 1.0, 1.0) : colorFS;
-		//colorFS = vec4(vec3(float(nearestProbeState) / 100.0), 1.0);
-	}
-	*/
+	//colorFS = vec4(surface.material.metalness);
 }

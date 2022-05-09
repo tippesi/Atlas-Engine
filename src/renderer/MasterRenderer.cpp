@@ -163,9 +163,9 @@ namespace Atlas {
 
 			ddgiRenderer.DebugProbes(viewport, target, camera, scene, materialMap);
 
-			terrainRenderer.Render(viewport, target, camera, scene, materialMap);
-
 			vegetationRenderer.Render(viewport, target, camera, scene, materialMap);
+
+			terrainRenderer.Render(viewport, target, camera, scene, materialMap);
 
 			glEnable(GL_CULL_FACE);
 			glDepthMask(GL_FALSE);
@@ -772,7 +772,7 @@ namespace Atlas {
 
 				packed.emissiveIntensity = emissiveIntensity;
 
-				vec4 data0, data1;
+				vec4 data0, data1, data2;
 
 				data0.x = material->opacity;
 				data0.y = material->roughness;
@@ -782,8 +782,14 @@ namespace Atlas {
 				data1.y = material->HasNormalMap() ? material->normalScale : 0.0f;
 				data1.z = material->HasDisplacementMap() ? material->displacementScale : 0.0f;
 
+				data2.x = material->reflectance;
+				// Note used
+				data2.y = 0.0f;
+				data2.z = 0.0f;
+
 				packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
 				packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
+				packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
 
 				packed.features = 0;
 
@@ -814,7 +820,7 @@ namespace Atlas {
 				packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
 				packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(impostor->transmissiveColor, 1.0f));
 
-				vec4 data0, data1;
+				vec4 data0, data1, data2;
 
 				data0.x = 1.0f;
 				data0.y = 1.0f;
@@ -824,8 +830,14 @@ namespace Atlas {
 				data1.y = 0.0f;
 				data1.z = 0.0f;
 
+				data2.x = 0.5f;
+				// Note used
+				data2.y = 0.0f;
+				data2.z = 0.0f;
+
 				packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
 				packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
+				packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
 
 				packed.features = 0;
 

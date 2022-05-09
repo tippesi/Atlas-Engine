@@ -51,6 +51,8 @@ namespace Atlas {
 		float metalness = 0.0f;
 		float ao = 1.0f;
 
+		float reflectance = 0.5f;
+
 		float normalScale = 1.0f;
 		float displacementScale = 0.01f;
 

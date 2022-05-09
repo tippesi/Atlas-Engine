@@ -96,6 +96,8 @@ struct RaytraceMaterial {
 	float roughness;
 	float metalness;
 	float ao;
+
+	float reflectance;
 	
 	float normalScale;
 	

@@ -25,6 +25,8 @@ namespace Atlas {
 			Texture::Texture2D refractionTexture;
 			Texture::Texture2D depthTexture;
 
+			Shader::Shader causticsShader;
+
 			Shader::Shader shader;
 
 			Shader::Uniform* nodeLocation = nullptr;

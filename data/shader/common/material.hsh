@@ -19,6 +19,7 @@ struct Material {
 	float roughness;
 	float metalness;
 	float ao;
+	float reflectance;
 	
 	float normalScale;
 	float displacementScale;
@@ -55,17 +56,19 @@ Material UnpackMaterial(uint idx) {
 
 	vec4 data0 = unpackColorVector(floatBitsToInt(compressed.data1.x));
 	vec4 data1 = unpackColorVector(floatBitsToInt(compressed.data1.y));
+	vec4 data2 = unpackColorVector(floatBitsToInt(compressed.data1.z));
 
 	material.opacity = data0.x;
 
 	material.roughness = data0.y;
 	material.metalness = data0.z;
 	material.ao = data1.x;
+	material.reflectance = data2.x;
 
 	material.normalScale = data0.y;
 	material.displacementScale = data0.z;
 
-	int features = floatBitsToInt(compressed.data1.z);
+	int features = floatBitsToInt(compressed.data1.w);
 	material.baseColorMap = (features & FEATURE_BASE_COLOR_MAP) > 0;
 	material.opacityMap = (features & FEATURE_OPACITY_MAP) > 0;
 	material.normalMap = (features & FEATURE_NORMAL_MAP) > 0;

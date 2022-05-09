@@ -52,6 +52,8 @@ void main() {
 
 	vec3 indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao * indirectStrength;
 	
+	// This normally only accounts for diffuse occlusion, we need seperate terms
+	// for diffuse and specular.
 	float occlusionFactor = aoEnabled ? texture(aoTexture, texCoord).r : 1.0;
 	indirect *= occlusionFactor;
 

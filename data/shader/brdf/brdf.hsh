@@ -16,9 +16,9 @@ float RenormalizedDisneyDiffuse(float NdotV, float NdotL, float LdotH, float lin
 
 	float energyBias = mix(0.0, 0.5, linearRoughness);
 	float energyFactor = mix(1.0, 1.0 / 1.51, linearRoughness);
-	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
-	float lightScatter = FresnelSchlick(vec3(1.0), fd90, NdotL).r;
-	float viewScatter = FresnelSchlick(vec3(1.0), fd90, NdotV).r;
+	float FD90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
+	float lightScatter = FresnelSchlick(vec3(1.0), FD90, NdotL).r;
+	float viewScatter = FresnelSchlick(vec3(1.0), FD90, NdotV).r;
 
 	return lightScatter * viewScatter * energyFactor;
 

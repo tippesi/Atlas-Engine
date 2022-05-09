@@ -45,7 +45,7 @@ uniform mat4 pvMatrixCurrent;
 // Functions
 void main() {
 
-	Instance instance = culledInstanceData[gl_InstanceID];
+	Instance instance = instanceData[gl_InstanceID + gl_BaseInstance];
 	texCoordVS = invertUVs ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
 	
 	mat4 mvMatrix = vMatrix;
@@ -67,7 +67,7 @@ void main() {
 	ndcLastVS = vec3(last.xy, last.w);
 	
 	normalVS = mat3(mvMatrix) * vNormal;
-	normalVS *= -dot(normalVS, positionVS);
+	//normalVS *= -dot(normalVS, positionVS);
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 normal = normalize(normalVS);

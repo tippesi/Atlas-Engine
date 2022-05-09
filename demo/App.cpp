@@ -260,14 +260,14 @@ void App::Render(float deltaTime) {
 				ImGui::Checkbox("Visualize probes", &volume->debug);
 				ImGui::Checkbox("Sample emissives", &volume->sampleEmissives);
 
-				const char* items[] = { "5x5x5", "10x10x10", "20x20x20", "30x30x30" };
+				const char* gridResItems [] = { "5x5x5", "10x10x10", "20x20x20", "30x30x30" };
 				int currentItem = 0;
 				if (volume->probeCount == ivec3(5)) currentItem = 0;
 				if (volume->probeCount == ivec3(10)) currentItem = 1;
 				if (volume->probeCount == ivec3(20)) currentItem = 2;
 				if (volume->probeCount == ivec3(30)) currentItem = 3;
 				auto prevItem = currentItem;
-				ImGui::Combo("Resolution##DDGI", &currentItem, items, IM_ARRAYSIZE(items));
+				ImGui::Combo("Resolution##DDGI", &currentItem, gridResItems, IM_ARRAYSIZE(gridResItems));
 
 				if (currentItem != prevItem) {
 					switch (currentItem) {
@@ -275,6 +275,26 @@ void App::Render(float deltaTime) {
 					case 1: volume->SetProbeCount(ivec3(10)); break;
 					case 2: volume->SetProbeCount(ivec3(20)); break;
 					case 3: volume->SetProbeCount(ivec3(30)); break;
+					}
+				}
+
+				const char* rayCountItems[] = { "32", "64", "128", "256", "512" };
+				currentItem = 0;
+				if (volume->rayCount == 32) currentItem = 0;
+				if (volume->rayCount == 64) currentItem = 1;
+				if (volume->rayCount == 128) currentItem = 2;
+				if (volume->rayCount == 256) currentItem = 3;
+				if (volume->rayCount == 512) currentItem = 4;
+				prevItem = currentItem;
+				ImGui::Combo("Ray count##DDGI", &currentItem, rayCountItems, IM_ARRAYSIZE(rayCountItems));
+
+				if (currentItem != prevItem) {
+					switch (currentItem) {
+					case 0: volume->SetRayCount(32, 32); break;
+					case 1: volume->SetRayCount(64, 32); break;
+					case 2: volume->SetRayCount(128, 32); break;
+					case 3: volume->SetRayCount(256, 32); break;
+					case 4: volume->SetRayCount(512, 32); break;
 					}
 				}
 

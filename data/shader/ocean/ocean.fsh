@@ -48,7 +48,7 @@ uniform Light light;
 uniform vec3 waterBodyColor = pow(vec3(0.1, 1.0, 0.7), vec3(2.2));
 uniform vec3 deepWaterBodyColor = pow(vec3(0.1,0.15, 0.5), vec3(2.2));
 uniform vec3 scatterColor = pow(vec3(0.3,0.7,0.6), vec3(2.2));
-uniform vec2 waterColorIntensity = pow(vec2(0.4, 0.6), vec2(2.2));
+uniform vec2 waterColorIntensity = pow(vec2(0.1, 0.3), vec2(2.2));
 
 // Control water scattering at crests
 const float scatterIntensity = 1.5;
@@ -60,7 +60,7 @@ const float specularPower = 500.0;
 const float specularIntensity = 350.0;
 
 // Shore softness (lower is softer)
-const float shoreSoftness = 7.5;
+const float shoreSoftness = 70.5;
 
 void main() {
 	
@@ -73,7 +73,7 @@ void main() {
 	
 	vec3 depthPos = ConvertDepthToViewSpace(clipDepth, ndcCoord);
 	
-	float shadowFactor = max(CalculateCascadedShadow(light, fPosition, fNormal, 1.0), 0.01);
+	float shadowFactor = max(CalculateCascadedShadow(light, fPosition, fNormal, 0.0), 0.01);
 	
 	fNormal = mix(normalShoreWave, fNormal, shoreScaling);
 
@@ -89,14 +89,14 @@ void main() {
 	vec3 rippleNormal = vec3(0.0, 1.0, 0.0);
 
 	if (hasRippleTexture) {
-		rippleNormal = normalize(2.0 * texture(rippleTexture, 50.0 * fTexCoord - vec2(time * 0.2)).rgb - 1.0);
-		rippleNormal += normalize(2.0 * texture(rippleTexture, 50.0 * fTexCoord * 0.5 + vec2(time * 0.05)).rgb - 1.0);
+		rippleNormal = normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord - vec2(time * 0.2)).rgb - 1.0);
+		rippleNormal += normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord * 0.5 + vec2(time * 0.05)).rgb - 1.0);
 		// Won't work with rippleNormal = vec3(0.0, 1.0, 0.0). Might be worth an investigation
 		norm = normalize(tbn * rippleNormal);
 	}
 	
 	// Scale ripples based on actual (not view) depth of water
-	float rippleScaling = clamp(1.0 - shoreScaling, 0.1, 0.2);
+	float rippleScaling = clamp(1.0 - shoreScaling, 0.05, 0.1);
 	norm = normalize(mix(fNormal, norm, rippleScaling));
 
 	vec3 eyeDir = normalize(fModelCoord - cameraLocation);
@@ -125,26 +125,29 @@ void main() {
 	
 	scatterFactor *= pow(max(0.0, 1.0 - nDotL), 8.0);
 
-	//scatterFactor += shadowFactor * 2.5 * waterColorIntensity.y
-	//	 * max(0.0, waveHeight) * max(0.0, nDotE) * 
-	//	 max(0.0, 1.0 + eyeDir.y);
+	/*
+	scatterFactor += shadowFactor * waterColorIntensity.y
+		 * max(0.0, waveHeight) * max(0.0, nDotE) * 
+		 max(0.0, 1.0 + eyeDir.y) * dot(-light.direction, -eyeDir);
+		 */
 
 	// Calculate water depth based on the viewer (ray from camera to ground)
 	float waterViewDepth = max(0.0, fPosition.z - depthPos.z);
 	
 	vec2 disturbance = (mat3(vMatrix) * vec3(norm.x, 0.0, norm.z)).xz;
 
-	vec2 refractionDisturbance = vec2(-disturbance.x, disturbance.y) * 0.05;
+	vec2 refractionDisturbance = vec2(-disturbance.x, disturbance.y) * 0.02;
 	refractionDisturbance *= min(2.0, waterViewDepth);
 
 	// Retrieve colors from textures
-	vec3 refractionColor = texture(refractionTexture, ndcCoord + refractionDisturbance).rgb;
-	vec3 reflectionColor = texture(skyEnvProbe, reflectionVec).rgb;
+	vec3 refractionColor = textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb;
+	vec3 reflectionColor = textureLod(skyEnvProbe, reflectionVec, 0).rgb;
 
 	// Calculate water color
+	vec3 depthFog = mix(deepWaterBodyColor, waterBodyColor, min(1.0 , exp(-waterViewDepth / 10.0)));
 	float diffuseFactor = waterColorIntensity.x + waterColorIntensity.y * 
 		max(0.0, nDotL) * shadowFactor;
-	vec3 waterColor = diffuseFactor * light.color * mix(deepWaterBodyColor, waterBodyColor, min(1.0 , exp(-waterViewDepth / 10.0)));
+	vec3 waterColor = diffuseFactor * light.intensity * light.color * depthFog;
 	
 	// Water edges at shore sould be soft
 	fresnel *= min(1.0, waterViewDepth * shoreSoftness);
@@ -160,25 +163,30 @@ void main() {
 	foam = min(foam, 1.0);
 
 	// Fade the reflection out caused by foam
-	reflectionColor *= 1.0 - 1.0 * foam;
+	reflectionColor *= (1.0 - 0.5 * foam);
 
 	// Mix relection and refraction and add sun spot
 	color = mix(refractionColor, reflectionColor, fresnel);
 	color += specularIntensity * fresnel * specularFactor * light.color;
 	color += scatterColor * scatterFactor;
+
+	vec3 foamColor = vec3(texture(foamTexture, fOriginalCoord.xz / 8.0).r) * 
+		nDotL * light.intensity;
 	
 	color = mix(color, vec3(mix(scatterColor * 0.1, vec3(1.0), 
-		texture(foamTexture, fOriginalCoord.xz / 8.0).r)), foam);
+		foamColor)), foam);
 
-	vec3 breakingColor = mix(vec3(1.0),
-		vec3(1.0) * max(0.0, nDotL)* shadowFactor, 0.7);
+	vec3 breakingColor = mix(vec3(0.1),
+		vec3(0.5) * max(0.0, nDotL) * shadowFactor, 0.7) * light.intensity * light.color;
 	color = mix(color, breakingColor, shoreInteraction.y);
 
-	vec2 terrainTex = (vec2(fModelCoord.xz) - vec2(terrainTranslation.xz))
-		/ terrainSideLength;
-
-	//color = vec3(texture(terrainHeight, terrainTex).ba, 0.0);
-	//color = vec3(shoreScaling);
+	/*
+		if (dot(norm, -eyeDir) < 0.0) {
+		float waterViewDepth = max(0.0, -fPosition.z);
+		depthFog = mix(deepWaterBodyColor, waterBodyColor, min(1.0 , exp(-waterViewDepth / 10.0)));
+		color = mix(depthFog, textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb, min(1.0 , exp(-waterViewDepth / 2.0)));
+	}
+	*/
 
 	// Calculate velocity
 	vec2 ndcL = ndcLast.xy / ndcLast.z;

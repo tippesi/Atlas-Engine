@@ -11,9 +11,11 @@ namespace Atlas {
 
 			Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 129, 1.0f / 128.0f);
 
+			causticsShader.AddStage(AE_COMPUTE_STAGE, "ocean/caustics.csh");
+			causticsShader.Compile();
+
 			shader.AddStage(AE_VERTEX_STAGE, "ocean/ocean.vsh");
 			shader.AddStage(AE_FRAGMENT_STAGE, "ocean/ocean.fsh");
-
 			shader.Compile();
 
 			GetUniforms();
@@ -28,11 +30,6 @@ namespace Atlas {
 			Profiler::BeginQuery("Ocean");
 
 			auto ocean = scene->ocean;
-
-			shader.Bind();
-
-			vertexArray.Bind();
-
 			auto lights = scene->GetLights();
 
 			Lighting::DirectionalLight* sun = nullptr;
@@ -48,52 +45,64 @@ namespace Atlas {
 
 			vec3 direction = normalize(sun->direction);
 
-			lightDirection->SetValue(direction);
-			lightColor->SetValue(sun->color);
-			lightAmbient->SetValue(0.0f);
+			{
+				Profiler::BeginQuery("Caustics");
 
-			if (sun->GetVolumetric()) {
-				ivec2 res = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
-				glViewport(0, 0, res.x, res.x);
-				target->volumetricTexture.Bind(GL_TEXTURE7);
-				glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
-			}			
+				const int32_t groupSize = 8;
+				auto res = ivec2(target->GetWidth(), target->GetHeight());
 
-			if (sun->GetShadow()) {
-				auto distance = !sun->GetShadow()->longRange ? sun->GetShadow()->distance :
-					sun->GetShadow()->longRangeDistance;
-				shadowDistance->SetValue(distance);
-				shadowBias->SetValue(sun->GetShadow()->bias);
-				shadowCascadeCount->SetValue(sun->GetShadow()->componentCount);
-				shadowResolution->SetValue(vec2((float)sun->GetShadow()->resolution));
+				ivec2 groupCount = res / groupSize;
+				groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
+				groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-				sun->GetShadow()->maps.Bind(GL_TEXTURE8);
+				causticsShader.Bind();
 
-				for (int32_t i = 0; i < sun->GetShadow()->componentCount; i++) {
-					auto cascade = &sun->GetShadow()->components[i];
-					cascades[i].distance->SetValue(cascade->farDistance);
-					cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->invViewMatrix);
+				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_READ_WRITE, 1);
+				target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
+
+				causticsShader.GetUniform("waterHeight")->SetValue(ocean->translation.y);
+
+				causticsShader.GetUniform("light.intensity")->SetValue(sun->intensity);
+				causticsShader.GetUniform("light.direction")->SetValue(direction);
+				causticsShader.GetUniform("light.color")->SetValue(sun->color);
+
+				if (sun->GetShadow()) {
+					auto distance = !sun->GetShadow()->longRange ? sun->GetShadow()->distance :
+						sun->GetShadow()->longRangeDistance;
+
+					causticsShader.GetUniform("light.shadow.distance")->SetValue(distance);
+					causticsShader.GetUniform("light.shadow.bias")->SetValue(sun->GetShadow()->bias);
+					causticsShader.GetUniform("light.shadow.cascadeCount")->SetValue(sun->GetShadow()->componentCount);
+					causticsShader.GetUniform("light.shadow.resolution")->SetValue(vec2((float)sun->GetShadow()->resolution));
+
+					sun->GetShadow()->maps.Bind(GL_TEXTURE8);
+
+					for (int32_t i = 0; i < sun->GetShadow()->componentCount; i++) {
+						auto cascade = &sun->GetShadow()->components[i];
+						auto frustum = Volume::Frustum(cascade->frustumMatrix);
+						auto corners = frustum.GetCorners();
+						auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
+							abs(corners[1].y - corners[3].y)) / (float)sun->GetShadow()->resolution;
+						auto lightSpace = cascade->projectionMatrix * cascade->viewMatrix * camera->invViewMatrix;
+						causticsShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].distance")->SetValue(cascade->farDistance);
+						causticsShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].lightSpace")->SetValue(lightSpace);
+						causticsShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].texelSize")->SetValue(texelSize);
+					}
 				}
+				else {
+					causticsShader.GetUniform("light.shadow.distance")->SetValue(0.0f);
+				}
+
+				causticsShader.GetUniform("time")->SetValue(Clock::Get());
+				causticsShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
+				causticsShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
+
+				glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
+
+				glDispatchCompute(groupCount.x, groupCount.y, 1);
+
+				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			}
-			else {
-				shadowDistance->SetValue(0.0f);
-			}
-
-			time->SetValue(Clock::Get());
-
-			translation->SetValue(ocean->translation);
-
-			displacementScale->SetValue(ocean->displacementScale);
-			choppyScale->SetValue(ocean->choppynessScale);
-			tiling->SetValue(ocean->tiling);
-
-			shoreWaveDistanceOffset->SetValue(ocean->shoreWaveDistanceOffset);
-			shoreWaveDistanceScale->SetValue(ocean->shoreWaveDistanceScale);
-			shoreWaveAmplitude->SetValue(ocean->shoreWaveAmplitude);
-			shoreWaveSteepness->SetValue(ocean->shoreWaveSteepness);
-			shoreWavePower->SetValue(ocean->shoreWavePower);
-			shoreWaveSpeed->SetValue(ocean->shoreWaveSpeed);
-			shoreWaveLength->SetValue(ocean->shoreWaveLength);
 
 			// Update local texture copies
 			auto texture = target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0);
@@ -117,87 +126,150 @@ namespace Atlas {
 			else {
 				depthTexture.Copy(*texture);
 			}
+			
+			{
+				Profiler::EndAndBeginQuery("Surface");
 
-			ocean->simulation.displacementMap.Bind(GL_TEXTURE0);
-			ocean->simulation.normalMap.Bind(GL_TEXTURE1);
+				shader.Bind();
 
-			ocean->foamTexture.Bind(GL_TEXTURE2);
+				vertexArray.Bind();
 
-			if (scene->sky.probe)
-				scene->sky.probe->cubemap.Bind(GL_TEXTURE3);
+				shader.GetUniform("light.intensity")->SetValue(sun->intensity);
+				lightDirection->SetValue(direction);
+				lightColor->SetValue(sun->color);
+				lightAmbient->SetValue(0.0f);
 
-			refractionTexture.Bind(GL_TEXTURE4);
-			depthTexture.Bind(GL_TEXTURE5);
+				if (sun->GetVolumetric()) {
+					ivec2 res = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
+					glViewport(0, 0, res.x, res.x);
+					target->volumetricTexture.Bind(GL_TEXTURE7);
+					glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
+				}
 
-			// In case a terrain isn't available
-			terrainSideLength->SetValue(-1.0f);
+				if (sun->GetShadow()) {
+					auto distance = !sun->GetShadow()->longRange ? sun->GetShadow()->distance :
+						sun->GetShadow()->longRangeDistance;
+					shadowDistance->SetValue(distance);
+					shadowBias->SetValue(sun->GetShadow()->bias);
+					shadowCascadeCount->SetValue(sun->GetShadow()->componentCount);
+					shadowResolution->SetValue(vec2((float)sun->GetShadow()->resolution));
 
-			if (scene->terrain) {
-				if (scene->terrain->shoreLine.width > 0 &&
-					scene->terrain->shoreLine.height > 0) {
+					sun->GetShadow()->maps.Bind(GL_TEXTURE8);
 
-					terrainTranslation->SetValue(scene->terrain->translation);
-					terrainHeightScale->SetValue(scene->terrain->heightScale);
-					terrainSideLength->SetValue(scene->terrain->sideLength);
+					for (int32_t i = 0; i < sun->GetShadow()->componentCount; i++) {
+						auto cascade = &sun->GetShadow()->components[i];
+						auto frustum = Volume::Frustum(cascade->frustumMatrix);
+						auto corners = frustum.GetCorners();
+						auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
+							abs(corners[1].y - corners[3].y)) / (float)sun->GetShadow()->resolution;
+						cascades[i].distance->SetValue(cascade->farDistance);
+						cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->invViewMatrix);
+						shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].texelSize")->SetValue(texelSize);
+					}
+				}
+				else {
+					shadowDistance->SetValue(0.0f);
+				}
 
-					scene->terrain->shoreLine.Bind(GL_TEXTURE9);
+				time->SetValue(Clock::Get());
+
+				translation->SetValue(ocean->translation);
+
+				displacementScale->SetValue(ocean->displacementScale);
+				choppyScale->SetValue(ocean->choppynessScale);
+				tiling->SetValue(ocean->tiling);
+
+				shoreWaveDistanceOffset->SetValue(ocean->shoreWaveDistanceOffset);
+				shoreWaveDistanceScale->SetValue(ocean->shoreWaveDistanceScale);
+				shoreWaveAmplitude->SetValue(ocean->shoreWaveAmplitude);
+				shoreWaveSteepness->SetValue(ocean->shoreWaveSteepness);
+				shoreWavePower->SetValue(ocean->shoreWavePower);
+				shoreWaveSpeed->SetValue(ocean->shoreWaveSpeed);
+				shoreWaveLength->SetValue(ocean->shoreWaveLength);
+
+				ocean->simulation.displacementMap.Bind(GL_TEXTURE0);
+				ocean->simulation.normalMap.Bind(GL_TEXTURE1);
+
+				ocean->foamTexture.Bind(GL_TEXTURE2);
+
+				if (scene->sky.probe)
+					scene->sky.probe->cubemap.Bind(GL_TEXTURE3);
+
+				refractionTexture.Bind(GL_TEXTURE4);
+				depthTexture.Bind(GL_TEXTURE5);
+
+				// In case a terrain isn't available
+				terrainSideLength->SetValue(-1.0f);
+
+				if (scene->terrain) {
+					if (scene->terrain->shoreLine.width > 0 &&
+						scene->terrain->shoreLine.height > 0) {
+
+						terrainTranslation->SetValue(scene->terrain->translation);
+						terrainHeightScale->SetValue(scene->terrain->heightScale);
+						terrainSideLength->SetValue(scene->terrain->sideLength);
+
+						scene->terrain->shoreLine.Bind(GL_TEXTURE9);
+
+					}
+				}
+
+				if (ocean->rippleTexture.width > 0 &&
+					ocean->rippleTexture.height > 0) {
+					ocean->rippleTexture.Bind(GL_TEXTURE10);
+					hasRippleTexture->SetValue(true);
+				}
+				else {
+					hasRippleTexture->SetValue(false);
+				}
+
+				viewMatrix->SetValue(camera->viewMatrix);
+				projectionMatrix->SetValue(camera->projectionMatrix);
+
+				inverseViewMatrix->SetValue(camera->invViewMatrix);
+				inverseProjectionMatrix->SetValue(camera->invProjectionMatrix);
+
+				jitterLast->SetValue(camera->GetLastJitter());
+				jitterCurrent->SetValue(camera->GetJitter());
+				pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
+
+				cameraLocation->SetValue(camera->GetLocation());
+
+				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+				auto renderList = ocean->GetRenderList();
+
+				glDisable(GL_CULL_FACE);
+
+#ifdef AE_API_GL
+				if (ocean->wireframe)
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+#endif
+
+				for (auto node : renderList) {
+
+					nodeLocation->SetValue(node->location);
+					nodeSideLength->SetValue(node->sideLength);
+
+					leftLoD->SetValue(node->leftLoDStitch);
+					topLoD->SetValue(node->topLoDStitch);
+					rightLoD->SetValue(node->rightLoDStitch);
+					bottomLoD->SetValue(node->bottomLoDStitch);
+
+					glDrawElements(GL_TRIANGLE_STRIP, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
+						vertexArray.GetIndexComponent()->GetDataType(), nullptr);
 
 				}
-			}
-
-			if (ocean->rippleTexture.width > 0 &&
-				ocean->rippleTexture.height > 0) {
-				ocean->rippleTexture.Bind(GL_TEXTURE10);
-				hasRippleTexture->SetValue(true);
-			}
-			else {
-				hasRippleTexture->SetValue(false);
-			}
-
-			viewMatrix->SetValue(camera->viewMatrix);
-			projectionMatrix->SetValue(camera->projectionMatrix);
-
-			inverseViewMatrix->SetValue(camera->invViewMatrix);
-			inverseProjectionMatrix->SetValue(camera->invProjectionMatrix);
-
-			jitterLast->SetValue(camera->GetLastJitter());
-			jitterCurrent->SetValue(camera->GetJitter());
-			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
-
-			cameraLocation->SetValue(camera->GetLocation());
-
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-			auto renderList = ocean->GetRenderList();
-
-			glDisable(GL_CULL_FACE);
 
 #ifdef AE_API_GL
-			if (ocean->wireframe)
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				if (ocean->wireframe)
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 #endif
 
-			for (auto node : renderList) {
+				glEnable(GL_CULL_FACE);
 
-				nodeLocation->SetValue(node->location);
-				nodeSideLength->SetValue(node->sideLength);
-
-				leftLoD->SetValue(node->leftLoDStitch);
-				topLoD->SetValue(node->topLoDStitch);
-				rightLoD->SetValue(node->rightLoDStitch);
-				bottomLoD->SetValue(node->bottomLoDStitch);
-
-				glDrawElements(GL_TRIANGLE_STRIP, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
-					vertexArray.GetIndexComponent()->GetDataType(), nullptr);
-
+				Profiler::EndQuery();
 			}
-
-#ifdef AE_API_GL
-			if (ocean->wireframe)
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-#endif
-
-			glEnable(GL_CULL_FACE);
 
 			Profiler::EndQuery();
 

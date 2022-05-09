@@ -49,7 +49,6 @@ asset directory is correct.
 -->
 ### CMake build options
 - **ATLAS_BUILD_SHARED** Force project to be build as a shared library
-- **ATLAS_OPENGL_ES** Use OpenGL ES instead of OpenGL on desktop devices
 - **ATLAS_EXPORT_MAIN** Export the main file to be added as executable to parent project (only if main function cannot be found)
 - **ATLAS_NO_APP** Disables the engines main function and app functionality. You have to code the main function and
 initialize the engine yourself

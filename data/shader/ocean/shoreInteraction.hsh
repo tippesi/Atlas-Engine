@@ -72,8 +72,8 @@ vec2 CalculateShoreInteraction(vec3 position) {
 	float modulation = saturate(sin(position.x / 20.0) + cos(position.z / 10.0));
 
 	// Move these calculations to the fragment shader
-	float foamShoreWave = pow(max(-cos(rad), 0.0), 1.0) * 1.0 * max(scale - 0.3, 0.0) * modulation;
-	float breakingShoreWave = saturate(pow(max(sin(rad + 0.4), 0.0), 2.0) * 2.0 * max(scale - 0.3, 0.0)) * modulation;
+	float foamShoreWave = max(-cos(rad), 0.0) * 1.0 * max(scale - 0.3, 0.0) * modulation;
+	float breakingShoreWave = saturate(max(sin(rad - 0.7), 0.0) * 4.0 * max(scale - 0.3, 0.0)) * modulation;
 
 	return vec2(saturate(foamShoreWave), breakingShoreWave);
 

@@ -33,10 +33,6 @@ void main() {
 	float depth = textureLod(shadowMap, texCoord, 0).r;
 	
 	// Early exit, also prevents halo
-	if(depth == 1.0) {
-		imageStore(textureOut, pixel, vec4(0.0, 0.0, 0.0, 0.0));
-		return;
-	}
 		
 	vec3 fragPos = ConvertDepthToViewSpace(depth, texCoord);
     vec3 norm = 2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0;
@@ -70,6 +66,7 @@ void main() {
     }
 	
     float result = pow(1.0 - (occlusion / float(sampleCount)), strength);
+    result = depth == 1.0 ? 0.0 : result;
     imageStore(textureOut, pixel, vec4(result, 0.0, 0.0, 0.0));
    
 }

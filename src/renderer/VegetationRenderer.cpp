@@ -11,7 +11,7 @@ namespace Atlas {
 			shader.AddStage(AE_FRAGMENT_STAGE, "vegetation/vegetation.fsh");
 
 			shader.AddMacro("BASE_COLOR_MAP");
-			//shader.AddMacro("OPACITY_MAP");
+			shader.AddMacro("OPACITY_MAP");
 			shader.Compile();
 
 			depthShader.AddStage(AE_VERTEX_STAGE, "vegetation/depth.vsh");
@@ -40,18 +40,23 @@ namespace Atlas {
 
 			auto time = Clock::Get();
 			auto deltaTime = Clock::GetDelta();
+
+			/*
+			target->geometryFramebuffer.SetDrawBuffers({});
 			
-			// Remember to disable the alpha test for the main path when using the prepass
-			auto depthTexture = target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT);
-			framebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, depthTexture);
-			framebuffer.Bind();
 			DepthPrepass(vegetation, meshes, camera, time, deltaTime);
 
-			target->geometryFramebuffer.Bind();
+			target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
+				GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,
+				GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 });
 
 			glDepthMask(GL_FALSE);
 			glDepthFunc(GL_EQUAL);
+			*/
 
+			glDepthMask(GL_TRUE);
+			glDepthFunc(GL_LEQUAL);
+			
 			shader.Bind();
 
 			shader.GetUniform("vMatrix")->SetValue(camera->viewMatrix);
@@ -71,7 +76,7 @@ namespace Atlas {
 				mesh->Bind();
 				auto buffers = vegetation.GetBuffers(mesh);
 
-				buffers->culledInstanceData.BindBase(4);
+				buffers->binnedInstanceData.BindBase(5);
 
 				shader.GetUniform("invertUVs")->SetValue(mesh->invertUVs);
 
@@ -96,8 +101,9 @@ namespace Atlas {
 					shader.GetUniform("materialIdx")->SetValue((uint32_t)materialMap[material]);
 
 					auto offset = helper.GetCommandBufferOffset(*mesh, subData);
-					glDrawElementsIndirect(mesh->data.primitiveType, mesh->data.indices.GetType(),
-						(void*)(sizeof(Helper::VegetationHelper::DrawElementsIndirectCommand) * offset));
+					glMultiDrawElementsIndirect(mesh->data.primitiveType, mesh->data.indices.GetType(),
+						(void*)(sizeof(Helper::VegetationHelper::DrawElementsIndirectCommand) * offset),
+						helper.binCount, 0);
 				}
 			}
 
@@ -131,7 +137,7 @@ namespace Atlas {
 				mesh->Bind();
 				auto buffers = vegetation.GetBuffers(mesh);
 
-				buffers->culledInstanceData.BindBase(4);
+				buffers->binnedInstanceData.BindBase(5);
 
 				depthShader.GetUniform("invertUVs")->SetValue(mesh->invertUVs);
 
@@ -142,8 +148,9 @@ namespace Atlas {
 						material->opacityMap->Bind(GL_TEXTURE1);
 
 					auto offset = helper.GetCommandBufferOffset(*mesh, subData);
-					glDrawElementsIndirect(mesh->data.primitiveType, mesh->data.indices.GetType(),
-						(void*)(sizeof(Helper::VegetationHelper::DrawElementsIndirectCommand) * offset));
+					glMultiDrawElementsIndirect(mesh->data.primitiveType, mesh->data.indices.GetType(),
+						(void*)(sizeof(Helper::VegetationHelper::DrawElementsIndirectCommand) * offset),
+						helper.binCount, 0);
 				}
 			}
 

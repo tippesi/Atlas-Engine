@@ -12,8 +12,11 @@ namespace Atlas {
 				instanceCullingShader.AddStage(AE_COMPUTE_STAGE, "vegetation/instanceCulling.csh");
 				instanceCullingShader.Compile();
 
-				instanceDataShader.AddStage(AE_COMPUTE_STAGE, "vegetation/instanceData.csh");
-				instanceDataShader.Compile();
+				instanceBinningShader.AddStage(AE_COMPUTE_STAGE, "vegetation/instanceBinning.csh");
+				instanceBinningShader.Compile();
+
+				instanceBinningOffsetShader.AddStage(AE_COMPUTE_STAGE, "vegetation/instanceBinningOffset.csh");
+				instanceBinningOffsetShader.Compile();
 
 				instanceDrawCallShader.AddStage(AE_COMPUTE_STAGE, "vegetation/instanceDrawCall.csh");
 				instanceDrawCallShader.Compile();
@@ -27,7 +30,13 @@ namespace Atlas {
 				meshSubdataInformationBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
 					sizeof(MeshSubdataInformation), 0);
 
-				lodCounterBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
+				instanceCounterBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
+					sizeof(uint32_t), 0);
+
+				binCounterBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, 
+					sizeof(uint32_t), 0);
+
+				binOffsetBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
 					sizeof(uint32_t), 0);
 
 			}
@@ -46,41 +55,88 @@ namespace Atlas {
 
 				meshInformationBuffer.BindBase(0);
 				meshSubdataInformationBuffer.BindBase(1);
-				lodCounterBuffer.BindBase(2);
+				binCounterBuffer.BindBase(2);
+				binOffsetBuffer.BindBase(3);
+				instanceCounterBuffer.BindBase(4);
 
-				Profiler::BeginQuery("Coarse");
+				Profiler::BeginQuery("Cull and count bins");
 
-				// Cull unseen vegetation and count lods
+				// Cull unseen vegetation and count bins
 				{
-					
+					instanceCullingShader.Bind();
+
+					instanceCullingShader.GetUniform("cameraLocation")->SetValue(camera->GetLocation());
+					instanceCullingShader.GetUniform("frustumPlanes")->SetValue(camera->frustum.GetPlanes().data(), 6);
+				
+					for (auto mesh : meshes) {
+						auto buffers = vegetation.GetBuffers(mesh);
+
+						auto instanceCount = int32_t(buffers->instanceData.GetElementCount());
+						auto idx = meshToIdxMap[mesh];
+
+						buffers->instanceData.BindBase(5);
+						buffers->culledInstanceData.BindBase(6);
+
+						instanceCullingShader.GetUniform("instanceCount")->SetValue(instanceCount);
+						instanceCullingShader.GetUniform("meshIdx")->SetValue(idx);
+						instanceCullingShader.GetUniform("binCount")->SetValue(binCount);
+
+						auto groupSize = 64;
+						auto groupCount = instanceCount / groupSize;
+						groupCount += (groupCount % groupSize == 0) ? 0 : 1;
+
+						glDispatchCompute(groupCount, 1, 1);
+					}
 				}
 
-				Profiler::EndAndBeginQuery("Detail");
 
-				int32_t instanceCount = 0;
+				Profiler::EndAndBeginQuery("Compute bin offsets");
+
+				{
+					instanceBinningOffsetShader.Bind();
+
+					auto binCount = int32_t(binCounterBuffer.GetElementCount());
+
+					auto groupSize = 64;
+					auto groupCount = binCount / groupSize;
+					groupCount += (groupCount % groupSize == 0) ? 0 : 1;
+
+					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+					glDispatchCompute(groupCount, 1, 1);
+				}
+
+				Profiler::EndAndBeginQuery("Sort by bins");
 
 				// Move culled per instance data into own buffer
 				{
-					instanceDataShader.Bind();
+					instanceBinningShader.Bind();
+					bool firstMesh = true;
 
-					instanceDataShader.GetUniform("cameraLocation")->SetValue(camera->GetLocation());
-					instanceDataShader.GetUniform("frustumPlanes")->SetValue(camera->frustum.GetPlanes().data(), 6);
+					instanceBinningShader.GetUniform("cameraLocation")->SetValue(camera->GetLocation());
 
 					for (auto mesh : meshes) {
 						auto buffers = vegetation.GetBuffers(mesh);
 
-						instanceCount = int32_t(buffers->instanceData.GetElementCount());
+						auto instanceCount = int32_t(buffers->instanceData.GetElementCount());
 						auto idx = meshToIdxMap[mesh];
 
-						buffers->instanceData.BindBase(3);
-						buffers->culledInstanceData.BindBase(4);
+						buffers->culledInstanceData.BindBase(5);
+						buffers->binnedInstanceData.BindBase(6);
 						
-						instanceDataShader.GetUniform("instanceCount")->SetValue(instanceCount);
-						instanceDataShader.GetUniform("meshIdx")->SetValue(idx);
+						instanceBinningShader.GetUniform("instanceCount")->SetValue(instanceCount);
+						instanceBinningShader.GetUniform("meshIdx")->SetValue(idx);
+						instanceBinningShader.GetUniform("binCount")->SetValue(binCount);
 
 						auto groupSize = 64;
 						auto groupCount = instanceCount / groupSize;
-						groupCount += groupCount % groupSize == 0 ? 0 : 1;
+						groupCount += (groupCount % groupSize == 0) ? 0 : 1;
+
+						// Just use a memory barrier for the first call
+						// It's synchronized afterwards
+						if (firstMesh) {
+							firstMesh = false;
+							glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+						}
 
 						glDispatchCompute(groupCount, 1, 1);
 					}
@@ -101,14 +157,17 @@ namespace Atlas {
 					if (drawCallCount > groupSize)
 						groupCount += groupCount % groupSize == 0 ? 0 : 1;
 
-					indirectDrawCallBuffer.BindBaseAs(AE_SHADER_STORAGE_BUFFER, 5);
+					indirectDrawCallBuffer.BindBaseAs(AE_SHADER_STORAGE_BUFFER, 7);
 
 					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 					glDispatchCompute(groupCount, 1, 1);
 				}
 
 				// Reset lod counter buffer
-				if (lodCounterBuffer.GetElementCount()) ResetCounterBuffer();
+				if (binCounterBuffer.GetElementCount()) {
+					ResetCounterBuffer(binCounterBuffer);
+					ResetCounterBuffer(instanceCounterBuffer);
+				}
 
 				Profiler::EndQuery();
 				Profiler::EndQuery();
@@ -132,7 +191,7 @@ namespace Atlas {
 					if (subdataInfo.meshIdx == meshIdx &&
 						subdataInfo.indicesOffset == subData.indicesOffset &&
 						subdataInfo.indicesCount == subData.indicesCount) {
-						return i;
+						return i * size_t(binCount);
 					}
 				}
 
@@ -148,10 +207,11 @@ namespace Atlas {
 				meshSubdataInformation.clear();
 
 				uint32_t idx = 0;
-				uint32_t lodCounter = 0;
+				uint32_t binCounter = 0;
+				uint32_t meshCounter = 0;
 				std::vector<MeshInformation> meshInformation;
 				for (auto mesh : meshes) {
-					meshInformation.push_back({ vec4(mesh->data.aabb.min, reinterpret_cast<float&>(lodCounter)), vec4(mesh->data.aabb.max, 0.0)});
+					meshInformation.push_back({ vec4(mesh->data.aabb.min, reinterpret_cast<float&>(binCounter)), vec4(mesh->data.aabb.max, 0.0)});
 					meshToIdxMap[mesh] = int32_t(idx);
 
 					for (auto& subdata : mesh->data.subData) {
@@ -160,13 +220,19 @@ namespace Atlas {
 					}
 
 					idx++;
-					lodCounter++; // Needs to be removed in the future when there are lods
+					binCounter += binCount;
+					meshCounter++;
 				}
 
-				indirectDrawCallBuffer.SetSize(meshSubdataInformation.size());
+				// Each bin needs a seperate draw call
+				indirectDrawCallBuffer.SetSize(meshSubdataInformation.size() * size_t(binCounter));
 
-				lodCounterBuffer.SetSize(size_t(lodCounter));
-				ResetCounterBuffer();
+				binCounterBuffer.SetSize(size_t(binCounter));
+				binOffsetBuffer.SetSize(size_t(binCounter));
+				ResetCounterBuffer(binCounterBuffer);
+				
+				instanceCounterBuffer.SetSize(size_t(meshCounter));
+				ResetCounterBuffer(instanceCounterBuffer);
 
 				meshInformationBuffer.SetSize(meshInformation.size(), 
 					meshInformation.data());
@@ -176,12 +242,12 @@ namespace Atlas {
 				glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
 			}
 
-			void VegetationHelper::ResetCounterBuffer() {
+			void VegetationHelper::ResetCounterBuffer(Buffer::Buffer& buffer) {
 
 				uint32_t zero = 0;
-				lodCounterBuffer.Bind();
-				lodCounterBuffer.InvalidateData();
-				lodCounterBuffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
+				buffer.Bind();
+				buffer.InvalidateData();
+				buffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
 
 			}
 

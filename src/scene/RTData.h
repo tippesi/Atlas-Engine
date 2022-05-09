@@ -65,6 +65,8 @@ namespace Atlas {
 				float metalness;
 				float ao;
 
+				float reflectance;
+
 				float normalScale;
 
 				int32_t invertUVs;
