@@ -7,6 +7,8 @@ namespace Atlas {
 		// We want a shared depth and velocity texture across the geometry and lighting framebuffers
 		depthTexture = Texture::Texture2D(width, height, AE_DEPTH32F,
 			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+		normalTexture = Texture::Texture2D(width, height, AE_RGB16F,
+			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 		velocityTexture = Texture::Texture2D(width, height, AE_RG16F,
 			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
@@ -20,9 +22,9 @@ namespace Atlas {
 
 		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT1, AE_RGB16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT2, AE_RGB16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT3, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT4, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST);
+		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT2, &normalTexture);
 		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &velocityTexture);
 		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT6, &stencilTexture);
 		geometryFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
@@ -51,16 +53,16 @@ namespace Atlas {
 
 		postProcessTexture = Texture::Texture2D(width, height, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
-		SetSSAOResolution(FULL_RES);
+		SetSSAOResolution(HALF_RES);
 		SetVolumetricResolution(FULL_RES);
 
 		ivec2 halfRes = GetRelativeResolution(HALF_RES);
-		depthDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		normalDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		depthDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_R32F, GL_CLAMP_TO_EDGE, GL_NEAREST);
+		normalDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 		ivec2 quaterRes = GetRelativeResolution(QUATER_RES);
-		depthDownsampled4xTexture = Texture::Texture2D(quaterRes.x, quaterRes.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		normalDownsampled4xTexture = Texture::Texture2D(quaterRes.x, quaterRes.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		depthDownsampled4xTexture = Texture::Texture2D(quaterRes.x, quaterRes.y, AE_R32F, GL_CLAMP_TO_EDGE, GL_NEAREST);
+		normalDownsampled4xTexture = Texture::Texture2D(quaterRes.x, quaterRes.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 	}
 
@@ -154,6 +156,7 @@ namespace Atlas {
 	void RenderTarget::SetSSAOResolution(RenderResolution resolution) {
 
 		auto res = GetRelativeResolution(resolution);
+		ssaoResolution = resolution;
 
 		ssaoTexture = Texture::Texture2D(res.x, res.y, AE_R16F);
 		swapSsaoTexture = Texture::Texture2D(res.x, res.y, AE_R16F);
@@ -169,6 +172,7 @@ namespace Atlas {
 	void RenderTarget::SetVolumetricResolution(RenderResolution resolution) {
 
 		auto res = GetRelativeResolution(resolution);
+		volumetricResolution = resolution;
 
 		volumetricTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
 		swapVolumetricTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
@@ -181,22 +185,22 @@ namespace Atlas {
 
 	}
 
-	Texture::Texture2D& RenderTarget::GetDownsampledDepthTexture(RenderResolution resolution) {
+	Texture::Texture2D* RenderTarget::GetDownsampledDepthTexture(RenderResolution resolution) {
 
 		switch (resolution) {
-		case HALF_RES: return depthDownsampled2xTexture;
-		case QUATER_RES: return depthDownsampled4xTexture;
-		default: return depthTexture;
+		case HALF_RES: return &depthDownsampled2xTexture;
+		case QUATER_RES: return &depthDownsampled4xTexture;
+		default: return &depthTexture;
 		}
 
 	}
 
-	Texture::Texture2D& RenderTarget::GetDownsampledNormalTexture(RenderResolution resolution) {
+	Texture::Texture2D* RenderTarget::GetDownsampledNormalTexture(RenderResolution resolution) {
 
 		switch (resolution) {
-		case HALF_RES: return normalDownsampled2xTexture;
-		case QUATER_RES: return normalDownsampled4xTexture;
-		default: return normalTexture;
+		case HALF_RES: return &normalDownsampled2xTexture;
+		case QUATER_RES: return &normalDownsampled4xTexture;
+		default: return &normalTexture;
 		}
 
 	}

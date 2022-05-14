@@ -3,8 +3,10 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
-layout (binding = 0) writeonly uniform image2D depthTextureOut;
-layout (binding = 1) uniform sampler2D depthTextureIn;
+layout (binding = 0) uniform sampler2D depthIn;
+layout (binding = 1) uniform sampler2D normalIn;
+layout (binding = 2) writeonly uniform image2D depthOut;
+layout (binding = 3) writeonly uniform image2D normalOut;
 
 float Checkerboard(ivec2 coord) {
 
@@ -12,42 +14,42 @@ float Checkerboard(ivec2 coord) {
 
 }
 
-int MinDepth(vec4 depth, out float minDepth) {
+int MinDepth(vec4 depthVec, out float minDepth) {
 
     int idx = 0;
-	minDepth = depth[idx];
-	idx += step(depth.y, minDepth);
-	minDepth = depth[idx];
-	idx += step(depth.z, minDepth);
-	minDepth = depth[idx];
-	idx += step(depth.w, minDepth);
-	minDepth = depth[idx];
+	minDepth = depthVec[idx];
+	idx += int(step(depthVec.y, minDepth));
+	minDepth = depthVec[idx];
+	idx += int(step(depthVec.z, minDepth));
+	minDepth = depthVec[idx];
+	idx += int(step(depthVec.w, minDepth));
+	minDepth = depthVec[idx];
 	return idx;
 
 }
 
-int MaxDepth(vec4 depth, out float maxDepth) {
+int MaxDepth(vec4 depthVec, out float maxDepth) {
 
 	int idx = 0;
-	maxDepth = depth[idx];
-	idx += step(maxDepth, depth.y);
-	maxDepth = depth[idx];
-	idx += step(maxDepth, depth.z);
-	maxDepth = depth[idx];
-	idx += step(maxDepth, depth.w);
-	maxDepth = depth[idx];
+	maxDepth = depthVec[idx];
+	idx += int(step(maxDepth, depthVec.y));
+	maxDepth = depthVec[idx];
+	idx += int(step(maxDepth, depthVec.z));
+	maxDepth = depthVec[idx];
+	idx += int(step(maxDepth, depthVec.w));
+	maxDepth = depthVec[idx];
 	return idx;
 
 }
 
-int CheckerboardDepth(vec4 depth, ivec2 coord, out float depth) {
+int CheckerboardDepth(vec4 depthVec, ivec2 coord, out float depth) {
 
 	float minmax = Checkerboard(coord);
 
 	float maxDepth;
-	int maxIdx = MaxDepth(depth, maxDepth);
+	int maxIdx = MaxDepth(depthVec, maxDepth);
 	float minDepth;
-	int minIdx = MinDepth(depth, maxDepth);
+	int minIdx = MinDepth(depthVec, minDepth);
 
     depth =  mix(maxDepth, minDepth, minmax);
 	return minmax < 1.0 ? maxIdx : minIdx;
@@ -56,22 +58,31 @@ int CheckerboardDepth(vec4 depth, ivec2 coord, out float depth) {
 
 void main() {
 
-	ivec2 size = textureSize(textureOut, 0);
+	ivec2 size = imageSize(depthOut);
 	ivec2 coord = ivec2(gl_GlobalInvocationID);
 	
 	if (coord.x < size.x &&
 		coord.y < size.y) {
 
-		float depth00 = texelFetch(depthTextureIn, coord * 2 + ivec2(0, 0), 0);
-		float depth10 = texelFetch(depthTextureIn, coord * 2 + ivec2(1, 0), 0);
-		float depth01 = texelFetch(depthTextureIn, coord * 2 + ivec2(0, 1), 0);
-		float depth11 = texelFetch(depthTextureIn, coord * 2 + ivec2(1, 1), 0);
+		float depth00 = texelFetch(depthIn, coord * 2 + ivec2(0, 0), 0).r;
+		float depth10 = texelFetch(depthIn, coord * 2 + ivec2(1, 0), 0).r;
+		float depth01 = texelFetch(depthIn, coord * 2 + ivec2(0, 1), 0).r;
+		float depth11 = texelFetch(depthIn, coord * 2 + ivec2(1, 1), 0).r;
 
-		vec4 depth = vec4(depth00, depth10, depth01, depth11);
-		float downsampledDepth;
-        int depthIdx = CheckerboardDepth(depth, coord, downsampledDepth);
+		vec3 normal00 = texelFetch(normalIn, coord * 2 + ivec2(0, 0), 0).rgb;
+		vec3 normal10 = texelFetch(normalIn, coord * 2 + ivec2(1, 0), 0).rgb;
+		vec3 normal01 = texelFetch(normalIn, coord * 2 + ivec2(0, 1), 0).rgb;
+		vec3 normal11 = texelFetch(normalIn, coord * 2 + ivec2(1, 1), 0).rgb;
+
+		vec4 depthVec = vec4(depth00, depth10, depth01, depth11);
+		float depth;
+        int depthIdx = CheckerboardDepth(depthVec, coord, depth);
+
+		vec3 normal = depthIdx < 2 ? (depthIdx < 1 ? normal00 : normal10) :
+			(depthIdx < 3 ? normal01 : normal11);
 		
-		imageStore(depthTextureOut, coord, vec4(downsampledDepth, 0.0, 0.0, 1.0));
+		imageStore(depthOut, coord, vec4(depth, 0.0, 0.0, 1.0));
+		imageStore(normalOut, coord, vec4(normal, 1.0));
 		
 	}
 

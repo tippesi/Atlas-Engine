@@ -16,7 +16,7 @@ layout(binding = 0) writeonly uniform image2D outputImage;
 uniform int kernelSize;
 uniform float weights[80];
 
-uniform float depthSensitivity = 10000.0;
+uniform float depthSensitivity = 1000.0;
 
 #ifdef BLUR_RGB
 shared vec3 inputs[320];

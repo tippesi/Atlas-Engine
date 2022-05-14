@@ -25,6 +25,7 @@ uniform float maxVelocityBlend = 0.5;
 //#define TAA_CLIP // Use clip instead of clamping for better ghosting prevention, introduces more flickering
 #define TAA_BICUBIC // Nearly always use the bicubic sampling for better quality and sharpness under movement
 #define TAA_TONE // Somehow introduces more flickering as well
+#define TAA_DENOISE
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
@@ -311,6 +312,8 @@ void main() {
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
     vec2 lastVelocity = texelFetch(lastVelocityTexture, velocityPixel, 0).rg;
 
+    float velocityBlend = saturate(600.0 * max(length(velocity), length(lastVelocity)));
+
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
 
     // Maybe we might want to filter the current input pixel
@@ -324,13 +327,16 @@ void main() {
 
     float historyContrast = saturate(abs(lumaCurrent - lumaHistory) / max3(vec3(0.2, lumaCurrent, lumaHistory)));
     float range = 1.4;
-    float localAntiFlicker = mix(0.6, 3.0, saturate(1.0 - 1000.0 * length(velocity)));
+    float localAntiFlicker = mix(0.6, 5.0, 1.0 - velocityBlend);
+
+#ifdef TAA_DENOISE
+    range += localAntiFlicker;
+#else
     range += mix(0.0, localAntiFlicker, historyContrast);
+#endif
+
     neighbourhoodMin = average - range * (average - neighbourhoodMin);
     neighbourhoodMax = average + range * (neighbourhoodMax - average);
-
-    float lumaMin = Luma(neighbourhoodMin);
-    float lumaMax = Luma(neighbourhoodMax);
 
     // Clamp/Clip the history to the neighbourhood bounding box
 #ifdef TAA_CLIP
@@ -342,8 +348,7 @@ void main() {
     historyColor = clamp(historyColor, neighbourhoodMin, neighbourhoodMax);
 #endif
 
-    float blendFactor = mix(minVelocityBlend, maxVelocityBlend, 
-        saturate(1000.0 * max(length(velocity), length(lastVelocity))));
+    float blendFactor = mix(minVelocityBlend, maxVelocityBlend, velocityBlend);
 
 #ifdef TAA_YCOCG
     historyColor = YCoCgToRGB(historyColor); 

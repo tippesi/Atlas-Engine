@@ -173,6 +173,8 @@ namespace Atlas {
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+			downscaleRenderer.Render(viewport, target, camera, scene);
+
 			target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
 				GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
 

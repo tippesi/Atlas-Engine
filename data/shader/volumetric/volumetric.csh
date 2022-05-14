@@ -7,6 +7,7 @@ layout (local_size_x = 8, local_size_y = 8) in;
 #include <../structures>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
+#include <../common/random.hsh>
 #include <fog.hsh>
 
 layout(binding = 0) uniform sampler2D depthTexture;
@@ -18,6 +19,7 @@ uniform int sampleCount;
 uniform vec2 framebufferResolution;
 uniform float intensity;
 uniform mat4 ivMatrix;
+uniform float seed;
 
 vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords);
 
@@ -56,7 +58,11 @@ vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 	
 	texCoords = (0.5 * texCoords + 0.5) * framebufferResolution;
 	
-	float ditherValue = ditherPattern[(int(texCoords.x) % 4) * 4 + int(texCoords.y) % 4];
+    float rndSeed = seed;
+    float rnd0 = random(texCoords, rndSeed) * 0.0;
+    float rnd1 = random(texCoords, rndSeed) * 0.0;
+	float ditherValue = ditherPattern[(int(texCoords.x + rnd0) % 4) * 4 + int(texCoords.y + rnd1) % 4];
+   
 	vec3 currentPosition = stepVector * ditherValue;
 
 	int cascadeIndex = 0;

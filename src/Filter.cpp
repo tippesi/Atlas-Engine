@@ -6,7 +6,7 @@ namespace Atlas {
 
 		size = 2 * size + 1;
 		float weightSum = 0.0f;
-		float mean = (float) size / 2.0f;
+		float mean = float(size - 1) / 2.0f;
 		ivec2 offset((size - 1) / 2);
 
 		weights.resize(size);

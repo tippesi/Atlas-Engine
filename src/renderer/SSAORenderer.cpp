@@ -6,7 +6,9 @@ namespace Atlas {
 
         SSAORenderer::SSAORenderer() {
 
-            blurFilter.CalculateBoxFilter(6);
+            const int32_t filterSize = 4;
+            blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
+            blurFilter.CalculateBoxFilter(filterSize);
 
             ssaoShader.AddStage(AE_COMPUTE_STAGE, "ao/ssao.csh");
 
@@ -30,12 +32,19 @@ namespace Atlas {
         void SSAORenderer::Render(Viewport* viewport, RenderTarget* target,
             Camera* camera, Scene::Scene* scene) {
 
+            static int32_t frameCount = 0;
+
             auto ssao = scene->ssao;
             if (!ssao || !ssao->enable) return;
 
             Profiler::BeginQuery("Render SSAO");
 
             ivec2 res = ivec2(target->ssaoTexture.width, target->ssaoTexture.height);
+
+            auto depthTexture = target->GetDownsampledDepthTexture(target->GetSSAOResolution());
+            auto normalTexture = target->GetDownsampledNormalTexture(target->GetSSAOResolution());
+
+            frameCount = (frameCount + 1) % 16;
 
             // Calculate SSAO
             {
@@ -55,10 +64,11 @@ namespace Atlas {
                 ssaoShader.GetUniform("radius")->SetValue(ssao->radius);
                 ssaoShader.GetUniform("strength")->SetValue(ssao->strength);
                 ssaoShader.GetUniform("resolution")->SetValue(vec2(res));
+                ssaoShader.GetUniform("frameCount")->SetValue(frameCount);
 
                 // Bind the geometry normal texure and depth texture
-                target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE1);
-                target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE2);
+                normalTexture->Bind(GL_TEXTURE1);
+                depthTexture->Bind(GL_TEXTURE2);
 
                 ssao->noiseTexture.Bind(GL_TEXTURE3);
 
@@ -66,16 +76,14 @@ namespace Atlas {
                 atomicCounterBuffer.BindBase(0);
 
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
-
-                Profiler::EndQuery();
             }
 
             {
-                Profiler::BeginQuery("Bilateral blur");
+                Profiler::EndAndBeginQuery("Bilateral blur");
 
                 const int32_t groupSize = 256;
 
-                target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
+                depthTexture->Bind(GL_TEXTURE1);
 
                 std::vector<float> kernelWeights;
                 std::vector<float> kernelOffsets;
@@ -113,13 +121,18 @@ namespace Atlas {
 
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
+            }
 
-                Profiler::EndQuery();
+            {
+                Profiler::EndAndBeginQuery("Bilateral upsampling");
+
+
             }
             
             InvalidateCounterBuffer();
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+            Profiler::EndQuery();
             Profiler::EndQuery();
 
         }

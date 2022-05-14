@@ -1,5 +1,6 @@
 #include "VolumetricRenderer.h"
 #include "../lighting/DirectionalLight.h"
+#include "../common/RandomHelper.h"
 
 namespace Atlas {
 
@@ -7,8 +8,8 @@ namespace Atlas {
 
         VolumetricRenderer::VolumetricRenderer() {
 
-            const int32_t filterSize = 6;
-            blurFilter.CalculateBoxFilter(filterSize);
+            const int32_t filterSize = 4;
+            blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
 
             volumetricShader.AddStage(AE_COMPUTE_STAGE, "volumetric/volumetric.csh");
             volumetricShader.Compile();
@@ -39,7 +40,9 @@ namespace Atlas {
 
             volumetricShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
             volumetricShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
-            target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
+
+            auto depthTexture = target->GetDownsampledDepthTexture(target->GetVolumetricResolution());
+            depthTexture->Bind(GL_TEXTURE0);
 
             auto lights = scene->GetLights();
 
@@ -74,6 +77,7 @@ namespace Atlas {
                 volumetricShader.GetUniform("sampleCount")->SetValue(volumetric->sampleCount);
                 volumetricShader.GetUniform("framebufferResolution")->SetValue(vec2(res));
                 volumetricShader.GetUniform("intensity")->SetValue(volumetric->intensity * light->intensity);
+                volumetricShader.GetUniform("seed")->SetValue(Common::Random::FastCanonicalUniform());
 
                 auto fog = scene->fog;
                 bool fogEnabled = fog && fog->enable;
@@ -114,7 +118,7 @@ namespace Atlas {
 
                 const int32_t groupSize = 256;
 
-                target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
+                depthTexture->Bind(GL_TEXTURE1);
 
                 std::vector<float> kernelWeights;
                 std::vector<float> kernelOffsets;

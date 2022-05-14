@@ -78,9 +78,9 @@ namespace Atlas {
 		 */
 		RenderResolution GetVolumetricResolution();
 
-		Texture::Texture2D& GetDownsampledDepthTexture(RenderResolution resolution);
+		Texture::Texture2D* GetDownsampledDepthTexture(RenderResolution resolution);
 
-		Texture::Texture2D& GetDownsampledNormalTexture(RenderResolution resolution);
+		Texture::Texture2D* GetDownsampledNormalTexture(RenderResolution resolution);
 
 		Texture::Texture2D* GetHistory();
 

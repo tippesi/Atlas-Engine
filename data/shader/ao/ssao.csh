@@ -3,6 +3,8 @@ layout (local_size_x = 8, local_size_y = 8) in;
 #include <../common/convert.hsh>
 #include <../common/compute.hsh>
 #include <../common/utility.hsh>
+#include <../common/flatten.hsh>
+#include <../common/random.hsh>
 
 layout (binding = 0, r16f) writeonly uniform image2D textureOut;
 layout(binding = 1) uniform sampler2D normalTexture;
@@ -15,6 +17,7 @@ uniform vec2 resolution;
 uniform uint sampleCount;
 uniform float radius;
 uniform float strength;
+uniform int frameCount;
 
 uniform mat4 pMatrix;
 uniform mat4 ivMatrix;
@@ -28,15 +31,15 @@ void main() {
     vec2 texCoord = (vec2(pixel) + 0.5) / resolution;
 	
 	// tile noise texture over screen based on screen dimensions divided by noise size
-	vec2 noiseScale = vec2(resolution.x / 4.0, resolution.y / 4.0); 
-   
-	float depth = textureLod(shadowMap, texCoord, 0).r;
+	vec2 noiseScale = vec2(resolution.x / 4.0, resolution.y / 4.0);
+
+	float depth = texelFetch(shadowMap, pixel, 0).r;
 	
 	// Early exit, also prevents halo
 		
 	vec3 fragPos = ConvertDepthToViewSpace(depth, texCoord);
     vec3 norm = 2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0;
-    vec3 randomVec = vec3(2.0 * textureLod(randomTexture, texCoord * noiseScale, 0).xy - 1.0, 0.0);
+    vec3 randomVec = vec3(2.0 * texelFetch(randomTexture, pixel % ivec2(4), 0).xy - 1.0, 0.0);
 	
     //Create TBN matrix
     vec3 tang = normalize(randomVec - norm * dot(randomVec, norm));
@@ -45,10 +48,12 @@ void main() {
 	
     //Calculate occlusion factor
     float occlusion = 0.0;
+    float seed = float(frameCount);
     for(uint i = 0; i < sampleCount; i++) {
+        float rnd = 2.0 * random(texCoord, seed);
         // get sample position
         vec3 ssaoSample = TBN * samples[i]; // From tangent to view-space
-        ssaoSample = fragPos + ssaoSample * radius; 
+        ssaoSample = fragPos + ssaoSample * radius * rnd; 
         
         // project sample position (to sample texture) (to get position on screen/texture)
         vec4 offset = vec4(ssaoSample, 1.0);
