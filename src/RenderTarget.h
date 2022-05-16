@@ -8,8 +8,7 @@ namespace Atlas {
 
 	enum RenderResolution {
 		FULL_RES = 0,
-		HALF_RES,
-		QUATER_RES
+		HALF_RES
 	};
 
 	class RenderTarget {
@@ -109,10 +108,7 @@ namespace Atlas {
 		Texture::Texture2D stencilTexture;
 
 		Texture::Texture2D depthDownsampled2xTexture;
-		Texture::Texture2D depthDownsampled4xTexture;
-
 		Texture::Texture2D normalDownsampled2xTexture;
-		Texture::Texture2D normalDownsampled4xTexture;
 
 		Texture::Texture2D velocityTexture;
 		Texture::Texture2D swapVelocityTexture;

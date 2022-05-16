@@ -87,7 +87,7 @@ void ImguiWrapper::Update(Atlas::Window* window, float deltaTime) {
 
 	auto w = (float)window->GetWidth();
 	auto h = (float)window->GetHeight();
-	auto size = vec2(window->GetDrawableSize());
+	auto size = glm::vec2(window->GetDrawableSize());
 	io.DisplaySize = ImVec2(w, h);
 	if (w > 0.0f && h > 0.0f)
 		io.DisplayFramebufferScale = ImVec2(size.x / w, size.y / h);

@@ -122,12 +122,6 @@ namespace Atlas {
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
             }
-
-            {
-                Profiler::EndAndBeginQuery("Bilateral upsampling");
-
-
-            }
             
             InvalidateCounterBuffer();
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

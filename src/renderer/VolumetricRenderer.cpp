@@ -175,6 +175,8 @@ namespace Atlas {
 
                 // We keep the depth texture binding from blur pass and only bind volumetric texture
                 target->volumetricTexture.Bind(GL_TEXTURE0);
+                target->GetDownsampledDepthTexture(target->GetVolumetricResolution())->Bind(GL_TEXTURE1);
+                target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE2);
 
                 auto fog = scene->fog;
                 bool fogEnabled = fog && fog->enable;
@@ -194,6 +196,7 @@ namespace Atlas {
                 volumetricResolveShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
                 volumetricResolveShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
                 volumetricResolveShader.GetUniform("cameraLocation")->SetValue(camera->location);
+                volumetricResolveShader.GetUniform("downsampled2x")->SetValue(target->GetVolumetricResolution() == RenderResolution::HALF_RES);
 
                 target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_READ_WRITE, 0);
 

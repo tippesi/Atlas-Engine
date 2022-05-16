@@ -17,6 +17,7 @@
 #include <string>
 #include <math.h>
 #include <exception>
+#include <memory>
 
 #if  defined(AE_OS_ANDROID)
 
@@ -62,17 +63,27 @@
 #include <glm/gtx/common.hpp>
 #include <glm/gtx/transform.hpp>
 
-// Important definitions
-using glm::vec4;
-using glm::vec3;
-using glm::vec2;
-using glm::ivec2;
-using glm::ivec3;
-using glm::ivec4;
+namespace Atlas {
 
-using glm::mat4;
-using glm::mat3;
+	// Important definitions
+	using glm::vec4;
+	using glm::vec3;
+	using glm::vec2;
+	using glm::ivec2;
+	using glm::ivec3;
+	using glm::ivec4;
 
-typedef short float16;
+	using glm::mat4;
+	using glm::mat3;
+
+	typedef short float16;
+
+	template<typename T>
+	using Ref = std::shared_ptr<T>;
+
+	template<typename T>
+	using Scope = std::unique_ptr<T>;
+
+}
 
 #endif

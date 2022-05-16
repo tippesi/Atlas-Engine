@@ -22,9 +22,9 @@ void App::LoadContent() {
 	DisplayLoadingScreen();
 
 	camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f,
-		vec3(30.0f, 25.0f, 0.0f), vec2(-3.14f / 2.0f, 0.0f));
+		glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
 
-	scene = Atlas::Scene::Scene(vec3(-2048.0f), vec3(2048.0f));
+	scene = Atlas::Scene::Scene(glm::vec3(-2048.0f), glm::vec3(2048.0f));
 
 	mouseHandler = Atlas::Input::MouseHandler(&camera, 1.5f, 6.0f);
 	keyboardHandler = Atlas::Input::KeyboardHandler(&camera, 7.0f, 6.0f);
@@ -46,10 +46,10 @@ void App::LoadContent() {
 		});
 	
 	directionalLight = Atlas::Lighting::DirectionalLight(AE_MOVABLE_LIGHT);
-	directionalLight.direction = vec3(0.0f, -1.0f, 1.0f);
-	directionalLight.color = vec3(253, 194, 109) / 255.0f;
-	mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
-	directionalLight.AddShadow(200.0f, 3.0f, 4096, vec3(0.0f), orthoProjection);
+	directionalLight.direction = glm::vec3(0.0f, -1.0f, 1.0f);
+	directionalLight.color = glm::vec3(253, 194, 109) / 255.0f;
+	glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
+	directionalLight.AddShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
 	directionalLight.AddVolumetric(10, 0.28f);
 	scene.Add(&directionalLight);
 
@@ -119,11 +119,11 @@ void App::Render(float deltaTime) {
 	
 	window.Clear();
 
-	if (animateLight) directionalLight.direction = vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));	
+	if (animateLight) directionalLight.direction = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
 	
 	if (pathTrace) {
 		viewport.Set(0, 0, pathTraceTarget.GetWidth(), pathTraceTarget.GetHeight());
-		pathTracingRenderer.Render(&viewport, &pathTraceTarget, ivec2(1, 1), &camera, &scene);
+		pathTracingRenderer.Render(&viewport, &pathTraceTarget, glm::ivec2(1, 1), &camera, &scene);
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
 			GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -262,19 +262,19 @@ void App::Render(float deltaTime) {
 
 				const char* gridResItems [] = { "5x5x5", "10x10x10", "20x20x20", "30x30x30" };
 				int currentItem = 0;
-				if (volume->probeCount == ivec3(5)) currentItem = 0;
-				if (volume->probeCount == ivec3(10)) currentItem = 1;
-				if (volume->probeCount == ivec3(20)) currentItem = 2;
-				if (volume->probeCount == ivec3(30)) currentItem = 3;
+				if (volume->probeCount == glm::ivec3(5)) currentItem = 0;
+				if (volume->probeCount == glm::ivec3(10)) currentItem = 1;
+				if (volume->probeCount == glm::ivec3(20)) currentItem = 2;
+				if (volume->probeCount == glm::ivec3(30)) currentItem = 3;
 				auto prevItem = currentItem;
 				ImGui::Combo("Resolution##DDGI", &currentItem, gridResItems, IM_ARRAYSIZE(gridResItems));
 
 				if (currentItem != prevItem) {
 					switch (currentItem) {
-					case 0: volume->SetProbeCount(ivec3(5)); break;
-					case 1: volume->SetProbeCount(ivec3(10)); break;
-					case 2: volume->SetProbeCount(ivec3(20)); break;
-					case 3: volume->SetProbeCount(ivec3(30)); break;
+					case 0: volume->SetProbeCount(glm::ivec3(5)); break;
+					case 1: volume->SetProbeCount(glm::ivec3(10)); break;
+					case 2: volume->SetProbeCount(glm::ivec3(20)); break;
+					case 3: volume->SetProbeCount(glm::ivec3(30)); break;
 					}
 				}
 
@@ -342,9 +342,9 @@ void App::Render(float deltaTime) {
 			}
 			if (ImGui::CollapsingHeader("Fog")) {
 				ImGui::Checkbox("Enable##Fog", &fog->enable);
-				fog->color = glm::pow(fog->color, 1.0f / vec3(2.2f));
+				fog->color = glm::pow(fog->color, 1.0f / glm::vec3(2.2f));
 				ImGui::ColorEdit3("Color##Fog", &fog->color[0]);
-				fog->color = glm::pow(fog->color, vec3(2.2f));
+				fog->color = glm::pow(fog->color, glm::vec3(2.2f));
 
 				ImGui::SliderFloat("Density##Fog", &fog->density, 0.0f, 0.5f, "%.4f", 4.0f);
 				ImGui::SliderFloat("Height##Fog", &fog->height, 0.0f, 300.0f, "%.3f", 4.0f);
@@ -469,7 +469,7 @@ void App::DisplayLoadingScreen() {
 	float y = windowSize.y / 2 - textHeight / 2;
 
 	viewport.Set(0, 0, windowSize.x, windowSize.y);
-	masterRenderer.textRenderer.Render(&viewport, &font, "Loading...", x, y, vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+	masterRenderer.textRenderer.Render(&viewport, &font, "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
 	window.Update();
 
@@ -498,7 +498,7 @@ bool App::LoadScene() {
 	DisplayLoadingScreen();
 
 	Atlas::Texture::Cubemap sky;
-	directionalLight.direction = vec3(0.0f, -1.0f, 1.0f);
+	directionalLight.direction = glm::vec3(0.0f, -1.0f, 1.0f);
 
 	if (sceneSelection == CORNELL) {
 		meshes.reserve(1);
@@ -508,8 +508,8 @@ bool App::LoadScene() {
 
 		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
-		mesh.SetTransform(scale(mat4(1.0f), vec3(10.0f)));
-		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.10f), ivec3(20));
+		mesh.SetTransform(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
+		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.10f), glm::ivec3(20));
 		scene.irradianceVolume->sampleEmissives = true;
 
 		// Other scene related settings apart from the mesh
@@ -518,8 +518,8 @@ bool App::LoadScene() {
 		scene.irradianceVolume->SetRayCount(512, 32);
 
 		// Setup camera
-		camera.location = vec3(0.0f, 14.0f, 40.0f);
-		camera.rotation = vec2(-3.14f, -0.1f);
+		camera.location = glm::vec3(0.0f, 14.0f, 40.0f);
+		camera.rotation = glm::vec2(-3.14f, -0.1f);
 
 		scene.fog->enable = false;
 	}
@@ -531,8 +531,8 @@ bool App::LoadScene() {
 
 		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
-		mesh.SetTransform(scale(mat4(1.0f), vec3(.05f)));
-		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(0.90f), ivec3(20));
+		mesh.SetTransform(glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
+		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(0.90f), glm::ivec3(20));
 
 		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
@@ -542,21 +542,21 @@ bool App::LoadScene() {
 		scene.irradianceVolume->SetRayCount(128, 32);
 
 		// Setup camera
-		camera.location = vec3(30.0f, 25.0f, 0.0f);
-		camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
+		camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
+		camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
 		scene.fog->enable = true;
 	}
 	else if (sceneSelection == BISTRO) {
 		meshes.reserve(1);
 
-		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("bistro/mesh/exterior.obj", false, mat4(1.0f), 2048);
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("bistro/mesh/exterior.obj", false, glm::mat4(1.0f), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
 		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
-		mesh.SetTransform(scale(mat4(1.0f), vec3(.015f)));
-		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(0.90f), ivec3(20));
+		mesh.SetTransform(glm::scale(glm::mat4(1.0f), glm::vec3(.015f)));
+		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(0.90f), glm::ivec3(20));
 
 		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
@@ -566,33 +566,33 @@ bool App::LoadScene() {
 		scene.irradianceVolume->SetRayCount(32, 32);
 
 		// Setup camera
-		camera.location = vec3(-21.0f, 8.0f, 1.0f);
-		camera.rotation = vec2(3.14f / 2.0f, 0.0f);
+		camera.location = glm::vec3(-21.0f, 8.0f, 1.0f);
+		camera.rotation = glm::vec2(3.14f / 2.0f, 0.0f);
 
 		scene.fog->enable = true;
 	}
 	else if (sceneSelection == SANMIGUEL) {
 		meshes.reserve(1);
 
-		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("sanmiguel/san-miguel-low-poly.obj", false, mat4(1.0f), 2048);
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("sanmiguel/san-miguel-low-poly.obj", false, glm::mat4(1.0f), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
 		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
-		mesh.SetTransform(scale(mat4(1.0f), vec3(2.0f)));
-		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
+		mesh.SetTransform(glm::scale(glm::mat4(1.0f), glm::vec3(2.0f)));
+		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), glm::ivec3(20));
 
 		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
 		// Other scene related settings apart from the mesh
 		directionalLight.intensity = 100.0f;
 		directionalLight.GetVolumetric()->intensity = 0.28f;
-		directionalLight.direction = vec3(0.0f, -1.0f, -1.0f);
+		directionalLight.direction = glm::vec3(0.0f, -1.0f, -1.0f);
 		scene.irradianceVolume->SetRayCount(128, 32);
 
 		// Setup camera
-		camera.location = vec3(45.0f, 26.0f, 17.0f);
-		camera.rotation = vec2(-4.14f / 2.0f, -.6f);
+		camera.location = glm::vec3(45.0f, 26.0f, 17.0f);
+		camera.rotation = glm::vec2(-4.14f / 2.0f, -.6f);
 		camera.exposure = 2.5f;
 
 		scene.fog->enable = true;
@@ -600,7 +600,7 @@ bool App::LoadScene() {
 	else if (sceneSelection == MEDIEVAL) {
 		meshes.reserve(1);
 
-		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("medieval/scene.fbx", false, glm::scale(mat4(1.0f), vec3(2.0f)));
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("medieval/scene.fbx", false, glm::scale(glm::mat4(1.0f), glm::vec3(2.0f)));
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
 		auto& mesh = meshes.back();
@@ -608,7 +608,7 @@ bool App::LoadScene() {
 		// Metalness is set to 0.9f
 		for (auto& material : mesh.data.materials) material.metalness = 0.0f;
 
-		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
+		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), glm::ivec3(20));
 
 		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
@@ -618,8 +618,8 @@ bool App::LoadScene() {
 		scene.irradianceVolume->SetRayCount(128, 32);
 
 		// Setup camera
-		camera.location = vec3(30.0f, 25.0f, 0.0f);
-		camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
+		camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
+		camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
 		scene.fog->enable = true;
 	}
@@ -633,7 +633,7 @@ bool App::LoadScene() {
 		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
 
-		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), ivec3(20));
+		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), glm::ivec3(20));
 
 		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
@@ -643,32 +643,32 @@ bool App::LoadScene() {
 		scene.irradianceVolume->SetRayCount(128, 32);
 
 		// Setup camera
-		camera.location = vec3(30.0f, 25.0f, 0.0f);
-		camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
+		camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
+		camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
 		scene.fog->enable = true;
 	}
 	else if (sceneSelection == NEWSPONZA) {
 		meshes.reserve(4);
 		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/Main/NewSponza_Main_Blender_glTF.gltf", 
-			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
+			false, glm::scale(glm::mat4(1.0f), glm::vec3(4.0f)), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 		meshes.back().invertUVs = true;
 		meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/PKG_D_Candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", 
-			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
+			false, glm::scale(glm::mat4(1.0f), glm::vec3(4.0f)), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 		meshes.back().invertUVs = true;
 		meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/PKG_A_Curtains/NewSponza_Curtains_glTF.gltf", 
-			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
+			false, glm::scale(glm::mat4(1.0f), glm::vec3(4.0f)), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 		meshes.back().invertUVs = true;
 		meshes.back().cullBackFaces = false;
 		meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/PKG_B_Ivy/NewSponza_IvyGrowth_glTF.gltf",
-			false, glm::scale(mat4(1.0f), vec3(4.0f)), 2048);
+			false, glm::scale(glm::mat4(1.0f), glm::vec3(4.0f)), 2048);
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 		meshes.back().invertUVs = true;
 
-		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(meshes.front().data.aabb.Scale(1.05f), ivec3(20));
+		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(meshes.front().data.aabb.Scale(1.05f), glm::ivec3(20));
 
 		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
@@ -678,15 +678,15 @@ bool App::LoadScene() {
 		scene.irradianceVolume->SetRayCount(128, 32);
 
 		// Setup camera
-		camera.location = vec3(30.0f, 25.0f, 0.0f);
-		camera.rotation = vec2(-3.14f / 2.0f, 0.0f);
+		camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
+		camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
 		scene.fog->enable = true;
 	}
 
 	actors.reserve(meshes.size());
 	for (auto& mesh : meshes) {
-		actors.push_back({ &mesh, mat4(1.0f) });
+		actors.push_back({ &mesh, glm::mat4(1.0f) });
 		scene.Add(&actors.back());
 	}
 

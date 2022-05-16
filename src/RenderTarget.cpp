@@ -54,15 +54,11 @@ namespace Atlas {
 		postProcessTexture = Texture::Texture2D(width, height, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 		SetSSAOResolution(HALF_RES);
-		SetVolumetricResolution(FULL_RES);
+		SetVolumetricResolution(HALF_RES);
 
 		ivec2 halfRes = GetRelativeResolution(HALF_RES);
 		depthDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_R32F, GL_CLAMP_TO_EDGE, GL_NEAREST);
 		normalDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-
-		ivec2 quaterRes = GetRelativeResolution(QUATER_RES);
-		depthDownsampled4xTexture = Texture::Texture2D(quaterRes.x, quaterRes.y, AE_R32F, GL_CLAMP_TO_EDGE, GL_NEAREST);
-		normalDownsampled4xTexture = Texture::Texture2D(quaterRes.x, quaterRes.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 	}
 
@@ -101,10 +97,6 @@ namespace Atlas {
 		ivec2 halfRes = GetRelativeResolution(HALF_RES);
 		depthDownsampled2xTexture.Resize(halfRes.x, halfRes.y);
 		normalDownsampled2xTexture.Resize(halfRes.x, halfRes.y);
-
-		ivec2 quaterRes = GetRelativeResolution(QUATER_RES);
-		depthDownsampled4xTexture.Resize(quaterRes.x, quaterRes.y);
-		normalDownsampled4xTexture.Resize(quaterRes.x, quaterRes.y);
 
 	}
 
@@ -145,7 +137,6 @@ namespace Atlas {
 
 		switch (resolution) {
 		case HALF_RES: factor = 2; break;
-		case QUATER_RES: factor = 4; break;
 		default: break;
 		}
 
@@ -189,7 +180,6 @@ namespace Atlas {
 
 		switch (resolution) {
 		case HALF_RES: return &depthDownsampled2xTexture;
-		case QUATER_RES: return &depthDownsampled4xTexture;
 		default: return &depthTexture;
 		}
 
@@ -199,7 +189,6 @@ namespace Atlas {
 
 		switch (resolution) {
 		case HALF_RES: return &normalDownsampled2xTexture;
-		case QUATER_RES: return &normalDownsampled4xTexture;
 		default: return &normalTexture;
 		}
 
