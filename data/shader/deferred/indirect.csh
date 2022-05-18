@@ -2,6 +2,7 @@
 
 #include <../ddgi/ddgi.hsh>
 #include <../brdf/brdfEval.hsh>
+#include <../common/flatten.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
@@ -14,6 +15,30 @@ uniform mat4 ivMatrix;
 uniform float indirectStrength = 1.0;
 uniform bool aoEnabled = true;
 uniform bool aoDownsampled2x;
+
+// (localSize / 2 + 2)^2
+shared float depths[36];
+shared float aos[36];
+
+const uint depthDataSize = (gl_WorkGroupSize.x / 2 + 2) * (gl_WorkGroupSize.y / 2 + 2);
+const ivec2 unflattenedDepthDataSize = ivec2(gl_WorkGroupSize) / 2 + 2;
+
+void LoadGroupSharedData() {
+
+	ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) / 2 - ivec2(1);
+
+	// We assume data size is smaller than gl_WorkGroupSize.x + gl_WorkGroupSize.y
+	if (gl_LocalInvocationIndex < depthDataSize) {
+		ivec2 offset = Unflatten2D(int(gl_LocalInvocationIndex), unflattenedDepthDataSize);
+		offset += workGroupOffset;
+		offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
+		depths[gl_LocalInvocationIndex] = texelFetch(lowResDepthTexture, offset, 0).r;
+		aos[gl_LocalInvocationIndex] = texelFetch(aoTexture, offset, 0).r;
+	}
+
+    barrier();
+
+}
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
@@ -42,42 +67,27 @@ int NearestDepth(float referenceDepth, float[9] depthVec) {
 
 }
 
-// We could load the data cooperatively into shared memory
-float Upsample2x(float referenceDepth, ivec2 pixel) {
+float Upsample2x(float referenceDepth) {
 
-    pixel /= 2;
+    ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
 
-    float depths[] = float[] (
-        texelFetch(lowResDepthTexture, pixel + offsets[0], 0).r,
-		texelFetch(lowResDepthTexture, pixel + offsets[1], 0).r,
-		texelFetch(lowResDepthTexture, pixel + offsets[2], 0).r,
-		texelFetch(lowResDepthTexture, pixel + offsets[3], 0).r,
-		texelFetch(lowResDepthTexture, pixel + offsets[4], 0).r,
-		texelFetch(lowResDepthTexture, pixel + offsets[5], 0).r,
-		texelFetch(lowResDepthTexture, pixel + offsets[6], 0).r,
-		texelFetch(lowResDepthTexture, pixel + offsets[7], 0).r,
-		texelFetch(lowResDepthTexture, pixel + offsets[8], 0).r
-    );
+	float invocationDepths[9];
 
-    float ssao[] = float[] (
-        texelFetch(aoTexture, pixel + offsets[0], 0).r,
-		texelFetch(aoTexture, pixel + offsets[1], 0).r,
-		texelFetch(aoTexture, pixel + offsets[2], 0).r,
-		texelFetch(aoTexture, pixel + offsets[3], 0).r,
-		texelFetch(aoTexture, pixel + offsets[4], 0).r,
-		texelFetch(aoTexture, pixel + offsets[5], 0).r,
-		texelFetch(aoTexture, pixel + offsets[6], 0).r,
-		texelFetch(aoTexture, pixel + offsets[7], 0).r,
-		texelFetch(aoTexture, pixel + offsets[8], 0).r
-    );
+	for (uint i = 0; i < 9; i++) {
+		int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
+		invocationDepths[i] = depths[sharedMemoryOffset];
+	}
 
-    int idx = NearestDepth(referenceDepth, depths);
+    int idx = NearestDepth(referenceDepth, invocationDepths);
+	int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
 
-    return ssao[idx];
+    return aos[offset];
 
 }
 
 void main() {
+
+	if (aoDownsampled2x) LoadGroupSharedData();
 
 	if (gl_GlobalInvocationID.x > imageSize(image).x ||
         gl_GlobalInvocationID.y > imageSize(image).y)
@@ -100,7 +110,7 @@ void main() {
 	vec3 geometryWorldNormal = normalize(vec3(ivMatrix * vec4(geometryNormal, 0.0)));
 
 	// Indirect diffuse BRDF
-	vec3 prefilteredDiffuse = texture(diffuseProbe, worldNormal).rgb;
+	vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
 	vec4 prefilteredDiffuseLocal = volumeEnabled ? GetLocalIrradiance(worldPosition, worldView, worldNormal, geometryWorldNormal)
 		 : vec4(0.0, 0.0, 0.0, 1.0);
 	prefilteredDiffuseLocal = IsInsideVolume(worldPosition) ? prefilteredDiffuseLocal : vec4(0.0, 0.0, 0.0, 1.0);
@@ -119,7 +129,7 @@ void main() {
 	
 	// This normally only accounts for diffuse occlusion, we need seperate terms
 	// for diffuse and specular.
-	float occlusionFactor = aoEnabled ? aoDownsampled2x ? Upsample2x(depth, pixel) : texture(aoTexture, texCoord).r : 1.0;
+	float occlusionFactor = aoEnabled ? aoDownsampled2x ? Upsample2x(depth) : texture(aoTexture, texCoord).r : 1.0;
 	indirect *= occlusionFactor;
 
     vec3 direct = imageLoad(image, pixel).rgb;

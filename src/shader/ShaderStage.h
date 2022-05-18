@@ -2,7 +2,6 @@
 #define AE_SHADERSTAGE_H
 
 #include "../System.h"
-#include "ShaderConstant.h"
 
 #include <vector>
 #include <string>
@@ -62,13 +61,6 @@ namespace Atlas {
 			void RemoveMacro(const std::string& macro);
 
 			/**
-             * Returns a ShaderConstant object for a specific constant of the shader stage.
-             * @param constant The name of the constant.
-             * @return A pointer to a ShaderConstant object if valid. Nullptr otherwise.
-             */
-			ShaderConstant* GetConstant(const std::string& constant);
-
-			/**
             * Compiles the shader stage.
             * @return True if successful, false otherwise.
             */
@@ -113,7 +105,6 @@ namespace Atlas {
 
 			std::string code;
 			std::vector<std::string> macros;
-			std::vector<ShaderConstant*> constants;
 			std::set<std::string> includes;
 			std::vector<Extension> extensions;
 

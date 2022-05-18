@@ -134,6 +134,7 @@ namespace Atlas {
 
                 horizontalBlurShader.Bind();
 
+                horizontalBlurShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
                 horizontalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
                 horizontalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
 
@@ -148,6 +149,7 @@ namespace Atlas {
 
                 verticalBlurShader.Bind();
 
+                verticalBlurShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
                 verticalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
                 verticalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
 

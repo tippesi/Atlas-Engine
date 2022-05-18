@@ -24,6 +24,8 @@ struct Material {
 	float normalScale;
 	float displacementScale;
 
+	float tiling;
+
 	bool baseColorMap;
 	bool opacityMap;
 	bool normalMap;
@@ -49,9 +51,11 @@ Material UnpackMaterial(uint idx) {
 	
 	Material material;
 
+	vec2 emissiveIntensityTiling = unpackHalf2x16(floatBitsToUint(compressed.data0.w));
+
 	material.baseColor = vec3(unpackColorVector(floatBitsToInt(compressed.data0.x)));
 	material.emissiveColor = vec3(unpackColorVector(floatBitsToInt(compressed.data0.y)))
-		 * compressed.data0.w;
+		 * emissiveIntensityTiling.x;
 	material.transmissiveColor = vec3(unpackColorVector(floatBitsToInt(compressed.data0.z)));
 
 	vec4 data0 = unpackColorVector(floatBitsToInt(compressed.data1.x));
@@ -67,6 +71,8 @@ Material UnpackMaterial(uint idx) {
 
 	material.normalScale = data0.y;
 	material.displacementScale = data0.z;
+
+	material.tiling = emissiveIntensityTiling.y;
 
 	int features = floatBitsToInt(compressed.data1.w);
 	material.baseColorMap = (features & FEATURE_BASE_COLOR_MAP) > 0;

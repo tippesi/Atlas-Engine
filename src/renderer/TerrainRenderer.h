@@ -31,8 +31,8 @@ namespace Atlas {
 				float ao;
 				float displacementScale;
 				float normalScale;
+				float tiling;
 
-				float padding0;
 				float padding1;
 			};
 

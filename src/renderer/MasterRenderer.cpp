@@ -173,7 +173,7 @@ namespace Atlas {
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-			downscaleRenderer.Render(viewport, target, camera, scene);
+			downscaleRenderer.Downscale(target);
 
 			target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
 				GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
@@ -217,7 +217,11 @@ namespace Atlas {
 
 			glDepthMask(GL_TRUE);
 
-			oceanRenderer.Render(viewport, target, camera, scene);
+			if (scene->ocean) {
+				oceanRenderer.Render(viewport, target, camera, scene);
+
+				downscaleRenderer.DownscaleDepthOnly(target);
+			}
 
 			glDisable(GL_DEPTH_TEST);
 
@@ -234,8 +238,6 @@ namespace Atlas {
 				taaRenderer.Render(viewport, target, camera, scene);
 
 				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-				target->historyFramebuffer.Unbind();
 			}
 			else {
 				target->lightingFramebuffer.Unbind();
@@ -772,7 +774,7 @@ namespace Atlas {
 				packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->emissiveColor / emissiveIntensity, 0.0f));
 				packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->transmissiveColor, 0.0f));
 
-				packed.emissiveIntensity = emissiveIntensity;
+				packed.emissiveIntensityTiling = glm::packHalf2x16(vec2(emissiveIntensity, material->tiling));
 
 				vec4 data0, data1, data2;
 

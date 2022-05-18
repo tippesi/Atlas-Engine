@@ -1,8 +1,11 @@
 #include <common/utility.hsh>
 #include <common/PI.hsh>
 #include <common/stencil.hsh>
+#include <common/flatten.hsh>
 
-layout(location = 0) out vec3 result;
+layout (local_size_x = 8, local_size_y = 8) in;
+
+layout(binding = 0, rgba16f) writeonly uniform image2D resolveImage;
 
 layout(binding = 0) uniform sampler2D historyTexture;
 layout(binding = 1) uniform sampler2D currentTexture;
@@ -10,8 +13,6 @@ layout(binding = 2) uniform sampler2D velocityTexture;
 layout(binding = 3) uniform sampler2D depthTexture;
 layout(binding = 4) uniform sampler2D lastVelocityTexture;
 layout(binding = 5) uniform usampler2D stencilTexture;
-
-in vec2 fTexCoord;
 
 uniform vec2 invResolution;
 uniform vec2 resolution;
@@ -39,10 +40,17 @@ const ivec2 offsets[9] = ivec2[9](
     ivec2(1, 1)
 );
 
-vec3 neighbourhood[9];
+// (localSize + 2)^2
+shared vec4 sharedNeighbourhood[100];
+
+vec3 localNeighbourhood[9];
+float localDepths[9];
 
 const mat3 RGBToYCoCgMatrix = mat3(0.25, 0.5, -0.25, 0.5, 0.0, 0.5, 0.25, -0.5, -0.25);
 const mat3 YCoCgToRGBMatrix = mat3(1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, 1.0, -1.0);
+
+const uint sharedDataSize = (gl_WorkGroupSize.x + 2) * (gl_WorkGroupSize.y + 2);
+const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2;
 
 vec3 RGBToYCoCg(vec3 RGB) {
 
@@ -80,8 +88,6 @@ vec3 InverseTonemap(vec3 color) {
 }
 
 vec3 FetchTexel(ivec2 texel) {
-
-    texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
 	
 	vec3 color = max(texelFetch(currentTexture, texel, 0).rgb, 0);
 
@@ -97,33 +103,50 @@ vec3 FetchTexel(ivec2 texel) {
 
 }
 
-void SampleNeighbourhood(ivec2 pixel) {
+void LoadGroupSharedData() {
 
-    neighbourhood[0] = FetchTexel(pixel + offsets[0]);
-    neighbourhood[1] = FetchTexel(pixel + offsets[1]);
-    neighbourhood[2] = FetchTexel(pixel + offsets[2]);
-    neighbourhood[3] = FetchTexel(pixel + offsets[3]);
-    neighbourhood[4] = FetchTexel(pixel + offsets[4]);
-    neighbourhood[5] = FetchTexel(pixel + offsets[5]);
-    neighbourhood[6] = FetchTexel(pixel + offsets[6]);
-    neighbourhood[7] = FetchTexel(pixel + offsets[7]);
-    neighbourhood[8] = FetchTexel(pixel + offsets[8]);
+	ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) - ivec2(1);
+
+	uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    for(uint i = gl_LocalInvocationIndex; i < sharedDataSize; i += workGroupSize) {
+        ivec2 localOffset = Unflatten2D(int(i), unflattenedSharedDataSize);
+        ivec2 texel = localOffset + workGroupOffset;
+
+        texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
+
+        float depth = texelFetch(depthTexture, texel, 0).r;
+        sharedNeighbourhood[i] = vec4(FetchTexel(texel), depth);
+    }
+
+    barrier();
+
+} 
+
+void LoadLocalData() {
+
+    ivec2 pixel = ivec2(gl_LocalInvocationID) + ivec2(1);
+
+    for (uint i = 0; i < 9; i++) {
+        int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedSharedDataSize);
+
+        vec4 data = sharedNeighbourhood[sharedMemoryOffset];
+        localNeighbourhood[i] = data.rgb;
+		localDepths[i] = data.a;
+    }
 
 }
 
-ivec2 FindNearest3x3(ivec2 pixel) {
+ivec2 FindNearest3x3() {
 
     ivec2 offset = ivec2(0);
     float depth = 1.0;
 
     for (int i = 0; i < 9; i++) {
-        ivec2 pixelCoord = pixel + offsets[i];
-
-        float currDepth = texelFetch(depthTexture, pixelCoord, 0).r;
+        float currDepth = localDepths[i];
         if (currDepth < depth) {
             depth = currDepth;
             offset = offsets[i];
-        }            
+        }
     }
 
     return offset;
@@ -225,6 +248,7 @@ vec4 SampleHistory(vec2 texCoord) {
 }
 
 float FilterBlackmanHarris(float x) {
+
     x = 1.0 - abs(x);
 
     const float a0 = 0.35875;
@@ -232,6 +256,7 @@ float FilterBlackmanHarris(float x) {
     const float a2 = 0.14128;
     const float a3 = 0.01168;
     return saturate(a0 - a1 * cos(PI * x) + a2 * cos(2 * PI * x) - a3 * cos(3 * PI * x));
+
 }
 
 vec3 SampleCurrent() {
@@ -240,7 +265,7 @@ vec3 SampleCurrent() {
 
     float sumWeights = 0.0;
     for (int i = 0; i < 9; i++) {
-        vec3 color = InverseTonemap(YCoCgToRGB(neighbourhood[i]));
+        vec3 color = InverseTonemap(YCoCgToRGB(localNeighbourhood[i]));
         vec2 offset = vec2(offsets[i]);
 
         //float weight = exp(-2.29 * (offset.x * offset.x + offset.y * offset.y));
@@ -255,10 +280,11 @@ vec3 SampleCurrent() {
 }
 
 void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
+
     vec3 m1 = vec3(0.0);
     vec3 m2 = vec3(0.0);
     for (int i = 0; i < 9; i++) {
-        vec3 color = neighbourhood[i];
+        vec3 color = localNeighbourhood[i];
         
         m1 += color;
         m2 += color * color;
@@ -270,26 +296,32 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
     vec3 sigma = sqrt(abs((m2 * oneDividedBySampleCount) - (mu * mu)));
     aabbMin = mu - gamma * sigma;
     aabbMax = mu + gamma * sigma;
+
 }
 
 void main() {
 
-    ivec2 pixel = ivec2(fTexCoord * resolution);
+    LoadGroupSharedData();
 
-    // Find nearest pixel in neighbourhood to improve velocity sampling
-    ivec2 offset = FindNearest3x3(pixel);
+    ivec2 pixel = ivec2(gl_GlobalInvocationID);
+    if (pixel.x > imageSize(resolveImage).x ||
+        pixel.y > imageSize(resolveImage).y)
+        return;
 
-    SampleNeighbourhood(pixel);
+    LoadLocalData();
 
-    vec3 tl = neighbourhood[0];
-    vec3 tc = neighbourhood[1];
-    vec3 tr = neighbourhood[2];
-    vec3 ml = neighbourhood[3];
-    vec3 mc = neighbourhood[4];
-    vec3 mr = neighbourhood[5];
-    vec3 bl = neighbourhood[6];
-    vec3 bc = neighbourhood[7];
-    vec3 br = neighbourhood[8];
+    // Find nearest pixel in localNeighbourhood to improve velocity sampling
+    ivec2 offset = FindNearest3x3();
+
+    vec3 tl = localNeighbourhood[0];
+    vec3 tc = localNeighbourhood[1];
+    vec3 tr = localNeighbourhood[2];
+    vec3 ml = localNeighbourhood[3];
+    vec3 mc = localNeighbourhood[4];
+    vec3 mr = localNeighbourhood[5];
+    vec3 bl = localNeighbourhood[6];
+    vec3 bc = localNeighbourhood[7];
+    vec3 br = localNeighbourhood[8];
 
     // 3x3 box pattern
     vec3 boxMin = min(tl, min(tc, min(tr, min(ml, min(mc, min(mr, min(bl, min(bc, br))))))));
@@ -300,13 +332,13 @@ void main() {
 	vec3 crossMax = max(tc, max(ml, max(mc, max(mr, bc))));
 
     // Average both bounding boxes to get a more rounded shape
-    vec3 neighbourhoodMin = 0.5 * (boxMin + crossMin);
-    vec3 neighbourhoodMax = 0.5 * (boxMax + crossMax);
+    vec3 localNeighbourhoodMin = 0.5 * (boxMin + crossMin);
+    vec3 localNeighbourhoodMax = 0.5 * (boxMax + crossMax);
     
-    //ComputeVarianceMinMax(neighbourhoodMin, neighbourhoodMax);
-    vec3 average = 0.5 * (neighbourhoodMin + neighbourhoodMax);
+    //ComputeVarianceMinMax(localNeighbourhoodMin, localNeighbourhoodMax);
+    vec3 average = 0.5 * (localNeighbourhoodMin + localNeighbourhoodMax);
 
-    ComputeVarianceMinMax(neighbourhoodMin, neighbourhoodMax);
+    ComputeVarianceMinMax(localNeighbourhoodMin, localNeighbourhoodMax);
 
     ivec2 velocityPixel = clamp(pixel + offset, ivec2(0), ivec2(resolution) - ivec2(1));
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
@@ -320,7 +352,7 @@ void main() {
     vec4 history = SampleHistory(uv);
 
     vec3 historyColor = history.rgb;
-    vec3 currentColor = SampleCurrent();
+    vec3 currentColor = mc;
 
     float lumaHistory = Luma(historyColor);
     float lumaCurrent = Luma(currentColor);
@@ -335,17 +367,17 @@ void main() {
     range += mix(0.0, localAntiFlicker, historyContrast);
 #endif
 
-    neighbourhoodMin = average - range * (average - neighbourhoodMin);
-    neighbourhoodMax = average + range * (neighbourhoodMax - average);
+    localNeighbourhoodMin = average - range * (average - localNeighbourhoodMin);
+    localNeighbourhoodMax = average + range * (localNeighbourhoodMax - average);
 
-    // Clamp/Clip the history to the neighbourhood bounding box
+    // Clamp/Clip the history to the localNeighbourhood bounding box
 #ifdef TAA_CLIP
-    float clipBlend = ClipBoundingBox(neighbourhoodMin, neighbourhoodMax,
+    float clipBlend = ClipBoundingBox(localNeighbourhoodMin, localNeighbourhoodMax,
         historyColor, currentColor);
     float adjClipBlend = saturate(clipBlend);
     historyColor = mix(historyColor, currentColor, adjClipBlend);
 #else
-    historyColor = clamp(historyColor, neighbourhoodMin, neighbourhoodMax);
+    historyColor = clamp(historyColor, localNeighbourhoodMin, localNeighbourhoodMax);
 #endif
 
     float blendFactor = mix(minVelocityBlend, maxVelocityBlend, velocityBlend);
@@ -371,20 +403,22 @@ void main() {
     float weightHistory = (1.0 - blendFactor) / (1.0 + dot(historyColor.rgb, luma));
     float weightCurrent =  blendFactor / (1.0 + dot(currentColor.rgb, luma));
 
-    result.rgb = historyColor.rgb * weightHistory + 
+    vec3 resolve = historyColor.rgb * weightHistory + 
         currentColor.rgb * weightCurrent;
 
-    result.rgb /= (weightHistory + weightCurrent);
+    resolve /= (weightHistory + weightCurrent);
 
     // Some components might have a value of -0.0 which produces
     // errors later on while rendering (postprocessing saturate)
-    result.rgb = abs(result.rgb);
+    resolve = abs(resolve);
 
     // Some stuff in the pipeline produces NaNs
-    if (isnan(result.r) == true ||
-        isnan(result.g) == true ||
-        isnan(result.b) == true) {
-        result.rgb = vec3(1, 0, 0);
+    if (isnan(resolve.r) == true ||
+        isnan(resolve.g) == true ||
+        isnan(resolve.b) == true) {
+        resolve = vec3(1, 0, 0);
     }
+
+    imageStore(resolveImage, pixel, vec4(resolve, 0.0));
 
 }

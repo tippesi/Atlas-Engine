@@ -39,10 +39,6 @@ namespace Atlas {
 
         ShaderStage::~ShaderStage() {
 
-            for (auto& constant : constants) {
-                delete constant;
-            }
-
             glDeleteShader(ID);
 
         }
@@ -62,7 +58,6 @@ namespace Atlas {
             auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
             path += filename;
 
-            constants.clear();
 			includes.clear();
             extensions.clear();
             code = ReadShaderFile(path, true);
@@ -87,18 +82,6 @@ namespace Atlas {
 
         }
 
-        ShaderConstant* ShaderStage::GetConstant(const std::string& name) {
-
-            auto constant = std::find_if(constants.begin(), constants.end(), 
-                [name](ShaderConstant* constant) { return constant->GetName() == name; });
-
-            if (constant != constants.end())
-                return *constant;
-
-            return nullptr;
-
-        }
-
         bool ShaderStage::Compile() {
 
             std::string composedCode;
@@ -119,10 +102,6 @@ namespace Atlas {
                 composedCode += extension.extension + "\n";
                 for (size_t i = 0; i < extension.ifdefs.size(); i++)
                     composedCode += "#endif\n";
-            }
-
-            for (auto& constant : constants) {
-                composedCode.append(constant->GetValuedString() + "\n");
             }
 
             composedCode.append(code);
@@ -234,44 +213,6 @@ namespace Atlas {
             }
 
             shaderCode = ExtractIncludes(filename, shaderCode);
-
-            // Find constants in the code (we have to consider that we don't 
-			//want to change the constants in functions or in function definitions)
-            if (mainFile) {               
-
-                int32_t openedCurlyBrackets = 0;
-				int32_t openedBrackets = 0;
-
-                for (size_t i = 0; i < shaderCode.length(); i++) {
-                    if (shaderCode[i] == '{') {
-                        openedCurlyBrackets++;
-                    }
-                    else if (shaderCode[i] == '}') {
-                        openedCurlyBrackets--;
-                    }
-					else if (shaderCode[i] == '(') {
-						openedBrackets++;
-					}
-					else if (shaderCode[i] == ')') {
-						openedBrackets--;
-					}
-                    else if (shaderCode[i] == 'c' && !openedCurlyBrackets && !openedBrackets) {
-                        // Check if its a constant
-                        size_t position = shaderCode.find("const ", i);
-                        if (position == i) {
-                            // Create a new constant
-                            size_t constantEndPosition = shaderCode.find(";", i);
-                            auto constantString = shaderCode.substr(i, constantEndPosition - i + 1);
-                            ShaderConstant* constant = new ShaderConstant(constantString);
-                            constants.push_back(constant);
-                            // Remove the constant expression from the code and reduce i
-                            shaderCode.erase(i, constantEndPosition - i + 1);
-                            i--;
-                        }
-                    }
-                }
-
-            }
 
             return shaderCode;
 
@@ -449,11 +390,6 @@ namespace Atlas {
 #ifdef AE_SHOW_LOG
             stageCode = that.stageCode;
 #endif
-
-            for (auto iterator = that.constants.begin(); iterator != that.constants.end(); iterator++) {
-                auto constant = new ShaderConstant((*iterator)->GetValuedString().c_str());
-                constants.push_back(constant);
-            }
 
             ID = glCreateShader(that.type);
 

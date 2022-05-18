@@ -53,7 +53,7 @@ void main() {
         float rnd = 2.0 * random(texCoord, seed);
         // get sample position
         vec3 ssaoSample = TBN * samples[i]; // From tangent to view-space
-        ssaoSample = fragPos + ssaoSample * radius * rnd; 
+        ssaoSample = fragPos + ssaoSample * radius; 
         
         // project sample position (to sample texture) (to get position on screen/texture)
         vec4 offset = vec4(ssaoSample, 1.0);

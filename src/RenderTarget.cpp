@@ -40,16 +40,10 @@ namespace Atlas {
 
 		postProcessFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
-		historyFramebuffer.Resize(width, height);
-
 		historyTexture = Texture::Texture2D(width, height, AE_RGBA16F,
 			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 		swapHistoryTexture = Texture::Texture2D(width, height, AE_RGBA16F,
 				GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-
-		historyFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &historyTexture);
-
-		historyFramebuffer.Unbind();
 
 		postProcessTexture = Texture::Texture2D(width, height, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
@@ -73,18 +67,12 @@ namespace Atlas {
 
 		postProcessFramebuffer.Resize(width, height);
 
-		historyFramebuffer.Resize(width, height);
-		historyFramebuffer.Unbind();
-
 		// We have to also resize the other part of the history
-		if (swap) {
-			historyTexture.Resize(width, height);
-			velocityTexture.Resize(width, height);
-		}
-		else {
-			swapHistoryTexture.Resize(width, height);
-			swapVelocityTexture.Resize(width, height);
-		}
+		historyTexture.Resize(width, height);
+		velocityTexture.Resize(width, height);
+
+		swapHistoryTexture.Resize(width, height);
+		swapVelocityTexture.Resize(width, height);
 
 		postProcessTexture.Resize(width, height);
 
@@ -115,17 +103,13 @@ namespace Atlas {
 	void RenderTarget::Swap() {
 
 		if (swap) {
-			historyFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &historyTexture);
 			geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &velocityTexture);
 			lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, &velocityTexture);
 		}
 		else {
-			historyFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, &swapHistoryTexture);
 			geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &swapVelocityTexture);
 			lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, &swapVelocityTexture);
 		}
-
-		historyFramebuffer.Unbind();
 
 		swap = !swap;
 

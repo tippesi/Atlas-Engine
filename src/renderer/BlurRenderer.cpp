@@ -27,14 +27,6 @@ namespace Atlas {
 
             auto fragmentShaderStage = shader.GetStage(AE_FRAGMENT_STAGE);
 
-            auto kernelOffsetsConstant = fragmentShaderStage->GetConstant("offset");
-            auto kernelWeightsConstant = fragmentShaderStage->GetConstant("weight");
-            auto kernelSizeConstant = fragmentShaderStage->GetConstant("kernelSize");
-
-            kernelOffsetsConstant->SetValue(kernelOffsets, kernelSize);
-            kernelWeightsConstant->SetValue(kernelWeights, kernelSize);
-            kernelSizeConstant->SetValue(kernelSize);
-
             shader.Compile();
 
             GetUniforms();

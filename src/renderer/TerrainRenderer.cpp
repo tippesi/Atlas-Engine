@@ -58,6 +58,7 @@ namespace Atlas {
 					terrainMaterials[i].ao = materials[i]->ao;
 					terrainMaterials[i].displacementScale = materials[i]->displacementScale;
 					terrainMaterials[i].normalScale = materials[i]->normalScale;
+					terrainMaterials[i].tiling = materials[i]->tiling;
 				}
 
 			}

@@ -92,7 +92,6 @@ namespace Atlas {
 		Framebuffer geometryFramebuffer;
 		Framebuffer lightingFramebuffer;
 		Framebuffer postProcessFramebuffer;
-		Framebuffer historyFramebuffer;
 
 		Texture::Texture2D postProcessTexture;
 

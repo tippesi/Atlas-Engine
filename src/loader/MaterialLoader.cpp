@@ -133,14 +133,18 @@ namespace Atlas {
 
             body.append(WriteVector("BC", material->baseColor));
 			body.append(WriteVector("EC", material->emissiveColor));
+			body.append(WriteVector("TC", material->transmissiveColor));
 
             body.append("RN " + std::to_string(material->roughness) + "\n");
             body.append("MN " + std::to_string(material->metalness) + "\n");
             body.append("AO " + std::to_string(material->ao) + "\n");
+            body.append("RF " + std::to_string(material->reflectance) + "\n");
 			body.append("NS " + std::to_string(material->normalScale) + "\n");
             body.append("DS " + std::to_string(material->displacementScale) + "\n");
+            body.append("TL " + std::to_string(material->tiling) + "\n");
 
             stream << body;
+			stream << "\n";
 
 			auto materialPath = AssetLoader::GetFullPath(filename);
 
@@ -185,25 +189,43 @@ namespace Atlas {
 			material->name = line.substr(lastPosition + 1, position - lastPosition);
 
 			std::getline(stream, line);
-			material->baseColor = ReadVector(line);
 
-			std::getline(stream, line);
-			material->emissiveColor = ReadVector(line);
+			while (line != "" && line != "\r") {
+				auto prefix = line.substr(0, 2);
 
-			std::getline(stream, line);
-			material->roughness = ReadFloat(line);
+				if (prefix == "BC") {
+					material->baseColor = ReadVector(line);
+				}
+				else if (prefix == "EC") {
+					material->emissiveColor = ReadVector(line);
+				}
+				else if (prefix == "TC") {
+					material->transmissiveColor = ReadVector(line);
+				}
+				else if (prefix == "RN") {
+					material->roughness = ReadFloat(line);
+				}
+				else if (prefix == "MN") {
+					material->metalness = ReadFloat(line);
+				}
+				else if (prefix == "AO") {
+					material->ao = ReadFloat(line);
+				}
+				else if (prefix == "RF") {
+					material->reflectance = ReadFloat(line);
+				}
+				else if (prefix == "NS") {
+					material->normalScale = ReadFloat(line);
+				}
+				else if (prefix == "DS") {
+					material->displacementScale = ReadFloat(line);
+				}
+				else if (prefix == "TL") {
+					material->tiling = ReadFloat(line);
+				}
 
-			std::getline(stream, line);
-			material->metalness = ReadFloat(line);
-
-			std::getline(stream, line);
-			material->ao = ReadFloat(line);
-
-			std::getline(stream, line);
-			material->normalScale = ReadFloat(line);
-
-			std::getline(stream, line);
-			material->displacementScale = ReadFloat(line);
+				std::getline(stream, line);
+			}
 
 			return material;
 

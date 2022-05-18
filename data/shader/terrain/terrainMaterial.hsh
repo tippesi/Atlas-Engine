@@ -9,4 +9,6 @@ struct TerrainMaterial {
 	float displacementScale;
 	float normalScale;
 
+	float tiling;
+
 };

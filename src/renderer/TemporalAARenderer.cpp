@@ -7,11 +7,7 @@ namespace Atlas {
 
 		TemporalAARenderer::TemporalAARenderer() {
 
-			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
-
-			shader.AddStage(AE_VERTEX_STAGE, "taa.vsh");
-			shader.AddStage(AE_FRAGMENT_STAGE, "taa.fsh");
-
+			shader.AddStage(AE_COMPUTE_STAGE, "taa.csh");
 			shader.Compile();
 
 		}
@@ -21,9 +17,15 @@ namespace Atlas {
 			Profiler::BeginQuery("TAA");
 
 			shader.Bind();
-			vertexArray.Bind();
 
-			target->historyFramebuffer.Bind(true);
+			auto res = ivec2(target->GetWidth(), target->GetHeight());
+
+			const int32_t groupSize = 8;
+			ivec2 groupCount = res / groupSize;
+			groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
+			groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
+
+			target->GetLastHistory()->Bind(GL_WRITE_ONLY, 0);
 
 			target->GetHistory()->Bind(GL_TEXTURE0);
 			target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE1);
@@ -38,7 +40,8 @@ namespace Atlas {
 			shader.GetUniform("ipvMatrixCurrent")->SetValue(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
 			shader.GetUniform("jitter")->SetValue(camera->GetJitter());
 
-			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+			glDispatchCompute(groupCount.x, groupCount.y, 1);
+			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			target->Swap();
 

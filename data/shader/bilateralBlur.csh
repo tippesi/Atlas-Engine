@@ -1,5 +1,6 @@
 // NOTE: The kernel is limited to a total size of 65 (2 * 32 + 1).
 #include <common/utility.hsh>
+#include <common/convert.hsh>
 
 #ifdef HORIZONTAL
 layout (local_size_x = 256, local_size_y = 1) in;
@@ -9,6 +10,7 @@ layout (local_size_x = 1, local_size_y = 256) in;
 
 layout(binding = 0) uniform sampler2D inputTexture;
 layout(binding = 1) uniform sampler2D depthTexture;
+layout(binding = 2) uniform sampler2D normalTexture;
 layout(binding = 0) writeonly uniform image2D outputImage;
 
 // Actual size of the kernel is 2 * kernelSize + 1
@@ -16,14 +18,19 @@ layout(binding = 0) writeonly uniform image2D outputImage;
 uniform int kernelSize;
 uniform float weights[80];
 
-uniform float depthSensitivity = 1000.0;
+uniform float depthSensitivity = 1.0;
 
 #ifdef BLUR_RGB
 shared vec3 inputs[320];
 #else
 shared float inputs[320];
 #endif
+#ifdef DEPTH_WEIGHT
 shared float depths[320];
+#endif
+#ifdef NORMAL_WEIGHT
+shared vec3 normals[320];
+#endif
 
 void LoadGroupSharedData() {
 
@@ -46,7 +53,7 @@ void LoadGroupSharedData() {
         localOffset.x += int(i);
 #else
         localOffset.y += int(i);
-#endif  
+#endif 
 #ifdef BLUR_RGB
         vec3 localInput = texelFetch(inputTexture, localOffset, 0).rgb;
 #else
@@ -55,7 +62,11 @@ void LoadGroupSharedData() {
         inputs[i] = localInput;
 #ifdef DEPTH_WEIGHT
         float localDepth = texelFetch(depthTexture, localOffset, 0).r;
-        depths[i] = localDepth;
+        depths[i] = ConvertDepthToViewSpaceDepth(localDepth);
+#endif
+#ifdef NORMAL_WEIGHT
+        vec3 localNormal = 2.0 * texelFetch(normalTexture, localOffset, 0).rgb - 1.0;
+        normals[i] = localNormal;
 #endif
     }
 

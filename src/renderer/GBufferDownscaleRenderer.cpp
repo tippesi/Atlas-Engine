@@ -6,19 +6,27 @@ namespace Atlas {
 
         GBufferDownscaleRenderer::GBufferDownscaleRenderer() {
 
-            shader.AddStage(AE_COMPUTE_STAGE, "downsampleGBuffer2x.csh");
-            shader.Compile();
+            downscale.AddStage(AE_COMPUTE_STAGE, "downsampleGBuffer2x.csh");
+            downscale.Compile();
+
+            downscaleDepthOnly.AddStage(AE_COMPUTE_STAGE, "downsampleGBuffer2x.csh");
+            downscaleDepthOnly.AddMacro("DEPTH_ONLY");
+            downscaleDepthOnly.Compile();
 
         }
 
         void GBufferDownscaleRenderer::Render(Viewport *viewport, RenderTarget *target, 
             Camera *camera, Scene::Scene *scene) {
 
+
+            
+        }
+
+        void GBufferDownscaleRenderer::Downscale(RenderTarget* target) {
+
             Profiler::BeginQuery("Downsample GBuffer");
 
-            shader.Bind();
-
-            Profiler::BeginQuery("Downsample 2x");
+            downscale.Bind();
 
             auto depthIn = target->GetDownsampledDepthTexture(RenderResolution::FULL_RES);
             auto normalIn = target->GetDownsampledNormalTexture(RenderResolution::FULL_RES);
@@ -28,7 +36,24 @@ namespace Atlas {
             Downscale(depthIn, normalIn, depthOut, normalOut);
 
             Profiler::EndQuery();
+
+        }
+
+        void GBufferDownscaleRenderer::DownscaleDepthOnly(RenderTarget* target) {
+
+            Profiler::BeginQuery("Downsample GBuffer depth only");
+
+            downscaleDepthOnly.Bind();
+
+            auto depthIn = target->GetDownsampledDepthTexture(RenderResolution::FULL_RES);
+            auto normalIn = target->GetDownsampledNormalTexture(RenderResolution::FULL_RES);
+            auto depthOut = target->GetDownsampledDepthTexture(RenderResolution::HALF_RES);
+            auto normalOut = target->GetDownsampledNormalTexture(RenderResolution::HALF_RES);
+
+            Downscale(depthIn, normalIn, depthOut, normalOut);
+
             Profiler::EndQuery();
+
         }
 
         void GBufferDownscaleRenderer::Downscale(Texture::Texture2D* depthIn, Texture::Texture2D* normalIn,

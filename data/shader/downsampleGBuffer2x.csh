@@ -16,7 +16,8 @@ float Checkerboard(ivec2 coord) {
 
 int MinDepth(vec4 depthVec, out float minDepth) {
 
-    int idx = 0;
+	int idx = 0;
+#ifndef DEPTH_ONLY    
 	minDepth = depthVec[idx];
 	idx += int(step(depthVec.y, minDepth));
 	minDepth = depthVec[idx];
@@ -24,6 +25,9 @@ int MinDepth(vec4 depthVec, out float minDepth) {
 	minDepth = depthVec[idx];
 	idx += int(step(depthVec.w, minDepth));
 	minDepth = depthVec[idx];
+#else
+	minDepth = min(depthVec.x, min(depthVec.y, min(depthVec.z, depthVec.w)));
+#endif
 	return idx;
 
 }
@@ -31,6 +35,7 @@ int MinDepth(vec4 depthVec, out float minDepth) {
 int MaxDepth(vec4 depthVec, out float maxDepth) {
 
 	int idx = 0;
+#ifndef DEPTH_ONLY
 	maxDepth = depthVec[idx];
 	idx += int(step(maxDepth, depthVec.y));
 	maxDepth = depthVec[idx];
@@ -38,6 +43,9 @@ int MaxDepth(vec4 depthVec, out float maxDepth) {
 	maxDepth = depthVec[idx];
 	idx += int(step(maxDepth, depthVec.w));
 	maxDepth = depthVec[idx];
+#else
+	maxDepth = max(depthVec.x, max(depthVec.y, max(depthVec.z, depthVec.w)));
+#endif
 	return idx;
 
 }
@@ -69,20 +77,21 @@ void main() {
 		float depth01 = texelFetch(depthIn, coord * 2 + ivec2(0, 1), 0).r;
 		float depth11 = texelFetch(depthIn, coord * 2 + ivec2(1, 1), 0).r;
 
+		vec4 depthVec = vec4(depth00, depth10, depth01, depth11);
+		float depth;
+        int depthIdx = CheckerboardDepth(depthVec, coord, depth);
+		imageStore(depthOut, coord, vec4(depth, 0.0, 0.0, 1.0));
+
+#ifndef DEPTH_ONLY
 		vec3 normal00 = texelFetch(normalIn, coord * 2 + ivec2(0, 0), 0).rgb;
 		vec3 normal10 = texelFetch(normalIn, coord * 2 + ivec2(1, 0), 0).rgb;
 		vec3 normal01 = texelFetch(normalIn, coord * 2 + ivec2(0, 1), 0).rgb;
 		vec3 normal11 = texelFetch(normalIn, coord * 2 + ivec2(1, 1), 0).rgb;
 
-		vec4 depthVec = vec4(depth00, depth10, depth01, depth11);
-		float depth;
-        int depthIdx = CheckerboardDepth(depthVec, coord, depth);
-
 		vec3 normal = depthIdx < 2 ? (depthIdx < 1 ? normal00 : normal10) :
 			(depthIdx < 3 ? normal01 : normal11);
-		
-		imageStore(depthOut, coord, vec4(depth, 0.0, 0.0, 1.0));
 		imageStore(normalOut, coord, vec4(normal, 1.0));
+#endif		
 		
 	}
 

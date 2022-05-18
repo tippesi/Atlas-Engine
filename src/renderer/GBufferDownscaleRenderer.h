@@ -14,11 +14,16 @@ namespace Atlas {
 
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
+            void Downscale(RenderTarget* target);
+
+            void DownscaleDepthOnly(RenderTarget* target);
+
         private:
             void Downscale(Texture::Texture2D* depthIn, Texture::Texture2D* normalIn,
                 Texture::Texture2D* depthOut, Texture::Texture2D* normalOut);
 
-            Shader::Shader shader;
+            Shader::Shader downscale;
+            Shader::Shader downscaleDepthOnly;
 
         };
 

@@ -1,5 +1,6 @@
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
+#include <../common/flatten.hsh>
 #include <fog.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
@@ -13,11 +14,47 @@ uniform mat4 ivMatrix;
 uniform vec3 cameraLocation;
 uniform bool downsampled2x;
 
-int NearestDepth(float referenceDepth, float[4] depthVec) {
+// (localSize / 2 + 2)^2
+shared float depths[36];
+shared vec3 volumetrics[36];
+
+const uint depthDataSize = (gl_WorkGroupSize.x / 2 + 2) * (gl_WorkGroupSize.y / 2 + 2);
+const ivec2 unflattenedDepthDataSize = ivec2(gl_WorkGroupSize) / 2 + 2;
+
+void LoadGroupSharedData() {
+
+	ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) / 2 - ivec2(1);
+
+	// We assume data size is smaller than gl_WorkGroupSize.x + gl_WorkGroupSize.y
+	if (gl_LocalInvocationIndex < depthDataSize) {
+		ivec2 offset = Unflatten2D(int(gl_LocalInvocationIndex), unflattenedDepthDataSize);
+		offset += workGroupOffset;
+		offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
+		depths[gl_LocalInvocationIndex] = texelFetch(lowResDepthTexture, offset, 0).r;
+		volumetrics[gl_LocalInvocationIndex] = texelFetch(lowResVolumetricTexture, offset, 0).rgb;
+	}
+
+    barrier();
+
+}
+
+const ivec2 offsets[9] = ivec2[9](
+    ivec2(-1, -1),
+    ivec2(0, -1),
+    ivec2(1, -1),
+    ivec2(-1, 0),
+    ivec2(0, 0),
+    ivec2(1, 0),
+    ivec2(-1, 1),
+    ivec2(0, 1),
+    ivec2(1, 1)
+);
+
+int NearestDepth(float referenceDepth, float[9] depthVec) {
 
     int idx = 0;
     float nearest = distance(referenceDepth, depthVec[0]);
-	for (int i = 1; i < 4; i++) {
+	for (int i = 1; i < 9; i++) {
         float dist = distance(referenceDepth, depthVec[i]);
         if (dist < nearest) {
             nearest = dist;
@@ -28,32 +65,27 @@ int NearestDepth(float referenceDepth, float[4] depthVec) {
 
 }
 
-// We could load the data cooperatively into shared memory
-vec4 Upsample2x(float referenceDepth, ivec2 pixel, vec2 texCoord) {
+vec4 Upsample2x(float referenceDepth) {
 
-    pixel /= 2;
+    ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
 
-    float depths[] = float[] (
-        texelFetch(lowResDepthTexture, pixel + ivec2(0, 0), 0).r,
-	    texelFetch(lowResDepthTexture, pixel + ivec2(1, 0), 0).r,
-	    texelFetch(lowResDepthTexture, pixel + ivec2(0, 1), 0).r,
-	    texelFetch(lowResDepthTexture, pixel + ivec2(1, 1), 0).r
-    );
+	float invocationDepths[9];
 
-    vec3 volumetric[] = vec3[] (
-        texelFetch(lowResVolumetricTexture, pixel + ivec2(0, 0), 0).rgb,
-	    texelFetch(lowResVolumetricTexture, pixel + ivec2(1, 0), 0).rgb,
-	    texelFetch(lowResVolumetricTexture, pixel + ivec2(0, 1), 0).rgb,
-	    texelFetch(lowResVolumetricTexture, pixel + ivec2(1, 1), 0).rgb
-    );
+	for (uint i = 0; i < 9; i++) {
+		int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
+		invocationDepths[i] = depths[sharedMemoryOffset];
+	}
 
-    int idx = NearestDepth(referenceDepth, depths);
+    int idx = NearestDepth(referenceDepth, invocationDepths);
+	int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
 
-    return vec4(volumetric[idx], 1.0);
+    return vec4(volumetrics[offset], 1.0);
 
 }
 
 void main() {
+
+    if (downsampled2x) LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
     if (pixel.x > imageSize(resolveImage).x ||
@@ -66,7 +98,7 @@ void main() {
 
     vec4 volumetric;
     if (downsampled2x) {
-        volumetric = Upsample2x(depth, pixel, texCoord);
+        volumetric = Upsample2x(depth);
     }
     else {
         volumetric = vec4(textureLod(lowResVolumetricTexture, texCoord, 0).rgb, 0.0);
@@ -75,8 +107,7 @@ void main() {
 	vec3 viewPosition = ConvertDepthToViewSpace(depth, texCoord);
 	vec3 worldPosition = vec3(ivMatrix * vec4(viewPosition, 1.0));
 
-    vec4 resolve = imageLoad(resolveImage, pixel);
-	
+    vec4 resolve = imageLoad(resolveImage, pixel);	
 
 	float fogAmount = fogEnabled ? saturate(ComputeVolumetricFog(cameraLocation, worldPosition)) : 0.0;
     resolve = fogEnabled ? mix(vec4(fogColor, 1.0), resolve, fogAmount) + volumetric : resolve + volumetric;
