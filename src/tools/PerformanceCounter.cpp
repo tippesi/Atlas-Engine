@@ -1,5 +1,7 @@
 #include "PerformanceCounter.h"
 
+#include <SDL/include/SDL.h>
+
 namespace Atlas {
 
 	namespace Tools {

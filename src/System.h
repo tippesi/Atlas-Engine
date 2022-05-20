@@ -13,10 +13,7 @@
 #define AE_INSTANT_SHADER_RELOAD
 
 #include <stdint.h>
-#include <stddef.h>
 #include <string>
-#include <math.h>
-#include <exception>
 #include <memory>
 
 #if  defined(AE_OS_ANDROID)
@@ -37,13 +34,6 @@
 #elif defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
 
 // GLAD
-#ifdef AE_OS_WINDOWS
-#include <direct.h>
-#ifndef NOMINMAX
-#define NOMINMAX 1
-#endif
-#include <Windows.h>
-#endif
 #include <Glad/glad/glad.h>
 
 #define AtlasLog(...) printf(__VA_ARGS__); printf("\n");
@@ -54,8 +44,6 @@
 #ifdef AE_NO_APP
 #define SDL_MAIN_HANDLED
 #endif
-#include <SDL/include/SDL.h>
-#include <SDL/include/SDL_events.h>
 
 // GLM
 #include <glm/glm.hpp>

@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <iterator>
 
+#include <SDL/include/SDL.h>
+#include <SDL/include/SDL_events.h>
+
 namespace Atlas {
 
 	namespace Events {

@@ -8,6 +8,8 @@
 #include "events/EventDelegate.h"
 #include "events/EventManager.h"
 
+#include <SDL/include/SDL.h>
+
 #define AE_WINDOWPOSITION_UNDEFINED SDL_WINDOWPOS_UNDEFINED
 
 #define AE_WINDOW_FULLSCREEN	SDL_WINDOW_FULLSCREEN

@@ -6,6 +6,10 @@
 #include <zconf.h>
 #endif
 
+#ifdef AE_OS_WINDOWS
+#include <direct.h>
+#endif
+
 extern Atlas::EngineInstance* GetEngineInstance();
 
 int main(int argc, char* argv[]) {

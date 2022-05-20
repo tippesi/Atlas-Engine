@@ -171,7 +171,7 @@ namespace Atlas {
         int32_t Texture::GetMaxAnisotropyLevel() {
 
             float maxAnisotropy;
-            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
 
             if (!anisotropyLevel)
                 anisotropyLevel = (int32_t)maxAnisotropy;
@@ -190,7 +190,7 @@ namespace Atlas {
 
             if (Texture::anisotropyLevel) {
                 float maxAnisotropy;
-                glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+                glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
 
                 Texture::anisotropyLevel = glm::min(anisotropyLevel, (int32_t)maxAnisotropy);
             }
@@ -246,7 +246,7 @@ namespace Atlas {
 
             if (generateMipMaps) {
                 if (anisotropicFiltering) {
-                    glTexParameteri(target, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropyLevel);
+                    glTexParameteri(target, GL_TEXTURE_MAX_ANISOTROPY, anisotropyLevel);
                 }
                 glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
                 glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

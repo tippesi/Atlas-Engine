@@ -37,9 +37,9 @@ namespace Atlas {
             mapFlags |= ((flags & AE_BUFFER_MAP_WRITE) ? GL_MAP_WRITE_BIT : 0);
 
             if (flags & AE_BUFFER_DYNAMIC_STORAGE && immutable) {
-                dataFlags |= GL_DYNAMIC_STORAGE_BIT_EXT | GL_MAP_COHERENT_BIT_EXT
-                             | GL_MAP_PERSISTENT_BIT_EXT | mapFlags;
-                mapFlags |= GL_MAP_PERSISTENT_BIT_EXT | GL_MAP_COHERENT_BIT_EXT;
+                dataFlags |= GL_DYNAMIC_STORAGE_BIT | GL_MAP_COHERENT_BIT
+                             | GL_MAP_PERSISTENT_BIT | mapFlags;
+                mapFlags |= GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
             }
             else if (flags & AE_BUFFER_DYNAMIC_STORAGE && !immutable) {
                 dataFlags |= GL_STREAM_DRAW;

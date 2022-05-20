@@ -5,6 +5,10 @@
 #include <vector>
 #include <sys/stat.h>
 
+#ifdef AE_OS_WINDOWS
+#include <direct.h>
+#endif
+
 namespace Atlas {
 
 	namespace Loader {
