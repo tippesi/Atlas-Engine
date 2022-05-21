@@ -14,14 +14,14 @@ namespace Atlas {
 
         public:
             Scene() = default;
-
-            Scene(std::string name) : name(name) {}
-
             Scene(const Scene& that) = default;
+            explicit Scene(const std::string& name) : name(name) {}
 
             Entity CreateEntity();
 
             void DestroyEntity(Entity entity);
+
+            void Update(float deltaTime);
 
             std::string name;
 

@@ -1,19 +1,40 @@
 #include "SceneSerializer.h"
 #include "Entity.h"
+#include "Components.h"
+
+#include "../common/SerializationHelper.h"
+#include "../loader/AssetLoader.h"
 
 namespace Atlas {
 
     namespace NewScene {
 
-        void SceneSerializer::SerializeScene() {
+        void SceneSerializer::SerializeScene(const std::string& filename) {
 
-            //scene->entityManager.
+            YAML::Node yaml;
+
+            yaml["version"] = "1.0";
+
+
+            for (auto entity : scene->entityManager) {
+                SerializeEntity(Entity { entity, scene.get() });
+            }
 
         }
 
-        void SceneSerializer::DeserializeScene() {
+        void SceneSerializer::DeserializeScene(const std::string& filename) {
 
+            Loader::AssetLoader::UnpackFile(filename);
+            YAML::Node yaml = YAML::LoadFile(Loader::AssetLoader::GetFullPath(filename));
 
+            if (!yaml["version"] || yaml["version"].as<std::string>() != "1.0") {
+                return;
+            }
+
+            auto entityNodes = yaml["entities"];
+            for (auto node : entityNodes) {
+                DeserializeEntity(node);
+            }
 
         }
 
@@ -25,11 +46,16 @@ namespace Atlas {
 
         void SceneSerializer::SerializeEntity(Entity entity) {
 
+            if (entity.HasComponent<NameComponent>()) {
 
+            }
+            if (entity.HasComponent<TransformComponent>()) {
+
+            }
 
         }
 
-        void SceneSerializer::DeserializeEntity() {
+        void SceneSerializer::DeserializeEntity(const YAML::Node& node) {
 
 
 

@@ -2,7 +2,8 @@
 #define AE_SCENESERIALIZER_H
 
 #include "Scene.h"
-#include "../common/Serializer.h"
+
+#include <YAML/include/yaml-cpp/yaml.h>
 
 namespace Atlas {
 
@@ -12,21 +13,19 @@ namespace Atlas {
 
         public:
             SceneSerializer() = default;
-
-            SceneSerializer(Ref<Scene> scene) : scene(scene) {}
-
             SceneSerializer(const SceneSerializer& that) = default;
+            explicit SceneSerializer(Ref<Scene> scene) : scene(scene) {}
 
-            void SerializeScene();
+            void SerializeScene(const std::string& filename);
 
-            void DeserializeScene();
+            void DeserializeScene(const std::string& filename);
 
             Ref<Scene> GetScene() const;
 
         private:
             void SerializeEntity(Entity entity);
 
-            void DeserializeEntity();
+            void DeserializeEntity(const YAML::Node& node);
 
             Ref<Scene> scene;
 

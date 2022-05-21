@@ -12,10 +12,8 @@ namespace Atlas {
 
         public:
             Entity() = default;
-
-            Entity(ECS::Entity entity, Scene* scene) : entity(entity), scene(scene) {}
-
             Entity(const Entity& that) = default;
+            Entity(ECS::Entity entity, Scene* scene) : entity(entity), scene(scene) {}
 
             template<typename Comp, typename... Args>
             Comp& AddComponent(Args&&... args) {
@@ -36,7 +34,7 @@ namespace Atlas {
             template<typename Comp>
             bool HasComponent() {
 
-                scene->entityManager.Contains<Comp>(entity);
+                return scene->entityManager.Contains<Comp>(entity);
 
             }
 
