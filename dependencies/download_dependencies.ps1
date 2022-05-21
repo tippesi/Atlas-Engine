@@ -35,6 +35,19 @@ $items = $zip_file.items()
 $destination.Copyhere($items)
 rename-item "assimp-5.2.3" "Assimp"
 
+$file = "YAML.zip"
+
+Invoke-WebRequest -Uri "https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.7.0.zip" -OutFile $file -TimeoutSec 120
+
+# Unzip the file to specified location
+$location = Get-Location
+$zip_file = (new-object -com shell.application).namespace("$location\$file")
+$destination = (new-object -com shell.application).namespace("$location")
+$items = $zip_file.items()
+$destination.Copyhere($items)
+rename-item "yaml-cpp-yaml-cpp-0.7.0" "YAML"
+
 remove-item SDL.zip
 remove-item Assimp.zip
 remove-item Imgui.zip
+remove-item YAML.zip
