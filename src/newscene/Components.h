@@ -59,11 +59,19 @@ namespace Atlas {
 
         };
 
-        class AudioSourceComponent {
+        class CameraComponent {
 
         public:
-            AudioSourceComponent() = default;
-            AudioSourceComponent(const AudioSourceComponent& that) = default;
+            CameraComponent() = default;
+            CameraComponent(const CameraComponent& that) = default;
+
+        };
+
+        class AudioComponent {
+
+        public:
+            AudioComponent() = default;
+            AudioComponent(const AudioComponent& that) = default;
 
         };
 
@@ -73,6 +81,7 @@ namespace Atlas {
             HierarchyComponent() = default;
             HierarchyComponent(const HierarchyComponent& that) = default;
 
+            bool root = false;
             std::vector<Entity> entities;
 
         };

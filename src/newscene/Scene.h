@@ -4,6 +4,9 @@
 #include "../System.h"
 #include "../ecs/EntityManager.h"
 
+#include "../ocean/Ocean.h"
+#include "../terrain/Terrain.h"
+
 namespace Atlas {
 
     namespace NewScene {
@@ -24,6 +27,9 @@ namespace Atlas {
             void Update(float deltaTime);
 
             std::string name;
+
+            Ref<Ocean::Ocean> ocean;
+            Ref<Terrain::Terrain> terrain;
 
         private:
             ECS::EntityManager entityManager;
