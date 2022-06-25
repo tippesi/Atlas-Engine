@@ -1,5 +1,7 @@
 #include "IrradianceVolume.h"
 
+#include <algorithm>
+
 namespace Atlas {
 
 	namespace Lighting {

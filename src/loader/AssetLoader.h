@@ -5,7 +5,6 @@
 
 #include <fstream>
 #include <sstream>
-#include <sys/stat.h>
 #include <vector>
 #include <mutex>
 #include <unordered_set>

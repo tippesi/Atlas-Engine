@@ -2,6 +2,7 @@
 #include "Scene.h"
 
 #include "../volume/BVH.h"
+#include "../Log.h"
 
 namespace Atlas {
 

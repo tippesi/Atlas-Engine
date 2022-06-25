@@ -5,7 +5,6 @@
 #include "Texture.h"
 
 #include "../common/Image.h"
-#include "../loader/ImageLoader.h"
 
 namespace Atlas {
 

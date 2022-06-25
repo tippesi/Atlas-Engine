@@ -29,9 +29,9 @@ namespace Atlas {
             TransformComponent(const TransformComponent& that) = default;
             explicit TransformComponent(mat4 matrix) : matrix(matrix) {}
 
-            void Translate(glm::mat4 translation);
-            void Rotate(glm::mat4 rotation);
-            void Scale(glm::mat4 scale);
+            void Translate(glm::vec3 translation);
+            void Rotate(glm::vec3 rotation);
+            void Scale(glm::vec3 scale);
 
             Common::MatrixDecomposition Decompose() const;
             void Compose(Common::MatrixDecomposition composition);
@@ -64,6 +64,10 @@ namespace Atlas {
         public:
             CameraComponent() = default;
             CameraComponent(const CameraComponent& that) = default;
+
+            bool main = true;
+            
+
 
         };
 

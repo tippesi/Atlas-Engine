@@ -8,6 +8,11 @@
 #include <limits>
 #include <functional>
 
+#include <Assimp/include/assimp/Importer.hpp>
+#include <Assimp/include/assimp/scene.h>
+#include <Assimp/include/assimp/postprocess.h>
+#include <Assimp/include/assimp/types.h>
+
 namespace Atlas {
 
 	namespace Loader {

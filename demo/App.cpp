@@ -185,7 +185,7 @@ void App::Render(float deltaTime) {
 
 			{
 				const char* items[] = { "Cornell box", "Sponza", "San Miguel",
-					"New Sponza", "Bistro", "Medieval", "Pica Pica" };
+					"New Sponza", "Bistro", "Medieval", "Pica Pica", "Square"};
 				int currentItem = static_cast<int>(sceneSelection);
 				ImGui::Combo("Select scene", &currentItem, items, IM_ARRAYSIZE(items));
 
@@ -487,6 +487,7 @@ bool App::IsSceneAvailable(SceneSelection selection) {
 		Atlas::Loader::AssetLoader::FileExists("newsponza/PKG_D_Candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf") &&
 		Atlas::Loader::AssetLoader::FileExists("newsponza/PKG_A_Curtains/NewSponza_Curtains_glTF.gltf") && 
 		Atlas::Loader::AssetLoader::FileExists("newsponza/PKG_B_Ivy/NewSponza_IvyGrowth_glTF.gltf");
+	case SQUARE: return Atlas::Loader::AssetLoader::FileExists("emeraldsquare/square.gltf");
 	default: return false;
 	}
 }
@@ -675,6 +676,31 @@ bool App::LoadScene() {
 		// Other scene related settings apart from the mesh
 		directionalLight.intensity = 100.0f;
 		directionalLight.GetVolumetric()->intensity = 0.28f;
+		scene.irradianceVolume->SetRayCount(128, 32);
+
+		// Setup camera
+		camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
+		camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+
+		scene.fog->enable = true;
+	}
+	else if (sceneSelection == SQUARE) {
+		meshes.reserve(1);
+
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("emeraldsquare/square.gltf", false,
+			glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)), 2048);
+		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+
+		auto& mesh = meshes.back();
+		mesh.invertUVs = true;
+
+		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), glm::ivec3(20));
+
+		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
+
+		// Other scene related settings apart from the mesh
+		directionalLight.intensity = 10.0f;
+		directionalLight.GetVolumetric()->intensity = 0.08f;
 		scene.irradianceVolume->SetRayCount(128, 32);
 
 		// Setup camera

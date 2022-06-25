@@ -1,5 +1,7 @@
 #include "Texture2D.h"
 
+#include "../loader/ImageLoader.h"
+
 namespace Atlas {
 
     namespace Texture {

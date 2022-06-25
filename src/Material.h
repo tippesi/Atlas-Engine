@@ -4,7 +4,6 @@
 #include "System.h"
 #include "texture/Texture2D.h"
 #include "texture/Texture2DArray.h"
-#include "loader/ImageLoader.h"
 #include "shader/Shader.h"
 #include "shader/ShaderConfig.h"
 

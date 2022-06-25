@@ -4,6 +4,7 @@
 
 #include "../common/SerializationHelper.h"
 #include "../loader/AssetLoader.h"
+#include "../loader/TerrainLoader.h"
 
 namespace Atlas {
 
@@ -15,10 +16,11 @@ namespace Atlas {
 
             yaml["version"] = "1.0";
 
-
             for (auto entity : scene->entityManager) {
                 SerializeEntity(Entity { entity, scene.get() });
             }
+
+
 
         }
 
@@ -50,6 +52,21 @@ namespace Atlas {
 
             }
             if (entity.HasComponent<TransformComponent>()) {
+
+            }
+            if (entity.HasComponent<MeshComponent>()) {
+
+            }
+            if (entity.HasComponent<LightComponent>()) {
+
+            }
+            if (entity.HasComponent<CameraComponent>()) {
+
+            }
+            if (entity.HasComponent<AudioComponent>()) {
+
+            }
+            if (entity.HasComponent<HierarchyComponent>()) {
 
             }
 
