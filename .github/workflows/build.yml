@@ -43,7 +43,7 @@ jobs:
         shell: pwsh
         # Add additional scripting steps here
         run: |
-          git clone --recursive https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
+          cd ${{ github.workspace }}
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -99,7 +99,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libgl1-mesa-dev
-          git clone --recursive https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
@@ -154,7 +153,7 @@ jobs:
         shell: bash
         # Add additional scripting steps here
         run: |
-          git clone --recursive https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg  
+          cd ${{ github.workspace }}
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
