@@ -272,15 +272,39 @@ namespace Atlas {
             refs.clear();
             refs.shrink_to_fit();
 
-            if (leftRefs.size()) {
-                leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap);
-                leftChild->Build(data);
+            if (depth <= 2) {
+                std::thread leftBuilderThread, rightBuilderThread;
+
+                auto leftLambda = [&]() {
+                    if (!leftRefs.size()) return;
+                    leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap);
+                    leftChild->Build(data);
+                };
+
+                auto rightLambda = [&]() {
+                    if (!rightRefs.size()) return;
+                    rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap);
+                    rightChild->Build(data);
+                };
+
+                leftBuilderThread = std::thread{ leftLambda };
+                rightBuilderThread = std::thread{ rightLambda };
+
+                leftBuilderThread.join();
+                rightBuilderThread.join();
+            }
+            else {
+                if (leftRefs.size()) {
+                    leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap);
+                    leftChild->Build(data);
+                }
+
+                if (rightRefs.size()) {
+                    rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap);
+                    rightChild->Build(data);
+                }
             }
 
-            if (rightRefs.size()) {
-                rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap);
-                rightChild->Build(data);
-            }
 
         }
 
