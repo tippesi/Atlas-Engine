@@ -28,4 +28,4 @@ find_package(imgui CONFIG REQUIRED)
 # after the engine is added
 add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCE_FILES})
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
-target_link_libraries(${PROJECT_NAME} imgui::imgui SDL2::SDL2 SDL2::SDL2-static)
+target_link_libraries(${PROJECT_NAME} imgui::imgui SDL2::SDL2)

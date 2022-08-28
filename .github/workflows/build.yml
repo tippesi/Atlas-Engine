@@ -26,6 +26,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - uses: friendlyanon/setup-vcpkg@v1
+        # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
+        with: { committish: a0454d6e18b335cf12da34d925538897d598219b }
+
       - name: Setup Microsoft Visual C++ CLI
         uses: ilammy/msvc-dev-cmd@v1
 
@@ -48,7 +52,7 @@ jobs:
           source-dir: ${{ github.workspace }}
           cc: "cl"
           cxx: "cl"
-          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake' 
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake' 
             -DATLAS_DEMO=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
@@ -79,6 +83,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - uses: friendlyanon/setup-vcpkg@v1
+        # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
+        with: { committish: a0454d6e18b335cf12da34d925538897d598219b }
+
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
         with:
@@ -101,7 +109,7 @@ jobs:
           source-dir: ${{ github.workspace }}
           cc: "gcc"
           cxx: "g++"
-          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake' 
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake' 
             -DATLAS_DEMO=ON -DATLAS_DEMO=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
@@ -132,6 +140,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - uses: friendlyanon/setup-vcpkg@v1
+        # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
+        with: { committish: a0454d6e18b335cf12da34d925538897d598219b }
+
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
         with:
@@ -152,7 +164,7 @@ jobs:
           source-dir: ${{ github.workspace }}
           cc: "clang"
           cxx: "clang++"
-          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake'
             -DATLAS_DEMO=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
