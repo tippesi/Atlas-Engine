@@ -47,8 +47,8 @@ jobs:
           source-dir: ${{ github.workspace }}
           cc: "cl"
           cxx: "cl"
-          configure-options: -G Ninja -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake' 
-            -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF -DATLAS_DEMO=ON
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake' 
+            -DATLAS_DEMO=ON -DATLAS_DEMO=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -99,8 +99,8 @@ jobs:
           source-dir: ${{ github.workspace }}
           cc: "gcc"
           cxx: "g++"
-          configure-options: -G Ninja -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake' 
-            -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF -DATLAS_DEMO=ON
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake' 
+            -DATLAS_DEMO=ON -DATLAS_DEMO=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -116,6 +116,43 @@ jobs:
             ${{ github.workspace }}/build/**/AtlasEngineDemo
             ${{ github.workspace }}/build/**/*.so*
             !**/CMakeFiles
+
+  macos-build:
+    runs-on: macos-12
+    name: Build on MacOS
+    # Run both builds in parallel and don't cancel if one fails
+    strategy:
+      matrix:
+        build-type: [Debug, Release]
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
+        with:
+          # ninja version to download. Default: 1.10.0
+          version: 1.10.0
+
+      - name: Run scripts
+        shell: bash
+        run: |
+          git clone --recursive https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
+
+      # https://github.com/marketplace/actions/setup-ninja
+      - name: Build ${{ matrix.build-type }} configuration with CMake
+        uses: ashutoshvarma/action-cmake-build@master
+        with:
+          build-dir: ${{ github.workspace }}/build/${{ matrix.build-type }}
+          source-dir: ${{ github.workspace }}
+          cc: "clang"
+          cxx: "clang++"
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
+            -DATLAS_DEMO=ON -G Ninja
+          parallel: 16
+          build-type: ${{ matrix.build-type }}
 
   code-quality:
     runs-on: ubuntu-latest

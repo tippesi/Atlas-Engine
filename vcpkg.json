@@ -1,9 +1,9 @@
 {
     "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
     "name": "atlas-engine",
-    "version-string": "0.0.1",
+    "version-string": "0.1.6",
     "port-version": 0,
-    "builtin-baseline": "8ff168270bc5977384b008bec6e879e15089d850",
+    "builtin-baseline": "9fd95d15e289ebd1535ba5cddf2a740d67ea76ce",
     "homepage": "https://github.com/tippesi/Atlas-Engine",
     "description": "Cross platform toy render engine supporting physically based rendering and software ray tracing",
     "dependencies": [
