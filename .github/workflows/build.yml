@@ -37,6 +37,7 @@ jobs:
 
       - name: Run scripts
         shell: pwsh
+        # Add additional scripting steps here
         run: |
           git clone --recursive https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
 
@@ -48,7 +49,7 @@ jobs:
           cc: "cl"
           cxx: "cl"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake' 
-            -DATLAS_DEMO=ON -DATLAS_DEMO=ON -G Ninja
+            -DATLAS_DEMO=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -86,6 +87,7 @@ jobs:
 
       - name: Run scripts
         shell: bash
+        # Add additional scripting steps here
         run: |
           sudo apt-get update
           sudo apt-get install libgl1-mesa-dev
@@ -138,8 +140,9 @@ jobs:
 
       - name: Run scripts
         shell: bash
+        # Add additional scripting steps here
         run: |
-          git clone --recursive https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
+          git clone --recursive https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg  
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
@@ -157,7 +160,7 @@ jobs:
   code-quality:
     runs-on: ubuntu-latest
     name: Check code quality
-    needs: [windows-build, linux-build]
+    needs: [windows-build, linux-build, macos-build]
 
     steps:
       - name: Check code meets quality standards

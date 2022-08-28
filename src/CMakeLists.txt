@@ -32,7 +32,7 @@ endif()
 if(WIN32)
 	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
-	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static glad::glad)
+	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main glad::glad)
     set(ATLAS_ENGINE_SYSTEM_LIBS opengl32 user32 Shlwapi)
 endif()
 

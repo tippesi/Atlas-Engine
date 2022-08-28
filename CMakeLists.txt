@@ -2,7 +2,15 @@ if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "Prevented in-tree built. Please create a build directory outside of the source code and call cmake from there")
 endif()
 
-project(AtlasEngine)
+if(COMMAND cmake_policy)
+    cmake_policy(SET CMP0003 NEW)
+    cmake_policy(SET CMP0048 NEW)
+    cmake_policy(SET CMP0074 NEW)
+    cmake_policy(SET CMP0011 NEW)
+    cmake_policy(SET CMP0042 NEW)
+endif(COMMAND cmake_policy)
+
+project(AtlasEngine VERSION 0.1.6)
 cmake_minimum_required(VERSION 3.7)
 
 # Only 64 bit is supported
