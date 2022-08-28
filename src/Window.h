@@ -8,7 +8,7 @@
 #include "events/EventDelegate.h"
 #include "events/EventManager.h"
 
-#include <SDL/include/SDL.h>
+#include <SDL.h>
 
 #define AE_WINDOWPOSITION_UNDEFINED SDL_WINDOWPOS_UNDEFINED
 

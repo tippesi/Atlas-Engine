@@ -4,8 +4,8 @@
 #include "../common/Path.h"
 #include "../Log.h"
 
-#include <stb/stb_image.h>
-#include <stb/stb_image_write.h>
+#include <stb_image.h>
+#include <stb_image_write.h>
 
 namespace Atlas {
 

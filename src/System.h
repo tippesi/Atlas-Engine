@@ -16,7 +16,7 @@
 #include <string>
 #include <memory>
 
-#if  defined(AE_OS_ANDROID)
+#if defined(AE_OS_ANDROID)
 
 #define GL_GLEXT_PROTOTYPES
 
@@ -34,7 +34,7 @@
 #elif defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
 
 // GLAD
-#include <Glad/glad/glad.h>
+#include <glad/glad.h>
 
 #define AtlasLog(...) printf(__VA_ARGS__); printf("\n");
 

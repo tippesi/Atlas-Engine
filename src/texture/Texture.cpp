@@ -1,7 +1,7 @@
 #include "Texture.h"
 #include "../Extensions.h"
 
-#include <stb/stb_image_resize.h>
+#include <stb_image_resize.h>
 
 namespace Atlas {
 

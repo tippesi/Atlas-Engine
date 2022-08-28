@@ -16,7 +16,7 @@ file(GLOB_RECURSE DEMO_SOURCE_FILES
 # Required: Set both the source and dependency directories 
 # as include directories
 include_directories(../src)
-include_directories(../dependencies)
+include_directories(../libs)
 
 foreach(SOURCE_FILE IN ITEMS ${DEMO_SOURCE_FILES})
     if (IS_ABSOLUTE "${SOURCE_FILE}")
@@ -41,4 +41,4 @@ add_executable(${PROJECT_NAME} ${DEMO_SOURCE_FILES} ${ATLAS_ENGINE_MAIN_FILE})
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
 # We want to use both ImGui and the AtlasEngine. For ImGui, the ATLAS_IMGUI option
 # needs to be turned on.
-target_link_libraries (${PROJECT_NAME} AtlasEngine Imgui)
+target_link_libraries (${PROJECT_NAME} AtlasEngine ImguiExtension)

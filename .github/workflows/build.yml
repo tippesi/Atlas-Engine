@@ -26,6 +26,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Setup Vcpkg
+        uses: friendlyanon/setup-vcpkg@v1
+        # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
+        with: {committish: a0454d6e18b335cf12da34d925538897d598219b}
+
       - name: Setup Microsoft Visual C++ CLI
         uses: ilammy/msvc-dev-cmd@v1
 
@@ -35,11 +40,11 @@ jobs:
           # ninja version to download. Default: 1.10.0
           version: 1.10.0
 
-      - name: Download dependencies
+      - name: Run scripts
         shell: pwsh
+        # Add additional scripting steps here
         run: |
-          cd dependencies
-          ./download_dependencies.ps1 -SkipCertificateCheck
+          cd ${{ github.workspace }}
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -48,7 +53,8 @@ jobs:
           source-dir: ${{ github.workspace }}
           cc: "cl"
           cxx: "cl"
-          configure-options: -G Ninja -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF -DATLAS_DEMO=ON
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
+            -DATLAS_DEMO=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -78,17 +84,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Setup Vcpkg
+        uses: friendlyanon/setup-vcpkg@v1
+        # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
+        with: {committish: a0454d6e18b335cf12da34d925538897d598219b}
+
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
         with:
           # ninja version to download. Default: 1.10.0
           version: 1.10.0
 
-      - name: Download dependencies
+      - name: Run scripts
         shell: bash
+        # Add additional scripting steps here
         run: |
-          cd dependencies
-          sh download_dependencies.sh
           sudo apt-get update
           sudo apt-get install libgl1-mesa-dev
 
@@ -100,7 +110,8 @@ jobs:
           source-dir: ${{ github.workspace }}
           cc: "gcc"
           cxx: "g++"
-          configure-options: -G Ninja -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF -DATLAS_DEMO=ON
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
+            -DATLAS_DEMO=ON -DATLAS_DEMO=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -117,10 +128,53 @@ jobs:
             ${{ github.workspace }}/build/**/*.so*
             !**/CMakeFiles
 
+  macos-build:
+    runs-on: macos-12
+    name: Build on MacOS
+    # Run both builds in parallel and don't cancel if one fails
+    strategy:
+      matrix:
+        build-type: [Debug, Release]
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Vcpkg
+        uses: friendlyanon/setup-vcpkg@v1
+        # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
+        with: {committish: a0454d6e18b335cf12da34d925538897d598219b}
+
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
+        with:
+          # ninja version to download. Default: 1.10.0
+          version: 1.10.0
+
+      - name: Run scripts
+        shell: bash
+        # Add additional scripting steps here
+        run: |
+          cd ${{ github.workspace }}
+
+      # https://github.com/marketplace/actions/setup-ninja
+      - name: Build ${{ matrix.build-type }} configuration with CMake
+        uses: ashutoshvarma/action-cmake-build@master
+        with:
+          build-dir: ${{ github.workspace }}/build/${{ matrix.build-type }}
+          source-dir: ${{ github.workspace }}
+          cc: "clang"
+          cxx: "clang++"
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
+            -DATLAS_DEMO=ON -G Ninja
+          parallel: 16
+          build-type: ${{ matrix.build-type }}
+
   code-quality:
     runs-on: ubuntu-latest
     name: Check code quality
-    needs: [windows-build, linux-build]
+    needs: [windows-build, linux-build, macos-build]
 
     steps:
       - name: Check code meets quality standards

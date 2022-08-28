@@ -17,8 +17,8 @@ This is a cross platform toy engine that is available on Linux and Windows.
 - OpenGL 4.6
 - C++17 compatible compiler
 ## Set up
-Before you start compiling make sure to download the dependencies into **./dependencies**. You can either do
-this manually or use one of the available scripts. The build process is then done using CMake.
+Dependencies are managed through [vcpkg](https://github.com/microsoft/vcpkg). You can either install the packages manually 
+or while doing the build configuration with CMake. To use vcpkg together with CMake follow the steps described [here](https://github.com/microsoft/vcpkg#using-vcpkg-with-cmake).
 ### Compiling the demo application
 Run CMake with the option ATLAS_DEMO=ON to include the demo application in the project. For easier use, the vsbuild.bat does exactly
 that and launches Visual Studio afterwards. After launching the IDE, set AtlasEngineDemo as your target.

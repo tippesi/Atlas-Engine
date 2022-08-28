@@ -3,7 +3,7 @@
 #include "../loader/ImageLoader.h"
 #include "../Log.h"
 
-#include <stb/stb_image_resize.h>
+#include <stb_image_resize.h>
 
 #include <string>
 #include <sys/stat.h>
