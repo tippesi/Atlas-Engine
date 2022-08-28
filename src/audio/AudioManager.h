@@ -5,7 +5,7 @@
 
 #include "AudioStream.h"
 
-#include <SDL/include/SDL_audio.h>
+#include <SDL_audio.h>
 
 #include <vector>
 #include <mutex>

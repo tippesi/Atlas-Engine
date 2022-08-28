@@ -19,7 +19,7 @@ data/sanmiguel
 cmake-build-relwithdebinfo
 data/cornell
 data/bistro
-dependencies/Imgui/imgui
+dependencies/ImguiPlatform/imgui
 data/pica pica
 data/medieval
 .DS_Store

@@ -10,8 +10,8 @@
 #include <algorithm>
 #include <iterator>
 
-#include <SDL/include/SDL.h>
-#include <SDL/include/SDL_events.h>
+#include <SDL.h>
+#include <SDL_events.h>
 
 namespace Atlas {
 

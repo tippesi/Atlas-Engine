@@ -4,7 +4,7 @@
 #include "../System.h"
 #include "../Filter.h"
 
-#include <stb/stb_image_resize.h>
+#include <stb_image_resize.h>
 
 #include <vector>
 #include <type_traits>

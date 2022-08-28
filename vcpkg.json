@@ -1,0 +1,31 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+    "name": "atlas-engine",
+    "version-string": "0.0.1",
+    "port-version": 0,
+    "builtin-baseline": "8ff168270bc5977384b008bec6e879e15089d850",
+    "homepage": "https://github.com/tippesi/Atlas-Engine",
+    "description": "Cross platform toy render engine supporting physically based rendering and software ray tracing",
+    "dependencies": [
+        "sdl2",
+        "glm",
+        "stb",
+        {
+            "name": "glad",
+            "features": [
+                "gl-api-46"
+            ]
+        },
+        {
+            "name": "imgui",
+            "version>=": "1.88",
+            "features": [
+                "docking-experimental"
+            ]
+        },
+        "assimp"
+    ],
+    "overrides": [
+            { "name": "glm", "version": "0.9.8.0" }
+        ]
+}

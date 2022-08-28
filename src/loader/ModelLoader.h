@@ -5,10 +5,10 @@
 #include "../mesh/MeshData.h"
 #include "../scene/Scene.h"
 
-#include <Assimp/include/assimp/Importer.hpp>
-#include <Assimp/include/assimp/scene.h>
-#include <Assimp/include/assimp/postprocess.h>
-#include <Assimp/include/assimp/types.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <assimp/types.h>
 
 namespace Atlas {
 

@@ -7,32 +7,32 @@ cmake_minimum_required(VERSION 3.7)
 
 # Validate options ################################################################################
 if (ATLAS_NO_APP AND ATLAS_EXPORT_MAIN)
-set (ATLAS_EXPORT_MAIN OFF)
+	set (ATLAS_EXPORT_MAIN OFF)
 endif()
 
 # Message options #################################################################################
 if (ATLAS_OPENGL_ES)
-message(STATUS "Using OpenGL ES")
+	message(STATUS "Using OpenGL ES")
 else()
-message(STATUS "Using OpenGL")
+	message(STATUS "Using OpenGL")
 endif()
 
 if (ATLAS_EXPORT_MAIN)
-message(STATUS "Exporting main function")
+	message(STATUS "Exporting main function")
 endif()
 
 if (ATLAS_NO_APP)
-message(STATUS "Building without app class")
-set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_NO_APP)
+	message(STATUS "Building without app class")
+	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_NO_APP)
 else()
-message(STATUS "Building with app class")
+	message(STATUS "Building with app class")
 endif()
 
 # Configure platform specific stuff ###############################################################
 if(WIN32)
 	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
-	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
+	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static glad::glad)
     set(ATLAS_ENGINE_SYSTEM_LIBS opengl32 user32 Shlwapi)
 endif()
 
@@ -50,14 +50,14 @@ if(APPLE)
 	find_library(CoreVideo_LIBRARY CoreVideo)
 	mark_as_advanced(COCOA_LIBRARY OpenGL_LIBRARY)
 
-	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
+	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static glad::glad)
 	set(ATLAS_ENGINE_SYSTEM_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
 endif()
 
 if(ANDROID)
 	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
 
-	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 hidapi)
+	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static hidapi)
 	set(ATLAS_ENGINE_SYSTEM_LIBS android EGL GLESv3 m)
 endif()
 
@@ -75,7 +75,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(CMAKE_INSTALL_RPATH "./")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	
-	set(ATLAS_ENGINE_LIBS assimp SDL2main SDL2 GLAD)
+	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static glad::glad)
 	set(ATLAS_ENGINE_SYSTEM_LIBS X11 GL dl pthread)
 endif()
 
@@ -129,14 +129,17 @@ else()
 endif()
 endif()
 
+find_path(GLM_INCLUDE_DIRS "glm/common.hpp")
+find_path(STB_INCLUDE_DIRS "stb_c_lexer.h")
+
 # Include directories and definitions #############################################################
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC
-	${CMAKE_CURRENT_SOURCE_DIR}/../dependencies
-	${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/Assimp/include
-	${CMAKE_CURRENT_BINARY_DIR}/../dependencies/Assimp/include
-	${CMAKE_CURRENT_SOURCE_DIR})
+	${STB_INCLUDE_DIRS}
+	${GLM_INCLUDE_DIRS}
+	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/../libs)
 	
 # Link libraries ##################################################################################
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${ATLAS_ENGINE_LIBS} LINK_PRIVATE ${ATLAS_ENGINE_SYSTEM_LIBS})
