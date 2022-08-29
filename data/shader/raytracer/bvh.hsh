@@ -136,19 +136,17 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
 	stack[0][threadID] = 0;
 	
 	ray.hitDistance = tMax;
-	uint nodeIdx = 0;
+	BVHNode node = UnpackNode(nodes[0]);
 	
-	while (stackPtr != 0u) {
-		BVHNode node = UnpackNode(nodes[nodeIdx]);
-		
+	while (stackPtr != 0u) {		
 		if((node.data0 & uint(0x80000000)) > 0u) {
 			CheckLeafClosest(ray, node, tMin, ray.hitDistance);
-			nodeIdx = stack[--stackPtr][threadID];
+			node =  UnpackNode(nodes[stack[--stackPtr][threadID]]);
 		}
 		else {
 			if (stackPtr + 1u >= uint(STACK_SIZE)) break;
 			
-			uint childLPtr = nodeIdx + 1;
+			uint childLPtr = node.data0;
 			uint childRPtr = node.data1;
 
 			float hitL = tMax, hitR = tMax;
@@ -162,8 +160,8 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
 
 			bool noIntersection = !intersectL && !intersectR;
 
-			nodeIdx = hitL <= hitR ? childLPtr : childRPtr;
-			nodeIdx = noIntersection ? stack[--stackPtr][threadID] : nodeIdx;
+			node = hitL <= hitR ? nodeL : nodeR;
+			node = noIntersection ? UnpackNode(nodes[stack[--stackPtr][threadID]]) : node;
 			uint stackIdx = hitL <= hitR ? childRPtr : childLPtr;
 
 			if (intersectR && intersectL) {
@@ -182,22 +180,20 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
 	uint threadID = gl_LocalInvocationIndex;
 	stack[0][threadID] = 0u;
 	
-	uint nodeIdx = 0;
+	BVHNode node = UnpackNode(nodes[0]);
 	
 	while (stackPtr != 0u) {
-		BVHNode node = UnpackNode(nodes[nodeIdx]);
-		
 		if((node.data0 & uint(0x80000000)) > 0u) {
 			if (CheckLeaf(ray, node, tMin, tMax)) {
 				hit = true;
 				break;
 			}
-			nodeIdx = stack[--stackPtr][threadID];
+			node = UnpackNode(nodes[stack[--stackPtr][threadID]]);
 		}
 		else {
 			if (stackPtr + 1u >= uint(STACK_SIZE)) break;
 
-			uint childLPtr = nodeIdx + 1;
+			uint childLPtr = node.data0;
 			uint childRPtr = node.data1;
 
 			BVHNode nodeL = UnpackNode(nodes[childLPtr]);
@@ -208,8 +204,8 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
 			bool intersectR = IntersectAABB(ray, 
 				nodeR.aabb, tMin, tMax);
 
-			nodeIdx = intersectR ? childRPtr : childLPtr;
-			nodeIdx = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodeIdx;
+			node = intersectR ? nodeR : nodeL;
+			node = !intersectR && !intersectL ? UnpackNode(nodes[stack[--stackPtr][threadID]]) : node;
 
 			if (intersectR && intersectL) {
 				stack[stackPtr++][threadID] = childLPtr;
