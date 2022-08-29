@@ -225,23 +225,21 @@ float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
 	uint threadID = gl_LocalInvocationIndex;
 	stack[0][threadID] = 0u;
 	
-	uint nodeIdx = 0;
+	BVHNode node = UnpackNode(nodes[0]);
 	
 	while (stackPtr != 0u) {
-		BVHNode node = UnpackNode(nodes[nodeIdx]);
-		
 		if((node.data0 & uint(0x80000000)) > 0u) {
 			transparency *= CheckLeafTransparency(ray, node, tMin, tMax, transparency);
 			if (transparency < 0.000001) {
 				transparency = 0.0;
 				break;
 			}
-			nodeIdx = stack[--stackPtr][threadID];
+			node = UnpackNode(nodes[stack[--stackPtr][threadID]]);
 		}
 		else {
 			if (stackPtr + 1u >= uint(STACK_SIZE)) break;
 
-			uint childLPtr = nodeIdx + 1;
+			uint childLPtr = node.data0;
 			uint childRPtr = node.data1;
 
 			BVHNode nodeL = UnpackNode(nodes[childLPtr]);
@@ -252,8 +250,8 @@ float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
 			bool intersectR = IntersectAABB(ray, 
 				nodeR.aabb, tMin, tMax);
 
-			nodeIdx = intersectR ? childRPtr : childLPtr;
-			nodeIdx = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodeIdx;
+			node = intersectR ? nodeR : nodeL;
+			node = !intersectR && !intersectL ? UnpackNode(nodes[stack[--stackPtr][threadID]]) : node;
 
 			if (intersectR && intersectL) {
 				stack[stackPtr++][threadID] = childLPtr;
