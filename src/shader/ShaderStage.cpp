@@ -92,16 +92,17 @@ namespace Atlas {
                 composedCode.append("#define AE_TEXTURE_SHADOW_LOD\n");
             }
 
-            for (auto& macro : macros) {
-                composedCode.append("#define " + macro + "\n");
-            }
-
+            // Extensions have to come first
             for (auto& extension : extensions) {
                 for (auto& ifdef : extension.ifdefs)
                     composedCode += ifdef + "\n";
                 composedCode += extension.extension + "\n";
                 for (size_t i = 0; i < extension.ifdefs.size(); i++)
                     composedCode += "#endif\n";
+            }
+
+            for (auto& macro : macros) {
+                composedCode.append("#define " + macro + "\n");
             }
 
             composedCode.append(code);

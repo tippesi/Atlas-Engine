@@ -103,6 +103,7 @@ namespace Atlas {
 				vec2 uv2;
 
 				int32_t materialIdx;
+				bool endOfNode;
 			};
 
 			std::vector<Triangle> triangles(triangleCount);
@@ -228,7 +229,7 @@ namespace Atlas {
 				gpuTriangle.v1 = vec4(triangle.v1, cn1);
 				gpuTriangle.v2 = vec4(triangle.v2, cn2);
 				gpuTriangle.d0 = vec4(cuv0, cuv1, cuv2, reinterpret_cast<float&>(triangle.materialIdx));
-				gpuTriangle.d1 = vec4(ct, cbt, 0.0f, 0.0f);
+				gpuTriangle.d1 = vec4(ct, cbt, bvhTriangle.endOfNode ? 1.0f : -1.0f, 0.0f);
 
 				gpuTriangles.push_back(gpuTriangle);
 
@@ -251,17 +252,14 @@ namespace Atlas {
 			auto gpuNodes = std::vector<GPUBVHNode>(nodes.size());
 			// Copy to GPU format
 			for (size_t i = 0; i < nodes.size(); i++) {
-				if (nodes[i].leaf.dataCount) {
-					gpuNodes[i].leaf.dataCount = nodes[i].leaf.dataCount;
-					gpuNodes[i].leaf.dataOffset = nodes[i].leaf.dataOffset;
-				}
-				else {
-					gpuNodes[i].inner.leftChild = nodes[i].inner.leftChild;
-					gpuNodes[i].inner.rightChild = nodes[i].inner.rightChild;
-				}
+				gpuNodes[i].leftPtr = nodes[i].leftPtr;
+				gpuNodes[i].rightPtr = nodes[i].rightPtr;
 
-				gpuNodes[i].aabb.min = nodes[i].aabb.min;
-				gpuNodes[i].aabb.max = nodes[i].aabb.max;
+				gpuNodes[i].leftAABB.min = nodes[i].leftAABB.min;
+				gpuNodes[i].leftAABB.max = nodes[i].leftAABB.max;
+
+				gpuNodes[i].rightAABB.min = nodes[i].rightAABB.min;
+				gpuNodes[i].rightAABB.max = nodes[i].rightAABB.max;
 			}
 
 			// Free original node memory

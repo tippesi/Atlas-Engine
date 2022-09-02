@@ -65,7 +65,8 @@ struct Triangle {
 	vec2 uv1;
 	vec2 uv2;
 	
-	int materialIndex;	
+	int materialIndex;
+	bool endOfNode;
 	
 };
 

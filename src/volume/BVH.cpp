@@ -2,7 +2,10 @@
 // https://www.nvidia.in/docs/IO/77714/sbvh.pdf
 #include <numeric>
 #include <thread>
+
 #include "BVH.h"
+#include "Log.h"
+#include "tools/PerformanceCounter.h"
 
 namespace Atlas {
 
@@ -16,7 +19,9 @@ namespace Atlas {
 
         BVH::BVH(std::vector<AABB>& aabbs, std::vector<BVHTriangle>& data) {
 
-            auto start = clock();
+            Log::Message("Started BVH build");
+
+            Tools::PerformanceCounter perfCounter;
 
             if (aabbs.size() != data.size())
                 return;
@@ -34,155 +39,159 @@ namespace Atlas {
                 aabb.Grow(aabbs[ref.idx]);
 
             auto minOverlap = aabb.GetSurfaceArea() * 10e-5f;
-            auto builder = new BVHBuilder(aabb, refs, 0, minOverlap);
+            auto builder = new BVHBuilder(aabb, refs, 0, minOverlap, 128);
             refs.clear();
             refs.reserve(data.size());
 
             builder->Build(data);
 
+            Log::Message("Build: " + std::to_string(perfCounter.StepStamp().delta));
+
             builder->Flatten(nodes, refs);
 
             this->aabbs.resize(refs.size());
             this->data.resize(refs.size());
+            this->woopData.resize(refs.size());
 
             for (size_t i = 0; i < refs.size(); i++) {
                 auto ref = refs[i];
                 this->aabbs[i] = aabbs[ref.idx];
                 this->data[i] = data[ref.idx];
+                this->woopData[i] = WoopTriangle(data[ref.idx]);
+                this->data[i].endOfNode = ref.endOfNode;
+                this->woopData[i].endOfNode = ref.endOfNode;
             }
 
             delete builder;
 
+            Log::Message("Flatten: " + std::to_string(perfCounter.StepStamp().delta));
+            Log::Message("Triangle count: " + std::to_string(refs.size()));
+            Log::Message("Node count: " + std::to_string(nodes.size()));
+            Log::Message("Max depth: " + std::to_string(BVHBuilder::maxDepth));
+            Log::Message("Min triangles: " + std::to_string(BVHBuilder::minTriangles));
+            Log::Message("Max triangles: " + std::to_string(BVHBuilder::maxTriangles));
+            Log::Message("Num spatial splits: " + std::to_string(BVHBuilder::spatialSplitCount));
+            Log::Message("Surface area: " + std::to_string(BVHBuilder::totalSurfaceArea));
+            Log::Message("Finished BVH build\n");
+
         }
 
-        bool BVH::GetIntersection(Ray ray, BVHTriangle& closest, glm::vec3& intersection) {
+        bool BVH::GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest, glm::vec3& intersection) {
 
             constexpr auto max = std::numeric_limits<float>::max();
 
-            return GetIntersection(ray, closest, intersection, max);
+            return GetIntersection(stack, ray, closest, intersection, max);
 
         }
 
-        bool BVH::GetIntersection(Ray ray, BVHTriangle& closest, glm::vec3& intersection, float max) {
+        bool BVH::GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest, glm::vec3& intersection, float max) {
 
             intersection.x = max;
 
             if (nodes.size()) {
                 // Use a stack based iterative ray traversal
-                uint32_t stack[64];
-                stack[0] = 0;
+                stack[0] = std::pair(0, 0.0f);
 
-                uint32_t stackPtr = 1;
+                uint32_t stackPtr = 1u;
+                int32_t closestPtr = 0;
 
                 while (stackPtr != 0u) {
-                    auto& node = nodes[stack[--stackPtr]];
+                    const auto [nodePtr, distance] = stack[--stackPtr];
 
-                    if (node.leaf.dataCount & 0x80000000) {
-                        // Extract triangle offset and count of the current node
-                        auto offset = node.leaf.dataOffset;
-                        auto count = node.leaf.dataCount & 0x7fffffff;
+                    if (distance > intersection.x) continue;
+
+                    if (nodePtr < 0) {
+                        auto triPtr = ~nodePtr;
+                        auto endOfNode = false;
                         // Intersect the ray with each triangle
-                        for (uint32_t i = offset; i < offset + count; i++) {
-                            auto& triangle = data[i];
+                        while (!endOfNode) {
+                            auto ptr = triPtr++;
+                            auto& woopTriangle = woopData[ptr];
+                            endOfNode = woopTriangle.endOfNode;
+
                             glm::vec3 intersect;
-                            if (ray.Intersects(triangle.v0, triangle.v1, triangle.v2, intersect)) {
-                                // Only allow intersections "in range"
-                                if (intersect.x < intersection.x) {
-                                    closest = triangle;
-                                    intersection = intersect;
-                                }
+                            bool hit = woopTriangle.Intersect(ray, intersect, intersection.x);
+
+                            // Only allow intersections "in range"
+                            if (hit && intersect.x < intersection.x) {
+                                closestPtr = ptr;
+                                intersection = intersect;
                             }
                         }
                     }
                     else {
-                        float hitL = max, hitR = max;
-                        bool intersectR = false, intersectL = false;
+                        float hitL = 0.0f, hitR = 0.0f;
 
-                        auto childLPtr = node.inner.leftChild;
-                        if (childLPtr) {
-                            auto& nodeL = nodes[childLPtr];
-                            intersectL = ray.Intersects(
-                                nodeL.aabb, 0.0f, intersection.x, hitL);
-                        }
-
-                        auto childRPtr = node.inner.rightChild;
-                        if (childRPtr) {
-                            auto& nodeR = nodes[childRPtr];
-                            intersectR = ray.Intersects(
-                                nodeR.aabb, 0.0f, intersection.x, hitR);
-                        }
+                        const auto& node = nodes[nodePtr];
+                        // We might want to check whether these nodes are leafs
+                        auto intersectL = ray.Intersects(node.leftAABB, 0.0f, intersection.x, hitL);
+                        auto intersectR = ray.Intersects(node.rightAABB, 0.0f, intersection.x, hitR);
 
                         if (intersectR && intersectL) {
                             if (hitL < hitR) {
-                                stack[stackPtr++] = childRPtr;
-                                stack[stackPtr++] = childLPtr;
+                                stack[stackPtr++] = std::pair(node.rightPtr, hitR);
+                                stack[stackPtr++] = std::pair(node.leftPtr, hitL);
                             }
                             else {
-                                stack[stackPtr++] = childLPtr;
-                                stack[stackPtr++] = childRPtr;
+                                stack[stackPtr++] = std::pair(node.leftPtr, hitL);
+                                stack[stackPtr++] = std::pair(node.rightPtr, hitR);
                             }
                         }
                         else if (intersectR && !intersectL) {
-                            stack[stackPtr++] = childRPtr;
+                            stack[stackPtr++] = std::pair(node.rightPtr, hitR);
                         }
                         else if (!intersectR && intersectL) {
-                            stack[stackPtr++] = childLPtr;
+                            stack[stackPtr++] = std::pair(node.leftPtr, hitL);
                         }
+
                     }
+
                 }
 
-
+                closest = data[closestPtr];
             }
 
             return (intersection.x < max);
 
         }
 
-        bool BVH::GetIntersectionAny(Ray ray, float max) {
+        bool BVH::GetIntersectionAny(std::vector<std::pair<int32_t, float>>& stack, Ray ray, float max) {
 
             if (nodes.size()) {
-                // Use a stack based iterative ray traversal
-                uint32_t stack[64];
-                stack[0] = 0;
+                stack[0] = std::pair(0, 0.0f);
 
-                uint32_t stackPtr = 1;
+                uint32_t stackPtr = 1u;
 
-                do {
-                    // Pop the last node from the stack
-                    auto& node = nodes[stack[--stackPtr]];
-                    auto& aabb = node.aabb;
+                while (stackPtr != 0u) {
+                    const auto [nodePtr, _] = stack[--stackPtr];
 
-                    // Check whether the ray intersects the node
-                    if (!ray.Intersects(aabb, 0.0f, max))
-                        continue;
-
-                    // Check if the node is a leaf node
-                    // indicated by the most significant bit.
-                    if (node.leaf.dataCount & 0x80000000) {
-                        // Extract triangle offset and count of the current node
-                        auto offset = node.leaf.dataOffset;
-                        auto count = node.leaf.dataCount & 0x7fffffff;
+                    if (nodePtr < 0) {
+                        auto triPtr = ~nodePtr;
+                        auto endOfNode = false;
                         // Intersect the ray with each triangle
-                        for (uint32_t i = offset; i < offset + count; i++) {
-                            auto& triangle = data[i];
+                        while (!endOfNode) {
+                            auto& woopTriangle = woopData[triPtr++];
+                            endOfNode = woopTriangle.endOfNode;
+
                             glm::vec3 intersect;
-                            if (ray.Intersects(triangle.v0, triangle.v1, triangle.v2, intersect)) {
-                                // Only allow intersections "in range"
-                                if (intersect.x < max) {
-                                    return true;
-                                }
+                            bool hit = woopTriangle.Intersect(ray, intersect, max);
+
+                            // Only allow intersections "in range"
+                            if (hit && intersect.x < max) {
+                                return true;
                             }
                         }
                     }
                     else {
-                        // Only push child if the child index is valid
-                        // indicated by an index larger than zero
-                        if (node.inner.leftChild)
-                            stack[stackPtr++] = node.inner.leftChild;
-                        if (node.inner.rightChild)
-                            stack[stackPtr++] = node.inner.rightChild;
+                        const auto& node = nodes[nodePtr];
+                        // We might want to check whether these nodes are leafs
+                        auto intersectL = ray.Intersects(node.leftAABB, 0.0f, max);
+                        auto intersectR = ray.Intersects(node.rightAABB, 0.0f, max);
+
+                        if (intersectR) stack[stackPtr++] = std::pair(node.rightPtr, 0.0f);
+                        if (intersectL) stack[stackPtr++] = std::pair(node.leftPtr, 0.0f);
                     }
-                } while (stackPtr != 0);
+                }
             }
 
             return false;
@@ -244,13 +253,8 @@ namespace Atlas {
             // If we haven't found a cost improvement we create a leaf node
             if ((objectSplit.axis < 0 || objectSplit.cost >= nodeCost) &&
                 (spatialSplit.axis < 0 || spatialSplit.cost >= nodeCost)) {
-                if (refs.size() >= 2 * refCount) {
-                    split = PerformMedianSplit(rightRefs, leftRefs);
-                }
-                else {
-                    CreateLeaf();
-                    return;
-                }
+                CreateLeaf();
+                return;
             }
             else {
                 if (spatialSplit.cost < objectSplit.cost) {
@@ -305,33 +309,33 @@ namespace Atlas {
                 }
             }
 
-
         }
 
         void BVHBuilder::Flatten(std::vector<BVHNode>& nodes, std::vector<Ref>& refs) {
 
-            const auto nodeIdx = nodes.size();
-            nodes.push_back(BVHNode());
             // Check for leaf
             if (this->refs.size()) {
-                nodes[nodeIdx].leaf.dataOffset = uint32_t(refs.size());
-                nodes[nodeIdx].leaf.dataCount = 0x80000000 | uint32_t(this->refs.size());
-
                 refs.insert(refs.end(), this->refs.begin(), this->refs.end());
+                refs[refs.size() - 1].endOfNode = true;
             }
             else {
+                const auto nodeIdx = nodes.size();
+                nodes.push_back(BVHNode());
+
                 // Flatten recursively
                 if (leftChild) {
-                    nodes[nodeIdx].inner.leftChild = uint32_t(nodes.size());
+                    auto leaf = leftChild->refs.size() > 0;
+                    nodes[nodeIdx].leftAABB = leftChild->aabb;
+                    nodes[nodeIdx].leftPtr = leaf ? ~int32_t(refs.size()) : uint32_t(nodes.size());
                     leftChild->Flatten(nodes, refs);
                 }
                 if (rightChild) {
-                    nodes[nodeIdx].inner.rightChild = uint32_t(nodes.size());
+                    auto leaf = rightChild->refs.size() > 0;
+                    nodes[nodeIdx].rightAABB = rightChild->aabb;
+                    nodes[nodeIdx].rightPtr = leaf ? ~int32_t(refs.size()) : uint32_t(nodes.size());
                     rightChild->Flatten(nodes, refs);
                 }
             }
-
-            nodes[nodeIdx].aabb = aabb;
 
         }
 

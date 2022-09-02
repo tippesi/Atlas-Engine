@@ -30,6 +30,7 @@ Triangle UnpackTriangle(PackedTriangle triangle) {
 	tri.uv2 = unpackHalf2x16(floatBitsToUint(triangle.d0.z));
 	
 	tri.materialIndex = floatBitsToInt(triangle.d0.w);
+	tri.endOfNode = triangle.d1.z > 0.0 ? true : false;
 	
 	return tri;	
 }

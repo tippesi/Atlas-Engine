@@ -85,19 +85,14 @@ namespace Atlas {
 				vec3 max;
 			};
 
-			// Cache friendly 32 bit
 			struct GPUBVHNode {
-				union {
-					struct {
-						uint32_t leftChild;
-						uint32_t rightChild;
-					}inner;
-					struct {
-						uint32_t dataCount;
-						uint32_t dataOffset;
-					}leaf;
-				};
-				GPUAABB aabb;
+				GPUAABB leftAABB;
+				GPUAABB rightAABB;
+				int32_t leftPtr = 0;
+				int32_t rightPtr = 0;
+
+				int32_t padding0;
+				int32_t padding1;
 			};
 
 			struct GPULight {

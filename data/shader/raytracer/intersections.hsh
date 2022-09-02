@@ -8,8 +8,8 @@ bool IntersectAABB(Ray ray, AABB aabb, float tmin, float tmax) {
 	vec3 tsmall = min(t0, t1);
 	vec3 tbig = max(t0, t1);
 	
-	float tminf = max(tmin, max(tsmall.x, max(tsmall.y, tsmall.z)));
-	float tmaxf = min(tmax, min(tbig.x, min(tbig.y, tbig.z)));
+	float tminf = max(max(tmin, tsmall.x), max(tsmall.y, tsmall.z));
+	float tmaxf = min(min(tmax, tbig.x), min(tbig.y, tbig.z));
 	
 	return (tminf <= tmaxf);
 
@@ -23,8 +23,8 @@ bool IntersectAABB(Ray ray, AABB aabb, float tmin, float tmax, out float dist) {
 	vec3 tsmall = min(t0, t1);
 	vec3 tbig = max(t0, t1);
 	
-	float tminf = max(tmin, max(tsmall.x, max(tsmall.y, tsmall.z)));
-	float tmaxf = min(tmax, min(tbig.x, min(tbig.y, tbig.z)));
+	float tminf = max(max(tmin, tsmall.x), max(tsmall.y, tsmall.z));
+	float tmaxf = min(min(tmax, tbig.x), min(tbig.y, tbig.z));
 
 	bool intersect = (tminf <= tmaxf);
 	dist = intersect ? tminf : tmax;
