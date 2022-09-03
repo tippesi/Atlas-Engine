@@ -43,8 +43,8 @@ namespace Atlas {
 				rayBinOffsetBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(uint32_t),
 					AE_BUFFER_DYNAMIC_STORAGE);
 
-				rayBinCounterBuffer.SetSize(64);
-				rayBinOffsetBuffer.SetSize(64);
+				rayBinCounterBuffer.SetSize(1024);
+				rayBinOffsetBuffer.SetSize(1024);
 
 				traceDispatchShader.AddStage(AE_COMPUTE_STAGE, "raytracer/traceDispatch.csh");
 				traceDispatchShader.Compile();
@@ -140,6 +140,7 @@ namespace Atlas {
 
 					rtData.materialBuffer.BindBase(5);
 					rtData.triangleBuffer.BindBase(6);
+					rtData.bvhTriangleBuffer.BindBase(13);
 					rtData.nodeBuffer.BindBase(7);
 					lightBuffer.BindBase(8);
 				}
@@ -248,6 +249,7 @@ namespace Atlas {
 
 					rtData.materialBuffer.BindBase(5);
 					rtData.triangleBuffer.BindBase(6);
+					rtData.bvhTriangleBuffer.BindBase(13);
 					rtData.nodeBuffer.BindBase(7);
 					lightBuffer.BindBase(8);
 				}

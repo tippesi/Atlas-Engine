@@ -21,8 +21,18 @@ struct BVHNode {
 	int rightPtr;
 };
 
+struct PackedBVHTriangle {
+	vec4 v0;
+	vec4 v1;
+	vec4 v2;
+};
+
 layout (std430, binding = 6) buffer Triangles {
 	PackedTriangle triangles[];
+};
+
+layout (std430, binding = 13) buffer BVHTriangles {
+	PackedBVHTriangle bvhTriangles[];
 };
 
 layout(std430, binding = 7) buffer Nodes {
@@ -57,10 +67,10 @@ void CheckLeafClosest(inout Ray ray, int nodePtr, float tmin, float tmax) {
 	vec3 sol, v0, v1, v2, n;
 	
 	while (!endOfNode) {
-		v0 = triangles[triPtr].v0.xyz;
-		v1 = triangles[triPtr].v1.xyz;
-		v2 = triangles[triPtr].v2.xyz;
-		endOfNode = triangles[triPtr].d1.z > 0.0;
+		v0 = bvhTriangles[triPtr].v0.xyz;
+		v1 = bvhTriangles[triPtr].v1.xyz;
+		v2 = bvhTriangles[triPtr].v2.xyz;
+		endOfNode = bvhTriangles[triPtr].v0.w > 0.0;
 		float d = 0.0;
 #ifdef BACKFACE_CULLING
 		n = cross(v0 - v1, v0 - v2);
@@ -86,11 +96,11 @@ bool CheckLeaf(inout Ray ray, int nodePtr, float tmin, float tmax) {
 	vec3 sol, v0, v1, v2, n;
 	bool hit = false;
 	
-	while (!endOfNode) {
-		v0 = triangles[triPtr].v0.xyz;
-		v1 = triangles[triPtr].v1.xyz;
-		v2 = triangles[triPtr].v2.xyz;
-		endOfNode = triangles[triPtr].d1.z > 0.0;
+	while (!endOfNode && !hit) {
+		v0 = bvhTriangles[triPtr].v0.xyz;
+		v1 = bvhTriangles[triPtr].v1.xyz;
+		v2 = bvhTriangles[triPtr].v2.xyz;
+		endOfNode = bvhTriangles[triPtr].v0.w > 0.0;
 		float d = 0.0;
 #ifdef BACKFACE_CULLING
 		n = cross(v0 - v1, v0 - v2);
@@ -101,7 +111,6 @@ bool CheckLeaf(inout Ray ray, int nodePtr, float tmin, float tmax) {
 			hit = true;
 			ray.hitDistance = sol.x;
 			ray.hitID = triPtr;
-			break;
 		}
 		triPtr++;
 	}
@@ -116,13 +125,13 @@ float CheckLeafTransparency(inout Ray ray, int nodePtr, float tmin, float tmax, 
 	bool endOfNode = false;
 	
 	vec3 sol, v0, v1, v2, n;
-	bool hit = false;
 	
 	while (!endOfNode) {
-		v0 = triangles[triPtr].v0.xyz;
-		v1 = triangles[triPtr].v1.xyz;
-		v2 = triangles[triPtr].v2.xyz;
-		endOfNode = triangles[triPtr].d1.z > 0.0;
+		Triangle tri = UnpackTriangle(triangles[triPtr]);
+		v0 = tri.v0.xyz;
+		v1 = tri.v1.xyz;
+		v2 = tri.v2.xyz;
+		endOfNode = tri.endOfNode;
 		float d = 0.0;
 #ifdef BACKFACE_CULLING
 		n = cross(v0 - v1, v0 - v2);
@@ -132,7 +141,6 @@ float CheckLeafTransparency(inout Ray ray, int nodePtr, float tmin, float tmax, 
 		if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {
 			ray.hitDistance = sol.x;
 			ray.hitID = triPtr;
-			Triangle tri = UnpackTriangle(triangles[triPtr]);
 			transparency *= (1.0 - GetOpacity(tri, sol.yz));
 		}
 		triPtr++;
@@ -143,57 +151,6 @@ float CheckLeafTransparency(inout Ray ray, int nodePtr, float tmin, float tmax, 
 }
 
 void HitClosest(inout Ray ray, float tMin, float tMax) {
-	/*
-	uint stackPtr = 1u;
-	uint threadID = gl_LocalInvocationIndex;
-
-	stack[0][threadID] = 0;
-	
-	ray.hitDistance = tMax;
-	int nodePtr = 0;
-	int leafPtr = 0;
-	
-	while (stackPtr != 0u) {
-		bool searchLeaf = true;
-		while(nodePtr >= 0 && stackPtr != 0u) {
-			BVHNode node = UnpackNode(nodes[nodePtr]);
-
-			float hitL = 0.0, hitR = 0.0;
-			bool intersectL = IntersectAABB(ray, 
-				node.leftAABB, tMin, ray.hitDistance, hitL);		
-			bool intersectR = IntersectAABB(ray, 
-				node.rightAABB, tMin, ray.hitDistance, hitR);
-
-			bool noIntersection = !intersectL && !intersectR;
-			nodePtr = hitL <= hitR ? node.leftPtr : node.rightPtr;
-			nodePtr = noIntersection ? stack[--stackPtr][threadID] : nodePtr;
-			int stackIdx = hitL <= hitR ? node.rightPtr : node.leftPtr;
-
-			if (intersectR && intersectL) {
-				stack[stackPtr++][threadID] = stackIdx;
-			}
-
-			if (leafPtr >= 0 && nodePtr < 0) {
-				leafPtr = nodePtr;
-				nodePtr = intersectR && intersectL ? (hitL <= hitR ? node.rightPtr : node.leftPtr) : stack[--stackPtr][threadID];
-				searchLeaf = false;
-			}
-
-			if (ballotARB(searchLeaf) == 0u)
-				break;
-		}
-
-		while(leafPtr < 0) {
-			CheckLeafClosest(ray, leafPtr, tMin, ray.hitDistance);
-
-			leafPtr = nodePtr;
-			if (nodePtr < 0) {
-				nodePtr = stack[--stackPtr][threadID];
-			}
-		}
-
-	}
-	*/
 	
 	uint stackPtr = 1u;
 	int nodePtr = 0;
@@ -208,8 +165,6 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
 			nodePtr = stack[--stackPtr][threadID];
 		}
 		else {
-			if (stackPtr + 1u >= uint(STACK_SIZE)) break;
-
 			BVHNode node = UnpackNode(nodes[nodePtr]);
 
 			float hitL = 0.0, hitR = 0.0;
@@ -228,7 +183,6 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
 			}
 		}
 	}
-	
 		
 }
 
@@ -241,17 +195,14 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
 	uint threadID = gl_LocalInvocationIndex;
 	stack[0][threadID] = nodePtr;
 	
-	while (stackPtr != 0u) {
+	while (stackPtr != 0u && !hit) {
 		if(nodePtr < 0) {
 			if (CheckLeaf(ray, nodePtr, tMin, tMax)) {
 				hit = true;
-				break;
 			}
 			nodePtr = stack[--stackPtr][threadID];
 		}
 		else {
-			if (stackPtr + 1u >= uint(STACK_SIZE)) break;
-
 			BVHNode node = UnpackNode(nodes[nodePtr]);
 
 			bool intersectL = IntersectAABB(ray, 
@@ -281,18 +232,15 @@ float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
 	uint threadID = gl_LocalInvocationIndex;
 	stack[0][threadID] = nodePtr;
 	
-	while (stackPtr != 0u) {
+	while (stackPtr != 0u && transparency > 0.0) {
 		if(nodePtr < 0) {
 			transparency *= CheckLeafTransparency(ray, nodePtr, tMin, tMax, transparency);
 			if (transparency < 0.000001) {
 				transparency = 0.0;
-				break;
 			}
 			nodePtr = stack[--stackPtr][threadID];
 		}
 		else {
-			if (stackPtr + 1u >= uint(STACK_SIZE)) break;
-
 			BVHNode node = UnpackNode(nodes[nodePtr]);
 
 			bool intersectL = IntersectAABB(ray, 

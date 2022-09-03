@@ -38,8 +38,8 @@ namespace Atlas {
             for (auto& ref : refs)
                 aabb.Grow(aabbs[ref.idx]);
 
-            auto minOverlap = aabb.GetSurfaceArea() * 10e-5f;
-            auto builder = new BVHBuilder(aabb, refs, 0, minOverlap, 128);
+            auto minOverlap = aabb.GetSurfaceArea() * 10e-6f;
+            auto builder = new BVHBuilder(aabb, refs, 0, minOverlap, 256);
             refs.clear();
             refs.reserve(data.size());
 
@@ -51,15 +51,12 @@ namespace Atlas {
 
             this->aabbs.resize(refs.size());
             this->data.resize(refs.size());
-            this->woopData.resize(refs.size());
 
             for (size_t i = 0; i < refs.size(); i++) {
                 auto ref = refs[i];
                 this->aabbs[i] = aabbs[ref.idx];
                 this->data[i] = data[ref.idx];
-                this->woopData[i] = WoopTriangle(data[ref.idx]);
                 this->data[i].endOfNode = ref.endOfNode;
-                this->woopData[i].endOfNode = ref.endOfNode;
             }
 
             delete builder;
@@ -106,11 +103,11 @@ namespace Atlas {
                         // Intersect the ray with each triangle
                         while (!endOfNode) {
                             auto ptr = triPtr++;
-                            auto& woopTriangle = woopData[ptr];
-                            endOfNode = woopTriangle.endOfNode;
+                            auto& triangle = data[ptr];
+                            endOfNode = triangle.endOfNode;
 
                             glm::vec3 intersect;
-                            bool hit = woopTriangle.Intersect(ray, intersect, intersection.x);
+                            bool hit = ray.Intersects(triangle.v0, triangle.v1, triangle.v2, intersect);
 
                             // Only allow intersections "in range"
                             if (hit && intersect.x < intersection.x) {
@@ -170,11 +167,11 @@ namespace Atlas {
                         auto endOfNode = false;
                         // Intersect the ray with each triangle
                         while (!endOfNode) {
-                            auto& woopTriangle = woopData[triPtr++];
-                            endOfNode = woopTriangle.endOfNode;
+                            auto& triangle = data[triPtr++];
+                            endOfNode = triangle.endOfNode;
 
                             glm::vec3 intersect;
-                            bool hit = woopTriangle.Intersect(ray, intersect, max);
+                            bool hit = ray.Intersects(triangle.v0, triangle.v1, triangle.v2, intersect);
 
                             // Only allow intersections "in range"
                             if (hit && intersect.x < max) {
@@ -224,7 +221,7 @@ namespace Atlas {
 
         void BVHBuilder::Build(const std::vector<BVHTriangle>& data) {
 
-            const size_t refCount = 4;
+            const size_t refCount = 2;
             // Create leaf node
             if (refs.size() <= refCount || depth >= 32) {
                 CreateLeaf();
@@ -253,8 +250,13 @@ namespace Atlas {
             // If we haven't found a cost improvement we create a leaf node
             if ((objectSplit.axis < 0 || objectSplit.cost >= nodeCost) &&
                 (spatialSplit.axis < 0 || spatialSplit.cost >= nodeCost)) {
-                CreateLeaf();
-                return;
+                if (refs.size() >= 2 * refCount) {
+                    split = PerformMedianSplit(rightRefs, leftRefs);
+                }
+                else {
+                    CreateLeaf();
+                    return;
+                }
             }
             else {
                 if (spatialSplit.cost < objectSplit.cost) {
@@ -276,18 +278,18 @@ namespace Atlas {
             refs.clear();
             refs.shrink_to_fit();
 
-            if (depth <= 2) {
+            if (depth <= 3) {
                 std::thread leftBuilderThread, rightBuilderThread;
 
                 auto leftLambda = [&]() {
                     if (!leftRefs.size()) return;
-                    leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap);
+                    leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap, binCount);
                     leftChild->Build(data);
                 };
 
                 auto rightLambda = [&]() {
                     if (!rightRefs.size()) return;
-                    rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap);
+                    rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap, binCount);
                     rightChild->Build(data);
                 };
 
@@ -299,12 +301,12 @@ namespace Atlas {
             }
             else {
                 if (leftRefs.size()) {
-                    leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap);
+                    leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap, binCount);
                     leftChild->Build(data);
                 }
 
                 if (rightRefs.size()) {
-                    rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap);
+                    rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap, binCount);
                     rightChild->Build(data);
                 }
             }

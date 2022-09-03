@@ -13,6 +13,8 @@ namespace Atlas {
 
 			triangleBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUTriangle),
 				AE_BUFFER_DYNAMIC_STORAGE);
+			bvhTriangleBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(BVHTriangle),
+				AE_BUFFER_DYNAMIC_STORAGE);
 			materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUMaterial),
 				AE_BUFFER_DYNAMIC_STORAGE);
 			nodeBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUBVHNode),
@@ -172,6 +174,7 @@ namespace Atlas {
 			auto bvh = Volume::BVH(aabbs, bvhTriangles);
 
 			std::vector<GPUTriangle> gpuTriangles;
+			std::vector<BVHTriangle> gpuBvhTriangles;
 
 			for (auto& bvhTriangle : bvh.data) {
 
@@ -233,6 +236,13 @@ namespace Atlas {
 
 				gpuTriangles.push_back(gpuTriangle);
 
+				BVHTriangle gpuBvhTriangle;
+				gpuBvhTriangle.v0 = vec4(triangle.v0, bvhTriangle.endOfNode ? 1.0f : -1.0f);
+				gpuBvhTriangle.v1 = vec4(triangle.v1, reinterpret_cast<float&>(triangle.materialIdx));
+				gpuBvhTriangle.v2 = vec4(triangle.v2, 0.0f);
+
+				gpuBvhTriangles.push_back(gpuBvhTriangle);
+
 			}
 
 			triangles.clear();
@@ -245,6 +255,9 @@ namespace Atlas {
 			// Upload triangles
 			triangleBuffer.SetSize(gpuTriangles.size());
 			triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
+
+			bvhTriangleBuffer.SetSize(gpuBvhTriangles.size());
+			bvhTriangleBuffer.SetData(gpuBvhTriangles.data(), 0, gpuBvhTriangles.size());
 
 			glFinish();
 

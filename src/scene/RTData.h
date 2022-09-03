@@ -43,6 +43,12 @@ namespace Atlas {
 				vec4 d1;
 			};
 
+			struct BVHTriangle {
+				vec4 v0;
+				vec4 v1;
+				vec4 v2;
+			};
+
 			struct GPUTexture {
 
 				int32_t layer;
@@ -109,6 +115,7 @@ namespace Atlas {
 			int32_t shaderStorageLimit;
 
 			Buffer::Buffer triangleBuffer;
+			Buffer::Buffer bvhTriangleBuffer;
 			Buffer::Buffer materialBuffer;
 			Buffer::Buffer nodeBuffer;
 
