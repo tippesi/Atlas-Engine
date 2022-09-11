@@ -16,6 +16,8 @@ This is a cross platform toy engine that is available on Linux and Windows.
 ## Requirements
 - OpenGL 4.6
 - C++17 compatible compiler
+- CMake
+- Vcpkg
 ## Set up
 Dependencies are managed through [vcpkg](https://github.com/microsoft/vcpkg). You can either install the packages manually 
 or while doing the build configuration with CMake. To use vcpkg together with CMake follow the steps described [here](https://github.com/microsoft/vcpkg#using-vcpkg-with-cmake).
