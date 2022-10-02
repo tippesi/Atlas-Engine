@@ -176,9 +176,9 @@ namespace Atlas {
 
 			bvhBuilder.Build();
 
-			//bvhBuilder.node->Collapse(4);
+			bvhBuilder.node->Collapse(4);
 
-			std::vector<Volume::BVH2Node> nodes;
+			std::vector<Volume::BVH4Node> nodes;
 			std::vector<Volume::BVHBuilder::Ref> refs;
 			bvhBuilder.node->Flatten(nodes, refs);
 
@@ -335,7 +335,7 @@ namespace Atlas {
 					}
 				}
 				*/
-
+				/*
 				gpuNodes[i].data0.w = reinterpret_cast<uint32_t&>(nodes[i].leftPtr);
 				gpuNodes[i].data1.w = reinterpret_cast<uint32_t&>(nodes[i].rightPtr);
 				gpuNodes[i].data2.w = 0;
@@ -351,8 +351,8 @@ namespace Atlas {
 				gpuNodes[i].data1.x = aabb1.x;
 				gpuNodes[i].data1.y = aabb1.y;
 				gpuNodes[i].data1.z = aabb1.z;
-
-				/*
+				*/
+				
 				gpuNodes[i].data0.w = reinterpret_cast<uint32_t&>(nodes[i].childrenPtr[0]);
 				gpuNodes[i].data1.w = reinterpret_cast<uint32_t&>(nodes[i].childrenPtr[1]);
 				gpuNodes[i].data2.w = reinterpret_cast<uint32_t&>(nodes[i].childrenPtr[2]);
@@ -378,7 +378,7 @@ namespace Atlas {
 				gpuNodes[i].data3.x = aabb3.x;
 				gpuNodes[i].data3.y = aabb3.y;
 				gpuNodes[i].data3.z = aabb3.z;
-				*/
+				
 			}
 
 			// Free original node memory
