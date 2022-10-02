@@ -47,6 +47,7 @@ namespace Atlas {
 				vec4 v0;
 				vec4 v1;
 				vec4 v2;
+				vec4 d0;
 			};
 
 			struct GPUTexture {
@@ -92,13 +93,10 @@ namespace Atlas {
 			};
 
 			struct GPUBVHNode {
-				GPUAABB leftAABB;
-				GPUAABB rightAABB;
-				int32_t leftPtr = 0;
-				int32_t rightPtr = 0;
-
-				int32_t padding0;
-				int32_t padding1;
+				glm::uvec4 data0;
+				glm::uvec4 data1;
+				glm::uvec4 data2;
+				glm::uvec4 data3;
 			};
 
 			struct GPULight {

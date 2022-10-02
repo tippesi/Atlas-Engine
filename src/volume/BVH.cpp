@@ -5,292 +5,144 @@
 
 #include "BVH.h"
 #include "Log.h"
-#include "tools/PerformanceCounter.h"
 
 namespace Atlas {
 
     namespace Volume {
 
-        uint32_t BVHBuilder::maxDepth = 0;
-        uint32_t BVHBuilder::maxTriangles = 0;
-        uint32_t BVHBuilder::minTriangles = 10000;
-        uint32_t BVHBuilder::spatialSplitCount = 0;
-        float BVHBuilder::totalSurfaceArea = 0.0f;
+        BVHBuilder::BVHBuilder(const BVHTriangle* data, size_t dataCount) : data(data) {
 
-        BVH::BVH(std::vector<AABB>& aabbs, std::vector<BVHTriangle>& data) {
+            node = new Node(2);
 
-            Log::Message("Started BVH build");
+            node->depth = 0;
+            node->aabb = InitialAABB();
+            node->refs.reserve(dataCount);
 
-            Tools::PerformanceCounter perfCounter;
+            for (size_t i = 0; i < dataCount; i++) {
+                auto& triangle = data[i];
 
-            if (aabbs.size() != data.size())
-                return;
+                Ref ref;
 
-            std::vector<BVHBuilder::Ref> refs(data.size());
-            for (size_t i = 0; i < refs.size(); i++) {
-                refs[i].idx = uint32_t(i);
-                refs[i].aabb = aabbs[i];
+                ref.idx = uint32_t(i);
+                ref.aabb.Grow(triangle.v0);
+                ref.aabb.Grow(triangle.v1);
+                ref.aabb.Grow(triangle.v2);
+
+                node->aabb.Grow(ref.aabb);
+
+                node->refs.push_back(ref);
             }
 
-            // Calculate initial aabb of root
-            AABB aabb(glm::vec3(std::numeric_limits<float>::max()),
-                glm::vec3(-std::numeric_limits<float>::max()));
-            for (auto& ref : refs)
-                aabb.Grow(aabbs[ref.idx]);
+        }
 
-            auto minOverlap = aabb.GetSurfaceArea() * 10e-6f;
-            auto builder = new BVHBuilder(aabb, refs, 0, minOverlap, 256);
-            refs.clear();
-            refs.reserve(data.size());
+        void BVHBuilder::Build() {
 
-            builder->Build(data);
+            minOverlap = node->aabb.GetSurfaceArea() * settings.minOverlap;
 
-            Log::Message("Build: " + std::to_string(perfCounter.StepStamp().delta));
+            binCount = settings.binCount;
 
-            builder->Flatten(nodes, refs);
-
-            this->aabbs.resize(refs.size());
-            this->data.resize(refs.size());
-
-            for (size_t i = 0; i < refs.size(); i++) {
-                auto ref = refs[i];
-                this->aabbs[i] = aabbs[ref.idx];
-                this->data[i] = data[ref.idx];
-                this->data[i].endOfNode = ref.endOfNode;
-            }
-
-            delete builder;
-
-            Log::Message("Flatten: " + std::to_string(perfCounter.StepStamp().delta));
-            Log::Message("Triangle count: " + std::to_string(refs.size()));
-            Log::Message("Node count: " + std::to_string(nodes.size()));
-            Log::Message("Max depth: " + std::to_string(BVHBuilder::maxDepth));
-            Log::Message("Min triangles: " + std::to_string(BVHBuilder::minTriangles));
-            Log::Message("Max triangles: " + std::to_string(BVHBuilder::maxTriangles));
-            Log::Message("Num spatial splits: " + std::to_string(BVHBuilder::spatialSplitCount));
-            Log::Message("Surface area: " + std::to_string(BVHBuilder::totalSurfaceArea));
-            Log::Message("Finished BVH build\n");
+            auto contextBinCount = settings.quality == HIGH ? uint32_t(node->refs.size()) : binCount;
+            ThreadContext context(contextBinCount, node->refs.size());
+            Build(context, node);
 
         }
 
-        bool BVH::GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest, glm::vec3& intersection) {
+        void BVHBuilder::Build(ThreadContext& context, Node* node) {
 
-            constexpr auto max = std::numeric_limits<float>::max();
-
-            return GetIntersection(stack, ray, closest, intersection, max);
-
-        }
-
-        bool BVH::GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest, glm::vec3& intersection, float max) {
-
-            intersection.x = max;
-
-            if (nodes.size()) {
-                // Use a stack based iterative ray traversal
-                stack[0] = std::pair(0, 0.0f);
-
-                uint32_t stackPtr = 1u;
-                int32_t closestPtr = 0;
-
-                while (stackPtr != 0u) {
-                    const auto [nodePtr, distance] = stack[--stackPtr];
-
-                    if (distance > intersection.x) continue;
-
-                    if (nodePtr < 0) {
-                        auto triPtr = ~nodePtr;
-                        auto endOfNode = false;
-                        // Intersect the ray with each triangle
-                        while (!endOfNode) {
-                            auto ptr = triPtr++;
-                            auto& triangle = data[ptr];
-                            endOfNode = triangle.endOfNode;
-
-                            glm::vec3 intersect;
-                            bool hit = ray.Intersects(triangle.v0, triangle.v1, triangle.v2, intersect);
-
-                            // Only allow intersections "in range"
-                            if (hit && intersect.x < intersection.x) {
-                                closestPtr = ptr;
-                                intersection = intersect;
-                            }
-                        }
-                    }
-                    else {
-                        float hitL = 0.0f, hitR = 0.0f;
-
-                        const auto& node = nodes[nodePtr];
-                        // We might want to check whether these nodes are leafs
-                        auto intersectL = ray.Intersects(node.leftAABB, 0.0f, intersection.x, hitL);
-                        auto intersectR = ray.Intersects(node.rightAABB, 0.0f, intersection.x, hitR);
-
-                        if (intersectR && intersectL) {
-                            if (hitL < hitR) {
-                                stack[stackPtr++] = std::pair(node.rightPtr, hitR);
-                                stack[stackPtr++] = std::pair(node.leftPtr, hitL);
-                            }
-                            else {
-                                stack[stackPtr++] = std::pair(node.leftPtr, hitL);
-                                stack[stackPtr++] = std::pair(node.rightPtr, hitR);
-                            }
-                        }
-                        else if (intersectR && !intersectL) {
-                            stack[stackPtr++] = std::pair(node.rightPtr, hitR);
-                        }
-                        else if (!intersectR && intersectL) {
-                            stack[stackPtr++] = std::pair(node.leftPtr, hitL);
-                        }
-
-                    }
-
-                }
-
-                closest = data[closestPtr];
-            }
-
-            return (intersection.x < max);
-
-        }
-
-        bool BVH::GetIntersectionAny(std::vector<std::pair<int32_t, float>>& stack, Ray ray, float max) {
-
-            if (nodes.size()) {
-                stack[0] = std::pair(0, 0.0f);
-
-                uint32_t stackPtr = 1u;
-
-                while (stackPtr != 0u) {
-                    const auto [nodePtr, _] = stack[--stackPtr];
-
-                    if (nodePtr < 0) {
-                        auto triPtr = ~nodePtr;
-                        auto endOfNode = false;
-                        // Intersect the ray with each triangle
-                        while (!endOfNode) {
-                            auto& triangle = data[triPtr++];
-                            endOfNode = triangle.endOfNode;
-
-                            glm::vec3 intersect;
-                            bool hit = ray.Intersects(triangle.v0, triangle.v1, triangle.v2, intersect);
-
-                            // Only allow intersections "in range"
-                            if (hit && intersect.x < max) {
-                                return true;
-                            }
-                        }
-                    }
-                    else {
-                        const auto& node = nodes[nodePtr];
-                        // We might want to check whether these nodes are leafs
-                        auto intersectL = ray.Intersects(node.leftAABB, 0.0f, max);
-                        auto intersectR = ray.Intersects(node.rightAABB, 0.0f, max);
-
-                        if (intersectR) stack[stackPtr++] = std::pair(node.rightPtr, 0.0f);
-                        if (intersectL) stack[stackPtr++] = std::pair(node.leftPtr, 0.0f);
-                    }
-                }
-            }
-
-            return false;
-
-        }
-
-        std::vector<BVHNode>& BVH::GetTree() {
-
-            return nodes;
-
-        }
-
-        BVHBuilder::BVHBuilder(const AABB aabb, const std::vector<Ref> refs,
-            uint32_t depth, const float minOverlap, const uint32_t binCount) :
-            depth(depth), binCount(binCount), minOverlap(minOverlap), aabb(aabb), refs(refs) {
-
-            // Calculate cost for current node
-            nodeCost = float(refs.size()) * this->aabb.GetSurfaceArea();
-
-            totalSurfaceArea += this->aabb.GetSurfaceArea();
-
-        }
-
-        BVHBuilder::~BVHBuilder() {
-
-            delete leftChild;
-            delete rightChild;
-
-        }
-
-        void BVHBuilder::Build(const std::vector<BVHTriangle>& data) {
-
-            const size_t refCount = 2;
+            const size_t minLeafSize = size_t(settings.minLeafSize);
             // Create leaf node
-            if (refs.size() <= refCount || depth >= 32) {
-                CreateLeaf();
+            if (node->refs.size() <= minLeafSize) {
+                // CreateLeaf(context);
                 return;
             }
+
+            auto nodeCost = float(node->refs.size()) * node->aabb.GetSurfaceArea();
 
             Split objectSplit;
-            objectSplit = FindObjectSplit();
+            if (settings.quality == Quality::HIGH) {
+                objectSplit = FindObjectSplit(context, node);
+            }
+            else {
+                objectSplit = FindObjectSplitBinned(context, node);
+            }
 
             Split spatialSplit;
-            if (depth <= 16) {
+            if (node->depth <= settings.maxSplitDepth && settings.quality != Quality::LOW) {
                 AABB overlap = objectSplit.leftAABB;
                 overlap.Intersect(objectSplit.rightAABB);
                 if (overlap.GetSurfaceArea() >= minOverlap) {
-                    spatialSplit = FindSpatialSplit(data);
+                    spatialSplit = FindSpatialSplit(context, node);
                 }
             }
 
-            std::vector<Ref> leftRefs;
-            std::vector<Ref> rightRefs;
-
-            leftRefs.reserve(refs.size() / 2);
-            rightRefs.reserve(refs.size() / 2);
+            auto& leftRefs = context.leftRefs;
+            auto& rightRefs = context.rightRefs;
 
             Split split;
             // If we haven't found a cost improvement we create a leaf node
             if ((objectSplit.axis < 0 || objectSplit.cost >= nodeCost) &&
                 (spatialSplit.axis < 0 || spatialSplit.cost >= nodeCost)) {
-                if (refs.size() >= 2 * refCount) {
-                    split = PerformMedianSplit(rightRefs, leftRefs);
-                }
-                else {
-                    CreateLeaf();
-                    return;
-                }
-            }
-            else {
-                if (spatialSplit.cost < objectSplit.cost) {
-                    PerformSpatialSplit(data, rightRefs, leftRefs, spatialSplit);
-                    split = spatialSplit;
-                }
-
-                if (objectSplit.cost <= spatialSplit.cost) {
+                /*
+                if (node->refs.size() >= 2 * minLeafSize) {
                     leftRefs.clear();
                     rightRefs.clear();
-                    PerformObjectSplit(rightRefs, leftRefs, objectSplit);
-                    split = objectSplit;
+                    split = PerformMedianSplit(context, node, rightRefs, leftRefs);
                 }
                 else {
-                    spatialSplitCount++;
+                    return;
                 }
+                */
+                return;
+            }
+            else {
+                // We need to keep this below this return statement, otherwise we'll get performance degradation
+                leftRefs.clear();
+                rightRefs.clear();
             }
 
-            refs.clear();
-            refs.shrink_to_fit();
+            if (spatialSplit.cost < objectSplit.cost) {
+                PerformSpatialSplit(context, node, rightRefs, leftRefs, spatialSplit);
+                split = spatialSplit;
+            }
 
-            if (depth <= 3) {
+            if (objectSplit.cost <= spatialSplit.cost) {
+                leftRefs.clear();
+                rightRefs.clear();
+                if (settings.quality == Quality::HIGH) {
+                    PerformObjectSplit(context, node, rightRefs, leftRefs, objectSplit);
+                }
+                else {
+                    PerformObjectSplitBinned(context, node, rightRefs, leftRefs, objectSplit);
+                }
+                split = objectSplit;
+            }
+
+            node->refs.clear();
+            node->refs.shrink_to_fit();
+
+            if (node->depth <= 5) {
                 std::thread leftBuilderThread, rightBuilderThread;
 
                 auto leftLambda = [&]() {
                     if (!leftRefs.size()) return;
-                    leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap, binCount);
-                    leftChild->Build(data);
+                    auto contextBinCount = settings.quality == HIGH ? uint32_t(2 * leftRefs.size()) : binCount;
+                    auto leftContext = ThreadContext(contextBinCount, leftRefs.size());
+                    auto leftNode = new Node(node->depth + 1, split.leftAABB, 2);
+                    leftNode->refs = leftRefs;
+                    node->children[0] = leftNode;
+                    node->childrenBounds[0] = split.leftAABB;
+                    Build(leftContext, leftNode);
                 };
 
                 auto rightLambda = [&]() {
                     if (!rightRefs.size()) return;
-                    rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap, binCount);
-                    rightChild->Build(data);
+                    auto contextBinCount = settings.quality == HIGH ? uint32_t(2 * rightRefs.size()) : binCount;
+                    auto rightContext = ThreadContext(contextBinCount, rightRefs.size());
+                    auto rightNode = new Node(node->depth + 1, split.rightAABB, 2);
+                    rightNode->refs = rightRefs;
+                    node->children[1] = rightNode;
+                    node->childrenBounds[1] = split.rightAABB;
+                    Build(rightContext, rightNode);
                 };
 
                 leftBuilderThread = std::thread{ leftLambda };
@@ -301,69 +153,54 @@ namespace Atlas {
             }
             else {
                 if (leftRefs.size()) {
-                    leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap, binCount);
-                    leftChild->Build(data);
+                    auto leftNode = new Node(node->depth + 1, split.leftAABB, 2);
+                    leftNode->refs = leftRefs;
+                    node->children[0] = leftNode;
+                    node->childrenBounds[0] = split.leftAABB;
                 }
 
                 if (rightRefs.size()) {
-                    rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap, binCount);
-                    rightChild->Build(data);
+                    auto rightNode = new Node(node->depth + 1, split.rightAABB, 2);
+                    rightNode->refs = rightRefs;
+                    node->children[1] = rightNode;
+                    node->childrenBounds[1] = split.rightAABB;
                 }
+
+                if (leftRefs.size()) Build(context, node->children[0]);
+                if (rightRefs.size()) Build(context, node->children[1]);
             }
 
         }
 
-        void BVHBuilder::Flatten(std::vector<BVHNode>& nodes, std::vector<Ref>& refs) {
+        BVHBuilder::~BVHBuilder() {
 
-            // Check for leaf
-            if (this->refs.size()) {
-                refs.insert(refs.end(), this->refs.begin(), this->refs.end());
-                refs[refs.size() - 1].endOfNode = true;
-            }
-            else {
-                const auto nodeIdx = nodes.size();
-                nodes.push_back(BVHNode());
-
-                // Flatten recursively
-                if (leftChild) {
-                    auto leaf = leftChild->refs.size() > 0;
-                    nodes[nodeIdx].leftAABB = leftChild->aabb;
-                    nodes[nodeIdx].leftPtr = leaf ? ~int32_t(refs.size()) : uint32_t(nodes.size());
-                    leftChild->Flatten(nodes, refs);
-                }
-                if (rightChild) {
-                    auto leaf = rightChild->refs.size() > 0;
-                    nodes[nodeIdx].rightAABB = rightChild->aabb;
-                    nodes[nodeIdx].rightPtr = leaf ? ~int32_t(refs.size()) : uint32_t(nodes.size());
-                    rightChild->Flatten(nodes, refs);
-                }
-            }
+            delete node;
 
         }
 
-
-        BVHBuilder::Split BVHBuilder::FindObjectSplit() {
+        BVHBuilder::Split BVHBuilder::FindObjectSplitBinned(ThreadContext& context, Node* node) {
 
             Split split;
-            const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
+            const auto depthBinCount = std::max(binCount / (node->depth + 1),
+                uint32_t(settings.minDepthBinCount));
 
-            std::vector<Bin> bins(depthBinCount);
-            std::vector<AABB> rightAABBs(bins.size());
+            auto& bins = context.bins;
+            auto& rightAABBs = context.rightAABBs;
 
             // Iterate over 3 axises
             for (int32_t i = 0; i < 3; i++) {
 
-                for (auto& bin : bins) {
-                    bin.aabb = InitialAABB();
-                    bin.primitiveCount = 0;
+                rightAABBs[0] = InitialAABB();
+                rightAABBs[depthBinCount - 1] = InitialAABB();
+
+                for (uint32_t i = 0; i < depthBinCount; i++) {
+                    bins[i].aabb = InitialAABB();
+                    bins[i].primitiveCount = 0;
+                    rightAABBs[i] = InitialAABB();
                 }
 
-                for (auto& aabb : rightAABBs) {
-                    aabb = InitialAABB();
-                }
-
-                auto start = aabb.min[i];
-                auto stop = aabb.max[i];
+                auto start = node->aabb.min[i];
+                auto stop = node->aabb.max[i];
 
                 // If the dimension of this axis is to small continue
                 if (fabsf(stop - start) < 1e-3f)
@@ -372,7 +209,7 @@ namespace Atlas {
                 auto binSize = (stop - start) / float(depthBinCount);
                 auto invBinSize = 1.0f / binSize;
 
-                for (const auto& ref : refs) {
+                for (const auto& ref : node->refs) {
                     const auto value = 0.5f * (ref.aabb.min[i] + ref.aabb.max[i]);
 
                     auto binIdx = uint32_t(glm::clamp((value - start) * invBinSize,
@@ -384,7 +221,7 @@ namespace Atlas {
 
                 // Sweep from right to left
                 AABB rightAABB = InitialAABB();
-                for (size_t j = bins.size() - 1; j > 0; j--) {
+                for (uint32_t j = depthBinCount - 1; j > 0; j--) {
                     rightAABB.Grow(bins[j].aabb);
                     rightAABBs[j - 1] = rightAABB;
                 }
@@ -394,12 +231,12 @@ namespace Atlas {
 
                 // Sweep from left to right and attempt to
                 // find cost improvement
-                for (size_t j = 1; j < bins.size(); j++) {
+                for (uint32_t j = 1; j < depthBinCount; j++) {
                     leftAABB.Grow(bins[j - 1].aabb);
                     primitivesLeft += bins[j - 1].primitiveCount;
 
                     const auto rightAABB = rightAABBs[j - 1];
-                    const auto primitivesRight = uint32_t(refs.size()) - primitivesLeft;
+                    const auto primitivesRight = uint32_t(node->refs.size()) - primitivesLeft;
 
                     if (!primitivesLeft || !primitivesRight) continue;
 
@@ -407,14 +244,14 @@ namespace Atlas {
                     const auto rightSurface = rightAABB.GetSurfaceArea();
 
                     // Calculate cost for current split
-                    const auto cost = leftSurface * float(primitivesLeft) +
-                        rightSurface * float(primitivesRight);
+                    const auto cost = 0.0f + (leftSurface * float(primitivesLeft) +
+                        rightSurface * float(primitivesRight));
 
                     // Check if cost has improved
                     if (cost < split.cost) {
                         split.cost = cost;
                         split.axis = i;
-                        split.binIdx = uint32_t(j);
+                        split.binIdx = j;
                         split.pos = start + float(j) * binSize;
 
                         split.leftAABB = leftAABB;
@@ -428,18 +265,97 @@ namespace Atlas {
 
         }
 
-        void BVHBuilder::PerformObjectSplit(std::vector<Ref>& rightRefs,
-            std::vector<Ref>& leftRefs, Split& split) {
+        BVHBuilder::Split BVHBuilder::FindObjectSplit(ThreadContext& context, Node* node) {
 
-            const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
+            Split split;
 
-            auto start = aabb.min[split.axis];
-            auto stop = aabb.max[split.axis];
+            auto depthBinCount = uint32_t(node->refs.size());
+
+            auto& rightAABBs = context.rightAABBs;
+
+            // Iterate over 3 axises
+            for (int32_t i = 0; i < 3; i++) {
+
+                rightAABBs[0] = InitialAABB();
+                rightAABBs[depthBinCount - 1] = InitialAABB();
+
+                auto start = node->aabb.min[i];
+                auto stop = node->aabb.max[i];
+
+                // If the dimension of this axis is to small continue
+                if (fabsf(stop - start) < 1e-3f)
+                    continue;
+
+                std::sort(node->refs.begin(), node->refs.end(), [&](const Ref& ref0, const Ref& ref1) {
+                    auto center0 = ref0.aabb.max[i] + ref0.aabb.min[i];
+                    auto center1 = ref1.aabb.max[i] + ref1.aabb.min[i];
+                    if (center0 != center1)
+                        return center0 < center1;
+                    else
+                        return ref0.idx < ref1.idx;
+                    });
+
+                // Sweep from right to left
+                AABB rightAABB = InitialAABB();
+                for (uint32_t j = depthBinCount - 1; j > 0; j--) {
+                    rightAABB.Grow(node->refs[j].aabb);
+                    rightAABBs[j - 1] = rightAABB;
+                }
+
+                AABB leftAABB = InitialAABB();
+
+                // Sweep from left to right and attempt to
+                // find cost improvement
+                for (uint32_t j = 1; j < depthBinCount; j++) {
+                    auto& refAABB = node->refs[j - 1].aabb;
+                    leftAABB.Grow(refAABB);
+
+                    const auto rightAABB = rightAABBs[j - 1];
+                    const auto primitivesLeft = j;
+                    const auto primitivesRight = uint32_t(node->refs.size()) - primitivesLeft;
+
+                    if (!primitivesLeft || !primitivesRight) continue;
+
+                    const auto leftSurface = leftAABB.GetSurfaceArea();
+                    const auto rightSurface = rightAABB.GetSurfaceArea();
+
+                    // Calculate cost for current split
+                    const auto cost = (leftSurface * float(primitivesLeft) +
+                        rightSurface * float(primitivesRight));
+
+                    auto center = refAABB.max[i] + refAABB.min[i];
+
+                    // Check if cost has improved
+                    if (cost < split.cost) {
+                        split.cost = cost;
+                        split.axis = i;
+                        split.binIdx = j;
+                        split.pos = center;
+
+                        split.leftAABB = leftAABB;
+                        split.rightAABB = rightAABB;
+                    }
+                }
+
+            }
+
+            return split;
+
+        }
+
+        void BVHBuilder::PerformObjectSplitBinned(ThreadContext& context, Node* node,
+            std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs, Split& split) {
+
+            const auto depthBinCount = std::max(binCount / (node->depth + 1),
+                uint32_t(settings.minDepthBinCount));
+
+            auto start = node->aabb.min[split.axis];
+            auto stop = node->aabb.max[split.axis];
 
             auto binSize = (stop - start) / float(depthBinCount);
             auto invBinSize = 1.0f / binSize;
 
-            for (const auto& ref : refs) {
+            for (const auto& ref : node->refs) {
                 const auto value = 0.5f * (ref.aabb.min[split.axis]
                     + ref.aabb.max[split.axis]);
 
@@ -456,29 +372,51 @@ namespace Atlas {
 
         }
 
-        BVHBuilder::Split BVHBuilder::FindSpatialSplit(const std::vector<BVHTriangle>& data) {
+        void BVHBuilder::PerformObjectSplit(ThreadContext& context, Node* node,
+            std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs, Split& split) {
+
+            std::sort(node->refs.begin(), node->refs.end(), [&](const Ref& ref0, const Ref& ref1) {
+                auto center0 = ref0.aabb.max[split.axis] + ref0.aabb.min[split.axis];
+                auto center1 = ref1.aabb.max[split.axis] + ref1.aabb.min[split.axis];
+                if (center0 != center1)
+                    return center0 < center1;
+                else
+                    return ref0.idx < ref1.idx;
+                });
+
+            for (int32_t i = 0; i < split.binIdx; i++) {
+                leftRefs.push_back(node->refs[i]);
+            }
+
+            for (int32_t i = split.binIdx; i < int32_t(node->refs.size()); i++) {
+                rightRefs.push_back(node->refs[i]);
+            }
+
+        }
+
+        BVHBuilder::Split BVHBuilder::FindSpatialSplit(ThreadContext& context, Node* node) {
 
             Split split;
-            const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
+            const auto depthBinCount = std::max(binCount / (node->depth + 1),
+                uint32_t(settings.minDepthBinCount));
 
-            std::vector<Bin> bins(depthBinCount);
-            std::vector<AABB> rightAABBs(bins.size());
+            auto& bins = context.bins;
+            auto& rightAABBs = context.rightAABBs;
 
             // Iterate over 3 axises
             for (int32_t i = 0; i < 3; i++) {
 
-                for (auto& bin : bins) {
-                    bin.aabb = InitialAABB();
-                    bin.enter = 0;
-                    bin.exit = 0;
+                rightAABBs[0] = InitialAABB();
+                rightAABBs[depthBinCount - 1] = InitialAABB();
+
+                for (uint32_t i = 0; i < depthBinCount; i++) {
+                    bins[i].aabb = InitialAABB();
+                    bins[i].primitiveCount = 0;
+                    rightAABBs[i] = InitialAABB();
                 }
 
-                for (auto& aabb : rightAABBs) {
-                    aabb = InitialAABB();
-                }
-
-                auto start = aabb.min[i];
-                auto stop = aabb.max[i];
+                auto start = node->aabb.min[i];
+                auto stop = node->aabb.max[i];
 
                 // If the dimension of this axis is to small continue
                 if (fabsf(stop - start) < 1e-3f)
@@ -487,7 +425,7 @@ namespace Atlas {
                 auto binSize = (stop - start) / float(depthBinCount);
                 auto invBinSize = 1.0f / binSize;
 
-                for (const auto& ref : refs) {
+                for (const auto& ref : node->refs) {
                     const auto startBinIdx = uint32_t(glm::clamp((ref.aabb.min[i] - start) * invBinSize,
                         0.0f, float(depthBinCount) - 1.0f));
                     const auto endBinIdx = uint32_t(glm::clamp((ref.aabb.max[i] - start) * invBinSize,
@@ -521,18 +459,18 @@ namespace Atlas {
 
                 // Sweep from right to left
                 AABB rightAABB = InitialAABB();
-                for (size_t j = bins.size() - 1; j > 0; j--) {
+                for (uint32_t j = depthBinCount - 1; j > 0; j--) {
                     rightAABB.Grow(bins[j].aabb);
                     rightAABBs[j - 1] = rightAABB;
                 }
 
                 AABB leftAABB = InitialAABB();
-                uint32_t primitivesRight = uint32_t(refs.size());
+                uint32_t primitivesRight = uint32_t(node->refs.size());
                 uint32_t primitivesLeft = 0;
 
                 // Sweep from left to right and attempt to
                 // find cost improvement
-                for (size_t j = 1; j < bins.size(); j++) {
+                for (uint32_t j = 1; j < depthBinCount; j++) {
                     leftAABB.Grow(bins[j - 1].aabb);
 
                     primitivesLeft += bins[j - 1].enter;
@@ -546,14 +484,14 @@ namespace Atlas {
                     const auto rightSurface = rightAABB.GetSurfaceArea();
 
                     // Calculate cost for current split
-                    const auto cost = leftSurface * float(primitivesLeft) +
-                        rightSurface * float(primitivesRight);
+                    const auto cost = 0.0f + (leftSurface * float(primitivesLeft) +
+                        rightSurface * float(primitivesRight));
 
                     // Check if cost has improved
                     if (cost < split.cost) {
                         split.cost = cost;
                         split.axis = i;
-                        split.binIdx = uint32_t(j);
+                        split.binIdx = j;
                         split.pos = start + float(j) * binSize;
 
                         split.leftAABB = leftAABB;
@@ -567,18 +505,22 @@ namespace Atlas {
 
         }
 
-        void BVHBuilder::PerformSpatialSplit(const std::vector<BVHTriangle>& data,
+        void BVHBuilder::PerformSpatialSplit(ThreadContext& context, Node* node,
             std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs, Split& split) {
 
-            const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
+            const auto depthBinCount = std::max(binCount / (node->depth + 1),
+                uint32_t(settings.minDepthBinCount));
 
-            auto start = aabb.min[split.axis];
-            auto stop = aabb.max[split.axis];
+            auto start = node->aabb.min[split.axis];
+            auto stop = node->aabb.max[split.axis];
 
             auto binSize = (stop - start) / float(depthBinCount);
             auto invBinSize = 1.0f / binSize;
 
-            for (const auto& ref : refs) {
+            split.leftAABB = InitialAABB();
+            split.rightAABB = InitialAABB();
+
+            for (const auto& ref : node->refs) {
                 const auto min = ref.aabb.min[split.axis];
                 const auto max = ref.aabb.max[split.axis];
 
@@ -589,20 +531,104 @@ namespace Atlas {
 
                 if (endBinIdx < split.binIdx) {
                     leftRefs.push_back(ref);
+                    split.leftAABB.Grow(ref.aabb);
                 }
                 else if (startBinIdx >= split.binIdx) {
                     rightRefs.push_back(ref);
+                    split.rightAABB.Grow(ref.aabb);
                 }
-                else {
+            }
+
+            for (const auto& ref : node->refs) {
+                const auto min = ref.aabb.min[split.axis];
+                const auto max = ref.aabb.max[split.axis];
+
+                const auto startBinIdx = uint32_t(glm::clamp((min - start) * invBinSize,
+                    0.0f, float(depthBinCount) - 1.0f));
+                const auto endBinIdx = uint32_t(glm::clamp((max - start) * invBinSize,
+                    0.0f, float(depthBinCount) - 1.0f));
+
+                if (endBinIdx >= split.binIdx && startBinIdx < split.binIdx) {
                     Ref leftRef, rightRef;
                     SplitReference(data[ref.idx], ref, leftRef,
                         rightRef, split.pos, split.axis);
-                    leftRef.idx = ref.idx;
-                    rightRef.idx = ref.idx;
-                    leftRefs.push_back(leftRef);
-                    rightRefs.push_back(rightRef);
+
+                    auto unsplitLeft = split.leftAABB;
+                    auto unsplitRight = split.rightAABB;
+                    auto duplicateLeft = split.leftAABB;
+                    auto duplicateRight = split.rightAABB;
+
+                    unsplitLeft.Grow(ref.aabb);
+                    unsplitRight.Grow(ref.aabb);
+                    duplicateLeft.Grow(leftRef.aabb);
+                    duplicateRight.Grow(rightRef.aabb);
+
+                    // Original triangle cost
+                    auto leftRefCost = float(leftRefs.size());
+                    auto rightRefCost = float(rightRefs.size());
+                    // Triangle cost with added reference to either right or left side
+                    auto leftModRefCost = float(leftRefs.size() + 1);
+                    auto rightModRefCost = float(rightRefs.size() + 1);
+
+                    auto unsplitLeftSAH = unsplitLeft.GetSurfaceArea() * leftModRefCost +
+                        split.rightAABB.GetSurfaceArea() * rightRefCost;
+                    auto unsplitRightSAH = split.leftAABB.GetSurfaceArea() * leftRefCost +
+                        unsplitRight.GetSurfaceArea() * rightModRefCost;
+                    auto duplicateSAH = duplicateLeft.GetSurfaceArea() * leftModRefCost +
+                        duplicateRight.GetSurfaceArea() * rightModRefCost;
+
+                    auto minSAH = glm::min(duplicateSAH, glm::min(unsplitRightSAH, unsplitLeftSAH));
+
+                    if (minSAH == unsplitLeftSAH) {
+                        split.leftAABB = unsplitLeft;
+                        leftRefs.push_back(ref);
+                    }
+                    else if (minSAH == unsplitRightSAH) {
+                        split.rightAABB = unsplitRight;
+                        rightRefs.push_back(ref);
+                    }
+                    else {
+                        leftRef.idx = ref.idx;
+                        rightRef.idx = ref.idx;
+                        split.leftAABB = duplicateLeft;
+                        split.rightAABB = duplicateRight;
+                        leftRefs.push_back(leftRef);
+                        rightRefs.push_back(rightRef);
+                    }
                 }
             }
+
+        }
+
+        BVHBuilder::Split BVHBuilder::PerformMedianSplit(ThreadContext& context,
+            Node* node, std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs) {
+
+            Split split;
+
+            auto dimensions = node->aabb.max - node->aabb.min;
+            auto axis = dimensions.x > dimensions.y ? dimensions.x > dimensions.z ? 0 : 2 :
+                dimensions.y > dimensions.z ? 1 : 2;
+            std::sort(node->refs.begin(), node->refs.end(), [&](const Ref& ref0, const Ref& ref1) {
+                auto center0 = ref0.aabb.max[axis] + ref0.aabb.min[axis];
+                auto center1 = ref1.aabb.max[axis] + ref1.aabb.min[axis];
+                return center0 < center1;
+                });
+
+            auto splitIdx = uint32_t(node->refs.size() / 2);
+
+            for (uint32_t i = 0; i < splitIdx; i++) {
+                const auto& ref = node->refs[i];
+                split.leftAABB.Grow(ref.aabb);
+                leftRefs.push_back(ref);
+            }
+
+            for (uint32_t i = splitIdx; i < uint32_t(node->refs.size()); i++) {
+                const auto& ref = node->refs[i];
+                split.rightAABB.Grow(ref.aabb);
+                rightRefs.push_back(ref);
+            }
+
+            return split;
 
         }
 
@@ -646,42 +672,9 @@ namespace Atlas {
 
         }
 
-        BVHBuilder::Split BVHBuilder::PerformMedianSplit(std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs) {
+        void BVHBuilder::CreateLeaf(ThreadContext& context) {
 
-            Split split;
 
-            auto dimensions = aabb.max - aabb.min;
-            auto axis = dimensions.x > dimensions.y ? dimensions.x > dimensions.z ? 0 : 2 :
-                dimensions.y > dimensions.z ? 1 : 2;
-            std::sort(refs.begin(), refs.end(), [&](const Ref& ref0, const Ref& ref1) {
-                auto center0 = ref0.aabb.max[axis] - ref0.aabb.min[axis];
-                auto center1 = ref1.aabb.max[axis] - ref1.aabb.min[axis];
-                return center0 < center1;
-                });
-
-            auto splitIdx = uint32_t(refs.size() / 2);
-
-            for (uint32_t i = 0; i < splitIdx; i++) {
-                const auto& ref = refs[i];
-                split.leftAABB.Grow(ref.aabb);
-                leftRefs.push_back(ref);
-            }
-
-            for (uint32_t i = splitIdx; i < uint32_t(refs.size()); i++) {
-                const auto& ref = refs[i];
-                split.rightAABB.Grow(ref.aabb);
-                rightRefs.push_back(ref);
-            }
-
-            return split;
-
-        }
-
-        void BVHBuilder::CreateLeaf() {
-
-            maxDepth = std::max(depth, maxDepth);
-            minTriangles = std::min(uint32_t(refs.size()), minTriangles);
-            maxTriangles = std::max(uint32_t(refs.size()), maxTriangles);
 
         }
 
@@ -690,6 +683,149 @@ namespace Atlas {
             const auto min = glm::vec3(std::numeric_limits<float>::max());
             const auto max = glm::vec3(-std::numeric_limits<float>::max());
             return AABB(min, max);
+
+        }
+
+        BVHBuilder::Node::Node(int32_t numChildren) : numChildren(numChildren) {
+
+            children = new Node * [numChildren];
+            childrenBounds.resize(numChildren);
+
+        }
+
+        BVHBuilder::Node::Node(int32_t depth, const AABB& aabb, int32_t numChildren)
+            : numChildren(numChildren), depth(depth), aabb(aabb) {
+
+            children = new Node * [numChildren];
+            for (int32_t i = 0; i < numChildren; i++) children[i] = nullptr;
+            childrenBounds.resize(numChildren);
+
+        }
+
+        void BVHBuilder::Node::Flatten(std::vector<BVH2Node>& nodes, std::vector<BVHBuilder::Ref>& refs) {
+
+            // Check for leaf
+            if (this->refs.size()) {
+                refs.insert(refs.end(), this->refs.begin(), this->refs.end());
+                refs[refs.size() - 1].endOfNode = true;
+            }
+            else {
+                auto leftChild = children[0];
+                auto rightChild = children[1];
+
+                const auto nodeIdx = nodes.size();
+                nodes.push_back(BVH2Node());
+
+                // Flatten recursively
+                if (leftChild && (leftChild->children || leftChild->refs.size())) {
+                    auto leaf = leftChild->refs.size() > 0;
+                    nodes[nodeIdx].leftAABB = childrenBounds[0];
+                    nodes[nodeIdx].leftPtr = leaf ? ~int32_t(refs.size()) : uint32_t(nodes.size());
+                    leftChild->Flatten(nodes, refs);
+                }
+                if (rightChild && (rightChild->children || rightChild->refs.size())) {
+                    auto leaf = rightChild->refs.size() > 0;
+                    nodes[nodeIdx].rightAABB = childrenBounds[1];
+                    nodes[nodeIdx].rightPtr = leaf ? ~int32_t(refs.size()) : uint32_t(nodes.size());
+                    rightChild->Flatten(nodes, refs);
+                }
+            }
+
+        }
+
+        void BVHBuilder::Node::Flatten(std::vector<BVH4Node>& nodes, std::vector<BVHBuilder::Ref>& refs) {
+
+            // Check for leaf
+            if (this->refs.size()) {
+                refs.insert(refs.end(), this->refs.begin(), this->refs.end());
+                refs[refs.size() - 1].endOfNode = true;
+            }
+            else {
+                const auto nodeIdx = nodes.size();
+                nodes.push_back(BVH4Node());
+
+                for (int32_t i = 0; i < 4; i++) {
+                    if (i < numChildren) {
+                        auto leaf = children[i]->refs.size() > 0;
+
+                        nodes[nodeIdx].childrenBounds[i] = childrenBounds[i];
+                        nodes[nodeIdx].childrenPtr[i] = leaf ? ~int32_t(refs.size()) : int32_t(nodes.size());
+                        children[i]->Flatten(nodes, refs);
+                    }
+                    else {
+                        nodes[nodeIdx].childrenBounds[i] = AABB(vec3(0.0f), vec3(0.0f));
+                        nodes[nodeIdx].childrenPtr[i] = 0;
+                    }
+                }
+            }
+
+        }
+
+        void BVHBuilder::Node::Collapse(int32_t maxChildren) {
+
+            if (refs.size() > 0) return;
+
+            auto newChildren = new Node * [maxChildren];
+            childrenBounds.resize(maxChildren);
+
+            for (int32_t i = 0; i < maxChildren; i++) {
+                newChildren[i] = i < numChildren ? children[i] : nullptr;
+            }
+
+            delete[] children;
+            children = newChildren;
+
+            while (true) {
+                float maxSurfaceArea = 0.0f;
+                int32_t maxIdx = -1;
+                for (int32_t i = 0; i < numChildren; i++) {
+                    auto child = children[i];
+                    auto& childBounds = childrenBounds[i];
+                    auto childValid = child && child->childrenBounds.size() && !child->refs.size();
+                    if (childValid && child->numChildren + numChildren - 1 <= maxChildren) {
+                        auto surfaceArea = childBounds.GetSurfaceArea();
+                        if (surfaceArea > maxSurfaceArea) {
+                            maxIdx = i;
+                            maxSurfaceArea = surfaceArea;
+                        }
+                    }
+                }
+
+                if (maxIdx < 0) break;
+
+                // Decrement and swap child with last child to prevent overwriting valid data
+                std::swap(children[maxIdx], children[--numChildren]);
+                std::swap(childrenBounds[maxIdx], childrenBounds[numChildren]);
+                auto child = children[numChildren];
+
+                for (int32_t i = 0; i < child->numChildren; i++) {
+                    // Embree is sometimes really weird
+                    if (!child->children[i]) continue;
+                    auto childIdx = numChildren++;
+                    children[childIdx] = child->children[i];
+                    childrenBounds[childIdx] = child->childrenBounds[i];
+                }
+
+                delete[] child->children;
+                delete child;
+            }
+
+            for (int32_t i = 0; i < numChildren; i++)
+                children[i]->Collapse(maxChildren);
+
+        }
+
+        void BVHBuilder::Node::Clear() {
+
+            for (int32_t i = 0; i < numChildren; i++) {
+                if (children[i]) {
+                    children[i]->Clear();
+                    // These were all single allocations
+                    delete children[i];
+                }
+            }
+
+            delete[] children;
 
         }
 
