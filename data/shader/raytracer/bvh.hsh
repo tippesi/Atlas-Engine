@@ -7,6 +7,7 @@
 
 #define STACK_SIZE_SM 16
 #define STACK_SIZE 48
+#define SIMD
 
 struct PackedBVHNode {
 	uvec4 data0;
@@ -94,16 +95,53 @@ BVHNode UnpackNode(PackedBVHNode compressed) {
 	return node;
 }
 
-/*
-SIMDBVHNode UnpackNode(PackedBVHNode compressed) {
+SIMDBVHNode UnpackSIMDNode(PackedBVHNode compressed) {
+	// Maybe if we change the layout here, unpacking will be faster
 	SIMDBVHNode node;
 
 	vec2 data0 = unpackHalf2x16(compressed.data0.x);
 	vec2 data1 = unpackHalf2x16(compressed.data0.y);
 	vec2 data2 = unpackHalf2x16(compressed.data0.z);
 
-	node.childrenBounds[0].min = vec3(data0.x, data0.y, data1.x);
-	node.childrenBounds[0].max = vec3(data1.y, data2.x, data2.y);
+	node.minVec[0].x = data0.x;
+	node.minVec[1].x = data0.y;
+	node.minVec[2].x = data1.x;
+	node.maxVec[0].x = data1.y;
+	node.maxVec[1].x = data2.x;
+	node.maxVec[2].x = data2.y;
+
+	data0 = unpackHalf2x16(compressed.data1.x);
+	data1 = unpackHalf2x16(compressed.data1.y);
+	data2 = unpackHalf2x16(compressed.data1.z);
+
+	node.minVec[0].y = data0.x;
+	node.minVec[1].y = data0.y;
+	node.minVec[2].y = data1.x;
+	node.maxVec[0].y = data1.y;
+	node.maxVec[1].y = data2.x;
+	node.maxVec[2].y = data2.y;
+
+	data0 = unpackHalf2x16(compressed.data2.x);
+	data1 = unpackHalf2x16(compressed.data2.y);
+	data2 = unpackHalf2x16(compressed.data2.z);
+
+	node.minVec[0].z = data0.x;
+	node.minVec[1].z = data0.y;
+	node.minVec[2].z = data1.x;
+	node.maxVec[0].z = data1.y;
+	node.maxVec[1].z = data2.x;
+	node.maxVec[2].z = data2.y;
+
+	data0 = unpackHalf2x16(compressed.data3.x);
+	data1 = unpackHalf2x16(compressed.data3.y);
+	data2 = unpackHalf2x16(compressed.data3.z);
+
+	node.minVec[0].w = data0.x;
+	node.minVec[1].w = data0.y;
+	node.minVec[2].w = data1.x;
+	node.maxVec[0].w = data1.y;
+	node.maxVec[1].w = data2.x;
+	node.maxVec[2].w = data2.y;
 
 	node.childrenPtr[0] = int(compressed.data0.w);
 	node.childrenPtr[1] = int(compressed.data1.w);
@@ -112,7 +150,6 @@ SIMDBVHNode UnpackNode(PackedBVHNode compressed) {
 
 	return node;
 }
-*/
 
 void CheckLeafClosest(inout Ray ray, int nodePtr, float tmin, float tmax) {
 		
@@ -221,6 +258,76 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
 			STACK_POP(nodePtr);
 		}
 		else {
+#ifdef SIMD
+			SIMDBVHNode node = UnpackSIMDNode(nodes[nodePtr]);
+
+			NodeHit hits[4];
+			hits[0].ptr = node.childrenPtr[0];
+			hits[1].ptr = node.childrenPtr[1];
+			hits[2].ptr = node.childrenPtr[2];
+			hits[3].ptr = node.childrenPtr[3];
+
+			vec4 tmin = vec4(tMin);
+			vec4 tmax = vec4(ray.hitDistance);
+
+			for (int i = 0; i < 3; i++) {
+				vec4 origin = vec4(ray.origin[i]);
+				vec4 invDirection = vec4(ray.inverseDirection[i]);
+				vec4 t0 = (node.minVec[i] - origin) * invDirection;
+				vec4 t1 = (node.maxVec[i] - origin) * invDirection;
+
+				tmin = max(tmin, min(t0, t1));
+				tmax = min(tmax, max(t0, t1));
+			}
+
+			bvec4 mask = lessThanEqual(tmin, tmax);
+			hits[0].dist = mask.x ? tmin.x : tMax;
+			hits[1].dist = mask.y ? tmin.y : tMax;
+			hits[2].dist = mask.z ? tmin.z : tMax;
+			hits[3].dist = mask.w ? tmin.w : tMax;
+
+			NodeHit tmpHit;
+			if (hits[1].dist < hits[0].dist) {
+                tmpHit = hits[1];
+				hits[1] = hits[0];
+				hits[0] = tmpHit;
+            }
+            if (hits[3].dist < hits[2].dist) {
+                tmpHit = hits[3];
+				hits[3] = hits[2];
+				hits[2] = tmpHit;
+            }
+            if (hits[2].dist < hits[1].dist) {
+                tmpHit = hits[2];
+				hits[2] = hits[1];
+				hits[1] = tmpHit;
+            }
+            if (hits[1].dist < hits[0].dist) {
+                tmpHit = hits[1];
+				hits[1] = hits[0];
+				hits[0] = tmpHit;
+            }
+            if (hits[3].dist < hits[2].dist) {
+                tmpHit = hits[3];
+				hits[3] = hits[2];
+				hits[2] = tmpHit;
+            }
+            if (hits[2].dist < hits[1].dist) {
+                tmpHit = hits[2];
+				hits[2] = hits[1];
+				hits[1] = tmpHit;
+            }
+
+			if (hits[0].dist < ray.hitDistance) {
+				if (hits[3].dist < ray.hitDistance) STACK_PUSH(hits[3].ptr);
+				if (hits[2].dist < ray.hitDistance) STACK_PUSH(hits[2].ptr);
+				if (hits[1].dist < ray.hitDistance) STACK_PUSH(hits[1].ptr);
+				nodePtr = hits[0].ptr;
+			}
+			else {
+				STACK_POP(nodePtr);
+			}
+#else
 			BVHNode node = UnpackNode(nodes[nodePtr]);
 
 			NodeHit hits[4];
@@ -276,6 +383,7 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
 			else {
 				STACK_POP(nodePtr);
 			}
+#endif
 		}
 	}
 		
@@ -290,8 +398,6 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
 	int nodePtr = 0;
 	uint threadID = gl_LocalInvocationIndex;
 	STACK_PUSH(nodePtr);
-
-	bool hits[4];
 	
 	while (stackPtr != 0u && !hit) {
 		STACK_POP(nodePtr);
@@ -301,8 +407,32 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
 			}
 		}
 		else {
+#ifdef SIMD
+			SIMDBVHNode node = UnpackSIMDNode(nodes[nodePtr]);
+
+			vec4 tmin = vec4(tMin);
+			vec4 tmax = vec4(tMax);
+
+			for (int i = 0; i < 3; i++) {
+				vec4 origin = vec4(ray.origin[i]);
+				vec4 invDirection = vec4(ray.inverseDirection[i]);
+				vec4 t0 = (node.minVec[i] - origin) * invDirection;
+				vec4 t1 = (node.maxVec[i] - origin) * invDirection;
+
+				tmin = max(tmin, min(t0, t1));
+				tmax = min(tmax, max(t0, t1));
+			}
+
+			bvec4 mask = lessThanEqual(tmin, tmax);
+
+			if (mask[3]) STACK_PUSH(node.childrenPtr[3]);
+			if (mask[2]) STACK_PUSH(node.childrenPtr[2]);
+			if (mask[1]) STACK_PUSH(node.childrenPtr[1]);
+			if (mask[0]) STACK_PUSH(node.childrenPtr[0]);
+#else
 			BVHNode node = UnpackNode(nodes[nodePtr]);
 
+			bool hits[4];
 			hits[0] = IntersectAABB(ray, node.childrenBounds[0], tMin, tMax);
 			hits[1] = IntersectAABB(ray, node.childrenBounds[1], tMin, tMax);
 			hits[2] = IntersectAABB(ray, node.childrenBounds[2], tMin, tMax);
@@ -312,6 +442,7 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
 			if (hits[2]) STACK_PUSH(node.childrenPtr[2]);
 			if (hits[1]) STACK_PUSH(node.childrenPtr[1]);
 			if (hits[0]) STACK_PUSH(node.childrenPtr[0]);
+#endif
 		}
 	}	
 
@@ -328,8 +459,6 @@ float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
 	int nodePtr = 0;
 	uint threadID = gl_LocalInvocationIndex;
 	STACK_PUSH(nodePtr);
-
-	bool hits[4];
 	
 	while (stackPtr != 0u && transparency > 0.0) {
 		STACK_POP(nodePtr);
@@ -341,8 +470,32 @@ float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
 			
 		}
 		else {
+#ifdef SIMD
+			SIMDBVHNode node = UnpackSIMDNode(nodes[nodePtr]);
+
+			vec4 tmin = vec4(tMin);
+			vec4 tmax = vec4(tMax);
+
+			for (int i = 0; i < 3; i++) {
+				vec4 origin = vec4(ray.origin[i]);
+				vec4 invDirection = vec4(ray.inverseDirection[i]);
+				vec4 t0 = (node.minVec[i] - origin) * invDirection;
+				vec4 t1 = (node.maxVec[i] - origin) * invDirection;
+
+				tmin = max(tmin, min(t0, t1));
+				tmax = min(tmax, max(t0, t1));
+			}
+
+			bvec4 mask = lessThanEqual(tmin, tmax);
+
+			if (mask[3]) STACK_PUSH(node.childrenPtr[3]);
+			if (mask[2]) STACK_PUSH(node.childrenPtr[2]);
+			if (mask[1]) STACK_PUSH(node.childrenPtr[1]);
+			if (mask[0]) STACK_PUSH(node.childrenPtr[0]);
+#else
 			BVHNode node = UnpackNode(nodes[nodePtr]);
 
+			bool hits[4];
 			hits[0] = IntersectAABB(ray, node.childrenBounds[0], tMin, tMax);
 			hits[1] = IntersectAABB(ray, node.childrenBounds[1], tMin, tMax);
 			hits[2] = IntersectAABB(ray, node.childrenBounds[2], tMin, tMax);
@@ -352,6 +505,7 @@ float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
 			if (hits[2]) STACK_PUSH(node.childrenPtr[2]);
 			if (hits[1]) STACK_PUSH(node.childrenPtr[1]);
 			if (hits[0]) STACK_PUSH(node.childrenPtr[0]);
+#endif
 		}
 	}	
 
