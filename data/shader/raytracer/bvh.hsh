@@ -6,7 +6,7 @@
 #include <surface.hsh>
 
 #define STACK_SIZE_SM 16
-#define STACK_SIZE 32
+#define STACK_SIZE 48
 
 struct PackedBVHNode {
 	uvec4 data0;
@@ -20,13 +20,11 @@ struct BVHNode {
 	int childrenPtr[4];
 };
 
-/*
 struct SIMDBVHNode {
 	vec4 minVec[3];
 	vec4 maxVec[3];
 	int childrenPtr[4];
 };
-*/
 
 struct PackedBVHTriangle {
 	vec4 v0;
@@ -95,6 +93,26 @@ BVHNode UnpackNode(PackedBVHNode compressed) {
 
 	return node;
 }
+
+/*
+SIMDBVHNode UnpackNode(PackedBVHNode compressed) {
+	SIMDBVHNode node;
+
+	vec2 data0 = unpackHalf2x16(compressed.data0.x);
+	vec2 data1 = unpackHalf2x16(compressed.data0.y);
+	vec2 data2 = unpackHalf2x16(compressed.data0.z);
+
+	node.childrenBounds[0].min = vec3(data0.x, data0.y, data1.x);
+	node.childrenBounds[0].max = vec3(data1.y, data2.x, data2.y);
+
+	node.childrenPtr[0] = int(compressed.data0.w);
+	node.childrenPtr[1] = int(compressed.data1.w);
+	node.childrenPtr[2] = int(compressed.data2.w);
+	node.childrenPtr[3] = int(compressed.data3.w);
+
+	return node;
+}
+*/
 
 void CheckLeafClosest(inout Ray ray, int nodePtr, float tmin, float tmax) {
 		
@@ -196,8 +214,6 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
 	STACK_PUSH(nodePtr);
 
 	ray.hitDistance = tMax;
-
-	NodeHit hits[4];
 	
 	while (stackPtr != 0u) {		
 		if(nodePtr < 0) {
@@ -207,6 +223,7 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
 		else {
 			BVHNode node = UnpackNode(nodes[nodePtr]);
 
+			NodeHit hits[4];
 			hits[0].ptr = node.childrenPtr[0];
 			hits[1].ptr = node.childrenPtr[1];
 			hits[2].ptr = node.childrenPtr[2];
@@ -217,11 +234,6 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
 			IntersectAABB(ray, node.childrenBounds[1], tMin, ray.hitDistance, hits[1].dist);
 			IntersectAABB(ray, node.childrenBounds[2], tMin, ray.hitDistance, hits[2].dist);
 			IntersectAABB(ray, node.childrenBounds[3], tMin, ray.hitDistance, hits[3].dist);
-
-			hits[0].dist = hits[0].ptr != 0 ? hits[0].dist : tMax;
-			hits[1].dist = hits[1].ptr != 0 ? hits[1].dist : tMax;
-			hits[2].dist = hits[2].ptr != 0 ? hits[2].dist : tMax;
-			hits[3].dist = hits[3].ptr != 0 ? hits[3].dist : tMax;
 
 			NodeHit tmpHit;
 			if (hits[1].dist < hits[0].dist) {
@@ -296,10 +308,10 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
 			hits[2] = IntersectAABB(ray, node.childrenBounds[2], tMin, tMax);
 			hits[3] = IntersectAABB(ray, node.childrenBounds[3], tMin, tMax);
 
-			if (hits[3] && node.childrenPtr[3] != 0) STACK_PUSH(node.childrenPtr[3]);
-			if (hits[2] && node.childrenPtr[2] != 0) STACK_PUSH(node.childrenPtr[2]);
-			if (hits[1] && node.childrenPtr[1] != 0) STACK_PUSH(node.childrenPtr[1]);
-			if (hits[0] && node.childrenPtr[0] != 0) STACK_PUSH(node.childrenPtr[0]);
+			if (hits[3]) STACK_PUSH(node.childrenPtr[3]);
+			if (hits[2]) STACK_PUSH(node.childrenPtr[2]);
+			if (hits[1]) STACK_PUSH(node.childrenPtr[1]);
+			if (hits[0]) STACK_PUSH(node.childrenPtr[0]);
 		}
 	}	
 
@@ -336,10 +348,10 @@ float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
 			hits[2] = IntersectAABB(ray, node.childrenBounds[2], tMin, tMax);
 			hits[3] = IntersectAABB(ray, node.childrenBounds[3], tMin, tMax);
 
-			if (hits[3] && node.childrenPtr[3] != 0) STACK_PUSH(node.childrenPtr[3]);
-			if (hits[2] && node.childrenPtr[2] != 0) STACK_PUSH(node.childrenPtr[2]);
-			if (hits[1] && node.childrenPtr[1] != 0) STACK_PUSH(node.childrenPtr[1]);
-			if (hits[0] && node.childrenPtr[0] != 0) STACK_PUSH(node.childrenPtr[0]);
+			if (hits[3]) STACK_PUSH(node.childrenPtr[3]);
+			if (hits[2]) STACK_PUSH(node.childrenPtr[2]);
+			if (hits[1]) STACK_PUSH(node.childrenPtr[1]);
+			if (hits[0]) STACK_PUSH(node.childrenPtr[0]);
 		}
 	}	
 

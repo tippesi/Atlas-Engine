@@ -298,8 +298,10 @@ namespace Atlas {
 						}
 					}					
 					*/
+					/*
 					max = center + out * (lenCenter + lenCenter * factor);
 					min = center - out * (lenCenter + lenCenter * factor);
+					*/
 
 					return ivec3(glm::packHalf2x16(glm::vec2(min.x, min.y)),
 						glm::packHalf2x16(glm::vec2(min.z, max.x)),

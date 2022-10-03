@@ -753,7 +753,7 @@ namespace Atlas {
                         children[i]->Flatten(nodes, refs);
                     }
                     else {
-                        nodes[nodeIdx].childrenBounds[i] = AABB(vec3(10.0f), vec3(-10.0f));
+                        nodes[nodeIdx].childrenBounds[i] = AABB(vec3(0.0f), vec3(0.0f));
                         nodes[nodeIdx].childrenPtr[i] = 0;
                     }
                 }
