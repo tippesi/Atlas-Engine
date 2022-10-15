@@ -43,7 +43,7 @@ void main() {
 	
     //Create TBN matrix
     vec3 tang = normalize(randomVec - norm * dot(randomVec, norm));
-    vec3 bitang = cross(norm, tang);
+    vec3 bitang = normalize(cross(norm, tang));
     mat3 TBN = mat3(tang, bitang, norm);
 	
     //Calculate occlusion factor

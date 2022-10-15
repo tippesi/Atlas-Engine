@@ -13,8 +13,9 @@ layout (local_size_x = 8, local_size_y = 4) in;
 layout (binding = 3, r16f) writeonly uniform image2D rtaoImage;
 
 layout(binding = 0) uniform sampler2D normalTexture;
-layout(binding = 1) uniform sampler2D shadowMap;
-layout(binding = 2) uniform sampler2D randomTexture;
+layout(binding = 1) uniform sampler2D depthTexture;
+layout(binding = 2) uniform sampler2D roughnessMetallicAoTexture;
+layout(binding = 3) uniform sampler2D randomTexture;
 
 uniform uint sampleCount;
 uniform float radius;
@@ -25,40 +26,47 @@ uniform mat4 ivMatrix;
 uniform ivec2 resolution;
 uniform float frameSeed;
 
+/*
+Spherical Fibonacci Mapping
+http://lgdv.cs.fau.de/publications/publication/Pub.2015.tech.IMMD.IMMD9.spheri/
+Authors: Benjamin Keinert, Matthias Innmann, Michael Sänger, Marc Stamminger
+*/
+float madfrac(float a, float b) { return a * b - floor(a * b); }
+
+vec3 fibonacciSphere(float i, float n) {
+	const float PHI = 1.6180339887498948482045868343656;
+	float phi = 2.0 * PI * madfrac(i, PHI);
+	float cosTheta = 1.0 - (2.0 * i + 1.0) * (1.0 / n);
+	float sinTheta = sqrt(saturate(1.0 - sqr(cosTheta)));
+	return vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+}
+
 void main() {
 
-    int verticalGroupCount = resolution.y / int(gl_WorkGroupSize.y);
-    verticalGroupCount += ((verticalGroupCount * int(gl_WorkGroupSize.y) == resolution.y) ? 0 : 1);
+	if (int(gl_GlobalInvocationID.x) < resolution.x &&
+		int(gl_GlobalInvocationID.y) < resolution.y) {
 
-    int tileSize = 4;
-    int groupsPerTile = tileSize * verticalGroupCount;
-
-    int tileGroupIdx = int(gl_WorkGroupID.x) % groupsPerTile;
-    int tileIdx = int(gl_WorkGroupID.x) / groupsPerTile;
-
-    ivec2 tileBaseOffset = ivec2(tileIdx * tileSize, 0);
-    ivec2 tileGroupOffset = ivec2(tileGroupIdx % tileSize, tileGroupIdx / tileSize);
-
-    ivec2 groupOffset = (tileBaseOffset + tileGroupOffset) * ivec2(gl_WorkGroupSize);
-    ivec2 pixel = ivec2(gl_LocalInvocationID.xy) + groupOffset;
-
-	if (int(pixel.x) < resolution.x &&
-		int(pixel.y) < resolution.y) {
-
+		ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
 		vec2 texCoord = (vec2(pixel) + vec2(0.5)) / vec2(resolution);
 
-        float depth = texelFetch(shadowMap, pixel, 0).r;
+        float depth = texelFetch(depthTexture, pixel, 0).r;
 		
 	    vec3 worldPos = vec3(ivMatrix * vec4(ConvertDepthToViewSpace(depth, texCoord), 1.0));
         vec3 worldNorm = normalize(vec3(ivMatrix * vec4(2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0, 0.0)));
-        float seed = texelFetch(randomTexture, pixel % ivec2(8), 0).r;
+        vec3 randomVec = normalize(vec3(2.0 * texelFetch(randomTexture, pixel % ivec2(4), 0).xy - 1.0, 0.0));
 
         float ao = 0.0;
+        
+        vec3 up = abs(randomVec.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+        vec3 tangent = normalize(cross(up, randomVec));
+        vec3 bitangent = cross(randomVec, tangent);
 
-        float raySeed = float(seed);
-        float curSeed = float(0);
+        mat3 TBN = mat3(tangent, bitangent, randomVec);
 
-        const int sampleCount = 2;
+        float raySeed = float(randomVec.x);
+        float curSeed = float(frameSeed);
+
+        const int sampleCount = 4;
         for (uint i = 0; i < sampleCount; i++) {
             Ray ray;
             Surface surface;
@@ -82,7 +90,7 @@ void main() {
             ao += ray.hitID > 0 ? saturate(radius - sqr(ray.hitDistance)) : 0.0;
         }
 
-        float result = pow(1.0 - (ao / float(sampleCount)), 2.0);
+        float result = pow(1.0 - (ao / float(sampleCount)), 1.0);
 
         imageStore(rtaoImage, pixel, vec4(result, 0.0, 0.0, 0.0));
 	}

@@ -47,12 +47,14 @@ namespace Atlas {
 
 		postProcessTexture = Texture::Texture2D(width, height, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
-		SetSSAOResolution(HALF_RES);
+		SetAOResolution(HALF_RES);
 		SetVolumetricResolution(HALF_RES);
+		SetReflectionResolution(HALF_RES);
 
 		ivec2 halfRes = GetRelativeResolution(HALF_RES);
 		depthDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_R32F, GL_CLAMP_TO_EDGE, GL_NEAREST);
 		normalDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		roughnessMetalnessAoDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 	}
 
@@ -79,12 +81,13 @@ namespace Atlas {
 		this->width = width;
 		this->height = height;
 
-		SetSSAOResolution(ssaoResolution);
+		SetAOResolution(aoResolution);
 		SetVolumetricResolution(volumetricResolution);
 
 		ivec2 halfRes = GetRelativeResolution(HALF_RES);
 		depthDownsampled2xTexture.Resize(halfRes.x, halfRes.y);
 		normalDownsampled2xTexture.Resize(halfRes.x, halfRes.y);
+		roughnessMetalnessAoDownsampled2xTexture.Resize(halfRes.x, halfRes.y);
 
 	}
 
@@ -128,19 +131,19 @@ namespace Atlas {
 
 	}
 
-	void RenderTarget::SetSSAOResolution(RenderResolution resolution) {
+	void RenderTarget::SetAOResolution(RenderResolution resolution) {
 
 		auto res = GetRelativeResolution(resolution);
-		ssaoResolution = resolution;
+		aoResolution = resolution;
 
-		ssaoTexture = Texture::Texture2D(res.x, res.y, AE_R16F);
-		swapSsaoTexture = Texture::Texture2D(res.x, res.y, AE_R16F);
+		aoTexture = Texture::Texture2D(res.x, res.y, AE_R16F);
+		swapAoTexture = Texture::Texture2D(res.x, res.y, AE_R16F);
 
 	}
 
-	RenderResolution RenderTarget::GetSSAOResolution() {
+	RenderResolution RenderTarget::GetAOResolution() {
 
-		return ssaoResolution;
+		return aoResolution;
 
 	}
 
@@ -160,6 +163,22 @@ namespace Atlas {
 
 	}
 
+	void RenderTarget::SetReflectionResolution(RenderResolution resolution) {
+
+		auto res = GetRelativeResolution(resolution);
+		reflectionResolution = resolution;
+
+		reflectionTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
+		swapReflectionTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
+
+	}
+
+	RenderResolution RenderTarget::GetReflectionResolution() {
+
+		return reflectionResolution;
+
+	}
+
 	Texture::Texture2D* RenderTarget::GetDownsampledDepthTexture(RenderResolution resolution) {
 
 		switch (resolution) {
@@ -174,6 +193,15 @@ namespace Atlas {
 		switch (resolution) {
 		case HALF_RES: return &normalDownsampled2xTexture;
 		default: return &normalTexture;
+		}
+
+	}
+
+	Texture::Texture2D* RenderTarget::GetDownsampledRoughnessMetalnessAoTexture(RenderResolution resolution) {
+
+		switch (resolution) {
+		case HALF_RES: return &roughnessMetalnessAoDownsampled2xTexture;
+		default: return geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3);
 		}
 
 	}

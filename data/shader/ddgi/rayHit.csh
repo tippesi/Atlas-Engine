@@ -79,7 +79,6 @@ vec3 EvaluateHit(inout Ray ray) {
 	vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) *
 		GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
 	radiance += IsInsideVolume(surface.P) ? indirect : vec3(0.0);
-
 	return radiance;
 
 }
@@ -99,7 +98,7 @@ vec3 EvaluateDirectLight(Surface surface) {
 	SampleLight(light, surface, raySeed, curSeed, solidAngle, lightDistance);
 	
 	// Evaluate the BRDF
-	vec3 reflectance = EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
+	vec3 reflectance = EvaluateDiffuseBRDF(surface);
 	reflectance *= surface.material.opacity;
 	vec3 radiance = light.radiance * solidAngle;
 

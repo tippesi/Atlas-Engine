@@ -42,10 +42,10 @@ namespace Atlas {
 			}
 
 			auto ssao = scene->ssao;
-			target->ssaoTexture.Bind(GL_TEXTURE6);
-			target->GetDownsampledDepthTexture(target->GetSSAOResolution())->Bind(GL_TEXTURE14);
+			target->aoTexture.Bind(GL_TEXTURE6);
+			target->GetDownsampledDepthTexture(target->GetAOResolution())->Bind(GL_TEXTURE14);
 			shader.GetUniform("aoEnabled")->SetValue(ssao && ssao->enable);
-			shader.GetUniform("aoDownsampled2x")->SetValue(target->GetSSAOResolution() == RenderResolution::HALF_RES);
+			shader.GetUniform("aoDownsampled2x")->SetValue(target->GetAOResolution() == RenderResolution::HALF_RES);
 
 			shader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
 			shader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);

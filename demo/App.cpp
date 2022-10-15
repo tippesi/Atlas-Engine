@@ -136,7 +136,7 @@ void App::Render(float deltaTime) {
 		masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
 
 		if (showAo) {
-			masterRenderer.RenderTexture(&viewport, &renderTarget->ssaoTexture, 0.0f, 0.0f,
+			masterRenderer.RenderTexture(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
 				viewport.width, viewport.height);
 		}
 	}

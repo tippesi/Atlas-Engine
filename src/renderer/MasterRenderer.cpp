@@ -184,8 +184,8 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
-			ssaoRenderer.Render(viewport, target, camera, scene);
-			//rtaoRenderer.Render(viewport, target, camera, scene);
+			// ssaoRenderer.Render(viewport, target, camera, scene);
+			rtaoRenderer.Render(viewport, target, camera, scene);
 
 			target->lightingFramebuffer.Bind(true);
 			target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });

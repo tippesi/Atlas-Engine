@@ -1,18 +1,19 @@
-#include "SSAORenderer.h"
+#include "RTReflectionsRenderer.h"
+
+#include "Clock.h"
 
 namespace Atlas {
 
-    namespace Renderer {
+	namespace Renderer {
 
-        SSAORenderer::SSAORenderer() {
+        RTReflectionRenderer::RTReflectionRenderer() {
 
-            const int32_t filterSize = 4;
+            const int32_t filterSize = 6;
             blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
             blurFilter.CalculateBoxFilter(filterSize);
 
-            ssaoShader.AddStage(AE_COMPUTE_STAGE, "ao/ssao.csh");
-
-            ssaoShader.Compile();
+            rtaoShader.AddStage(AE_COMPUTE_STAGE, "reflections/rtreflections.csh");
+            rtaoShader.Compile();
 
             horizontalBlurShader.AddStage(AE_COMPUTE_STAGE, "bilateralBlur.csh");
             horizontalBlurShader.AddMacro("HORIZONTAL");
@@ -24,63 +25,56 @@ namespace Atlas {
             verticalBlurShader.AddMacro("DEPTH_WEIGHT");
             verticalBlurShader.Compile();
 
-            atomicCounterBuffer = Buffer::Buffer(AE_ATOMIC_COUNTER_BUFFER, sizeof(uint32_t), 0);
-            atomicCounterBuffer.SetSize(1);
-            InvalidateCounterBuffer();
-        }
+		}
 
-        void SSAORenderer::Render(Viewport* viewport, RenderTarget* target,
-            Camera* camera, Scene::Scene* scene) {
-
-            static int32_t frameCount = 0;
+		void RTReflectionRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
             auto ssao = scene->ssao;
             if (!ssao || !ssao->enable) return;
 
-            Profiler::BeginQuery("Render SSAO");
+            helper.SetScene(scene, 8);
 
             ivec2 res = ivec2(target->aoTexture.width, target->aoTexture.height);
+
+            Profiler::BeginQuery("Render RTAO");
+            Profiler::BeginQuery("Trace rays/calculate ao");
 
             auto depthTexture = target->GetDownsampledDepthTexture(target->GetAOResolution());
             auto normalTexture = target->GetDownsampledNormalTexture(target->GetAOResolution());
 
-            frameCount = (frameCount + 1) % 16;
-
-            // Calculate SSAO
+            // Calculate RTAO
             {
-                Profiler::BeginQuery("Main pass");
+                ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
+                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
-                ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
-                groupCount.x += ((res.x % 8 == 0) ? 0 : 1);
-                groupCount.y += ((res.y % 8 == 0) ? 0 : 1);
+                helper.DispatchAndHit(&rtaoShader, ivec3(groupCount, 1), 
+                    [=]() {
+                        target->aoTexture.Bind(GL_WRITE_ONLY, 3);
 
-                ssaoShader.Bind();
+                        // Bind the geometry normal texure and depth texture
+                        normalTexture->Bind(GL_TEXTURE0);
+                        depthTexture->Bind(GL_TEXTURE1);
 
-                ssaoShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
-                ssaoShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
+                        ssao->noiseTexture.Bind(GL_TEXTURE2);
 
-                ssaoShader.GetUniform("sampleCount")->SetValue(ssao->sampleCount);
-                ssaoShader.GetUniform("samples")->SetValue(ssao->samples.data(), int32_t(ssao->samples.size()));
-                ssaoShader.GetUniform("radius")->SetValue(ssao->radius);
-                ssaoShader.GetUniform("strength")->SetValue(ssao->strength);
-                ssaoShader.GetUniform("resolution")->SetValue(vec2(res));
-                ssaoShader.GetUniform("frameCount")->SetValue(frameCount);
+                        rtaoShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
+                        rtaoShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
+                        rtaoShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
 
-                // Bind the geometry normal texure and depth texture
-                normalTexture->Bind(GL_TEXTURE1);
-                depthTexture->Bind(GL_TEXTURE2);
+                        rtaoShader.GetUniform("sampleCount")->SetValue(ssao->sampleCount);
+                        rtaoShader.GetUniform("radius")->SetValue(ssao->radius);
+                        rtaoShader.GetUniform("resolution")->SetValue(res);
 
-                ssao->noiseTexture.Bind(GL_TEXTURE3);
-
-                target->aoTexture.Bind(GL_WRITE_ONLY, 0);
-                atomicCounterBuffer.BindBase(0);
-
-                glDispatchCompute(groupCount.x, groupCount.y, 1);
+                        rtaoShader.GetUniform("frameSeed")->SetValue(Clock::Get());
+                    });
             }
 
-            {
-                Profiler::EndAndBeginQuery("Bilateral blur");
+            Profiler::EndAndBeginQuery("Blur");
 
+            framebuffer.Bind();
+
+            {
                 const int32_t groupSize = 256;
 
                 depthTexture->Bind(GL_TEXTURE1);
@@ -124,24 +118,12 @@ namespace Atlas {
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
             }
-            
-            InvalidateCounterBuffer();
-            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
             Profiler::EndQuery();
             Profiler::EndQuery();
 
-        }
+		}
 
-        void SSAORenderer::InvalidateCounterBuffer() {
-
-            uint32_t zero = 0;
-            atomicCounterBuffer.Bind();
-            atomicCounterBuffer.InvalidateData();
-            atomicCounterBuffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
-
-        }
-
-    }
+	}
 
 }

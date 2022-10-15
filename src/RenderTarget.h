@@ -60,15 +60,15 @@ namespace Atlas {
 		/*
 		 * Sets the render resolution for screen space ambient occlusion
 		 */
-		void SetSSAOResolution(RenderResolution resolution);
+		void SetAOResolution(RenderResolution resolution);
 
 		/*
 		 * Gets the render resolution for screen space ambient occlusion
 		 */
-		RenderResolution GetSSAOResolution();
+		RenderResolution GetAOResolution();
 
 		/*
-		 * Sets the rende resolution for volumetric effetcs
+		 * Sets the render resolution for volumetric effetcs
 		 */
 		void SetVolumetricResolution(RenderResolution resolution);
 
@@ -77,9 +77,21 @@ namespace Atlas {
 		 */
 		RenderResolution GetVolumetricResolution();
 
+		/*
+		 * Sets the render resolution for reflections
+		 */
+		void SetReflectionResolution(RenderResolution resolution);
+
+		/*
+		 * Gets the render resolution for reflections
+		 */
+		RenderResolution GetReflectionResolution();
+
 		Texture::Texture2D* GetDownsampledDepthTexture(RenderResolution resolution);
 
 		Texture::Texture2D* GetDownsampledNormalTexture(RenderResolution resolution);
+
+		Texture::Texture2D* GetDownsampledRoughnessMetalnessAoTexture(RenderResolution resolution);
 
 		Texture::Texture2D* GetHistory();
 
@@ -95,11 +107,14 @@ namespace Atlas {
 
 		Texture::Texture2D postProcessTexture;
 
-		Texture::Texture2D ssaoTexture;
-		Texture::Texture2D swapSsaoTexture;
+		Texture::Texture2D aoTexture;
+		Texture::Texture2D swapAoTexture;
 
 		Texture::Texture2D volumetricTexture;
 		Texture::Texture2D swapVolumetricTexture;
+
+		Texture::Texture2D reflectionTexture;
+		Texture::Texture2D swapReflectionTexture;
 
 	private:
 		Texture::Texture2D depthTexture;
@@ -108,6 +123,7 @@ namespace Atlas {
 
 		Texture::Texture2D depthDownsampled2xTexture;
 		Texture::Texture2D normalDownsampled2xTexture;
+		Texture::Texture2D roughnessMetalnessAoDownsampled2xTexture;
 
 		Texture::Texture2D velocityTexture;
 		Texture::Texture2D swapVelocityTexture;
@@ -118,8 +134,9 @@ namespace Atlas {
 		int32_t width = 0;
 		int32_t height = 0;
 
-		RenderResolution ssaoResolution;
+		RenderResolution aoResolution;
 		RenderResolution volumetricResolution;
+		RenderResolution reflectionResolution;
 
 		bool swap = false;
 

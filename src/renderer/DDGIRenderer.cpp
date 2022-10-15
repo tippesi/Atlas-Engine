@@ -152,6 +152,8 @@ namespace Atlas {
 
 			// Update the probes
 			{
+				Profiler::BeginQuery("Update irradiance");
+
 				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 				irradianceArray.Bind(GL_WRITE_ONLY, 0);
@@ -169,6 +171,8 @@ namespace Atlas {
 
 				glDispatchCompute(probeCount.x, probeCount.y, probeCount.z);
 
+				Profiler::EndAndBeginQuery("Update moments");
+
 				irradianceArray.Bind(GL_WRITE_ONLY, 0);
 				momentsArray.Bind(GL_WRITE_ONLY, 1);
 
@@ -184,6 +188,8 @@ namespace Atlas {
 				probeMomentsUpdateShader.GetUniform("optimizeProbes")->SetValue(volume->optimizeProbes);
 
 				glDispatchCompute(probeCount.x, probeCount.y, probeCount.z);
+
+				Profiler::EndQuery();
 			}
 
 			Profiler::EndAndBeginQuery("Update probe states");

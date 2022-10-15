@@ -72,6 +72,8 @@ void main() {
             probeState = PROBE_STATE_ACTIVE;
         }
 
+        probeState = PROBE_STATE_ACTIVE;
+        
         probeStates[baseIdx].x = uintBitsToFloat(probeState);
         probeStates[baseIdx].y = temporalPercentageBackface;
     }

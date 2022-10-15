@@ -30,10 +30,12 @@ namespace Atlas {
 
             auto depthIn = target->GetDownsampledDepthTexture(RenderResolution::FULL_RES);
             auto normalIn = target->GetDownsampledNormalTexture(RenderResolution::FULL_RES);
+            auto roughnessMetallicAoIn = target->GetDownsampledRoughnessMetalnessAoTexture(RenderResolution::FULL_RES);
             auto depthOut = target->GetDownsampledDepthTexture(RenderResolution::HALF_RES);
             auto normalOut = target->GetDownsampledNormalTexture(RenderResolution::HALF_RES);
+            auto roughnessMetallicAoOut = target->GetDownsampledRoughnessMetalnessAoTexture(RenderResolution::HALF_RES);
 
-            Downscale(depthIn, normalIn, depthOut, normalOut);
+            Downscale(depthIn, normalIn, roughnessMetallicAoIn, depthOut, normalOut, roughnessMetallicAoOut);
 
             Profiler::EndQuery();
 
@@ -47,17 +49,20 @@ namespace Atlas {
 
             auto depthIn = target->GetDownsampledDepthTexture(RenderResolution::FULL_RES);
             auto normalIn = target->GetDownsampledNormalTexture(RenderResolution::FULL_RES);
+            auto roughnessMetallicAoIn = target->GetDownsampledRoughnessMetalnessAoTexture(RenderResolution::FULL_RES);
             auto depthOut = target->GetDownsampledDepthTexture(RenderResolution::HALF_RES);
             auto normalOut = target->GetDownsampledNormalTexture(RenderResolution::HALF_RES);
+            auto roughnessMetallicAoOut = target->GetDownsampledRoughnessMetalnessAoTexture(RenderResolution::HALF_RES);
 
-            Downscale(depthIn, normalIn, depthOut, normalOut);
+            Downscale(depthIn, normalIn, roughnessMetallicAoIn, depthOut, normalOut, roughnessMetallicAoOut);
 
             Profiler::EndQuery();
 
         }
 
         void GBufferDownscaleRenderer::Downscale(Texture::Texture2D* depthIn, Texture::Texture2D* normalIn,
-            Texture::Texture2D* depthOut, Texture::Texture2D* normalOut) {
+            Texture::Texture2D* roughnessMetallicAoIn, Texture::Texture2D* depthOut, 
+            Texture::Texture2D* normalOut, Texture::Texture2D* roughnessMetallicAoOut) {
 
             ivec2 res = ivec2(depthOut->width, depthOut->height);
 
@@ -67,9 +72,11 @@ namespace Atlas {
 
             depthIn->Bind(GL_TEXTURE0);
             normalIn->Bind(GL_TEXTURE1);
+            roughnessMetallicAoIn->Bind(GL_TEXTURE2);
 
-            depthOut->Bind(GL_WRITE_ONLY, 2);
-            normalOut->Bind(GL_WRITE_ONLY, 3);
+            depthOut->Bind(GL_WRITE_ONLY, 3);
+            normalOut->Bind(GL_WRITE_ONLY, 4);
+            roughnessMetallicAoOut->Bind(GL_WRITE_ONLY, 5);
 
             glDispatchCompute(groupCount.x, groupCount.y, 1);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

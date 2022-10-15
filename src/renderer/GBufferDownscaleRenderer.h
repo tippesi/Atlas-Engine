@@ -20,7 +20,8 @@ namespace Atlas {
 
         private:
             void Downscale(Texture::Texture2D* depthIn, Texture::Texture2D* normalIn,
-                Texture::Texture2D* depthOut, Texture::Texture2D* normalOut);
+                Texture::Texture2D* roughnessMetallicAoIn, Texture::Texture2D* depthOut,
+                Texture::Texture2D* normalOut, Texture::Texture2D* roughnessMetallicAoOut);
 
             Shader::Shader downscale;
             Shader::Shader downscaleDepthOnly;

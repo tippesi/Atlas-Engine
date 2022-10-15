@@ -1,13 +1,16 @@
 #include "RTAORenderer.h"
 
+#include "Clock.h"
+
 namespace Atlas {
 
 	namespace Renderer {
 
 		RTAORenderer::RTAORenderer() {
 
-            const int32_t filterSize = 21;
-			blurFilter.CalculateGaussianFilter(float(filterSize) / 6.0f, filterSize);
+            const int32_t filterSize = 6;
+            blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
+            blurFilter.CalculateBoxFilter(filterSize);
 
             rtaoShader.AddStage(AE_COMPUTE_STAGE, "ao/rtao.csh");
             rtaoShader.Compile();
@@ -31,7 +34,13 @@ namespace Atlas {
 
             helper.SetScene(scene, 8);
 
-            ivec2 res = ivec2(target->ssaoTexture.width, target->ssaoTexture.height);
+            ivec2 res = ivec2(target->aoTexture.width, target->aoTexture.height);
+
+            Profiler::BeginQuery("Render RTAO");
+            Profiler::BeginQuery("Trace rays/calculate ao");
+
+            auto depthTexture = target->GetDownsampledDepthTexture(target->GetAOResolution());
+            auto normalTexture = target->GetDownsampledNormalTexture(target->GetAOResolution());
 
             // Calculate RTAO
             {
@@ -39,13 +48,13 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
-                helper.DispatchAndHit(&rtaoShader, ivec3(groupCount, 1), 
+                helper.DispatchAndHit(&rtaoShader, ivec3(groupCount.x * groupCount.y, 1, 1), 
                     [=]() {
-                        target->ssaoTexture.Bind(GL_WRITE_ONLY, 3);
+                        target->aoTexture.Bind(GL_WRITE_ONLY, 3);
 
                         // Bind the geometry normal texure and depth texture
-                        target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE0);
-                        target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
+                        normalTexture->Bind(GL_TEXTURE0);
+                        depthTexture->Bind(GL_TEXTURE1);
 
                         ssao->noiseTexture.Bind(GL_TEXTURE2);
 
@@ -57,15 +66,18 @@ namespace Atlas {
                         rtaoShader.GetUniform("radius")->SetValue(ssao->radius);
                         rtaoShader.GetUniform("resolution")->SetValue(res);
 
+                        rtaoShader.GetUniform("frameSeed")->SetValue(Clock::Get());
                     });
             }
+
+            Profiler::EndAndBeginQuery("Blur");
 
             framebuffer.Bind();
 
             {
                 const int32_t groupSize = 256;
 
-                target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
+                depthTexture->Bind(GL_TEXTURE1);
 
                 std::vector<float> kernelWeights;
                 std::vector<float> kernelOffsets;
@@ -81,11 +93,12 @@ namespace Atlas {
 
                 horizontalBlurShader.Bind();
 
+                horizontalBlurShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
                 horizontalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
                 horizontalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
 
-                target->ssaoTexture.Bind(GL_TEXTURE0);
-                target->swapSsaoTexture.Bind(GL_WRITE_ONLY, 0);
+                target->aoTexture.Bind(GL_TEXTURE0);
+                target->swapAoTexture.Bind(GL_WRITE_ONLY, 0);
 
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
@@ -95,15 +108,19 @@ namespace Atlas {
 
                 verticalBlurShader.Bind();
 
+                verticalBlurShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
                 verticalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
                 verticalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
 
-                target->swapSsaoTexture.Bind(GL_TEXTURE0);
-                target->ssaoTexture.Bind(GL_WRITE_ONLY, 0);
+                target->swapAoTexture.Bind(GL_TEXTURE0);
+                target->aoTexture.Bind(GL_WRITE_ONLY, 0);
 
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
             }
+
+            Profiler::EndQuery();
+            Profiler::EndQuery();
 
 		}
 
