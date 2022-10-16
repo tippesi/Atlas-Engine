@@ -1,4 +1,4 @@
-#include "RTReflectionsRenderer.h"
+#include "RTReflectionRenderer.h"
 
 #include "Clock.h"
 
@@ -11,17 +11,19 @@ namespace Atlas {
             const int32_t filterSize = 1;
             blurFilter.CalculateBoxFilter(filterSize);
 
-            rtrShader.AddStage(AE_COMPUTE_STAGE, "reflections/rtreflections.csh");
+            rtrShader.AddStage(AE_COMPUTE_STAGE, "reflection/rtreflection.csh");
             rtrShader.Compile();
 
             horizontalBlurShader.AddStage(AE_COMPUTE_STAGE, "bilateralBlur.csh");
             horizontalBlurShader.AddMacro("HORIZONTAL");
             horizontalBlurShader.AddMacro("DEPTH_WEIGHT");
+            horizontalBlurShader.AddMacro("BLUR_RGB");
             horizontalBlurShader.Compile();
 
             verticalBlurShader.AddStage(AE_COMPUTE_STAGE, "bilateralBlur.csh");
             verticalBlurShader.AddMacro("VERTICAL");
             verticalBlurShader.AddMacro("DEPTH_WEIGHT");
+            verticalBlurShader.AddMacro("BLUR_RGB");
             verticalBlurShader.Compile();
 
 		}
@@ -43,6 +45,8 @@ namespace Atlas {
             auto normalTexture = target->GetDownsampledNormalTexture(target->GetReflectionResolution());
             auto roughnessTexture = target->GetDownsampledRoughnessMetalnessAoTexture(target->GetReflectionResolution());
             auto offsetTexture = target->GetDownsampledOffsetTexture(target->GetReflectionResolution());
+            auto materialIdxTexture = target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT4);
+            auto randomTexture = &scene->ssao->noiseTexture;
 
             // Calculate RTAO
             {
@@ -55,10 +59,12 @@ namespace Atlas {
                         target->reflectionTexture.Bind(GL_WRITE_ONLY, 4);
 
                         // Bind the geometry normal texure and depth texture
-                        normalTexture->Bind(GL_TEXTURE0);
-                        depthTexture->Bind(GL_TEXTURE1);
-                        roughnessTexture->Bind(GL_TEXTURE2);
-                        offsetTexture->Bind(GL_TEXTURE3);
+                        normalTexture->Bind(GL_TEXTURE16);
+                        depthTexture->Bind(GL_TEXTURE17);
+                        roughnessTexture->Bind(GL_TEXTURE18);
+                        offsetTexture->Bind(GL_TEXTURE19);
+                        materialIdxTexture->Bind(GL_TEXTURE20);
+                        randomTexture->Bind(GL_TEXTURE21);
 
                         rtrShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
                         rtrShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
@@ -99,8 +105,8 @@ namespace Atlas {
                 horizontalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
                 horizontalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
 
-                target->aoTexture.Bind(GL_TEXTURE0);
-                target->swapAoTexture.Bind(GL_WRITE_ONLY, 0);
+                target->reflectionTexture.Bind(GL_TEXTURE0);
+                target->swapReflectionTexture.Bind(GL_WRITE_ONLY, 0);
 
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
@@ -114,8 +120,8 @@ namespace Atlas {
                 verticalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
                 verticalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
 
-                target->swapAoTexture.Bind(GL_TEXTURE0);
-                target->aoTexture.Bind(GL_WRITE_ONLY, 0);
+                target->swapReflectionTexture.Bind(GL_TEXTURE0);
+                target->reflectionTexture.Bind(GL_WRITE_ONLY, 0);
 
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
                 glDispatchCompute(groupCount.x, groupCount.y, 1);

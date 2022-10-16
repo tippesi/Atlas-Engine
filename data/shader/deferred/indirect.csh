@@ -8,6 +8,7 @@ layout (local_size_x = 8, local_size_y = 8) in;
 
 layout(binding = 0, rgba16f) uniform image2D image;
 layout(binding = 6) uniform sampler2D aoTexture;
+layout(binding = 16) uniform sampler2D reflectionTexture;
 layout(binding = 14) uniform sampler2D lowResDepthTexture;
 
 uniform mat4 ivMatrix;
@@ -122,8 +123,9 @@ void main() {
 	float mipLevel = sqrt(surface.material.roughness) * 9.0;
 	vec3 prefilteredSpecular = textureLod(specularProbe, R, mipLevel).rgb;
 	// We multiply by local sky visibility because the reflection probe only includes the sky
-	vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
-		* prefilteredDiffuseLocal.a;
+	//vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
+	//	* prefilteredDiffuseLocal.a;
+	vec3 indirectSpecular = texture(reflectionTexture, texCoord).rgb * EvaluateIndirectSpecularBRDF(surface);
 
 	vec3 indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao * indirectStrength;
 	

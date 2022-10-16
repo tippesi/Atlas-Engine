@@ -147,7 +147,7 @@ namespace Atlas {
 				light->GetShadow()->update = false;
 			}
 
-			materialBuffer.BindBase(0);
+			materialBuffer.BindBase(16);
 
 			target->geometryFramebuffer.Bind(true);
 			target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
@@ -186,6 +186,8 @@ namespace Atlas {
 
 			// ssaoRenderer.Render(viewport, target, camera, scene);
 			rtaoRenderer.Render(viewport, target, camera, scene);
+
+			rtrRenderer.Render(viewport, target, camera, scene);
 
 			target->lightingFramebuffer.Bind(true);
 			target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });

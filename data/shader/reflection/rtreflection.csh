@@ -6,18 +6,26 @@
 #include <../common/random.hsh>
 #include <../common/flatten.hsh>
 #include <../common/convert.hsh>
-#include <../brdf/brdfSample.hsh>
+#include <../brdf/importanceSample.hsh>
+#include <../common/material.hsh>
 
 layout (local_size_x = 8, local_size_y = 4) in;
 
-layout (binding = 3, rgba16f) writeonly uniform image2D rtaoImage;
+layout (binding = 4, rgba16f) writeonly uniform image2D rtrImage;
 
-layout(binding = 0) uniform sampler2D normalTexture;
-layout(binding = 1) uniform sampler2D depthTexture;
-layout(binding = 2) uniform sampler2D roughnessMetallicAoTexture;
-layout(binding = 3) uniform isampler2D offsetTexture;
-layout(binding = 4) uniform usampler2D materialIdxTexture;
-layout(binding = 5) uniform sampler2D randomTexture;
+layout(binding = 16) uniform sampler2D normalTexture;
+layout(binding = 17) uniform sampler2D depthTexture;
+layout(binding = 18) uniform sampler2D roughnessMetallicAoTexture;
+layout(binding = 19) uniform isampler2D offsetTexture;
+layout(binding = 20) uniform usampler2D materialIdxTexture;
+layout(binding = 21) uniform sampler2D randomTexture;
+
+const ivec2 offsets[4] = ivec2[4](
+    ivec2(0, 0),
+    ivec2(1, 0),
+    ivec2(0, 1),
+    ivec2(1, 1)
+);
 
 uniform uint sampleCount;
 uniform float radius;
@@ -36,50 +44,66 @@ void main() {
 		ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
 		vec2 texCoord = (vec2(pixel) + vec2(0.5)) / vec2(resolution);
 
+        int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
+        ivec2 offset = offsets[offsetIdx];
+
         float depth = texelFetch(depthTexture, pixel, 0).r;
 
-        vec3 viewPos = ConvertDepthToViewSpace(depth, texCoord);
+        vec2 recontructTexCoord = (2.0 * vec2(pixel) + offset + vec2(0.5)) / (2.0 * vec2(resolution));
+        vec3 viewPos = ConvertDepthToViewSpace(depth, recontructTexCoord);
 	    vec3 worldPos = vec3(ivMatrix * vec4(viewPos, 1.0));
+        vec3 viewVec = vec3(ivMatrix * vec4(viewPos, 0.0));
         vec3 worldNorm = normalize(vec3(ivMatrix * vec4(2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0, 0.0)));
-        vec3 randomVec = normalize(vec3(2.0 * texelFetch(randomTexture, pixel % ivec2(4), 0).xy - 1.0, 0.0));
+        vec3 randomVec = normalize(vec3(2.0 * texelFetch(randomTexture, pixel % ivec2(2), 0).xy - 1.0, 0.0));
+
+        uint materialIdx = texelFetch(materialIdxTexture, pixel * 2 + offset, 0).r;
+	    Material material = UnpackMaterial(materialIdx);
 
         float roughness = texelFetch(roughnessMetallicAoTexture, pixel, 0).r;
-        float ao = 0.0;
-        
-        vec3 up = abs(randomVec.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-        vec3 tangent = normalize(cross(up, randomVec));
-        vec3 bitangent = cross(randomVec, tangent);
+        material.roughness *= material.roughnessMap ? roughness : 1.0;
 
-        mat3 TBN = mat3(tangent, bitangent, randomVec);
+        vec3 reflection = vec3(0.0);
 
-        float raySeed = float(randomVec.x);
-        float curSeed = float(frameSeed);
+        if (material.roughness < 0.3) {
 
-        const int sampleCount = 4;
-        for (uint i = 0; i < sampleCount; i++) {
-            Ray ray;
+            float raySeed = float(pixel.x + pixel.y * resolution.x);
+            float curSeed = float(frameSeed);
 
-            float u0 = random(raySeed, curSeed);
-    	    float u1 = random(raySeed, curSeed);
+            const int sampleCount = 1;
+            for (uint i = 0; i < sampleCount; i++) {
+                Ray ray;
 
-            float pdf;
-            ImportanceSampleGGX(vec2(u0, u1), worldNorm, -viewPos, roughness,
-                                ray.direction, pdf);
+                float u0 = random(raySeed, curSeed);
+                float u1 = random(raySeed, curSeed);
 
-            ray.inverseDirection = 1.0 / ray.direction;
-            ray.origin = worldPos + ray.direction * 0.1 + worldNorm * 0.1;
+                float pdf;
+                ImportanceSampleGGX(vec2(u0, u1), worldNorm, normalize(-viewVec), sqr(material.roughness),
+                                    ray.direction, pdf);
 
-            ray.hitID = -1;
-            ray.hitDistance = 0.0;
+                ray.inverseDirection = 1.0 / ray.direction;
+                ray.origin = worldPos + ray.direction * EPSILON + worldNorm * EPSILON;
 
-            HitClosest(ray, 0.0, radius);
+                ray.hitID = -1;
+                ray.hitDistance = 0.0;
 
-            ao += ray.hitID > 0 ? saturate(radius - sqr(ray.hitDistance)) : 0.0;
+                HitClosest(ray, 0.0, INF);
+
+                if (ray.hitID >= 0) {
+                    Triangle tri = UnpackTriangle(triangles[ray.hitID]);
+                    Surface surface = GetSurfaceParameters(tri, ray, true);
+
+                    reflection += min(surface.material.baseColor / pdf, vec3(1.0));
+                }
+                else {
+                    reflection += min(SampleEnvironmentMap(ray.direction).rgb / pdf, vec3(1.0));
+                }
+            }
+
+            reflection /= float(sampleCount);
+
         }
 
-        float result = pow(1.0 - (ao / float(sampleCount)), 1.0);
-
-        imageStore(rtaoImage, pixel, vec4(result, 0.0, 0.0, 0.0));
+        imageStore(rtrImage, pixel, vec4(reflection, 0.0));
 	}
 
 }

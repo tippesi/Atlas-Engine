@@ -1,5 +1,5 @@
-#ifndef AE_RTAORENDERER_H
-#define AE_RTAORENDERER_H
+#ifndef AE_RTRRENDERER_H
+#define AE_RTRRENDERER_H
 
 #include "../System.h"
 

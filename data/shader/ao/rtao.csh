@@ -79,7 +79,7 @@ void main() {
 
             HitClosest(ray, 0.0, radius);
 
-            ao += ray.hitID > 0 ? saturate(radius - sqr(ray.hitDistance)) : 0.0;
+            ao += ray.hitID >= 0 ? saturate(radius - sqr(ray.hitDistance)) : 0.0;
         }
 
         float result = pow(1.0 - (ao / float(sampleCount)), 2.0);

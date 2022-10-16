@@ -24,6 +24,7 @@
 #include "DDGIRenderer.h"
 #include "SSAORenderer.h"
 #include "RTAORenderer.h"
+#include "RTReflectionRenderer.h"
 #include "VolumetricRenderer.h"
 #include "VegetationRenderer.h"
 
@@ -257,6 +258,7 @@ namespace Atlas {
 			DDGIRenderer ddgiRenderer;
 			SSAORenderer ssaoRenderer;
 			RTAORenderer rtaoRenderer;
+			RTReflectionRenderer rtrRenderer;
 			VolumetricRenderer volumetricRenderer;
 
 			std::vector<vec2> haltonSequence;

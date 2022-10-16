@@ -44,6 +44,7 @@ namespace Atlas {
 			auto ssao = scene->ssao;
 			target->aoTexture.Bind(GL_TEXTURE6);
 			target->GetDownsampledDepthTexture(target->GetAOResolution())->Bind(GL_TEXTURE14);
+			target->reflectionTexture.Bind(GL_TEXTURE16);
 			shader.GetUniform("aoEnabled")->SetValue(ssao && ssao->enable);
 			shader.GetUniform("aoDownsampled2x")->SetValue(target->GetAOResolution() == RenderResolution::HALF_RES);
 

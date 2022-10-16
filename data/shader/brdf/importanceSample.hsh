@@ -29,7 +29,7 @@ void ImportanceSampleGGX(vec2 Xi, vec3 N, vec3 V, float roughness,
                          out vec3 L, out float pdf) {
 
     vec3 H = ImportanceSampleGGX(Xi, N, roughness);
-    vec3 L = 2.0 * dot(V, H) * H - V;
+    L = 2.0 * dot(V, H) * H - V;
 
     pdf = dot(N, H) / (4.0 * abs(dot(V, H)));
 
