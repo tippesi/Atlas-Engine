@@ -55,6 +55,7 @@ namespace Atlas {
 		depthDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_R32F, GL_CLAMP_TO_EDGE, GL_NEAREST);
 		normalDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		roughnessMetalnessAoDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		downsampleOffset2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_R8I, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 	}
 
@@ -88,6 +89,7 @@ namespace Atlas {
 		depthDownsampled2xTexture.Resize(halfRes.x, halfRes.y);
 		normalDownsampled2xTexture.Resize(halfRes.x, halfRes.y);
 		roughnessMetalnessAoDownsampled2xTexture.Resize(halfRes.x, halfRes.y);
+		downsampleOffset2xTexture.Resize(halfRes.x, halfRes.y);
 
 	}
 
@@ -205,6 +207,14 @@ namespace Atlas {
 		}
 
 	}
+
+    Texture::Texture2D* RenderTarget::GetDownsampledOffsetTexture(Atlas::RenderResolution resolution) {
+
+        switch (resolution) {
+            default: return &downsampleOffset2xTexture;
+        }
+
+    }
 
 	Texture::Texture2D* RenderTarget::GetHistory() {
 

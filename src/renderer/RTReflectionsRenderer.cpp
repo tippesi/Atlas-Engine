@@ -8,12 +8,11 @@ namespace Atlas {
 
         RTReflectionRenderer::RTReflectionRenderer() {
 
-            const int32_t filterSize = 6;
-            blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
+            const int32_t filterSize = 1;
             blurFilter.CalculateBoxFilter(filterSize);
 
-            rtaoShader.AddStage(AE_COMPUTE_STAGE, "reflections/rtreflections.csh");
-            rtaoShader.Compile();
+            rtrShader.AddStage(AE_COMPUTE_STAGE, "reflections/rtreflections.csh");
+            rtrShader.Compile();
 
             horizontalBlurShader.AddStage(AE_COMPUTE_STAGE, "bilateralBlur.csh");
             horizontalBlurShader.AddMacro("HORIZONTAL");
@@ -29,18 +28,21 @@ namespace Atlas {
 
 		void RTReflectionRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
-            auto ssao = scene->ssao;
-            if (!ssao || !ssao->enable) return;
+            //auto ssao = scene->ssao;
+            //if (!ssao || !ssao->enable) return;
 
             helper.SetScene(scene, 8);
 
             ivec2 res = ivec2(target->aoTexture.width, target->aoTexture.height);
 
-            Profiler::BeginQuery("Render RTAO");
-            Profiler::BeginQuery("Trace rays/calculate ao");
+            Profiler::BeginQuery("Render RT Reflections");
+            Profiler::BeginQuery("Trace rays");
 
-            auto depthTexture = target->GetDownsampledDepthTexture(target->GetAOResolution());
-            auto normalTexture = target->GetDownsampledNormalTexture(target->GetAOResolution());
+            // Should be reflection resolution
+            auto depthTexture = target->GetDownsampledDepthTexture(target->GetReflectionResolution());
+            auto normalTexture = target->GetDownsampledNormalTexture(target->GetReflectionResolution());
+            auto roughnessTexture = target->GetDownsampledRoughnessMetalnessAoTexture(target->GetReflectionResolution());
+            auto offsetTexture = target->GetDownsampledOffsetTexture(target->GetReflectionResolution());
 
             // Calculate RTAO
             {
@@ -48,25 +50,25 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
-                helper.DispatchAndHit(&rtaoShader, ivec3(groupCount, 1), 
+                helper.DispatchAndHit(&rtrShader, ivec3(groupCount, 1),
                     [=]() {
-                        target->aoTexture.Bind(GL_WRITE_ONLY, 3);
+                        target->reflectionTexture.Bind(GL_WRITE_ONLY, 4);
 
                         // Bind the geometry normal texure and depth texture
                         normalTexture->Bind(GL_TEXTURE0);
                         depthTexture->Bind(GL_TEXTURE1);
+                        roughnessTexture->Bind(GL_TEXTURE2);
+                        offsetTexture->Bind(GL_TEXTURE3);
 
-                        ssao->noiseTexture.Bind(GL_TEXTURE2);
+                        rtrShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
+                        rtrShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
+                        rtrShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
 
-                        rtaoShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
-                        rtaoShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
-                        rtaoShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
+                        //rtaoShader.GetUniform("sampleCount")->SetValue(ssao->sampleCount);
+                        //rtaoShader.GetUniform("radius")->SetValue(ssao->radius);
+                        rtrShader.GetUniform("resolution")->SetValue(res);
 
-                        rtaoShader.GetUniform("sampleCount")->SetValue(ssao->sampleCount);
-                        rtaoShader.GetUniform("radius")->SetValue(ssao->radius);
-                        rtaoShader.GetUniform("resolution")->SetValue(res);
-
-                        rtaoShader.GetUniform("frameSeed")->SetValue(Clock::Get());
+                        rtrShader.GetUniform("frameSeed")->SetValue(Clock::Get());
                     });
             }
 

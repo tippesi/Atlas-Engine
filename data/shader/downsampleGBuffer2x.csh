@@ -9,6 +9,7 @@ layout (binding = 2) uniform sampler2D roughnessMetallicAoIn;
 layout (binding = 3) writeonly uniform image2D depthOut;
 layout (binding = 4) writeonly uniform image2D normalOut;
 layout (binding = 5) writeonly uniform image2D roughnessMetallicAoOut;
+layout (binding = 6) writeonly uniform iimage2D offsetOut;
 
 float Checkerboard(ivec2 coord) {
 
@@ -102,6 +103,8 @@ void main() {
 		vec3 roughnessMetallicAo = depthIdx < 2 ? (depthIdx < 1 ? roughnessMetallicAo00 : roughnessMetallicAo10) :
 			(depthIdx < 3 ? roughnessMetallicAo01 : roughnessMetallicAo11);
 		imageStore(roughnessMetallicAoOut, coord, vec4(roughnessMetallicAo, 1.0));
+
+		imageStore(offsetOut, coord, ivec4(depthIdx, 0, 0, 0));
 #endif		
 		
 	}

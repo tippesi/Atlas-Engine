@@ -25,7 +25,7 @@ namespace Atlas {
 			Filter blurFilter;
 			Helper::RayTracingHelper helper;
 
-			Shader::Shader rtaoShader;
+			Shader::Shader rtrShader;
 			
 			Shader::Shader horizontalBlurShader;
 			Shader::Shader verticalBlurShader;

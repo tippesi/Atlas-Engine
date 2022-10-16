@@ -93,6 +93,8 @@ namespace Atlas {
 
 		Texture::Texture2D* GetDownsampledRoughnessMetalnessAoTexture(RenderResolution resolution);
 
+		Texture::Texture2D* GetDownsampledOffsetTexture(RenderResolution resolution);
+
 		Texture::Texture2D* GetHistory();
 
 		Texture::Texture2D* GetLastHistory();
@@ -124,6 +126,7 @@ namespace Atlas {
 		Texture::Texture2D depthDownsampled2xTexture;
 		Texture::Texture2D normalDownsampled2xTexture;
 		Texture::Texture2D roughnessMetalnessAoDownsampled2xTexture;
+        Texture::Texture2D downsampleOffset2xTexture;
 
 		Texture::Texture2D velocityTexture;
 		Texture::Texture2D swapVelocityTexture;
