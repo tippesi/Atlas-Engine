@@ -1,13 +1,16 @@
-#include <../raytracer/structures.hsh>
-#include <../raytracer/common.hsh>
-#include <../raytracer/buffers.hsh>
+#include <../raytracer/lights.hsh>
 #include <../raytracer/tracing.hsh>
-#include <../raytracer/bvh.hsh>
+#include <../raytracer/direct.hsh>
+
 #include <../common/random.hsh>
+#include <../common/utility.hsh>
 #include <../common/flatten.hsh>
 #include <../common/convert.hsh>
+#include <../common/PI.hsh>
+
+#include <../brdf/brdfEval.hsh>
 #include <../brdf/importanceSample.hsh>
-#include <../common/material.hsh>
+#include <../brdf/surface.hsh>
 
 layout (local_size_x = 8, local_size_y = 4) in;
 
@@ -35,6 +38,10 @@ uniform mat4 ivMatrix;
 
 uniform ivec2 resolution;
 uniform float frameSeed;
+
+vec3 EvaluateHit(inout Ray ray);
+vec3 EvaluateDirectLight(Surface surface);
+bool CheckVisibility(Surface surface, float lightDistance);
 
 void main() {
 
@@ -64,12 +71,12 @@ void main() {
 
         vec3 reflection = vec3(0.0);
 
-        if (material.roughness < 0.3) {
+        if (material.roughness < 0.9) {
+            const int sampleCount = 1;
 
-            float raySeed = float(pixel.x + pixel.y * resolution.x);
+            float raySeed = float(pixel.x + pixel.y * resolution.x) * 2 * float(sampleCount);
             float curSeed = float(frameSeed);
 
-            const int sampleCount = 1;
             for (uint i = 0; i < sampleCount; i++) {
                 Ray ray;
 
@@ -80,6 +87,8 @@ void main() {
                 ImportanceSampleGGX(vec2(u0, u1), worldNorm, normalize(-viewVec), sqr(material.roughness),
                                     ray.direction, pdf);
 
+                //if (pdf == 0.0) continue;
+
                 ray.inverseDirection = 1.0 / ray.direction;
                 ray.origin = worldPos + ray.direction * EPSILON + worldNorm * EPSILON;
 
@@ -88,15 +97,7 @@ void main() {
 
                 HitClosest(ray, 0.0, INF);
 
-                if (ray.hitID >= 0) {
-                    Triangle tri = UnpackTriangle(triangles[ray.hitID]);
-                    Surface surface = GetSurfaceParameters(tri, ray, true);
-
-                    reflection += min(surface.material.baseColor / pdf, vec3(1.0));
-                }
-                else {
-                    reflection += min(SampleEnvironmentMap(ray.direction).rgb / pdf, vec3(1.0));
-                }
+                reflection += min(EvaluateHit(ray), vec3(1.0));
             }
 
             reflection /= float(sampleCount);
@@ -104,6 +105,78 @@ void main() {
         }
 
         imageStore(rtrImage, pixel, vec4(reflection, 0.0));
+	}
+
+}
+
+vec3 EvaluateHit(inout Ray ray) {
+
+	vec3 radiance = vec3(0.0);
+	
+	// If we didn't find a triangle along the ray,
+	// we add the contribution of the environment map
+	if (ray.hitID == -1) {
+		return SampleEnvironmentMap(ray.direction).rgb;
+	}
+	
+	// Unpack the compressed triangle and extract surface parameters
+	Triangle tri = UnpackTriangle(triangles[ray.hitID]);
+	bool backfaceHit;	
+	Surface surface = GetSurfaceParameters(tri, ray, false, backfaceHit);
+	
+	radiance += surface.material.emissiveColor;
+
+	// Evaluate direct light
+	radiance += EvaluateDirectLight(surface);
+
+	// Need to sample the volume later for infinite bounces:
+	//vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) *
+	//	GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
+	//radiance += IsInsideVolume(surface.P) ? indirect : vec3(0.0);
+	return radiance;
+
+}
+
+vec3 EvaluateDirectLight(Surface surface) {
+
+	if (GetLightCount() == 0)
+		return vec3(0.0);
+
+	float curSeed = frameSeed;
+	float raySeed = float(gl_GlobalInvocationID.x);
+
+	float lightPdf;
+	Light light = GetLight(surface, raySeed, curSeed, lightPdf);
+
+	float solidAngle, lightDistance;
+	SampleLight(light, surface, raySeed, curSeed, solidAngle, lightDistance);
+	
+	// Evaluate the BRDF
+	vec3 reflectance = EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
+	reflectance *= surface.material.opacity;
+	vec3 radiance = light.radiance * solidAngle;
+
+	// Check for visibilty. This is important to get an
+	// estimate of the solid angle of the light from point P
+	// on the surface.
+	if (CheckVisibility(surface, lightDistance) == false)
+		radiance = vec3(0.0);
+	
+	return reflectance * radiance * surface.NdotL / lightPdf;
+
+}
+
+bool CheckVisibility(Surface surface, float lightDistance) {
+
+	if (surface.NdotL > 0.0) {
+		Ray ray;
+		ray.direction = surface.L;
+		ray.origin = surface.P + surface.N * EPSILON;
+		ray.inverseDirection = 1.0 / ray.direction;
+		return HitAny(ray, 0.0, lightDistance - 2.0 * EPSILON) == false;
+	}
+	else {
+		return false;
 	}
 
 }

@@ -26,6 +26,7 @@ namespace Atlas {
 			Helper::RayTracingHelper helper;
 
 			Shader::Shader rtrShader;
+			Shader::Shader temporalShader;
 			
 			Shader::Shader horizontalBlurShader;
 			Shader::Shader verticalBlurShader;

@@ -15,6 +15,14 @@ layout (binding = 3, r16f) writeonly uniform image2D rtaoImage;
 layout(binding = 0) uniform sampler2D normalTexture;
 layout(binding = 1) uniform sampler2D shadowMap;
 layout(binding = 2) uniform sampler2D randomTexture;
+layout(binding = 3) uniform isampler2D offsetTexture;
+
+const ivec2 offsets[4] = ivec2[4](
+    ivec2(0, 0),
+    ivec2(1, 0),
+    ivec2(0, 1),
+    ivec2(1, 1)
+);
 
 uniform uint sampleCount;
 uniform float radius;
@@ -49,9 +57,13 @@ void main() {
 
         float depth = texelFetch(shadowMap, pixel, 0).r;
 		
-	    vec3 worldPos = vec3(ivMatrix * vec4(ConvertDepthToViewSpace(depth, texCoord), 1.0));
+        int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
+        ivec2 offset = offsets[offsetIdx];
+
+        vec2 recontructTexCoord = (2.0 * vec2(pixel) + offset + vec2(0.5)) / (2.0 * vec2(resolution));
+	    vec3 worldPos = vec3(ivMatrix * vec4(ConvertDepthToViewSpace(depth, recontructTexCoord), 1.0));
         vec3 worldNorm = normalize(vec3(ivMatrix * vec4(2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0, 0.0)));
-        float seed = texelFetch(randomTexture, pixel % ivec2(8), 0).r;
+        float seed = texelFetch(randomTexture, pixel % ivec2(4), 0).r;
 
         float ao = 0.0;
 
@@ -72,7 +84,7 @@ void main() {
            
             ray.direction = brdfSample.L;
             ray.inverseDirection = 1.0 / ray.direction;
-            ray.origin = worldPos + ray.direction * 0.1 + worldNorm * 0.1;
+            ray.origin = worldPos + ray.direction * EPSILON + worldNorm * EPSILON;
 
             ray.hitID = -1;
             ray.hitDistance = 0.0;
@@ -82,7 +94,7 @@ void main() {
             ao += ray.hitID >= 0 ? saturate(radius - sqr(ray.hitDistance)) : 0.0;
         }
 
-        float result = pow(1.0 - (ao / float(sampleCount)), 2.0);
+        float result = pow(1.0 - (ao / float(sampleCount)), 1.0);
 
         imageStore(rtaoImage, pixel, vec4(result, 0.0, 0.0, 0.0));
 	}

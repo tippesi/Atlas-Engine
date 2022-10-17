@@ -41,6 +41,7 @@ namespace Atlas {
 
             auto depthTexture = target->GetDownsampledDepthTexture(target->GetAOResolution());
             auto normalTexture = target->GetDownsampledNormalTexture(target->GetAOResolution());
+            auto offsetTexture = target->GetDownsampledOffsetTexture(target->GetReflectionResolution());
 
             // Calculate RTAO
             {
@@ -57,6 +58,7 @@ namespace Atlas {
                         depthTexture->Bind(GL_TEXTURE1);
 
                         ssao->noiseTexture.Bind(GL_TEXTURE2);
+                        offsetTexture->Bind(GL_TEXTURE3);
 
                         rtaoShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
                         rtaoShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);

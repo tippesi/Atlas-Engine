@@ -68,7 +68,7 @@ int NearestDepth(float referenceDepth, float[9] depthVec) {
 
 }
 
-float Upsample2x(float referenceDepth) {
+float UpsampleAo2x(float referenceDepth) {
 
     ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
 
@@ -131,7 +131,7 @@ void main() {
 	
 	// This normally only accounts for diffuse occlusion, we need seperate terms
 	// for diffuse and specular.
-	float occlusionFactor = aoEnabled ? aoDownsampled2x ? Upsample2x(depth) : texture(aoTexture, texCoord).r : 1.0;
+	float occlusionFactor = aoEnabled ? aoDownsampled2x ? UpsampleAo2x(depth) : texture(aoTexture, texCoord).r : 1.0;
 	indirect *= occlusionFactor;
 
     vec3 direct = imageLoad(image, pixel).rgb;
