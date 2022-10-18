@@ -62,7 +62,7 @@ namespace Atlas {
              * @param framebuffer
              */
 			void RenderTexture(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-							   bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+							   bool alphaBlending = false, bool inverted = false, Framebuffer* framebuffer = nullptr);
 
 			/**
              *
@@ -78,7 +78,8 @@ namespace Atlas {
              * @param framebuffer
              */
 			void RenderTexture(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-							   vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+							   vec4 clipArea, vec4 blendArea, bool alphaBlending = false,
+							   bool inverted = false, Framebuffer* framebuffer = nullptr);
 
 			/**
 			 *
@@ -93,7 +94,8 @@ namespace Atlas {
 			 * @param framebuffer
 			 */
 			void RenderTexture(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y,
-							   float width, float height, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+							   float width, float height, bool alphaBlending = false,
+							   bool inverted = false, Framebuffer* framebuffer = nullptr);
 
 			/**
 			 *
@@ -111,7 +113,7 @@ namespace Atlas {
 			 */
 			void RenderTexture(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y,
 							   float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending = false,
-							   Framebuffer* framebuffer = nullptr);
+							   bool inverted = false, Framebuffer* framebuffer = nullptr);
 
 			/**
              *

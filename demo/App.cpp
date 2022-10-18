@@ -53,7 +53,8 @@ void App::LoadContent() {
 	directionalLight.AddVolumetric(10, 0.28f);
 	scene.Add(&directionalLight);
 
-	scene.ssao = new Atlas::Lighting::SSAO(16);
+	scene.ao = new Atlas::Lighting::AO(16);
+	scene.reflection = new Atlas::Lighting::Reflection(1);
 
 	scene.fog = new Atlas::Lighting::Fog();
 	scene.fog->enable = true;
@@ -114,7 +115,8 @@ void App::Render(float deltaTime) {
 	static bool firstFrame = true;
 	static bool animateLight = false;
 	static bool pathTrace = false;
-	static bool showAo = false;
+	static bool debugAo = false;
+	static bool debugReflection = false;
 	static bool slowMode = false;
 	
 	window.Clear();
@@ -135,9 +137,13 @@ void App::Render(float deltaTime) {
 		viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
 		masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
 
-		if (showAo) {
+		if (debugAo) {
 			masterRenderer.RenderTexture(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
-				viewport.width, viewport.height);
+				viewport.width, viewport.height, false, true);
+		}
+		if (debugReflection) {
+			masterRenderer.RenderTexture(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
+				viewport.width, viewport.height, false, true);
 		}
 	}
 	
@@ -149,8 +155,9 @@ void App::Render(float deltaTime) {
 
 		auto& light = directionalLight;
 		auto& volume = scene.irradianceVolume;
-		auto& ssao = scene.ssao;
+		auto& ao = scene.ao;
 		auto& fog = scene.fog;
+		auto& reflection = scene.reflection;
 
 		bool openSceneNotFoundPopup = false;
 
@@ -329,10 +336,20 @@ void App::Render(float deltaTime) {
 				ImGui::SliderFloat("Bias##Shadow", &light.GetShadow()->bias, 0.0f, 2.0f);
 			}
 			if (ImGui::CollapsingHeader("Ambient Occlusion")) {
-				ImGui::Checkbox("Debug", &showAo);
-				ImGui::Checkbox("Enable ambient occlusion", &ssao->enable);
-				ImGui::SliderFloat("Radius", &ssao->radius, 0.0f, 10.0f);
-				ImGui::SliderFloat("Strength", &ssao->strength, 0.0f, 20.0f, "%.3f", 2.0f);
+				ImGui::Checkbox("Debug##Ao", &debugAo);
+				ImGui::Checkbox("Enable ambient occlusion##Ao", &ao->enable);
+				ImGui::Checkbox("Enable raytracing##Ao", &ao->rt);
+				ImGui::SliderFloat("Radius##Ao", &ao->radius, 0.0f, 10.0f);
+				ImGui::SliderFloat("Strength##Ao", &ao->strength, 0.0f, 20.0f, "%.3f", 2.0f);
+				//ImGui::SliderInt("Sample count##Ao", &ao->s, 0.0f, 20.0f, "%.3f", 2.0f);
+			}
+			if (ImGui::CollapsingHeader("Reflection")) {
+				ImGui::Checkbox("Debug##Reflection", &debugReflection);
+				ImGui::Checkbox("Enable reflection", &reflection->enable);
+				ImGui::Checkbox("Enable raytracing##Reflection", &reflection->rt);
+				ImGui::Checkbox("Use shadow map", &reflection->useShadowMap);
+				ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
+				ImGui::SliderFloat("Radiance Limit##Reflection", &reflection->radianceLimit, 0.0f, 10.0f);
 			}
 			if (ImGui::CollapsingHeader("Camera")) {
 				ImGui::SliderFloat("Exposure##Camera", &camera.exposure, 0.0f, 10.0f);

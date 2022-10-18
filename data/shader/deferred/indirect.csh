@@ -16,6 +16,7 @@ uniform mat4 ivMatrix;
 uniform float indirectStrength = 1.0;
 uniform bool aoEnabled = true;
 uniform bool aoDownsampled2x;
+uniform bool reflectionEnabled = true;
 
 // (localSize / 2 + 2)^2
 shared float depths[36];
@@ -125,7 +126,8 @@ void main() {
 	// We multiply by local sky visibility because the reflection probe only includes the sky
 	//vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
 	//	* prefilteredDiffuseLocal.a;
-	vec3 indirectSpecular = texture(reflectionTexture, texCoord).rgb * EvaluateIndirectSpecularBRDF(surface);
+	vec3 indirectSpecular = reflectionEnabled ? texture(reflectionTexture, texCoord).rgb * EvaluateIndirectSpecularBRDF(surface)
+		: vec3(0.0);
 
 	vec3 indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao * indirectStrength;
 	

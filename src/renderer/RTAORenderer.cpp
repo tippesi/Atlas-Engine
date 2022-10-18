@@ -29,7 +29,7 @@ namespace Atlas {
 
 		void RTAORenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
-            auto ssao = scene->ssao;
+            auto ssao = scene->ao;
             if (!ssao || !ssao->enable) return;
 
             helper.SetScene(scene, 8);

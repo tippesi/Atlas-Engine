@@ -24,7 +24,7 @@ const ivec2 offsets[4] = ivec2[4](
     ivec2(1, 1)
 );
 
-uniform uint sampleCount;
+uniform int sampleCount;
 uniform float radius;
 
 uniform mat4 pMatrix;

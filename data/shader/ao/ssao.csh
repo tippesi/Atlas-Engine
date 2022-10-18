@@ -14,7 +14,7 @@ layout(binding = 3) uniform sampler2D randomTexture;
 uniform vec3 samples[64];
 uniform vec2 resolution;
 
-uniform uint sampleCount;
+uniform int sampleCount;
 uniform float radius;
 uniform float strength;
 uniform int frameCount;

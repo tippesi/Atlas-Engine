@@ -1,5 +1,5 @@
-#ifndef AE_SSAO_H
-#define AE_SSAO_H
+#ifndef AE_AO_H
+#define AE_AO_H
 
 #include "../System.h"
 #include "../RenderTarget.h"
@@ -9,19 +9,20 @@ namespace Atlas {
 
 	namespace Lighting {
 
-		class SSAO {
+		class AO {
 
 		public:
-			SSAO(uint32_t sampleCount = 16);
+			AO(int32_t sampleCount = 16);
 
-			void SetSampleCount(uint32_t sampleCount);
+			void SetSampleCount(int32_t sampleCount);
 
-			uint32_t sampleCount = 16;
+			int32_t sampleCount = 16;
 
 			float radius = 3.0f;
 			float strength = 2.0f;
 
 			bool enable = true;
+			bool rt = false;
 
 			Texture::Texture2D noiseTexture;
 			std::vector<vec3> samples;

@@ -34,7 +34,7 @@ namespace Atlas {
 
             static int32_t frameCount = 0;
 
-            auto ssao = scene->ssao;
+            auto ssao = scene->ao;
             if (!ssao || !ssao->enable) return;
 
             Profiler::BeginQuery("Render SSAO");

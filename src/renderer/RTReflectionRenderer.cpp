@@ -33,8 +33,8 @@ namespace Atlas {
 
 		void RTReflectionRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
-            //auto ssao = scene->ssao;
-            //if (!ssao || !ssao->enable) return;
+            auto reflection = scene->reflection;
+            if (!reflection || !reflection->enable) return;
 
             helper.SetScene(scene, 8, false);
             helper.UpdateLights();
@@ -50,7 +50,7 @@ namespace Atlas {
             auto roughnessTexture = target->GetDownsampledRoughnessMetalnessAoTexture(target->GetReflectionResolution());
             auto offsetTexture = target->GetDownsampledOffsetTexture(target->GetReflectionResolution());
             auto materialIdxTexture = target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT4);
-            auto randomTexture = &scene->ssao->noiseTexture;
+            auto randomTexture = &scene->ao->noiseTexture;
 
             auto history = target->reflectionTexture;
 
@@ -76,8 +76,9 @@ namespace Atlas {
                         rtrShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
                         rtrShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
 
-                        //rtaoShader.GetUniform("sampleCount")->SetValue(ssao->sampleCount);
-                        //rtaoShader.GetUniform("radius")->SetValue(ssao->radius);
+                        rtrShader.GetUniform("sampleCount")->SetValue(reflection->sampleCount);
+                        rtrShader.GetUniform("radianceLimit")->SetValue(reflection->radianceLimit);
+                        rtrShader.GetUniform("useShadowMap")->SetValue(reflection->useShadowMap);
                         rtrShader.GetUniform("resolution")->SetValue(res);
 
                         rtrShader.GetUniform("frameSeed")->SetValue(Clock::Get());

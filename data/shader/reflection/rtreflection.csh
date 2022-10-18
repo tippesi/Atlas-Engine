@@ -30,8 +30,9 @@ const ivec2 offsets[4] = ivec2[4](
     ivec2(1, 1)
 );
 
-uniform uint sampleCount;
-uniform float radius;
+uniform int sampleCount;
+uniform float radianceLimit;
+uniform bool useShadowMap;
 
 uniform mat4 pMatrix;
 uniform mat4 ivMatrix;
@@ -72,7 +73,6 @@ void main() {
         vec3 reflection = vec3(0.0);
 
         if (material.roughness < 0.9) {
-            const int sampleCount = 1;
 
             float raySeed = float(pixel.x + pixel.y * resolution.x) * 2 * float(sampleCount);
             float curSeed = float(frameSeed);
@@ -87,7 +87,11 @@ void main() {
                 ImportanceSampleGGX(vec2(u0, u1), worldNorm, normalize(-viewVec), sqr(material.roughness),
                                     ray.direction, pdf);
 
-                //if (pdf == 0.0) continue;
+
+                if (pdf == 0.0) {
+                    //reflection += vec3(1.0, 0.0, 0.0);
+                    //continue;
+                }
 
                 ray.inverseDirection = 1.0 / ray.direction;
                 ray.origin = worldPos + ray.direction * EPSILON + worldNorm * EPSILON;
@@ -97,7 +101,7 @@ void main() {
 
                 HitClosest(ray, 0.0, INF);
 
-                reflection += min(EvaluateHit(ray), vec3(1.0));
+                reflection += min(EvaluateHit(ray), vec3(radianceLimit));
             }
 
             reflection /= float(sampleCount);
@@ -159,9 +163,12 @@ vec3 EvaluateDirectLight(Surface surface) {
 	// Check for visibilty. This is important to get an
 	// estimate of the solid angle of the light from point P
 	// on the surface.
-	if (CheckVisibility(surface, lightDistance) == false)
-		radiance = vec3(0.0);
-	
+    if (useShadowMap) {
+
+    }
+    else {
+        radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
+    }	
 	return reflectance * radiance * surface.NdotL / lightPdf;
 
 }
