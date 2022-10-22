@@ -222,11 +222,13 @@ namespace Atlas {
 				if (!convertedData.size())
 					continue;
 
-				// Downscale the texture data
-				Common::Image<uint8_t> image(tex->width, tex->height, tex->channels);
-				image.SetData(convertedData);
-				image.Resize(slice.size.x, slice.size.y);
-				convertedData = image.GetData();
+				// Downscale the texture data if it hasn't the right size
+				if (slice.size.x != tex->width || slice.size.y != tex->height) {
+					Common::Image<uint8_t> image(tex->width, tex->height, tex->channels);
+					image.SetData(convertedData);
+					image.Resize(slice.size.x, slice.size.y);
+					convertedData = image.GetData();
+				}
 
 				texture.SetData(convertedData, slice.offset.x, 
 					slice.offset.y, slice.layer, slice.size.x, 
