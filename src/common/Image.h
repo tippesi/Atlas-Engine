@@ -126,6 +126,19 @@ namespace Atlas {
 				int32_t channelCount, int32_t mipLevel = 0) const;
 
 			/**
+			 * Returns the selected channel data of the whole image as an image.
+			 * @param channelOffset The offset of the channels to be copied.
+			 * @param channelCount The number of channels to be copied.
+			 * @param mipLevel The mipmap level of the data.
+			 * @return The channel data of the whole image.
+			 * @note The resulting data will contain all pixel data of
+			 * the channels in range [channelOffset, channelOffset + channelCount].
+			 * At each pixel, this data range will be copied in the to be returned data.
+			 */
+			Image<T> GetChannelImage(int32_t channelOffset,
+				int32_t channelCount, int32_t mipLevel = 0) const;
+
+			/**
 			 * Returns the number of mipmap levels the image has.
 			 * @return The number of mipmap levels the image has.
 			 */
@@ -209,6 +222,7 @@ namespace Atlas {
 			int32_t channels = 0;
 
 			int32_t fileFormat = 0;
+			std::string fileName = "";
 
 		private:
 			std::vector<MipLevel<T>> mipLevels;
@@ -279,6 +293,19 @@ namespace Atlas {
 			}
 
 			return channelData;
+
+		}
+
+		template<typename T>
+		Image<T> Image<T>::GetChannelImage(int32_t channelOffset,
+			int32_t channelCount, int32_t mipLevel) const {
+
+			auto& level = mipLevels[mipLevel];
+			Image<T> image(level.width, level.height, channelCount);
+
+			image.SetData(GetChannelData(channelOffset, channelCount, mipLevel));
+
+			return image;
 
 		}
 

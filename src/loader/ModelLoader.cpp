@@ -124,16 +124,43 @@ namespace Atlas {
             std::vector<vec4> normals(vertexCount);
             std::vector<vec4> tangents(hasTangents ? vertexCount : 0);
 
+			std::atomic_int32_t counter = 0;
+			std::vector<MaterialImages> materialImages(scene->mNumMaterials);
+			auto loadImagesLambda = [&]() {
+				auto i = counter++;
+
+				while (i < int32_t(materialImages.size())) {
+
+					auto& images = materialImages[i]; 
+
+					LoadMaterialImages(scene->mMaterials[i], images,
+						directoryPath, isObj, hasTangents, maxTextureResolution);
+
+					i = counter++;
+				}
+
+			};
+
+			auto threadCount = std::thread::hardware_concurrency();
+			std::vector<std::thread> threads;
+			for (int32_t i = 0; i < threadCount; i++) {
+				threads.emplace_back(std::thread{ loadImagesLambda });
+			}
+
+			for (int32_t i = 0; i < threadCount; i++) {
+				threads[i].join();
+			}
+
 			meshData.subData = std::vector<Mesh::MeshSubData>(scene->mNumMaterials);
 			meshData.materials = std::vector<Material>(scene->mNumMaterials);
 
 			for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 
 				auto& material = meshData.materials[i];
+				auto& images = materialImages[i];
 				auto& subData = meshData.subData[i];
 
-				LoadMaterial(scene->mMaterials[i], material,
-					directoryPath, isObj, hasTangents, maxTextureResolution);
+				LoadMaterial(scene->mMaterials[i], images, material);
 
 				subData.material = &material;
 				subData.indicesOffset = usedFaces * 3;
@@ -199,6 +226,8 @@ namespace Atlas {
 
 			}
 
+			materialImages.clear();
+
 			meshData.aabb = Volume::AABB(min, max);
 
 			meshData.indices.Set(indices);
@@ -216,8 +245,7 @@ namespace Atlas {
 
 		}
 
-		void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, Material& material,
-			std::string directory, bool isObj, bool hasTangents, int32_t maxTextureResolution) {
+		void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material) {
 
 			bool roughnessMetalnessTexture = false;
 
@@ -226,14 +254,15 @@ namespace Atlas {
 			aiColor3D diffuse;
 			aiColor3D emissive;
 			aiColor3D specular;
-			float specularHardness;
-			float specularIntensity;
-			float metalness;
-			bool twoSided;
+			float specularHardness = 0.0f;
+			float specularIntensity = 0.0f;
+			float metalness = 0.0f;
+			bool twoSided = false;
 
 			int32_t shadingModel;
 			assimpMaterial->Get(AI_MATKEY_SHADING_MODEL, shadingModel);
 
+			// It seems like these methods are not guaranteed to set the value
 			assimpMaterial->Get(AI_MATKEY_NAME, name);
 			assimpMaterial->Get(AI_MATKEY_SHININESS, specularHardness);
 			assimpMaterial->Get(AI_MATKEY_OPACITY, material.opacity);
@@ -249,6 +278,7 @@ namespace Atlas {
 			material.emissiveColor = vec3(emissive.r, emissive.g, emissive.b);
 
 			material.displacementScale = 0.01f;
+			material.normalScale = 0.5f;
 
 			// Avoid NaN
 			specularHardness = glm::max(1.0f, specularHardness);
@@ -260,122 +290,29 @@ namespace Atlas {
 
 			material.twoSided = twoSided;
 			
-			if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0 ||
-				assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
-				aiString aiPath;
-				if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0)
-					assimpMaterial->GetTexture(aiTextureType_BASE_COLOR, 0, &aiPath);
-				else
-					assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
-				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
-				auto image = ImageLoader::LoadImage<uint8_t>(path, true, 0, maxTextureResolution);
-
-				material.baseColorMap = new Texture::Texture2D(image.width, image.height, AE_RGB8,
-					GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
-
-				std::vector <uint8_t> data(image.width * image.height * 3);
-				if (image.channels == 1) {
-					auto imageData = image.GetData();
-					for (size_t i = 0; i < data.size(); i += 3) {
-						data[i + 0] = imageData[i / 3];
-						data[i + 1] = imageData[i / 3];
-						data[i + 2] = imageData[i / 3];
-					}
-				}
-				else if (image.channels == 3) {
-					data = image.GetData();
-				}
-				else if (image.channels == 4) {
-					data = image.GetChannelData(0, 3);
-					auto opacityData = image.GetChannelData(3, 1);
-					material.opacityMap = new Texture::Texture2D(image.width, image.height, AE_R8,
-						GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
-					material.opacityMap->SetData(opacityData);
-					material.opacityMapPath = path;
-				}
-				material.baseColorMap->SetData(data);
-				material.baseColorMapPath = path;
+			if (images.baseColorImage.HasData()) {
+				material.baseColorMap = new Texture::Texture2D(images.baseColorImage);
+				material.baseColorMapPath = images.baseColorImage.fileName;
 			}
-			if (assimpMaterial->GetTextureCount(aiTextureType_OPACITY) > 0) {
-				aiString aiPath;
-				assimpMaterial->GetTexture(aiTextureType_OPACITY, 0, &aiPath);
-				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
-				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
-				material.opacityMap = new Texture::Texture2D(image.width, image.height, AE_R8,
-					GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
-				material.opacityMap->SetData(image.GetData());
-				material.opacityMapPath = path;
+			if (images.opacityImage.HasData()) {
+				material.opacityMap = new Texture::Texture2D(images.opacityImage);
+				material.opacityMapPath = images.opacityImage.fileName;
 			}
-			if ((assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0 ||
-				(assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && isObj))
-				&& hasTangents) {
-				aiString aiPath;
-				if (isObj)
-					assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
-				else
-					assimpMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
-				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
-				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 0, maxTextureResolution);
-				auto texture = new Texture::Texture2D(image);
-				// Might still be a traditional displacement map
-				if (texture->channels == 1 && isObj) {
-					material.displacementMap = texture;
-					material.displacementMapPath = path;
-					image = ApplySobelFilter(image);
-					material.normalMap = new Texture::Texture2D(image);
-				}
-				else {
-					material.normalMap = texture;
-				}
-				material.normalScale = 0.5f;
-				material.normalMapPath = path;
+			if (images.roughnessImage.HasData()) {
+				material.roughnessMap = new Texture::Texture2D(images.roughnessImage);
+				material.roughnessMapPath = images.roughnessImage.fileName;
 			}
-			if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
-				aiString aiPath;
-				assimpMaterial->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &aiPath);
-				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
-				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 0, maxTextureResolution);
-				if (image.channels > 1) {
-					auto roughnessData = image.GetChannelData(1, 1);
-					auto metalnessData = image.GetChannelData(2, 1);
-					material.roughnessMap = new Texture::Texture2D(image.width, image.height, AE_R8,
-						GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
-					material.roughnessMap->SetData(roughnessData);
-					material.metalnessMap = new Texture::Texture2D(image.width, image.height, AE_R8,
-						GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, true, true);
-					material.metalnessMap->SetData(metalnessData);
-					material.metalnessMapPath = path;
-					roughnessMetalnessTexture = true;
-				}
-				else {
-					material.roughnessMap = new Texture::Texture2D(image, true, true);
-				}
-				material.roughnessMapPath = path;
+			if (images.metallicImage.HasData()) {
+				material.metalnessMap = new Texture::Texture2D(images.metallicImage);
+				material.metalnessMapPath = images.metallicImage.fileName;
 			}
-			if (assimpMaterial->GetTextureCount(aiTextureType_METALNESS) > 0 && !roughnessMetalnessTexture) {
-				aiString aiPath;
-				assimpMaterial->GetTexture(aiTextureType_METALNESS, 0, &aiPath);
-				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
-				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
-				material.metalnessMap = new Texture::Texture2D(image, true, true);
-				material.metalnessMapPath = path;
+			if (images.normalImage.HasData()) {
+				material.normalMap = new Texture::Texture2D(images.normalImage);
+				material.normalMapPath = images.normalImage.fileName;
 			}
-			if (assimpMaterial->GetTextureCount(aiTextureType_SPECULAR) > 0 && !material.metalnessMap) {
-				aiString aiPath;
-				assimpMaterial->GetTexture(aiTextureType_SPECULAR, 0, &aiPath);
-				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
-				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
-				auto texture = new Texture::Texture2D(image, true, true);
-				material.metalnessMap = texture;
-				material.metalnessMapPath = path;
-			}
-			if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && !isObj && hasTangents) {
-				aiString aiPath;
-				assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
-				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
-				auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
-				material.displacementMap = new Texture::Texture2D(image, true, true);
-				material.displacementMapPath = path;
+			if (images.displacementImage.HasData()) {
+				material.displacementMap = new Texture::Texture2D(images.displacementImage);
+				material.displacementMapPath = images.displacementImage.fileName;
 			}
 			
 			// Probably foliage
@@ -384,6 +321,90 @@ namespace Atlas {
 				material.twoSided = true;
 			}
 			
+		}
+
+		void ModelLoader::LoadMaterialImages(aiMaterial* material, MaterialImages& images,
+			std::string directory, bool isObj, bool hasTangents, int32_t maxTextureResolution) {
+			if (material->GetTextureCount(aiTextureType_BASE_COLOR) > 0 ||
+				material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
+				aiString aiPath;
+				if (material->GetTextureCount(aiTextureType_BASE_COLOR) > 0)
+					material->GetTexture(aiTextureType_BASE_COLOR, 0, &aiPath);
+				else
+					material->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
+				images.baseColorImage = ImageLoader::LoadImage<uint8_t>(path, true, 0, maxTextureResolution);
+
+				if (images.baseColorImage.channels == 1) {
+					auto imageData = images.baseColorImage.GetData();
+					std::vector<uint8_t> data(images.baseColorImage.width * images.baseColorImage.height * 3);
+					for (size_t i = 0; i < data.size(); i += 3) {
+						data[i + 0] = imageData[i / 3];
+						data[i + 1] = imageData[i / 3];
+						data[i + 2] = imageData[i / 3];
+					}
+					images.baseColorImage = Common::Image<uint8_t>(images.baseColorImage.width, images.baseColorImage.height, 3);
+					images.baseColorImage.SetData(data);
+				}
+				else if (images.baseColorImage.channels == 4) {
+					images.opacityImage = images.baseColorImage.GetChannelImage(3, 1);
+					images.baseColorImage = images.baseColorImage.GetChannelImage(0, 3);
+				}
+			}
+			if (material->GetTextureCount(aiTextureType_OPACITY) > 0) {
+				aiString aiPath;
+				material->GetTexture(aiTextureType_OPACITY, 0, &aiPath);
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
+				images.opacityImage = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
+			}
+			if ((material->GetTextureCount(aiTextureType_NORMALS) > 0 ||
+				(material->GetTextureCount(aiTextureType_HEIGHT) > 0 && isObj))
+				&& hasTangents) {
+				aiString aiPath;
+				if (isObj)
+					material->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
+				else
+					material->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
+				images.normalImage = ImageLoader::LoadImage<uint8_t>(path, false, 0, maxTextureResolution);
+				// Might still be a traditional displacement map
+				if (images.normalImage.channels == 1 && isObj) {
+					images.displacementImage = images.normalImage;
+					images.normalImage = ApplySobelFilter(images.normalImage);
+				}
+				if (images.normalImage.channels == 4) {
+					images.normalImage = images.normalImage.GetChannelImage(0, 3);
+				}
+			}
+			if (material->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
+				aiString aiPath;
+				material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &aiPath);
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
+				images.roughnessImage = ImageLoader::LoadImage<uint8_t>(path, false, 0, maxTextureResolution);
+				if (images.roughnessImage.channels > 1) {
+					images.metallicImage = images.roughnessImage.GetChannelImage(2, 1);
+					images.roughnessImage = images.roughnessImage.GetChannelImage(1, 1);
+				}
+
+			}
+			if (material->GetTextureCount(aiTextureType_METALNESS) > 0 && !images.metallicImage.HasData()) {
+				aiString aiPath;
+				material->GetTexture(aiTextureType_METALNESS, 0, &aiPath);
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
+				images.metallicImage = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
+			}
+			if (material->GetTextureCount(aiTextureType_SPECULAR) > 0 && !images.metallicImage.HasData()) {
+				aiString aiPath;
+				material->GetTexture(aiTextureType_SPECULAR, 0, &aiPath);
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
+				images.metallicImage = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
+			}
+			if (material->GetTextureCount(aiTextureType_HEIGHT) > 0 && !isObj && hasTangents) {
+				aiString aiPath;
+				material->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
+				auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
+				images.displacementImage = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
+			}
 		}
 
         std::string ModelLoader::GetDirectoryPath(std::string filename) {

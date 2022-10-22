@@ -22,10 +22,19 @@ namespace Atlas {
 				int32_t maxTextureResolution = 4096);
 
 		private:
-			static void LoadMaterial(aiMaterial* assimpMaterial, Material& material,
-				std::string directory, bool isObj, bool hasTangents, int32_t maxTextureResolution);
+			struct MaterialImages {
+				Common::Image<uint8_t> baseColorImage;
+				Common::Image<uint8_t> opacityImage;
+				Common::Image<uint8_t> roughnessImage;
+				Common::Image<uint8_t> metallicImage;
+				Common::Image<uint8_t> normalImage;
+				Common::Image<uint8_t> displacementImage;
+			};
 
-			//static void ProcessNode(aiNode node, )
+			static void LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material);
+
+			static void LoadMaterialImages(aiMaterial* material, MaterialImages& images,
+				std::string directory, bool isObj, bool hasTangents, int32_t maxTextureResolution);
 
             static std::string GetDirectoryPath(std::string filename);
 

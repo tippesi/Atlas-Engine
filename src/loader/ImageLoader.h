@@ -105,6 +105,8 @@ namespace Atlas {
                     image.fileFormat = AE_IMAGE_HDR;
                 }
 
+                image.fileName = filename;
+
                 Log::Message("Loaded image " + filename);
 
                 return image;
