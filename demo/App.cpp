@@ -55,6 +55,7 @@ void App::LoadContent() {
 
 	scene.ao = new Atlas::Lighting::AO(16);
 	scene.reflection = new Atlas::Lighting::Reflection(1);
+	scene.reflection->enable = false;
 
 	scene.fog = new Atlas::Lighting::Fog();
 	scene.fog->enable = true;
@@ -348,6 +349,7 @@ void App::Render(float deltaTime) {
 				ImGui::Checkbox("Enable reflection", &reflection->enable);
 				ImGui::Checkbox("Enable raytracing##Reflection", &reflection->rt);
 				ImGui::Checkbox("Use shadow map", &reflection->useShadowMap);
+				ImGui::Checkbox("Enable GI in reflection", &reflection->gi);
 				ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
 				ImGui::SliderFloat("Radiance Limit##Reflection", &reflection->radianceLimit, 0.0f, 10.0f);
 			}
@@ -379,7 +381,45 @@ void App::Render(float deltaTime) {
 				ImGui::SliderFloat("Sharpness", &scene.postProcessing.sharpen.factor, 0.0f, 1.0f);
 				ImGui::Separator();
 				ImGui::Text("Image effects");
+				ImGui::Checkbox("Filmic tonemapping", &scene.postProcessing.filmicTonemapping);
 				ImGui::SliderFloat("Saturation##Postprocessing", &scene.postProcessing.saturation, 0.0f, 2.0f);
+			}
+			if (ImGui::CollapsingHeader("Materials")) {
+				int32_t id = 0;
+				auto materials = scene.GetMaterials();
+				for (auto material : materials) {
+					auto label = material->name + "##mat" + std::to_string(id++);
+
+					if (ImGui::TreeNode(label.c_str())) {
+						auto baseColorLabel = "Base color##" + label;
+						auto emissionColorLabel = "Emission color##" + label;
+						auto emissionPowerLabel = "Emission power##" + label;
+						auto transmissionColorLabel = "Transmission color##" + label;
+
+						auto emissionPower = glm::max(material->emissiveColor.r, glm::max(material->emissiveColor.g,
+							material->emissiveColor.b));
+						material->emissiveColor /= emissionPower;
+						ImGui::ColorEdit3(baseColorLabel.c_str(), glm::value_ptr(material->baseColor));
+						ImGui::ColorEdit3(emissionColorLabel.c_str(), glm::value_ptr(material->emissiveColor));
+						ImGui::SliderFloat(emissionPowerLabel.c_str(), &emissionPower, 1.0f, 10000.0f,
+							"%.3f", ImGuiSliderFlags_Logarithmic);
+						material->emissiveColor *= emissionPower;
+
+						auto roughnessLabel = "Roughness##" + label;
+						auto metallicLabel = "Metallic##" + label;
+						auto reflectanceLabel = "Reflectance##" + label;
+						auto aoLabel = "Ao##" + label;
+						auto opacityLabel = "Opacity##" + label;
+
+						ImGui::SliderFloat(roughnessLabel.c_str(), &material->roughness, 0.0f, 1.0f);
+						ImGui::SliderFloat(metallicLabel.c_str(), &material->metalness, 0.0f, 1.0f);
+						ImGui::SliderFloat(reflectanceLabel.c_str(), &material->reflectance, 0.0f, 1.0f);
+						ImGui::SliderFloat(aoLabel.c_str(), &material->ao, 0.0f, 1.0f);
+						ImGui::SliderFloat(opacityLabel.c_str(), &material->opacity, 0.0f, 1.0f);
+
+						ImGui::TreePop();
+					}
+				}
 			}
 			if (ImGui::CollapsingHeader("Controls")) {
 				ImGui::Text("Use WASD for movement");

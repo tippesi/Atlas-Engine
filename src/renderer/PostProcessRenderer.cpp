@@ -39,30 +39,9 @@ namespace Atlas {
 			auto& taa = postProcessing.taa;
 			auto& sharpen = postProcessing.sharpen;
 
-			bool hasFilmicTonemappingMacro = shader.HasMacro("FILMIC_TONEMAPPING");
-			bool hasVignetteMacro = shader.HasMacro("VIGNETTE");
-			bool hasChromaticAberrationMacro = shader.HasMacro("CHROMATIC_ABERRATION");
-
-			if (postProcessing.filmicTonemapping && !hasFilmicTonemappingMacro) {
-				shader.AddMacro("FILMIC_TONEMAPPING");
-			}
-			else if (!postProcessing.filmicTonemapping && hasFilmicTonemappingMacro) {
-				shader.RemoveMacro("FILMIC_TONEMAPPING");
-			}
-
-			if (postProcessing.vignette.enable && !hasVignetteMacro) {
-				shader.AddMacro("VIGNETTE");
-			}
-			else if (!postProcessing.vignette.enable && hasVignetteMacro) {
-				shader.RemoveMacro("VIGNETTE");
-			}
-
-			if (postProcessing.chromaticAberration.enable && !hasChromaticAberrationMacro) {
-				shader.AddMacro("CHROMATIC_ABERRATION");
-			}
-			else if (!postProcessing.chromaticAberration.enable && hasChromaticAberrationMacro) {
-				shader.RemoveMacro("CHROMATIC_ABERRATION");
-			}
+			shader.ManageMacro("FILMIC_TONEMAPPING", postProcessing.filmicTonemapping);
+			shader.ManageMacro("VIGNETTE", postProcessing.vignette.enable);
+			shader.ManageMacro("CHROMATIC_ABERRATION", postProcessing.chromaticAberration.enable);
 
 			shader.Bind();
 

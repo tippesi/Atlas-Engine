@@ -8,7 +8,7 @@ namespace Atlas {
 
 		RTAORenderer::RTAORenderer() {
 
-            const int32_t filterSize = 6;
+            const int32_t filterSize = 3;
             blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
             blurFilter.CalculateBoxFilter(filterSize);
 
@@ -39,9 +39,12 @@ namespace Atlas {
             Profiler::BeginQuery("Render RTAO");
             Profiler::BeginQuery("Trace rays/calculate ao");
 
-            auto depthTexture = target->GetDownsampledDepthTexture(target->GetAOResolution());
-            auto normalTexture = target->GetDownsampledNormalTexture(target->GetAOResolution());
-            auto offsetTexture = target->GetDownsampledOffsetTexture(target->GetReflectionResolution());
+            auto downsampledRT = target->GetDownsampledTextures(target->GetAOResolution());
+
+            // Should be reflection resolution
+            auto depthTexture = downsampledRT->depthTexture;
+            auto normalTexture = downsampledRT->geometryNormalTexture;
+            auto offsetTexture = downsampledRT->offsetTexture;
 
             // Calculate RTAO
             {

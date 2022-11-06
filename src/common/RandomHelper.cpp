@@ -1,5 +1,6 @@
 #include "RandomHelper.h"
 
+
 namespace Atlas {
 
 	namespace Common {
@@ -33,19 +34,31 @@ namespace Atlas {
 
 		void Random::Init() {
 
-			pcg32_init(CanonicalUniform());
+			pcg32_init(SampleUniformFloat());
 
 		}
 
-		float Random::CanonicalUniform() {
+		float Random::SampleUniformFloat() {
 
 			return canonicalUniformDistr(generator);
 
 		}
 
-		float Random::FastCanonicalUniform() {
+		float Random::SampleFastUniformFloat() {
 
 			return float(pcg32()) / float(0xFFFFFFFF) * 0.999999f;
+
+		}
+
+		float Random::SampleFastUniformFloat(float min, float max) {
+
+			return float(pcg32()) / float(0xFFFFFFFF) * (max - min) + min;
+
+		}
+
+		uint32_t Random::SampleUniformInt(uint32_t min, uint32_t max) {
+
+			return std::min(std::max(uint32_t(SampleFastUniformFloat(float(min), float(max) + 1.0f)), min), max);
 
 		}
 

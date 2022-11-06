@@ -41,8 +41,10 @@ namespace Atlas {
 
             ivec2 res = ivec2(target->aoTexture.width, target->aoTexture.height);
 
-            auto depthTexture = target->GetDownsampledDepthTexture(target->GetAOResolution());
-            auto normalTexture = target->GetDownsampledNormalTexture(target->GetAOResolution());
+            auto downsampledRT = target->GetDownsampledTextures(target->GetAOResolution());
+
+            auto depthTexture = downsampledRT->depthTexture;
+            auto normalTexture = downsampledRT->geometryNormalTexture;
 
             frameCount = (frameCount + 1) % 16;
 

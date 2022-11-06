@@ -1,6 +1,8 @@
 #include "TemporalAARenderer.h"
 #include "helper/GeometryHelper.h"
 
+#include "Clock.h"
+
 namespace Atlas {
 
 	namespace Renderer {
@@ -39,6 +41,7 @@ namespace Atlas {
 			shader.GetUniform("pvMatrixLast")->SetValue(camera->GetLastJitteredMatrix());
 			shader.GetUniform("ipvMatrixCurrent")->SetValue(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
 			shader.GetUniform("jitter")->SetValue(camera->GetJitter());
+			shader.GetUniform("frameSeed")->SetValue(Clock::Get());
 
 			glDispatchCompute(groupCount.x, groupCount.y, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

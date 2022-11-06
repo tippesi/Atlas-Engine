@@ -21,6 +21,7 @@ uniform bool reflectionEnabled = true;
 // (localSize / 2 + 2)^2
 shared float depths[36];
 shared float aos[36];
+shared vec3 reflections[36];
 
 const uint depthDataSize = (gl_WorkGroupSize.x / 2 + 2) * (gl_WorkGroupSize.y / 2 + 2);
 const ivec2 unflattenedDepthDataSize = ivec2(gl_WorkGroupSize) / 2 + 2;
@@ -36,6 +37,7 @@ void LoadGroupSharedData() {
 		offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
 		depths[gl_LocalInvocationIndex] = texelFetch(lowResDepthTexture, offset, 0).r;
 		aos[gl_LocalInvocationIndex] = texelFetch(aoTexture, offset, 0).r;
+		reflections[gl_LocalInvocationIndex] = texelFetch(reflectionTexture, offset, 0).rgb;
 	}
 
     barrier();
@@ -87,6 +89,24 @@ float UpsampleAo2x(float referenceDepth) {
 
 }
 
+vec3 UpsampleReflection2x(float referenceDepth) {
+
+    ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
+
+	float invocationDepths[9];
+
+	for (uint i = 0; i < 9; i++) {
+		int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
+		invocationDepths[i] = depths[sharedMemoryOffset];
+	}
+
+    int idx = NearestDepth(referenceDepth, invocationDepths);
+	int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
+
+    return reflections[offset];
+
+}
+
 void main() {
 
 	if (aoDownsampled2x) LoadGroupSharedData();
@@ -126,9 +146,10 @@ void main() {
 	// We multiply by local sky visibility because the reflection probe only includes the sky
 	//vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
 	//	* prefilteredDiffuseLocal.a;
-	vec3 indirectSpecular = reflectionEnabled ? texture(reflectionTexture, texCoord).rgb * EvaluateIndirectSpecularBRDF(surface)
+	vec3 indirectSpecular = reflectionEnabled ? true ? UpsampleReflection2x(depth) : texture(reflectionTexture, texCoord).rgb 
 		: vec3(0.0);
 
+	indirectSpecular *= EvaluateIndirectSpecularBRDF(surface);
 	vec3 indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao * indirectStrength;
 	
 	// This normally only accounts for diffuse occlusion, we need seperate terms

@@ -78,6 +78,8 @@ namespace Atlas {
 
 		DeleteTextures();
 
+		name = that.name;
+
 		baseColorMap = nullptr;
 		normalMap = nullptr;
 		roughnessMap = nullptr;

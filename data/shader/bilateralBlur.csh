@@ -128,7 +128,7 @@ void main() {
     ivec2 pixel = offset + ivec2(gl_LocalInvocationID);
 
 #ifdef BLUR_RGB
-    imageStore(outputImage, pixel, vec4(result / totalWeight, 0.0));
+    imageStore(outputImage, pixel, vec4(center, 0.0));
 #else
     imageStore(outputImage, pixel, vec4(result / totalWeight));
 #endif

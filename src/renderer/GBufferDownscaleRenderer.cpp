@@ -28,16 +28,10 @@ namespace Atlas {
 
             downscale.Bind();
 
-            auto depthIn = target->GetDownsampledDepthTexture(RenderResolution::FULL_RES);
-            auto normalIn = target->GetDownsampledNormalTexture(RenderResolution::FULL_RES);
-            auto roughnessMetallicAoIn = target->GetDownsampledRoughnessMetalnessAoTexture(RenderResolution::FULL_RES);
-            auto depthOut = target->GetDownsampledDepthTexture(RenderResolution::HALF_RES);
-            auto normalOut = target->GetDownsampledNormalTexture(RenderResolution::HALF_RES);
-            auto roughnessMetallicAoOut = target->GetDownsampledRoughnessMetalnessAoTexture(RenderResolution::HALF_RES);
-            auto offsetOut = target->GetDownsampledOffsetTexture(RenderResolution::HALF_RES);
+            auto rt = target->GetDownsampledTextures(RenderResolution::FULL_RES);
+            auto downsampledRt = target->GetDownsampledTextures(RenderResolution::HALF_RES);
 
-            Downscale(depthIn, normalIn, roughnessMetallicAoIn, depthOut, normalOut,
-                      roughnessMetallicAoOut, offsetOut);
+            Downscale(rt, downsampledRt);
 
             Profiler::EndQuery();
 
@@ -49,25 +43,29 @@ namespace Atlas {
 
             downscaleDepthOnly.Bind();
 
-            auto depthIn = target->GetDownsampledDepthTexture(RenderResolution::FULL_RES);
-            auto normalIn = target->GetDownsampledNormalTexture(RenderResolution::FULL_RES);
-            auto roughnessMetallicAoIn = target->GetDownsampledRoughnessMetalnessAoTexture(RenderResolution::FULL_RES);
-            auto depthOut = target->GetDownsampledDepthTexture(RenderResolution::HALF_RES);
-            auto normalOut = target->GetDownsampledNormalTexture(RenderResolution::HALF_RES);
-            auto roughnessMetallicAoOut = target->GetDownsampledRoughnessMetalnessAoTexture(RenderResolution::HALF_RES);
-            auto offsetOut = target->GetDownsampledOffsetTexture(RenderResolution::HALF_RES);
+            auto rt = target->GetDownsampledTextures(RenderResolution::FULL_RES);
+            auto downsampledRt = target->GetDownsampledTextures(RenderResolution::HALF_RES);
 
-            Downscale(depthIn, normalIn, roughnessMetallicAoIn, depthOut, normalOut,
-                      roughnessMetallicAoOut, offsetOut);
+            Downscale(rt, downsampledRt);
 
             Profiler::EndQuery();
 
         }
 
-        void GBufferDownscaleRenderer::Downscale(Texture::Texture2D* depthIn, Texture::Texture2D* normalIn,
-            Texture::Texture2D* roughnessMetallicAoIn, Texture::Texture2D* depthOut, 
-            Texture::Texture2D* normalOut, Texture::Texture2D* roughnessMetallicAoOut,
-            Texture::Texture2D* offsetOut) {
+        void GBufferDownscaleRenderer::Downscale(DownsampledRenderTarget* rt, DownsampledRenderTarget* downsampledRt) {
+
+            auto depthIn = rt->depthTexture;
+            auto normalIn = rt->normalTexture;
+            auto geometryNormalIn = rt->geometryNormalTexture;
+            auto roughnessMetallicAoIn = rt->roughnessMetallicAoTexture;
+            auto velocityIn = rt->velocityTexture;
+
+            auto depthOut = downsampledRt->depthTexture;
+            auto normalOut = downsampledRt->normalTexture;
+            auto geometryNormalOut = downsampledRt->geometryNormalTexture;
+            auto roughnessMetallicAoOut = downsampledRt->roughnessMetallicAoTexture;
+            auto velocityOut = downsampledRt->velocityTexture;
+            auto offsetOut = downsampledRt->offsetTexture;
 
             ivec2 res = ivec2(depthOut->width, depthOut->height);
 
@@ -77,12 +75,16 @@ namespace Atlas {
 
             depthIn->Bind(GL_TEXTURE0);
             normalIn->Bind(GL_TEXTURE1);
-            roughnessMetallicAoIn->Bind(GL_TEXTURE2);
+            geometryNormalIn->Bind(GL_TEXTURE2);
+            roughnessMetallicAoIn->Bind(GL_TEXTURE3);
+            velocityIn->Bind(GL_TEXTURE4);
 
-            depthOut->Bind(GL_WRITE_ONLY, 3);
-            normalOut->Bind(GL_WRITE_ONLY, 4);
-            roughnessMetallicAoOut->Bind(GL_WRITE_ONLY, 5);
-            offsetOut->Bind(GL_WRITE_ONLY, 6);
+            depthOut->Bind(GL_WRITE_ONLY, 0);
+            normalOut->Bind(GL_WRITE_ONLY, 1);
+            geometryNormalOut->Bind(GL_WRITE_ONLY, 2);
+            roughnessMetallicAoOut->Bind(GL_WRITE_ONLY, 3);
+            velocityOut->Bind(GL_WRITE_ONLY, 4);
+            offsetOut->Bind(GL_WRITE_ONLY, 5);
 
             glDispatchCompute(groupCount.x, groupCount.y, 1);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

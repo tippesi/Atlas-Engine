@@ -89,9 +89,9 @@ void main() {
             ray.hitID = -1;
             ray.hitDistance = 0.0;
 
-            HitClosest(ray, 0.0, radius);
+            bool hit = HitAny(ray, 0.0, radius);
 
-            ao += ray.hitID >= 0 ? saturate(radius - sqr(ray.hitDistance)) : 0.0;
+            ao += hit ? 1.0 : 0.0;
         }
 
         float result = pow(1.0 - (ao / float(sampleCount)), 1.0);

@@ -84,6 +84,13 @@ namespace Atlas {
             bool HasMacro(const std::string& macro);
 
             /**
+             * Manages a macro in the shader. Adds/Removes it depending on enable
+             * @param macro The macro to be checked.
+             * @return True if the macros were changed, false otherwise.
+             */
+            bool ManageMacro(const std::string& macro, bool enable);
+
+            /**
              * Compiles all shader stages and links them
              * @return True if successful, false otherwise.
              */

@@ -21,8 +21,8 @@ namespace Atlas {
 			auto volume = scene->irradianceVolume;
 			if (volume && volume->enable) {
 				auto [irradianceArray, momentsArray] = volume->internal.GetCurrentProbes();
-				irradianceArray.Bind(GL_TEXTURE12);
-				momentsArray.Bind(GL_TEXTURE13);
+				irradianceArray.Bind(GL_TEXTURE24);
+				momentsArray.Bind(GL_TEXTURE25);
 				volume->internal.probeStateBuffer.BindBase(1);
 				shader.GetUniform("volumeEnabled")->SetValue(true);
 				shader.GetUniform("volumeMin")->SetValue(volume->aabb.min);
@@ -45,7 +45,7 @@ namespace Atlas {
 			auto reflection = scene->reflection;
 
 			target->aoTexture.Bind(GL_TEXTURE6);
-			target->GetDownsampledDepthTexture(target->GetAOResolution())->Bind(GL_TEXTURE14);
+			target->GetDownsampledTextures(target->GetAOResolution())->depthTexture->Bind(GL_TEXTURE14);
 			target->reflectionTexture.Bind(GL_TEXTURE16);
 			shader.GetUniform("aoEnabled")->SetValue(ssao && ssao->enable);
 			shader.GetUniform("aoDownsampled2x")->SetValue(target->GetAOResolution() == RenderResolution::HALF_RES);

@@ -97,9 +97,9 @@ namespace Atlas {
 					auto phi = glm::two_pi<float>() * float(rand()) / float(RAND_MAX);
 
 					auto dir = glm::vec3(
-						2.0f * Random::CanonicalUniform() - 1.0f,
-						2.0f * Random::CanonicalUniform() - 1.0f,
-						2.0f * Random::CanonicalUniform() - 1.0f
+						2.0f * Random::SampleUniformFloat() - 1.0f,
+						2.0f * Random::SampleUniformFloat() - 1.0f,
+						2.0f * Random::SampleUniformFloat() - 1.0f
 					);
 
 					auto epsilon = glm::two_pi<float>() * float(rand()) / float(RAND_MAX);
@@ -121,8 +121,8 @@ namespace Atlas {
 
 			Profiler::EndAndBeginQuery("Ray evaluation");
 
-			lastIrradianceArray.Bind(GL_TEXTURE12);
-			lastMomentsArray.Bind(GL_TEXTURE13);
+			lastIrradianceArray.Bind(GL_TEXTURE24);
+			lastMomentsArray.Bind(GL_TEXTURE25);
 
 			helper.DispatchHitClosest(&rayHitShader, false,
 				[&]() {
