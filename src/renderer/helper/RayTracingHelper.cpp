@@ -123,6 +123,14 @@ namespace Atlas {
 
 				// Bind textures and buffers
 				{
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE0);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE1);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE2);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE3);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE4);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE5);
+					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, GL_TEXTURE6);
+
 					if (rtData.baseColorTextureAtlas.slices.size())
 						rtData.baseColorTextureAtlas.texture.Bind(GL_TEXTURE0);
 					if (rtData.opacityTextureAtlas.slices.size())
@@ -232,6 +240,14 @@ namespace Atlas {
 
 				// Bind textures and buffers
 				{
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE0);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE1);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE2);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE3);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE4);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE5);
+					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, GL_TEXTURE6);
+
 					if (rtData.baseColorTextureAtlas.slices.size())
 						rtData.baseColorTextureAtlas.texture.Bind(GL_TEXTURE0);
 					if (rtData.opacityTextureAtlas.slices.size())

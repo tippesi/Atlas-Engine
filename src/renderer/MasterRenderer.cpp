@@ -94,6 +94,11 @@ namespace Atlas {
 
 				camera->Jitter(jitter * taa.jitterRange);
 			}
+			else {
+				// Even if there is no TAA we need to update the jitter for other techniques
+				// E.g. the reflections and ambient occlusion use reprojection
+				camera->Jitter(vec2(0.0f));
+			}
 
 			if (scene->sky.probe) {
 				if (scene->sky.probe->update) {
@@ -248,6 +253,9 @@ namespace Atlas {
 			else {
 				target->lightingFramebuffer.Unbind();
 			}
+
+			// Swap history and current textures
+			target->Swap();
 
 			vertexArray.Bind();
 

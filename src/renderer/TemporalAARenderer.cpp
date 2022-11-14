@@ -46,8 +46,6 @@ namespace Atlas {
 			glDispatchCompute(groupCount.x, groupCount.y, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-			target->Swap();
-
 			Profiler::EndQuery();
 
 		}

@@ -19,9 +19,6 @@ namespace Atlas {
 				Camera* camera, Scene::Scene* scene);
 
 		private:
-			Framebuffer framebuffer;
-			Buffer::VertexArray vertexArray;
-
 			Filter blurFilter;
 			Helper::RayTracingHelper helper;
 
@@ -29,9 +26,7 @@ namespace Atlas {
 
 			Shader::Shader rtrShader;
 			Shader::Shader temporalShader;
-			
-			Shader::Shader horizontalBlurShader;
-			Shader::Shader verticalBlurShader;
+			Shader::Shader atrousShader;
 
 		};
 

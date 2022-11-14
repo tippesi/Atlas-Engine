@@ -29,7 +29,7 @@ layout(std430, binding = 3) buffer RayHits {
 uniform float seed;
 
 vec3 EvaluateHit(inout Ray ray);
-vec3 EvaluateDirectLight(Surface surface);
+vec3 EvaluateDirectLight(inout Surface surface);
 bool CheckVisibility(Surface surface, float lightDistance);
 
 void main() {
@@ -83,7 +83,7 @@ vec3 EvaluateHit(inout Ray ray) {
 
 }
 
-vec3 EvaluateDirectLight(Surface surface) {
+vec3 EvaluateDirectLight(inout Surface surface) {
 
 	if (GetLightCount() == 0)
 		return vec3(0.0);

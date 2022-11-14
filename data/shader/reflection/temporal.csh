@@ -1,4 +1,5 @@
 #include <../common/utility.hsh>
+#include <../common/convert.hsh>
 #include <../common/PI.hsh>
 #include <../common/stencil.hsh>
 #include <../common/flatten.hsh>
@@ -8,6 +9,7 @@
 layout (local_size_x = 8, local_size_y = 8) in;
 
 layout(binding = 0, rgba16f) writeonly uniform image2D resolveImage;
+layout(binding = 1, rgba16f) writeonly uniform image2D momentsImage;
 
 layout(binding = 0) uniform sampler2D historyTexture;
 layout(binding = 1) uniform sampler2D currentTexture;
@@ -15,7 +17,12 @@ layout(binding = 2) uniform sampler2D velocityTexture;
 layout(binding = 3) uniform sampler2D depthTexture;
 layout(binding = 4) uniform sampler2D roughnessMetallicAoTexture;
 layout(binding = 5) uniform isampler2D offsetTexture;
-layout(binding = 6) uniform usampler2D materialIdxTexture;
+layout(binding = 6) uniform sampler2D normalTexture;
+layout(binding = 7) uniform usampler2D currentMaterialIdxTexture;
+layout(binding = 8) uniform usampler2D historyMaterialIdxTexture;
+layout(binding = 9) uniform sampler2D historyNormalTexture;
+layout(binding = 10) uniform sampler2D historyMomentsTexture;
+
 
 uniform vec2 invResolution;
 uniform vec2 resolution;
@@ -40,6 +47,13 @@ const ivec2 pixelOffsets[4] = ivec2[4](
 );
 
 vec3 localNeighbourhood[9];
+
+float Luma(vec3 color) {
+
+    const vec3 luma = vec3(0.299, 0.587, 0.114);
+    return dot(color, luma);
+
+}
 
 vec3 FetchTexel(ivec2 texel) {
 	
@@ -94,13 +108,75 @@ float ClipBoundingBox(vec3 boxMin, vec3 boxMax, vec3 history, vec3 current) {
 
 }
 
+vec4 SampleCatmullRom(vec2 uv) {
+
+    // http://advances.realtimerendering.com/s2016/Filmic%20SMAA%20v7.pptx
+    // Credit: Jorge Jimenez (SIGGRAPH 2016)
+    // Ignores the 4 corners of the 4x4 grid
+    // Learn more: http://vec3.ca/bicubic-filtering-in-fewer-taps/
+    vec2 position = uv * resolution;
+
+    vec2 center = floor(position - 0.5) + 0.5;
+    vec2 f = position - center;
+    vec2 f2 = f * f;
+    vec2 f3 = f2 * f;
+
+    vec2 w0 = f2 - 0.5 * (f3 + f);
+    vec2 w1 = 1.5 * f3 - 2.5 * f2 + 1.0;
+    vec2 w3 = 0.5 * (f3 - f2);
+    vec2 w2 = 1.0 - w0 - w1 - w3;
+
+    vec2 w12 = w1 + w2;
+
+    vec2 tc0 = (center - 1.0) * invResolution;
+    vec2 tc12 = (center + w2 / w12) * invResolution;
+    vec2 tc3 = (center + 2.0) * invResolution;
+
+    vec2 uv0 = clamp(vec2(tc12.x, tc0.y), vec2(0.0), vec2(1.0));
+    vec2 uv1 = clamp(vec2(tc0.x, tc12.y), vec2(0.0), vec2(1.0));
+    vec2 uv2 = clamp(vec2(tc12.x, tc12.y), vec2(0.0), vec2(1.0));
+    vec2 uv3 = clamp(vec2(tc3.x, tc12.y), vec2(0.0), vec2(1.0));
+    vec2 uv4 = clamp(vec2(tc12.x, tc3.y), vec2(0.0), vec2(1.0));
+
+    float weight0 = w12.x * w0.y;
+    float weight1 = w0.x * w12.y;
+    float weight2 = w12.x * w12.y;
+    float weight3 = w3.x * w12.y;
+    float weight4 = w12.x * w3.y;
+
+    vec4 sample0 = texture(historyTexture, uv0) * weight0;
+    vec4 sample1 = texture(historyTexture, uv1) * weight1;
+    vec4 sample2 = texture(historyTexture, uv2) * weight2;
+    vec4 sample3 = texture(historyTexture, uv3) * weight3;
+    vec4 sample4 = texture(historyTexture, uv4) * weight4;
+
+    float totalWeight = weight0 + weight1 + 
+        weight2 + weight3 + weight4;
+
+    vec4 totalSample = sample0 + sample1 +
+        sample2 + sample3 + sample4;
+
+    return totalSample / totalWeight;    
+
+}
+
 vec4 SampleHistory(vec2 texCoord) {
 
     vec4 historyColor;
 
-    historyColor = texture(historyTexture, texCoord);
+    historyColor = SampleCatmullRom(texCoord);
 
     return historyColor;
+
+}
+
+vec4 SampleHistoryMoments(vec2 texCoord) {
+
+    vec4 moments;
+
+    moments = texture(historyMomentsTexture, texCoord);
+
+    return moments;
 
 }
 
@@ -108,7 +184,8 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
 
     vec3 m1 = vec3(0.0);
     vec3 m2 = vec3(0.0);
-    const int radius = 4;
+    // This could be varied using the temporal variance estimation
+    const int radius = 8;
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
     for (int i = -radius; i <= radius; i++) {
@@ -127,6 +204,12 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
     aabbMin = mu - gamma * sigma;
     aabbMax = mu + gamma * sigma;
 
+}
+
+float ComputeDisocclusionWeight(vec3 normal, vec3 historyNormal,
+                                float historyLinearDepth, float linearDepth) {
+    return exp(-abs(1.0 - max(0.0, dot(normal, historyNormal))))
+    * exp(-abs(historyLinearDepth - linearDepth) / linearDepth);
 }
 
 void main() {
@@ -175,9 +258,14 @@ void main() {
 
     // Maybe we might want to filter the current input pixel
     vec4 history = SampleHistory(uv);
+    vec4 historyMoments = SampleHistoryMoments(uv);
 
     vec3 historyColor = history.rgb;
     vec3 currentColor = mc;
+
+     vec2 currentMoments;
+    currentMoments.r = Luma(currentColor);
+    currentMoments.g = currentMoments.r * currentMoments.r;
 
     localNeighbourhoodMin = average - (average - localNeighbourhoodMin);
     localNeighbourhoodMax = average + (localNeighbourhoodMax - average);
@@ -190,18 +278,64 @@ void main() {
     int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
     ivec2 pixelOffset = pixelOffsets[offsetIdx];
 
-    uint materialIdx = texelFetch(materialIdxTexture, pixel * 2 + pixelOffset, 0).r;
+    uint materialIdx = texelFetch(currentMaterialIdxTexture, pixel, 0).r;
 	Material material = UnpackMaterial(materialIdx);
 
     float roughness = texelFetch(roughnessMetallicAoTexture, pixel, 0).r;
     material.roughness *= material.roughnessMap ? roughness : 1.0;
 
-    float factor = clamp(4.0 * material.roughness, 0.0, 0.95);
+    float factor = clamp(16.0 * log(material.roughness + 1.0), 0.001, 0.95);
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
-    vec3 resolve = mix(currentColor, historyColor, factor);
+    vec3 normal = 2.0 * texelFetch(normalTexture, pixel, 0).rgb - 1.0;
 
-    imageStore(resolveImage, pixel, vec4(resolve, 0.0));
+    float materialConfidence = 0.0;
+    float normalConfidence = 0.0;
+    ivec2 historyPixel = ivec2(vec2(pixel) + velocity * resolution);
+    for (int i = 0; i < 4; i++) {
+        ivec2 offsetPixel = historyPixel + pixelOffsets[i];
+        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
+        // Try to find one pixel in the neighborhood which matches the material
+        if (historyMaterialIdx == materialIdx) {
+            materialConfidence = 1.0;
+        }
+        vec3 historyNormal = 2.0 * texelFetch(historyNormalTexture, offsetPixel, 0).rgb - 1.0;
+        float similarity = pow(abs(dot(historyNormal, normal)), 2.0);
+        if (similarity >= 0.9) {
+            normalConfidence = 1.0;
+        }
+    }
+    
+    factor *= materialConfidence * normalConfidence;
+    float historyLength = historyMoments.b;
+    if (factor == 0.0) {
+        historyLength = 0.0;
+        currentMoments.g = 1.0;
+        currentMoments.r = 0.0;
+    }
+
+    // Some stuff in the pipeline produces NaNs
+    if (isnan(historyColor.r) == true ||
+        isnan(historyColor.g) == true ||
+        isnan(historyColor.b) == true) {
+        historyLength = 0.0;
+    }
+
+    factor = min(factor, historyLength / (historyLength + 1.0));
+
+    vec3 resolve = mix(currentColor, historyColor, factor);
+    vec2 momentsResolve = mix(currentMoments, historyMoments.rg, factor);
+
+    // Boost variance when we have a small history length (we trade blur for noise)
+    float varianceBoost = max(1.0, 4.0 / (historyLength + 1.0));
+    float variance = max(0.0, momentsResolve.g - momentsResolve.r * momentsResolve.r);
+    variance *= varianceBoost;
+
+    // No spatial filtering for mirror reflections
+    variance = material.roughness < 0.001 ? 0.0 : variance;
+
+    imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
+    imageStore(resolveImage, pixel, vec4(resolve, variance));
 
 }

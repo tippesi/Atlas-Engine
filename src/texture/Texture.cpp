@@ -223,6 +223,13 @@ namespace Atlas {
 
         }
 
+        void Texture::Unbind(uint32_t target, uint32_t unit) {
+
+            glActiveTexture(unit);
+            glBindTexture(target, 0);
+
+        }
+
         void Texture::Generate(uint32_t target, int32_t sizedFormat, int32_t wrapping,
                                int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
 

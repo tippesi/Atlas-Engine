@@ -26,6 +26,7 @@
         "assimp"
     ],
     "overrides": [
-            { "name": "glm", "version": "0.9.8.0" }
+            { "name": "glm", "version": "0.9.8.0" },
+            { "name": "assimp", "version": "5.2.5" }
         ]
 }

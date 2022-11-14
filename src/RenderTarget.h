@@ -22,6 +22,7 @@ namespace Atlas {
 			roughnessMetallicAoTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 			velocityTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_NEAREST);
 			offsetTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R8I, GL_CLAMP_TO_EDGE, GL_LINEAR);
+			materialIdxTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST);
 		}
 
 		void Resize(ivec2 resolution) {
@@ -31,6 +32,7 @@ namespace Atlas {
 			roughnessMetallicAoTexture->Resize(resolution.x, resolution.y);
 			velocityTexture->Resize(resolution.x, resolution.y);
 			offsetTexture->Resize(resolution.x, resolution.y);
+			materialIdxTexture->Resize(resolution.x, resolution.y);
 		}
 
 		Texture::Texture2D* depthTexture = nullptr;
@@ -39,6 +41,7 @@ namespace Atlas {
 		Texture::Texture2D* roughnessMetallicAoTexture = nullptr;
 		Texture::Texture2D* velocityTexture = nullptr;
 		Texture::Texture2D* offsetTexture = nullptr;
+		Texture::Texture2D* materialIdxTexture = nullptr;
 	};
 
 	class RenderTarget {
@@ -144,6 +147,8 @@ namespace Atlas {
 		Texture::Texture2D reflectionTexture;
 		Texture::Texture2D swapReflectionTexture;
 		Texture::Texture2D historyReflectionTexture;
+		Texture::Texture2D reflectionMomentsTexture;
+		Texture::Texture2D historyReflectionMomentsTexture;
 
 	private:
 		Texture::Texture2D depthTexture;
@@ -158,6 +163,7 @@ namespace Atlas {
 
 		DownsampledRenderTarget downsampledTarget1x;
 		DownsampledRenderTarget downsampledTarget2x;
+		DownsampledRenderTarget downsampledSwapTarget2x;
 
 		int32_t width = 0;
 		int32_t height = 0;

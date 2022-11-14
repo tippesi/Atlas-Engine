@@ -15,11 +15,11 @@
 layout(binding = 24) uniform sampler2DArray irradianceVolume;
 layout(binding = 25) uniform sampler2DArray momentsVolume;
 
-layout(std430, binding = 9) buffer ProbeStates {
+layout(std430, binding = 14) buffer ProbeStates {
 	vec4 probeStates[];
 };
 
-layout(std430, binding = 10) buffer ProbeOffsets {
+layout(std430, binding = 15) buffer ProbeOffsets {
 	vec4 probeOffsets[];
 };
 

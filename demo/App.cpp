@@ -55,7 +55,6 @@ void App::LoadContent() {
 
 	scene.ao = new Atlas::Lighting::AO(16);
 	scene.reflection = new Atlas::Lighting::Reflection(1);
-	scene.reflection->enable = false;
 
 	scene.fog = new Atlas::Lighting::Fog();
 	scene.fog->enable = true;
@@ -183,7 +182,7 @@ void App::Render(float deltaTime) {
 			triangleCount += mesh.data.GetIndexCount() / 3;
 		}
 
-		if (ImGui::Begin("Settings", (bool*)0, 0)) {
+		if (ImGui::Begin("Settings", (bool*)0, ImGuiWindowFlags_HorizontalScrollbar)) {
 			if(pathTrace) ImGui::Text(("Samples: " + std::to_string(pathTracingRenderer.GetSampleCount())).c_str());
 			ImGui::Text(("Average frametime: " + std::to_string(averageFramerate * 1000.0f) + " ms").c_str());
 			ImGui::Text(("Current frametime: " + std::to_string(deltaTime * 1000.0f) + " ms").c_str());
@@ -339,12 +338,12 @@ void App::Render(float deltaTime) {
 			if (ImGui::CollapsingHeader("Ambient Occlusion")) {
 				ImGui::Checkbox("Debug##Ao", &debugAo);
 				ImGui::Checkbox("Enable ambient occlusion##Ao", &ao->enable);
-				ImGui::Checkbox("Enable raytracing##Ao", &ao->rt);
+				ImGui::Checkbox("Enable raytracing (preview)##Ao", &ao->rt);
 				ImGui::SliderFloat("Radius##Ao", &ao->radius, 0.0f, 10.0f);
 				ImGui::SliderFloat("Strength##Ao", &ao->strength, 0.0f, 20.0f, "%.3f", 2.0f);
 				//ImGui::SliderInt("Sample count##Ao", &ao->s, 0.0f, 20.0f, "%.3f", 2.0f);
 			}
-			if (ImGui::CollapsingHeader("Reflection")) {
+			if (ImGui::CollapsingHeader("Reflection (preview)")) {
 				ImGui::Checkbox("Debug##Reflection", &debugReflection);
 				ImGui::Checkbox("Enable reflection", &reflection->enable);
 				ImGui::Checkbox("Enable raytracing##Reflection", &reflection->rt);
@@ -352,6 +351,7 @@ void App::Render(float deltaTime) {
 				ImGui::Checkbox("Enable GI in reflection", &reflection->gi);
 				ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
 				ImGui::SliderFloat("Radiance Limit##Reflection", &reflection->radianceLimit, 0.0f, 10.0f);
+				ImGui::SliderFloat("Bias##Reflection", &reflection->bias, 0.0f, 1.0f);
 			}
 			if (ImGui::CollapsingHeader("Camera")) {
 				ImGui::SliderFloat("Exposure##Camera", &camera.exposure, 0.0f, 10.0f);
@@ -397,7 +397,7 @@ void App::Render(float deltaTime) {
 						auto transmissionColorLabel = "Transmission color##" + label;
 
 						auto emissionPower = glm::max(material->emissiveColor.r, glm::max(material->emissiveColor.g,
-							material->emissiveColor.b));
+							glm::max(material->emissiveColor.b, 1.0f)));
 						material->emissiveColor /= emissionPower;
 						ImGui::ColorEdit3(baseColorLabel.c_str(), glm::value_ptr(material->baseColor));
 						ImGui::ColorEdit3(emissionColorLabel.c_str(), glm::value_ptr(material->emissiveColor));
@@ -662,6 +662,7 @@ bool App::LoadScene() {
 
 		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
+		mesh.cullBackFaces = false;
 		// Metalness is set to 0.9f
 		for (auto& material : mesh.data.materials) material.metalness = 0.0f;
 

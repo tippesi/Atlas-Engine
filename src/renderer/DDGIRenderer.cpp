@@ -84,8 +84,8 @@ namespace Atlas {
 			helper.SetScene(scene, 8, volume->sampleEmissives);
 			helper.UpdateLights();
 
-			probeStateBuffer.BindBase(9);
-			probeOffsetBuffer.BindBase(10);
+			probeStateBuffer.BindBase(14);
+			probeOffsetBuffer.BindBase(15);
 
 			Profiler::EndAndBeginQuery("Ray generation");
 

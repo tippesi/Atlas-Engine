@@ -18,6 +18,7 @@ namespace Atlas {
 
 			int32_t sampleCount = 1;
 			float radianceLimit = 2.0f;
+			float bias = 0.0f;
 
 			bool enable = true;
 			bool rt = false;

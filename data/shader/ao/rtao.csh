@@ -70,7 +70,11 @@ void main() {
         float raySeed = float(seed);
         float curSeed = float(0);
 
-        const int sampleCount = 2;
+        vec2 blueNoiseVec = texelFetch(randomTexture, (pixel) % ivec2(128), 0).xy * 256.0;
+		blueNoiseVec = clamp(blueNoiseVec, 0.0, 255.0);
+		blueNoiseVec = (blueNoiseVec + 0.5) / 256.0;
+
+        const int sampleCount = 1;
         for (uint i = 0; i < sampleCount; i++) {
             Ray ray;
             Surface surface;
@@ -80,7 +84,7 @@ void main() {
 
             surface.N = worldNorm;
             surface.P = worldPos;
-            BRDFSample brdfSample = SampleDiffuseBRDF(surface, vec2(u0, u1));
+            BRDFSample brdfSample = SampleDiffuseBRDF(surface, blueNoiseVec);
            
             ray.direction = brdfSample.L;
             ray.inverseDirection = 1.0 / ray.direction;

@@ -42,10 +42,88 @@ uniform ivec2 resolution;
 uniform uint frameSeed;
 
 uniform vec2 jitter;
+uniform float bias;
 
 vec3 EvaluateHit(inout Ray ray);
-vec3 EvaluateDirectLight(Surface surface);
+vec3 EvaluateDirectLight(inout Surface surface);
 bool CheckVisibility(Surface surface, float lightDistance);
+
+vec3 ImportanceSampleGGX_VNDF(vec2 u, float roughness, vec3 V, mat3 basis)
+{
+    float alpha = roughness;
+
+    vec3 Ve = -vec3(dot(V, basis[0]), dot(V, basis[2]), dot(V, basis[1]));
+
+    vec3 Vh = normalize(vec3(alpha * Ve.x, alpha * Ve.y, Ve.z));
+    
+    float lensq = sqr(Vh.x) + sqr(Vh.y);
+    vec3 T1 = lensq > 0.0 ? vec3(-Vh.y, Vh.x, 0.0) * inversesqrt(lensq) : vec3(1.0, 0.0, 0.0);
+    vec3 T2 = cross(Vh, T1);
+
+    float r = sqrt(u.x);
+    float phi = 2.0 * PI * u.y;
+    float t1 = r * cos(phi);
+    float t2 = r * sin(phi);
+    float s = 0.5 * (1.0 + Vh.z);
+    t2 = (1.0 - s) * sqrt(1.0 - sqr(t1)) + s * t2;
+
+    vec3 Nh = t1 * T1 + t2 * T2 + sqrt(max(0.0, 1.0 - sqr(t1) - sqr(t2))) * Vh;
+
+    // Tangent space H
+    vec3 Ne = vec3(alpha * Nh.x, max(0.0, Nh.z), alpha * Nh.y);
+
+    // World space H
+    return normalize(basis * Ne);
+}
+
+float ImportanceSampleGGX_VNDF_PDF(float roughness, vec3 N, vec3 V, vec3 L)
+{
+    vec3 H = normalize(L + V);
+    float NoH = clamp(dot(N, H), 0, 1);
+    float VoH = clamp(dot(V, H), 0, 1);
+
+    float alpha = roughness;
+    float D = sqr(alpha) / (PI * sqr(sqr(NoH) * sqr(alpha) + (1 - sqr(NoH))));
+    return (VoH > 0.0) ? D / (4.0 * VoH) : 0.0;
+}
+
+mat3 construct_ONB_frisvad(vec3 normal)
+{
+    precise mat3 ret;
+    ret[1] = normal;
+    if(normal.z < -0.999805696f) {
+        ret[0] = vec3(0.0f, -1.0f, 0.0f);
+        ret[2] = vec3(-1.0f, 0.0f, 0.0f);
+    }
+    else {
+        precise float a = 1.0f / (1.0f + normal.z);
+        precise float b = -normal.x * normal.y * a;
+        ret[0] = vec3(1.0f - normal.x * normal.x * a, b, -normal.x);
+        ret[2] = vec3(b, 1.0f - normal.y * normal.y * a, -normal.y);
+    }
+    return ret;
+}
+
+void ImportanceSampleGGXVNDF_NV(vec2 Xi, vec3 N, vec3 V, float roughness,
+                         out vec3 L, out float pdf) {
+
+    vec3 up        = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent   = normalize(cross(up, N));
+    vec3 bitangent = normalize(cross(N, tangent));
+
+	V = -V;
+
+    mat3 basis = construct_ONB_frisvad(N);
+    
+    vec3 H = ImportanceSampleGGX_VNDF(Xi, roughness, V, basis);
+	L = reflect(V, H);
+
+	float NdotH = max(0, dot(N, H));
+	float D = DistributionGGX(NdotH, roughness);
+
+    pdf = D / (4.0 * max(0, -dot(V, H)));
+
+}
 
 void main() {
 
@@ -72,7 +150,7 @@ void main() {
 		blueNoiseVec = clamp(blueNoiseVec, 0.0, 255.0);
 		blueNoiseVec = (blueNoiseVec + 0.5) / 256.0;
 
-        uint materialIdx = texelFetch(materialIdxTexture, pixel * 2 + offset, 0).r;
+        uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 	    Material material = UnpackMaterial(materialIdx);
 
         float roughness = texelFetch(roughnessMetallicAoTexture, pixel, 0).r;
@@ -80,16 +158,23 @@ void main() {
 
         vec3 reflection = vec3(0.0);
 
-        if (material.roughness < 0.9) {
+        if (material.roughness < 1.0) {
 
             for (uint i = 0; i < sampleCount; i++) {
                 Ray ray;
 
+				float alpha = sqr(material.roughness);
+				float biasedAlpha = (1.0 - bias) * alpha;
+
+				vec3 V = normalize(-viewVec);
+				vec3 N = worldNorm;
+
                 float pdf;
-                ImportanceSampleGGX(blueNoiseVec, worldNorm, normalize(-viewVec), sqr(material.roughness),
+                ImportanceSampleGGX(blueNoiseVec, N, V, biasedAlpha,
                                     ray.direction, pdf);
 
                 if (pdf <= 0.0) {
+					// What should we do here?
                     continue;
                 }
 
@@ -99,15 +184,22 @@ void main() {
                 ray.hitID = -1;
                 ray.hitDistance = 0.0;
 
-                HitClosest(ray, 0.0, INF);
+				vec3 radiance = vec3(0.0);
 
-                reflection += min(EvaluateHit(ray), vec3(radianceLimit));
+				if (material.roughness < 0.9) {
+                	HitClosest(ray, 0.0, INF);
+					radiance = EvaluateHit(ray);
+				}
+				else {
+#ifdef GI
+					radiance = GetLocalIrradiance(worldPos, V, N).rgb;
+					radiance = IsInsideVolume(worldPos) ? radiance : vec3(0.0);
+#endif
+				}
 
-				/*
-				Triangle tri = UnpackTriangle(triangles[ray.hitID]);
-				Surface surface = GetSurfaceParameters(tri, ray, false);
-                reflection += min(surface.material.baseColor, vec3(radianceLimit));
-				*/
+				float radianceMax = max(max(radiance.r, 
+						max(radiance.g, radiance.b)), radianceLimit);
+				reflection += radiance * (radianceLimit / radianceMax);
             }
 
             reflection /= float(sampleCount);
@@ -145,11 +237,12 @@ vec3 EvaluateHit(inout Ray ray) {
 		GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
 	radiance += IsInsideVolume(surface.P) ? indirect : vec3(0.0);
 #endif
+
 	return radiance;
 
 }
 
-vec3 EvaluateDirectLight(Surface surface) {
+vec3 EvaluateDirectLight(inout Surface surface) {
 
 	if (GetLightCount() == 0)
 		return vec3(0.0);
@@ -162,7 +255,7 @@ vec3 EvaluateDirectLight(Surface surface) {
 
 	float solidAngle, lightDistance;
 	SampleLight(light, surface, raySeed, curSeed, solidAngle, lightDistance);
-	
+
 	// Evaluate the BRDF
 	vec3 reflectance = EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
 	reflectance *= surface.material.opacity;
@@ -186,9 +279,9 @@ bool CheckVisibility(Surface surface, float lightDistance) {
 	if (surface.NdotL > 0.0) {
 		Ray ray;
 		ray.direction = surface.L;
-		ray.origin = surface.P + surface.N * EPSILON;
+		ray.origin = surface.P + surface.N * 2.0 * EPSILON;
 		ray.inverseDirection = 1.0 / ray.direction;
-		return HitAny(ray, 0.0, lightDistance - 2.0 * EPSILON) == false;
+		return HitAny(ray, 0.0, lightDistance - 4.0 * EPSILON) == false;
 	}
 	else {
 		return false;

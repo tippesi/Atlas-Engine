@@ -53,6 +53,7 @@ namespace Atlas {
 
 		ivec2 halfRes = GetRelativeResolution(HALF_RES);
 		downsampledTarget2x = DownsampledRenderTarget(halfRes);
+		downsampledSwapTarget2x = DownsampledRenderTarget(halfRes);
 
 	}
 
@@ -81,9 +82,11 @@ namespace Atlas {
 
 		SetAOResolution(aoResolution);
 		SetVolumetricResolution(volumetricResolution);
+		SetReflectionResolution(reflectionResolution);
 
 		ivec2 halfRes = GetRelativeResolution(HALF_RES);
 		downsampledTarget2x.Resize(halfRes);
+		downsampledSwapTarget2x.Resize(halfRes);
 
 	}
 
@@ -167,6 +170,9 @@ namespace Atlas {
 		reflectionTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		swapReflectionTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
+		reflectionMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		historyReflectionMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+	
 	}
 
 	RenderResolution RenderTarget::GetReflectionResolution() {
@@ -184,8 +190,24 @@ namespace Atlas {
 			downsampledTarget1x.geometryNormalTexture = &normalTexture;
 			downsampledTarget1x.velocityTexture = GetLastVelocity();
 			downsampledTarget1x.roughnessMetallicAoTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3);
+			downsampledTarget1x.materialIdxTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT4);
 			return &downsampledTarget1x;
-		default: return &downsampledTarget2x;
+		default: return swap ? &downsampledTarget2x : &downsampledSwapTarget2x;
+		}
+
+	}
+
+	DownsampledRenderTarget* RenderTarget::GetDownsampledHistoryTextures(RenderResolution resolution) {
+
+		switch (resolution) {
+		case FULL_RES:
+			downsampledTarget1x.depthTexture = &depthTexture;
+			downsampledTarget1x.normalTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT1);
+			downsampledTarget1x.geometryNormalTexture = &normalTexture;
+			downsampledTarget1x.velocityTexture = GetLastVelocity();
+			downsampledTarget1x.roughnessMetallicAoTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3);
+			return &downsampledTarget1x;
+		default: return swap ? &downsampledSwapTarget2x : &downsampledTarget2x;
 		}
 
 	}

@@ -8,9 +8,13 @@ namespace Atlas {
 
 		RTAORenderer::RTAORenderer() {
 
-            const int32_t filterSize = 3;
+            const int32_t filterSize = 6;
             blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
-            blurFilter.CalculateBoxFilter(filterSize);
+            //blurFilter.CalculateBoxFilter(filterSize);
+
+            auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("noise.png");
+            blueNoiseTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, GL_RGBA8, GL_REPEAT, GL_NEAREST);
+            blueNoiseTexture.SetData(noiseImage.GetData());
 
             rtaoShader.AddStage(AE_COMPUTE_STAGE, "ao/rtao.csh");
             rtaoShader.Compile();
@@ -60,8 +64,9 @@ namespace Atlas {
                         normalTexture->Bind(GL_TEXTURE0);
                         depthTexture->Bind(GL_TEXTURE1);
 
-                        ssao->noiseTexture.Bind(GL_TEXTURE2);
+                        //ssao->noiseTexture.Bind(GL_TEXTURE2);
                         offsetTexture->Bind(GL_TEXTURE3);
+                        blueNoiseTexture.Bind(GL_TEXTURE2);
 
                         rtaoShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
                         rtaoShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);

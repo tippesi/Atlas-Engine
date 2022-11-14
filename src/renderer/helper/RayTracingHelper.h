@@ -58,7 +58,6 @@ namespace Atlas {
 
 				Shader::Shader binningOffsetShader;
 				Shader::Shader binningShader;
-
 				Buffer::Buffer indirectDispatchBuffer;
 
 				Buffer::Buffer counterBuffer0;

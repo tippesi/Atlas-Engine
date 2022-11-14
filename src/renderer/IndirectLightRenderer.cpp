@@ -23,7 +23,7 @@ namespace Atlas {
 				auto [irradianceArray, momentsArray] = volume->internal.GetCurrentProbes();
 				irradianceArray.Bind(GL_TEXTURE24);
 				momentsArray.Bind(GL_TEXTURE25);
-				volume->internal.probeStateBuffer.BindBase(1);
+				volume->internal.probeStateBuffer.BindBase(14);
 				shader.GetUniform("volumeEnabled")->SetValue(true);
 				shader.GetUniform("volumeMin")->SetValue(volume->aabb.min);
 				shader.GetUniform("volumeMax")->SetValue(volume->aabb.max);

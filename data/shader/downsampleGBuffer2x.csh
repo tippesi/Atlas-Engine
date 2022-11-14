@@ -8,13 +8,15 @@ layout (binding = 1) uniform sampler2D normalIn;
 layout (binding = 2) uniform sampler2D geometryNormalIn;
 layout (binding = 3) uniform sampler2D roughnessMetallicAoIn;
 layout (binding = 4) uniform sampler2D velocityIn;
+layout (binding = 5) uniform usampler2D materialIdxIn;
 
 layout (binding = 0) writeonly uniform image2D depthOut;
 layout (binding = 1) writeonly uniform image2D normalOut;
 layout (binding = 2) writeonly uniform image2D geometryNormalOut;
 layout (binding = 3) writeonly uniform image2D roughnessMetallicAoOut;
 layout (binding = 4) writeonly uniform image2D velocityOut;
-layout (binding = 5) writeonly uniform iimage2D offsetOut;
+layout (binding = 5) writeonly uniform uimage2D materialIdxOut;
+layout (binding = 6) writeonly uniform iimage2D offsetOut;
 
 float Checkerboard(ivec2 coord) {
 
@@ -126,6 +128,15 @@ void main() {
 		vec2 velocity = depthIdx < 2 ? (depthIdx < 1 ? velocity00 : velocity10) :
 			(depthIdx < 3 ? velocity01 : velocity11);
 		imageStore(velocityOut, coord, vec4(velocity, 0.0, 0.0));
+
+		uint materialIdx00 = texelFetch(materialIdxIn, coord * 2 + ivec2(0, 0), 0).r;
+		uint materialIdx10 = texelFetch(materialIdxIn, coord * 2 + ivec2(1, 0), 0).r;
+		uint materialIdx01 = texelFetch(materialIdxIn, coord * 2 + ivec2(0, 1), 0).r;
+		uint materialIdx11 = texelFetch(materialIdxIn, coord * 2 + ivec2(1, 1), 0).r;
+
+		uint materialIdx = depthIdx < 2 ? (depthIdx < 1 ? materialIdx00 : materialIdx10) :
+			(depthIdx < 3 ? materialIdx01 : materialIdx11);
+		imageStore(materialIdxOut, coord, uvec4(materialIdx, 0u, 0u, 0u));
 
 		imageStore(offsetOut, coord, ivec4(depthIdx, 0, 0, 0));
 #endif		
