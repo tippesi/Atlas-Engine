@@ -8,6 +8,7 @@
 #include <limits>
 #include <functional>
 #include <thread>
+#include <atomic>
 
 namespace Atlas {
 
