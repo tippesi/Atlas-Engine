@@ -27,6 +27,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Setup Vcpkg
+        uses: friendlyanon/setup-vcpkg@v1
+        # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
+        with: {committish: 59b58fc56de40eaa279ae0208debcf5773a2db77}
+
       - name: Setup Microsoft Visual C++ CLI
         uses: ilammy/msvc-dev-cmd@v1
 
@@ -38,8 +43,9 @@ jobs:
 
       - name: Run scripts
         shell: pwsh
+        # Add additional scripting steps here
         run: |
-          git clone --recursive https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
+          cd ${{ github.workspace }}
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -78,6 +84,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Setup Vcpkg
+        uses: friendlyanon/setup-vcpkg@v1
+        # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
+        with: {committish: 59b58fc56de40eaa279ae0208debcf5773a2db77}
+
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
         with:
@@ -89,7 +100,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libgl1-mesa-dev
-          git clone --recursive https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
+          cd ${{ github.workspace }}
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
