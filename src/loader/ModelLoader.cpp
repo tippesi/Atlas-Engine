@@ -7,6 +7,7 @@
 #include <vector>
 #include <limits>
 #include <functional>
+#include <thread>
 
 namespace Atlas {
 
