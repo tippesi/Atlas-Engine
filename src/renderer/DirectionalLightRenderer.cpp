@@ -54,7 +54,7 @@ namespace Atlas {
 			auto lights = scene->GetLights();
 
 			// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
-			for (auto& light : lights) {
+			for (auto light : lights) {
 
 				if (light->type != AE_DIRECTIONAL_LIGHT) {
 					continue;

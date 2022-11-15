@@ -98,6 +98,7 @@ namespace Atlas {
 			bool sampleEmissives = false;
 			bool debug = false;
 			bool optimizeProbes = true;
+			bool useShadowMap = false;
 
 			InternalIrradianceVolume internal;
 

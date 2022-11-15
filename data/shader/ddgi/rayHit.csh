@@ -3,6 +3,9 @@
 // Journal of Computer Graphics Techniques Vol 8.2 (2019).
 // Majercik, Zander, et al. "Scaling Probe-Based Real-Time Dynamic Global Illumination for Production."
 // arXiv preprint arXiv:2009.10796 (2020).
+#ifdef USE_SHADOW_MAP
+#define SHADOW_FILTER_1x1
+#endif
 
 #include <../raytracer/lights.hsh>
 #include <../raytracer/tracing.hsh>
@@ -17,9 +20,13 @@
 #include <../brdf/importanceSample.hsh>
 #include <../brdf/surface.hsh>
 
+#include <../shadow.hsh>
+
 #include <ddgi.hsh>
 
 layout (local_size_x = 32) in;
+
+layout(binding = 26) uniform sampler2DArrayShadow cascadeMaps;
 
 // Instead of write ray array use hits array
 layout(std430, binding = 3) buffer RayHits {
@@ -27,6 +34,10 @@ layout(std430, binding = 3) buffer RayHits {
 };
 
 uniform float seed;
+
+
+uniform Shadow shadow;
+#endif
 
 vec3 EvaluateHit(inout Ray ray);
 vec3 EvaluateDirectLight(inout Surface surface);
@@ -105,8 +116,12 @@ vec3 EvaluateDirectLight(inout Surface surface) {
 	// Check for visibilty. This is important to get an
 	// estimate of the solid angle of the light from point P
 	// on the surface.
-	if (CheckVisibility(surface, lightDistance) == false)
-		radiance = vec3(0.0);
+#ifdef USE_SHADOW_MAP
+	radiance *= CalculateShadowWorldSpace(shadow, cascadeMaps, surface.P,
+		surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
+#else
+	radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
+#endif
 	
 	return reflectance * radiance * surface.NdotL / lightPdf;
 

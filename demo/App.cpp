@@ -16,8 +16,8 @@ void App::LoadContent() {
 	auto icon = Atlas::Texture::Texture2D("icon.png");
 	window.SetIcon(&icon);
 	window.Update();
-
-	font = Atlas::Font("font/roboto.ttf", 44, 10);
+	
+	font = Atlas::Font("font/roboto.ttf", 22, 5);
 
 	DisplayLoadingScreen();
 
@@ -55,6 +55,7 @@ void App::LoadContent() {
 
 	scene.ao = new Atlas::Lighting::AO(16);
 	scene.reflection = new Atlas::Lighting::Reflection(1);
+	scene.reflection->useShadowMap = true;
 
 	scene.fog = new Atlas::Lighting::Fog();
 	scene.fog->enable = true;
@@ -262,10 +263,15 @@ void App::Render(float deltaTime) {
 			if (ImGui::CollapsingHeader("DDGI")) {
 				ImGui::Text(("Probe count: " + vecToString(volume->probeCount)).c_str());
 				ImGui::Text(("Cell size: " + vecToString(volume->cellSize)).c_str());
-				ImGui::Checkbox("Enable volume", &volume->enable);
-				ImGui::Checkbox("Update volume", &volume->update);
-				ImGui::Checkbox("Visualize probes", &volume->debug);
-				ImGui::Checkbox("Sample emissives", &volume->sampleEmissives);
+				ImGui::Checkbox("Enable volume##DDGI", &volume->enable);
+				ImGui::Checkbox("Update volume##DDGI", &volume->update);
+				ImGui::Checkbox("Visualize probes##DDGI", &volume->debug);
+				ImGui::Checkbox("Sample emissives##DDGI", &volume->sampleEmissives);
+				ImGui::Checkbox("Use shadow map##DDGI", &volume->useShadowMap);
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+					ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \
+						This is only possible when cascaded shadow maps are not used.");
+				}
 
 				const char* gridResItems [] = { "5x5x5", "10x10x10", "20x20x20", "30x30x30" };
 				int currentItem = 0;
@@ -348,6 +354,10 @@ void App::Render(float deltaTime) {
 				ImGui::Checkbox("Enable reflection", &reflection->enable);
 				ImGui::Checkbox("Enable raytracing##Reflection", &reflection->rt);
 				ImGui::Checkbox("Use shadow map", &reflection->useShadowMap);
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+					ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \
+						This is only possible when cascaded shadow maps are not used.");
+				}
 				ImGui::Checkbox("Enable GI in reflection", &reflection->gi);
 				ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
 				ImGui::SliderFloat("Radiance Limit##Reflection", &reflection->radianceLimit, 0.0f, 10.0f);
@@ -686,6 +696,8 @@ bool App::LoadScene() {
 
 		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("pica pica/mesh/scene.gltf", false,
 			glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)));
+		for (auto& material : meshData.materials) material.twoSided = false;
+
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
 		auto& mesh = meshes.back();
@@ -753,6 +765,7 @@ bool App::LoadScene() {
 	camera.Update();
 	scene.Update(&camera, 1.0f);
 	scene.BuildRTStructures();
+	scene.irradianceVolume->useShadowMap = true;
 
 	// Reset input handlers
 	keyboardHandler.Reset(&camera);

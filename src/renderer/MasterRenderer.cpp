@@ -73,8 +73,6 @@ namespace Atlas {
 			if (scene->vegetation)
 				vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera);
 
-			ddgiRenderer.TraceAndUpdateProbes(scene);
-
 			glEnable(GL_DEPTH_TEST);
 			glEnable(GL_CULL_FACE);
 
@@ -151,6 +149,8 @@ namespace Atlas {
 					continue;
 				light->GetShadow()->update = false;
 			}
+
+			ddgiRenderer.TraceAndUpdateProbes(scene);
 
 			materialBuffer.BindBase(16);
 

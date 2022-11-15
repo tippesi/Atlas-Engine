@@ -1,3 +1,5 @@
+#define SHADOW_FILTER_1x1
+
 #include <../raytracer/lights.hsh>
 #include <../raytracer/tracing.hsh>
 #include <../raytracer/direct.hsh>
@@ -13,6 +15,7 @@
 #include <../brdf/surface.hsh>
 
 #include <../ddgi/ddgi.hsh>
+#include <../shadow.hsh>
 
 layout (local_size_x = 8, local_size_y = 4) in;
 
@@ -24,6 +27,7 @@ layout(binding = 18) uniform sampler2D roughnessMetallicAoTexture;
 layout(binding = 19) uniform isampler2D offsetTexture;
 layout(binding = 20) uniform usampler2D materialIdxTexture;
 layout(binding = 21) uniform sampler2D randomTexture;
+layout(binding = 26) uniform sampler2DArrayShadow cascadeMaps;
 
 const ivec2 offsets[4] = ivec2[4](
     ivec2(0, 0),
@@ -43,6 +47,10 @@ uniform uint frameSeed;
 
 uniform vec2 jitter;
 uniform float bias;
+
+#ifdef USE_SHADOW_MAP
+uniform Shadow shadow;
+#endif
 
 vec3 EvaluateHit(inout Ray ray);
 vec3 EvaluateDirectLight(inout Surface surface);
@@ -156,8 +164,11 @@ vec3 EvaluateHit(inout Ray ray) {
 
 	// Evaluate indirect lighting
 #ifdef GI
-	vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) *
-		GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
+	vec3 irradiance = GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
+	// Approximate indirect specular for ray by using the irradiance grid
+	// This enables metallic materials to have some kind of secondary reflection
+	vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) * irradiance +
+		EvaluateIndirectSpecularBRDF(surface) * irradiance;
 	radiance += IsInsideVolume(surface.P) ? indirect : vec3(0.0);
 #endif
 
@@ -188,7 +199,8 @@ vec3 EvaluateDirectLight(inout Surface surface) {
 	// estimate of the solid angle of the light from point P
 	// on the surface.
 #ifdef USE_SHADOW_MAP
-
+	radiance *= CalculateShadowWorldSpace(shadow, cascadeMaps, surface.P,
+		surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
 #else
 	radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
 #endif

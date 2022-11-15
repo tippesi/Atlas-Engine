@@ -23,7 +23,6 @@ layout(binding = 8) uniform usampler2D historyMaterialIdxTexture;
 layout(binding = 9) uniform sampler2D historyNormalTexture;
 layout(binding = 10) uniform sampler2D historyMomentsTexture;
 
-
 uniform vec2 invResolution;
 uniform vec2 resolution;
 

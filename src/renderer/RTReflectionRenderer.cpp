@@ -41,6 +41,15 @@ namespace Atlas {
             Profiler::BeginQuery("Render RT Reflections");
             Profiler::BeginQuery("Trace rays");
 
+            // Try to get a shadow map
+            auto lights = scene->GetLights();
+            Lighting::Shadow* shadow = nullptr;
+            for (auto light : lights) {
+                if (light->type == AE_DIRECTIONAL_LIGHT) {
+                    shadow = light->GetShadow();
+                }
+            }
+
             auto downsampledRT = target->GetDownsampledTextures(target->GetReflectionResolution());
             auto downsampledHistoryRT = target->GetDownsampledHistoryTextures(target->GetReflectionResolution());
 
@@ -112,6 +121,32 @@ namespace Atlas {
                             rtrShader.GetUniform("volumeEnabled")->SetValue(false);
                             rtrShader.GetUniform("volumeMin")->SetValue(vec3(0.0f));
                             rtrShader.GetUniform("volumeMax")->SetValue(vec3(0.0f));
+                        }
+
+                        if (shadow && reflection->useShadowMap) {
+                            auto distance = shadow->longRange ? shadow->distance : shadow->longRangeDistance;
+
+                            rtrShader.GetUniform("shadow.distance")->SetValue(distance);
+                            rtrShader.GetUniform("shadow.bias")->SetValue(shadow->bias);
+                            rtrShader.GetUniform("shadow.cascadeCount")->SetValue(shadow->componentCount);
+                            rtrShader.GetUniform("shadow.resolution")->SetValue(vec2((float)shadow->resolution));
+
+                            shadow->maps.Bind(GL_TEXTURE26);
+
+                            for (int32_t i = 0; i < shadow->componentCount; i++) {
+                                auto cascade = &shadow->components[i];
+                                auto frustum = Volume::Frustum(cascade->frustumMatrix);
+                                auto corners = frustum.GetCorners();
+                                auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
+                                    abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
+                                auto lightSpace = cascade->projectionMatrix * cascade->viewMatrix;
+                                rtrShader.GetUniform("shadow.cascades[" + std::to_string(i) + "].distance")->SetValue(cascade->farDistance);
+                                rtrShader.GetUniform("shadow.cascades[" + std::to_string(i) + "].cascadeSpace")->SetValue(lightSpace);
+                                rtrShader.GetUniform("shadow.cascades[" + std::to_string(i) + "].texelSize")->SetValue(texelSize);
+                            }
+                        }
+                        else {
+                            rtrShader.GetUniform("shadow.distance")->SetValue(0.0f);
                         }
                     });
             }

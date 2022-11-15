@@ -4,7 +4,6 @@
 #include <../common/utility.hsh>
 #include <../common/stencil.hsh>
 #include <../structures>
-#include <../shadow.hsh>
 
 #include <sharedUniforms.hsh>
 #include <shoreInteraction.hsh>
@@ -21,6 +20,7 @@ layout (binding = 3) uniform samplerCube skyEnvProbe;
 layout (binding = 4) uniform sampler2D refractionTexture;
 layout (binding = 5) uniform sampler2D depthTexture;
 layout (binding = 7) uniform sampler2D volumetricTexture;
+layout (binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 layout (binding = 10) uniform sampler2D rippleTexture;
 
 in vec4 fClipSpace;
@@ -73,7 +73,7 @@ void main() {
 	
 	vec3 depthPos = ConvertDepthToViewSpace(clipDepth, ndcCoord);
 	
-	float shadowFactor = max(CalculateCascadedShadow(light, fPosition, fNormal, 0.0), 0.01);
+	float shadowFactor = max(CalculateCascadedShadow(light.shadow, cascadeMaps, fPosition, fNormal, 0.0), 0.01);
 	
 	fNormal = mix(normalShoreWave, fNormal, shoreScaling);
 

@@ -85,7 +85,7 @@ namespace Atlas {
 							abs(corners[1].y - corners[3].y)) / (float)sun->GetShadow()->resolution;
 						auto lightSpace = cascade->projectionMatrix * cascade->viewMatrix * camera->invViewMatrix;
 						causticsShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].distance")->SetValue(cascade->farDistance);
-						causticsShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].lightSpace")->SetValue(lightSpace);
+						causticsShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].cascadeSpace")->SetValue(lightSpace);
 						causticsShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].texelSize")->SetValue(texelSize);
 					}
 				}
