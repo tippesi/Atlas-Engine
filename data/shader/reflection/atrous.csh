@@ -28,7 +28,7 @@ float ComputeEdgeStoppingWeight(float centerLuminance, float sampleLuminance,
     float luminanceDiff = abs(centerLuminance - sampleLuminance);
     float luminanceWeight = min(exp(-luminanceDiff / luminancePhi), 1.0);
 
-    float normalDiff = max(dot(centerNormal, sampleNormal), 0.0);
+    float normalDiff = saturate(dot(centerNormal, sampleNormal));
     float normalWeight = min(pow(normalDiff, normalPhi), 1.0);
 
     float depthDiff = abs(centerDepth - sampleDepth);
@@ -81,7 +81,7 @@ void main() {
     float totalWeight = 1.0;
 
     float variance = GetFilteredVariance(pixel);
-    float stdDeviation = sqrt(variance);
+    float stdDeviation = sqrt(max(0.0, variance));
 
     const int radius = 2;
     for (int x = -radius; x <= radius; x++) {
@@ -108,7 +108,7 @@ void main() {
                                     centerLuminance, sampleLuminance,
                                     centerNormal, sampleNormal,
                                     sampleLinearDepth, centerLinearDepth,
-                                    stdDeviation, 32.0, 1.0);
+                                    stdDeviation * 10, 32.0, 1.0);
 
             float weight = kernelWeight * edgeStoppingWeight;
             

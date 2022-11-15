@@ -46,8 +46,6 @@ const ivec2 pixelOffsets[4] = ivec2[4](
     ivec2(1, 1)
 );
 
-vec3 localNeighbourhood[9];
-
 float Luma(vec3 color) {
 
     const vec3 luma = vec3(0.299, 0.587, 0.114);
@@ -59,15 +57,6 @@ vec3 FetchTexel(ivec2 texel) {
 	
 	vec3 color = max(texelFetch(currentTexture, texel, 0).rgb, 0);
 	return color;
-
-}
-
-void LoadData(ivec2 pixel) {
-
-    for (uint i = 0; i < 9; i++) {
-        
-        localNeighbourhood[i] = FetchTexel(pixel + offsets[i]);
-    }
 
 }
 
@@ -185,12 +174,23 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
     vec3 m1 = vec3(0.0);
     vec3 m2 = vec3(0.0);
     // This could be varied using the temporal variance estimation
+    // By using a wide neighborhood for variance estimation (8x8) we introduce block artifacts
+    // These are similiar to video compression artifacts, the spatial filter mostly clears them up
     const int radius = 8;
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
+
+    float depth = texelFetch(depthTexture, pixel, 0).r;
+    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
 
     for (int i = -radius; i <= radius; i++) {
         for (int j = -radius; j <= radius; j++) {
             vec3 color = texelFetch(currentTexture, pixel + ivec2(i, j), 0).rgb;
+
+            float historyDepth = texelFetch(depthTexture, pixel + ivec2(i, j), 0).r;
+            float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+            float weight = min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+
+            color *= weight;
         
             m1 += color;
             m2 += color * color;
@@ -200,7 +200,7 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
     float oneDividedBySampleCount = 1.0 / float((2.0 * radius + 1.0) * (2.0 * radius + 1.0));
     float gamma = 1.0;
     vec3 mu = m1 * oneDividedBySampleCount;
-    vec3 sigma = sqrt(abs((m2 * oneDividedBySampleCount) - (mu * mu)));
+    vec3 sigma = sqrt(max((m2 * oneDividedBySampleCount) - (mu * mu), 0.0));
     aabbMin = mu - gamma * sigma;
     aabbMax = mu + gamma * sigma;
 
@@ -209,7 +209,7 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
 float ComputeDisocclusionWeight(vec3 normal, vec3 historyNormal,
                                 float historyLinearDepth, float linearDepth) {
     return exp(-abs(1.0 - max(0.0, dot(normal, historyNormal))))
-    * exp(-abs(historyLinearDepth - linearDepth) / linearDepth);
+        * exp(-abs(historyLinearDepth - linearDepth) / linearDepth);
 }
 
 void main() {
@@ -219,36 +219,7 @@ void main() {
         pixel.y > imageSize(resolveImage).y)
         return;
 
-    LoadData(pixel);
-
-    // Find nearest pixel in localNeighbourhood to improve velocity sampling
-    ivec2 offset = FindNearest3x3(pixel);
-
-    vec3 tl = localNeighbourhood[0];
-    vec3 tc = localNeighbourhood[1];
-    vec3 tr = localNeighbourhood[2];
-    vec3 ml = localNeighbourhood[3];
-    vec3 mc = localNeighbourhood[4];
-    vec3 mr = localNeighbourhood[5];
-    vec3 bl = localNeighbourhood[6];
-    vec3 bc = localNeighbourhood[7];
-    vec3 br = localNeighbourhood[8];
-
-    // 3x3 box pattern
-    vec3 boxMin = min(tl, min(tc, min(tr, min(ml, min(mc, min(mr, min(bl, min(bc, br))))))));
-    vec3 boxMax = max(tl, max(tc, max(tr, max(ml, max(mc, max(mr, max(bl, max(bc, br))))))));
-
-    // 5 sample cross pattern
-    vec3 crossMin = min(tc, min(ml, min(mc, min(mr, bc))));
-	vec3 crossMax = max(tc, max(ml, max(mc, max(mr, bc))));
-
-    // Average both bounding boxes to get a more rounded shape
-    vec3 localNeighbourhoodMin = 0.5 * (boxMin + crossMin);
-    vec3 localNeighbourhoodMax = 0.5 * (boxMax + crossMax);
-    
-    //ComputeVarianceMinMax(localNeighbourhoodMin, localNeighbourhoodMax);
-    vec3 average = 0.5 * (localNeighbourhoodMin + localNeighbourhoodMax);
-
+    vec3 localNeighbourhoodMin, localNeighbourhoodMax;
     ComputeVarianceMinMax(localNeighbourhoodMin, localNeighbourhoodMax);
 
     ivec2 velocityPixel = pixel;
@@ -261,15 +232,13 @@ void main() {
     vec4 historyMoments = SampleHistoryMoments(uv);
 
     vec3 historyColor = history.rgb;
-    vec3 currentColor = mc;
+    vec3 currentColor = texelFetch(currentTexture, pixel, 0).rgb;
 
-     vec2 currentMoments;
+    vec2 currentMoments;
     currentMoments.r = Luma(currentColor);
     currentMoments.g = currentMoments.r * currentMoments.r;
 
-    localNeighbourhoodMin = average - (average - localNeighbourhoodMin);
-    localNeighbourhoodMax = average + (localNeighbourhoodMax - average);
-
+    // In case of clipping we might also reject the sample. TODO: Investigate
     float clipBlend = ClipBoundingBox(localNeighbourhoodMin, localNeighbourhoodMax,
         historyColor, currentColor);
     float adjClipBlend = saturate(clipBlend);
@@ -289,37 +258,38 @@ void main() {
          || uv.y > 1.0) ? 0.0 : factor;
 
     vec3 normal = 2.0 * texelFetch(normalTexture, pixel, 0).rgb - 1.0;
+    float depth = texelFetch(depthTexture, pixel, 0).r;
 
-    float materialConfidence = 0.0;
-    float normalConfidence = 0.0;
+    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+
     ivec2 historyPixel = ivec2(vec2(pixel) + velocity * resolution);
+    float maxConfidence = 0.0;
+    // Calculate confidence over 2x2 bilinear neighborhood
+    // Note that 3x3 neighborhoud could help on edges
     for (int i = 0; i < 4; i++) {
         ivec2 offsetPixel = historyPixel + pixelOffsets[i];
+        float confidence = 1.0;
+
         uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
-        // Try to find one pixel in the neighborhood which matches the material
-        if (historyMaterialIdx == materialIdx) {
-            materialConfidence = 1.0;
-        }
+        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+
         vec3 historyNormal = 2.0 * texelFetch(historyNormalTexture, offsetPixel, 0).rgb - 1.0;
-        float similarity = pow(abs(dot(historyNormal, normal)), 2.0);
-        if (similarity >= 0.9) {
-            normalConfidence = 1.0;
-        }
+        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+
+        float historyDepth = texelFetch(depthTexture, offsetPixel, 0).r;
+        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        confidence = min(1.0 , exp(-abs(linearDepth - historyLinearDepth) / linearDepth));
+
+        maxConfidence = max(maxConfidence, confidence);
     }
     
-    factor *= materialConfidence * normalConfidence;
+    factor *= maxConfidence;
+
     float historyLength = historyMoments.b;
     if (factor == 0.0) {
         historyLength = 0.0;
         currentMoments.g = 1.0;
         currentMoments.r = 0.0;
-    }
-
-    // Some stuff in the pipeline produces NaNs
-    if (isnan(historyColor.r) == true ||
-        isnan(historyColor.g) == true ||
-        isnan(historyColor.b) == true) {
-        historyLength = 0.0;
     }
 
     factor = min(factor, historyLength / (historyLength + 1.0));
@@ -336,6 +306,6 @@ void main() {
     variance = material.roughness < 0.001 ? 0.0 : variance;
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
-    imageStore(resolveImage, pixel, vec4(resolve, variance));
+    imageStore(resolveImage, pixel, vec4(vec3(resolve), variance));
 
 }

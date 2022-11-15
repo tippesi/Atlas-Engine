@@ -167,7 +167,7 @@ namespace Atlas {
 
                 atrousShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
 
-                for (int i = 0; i < 4; i++) {
+                for (int32_t i = 0; i < 4; i++) {
                     Profiler::BeginQuery("Subpass " + std::to_string(i));
                     atrousShader.GetUniform("stepSize")->SetValue(1 << i);
 
