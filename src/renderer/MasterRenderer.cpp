@@ -189,13 +189,7 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
-			if (scene->ao->rt) {
-				rtaoRenderer.Render(viewport, target, camera, scene);
-			}
-			else {
-				ssaoRenderer.Render(viewport, target, camera, scene);
-			}
-
+			aoRenderer.Render(viewport, target, camera, scene);
 			rtrRenderer.Render(viewport, target, camera, scene);
 
 			target->lightingFramebuffer.Bind(true);

@@ -18,7 +18,8 @@ layout(binding = 0) writeonly uniform image2D outputImage;
 uniform int kernelSize;
 uniform float weights[80];
 
-uniform float depthSensitivity = 1.0;
+uniform float normalPhi = 32.0;
+uniform float depthPhi = 1.0;
 
 #ifdef BLUR_RGB
 shared vec3 inputs[320];
@@ -100,14 +101,26 @@ void main() {
 #ifdef DEPTH_WEIGHT
     float centerDepth = depths[sharedDataOffset];
 #endif
+#ifdef NORMAL_WEIGHT
+    vec3 centerNormal = normals[sharedDataOffset];
+#endif
 
     // First sum and weight left kernel extend
     for (int i = 1; i <= kernelSize; i++) {
         float weight = weights[i];
 #ifdef DEPTH_WEIGHT
         float depth = depths[sharedDataOffset - i];
-        float closeness = max(0.0, 1.0 - depthSensitivity * abs(centerDepth - depth));
-		weight *= closeness;
+
+        float depthDiff = abs(centerDepth - depth);
+        float depthWeight = min(exp(-depthDiff / depthPhi), 1.0);
+		weight *= depthWeight;
+#endif
+#ifdef NORMAL_WEIGHT
+        vec3 normal = normals[sharedDataOffset - i];
+
+        float normalDiff = saturate(dot(centerNormal, normal));
+        float normalWeight = min(pow(normalDiff, normalPhi), 1.0);
+        weight *= normalWeight;
 #endif
         result += inputs[sharedDataOffset - i] * weight;
         totalWeight += weight;
@@ -118,8 +131,17 @@ void main() {
         float weight = weights[i];
 #ifdef DEPTH_WEIGHT
         float depth = depths[sharedDataOffset + i];
-        float closeness = max(0.0, 1.0 - depthSensitivity * abs(centerDepth - depth));
-		weight *= closeness;
+
+        float depthDiff = abs(centerDepth - depth);
+        float depthWeight = min(exp(-depthDiff / depthPhi), 1.0);
+		weight *= depthWeight;
+#endif
+#ifdef NORMAL_WEIGHT
+        vec3 normal = normals[sharedDataOffset + i];
+
+        float normalDiff = saturate(dot(centerNormal, normal));
+        float normalWeight = min(pow(normalDiff, normalPhi), 1.0);
+        weight *= normalWeight;
 #endif
         result += inputs[sharedDataOffset + i] * weight;
         totalWeight += weight;

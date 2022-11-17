@@ -199,6 +199,7 @@ namespace Atlas {
 
                 depthTexture->Bind(GL_TEXTURE1);
                 normalTexture->Bind(GL_TEXTURE2);
+                roughnessTexture->Bind(GL_TEXTURE3);
 
                 atrousShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
 

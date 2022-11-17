@@ -135,8 +135,11 @@ namespace Atlas {
 		auto res = GetRelativeResolution(resolution);
 		aoResolution = resolution;
 
-		aoTexture = Texture::Texture2D(res.x, res.y, AE_R16F);
-		swapAoTexture = Texture::Texture2D(res.x, res.y, AE_R16F);
+		aoTexture = Texture::Texture2D(res.x, res.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		swapAoTexture = Texture::Texture2D(res.x, res.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+
+		aoMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		historyAoMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 	}
 

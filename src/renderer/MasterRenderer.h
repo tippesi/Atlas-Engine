@@ -22,8 +22,7 @@
 #include "GBufferDownscaleRenderer.h"
 #include "TextRenderer.h"
 #include "DDGIRenderer.h"
-#include "SSAORenderer.h"
-#include "RTAORenderer.h"
+#include "AORenderer.h"
 #include "RTReflectionRenderer.h"
 #include "VolumetricRenderer.h"
 #include "VegetationRenderer.h"
@@ -258,8 +257,7 @@ namespace Atlas {
 			PostProcessRenderer postProcessRenderer;
 			GBufferDownscaleRenderer downscaleRenderer;
 			DDGIRenderer ddgiRenderer;
-			SSAORenderer ssaoRenderer;
-			RTAORenderer rtaoRenderer;
+			AORenderer aoRenderer;
 			RTReflectionRenderer rtrRenderer;
 			VolumetricRenderer volumetricRenderer;
 

@@ -6,6 +6,7 @@ layout (local_size_x = 8, local_size_y = 8) in;
 layout(binding = 0) uniform sampler2D inputTexture;
 layout(binding = 1) uniform sampler2D depthTexture;
 layout(binding = 2) uniform sampler2D normalTexture;
+layout(binding = 3) uniform sampler2D roughnessTexture;
 
 layout(binding = 0) writeonly uniform image2D outputImage;
 
@@ -23,7 +24,9 @@ float Luma(vec3 color) {
 float ComputeEdgeStoppingWeight(float centerLuminance, float sampleLuminance,
                                 vec3 centerNormal, vec3 sampleNormal,
                                 float centerDepth, float sampleDepth,
-                                float luminancePhi, float normalPhi, float depthPhi) {
+                                float centerRoughness, float sampleRoughness,
+                                float luminancePhi, float normalPhi, 
+                                float depthPhi, float roughnessPhi) {
 
     float luminanceDiff = abs(centerLuminance - sampleLuminance);
     float luminanceWeight = min(exp(-luminanceDiff / luminancePhi), 1.0);
@@ -34,7 +37,10 @@ float ComputeEdgeStoppingWeight(float centerLuminance, float sampleLuminance,
     float depthDiff = abs(centerDepth - sampleDepth);
     float depthWeight = min(exp(-depthDiff / depthPhi), 1.0);
 
-    return luminanceWeight * normalWeight * depthWeight;
+    float roughnessDiff = abs(centerRoughness - sampleRoughness);
+    float roughnessWeight = min(exp(-roughnessDiff / roughnessPhi), 1.0);
+
+    return luminanceWeight * normalWeight * depthWeight * roughnessWeight;
 
 }
 
@@ -77,6 +83,8 @@ void main() {
     float centerLuminance = Luma(centerColor.rgb);
     float centerLinearDepth = ConvertDepthToViewSpaceDepth(centerDepth);
 
+    float centerRoughness = texelFetch(roughnessTexture, pixel, 0).r;
+
     vec4 outputColor = centerColor;
     float totalWeight = 1.0;
 
@@ -103,12 +111,16 @@ void main() {
             float sampleLinearDepth = ConvertDepthToViewSpaceDepth(sampleDepth);
             float sampleLuminance = Luma(sampleColor.rgb);
 
+            float sampleRoughness = texelFetch(roughnessTexture, samplePixel, 0).r;
+
             float kernelWeight = kernelWeights[abs(x)] * kernelWeights[abs(y)];
             float edgeStoppingWeight = ComputeEdgeStoppingWeight(
                                     centerLuminance, sampleLuminance,
                                     centerNormal, sampleNormal,
-                                    sampleLinearDepth, centerLinearDepth,
-                                    stdDeviation * 10, 32.0, 1.0);
+                                    centerLinearDepth, sampleLinearDepth,
+                                    centerRoughness, sampleRoughness,
+                                    stdDeviation * 10, 2.0, 
+                                    1.0, 0.05);
 
             float weight = kernelWeight * edgeStoppingWeight;
             

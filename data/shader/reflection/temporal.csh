@@ -16,11 +16,8 @@ layout(binding = 1) uniform sampler2D currentTexture;
 layout(binding = 2) uniform sampler2D velocityTexture;
 layout(binding = 3) uniform sampler2D depthTexture;
 layout(binding = 4) uniform sampler2D roughnessMetallicAoTexture;
-layout(binding = 5) uniform isampler2D offsetTexture;
 layout(binding = 6) uniform sampler2D normalTexture;
-layout(binding = 7) uniform usampler2D currentMaterialIdxTexture;
-layout(binding = 8) uniform usampler2D historyMaterialIdxTexture;
-layout(binding = 9) uniform sampler2D historyNormalTexture;
+layout(binding = 7) uniform usampler2D materialIdxTexture;
 layout(binding = 10) uniform sampler2D historyMomentsTexture;
 
 uniform vec2 invResolution;
@@ -181,6 +178,10 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
     float depth = texelFetch(depthTexture, pixel, 0).r;
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
 
+    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
+
+    vec3 normal = 2.0 * texelFetch(normalTexture, pixel, 0).rgb - 1.0;
+
     for (int i = -radius; i <= radius; i++) {
         for (int j = -radius; j <= radius; j++) {
             vec3 color = texelFetch(currentTexture, pixel + ivec2(i, j), 0).rgb;
@@ -188,6 +189,13 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
             float historyDepth = texelFetch(depthTexture, pixel + ivec2(i, j), 0).r;
             float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
             float weight = min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+            weight = 1.0;
+
+            uint historyMaterialIdx = texelFetch(materialIdxTexture, pixel + ivec2(i, j), 0).r;
+            weight *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+
+            vec3 historyNormal = 2.0 * texelFetch(normalTexture, pixel + ivec2(i, j), 0).rgb - 1.0;
+            weight *= pow(abs(dot(historyNormal, normal)), 2.0);
 
             color *= weight;
         
@@ -243,10 +251,7 @@ void main() {
     float adjClipBlend = saturate(clipBlend);
     historyColor = mix(historyColor, currentColor, adjClipBlend);
 
-    int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
-    ivec2 pixelOffset = pixelOffsets[offsetIdx];
-
-    uint materialIdx = texelFetch(currentMaterialIdxTexture, pixel, 0).r;
+    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 	Material material = UnpackMaterial(materialIdx);
 
     float roughness = texelFetch(roughnessMetallicAoTexture, pixel, 0).r;
@@ -261,23 +266,26 @@ void main() {
 
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
 
-    ivec2 historyPixel = ivec2(vec2(pixel) + velocity * resolution);
+    ivec2 historyPixel = ivec2(vec2(pixel) + vec2(0.5) + velocity * resolution);
     float maxConfidence = 0.0;
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges
-    for (int i = 0; i < 4; i++) {
-        ivec2 offsetPixel = historyPixel + pixelOffsets[i];
+    for (int i = 0; i < 9; i++) {
+        ivec2 offsetPixel = historyPixel + offsets[i];
         float confidence = 1.0;
 
-        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
-        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+        uint historyMaterialIdx = texelFetch(materialIdxTexture, offsetPixel, 0).r;
+        //confidence *= historyMaterialIdx != materialIdx ? 0.1 : 1.0;
 
-        vec3 historyNormal = 2.0 * texelFetch(historyNormalTexture, offsetPixel, 0).rgb - 1.0;
-        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+        vec3 historyNormal = 2.0 * texelFetch(normalTexture, offsetPixel, 0).rgb - 1.0;
+        //confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
 
         float historyDepth = texelFetch(depthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-        confidence = min(1.0 , exp(-abs(linearDepth - historyLinearDepth) / linearDepth));
+        //confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+
+        confidence = exp(-abs(1.0 - max(0.0, dot(normal, historyNormal))))
+            * exp(-abs(historyLinearDepth - linearDepth));
 
         maxConfidence = max(maxConfidence, confidence);
     }
@@ -285,7 +293,7 @@ void main() {
     factor *= maxConfidence;
 
     float historyLength = historyMoments.b;
-    if (factor == 0.0) {
+    if (factor <= 0.1) {
         historyLength = 0.0;
         currentMoments.g = 1.0;
         currentMoments.r = 0.0;

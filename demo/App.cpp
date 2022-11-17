@@ -54,6 +54,7 @@ void App::LoadContent() {
 	scene.Add(&directionalLight);
 
 	scene.ao = new Atlas::Lighting::AO(16);
+	scene.ao->rt = true;
 	scene.reflection = new Atlas::Lighting::Reflection(1);
 	scene.reflection->useShadowMap = true;
 
@@ -103,6 +104,16 @@ void App::Update(float deltaTime) {
 
 	mouseHandler.Update(&camera, deltaTime);
 	keyboardHandler.Update(&camera, deltaTime);
+
+	if (rotateCamera) {
+		camera.rotation.y += rotateCameraSpeed * cos(Atlas::Clock::Get());
+		mouseHandler.Reset(&camera);
+	}
+
+	if(moveCamera) {
+		camera.location += camera.right * moveCameraSpeed * cos(Atlas::Clock::Get());
+		mouseHandler.Reset(&camera);
+	}
 
 	camera.UpdateView();
 	camera.UpdateProjection();
@@ -190,6 +201,8 @@ void App::Render(float deltaTime) {
 			ImGui::Text(("Camera location: " + vecToString(camera.location)).c_str());
 			ImGui::Text(("Scene dimensions: " + vecToString(sceneAABB.min) + " to " + vecToString(sceneAABB.max)).c_str());
 			ImGui::Text(("Scene triangle count: " + std::to_string(triangleCount)).c_str());
+			ImGui::Checkbox("Move camera", &moveCamera);
+			ImGui::Checkbox("Rotate camera", &rotateCamera);
 
 			{
 				const char* items[] = { "Cornell box", "Sponza", "San Miguel",

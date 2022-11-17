@@ -70,6 +70,11 @@ private:
 	bool renderUI = true;
 	bool renderEnvProbe = true;
 	bool spheresVisible = false;
+	 
+	bool rotateCamera = false;
+	bool moveCamera = false;
+	float rotateCameraSpeed = 0.01f;
+	float moveCameraSpeed = 0.1f;
 	
 	int32_t windowWidth;
 	int32_t windowHeight;

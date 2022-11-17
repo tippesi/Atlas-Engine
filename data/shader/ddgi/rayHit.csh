@@ -35,7 +35,7 @@ layout(std430, binding = 3) buffer RayHits {
 
 uniform float seed;
 
-
+#ifdef USE_SHADOW_MAP
 uniform Shadow shadow;
 #endif
 

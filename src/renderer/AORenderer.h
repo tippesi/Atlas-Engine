@@ -10,24 +10,23 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		class RTAORenderer {
+		class AORenderer {
 
 		public:
-			RTAORenderer();
+			AORenderer();
 
 			void Render(Viewport* viewport, RenderTarget* target,
 				Camera* camera, Scene::Scene* scene);
 
 		private:
-			Framebuffer framebuffer;
-			Buffer::VertexArray vertexArray;
-
 			Filter blurFilter;
 			Helper::RayTracingHelper helper;
 
 			Texture::Texture2D blueNoiseTexture;
 
+			Shader::Shader ssaoShader;
 			Shader::Shader rtaoShader;
+			Shader::Shader temporalShader;
 			
 			Shader::Shader horizontalBlurShader;
 			Shader::Shader verticalBlurShader;
