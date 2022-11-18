@@ -19,7 +19,7 @@ namespace Atlas {
 			int32_t sampleCount = 16;
 
 			float radius = 3.0f;
-			float strength = 2.0f;
+			float strength = 1.0f;
 
 			bool enable = true;
 			bool rt = false;

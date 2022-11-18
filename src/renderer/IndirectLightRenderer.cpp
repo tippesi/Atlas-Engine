@@ -41,15 +41,16 @@ namespace Atlas {
 				shader.GetUniform("volumeMax")->SetValue(vec3(0.0f));
 			}
 
-			auto ssao = scene->ao;
+			auto ao = scene->ao;
 			auto reflection = scene->reflection;
 
 			target->aoTexture.Bind(GL_TEXTURE6);
 			target->GetDownsampledTextures(target->GetAOResolution())->depthTexture->Bind(GL_TEXTURE14);
 			target->reflectionTexture.Bind(GL_TEXTURE16);
-			shader.GetUniform("aoEnabled")->SetValue(ssao && ssao->enable);
+			shader.GetUniform("aoEnabled")->SetValue(ao && ao->enable);
 			shader.GetUniform("aoDownsampled2x")->SetValue(target->GetAOResolution() == RenderResolution::HALF_RES);
 			shader.GetUniform("reflectionEnabled")->SetValue(reflection && reflection->enable);
+			shader.GetUniform("aoStrength")->SetValue(ao && ao->enable ? ao->strength : 1.0f);
 
 			shader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
 			shader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);

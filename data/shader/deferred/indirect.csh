@@ -17,6 +17,7 @@ uniform float indirectStrength = 1.0;
 uniform bool aoEnabled = true;
 uniform bool aoDownsampled2x;
 uniform bool reflectionEnabled = true;
+uniform float aoStrength = 1.0;
 
 // (localSize / 2 + 2)^2
 shared float depths[36];
@@ -155,7 +156,7 @@ void main() {
 	// This normally only accounts for diffuse occlusion, we need seperate terms
 	// for diffuse and specular.
 	float occlusionFactor = aoEnabled ? aoDownsampled2x ? UpsampleAo2x(depth) : texture(aoTexture, texCoord).r : 1.0;
-	indirect *= occlusionFactor;
+	indirect *= pow(occlusionFactor, aoStrength);
 
     vec3 direct = imageLoad(image, pixel).rgb;
     imageStore(image, pixel, vec4(direct + indirect, 0.0));

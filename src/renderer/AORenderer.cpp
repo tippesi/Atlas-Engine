@@ -9,7 +9,7 @@ namespace Atlas {
 
 		AORenderer::AORenderer() {
 
-            const int32_t filterSize = 2;
+            const int32_t filterSize = 4;
             blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
 
             auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("noise.png");
@@ -126,9 +126,9 @@ namespace Atlas {
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
             }
 
-            Profiler::EndAndBeginQuery("Temporal filter");
+            if (ao->rt) {
+                Profiler::EndAndBeginQuery("Temporal filter");
 
-            {
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
@@ -157,9 +157,9 @@ namespace Atlas {
             target->historyAoTexture = target->aoTexture;
             target->historyAoMomentsTexture = target->aoMomentsTexture;
 
-            Profiler::EndAndBeginQuery("Blur");
-
             {
+                Profiler::EndAndBeginQuery("Blur");
+
                 const int32_t groupSize = 256;
 
                 depthTexture->Bind(GL_TEXTURE1);
@@ -174,7 +174,7 @@ namespace Atlas {
                 kernelWeights = std::vector<float>(kernelWeights.begin() + mean, kernelWeights.end());
                 kernelOffsets = std::vector<float>(kernelOffsets.begin() + mean, kernelOffsets.end());
 
-                for (int32_t i = 0; i < 10; i++) {
+                for (int32_t i = 0; i < 5; i++) {
                     ivec2 groupCount = ivec2(res.x / groupSize, res.y);
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
 

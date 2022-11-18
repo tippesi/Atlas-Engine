@@ -57,7 +57,12 @@ namespace Atlas {
 		 * @param width The width of the render target
 		 * @param height The height of the render target
 		 */
-		RenderTarget(int32_t width, int32_t height);
+		explicit RenderTarget(int32_t width, int32_t height);
+
+		/**
+		 * The render target doesn't support copy due to framebuffers
+		 */
+		RenderTarget& operator=(const RenderTarget& that) = delete;
 
 		/**
 		 * Resizes the render target.

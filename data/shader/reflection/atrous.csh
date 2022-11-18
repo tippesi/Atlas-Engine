@@ -119,7 +119,7 @@ void main() {
                                     centerNormal, sampleNormal,
                                     centerLinearDepth, sampleLinearDepth,
                                     centerRoughness, sampleRoughness,
-                                    stdDeviation * 10, 2.0, 
+                                    stdDeviation * 5.0, 2.0, 
                                     1.0, 0.05);
 
             float weight = kernelWeight * edgeStoppingWeight;

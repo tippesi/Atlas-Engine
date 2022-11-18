@@ -99,7 +99,7 @@ void main() {
             ao += hit ? 1.0 : 0.0;
         }
 
-        float result = pow(1.0 - (ao / float(sampleCount)), 1.0);
+        float result = 1.0 - (ao / float(sampleCount));
 
         imageStore(rtaoImage, pixel, vec4(result, 0.0, 0.0, 0.0));
 	}

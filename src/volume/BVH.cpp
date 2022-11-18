@@ -69,7 +69,7 @@ namespace Atlas {
             Log::Message("Max triangles: " + std::to_string(BVHBuilder::maxTriangles));
             Log::Message("Num spatial splits: " + std::to_string(BVHBuilder::spatialSplitCount));
             Log::Message("Surface area: " + std::to_string(BVHBuilder::totalSurfaceArea));
-            Log::Message("Finished BVH build\n");
+            Log::Message("Finished BVH build");
 
         }
 

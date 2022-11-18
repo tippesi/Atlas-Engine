@@ -254,8 +254,8 @@ void main() {
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 	Material material = UnpackMaterial(materialIdx);
 
-    float roughness = texelFetch(roughnessMetallicAoTexture, pixel, 0).r;
-    material.roughness *= material.roughnessMap ? roughness : 1.0;
+    float roughness = material.roughness;
+    roughness *= material.roughnessMap ? texelFetch(roughnessMetallicAoTexture, pixel, 0).r : 1.0;
 
     float factor = clamp(16.0 * log(material.roughness + 1.0), 0.001, 0.95);
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
@@ -275,17 +275,14 @@ void main() {
         float confidence = 1.0;
 
         uint historyMaterialIdx = texelFetch(materialIdxTexture, offsetPixel, 0).r;
-        //confidence *= historyMaterialIdx != materialIdx ? 0.1 : 1.0;
+        confidence *= historyMaterialIdx != materialIdx ? 0.1 : 1.0;
 
         vec3 historyNormal = 2.0 * texelFetch(normalTexture, offsetPixel, 0).rgb - 1.0;
-        //confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
 
         float historyDepth = texelFetch(depthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-        //confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
-
-        confidence = exp(-abs(1.0 - max(0.0, dot(normal, historyNormal))))
-            * exp(-abs(historyLinearDepth - linearDepth));
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) / linearDepth));
 
         maxConfidence = max(maxConfidence, confidence);
     }
@@ -293,7 +290,7 @@ void main() {
     factor *= maxConfidence;
 
     float historyLength = historyMoments.b;
-    if (factor <= 0.1) {
+    if (factor < 0.1 * roughness) {
         historyLength = 0.0;
         currentMoments.g = 1.0;
         currentMoments.r = 0.0;
@@ -308,9 +305,6 @@ void main() {
     float varianceBoost = max(1.0, 4.0 / (historyLength + 1.0));
     float variance = max(0.0, momentsResolve.g - momentsResolve.r * momentsResolve.r);
     variance *= varianceBoost;
-
-    // No spatial filtering for mirror reflections
-    variance = material.roughness < 0.001 ? 0.0 : variance;
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
     imageStore(resolveImage, pixel, vec4(vec3(resolve), variance));

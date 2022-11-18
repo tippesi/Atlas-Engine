@@ -70,7 +70,7 @@ void main() {
 		
     }
 	
-    float result = pow(1.0 - (occlusion / float(sampleCount)), strength);
+    float result = pow(1.0 - (occlusion / float(sampleCount)), 2.0);
     result = depth == 1.0 ? 0.0 : result;
     imageStore(textureOut, pixel, vec4(result, 0.0, 0.0, 0.0));
    

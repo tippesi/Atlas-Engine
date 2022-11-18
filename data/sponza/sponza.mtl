@@ -123,7 +123,7 @@ newmtl column_a
 	map_bump textures\sponza_column_a_bump.png
 
 newmtl floor
-	Ns 70.0000
+	Ns 300.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000

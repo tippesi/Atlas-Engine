@@ -201,8 +201,6 @@ void App::Render(float deltaTime) {
 			ImGui::Text(("Camera location: " + vecToString(camera.location)).c_str());
 			ImGui::Text(("Scene dimensions: " + vecToString(sceneAABB.min) + " to " + vecToString(sceneAABB.max)).c_str());
 			ImGui::Text(("Scene triangle count: " + std::to_string(triangleCount)).c_str());
-			ImGui::Checkbox("Move camera", &moveCamera);
-			ImGui::Checkbox("Rotate camera", &rotateCamera);
 
 			{
 				const char* items[] = { "Cornell box", "Sponza", "San Miguel",
@@ -372,7 +370,7 @@ void App::Render(float deltaTime) {
 						This is only possible when cascaded shadow maps are not used.");
 				}
 				ImGui::Checkbox("Enable GI in reflection", &reflection->gi);
-				ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
+				// ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
 				ImGui::SliderFloat("Radiance Limit##Reflection", &reflection->radianceLimit, 0.0f, 10.0f);
 				ImGui::SliderFloat("Bias##Reflection", &reflection->bias, 0.0f, 1.0f);
 			}
@@ -381,6 +379,10 @@ void App::Render(float deltaTime) {
 				ImGui::SliderFloat("Speed##Camera", &cameraSpeed, 0.0f, 20.0f);
 				ImGui::SliderFloat("FOV##Camera", &camera.fieldOfView, 0.0f, 90.0f);
 				keyboardHandler.speed = cameraSpeed;
+				ImGui::Separator();
+				ImGui::Text("Camera debugging");
+				ImGui::Checkbox("Move camera", &moveCamera);
+				ImGui::Checkbox("Rotate camera", &rotateCamera);
 			}
 			if (ImGui::CollapsingHeader("Fog")) {
 				ImGui::Checkbox("Enable##Fog", &fog->enable);
@@ -617,6 +619,7 @@ bool App::LoadScene() {
 		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
 		// Other scene related settings apart from the mesh
+		directionalLight.direction = glm::vec3(0.0f, -1.0f, 0.33f);
 		directionalLight.intensity = 100.0f;
 		directionalLight.GetVolumetric()->intensity = 0.28f;
 		scene.irradianceVolume->SetRayCount(128, 32);
