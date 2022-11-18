@@ -11,9 +11,9 @@ namespace Atlas {
 
     namespace Volume {
 
-        class BVH2Node {
+        class BVHNode {
         public:
-            BVH2Node() {}
+            BVHNode() {}
 
             AABB leftAABB;
             AABB rightAABB;
@@ -21,14 +21,6 @@ namespace Atlas {
             int32_t leftPtr = 0;
             int32_t rightPtr = 0;
 
-        };
-
-        class BVH4Node {
-        public:
-            BVH4Node() {}
-
-            AABB childrenBounds[4];
-            int32_t childrenPtr[4];
         };
 
         class BVHTriangle {
@@ -43,6 +35,40 @@ namespace Atlas {
         class BVHBuilder {
 
         public:
+            struct Ref {
+                uint32_t idx = 0;
+                bool endOfNode = false;
+                AABB aabb = InitialAABB();
+            };
+
+            BVHBuilder(const AABB aabb, const std::vector<Ref> refs,
+                uint32_t depth, const float minOverlap, const uint32_t binCount = 128);
+
+            ~BVHBuilder();
+
+            void Build(const std::vector<BVHTriangle>& data);
+
+            void Flatten(std::vector<BVHNode>& nodes, std::vector<Ref>& refs);
+
+            BVHBuilder* leftChild = nullptr;
+            BVHBuilder* rightChild = nullptr;
+
+            uint32_t depth;
+            uint32_t binCount;
+
+            float minOverlap;
+            float nodeCost;
+
+            AABB aabb;
+            std::vector<Ref> refs;
+
+            static uint32_t maxDepth;
+            static uint32_t minTriangles;
+            static uint32_t maxTriangles;
+            static uint32_t spatialSplitCount;
+            static float totalSurfaceArea;
+
+        private:
             struct Bin {
             public:
                 AABB aabb = InitialAABB();
@@ -52,89 +78,6 @@ namespace Atlas {
                 uint32_t exit = 0;
             };
 
-            struct Ref {
-                uint32_t idx = 0;
-                bool endOfNode = false;
-                AABB aabb = InitialAABB();
-            };
-
-            enum Quality {
-                LOW = 0,
-                MEDIUM,
-                HIGH
-            };
-
-            struct Settings {
-                int32_t quality = Quality::MEDIUM;
-                int32_t binCount = 128;
-                int32_t minDepthBinCount = 16;
-                int32_t maxSplitDepth = 16;
-                int32_t minLeafSize = 8;
-                float minOverlap = 10e-6f;
-            };
-
-            class ThreadContext {
-
-            public:
-                ThreadContext(const uint32_t binCount, const size_t refEstimate) {
-                    bins.resize(binCount);
-                    rightAABBs.resize(binCount);
-
-                    leftRefs.reserve(refEstimate / 2);
-                    rightRefs.reserve(refEstimate / 2);
-                }
-
-                std::vector<Bin> bins;
-                std::vector<AABB> rightAABBs;
-
-                std::vector<Ref> leftRefs;
-                std::vector<Ref> rightRefs;
-
-            };
-
-            class Node {
-            public:
-                Node() = default;
-
-                Node(int32_t numChildren);
-
-                Node(const int32_t depth, const AABB& aabb, int32_t numChildren);
-
-                void Flatten(std::vector<BVH2Node>& nodes, std::vector<BVHBuilder::Ref>& refs);
-
-                void Flatten(std::vector<BVH4Node>& nodes, std::vector<BVHBuilder::Ref>& refs);
-
-                void Collapse(int32_t maxChildren = 4);
-
-                void Clear();
-
-                Node** children = nullptr;
-                std::vector<AABB> childrenBounds;
-                int32_t numChildren = 0;
-                int32_t depth = 0;
-
-                AABB aabb;
-
-                std::vector<BVHBuilder::Ref> refs;
-
-            private:
-                void ClearOwnMemory();
-
-            };
-
-            BVHBuilder(const BVHTriangle* data, size_t dataCount);
-
-            ~BVHBuilder();
-
-            void Build();
-
-            void Build(ThreadContext& context, Node* node);
-
-            Node* node = nullptr;
-            
-            Settings settings;
-
-        private:
             struct Split {
                 float cost = std::numeric_limits<float>::max();
                 int32_t axis = -1;
@@ -145,37 +88,51 @@ namespace Atlas {
                 AABB rightAABB = InitialAABB();
             };
 
-            Split FindObjectSplitBinned(ThreadContext& context, Node* node);
+            Split FindObjectSplit();
 
-            Split FindObjectSplit(ThreadContext& context, Node* node);
-
-            void PerformObjectSplitBinned(ThreadContext& context, Node* node,
-                std::vector<Ref>& rightRefs,
+            void PerformObjectSplit(std::vector<Ref>& rightRefs,
                 std::vector<Ref>& leftRefs, Split& split);
 
-            void PerformObjectSplit(ThreadContext& context, Node* node,
-                std::vector<Ref>& rightRefs,
-                std::vector<Ref>& leftRefs, Split& split);
+            Split FindSpatialSplit(const std::vector<BVHTriangle>& data);
 
-            Split FindSpatialSplit(ThreadContext& context, Node* node);
-
-            void PerformSpatialSplit(ThreadContext& context, Node* node,
+            void PerformSpatialSplit(const std::vector<BVHTriangle>& data,
                 std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs, Split& split);
-
-            Split PerformMedianSplit(ThreadContext& context, Node* node,
-                std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs);
 
             void SplitReference(const BVHTriangle triangle, Ref currentRef,
                 Ref& leftRef, Ref& rightRef, const float planePos, const int32_t axis);
 
-            void CreateLeaf(ThreadContext& context);
+            Split PerformMedianSplit(std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs);
+
+            void CreateLeaf();
 
             static AABB InitialAABB();
 
-            const BVHTriangle* data;
+        };
 
-            uint32_t binCount = 128;
-            float minOverlap = 0.0f;
+
+        class BVH {
+
+        public:
+            BVH() = default;
+
+            BVH(std::vector<AABB>& aabbs, std::vector<BVHTriangle>& data);
+
+            bool GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest,
+                glm::vec3& intersection);
+
+            bool GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest,
+                glm::vec3& intersection, float max);
+
+            bool GetIntersectionAny(std::vector<std::pair<int32_t, float>>& stack, Ray ray, float max);
+
+            std::vector<BVHNode>& GetTree();
+
+            void Clear();
+
+            std::vector<AABB> aabbs;
+            std::vector<BVHTriangle> data;
+
+            std::vector<BVHNode> nodes;
 
         };
 

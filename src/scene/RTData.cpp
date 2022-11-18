@@ -110,6 +110,7 @@ namespace Atlas {
 
 			std::vector<Triangle> triangles(triangleCount);
 			
+			std::vector<Volume::AABB> aabbs(triangleCount);
 			std::vector<Volume::BVHTriangle> bvhTriangles(triangleCount);
 
 			triangleCount = 0;
@@ -151,6 +152,8 @@ namespace Atlas {
 					bvhTriangles[k].v2 = triangles[k].v2;
 					bvhTriangles[k].idx = k;
 
+					aabbs[k] = Volume::AABB(min, max);
+
 				}
 
 				triangleCount += actorTriangleCount;
@@ -168,26 +171,14 @@ namespace Atlas {
 			materialIndices.shrink_to_fit();
 
 			// Generate BVH
-			auto bvhBuilder = Volume::BVHBuilder(bvhTriangles.data(), bvhTriangles.size());
-
-			bvhBuilder.settings.minLeafSize = 2;
-			bvhBuilder.settings.quality = Volume::BVHBuilder::Quality::MEDIUM;
-			bvhBuilder.settings.binCount = 128;
-
-			bvhBuilder.Build();
-
-			bvhBuilder.node->Collapse(4);
-
-			std::vector<Volume::BVH4Node> nodes;
-			std::vector<Volume::BVHBuilder::Ref> refs;
-			bvhBuilder.node->Flatten(nodes, refs);
+			auto bvh = Volume::BVH(aabbs, bvhTriangles);
 
 			std::vector<GPUTriangle> gpuTriangles;
 			std::vector<BVHTriangle> gpuBvhTriangles;
 
-			for (auto& ref : refs) {
+			for (auto& bvhTriangle : bvh.data) {
 
-				auto& triangle = triangles[ref.idx];
+				auto& triangle = triangles[bvhTriangle.idx];
 
 				auto v0v1 = triangle.v1 - triangle.v0;
 				auto v0v2 = triangle.v2 - triangle.v0;
@@ -241,12 +232,12 @@ namespace Atlas {
 				gpuTriangle.v1 = vec4(triangle.v1, cn1);
 				gpuTriangle.v2 = vec4(triangle.v2, cn2);
 				gpuTriangle.d0 = vec4(cuv0, cuv1, cuv2, reinterpret_cast<float&>(triangle.materialIdx));
-				gpuTriangle.d1 = vec4(ct, cbt, ref.endOfNode ? 1.0f : -1.0f, 0.0f);
+				gpuTriangle.d1 = vec4(ct, cbt, bvhTriangle.endOfNode ? 1.0f : -1.0f, 0.0f);
 
 				gpuTriangles.push_back(gpuTriangle);
 
 				BVHTriangle gpuBvhTriangle;
-				gpuBvhTriangle.v0 = vec4(triangle.v0, ref.endOfNode ? 1.0f : -1.0f);
+				gpuBvhTriangle.v0 = vec4(triangle.v0, bvhTriangle.endOfNode ? 1.0f : -1.0f);
 				gpuBvhTriangle.v1 = vec4(triangle.v1, reinterpret_cast<float&>(triangle.materialIdx));
 				gpuBvhTriangle.v2 = vec4(triangle.v2, 0.0f);
 
@@ -257,6 +248,10 @@ namespace Atlas {
 			triangles.clear();
 			triangles.shrink_to_fit();
 
+			// Free memory and upload data instantly
+			bvh.data.clear();
+			bvh.data.shrink_to_fit();
+
 			// Upload triangles
 			triangleBuffer.SetSize(gpuTriangles.size());
 			triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
@@ -266,121 +261,18 @@ namespace Atlas {
 
 			glFinish();
 
-			auto rootNode = bvhBuilder.node;
-
+			auto& nodes = bvh.GetTree();
 			auto gpuNodes = std::vector<GPUBVHNode>(nodes.size());
 			// Copy to GPU format
 			for (size_t i = 0; i < nodes.size(); i++) {
-				auto quantize = [](vec3 min, vec3 max) {
-					auto center = 0.5f * (min + max);
-					auto lenCenter = glm::distance(max, center);
-					auto out = glm::normalize(max - center);
+				gpuNodes[i].leftPtr = nodes[i].leftPtr;
+				gpuNodes[i].rightPtr = nodes[i].rightPtr;
 
-					auto factor = 0.00f;
-					/*
-					while (factor < 1.0f) {
-						auto emax = center + out * (lenCenter + lenCenter * factor);
-						auto emin = center - out * (lenCenter + lenCenter * factor);
+				gpuNodes[i].leftAABB.min = nodes[i].leftAABB.min;
+				gpuNodes[i].leftAABB.max = nodes[i].leftAABB.max;
 
-						bool error = false;
-						for (int32_t i = 0; i < 3; i++) {
-							auto minmax = glm::unpackHalf2x16(glm::packHalf2x16(glm::vec2(emin[i], emax[i])));
-							if (minmax.x > min[i] || minmax.y < max[i]) {
-								error = true; break;
-							}
-						}
-
-						if (error) {
-							factor *= 2.0f;
-						}
-						else {
-							break;
-						}
-					}					
-					*/
-					/*
-					max = center + out * (lenCenter + lenCenter * factor);
-					min = center - out * (lenCenter + lenCenter * factor);
-					*/
-
-					return ivec3(glm::packHalf2x16(glm::vec2(min.x, min.y)),
-						glm::packHalf2x16(glm::vec2(min.z, max.x)),
-						glm::packHalf2x16(glm::vec2(max.y, max.z)));
-				};
-
-				/*
-				if (nodes[i].leftPtr < 0) {
-					if (~nodes[i].leftPtr >= gpuTriangles.size()) {
-						printf("Error\n");
-					}
-				}
-				else if (nodes[i].leftPtr == 0) {
-					printf("Error");
-				}
-				else {
-					if (nodes[i].leftPtr >= nodes.size()) {
-						printf("Error\n");
-					}
-				}
-
-				if (nodes[i].rightPtr < 0) {
-					if (~nodes[i].rightPtr >= gpuTriangles.size()) {
-						printf("Error\n");
-					}
-				}
-				else if (nodes[i].rightPtr == 0) {
-					printf("Error");
-				}
-				else {
-					if (nodes[i].rightPtr >= nodes.size()) {
-						printf("Error\n");
-					}
-				}
-				*/
-				/*
-				gpuNodes[i].data0.w = reinterpret_cast<uint32_t&>(nodes[i].leftPtr);
-				gpuNodes[i].data1.w = reinterpret_cast<uint32_t&>(nodes[i].rightPtr);
-				gpuNodes[i].data2.w = 0;
-				gpuNodes[i].data3.w = 0;
-
-				auto aabb0 = quantize(nodes[i].leftAABB.min, nodes[i].leftAABB.max);
-				auto aabb1 = quantize(nodes[i].rightAABB.min, nodes[i].rightAABB.max);
-
-				gpuNodes[i].data0.x = aabb0.x;
-				gpuNodes[i].data0.y = aabb0.y;
-				gpuNodes[i].data0.z = aabb0.z;
-
-				gpuNodes[i].data1.x = aabb1.x;
-				gpuNodes[i].data1.y = aabb1.y;
-				gpuNodes[i].data1.z = aabb1.z;
-				*/
-				
-				gpuNodes[i].data0.w = reinterpret_cast<uint32_t&>(nodes[i].childrenPtr[0]);
-				gpuNodes[i].data1.w = reinterpret_cast<uint32_t&>(nodes[i].childrenPtr[1]);
-				gpuNodes[i].data2.w = reinterpret_cast<uint32_t&>(nodes[i].childrenPtr[2]);
-				gpuNodes[i].data3.w = reinterpret_cast<uint32_t&>(nodes[i].childrenPtr[3]);
-
-				auto aabb0 = quantize(nodes[i].childrenBounds[0].min, nodes[i].childrenBounds[0].max);
-				auto aabb1 = quantize(nodes[i].childrenBounds[1].min, nodes[i].childrenBounds[1].max);
-				auto aabb2 = quantize(nodes[i].childrenBounds[2].min, nodes[i].childrenBounds[2].max);
-				auto aabb3 = quantize(nodes[i].childrenBounds[3].min, nodes[i].childrenBounds[3].max);
-
-				gpuNodes[i].data0.x = aabb0.x;
-				gpuNodes[i].data0.y = aabb0.y;
-				gpuNodes[i].data0.z = aabb0.z;
-
-				gpuNodes[i].data1.x = aabb1.x;
-				gpuNodes[i].data1.y = aabb1.y;
-				gpuNodes[i].data1.z = aabb1.z;
-
-				gpuNodes[i].data2.x = aabb2.x;
-				gpuNodes[i].data2.y = aabb2.y;
-				gpuNodes[i].data2.z = aabb2.z;
-
-				gpuNodes[i].data3.x = aabb3.x;
-				gpuNodes[i].data3.y = aabb3.y;
-				gpuNodes[i].data3.z = aabb3.z;
-				
+				gpuNodes[i].rightAABB.min = nodes[i].rightAABB.min;
+				gpuNodes[i].rightAABB.max = nodes[i].rightAABB.max;
 			}
 
 			// Free original node memory
