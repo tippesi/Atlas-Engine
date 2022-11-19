@@ -690,7 +690,7 @@ bool App::LoadScene() {
 		mesh.invertUVs = true;
 		mesh.cullBackFaces = false;
 		// Metalness is set to 0.9f
-		for (auto& material : mesh.data.materials) material.metalness = 0.0f;
+		//for (auto& material : mesh.data.materials) material.metalness = 0.0f;
 
 		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), glm::ivec3(20));
 
