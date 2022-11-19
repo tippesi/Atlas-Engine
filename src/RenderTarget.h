@@ -62,6 +62,11 @@ namespace Atlas {
 		/**
 		 * The render target doesn't support copy due to framebuffers
 		 */
+		explicit RenderTarget(const RenderTarget& that) = delete;
+
+		/**
+		 * The render target doesn't support copy due to framebuffers
+		 */
 		RenderTarget& operator=(const RenderTarget& that) = delete;
 
 		/**

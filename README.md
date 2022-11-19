@@ -8,11 +8,9 @@
 [code-quality-image]: https://api.codiga.io/project/10000/score/svg
 [code-quality-url]: https://app.codiga.io/public/project/10000/Atlas-Engine/dashboard
 
-![GI scene](wiki/images/gi.gif) <br/>
-*Realtime GI demo scene* <br/>
-#### The current version is a WIP which means many changes and less stability.
+![GI scene](wiki/images/intel_sponza.gif) <br/>*Realtime Sponza scene with software raytraced GI, AO and reflections (model from [Intel Graphics Research Sample Library](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html))* <br/>
 ## Introduction
-This is a cross platform toy engine that is available on Linux and Windows.
+This is a cross platform toy engine developed in my spare time that is available on Linux and Windows.
 ## Requirements
 - OpenGL 4.6
 - C++17 compatible compiler
@@ -72,5 +70,3 @@ For a code example have a look at the [demo application](https://github.com/tipp
 *Path traced scene*
 ![Island scene](wiki/images/island.gif) <br/>
 *Island demo scene using the terrain and ocean systems* <br/>
-![Gun scene](wiki/images/gun.gif) <br/>
-*PBR rendering* <br/>
