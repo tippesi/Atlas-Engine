@@ -130,6 +130,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     name: Create a new release
+    environment: release
     needs: [windows-build, linux-build]
 
     steps:
@@ -148,6 +149,12 @@ jobs:
       - name: Zip Linux artifact
         run: zip -r "Atlas Engine Demo Linux.zip" "Atlas Engine Demo Linux"
         working-directory: ${{ github.workspace }}
+        
+      - name: "Build Changelog"
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@{latest-release}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create release
         id: create_release
@@ -157,8 +164,16 @@ jobs:
         with:
           tag_name: ${{ github.event.inputs.release_version }}
           release_name: Release ${{ github.event.inputs.release_version }}
-          draft: false
+          draft: true
           prerelease: false
+          body: |
+            # Changes in this release
+            ${{steps.build_changelog.outputs.changelog}}
+            ### Change metrics
+            ${{steps.build_changelog.outputs.changed_files}} files were changed
+            Added ${{steps.build_changelog.outputs.additions}} lines
+            Removed ${{steps.build_changelog.outputs.deletions}} lines
+            ${{steps.build_changelog.outputs.commits}} total commits
 
       - name: Upload Windows Release Asset
         uses: actions/upload-release-asset@v1
