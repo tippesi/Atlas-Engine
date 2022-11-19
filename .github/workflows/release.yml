@@ -150,11 +150,20 @@ jobs:
         run: zip -r "Atlas Engine Demo Linux.zip" "Atlas Engine Demo Linux"
         working-directory: ${{ github.workspace }}
         
+      - name: Create tag
+        uses: actions/github-script@v5
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/${{ github.event.inputs.release_version }}',
+              sha: context.sha
+            })
+        
       - name: Build Changelog
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v3
-        with:
-          commitMode: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
