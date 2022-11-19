@@ -47,12 +47,13 @@ namespace Atlas {
 
 		postProcessTexture = Texture::Texture2D(width, height, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
-		SetSSAOResolution(HALF_RES);
+		SetAOResolution(HALF_RES);
 		SetVolumetricResolution(HALF_RES);
+		SetReflectionResolution(HALF_RES);
 
 		ivec2 halfRes = GetRelativeResolution(HALF_RES);
-		depthDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_R32F, GL_CLAMP_TO_EDGE, GL_NEAREST);
-		normalDownsampled2xTexture = Texture::Texture2D(halfRes.x, halfRes.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		downsampledTarget2x = DownsampledRenderTarget(halfRes);
+		downsampledSwapTarget2x = DownsampledRenderTarget(halfRes);
 
 	}
 
@@ -79,12 +80,13 @@ namespace Atlas {
 		this->width = width;
 		this->height = height;
 
-		SetSSAOResolution(ssaoResolution);
+		SetAOResolution(aoResolution);
 		SetVolumetricResolution(volumetricResolution);
+		SetReflectionResolution(reflectionResolution);
 
 		ivec2 halfRes = GetRelativeResolution(HALF_RES);
-		depthDownsampled2xTexture.Resize(halfRes.x, halfRes.y);
-		normalDownsampled2xTexture.Resize(halfRes.x, halfRes.y);
+		downsampledTarget2x.Resize(halfRes);
+		downsampledSwapTarget2x.Resize(halfRes);
 
 	}
 
@@ -128,19 +130,22 @@ namespace Atlas {
 
 	}
 
-	void RenderTarget::SetSSAOResolution(RenderResolution resolution) {
+	void RenderTarget::SetAOResolution(RenderResolution resolution) {
 
 		auto res = GetRelativeResolution(resolution);
-		ssaoResolution = resolution;
+		aoResolution = resolution;
 
-		ssaoTexture = Texture::Texture2D(res.x, res.y, AE_R16F);
-		swapSsaoTexture = Texture::Texture2D(res.x, res.y, AE_R16F);
+		aoTexture = Texture::Texture2D(res.x, res.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		swapAoTexture = Texture::Texture2D(res.x, res.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+
+		aoMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		historyAoMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 	}
 
-	RenderResolution RenderTarget::GetSSAOResolution() {
+	RenderResolution RenderTarget::GetAOResolution() {
 
-		return ssaoResolution;
+		return aoResolution;
 
 	}
 
@@ -160,20 +165,52 @@ namespace Atlas {
 
 	}
 
-	Texture::Texture2D* RenderTarget::GetDownsampledDepthTexture(RenderResolution resolution) {
+	void RenderTarget::SetReflectionResolution(RenderResolution resolution) {
+
+		auto res = GetRelativeResolution(resolution);
+		reflectionResolution = resolution;
+
+		reflectionTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		swapReflectionTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+
+		reflectionMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		historyReflectionMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+	
+	}
+
+	RenderResolution RenderTarget::GetReflectionResolution() {
+
+		return reflectionResolution;
+
+	}
+
+	DownsampledRenderTarget* RenderTarget::GetDownsampledTextures(RenderResolution resolution) {
 
 		switch (resolution) {
-		case HALF_RES: return &depthDownsampled2xTexture;
-		default: return &depthTexture;
+		case FULL_RES:
+			downsampledTarget1x.depthTexture = &depthTexture;
+			downsampledTarget1x.normalTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT1);
+			downsampledTarget1x.geometryNormalTexture = &normalTexture;
+			downsampledTarget1x.velocityTexture = GetLastVelocity();
+			downsampledTarget1x.roughnessMetallicAoTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3);
+			downsampledTarget1x.materialIdxTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT4);
+			return &downsampledTarget1x;
+		default: return swap ? &downsampledTarget2x : &downsampledSwapTarget2x;
 		}
 
 	}
 
-	Texture::Texture2D* RenderTarget::GetDownsampledNormalTexture(RenderResolution resolution) {
+	DownsampledRenderTarget* RenderTarget::GetDownsampledHistoryTextures(RenderResolution resolution) {
 
 		switch (resolution) {
-		case HALF_RES: return &normalDownsampled2xTexture;
-		default: return &normalTexture;
+		case FULL_RES:
+			downsampledTarget1x.depthTexture = &depthTexture;
+			downsampledTarget1x.normalTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT1);
+			downsampledTarget1x.geometryNormalTexture = &normalTexture;
+			downsampledTarget1x.velocityTexture = GetLastVelocity();
+			downsampledTarget1x.roughnessMetallicAoTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3);
+			return &downsampledTarget1x;
+		default: return swap ? &downsampledSwapTarget2x : &downsampledTarget2x;
 		}
 
 	}

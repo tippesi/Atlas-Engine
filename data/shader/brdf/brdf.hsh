@@ -24,6 +24,13 @@ float RenormalizedDisneyDiffuse(float NdotV, float NdotL, float LdotH, float lin
 
 }
 
+float VisibilitySmithGGXSeparable(float CosTheta, float alpha) {
+
+	float alpha2 = alpha * alpha;
+	return 2.0 / (1.0 + sqrt(alpha2 + (1 - alpha2) * CosTheta * CosTheta));
+
+}
+
 float VisibilitySmithGGXCorrelated(float NdotL, float NdotV, float alpha) {
 
 	float alpha2 = alpha * alpha;

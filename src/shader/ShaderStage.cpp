@@ -275,9 +275,9 @@ namespace Atlas {
                 auto comment = false;
                 auto commentPos = 0;
                 if (!multilineComment) {
-                    commentPos = line.find_first_of("//");
+                    commentPos = line.find("//");
                     comment = commentPos != std::string::npos;
-                    multilineCommentPos = line.find_first_of("/*");
+                    multilineCommentPos = line.find("/*");
                     multilineComment = multilineCommentPos != std::string::npos;
                 }
 
@@ -299,7 +299,6 @@ namespace Atlas {
                     if (directivePos != std::string::npos &&
                         (!comment || directivePos < commentPos)) {
                         directives++;
-                        continuousBuildup++;
                     }
 
                     directivePos = line.find("#if ");
@@ -335,18 +334,6 @@ namespace Atlas {
                     }
 
                     if (directives > 1) continuousBuildup++;
-
-                    auto emptyLine = line.find_first_not_of(" \n\r\t") == std::string::npos;
-                    if (directives == 0 && emptyLine) continuousBuildup++;
-                    if (directives == 0 && !emptyLine) {
-                        // Remove all directive lines after a continous buildup of if(defs)
-                        // Needs to have at least 3 lines to complete a valid buildup
-                        if (!ifdefs.size() && continuousBuildup >= 3) {
-                            for (size_t i = 0; i < continuousBuildup; i++)
-                                lines.pop_back();
-                        }
-                        continuousBuildup = 0;
-                    }
 
                     // If we have a valid directive, we don't want to include
                     // it in the lines of code

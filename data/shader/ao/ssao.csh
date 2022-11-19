@@ -14,7 +14,7 @@ layout(binding = 3) uniform sampler2D randomTexture;
 uniform vec3 samples[64];
 uniform vec2 resolution;
 
-uniform uint sampleCount;
+uniform int sampleCount;
 uniform float radius;
 uniform float strength;
 uniform int frameCount;
@@ -43,7 +43,7 @@ void main() {
 	
     //Create TBN matrix
     vec3 tang = normalize(randomVec - norm * dot(randomVec, norm));
-    vec3 bitang = cross(norm, tang);
+    vec3 bitang = normalize(cross(norm, tang));
     mat3 TBN = mat3(tang, bitang, norm);
 	
     //Calculate occlusion factor
@@ -70,7 +70,7 @@ void main() {
 		
     }
 	
-    float result = pow(1.0 - (occlusion / float(sampleCount)), strength);
+    float result = pow(1.0 - (occlusion / float(sampleCount)), 2.0);
     result = depth == 1.0 ? 0.0 : result;
     imageStore(textureOut, pixel, vec4(result, 0.0, 0.0, 0.0));
    

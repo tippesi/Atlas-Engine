@@ -33,7 +33,7 @@ namespace Atlas {
 
 		float Piecewise1D::Sample(float& pdf, int32_t& offset) {
 
-			auto x = Random::FastCanonicalUniform();
+			auto x = Random::SampleFastUniformFloat();
 			offset = BinarySearch(x);
 
 			auto dx = x - cdf[offset];

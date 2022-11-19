@@ -8,7 +8,8 @@
 #include "../lighting/Sky.h"
 #include "../lighting/Fog.h"
 #include "../lighting/IrradianceVolume.h"
-#include "../lighting/SSAO.h"
+#include "../lighting/AO.h"
+#include "../lighting/Reflection.h"
 #include "../ocean/Ocean.h"
 #include "../postprocessing/PostProcessing.h"
 #include "../Decal.h"
@@ -110,7 +111,8 @@ namespace Atlas {
 			Lighting::Sky sky;
 			Lighting::Fog* fog = nullptr;
 			Lighting::IrradianceVolume* irradianceVolume = nullptr;
-			Lighting::SSAO* ssao = nullptr;
+			Lighting::AO* ao = nullptr;
+			Lighting::Reflection* reflection = nullptr;
 			PostProcessing::PostProcessing postProcessing;
 
 		private:

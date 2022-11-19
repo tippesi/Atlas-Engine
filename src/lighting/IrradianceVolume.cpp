@@ -206,7 +206,7 @@ namespace Atlas {
 			auto rayCount = float(rayDirBuffer.GetElementCount());
 			for (float i = 0.0f; i < rayCount; i += 1.0f)
 				rayDirs.push_back(vec4(fibonacciSphere(i, rayCount), 0.0));
-			sortRays(rayDirs);
+			//sortRays(rayDirs);
 			rayDirBuffer.SetData(rayDirs.data(), 0, rayDirs.size());
 
 			rayDirs.clear();
@@ -215,7 +215,7 @@ namespace Atlas {
 			rayCount = float(rayDirInactiveBuffer.GetElementCount());
 			for (float i = 0.0f; i < rayCount; i += 1.0f)
 				rayDirs.push_back(vec4(fibonacciSphere(i, rayCount), 0.0));
-			sortRays(rayDirs);
+			//sortRays(rayDirs);
 			rayDirInactiveBuffer.SetData(rayDirs.data(), 0, rayDirs.size());
 		}
 

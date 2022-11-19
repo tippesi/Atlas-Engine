@@ -16,7 +16,7 @@
 class App : public Atlas::EngineInstance {
 
 public:
-	App() : EngineInstance("Atlas Engine Demo", 1280, 720, WINDOW_FLAGS) {}
+	App() : EngineInstance("Atlas Engine Demo", 1920, 1080, WINDOW_FLAGS) {}
 
 	virtual void LoadContent() final;
 
@@ -70,6 +70,11 @@ private:
 	bool renderUI = true;
 	bool renderEnvProbe = true;
 	bool spheresVisible = false;
+	 
+	bool rotateCamera = false;
+	bool moveCamera = false;
+	float rotateCameraSpeed = 0.01f;
+	float moveCameraSpeed = 0.1f;
 	
 	int32_t windowWidth;
 	int32_t windowHeight;

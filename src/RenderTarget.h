@@ -11,6 +11,39 @@ namespace Atlas {
 		HALF_RES
 	};
 
+	class DownsampledRenderTarget {
+	public:
+		DownsampledRenderTarget() = default;
+
+		DownsampledRenderTarget(ivec2 resolution) {
+			depthTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R32F, GL_CLAMP_TO_EDGE, GL_NEAREST);
+			normalTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+			geometryNormalTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+			roughnessMetallicAoTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
+			velocityTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_NEAREST);
+			offsetTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R8I, GL_CLAMP_TO_EDGE, GL_LINEAR);
+			materialIdxTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST);
+		}
+
+		void Resize(ivec2 resolution) {
+			depthTexture->Resize(resolution.x, resolution.y);
+			normalTexture->Resize(resolution.x, resolution.y);
+			geometryNormalTexture->Resize(resolution.x, resolution.y);
+			roughnessMetallicAoTexture->Resize(resolution.x, resolution.y);
+			velocityTexture->Resize(resolution.x, resolution.y);
+			offsetTexture->Resize(resolution.x, resolution.y);
+			materialIdxTexture->Resize(resolution.x, resolution.y);
+		}
+
+		Texture::Texture2D* depthTexture = nullptr;
+		Texture::Texture2D* normalTexture = nullptr;
+		Texture::Texture2D* geometryNormalTexture = nullptr;
+		Texture::Texture2D* roughnessMetallicAoTexture = nullptr;
+		Texture::Texture2D* velocityTexture = nullptr;
+		Texture::Texture2D* offsetTexture = nullptr;
+		Texture::Texture2D* materialIdxTexture = nullptr;
+	};
+
 	class RenderTarget {
 
 	public:
@@ -24,7 +57,17 @@ namespace Atlas {
 		 * @param width The width of the render target
 		 * @param height The height of the render target
 		 */
-		RenderTarget(int32_t width, int32_t height);
+		explicit RenderTarget(int32_t width, int32_t height);
+
+		/**
+		 * The render target doesn't support copy due to framebuffers
+		 */
+		explicit RenderTarget(const RenderTarget& that) = delete;
+
+		/**
+		 * The render target doesn't support copy due to framebuffers
+		 */
+		RenderTarget& operator=(const RenderTarget& that) = delete;
 
 		/**
 		 * Resizes the render target.
@@ -60,15 +103,15 @@ namespace Atlas {
 		/*
 		 * Sets the render resolution for screen space ambient occlusion
 		 */
-		void SetSSAOResolution(RenderResolution resolution);
+		void SetAOResolution(RenderResolution resolution);
 
 		/*
 		 * Gets the render resolution for screen space ambient occlusion
 		 */
-		RenderResolution GetSSAOResolution();
+		RenderResolution GetAOResolution();
 
 		/*
-		 * Sets the rende resolution for volumetric effetcs
+		 * Sets the render resolution for volumetric effetcs
 		 */
 		void SetVolumetricResolution(RenderResolution resolution);
 
@@ -77,9 +120,19 @@ namespace Atlas {
 		 */
 		RenderResolution GetVolumetricResolution();
 
-		Texture::Texture2D* GetDownsampledDepthTexture(RenderResolution resolution);
+		/*
+		 * Sets the render resolution for reflections
+		 */
+		void SetReflectionResolution(RenderResolution resolution);
 
-		Texture::Texture2D* GetDownsampledNormalTexture(RenderResolution resolution);
+		/*
+		 * Gets the render resolution for reflections
+		 */
+		RenderResolution GetReflectionResolution();
+
+		DownsampledRenderTarget* GetDownsampledTextures(RenderResolution resolution);
+
+		DownsampledRenderTarget* GetDownsampledHistoryTextures(RenderResolution resolution);
 
 		Texture::Texture2D* GetHistory();
 
@@ -95,19 +148,25 @@ namespace Atlas {
 
 		Texture::Texture2D postProcessTexture;
 
-		Texture::Texture2D ssaoTexture;
-		Texture::Texture2D swapSsaoTexture;
+		Texture::Texture2D aoTexture;
+		Texture::Texture2D swapAoTexture;
+		Texture::Texture2D historyAoTexture;
+		Texture::Texture2D aoMomentsTexture;
+		Texture::Texture2D historyAoMomentsTexture;
 
 		Texture::Texture2D volumetricTexture;
 		Texture::Texture2D swapVolumetricTexture;
+
+		Texture::Texture2D reflectionTexture;
+		Texture::Texture2D swapReflectionTexture;
+		Texture::Texture2D historyReflectionTexture;
+		Texture::Texture2D reflectionMomentsTexture;
+		Texture::Texture2D historyReflectionMomentsTexture;
 
 	private:
 		Texture::Texture2D depthTexture;
 		Texture::Texture2D normalTexture;
 		Texture::Texture2D stencilTexture;
-
-		Texture::Texture2D depthDownsampled2xTexture;
-		Texture::Texture2D normalDownsampled2xTexture;
 
 		Texture::Texture2D velocityTexture;
 		Texture::Texture2D swapVelocityTexture;
@@ -115,11 +174,16 @@ namespace Atlas {
 		Texture::Texture2D historyTexture;
 		Texture::Texture2D swapHistoryTexture;
 
+		DownsampledRenderTarget downsampledTarget1x;
+		DownsampledRenderTarget downsampledTarget2x;
+		DownsampledRenderTarget downsampledSwapTarget2x;
+
 		int32_t width = 0;
 		int32_t height = 0;
 
-		RenderResolution ssaoResolution;
+		RenderResolution aoResolution;
 		RenderResolution volumetricResolution;
+		RenderResolution reflectionResolution;
 
 		bool swap = false;
 

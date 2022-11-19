@@ -1,26 +1,4 @@
-// Shadow cascades
-struct Cascade {
-	
-	float distance;
-	float texelSize;
-	mat4 cascadeSpace;	
-	
-};
-
-//Shadow struct has to be implemented like this
-struct Shadow {
-	
-	float distance;
-	float bias;
-	
-	float cascadeBlendDistance;
-	
-	int cascadeCount;
-	vec2 resolution;
-	
-	Cascade cascades[6];
-	
-};
+#include <shadow.hsh>
 
 //Light struct has to be implemented like this
 struct Light {

@@ -14,6 +14,7 @@ uniform vec4 rectangleColor;
 in vec2 fScreenPosition;
 uniform vec4 rectangleBlendArea;
 uniform vec4 rectangleClipArea;
+uniform bool invert = false;
 
 void main() {
 
@@ -22,11 +23,19 @@ void main() {
 		fScreenPosition.x > rectangleClipArea.x + rectangleClipArea.z ||
 		fScreenPosition.y > rectangleClipArea.y + rectangleClipArea.w)
 		discard;
+
+#if defined(TEXTURE2D) || defined(TEXTURE2D_ARRAY)
+	vec2 texCoord = fTexCoord;
+
+	if (invert) {
+		texCoord.y = 1.0 - texCoord.y;
+	}
+#endif
 	
 #ifdef TEXTURE2D
-	color = texture(rectangleTexture, vec2(fTexCoord));
+	color = texture(rectangleTexture, vec2(texCoord));
 #elif defined(TEXTURE2D_ARRAY)
-	color = texture(rectangleTexture, vec3(fTexCoord, textureDepth));
+	color = texture(rectangleTexture, vec3(texCoord, textureDepth));
 #else
 	color = rectangleColor;
 #endif

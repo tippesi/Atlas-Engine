@@ -183,6 +183,14 @@ namespace Atlas {
              */
             static int32_t GetSuggestedFormat(int32_t channelCount);
 
+            /**
+             * Unbinds any texture from the texture unit.
+             * @param target The target of the unbind, e.g. GL_TEXTURE_2D
+             * @param unit The texture unit which should be unbound.
+             * @note The texture unit should be between GL_TEXTURE0-GL_TEXTURE_MAX
+             */
+            static void Unbind(uint32_t target, uint32_t unit);
+
             int32_t width = 0;
             int32_t height = 0;
 

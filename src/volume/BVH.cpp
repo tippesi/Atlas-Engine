@@ -69,7 +69,7 @@ namespace Atlas {
             Log::Message("Max triangles: " + std::to_string(BVHBuilder::maxTriangles));
             Log::Message("Num spatial splits: " + std::to_string(BVHBuilder::spatialSplitCount));
             Log::Message("Surface area: " + std::to_string(BVHBuilder::totalSurfaceArea));
-            Log::Message("Finished BVH build\n");
+            Log::Message("Finished BVH build");
 
         }
 
@@ -250,13 +250,8 @@ namespace Atlas {
             // If we haven't found a cost improvement we create a leaf node
             if ((objectSplit.axis < 0 || objectSplit.cost >= nodeCost) &&
                 (spatialSplit.axis < 0 || spatialSplit.cost >= nodeCost)) {
-                if (refs.size() >= 2 * refCount) {
-                    split = PerformMedianSplit(rightRefs, leftRefs);
-                }
-                else {
-                    CreateLeaf();
-                    return;
-                }
+                CreateLeaf();
+                return;
             }
             else {
                 if (spatialSplit.cost < objectSplit.cost) {
@@ -278,7 +273,7 @@ namespace Atlas {
             refs.clear();
             refs.shrink_to_fit();
 
-            if (depth <= 3) {
+            if (depth <= 5) {
                 std::thread leftBuilderThread, rightBuilderThread;
 
                 auto leftLambda = [&]() {
@@ -589,18 +584,70 @@ namespace Atlas {
 
                 if (endBinIdx < split.binIdx) {
                     leftRefs.push_back(ref);
+                    split.leftAABB.Grow(ref.aabb);
                 }
                 else if (startBinIdx >= split.binIdx) {
                     rightRefs.push_back(ref);
+                    split.rightAABB.Grow(ref.aabb);
                 }
-                else {
+            }
+
+            for (const auto& ref : refs) {
+                const auto min = ref.aabb.min[split.axis];
+                const auto max = ref.aabb.max[split.axis];
+
+                const auto startBinIdx = uint32_t(glm::clamp((min - start) * invBinSize,
+                    0.0f, float(depthBinCount) - 1.0f));
+                const auto endBinIdx = uint32_t(glm::clamp((max - start) * invBinSize,
+                    0.0f, float(depthBinCount) - 1.0f));
+
+                if (endBinIdx >= split.binIdx && startBinIdx < split.binIdx) {
                     Ref leftRef, rightRef;
                     SplitReference(data[ref.idx], ref, leftRef,
                         rightRef, split.pos, split.axis);
-                    leftRef.idx = ref.idx;
-                    rightRef.idx = ref.idx;
-                    leftRefs.push_back(leftRef);
-                    rightRefs.push_back(rightRef);
+
+                    auto unsplitLeft = split.leftAABB;
+                    auto unsplitRight = split.rightAABB;
+                    auto duplicateLeft = split.leftAABB;
+                    auto duplicateRight = split.rightAABB;
+
+                    unsplitLeft.Grow(ref.aabb);
+                    unsplitRight.Grow(ref.aabb);
+                    duplicateLeft.Grow(leftRef.aabb);
+                    duplicateRight.Grow(rightRef.aabb);
+
+                    // Original triangle cost
+                    auto leftRefCost = float(leftRefs.size());
+                    auto rightRefCost = float(rightRefs.size());
+                    // Triangle cost with added reference to either right or left side
+                    auto leftModRefCost = float(leftRefs.size() + 1);
+                    auto rightModRefCost = float(rightRefs.size() + 1);
+
+                    auto unsplitLeftSAH = unsplitLeft.GetSurfaceArea() * leftModRefCost +
+                        split.rightAABB.GetSurfaceArea() * rightRefCost;
+                    auto unsplitRightSAH = split.leftAABB.GetSurfaceArea() * leftRefCost +
+                        unsplitRight.GetSurfaceArea() * rightModRefCost;
+                    auto duplicateSAH = duplicateLeft.GetSurfaceArea() * leftModRefCost +
+                        duplicateRight.GetSurfaceArea() * rightModRefCost;
+
+                    auto minSAH = glm::min(duplicateSAH, glm::min(unsplitRightSAH, unsplitLeftSAH));
+
+                    if (minSAH == unsplitLeftSAH) {
+                        split.leftAABB = unsplitLeft;
+                        leftRefs.push_back(ref);
+                    }
+                    else if (minSAH == unsplitRightSAH) {
+                        split.rightAABB = unsplitRight;
+                        rightRefs.push_back(ref);
+                    }
+                    else {
+                        leftRef.idx = ref.idx;
+                        rightRef.idx = ref.idx;
+                        split.leftAABB = duplicateLeft;
+                        split.rightAABB = duplicateRight;
+                        leftRefs.push_back(leftRef);
+                        rightRefs.push_back(rightRef);
+                    }
                 }
             }
 

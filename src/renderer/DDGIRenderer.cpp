@@ -52,6 +52,17 @@ namespace Atlas {
 				return;
 
 			Profiler::BeginQuery("DDGI");
+
+			// Try to get a shadow map
+			auto lights = scene->GetLights();
+			Lighting::Shadow* shadow = nullptr;
+			for (auto light : lights) {
+				if (light->type == AE_DIRECTIONAL_LIGHT) {
+					shadow = light->GetShadow();
+				}
+			}
+
+			rayHitShader.ManageMacro("USE_SHADOW_MAP", volume->useShadowMap);
 			
 			auto& internalVolume = volume->internal;
 			internalVolume.SwapTextures();
@@ -84,8 +95,8 @@ namespace Atlas {
 			helper.SetScene(scene, 8, volume->sampleEmissives);
 			helper.UpdateLights();
 
-			probeStateBuffer.BindBase(9);
-			probeOffsetBuffer.BindBase(10);
+			probeStateBuffer.BindBase(14);
+			probeOffsetBuffer.BindBase(15);
 
 			Profiler::EndAndBeginQuery("Ray generation");
 
@@ -97,9 +108,9 @@ namespace Atlas {
 					auto phi = glm::two_pi<float>() * float(rand()) / float(RAND_MAX);
 
 					auto dir = glm::vec3(
-						2.0f * Random::CanonicalUniform() - 1.0f,
-						2.0f * Random::CanonicalUniform() - 1.0f,
-						2.0f * Random::CanonicalUniform() - 1.0f
+						2.0f * Random::SampleUniformFloat() - 1.0f,
+						2.0f * Random::SampleUniformFloat() - 1.0f,
+						2.0f * Random::SampleUniformFloat() - 1.0f
 					);
 
 					auto epsilon = glm::two_pi<float>() * float(rand()) / float(RAND_MAX);
@@ -121,8 +132,8 @@ namespace Atlas {
 
 			Profiler::EndAndBeginQuery("Ray evaluation");
 
-			lastIrradianceArray.Bind(GL_TEXTURE12);
-			lastMomentsArray.Bind(GL_TEXTURE13);
+			lastIrradianceArray.Bind(GL_TEXTURE24);
+			lastMomentsArray.Bind(GL_TEXTURE25);
 
 			helper.DispatchHitClosest(&rayHitShader, false,
 				[&]() {
@@ -139,6 +150,32 @@ namespace Atlas {
 					rayHitShader.GetUniform("volumeIrradianceRes")->SetValue(volume->irrRes);
 					rayHitShader.GetUniform("volumeMomentsRes")->SetValue(volume->momRes);
 
+					if (shadow && volume->useShadowMap) {
+						auto distance = shadow->longRange ? shadow->distance : shadow->longRangeDistance;
+
+						rayHitShader.GetUniform("shadow.distance")->SetValue(distance);
+						rayHitShader.GetUniform("shadow.bias")->SetValue(shadow->bias);
+						rayHitShader.GetUniform("shadow.cascadeCount")->SetValue(shadow->componentCount);
+						rayHitShader.GetUniform("shadow.resolution")->SetValue(vec2((float)shadow->resolution));
+
+						shadow->maps.Bind(GL_TEXTURE26);
+
+						for (int32_t i = 0; i < shadow->componentCount; i++) {
+							auto cascade = &shadow->components[i];
+							auto frustum = Volume::Frustum(cascade->frustumMatrix);
+							auto corners = frustum.GetCorners();
+							auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
+								abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
+							auto lightSpace = cascade->projectionMatrix * cascade->viewMatrix;
+							rayHitShader.GetUniform("shadow.cascades[" + std::to_string(i) + "].distance")->SetValue(cascade->farDistance);
+							rayHitShader.GetUniform("shadow.cascades[" + std::to_string(i) + "].cascadeSpace")->SetValue(lightSpace);
+							rayHitShader.GetUniform("shadow.cascades[" + std::to_string(i) + "].texelSize")->SetValue(texelSize);
+						}
+					}
+					else {
+						rayHitShader.GetUniform("shadow.distance")->SetValue(0.0f);
+					}
+
 					// Use this buffer instead of the default writeRays buffer of the helper
 					rayHitBuffer.BindBase(3);
 				}
@@ -152,6 +189,8 @@ namespace Atlas {
 
 			// Update the probes
 			{
+				Profiler::BeginQuery("Update irradiance");
+
 				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 				irradianceArray.Bind(GL_WRITE_ONLY, 0);
@@ -169,6 +208,8 @@ namespace Atlas {
 
 				glDispatchCompute(probeCount.x, probeCount.y, probeCount.z);
 
+				Profiler::EndAndBeginQuery("Update moments");
+
 				irradianceArray.Bind(GL_WRITE_ONLY, 0);
 				momentsArray.Bind(GL_WRITE_ONLY, 1);
 
@@ -184,6 +225,8 @@ namespace Atlas {
 				probeMomentsUpdateShader.GetUniform("optimizeProbes")->SetValue(volume->optimizeProbes);
 
 				glDispatchCompute(probeCount.x, probeCount.y, probeCount.z);
+
+				Profiler::EndQuery();
 			}
 
 			Profiler::EndAndBeginQuery("Update probe states");

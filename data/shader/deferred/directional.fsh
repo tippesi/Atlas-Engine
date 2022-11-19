@@ -11,6 +11,8 @@
 #include <../brdf/brdfEval.hsh>
 #include <../common/octahedron.hsh>
 
+layout (binding = 8) uniform sampler2DArrayShadow cascadeMaps;
+
 in vec2 texCoordVS;
 out vec4 colorFS;
 
@@ -45,7 +47,7 @@ void main() {
 	// for transmissive materials
 	vec3 shadowNormal = surface.material.transmissive ? dot(-light.direction, geometryNormal) < 0.0 ? 
 		-geometryNormal : geometryNormal : geometryNormal;
-	shadowFactor = CalculateCascadedShadow(light, surface.P,
+	shadowFactor = CalculateCascadedShadow(light.shadow, cascadeMaps, surface.P,
 		shadowNormal, saturate(dot(-light.direction, shadowNormal))); 
 #endif
 	

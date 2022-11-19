@@ -73,8 +73,6 @@ namespace Atlas {
 			if (scene->vegetation)
 				vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera);
 
-			ddgiRenderer.TraceAndUpdateProbes(scene);
-
 			glEnable(GL_DEPTH_TEST);
 			glEnable(GL_CULL_FACE);
 
@@ -93,6 +91,11 @@ namespace Atlas {
 				jitter.y /= (float)target->GetHeight();
 
 				camera->Jitter(jitter * taa.jitterRange);
+			}
+			else {
+				// Even if there is no TAA we need to update the jitter for other techniques
+				// E.g. the reflections and ambient occlusion use reprojection
+				camera->Jitter(vec2(0.0f));
 			}
 
 			if (scene->sky.probe) {
@@ -147,7 +150,9 @@ namespace Atlas {
 				light->GetShadow()->update = false;
 			}
 
-			materialBuffer.BindBase(0);
+			ddgiRenderer.TraceAndUpdateProbes(scene);
+
+			materialBuffer.BindBase(16);
 
 			target->geometryFramebuffer.Bind(true);
 			target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
@@ -184,8 +189,8 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
-			ssaoRenderer.Render(viewport, target, camera, scene);
-			//rtaoRenderer.Render(viewport, target, camera, scene);
+			aoRenderer.Render(viewport, target, camera, scene);
+			rtrRenderer.Render(viewport, target, camera, scene);
 
 			target->lightingFramebuffer.Bind(true);
 			target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
@@ -243,6 +248,9 @@ namespace Atlas {
 				target->lightingFramebuffer.Unbind();
 			}
 
+			// Swap history and current textures
+			target->Swap();
+
 			vertexArray.Bind();
 
 			if (texture) {
@@ -279,7 +287,7 @@ namespace Atlas {
 		}
 
 		void MasterRenderer::RenderTexture(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-			bool alphaBlending, Framebuffer* framebuffer) {
+			bool alphaBlending, bool invert, Framebuffer* framebuffer) {
 
 			float viewportWidth = (float)viewport->width;
 			float viewportHeight = (float)viewport->height;
@@ -287,12 +295,12 @@ namespace Atlas {
 			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
-			RenderTexture(viewport, texture, x, y, width, height, clipArea, blendArea, alphaBlending, framebuffer);
+			RenderTexture(viewport, texture, x, y, width, height, clipArea, blendArea, alphaBlending, invert, framebuffer);
 
 		}
 
 		void MasterRenderer::RenderTexture(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-			vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
+			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert, Framebuffer* framebuffer) {
 
 			vertexArray.Bind();
 
@@ -315,6 +323,7 @@ namespace Atlas {
 			texture2DScale->SetValue(vec2(width, height));
 			texture2DBlendArea->SetValue(blendArea);
 			texture2DClipArea->SetValue(clipArea);
+			texture2DShader.GetUniform("invert")->SetValue(invert);
 
 			texture->Bind(GL_TEXTURE0);
 
@@ -331,7 +340,7 @@ namespace Atlas {
 		}
 
 		void MasterRenderer::RenderTexture(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x,
-			float y, float width, float height,  bool alphaBlending, Framebuffer* framebuffer) {
+			float y, float width, float height,  bool alphaBlending, bool invert, Framebuffer* framebuffer) {
 
 			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
 			float viewportHeight = (float)(!framebuffer ? viewport->height : framebuffer->height);
@@ -344,7 +353,7 @@ namespace Atlas {
 		}
 
 		void MasterRenderer::RenderTexture(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
-			vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
+			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert, Framebuffer* framebuffer) {
 
 			vertexArray.Bind();
 
@@ -374,6 +383,7 @@ namespace Atlas {
 			texture2DArrayBlendArea->SetValue(blendArea);
 			texture2DArrayClipArea->SetValue(clipArea);
 			texture2DArrayDepth->SetValue((float)depth);
+			texture2DArrayShader.GetUniform("invert")->SetValue(invert);
 
 			texture->Bind(GL_TEXTURE0);
 

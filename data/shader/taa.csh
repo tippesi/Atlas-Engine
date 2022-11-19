@@ -26,7 +26,7 @@ uniform float maxVelocityBlend = 0.5;
 //#define TAA_CLIP // Use clip instead of clamping for better ghosting prevention, introduces more flickering
 #define TAA_BICUBIC // Nearly always use the bicubic sampling for better quality and sharpness under movement
 #define TAA_TONE // Somehow introduces more flickering as well
-#define TAA_DENOISE
+//#define TAA_DENOISE
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),

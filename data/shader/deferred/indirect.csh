@@ -8,6 +8,7 @@ layout (local_size_x = 8, local_size_y = 8) in;
 
 layout(binding = 0, rgba16f) uniform image2D image;
 layout(binding = 6) uniform sampler2D aoTexture;
+layout(binding = 16) uniform sampler2D reflectionTexture;
 layout(binding = 14) uniform sampler2D lowResDepthTexture;
 
 uniform mat4 ivMatrix;
@@ -15,10 +16,13 @@ uniform mat4 ivMatrix;
 uniform float indirectStrength = 1.0;
 uniform bool aoEnabled = true;
 uniform bool aoDownsampled2x;
+uniform bool reflectionEnabled = true;
+uniform float aoStrength = 1.0;
 
 // (localSize / 2 + 2)^2
 shared float depths[36];
 shared float aos[36];
+shared vec3 reflections[36];
 
 const uint depthDataSize = (gl_WorkGroupSize.x / 2 + 2) * (gl_WorkGroupSize.y / 2 + 2);
 const ivec2 unflattenedDepthDataSize = ivec2(gl_WorkGroupSize) / 2 + 2;
@@ -34,6 +38,7 @@ void LoadGroupSharedData() {
 		offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
 		depths[gl_LocalInvocationIndex] = texelFetch(lowResDepthTexture, offset, 0).r;
 		aos[gl_LocalInvocationIndex] = texelFetch(aoTexture, offset, 0).r;
+		reflections[gl_LocalInvocationIndex] = texelFetch(reflectionTexture, offset, 0).rgb;
 	}
 
     barrier();
@@ -67,7 +72,7 @@ int NearestDepth(float referenceDepth, float[9] depthVec) {
 
 }
 
-float Upsample2x(float referenceDepth) {
+float UpsampleAo2x(float referenceDepth) {
 
     ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
 
@@ -82,6 +87,24 @@ float Upsample2x(float referenceDepth) {
 	int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
 
     return aos[offset];
+
+}
+
+vec3 UpsampleReflection2x(float referenceDepth) {
+
+    ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
+
+	float invocationDepths[9];
+
+	for (uint i = 0; i < 9; i++) {
+		int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
+		invocationDepths[i] = depths[sharedMemoryOffset];
+	}
+
+    int idx = NearestDepth(referenceDepth, invocationDepths);
+	int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
+
+    return reflections[offset];
 
 }
 
@@ -122,15 +145,18 @@ void main() {
 	float mipLevel = sqrt(surface.material.roughness) * 9.0;
 	vec3 prefilteredSpecular = textureLod(specularProbe, R, mipLevel).rgb;
 	// We multiply by local sky visibility because the reflection probe only includes the sky
-	vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
-		* prefilteredDiffuseLocal.a;
+	//vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
+	//	* prefilteredDiffuseLocal.a;
+	vec3 indirectSpecular = reflectionEnabled ? true ? UpsampleReflection2x(depth) : texture(reflectionTexture, texCoord).rgb 
+		: vec3(0.0);
 
+	indirectSpecular *= EvaluateIndirectSpecularBRDF(surface);
 	vec3 indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao * indirectStrength;
 	
 	// This normally only accounts for diffuse occlusion, we need seperate terms
 	// for diffuse and specular.
-	float occlusionFactor = aoEnabled ? aoDownsampled2x ? Upsample2x(depth) : texture(aoTexture, texCoord).r : 1.0;
-	indirect *= occlusionFactor;
+	float occlusionFactor = aoEnabled ? aoDownsampled2x ? UpsampleAo2x(depth) : texture(aoTexture, texCoord).r : 1.0;
+	indirect *= pow(occlusionFactor, aoStrength);
 
     vec3 direct = imageLoad(image, pixel).rgb;
     imageStore(image, pixel, vec4(direct + indirect, 0.0));

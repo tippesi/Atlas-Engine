@@ -109,6 +109,19 @@ namespace Atlas {
 
         }
 
+        bool Shader::ManageMacro(const std::string& macro, bool enable) {
+
+            bool hasMacro = HasMacro(macro);
+            if (enable && !hasMacro) {
+                AddMacro(macro);
+            }
+            if (!enable && hasMacro) {
+                RemoveMacro(macro);
+            }
+            return hasMacro != enable;
+
+        }
+
         bool Shader::Compile() {
 
             bool compile = true;

@@ -152,15 +152,15 @@ void main() {
     imageStore(irradiance, volumeCoord, vec4(resultOut, 0.0));
 #else
     vec2 lastResult = texelFetch(momentsVolume, volumeCoord, 0).rg;
-        vec2 resultOut = lastResult;
-        if (result.w > 0.0) {
-            if (probeState == PROBE_STATE_NEW) {
-                resultOut = result.xy / result.w;
-            }
-            else {
-                resultOut = mix(result.xy / result.w, lastResult, hysteresis);
-            }
+    vec2 resultOut = lastResult;
+    if (result.w > 0.0) {
+        if (probeState == PROBE_STATE_NEW) {
+            resultOut = result.xy / result.w;
         }
+        else {
+            resultOut = mix(result.xy / result.w, lastResult, hysteresis);
+        }
+    }
 
     imageStore(moment, volumeCoord, vec4(resultOut, 0.0, 0.0));
     if (gl_LocalInvocationIndex == 0 && optimizeProbes) {

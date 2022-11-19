@@ -8,6 +8,7 @@ layout (local_size_x = 8, local_size_y = 8) in;
 #include <../common/utility.hsh>
 
 layout(binding = 0) uniform sampler2D depthTexture;
+layout (binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 layout(binding = 1, rgba16f) uniform image2D refractionImage;
 
 uniform Light light;
@@ -44,7 +45,7 @@ void main() {
     if (waterDepth <= 0.0)
         return;
 
-    float shadowFactor = max(CalculateCascadedShadow(light, pixelPos, vec3(0.0, 1.0, 0.0), 1.0), 0.0);
+    float shadowFactor = max(CalculateCascadedShadow(light.shadow, cascadeMaps, pixelPos, vec3(0.0, 1.0, 0.0), 1.0), 0.0);
 
     vec3 pos = vec3(pixelPos.x, time * 0.5, pixelPos.z);
     pos *= 2.0;

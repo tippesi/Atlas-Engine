@@ -16,8 +16,8 @@ void App::LoadContent() {
 	auto icon = Atlas::Texture::Texture2D("icon.png");
 	window.SetIcon(&icon);
 	window.Update();
-
-	font = Atlas::Font("font/roboto.ttf", 44, 10);
+	
+	font = Atlas::Font("font/roboto.ttf", 22, 5);
 
 	DisplayLoadingScreen();
 
@@ -53,7 +53,10 @@ void App::LoadContent() {
 	directionalLight.AddVolumetric(10, 0.28f);
 	scene.Add(&directionalLight);
 
-	scene.ssao = new Atlas::Lighting::SSAO(16);
+	scene.ao = new Atlas::Lighting::AO(16);
+	scene.ao->rt = true;
+	scene.reflection = new Atlas::Lighting::Reflection(1);
+	scene.reflection->useShadowMap = true;
 
 	scene.fog = new Atlas::Lighting::Fog();
 	scene.fog->enable = true;
@@ -102,6 +105,16 @@ void App::Update(float deltaTime) {
 	mouseHandler.Update(&camera, deltaTime);
 	keyboardHandler.Update(&camera, deltaTime);
 
+	if (rotateCamera) {
+		camera.rotation.y += rotateCameraSpeed * cos(Atlas::Clock::Get());
+		mouseHandler.Reset(&camera);
+	}
+
+	if(moveCamera) {
+		camera.location += camera.right * moveCameraSpeed * cos(Atlas::Clock::Get());
+		mouseHandler.Reset(&camera);
+	}
+
 	camera.UpdateView();
 	camera.UpdateProjection();
 
@@ -114,7 +127,8 @@ void App::Render(float deltaTime) {
 	static bool firstFrame = true;
 	static bool animateLight = false;
 	static bool pathTrace = false;
-	static bool showAo = false;
+	static bool debugAo = false;
+	static bool debugReflection = false;
 	static bool slowMode = false;
 	
 	window.Clear();
@@ -135,9 +149,13 @@ void App::Render(float deltaTime) {
 		viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
 		masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
 
-		if (showAo) {
-			masterRenderer.RenderTexture(&viewport, &renderTarget->ssaoTexture, 0.0f, 0.0f,
-				viewport.width, viewport.height);
+		if (debugAo) {
+			masterRenderer.RenderTexture(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
+				viewport.width, viewport.height, false, true);
+		}
+		if (debugReflection) {
+			masterRenderer.RenderTexture(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
+				viewport.width, viewport.height, false, true);
 		}
 	}
 	
@@ -149,8 +167,9 @@ void App::Render(float deltaTime) {
 
 		auto& light = directionalLight;
 		auto& volume = scene.irradianceVolume;
-		auto& ssao = scene.ssao;
+		auto& ao = scene.ao;
 		auto& fog = scene.fog;
+		auto& reflection = scene.reflection;
 
 		bool openSceneNotFoundPopup = false;
 
@@ -175,7 +194,7 @@ void App::Render(float deltaTime) {
 			triangleCount += mesh.data.GetIndexCount() / 3;
 		}
 
-		if (ImGui::Begin("Settings", (bool*)0, 0)) {
+		if (ImGui::Begin("Settings", (bool*)0, ImGuiWindowFlags_HorizontalScrollbar)) {
 			if(pathTrace) ImGui::Text(("Samples: " + std::to_string(pathTracingRenderer.GetSampleCount())).c_str());
 			ImGui::Text(("Average frametime: " + std::to_string(averageFramerate * 1000.0f) + " ms").c_str());
 			ImGui::Text(("Current frametime: " + std::to_string(deltaTime * 1000.0f) + " ms").c_str());
@@ -255,10 +274,15 @@ void App::Render(float deltaTime) {
 			if (ImGui::CollapsingHeader("DDGI")) {
 				ImGui::Text(("Probe count: " + vecToString(volume->probeCount)).c_str());
 				ImGui::Text(("Cell size: " + vecToString(volume->cellSize)).c_str());
-				ImGui::Checkbox("Enable volume", &volume->enable);
-				ImGui::Checkbox("Update volume", &volume->update);
-				ImGui::Checkbox("Visualize probes", &volume->debug);
-				ImGui::Checkbox("Sample emissives", &volume->sampleEmissives);
+				ImGui::Checkbox("Enable volume##DDGI", &volume->enable);
+				ImGui::Checkbox("Update volume##DDGI", &volume->update);
+				ImGui::Checkbox("Visualize probes##DDGI", &volume->debug);
+				ImGui::Checkbox("Sample emissives##DDGI", &volume->sampleEmissives);
+				ImGui::Checkbox("Use shadow map##DDGI", &volume->useShadowMap);
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+					ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \
+						This is only possible when cascaded shadow maps are not used.");
+				}
 
 				const char* gridResItems [] = { "5x5x5", "10x10x10", "20x20x20", "30x30x30" };
 				int currentItem = 0;
@@ -329,16 +353,36 @@ void App::Render(float deltaTime) {
 				ImGui::SliderFloat("Bias##Shadow", &light.GetShadow()->bias, 0.0f, 2.0f);
 			}
 			if (ImGui::CollapsingHeader("Ambient Occlusion")) {
-				ImGui::Checkbox("Debug", &showAo);
-				ImGui::Checkbox("Enable ambient occlusion", &ssao->enable);
-				ImGui::SliderFloat("Radius", &ssao->radius, 0.0f, 10.0f);
-				ImGui::SliderFloat("Strength", &ssao->strength, 0.0f, 20.0f, "%.3f", 2.0f);
+				ImGui::Checkbox("Debug##Ao", &debugAo);
+				ImGui::Checkbox("Enable ambient occlusion##Ao", &ao->enable);
+				ImGui::Checkbox("Enable raytracing (preview)##Ao", &ao->rt);
+				ImGui::SliderFloat("Radius##Ao", &ao->radius, 0.0f, 10.0f);
+				ImGui::SliderFloat("Strength##Ao", &ao->strength, 0.0f, 20.0f, "%.3f", 2.0f);
+				//ImGui::SliderInt("Sample count##Ao", &ao->s, 0.0f, 20.0f, "%.3f", 2.0f);
+			}
+			if (ImGui::CollapsingHeader("Reflection (preview)")) {
+				ImGui::Checkbox("Debug##Reflection", &debugReflection);
+				ImGui::Checkbox("Enable reflection", &reflection->enable);
+				ImGui::Checkbox("Enable raytracing##Reflection", &reflection->rt);
+				ImGui::Checkbox("Use shadow map", &reflection->useShadowMap);
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+					ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \
+						This is only possible when cascaded shadow maps are not used.");
+				}
+				ImGui::Checkbox("Enable GI in reflection", &reflection->gi);
+				// ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
+				ImGui::SliderFloat("Radiance Limit##Reflection", &reflection->radianceLimit, 0.0f, 10.0f);
+				ImGui::SliderFloat("Bias##Reflection", &reflection->bias, 0.0f, 1.0f);
 			}
 			if (ImGui::CollapsingHeader("Camera")) {
 				ImGui::SliderFloat("Exposure##Camera", &camera.exposure, 0.0f, 10.0f);
 				ImGui::SliderFloat("Speed##Camera", &cameraSpeed, 0.0f, 20.0f);
 				ImGui::SliderFloat("FOV##Camera", &camera.fieldOfView, 0.0f, 90.0f);
 				keyboardHandler.speed = cameraSpeed;
+				ImGui::Separator();
+				ImGui::Text("Camera debugging");
+				ImGui::Checkbox("Move camera", &moveCamera);
+				ImGui::Checkbox("Rotate camera", &rotateCamera);
 			}
 			if (ImGui::CollapsingHeader("Fog")) {
 				ImGui::Checkbox("Enable##Fog", &fog->enable);
@@ -362,7 +406,45 @@ void App::Render(float deltaTime) {
 				ImGui::SliderFloat("Sharpness", &scene.postProcessing.sharpen.factor, 0.0f, 1.0f);
 				ImGui::Separator();
 				ImGui::Text("Image effects");
+				ImGui::Checkbox("Filmic tonemapping", &scene.postProcessing.filmicTonemapping);
 				ImGui::SliderFloat("Saturation##Postprocessing", &scene.postProcessing.saturation, 0.0f, 2.0f);
+			}
+			if (ImGui::CollapsingHeader("Materials")) {
+				int32_t id = 0;
+				auto materials = scene.GetMaterials();
+				for (auto material : materials) {
+					auto label = material->name + "##mat" + std::to_string(id++);
+
+					if (ImGui::TreeNode(label.c_str())) {
+						auto baseColorLabel = "Base color##" + label;
+						auto emissionColorLabel = "Emission color##" + label;
+						auto emissionPowerLabel = "Emission power##" + label;
+						auto transmissionColorLabel = "Transmission color##" + label;
+
+						auto emissionPower = glm::max(material->emissiveColor.r, glm::max(material->emissiveColor.g,
+							glm::max(material->emissiveColor.b, 1.0f)));
+						material->emissiveColor /= emissionPower;
+						ImGui::ColorEdit3(baseColorLabel.c_str(), glm::value_ptr(material->baseColor));
+						ImGui::ColorEdit3(emissionColorLabel.c_str(), glm::value_ptr(material->emissiveColor));
+						ImGui::SliderFloat(emissionPowerLabel.c_str(), &emissionPower, 1.0f, 10000.0f,
+							"%.3f", ImGuiSliderFlags_Logarithmic);
+						material->emissiveColor *= emissionPower;
+
+						auto roughnessLabel = "Roughness##" + label;
+						auto metallicLabel = "Metallic##" + label;
+						auto reflectanceLabel = "Reflectance##" + label;
+						auto aoLabel = "Ao##" + label;
+						auto opacityLabel = "Opacity##" + label;
+
+						ImGui::SliderFloat(roughnessLabel.c_str(), &material->roughness, 0.0f, 1.0f);
+						ImGui::SliderFloat(metallicLabel.c_str(), &material->metalness, 0.0f, 1.0f);
+						ImGui::SliderFloat(reflectanceLabel.c_str(), &material->reflectance, 0.0f, 1.0f);
+						ImGui::SliderFloat(aoLabel.c_str(), &material->ao, 0.0f, 1.0f);
+						ImGui::SliderFloat(opacityLabel.c_str(), &material->opacity, 0.0f, 1.0f);
+
+						ImGui::TreePop();
+					}
+				}
 			}
 			if (ImGui::CollapsingHeader("Controls")) {
 				ImGui::Text("Use WASD for movement");
@@ -537,6 +619,7 @@ bool App::LoadScene() {
 		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
 		// Other scene related settings apart from the mesh
+		directionalLight.direction = glm::vec3(0.0f, -1.0f, 0.33f);
 		directionalLight.intensity = 100.0f;
 		directionalLight.GetVolumetric()->intensity = 0.28f;
 		scene.irradianceVolume->SetRayCount(128, 32);
@@ -605,6 +688,7 @@ bool App::LoadScene() {
 
 		auto& mesh = meshes.back();
 		mesh.invertUVs = true;
+		mesh.cullBackFaces = false;
 		// Metalness is set to 0.9f
 		for (auto& material : mesh.data.materials) material.metalness = 0.0f;
 
@@ -628,6 +712,8 @@ bool App::LoadScene() {
 
 		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("pica pica/mesh/scene.gltf", false,
 			glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)));
+		for (auto& material : meshData.materials) material.twoSided = false;
+
 		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
 		auto& mesh = meshes.back();
@@ -673,6 +759,7 @@ bool App::LoadScene() {
 		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
 		// Other scene related settings apart from the mesh
+		directionalLight.direction = glm::vec3(0.0f, -1.0f, 0.33f);
 		directionalLight.intensity = 100.0f;
 		directionalLight.GetVolumetric()->intensity = 0.28f;
 		scene.irradianceVolume->SetRayCount(128, 32);
@@ -695,6 +782,7 @@ bool App::LoadScene() {
 	camera.Update();
 	scene.Update(&camera, 1.0f);
 	scene.BuildRTStructures();
+	scene.irradianceVolume->useShadowMap = true;
 
 	// Reset input handlers
 	keyboardHandler.Reset(&camera);
