@@ -73,7 +73,7 @@ vec3 EvaluateHit(inout Ray ray) {
 	// Unpack the compressed triangle and extract surface parameters
 	Triangle tri = UnpackTriangle(triangles[ray.hitID]);
 	bool backfaceHit;	
-	Surface surface = GetSurfaceParameters(tri, ray, false, backfaceHit);
+	Surface surface = GetSurfaceParameters(tri, ray, false, backfaceHit, 4);
 
 	// Indicates backface hit
 	if (backfaceHit) {

@@ -382,93 +382,39 @@ namespace Atlas {
 						gpuMaterial.twoSided = material.twoSided ? 1 : 0;
 
 						if (material.HasBaseColorMap()) {
-							auto slice = baseColorTextureAtlas.slices[material.baseColorMap];
+							auto& slices = baseColorTextureAtlas.slices[material.baseColorMap];
 
-							gpuMaterial.baseColorTexture.layer = slice.layer;
-
-							gpuMaterial.baseColorTexture.x = slice.offset.x;
-							gpuMaterial.baseColorTexture.y = slice.offset.y;
-
-							gpuMaterial.baseColorTexture.width = slice.size.x;
-							gpuMaterial.baseColorTexture.height = slice.size.y;
-						}
-						else {
-							gpuMaterial.baseColorTexture.layer = -1;
+							gpuMaterial.baseColorTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasOpacityMap()) {
-							auto slice = opacityTextureAtlas.slices[material.opacityMap];
+							auto& slices = opacityTextureAtlas.slices[material.opacityMap];
 
-							gpuMaterial.opacityTexture.layer = slice.layer;
-
-							gpuMaterial.opacityTexture.x = slice.offset.x;
-							gpuMaterial.opacityTexture.y = slice.offset.y;
-
-							gpuMaterial.opacityTexture.width = slice.size.x;
-							gpuMaterial.opacityTexture.height = slice.size.y;
-						}
-						else {
-							gpuMaterial.opacityTexture.layer = -1;
+							gpuMaterial.opacityTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasNormalMap()) {
-							auto slice = normalTextureAtlas.slices[material.normalMap];
+							auto& slices = normalTextureAtlas.slices[material.normalMap];
 
-							gpuMaterial.normalTexture.layer = slice.layer;
-
-							gpuMaterial.normalTexture.x = slice.offset.x;
-							gpuMaterial.normalTexture.y = slice.offset.y;
-
-							gpuMaterial.normalTexture.width = slice.size.x;
-							gpuMaterial.normalTexture.height = slice.size.y;
-						}
-						else {
-							gpuMaterial.normalTexture.layer = -1;
+							gpuMaterial.normalTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasRoughnessMap()) {
-							auto slice = roughnessTextureAtlas.slices[material.roughnessMap];
+							auto& slices = roughnessTextureAtlas.slices[material.roughnessMap];
 
-							gpuMaterial.roughnessTexture.layer = slice.layer;
-
-							gpuMaterial.roughnessTexture.x = slice.offset.x;
-							gpuMaterial.roughnessTexture.y = slice.offset.y;
-
-							gpuMaterial.roughnessTexture.width = slice.size.x;
-							gpuMaterial.roughnessTexture.height = slice.size.y;
-						}
-						else {
-							gpuMaterial.roughnessTexture.layer = -1;
+							gpuMaterial.roughnessTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasMetalnessMap()) {
-							auto slice = metalnessTextureAtlas.slices[material.metalnessMap];
+							auto& slices = metalnessTextureAtlas.slices[material.metalnessMap];
 
-							gpuMaterial.metalnessTexture.layer = slice.layer;
-
-							gpuMaterial.metalnessTexture.x = slice.offset.x;
-							gpuMaterial.metalnessTexture.y = slice.offset.y;
-
-							gpuMaterial.metalnessTexture.width = slice.size.x;
-							gpuMaterial.metalnessTexture.height = slice.size.y;
-						}
-						else {
-							gpuMaterial.metalnessTexture.layer = -1;
+							gpuMaterial.metalnessTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasAoMap()) {
-							auto slice = aoTextureAtlas.slices[material.aoMap];
+							auto& slices = aoTextureAtlas.slices[material.aoMap];
 
-							gpuMaterial.aoTexture.layer = slice.layer;
-
-							gpuMaterial.aoTexture.x = slice.offset.x;
-							gpuMaterial.aoTexture.y = slice.offset.y;
-
-							gpuMaterial.aoTexture.width = slice.size.x;
-							gpuMaterial.aoTexture.height = slice.size.y;
-						}
-						else {
-							gpuMaterial.aoTexture.layer = -1;
+							gpuMaterial.aoTexture = CreateGPUTextureStruct(slices);
 						}
 
 						materials.push_back(gpuMaterial);
@@ -525,6 +471,39 @@ namespace Atlas {
 			roughnessTextureAtlas = Texture::TextureAtlas(roughnessTextures, 1, textureDownscale);
 			metalnessTextureAtlas = Texture::TextureAtlas(metalnessTextures, 1, textureDownscale);
 			aoTextureAtlas = Texture::TextureAtlas(aoTextures, 1, textureDownscale);
+
+		}
+
+		RTData::GPUTexture RTData::CreateGPUTextureStruct(std::vector<Texture::TextureAtlas::Slice> slices) {
+
+			GPUTexture texture;
+
+			if (slices.size() > 0) texture.level0 = CreateGPUTextureLevelStruct(slices[0]);
+			if (slices.size() > 1) texture.level1 = CreateGPUTextureLevelStruct(slices[1]);
+			if (slices.size() > 2) texture.level2 = CreateGPUTextureLevelStruct(slices[2]);
+			if (slices.size() > 3) texture.level3 = CreateGPUTextureLevelStruct(slices[3]);
+			if (slices.size() > 4) texture.level4 = CreateGPUTextureLevelStruct(slices[4]);
+
+			texture.valid = 1;
+
+			return texture;
+
+		}
+
+		RTData::GPUTextureLevel RTData::CreateGPUTextureLevelStruct(Texture::TextureAtlas::Slice slice) {
+
+			GPUTextureLevel level;
+
+			level.x = slice.offset.x;
+			level.y = slice.offset.y;
+
+			level.width = slice.size.x;
+			level.height = slice.size.y;
+
+			level.layer = slice.layer;
+			level.valid = 1;
+
+			return level;
 
 		}
 

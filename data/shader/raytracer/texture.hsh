@@ -9,107 +9,116 @@ layout (binding = 4) uniform sampler2DArray metalnessTextures;
 layout (binding = 5) uniform sampler2DArray aoTextures;
 layout (binding = 6) uniform samplerCube environmentMap;
 
-vec2 GetTexCoord(vec2 texCoord, Texture tex, vec2 size) {
+vec2 GetTexCoord(vec2 texCoord, TextureLevel level, vec2 size) {
 	
-	return (vec2(mod(texCoord.x, float(tex.width) - 0.5),
-		mod(texCoord.y, float(tex.height) - 0.5)) + 
-		vec2(tex.x, tex.y)) / size;
+	return (vec2(mod(texCoord.x, float(level.width) - 0.5),
+		mod(texCoord.y, float(level.height) - 0.5)) + 
+		vec2(level.x, level.y)) / size;
 		
 }
 
-vec3 SampleBaseColorBilinear(Texture tex, vec2 texCoord) {
+TextureLevel GetTextureLevel(Texture texture, int level) {
+	if (level == 0) return texture.level0;
+	else if (level == 1) return texture.level1;
+	else if (level == 2) return texture.level2;
+	else if (level == 3) return texture.level3;
+	else if (level == 4) return texture.level4;
+	else return texture.level4;
+}
+
+vec3 SampleBaseColorBilinear(TextureLevel level, vec2 texCoord) {
 	
-	if (tex.layer < 0)
+	if (level.valid < 0)
 		return vec3(1.0);
 		
-	texCoord *= vec2(tex.width - 1, tex.height - 1);
+	texCoord *= vec2(level.width - 1, level.height - 1);
 	texCoord += vec2(0.5);
 	
 	vec2 size = vec2(textureSize(baseColorTextures, 0));
-	texCoord = GetTexCoord(texCoord, tex, size);
+	texCoord = GetTexCoord(texCoord, level, size);
 	
 	return textureLod(baseColorTextures, 
-		vec3(texCoord, float(tex.layer)), 0).rgb;
+		vec3(texCoord, float(level.layer)), 0).rgb;
 	
 }
 
-float SampleOpacityBilinear(Texture tex, vec2 texCoord) {
+float SampleOpacityBilinear(TextureLevel level, vec2 texCoord) {
 	
-	if (tex.layer < 0)
+	if (level.valid < 0)
 		return 1.0;
 		
-	texCoord *= vec2(tex.width - 1, tex.height - 1);
+	texCoord *= vec2(level.width - 1, level.height - 1);
 	texCoord += vec2(0.5);
 	
 	vec2 size = vec2(textureSize(opacityTextures, 0));
-	texCoord = GetTexCoord(texCoord, tex, size);
+	texCoord = GetTexCoord(texCoord, level, size);
 	
 	return textureLod(opacityTextures, 
-		vec3(texCoord, float(tex.layer)), 0).r;
+		vec3(texCoord, float(level.layer)), 0).r;
 	
 }
 
-vec3 SampleNormalBilinear(Texture tex, vec2 texCoord) {
+vec3 SampleNormalBilinear(TextureLevel level, vec2 texCoord) {
 	
-	if (tex.layer < 0)
+	if (level.valid < 0)
 		return vec3(1.0);
 		
-	texCoord *= vec2(tex.width - 1, tex.height - 1);
+	texCoord *= vec2(level.width - 1, level.height - 1);
 	texCoord += vec2(0.5);
 	
 	vec2 size = vec2(textureSize(normalTextures, 0));
-	texCoord = GetTexCoord(texCoord, tex, size);
+	texCoord = GetTexCoord(texCoord, level, size);
 	
 	return textureLod(normalTextures, 
-		vec3(texCoord, float(tex.layer)), 0).rgb;
+		vec3(texCoord, float(level.layer)), 0).rgb;
 	
 }
 
-float SampleRoughnessBilinear(Texture tex, vec2 texCoord) {
+float SampleRoughnessBilinear(TextureLevel level, vec2 texCoord) {
 	
-	if (tex.layer < 0)
+	if (level.valid < 0)
 		return 1.0;
 		
-	texCoord *= vec2(tex.width - 1, tex.height - 1);
+	texCoord *= vec2(level.width - 1, level.height - 1);
 	texCoord += vec2(0.5);
 	
 	vec2 size = vec2(textureSize(roughnessTextures, 0));
-	texCoord = GetTexCoord(texCoord, tex, size);
+	texCoord = GetTexCoord(texCoord, level, size);
 	
 	return textureLod(roughnessTextures, 
-		vec3(texCoord, float(tex.layer)), 0).r;
+		vec3(texCoord, float(level.layer)), 0).r;
 	
 }
 
-float SampleMetalnessBilinear(Texture tex, vec2 texCoord) {
+float SampleMetalnessBilinear(TextureLevel level, vec2 texCoord) {
 	
-	if (tex.layer < 0)
+	if (level.valid < 0)
 		return 1.0;
 		
-	texCoord *= vec2(tex.width - 1, tex.height - 1);
+	texCoord *= vec2(level.width - 1, level.height - 1);
 	texCoord += vec2(0.5);
 	
 	vec2 size = vec2(textureSize(metalnessTextures, 0));
-	texCoord = GetTexCoord(texCoord, tex, size);
+	texCoord = GetTexCoord(texCoord, level, size);
 	
 	return textureLod(metalnessTextures, 
-		vec3(texCoord, float(tex.layer)), 0).r;
+		vec3(texCoord, float(level.layer)), 0).r;
 	
 }
 
-float SampleAoBilinear(Texture tex, vec2 texCoord) {
+float SampleAoBilinear(TextureLevel level, vec2 texCoord) {
 	
-	if (tex.layer < 0)
+	if (level.valid < 0)
 		return 1.0;
 		
-	texCoord *= vec2(tex.width - 1, tex.height - 1);
+	texCoord *= vec2(level.width - 1, level.height - 1);
 	texCoord += vec2(0.5);
 	
 	vec2 size = vec2(textureSize(aoTextures, 0));
-	texCoord = GetTexCoord(texCoord, tex, size);
+	texCoord = GetTexCoord(texCoord, level, size);
 	
 	return textureLod(aoTextures, 
-		vec3(texCoord, float(tex.layer)), 0).r;
+		vec3(texCoord, float(level.layer)), 0).r;
 	
 }
 

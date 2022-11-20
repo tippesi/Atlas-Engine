@@ -98,7 +98,7 @@ void EvaluateBounce(inout Ray ray, inout RayPayload payload) {
 	
 	// Unpack the compressed triangle and extract surface parameters
 	Triangle tri = UnpackTriangle(triangles[ray.hitID]);
-	Surface surface = GetSurfaceParameters(tri, ray, true);
+	Surface surface = GetSurfaceParameters(tri, ray, true, 0);
 
 	// If we hit an emissive surface we need to terminate the ray
 	if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.0 &&

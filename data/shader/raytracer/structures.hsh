@@ -70,8 +70,7 @@ struct Triangle {
 	
 };
 
-struct Texture {
-	
+struct TextureLevel  {
 	int layer;
 	
 	int x;
@@ -79,7 +78,18 @@ struct Texture {
 	
 	int width;
 	int height;
+
+	int valid;
+};
+
+struct Texture {
+	TextureLevel level0;
+	TextureLevel level1;
+	TextureLevel level2;
+	TextureLevel level3;
+	TextureLevel level4;
 	
+	int valid;
 };
 
 struct RaytraceMaterial {

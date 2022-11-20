@@ -49,8 +49,7 @@ namespace Atlas {
 				vec4 v2;
 			};
 
-			struct GPUTexture {
-
+			struct GPUTextureLevel {
 				int32_t layer;
 
 				int32_t x;
@@ -59,6 +58,17 @@ namespace Atlas {
 				int32_t width;
 				int32_t height;
 
+				int32_t valid = -1;
+			};
+
+			struct GPUTexture {
+				GPUTextureLevel level0;
+				GPUTextureLevel level1;
+				GPUTextureLevel level2;
+				GPUTextureLevel level3;
+				GPUTextureLevel level4;
+
+				int32_t valid = -1;
 			};
 
 			struct GPUMaterial {
@@ -109,6 +119,10 @@ namespace Atlas {
 
 			std::unordered_map<Material*, int32_t> UpdateMaterials(std::vector<GPUMaterial>& materials,
 				bool updateTextures);
+
+			GPUTexture CreateGPUTextureStruct(std::vector<Texture::TextureAtlas::Slice> slices);
+
+			GPUTextureLevel CreateGPUTextureLevelStruct(Texture::TextureAtlas::Slice slice);
 
 			Scene* scene;
 

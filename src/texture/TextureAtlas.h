@@ -54,11 +54,29 @@ namespace Atlas {
 			};
 
 			Texture2DArray texture;
-			std::map<Texture2D*, Slice> slices;
+			std::map<Texture2D*, std::vector<Slice>> slices;
 
 		private:
+			struct TextureStructure {
+				int32_t width;
+				int32_t height;
+				int32_t channels;
+				Texture2D* texture;
+			};
+
+			std::map<Texture2D*, TextureAtlas::Slice> CreateSlicesForAtlasLevel(std::vector<TextureStructure> textures, int32_t level);
+
+			void FillAtlas(std::map<Texture2D*, TextureAtlas::Slice> levelSlices);
+
 			int32_t padding = 1;
 			int32_t downscale = 1;
+
+			int32_t width = 0;
+			int32_t height = 0;
+			int32_t channels = 0;
+			int32_t layers = 0;
+
+			ivec2 offset;
 
 		};
 

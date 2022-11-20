@@ -27,7 +27,7 @@ Material GetTriangleMaterial(Triangle tri, out RaytraceMaterial rayMat) {
 	return mat;
 }
 
-Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool backfaceHit) {
+Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool backfaceHit, int textureLevel) {
 
 	Surface surface;
 	RaytraceMaterial rayMat;
@@ -60,21 +60,22 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
 	triangleNormal *= flipNormal ? -1.0 : 1.0;
 
 	vec3 geometryNormal = normal;
-		
-	mat.baseColor *= SampleBaseColorBilinear(rayMat.baseColorTexture, texCoord);
-	mat.opacity *= SampleOpacityBilinear(rayMat.opacityTexture, texCoord);
 	
-	mat.roughness *= SampleRoughnessBilinear(rayMat.roughnessTexture, texCoord);
-	mat.metalness *= SampleMetalnessBilinear(rayMat.metalnessTexture, texCoord);
-	mat.ao *= SampleAoBilinear(rayMat.aoTexture, texCoord);
+	int level = textureLevel;
+	mat.baseColor *= SampleBaseColorBilinear(GetTextureLevel(rayMat.baseColorTexture, level), texCoord);
+	mat.opacity *= SampleOpacityBilinear(GetTextureLevel(rayMat.opacityTexture, level), texCoord);
+	
+	mat.roughness *= SampleRoughnessBilinear(GetTextureLevel(rayMat.roughnessTexture, level), texCoord);
+	mat.metalness *= SampleMetalnessBilinear(GetTextureLevel(rayMat.metalnessTexture, level), texCoord);
+	mat.ao *= SampleAoBilinear(GetTextureLevel(rayMat.aoTexture, level), texCoord);
 	
 	// Account for changing texture coord direction
 	vec3 bitangent = rayMat.invertUVs > 0 ? tri.bt : -tri.bt;
 	mat3 TBN = mat3(tri.t, bitangent, normal);
 	
 	// Sample normal map
-	if (rayMat.normalTexture.layer >= 0 && useNormalMaps) {
-		vec3 texNormal = 2.0 * SampleNormalBilinear(rayMat.normalTexture, texCoord) - 1.0;
+	if (rayMat.normalTexture.valid >= 0 && useNormalMaps) {
+		vec3 texNormal = 2.0 * SampleNormalBilinear(GetTextureLevel(rayMat.normalTexture, level), texCoord) - 1.0;
 		texNormal = TBN * texNormal;
 		// Make sure we don't divide by zero
 		// The normalize function crashes the program in case of vec3(0.0)
@@ -99,12 +100,12 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
 
 }
 
-Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps) {
+Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, int textureLevel) {
 	bool normalFlipped;
-	return GetSurfaceParameters(tri, ray, useNormalMaps, normalFlipped);
+	return GetSurfaceParameters(tri, ray, useNormalMaps, normalFlipped, textureLevel);
 }
 
-float GetOpacity(Triangle tri, vec2 barrycentric) {
+float GetOpacity(Triangle tri, vec2 barrycentric, int textureLevel) {
 	float s = barrycentric.x;
 	float t = barrycentric.y;
 	float r = 1.0 - s - t;
@@ -114,5 +115,5 @@ float GetOpacity(Triangle tri, vec2 barrycentric) {
 	vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;		
 	texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
 
-	return rayMat.opacity * SampleOpacityBilinear(rayMat.opacityTexture, texCoord);
+	return rayMat.opacity * SampleOpacityBilinear(GetTextureLevel(rayMat.opacityTexture, textureLevel), texCoord);
 }
