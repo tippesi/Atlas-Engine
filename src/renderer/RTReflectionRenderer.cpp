@@ -154,9 +154,9 @@ namespace Atlas {
             Profiler::EndAndBeginQuery("Temporal filter");
 
             {
-                ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
-                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
+                ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
+                groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
 
                 temporalShader.Bind();
 

@@ -21,6 +21,13 @@ layout(binding = 10) uniform sampler2D historyMomentsTexture;
 uniform vec2 invResolution;
 uniform vec2 resolution;
 
+const int kernelRadius = 4;
+
+const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
+const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
+
+shared vec2 sharedAoDepth[sharedDataSize];
+
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
     ivec2(0, -1),
@@ -47,6 +54,43 @@ float FetchTexel(ivec2 texel) {
 
 }
 
+void LoadGroupSharedData() {
+
+	ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) - ivec2(kernelRadius);
+
+	uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    for(uint i = gl_LocalInvocationIndex; i < sharedDataSize; i += workGroupSize) {
+        ivec2 localOffset = Unflatten2D(int(i), unflattenedSharedDataSize);
+        ivec2 texel = localOffset + workGroupOffset;
+
+        texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
+
+        sharedAoDepth[i].r = FetchTexel(texel);
+        sharedAoDepth[i].g = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, texel, 0).r);
+    }
+
+    barrier();
+
+}
+
+int GetSharedMemoryIndex(ivec2 pixelOffset) {
+
+    ivec2 pixel = ivec2(gl_LocalInvocationID) + ivec2(kernelRadius);
+    return Flatten2D(pixel + pixelOffset, unflattenedSharedDataSize);
+
+}
+
+float FetchCurrentAo(int sharedMemoryIdx) {
+
+    return sharedAoDepth[sharedMemoryIdx].r;
+
+}
+
+float FetchDepth(int sharedMemoryIdx) {
+
+    return sharedAoDepth[sharedMemoryIdx].g;
+
+}
 ivec2 FindNearest3x3(ivec2 pixel) {
 
     ivec2 offset = ivec2(0);
@@ -153,19 +197,17 @@ void ComputeVarianceMinMax(out float aabbMin, out float aabbMax) {
 
     for (int i = -radius; i <= radius; i++) {
         for (int j = -radius; j <= radius; j++) {
-            float value = texelFetch(currentTexture, pixel + ivec2(i, j), 0).r;
+            int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
 
-            uint historyMaterialIdx = texelFetch(materialIdxTexture, pixel + ivec2(i, j), 0).r;
-            float materialWeight = historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+            float sampleAo = FetchCurrentAo(sharedMemoryIdx);
+            float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
 
-            float historyDepth = texelFetch(depthTexture, pixel + ivec2(i, j), 0).r;
-            float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-            float depthWeight = min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth)));
 
-            value *= depthWeight * materialWeight;
+            sampleAo *= weight;
         
-            m1 += value;
-            m2 += value * value;
+            m1 += sampleAo;
+            m2 += sampleAo * sampleAo;
         }
     }
 
@@ -190,6 +232,8 @@ void main() {
     if (pixel.x > imageSize(resolveImage).x ||
         pixel.y > imageSize(resolveImage).y)
         return;
+
+    LoadGroupSharedData();
 
     float localNeighbourhoodMin, localNeighbourhoodMax;
     ComputeVarianceMinMax(localNeighbourhoodMin, localNeighbourhoodMax);

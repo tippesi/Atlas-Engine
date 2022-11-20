@@ -207,7 +207,7 @@ namespace Atlas {
 
 				}
 
-				layers++;				
+				layers++;
 
 			}
 

@@ -363,7 +363,7 @@ void App::Render(float deltaTime) {
 			if (ImGui::CollapsingHeader("Reflection (preview)")) {
 				ImGui::Checkbox("Debug##Reflection", &debugReflection);
 				ImGui::Checkbox("Enable reflection", &reflection->enable);
-				ImGui::Checkbox("Enable raytracing##Reflection", &reflection->rt);
+				//ImGui::Checkbox("Enable raytracing##Reflection", &reflection->rt);
 				ImGui::Checkbox("Use shadow map", &reflection->useShadowMap);
 				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
 					ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \

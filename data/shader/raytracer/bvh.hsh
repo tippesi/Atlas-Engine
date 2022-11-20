@@ -141,7 +141,7 @@ float CheckLeafTransparency(inout Ray ray, int nodePtr, float tmin, float tmax, 
 		if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {
 			ray.hitDistance = sol.x;
 			ray.hitID = triPtr;
-			transparency *= (1.0 - GetOpacity(tri, sol.yz, 1));
+			transparency *= (1.0 - GetOpacity(tri, sol.yz, 0));
 		}
 		triPtr++;
 	}

@@ -6,7 +6,7 @@
 #include <../common/material.hsh>
 #include <../common/random.hsh>
 
-layout (local_size_x = 8, local_size_y = 8) in;
+layout (local_size_x = 16, local_size_y = 16) in;
 
 layout(binding = 0, rgba16f) writeonly uniform image2D resolveImage;
 layout(binding = 1, rgba16f) writeonly uniform image2D momentsImage;
@@ -22,6 +22,13 @@ layout(binding = 10) uniform sampler2D historyMomentsTexture;
 
 uniform vec2 invResolution;
 uniform vec2 resolution;
+
+const int kernelRadius = 8;
+
+const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
+const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
+
+shared vec4 sharedRadianceDepth[sharedDataSize];
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
@@ -53,6 +60,44 @@ vec3 FetchTexel(ivec2 texel) {
 	
 	vec3 color = max(texelFetch(currentTexture, texel, 0).rgb, 0);
 	return color;
+
+}
+
+void LoadGroupSharedData() {
+
+	ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) - ivec2(kernelRadius);
+
+	uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    for(uint i = gl_LocalInvocationIndex; i < sharedDataSize; i += workGroupSize) {
+        ivec2 localOffset = Unflatten2D(int(i), unflattenedSharedDataSize);
+        ivec2 texel = localOffset + workGroupOffset;
+
+        texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
+
+        sharedRadianceDepth[i].rgb = FetchTexel(texel);
+        sharedRadianceDepth[i].a = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, texel, 0).r);
+    }
+
+    barrier();
+
+}
+
+int GetSharedMemoryIndex(ivec2 pixelOffset) {
+
+    ivec2 pixel = ivec2(gl_LocalInvocationID) + ivec2(kernelRadius);
+    return Flatten2D(pixel + pixelOffset, unflattenedSharedDataSize);
+
+}
+
+vec3 FetchCurrentRadiance(int sharedMemoryIdx) {
+
+    return sharedRadianceDepth[sharedMemoryIdx].rgb;
+
+}
+
+float FetchDepth(int sharedMemoryIdx) {
+
+    return sharedRadianceDepth[sharedMemoryIdx].a;
 
 }
 
@@ -172,7 +217,7 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
     // This could be varied using the temporal variance estimation
     // By using a wide neighborhood for variance estimation (8x8) we introduce block artifacts
     // These are similiar to video compression artifacts, the spatial filter mostly clears them up
-    const int radius = 8;
+    const int radius = kernelRadius;
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
@@ -184,23 +229,17 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
 
     for (int i = -radius; i <= radius; i++) {
         for (int j = -radius; j <= radius; j++) {
-            vec3 color = texelFetch(currentTexture, pixel + ivec2(i, j), 0).rgb;
+            int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
 
-            float historyDepth = texelFetch(depthTexture, pixel + ivec2(i, j), 0).r;
-            float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-            float weight = min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
-            weight = 1.0;
+            vec3 sampleRadiance = FetchCurrentRadiance(sharedMemoryIdx);
+            float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
 
-            uint historyMaterialIdx = texelFetch(materialIdxTexture, pixel + ivec2(i, j), 0).r;
-            weight *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth)));
 
-            vec3 historyNormal = 2.0 * texelFetch(normalTexture, pixel + ivec2(i, j), 0).rgb - 1.0;
-            weight *= pow(abs(dot(historyNormal, normal)), 2.0);
-
-            color *= weight;
+            sampleRadiance *= weight;
         
-            m1 += color;
-            m2 += color * color;
+            m1 += sampleRadiance;
+            m2 += sampleRadiance * sampleRadiance;
         }
     }
 
@@ -225,6 +264,8 @@ void main() {
     if (pixel.x > imageSize(resolveImage).x ||
         pixel.y > imageSize(resolveImage).y)
         return;
+
+    LoadGroupSharedData();
 
     vec3 localNeighbourhoodMin, localNeighbourhoodMax;
     ComputeVarianceMinMax(localNeighbourhoodMin, localNeighbourhoodMax);

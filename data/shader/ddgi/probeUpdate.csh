@@ -37,12 +37,21 @@ uniform int momProbeRes;
 uniform float depthSharpness;
 uniform bool optimizeProbes;
 
-shared vec3 rayDirections[sharedSize];
 #ifdef IRRADIANCE
-shared vec3 rayRadiances[sharedSize];
+struct RayData {
+    // This seems to be a better layout than two vec3's
+    // My guess is that vec3's get expanded to vec4's
+    vec4 direction;
+    vec2 radiance;
+};
 #else
-shared float rayDistances[sharedSize];
+struct RayData {
+    vec3 direction;
+    float dist;
+};
 #endif
+
+shared RayData rayData[sharedSize];
 
 void main() {
 
@@ -82,11 +91,12 @@ void main() {
         // Load rays cooperatively
         for (uint j = gl_LocalInvocationIndex; j < loadRayCount; j += groupSize) {
             RayHit hit = UnpackRayHit(hits[rayBaseIdx + i + j]);
-            rayDirections[j] = hit.direction;
+            rayData[j].direction.rgb = hit.direction;
 #ifdef IRRADIANCE
-            rayRadiances[j] = hit.radiance;
+            rayData[j].radiance.rg = hit.radiance.rg;
+            rayData[j].direction.a = hit.radiance.b;
 #else
-            rayDistances[j] = hit.hitDistance;
+            rayData[j].dist = hit.hitDistance;
 #endif
         }
 
@@ -95,20 +105,21 @@ void main() {
         // Iterate over all rays in the shared memory
         for (uint j = 0; j < loadRayCount; j++) {
 #ifdef IRRADIANCE
-            float weight = max(0.0, dot(N, rayDirections[j]));
+            float weight = max(0.0, dot(N, rayData[j].direction.rgb));
 
             if (weight >= 0.00001) {
-                result += vec4(rayRadiances[j], 1.0) * weight;	
+                vec3 radiance = vec3(rayData[j].radiance, rayData[j].direction.a);
+                result += vec4(radiance, 1.0) * weight;	
             }
 #else
-            float dist = rayDistances[j];
+            float dist = rayData[j].dist;
             dist = dist < 0.0 ? dist * 0.2 : dist;
 
             float hitDistance = min(maxDepth, dist);
-            float weight = max(0.0, dot(N, rayDirections[j]));
+            float weight = max(0.0, dot(N, rayData[j].direction));
 
             const float probeOffsetDistance = 0.6;
-            dist = rayDistances[j];
+            dist = rayData[j].dist;
             // Remember: Negative distances means backface hits.
             // Meaning we want to get probes from backfaces to the 
             // front and want to get a certain distance to these front
@@ -118,7 +129,7 @@ void main() {
             if (probeOffset.w > 0.0) {
                 float sig = sign(dist);
                 if (abs(dist) < probeOffsetDistance && optimizeProbes) {
-                    newProbeOffset -= rayDirections[j] * (sig * probeOffsetDistance - dist) * 0.1 * probeOffset.w;
+                    newProbeOffset -= rayData[j].direction * (sig * probeOffsetDistance - dist) * 0.1 * probeOffset.w;
                 }
             }
 
