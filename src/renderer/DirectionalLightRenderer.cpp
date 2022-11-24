@@ -22,7 +22,7 @@ namespace Atlas {
 		}
 
 		void DirectionalLightRenderer::Render(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene, Texture::Texture2D* dfgTexture) {
+				Camera* camera, Scene::Scene* scene) {
 
 			Profiler::BeginQuery("Directional lights");
 
@@ -41,7 +41,6 @@ namespace Atlas {
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3)->Bind(GL_TEXTURE3);
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT4)->Bind(GL_TEXTURE4);
 			target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE5);
-			dfgTexture->Bind(GL_TEXTURE9);
 
 			if (scene->sky.probe) {
 				scene->sky.probe->cubemap.Bind(GL_TEXTURE10);

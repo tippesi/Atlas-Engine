@@ -71,7 +71,7 @@ void main() {
         float curSeed = float(0);
 
         ivec2 noiseOffset = Unflatten2D(int(frameSeed), ivec2(16)) * ivec2(8);
-        vec2 blueNoiseVec = texelFetch(randomTexture, ((pixel % ivec2(8)) + noiseOffset) % ivec2(128), 0).xy * 256.0;
+        vec2 blueNoiseVec = texelFetch(randomTexture, (pixel + noiseOffset) % ivec2(128), 0).xy * 256.0;
 		blueNoiseVec = clamp(blueNoiseVec, 0.0, 255.0);
 		blueNoiseVec = (blueNoiseVec + 0.5) / 256.0;
 

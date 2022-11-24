@@ -26,8 +26,8 @@ namespace Atlas {
 
 			Shader::Shader rtrShader;
 			Shader::Shader temporalShader;
-			Shader::Shader atrousShader;
 
+			Shader::Shader atrousShader[3];
 		};
 
 	}

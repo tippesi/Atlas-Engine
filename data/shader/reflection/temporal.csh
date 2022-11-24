@@ -11,19 +11,24 @@ layout (local_size_x = 16, local_size_y = 16) in;
 layout(binding = 0, rgba16f) writeonly uniform image2D resolveImage;
 layout(binding = 1, rgba16f) writeonly uniform image2D momentsImage;
 
-layout(binding = 0) uniform sampler2D historyTexture;
-layout(binding = 1) uniform sampler2D currentTexture;
-layout(binding = 2) uniform sampler2D velocityTexture;
-layout(binding = 3) uniform sampler2D depthTexture;
-layout(binding = 4) uniform sampler2D roughnessMetallicAoTexture;
-layout(binding = 6) uniform sampler2D normalTexture;
-layout(binding = 7) uniform usampler2D materialIdxTexture;
-layout(binding = 10) uniform sampler2D historyMomentsTexture;
+layout(binding = 0) uniform sampler2D currentTexture;
+layout(binding = 1) uniform sampler2D velocityTexture;
+layout(binding = 2) uniform sampler2D depthTexture;
+layout(binding = 3) uniform sampler2D roughnessMetallicAoTexture;
+layout(binding = 4) uniform sampler2D normalTexture;
+layout(binding = 5) uniform usampler2D materialIdxTexture;
+
+layout(binding = 6) uniform sampler2D historyTexture;
+layout(binding = 7) uniform sampler2D historyMomentsTexture;
+layout(binding = 8) uniform sampler2D historyDepthTexture;
+layout(binding = 9) uniform sampler2D historyNormalTexture;
+layout(binding = 10) uniform usampler2D historyMaterialIdxTexture;
+
 
 uniform vec2 invResolution;
 uniform vec2 resolution;
 
-const int kernelRadius = 8;
+const int kernelRadius = 7;
 
 const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
 const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
@@ -225,8 +230,6 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 
-    vec3 normal = 2.0 * texelFetch(normalTexture, pixel, 0).rgb - 1.0;
-
     for (int i = -radius; i <= radius; i++) {
         for (int j = -radius; j <= radius; j++) {
             int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
@@ -234,7 +237,8 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
             vec3 sampleRadiance = FetchCurrentRadiance(sharedMemoryIdx);
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
 
-            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth)));
+            float depthPhi = max(1.0, abs(0.25 * linearDepth));
+            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) / depthPhi));
 
             sampleRadiance *= weight;
         
@@ -252,20 +256,14 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
 
 }
 
-float ComputeDisocclusionWeight(vec3 normal, vec3 historyNormal,
-                                float historyLinearDepth, float linearDepth) {
-    return exp(-abs(1.0 - max(0.0, dot(normal, historyNormal))))
-        * exp(-abs(historyLinearDepth - linearDepth) / linearDepth);
-}
-
 void main() {
+
+    LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
     if (pixel.x > imageSize(resolveImage).x ||
         pixel.y > imageSize(resolveImage).y)
         return;
-
-    LoadGroupSharedData();
 
     vec3 localNeighbourhoodMin, localNeighbourhoodMax;
     ComputeVarianceMinMax(localNeighbourhoodMin, localNeighbourhoodMax);
@@ -298,7 +296,7 @@ void main() {
     float roughness = material.roughness;
     roughness *= material.roughnessMap ? texelFetch(roughnessMetallicAoTexture, pixel, 0).r : 1.0;
 
-    float factor = clamp(16.0 * log(material.roughness + 1.0), 0.001, 0.95);
+    float factor = clamp(16.0 * log(roughness + 1.0), 0.001, 0.97);
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
@@ -307,7 +305,7 @@ void main() {
 
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
 
-    ivec2 historyPixel = ivec2(vec2(pixel) + vec2(0.5) + velocity * resolution);
+    ivec2 historyPixel = ivec2(floor(((vec2(pixel) + vec2(0.5)) / resolution + velocity) * resolution - ivec2(0.5)));
     float maxConfidence = 0.0;
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges
@@ -315,16 +313,16 @@ void main() {
         ivec2 offsetPixel = historyPixel + offsets[i];
         float confidence = 1.0;
 
-        uint historyMaterialIdx = texelFetch(materialIdxTexture, offsetPixel, 0).r;
-        confidence *= historyMaterialIdx != materialIdx ? 0.1 : 1.0;
-
-        vec3 historyNormal = 2.0 * texelFetch(normalTexture, offsetPixel, 0).rgb - 1.0;
+        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
+        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+        
+        vec3 historyNormal = 2.0 * texelFetch(historyNormalTexture, offsetPixel, 0).rgb - 1.0;
         confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
 
-        float historyDepth = texelFetch(depthTexture, offsetPixel, 0).r;
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) / linearDepth));
-
+        
         maxConfidence = max(maxConfidence, confidence);
     }
     
@@ -339,6 +337,10 @@ void main() {
 
     factor = min(factor, historyLength / (historyLength + 1.0));
 
+    if (abs(velocity.x) + abs(velocity.y) >= 0.001) {
+        factor = min(factor, 0.9);
+    }
+
     vec3 resolve = mix(currentColor, historyColor, factor);
     vec2 momentsResolve = mix(currentMoments, historyMoments.rg, factor);
 
@@ -346,6 +348,8 @@ void main() {
     float varianceBoost = max(1.0, 4.0 / (historyLength + 1.0));
     float variance = max(0.0, momentsResolve.g - momentsResolve.r * momentsResolve.r);
     variance *= varianceBoost;
+
+    variance = roughness <= 0.02 ? 0.0 : variance;
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
     imageStore(resolveImage, pixel, vec4(vec3(resolve), variance));

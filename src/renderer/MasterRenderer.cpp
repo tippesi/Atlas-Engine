@@ -81,6 +81,8 @@ namespace Atlas {
 
 			PrepareMaterials(scene, materials, materialMap);
 
+			dfgPreintegrationTexture.Bind(GL_TEXTURE31);
+
 			auto materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(PackedMaterial), 0,
 				materials.size(), materials.data());
 
@@ -187,10 +189,10 @@ namespace Atlas {
 
 			glDisable(GL_BLEND);
 
-			vertexArray.Bind();
-
 			aoRenderer.Render(viewport, target, camera, scene);
 			rtrRenderer.Render(viewport, target, camera, scene);
+
+			vertexArray.Bind();
 
 			target->lightingFramebuffer.Bind(true);
 			target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
@@ -198,7 +200,7 @@ namespace Atlas {
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
 
-			directionalLightRenderer.Render(viewport, target, camera, scene, &dfgPreintegrationTexture);
+			directionalLightRenderer.Render(viewport, target, camera, scene);
 
 			indirectLightRenderer.Render(viewport, target, camera, scene);
 
@@ -635,7 +637,7 @@ namespace Atlas {
 				glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 				glClear(GL_COLOR_BUFFER_BIT);
 
-				directionalLightRenderer.Render(&viewport, target, &camera, scene, &dfgPreintegrationTexture);
+				directionalLightRenderer.Render(&viewport, target, &camera, scene);
 
 				glEnable(GL_DEPTH_TEST);
 

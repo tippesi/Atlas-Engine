@@ -10,13 +10,18 @@ layout (local_size_x = 8, local_size_y = 8) in;
 layout(binding = 0, r16f) writeonly uniform image2D resolveImage;
 layout(binding = 1, r16f) writeonly uniform image2D momentsImage;
 
-layout(binding = 0) uniform sampler2D historyTexture;
-layout(binding = 1) uniform sampler2D currentTexture;
-layout(binding = 2) uniform sampler2D velocityTexture;
-layout(binding = 3) uniform sampler2D depthTexture;
-layout(binding = 6) uniform sampler2D normalTexture;
-layout(binding = 7) uniform usampler2D materialIdxTexture;
-layout(binding = 10) uniform sampler2D historyMomentsTexture;
+layout(binding = 0) uniform sampler2D currentTexture;
+layout(binding = 1) uniform sampler2D velocityTexture;
+layout(binding = 2) uniform sampler2D depthTexture;
+layout(binding = 3) uniform sampler2D roughnessMetallicAoTexture;
+layout(binding = 4) uniform sampler2D normalTexture;
+layout(binding = 5) uniform usampler2D materialIdxTexture;
+
+layout(binding = 6) uniform sampler2D historyTexture;
+layout(binding = 7) uniform sampler2D historyMomentsTexture;
+layout(binding = 8) uniform sampler2D historyDepthTexture;
+layout(binding = 9) uniform sampler2D historyNormalTexture;
+layout(binding = 10) uniform usampler2D historyMaterialIdxTexture;
 
 uniform vec2 invResolution;
 uniform vec2 resolution;
@@ -202,7 +207,8 @@ void ComputeVarianceMinMax(out float aabbMin, out float aabbMax) {
             float sampleAo = FetchCurrentAo(sharedMemoryIdx);
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
 
-            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth)));
+            float depthPhi = max(1.0, abs(0.125 * linearDepth));
+            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) / depthPhi));
 
             sampleAo *= weight;
         
@@ -220,20 +226,15 @@ void ComputeVarianceMinMax(out float aabbMin, out float aabbMax) {
 
 }
 
-float ComputeDisocclusionWeight(vec3 normal, vec3 historyNormal,
-                                float historyLinearDepth, float linearDepth) {
-    return exp(-abs(1.0 - max(0.0, dot(normal, historyNormal))))
-        * exp(-abs(historyLinearDepth - linearDepth) / linearDepth);
-}
-
 void main() {
+
+    LoadGroupSharedData();
+
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
     if (pixel.x > imageSize(resolveImage).x ||
         pixel.y > imageSize(resolveImage).y)
         return;
-
-    LoadGroupSharedData();
 
     float localNeighbourhoodMin, localNeighbourhoodMax;
     ComputeVarianceMinMax(localNeighbourhoodMin, localNeighbourhoodMax);
@@ -259,7 +260,7 @@ void main() {
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 
-    float factor = 0.9;
+    float factor = 0.95;
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
@@ -276,13 +277,13 @@ void main() {
         ivec2 offsetPixel = historyPixel + offsets[i];
         float confidence = 1.0;
 
-        uint historyMaterialIdx = texelFetch(materialIdxTexture, offsetPixel, 0).r;
+        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
         confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
 
-        vec3 historyNormal = 2.0 * texelFetch(normalTexture, offsetPixel, 0).rgb - 1.0;
-        //confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+        vec3 historyNormal = 2.0 * texelFetch(historyNormalTexture, offsetPixel, 0).rgb - 1.0;
+        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
 
-        float historyDepth = texelFetch(depthTexture, offsetPixel, 0).r;
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
         //confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) / linearDepth));
 
