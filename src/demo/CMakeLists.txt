@@ -15,8 +15,8 @@ file(GLOB_RECURSE DEMO_SOURCE_FILES
 
 # Required: Set both the source and dependency directories 
 # as include directories
-include_directories(../src)
-include_directories(../libs)
+include_directories(../engine)
+include_directories(../../libs)
 
 foreach(SOURCE_FILE IN ITEMS ${DEMO_SOURCE_FILES})
     if (IS_ABSOLUTE "${SOURCE_FILE}")

@@ -62,8 +62,8 @@ set(ATLAS_EXPORT_MAIN ON CACHE BOOL "Override engine settings" FORCE)
 endif()
 
 # Set dependencies location #######################################################################
-set (ATLAS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set (DEMO_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/demo)
+set (ATLAS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/engine)
+set (DEMO_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/demo)
 set(IMGUI_EXTENSION_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/ImguiExtension)
 
 # Add dependencies ################################################################################
