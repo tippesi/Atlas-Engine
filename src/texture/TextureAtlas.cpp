@@ -1,6 +1,8 @@
 #include "TextureAtlas.h"
 
 #include "../shader/ShaderManager.h"
+#include "../Framebuffer.h"
+#include "../Log.h"
 
 #include <algorithm>
 
@@ -28,7 +30,7 @@ namespace Atlas {
 				slices = that.slices;
 				padding = that.padding;
 
-				texture = that.texture;
+				textureArray = that.textureArray;
 
 			}
 
@@ -39,17 +41,7 @@ namespace Atlas {
 		void TextureAtlas::Update(std::vector<Texture2D*>& textures) {
 
 			if (!textures.size())
-				return;
-
-			// Use structure to allow for downscaling without
-			// invalidating the original textures and without
-			// needing to copy them
-			struct TextureStructure {
-				int32_t width;
-				int32_t height;
-				int32_t channels;
-				Texture2D* texture;
-			};
+				return;			
 
 			std::vector<TextureStructure> textureStructures;
 
@@ -63,9 +55,6 @@ namespace Atlas {
 					}
 				);
 			};
-
-			int32_t width = 0, height = 0, 
-				layers = 0, channels = 0;
 
 			for (auto& texture : textureStructures) {
 				width = texture.width > width ?
@@ -91,64 +80,121 @@ namespace Atlas {
 
 			// Approximation of total padding by assuming to stuff
 			// the smallest texture over and over again.
-			auto& smallest = textureStructures[textureStructures.size() - 1];
+			auto& smallest = textureStructures.back();
 			auto smallestSize = glm::max(ivec2(smallest.width, smallest.height), glm::ivec2(1));
 			ivec2 totalPadding = ivec2(width, height) / smallestSize * padding;
 
 			// Add total padding to total size
 			width += totalPadding.x;
 			height += totalPadding.y;
+			
+			std::vector<std::map<Texture2D*, TextureAtlas::Slice>> levels;
 
-			while(textureStructures.size()) {
+			// This will create slices for four texture levels, each downsampled by a factor of two
+			for (int32_t i = 0; i < 5; i++) {
+				const auto levelSlices = CreateSlicesForAtlasLevel(textureStructures, i);
+				levels.push_back(levelSlices);
+			}
 
-				auto textureStruct = textureStructures[0];
-				auto texture = textureStruct.texture;
-				textureStructures.erase(textureStructures.begin());
+			int32_t sizedFormat;
 
-				slices[texture].layer = layers;
-				slices[texture].offset = ivec2(0);
-				slices[texture].size = ivec2(textureStruct.width, textureStruct.height);
+			switch (channels) {
+			case 1: sizedFormat = AE_R8; break;
+			case 2: sizedFormat = AE_RG8; break;
+			case 3: sizedFormat = AE_RGB8; break;
+			default: sizedFormat = AE_RGBA8; break;
+			}
 
-				ivec2 size = ivec2(textureStruct.width, textureStruct.height);
-				ivec2 offset = ivec2(size.x + padding, 0);
+			textureArray = Texture2DArray(width, height, layers, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
-				if ((size.x == width && size.y == height) ||
-					!textureStructures.size()) {
-					layers++;
-					continue;
-				}
+			// Copy all levels to the texture array (note that the order levels are added is important)
+			for (auto& levelSlices : levels) {
+				FillAtlas(levelSlices);
+			}
+
+		}
+
+		std::map<Texture2D*, TextureAtlas::Slice> TextureAtlas::CreateSlicesForAtlasLevel(std::vector<TextureStructure> textures, int32_t level) {
+
+			std::map<Texture2D*, TextureAtlas::Slice> levelSlices;
+
+			int32_t downsampleFactor = pow(2, level);
+
+			for (auto& texture : textures) {
+				texture.width /= downsampleFactor;
+				texture.height /= downsampleFactor;
+
+				texture.width = glm::max(texture.width, 1);
+				texture.height = glm::max(texture.height, 1);
+			}
+
+			// Reuse the offset for levels larger than zero
+			// This reduces the layer by not creating a new one for each level
+			bool reuseOffset = level != 0;
+			// Try to add data to a lower layer for levels > 0
+			if (reuseOffset) layers--;
+
+			while (textures.size()) {
+
+				offset = reuseOffset ? offset : ivec2(0);
+				// Only reuse offset at first loop iteration
+				reuseOffset = false;				
 
 				size_t outerTex = 0;
-				while (outerTex != textureStructures.size()) {
-					outerTex = textureStructures.size();
+				while (outerTex != textures.size()) {
+					outerTex = textures.size();
 
-					if (!textureStructures.size())
+					// Break here, we don't want to increment the y-offset twice when no data is left
+					if (!textures.size())
 						break;
 
-					size_t innerTex = 0;
-					while (innerTex != textureStructures.size()) {
-						innerTex = textureStructures.size();
+					// Attempt to place the front most texture into the new roe
+					auto textureStruct = textures.front();
+					auto texture = textureStruct.texture;
 
-						if (!textureStructures.size() || offset.x == width)
+					ivec2 size = ivec2(textureStruct.width, textureStruct.height);
+					ivec2 remain = ivec2(width, height) - offset;
+
+					// We need to increase the layer in case no space is left
+					if (remain.x - size.x < 0 ||
+						remain.y - size.y < 0) {
+						break;
+					}
+
+					levelSlices[texture].layer = layers;
+					levelSlices[texture].offset = offset;
+					levelSlices[texture].size = size;
+
+					textures.erase(textures.begin());
+
+					offset.x += size.x + padding;
+
+					size_t innerTex = 0;
+					while (innerTex != textures.size()) {
+						innerTex = textures.size();
+
+						if (!textures.size() || offset.x == width)
 							break;
 
-						for (size_t i = 0; i < textureStructures.size(); i++) {
+						// Try to find a texture which might still fit in the
+						// the current row
+						for (size_t i = 0; i < textures.size(); i++) {
 
-							textureStruct = textureStructures[i];
+							textureStruct = textures[i];
 							texture = textureStruct.texture;
 
-							ivec2 remain = ivec2(width, height) - offset;
+							remain = ivec2(width, height) - offset;
 							ivec2 texSize = ivec2(textureStruct.width, textureStruct.height);
 
 							if (remain.x - texSize.x >= 0 &&
 								remain.y - texSize.y >= 0 &&
 								texSize.x <= size.x &&
 								texSize.y <= size.y) {
-								slices[texture].layer = layers;
-								slices[texture].offset = offset;
-								slices[texture].size = texSize;
+								levelSlices[texture].layer = layers;
+								levelSlices[texture].offset = offset;
+								levelSlices[texture].size = texSize;
 								offset.x += texSize.x + padding;
-								textureStructures.erase(textureStructures.begin() + i);
+								textures.erase(textures.begin() + i);
 								break;
 							}
 
@@ -165,33 +211,41 @@ namespace Atlas {
 
 			}
 
-			int32_t sizedFormat;
+			return levelSlices;
 
-			switch (channels) {
-			case 1: sizedFormat = AE_R8; break;
-			case 2: sizedFormat = AE_RG8; break;
-			case 3: sizedFormat = AE_RGB8; break;
-			default: sizedFormat = AE_RGBA8; break;
-			}
+		}
 
-			texture = Texture2DArray(width, height, layers, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		void TextureAtlas::FillAtlas(std::map<Texture2D*, TextureAtlas::Slice> levelSlices) {
 
-			for (auto& key : slices) {
+			Framebuffer readFramebuffer;
+			Framebuffer writeFramebuffer;
+
+			for (auto& key : levelSlices) {
 				auto tex = key.first;
 				auto slice = key.second;
 
-				auto data = tex->GetData<uint8_t>();
-
-				std::vector<uint8_t> convertedData;
-
 				if (tex->channels == channels) {
 
-					convertedData = data;
+					readFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, tex);
+					writeFramebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, &textureArray, slice.layer);
+
+					readFramebuffer.Bind(GL_READ_FRAMEBUFFER);
+					writeFramebuffer.Bind(GL_DRAW_FRAMEBUFFER);
+
+					glBlitFramebuffer(0, 0, tex->width, tex->height,
+						slice.offset.x, slice.offset.y, 
+						slice.offset.x + slice.size.x, 
+						slice.offset.y + slice.size.y,
+						GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
 				}
 				else {
 
-					auto pixelCount = (size_t)tex->width * 
+					auto data = tex->GetData<uint8_t>();
+
+					std::vector<uint8_t> convertedData;
+
+					auto pixelCount = (size_t)tex->width *
 						(size_t)tex->height;
 					auto texChannels = tex->channels;
 
@@ -217,22 +271,24 @@ namespace Atlas {
 
 					}
 
+					if (!convertedData.size())
+						continue;
+
+					// Downscale the texture data if it hasn't the right size
+					if (slice.size.x != tex->width || slice.size.y != tex->height) {
+						Common::Image<uint8_t> image(tex->width, tex->height, tex->channels);
+						image.SetData(convertedData);
+						image.Resize(slice.size.x, slice.size.y);
+						convertedData = image.GetData();
+					}
+
+					textureArray.SetData(convertedData, slice.offset.x,
+						slice.offset.y, slice.layer, slice.size.x,
+						slice.size.y, 1);
+
 				}
 
-				if (!convertedData.size())
-					continue;
-
-				// Downscale the texture data if it hasn't the right size
-				if (slice.size.x != tex->width || slice.size.y != tex->height) {
-					Common::Image<uint8_t> image(tex->width, tex->height, tex->channels);
-					image.SetData(convertedData);
-					image.Resize(slice.size.x, slice.size.y);
-					convertedData = image.GetData();
-				}
-
-				texture.SetData(convertedData, slice.offset.x, 
-					slice.offset.y, slice.layer, slice.size.x, 
-					slice.size.y, 1);
+				slices[tex].push_back(slice);
 			}
 
 		}

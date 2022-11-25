@@ -143,7 +143,7 @@ void App::Render(float deltaTime) {
 
 		viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
 		masterRenderer.RenderTexture(&viewport, &pathTraceTarget.texture, 0.0f, 0.0f,
-			(float)viewport.width, (float)viewport.height);
+			float(viewport.width), float(viewport.height));
 	}
 	else {
 		viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
@@ -151,11 +151,11 @@ void App::Render(float deltaTime) {
 
 		if (debugAo) {
 			masterRenderer.RenderTexture(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
-				viewport.width, viewport.height, false, true);
+				float(viewport.width), float(viewport.height), false, true);
 		}
 		if (debugReflection) {
 			masterRenderer.RenderTexture(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
-				viewport.width, viewport.height, false, true);
+				float(viewport.width), float(viewport.height), false, true);
 		}
 	}
 	
@@ -363,7 +363,7 @@ void App::Render(float deltaTime) {
 			if (ImGui::CollapsingHeader("Reflection (preview)")) {
 				ImGui::Checkbox("Debug##Reflection", &debugReflection);
 				ImGui::Checkbox("Enable reflection", &reflection->enable);
-				ImGui::Checkbox("Enable raytracing##Reflection", &reflection->rt);
+				//ImGui::Checkbox("Enable raytracing##Reflection", &reflection->rt);
 				ImGui::Checkbox("Use shadow map", &reflection->useShadowMap);
 				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
 					ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \
@@ -373,6 +373,7 @@ void App::Render(float deltaTime) {
 				// ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
 				ImGui::SliderFloat("Radiance Limit##Reflection", &reflection->radianceLimit, 0.0f, 10.0f);
 				ImGui::SliderFloat("Bias##Reflection", &reflection->bias, 0.0f, 1.0f);
+				ImGui::SliderFloat("Spatial filter strength##Reflection", &reflection->spatialFilterStrength, 0.0f, 10.0f);
 			}
 			if (ImGui::CollapsingHeader("Camera")) {
 				ImGui::SliderFloat("Exposure##Camera", &camera.exposure, 0.0f, 10.0f);

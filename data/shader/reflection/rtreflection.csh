@@ -95,17 +95,23 @@ void main() {
                 Ray ray;
 
 				float alpha = sqr(material.roughness);
-				float biasedAlpha = (1.0 - bias) * alpha;
 
 				vec3 V = normalize(-viewVec);
 				vec3 N = worldNorm;
 
-                float pdf;
-                ImportanceSampleGGX(blueNoiseVec, N, V, biasedAlpha,
-                                    ray.direction, pdf);
+				blueNoiseVec.y *= (1.0 - bias);
 
-                if (pdf <= 0.0) {
-					// What should we do here?
+				if (material.roughness > 0.02) {
+					float pdf;
+					ImportanceSampleGGX(blueNoiseVec, N, V, alpha,
+										ray.direction, pdf);
+				}
+				else {
+					ray.direction = normalize(reflect(-V, N));
+				}
+
+                if (dot(N, ray.direction) < 0.0) {
+					//reflection += vec3(100.0, 0.0, 0.0);
                     continue;
                 }
 
@@ -128,8 +134,8 @@ void main() {
 #endif
 				}
 
-				float radianceMax = max(max(radiance.r, 
-						max(radiance.g, radiance.b)), radianceLimit);
+				float radianceMax = max(max(max(radiance.r, 
+						max(radiance.g, radiance.b)), radianceLimit), 0.01);
 				reflection += radiance * (radianceLimit / radianceMax);
             }
 
@@ -155,7 +161,7 @@ vec3 EvaluateHit(inout Ray ray) {
 	// Unpack the compressed triangle and extract surface parameters
 	Triangle tri = UnpackTriangle(triangles[ray.hitID]);
 	bool backfaceHit;	
-	Surface surface = GetSurfaceParameters(tri, ray, false, backfaceHit);
+	Surface surface = GetSurfaceParameters(tri, ray, false, backfaceHit, 4);
 	
 	radiance += surface.material.emissiveColor;
 

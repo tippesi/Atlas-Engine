@@ -6,22 +6,34 @@
 #include <../common/material.hsh>
 #include <../common/random.hsh>
 
-layout (local_size_x = 8, local_size_y = 8) in;
+layout (local_size_x = 16, local_size_y = 16) in;
 
 layout(binding = 0, rgba16f) writeonly uniform image2D resolveImage;
 layout(binding = 1, rgba16f) writeonly uniform image2D momentsImage;
 
-layout(binding = 0) uniform sampler2D historyTexture;
-layout(binding = 1) uniform sampler2D currentTexture;
-layout(binding = 2) uniform sampler2D velocityTexture;
-layout(binding = 3) uniform sampler2D depthTexture;
-layout(binding = 4) uniform sampler2D roughnessMetallicAoTexture;
-layout(binding = 6) uniform sampler2D normalTexture;
-layout(binding = 7) uniform usampler2D materialIdxTexture;
-layout(binding = 10) uniform sampler2D historyMomentsTexture;
+layout(binding = 0) uniform sampler2D currentTexture;
+layout(binding = 1) uniform sampler2D velocityTexture;
+layout(binding = 2) uniform sampler2D depthTexture;
+layout(binding = 3) uniform sampler2D roughnessMetallicAoTexture;
+layout(binding = 4) uniform sampler2D normalTexture;
+layout(binding = 5) uniform usampler2D materialIdxTexture;
+
+layout(binding = 6) uniform sampler2D historyTexture;
+layout(binding = 7) uniform sampler2D historyMomentsTexture;
+layout(binding = 8) uniform sampler2D historyDepthTexture;
+layout(binding = 9) uniform sampler2D historyNormalTexture;
+layout(binding = 10) uniform usampler2D historyMaterialIdxTexture;
+
 
 uniform vec2 invResolution;
 uniform vec2 resolution;
+
+const int kernelRadius = 7;
+
+const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
+const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
+
+shared vec4 sharedRadianceDepth[sharedDataSize];
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
@@ -53,6 +65,44 @@ vec3 FetchTexel(ivec2 texel) {
 	
 	vec3 color = max(texelFetch(currentTexture, texel, 0).rgb, 0);
 	return color;
+
+}
+
+void LoadGroupSharedData() {
+
+	ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) - ivec2(kernelRadius);
+
+	uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    for(uint i = gl_LocalInvocationIndex; i < sharedDataSize; i += workGroupSize) {
+        ivec2 localOffset = Unflatten2D(int(i), unflattenedSharedDataSize);
+        ivec2 texel = localOffset + workGroupOffset;
+
+        texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
+
+        sharedRadianceDepth[i].rgb = FetchTexel(texel);
+        sharedRadianceDepth[i].a = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, texel, 0).r);
+    }
+
+    barrier();
+
+}
+
+int GetSharedMemoryIndex(ivec2 pixelOffset) {
+
+    ivec2 pixel = ivec2(gl_LocalInvocationID) + ivec2(kernelRadius);
+    return Flatten2D(pixel + pixelOffset, unflattenedSharedDataSize);
+
+}
+
+vec3 FetchCurrentRadiance(int sharedMemoryIdx) {
+
+    return sharedRadianceDepth[sharedMemoryIdx].rgb;
+
+}
+
+float FetchDepth(int sharedMemoryIdx) {
+
+    return sharedRadianceDepth[sharedMemoryIdx].a;
 
 }
 
@@ -172,7 +222,7 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
     // This could be varied using the temporal variance estimation
     // By using a wide neighborhood for variance estimation (8x8) we introduce block artifacts
     // These are similiar to video compression artifacts, the spatial filter mostly clears them up
-    const int radius = 8;
+    const int radius = kernelRadius;
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
@@ -180,27 +230,20 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 
-    vec3 normal = 2.0 * texelFetch(normalTexture, pixel, 0).rgb - 1.0;
-
     for (int i = -radius; i <= radius; i++) {
         for (int j = -radius; j <= radius; j++) {
-            vec3 color = texelFetch(currentTexture, pixel + ivec2(i, j), 0).rgb;
+            int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
 
-            float historyDepth = texelFetch(depthTexture, pixel + ivec2(i, j), 0).r;
-            float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-            float weight = min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
-            weight = 1.0;
+            vec3 sampleRadiance = FetchCurrentRadiance(sharedMemoryIdx);
+            float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
 
-            uint historyMaterialIdx = texelFetch(materialIdxTexture, pixel + ivec2(i, j), 0).r;
-            weight *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+            float depthPhi = max(1.0, abs(0.25 * linearDepth));
+            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) / depthPhi));
 
-            vec3 historyNormal = 2.0 * texelFetch(normalTexture, pixel + ivec2(i, j), 0).rgb - 1.0;
-            weight *= pow(abs(dot(historyNormal, normal)), 2.0);
-
-            color *= weight;
+            sampleRadiance *= weight;
         
-            m1 += color;
-            m2 += color * color;
+            m1 += sampleRadiance;
+            m2 += sampleRadiance * sampleRadiance;
         }
     }
 
@@ -213,13 +256,9 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
 
 }
 
-float ComputeDisocclusionWeight(vec3 normal, vec3 historyNormal,
-                                float historyLinearDepth, float linearDepth) {
-    return exp(-abs(1.0 - max(0.0, dot(normal, historyNormal))))
-        * exp(-abs(historyLinearDepth - linearDepth) / linearDepth);
-}
-
 void main() {
+
+    LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
     if (pixel.x > imageSize(resolveImage).x ||
@@ -257,7 +296,7 @@ void main() {
     float roughness = material.roughness;
     roughness *= material.roughnessMap ? texelFetch(roughnessMetallicAoTexture, pixel, 0).r : 1.0;
 
-    float factor = clamp(16.0 * log(material.roughness + 1.0), 0.001, 0.95);
+    float factor = clamp(16.0 * log(roughness + 1.0), 0.001, 0.97);
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
@@ -266,7 +305,7 @@ void main() {
 
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
 
-    ivec2 historyPixel = ivec2(vec2(pixel) + vec2(0.5) + velocity * resolution);
+    ivec2 historyPixel = ivec2(floor(((vec2(pixel) + vec2(0.5)) / resolution + velocity) * resolution - ivec2(0.5)));
     float maxConfidence = 0.0;
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges
@@ -274,16 +313,16 @@ void main() {
         ivec2 offsetPixel = historyPixel + offsets[i];
         float confidence = 1.0;
 
-        uint historyMaterialIdx = texelFetch(materialIdxTexture, offsetPixel, 0).r;
-        confidence *= historyMaterialIdx != materialIdx ? 0.1 : 1.0;
-
-        vec3 historyNormal = 2.0 * texelFetch(normalTexture, offsetPixel, 0).rgb - 1.0;
+        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
+        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+        
+        vec3 historyNormal = 2.0 * texelFetch(historyNormalTexture, offsetPixel, 0).rgb - 1.0;
         confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
 
-        float historyDepth = texelFetch(depthTexture, offsetPixel, 0).r;
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) / linearDepth));
-
+        
         maxConfidence = max(maxConfidence, confidence);
     }
     
@@ -298,6 +337,10 @@ void main() {
 
     factor = min(factor, historyLength / (historyLength + 1.0));
 
+    if (abs(velocity.x) + abs(velocity.y) >= 0.001) {
+        factor = min(factor, 0.9);
+    }
+
     vec3 resolve = mix(currentColor, historyColor, factor);
     vec2 momentsResolve = mix(currentMoments, historyMoments.rg, factor);
 
@@ -305,6 +348,8 @@ void main() {
     float varianceBoost = max(1.0, 4.0 / (historyLength + 1.0));
     float variance = max(0.0, momentsResolve.g - momentsResolve.r * momentsResolve.r);
     variance *= varianceBoost;
+
+    variance = roughness <= 0.02 ? 0.0 : variance;
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
     imageStore(resolveImage, pixel, vec4(vec3(resolve), variance));

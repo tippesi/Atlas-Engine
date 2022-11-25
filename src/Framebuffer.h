@@ -120,6 +120,12 @@ namespace Atlas {
 		void Bind(bool resizeViewport = false);
 
 		/**
+		 *
+		 * @param resizeViewport
+		 */
+		void Bind(int32_t target, bool resizeViewport = false);
+
+		/**
 		 * Unbinds any framebuffer.
 		 */
 		void Unbind();
@@ -156,8 +162,6 @@ namespace Atlas {
 
 		std::unordered_map<int32_t, Component> components;
 		std::vector<uint32_t> drawBuffers;
-
-		static uint32_t boundFramebufferID;
 
 	};
 

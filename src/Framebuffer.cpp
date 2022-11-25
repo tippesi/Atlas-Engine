@@ -2,8 +2,6 @@
 
 namespace Atlas {
 
-	uint32_t Framebuffer::boundFramebufferID = 0;
-
 	Framebuffer::Framebuffer() {
 
 		glGenFramebuffers(1, &ID);
@@ -187,22 +185,25 @@ namespace Atlas {
 
 	void Framebuffer::Bind(bool resizeViewport) {
 
-		if (boundFramebufferID != ID) {
-
-			if (resizeViewport) {
-				glViewport(0, 0, width, height);
-			}
-
-			glBindFramebuffer(GL_FRAMEBUFFER, ID);
-
-			boundFramebufferID = ID;
+		if (resizeViewport) {
+			glViewport(0, 0, width, height);
 		}
+
+		glBindFramebuffer(GL_FRAMEBUFFER, ID);
+	}
+
+	void Framebuffer::Bind(int32_t target, bool resizeViewport) {
+
+		if (resizeViewport) {
+			glViewport(0, 0, width, height);
+		}
+
+		glBindFramebuffer(target, ID);
 	}
 
 	void Framebuffer::Unbind() {
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		boundFramebufferID = 0;
 
 	}
 

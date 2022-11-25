@@ -62,6 +62,7 @@ namespace Atlas {
             auto materialIdxTexture = downsampledRT->materialIdxTexture;
             auto randomTexture = &scene->ao->noiseTexture;
 
+            auto historyDepthTexture = downsampledHistoryRT->depthTexture;
             auto historyMaterialIdxTexture = downsampledHistoryRT->materialIdxTexture;
             auto historyNormalTexture = downsampledHistoryRT->geometryNormalTexture;
 
@@ -121,7 +122,7 @@ namespace Atlas {
 
                 ao->noiseTexture.Bind(GL_TEXTURE3);
 
-                target->swapAoTexture.Bind(GL_WRITE_ONLY, 0);
+                target->aoTexture.Bind(GL_WRITE_ONLY, 0);
 
                 glDispatchCompute(groupCount.x, groupCount.y, 1);
             }
@@ -138,13 +139,18 @@ namespace Atlas {
                 target->aoTexture.Bind(GL_WRITE_ONLY, 0);
                 target->aoMomentsTexture.Bind(GL_WRITE_ONLY, 1);
 
-                target->historyAoTexture.Bind(GL_TEXTURE0);
-                target->swapAoTexture.Bind(GL_TEXTURE1);
-                velocityTexture->Bind(GL_TEXTURE2);
-                depthTexture->Bind(GL_TEXTURE3);
-                normalTexture->Bind(GL_TEXTURE6);
-                materialIdxTexture->Bind(GL_TEXTURE7);
-                target->historyAoMomentsTexture.Bind(GL_TEXTURE10);
+                target->swapAoTexture.Bind(GL_TEXTURE0);
+                velocityTexture->Bind(GL_TEXTURE1);
+                depthTexture->Bind(GL_TEXTURE2);
+                roughnessTexture->Bind(GL_TEXTURE3);
+                normalTexture->Bind(GL_TEXTURE4);
+                materialIdxTexture->Bind(GL_TEXTURE5);
+
+                target->historyAoTexture.Bind(GL_TEXTURE6);
+                target->historyAoMomentsTexture.Bind(GL_TEXTURE7);
+                historyDepthTexture->Bind(GL_TEXTURE8);
+                historyNormalTexture->Bind(GL_TEXTURE9);
+                historyMaterialIdxTexture->Bind(GL_TEXTURE10);
 
                 temporalShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
                 temporalShader.GetUniform("invResolution")->SetValue(1.0f / vec2((float)res.x, (float)res.y));

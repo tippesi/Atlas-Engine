@@ -13,11 +13,8 @@ namespace Atlas {
         public:
             DirectionalLightRenderer();
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene) final {}
-
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
-                Scene::Scene* scene, Texture::Texture2D* dfgTexture);
+                Scene::Scene* scene);
 
         private:
             void GetUniforms();
