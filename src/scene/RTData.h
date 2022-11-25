@@ -50,13 +50,13 @@ namespace Atlas {
 			};
 
 			struct GPUTextureLevel {
-				int32_t layer;
+				int32_t layer = 0;
 
-				int32_t x;
-				int32_t y;
+				int32_t x = 0;
+				int32_t y = 0;
 
-				int32_t width;
-				int32_t height;
+				int32_t width = 0;
+				int32_t height = 0;
 
 				int32_t valid = -1;
 			};

@@ -30,7 +30,7 @@ namespace Atlas {
 				slices = that.slices;
 				padding = that.padding;
 
-				texture = that.texture;
+				textureArray = that.textureArray;
 
 			}
 
@@ -105,7 +105,7 @@ namespace Atlas {
 			default: sizedFormat = AE_RGBA8; break;
 			}
 
-			texture = Texture2DArray(width, height, layers, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR);
+			textureArray = Texture2DArray(width, height, layers, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 			// Copy all levels to the texture array (note that the order levels are added is important)
 			for (auto& levelSlices : levels) {
@@ -227,7 +227,7 @@ namespace Atlas {
 				if (tex->channels == channels) {
 
 					readFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, tex);
-					writeFramebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, &texture, slice.layer);
+					writeFramebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, &textureArray, slice.layer);
 
 					readFramebuffer.Bind(GL_READ_FRAMEBUFFER);
 					writeFramebuffer.Bind(GL_DRAW_FRAMEBUFFER);
@@ -282,7 +282,7 @@ namespace Atlas {
 						convertedData = image.GetData();
 					}
 
-					texture.SetData(convertedData, slice.offset.x,
+					textureArray.SetData(convertedData, slice.offset.x,
 						slice.offset.y, slice.layer, slice.size.x,
 						slice.size.y, 1);
 

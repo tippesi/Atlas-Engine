@@ -132,17 +132,17 @@ namespace Atlas {
 					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, GL_TEXTURE6);
 
 					if (rtData.baseColorTextureAtlas.slices.size())
-						rtData.baseColorTextureAtlas.texture.Bind(GL_TEXTURE0);
+						rtData.baseColorTextureAtlas.textureArray.Bind(GL_TEXTURE0);
 					if (rtData.opacityTextureAtlas.slices.size())
-						rtData.opacityTextureAtlas.texture.Bind(GL_TEXTURE1);
+						rtData.opacityTextureAtlas.textureArray.Bind(GL_TEXTURE1);
 					if (rtData.normalTextureAtlas.slices.size())
-						rtData.normalTextureAtlas.texture.Bind(GL_TEXTURE2);
+						rtData.normalTextureAtlas.textureArray.Bind(GL_TEXTURE2);
 					if (rtData.roughnessTextureAtlas.slices.size())
-						rtData.roughnessTextureAtlas.texture.Bind(GL_TEXTURE3);
+						rtData.roughnessTextureAtlas.textureArray.Bind(GL_TEXTURE3);
 					if (rtData.metalnessTextureAtlas.slices.size())
-						rtData.metalnessTextureAtlas.texture.Bind(GL_TEXTURE4);
+						rtData.metalnessTextureAtlas.textureArray.Bind(GL_TEXTURE4);
 					if (rtData.aoTextureAtlas.slices.size())
-						rtData.aoTextureAtlas.texture.Bind(GL_TEXTURE5);
+						rtData.aoTextureAtlas.textureArray.Bind(GL_TEXTURE5);
 					if (scene->sky.probe)
 						scene->sky.probe->cubemap.Bind(GL_TEXTURE6);
 
@@ -249,17 +249,17 @@ namespace Atlas {
 					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, GL_TEXTURE6);
 
 					if (rtData.baseColorTextureAtlas.slices.size())
-						rtData.baseColorTextureAtlas.texture.Bind(GL_TEXTURE0);
+						rtData.baseColorTextureAtlas.textureArray.Bind(GL_TEXTURE0);
 					if (rtData.opacityTextureAtlas.slices.size())
-						rtData.opacityTextureAtlas.texture.Bind(GL_TEXTURE1);
+						rtData.opacityTextureAtlas.textureArray.Bind(GL_TEXTURE1);
 					if (rtData.normalTextureAtlas.slices.size())
-						rtData.normalTextureAtlas.texture.Bind(GL_TEXTURE2);
+						rtData.normalTextureAtlas.textureArray.Bind(GL_TEXTURE2);
 					if (rtData.roughnessTextureAtlas.slices.size())
-						rtData.roughnessTextureAtlas.texture.Bind(GL_TEXTURE3);
+						rtData.roughnessTextureAtlas.textureArray.Bind(GL_TEXTURE3);
 					if (rtData.metalnessTextureAtlas.slices.size())
-						rtData.metalnessTextureAtlas.texture.Bind(GL_TEXTURE4);
+						rtData.metalnessTextureAtlas.textureArray.Bind(GL_TEXTURE4);
 					if (rtData.aoTextureAtlas.slices.size())
-						rtData.aoTextureAtlas.texture.Bind(GL_TEXTURE5);
+						rtData.aoTextureAtlas.textureArray.Bind(GL_TEXTURE5);
 					if (scene->sky.probe)
 						scene->sky.probe->cubemap.Bind(GL_TEXTURE6);
 

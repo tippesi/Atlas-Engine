@@ -143,7 +143,7 @@ void App::Render(float deltaTime) {
 
 		viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
 		masterRenderer.RenderTexture(&viewport, &pathTraceTarget.texture, 0.0f, 0.0f,
-			(float)viewport.width, (float)viewport.height);
+			float(viewport.width), float(viewport.height));
 	}
 	else {
 		viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
@@ -151,11 +151,11 @@ void App::Render(float deltaTime) {
 
 		if (debugAo) {
 			masterRenderer.RenderTexture(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
-				viewport.width, viewport.height, false, true);
+				float(viewport.width), float(viewport.height), false, true);
 		}
 		if (debugReflection) {
 			masterRenderer.RenderTexture(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
-				viewport.width, viewport.height, false, true);
+				float(viewport.width), float(viewport.height), false, true);
 		}
 	}
 	

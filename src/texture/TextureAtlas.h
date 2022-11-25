@@ -53,7 +53,7 @@ namespace Atlas {
 
 			};
 
-			Texture2DArray texture;
+			Texture2DArray textureArray;
 			std::map<Texture2D*, std::vector<Slice>> slices;
 
 		private:
