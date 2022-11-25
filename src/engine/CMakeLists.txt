@@ -139,7 +139,7 @@ target_include_directories(${PROJECT_NAME}
 	${STB_INCLUDE_DIRS}
 	${GLM_INCLUDE_DIRS}
 	${CMAKE_CURRENT_SOURCE_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}/../libs)
+	${CMAKE_CURRENT_SOURCE_DIR}/../../libs)
 	
 # Link libraries ##################################################################################
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${ATLAS_ENGINE_LIBS} LINK_PRIVATE ${ATLAS_ENGINE_SYSTEM_LIBS})

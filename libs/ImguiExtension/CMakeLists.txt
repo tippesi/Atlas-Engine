@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 project(ImguiExtension)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../src/engine)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/)
 
 file(GLOB_RECURSE IMGUI_SOURCE_FILES
