@@ -174,7 +174,7 @@ namespace Atlas {
 			}
 
 			if (component.textureArray) {
-				component.textureArray->Resize(width, height, component.textureArray->layers);
+				component.textureArray->Resize(width, height, component.textureArray->depth);
 				glFramebufferTextureLayer(component.target, componentKey.first,
 										  component.textureArray->GetID(), 0, component.index);
 			}

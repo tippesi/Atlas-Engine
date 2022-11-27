@@ -53,7 +53,7 @@ namespace Atlas {
 		void DirectionalLight::AddLongRangeShadow(float distance) {
 
 			shadow->maps.Resize(shadow->resolution, shadow->resolution,
-				shadow->maps.layers + 1);
+                                shadow->maps.depth + 1);
 
 			shadow->maps.Bind(GL_TEXTURE0);
 
