@@ -1,31 +1,34 @@
 out vec4 color;
 
 #ifdef TEXTURE2D
-in vec2 fTexCoord;
+in vec2 texCoordVS;
 layout(binding = 0) uniform sampler2D rectangleTexture;
 #elif defined(TEXTURE2D_ARRAY)
-in vec2 fTexCoord;
+in vec2 texCoordVS;
 layout(binding = 0) uniform sampler2DArray rectangleTexture;
-uniform float textureDepth;
+#elif defined(TEXTURE3D)
+in vec2 texCoordVS;
+layout(binding = 0) uniform sampler3D rectangleTexture;
 #else
 uniform vec4 rectangleColor;
 #endif
 
-in vec2 fScreenPosition;
-uniform vec4 rectangleBlendArea;
-uniform vec4 rectangleClipArea;
+in vec2 screenPositionVS;
+uniform vec4 blendArea;
+uniform vec4 clipArea;
 uniform bool invert = false;
+uniform float depth;
 
 void main() {
 
-	if (fScreenPosition.x < rectangleClipArea.x ||
-		fScreenPosition.y < rectangleClipArea.y ||
-		fScreenPosition.x > rectangleClipArea.x + rectangleClipArea.z ||
-		fScreenPosition.y > rectangleClipArea.y + rectangleClipArea.w)
+	if (screenPositionVS.x < clipArea.x ||
+		screenPositionVS.y < clipArea.y ||
+		screenPositionVS.x > clipArea.x + clipArea.z ||
+		screenPositionVS.y > clipArea.y + clipArea.w)
 		discard;
 
-#if defined(TEXTURE2D) || defined(TEXTURE2D_ARRAY)
-	vec2 texCoord = fTexCoord;
+#if defined(TEXTURE2D) || defined(TEXTURE2D_ARRAY) || defined(TEXTURE3D)
+	vec2 texCoord = texCoordVS;
 
 	if (invert) {
 		texCoord.y = 1.0 - texCoord.y;
@@ -35,7 +38,9 @@ void main() {
 #ifdef TEXTURE2D
 	color = texture(rectangleTexture, vec2(texCoord));
 #elif defined(TEXTURE2D_ARRAY)
-	color = texture(rectangleTexture, vec3(texCoord, textureDepth));
+	color = texture(rectangleTexture, vec3(texCoord, depth));
+#elif defined(TEXTURE3D)
+	color = texture(rectangleTexture, vec3(texCoord, depth));
 #else
 	color = rectangleColor;
 #endif

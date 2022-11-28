@@ -26,6 +26,7 @@
 #include "RTReflectionRenderer.h"
 #include "VolumetricRenderer.h"
 #include "VegetationRenderer.h"
+#include "TextureRenderer.h"
 
 namespace Atlas {
 
@@ -48,71 +49,6 @@ namespace Atlas {
 			void RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera,
 				Scene::Scene* scene, Texture::Texture2D* texture = nullptr, 
 				RenderBatch* batch = nullptr);
-
-			/**
-             *
-             * @param window
-             * @param texture
-             * @param x
-             * @param y
-             * @param width
-             * @param height
-             * @param alphaBlending
-             * @param framebuffer
-             */
-			void RenderTexture(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-							   bool alphaBlending = false, bool inverted = false, Framebuffer* framebuffer = nullptr);
-
-			/**
-             *
-             * @param window
-             * @param texture
-             * @param x
-             * @param y
-             * @param width
-             * @param height
-             * @param clipArea
-             * @param blendArea
-             * @param alphaBlending
-             * @param framebuffer
-             */
-			void RenderTexture(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-							   vec4 clipArea, vec4 blendArea, bool alphaBlending = false,
-							   bool inverted = false, Framebuffer* framebuffer = nullptr);
-
-			/**
-			 *
-			 * @param window
-			 * @param texture
-			 * @param depth
-			 * @param x
-			 * @param y
-			 * @param width
-			 * @param height
-			 * @param alphaBlending
-			 * @param framebuffer
-			 */
-			void RenderTexture(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y,
-							   float width, float height, bool alphaBlending = false,
-							   bool inverted = false, Framebuffer* framebuffer = nullptr);
-
-			/**
-			 *
-			 * @param window
-			 * @param texture
-			 * @param depth
-			 * @param x
-			 * @param y
-			 * @param width
-			 * @param height
-			 * @param clipArea
-			 * @param blendArea
-			 * @param alphaBlending
-			 * @param framebuffer
-			 */
-			void RenderTexture(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y,
-							   float width, float height, vec4 clipArea, vec4 blendArea, bool alphaBlending = false,
-							   bool inverted = false, Framebuffer* framebuffer = nullptr);
 
 			/**
              *
@@ -175,6 +111,7 @@ namespace Atlas {
 			void Update();
 
 			TextRenderer textRenderer;
+			TextureRenderer textureRenderer;
 			OceanRenderer oceanRenderer;
 			AtmosphereRenderer atmosphereRenderer;
 
@@ -211,8 +148,6 @@ namespace Atlas {
 			Buffer::VertexArray cubeVertexArray;
 
 			Shader::Shader rectangleShader;
-			Shader::Shader texture2DShader;
-			Shader::Shader texture2DArrayShader;
 
 			Shader::Shader lineShader;
 
@@ -226,19 +161,6 @@ namespace Atlas {
 			Shader::Uniform* rectangleColor = nullptr;
 			Shader::Uniform* rectangleClipArea = nullptr;
 			Shader::Uniform* rectangleBlendArea = nullptr;
-
-			Shader::Uniform* texture2DProjectionMatrix = nullptr;
-			Shader::Uniform* texture2DOffset = nullptr;
-			Shader::Uniform* texture2DScale = nullptr;
-			Shader::Uniform* texture2DClipArea = nullptr;
-			Shader::Uniform* texture2DBlendArea = nullptr;
-
-			Shader::Uniform* texture2DArrayProjectionMatrix = nullptr;
-			Shader::Uniform* texture2DArrayOffset = nullptr;
-			Shader::Uniform* texture2DArrayScale = nullptr;
-			Shader::Uniform* texture2DArrayClipArea = nullptr;
-			Shader::Uniform* texture2DArrayBlendArea = nullptr;
-			Shader::Uniform* texture2DArrayDepth = nullptr;
 
 			Shader::Uniform* lineViewMatrix = nullptr;
 			Shader::Uniform* lineProjectionMatrix = nullptr;

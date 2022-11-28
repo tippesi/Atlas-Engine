@@ -142,7 +142,7 @@ void App::Render(float deltaTime) {
 			GL_SHADER_STORAGE_BARRIER_BIT);
 
 		viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
-		masterRenderer.RenderTexture(&viewport, &pathTraceTarget.texture, 0.0f, 0.0f,
+		masterRenderer.textureRenderer.RenderTexture2D(&viewport, &pathTraceTarget.texture, 0.0f, 0.0f,
 			float(viewport.width), float(viewport.height));
 	}
 	else {
@@ -150,11 +150,11 @@ void App::Render(float deltaTime) {
 		masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
 
 		if (debugAo) {
-			masterRenderer.RenderTexture(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
+			masterRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
 				float(viewport.width), float(viewport.height), false, true);
 		}
 		if (debugReflection) {
-			masterRenderer.RenderTexture(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
+			masterRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
 				float(viewport.width), float(viewport.height), false, true);
 		}
 	}
