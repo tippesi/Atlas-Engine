@@ -45,7 +45,7 @@ private:
 
 	void SetResolution(int32_t width, int32_t height);
 
-	SceneSelection sceneSelection = SPONZA;
+	SceneSelection sceneSelection = PICAPICA;
 
 	Atlas::Renderer::PathTracerRenderTarget pathTraceTarget;
 	Atlas::RenderTarget* renderTarget;

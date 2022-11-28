@@ -36,11 +36,11 @@ void main() {
 #endif
 	
 #ifdef TEXTURE2D
-	color = texture(rectangleTexture, vec2(texCoord));
+	color = textureLod(rectangleTexture, vec2(texCoord), 0.0);
 #elif defined(TEXTURE2D_ARRAY)
-	color = texture(rectangleTexture, vec3(texCoord, depth));
+	color = textureLod(rectangleTexture, vec3(texCoord, depth), 0.0);
 #elif defined(TEXTURE3D)
-	color = texture(rectangleTexture, vec3(texCoord, depth));
+	color = textureLod(rectangleTexture, vec3(texCoord, depth), 0.0);
 #else
 	color = rectangleColor;
 #endif

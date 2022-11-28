@@ -1,0 +1,48 @@
+#include <../common/utility.hsh>
+
+vec3 Random3(vec3 p){
+    vec3 q = vec3(dot(p, vec3(127.1, 311.7, 74.7)),
+				  dot(p, vec3(269.5, 183.3, 246.1)),
+				  dot(p, vec3(113.5, 271.9, 124.6)));
+	return fract(sin(q)*43758.5453);
+}
+
+float Worley(vec3 pos, float scale, float seed) {
+
+    pos *= scale;
+    pos += 0.5;
+
+    vec3 base = floor(pos);
+    vec3 frac = fract(pos);
+
+    float dist = 1.0;
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            for (int z = -1; z <= 1; z++) {
+                vec3 cell = vec3(x, y, z);
+                vec3 offset = Random3(mod(base + cell + seed, scale));
+                vec3 cellPos = base + cell + offset;
+
+                dist = min(dist, distance(cellPos, pos));
+            }
+        }
+    }
+
+    return 1.0 - dist;
+
+}
+
+float Worley4Octaves(vec3 pos, float scale, float seed, vec4 weights) {
+
+    float octave0 = Worley(pos, 1.0 * scale, seed) * weights.x;
+    float octave1 = Worley(pos, 2.0 * scale, seed) * weights.y;
+    float octave2 = Worley(pos, 4.0 * scale, seed) * weights.z;
+    float octave3 = Worley(pos, 8.0 * scale, seed) * weights.w;
+
+    return (octave0 + octave1 + octave2 + octave3) / sum(weights);
+
+}
+
+float Remap(float originalValue, float originalMin,  float originalMax, float newMin, float newMax) {
+    return newMin + (((originalValue - originalMin) / (originalMax - originalMin)) * (newMax - newMin));
+} 

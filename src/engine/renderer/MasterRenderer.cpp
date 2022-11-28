@@ -225,6 +225,8 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
+			volumetricCloudRenderer.Render(viewport, target, camera, scene);
+
 			volumetricRenderer.Render(viewport, target, camera, scene);
 
 			if (taa.enable) {

@@ -11,8 +11,8 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		class TextureRenderer
-		{
+		class TextureRenderer {
+
 		public:
 			TextureRenderer();
 

@@ -57,7 +57,6 @@ namespace Atlas {
 				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			}
 
-
 			auto projectionMatrix = glm::ortho(0.0f, (float)viewport->width, 0.0f, (float)viewport->height);
 			texture2DShader.GetUniform("pMatrix")->SetValue(projectionMatrix);
 			texture2DShader.GetUniform("offset")->SetValue(vec2(x, y));

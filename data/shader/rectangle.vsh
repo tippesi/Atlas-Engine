@@ -18,7 +18,7 @@ void main() {
     gl_Position = pMatrix * vec4(screenPositionVS, 0.0, 1.0);
 	gl_Position.y *= -1.0f;
 	
-#if defined(TEXTURE2D) || defined(TEXTURE2D_ARRAY)
+#if defined(TEXTURE2D) || defined(TEXTURE2D_ARRAY) || defined(TEXTURE3D)
 	texCoordVS = position;
 #endif
 	

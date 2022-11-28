@@ -65,6 +65,11 @@ void App::LoadContent() {
 	scene.fog->height = 0.0f;
 	scene.fog->scatteringAnisotropy = 0.0f;
 
+	scene.clouds = new Atlas::Lighting::VolumetricClouds();
+	scene.clouds->aabbMin = glm::vec3(-20.0f, 15.0f, -20.0f);
+	scene.clouds->aabbMax = glm::vec3(20.0f, 20.0f, 20.0f);
+	scene.clouds->shapeScale = 3.5f;
+
 	scene.postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
 	scene.postProcessing.sharpen.enable = true;
 	scene.postProcessing.sharpen.factor = 0.15f;
@@ -129,8 +134,11 @@ void App::Render(float deltaTime) {
 	static bool pathTrace = false;
 	static bool debugAo = false;
 	static bool debugReflection = false;
+	static bool debugClouds = false;
 	static bool slowMode = false;
 	
+	static float cloudDepthDebug = 0.0f;
+
 	window.Clear();
 
 	if (animateLight) directionalLight.direction = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
@@ -157,6 +165,10 @@ void App::Render(float deltaTime) {
 			masterRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
 				float(viewport.width), float(viewport.height), false, true);
 		}
+		if (debugClouds) {
+			masterRenderer.textureRenderer.RenderTexture3D(&viewport, &scene.clouds->shapeTexture, cloudDepthDebug, 0.0f, 0.0f,
+				float(viewport.width), float(viewport.height), false, true);
+		}
 	}
 	
 	float averageFramerate = Atlas::Clock::GetAverage();
@@ -170,6 +182,7 @@ void App::Render(float deltaTime) {
 		auto& ao = scene.ao;
 		auto& fog = scene.fog;
 		auto& reflection = scene.reflection;
+		auto& clouds = scene.clouds;
 
 		bool openSceneNotFoundPopup = false;
 
@@ -395,6 +408,16 @@ void App::Render(float deltaTime) {
 				ImGui::SliderFloat("Height##Fog", &fog->height, 0.0f, 300.0f, "%.3f", 4.0f);
 				ImGui::SliderFloat("Height falloff##Fog", &fog->heightFalloff, 0.0f, 0.5f, "%.4f", 4.0f);
 				ImGui::SliderFloat("Scattering anisotropy##Fog", &fog->scatteringAnisotropy, -1.0f, 1.0f, "%.3f", 2.0f);
+			}
+			if (ImGui::CollapsingHeader("Clouds")) {
+				ImGui::Checkbox("Debug##Clouds", &debugClouds);
+				ImGui::SliderFloat("Cloud noise depth##Clouds", &cloudDepthDebug, 0.0f, 1.0f);
+				ImGui::SliderFloat("Shape scale##Clouds", &clouds->shapeScale, 0.0f, 10.0f);
+				ImGui::SliderFloat("Density multiplier##Clouds", &clouds->densityMultiplier, 0.0f, 10.0f);
+				ImGui::SliderFloat("Density cutoff##Clouds", &clouds->densityCutoff, 0.0f, 1.0f);
+				if (ImGui::Button("Update noise textures##Clouds")) {
+					clouds->needsNoiseUpdate = true;
+				}
 			}
 			if (ImGui::CollapsingHeader("Postprocessing")) {
 				ImGui::Text("Temporal anti-aliasing");

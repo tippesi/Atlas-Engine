@@ -178,7 +178,8 @@ namespace Atlas {
                 // We keep the depth texture binding from blur pass and only bind volumetric texture
                 target->volumetricTexture.Bind(0);
                 target->GetDownsampledTextures(target->GetVolumetricResolution())->depthTexture->Bind(1);
-                target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(2);
+                target->volumetricCloudsTexture.Bind(2);
+                target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(3);
 
                 auto fog = scene->fog;
                 bool fogEnabled = fog && fog->enable;

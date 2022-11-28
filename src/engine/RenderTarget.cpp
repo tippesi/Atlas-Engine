@@ -155,6 +155,7 @@ namespace Atlas {
 		volumetricResolution = resolution;
 
 		volumetricTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
+		volumetricCloudsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
 		swapVolumetricTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
 
 	}
