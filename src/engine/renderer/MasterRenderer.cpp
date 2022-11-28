@@ -81,7 +81,7 @@ namespace Atlas {
 
 			PrepareMaterials(scene, materials, materialMap);
 
-			dfgPreintegrationTexture.Bind(GL_TEXTURE31);
+			dfgPreintegrationTexture.Bind(31);
 
 			auto materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(PackedMaterial), 0,
 				materials.size(), materials.data());
@@ -102,7 +102,7 @@ namespace Atlas {
 
 			if (scene->sky.probe) {
 				if (scene->sky.probe->update) {
-					scene->sky.probe->filteredDiffuse.Bind(GL_TEXTURE0);
+					scene->sky.probe->filteredDiffuse.Bind(0);
 					FilterProbe(scene->sky.probe);
 					scene->sky.probe->update = false;
 				}
@@ -327,7 +327,7 @@ namespace Atlas {
 			texture2DClipArea->SetValue(clipArea);
 			texture2DShader.GetUniform("invert")->SetValue(invert);
 
-			texture->Bind(GL_TEXTURE0);
+			texture->Bind(0);
 
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -387,7 +387,7 @@ namespace Atlas {
 			texture2DArrayDepth->SetValue((float)depth);
 			texture2DArrayShader.GetUniform("invert")->SetValue(invert);
 
-			texture->Bind(GL_TEXTURE0);
+			texture->Bind(0);
 
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -668,8 +668,8 @@ namespace Atlas {
 				probe->cubemap.Bind(GL_WRITE_ONLY, 0);
 				probe->depth.Bind(GL_WRITE_ONLY, 1);
 
-				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
-				target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
+				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(0);
+				target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(1);
 
 				glDispatchCompute(groupCount, groupCount, 1);
 
@@ -702,7 +702,7 @@ namespace Atlas {
 			cubeVertexArray.Bind();
 			framebuffer.Bind();
 
-			probe->cubemap.Bind(GL_TEXTURE0);
+			probe->cubemap.Bind(0);
 
 			glViewport(0, 0, probe->filteredDiffuse.width, probe->filteredDiffuse.height);
 			glDisable(GL_DEPTH_TEST);

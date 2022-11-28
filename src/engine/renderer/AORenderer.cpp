@@ -79,12 +79,12 @@ namespace Atlas {
                         target->swapAoTexture.Bind(GL_WRITE_ONLY, 3);
 
                         // Bind the geometry normal texure and depth texture
-                        normalTexture->Bind(GL_TEXTURE0);
-                        depthTexture->Bind(GL_TEXTURE1);
+                        normalTexture->Bind(0);
+                        depthTexture->Bind(1);
 
-                        //ssao->noiseTexture.Bind(GL_TEXTURE2);
-                        offsetTexture->Bind(GL_TEXTURE3);
-                        blueNoiseTexture.Bind(GL_TEXTURE2);
+                        //ssao->noiseTexture.Bind(2);
+                        offsetTexture->Bind(3);
+                        blueNoiseTexture.Bind(2);
 
                         rtaoShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
                         rtaoShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
@@ -117,10 +117,10 @@ namespace Atlas {
                 ssaoShader.GetUniform("frameCount")->SetValue(0);
 
                 // Bind the geometry normal texure and depth texture
-                normalTexture->Bind(GL_TEXTURE1);
-                depthTexture->Bind(GL_TEXTURE2);
+                normalTexture->Bind(1);
+                depthTexture->Bind(2);
 
-                ao->noiseTexture.Bind(GL_TEXTURE3);
+                ao->noiseTexture.Bind(3);
 
                 target->aoTexture.Bind(GL_WRITE_ONLY, 0);
 
@@ -139,18 +139,18 @@ namespace Atlas {
                 target->aoTexture.Bind(GL_WRITE_ONLY, 0);
                 target->aoMomentsTexture.Bind(GL_WRITE_ONLY, 1);
 
-                target->swapAoTexture.Bind(GL_TEXTURE0);
-                velocityTexture->Bind(GL_TEXTURE1);
-                depthTexture->Bind(GL_TEXTURE2);
-                roughnessTexture->Bind(GL_TEXTURE3);
-                normalTexture->Bind(GL_TEXTURE4);
-                materialIdxTexture->Bind(GL_TEXTURE5);
+                target->swapAoTexture.Bind(0);
+                velocityTexture->Bind(1);
+                depthTexture->Bind(2);
+                roughnessTexture->Bind(3);
+                normalTexture->Bind(4);
+                materialIdxTexture->Bind(5);
 
-                target->historyAoTexture.Bind(GL_TEXTURE6);
-                target->historyAoMomentsTexture.Bind(GL_TEXTURE7);
-                historyDepthTexture->Bind(GL_TEXTURE8);
-                historyNormalTexture->Bind(GL_TEXTURE9);
-                historyMaterialIdxTexture->Bind(GL_TEXTURE10);
+                target->historyAoTexture.Bind(6);
+                target->historyAoMomentsTexture.Bind(7);
+                historyDepthTexture->Bind(8);
+                historyNormalTexture->Bind(9);
+                historyMaterialIdxTexture->Bind(10);
 
                 temporalShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
                 temporalShader.GetUniform("invResolution")->SetValue(1.0f / vec2((float)res.x, (float)res.y));
@@ -168,8 +168,8 @@ namespace Atlas {
 
                 const int32_t groupSize = 256;
 
-                depthTexture->Bind(GL_TEXTURE1);
-                normalTexture->Bind(GL_TEXTURE2);
+                depthTexture->Bind(1);
+                normalTexture->Bind(2);
 
                 std::vector<float> kernelWeights;
                 std::vector<float> kernelOffsets;
@@ -190,7 +190,7 @@ namespace Atlas {
                     horizontalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
                     horizontalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
 
-                    target->aoTexture.Bind(GL_TEXTURE0);
+                    target->aoTexture.Bind(0);
                     target->swapAoTexture.Bind(GL_WRITE_ONLY, 0);
 
                     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -205,7 +205,7 @@ namespace Atlas {
                     verticalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
                     verticalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
 
-                    target->swapAoTexture.Bind(GL_TEXTURE0);
+                    target->swapAoTexture.Bind(0);
                     target->aoTexture.Bind(GL_WRITE_ONLY, 0);
 
                     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

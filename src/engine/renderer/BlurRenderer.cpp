@@ -45,14 +45,14 @@ namespace Atlas {
             framebuffer.Bind();
 
             if (bilateralBlur) {
-                depthTexture->Bind(GL_TEXTURE1);
+                depthTexture->Bind(1);
             }
 
             glViewport(0, 0, texture->width, texture->height);
 
             framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, swapTexture);
 
-            texture->Bind(GL_TEXTURE0);
+            texture->Bind(0);
 
             blurDirection->SetValue(vec2(1.0f / (float)texture->width, 0.0f));
 
@@ -60,7 +60,7 @@ namespace Atlas {
 
             framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, texture);
 
-            swapTexture->Bind(GL_TEXTURE0);
+            swapTexture->Bind(0);
 
             blurDirection->SetValue(vec2(0.0f, 1.0f / (float)texture->height));
 

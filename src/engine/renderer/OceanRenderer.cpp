@@ -58,7 +58,7 @@ namespace Atlas {
 				causticsShader.Bind();
 
 				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_READ_WRITE, 1);
-				target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
+				target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(0);
 
 				causticsShader.GetUniform("waterHeight")->SetValue(ocean->translation.y);
 
@@ -75,7 +75,7 @@ namespace Atlas {
 					causticsShader.GetUniform("light.shadow.cascadeCount")->SetValue(sun->GetShadow()->componentCount);
 					causticsShader.GetUniform("light.shadow.resolution")->SetValue(vec2((float)sun->GetShadow()->resolution));
 
-					sun->GetShadow()->maps.Bind(GL_TEXTURE8);
+					sun->GetShadow()->maps.Bind(8);
 
 					for (int32_t i = 0; i < sun->GetShadow()->componentCount; i++) {
 						auto cascade = &sun->GetShadow()->components[i];
@@ -142,7 +142,7 @@ namespace Atlas {
 				if (sun->GetVolumetric()) {
 					ivec2 res = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
 					glViewport(0, 0, res.x, res.x);
-					target->volumetricTexture.Bind(GL_TEXTURE7);
+					target->volumetricTexture.Bind(7);
 					glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
 				}
 
@@ -154,7 +154,7 @@ namespace Atlas {
 					shadowCascadeCount->SetValue(sun->GetShadow()->componentCount);
 					shadowResolution->SetValue(vec2((float)sun->GetShadow()->resolution));
 
-					sun->GetShadow()->maps.Bind(GL_TEXTURE8);
+					sun->GetShadow()->maps.Bind(8);
 
 					for (int32_t i = 0; i < sun->GetShadow()->componentCount; i++) {
 						auto cascade = &sun->GetShadow()->components[i];
@@ -187,16 +187,16 @@ namespace Atlas {
 				shoreWaveSpeed->SetValue(ocean->shoreWaveSpeed);
 				shoreWaveLength->SetValue(ocean->shoreWaveLength);
 
-				ocean->simulation.displacementMap.Bind(GL_TEXTURE0);
-				ocean->simulation.normalMap.Bind(GL_TEXTURE1);
+				ocean->simulation.displacementMap.Bind(0);
+				ocean->simulation.normalMap.Bind(1);
 
-				ocean->foamTexture.Bind(GL_TEXTURE2);
+				ocean->foamTexture.Bind(2);
 
 				if (scene->sky.probe)
-					scene->sky.probe->cubemap.Bind(GL_TEXTURE3);
+					scene->sky.probe->cubemap.Bind(3);
 
-				refractionTexture.Bind(GL_TEXTURE4);
-				depthTexture.Bind(GL_TEXTURE5);
+				refractionTexture.Bind(4);
+				depthTexture.Bind(5);
 
 				// In case a terrain isn't available
 				terrainSideLength->SetValue(-1.0f);
@@ -209,14 +209,14 @@ namespace Atlas {
 						terrainHeightScale->SetValue(scene->terrain->heightScale);
 						terrainSideLength->SetValue(scene->terrain->sideLength);
 
-						scene->terrain->shoreLine.Bind(GL_TEXTURE9);
+						scene->terrain->shoreLine.Bind(9);
 
 					}
 				}
 
 				if (ocean->rippleTexture.width > 0 &&
 					ocean->rippleTexture.height > 0) {
-					ocean->rippleTexture.Bind(GL_TEXTURE10);
+					ocean->rippleTexture.Bind(10);
 					hasRippleTexture->SetValue(true);
 				}
 				else {

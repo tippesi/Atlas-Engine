@@ -142,7 +142,7 @@ namespace Atlas {
 									backFaceCulling);
 
 								if (material->HasOpacityMap()) {
-									material->opacityMap->Bind(GL_TEXTURE0);
+									material->opacityMap->Bind(0);
 								}
 
 								glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),

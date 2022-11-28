@@ -67,10 +67,10 @@ namespace Atlas {
 			}
 
 			if (taa.enable) {
-				target->GetHistory()->Bind(GL_TEXTURE0);
+				target->GetHistory()->Bind(0);
 			}
 			else {
-				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
+				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(0);
 			}
 
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -90,7 +90,7 @@ namespace Atlas {
 				groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
 				target->postProcessTexture.Bind(GL_WRITE_ONLY, 0);
-				target->postProcessFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE1);
+				target->postProcessFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(1);
 
 				sharpenFactor->SetValue(sharpen.factor);
 

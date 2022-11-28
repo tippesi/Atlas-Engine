@@ -84,19 +84,19 @@ namespace Atlas {
 					auto material = subData.material;
 
 					if (material->HasBaseColorMap())
-						material->baseColorMap->Bind(GL_TEXTURE0);
+						material->baseColorMap->Bind(0);
 					if (material->HasOpacityMap())
-						material->opacityMap->Bind(GL_TEXTURE1);
+						material->opacityMap->Bind(1);
 					if (material->HasNormalMap())
-						material->normalMap->Bind(GL_TEXTURE2);
+						material->normalMap->Bind(2);
 					if (material->HasRoughnessMap())
-						material->roughnessMap->Bind(GL_TEXTURE3);
+						material->roughnessMap->Bind(3);
 					if (material->HasMetalnessMap())
-						material->metalnessMap->Bind(GL_TEXTURE4);
+						material->metalnessMap->Bind(4);
 					if (material->HasAoMap())
-						material->aoMap->Bind(GL_TEXTURE5);
+						material->aoMap->Bind(5);
 					if (material->HasDisplacementMap())
-						material->displacementMap->Bind(GL_TEXTURE6);
+						material->displacementMap->Bind(6);
 
 					shader.GetUniform("materialIdx")->SetValue((uint32_t)materialMap[material]);
 
@@ -145,7 +145,7 @@ namespace Atlas {
 					auto material = subData.material;
 
 					if (material->HasOpacityMap())
-						material->opacityMap->Bind(GL_TEXTURE1);
+						material->opacityMap->Bind(1);
 
 					auto offset = helper.GetCommandBufferOffset(*mesh, subData);
 					glMultiDrawElementsIndirect(mesh->data.primitiveType, mesh->data.indices.GetType(),

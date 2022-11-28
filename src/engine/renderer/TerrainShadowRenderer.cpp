@@ -72,7 +72,7 @@ namespace Atlas {
 
 					for (auto node : terrain->renderList) {
 
-						node->cell->heightField->Bind(GL_TEXTURE0);
+						node->cell->heightField->Bind(0);
 
 						nodeLocation->SetValue(node->location);
 						nodeSideLength->SetValue(node->sideLength);

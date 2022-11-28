@@ -132,8 +132,8 @@ namespace Atlas {
 
 			Profiler::EndAndBeginQuery("Ray evaluation");
 
-			lastIrradianceArray.Bind(GL_TEXTURE24);
-			lastMomentsArray.Bind(GL_TEXTURE25);
+			lastIrradianceArray.Bind(24);
+			lastMomentsArray.Bind(25);
 
 			helper.DispatchHitClosest(&rayHitShader, false,
 				[&]() {
@@ -158,7 +158,7 @@ namespace Atlas {
 						rayHitShader.GetUniform("shadow.cascadeCount")->SetValue(shadow->componentCount);
 						rayHitShader.GetUniform("shadow.resolution")->SetValue(vec2((float)shadow->resolution));
 
-						shadow->maps.Bind(GL_TEXTURE26);
+						shadow->maps.Bind(26);
 
 						for (int32_t i = 0; i < shadow->componentCount; i++) {
 							auto cascade = &shadow->components[i];
@@ -266,7 +266,7 @@ namespace Atlas {
 					copyEdgeShader.GetUniform("probeRes")->SetValue(volume->irrRes);
 					copyEdgeShader.GetUniform("volumeLayer")->SetValue(y);
 
-					irradianceArray.Bind(GL_TEXTURE0);
+					irradianceArray.Bind(0);
 
 					glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -278,7 +278,7 @@ namespace Atlas {
 					copyEdgeShader.GetUniform("probeRes")->SetValue(volume->momRes);
 					copyEdgeShader.GetUniform("volumeLayer")->SetValue(y);
 
-					momentsArray.Bind(GL_TEXTURE0);
+					momentsArray.Bind(0);
 
 					glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -330,8 +330,8 @@ namespace Atlas {
 			probeDebugShader.GetUniform("cellLength")->SetValue(glm::length(volume->cellSize));
 
 			auto [irradianceArray, momentsArray] = volume->internal.GetCurrentProbes();
-			irradianceArray.Bind(GL_TEXTURE12);
-			momentsArray.Bind(GL_TEXTURE13);
+			irradianceArray.Bind(12);
+			momentsArray.Bind(13);
 
 			volume->internal.probeStateBuffer.BindBase(9);
 			volume->internal.probeOffsetBuffer.BindBase(10);

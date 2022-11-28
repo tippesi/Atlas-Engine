@@ -19,7 +19,7 @@ namespace Atlas {
 			maps = Texture::Texture2DArray(resolution, resolution, cascadeCount, 
 				AE_DEPTH16, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
-			maps.Bind(GL_TEXTURE0);
+			maps.Bind(0);
 
 			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
@@ -41,7 +41,7 @@ namespace Atlas {
 				cubemap  = Texture::Cubemap(resolution, resolution, AE_DEPTH16, 
 					GL_CLAMP_TO_EDGE, GL_LINEAR, false);
 
-				cubemap.Bind(GL_TEXTURE0);
+				cubemap.Bind(0);
 
 				glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 				glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
@@ -52,7 +52,7 @@ namespace Atlas {
 				maps = Texture::Texture2DArray(resolution, resolution, 1,
 					AE_DEPTH16 , GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
-				maps.Bind(GL_TEXTURE0);
+				maps.Bind(0);
 
 				glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 				glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);

@@ -43,7 +43,7 @@ namespace Atlas {
 
 				auto actorCount = buffer->GetElementCount();				
 
-				mesh->impostor->baseColorTexture.Bind(GL_TEXTURE0);
+				mesh->impostor->baseColorTexture.Bind(0);
 
 				// Base 0 is used by the materials
 				mesh->impostor->viewPlaneBuffer.BindBase(1);

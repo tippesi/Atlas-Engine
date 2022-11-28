@@ -53,7 +53,7 @@ namespace Atlas {
 			if (!target)
 				return;
 
-			glActiveTexture(unit);
+			glActiveTexture(GL_TEXTURE0 + unit);
 			Bind();
 
 		}
@@ -225,7 +225,7 @@ namespace Atlas {
 
         void Texture::Unbind(uint32_t target, uint32_t unit) {
 
-            glActiveTexture(unit);
+            glActiveTexture(GL_TEXTURE0 + unit);
             glBindTexture(target, 0);
 
         }

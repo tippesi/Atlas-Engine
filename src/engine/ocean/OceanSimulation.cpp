@@ -95,10 +95,10 @@ namespace Atlas {
 			h0.GetUniform("windDependency")->SetValue(windDependency);
 			h0.GetUniform("waveSurpression")->SetValue(waveSurpression);
 
-			noise0.Bind(GL_TEXTURE2);
-			noise1.Bind(GL_TEXTURE3);
-			noise2.Bind(GL_TEXTURE4);
-			noise3.Bind(GL_TEXTURE5);
+			noise0.Bind(2);
+			noise1.Bind(3);
+			noise2.Bind(4);
+			noise3.Bind(5);
 
 			h0K.Bind(GL_WRITE_ONLY, 0);
 

@@ -67,7 +67,7 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
-			scene->sky.probe->cubemap.Bind(GL_TEXTURE0);
+			scene->sky.probe->cubemap.Bind(0);
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 
