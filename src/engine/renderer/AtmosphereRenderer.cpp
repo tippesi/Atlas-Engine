@@ -31,16 +31,26 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
+			auto lights = scene->GetLights();
+			Lighting::DirectionalLight* sun = nullptr;
+			for (auto light : lights) {
+				if (light->type == AE_DIRECTIONAL_LIGHT) {
+					sun = (Lighting::DirectionalLight*)light;
+				}
+			}
+
+			if (!sun) return;
+
 			auto location = camera->GetLocation();
 
 			shader.GetUniform("vMatrix")->SetValue(camera->viewMatrix);
 			shader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
 			shader.GetUniform("cameraLocation")->SetValue(location);
-			shader.GetUniform("sunDirection")->SetValue(vec3(0.0f, -1.0f, 0.0f));
-			shader.GetUniform("sunIntensity")->SetValue(22.0f);
-			shader.GetUniform("planetCenter")->SetValue(-vec3(0.0f, 6371000.0f, 0.0f));
-			shader.GetUniform("planetRadius")->SetValue(6371000.0f);
-			shader.GetUniform("atmosphereRadius")->SetValue(6471000.0f);
+			shader.GetUniform("sunDirection")->SetValue(sun->direction);
+			shader.GetUniform("sunIntensity")->SetValue(sun->intensity);
+			shader.GetUniform("planetCenter")->SetValue(-vec3(0.0f, 65000.0f, 0.0f));
+			shader.GetUniform("planetRadius")->SetValue(65000.0f);
+			shader.GetUniform("atmosphereRadius")->SetValue(66000.0f);
             shader.GetUniform("pvMatrixLast")->SetValue(camera->GetLastJitteredMatrix());
 			shader.GetUniform("jitterLast")->SetValue(camera->GetLastJitter());
 			shader.GetUniform("jitterCurrent")->SetValue(camera->GetJitter());

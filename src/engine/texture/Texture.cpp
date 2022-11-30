@@ -157,6 +157,7 @@ namespace Atlas {
 
 		void Texture::GenerateMipmap() {
 
+            Bind();
 			if (mipmaps)
 				glGenerateMipmap(target);
 

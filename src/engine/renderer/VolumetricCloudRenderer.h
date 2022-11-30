@@ -21,11 +21,14 @@ namespace Atlas {
 
 		private:
 			void GenerateShapeTexture(Texture::Texture3D* texture, float baseScale);
+			
+			void GenerateDetailTexture(Texture::Texture3D* texture, float baseScale);
 
 			Shader::Shader shapeNoiseShader;
 			Shader::Shader detailNoiseShader;
 			Shader::Shader integrateShader;
-			// Shader::Shader perlinNoiseShader;
+			
+			Texture::Texture2D blueNoiseTexture;
 
 		};
 

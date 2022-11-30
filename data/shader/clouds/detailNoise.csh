@@ -13,7 +13,7 @@ void main() {
 
     vec3 pos = vec3(pixel) / vec3(size);
 
-    float baseScale = 6.0;
+    float baseScale = 3.0;
     vec4 weights = vec4(1.0, 0.5, 0.25, 0.125);
 
     vec4 noise;

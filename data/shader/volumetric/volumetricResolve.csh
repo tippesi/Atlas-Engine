@@ -113,7 +113,9 @@ void main() {
 	float fogAmount = fogEnabled ? saturate(ComputeVolumetricFog(cameraLocation, worldPosition)) : 0.0;
     resolve = fogEnabled ? mix(vec4(fogColor, 1.0), resolve, fogAmount) + volumetric : resolve + volumetric;
 
-    resolve += texture(lowResVolumetricCloudsTexture, texCoord);
+    vec4 cloudScattering = texture(lowResVolumetricCloudsTexture, texCoord);
+    float alpha = cloudScattering.a;
+    resolve = alpha * resolve + cloudScattering;
 
     imageStore(resolveImage, pixel, resolve);
 

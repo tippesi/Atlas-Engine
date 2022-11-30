@@ -66,9 +66,20 @@ void App::LoadContent() {
 	scene.fog->scatteringAnisotropy = 0.0f;
 
 	scene.clouds = new Atlas::Lighting::VolumetricClouds();
-	scene.clouds->aabbMin = glm::vec3(-20.0f, 15.0f, -20.0f);
-	scene.clouds->aabbMax = glm::vec3(20.0f, 20.0f, 20.0f);
-	scene.clouds->shapeScale = 3.5f;
+	scene.clouds->aabbMin = glm::vec3(-10000.0f, 100.0f, -10000.0f);
+	scene.clouds->aabbMax = glm::vec3(10000.0f, 400.0f, 10000.0f);
+	scene.clouds->shapeScale = 1.0f;
+	scene.clouds->detailScale = 16.0f;
+	scene.clouds->shapeSpeed = 1.0f;
+	scene.clouds->detailSpeed = 10.0f;
+	scene.clouds->densityMultiplier = 0.7f;
+	scene.clouds->scattering.eccentricity = 0.0f;
+	scene.clouds->scattering.extinctionFactor = 0.33f;
+	scene.clouds->scattering.scatteringFactor = 1.25f;
+	scene.clouds->lowerHeightFalloff = 0.1f;
+	scene.clouds->upperHeightFalloff = 0.67f;
+	scene.clouds->silverLiningIntensity = 0.077f;
+	scene.clouds->silverLiningSpread = 0.24f;
 
 	scene.postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
 	scene.postProcessing.sharpen.enable = true;
@@ -166,7 +177,7 @@ void App::Render(float deltaTime) {
 				float(viewport.width), float(viewport.height), false, true);
 		}
 		if (debugClouds) {
-			masterRenderer.textureRenderer.RenderTexture3D(&viewport, &scene.clouds->shapeTexture, cloudDepthDebug, 0.0f, 0.0f,
+			masterRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->volumetricCloudsTexture, 0.0f, 0.0f,
 				float(viewport.width), float(viewport.height), false, true);
 		}
 	}
@@ -412,12 +423,27 @@ void App::Render(float deltaTime) {
 			if (ImGui::CollapsingHeader("Clouds")) {
 				ImGui::Checkbox("Debug##Clouds", &debugClouds);
 				ImGui::SliderFloat("Cloud noise depth##Clouds", &cloudDepthDebug, 0.0f, 1.0f);
-				ImGui::SliderFloat("Shape scale##Clouds", &clouds->shapeScale, 0.0f, 10.0f);
-				ImGui::SliderFloat("Density multiplier##Clouds", &clouds->densityMultiplier, 0.0f, 10.0f);
-				ImGui::SliderFloat("Density cutoff##Clouds", &clouds->densityCutoff, 0.0f, 1.0f);
+				ImGui::SliderFloat("Density multiplier##Clouds", &clouds->densityMultiplier, 0.0f, 1.0f);
+				ImGui::SliderFloat("Lower height falloff##Clouds", &clouds->lowerHeightFalloff, 0.0f, 1.0f);
+				ImGui::SliderFloat("Upper height falloff##Clouds", &clouds->upperHeightFalloff, 0.0f, 1.0f);
 				if (ImGui::Button("Update noise textures##Clouds")) {
 					clouds->needsNoiseUpdate = true;
 				}
+				ImGui::Separator();
+				ImGui::Text("Scattering");
+				ImGui::SliderFloat("Eccentricity", &clouds->scattering.eccentricity, -1.0f, 1.0f);
+				ImGui::SliderFloat("Extinction factor", &clouds->scattering.extinctionFactor, 0.0001f, 10.0f);
+				ImGui::SliderFloat("Scattering factor", &clouds->scattering.scatteringFactor, 0.0001f, 10.0f);
+				ImGui::Separator();
+				ImGui::Text("Noise texture behaviour");
+				ImGui::SliderFloat("Shape scale##Clouds", &clouds->shapeScale, 0.0f, 100.0f);
+				ImGui::SliderFloat("Detail scale##Clouds", &clouds->detailScale, 0.0f, 100.0f);
+				ImGui::SliderFloat("Shape speed##Clouds", &clouds->shapeSpeed, 0.0f, 10.0f);
+				ImGui::SliderFloat("Detail speed##Clouds", &clouds->detailSpeed, 0.0f, 10.0f);
+				ImGui::Separator();
+				ImGui::Text("Silver lining");
+				ImGui::SliderFloat("Silver lining spread##Clouds", &clouds->silverLiningSpread, 0.0f, 1.0f);
+				ImGui::SliderFloat("Silver lining intensity##Clouds", &clouds->silverLiningIntensity, 0.0f, 10.0f);
 			}
 			if (ImGui::CollapsingHeader("Postprocessing")) {
 				ImGui::Text("Temporal anti-aliasing");
@@ -651,6 +677,7 @@ bool App::LoadScene() {
 		// Setup camera
 		camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
 		camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+		camera.exposure = 0.125f;
 
 		scene.fog->enable = true;
 	}
@@ -675,6 +702,7 @@ bool App::LoadScene() {
 		// Setup camera
 		camera.location = glm::vec3(-21.0f, 8.0f, 1.0f);
 		camera.rotation = glm::vec2(3.14f / 2.0f, 0.0f);
+		camera.exposure = 0.125f;
 
 		scene.fog->enable = true;
 	}
@@ -801,7 +829,7 @@ bool App::LoadScene() {
 		scene.Add(&actors.back());
 	}
 
-	scene.sky.probe = new Atlas::Lighting::EnvironmentProbe(sky);
+	//  scene.sky.probe = new Atlas::Lighting::EnvironmentProbe(sky);
 
 	camera.Update();
 	scene.Update(&camera, 1.0f);

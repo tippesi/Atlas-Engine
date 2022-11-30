@@ -20,10 +20,10 @@ float Worley(vec3 pos, float scale, float seed) {
         for (int y = -1; y <= 1; y++) {
             for (int z = -1; z <= 1; z++) {
                 vec3 cell = vec3(x, y, z);
-                vec3 offset = Random3(mod(base + cell + seed, scale));
-                vec3 cellPos = base + cell + offset;
+                vec3 r = cell - frac + Random3(mod(base + cell, scale) + seed);
+                float d = dot(r, r);
 
-                dist = min(dist, distance(cellPos, pos));
+                dist = min(dist, d);
             }
         }
     }
@@ -45,4 +45,12 @@ float Worley4Octaves(vec3 pos, float scale, float seed, vec4 weights) {
 
 float Remap(float originalValue, float originalMin,  float originalMax, float newMin, float newMax) {
     return newMin + (((originalValue - originalMin) / (originalMax - originalMin)) * (newMax - newMin));
-} 
+}
+
+float ComputeScattering(float lightDotView, float g) {
+    // Range [-1;1]
+    float g2 = g * g;
+    float result = 1.0 - g2;
+    result /= (4.0 * 3.14 * pow(1.0 + g2 - (2.0 * g) * lightDotView, 1.5));
+    return result;
+}
