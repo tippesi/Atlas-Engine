@@ -27,6 +27,7 @@ namespace Atlas {
 			Shader::Shader shapeNoiseShader;
 			Shader::Shader detailNoiseShader;
 			Shader::Shader integrateShader;
+			Shader::Shader temporalShader;
 			
 			Texture::Texture2D blueNoiseTexture;
 

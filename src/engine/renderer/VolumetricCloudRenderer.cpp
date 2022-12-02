@@ -22,6 +22,9 @@ namespace Atlas {
 			integrateShader.AddStage(AE_COMPUTE_STAGE, "clouds/integrate.csh");
 			integrateShader.Compile();
 
+			temporalShader.AddStage(AE_COMPUTE_STAGE, "clouds/temporal.csh");
+			temporalShader.Compile();
+
 		}
 
 		void VolumetricCloudRenderer::Render(Viewport* viewport, RenderTarget* target,
@@ -53,6 +56,7 @@ namespace Atlas {
 			ivec2 res = ivec2(target->volumetricCloudsTexture.width, target->volumetricCloudsTexture.height);
 
 			auto depthTexture = downsampledRT->depthTexture;
+			auto velocityTexture = downsampledRT->velocityTexture;
 
 			{
 				Profiler::BeginQuery("Integrate");
@@ -63,7 +67,7 @@ namespace Atlas {
 
 				integrateShader.Bind();
 
-				target->volumetricCloudsTexture.Bind(GL_WRITE_ONLY, 0);
+				target->swapVolumetricCloudsTexture.Bind(GL_WRITE_ONLY, 0);
 				depthTexture->Bind(0);
 				clouds->shapeTexture.Bind(1);
 				clouds->detailTexture.Bind(2);
@@ -77,8 +81,9 @@ namespace Atlas {
 				
 				integrateShader.GetUniform("densityMultiplier")->SetValue(clouds->densityMultiplier);
 
-				integrateShader.GetUniform("aabbMin")->SetValue(clouds->aabbMin);
-				integrateShader.GetUniform("aabbMax")->SetValue(clouds->aabbMax);
+				//integrateShader.GetUniform("innerRadius")->SetValue(clouds->minHeight);
+				//integrateShader.GetUniform("outerRadius")->SetValue(clouds->maxHeight);
+				integrateShader.GetUniform("distanceLimit")->SetValue(clouds->distanceLimit);
 
 				integrateShader.GetUniform("lowerHeightFalloff")->SetValue(clouds->lowerHeightFalloff);
 				integrateShader.GetUniform("upperHeightFalloff")->SetValue(clouds->upperHeightFalloff);
@@ -87,6 +92,7 @@ namespace Atlas {
 				integrateShader.GetUniform("detailScale")->SetValue(clouds->detailScale);
 				integrateShader.GetUniform("shapeSpeed")->SetValue(clouds->shapeSpeed);
 				integrateShader.GetUniform("detailSpeed")->SetValue(clouds->detailSpeed);
+				integrateShader.GetUniform("detailStrength")->SetValue(clouds->detailStrength);
 
 				integrateShader.GetUniform("eccentricity")->SetValue(clouds->scattering.eccentricity);
 				integrateShader.GetUniform("extinctionFactor")->SetValue(clouds->scattering.extinctionFactor);
@@ -106,6 +112,33 @@ namespace Atlas {
 
 				Profiler::EndQuery();
 			}
+
+			{
+				Profiler::BeginQuery("Temporal accumulation");
+
+				ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
+				groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+				groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
+
+				temporalShader.Bind();
+
+				target->swapVolumetricCloudsTexture.Bind(0);
+				velocityTexture->Bind(1);
+				depthTexture->Bind(2);
+				target->historyVolumetricCloudsTexture.Bind(3);
+				target->volumetricCloudsTexture.Bind(GL_WRITE_ONLY, 0);
+
+				temporalShader.GetUniform("invResolution")->SetValue(1.0f / vec2((float)res.x, (float)res.y));
+				temporalShader.GetUniform("resolution")->SetValue(vec2((float)res.x, (float)res.y));
+
+				glMemoryBarrier(GL_ALL_BARRIER_BITS);
+				glDispatchCompute(groupCount.x, groupCount.y, 1);
+
+				Profiler::EndQuery();
+			}
+
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+			target->historyVolumetricCloudsTexture = target->volumetricCloudsTexture;
 			
 			Profiler::EndQuery();
 

@@ -11,7 +11,7 @@ layout (local_size_x = 8, local_size_y = 4) in;
 layout(binding = 0) uniform sampler2D depthTexture;
 layout(binding = 1) uniform sampler3D shapeTexture;
 layout(binding = 2) uniform sampler3D detailTexture;
-layout(binding = 2) uniform sampler2D randomTexture;
+layout(binding = 3) uniform sampler2D randomTexture;
 layout(binding = 0) writeonly uniform image2D volumetricCloudImage;
 
 uniform Light light;
@@ -27,9 +27,6 @@ uniform float eccentricity = 0.0;
 uniform float extinctionFactor = 1.0;
 uniform float scatteringFactor = 0.5;
 
-uniform vec3 aabbMin = vec3(5.0);
-uniform vec3 aabbMax = vec3(10.0);
-
 uniform float lowerHeightFalloff = 0.2;
 uniform float upperHeightFalloff = 0.25;
 
@@ -37,6 +34,7 @@ uniform float shapeScale = 1.0;
 uniform float detailScale = 1.0;
 uniform float shapeSpeed = 1.0;
 uniform float detailSpeed = 0.5;
+uniform float detailStrength = 0.3;
 
 uniform float silverLiningSpread = 0.05;
 uniform float silverLiningIntensity = 1.0;
@@ -49,6 +47,8 @@ uniform float windSpeed = 0.01;
 uniform float planetRadius = 65000.0;
 uniform float innerRadius = 65100.0;
 uniform float outerRadius = 65400.0;
+
+uniform float distanceLimit = 2000.0;
 
 vec3 planetCenter = -vec3(0.0, planetRadius, 0.0);
 
@@ -84,7 +84,7 @@ float GetNoiseOffset(int idx) {
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
-    ivec2 noiseOffset = Unflatten2D(idx % 256, ivec2(16)) * ivec2(8);
+    ivec2 noiseOffset = Unflatten2D(idx % 256, ivec2(16)) * ivec2(16);
     float blueNoise = texelFetch(randomTexture, (pixel + noiseOffset) % ivec2(128), 0).r * 256.0;
 	blueNoise = clamp(blueNoise, 0.0, 255.0);
 	blueNoise = (blueNoise + 0.5) / 256.0;
@@ -151,14 +151,14 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
             1.0 - highFrequenyFBM, saturate(heightFraction * 10.0));
 
         finalCloudDensity = Remap(baseCloudDensity, 
-            highFrequencyNoiseModifier * 0.3, 1.0, 0.0, 1.0);
+            highFrequencyNoiseModifier * detailStrength, 1.0, 0.0, 1.0);
     }
 
     return saturate(finalCloudDensity);
 
 }
 
-void CalculateTexCoords(vec3 pos, vec3 aabbSize, out vec3 shapeTexCoords, out vec3 detailTexCoords) {
+void CalculateTexCoords(vec3 pos, out vec3 shapeTexCoords, out vec3 detailTexCoords) {
 
     float distFromCenter = distance(pos, planetCenter);
 
@@ -198,7 +198,7 @@ void CalculateRayLength(vec3 rayOrigin, vec3 rayDirection, out float minDist, ou
             outDist.x < 0.0 && outDist.y >= 0.0) {
             minDist = 0.0;
             maxDist = planetDist.x >= 0.0 ? inDist.x : outDist.y;
-        }
+        }        
         // We are out of both layers and looking down
         if (outDist.x > 0.0 && outDist.y > 0.0) {
             minDist = outDist.x;
@@ -208,13 +208,8 @@ void CalculateRayLength(vec3 rayOrigin, vec3 rayDirection, out float minDist, ou
 
     // If the distance gets to big, we might undersample near detail which can go missing
     // This is especially the case when we are in between the two radii layers
-    minDist = min(2000.0, minDist);
-    maxDist = min(2000.0, maxDist);
-
-    if (minDist == maxDist) {
-        minDist = 0.0;
-        maxDist = 0.0;
-    }
+    minDist = min(distanceLimit, minDist);
+    maxDist = min(distanceLimit, maxDist);
 
 }
 
@@ -227,9 +222,8 @@ float GetExtinctionToLight(vec3 pos, int ditherIdx) {
     float inDist, outDist;
     CalculateRayLength(pos, rayDirection, inDist, outDist);
 
-    float stepLength = (outDist - inDist)  / float(lightSampleCount);
+    float stepLength = 0.25 * (outDist - inDist)  / float(lightSampleCount);
     vec3 stepVector = rayDirection * stepLength;
-    vec3 aabbSize = aabbMax - aabbMin;
 
     // Dither secondary rays
     pos += stepVector * GetDitherOffset(ditherIdx);
@@ -237,7 +231,7 @@ float GetExtinctionToLight(vec3 pos, int ditherIdx) {
     float extinction = 1.0;
     for (int i = 0; i < lightSampleCount; i++) {        
         vec3 shapeTexCoords, detailTexCoords;
-        CalculateTexCoords(pos, aabbSize, shapeTexCoords, detailTexCoords);
+        CalculateTexCoords(pos, shapeTexCoords, detailTexCoords);
 
         float density = saturate(SampleDensity(pos, shapeTexCoords, detailTexCoords, vec3(1.0)));
         float extinctionCoefficient = extinctionFactor * density;
@@ -267,10 +261,10 @@ vec3 ComputeAmbientColor(vec3 pos, float extinctionCoefficient) {
     vec3 isotropicLightBottom = vec3(0.2);
     float Hp = outerRadius - distFromCenter; // Height to the top of the volume
     float a = -extinctionCoefficient * Hp;
-    vec3 isotropicScatteringTop = isotropicLightTop * max( 0.0, exp( a ) - a * Ei( a ));
+    vec3 isotropicScatteringTop = isotropicLightTop * max(0.0, exp(a) - a * Ei(a));
     float Hb = distFromCenter - innerRadius; // Height to the bottom of the volume
     a = -extinctionCoefficient * Hb;
-    vec3 isotropicScatteringBottom = isotropicLightBottom * max( 0.0, exp( a ) - a * Ei( a ));
+    vec3 isotropicScatteringBottom = isotropicLightBottom * max(0.0, exp(a) - a * Ei(a));
     return isotropicScatteringTop + isotropicScatteringBottom;
 
 }
@@ -292,7 +286,8 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     if (inDist > rayLength && depth < 1.0)
         return vec4(0.0, 0.0, 0.0, 1.0);
 
-    float stepLength = rayLength / float(sampleCount);
+    int raySampleCount = max(64, int((rayLength / distanceLimit) * float(sampleCount)));
+    float stepLength = rayLength / float(raySampleCount);
     vec3 stepVector = rayDirection * stepLength;
 
     int ditherIdx = ((int(pixel.x) % 4) * 4 + int(pixel.y) % 4 + int(frameSeed)) % 16;
@@ -302,27 +297,27 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     vec3 integration = vec3(0.0);
 	vec3 rayPos = rayOrigin + rayDirection * inDist;
 
-    vec3 aabbSize = aabbMax - aabbMin;
-
     float extinction = 1.0;
     vec3 scattering = vec3(0.0);
 
-    for (int i = 0; i < sampleCount; i++) {
+    for (int i = 0; i < raySampleCount; i++) {
         
         vec3 shapeTexCoords, detailTexCoords;
-        CalculateTexCoords(rayPos, aabbSize, shapeTexCoords, detailTexCoords);
+        CalculateTexCoords(rayPos, shapeTexCoords, detailTexCoords);
 
         float distToPlanetCenter = distance(rayPos, planetCenter);
         // This can happen if we look from inside the cloud layer trough it below the cloud
         // layer. We need to find the next intersection with the inner layer
-        /*
         if (distToPlanetCenter < innerRadius) {
+            /*
             CalculateRayLength(rayPos, rayDirection, inDist, outDist);
             stepLength = rayLength / float(sampleCount - i);
             stepVector = rayDirection * stepLength;
             rayPos += rayDirection * inDist;
+            */
+            rayPos += stepVector;
+            continue;
         }
-        */
 
         float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords, vec3(1.0)));
 
@@ -334,14 +329,14 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
             extinction *= stepExtinction;
 
             float lightDotView = dot(normalize(light.direction), normalize(rayDirection));
-            vec3 lightColor = vec3(1.0) * light.intensity;
-            float lightExtinction =  GetExtinctionToLight(rayPos, (ditherIdx + i) % 16);
+            vec3 lightColor = light.color * light.intensity;
+            float lightExtinction =  GetExtinctionToLight(rayPos, ditherIdx);
 
             float standardLightPhase = ComputeScattering(lightDotView, eccentricity);
             float silverLiningPhase = silverLiningIntensity * ComputeScattering(lightDotView, -1.0 + silverLiningSpread);
             float lightPhase = max(standardLightPhase, silverLiningPhase);
             vec3 stepScattering = scatteringCoefficient  * stepLength * (lightPhase * lightColor * lightExtinction
-                + ComputeAmbientColor(rayPos, stepExtinction));
+                + ComputeAmbientColor(rayPos, extinctionCoefficient));
 
             vec3 luminanceIntegral = stepScattering * stepExtinction;
             scattering += luminanceIntegral * extinction;

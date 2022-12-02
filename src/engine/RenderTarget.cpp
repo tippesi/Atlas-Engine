@@ -11,9 +11,9 @@ namespace Atlas {
 			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 		velocityTexture = Texture::Texture2D(width, height, AE_RG16F,
-			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 		swapVelocityTexture = Texture::Texture2D(width, height, AE_RG16F,
-			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 
 		stencilTexture = Texture::Texture2D(width, height, AE_R8UI,
 			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
@@ -155,8 +155,11 @@ namespace Atlas {
 		volumetricResolution = resolution;
 
 		volumetricTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
-		volumetricCloudsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
 		swapVolumetricTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
+
+		volumetricCloudsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		swapVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		historyVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 	}
 

@@ -212,9 +212,9 @@ namespace Atlas {
 
 			if (scene->ocean) {
 				oceanRenderer.Render(viewport, target, camera, scene);
-
-				downscaleRenderer.DownscaleDepthOnly(target);
 			}
+
+			downscaleRenderer.Downscale(target);
 
 			glDisable(GL_DEPTH_TEST);
 

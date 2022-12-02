@@ -18,28 +18,30 @@ namespace Atlas {
 			Texture::Texture3D detailTexture;
 
 			struct Scattering {
-				float extinctionFactor = 1.0;
-				float scatteringFactor = 0.5;
-				float eccentricity = 0.2f;
+				float extinctionFactor = 0.33f;
+				float scatteringFactor = 1.25;
+				float eccentricity = 0.0f;
 			};
 
+			float minHeight = 100.0f;
+			float maxHeight = 400.0f;
+			float distanceLimit = 2000.0f;
+
 			float shapeScale = 1.0f;
-			float detailScale = 1.0f;
+			float detailScale = 16.0f;
 			float shapeSpeed = 1.0f;
-			float detailSpeed = 0.5f;
+			float detailSpeed = 10.0f;
+			float detailStrength = 0.3f;
 
-			float densityMultiplier = 5.0f;
+			float densityMultiplier = 0.7f;
 
-			float lowerHeightFalloff = 0.2f;
-			float upperHeightFalloff = 0.25f;
+			float lowerHeightFalloff = 0.1f;
+			float upperHeightFalloff = 0.67f;
 
-			float silverLiningSpread = 0.05f;
-			float silverLiningIntensity = 1.0f;
+			float silverLiningSpread = 0.24f;
+			float silverLiningIntensity = 0.077f;
 
 			Scattering scattering;
-
-			vec3 aabbMin = vec3(0.0f,5.0f, 0.0f);
-			vec3 aabbMax = vec3(10.0f);
 
 			bool needsNoiseUpdate = true;
 

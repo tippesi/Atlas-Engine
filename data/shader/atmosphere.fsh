@@ -53,6 +53,14 @@ void main() {
     float pMie = 3.0 / (8.0 * PI) * ((1.0 - gg) * (mumu + 1.0)) / (pow(1.0 + gg - 2.0 * mu * g, 1.5) * (2.0 + gg));
 	
 	fragColor = max(pRlh * totalRlh + pMie * totalMie, vec3(0.0));
+
+	float LdotV = max(0.0, dot(normalize(pSun), normalize(r)));
+	float sunAngle = cos(2.0 * 0.5 * 3.14 / 180.0);
+
+	if (LdotV > sunAngle) {
+		float sunDisk = clamp(0.5 * (LdotV - sunAngle) / (1.0 - sunAngle), 0.0, 1.0);
+		fragColor += sunIntensity * sunDisk;
+	}	
 	
 	// Calculate velocity
 	// Calculate velocity

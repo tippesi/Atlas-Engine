@@ -66,8 +66,6 @@ void App::LoadContent() {
 	scene.fog->scatteringAnisotropy = 0.0f;
 
 	scene.clouds = new Atlas::Lighting::VolumetricClouds();
-	scene.clouds->aabbMin = glm::vec3(-10000.0f, 100.0f, -10000.0f);
-	scene.clouds->aabbMax = glm::vec3(10000.0f, 400.0f, 10000.0f);
 	scene.clouds->shapeScale = 1.0f;
 	scene.clouds->detailScale = 16.0f;
 	scene.clouds->shapeSpeed = 1.0f;
@@ -422,13 +420,17 @@ void App::Render(float deltaTime) {
 			}
 			if (ImGui::CollapsingHeader("Clouds")) {
 				ImGui::Checkbox("Debug##Clouds", &debugClouds);
-				ImGui::SliderFloat("Cloud noise depth##Clouds", &cloudDepthDebug, 0.0f, 1.0f);
 				ImGui::SliderFloat("Density multiplier##Clouds", &clouds->densityMultiplier, 0.0f, 1.0f);
 				ImGui::SliderFloat("Lower height falloff##Clouds", &clouds->lowerHeightFalloff, 0.0f, 1.0f);
 				ImGui::SliderFloat("Upper height falloff##Clouds", &clouds->upperHeightFalloff, 0.0f, 1.0f);
 				if (ImGui::Button("Update noise textures##Clouds")) {
 					clouds->needsNoiseUpdate = true;
 				}
+				ImGui::Separator();
+				ImGui::Text("Dimensions");
+				ImGui::SliderFloat("Min height##Clouds", &clouds->minHeight, 0.0f, 1000.0f);
+				ImGui::SliderFloat("Max height##Clouds", &clouds->maxHeight, 0.0f, 1000.0f);
+				ImGui::SliderFloat("Distance limit##Clouds", &clouds->distanceLimit, 0.0f, 10000.0f);
 				ImGui::Separator();
 				ImGui::Text("Scattering");
 				ImGui::SliderFloat("Eccentricity", &clouds->scattering.eccentricity, -1.0f, 1.0f);
@@ -440,6 +442,7 @@ void App::Render(float deltaTime) {
 				ImGui::SliderFloat("Detail scale##Clouds", &clouds->detailScale, 0.0f, 100.0f);
 				ImGui::SliderFloat("Shape speed##Clouds", &clouds->shapeSpeed, 0.0f, 10.0f);
 				ImGui::SliderFloat("Detail speed##Clouds", &clouds->detailSpeed, 0.0f, 10.0f);
+				ImGui::SliderFloat("Detail strength##Clouds", &clouds->detailStrength, 0.0f, 1.0f);
 				ImGui::Separator();
 				ImGui::Text("Silver lining");
 				ImGui::SliderFloat("Silver lining spread##Clouds", &clouds->silverLiningSpread, 0.0f, 1.0f);
@@ -829,7 +832,7 @@ bool App::LoadScene() {
 		scene.Add(&actors.back());
 	}
 
-	//  scene.sky.probe = new Atlas::Lighting::EnvironmentProbe(sky);
+	// scene.sky.probe = new Atlas::Lighting::EnvironmentProbe(sky);
 
 	camera.Update();
 	scene.Update(&camera, 1.0f);
