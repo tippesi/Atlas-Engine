@@ -12,7 +12,7 @@
 #include "RenderTarget.h"
 #include "shader/Shader.h"
 #include "shader/ShaderManager.h"
-#include "renderer/MasterRenderer.h"
+#include "renderer/MainRenderer.h"
 #include "events/EventManager.h"
 #include "audio/AudioManager.h"
 #include "lighting/DirectionalLight.h"

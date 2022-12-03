@@ -286,7 +286,7 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     if (inDist > rayLength && depth < 1.0)
         return vec4(0.0, 0.0, 0.0, 1.0);
 
-    int raySampleCount = max(64, int((rayLength / distanceLimit) * float(sampleCount)));
+    int raySampleCount = max(128, int((rayLength / distanceLimit) * float(sampleCount)));
     float stepLength = rayLength / float(raySampleCount);
     vec3 stepVector = rayDirection * stepLength;
 

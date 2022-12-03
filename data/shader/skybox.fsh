@@ -9,8 +9,6 @@ in vec3 ndcCurrentVS;
 in vec3 ndcLastVS;
 
 uniform vec3 cameraLocation;
-uniform vec3 lightDirection;
-uniform vec3 lightColor;
 
 uniform vec2 jitterLast;
 uniform vec2 jitterCurrent;

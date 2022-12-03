@@ -1,5 +1,4 @@
 #include "DirectionalLightRenderer.h"
-#include "MasterRenderer.h"
 
 #include "../lighting/DirectionalLight.h"
 
@@ -42,15 +41,16 @@ namespace Atlas {
 			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT4)->Bind(4);
 			target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(5);
 
-			if (scene->sky.probe) {
-				scene->sky.probe->cubemap.Bind(10);
-			}
-
-			if (scene->sky.probe) {
-				scene->sky.probe->filteredDiffuse.Bind(11);
+			if (scene->sky.GetProbe()) {
+				scene->sky.GetProbe()->cubemap.Bind(10);
+				scene->sky.GetProbe()->filteredDiffuse.Bind(11);
 			}
 
 			auto lights = scene->GetLights();
+
+			if (scene->sky.sun) {
+				lights.push_back(scene->sky.sun);
+			}
 
 			// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
 			for (auto light : lights) {

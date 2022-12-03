@@ -30,21 +30,11 @@ namespace Atlas {
 		void VolumetricCloudRenderer::Render(Viewport* viewport, RenderTarget* target,
 			Camera* camera, Scene::Scene* scene) {
 
-			if (!scene->clouds) return;
-
-			auto lights = scene->GetLights();
-			Lighting::DirectionalLight* sun = nullptr;
-			for (auto light : lights) {
-				if (light->type == AE_DIRECTIONAL_LIGHT) {
-					sun = (Lighting::DirectionalLight*)light;
-				}
-			}
-
-			if (!sun) return;
+			auto clouds = scene->sky.clouds;
+			auto sun = scene->sky.sun;
+			if (!clouds) return;
 
 			Profiler::BeginQuery("Volumetric clouds");
-
-			auto clouds = scene->clouds;
 
 			if (clouds->needsNoiseUpdate) {
 				GenerateTextures(scene);
@@ -81,8 +71,9 @@ namespace Atlas {
 				
 				integrateShader.GetUniform("densityMultiplier")->SetValue(clouds->densityMultiplier);
 
-				//integrateShader.GetUniform("innerRadius")->SetValue(clouds->minHeight);
-				//integrateShader.GetUniform("outerRadius")->SetValue(clouds->maxHeight);
+				integrateShader.GetUniform("planetRadius")->SetValue(scene->sky.planetRadius);
+				integrateShader.GetUniform("innerRadius")->SetValue(scene->sky.planetRadius + clouds->minHeight);
+				integrateShader.GetUniform("outerRadius")->SetValue(scene->sky.planetRadius + clouds->maxHeight);
 				integrateShader.GetUniform("distanceLimit")->SetValue(clouds->distanceLimit);
 
 				integrateShader.GetUniform("lowerHeightFalloff")->SetValue(clouds->lowerHeightFalloff);
@@ -101,9 +92,14 @@ namespace Atlas {
 				integrateShader.GetUniform("silverLiningSpread")->SetValue(clouds->silverLiningSpread);
 				integrateShader.GetUniform("silverLiningIntensity")->SetValue(clouds->silverLiningIntensity);
 
-				integrateShader.GetUniform("light.direction")->SetValue(sun->direction);
-				integrateShader.GetUniform("light.color")->SetValue(sun->color);
-				integrateShader.GetUniform("light.intensity")->SetValue(sun->intensity);
+				if (sun) {
+					integrateShader.GetUniform("light.direction")->SetValue(sun->direction);
+					integrateShader.GetUniform("light.color")->SetValue(sun->color);
+					integrateShader.GetUniform("light.intensity")->SetValue(sun->intensity);
+				}
+				else {
+					integrateShader.GetUniform("light.intensity")->SetValue(0.0f);
+				}
 
 				integrateShader.GetUniform("time")->SetValue(Clock::Get());
 				integrateShader.GetUniform("frameSeed")->SetValue(Common::Random::SampleUniformInt(0, 255));
@@ -146,9 +142,9 @@ namespace Atlas {
 
 		void VolumetricCloudRenderer::GenerateTextures(Scene::Scene* scene) {
 
-			if (!scene->clouds) return;
+			auto clouds = scene->sky.clouds;
+			if (!clouds) return;
 
-			auto clouds = scene->clouds;
 			GenerateShapeTexture(&clouds->shapeTexture, clouds->shapeScale);
 			GenerateDetailTexture(&clouds->detailTexture, clouds->detailScale);
 

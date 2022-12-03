@@ -15,7 +15,7 @@ namespace Atlas {
 			VolumetricCloudRenderer();
 
 			void Render(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene);
+				Camera* camera, Scene::Scene* scene) final;
 
 			void GenerateTextures(Scene::Scene* scene);
 

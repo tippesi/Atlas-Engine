@@ -1,5 +1,5 @@
-#ifndef AE_MASTERRENDERER_H
-#define AE_MASTERRENDERER_H
+#ifndef AE_MAINRENDERER_H
+#define AE_MAINRENDERER_H
 
 #include "../System.h"
 #include "buffer/VertexArray.h"
@@ -33,12 +33,12 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		class MasterRenderer {
+		class MainRenderer {
 
 		public:
-			MasterRenderer();
+			MainRenderer();
 
-			~MasterRenderer();
+			~MainRenderer();
 
 			/**
              *

@@ -36,6 +36,10 @@ namespace Atlas {
 
 			auto lights = scene->GetLights();
 
+			if (scene->sky.sun) {
+				lights.push_back(scene->sky.sun);
+			}
+
 			for (auto& light : lights) {
 
 				if (!light->GetShadow()) {

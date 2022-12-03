@@ -196,6 +196,16 @@ namespace Atlas {
                     volumetricResolveShader.GetUniform("fogEnabled")->SetValue(false);
                 }
 
+                auto clouds = scene->sky.clouds;
+                auto cloudsEnabled = clouds && clouds->enable;
+
+                if (cloudsEnabled) {
+                    volumetricResolveShader.GetUniform("cloudsEnabled")->SetValue(true);
+                }
+                else {
+                    volumetricResolveShader.GetUniform("cloudsEnabled")->SetValue(false);
+                }
+
                 volumetricResolveShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
                 volumetricResolveShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
                 volumetricResolveShader.GetUniform("cameraLocation")->SetValue(camera->location);

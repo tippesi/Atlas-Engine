@@ -51,12 +51,17 @@ namespace Atlas {
             Profiler::BeginQuery("Trace rays");
 
             // Try to get a shadow map
-            auto lights = scene->GetLights();
             Lighting::Shadow* shadow = nullptr;
-            for (auto light : lights) {
-                if (light->type == AE_DIRECTIONAL_LIGHT) {
-                    shadow = light->GetShadow();
+            if (!scene->sky.sun) {
+                auto lights = scene->GetLights();
+                for (auto& light : lights) {
+                    if (light->type == AE_DIRECTIONAL_LIGHT) {
+                        shadow = light->GetShadow();
+                    }
                 }
+            }
+            else {
+                shadow = scene->sky.sun->GetShadow();
             }
 
             auto downsampledRT = target->GetDownsampledTextures(target->GetReflectionResolution());

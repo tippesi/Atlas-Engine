@@ -1,4 +1,4 @@
-#include "MasterRenderer.h"
+#include "MainRenderer.h"
 #include "helper/GeometryHelper.h"
 #include "helper/HaltonSequence.h"
 
@@ -16,7 +16,7 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		MasterRenderer::MasterRenderer() {
+		MainRenderer::MainRenderer() {
 
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 			Helper::GeometryHelper::GenerateCubeVertexArray(cubeVertexArray);
@@ -42,13 +42,13 @@ namespace Atlas {
 
 		}
 
-		MasterRenderer::~MasterRenderer() {
+		MainRenderer::~MainRenderer() {
 
 			
 
 		}
 
-		void MasterRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
+		void MainRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
 			Scene::Scene* scene, Texture::Texture2D* texture, RenderBatch* batch) {
 
 			Profiler::BeginQuery("Render scene");
@@ -93,6 +93,11 @@ namespace Atlas {
 					scene->sky.probe->update = false;
 				}
 			}
+			else if (scene->sky.atmosphere) {
+				atmosphereRenderer.Render(&scene->sky.atmosphere->probe, scene);
+				scene->sky.atmosphere->probe.filteredDiffuse.Bind(0);
+				FilterProbe(&scene->sky.atmosphere->probe);
+			}
 
 			glEnable(GL_DEPTH_TEST);
 			glDepthMask(GL_TRUE);
@@ -101,6 +106,10 @@ namespace Atlas {
 			depthFramebuffer.Bind();
 
 			auto lights = scene->GetLights();
+
+			if (scene->sky.sun) {
+				lights.push_back(scene->sky.sun);
+			}
 
 			for (auto light : lights) {
 
@@ -204,7 +213,7 @@ namespace Atlas {
 			if (scene->sky.probe) {
 				skyboxRenderer.Render(viewport, target, camera, scene);
 			}
-			else {
+			else if (scene->sky.atmosphere) {
 				atmosphereRenderer.Render(viewport, target, camera, scene);
 			}
 
@@ -276,7 +285,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
+		void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
 			bool alphaBlending, Framebuffer* framebuffer) {
 
 			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
@@ -294,7 +303,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
+		void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
 			vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
 
 			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
@@ -344,7 +353,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::RenderBatched(Viewport* viewport, Camera* camera, RenderBatch* batch) {
+		void MainRenderer::RenderBatched(Viewport* viewport, Camera* camera, RenderBatch* batch) {
 
 			batch->TransferData();
 
@@ -377,7 +386,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::RenderProbe(Lighting::EnvironmentProbe* probe, RenderTarget* target, Scene::Scene* scene) {
+		void MainRenderer::RenderProbe(Lighting::EnvironmentProbe* probe, RenderTarget* target, Scene::Scene* scene) {
 
 		    if (probe->resolution != target->GetWidth() ||
 		        probe->resolution != target->GetHeight())
@@ -435,6 +444,10 @@ namespace Atlas {
 				depthFramebuffer.Bind();
 
 				auto lights = scene->GetLights();
+
+				if (scene->sky.sun) {
+					lights.push_back(scene->sky.sun);
+				}
 
 				for (auto light : lights) {
 
@@ -556,7 +569,9 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::FilterProbe(Lighting::EnvironmentProbe* probe) {
+		void MainRenderer::FilterProbe(Lighting::EnvironmentProbe* probe) {
+
+			Profiler::BeginQuery("Filter probe");
 
 			mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
 			vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
@@ -595,9 +610,11 @@ namespace Atlas {
 			glEnable(GL_DEPTH_TEST);
 			framebuffer.Unbind();
 
+			Profiler::EndQuery();
+
 		}
 
-		void MasterRenderer::Update() {
+		void MainRenderer::Update() {
 
 			static auto framecounter = 0;
 
@@ -607,7 +624,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::GetUniforms() {
+		void MainRenderer::GetUniforms() {
 
 			rectangleProjectionMatrix = rectangleShader.GetUniform("pMatrix");
 			rectangleOffset = rectangleShader.GetUniform("rectangleOffset");
@@ -621,7 +638,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
+		void MainRenderer::PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
 			std::unordered_map<void*, uint16_t>& materialMap) {
 
 			auto sceneMaterials = scene->GetMaterials();
@@ -729,7 +746,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::PreintegrateBRDF() {
+		void MainRenderer::PreintegrateBRDF() {
 
 			Shader::Shader shader;
 

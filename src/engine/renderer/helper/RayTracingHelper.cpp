@@ -143,8 +143,8 @@ namespace Atlas {
 						rtData.metalnessTextureAtlas.textureArray.Bind(4);
 					if (rtData.aoTextureAtlas.slices.size())
 						rtData.aoTextureAtlas.textureArray.Bind(5);
-					if (scene->sky.probe)
-						scene->sky.probe->cubemap.Bind(6);
+					if (scene->sky.GetProbe())
+						scene->sky.GetProbe()->cubemap.Bind(6);
 
 					rtData.materialBuffer.BindBase(5);
 					rtData.triangleBuffer.BindBase(6);
@@ -260,8 +260,8 @@ namespace Atlas {
 						rtData.metalnessTextureAtlas.textureArray.Bind(4);
 					if (rtData.aoTextureAtlas.slices.size())
 						rtData.aoTextureAtlas.textureArray.Bind(5);
-					if (scene->sky.probe)
-						scene->sky.probe->cubemap.Bind(6);
+					if (scene->sky.GetProbe())
+						scene->sky.GetProbe()->cubemap.Bind(6);
 
 					rtData.materialBuffer.BindBase(5);
 					rtData.triangleBuffer.BindBase(6);
@@ -396,6 +396,10 @@ namespace Atlas {
 				auto& rtData = scene->rayTracingData;
 
 				auto lightSources = scene->GetLights();
+
+				if (scene->sky.sun) {
+					lightSources.push_back(scene->sky.sun);
+				}
 
 				for (auto light : lightSources) {
 

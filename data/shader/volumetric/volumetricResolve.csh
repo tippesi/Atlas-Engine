@@ -14,6 +14,7 @@ layout(binding = 0, rgba16f) uniform image2D resolveImage;
 uniform mat4 ivMatrix;
 uniform vec3 cameraLocation;
 uniform bool downsampled2x;
+uniform bool cloudsEnabled = true;
 
 // (localSize / 2 + 2)^2
 shared float depths[36];
@@ -113,9 +114,11 @@ void main() {
 	float fogAmount = fogEnabled ? saturate(ComputeVolumetricFog(cameraLocation, worldPosition)) : 0.0;
     resolve = fogEnabled ? mix(vec4(fogColor, 1.0), resolve, fogAmount) + volumetric : resolve + volumetric;
 
-    vec4 cloudScattering = texture(lowResVolumetricCloudsTexture, texCoord);
-    float alpha = cloudScattering.a;
-    resolve = alpha * resolve + cloudScattering;
+    if (cloudsEnabled) {
+        vec4 cloudScattering = texture(lowResVolumetricCloudsTexture, texCoord);
+        float alpha = cloudScattering.a;
+        resolve = alpha * resolve + cloudScattering;
+    }
 
     imageStore(resolveImage, pixel, resolve);
 

@@ -17,7 +17,7 @@ namespace Atlas {
 
 		window.Clear();
 
-		masterRenderer.Update();
+		mainRenderer.Update();
 
 	}
 

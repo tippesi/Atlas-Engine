@@ -30,18 +30,18 @@ namespace Atlas {
 			Profiler::BeginQuery("Ocean");
 
 			auto ocean = scene->ocean;
-			auto lights = scene->GetLights();
 
-			Lighting::DirectionalLight* sun = nullptr;
-
-			for (auto& light : lights) {
-				if (light->type == AE_DIRECTIONAL_LIGHT) {
-					sun = static_cast<Lighting::DirectionalLight*>(light);
+			auto sun = scene->sky.sun;
+			if (!sun) {
+				auto lights = scene->GetLights();
+				for (auto& light : lights) {
+					if (light->type == AE_DIRECTIONAL_LIGHT) {
+						sun = static_cast<Lighting::DirectionalLight*>(light);
+					}
 				}
-			}
 
-			if (!sun)
-				return;
+				if (!sun) return;
+			}
 
 			vec3 direction = normalize(sun->direction);
 
@@ -192,8 +192,8 @@ namespace Atlas {
 
 				ocean->foamTexture.Bind(2);
 
-				if (scene->sky.probe)
-					scene->sky.probe->cubemap.Bind(3);
+				if (scene->sky.GetProbe())
+					scene->sky.GetProbe()->cubemap.Bind(3);
 
 				refractionTexture.Bind(4);
 				depthTexture.Bind(5);

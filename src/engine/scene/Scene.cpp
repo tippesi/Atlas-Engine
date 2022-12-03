@@ -46,6 +46,10 @@ namespace Atlas {
 			if (ocean)
 				ocean->Update(camera, deltaTime);
 
+			if (sky.sun) {
+				sky.sun->Update(camera);
+			}
+
 			rayTracingData.UpdateMaterials();
 			
 			hasChanged = SceneNode::Update(camera, deltaTime, mat4(1.0f), false);

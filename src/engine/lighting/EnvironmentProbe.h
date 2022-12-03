@@ -17,7 +17,7 @@ namespace Atlas {
 
 			explicit EnvironmentProbe(const Texture::Cubemap& cubemap);
 
-			explicit EnvironmentProbe(int32_t resolution, vec3 position = vec3(0.0f));
+			explicit EnvironmentProbe(int32_t resolution, vec3 position = vec3(0.0f, 10.0f, 0.0f));
 
 			void SetPosition(vec3 position);
 
@@ -36,7 +36,7 @@ namespace Atlas {
 			bool update = true;
 
 		private:
-			vec3 position = vec3(0.0f);
+			vec3 position = vec3(0.0f, 10.0f, 0.0f);
 
 		};
 

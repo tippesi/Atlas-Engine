@@ -101,7 +101,7 @@ namespace Atlas {
 		 */
 		void Exit();
 
-		Renderer::MasterRenderer masterRenderer;
+		Renderer::MainRenderer mainRenderer;
 
 	};
 

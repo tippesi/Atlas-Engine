@@ -6,7 +6,7 @@ namespace Atlas {
 
 		EnvironmentProbe::EnvironmentProbe(const Texture::Cubemap& cubemap) : resolution(cubemap.width),
 			cubemap(cubemap), depth(cubemap.width, cubemap.height, AE_R16F),
-			filteredDiffuse(32, 32, AE_RGBA16F) {
+			filteredDiffuse(8, 8, AE_RGBA16F) {
 
 			SetPosition(position);
 
@@ -14,7 +14,7 @@ namespace Atlas {
 
 		EnvironmentProbe::EnvironmentProbe(int32_t res, vec3 position) : resolution(res),
 			cubemap(res, res, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR_MIPMAP_LINEAR, true),
-			depth(res, res, AE_R16F), filteredDiffuse(32, 32, AE_RGBA16F) {
+			depth(res, res, AE_R16F), filteredDiffuse(8, 8, AE_RGBA16F) {
 
 			SetPosition(position);
 

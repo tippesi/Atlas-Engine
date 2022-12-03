@@ -17,8 +17,8 @@ uniform float planetRadius;
 uniform vec2 jitterLast;
 uniform vec2 jitterCurrent;
 
-const float rayScaleHeight = 8.0e1;
-const float mieScaleHeight = 1.2e1; 
+const float rayScaleHeight = 8.0e3;
+const float mieScaleHeight = 1.2e3; 
 
 vec3 planetCenter = -vec3(0.0, planetRadius, 0.0);
 
@@ -26,7 +26,7 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
 
 void main() {
 	
-	const float g = 0.75;
+	const float g = 0.76;
 	vec3 r = normalize(fPosition);
 	vec3 pSun = normalize(-sunDirection);
 	
@@ -39,8 +39,8 @@ void main() {
         -sunDirection,                        // position of the sun
         planetRadius,                         // radius of the planet in meters
         atmosphereRadius,                         // radius of the atmosphere in meters
-        vec3(5.0e-4, 10.0e-4, 22.4e-4), // Rayleigh scattering coefficient
-        21e-4,                          // Mie scattering coefficient
+        vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
+        21e-6,                          // Mie scattering coefficient
 		totalRlh,
 		totalMie
     );	

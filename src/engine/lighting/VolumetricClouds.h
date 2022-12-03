@@ -44,6 +44,7 @@ namespace Atlas {
 			Scattering scattering;
 
 			bool needsNoiseUpdate = true;
+			bool enable = true;
 
 		};
 

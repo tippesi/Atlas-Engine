@@ -51,7 +51,8 @@ void App::LoadContent() {
 	glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
 	directionalLight.AddShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
 	directionalLight.AddVolumetric(10, 0.28f);
-	scene.Add(&directionalLight);
+	
+	scene.sky.sun = &directionalLight;
 
 	scene.ao = new Atlas::Lighting::AO(16);
 	scene.ao->rt = true;
@@ -65,19 +66,11 @@ void App::LoadContent() {
 	scene.fog->height = 0.0f;
 	scene.fog->scatteringAnisotropy = 0.0f;
 
-	scene.clouds = new Atlas::Lighting::VolumetricClouds();
-	scene.clouds->shapeScale = 1.0f;
-	scene.clouds->detailScale = 16.0f;
-	scene.clouds->shapeSpeed = 1.0f;
-	scene.clouds->detailSpeed = 10.0f;
-	scene.clouds->densityMultiplier = 0.7f;
-	scene.clouds->scattering.eccentricity = 0.0f;
-	scene.clouds->scattering.extinctionFactor = 0.33f;
-	scene.clouds->scattering.scatteringFactor = 1.25f;
-	scene.clouds->lowerHeightFalloff = 0.1f;
-	scene.clouds->upperHeightFalloff = 0.67f;
-	scene.clouds->silverLiningIntensity = 0.077f;
-	scene.clouds->silverLiningSpread = 0.24f;
+	scene.sky.clouds = new Atlas::Lighting::VolumetricClouds();
+	scene.sky.clouds->minHeight = 300.0f;
+	scene.sky.clouds->maxHeight = 600.0f;
+
+	scene.sky.atmosphere = new Atlas::Lighting::Atmosphere();
 
 	scene.postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
 	scene.postProcessing.sharpen.enable = true;
@@ -159,23 +152,23 @@ void App::Render(float deltaTime) {
 			GL_SHADER_STORAGE_BARRIER_BIT);
 
 		viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
-		masterRenderer.textureRenderer.RenderTexture2D(&viewport, &pathTraceTarget.texture, 0.0f, 0.0f,
+		mainRenderer.textureRenderer.RenderTexture2D(&viewport, &pathTraceTarget.texture, 0.0f, 0.0f,
 			float(viewport.width), float(viewport.height));
 	}
 	else {
 		viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
-		masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
+		mainRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
 
 		if (debugAo) {
-			masterRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
+			mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
 				float(viewport.width), float(viewport.height), false, true);
 		}
 		if (debugReflection) {
-			masterRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
+			mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
 				float(viewport.width), float(viewport.height), false, true);
 		}
 		if (debugClouds) {
-			masterRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->volumetricCloudsTexture, 0.0f, 0.0f,
+			mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->volumetricCloudsTexture, 0.0f, 0.0f,
 				float(viewport.width), float(viewport.height), false, true);
 		}
 	}
@@ -191,7 +184,7 @@ void App::Render(float deltaTime) {
 		auto& ao = scene.ao;
 		auto& fog = scene.fog;
 		auto& reflection = scene.reflection;
-		auto& clouds = scene.clouds;
+		auto& clouds = scene.sky.clouds;
 
 		bool openSceneNotFoundPopup = false;
 
@@ -604,7 +597,7 @@ void App::DisplayLoadingScreen() {
 	float y = windowSize.y / 2 - textHeight / 2;
 
 	viewport.Set(0, 0, windowSize.x, windowSize.y);
-	masterRenderer.textRenderer.Render(&viewport, &font, "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+	mainRenderer.textRenderer.Render(&viewport, &font, "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
 	window.Update();
 
@@ -676,6 +669,7 @@ bool App::LoadScene() {
 		directionalLight.intensity = 100.0f;
 		directionalLight.GetVolumetric()->intensity = 0.28f;
 		scene.irradianceVolume->SetRayCount(128, 32);
+		scene.irradianceVolume->strength = 1.5f;
 
 		// Setup camera
 		camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -701,6 +695,7 @@ bool App::LoadScene() {
 		directionalLight.intensity = 100.0f;
 		directionalLight.GetVolumetric()->intensity = 0.28f;
 		scene.irradianceVolume->SetRayCount(32, 32);
+		scene.irradianceVolume->strength = 1.5f;
 
 		// Setup camera
 		camera.location = glm::vec3(-21.0f, 8.0f, 1.0f);

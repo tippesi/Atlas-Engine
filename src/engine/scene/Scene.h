@@ -114,7 +114,6 @@ namespace Atlas {
 			Lighting::IrradianceVolume* irradianceVolume = nullptr;
 			Lighting::AO* ao = nullptr;
 			Lighting::Reflection* reflection = nullptr;
-			Lighting::VolumetricClouds* clouds = nullptr;
 			PostProcessing::PostProcessing postProcessing;
 
 		private:

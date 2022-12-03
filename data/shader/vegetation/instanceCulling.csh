@@ -23,8 +23,8 @@ void main() {
     uint binIdx = min(GetBin(instance, meshInfo), binCount - 1u) + binOffset;
 
     cull = !IsInstanceVisible(instance, meshInfo) || dist > 100.0;
-    cull = dist > 25 ? idx % 2 == 0 ? cull : true : cull;
-    cull = dist > 50 ? idx % 4 == 0 ? cull : true : cull;
+    //cull = dist > 25 ? idx % 2 == 0 ? cull : true : cull;
+    //cull = dist > 50 ? idx % 4 == 0 ? cull : true : cull;
 
     if (!cull) {
         uint instanceOffset = atomicAdd(instanceCounters[meshIdx], 1u);

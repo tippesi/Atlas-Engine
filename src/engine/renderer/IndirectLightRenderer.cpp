@@ -17,6 +17,11 @@ namespace Atlas {
 			Profiler::BeginQuery("Indirect lighting");
 
 			shader.Bind();
+
+			if (scene->sky.GetProbe()) {
+				scene->sky.GetProbe()->cubemap.Bind(10);
+				scene->sky.GetProbe()->filteredDiffuse.Bind(11);
+			}
 			
 			auto volume = scene->irradianceVolume;
 			if (volume && volume->enable) {
