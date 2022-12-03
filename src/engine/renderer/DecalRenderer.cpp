@@ -33,7 +33,7 @@ namespace Atlas {
 
 			target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
 
-            target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
+            target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(0);
 
             viewMatrix->SetValue(camera->viewMatrix);
             projectionMatrix->SetValue(camera->projectionMatrix);
@@ -61,7 +61,7 @@ namespace Atlas {
 
                 color->SetValue(decalActor->color);
 
-                decal->texture->Bind(GL_TEXTURE1);
+                decal->texture->Bind(1);
 
                 glDrawArrays(GL_TRIANGLES, 0, 36);
 

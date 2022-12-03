@@ -31,6 +31,10 @@ namespace Atlas {
 
 			auto lights = scene->GetLights();
 
+			if (scene->sky.sun) {
+				lights.push_back(scene->sky.sun);
+			}
+
 			for (auto light : lights) {
 
 				if (!light->GetShadow()) {
@@ -72,7 +76,7 @@ namespace Atlas {
 
 					for (auto node : terrain->renderList) {
 
-						node->cell->heightField->Bind(GL_TEXTURE0);
+						node->cell->heightField->Bind(0);
 
 						nodeLocation->SetValue(node->location);
 						nodeSideLength->SetValue(node->sideLength);

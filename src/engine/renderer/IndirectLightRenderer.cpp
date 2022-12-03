@@ -17,12 +17,17 @@ namespace Atlas {
 			Profiler::BeginQuery("Indirect lighting");
 
 			shader.Bind();
+
+			if (scene->sky.GetProbe()) {
+				scene->sky.GetProbe()->cubemap.Bind(10);
+				scene->sky.GetProbe()->filteredDiffuse.Bind(11);
+			}
 			
 			auto volume = scene->irradianceVolume;
 			if (volume && volume->enable) {
 				auto [irradianceArray, momentsArray] = volume->internal.GetCurrentProbes();
-				irradianceArray.Bind(GL_TEXTURE24);
-				momentsArray.Bind(GL_TEXTURE25);
+				irradianceArray.Bind(24);
+				momentsArray.Bind(25);
 				volume->internal.probeStateBuffer.BindBase(14);
 				shader.GetUniform("volumeEnabled")->SetValue(true);
 				shader.GetUniform("volumeMin")->SetValue(volume->aabb.min);
@@ -44,9 +49,9 @@ namespace Atlas {
 			auto ao = scene->ao;
 			auto reflection = scene->reflection;
 
-			target->aoTexture.Bind(GL_TEXTURE6);
-			target->GetDownsampledTextures(target->GetAOResolution())->depthTexture->Bind(GL_TEXTURE14);
-			target->reflectionTexture.Bind(GL_TEXTURE16);
+			target->aoTexture.Bind(6);
+			target->GetDownsampledTextures(target->GetAOResolution())->depthTexture->Bind(14);
+			target->reflectionTexture.Bind(16);
 			shader.GetUniform("aoEnabled")->SetValue(ao && ao->enable);
 			shader.GetUniform("aoDownsampled2x")->SetValue(target->GetAOResolution() == RenderResolution::HALF_RES);
 			shader.GetUniform("reflectionEnabled")->SetValue(reflection && reflection->enable);

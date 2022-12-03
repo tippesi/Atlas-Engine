@@ -15,7 +15,7 @@ namespace Atlas {
 
 			this->width = width;
 			this->height = height;
-			this->layers = depth * 6;
+			this->depth = depth * 6;
 
 			Generate(GL_TEXTURE_CUBE_MAP_ARRAY, sizedFormat, wrapping, filtering,
 				anisotropicFiltering, generateMipMaps);
@@ -43,8 +43,8 @@ namespace Atlas {
 
 		void CubemapArray::ReserveStorage(int32_t mipCount) {
 
-			glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, mipCount, 
-				sizedFormat, width, height, layers);
+			glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, mipCount,
+                           sizedFormat, width, height, depth);
 
 		}
 

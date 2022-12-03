@@ -51,7 +51,8 @@ void App::LoadContent() {
 	glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
 	directionalLight.AddShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
 	directionalLight.AddVolumetric(10, 0.28f);
-	scene.Add(&directionalLight);
+	
+	scene.sky.sun = &directionalLight;
 
 	scene.ao = new Atlas::Lighting::AO(16);
 	scene.ao->rt = true;
@@ -64,6 +65,12 @@ void App::LoadContent() {
 	scene.fog->heightFalloff = 0.0284f;
 	scene.fog->height = 0.0f;
 	scene.fog->scatteringAnisotropy = 0.0f;
+
+	scene.sky.clouds = new Atlas::Lighting::VolumetricClouds();
+	scene.sky.clouds->minHeight = 300.0f;
+	scene.sky.clouds->maxHeight = 600.0f;
+
+	scene.sky.atmosphere = new Atlas::Lighting::Atmosphere();
 
 	scene.postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
 	scene.postProcessing.sharpen.enable = true;
@@ -129,8 +136,11 @@ void App::Render(float deltaTime) {
 	static bool pathTrace = false;
 	static bool debugAo = false;
 	static bool debugReflection = false;
+	static bool debugClouds = false;
 	static bool slowMode = false;
 	
+	static float cloudDepthDebug = 0.0f;
+
 	window.Clear();
 
 	if (animateLight) directionalLight.direction = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
@@ -142,19 +152,23 @@ void App::Render(float deltaTime) {
 			GL_SHADER_STORAGE_BARRIER_BIT);
 
 		viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
-		masterRenderer.RenderTexture(&viewport, &pathTraceTarget.texture, 0.0f, 0.0f,
+		mainRenderer.textureRenderer.RenderTexture2D(&viewport, &pathTraceTarget.texture, 0.0f, 0.0f,
 			float(viewport.width), float(viewport.height));
 	}
 	else {
 		viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
-		masterRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
+		mainRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
 
 		if (debugAo) {
-			masterRenderer.RenderTexture(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
+			mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
 				float(viewport.width), float(viewport.height), false, true);
 		}
 		if (debugReflection) {
-			masterRenderer.RenderTexture(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
+			mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
+				float(viewport.width), float(viewport.height), false, true);
+		}
+		if (debugClouds) {
+			mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->volumetricCloudsTexture, 0.0f, 0.0f,
 				float(viewport.width), float(viewport.height), false, true);
 		}
 	}
@@ -170,6 +184,7 @@ void App::Render(float deltaTime) {
 		auto& ao = scene.ao;
 		auto& fog = scene.fog;
 		auto& reflection = scene.reflection;
+		auto& clouds = scene.sky.clouds;
 
 		bool openSceneNotFoundPopup = false;
 
@@ -396,6 +411,36 @@ void App::Render(float deltaTime) {
 				ImGui::SliderFloat("Height falloff##Fog", &fog->heightFalloff, 0.0f, 0.5f, "%.4f", 4.0f);
 				ImGui::SliderFloat("Scattering anisotropy##Fog", &fog->scatteringAnisotropy, -1.0f, 1.0f, "%.3f", 2.0f);
 			}
+			if (ImGui::CollapsingHeader("Clouds")) {
+				ImGui::Checkbox("Debug##Clouds", &debugClouds);
+				ImGui::SliderFloat("Density multiplier##Clouds", &clouds->densityMultiplier, 0.0f, 1.0f);
+				ImGui::SliderFloat("Lower height falloff##Clouds", &clouds->lowerHeightFalloff, 0.0f, 1.0f);
+				ImGui::SliderFloat("Upper height falloff##Clouds", &clouds->upperHeightFalloff, 0.0f, 1.0f);
+				if (ImGui::Button("Update noise textures##Clouds")) {
+					clouds->needsNoiseUpdate = true;
+				}
+				ImGui::Separator();
+				ImGui::Text("Dimensions");
+				ImGui::SliderFloat("Min height##Clouds", &clouds->minHeight, 0.0f, 1000.0f);
+				ImGui::SliderFloat("Max height##Clouds", &clouds->maxHeight, 0.0f, 1000.0f);
+				ImGui::SliderFloat("Distance limit##Clouds", &clouds->distanceLimit, 0.0f, 10000.0f);
+				ImGui::Separator();
+				ImGui::Text("Scattering");
+				ImGui::SliderFloat("Eccentricity", &clouds->scattering.eccentricity, -1.0f, 1.0f);
+				ImGui::SliderFloat("Extinction factor", &clouds->scattering.extinctionFactor, 0.0001f, 10.0f);
+				ImGui::SliderFloat("Scattering factor", &clouds->scattering.scatteringFactor, 0.0001f, 10.0f);
+				ImGui::Separator();
+				ImGui::Text("Noise texture behaviour");
+				ImGui::SliderFloat("Shape scale##Clouds", &clouds->shapeScale, 0.0f, 100.0f);
+				ImGui::SliderFloat("Detail scale##Clouds", &clouds->detailScale, 0.0f, 100.0f);
+				ImGui::SliderFloat("Shape speed##Clouds", &clouds->shapeSpeed, 0.0f, 10.0f);
+				ImGui::SliderFloat("Detail speed##Clouds", &clouds->detailSpeed, 0.0f, 10.0f);
+				ImGui::SliderFloat("Detail strength##Clouds", &clouds->detailStrength, 0.0f, 1.0f);
+				ImGui::Separator();
+				ImGui::Text("Silver lining");
+				ImGui::SliderFloat("Silver lining spread##Clouds", &clouds->silverLiningSpread, 0.0f, 1.0f);
+				ImGui::SliderFloat("Silver lining intensity##Clouds", &clouds->silverLiningIntensity, 0.0f, 10.0f);
+			}
 			if (ImGui::CollapsingHeader("Postprocessing")) {
 				ImGui::Text("Temporal anti-aliasing");
 				ImGui::Checkbox("Enable##TAA", &scene.postProcessing.taa.enable);
@@ -552,7 +597,7 @@ void App::DisplayLoadingScreen() {
 	float y = windowSize.y / 2 - textHeight / 2;
 
 	viewport.Set(0, 0, windowSize.x, windowSize.y);
-	masterRenderer.textRenderer.Render(&viewport, &font, "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+	mainRenderer.textRenderer.Render(&viewport, &font, "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
 	window.Update();
 
@@ -624,10 +669,12 @@ bool App::LoadScene() {
 		directionalLight.intensity = 100.0f;
 		directionalLight.GetVolumetric()->intensity = 0.28f;
 		scene.irradianceVolume->SetRayCount(128, 32);
+		scene.irradianceVolume->strength = 1.5f;
 
 		// Setup camera
 		camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
 		camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+		camera.exposure = 0.125f;
 
 		scene.fog->enable = true;
 	}
@@ -648,10 +695,12 @@ bool App::LoadScene() {
 		directionalLight.intensity = 100.0f;
 		directionalLight.GetVolumetric()->intensity = 0.28f;
 		scene.irradianceVolume->SetRayCount(32, 32);
+		scene.irradianceVolume->strength = 1.5f;
 
 		// Setup camera
 		camera.location = glm::vec3(-21.0f, 8.0f, 1.0f);
 		camera.rotation = glm::vec2(3.14f / 2.0f, 0.0f);
+		camera.exposure = 0.125f;
 
 		scene.fog->enable = true;
 	}
@@ -778,7 +827,7 @@ bool App::LoadScene() {
 		scene.Add(&actors.back());
 	}
 
-	scene.sky.probe = new Atlas::Lighting::EnvironmentProbe(sky);
+	// scene.sky.probe = new Atlas::Lighting::EnvironmentProbe(sky);
 
 	camera.Update();
 	scene.Update(&camera, 1.0f);

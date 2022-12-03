@@ -51,12 +51,17 @@ namespace Atlas {
             Profiler::BeginQuery("Trace rays");
 
             // Try to get a shadow map
-            auto lights = scene->GetLights();
             Lighting::Shadow* shadow = nullptr;
-            for (auto light : lights) {
-                if (light->type == AE_DIRECTIONAL_LIGHT) {
-                    shadow = light->GetShadow();
+            if (!scene->sky.sun) {
+                auto lights = scene->GetLights();
+                for (auto& light : lights) {
+                    if (light->type == AE_DIRECTIONAL_LIGHT) {
+                        shadow = light->GetShadow();
+                    }
                 }
+            }
+            else {
+                shadow = scene->sky.sun->GetShadow();
             }
 
             auto downsampledRT = target->GetDownsampledTextures(target->GetReflectionResolution());
@@ -76,12 +81,12 @@ namespace Atlas {
             auto historyNormalTexture = downsampledHistoryRT->geometryNormalTexture;
 
             // Bind the geometry normal texure and depth texture
-            normalTexture->Bind(GL_TEXTURE16);
-            depthTexture->Bind(GL_TEXTURE17);
-            roughnessTexture->Bind(GL_TEXTURE18);
-            offsetTexture->Bind(GL_TEXTURE19);
-            materialIdxTexture->Bind(GL_TEXTURE20);
-            blueNoiseTexture.Bind(GL_TEXTURE21);
+            normalTexture->Bind(16);
+            depthTexture->Bind(17);
+            roughnessTexture->Bind(18);
+            offsetTexture->Bind(19);
+            materialIdxTexture->Bind(20);
+            blueNoiseTexture.Bind(21);
 
             // Calculate RTAO
             {
@@ -113,8 +118,8 @@ namespace Atlas {
                         auto volume = scene->irradianceVolume;
                         if (volume && volume->enable) {
                             auto [irradianceArray, momentsArray] = volume->internal.GetCurrentProbes();
-                            irradianceArray.Bind(GL_TEXTURE24);
-                            momentsArray.Bind(GL_TEXTURE25);
+                            irradianceArray.Bind(24);
+                            momentsArray.Bind(25);
                             volume->internal.probeStateBuffer.BindBase(14);
                             rtrShader.GetUniform("volumeEnabled")->SetValue(true);
                             rtrShader.GetUniform("volumeMin")->SetValue(volume->aabb.min);
@@ -141,7 +146,7 @@ namespace Atlas {
                             rtrShader.GetUniform("shadow.cascadeCount")->SetValue(shadow->componentCount);
                             rtrShader.GetUniform("shadow.resolution")->SetValue(vec2((float)shadow->resolution));
 
-                            shadow->maps.Bind(GL_TEXTURE26);
+                            shadow->maps.Bind(26);
 
                             for (int32_t i = 0; i < shadow->componentCount; i++) {
                                 auto cascade = &shadow->components[i];
@@ -173,18 +178,18 @@ namespace Atlas {
                 target->reflectionTexture.Bind(GL_WRITE_ONLY, 0);
                 target->reflectionMomentsTexture.Bind(GL_WRITE_ONLY, 1);
 
-                target->swapReflectionTexture.Bind(GL_TEXTURE0);
-                velocityTexture->Bind(GL_TEXTURE1);
-                depthTexture->Bind(GL_TEXTURE2);
-                roughnessTexture->Bind(GL_TEXTURE3);
-                normalTexture->Bind(GL_TEXTURE4);
-                materialIdxTexture->Bind(GL_TEXTURE5);
+                target->swapReflectionTexture.Bind(0);
+                velocityTexture->Bind(1);
+                depthTexture->Bind(2);
+                roughnessTexture->Bind(3);
+                normalTexture->Bind(4);
+                materialIdxTexture->Bind(5);
 
-                target->historyReflectionTexture.Bind(GL_TEXTURE6);
-                target->historyReflectionMomentsTexture.Bind(GL_TEXTURE7);
-                historyDepthTexture->Bind(GL_TEXTURE8);
-                historyNormalTexture->Bind(GL_TEXTURE9);
-                historyMaterialIdxTexture->Bind(GL_TEXTURE10);
+                target->historyReflectionTexture.Bind(6);
+                target->historyReflectionMomentsTexture.Bind(7);
+                historyDepthTexture->Bind(8);
+                historyNormalTexture->Bind(9);
+                historyMaterialIdxTexture->Bind(10);
 
                 temporalShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
                 temporalShader.GetUniform("invResolution")->SetValue(1.0f / vec2((float)res.x, (float)res.y));
@@ -208,9 +213,9 @@ namespace Atlas {
 
                 bool pingpong = true;
 
-                depthTexture->Bind(GL_TEXTURE1);
-                normalTexture->Bind(GL_TEXTURE2);
-                roughnessTexture->Bind(GL_TEXTURE3);
+                depthTexture->Bind(1);
+                normalTexture->Bind(2);
+                roughnessTexture->Bind(3);
 
                 for (int32_t i = 0; i < 3; i++) {
                     Profiler::BeginQuery("Subpass " + std::to_string(i));
@@ -224,11 +229,11 @@ namespace Atlas {
                     atrousShader[i].GetUniform("stepSize")->SetValue(1 << i);
 
                     if (pingpong) {
-                        target->reflectionTexture.Bind(GL_TEXTURE0);
+                        target->reflectionTexture.Bind(0);
                         target->swapReflectionTexture.Bind(GL_WRITE_ONLY, 0);
                     }
                     else {
-                        target->swapReflectionTexture.Bind(GL_TEXTURE0);
+                        target->swapReflectionTexture.Bind(0);
                         target->reflectionTexture.Bind(GL_WRITE_ONLY, 0);
                     }
 

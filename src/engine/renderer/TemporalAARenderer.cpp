@@ -29,12 +29,12 @@ namespace Atlas {
 
 			target->GetLastHistory()->Bind(GL_WRITE_ONLY, 0);
 
-			target->GetHistory()->Bind(GL_TEXTURE0);
-			target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE1);
-			target->GetVelocity()->Bind(GL_TEXTURE2);
-			target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE3);
-			target->GetLastVelocity()->Bind(GL_TEXTURE4);
-			target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE5);
+			target->GetHistory()->Bind(0);
+			target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(1);
+			target->GetVelocity()->Bind(2);
+			target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(3);
+			target->GetLastVelocity()->Bind(4);
+			target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(5);
 
 			shader.GetUniform("invResolution")->SetValue(1.0f / vec2((float)target->GetWidth(), (float)target->GetHeight()));
 			shader.GetUniform("resolution")->SetValue(vec2((float)target->GetWidth(), (float)target->GetHeight()));

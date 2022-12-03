@@ -103,7 +103,7 @@ namespace Atlas {
 			this->clipArea->SetValue(clipArea);
 			this->blendArea->SetValue(blendArea);
 
-			font->glyphTexture.Bind(GL_TEXTURE0);
+			font->glyphTexture.Bind(0);
 
 			font->firstGlyphBuffer.BindBase(0);
 			font->secondGlyphBuffer.BindBase(1);

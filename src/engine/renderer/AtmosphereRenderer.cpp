@@ -19,8 +19,6 @@ namespace Atlas {
 
 			shader.Compile();
 
-			GetUniforms();
-
 		}
 
 		void AtmosphereRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
@@ -31,16 +29,20 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
+			auto sun = scene->sky.sun;
+			auto atmosphere = scene->sky.atmosphere;
+			if (!sun || !atmosphere) return;
+
 			auto location = camera->GetLocation();
 
 			shader.GetUniform("vMatrix")->SetValue(camera->viewMatrix);
 			shader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
 			shader.GetUniform("cameraLocation")->SetValue(location);
-			shader.GetUniform("sunDirection")->SetValue(vec3(0.0f, -1.0f, 0.0f));
-			shader.GetUniform("sunIntensity")->SetValue(22.0f);
-			shader.GetUniform("planetCenter")->SetValue(-vec3(0.0f, 6371000.0f, 0.0f));
-			shader.GetUniform("planetRadius")->SetValue(6371000.0f);
-			shader.GetUniform("atmosphereRadius")->SetValue(6471000.0f);
+			shader.GetUniform("sunDirection")->SetValue(sun->direction);
+			shader.GetUniform("sunIntensity")->SetValue(sun->intensity);
+			shader.GetUniform("planetCenter")->SetValue(scene->sky.planetCenter);
+			shader.GetUniform("planetRadius")->SetValue(scene->sky.planetRadius);
+			shader.GetUniform("atmosphereRadius")->SetValue(scene->sky.planetRadius + atmosphere->height);
             shader.GetUniform("pvMatrixLast")->SetValue(camera->GetLastJitteredMatrix());
 			shader.GetUniform("jitterLast")->SetValue(camera->GetLastJitter());
 			shader.GetUniform("jitterCurrent")->SetValue(camera->GetJitter());
@@ -52,7 +54,9 @@ namespace Atlas {
 
 		}
 
-		void AtmosphereRenderer::Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene, Lighting::DirectionalLight* sun) {
+		void AtmosphereRenderer::Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene) {
+
+			Profiler::BeginQuery("Atmosphere environment probe");
 
 			glDisable(GL_DEPTH_TEST);
 
@@ -60,22 +64,30 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
-			cameraLocation->SetValue(probe->GetPosition());
-			sunDirection->SetValue(sun->direction);
-			sunIntensity->SetValue(22.0f);
-			planetCenter->SetValue(-vec3(0.0f, 6371000.0f, 0.0f));
-			planetRadius->SetValue(6371000.0f);
-			atmosphereRadius->SetValue(6471000.0f);
+			auto sun = scene->sky.sun;
+			auto atmosphere = scene->sky.atmosphere;
+			if (!sun || !atmosphere) return;
 
-			viewMatrix->SetValue(mat4(1.0f));
+			shader.GetUniform("vMatrix")->SetValue(mat4(1.0f));
+			shader.GetUniform("cameraLocation")->SetValue(probe->GetPosition());
+			shader.GetUniform("sunDirection")->SetValue(sun->direction);
+			shader.GetUniform("sunIntensity")->SetValue(sun->intensity);
+			shader.GetUniform("planetCenter")->SetValue(scene->sky.planetCenter);
+			shader.GetUniform("planetRadius")->SetValue(scene->sky.planetRadius);
+			shader.GetUniform("atmosphereRadius")->SetValue(scene->sky.planetRadius + atmosphere->height);
+			shader.GetUniform("pvMatrixLast")->SetValue(mat4(1.0f));
+			shader.GetUniform("jitterLast")->SetValue(vec2(1.0f));
+			shader.GetUniform("jitterCurrent")->SetValue(vec2(1.0f));
 
 			glViewport(0, 0, probe->cubemap.width, probe->cubemap.height);
 
 			framebuffer.Bind();
 
+			Profiler::BeginQuery("Render probe faces");
+
 			for (uint8_t i = 0; i < 6; i++) {
 
-				projectionMatrix->SetValue(probe->matrices[i]);
+				shader.GetUniform("pMatrix")->SetValue(probe->matrices[i]);
 
 				framebuffer.AddComponentCubemap(GL_COLOR_ATTACHMENT0, &probe->cubemap, i);
 
@@ -91,21 +103,12 @@ namespace Atlas {
 			vertexArray.Unbind();
 			framebuffer.Unbind();
 
-		}
+			Profiler::EndAndBeginQuery("Generate mipmaps");
 
-		void AtmosphereRenderer::GetUniforms() {
+			probe->cubemap.GenerateMipmap();
 
-			viewMatrix = shader.GetUniform("vMatrix");
-			projectionMatrix = shader.GetUniform("pMatrix");
-			cameraLocation = shader.GetUniform("cameraLocation");
-			sunDirection = shader.GetUniform("sunDirection");
-			sunIntensity = shader.GetUniform("sunIntensity");
-			planetCenter = shader.GetUniform("planetCenter");
-			atmosphereRadius = shader.GetUniform("atmosphereRadius");
-			planetRadius = shader.GetUniform("planetRadius");
-			pvMatrixLast = shader.GetUniform("pvMatrixLast");
-			jitterLast = shader.GetUniform("jitterLast");
-			jitterCurrent = shader.GetUniform("jitterCurrent");
+			Profiler::EndQuery();
+			Profiler::EndQuery();
 
 		}
 

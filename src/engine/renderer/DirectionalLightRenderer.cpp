@@ -1,5 +1,4 @@
 #include "DirectionalLightRenderer.h"
-#include "MasterRenderer.h"
 
 #include "../lighting/DirectionalLight.h"
 
@@ -35,22 +34,23 @@ namespace Atlas {
 
 			glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
 
-			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
-			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE1);
-			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(GL_TEXTURE2);
-			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3)->Bind(GL_TEXTURE3);
-			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT4)->Bind(GL_TEXTURE4);
-			target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE5);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(0);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT1)->Bind(1);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT2)->Bind(2);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3)->Bind(3);
+			target->geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT4)->Bind(4);
+			target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(5);
 
-			if (scene->sky.probe) {
-				scene->sky.probe->cubemap.Bind(GL_TEXTURE10);
-			}
-
-			if (scene->sky.probe) {
-				scene->sky.probe->filteredDiffuse.Bind(GL_TEXTURE11);
+			if (scene->sky.GetProbe()) {
+				scene->sky.GetProbe()->cubemap.Bind(10);
+				scene->sky.GetProbe()->filteredDiffuse.Bind(11);
 			}
 
 			auto lights = scene->GetLights();
+
+			if (scene->sky.sun) {
+				lights.push_back(scene->sky.sun);
+			}
 
 			// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
 			for (auto light : lights) {
@@ -76,7 +76,7 @@ namespace Atlas {
 					shadowCascadeCount->SetValue(directionalLight->GetShadow()->componentCount);
 					shadowResolution->SetValue(vec2((float)directionalLight->GetShadow()->resolution));
 
-					directionalLight->GetShadow()->maps.Bind(GL_TEXTURE8);
+					directionalLight->GetShadow()->maps.Bind(8);
 
 					auto componentCount = directionalLight->GetShadow()->componentCount;
 

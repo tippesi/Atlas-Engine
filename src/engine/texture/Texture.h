@@ -51,8 +51,8 @@ namespace Atlas {
 			 * @param access The kind of access needed e.g. GL_WRITE_ONLY
 			 * @param unit The binding point specified in the shader
 			 * @param level The mipmap level which should be accessed
-			 * @note If the texture has multiple layers, e.g. it is a Texture2DArray
-			 * then all layers will be made available.
+			 * @note If the texture has multiple depth, e.g. it is a Texture2DArray
+			 * then all depth will be made available.
 			 */
 			void Bind(uint32_t access, uint32_t unit, int32_t level = 0) const;
 
@@ -72,7 +72,7 @@ namespace Atlas {
              * Validates a texture.
              * @return True, if the texture is considered valid, false otherwise
              * @note The validity is checked by checking the width,
-             * height, channels and layers of the texture. No data is
+             * height, channels and depth of the texture. No data is
              * validated with this method.
              */
             bool IsValid() const;
@@ -193,8 +193,7 @@ namespace Atlas {
 
             int32_t width = 0;
             int32_t height = 0;
-
-            int32_t layers = 0;
+            int32_t depth = 0;
 
             int32_t channels = 0;
 

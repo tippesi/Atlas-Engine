@@ -15,7 +15,7 @@ namespace Atlas {
 
             this->width = width;
             this->height = height;
-			this->layers = 1;
+			this->depth = 1;
 
             Generate(GL_TEXTURE_2D, sizedFormat, wrapping, filtering, anisotropicFiltering, generateMipMaps);
 
@@ -149,7 +149,7 @@ namespace Atlas {
 			width = image.width;
 			height = image.height;
 			channels = image.channels;
-			this->layers = 1;
+			this->depth = 1;
 
 			Generate(GL_TEXTURE_2D, sizedFormat, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
 					 anisotropicFiltering, generateMipMaps);

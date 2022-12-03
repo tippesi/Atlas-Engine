@@ -18,31 +18,17 @@ namespace Atlas {
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
-			void Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene, Lighting::DirectionalLight* sun);
+			void Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene);
 
 			static std::string vertexPath;
 			static std::string fragmentPath;
 
 		private:
-			void GetUniforms();
-
 			Buffer::VertexArray vertexArray;
 
 			Framebuffer framebuffer;
 
 			Shader::Shader shader;
-
-			Shader::Uniform* viewMatrix = nullptr;
-			Shader::Uniform* projectionMatrix = nullptr;
-			Shader::Uniform* cameraLocation = nullptr;
-			Shader::Uniform* sunDirection = nullptr;
-			Shader::Uniform* sunIntensity = nullptr;
-			Shader::Uniform* planetCenter = nullptr;
-			Shader::Uniform* atmosphereRadius = nullptr;
-			Shader::Uniform* planetRadius = nullptr;
-			Shader::Uniform* pvMatrixLast = nullptr;
-			Shader::Uniform* jitterCurrent = nullptr;
-			Shader::Uniform* jitterLast = nullptr;
 
 		};
 

@@ -42,7 +42,7 @@ namespace Atlas {
             volumetricShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
 
             auto depthTexture = target->GetDownsampledTextures(target->GetVolumetricResolution())->depthTexture;
-            depthTexture->Bind(GL_TEXTURE0);
+            depthTexture->Bind(0);
 
             auto lights = scene->GetLights();
 
@@ -93,7 +93,7 @@ namespace Atlas {
                     volumetricShader.GetUniform("fogEnabled")->SetValue(false);
                 }
 
-                light->GetShadow()->maps.Bind(GL_TEXTURE1);
+                light->GetShadow()->maps.Bind(1);
 
                 for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
                     auto cascadeString = "light.shadow.cascades[" + std::to_string(i) + "]";
@@ -118,7 +118,7 @@ namespace Atlas {
 
                 const int32_t groupSize = 256;
 
-                depthTexture->Bind(GL_TEXTURE1);
+                depthTexture->Bind(1);
 
                 std::vector<float> kernelWeights;
                 std::vector<float> kernelOffsets;
@@ -138,7 +138,7 @@ namespace Atlas {
                 horizontalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
                 horizontalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
 
-                target->volumetricTexture.Bind(GL_TEXTURE0);
+                target->volumetricTexture.Bind(0);
                 target->swapVolumetricTexture.Bind(GL_WRITE_ONLY, 0);
 
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -153,7 +153,7 @@ namespace Atlas {
                 verticalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
                 verticalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
 
-                target->swapVolumetricTexture.Bind(GL_TEXTURE0);
+                target->swapVolumetricTexture.Bind(0);
                 target->volumetricTexture.Bind(GL_WRITE_ONLY, 0);
 
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -176,9 +176,10 @@ namespace Atlas {
                 volumetricResolveShader.Bind();
 
                 // We keep the depth texture binding from blur pass and only bind volumetric texture
-                target->volumetricTexture.Bind(GL_TEXTURE0);
-                target->GetDownsampledTextures(target->GetVolumetricResolution())->depthTexture->Bind(GL_TEXTURE1);
-                target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE2);
+                target->volumetricTexture.Bind(0);
+                target->GetDownsampledTextures(target->GetVolumetricResolution())->depthTexture->Bind(1);
+                target->volumetricCloudsTexture.Bind(2);
+                target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(3);
 
                 auto fog = scene->fog;
                 bool fogEnabled = fog && fog->enable;
@@ -193,6 +194,16 @@ namespace Atlas {
                 }
                 else {
                     volumetricResolveShader.GetUniform("fogEnabled")->SetValue(false);
+                }
+
+                auto clouds = scene->sky.clouds;
+                auto cloudsEnabled = clouds && clouds->enable;
+
+                if (cloudsEnabled) {
+                    volumetricResolveShader.GetUniform("cloudsEnabled")->SetValue(true);
+                }
+                else {
+                    volumetricResolveShader.GetUniform("cloudsEnabled")->SetValue(false);
                 }
 
                 volumetricResolveShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);

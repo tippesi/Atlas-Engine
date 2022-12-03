@@ -75,12 +75,12 @@ namespace Atlas {
             groupCount.x += ((res.x % 8 == 0) ? 0 : 1);
             groupCount.y += ((res.y % 8 == 0) ? 0 : 1);
 
-            depthIn->Bind(GL_TEXTURE0);
-            normalIn->Bind(GL_TEXTURE1);
-            geometryNormalIn->Bind(GL_TEXTURE2);
-            roughnessMetallicAoIn->Bind(GL_TEXTURE3);
-            velocityIn->Bind(GL_TEXTURE4);
-            materialIdxIn->Bind(GL_TEXTURE5);
+            depthIn->Bind(0);
+            normalIn->Bind(1);
+            geometryNormalIn->Bind(2);
+            roughnessMetallicAoIn->Bind(3);
+            velocityIn->Bind(4);
+            materialIdxIn->Bind(5);
 
             depthOut->Bind(GL_WRITE_ONLY, 0);
             normalOut->Bind(GL_WRITE_ONLY, 1);

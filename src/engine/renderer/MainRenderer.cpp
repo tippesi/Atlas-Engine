@@ -1,4 +1,4 @@
-#include "MasterRenderer.h"
+#include "MainRenderer.h"
 #include "helper/GeometryHelper.h"
 #include "helper/HaltonSequence.h"
 
@@ -16,7 +16,7 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		MasterRenderer::MasterRenderer() {
+		MainRenderer::MainRenderer() {
 
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 			Helper::GeometryHelper::GenerateCubeVertexArray(cubeVertexArray);
@@ -25,20 +25,6 @@ namespace Atlas {
 			rectangleShader.AddStage(AE_FRAGMENT_STAGE, "rectangle.fsh");
 
 			rectangleShader.Compile();
-
-			texture2DShader.AddStage(AE_VERTEX_STAGE, "rectangle.vsh");
-			texture2DShader.AddStage(AE_FRAGMENT_STAGE, "rectangle.fsh");
-
-			texture2DShader.AddMacro("TEXTURE2D");
-
-			texture2DShader.Compile();
-
-			texture2DArrayShader.AddStage(AE_VERTEX_STAGE, "rectangle.vsh");
-			texture2DArrayShader.AddStage(AE_FRAGMENT_STAGE, "rectangle.fsh");
-
-			texture2DArrayShader.AddMacro("TEXTURE2D_ARRAY");
-
-			texture2DArrayShader.Compile();
 
 			lineShader.AddStage(AE_VERTEX_STAGE, "primitive.vsh");
 			lineShader.AddStage(AE_FRAGMENT_STAGE, "primitive.fsh");
@@ -56,13 +42,13 @@ namespace Atlas {
 
 		}
 
-		MasterRenderer::~MasterRenderer() {
+		MainRenderer::~MainRenderer() {
 
 			
 
 		}
 
-		void MasterRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
+		void MainRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
 			Scene::Scene* scene, Texture::Texture2D* texture, RenderBatch* batch) {
 
 			Profiler::BeginQuery("Render scene");
@@ -81,7 +67,7 @@ namespace Atlas {
 
 			PrepareMaterials(scene, materials, materialMap);
 
-			dfgPreintegrationTexture.Bind(GL_TEXTURE31);
+			dfgPreintegrationTexture.Bind(31);
 
 			auto materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(PackedMaterial), 0,
 				materials.size(), materials.data());
@@ -102,10 +88,15 @@ namespace Atlas {
 
 			if (scene->sky.probe) {
 				if (scene->sky.probe->update) {
-					scene->sky.probe->filteredDiffuse.Bind(GL_TEXTURE0);
+					scene->sky.probe->filteredDiffuse.Bind(0);
 					FilterProbe(scene->sky.probe);
 					scene->sky.probe->update = false;
 				}
+			}
+			else if (scene->sky.atmosphere) {
+				atmosphereRenderer.Render(&scene->sky.atmosphere->probe, scene);
+				scene->sky.atmosphere->probe.filteredDiffuse.Bind(0);
+				FilterProbe(&scene->sky.atmosphere->probe);
 			}
 
 			glEnable(GL_DEPTH_TEST);
@@ -115,6 +106,10 @@ namespace Atlas {
 			depthFramebuffer.Bind();
 
 			auto lights = scene->GetLights();
+
+			if (scene->sky.sun) {
+				lights.push_back(scene->sky.sun);
+			}
 
 			for (auto light : lights) {
 
@@ -218,7 +213,7 @@ namespace Atlas {
 			if (scene->sky.probe) {
 				skyboxRenderer.Render(viewport, target, camera, scene);
 			}
-			else {
+			else if (scene->sky.atmosphere) {
 				atmosphereRenderer.Render(viewport, target, camera, scene);
 			}
 
@@ -226,9 +221,9 @@ namespace Atlas {
 
 			if (scene->ocean) {
 				oceanRenderer.Render(viewport, target, camera, scene);
-
-				downscaleRenderer.DownscaleDepthOnly(target);
 			}
+
+			downscaleRenderer.Downscale(target);
 
 			glDisable(GL_DEPTH_TEST);
 
@@ -238,6 +233,8 @@ namespace Atlas {
 			glDisable(GL_DEPTH_TEST);
 
 			vertexArray.Bind();
+
+			volumetricCloudRenderer.Render(viewport, target, camera, scene);
 
 			volumetricRenderer.Render(viewport, target, camera, scene);
 
@@ -275,12 +272,12 @@ namespace Atlas {
 
 			if (texture) {
 				framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, texture);
-				RenderTexture(viewport, postTex, 0.0f, 0.0f,
+				textureRenderer.RenderTexture2D(viewport, postTex, 0.0f, 0.0f,
 					(float)viewport->width, (float)viewport->height,
-					false, &framebuffer);
+					false, false, &framebuffer);
 			}
 			else {
-				RenderTexture(viewport, postTex, 0.0f, 0.0f,
+				textureRenderer.RenderTexture2D(viewport, postTex, 0.0f, 0.0f,
 					(float)viewport->width, (float)viewport->height);
 			}
 
@@ -288,122 +285,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::RenderTexture(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-			bool alphaBlending, bool invert, Framebuffer* framebuffer) {
-
-			float viewportWidth = (float)viewport->width;
-			float viewportHeight = (float)viewport->height;
-
-			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
-			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
-
-			RenderTexture(viewport, texture, x, y, width, height, clipArea, blendArea, alphaBlending, invert, framebuffer);
-
-		}
-
-		void MasterRenderer::RenderTexture(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert, Framebuffer* framebuffer) {
-
-			vertexArray.Bind();
-
-			texture2DShader.Bind();
-
-			glDisable(GL_CULL_FACE);
-
-			if (framebuffer)
-				framebuffer->Bind();
-
-			glViewport(0, 0, viewport->width, viewport->height);
-
-			if (alphaBlending) {
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			}
-
-			texture2DProjectionMatrix->SetValue(glm::ortho(0.0f, (float)viewport->width, 0.0f, (float)viewport->height));
-			texture2DOffset->SetValue(vec2(x, y));
-			texture2DScale->SetValue(vec2(width, height));
-			texture2DBlendArea->SetValue(blendArea);
-			texture2DClipArea->SetValue(clipArea);
-			texture2DShader.GetUniform("invert")->SetValue(invert);
-
-			texture->Bind(GL_TEXTURE0);
-
-			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-			if (alphaBlending)
-				glDisable(GL_BLEND);
-
-			if (framebuffer)
-				framebuffer->Unbind();
-
-			glEnable(GL_CULL_FACE);
-
-		}
-
-		void MasterRenderer::RenderTexture(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x,
-			float y, float width, float height,  bool alphaBlending, bool invert, Framebuffer* framebuffer) {
-
-			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
-			float viewportHeight = (float)(!framebuffer ? viewport->height : framebuffer->height);
-
-			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
-			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
-
-			RenderTexture(viewport, texture, depth, x, y, width, height, clipArea, blendArea, alphaBlending, framebuffer);
-
-		}
-
-		void MasterRenderer::RenderTexture(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
-			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert, Framebuffer* framebuffer) {
-
-			vertexArray.Bind();
-
-			texture2DArrayShader.Bind();
-
-			glDisable(GL_CULL_FACE);
-
-			if (framebuffer) {
-				framebuffer->Bind(true);
-			}
-			else {
-				glViewport(0, 0, viewport->width, viewport->height);
-			}
-
-			if (alphaBlending) {
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			}
-
-
-			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
-			float viewportHeight = (float)(!framebuffer ? viewport->height : framebuffer->height);
-
-			texture2DArrayProjectionMatrix->SetValue(glm::ortho(0.0f, (float)viewportWidth, 0.0f, (float)viewportHeight));
-			texture2DArrayOffset->SetValue(vec2(x, y));
-			texture2DArrayScale->SetValue(vec2(width, height));
-			texture2DArrayBlendArea->SetValue(blendArea);
-			texture2DArrayClipArea->SetValue(clipArea);
-			texture2DArrayDepth->SetValue((float)depth);
-			texture2DArrayShader.GetUniform("invert")->SetValue(invert);
-
-			texture->Bind(GL_TEXTURE0);
-
-			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-			if (alphaBlending) {
-				glDisable(GL_BLEND);
-			}
-
-			if (framebuffer) {
-				framebuffer->Unbind();
-			}
-
-			glEnable(GL_CULL_FACE);
-
-		}
-
-		void MasterRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
+		void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
 			bool alphaBlending, Framebuffer* framebuffer) {
 
 			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
@@ -421,7 +303,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
+		void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
 			vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
 
 			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
@@ -471,7 +353,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::RenderBatched(Viewport* viewport, Camera* camera, RenderBatch* batch) {
+		void MainRenderer::RenderBatched(Viewport* viewport, Camera* camera, RenderBatch* batch) {
 
 			batch->TransferData();
 
@@ -504,7 +386,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::RenderProbe(Lighting::EnvironmentProbe* probe, RenderTarget* target, Scene::Scene* scene) {
+		void MainRenderer::RenderProbe(Lighting::EnvironmentProbe* probe, RenderTarget* target, Scene::Scene* scene) {
 
 		    if (probe->resolution != target->GetWidth() ||
 		        probe->resolution != target->GetHeight())
@@ -562,6 +444,10 @@ namespace Atlas {
 				depthFramebuffer.Bind();
 
 				auto lights = scene->GetLights();
+
+				if (scene->sky.sun) {
+					lights.push_back(scene->sky.sun);
+				}
 
 				for (auto light : lights) {
 
@@ -668,8 +554,8 @@ namespace Atlas {
 				probe->cubemap.Bind(GL_WRITE_ONLY, 0);
 				probe->depth.Bind(GL_WRITE_ONLY, 1);
 
-				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
-				target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
+				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(0);
+				target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(1);
 
 				glDispatchCompute(groupCount, groupCount, 1);
 
@@ -683,7 +569,9 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::FilterProbe(Lighting::EnvironmentProbe* probe) {
+		void MainRenderer::FilterProbe(Lighting::EnvironmentProbe* probe) {
+
+			Profiler::BeginQuery("Filter probe");
 
 			mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
 			vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
@@ -702,7 +590,7 @@ namespace Atlas {
 			cubeVertexArray.Bind();
 			framebuffer.Bind();
 
-			probe->cubemap.Bind(GL_TEXTURE0);
+			probe->cubemap.Bind(0);
 
 			glViewport(0, 0, probe->filteredDiffuse.width, probe->filteredDiffuse.height);
 			glDisable(GL_DEPTH_TEST);
@@ -722,9 +610,11 @@ namespace Atlas {
 			glEnable(GL_DEPTH_TEST);
 			framebuffer.Unbind();
 
+			Profiler::EndQuery();
+
 		}
 
-		void MasterRenderer::Update() {
+		void MainRenderer::Update() {
 
 			static auto framecounter = 0;
 
@@ -734,7 +624,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::GetUniforms() {
+		void MainRenderer::GetUniforms() {
 
 			rectangleProjectionMatrix = rectangleShader.GetUniform("pMatrix");
 			rectangleOffset = rectangleShader.GetUniform("rectangleOffset");
@@ -743,25 +633,12 @@ namespace Atlas {
 			rectangleBlendArea = rectangleShader.GetUniform("rectangleBlendArea");
 			rectangleClipArea = rectangleShader.GetUniform("rectangleClipArea");
 
-			texture2DProjectionMatrix = texture2DShader.GetUniform("pMatrix");
-			texture2DOffset = texture2DShader.GetUniform("rectangleOffset");
-			texture2DScale = texture2DShader.GetUniform("rectangleScale");
-			texture2DBlendArea = texture2DShader.GetUniform("rectangleBlendArea");
-			texture2DClipArea = texture2DShader.GetUniform("rectangleClipArea");
-
-			texture2DArrayProjectionMatrix = texture2DArrayShader.GetUniform("pMatrix");
-			texture2DArrayOffset = texture2DArrayShader.GetUniform("rectangleOffset");
-			texture2DArrayScale = texture2DArrayShader.GetUniform("rectangleScale");
-			texture2DArrayBlendArea = texture2DArrayShader.GetUniform("rectangleBlendArea");
-			texture2DArrayClipArea = texture2DArrayShader.GetUniform("rectangleClipArea");
-			texture2DArrayDepth = texture2DArrayShader.GetUniform("textureDepth");
-
 			lineViewMatrix = lineShader.GetUniform("vMatrix");
 			lineProjectionMatrix = lineShader.GetUniform("pMatrix");
 
 		}
 
-		void MasterRenderer::PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
+		void MainRenderer::PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
 			std::unordered_map<void*, uint16_t>& materialMap) {
 
 			auto sceneMaterials = scene->GetMaterials();
@@ -869,7 +746,7 @@ namespace Atlas {
 
 		}
 
-		void MasterRenderer::PreintegrateBRDF() {
+		void MainRenderer::PreintegrateBRDF() {
 
 			Shader::Shader shader;
 

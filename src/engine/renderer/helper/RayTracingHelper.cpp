@@ -123,28 +123,28 @@ namespace Atlas {
 
 				// Bind textures and buffers
 				{
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE0);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE1);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE2);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE3);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE4);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE5);
-					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, GL_TEXTURE6);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 0);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 1);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 2);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 3);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 4);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 5);
+					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, 6);
 
 					if (rtData.baseColorTextureAtlas.slices.size())
-						rtData.baseColorTextureAtlas.textureArray.Bind(GL_TEXTURE0);
+						rtData.baseColorTextureAtlas.textureArray.Bind(0);
 					if (rtData.opacityTextureAtlas.slices.size())
-						rtData.opacityTextureAtlas.textureArray.Bind(GL_TEXTURE1);
+						rtData.opacityTextureAtlas.textureArray.Bind(1);
 					if (rtData.normalTextureAtlas.slices.size())
-						rtData.normalTextureAtlas.textureArray.Bind(GL_TEXTURE2);
+						rtData.normalTextureAtlas.textureArray.Bind(2);
 					if (rtData.roughnessTextureAtlas.slices.size())
-						rtData.roughnessTextureAtlas.textureArray.Bind(GL_TEXTURE3);
+						rtData.roughnessTextureAtlas.textureArray.Bind(3);
 					if (rtData.metalnessTextureAtlas.slices.size())
-						rtData.metalnessTextureAtlas.textureArray.Bind(GL_TEXTURE4);
+						rtData.metalnessTextureAtlas.textureArray.Bind(4);
 					if (rtData.aoTextureAtlas.slices.size())
-						rtData.aoTextureAtlas.textureArray.Bind(GL_TEXTURE5);
-					if (scene->sky.probe)
-						scene->sky.probe->cubemap.Bind(GL_TEXTURE6);
+						rtData.aoTextureAtlas.textureArray.Bind(5);
+					if (scene->sky.GetProbe())
+						scene->sky.GetProbe()->cubemap.Bind(6);
 
 					rtData.materialBuffer.BindBase(5);
 					rtData.triangleBuffer.BindBase(6);
@@ -240,28 +240,28 @@ namespace Atlas {
 
 				// Bind textures and buffers
 				{
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE0);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE1);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE2);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE3);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE4);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, GL_TEXTURE5);
-					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, GL_TEXTURE6);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 0);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 1);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 2);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 3);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 4);
+					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 5);
+					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, 6);
 
 					if (rtData.baseColorTextureAtlas.slices.size())
-						rtData.baseColorTextureAtlas.textureArray.Bind(GL_TEXTURE0);
+						rtData.baseColorTextureAtlas.textureArray.Bind(0);
 					if (rtData.opacityTextureAtlas.slices.size())
-						rtData.opacityTextureAtlas.textureArray.Bind(GL_TEXTURE1);
+						rtData.opacityTextureAtlas.textureArray.Bind(1);
 					if (rtData.normalTextureAtlas.slices.size())
-						rtData.normalTextureAtlas.textureArray.Bind(GL_TEXTURE2);
+						rtData.normalTextureAtlas.textureArray.Bind(2);
 					if (rtData.roughnessTextureAtlas.slices.size())
-						rtData.roughnessTextureAtlas.textureArray.Bind(GL_TEXTURE3);
+						rtData.roughnessTextureAtlas.textureArray.Bind(3);
 					if (rtData.metalnessTextureAtlas.slices.size())
-						rtData.metalnessTextureAtlas.textureArray.Bind(GL_TEXTURE4);
+						rtData.metalnessTextureAtlas.textureArray.Bind(4);
 					if (rtData.aoTextureAtlas.slices.size())
-						rtData.aoTextureAtlas.textureArray.Bind(GL_TEXTURE5);
-					if (scene->sky.probe)
-						scene->sky.probe->cubemap.Bind(GL_TEXTURE6);
+						rtData.aoTextureAtlas.textureArray.Bind(5);
+					if (scene->sky.GetProbe())
+						scene->sky.GetProbe()->cubemap.Bind(6);
 
 					rtData.materialBuffer.BindBase(5);
 					rtData.triangleBuffer.BindBase(6);
@@ -396,6 +396,10 @@ namespace Atlas {
 				auto& rtData = scene->rayTracingData;
 
 				auto lightSources = scene->GetLights();
+
+				if (scene->sky.sun) {
+					lightSources.push_back(scene->sky.sun);
+				}
 
 				for (auto light : lightSources) {
 

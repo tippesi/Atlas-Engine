@@ -10,6 +10,7 @@
 #include "../lighting/IrradianceVolume.h"
 #include "../lighting/AO.h"
 #include "../lighting/Reflection.h"
+#include "../lighting/VolumetricClouds.h"
 #include "../ocean/Ocean.h"
 #include "../postprocessing/PostProcessing.h"
 #include "../Decal.h"

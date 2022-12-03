@@ -7,7 +7,7 @@ layout(binding = 0) uniform samplerCube probe;
 
 vec4 Irradiance(vec3 N) {
 
-    uint sampleCount = 4096u;
+    uint sampleCount = 256u;
     vec4 acc = vec4(0.0);
 
     ivec2 size = textureSize(probe, 0);

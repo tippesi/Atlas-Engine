@@ -36,28 +36,12 @@ namespace Atlas {
 				key = cameraMap.find(camera);
 			}
 
-			auto lights = scene->GetLights();
-
-			Lighting::DirectionalLight* sun = nullptr;
-
-			for (auto& light : lights) {
-				if (light->type == AE_DIRECTIONAL_LIGHT) {
-					sun = static_cast<Lighting::DirectionalLight*>(light);
-				}
-			}
-
-			if (!sun)
-				return;
-
 			mvpMatrix->SetValue(matrix);
 			ivMatrix->SetValue(camera->invViewMatrix);
 			ipMatrix->SetValue(camera->invProjectionMatrix);
 			
 			cameraLocation->SetValue(camera->GetLocation());
 			cameraLocationLast->SetValue(lastCameraLocation);
-
-			lightDirection->SetValue(normalize(sun->direction));
-			lightColor->SetValue(sun->color);
 
 			cameraMap[camera] = camera->GetLocation();
 
@@ -67,7 +51,7 @@ namespace Atlas {
 
 			vertexArray.Bind();
 
-			scene->sky.probe->cubemap.Bind(GL_TEXTURE0);
+			scene->sky.probe->cubemap.Bind(0);
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -82,8 +66,6 @@ namespace Atlas {
 			ipMatrix = shader.GetUniform("ipMatrix");
 			cameraLocation = shader.GetUniform("cameraLocation");
 			cameraLocationLast = shader.GetUniform("cameraLocationLast");
-			lightDirection = shader.GetUniform("lightDirection");
-			lightColor = shader.GetUniform("lightColor");
 
 			pvMatrixLast = shader.GetUniform("pvMatrixLast");
 			jitterLast = shader.GetUniform("jitterLast");

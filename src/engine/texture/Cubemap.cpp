@@ -32,7 +32,7 @@ namespace Atlas {
 
 		   this->width = images[0].width;
 		   this->height = images[0].height;
-		   this->layers = 6;
+		   this->depth = 6;
 
 		   Generate(GL_TEXTURE_CUBE_MAP, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR_MIPMAP_LINEAR,
 			   false, true);
@@ -53,7 +53,7 @@ namespace Atlas {
 
 		   this->width = resolution;
 		   this->height = resolution;
-		   this->layers = 6;
+		   this->depth = 6;
 
 		   Generate(GL_TEXTURE_CUBE_MAP, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR_MIPMAP_LINEAR,
 			   false, true);
@@ -115,7 +115,7 @@ namespace Atlas {
 
 		   this->width = width;
 		   this->height = height;
-		   this->layers = 6;
+		   this->depth = 6;
 
 		   Generate(GL_TEXTURE_CUBE_MAP, sizedFormat, wrapping, filtering,
 			   anisotropicFiltering, generateMipmaps);

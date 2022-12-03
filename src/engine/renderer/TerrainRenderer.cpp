@@ -68,16 +68,14 @@ namespace Atlas {
 			terrainMaterialBuffer.BindBase(0);
 			terrain->vertexArray.Bind();
 
-			terrain->storage->baseColorMaps.Bind(GL_TEXTURE3);
-			terrain->storage->roughnessMaps.Bind(GL_TEXTURE4);
-			terrain->storage->aoMaps.Bind(GL_TEXTURE5);
-			terrain->storage->normalMaps.Bind(GL_TEXTURE6);
-			terrain->storage->displacementMaps.Bind(GL_TEXTURE7);
+			terrain->storage->baseColorMaps.Bind(3);
+			terrain->storage->roughnessMaps.Bind(4);
+			terrain->storage->aoMaps.Bind(5);
+			terrain->storage->normalMaps.Bind(6);
+			terrain->storage->displacementMaps.Bind(7);
 
-#ifdef AE_API_GL
 			if (terrain->wireframe)
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-#endif
 
 			for (uint8_t i = 0; i < 2; i++) {
 
@@ -115,9 +113,9 @@ namespace Atlas {
 
 				for (auto node : nodes) {
 
-					node->cell->heightField->Bind(GL_TEXTURE0);
-					node->cell->normalMap->Bind(GL_TEXTURE1);
-					node->cell->splatMap->Bind(GL_TEXTURE2);
+					node->cell->heightField->Bind(0);
+					node->cell->normalMap->Bind(1);
+					node->cell->splatMap->Bind(2);
 
 					nodeLocation->SetValue(node->location);
 					nodeSideLength->SetValue(node->sideLength);
@@ -140,10 +138,8 @@ namespace Atlas {
 
 			}
 
-#ifdef AE_API_GL
 			if (terrain->wireframe)
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-#endif
 
 			Profiler::EndQuery();
 

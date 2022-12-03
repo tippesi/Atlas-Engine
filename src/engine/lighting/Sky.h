@@ -2,8 +2,11 @@
 #define AE_SKY_H
 
 #include "../System.h"
+
 #include "EnvironmentProbe.h"
 #include "DirectionalLight.h"
+#include "Atmosphere.h"
+#include "VolumetricClouds.h"
 
 namespace Atlas {
 
@@ -14,7 +17,14 @@ namespace Atlas {
 		public:
 			Sky();
 
+			EnvironmentProbe* GetProbe();
+
+			vec3 planetCenter = vec3(0.0f, -650000.0f, 0.0f);
+			float planetRadius = 650000.0f;
+
 			DirectionalLight* sun = nullptr;
+			Atmosphere* atmosphere = nullptr;
+			VolumetricClouds* clouds = nullptr;
 
 			EnvironmentProbe* probe = nullptr;
 

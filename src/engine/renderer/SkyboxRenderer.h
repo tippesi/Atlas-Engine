@@ -32,8 +32,6 @@ namespace Atlas {
 			Shader::Uniform* ipMatrix = nullptr;
 			Shader::Uniform* cameraLocation = nullptr;
 			Shader::Uniform* cameraLocationLast = nullptr;
-			Shader::Uniform* lightDirection = nullptr;
-			Shader::Uniform* lightColor = nullptr;
 
 			Shader::Uniform* pvMatrixLast = nullptr;
 			Shader::Uniform* jitterLast = nullptr;

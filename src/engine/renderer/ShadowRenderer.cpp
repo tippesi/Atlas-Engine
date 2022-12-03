@@ -36,6 +36,10 @@ namespace Atlas {
 
 			auto lights = scene->GetLights();
 
+			if (scene->sky.sun) {
+				lights.push_back(scene->sky.sun);
+			}
+
 			for (auto& light : lights) {
 
 				if (!light->GetShadow()) {
@@ -142,7 +146,7 @@ namespace Atlas {
 									backFaceCulling);
 
 								if (material->HasOpacityMap()) {
-									material->opacityMap->Bind(GL_TEXTURE0);
+									material->opacityMap->Bind(0);
 								}
 
 								glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),

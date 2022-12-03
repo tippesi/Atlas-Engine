@@ -53,14 +53,14 @@ namespace Atlas {
 			if (!target)
 				return;
 
-			glActiveTexture(unit);
+			glActiveTexture(GL_TEXTURE0 + unit);
 			Bind();
 
 		}
 
 		void Texture::Bind(uint32_t access, uint32_t unit, int32_t level) const {
 
-			glBindImageTexture(unit, ID, level, layers > 1, 0, access, sizedFormat);
+			glBindImageTexture(unit, ID, level, depth > 1, 0, access, sizedFormat);
 
 		}
 
@@ -86,7 +86,7 @@ namespace Atlas {
         bool Texture::IsValid() const {
 
             return width > 0 && height > 0 &&
-                channels > 0 && layers > 0;
+                channels > 0 && depth > 0;
 
         }
 
@@ -127,10 +127,10 @@ namespace Atlas {
         void Texture::Copy(const Texture &texture) {
 
             if (width != texture.width || height != texture.height ||
-                layers != texture.layers || channels != texture.channels)
+                depth != texture.depth || channels != texture.channels)
                 return;
 
-			Copy(texture, 0, 0, 0, 0, 0, 0, width, height, layers);
+			Copy(texture, 0, 0, 0, 0, 0, 0, width, height, depth);
 
         }
 
@@ -140,8 +140,8 @@ namespace Atlas {
 
 			if (width <= 0 || height <= 0 || depth <= 0 || texture.channels != channels ||
 				srcX + width > texture.width || srcY + height > texture.height ||
-				srcZ + depth > texture.layers || destX + width > this->width || 
-				destY + height > this->height || destZ + depth > this->layers )
+				srcZ + depth > texture.depth || destX + width > this->width ||
+				destY + height > this->height || destZ + depth > this->depth )
 				return;
 
 			Bind();
@@ -157,6 +157,7 @@ namespace Atlas {
 
 		void Texture::GenerateMipmap() {
 
+            Bind();
 			if (mipmaps)
 				glGenerateMipmap(target);
 
@@ -225,7 +226,7 @@ namespace Atlas {
 
         void Texture::Unbind(uint32_t target, uint32_t unit) {
 
-            glActiveTexture(unit);
+            glActiveTexture(GL_TEXTURE0 + unit);
             glBindTexture(target, 0);
 
         }
@@ -267,7 +268,7 @@ namespace Atlas {
             glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
             glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapping);
 
-			if (width > 0 && height > 0 && layers > 0)
+			if (width > 0 && height > 0 && depth > 0)
 				ReserveStorage(mipCount);
 
 			Unbind();
@@ -278,7 +279,7 @@ namespace Atlas {
 
 			width = that.width;
 			height = that.height;
-			layers = that.layers;
+            depth = that.depth;
 
 			Generate(that.target, that.sizedFormat, that.wrapping, that.filtering,
 				that.anisotropicFiltering, that.mipmaps);
