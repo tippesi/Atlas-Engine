@@ -10,7 +10,7 @@ if(COMMAND cmake_policy)
     cmake_policy(SET CMP0042 NEW)
 endif(COMMAND cmake_policy)
 
-project(AtlasEngine VERSION 0.1.7)
+project(AtlasEngine VERSION 0.1.8)
 cmake_minimum_required(VERSION 3.7)
 
 # Only 64 bit is supported
@@ -56,6 +56,9 @@ endif()
 if (ANDROID)
     list(APPEND EXTRA_LIBS dl)
 endif()
+
+# Find Vulkan #####################################################################################
+find_package(Vulkan REQUIRED FATAL_ERROR)
 
 if (ATLAS_DEMO)
 set(ATLAS_EXPORT_MAIN ON CACHE BOOL "Override engine settings" FORCE)

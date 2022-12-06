@@ -1,7 +1,7 @@
 {
     "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
     "name": "atlas-engine",
-    "version-string": "0.1.7",
+    "version-string": "0.1.8",
     "port-version": 0,
     "builtin-baseline": "59b58fc56de40eaa279ae0208debcf5773a2db77",
     "homepage": "https://github.com/tippesi/Atlas-Engine",
@@ -23,7 +23,10 @@
                 "docking-experimental"
             ]
         },
-        "assimp"
+        "assimp",
+        "vulkan-hpp",
+        "vulkan-memory-allocator",
+        "vk-bootstrap"
     ],
     "overrides": [
             { "name": "glm", "version": "0.9.8.0" },
