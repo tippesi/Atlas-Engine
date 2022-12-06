@@ -34,7 +34,8 @@ private:
 		NEWSPONZA,
 		BISTRO,
 		MEDIEVAL,
-		PICAPICA
+		PICAPICA,
+		FOREST
 	};
 
 	void DisplayLoadingScreen();

@@ -21,6 +21,7 @@ uniform Light light;
 uniform mat4 ivMatrix;
 uniform vec3 cameraLocation;
 uniform vec3 cameraDirection;
+uniform bool sssEnabled = false;
 
 void main() {
 	
@@ -48,7 +49,11 @@ void main() {
 	vec3 shadowNormal = surface.material.transmissive ? dot(-light.direction, geometryNormal) < 0.0 ? 
 		-geometryNormal : geometryNormal : geometryNormal;
 	shadowFactor = CalculateCascadedShadow(light.shadow, cascadeMaps, surface.P,
-		shadowNormal, saturate(dot(-light.direction, shadowNormal))); 
+		shadowNormal, saturate(dot(-light.direction, shadowNormal)));
+	if (sssEnabled) {
+		float sssFactor = textureLod(sssTexture, texCoordVS, 0).r;
+		shadowFactor = min(sssFactor, shadowFactor);
+	}
 #endif
 	
 	vec3 radiance = light.color * light.intensity;

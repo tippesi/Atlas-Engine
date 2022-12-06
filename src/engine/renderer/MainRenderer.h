@@ -28,6 +28,7 @@
 #include "VolumetricCloudRenderer.h"
 #include "VegetationRenderer.h"
 #include "TextureRenderer.h"
+#include "SSSRenderer.h"
 
 namespace Atlas {
 
@@ -184,6 +185,7 @@ namespace Atlas {
 			RTReflectionRenderer rtrRenderer;
 			VolumetricRenderer volumetricRenderer;
 			VolumetricCloudRenderer volumetricCloudRenderer;
+			SSSRenderer sssRenderer;
 
 			std::vector<vec2> haltonSequence;
 			size_t haltonIndex = 0;

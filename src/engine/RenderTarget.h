@@ -154,6 +154,8 @@ namespace Atlas {
 		Texture::Texture2D aoMomentsTexture;
 		Texture::Texture2D historyAoMomentsTexture;
 
+		Texture::Texture2D sssTexture;
+
 		Texture::Texture2D volumetricTexture;
 		Texture::Texture2D swapVolumetricTexture;
 

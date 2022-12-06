@@ -12,6 +12,7 @@ layout(binding = 7) uniform sampler2D volumetricTexture;
 
 layout(binding = 10) uniform samplerCube specularProbe;
 layout(binding = 11) uniform samplerCube diffuseProbe;
+layout(binding = 12) uniform sampler2D sssTexture;
 
 Material GetMaterial(vec2 texCoord) {
     uint materialIdx = textureLod(materialIdxTexture, texCoord, 0).r;

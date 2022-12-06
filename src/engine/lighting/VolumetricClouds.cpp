@@ -4,13 +4,12 @@ namespace Atlas {
 
 	namespace Lighting {
 
-		VolumetricClouds::VolumetricClouds(int32_t shapeResolution, int32_t detailResolution) :
-			shapeTexture(shapeResolution, shapeResolution, shapeResolution,
-				GL_RGBA16F, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, false, true),
-			detailTexture(detailResolution, detailResolution, detailResolution,
-				GL_RGBA16F, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, false, true) {
+		VolumetricClouds::VolumetricClouds(int32_t shapeResolution, int32_t detailResolution) {
 
-
+			shapeTexture = Texture::Texture3D(shapeResolution, shapeResolution, shapeResolution,
+				GL_RGBA16F, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, false, true);
+			detailTexture = Texture::Texture3D(detailResolution, detailResolution, detailResolution,
+				GL_RGBA16F, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, false, true);
 
 		}
 

@@ -55,6 +55,8 @@ namespace Atlas {
 		downsampledTarget2x = DownsampledRenderTarget(halfRes);
 		downsampledSwapTarget2x = DownsampledRenderTarget(halfRes);
 
+		sssTexture = Texture::Texture2D(width, height, AE_RGBA32F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+
 	}
 
 	void RenderTarget::Resize(int32_t width, int32_t height) {
@@ -87,6 +89,8 @@ namespace Atlas {
 		ivec2 halfRes = GetRelativeResolution(HALF_RES);
 		downsampledTarget2x.Resize(halfRes);
 		downsampledSwapTarget2x.Resize(halfRes);
+
+		sssTexture.Resize(width, height);
 
 	}
 

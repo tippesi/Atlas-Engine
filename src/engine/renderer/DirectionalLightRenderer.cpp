@@ -52,6 +52,8 @@ namespace Atlas {
 				lights.push_back(scene->sky.sun);
 			}
 
+			target->sssTexture.Bind(12);
+
 			// We will use two types of shaders: One with shadows and one without shadows (this is the only thing which might change per light)
 			for (auto light : lights) {
 
@@ -66,6 +68,8 @@ namespace Atlas {
 				lightDirection->SetValue(direction);
 				lightColor->SetValue(directionalLight->color);
 				lightIntensity->SetValue(directionalLight->intensity);
+
+				shader.GetUniform("sssEnabled")->SetValue(scene->sss && scene->sss->enable);
 
 				if (light->GetShadow()) {
 					auto distance = !light->GetShadow()->longRange ? light->GetShadow()->distance :
