@@ -10,8 +10,6 @@
 #include <direct.h>
 #endif
 
-extern Atlas::EngineInstance* GetEngineInstance();
-
 int main(int argc, char* argv[]) {
 
 	// Automatically change working directory to load
@@ -25,8 +23,17 @@ int main(int argc, char* argv[]) {
 #endif
 	}
 
-	auto graphicsInstance = Atlas::Engine::Init(Atlas::EngineInstance::assetDirectory,
-		Atlas::EngineInstance::shaderDirectory);
+    Atlas::Engine::Init(Atlas::EngineInstance::assetDirectory,
+                        Atlas::EngineInstance::shaderDirectory);
+
+    auto engineInstance = Atlas::EngineInstance::GetInstance();
+    if (!engineInstance) {
+        Atlas::Log::Warning("Shutdown of application");
+        Atlas::Engine::Shutdown();
+        return 0;
+    }
+
+    auto graphicsInstance = Atlas::EngineInstance::GetGraphicsInstance();
 
 	if (!graphicsInstance) {
 		Atlas::Log::Warning("Shutdown of application");
@@ -34,11 +41,10 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 
-    auto graphicsDevice = graphicsInstance->CreateGraphicsDevice();
+    auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
 
     bool needed = graphicsDevice == nullptr;
 
-	auto instance = GetEngineInstance();
 
 	// No need to clean the context up, will be released
 	// when the instance is being deleted.
@@ -46,7 +52,7 @@ int main(int argc, char* argv[]) {
 
 	// We need to pass the command line arguments
 	for (int32_t i = 0; i < argc; i++)
-	    instance->args.push_back(std::string(argv[i]));
+        engineInstance->args.push_back(std::string(argv[i]));
 
 	bool quit = false;
 
@@ -55,7 +61,7 @@ int main(int argc, char* argv[]) {
 			quit = true;
 	});
 
-	instance->LoadContent();
+    engineInstance->LoadContent();
 
 	while (!quit) {
 
@@ -63,18 +69,19 @@ int main(int argc, char* argv[]) {
 		
 		auto deltaTime = Atlas::Clock::GetDelta();
 
-		instance->Update();
+        engineInstance->Update();
 
-		instance->Update(deltaTime);
-		instance->Render(deltaTime);
+        engineInstance->Update(deltaTime);
+        engineInstance->Render(deltaTime);
 
-		instance->window.Update();
+        engineInstance->window->Update();
 
 	}
 
-	instance->UnloadContent();
+    engineInstance->UnloadContent();
 
 	Atlas::Engine::Shutdown();
+    delete engineInstance;
 
     // Need this right now just for linking to be successful
     if (needed && !gladLoadGL()) {

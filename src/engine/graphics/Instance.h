@@ -9,6 +9,9 @@
 #include <vulkan/vulkan.h>
 
 #include "GraphicsDevice.h"
+#include "Surface.h"
+
+#include "../Engine.h"
 
 namespace Atlas {
 
@@ -17,13 +20,17 @@ namespace Atlas {
         class Instance {
 
             friend GraphicsDevice;
+            friend Surface;
+            friend Engine;
 
         public:
             Instance(const std::string& instanceName, bool& success, bool enableValidationLayers = false);
 
             ~Instance();
 
-            GraphicsDevice* CreateGraphicsDevice();
+            VkInstance GetNativeInstance() const;
+
+            GraphicsDevice* GetGraphicsDevice() const;
 
         private:
             bool LoadSupportedLayersAndExtensions();
@@ -31,6 +38,8 @@ namespace Atlas {
             bool CheckExtensionSupport(std::vector<const char*> extensionNames);
 
             bool CheckValidationLayerSupport(std::vector<const char*> validationLayerNames);
+
+            bool IntitializeGraphicsDevice(Surface* surface);
 
             bool RegisterDebugCallback();
 
@@ -48,6 +57,9 @@ namespace Atlas {
 
             VkInstance instance;
             VkDebugUtilsMessengerEXT debugMessenger;
+
+            GraphicsDevice* graphicsDevice;
+            Surface* surface;
 
         private:
             static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(

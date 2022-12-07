@@ -19,8 +19,6 @@
 #include "loader/AssetLoader.h"
 #include "common/RandomHelper.h"
 
-#include "graphics/Instance.h"
-
 namespace Atlas {
 
 	class Engine {
@@ -32,7 +30,7 @@ namespace Atlas {
          * @param shaderDirectory The directory where all the shader files are located relative to the asset directory
          * @note All file paths handed over to the engine should be relative the asset directory
          */
-		static Graphics::Instance* Init(std::string assetDirectory, std::string shaderDirectory);
+		static void Init(std::string assetDirectory, std::string shaderDirectory);
 
 		/**
 		 * Shuts down the engine
@@ -61,11 +59,6 @@ namespace Atlas {
          * Unlocks the framerate.
          */
         static void UnlockFramerate();
-
-		/**
-		 * This window is there by default and is not visible.
-		 */
-        static Graphics::Instance* instance;
 
 	};
 

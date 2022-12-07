@@ -66,22 +66,23 @@ namespace Atlas {
 
         Instance::~Instance() {
 
+            delete graphicsDevice;
+            delete surface;
+
             vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
             vkDestroyInstance(instance, nullptr);
 
         }
 
-        GraphicsDevice *Instance::CreateGraphicsDevice() {
+        VkInstance Instance::GetNativeInstance() const {
 
-            bool success = false;
-            auto device = new GraphicsDevice(this, success, validationLayersEnabled);
+            return instance;
 
-            if (!success) {
-                delete device;
-                return nullptr;
-            }
+        }
 
-            return device;
+        GraphicsDevice *Instance::GetGraphicsDevice() const {
+
+            return graphicsDevice;
 
         }
 
@@ -120,6 +121,14 @@ namespace Atlas {
         bool Instance::CheckValidationLayerSupport(std::vector<const char*> validationLayerNames) {
 
             return CheckVectorIntersection(validationLayerNames, this->layerNames);
+
+        }
+
+        bool Instance::IntitializeGraphicsDevice(Surface* surface) {
+
+            bool success = false;
+            graphicsDevice = new GraphicsDevice(surface, success, validationLayersEnabled);
+            return success;
 
         }
 

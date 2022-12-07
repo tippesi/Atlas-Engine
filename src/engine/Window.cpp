@@ -1,18 +1,22 @@
 #include "Window.h"
+#include "EngineInstance.h"
+
+#include <SDL_vulkan.h>
 
 namespace Atlas {
 
-	Window::Window(std::string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags) :
+	Window::Window(std::string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags, bool createSurface) :
 			x(x == AE_WINDOWPOSITION_UNDEFINED ? 0 : x), y(y == AE_WINDOWPOSITION_UNDEFINED ? 0 : y),
 			width(width), height(height) {
 
 		sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_VULKAN);
-
 		if (!sdlWindow) {
             auto error = SDL_GetError();
 			Log::Error("Error initializing window: " + std::string(error));
 			return;
 		}
+
+        if (createSurface) CreateSurface();
 
 		ID = SDL_GetWindowID(sdlWindow);
 
@@ -43,6 +47,8 @@ namespace Atlas {
 	}
 
 	Window::~Window() {
+
+        delete surface;
 
 		SDL_DestroyWindow(sdlWindow);
 
@@ -179,6 +185,19 @@ namespace Atlas {
 		// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	}
+
+    bool Window::CreateSurface() {
+
+        bool success = false;
+        surface = new Graphics::Surface(sdlWindow, success);
+        if (!success) {
+            Log::Error("Error initializing window surface");
+            return false;
+        }
+
+        return true;
+
+    }
 
 	SDL_Window* Window::GetSDLWindow() {
 

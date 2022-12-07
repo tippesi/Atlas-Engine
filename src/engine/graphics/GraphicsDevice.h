@@ -1,10 +1,11 @@
 #ifndef AE_GRAPHICSDEVICE_H
 #define AE_GRAPHICSDEVICE_H
 
-#define VK_NO_PROTOTYPES
-#include <vulkan/vulkan.h>
+#include "Surface.h"
 
+#include <volk.h>
 #include <optional>
+#include <vector>
 
 namespace Atlas {
 
@@ -21,25 +22,30 @@ namespace Atlas {
                 VkQueue queue;
             };
 
-            GraphicsDevice(Instance* instance, bool& success, bool enableValidationLayers = false);
+            GraphicsDevice(Surface* surface, bool& success, bool enableValidationLayers = false);
 
             ~GraphicsDevice();
 
-            
-
         private:
             struct QueueFamilyIndices {
-                std::optional<uint32_t> indices;
+                std::optional<uint32_t> graphicsFamily;
+                std::optional<uint32_t> presentationFamily;
+
+                VkQueue graphicsQueue;
+                VkQueue presentationQueue;
 
                 bool IsComplete() {
-                    return indices.has_value();
+                    return graphicsFamily.has_value() && presentationFamily.has_value();
                 }
             };
-            bool SelectPhysicalDevice(VkInstance instance);
 
-            int32_t RateDeviceSuitability(VkPhysicalDevice device);
+            bool SelectPhysicalDevice(Surface* surface, VkInstance instance);
 
-            bool FindQueueFamilies();
+            int32_t RateDeviceSuitability(Surface* surface, VkPhysicalDevice device);
+
+            bool FindQueueFamilies(Surface* surface);
+
+            std::vector<VkDeviceQueueCreateInfo> CreateQueueInfos();
 
             VkPhysicalDevice physicalDevice;
             VkDevice device;

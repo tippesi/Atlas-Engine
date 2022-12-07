@@ -1,34 +1,31 @@
 #include "GraphicsDevice.h"
 #include "Instance.h"
+#include "../EngineInstance.h"
 
 #include <vector>
 #include <map>
-
-#include <volk.h>
+#include <cassert>
+#include <set>
 
 namespace Atlas {
 
     namespace Graphics {
 
-        GraphicsDevice::GraphicsDevice(Instance* instance, bool &success, bool enableValidationLayers) {
+        GraphicsDevice::GraphicsDevice(Surface* surface, bool &success, bool enableValidationLayers) {
 
-            success = SelectPhysicalDevice(instance->instance);
-            success &= FindQueueFamilies();
+            auto instance = EngineInstance::GetGraphicsInstance();
 
-            VkDeviceQueueCreateInfo queueCreateInfo{};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamilyIndices.indices.value();
-            queueCreateInfo.queueCount = 1;
+            success = SelectPhysicalDevice(surface, instance->instance);
+            assert(success && "Error selecting physical device");
 
-            float queuePriority = 1.0f;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
+            auto queueCreateInfos = CreateQueueInfos();
 
             VkPhysicalDeviceFeatures deviceFeatures{};
 
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-            createInfo.pQueueCreateInfos = &queueCreateInfo;
-            createInfo.queueCreateInfoCount = 1;
+            createInfo.pQueueCreateInfos = queueCreateInfos.data();
+            createInfo.queueCreateInfoCount = uint32_t(queueCreateInfos.size());
 
             const std::vector<const char*> requiredExtensions = {
                     "VK_KHR_portability_subset"
@@ -47,6 +44,11 @@ namespace Atlas {
             success &= vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) == VK_SUCCESS;
             assert(success && "Unable to create virtual device");
 
+            vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamily.value(), 0,
+                             &queueFamilyIndices.graphicsQueue);
+            vkGetDeviceQueue(device, queueFamilyIndices.presentationFamily.value(), 0,
+                             &queueFamilyIndices.presentationQueue);
+
         }
 
         GraphicsDevice::~GraphicsDevice() {
@@ -55,7 +57,7 @@ namespace Atlas {
 
         }
 
-        bool GraphicsDevice::SelectPhysicalDevice(VkInstance instance) {
+        bool GraphicsDevice::SelectPhysicalDevice(Surface* surface, VkInstance instance) {
 
             uint32_t deviceCount = 0;
             bool success = vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr) == VK_SUCCESS;
@@ -68,22 +70,23 @@ namespace Atlas {
 
             std::multimap<int32_t, VkPhysicalDevice> candidates;
             for (const auto& device : devices) {
-                int32_t score = RateDeviceSuitability(device);
+                int32_t score = RateDeviceSuitability(surface, device);
                 candidates.insert(std::make_pair(score, device));
             }
 
+            auto foundSuitableDevice = candidates.rbegin()->first > 0;
+            assert(foundSuitableDevice && "No suitable device found");
             // Check if the best candidate is suitable at all
-            if (candidates.rbegin()->first > 0) {
+            if (foundSuitableDevice) {
                 physicalDevice = candidates.rbegin()->second;
             } else {
-                assert("No suitable device found");
                 return false;
             }
 
-            FindQueueFamilies();
-
-            if (!queueFamilyIndices.IsComplete()) {
-                assert("No valid queue family found");
+            FindQueueFamilies(surface);
+            auto completeIndices = queueFamilyIndices.IsComplete();
+            assert(completeIndices && "No valid queue family found");
+            if (!completeIndices) {
                 return false;
             }
 
@@ -91,7 +94,7 @@ namespace Atlas {
 
         }
 
-        int32_t GraphicsDevice::RateDeviceSuitability(VkPhysicalDevice device) {
+        int32_t GraphicsDevice::RateDeviceSuitability(Surface* surface, VkPhysicalDevice device) {
 
             int32_t score = 0;
 
@@ -112,13 +115,15 @@ namespace Atlas {
 
         }
 
-        bool GraphicsDevice::FindQueueFamilies() {
+        bool GraphicsDevice::FindQueueFamilies(Surface* surface) {
 
             uint32_t queueFamilyCount = 0;
             vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
             std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
             vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+
+            auto vkSurface = surface->GetNativeSurface();
 
             int32_t counter = 0;
             for (auto& queueFamily : queueFamilies) {
@@ -134,14 +139,43 @@ namespace Atlas {
                     isFamilyValid = false;
 
                 if (isFamilyValid) {
-                    queueFamilyIndices.indices = counter;
-                    return true;
+                    queueFamilyIndices.graphicsFamily = counter;
                 }
+
+                VkBool32 presentSupport = false;
+                vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, counter, vkSurface, &presentSupport);
+                if (presentSupport) {
+                    queueFamilyIndices.presentationFamily = counter;
+                }
+
+                if (queueFamilyIndices.IsComplete()) return true;
 
                 counter++;
             }
 
             return false;
+
+        }
+
+        std::vector<VkDeviceQueueCreateInfo> GraphicsDevice::CreateQueueInfos() {
+
+            std::vector<VkDeviceQueueCreateInfo> queueInfos;
+            std::set<uint32_t> queueFamilies = {
+                    queueFamilyIndices.graphicsFamily.value(),
+                    queueFamilyIndices.presentationFamily.value()
+            };
+
+            float priority = 1.0f;
+            for (auto queueFamily : queueFamilies) {
+                VkDeviceQueueCreateInfo queueCreateInfo{};
+                queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+                queueCreateInfo.queueFamilyIndex = queueFamily;
+                queueCreateInfo.queueCount = 1;
+                queueCreateInfo.pQueuePriorities = &priority;
+                queueInfos.push_back(queueCreateInfo);
+            }
+
+            return queueInfos;
 
         }
 

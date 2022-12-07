@@ -2,18 +2,37 @@
 
 namespace Atlas {
 
-	EngineInstance::EngineInstance(std::string windowTitle, int32_t windowWidth, 
-		int32_t windowHeight, int32_t flags) : window(windowTitle, 
-		AE_WINDOWPOSITION_UNDEFINED, AE_WINDOWPOSITION_UNDEFINED, windowWidth, 
-		windowHeight, flags) {
+    EngineInstance* EngineInstance::instance;
+
+	EngineInstance::EngineInstance(std::string instanceName, int32_t windowWidth,
+		int32_t windowHeight, int32_t flags) : window() {
 
 		LockFramerate();
 
+        bool success = false;
+        graphicInstance = new Graphics::Instance(instanceName, success, true);
+
+        if (!success) {
+            Atlas::Log::Error("Couldn't initialize engine instance");
+        }
+
+        // Create window after creation of graphics instance
+        window = new Window(instanceName,AE_WINDOWPOSITION_UNDEFINED,
+            AE_WINDOWPOSITION_UNDEFINED, windowWidth,windowHeight,
+            flags, false);
+
 	}
+
+    EngineInstance::~EngineInstance() {
+
+        delete window;
+        delete graphicInstance;
+
+    }
 
 	void EngineInstance::Update() {
 
-		window.Clear();
+		window->Clear();
 
 		// mainRenderer.Update();
 
@@ -42,5 +61,17 @@ namespace Atlas {
 		Events::EventManager::QuitEventDelegate.Fire();
 
 	}
+
+    EngineInstance* EngineInstance::GetInstance() {
+
+        return instance;
+
+    }
+
+    Graphics::Instance *EngineInstance::GetGraphicsInstance() {
+
+        return instance->graphicInstance;
+
+    }
 
 }

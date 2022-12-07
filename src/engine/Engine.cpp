@@ -1,15 +1,16 @@
 #include "Engine.h"
 #include "Extensions.h"
 #include "Profiler.h"
+#include "EngineInstance.h"
 
 #include <volk.h>
 #include <SDL_vulkan.h>
 
+extern Atlas::EngineInstance* GetEngineInstance();
+
 namespace Atlas {
 
-    Graphics::Instance* Engine::instance = nullptr;
-
-	Graphics::Instance* Engine::Init(std::string assetDirectory, std::string shaderDirectory) {
+	void Engine::Init(std::string assetDirectory, std::string shaderDirectory) {
 
 #ifdef AE_NO_APP
         SDL_SetMainReady();
@@ -18,16 +19,13 @@ namespace Atlas {
 			SDL_Init(SDL_INIT_EVERYTHING);
 		}
 
-#if defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
-		bool success = false;
-        instance = new Graphics::Instance("My application name", success, true);
-        if (!success) {
-			Log::Error("Error initializing Vulkan");
-			return nullptr;
-		}
-#endif
+        auto engineInstance = GetEngineInstance();
+		EngineInstance::instance = engineInstance;
 
-		int value;
+        // Create the surface to render to.
+        engineInstance->window->CreateSurface();
+        // Initialize the graphics device
+        engineInstance->graphicInstance->IntitializeGraphicsDevice(engineInstance->window->surface);
 
 		// Do the setup for all the classes that need static setup
 		// Extensions::Process();
@@ -46,15 +44,11 @@ namespace Atlas {
 
 		Clock::Update();
 
-		return instance;
-
 	}
 
     void Engine::Shutdown() {
 
         Shader::ShaderManager::Clear();
-
-        delete instance;
 
 #ifdef AE_NO_APP
         SDL_Quit();
