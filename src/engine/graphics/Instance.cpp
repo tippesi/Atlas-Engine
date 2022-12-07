@@ -25,6 +25,7 @@ namespace Atlas {
 
             auto requiredExtensions = extensionNames;
             requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+            requiredExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
             const std::vector<const char*> validationLayers = {
                     "VK_LAYER_KHRONOS_validation"
@@ -40,14 +41,14 @@ namespace Atlas {
             createInfo.pApplicationInfo = &appInfo;
             createInfo.enabledLayerCount = 0;
             createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-            createInfo.enabledExtensionCount = (uint32_t)requiredExtensions.size();
+            createInfo.enabledExtensionCount = uint32_t(requiredExtensions.size());
             createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
+            auto debugCreateInfo = GetDebugMessengerCreateInfo();
             if (enableValidationLayers) {
-                createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+                createInfo.enabledLayerCount = uint32_t(validationLayers.size());
                 createInfo.ppEnabledLayerNames = validationLayers.data();
 
-                auto debugCreateInfo = GetDebugMessengerCreateInfo();
                 createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
             }
             else {
@@ -65,7 +66,22 @@ namespace Atlas {
 
         Instance::~Instance() {
 
+            vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
             vkDestroyInstance(instance, nullptr);
+
+        }
+
+        GraphicsDevice *Instance::CreateGraphicsDevice() {
+
+            bool success = false;
+            auto device = new GraphicsDevice(this, success, validationLayersEnabled);
+
+            if (!success) {
+                delete device;
+                return nullptr;
+            }
+
+            return device;
 
         }
 

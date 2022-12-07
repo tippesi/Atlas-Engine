@@ -8,16 +8,22 @@
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
+#include "GraphicsDevice.h"
+
 namespace Atlas {
 
     namespace Graphics {
 
         class Instance {
 
+            friend GraphicsDevice;
+
         public:
             Instance(const std::string& instanceName, bool& success, bool enableValidationLayers = false);
 
             ~Instance();
+
+            GraphicsDevice* CreateGraphicsDevice();
 
         private:
             bool LoadSupportedLayersAndExtensions();

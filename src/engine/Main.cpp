@@ -25,14 +25,18 @@ int main(int argc, char* argv[]) {
 #endif
 	}
 
-	auto context = Atlas::Engine::Init(Atlas::EngineInstance::assetDirectory,
+	auto graphicsInstance = Atlas::Engine::Init(Atlas::EngineInstance::assetDirectory,
 		Atlas::EngineInstance::shaderDirectory);
 
-	if (!context) {
+	if (!graphicsInstance) {
 		Atlas::Log::Warning("Shutdown of application");
 		Atlas::Engine::Shutdown();
 		return 0;
 	}
+
+    auto graphicsDevice = graphicsInstance->CreateGraphicsDevice();
+
+    bool needed = graphicsDevice == nullptr;
 
 	auto instance = GetEngineInstance();
 
@@ -73,7 +77,7 @@ int main(int argc, char* argv[]) {
 	Atlas::Engine::Shutdown();
 
     // Need this right now just for linking to be successful
-    if (!gladLoadGL()) {
+    if (needed && !gladLoadGL()) {
 
     }
 
