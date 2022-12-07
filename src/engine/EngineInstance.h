@@ -2,7 +2,6 @@
 #define AE_ENGINEINSTANCE_H
 
 #include "Engine.h"
-#include "Context.h"
 
 #include <vector>
 
@@ -70,7 +69,7 @@ namespace Atlas {
 		/**
 		 * A default context which needs to be used for rendering.
 		 */
-		Context context;
+		// Context context;
 
         /**
          * Command line arguments.
@@ -101,7 +100,7 @@ namespace Atlas {
 		 */
 		void Exit();
 
-		Renderer::MainRenderer mainRenderer;
+		// Renderer::MainRenderer mainRenderer;
 
 	};
 

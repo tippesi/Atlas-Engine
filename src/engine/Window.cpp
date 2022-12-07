@@ -1,5 +1,4 @@
 #include "Window.h"
-#include "Engine.h"
 
 namespace Atlas {
 
@@ -7,25 +6,13 @@ namespace Atlas {
 			x(x == AE_WINDOWPOSITION_UNDEFINED ? 0 : x), y(y == AE_WINDOWPOSITION_UNDEFINED ? 0 : y),
 			width(width), height(height) {
 
-	    // The engine creates a default SDL window.
-	    // We destroy it here in case we need room on some
-	    // platforms which only support one window at a time.
-	    if (Engine::defaultWindow) {
-            Engine::defaultContext->Unbind();
-            SDL_DestroyWindow(Engine::defaultWindow);
-        }
-
-		sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_OPENGL);
+		sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_VULKAN);
 
 		if (!sdlWindow) {
-			Log::Error("Error initializing window");
+            auto error = SDL_GetError();
+			Log::Error("Error initializing window: " + std::string(error));
 			return;
 		}
-
-        if (Engine::defaultWindow) {
-            Engine::defaultContext->AttachTo(this);
-            Engine::defaultWindow = nullptr;
-        }
 
 		ID = SDL_GetWindowID(sdlWindow);
 
@@ -188,8 +175,8 @@ namespace Atlas {
 
 	void Window::Clear(vec3 color) {
 
-		glClearColor(color.r, color.g, color.b, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// glClearColor(color.r, color.g, color.b, 1.0f);
+		// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	}
 

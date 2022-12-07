@@ -32,7 +32,8 @@ endif()
 if(WIN32)
 	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
-	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main glad::glad)
+	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main glad::glad Vulkan::Headers Vulkan::Registry
+			volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator)
     set(ATLAS_ENGINE_SYSTEM_LIBS opengl32 user32 Shlwapi)
 endif()
 
@@ -50,7 +51,9 @@ if(APPLE)
 	find_library(CoreVideo_LIBRARY CoreVideo)
 	mark_as_advanced(COCOA_LIBRARY OpenGL_LIBRARY)
 
-	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static glad::glad)
+	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static glad::glad
+			Vulkan::Headers Vulkan::Registry volk::volk volk::volk_headers
+			unofficial::vulkan-memory-allocator::vulkan-memory-allocator)
 	set(ATLAS_ENGINE_SYSTEM_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
 endif()
 
@@ -75,7 +78,9 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(CMAKE_INSTALL_RPATH "./")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	
-	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static glad::glad)
+	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main
+			SDL2::SDL2-static glad::glad Vulkan::Headers Vulkan::Registry
+			volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator)
 	set(ATLAS_ENGINE_SYSTEM_LIBS X11 GL dl pthread)
 endif()
 

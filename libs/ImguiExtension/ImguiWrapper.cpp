@@ -3,7 +3,7 @@
 
 #include <SDL2/SDL_mouse.h>
 
-ImguiWrapper::ImguiWrapper(Atlas::Window* window, Atlas::Context* context) {
+ImguiWrapper::ImguiWrapper(Atlas::Window* window) {
 
 	 // Setup back-end capabilities flags
     ImGuiIO& io = ImGui::GetIO();

@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 
 	// No need to clean the context up, will be released
 	// when the instance is being deleted.
-	instance->context = *context;
+	// instance->context = *context;
 
 	// We need to pass the command line arguments
 	for (int32_t i = 0; i < argc; i++)
@@ -71,6 +71,11 @@ int main(int argc, char* argv[]) {
 	instance->UnloadContent();
 
 	Atlas::Engine::Shutdown();
+
+    // Need this right now just for linking to be successful
+    if (!gladLoadGL()) {
+
+    }
 
 	return 0;
 

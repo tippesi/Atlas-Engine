@@ -6,14 +6,13 @@
 
 // Atlas engine includes
 #include <Window.h>
-#include <Context.h>
 
 class ImguiWrapper {
 
 public:
 	ImguiWrapper() {}
 
-	ImguiWrapper(Atlas::Window* window, Atlas::Context* context);
+	ImguiWrapper(Atlas::Window* window);
 
 	~ImguiWrapper();
 

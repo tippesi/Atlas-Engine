@@ -7,7 +7,12 @@
     "homepage": "https://github.com/tippesi/Atlas-Engine",
     "description": "Cross platform toy render engine supporting physically based rendering and software ray tracing",
     "dependencies": [
-        "sdl2",
+        {
+            "name": "sdl2",
+            "features": [
+                "vulkan"
+            ]
+        },
         "glm",
         "stb",
         {
@@ -24,9 +29,9 @@
             ]
         },
         "assimp",
-        "vulkan-hpp",
+        "vulkan-headers",
         "vulkan-memory-allocator",
-        "vk-bootstrap"
+        "volk"
     ],
     "overrides": [
             { "name": "glm", "version": "0.9.8.0" },

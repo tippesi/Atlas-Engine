@@ -57,9 +57,6 @@ if (ANDROID)
     list(APPEND EXTRA_LIBS dl)
 endif()
 
-# Find Vulkan #####################################################################################
-find_package(Vulkan REQUIRED FATAL_ERROR)
-
 if (ATLAS_DEMO)
 set(ATLAS_EXPORT_MAIN ON CACHE BOOL "Override engine settings" FORCE)
 endif()
@@ -67,7 +64,7 @@ endif()
 # Set dependencies location #######################################################################
 set (ATLAS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/engine)
 set (DEMO_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/demo)
-set(IMGUI_EXTENSION_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/ImguiExtension)
+set (IMGUI_EXTENSION_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/ImguiExtension)
 
 # Add dependencies ################################################################################
 find_package(SDL2 CONFIG REQUIRED)
@@ -80,6 +77,10 @@ if (ANDROID)
 else()
     find_package(glad CONFIG REQUIRED)
 endif()
+
+find_package(VulkanHeaders CONFIG REQUIRED)
+find_package(volk CONFIG REQUIRED)
+find_package(unofficial-vulkan-memory-allocator CONFIG REQUIRED)
 
 add_subdirectory(${ATLAS_LOCATION})
 

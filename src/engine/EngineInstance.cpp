@@ -9,15 +9,13 @@ namespace Atlas {
 
 		LockFramerate();
 
-
-
 	}
 
 	void EngineInstance::Update() {
 
 		window.Clear();
 
-		mainRenderer.Update();
+		// mainRenderer.Update();
 
 	}
 

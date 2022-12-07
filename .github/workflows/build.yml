@@ -40,6 +40,13 @@ jobs:
           # ninja version to download. Default: 1.10.0
           version: 1.10.0
 
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
+
       - name: Run scripts
         shell: pwsh
         # Add additional scripting steps here
@@ -94,6 +101,13 @@ jobs:
         with:
           # ninja version to download. Default: 1.10.0
           version: 1.10.0
+
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
 
       - name: Run scripts
         shell: bash
@@ -152,6 +166,13 @@ jobs:
         with:
           # ninja version to download. Default: 1.10.0
           version: 1.10.0
+
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
 
       - name: Run scripts
         shell: bash

@@ -2,12 +2,14 @@
 #include "Extensions.h"
 #include "Profiler.h"
 
+#include <volk.h>
+#include <SDL_vulkan.h>
+
 namespace Atlas {
 
-	SDL_Window* Engine::defaultWindow = nullptr;
-	Context* Engine::defaultContext = nullptr;
+    Graphics::Instance* Engine::instance = nullptr;
 
-	Context* Engine::Init(std::string assetDirectory, std::string shaderDirectory) {
+	Graphics::Instance* Engine::Init(std::string assetDirectory, std::string shaderDirectory) {
 
 #ifdef AE_NO_APP
         SDL_SetMainReady();
@@ -16,53 +18,20 @@ namespace Atlas {
 			SDL_Init(SDL_INIT_EVERYTHING);
 		}
 
-		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-
-		defaultWindow = SDL_CreateWindow("", 0, 0, 1, 1, AE_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
-
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
-		SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
-		SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
-
-#ifdef AE_SHOW_API_DEBUG_LOG
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
-#endif
-
-		auto setupContext = SDL_GL_CreateContext(defaultWindow);
-
 #if defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
-		if (!gladLoadGL()) {
-			Log::Error("Error initializing OpenGL");
+		bool success = false;
+        instance = new Graphics::Instance("My application name", success, true);
+        if (!success) {
+			Log::Error("Error initializing Vulkan");
 			return nullptr;
 		}
 #endif
 
-		SDL_GL_DeleteContext(setupContext);
-		defaultContext = new Context(defaultWindow);
-
 		int value;
 
-#ifdef AE_SHOW_LOG
-		Log::Message("OpenGL Version: " + std::string((const char*)glGetString(GL_VERSION)));
-		SDL_GL_GetAttribute(SDL_GL_RED_SIZE, &value);
-		Log::Message("Native colorbuffer red component precision " + std::to_string(value) + " bits");
-		SDL_GL_GetAttribute(SDL_GL_GREEN_SIZE, &value);
-		Log::Message("Native colorbuffer green component precision " + std::to_string(value) + " bits");
-		SDL_GL_GetAttribute(SDL_GL_BLUE_SIZE, &value);
-		Log::Message("Native colorbuffer blue component precision " + std::to_string(value) + " bits");
-		SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE, &value);
-		Log::Message("Native depthbuffer precision " + std::to_string(value) + " bits");
-#endif
-
 		// Do the setup for all the classes that need static setup
-		Extensions::Process();
-		Texture::Texture::GetMaxAnisotropyLevel();
+		// Extensions::Process();
+		// Texture::Texture::GetMaxAnisotropyLevel();
 
 		Loader::AssetLoader::Init();
 		Common::Random::Init();
@@ -72,12 +41,12 @@ namespace Atlas {
 		Loader::AssetLoader::SetAssetDirectory(assetDirectory);
 		Shader::ShaderStage::SetSourceDirectory(shaderDirectory);
 
-		Renderer::OpaqueRenderer::InitShaderBatch();
-		Renderer::ShadowRenderer::InitShaderBatch();
+		// Renderer::OpaqueRenderer::InitShaderBatch();
+		// Renderer::ShadowRenderer::InitShaderBatch();
 
 		Clock::Update();
 
-		return defaultContext;
+		return instance;
 
 	}
 
@@ -85,8 +54,7 @@ namespace Atlas {
 
         Shader::ShaderManager::Clear();
 
-		if (defaultWindow)
-			SDL_DestroyWindow(defaultWindow);
+        delete instance;
 
 #ifdef AE_NO_APP
         SDL_Quit();
