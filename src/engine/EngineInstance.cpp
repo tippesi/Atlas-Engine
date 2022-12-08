@@ -25,8 +25,9 @@ namespace Atlas {
 
     EngineInstance::~EngineInstance() {
 
-        delete window;
         delete graphicInstance;
+        // Surface needs to be deleted after swap chain
+        delete window;
 
     }
 

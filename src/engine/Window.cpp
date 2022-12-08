@@ -48,8 +48,6 @@ namespace Atlas {
 
 	Window::~Window() {
 
-        delete surface;
-
 		SDL_DestroyWindow(sdlWindow);
 
 		Events::EventManager::WindowEventDelegate.Unsubscribe(windowEventSubcriberID);
@@ -189,8 +187,9 @@ namespace Atlas {
     bool Window::CreateSurface() {
 
         bool success = false;
-        surface = new Graphics::Surface(sdlWindow, success);
-        if (!success) {
+        auto graphicsInstance = EngineInstance::GetGraphicsInstance();
+        surface = graphicsInstance->CreateSurface(sdlWindow);
+        if (!surface) {
             Log::Error("Error initializing window surface");
             return false;
         }

@@ -9,7 +9,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        Surface::Surface(SDL_Window* window, bool& success) {
+        Surface::Surface(SDL_Window* window, bool& success) : window(window) {
 
             auto nativeInstance = EngineInstance::GetGraphicsInstance()->GetNativeInstance();
             success = SDL_Vulkan_CreateSurface(window, nativeInstance, &surface);
@@ -27,6 +27,12 @@ namespace Atlas {
         VkSurfaceKHR Surface::GetNativeSurface() const {
 
             return surface;
+
+        }
+
+        SDL_Window *Surface::GetNativeWindow() const {
+
+            return window;
 
         }
 

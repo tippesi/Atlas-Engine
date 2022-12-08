@@ -67,7 +67,10 @@ namespace Atlas {
         Instance::~Instance() {
 
             delete graphicsDevice;
-            delete surface;
+
+            for (auto surface : surfaces) {
+                delete surface;
+            }
 
             vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
             vkDestroyInstance(instance, nullptr);
@@ -83,6 +86,20 @@ namespace Atlas {
         GraphicsDevice *Instance::GetGraphicsDevice() const {
 
             return graphicsDevice;
+
+        }
+
+        Surface *Instance::CreateSurface(SDL_Window* window) {
+
+            bool success = false;
+            auto surface = new Surface(window, success);
+            if (!success) {
+                return nullptr;
+            }
+
+            surfaces.push_back(surface);
+
+            return surface;
 
         }
 
@@ -112,19 +129,19 @@ namespace Atlas {
 
         }
 
-        bool Instance::CheckExtensionSupport(std::vector<const char*> extensionNames) {
+        bool Instance::CheckExtensionSupport(const std::vector<const char*>& extensionNames) {
 
-            return CheckVectorIntersection(extensionNames, this->extensionNames);
-
-        }
-
-        bool Instance::CheckValidationLayerSupport(std::vector<const char*> validationLayerNames) {
-
-            return CheckVectorIntersection(validationLayerNames, this->layerNames);
+            return CheckRequiredVector(this->extensionNames, extensionNames);
 
         }
 
-        bool Instance::IntitializeGraphicsDevice(Surface* surface) {
+        bool Instance::CheckValidationLayerSupport(const std::vector<const char*>& validationLayerNames) {
+
+            return CheckRequiredVector(this->layerNames, validationLayerNames);
+
+        }
+
+        bool Instance::InitializeGraphicsDevice(Surface* surface) {
 
             bool success = false;
             graphicsDevice = new GraphicsDevice(surface, success, validationLayersEnabled);
@@ -158,21 +175,18 @@ namespace Atlas {
 
         }
 
-        bool Instance::CheckVectorIntersection(std::vector<const char *> &v1, std::vector<const char *> &v2) {
+        bool Instance::CheckRequiredVector(const std::vector<const char *> &available,
+                                           const std::vector<const char *> &required) {
 
-            for (const auto a : v1) {
-                bool found = false;
+            std::vector<std::string> availableElements(available.begin(), available.end());
+            std::set<std::string> requiredElements(required.begin(), required.end());
 
-                for (const auto b : v2) {
-                    if (strcmp(a, b) == 0) {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found) return false;
+            for (const auto& element : availableElements) {
+                requiredElements.erase(element);
             }
-            return true;
+            assert(requiredElements.empty() && "Not all required elements were found");
+
+            return requiredElements.empty();
 
         }
 

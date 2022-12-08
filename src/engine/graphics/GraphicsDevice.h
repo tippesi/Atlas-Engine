@@ -2,6 +2,7 @@
 #define AE_GRAPHICSDEVICE_H
 
 #include "Surface.h"
+#include "SwapChain.h"
 
 #include <volk.h>
 #include <optional>
@@ -26,6 +27,8 @@ namespace Atlas {
 
             ~GraphicsDevice();
 
+            SwapChain* swapChain = nullptr;
+
         private:
             struct QueueFamilyIndices {
                 std::optional<uint32_t> graphicsFamily;
@@ -39,13 +42,20 @@ namespace Atlas {
                 }
             };
 
-            bool SelectPhysicalDevice(Surface* surface, VkInstance instance);
+            bool SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
+                const std::vector<const char*>& requiredExtensions);
 
-            int32_t RateDeviceSuitability(Surface* surface, VkPhysicalDevice device);
+            int32_t RateDeviceSuitability(VkPhysicalDevice device, VkSurfaceKHR surface,
+                const std::vector<const char*>& requiredExtensions);
 
-            bool FindQueueFamilies(Surface* surface);
+            bool FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 
-            std::vector<VkDeviceQueueCreateInfo> CreateQueueInfos();
+            std::vector<VkDeviceQueueCreateInfo> CreateQueueInfos(float* priority);
+
+            bool CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice,
+                const std::vector<const char*>& extensionNames);
+
+            bool CreateSwapChain(Surface* surface);
 
             VkPhysicalDevice physicalDevice;
             VkDevice device;

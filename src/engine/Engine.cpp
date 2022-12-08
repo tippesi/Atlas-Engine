@@ -25,7 +25,7 @@ namespace Atlas {
         // Create the surface to render to.
         engineInstance->window->CreateSurface();
         // Initialize the graphics device
-        engineInstance->graphicInstance->IntitializeGraphicsDevice(engineInstance->window->surface);
+        engineInstance->graphicInstance->InitializeGraphicsDevice(engineInstance->window->surface);
 
 		// Do the setup for all the classes that need static setup
 		// Extensions::Process();

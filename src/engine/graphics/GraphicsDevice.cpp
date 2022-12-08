@@ -15,10 +15,17 @@ namespace Atlas {
 
             auto instance = EngineInstance::GetGraphicsInstance();
 
-            success = SelectPhysicalDevice(surface, instance->instance);
+            const std::vector<const char*> requiredExtensions = {
+                    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                    "VK_KHR_portability_subset"
+            };
+
+            success = SelectPhysicalDevice(instance->instance,
+                surface->GetNativeSurface(), requiredExtensions);
             assert(success && "Error selecting physical device");
 
-            auto queueCreateInfos = CreateQueueInfos();
+            float priority = 1.0f;
+            auto queueCreateInfos = CreateQueueInfos(&priority);
 
             VkPhysicalDeviceFeatures deviceFeatures{};
 
@@ -27,9 +34,6 @@ namespace Atlas {
             createInfo.pQueueCreateInfos = queueCreateInfos.data();
             createInfo.queueCreateInfoCount = uint32_t(queueCreateInfos.size());
 
-            const std::vector<const char*> requiredExtensions = {
-                    "VK_KHR_portability_subset"
-            };
             createInfo.pEnabledFeatures = &deviceFeatures;
             createInfo.enabledExtensionCount = uint32_t(requiredExtensions.size());
             createInfo.ppEnabledExtensionNames = requiredExtensions.data();
@@ -44,20 +48,27 @@ namespace Atlas {
             success &= vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) == VK_SUCCESS;
             assert(success && "Unable to create virtual device");
 
+            if (!success) return;
+
             vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamily.value(), 0,
                              &queueFamilyIndices.graphicsQueue);
             vkGetDeviceQueue(device, queueFamilyIndices.presentationFamily.value(), 0,
                              &queueFamilyIndices.presentationQueue);
 
+            success &= CreateSwapChain(surface);
+
         }
 
         GraphicsDevice::~GraphicsDevice() {
+
+            delete swapChain;
 
             vkDestroyDevice(device, nullptr);
 
         }
 
-        bool GraphicsDevice::SelectPhysicalDevice(Surface* surface, VkInstance instance) {
+        bool GraphicsDevice::SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
+            const std::vector<const char*>& requiredExtensions) {
 
             uint32_t deviceCount = 0;
             bool success = vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr) == VK_SUCCESS;
@@ -70,7 +81,7 @@ namespace Atlas {
 
             std::multimap<int32_t, VkPhysicalDevice> candidates;
             for (const auto& device : devices) {
-                int32_t score = RateDeviceSuitability(surface, device);
+                int32_t score = RateDeviceSuitability(device, surface, requiredExtensions);
                 candidates.insert(std::make_pair(score, device));
             }
 
@@ -83,18 +94,29 @@ namespace Atlas {
                 return false;
             }
 
-            FindQueueFamilies(surface);
-            auto completeIndices = queueFamilyIndices.IsComplete();
-            assert(completeIndices && "No valid queue family found");
-            if (!completeIndices) {
-                return false;
+            // The following is done to see the reason in terms of a
+            {
+                FindQueueFamilies(physicalDevice, surface);
+                auto completeIndices = queueFamilyIndices.IsComplete();
+                assert(completeIndices && "No valid queue family found");
+                if (!completeIndices) {
+                    return false;
+                }
+
+                auto extensionsSupported = CheckDeviceExtensionSupport(physicalDevice, requiredExtensions);
+                assert(extensionsSupported && "Some required extensions are not supported");
+                if (!extensionsSupported) {
+                    return false;
+                }
+
             }
 
             return true;
 
         }
 
-        int32_t GraphicsDevice::RateDeviceSuitability(Surface* surface, VkPhysicalDevice device) {
+        int32_t GraphicsDevice::RateDeviceSuitability(VkPhysicalDevice device, VkSurfaceKHR surface,
+            const std::vector<const char*>& requiredExtensions) {
 
             int32_t score = 0;
 
@@ -111,19 +133,36 @@ namespace Atlas {
             // Maximum possible size of textures affects graphics quality
             score += deviceProperties.limits.maxImageDimension2D;
 
+            // The following are the requirements we MUST meet
+            {
+                FindQueueFamilies(device, surface);
+                if (!queueFamilyIndices.IsComplete()) {
+                    return 0;
+                }
+
+                // Need to check extensions before checking the swap chain details
+                auto extensionsSupported = CheckDeviceExtensionSupport(device, requiredExtensions);
+                if (!extensionsSupported) {
+                    return 0;
+                }
+
+                auto swapchainSupportDetails = SwapChainSupportDetails(device, surface);
+                if (!swapchainSupportDetails.IsAdequate()) {
+                    return 0;
+                }
+            }
+
             return score;
 
         }
 
-        bool GraphicsDevice::FindQueueFamilies(Surface* surface) {
+        bool GraphicsDevice::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
 
             uint32_t queueFamilyCount = 0;
-            vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+            vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
             std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-            vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
-
-            auto vkSurface = surface->GetNativeSurface();
+            vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
             int32_t counter = 0;
             for (auto& queueFamily : queueFamilies) {
@@ -143,7 +182,7 @@ namespace Atlas {
                 }
 
                 VkBool32 presentSupport = false;
-                vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, counter, vkSurface, &presentSupport);
+                vkGetPhysicalDeviceSurfaceSupportKHR(device, counter, surface, &presentSupport);
                 if (presentSupport) {
                     queueFamilyIndices.presentationFamily = counter;
                 }
@@ -157,7 +196,7 @@ namespace Atlas {
 
         }
 
-        std::vector<VkDeviceQueueCreateInfo> GraphicsDevice::CreateQueueInfos() {
+        std::vector<VkDeviceQueueCreateInfo> GraphicsDevice::CreateQueueInfos(float* priority) {
 
             std::vector<VkDeviceQueueCreateInfo> queueInfos;
             std::set<uint32_t> queueFamilies = {
@@ -165,17 +204,55 @@ namespace Atlas {
                     queueFamilyIndices.presentationFamily.value()
             };
 
-            float priority = 1.0f;
             for (auto queueFamily : queueFamilies) {
                 VkDeviceQueueCreateInfo queueCreateInfo{};
                 queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
                 queueCreateInfo.queueFamilyIndex = queueFamily;
                 queueCreateInfo.queueCount = 1;
-                queueCreateInfo.pQueuePriorities = &priority;
+                queueCreateInfo.pQueuePriorities = priority;
                 queueInfos.push_back(queueCreateInfo);
             }
 
             return queueInfos;
+
+        }
+
+        bool GraphicsDevice::CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice,
+            const std::vector<const char *>& extensionNames) {
+
+            uint32_t extensionCount;
+            vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+
+            std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+            vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
+
+            std::set<std::string> requiredExtensions(extensionNames.begin(), extensionNames.end());
+
+            for (const auto& extension : availableExtensions) {
+                requiredExtensions.erase(extension.extensionName);
+            }
+            assert(requiredExtensions.empty() && "Not all required extensions were found");
+
+            return requiredExtensions.empty();
+
+        }
+
+        bool GraphicsDevice::CreateSwapChain(Surface *surface) {
+
+            auto nativeSurface = surface->GetNativeSurface();
+            auto nativeWindow = surface->GetNativeWindow();
+
+            auto supportDetails = SwapChainSupportDetails(physicalDevice, nativeSurface);
+
+            int32_t width, height;
+            SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
+
+            bool success;
+            swapChain = new SwapChain(supportDetails, nativeSurface, device,
+                                      width, height, success,
+                                      VK_PRESENT_MODE_FIFO_KHR, nullptr);
+
+            return success;
 
         }
 

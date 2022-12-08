@@ -32,20 +32,24 @@ namespace Atlas {
 
             GraphicsDevice* GetGraphicsDevice() const;
 
+            Surface* CreateSurface(SDL_Window* window);
+
         private:
             bool LoadSupportedLayersAndExtensions();
 
-            bool CheckExtensionSupport(std::vector<const char*> extensionNames);
+            bool CheckExtensionSupport(const std::vector<const char*>& extensionNames);
 
-            bool CheckValidationLayerSupport(std::vector<const char*> validationLayerNames);
+            bool CheckValidationLayerSupport(const std::vector<const char*>& validationLayerNames);
 
-            bool IntitializeGraphicsDevice(Surface* surface);
+            bool InitializeGraphicsDevice(Surface* surface);
+
+            bool DestroyGraphicsDevice();
 
             bool RegisterDebugCallback();
 
             VkDebugUtilsMessengerCreateInfoEXT GetDebugMessengerCreateInfo();
 
-            bool CheckVectorIntersection(std::vector<const char*>& v1, std::vector<const char*>& v2);
+            bool CheckRequiredVector(const std::vector<const char*>& available, const std::vector<const char*>& required);
 
             const std::string name;
             bool validationLayersEnabled;
@@ -59,7 +63,7 @@ namespace Atlas {
             VkDebugUtilsMessengerEXT debugMessenger;
 
             GraphicsDevice* graphicsDevice;
-            Surface* surface;
+            std::vector<Surface*> surfaces;
 
         private:
             static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(

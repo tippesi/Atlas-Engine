@@ -18,8 +18,11 @@ namespace Atlas {
 
             VkSurfaceKHR GetNativeSurface() const;
 
+            SDL_Window* GetNativeWindow() const;
+
         private:
             VkSurfaceKHR surface;
+            SDL_Window* window;
 
         };
 
