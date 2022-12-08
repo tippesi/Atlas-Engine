@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <limits>
 #include <algorithm>
+#include <cassert>
 
 namespace Atlas {
 

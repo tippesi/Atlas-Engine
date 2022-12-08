@@ -16,8 +16,10 @@ namespace Atlas {
             auto instance = EngineInstance::GetGraphicsInstance();
 
             const std::vector<const char*> requiredExtensions = {
-                    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-                    "VK_KHR_portability_subset"
+                    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+#ifdef AE_OS_MACOS
+                    , "VK_KHR_portability_subset"
+#endif
             };
 
             success = SelectPhysicalDevice(instance->instance,
