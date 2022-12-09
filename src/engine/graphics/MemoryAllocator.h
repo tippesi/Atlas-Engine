@@ -1,7 +1,7 @@
 #ifndef AE_GRAPHICSMEMORYALLOCATOR_H
 #define AE_GRAPHICSMEMORYALLOCATOR_H
 
-#include <volk.h>
+#include "Common.h"
 
 #define VMA_IMPLEMENTATION
 #define VMA_STATS_STRING_ENABLED 0

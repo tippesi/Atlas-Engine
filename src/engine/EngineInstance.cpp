@@ -9,10 +9,9 @@ namespace Atlas {
 
 		LockFramerate();
 
-        bool success = false;
-        graphicInstance = new Graphics::Instance(instanceName, success, true);
+        graphicInstance = new Graphics::Instance(instanceName, true);
 
-        if (!success) {
+        if (!graphicInstance->isComplete) {
             Atlas::Log::Error("Couldn't initialize engine instance");
         }
 

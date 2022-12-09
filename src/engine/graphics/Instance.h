@@ -8,6 +8,7 @@
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
+#include "Common.h"
 #include "GraphicsDevice.h"
 #include "Surface.h"
 
@@ -24,7 +25,7 @@ namespace Atlas {
             friend Engine;
 
         public:
-            Instance(const std::string& instanceName, bool& success, bool enableValidationLayers = false);
+            Instance(const std::string& instanceName, bool enableValidationLayers = false);
 
             ~Instance();
 
@@ -34,18 +35,20 @@ namespace Atlas {
 
             Surface* CreateSurface(SDL_Window* window);
 
+            bool isComplete = false;
+
         private:
-            bool LoadSupportedLayersAndExtensions();
+            void LoadSupportedLayersAndExtensions();
 
             bool CheckExtensionSupport(const std::vector<const char*>& extensionNames);
 
             bool CheckValidationLayerSupport(const std::vector<const char*>& validationLayerNames);
 
-            bool InitializeGraphicsDevice(Surface* surface);
+            void InitializeGraphicsDevice(Surface* surface);
 
             bool DestroyGraphicsDevice();
 
-            bool RegisterDebugCallback();
+            void RegisterDebugCallback();
 
             VkDebugUtilsMessengerCreateInfoEXT GetDebugMessengerCreateInfo();
 

@@ -1,9 +1,9 @@
 #ifndef AE_GRAPHICSSWAPCHAIN_H
 #define AE_GRAPHICSSWAPCHAIN_H
 
+#include "Common.h"
 #include "Surface.h"
 
-#include <volk.h>
 #include <vector>
 #include <cstdint>
 
@@ -43,8 +43,11 @@ namespace Atlas {
             VkPresentModeKHR presentMode;
             VkExtent2D extent;
 
+
             std::vector<VkImage> images;
             std::vector<VkImageView> imageViews;
+            std::vector<VkFramebuffer> frameBuffers;
+            VkRenderPass defaultRenderPass;
 
         private:
             VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats);

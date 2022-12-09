@@ -1,10 +1,11 @@
 #ifndef AE_GRAPHICSDEVICE_H
 #define AE_GRAPHICSDEVICE_H
 
+#include "Common.h"
 #include "Surface.h"
 #include "SwapChain.h"
+#include "CommandList.h"
 
-#include <volk.h>
 #include <optional>
 #include <vector>
 
@@ -23,11 +24,18 @@ namespace Atlas {
                 VkQueue queue;
             };
 
-            GraphicsDevice(Surface* surface, bool& success, bool enableValidationLayers = false);
+            GraphicsDevice(Surface* surface, bool enableValidationLayers = false);
+
+            GraphicsDevice(const GraphicsDevice& that) = delete;
 
             ~GraphicsDevice();
 
+            GraphicsDevice& operator=(const GraphicsDevice& that) = delete;
+
             SwapChain* swapChain = nullptr;
+            CommandList* commandList = nullptr;
+
+            bool isComplete = false;
 
         private:
             struct QueueFamilyIndices {

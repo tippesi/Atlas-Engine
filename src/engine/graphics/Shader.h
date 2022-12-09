@@ -1,5 +1,5 @@
-#ifndef AE_GRAPHICSBUFFER_H
-#define AE_GRAPHICSBUFFER_H
+#ifndef AE_GRAPHICSSHADER_H
+#define AE_GRAPHICSSHADER_H
 
 #include "Common.h"
 
@@ -7,11 +7,11 @@ namespace Atlas {
 
     namespace Graphics {
 
-        struct BufferDesc {
+        struct ShaderDesc {
 
         };
 
-        class Buffer {
+        class Shader {
 
         };
 

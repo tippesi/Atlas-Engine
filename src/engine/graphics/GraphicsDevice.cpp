@@ -11,7 +11,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        GraphicsDevice::GraphicsDevice(Surface* surface, bool &success, bool enableValidationLayers) {
+        GraphicsDevice::GraphicsDevice(Surface* surface, bool enableValidationLayers) {
 
             auto instance = EngineInstance::GetGraphicsInstance();
 
@@ -22,9 +22,8 @@ namespace Atlas {
 #endif
             };
 
-            success = SelectPhysicalDevice(instance->instance,
+            SelectPhysicalDevice(instance->instance,
                 surface->GetNativeSurface(), requiredExtensions);
-            assert(success && "Error selecting physical device");
 
             float priority = 1.0f;
             auto queueCreateInfos = CreateQueueInfos(&priority);
@@ -47,23 +46,25 @@ namespace Atlas {
                 createInfo.enabledLayerCount = 0;
             }
 
-            success &= vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) == VK_SUCCESS;
-            assert(success && "Unable to create virtual device");
-
-            if (!success) return;
+            VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device))
 
             vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamily.value(), 0,
                              &queueFamilyIndices.graphicsQueue);
             vkGetDeviceQueue(device, queueFamilyIndices.presentationFamily.value(), 0,
                              &queueFamilyIndices.presentationQueue);
 
-            success &= CreateSwapChain(surface);
+            CreateSwapChain(surface);
+
+            commandList = new CommandList(device, queueFamilyIndices.graphicsFamily.value());
+
+            isComplete = true;
 
         }
 
         GraphicsDevice::~GraphicsDevice() {
 
             delete swapChain;
+            delete commandList;
 
             vkDestroyDevice(device, nullptr);
 
@@ -73,13 +74,11 @@ namespace Atlas {
             const std::vector<const char*>& requiredExtensions) {
 
             uint32_t deviceCount = 0;
-            bool success = vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr) == VK_SUCCESS;
-            assert(success && deviceCount && "Couldn't find any physical devices");
-            if (!success || !deviceCount) return false;
+            VK_CHECK(vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr));
+            if (!deviceCount) return false;
 
             std::vector<VkPhysicalDevice> devices(deviceCount);
-            success &= vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data()) == VK_SUCCESS;
-            assert(success && "Error retrieving physical devices");
+            VK_CHECK(vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data()))
 
             std::multimap<int32_t, VkPhysicalDevice> candidates;
             for (const auto& device : devices) {
@@ -193,6 +192,8 @@ namespace Atlas {
 
                 counter++;
             }
+
+
 
             return false;
 

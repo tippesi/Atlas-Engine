@@ -7,11 +7,10 @@ namespace Atlas {
 
     namespace Graphics {
 
-        Instance::Instance(const std::string &instanceName, bool &success, bool enableValidationLayers) :
+        Instance::Instance(const std::string &instanceName, bool enableValidationLayers) :
             name(instanceName), validationLayersEnabled(enableValidationLayers) {
 
-            success = volkInitialize() == VK_SUCCESS;
-            assert(success && "Error initializing Volk");
+            VK_CHECK(volkInitialize());
 
             VkApplicationInfo appInfo{};
             appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -21,7 +20,7 @@ namespace Atlas {
             appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.apiVersion = VK_API_VERSION_1_2;
 
-            success &= LoadSupportedLayersAndExtensions();
+            LoadSupportedLayersAndExtensions();
 
             auto requiredExtensions = extensionNames;
             requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
@@ -32,7 +31,6 @@ namespace Atlas {
             };
 
             if (!CheckValidationLayerSupport(validationLayers) && enableValidationLayers) {
-                success = false;
                 return;
             }
 
@@ -55,12 +53,12 @@ namespace Atlas {
                 createInfo.enabledLayerCount = 0;
             }
 
-            success &= vkCreateInstance(&createInfo, nullptr, &instance) == VK_SUCCESS;
-            assert(success && "Error creating Vulkan instance");
+            VK_CHECK(vkCreateInstance(&createInfo, nullptr, &instance));
 
             volkLoadInstance(instance);
 
             RegisterDebugCallback();
+            isComplete = true;
 
         }
 
@@ -103,13 +101,12 @@ namespace Atlas {
 
         }
 
-        bool Instance::LoadSupportedLayersAndExtensions() {
+        void Instance::LoadSupportedLayersAndExtensions() {
 
             unsigned int extensionCount = 0;
             bool success = vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr) == VK_SUCCESS;
             extensionProperties.resize(extensionCount);
-            success &= vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensionProperties.data()) == VK_SUCCESS;
-            assert(success && "Error loading extension properties");
+            VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensionProperties.data()))
 
             for (auto& extensionProperty : extensionProperties) {
                 extensionNames.push_back(extensionProperty.extensionName);
@@ -118,14 +115,11 @@ namespace Atlas {
             unsigned int layerCount = 0;
             success &= vkEnumerateInstanceLayerProperties(&layerCount, nullptr) == VK_SUCCESS;
             layerProperties.resize(layerCount);
-            success &= vkEnumerateInstanceLayerProperties(&layerCount, layerProperties.data()) == VK_SUCCESS;
-            assert(success && "Error loading layer properties");
+            VK_CHECK(vkEnumerateInstanceLayerProperties(&layerCount, layerProperties.data()));
 
             for (auto& layerProperty : layerProperties) {
                 layerNames.push_back(layerProperty.layerName);
             }
-
-            return success;
 
         }
 
@@ -141,20 +135,18 @@ namespace Atlas {
 
         }
 
-        bool Instance::InitializeGraphicsDevice(Surface* surface) {
+        void Instance::InitializeGraphicsDevice(Surface* surface) {
 
-            bool success = false;
-            graphicsDevice = new GraphicsDevice(surface, success, validationLayersEnabled);
-            return success;
+            graphicsDevice = new GraphicsDevice(surface, validationLayersEnabled);
 
         }
 
-        bool Instance::RegisterDebugCallback() {
+        void Instance::RegisterDebugCallback() {
 
-            if (!validationLayersEnabled) return true;
+            if (!validationLayersEnabled) return;
 
             auto createInfo = GetDebugMessengerCreateInfo();
-            return vkCreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) == VK_SUCCESS;
+            VK_CHECK(vkCreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger))
 
         }
 
