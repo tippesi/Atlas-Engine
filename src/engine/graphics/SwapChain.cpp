@@ -36,7 +36,7 @@ namespace Atlas {
         }
 
         SwapChain::SwapChain(const SwapChainSupportDetails& supportDetails, VkSurfaceKHR surface,
-                             VkDevice device, int desiredWidth, int32_t desiredHeight, bool& success,
+                             VkDevice device, int desiredWidth, int32_t desiredHeight,
                              VkPresentModeKHR desiredMode, SwapChain* oldSwapchain) : device(device) {
 
             surfaceFormat = ChooseSurfaceFormat(supportDetails.formats);
@@ -49,7 +49,7 @@ namespace Atlas {
                 imageCount = supportDetails.capabilities.maxImageCount;
             }
 
-            VkSwapchainCreateInfoKHR createInfo{};
+            VkSwapchainCreateInfoKHR createInfo = {};
             createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
             createInfo.surface = surface;
             createInfo.minImageCount = imageCount;
@@ -64,44 +64,84 @@ namespace Atlas {
             createInfo.clipped = VK_TRUE;
             createInfo.oldSwapchain = oldSwapchain ? oldSwapchain->swapChain : VK_NULL_HANDLE;
 
-            success = vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) == VK_SUCCESS;
-            assert(success && "Error creating swap chain");
+            VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain))
 
-            success &= vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr) == VK_SUCCESS;
+            VK_CHECK(vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr))
             images.resize(imageCount);
-            success &= vkGetSwapchainImagesKHR(device, swapChain, &imageCount, images.data()) == VK_SUCCESS;
-            assert(success && "Error retrieving swap chain images");
+            VK_CHECK(vkGetSwapchainImagesKHR(device, swapChain, &imageCount, images.data()))
+
+            VkAttachmentDescription2 attachmentDescription = Initializers::InitAttachmentDescription(surfaceFormat.format,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+            VkAttachmentReference2 attachmentReference = Initializers::InitAttachmentReference(0,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+            VkSubpassDescription2 subPassDescription = {};
+            subPassDescription.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
+            subPassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+            subPassDescription.colorAttachmentCount = 1;
+            subPassDescription.pColorAttachments = &attachmentReference;
+
+            VkRenderPassCreateInfo2 renderPassCreateInfo = Initializers::InitRenderPassCreateInfo(1,
+                &attachmentDescription,1, &subPassDescription);
+            VK_CHECK(vkCreateRenderPass2(device, &renderPassCreateInfo, nullptr, &defaultRenderPass))
+
 
             imageViews.resize(imageCount);
+            frameBuffers.resize(imageCount);
+            for(size_t i = 0; i < images.size(); i++) {
+                VkImageViewCreateInfo imageViewCreateInfo{};
+                imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                imageViewCreateInfo.image = images[i];
+                imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                imageViewCreateInfo.format = surfaceFormat.format;
+                imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+                imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+                imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+                imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+                imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+                imageViewCreateInfo.subresourceRange.levelCount = 1;
+                imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+                imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-            for(int32_t i = 0; i < int32_t(images.size()); i++) {
-                VkImageViewCreateInfo createInfo{};
-                createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                createInfo.image = images[i];
-                createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                createInfo.format = surfaceFormat.format;
-                createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-                createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-                createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-                createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-                createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                createInfo.subresourceRange.baseMipLevel = 0;
-                createInfo.subresourceRange.levelCount = 1;
-                createInfo.subresourceRange.baseArrayLayer = 0;
-                createInfo.subresourceRange.layerCount = 1;
+                VK_CHECK(vkCreateImageView(device, &imageViewCreateInfo, nullptr, &imageViews[i]))
 
-                success &= vkCreateImageView(device, &createInfo, nullptr, &imageViews[i]) == VK_SUCCESS;
+                VkFramebufferCreateInfo frameBufferInfo = {};
+                frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+                frameBufferInfo.renderPass = defaultRenderPass;
+                frameBufferInfo.attachmentCount = 1;
+                frameBufferInfo.pAttachments = &imageViews[i];
+                frameBufferInfo.width = extent.width;
+                frameBufferInfo.height = extent.height;
+                frameBufferInfo.layers = 1;
+                VK_CHECK(vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &frameBuffers[i]));
+
             }
+
+            VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
+            VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore))
 
         }
 
         SwapChain::~SwapChain() {
 
+            for (auto& frameBuffer : frameBuffers) {
+                vkDestroyFramebuffer(device, frameBuffer, nullptr);
+            }
+
             for (auto& imageView : imageViews) {
                 vkDestroyImageView(device, imageView, nullptr);
             }
 
+            vkDestroySemaphore(device, semaphore, nullptr);
+            vkDestroyRenderPass(device, defaultRenderPass, nullptr);
             vkDestroySwapchainKHR(device, swapChain, nullptr);
+
+        }
+
+        void SwapChain::AquireImageIndex() {
+
+            VK_CHECK(vkAcquireNextImageKHR(device, swapChain, 1000000000, semaphore, nullptr, &aquiredImageIndex));
 
         }
 

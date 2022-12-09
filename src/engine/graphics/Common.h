@@ -9,11 +9,14 @@
 #include <string>
 #include <cassert>
 
+#define FRAME_DATA_COUNT 1
+
 #define VK_CHECK(x) {                                                               \
                 VkResult err = x;                                                   \
                 if (err)                                                            \
                 {                                                                   \
-                    Log::Error("Detected Vulkan error: " + VkResultToString(err));   \
+                    Atlas::Log::Error("Detected Vulkan error: " +                   \
+                        Atlas::Graphics::VkResultToString(err));                    \
                     assert(err == VK_SUCCESS);                                      \
                 }                                                                   \
             }

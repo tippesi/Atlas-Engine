@@ -10,7 +10,7 @@ namespace Atlas {
             allocatorInfo.physicalDevice = desc.physicalDevice;
             allocatorInfo.device = desc.device;
             allocatorInfo.instance = desc.instance;
-            success = vmaCreateAllocator(&allocatorInfo, &allocator) == success;
+            VK_CHECK(vmaCreateAllocator(&allocatorInfo, &allocator))
 
         }
 

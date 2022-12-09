@@ -15,15 +15,13 @@ namespace Atlas {
 
         class Instance;
 
+        struct FrameData {
+            VkFence fence;
+        };
+
         class GraphicsDevice {
 
         public:
-            struct Queue {
-                friend GraphicsDevice;
-            private:
-                VkQueue queue;
-            };
-
             GraphicsDevice(Surface* surface, bool enableValidationLayers = false);
 
             GraphicsDevice(const GraphicsDevice& that) = delete;
@@ -32,21 +30,24 @@ namespace Atlas {
 
             GraphicsDevice& operator=(const GraphicsDevice& that) = delete;
 
+            CommandList* GetCommandList(QueueType queueType = QueueType::GraphicsQueue);
+
+            void SubmitCommandList(CommandList* cmd);
+
+            void CompleteFrame();
+
             SwapChain* swapChain = nullptr;
-            CommandList* commandList = nullptr;
 
             bool isComplete = false;
 
         private:
             struct QueueFamilyIndices {
-                std::optional<uint32_t> graphicsFamily;
-                std::optional<uint32_t> presentationFamily;
-
-                VkQueue graphicsQueue;
-                VkQueue presentationQueue;
+                std::optional<uint32_t> queueFamilies[2];
+                VkQueue queues[2];
 
                 bool IsComplete() {
-                    return graphicsFamily.has_value() && presentationFamily.has_value();
+                    return queueFamilies[QueueType::GraphicsQueue].has_value() &&
+                        queueFamilies[QueueType::PresentationQueue].has_value();
                 }
             };
 
@@ -63,13 +64,22 @@ namespace Atlas {
             bool CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice,
                 const std::vector<const char*>& extensionNames);
 
-            bool CreateSwapChain(Surface* surface);
+            void CreateSwapChain(Surface* surface);
+
+            void CreateFrameData();
+
+            void DestroyFrameData();
+
+            const FrameData* GetFrameData() const;
 
             VkPhysicalDevice physicalDevice;
             VkDevice device;
 
             QueueFamilyIndices queueFamilyIndices;
+            std::vector<CommandList*> commandLists;
 
+            int32_t frameIndex = 0;
+            FrameData frameData[FRAME_DATA_COUNT];
         };
 
     }

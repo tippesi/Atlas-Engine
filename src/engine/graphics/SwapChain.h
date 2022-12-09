@@ -32,22 +32,28 @@ namespace Atlas {
 
         public:
             SwapChain(const SwapChainSupportDetails& supportDetails, VkSurfaceKHR surface,
-                      VkDevice device, int desiredWidth, int32_t desiredHeight, bool& success,
+                      VkDevice device, int desiredWidth, int32_t desiredHeight,
                       VkPresentModeKHR desiredMode = VK_PRESENT_MODE_FIFO_KHR,
                       SwapChain* oldSwapchain = nullptr);
 
             ~SwapChain();
+
+            void AquireImageIndex();
 
             VkSwapchainKHR swapChain;
             VkSurfaceFormatKHR surfaceFormat;
             VkPresentModeKHR presentMode;
             VkExtent2D extent;
 
-
+            uint32_t aquiredImageIndex;
             std::vector<VkImage> images;
             std::vector<VkImageView> imageViews;
             std::vector<VkFramebuffer> frameBuffers;
+
             VkRenderPass defaultRenderPass;
+            VkSemaphore semaphore;
+
+            VkClearValue clearValue = { .color = { { 1.0f, 1.0f, 1.0f, 1.0f } }};
 
         private:
             VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats);

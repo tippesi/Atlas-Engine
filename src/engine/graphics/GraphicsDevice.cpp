@@ -48,14 +48,13 @@ namespace Atlas {
 
             VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device))
 
-            vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamily.value(), 0,
-                             &queueFamilyIndices.graphicsQueue);
-            vkGetDeviceQueue(device, queueFamilyIndices.presentationFamily.value(), 0,
-                             &queueFamilyIndices.presentationQueue);
+            vkGetDeviceQueue(device, queueFamilyIndices.queueFamilies[QueueType::GraphicsQueue].value(), 0,
+                             &queueFamilyIndices.queues[QueueType::GraphicsQueue]);
+            vkGetDeviceQueue(device, queueFamilyIndices.queueFamilies[QueueType::PresentationQueue].value(), 0,
+                             &queueFamilyIndices.queues[QueueType::PresentationQueue]);
 
             CreateSwapChain(surface);
-
-            commandList = new CommandList(device, queueFamilyIndices.graphicsFamily.value());
+            CreateFrameData();
 
             isComplete = true;
 
@@ -63,10 +62,88 @@ namespace Atlas {
 
         GraphicsDevice::~GraphicsDevice() {
 
+            // Make sure that all commands were processed before
+            // deleting resources
+            vkDeviceWaitIdle(device);
+
             delete swapChain;
-            delete commandList;
+
+            for (auto commandList : commandLists) {
+                delete commandList;
+            }
+
+            DestroyFrameData();
 
             vkDestroyDevice(device, nullptr);
+
+        }
+
+        CommandList* GraphicsDevice::GetCommandList(QueueType queueType) {
+
+            auto it = std::find_if(commandLists.begin(), commandLists.end(),
+                [&](CommandList* commandList) {
+                    return commandList->queueType == queueType;
+                });
+
+            if (it == commandLists.end()) {
+                auto queueFamilyIndex = queueFamilyIndices.queueFamilies[queueType];
+                CommandList* cmd = new CommandList(device, queueType, queueFamilyIndex.value());
+                commandLists.push_back(cmd);
+                return cmd;
+            }
+
+            return *it;
+
+        }
+
+        void GraphicsDevice::SubmitCommandList(CommandList *cmd) {
+
+            VkSubmitInfo submit = {};
+            submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submit.pNext = nullptr;
+
+            VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+            submit.pWaitDstStageMask = &waitStage;
+            submit.waitSemaphoreCount = 1;
+            submit.pWaitSemaphores = &swapChain->semaphore;
+            submit.signalSemaphoreCount = 1;
+            submit.pSignalSemaphores = &cmd->semaphore;
+            submit.commandBufferCount = 1;
+            submit.pCommandBuffers = &cmd->commandBuffer;
+
+            auto queue = queueFamilyIndices.queues[cmd->queueType];
+            auto frameData = GetFrameData();
+            VK_CHECK(vkQueueSubmit(queue, 1, &submit, frameData->fence));
+
+        }
+
+        void GraphicsDevice::CompleteFrame() {
+
+            std::vector<VkSemaphore> semaphores;
+            for (auto cmd : commandLists) semaphores.push_back(cmd->semaphore);
+
+            VkPresentInfoKHR presentInfo = {};
+            presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+            presentInfo.pNext = nullptr;
+
+            presentInfo.pSwapchains = &swapChain->swapChain;
+            presentInfo.swapchainCount = 1;
+
+            presentInfo.pWaitSemaphores = semaphores.data();
+            presentInfo.waitSemaphoreCount = uint32_t(semaphores.size());
+
+            presentInfo.pImageIndices = &swapChain->aquiredImageIndex;
+
+            VkQueue& presenterQueue = queueFamilyIndices.queues[QueueType::PresentationQueue];
+            VK_CHECK(vkQueuePresentKHR(presenterQueue, &presentInfo));
+
+            frameIndex++;
+
+            auto frameData = GetFrameData();
+            // Need to check if we can use the next frame data
+            VK_CHECK(vkWaitForFences(device, 1, &frameData->fence, true, 1000000000))
+            VK_CHECK(vkResetFences(device, 1, &frameData->fence))
 
         }
 
@@ -179,13 +256,13 @@ namespace Atlas {
                     isFamilyValid = false;
 
                 if (isFamilyValid) {
-                    queueFamilyIndices.graphicsFamily = counter;
+                    queueFamilyIndices.queueFamilies[QueueType::GraphicsQueue] = counter;
                 }
 
                 VkBool32 presentSupport = false;
                 vkGetPhysicalDeviceSurfaceSupportKHR(device, counter, surface, &presentSupport);
                 if (presentSupport) {
-                    queueFamilyIndices.presentationFamily = counter;
+                    queueFamilyIndices.queueFamilies[QueueType::PresentationQueue] = counter;
                 }
 
                 if (queueFamilyIndices.IsComplete()) return true;
@@ -203,8 +280,8 @@ namespace Atlas {
 
             std::vector<VkDeviceQueueCreateInfo> queueInfos;
             std::set<uint32_t> queueFamilies = {
-                    queueFamilyIndices.graphicsFamily.value(),
-                    queueFamilyIndices.presentationFamily.value()
+                    queueFamilyIndices.queueFamilies[QueueType::GraphicsQueue].value(),
+                    queueFamilyIndices.queueFamilies[QueueType::PresentationQueue].value()
             };
 
             for (auto queueFamily : queueFamilies) {
@@ -240,7 +317,7 @@ namespace Atlas {
 
         }
 
-        bool GraphicsDevice::CreateSwapChain(Surface *surface) {
+        void GraphicsDevice::CreateSwapChain(Surface *surface) {
 
             auto nativeSurface = surface->GetNativeSurface();
             auto nativeWindow = surface->GetNativeWindow();
@@ -250,12 +327,32 @@ namespace Atlas {
             int32_t width, height;
             SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
 
-            bool success;
             swapChain = new SwapChain(supportDetails, nativeSurface, device,
-                                      width, height, success,
-                                      VK_PRESENT_MODE_FIFO_KHR, nullptr);
+                width, height,
+                VK_PRESENT_MODE_FIFO_KHR, nullptr);
 
-            return success;
+        }
+
+        void GraphicsDevice::CreateFrameData() {
+
+            VkFenceCreateInfo fenceInfo = Initializers::InitFenceCreateInfo();
+            for (int32_t i = 0; i < FRAME_DATA_COUNT; i++) {
+                VK_CHECK(vkCreateFence(device, &fenceInfo, nullptr, &frameData[i].fence))
+            }
+
+        }
+
+        void GraphicsDevice::DestroyFrameData() {
+
+            for (int32_t i = 0; i < FRAME_DATA_COUNT; i++) {
+                vkDestroyFence(device, frameData[i].fence, nullptr);
+            }
+
+        }
+
+        const FrameData *GraphicsDevice::GetFrameData() const {
+
+            return &frameData[frameIndex % FRAME_DATA_COUNT];
 
         }
 
