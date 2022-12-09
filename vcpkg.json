@@ -32,10 +32,13 @@
         "vulkan",
         "vulkan-headers",
         "vulkan-memory-allocator",
-        "volk"
+        "volk",
+        "glslang",
+        "spirv-reflect"
     ],
     "overrides": [
             { "name": "glm", "version": "0.9.8.0" },
-            { "name": "assimp", "version": "5.2.5" }
-        ]
+            { "name": "assimp", "version": "5.2.5" },
+            { "name": "glslang", "version": "11.8.0" }
+    ]
 }

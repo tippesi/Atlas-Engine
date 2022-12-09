@@ -27,7 +27,11 @@ namespace Atlas {
         public:
             Instance(const std::string& instanceName, bool enableValidationLayers = false);
 
+            Instance(const Instance& that) = delete;
+
             ~Instance();
+
+            Instance& operator=(const Instance& that) = delete;
 
             VkInstance GetNativeInstance() const;
 
