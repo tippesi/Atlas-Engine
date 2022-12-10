@@ -7,6 +7,8 @@
 #include <input/Controller.h>
 #include <input/Touch.h>
 
+#include <renderer/VulkanTestRenderer.h>
+
 #define WINDOW_FLAGS AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI
 
 class App : public Atlas::EngineInstance {
@@ -21,6 +23,9 @@ public:
     virtual void Update(float deltaTime) final;
 
     virtual void Render(float deltaTime) final;
+
+private:
+    Atlas::Renderer::VulkanTestRenderer testRenderer;
 
 };
 

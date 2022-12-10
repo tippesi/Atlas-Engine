@@ -11,6 +11,7 @@
 #include "Common.h"
 #include "GraphicsDevice.h"
 #include "Surface.h"
+#include "Extensions.h"
 
 #include "../Engine.h"
 
@@ -23,6 +24,7 @@ namespace Atlas {
             friend GraphicsDevice;
             friend Surface;
             friend Engine;
+            friend Extensions;
 
         public:
             Instance(const std::string& instanceName, bool enableValidationLayers = false);

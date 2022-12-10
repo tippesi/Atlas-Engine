@@ -1,7 +1,7 @@
 #include "Buffer.h"
 #include "../TypeFormat.h"
 #include "../texture/TextureFormat.h"
-#include "../Extensions.h"
+#include "graphics/Extensions.h"
 
 namespace Atlas {
 

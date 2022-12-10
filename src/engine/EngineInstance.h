@@ -25,7 +25,11 @@ namespace Atlas {
 		EngineInstance(std::string windowTitle, int32_t windowWidth,
 			int32_t windowHeight, int32_t flags = AE_WINDOW_RESIZABLE);
 
+        EngineInstance(const EngineInstance& that) = delete;
+
         virtual ~EngineInstance();
+
+        EngineInstance& operator=(const EngineInstance& that) = delete;
 
 		/**
 		 * Derived classes should load their content and data.

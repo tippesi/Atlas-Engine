@@ -78,6 +78,12 @@ namespace Atlas {
 
         }
 
+        Shader* GraphicsDevice::CreateShader(ShaderDesc shaderDesc) {
+
+
+
+        }
+
         CommandList* GraphicsDevice::GetCommandList(QueueType queueType) {
 
             auto it = std::find_if(commandLists.begin(), commandLists.end(),

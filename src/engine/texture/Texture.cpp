@@ -1,5 +1,5 @@
 #include "Texture.h"
-#include "../Extensions.h"
+#include "graphics/Extensions.h"
 
 #include <stb_image_resize.h>
 

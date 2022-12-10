@@ -1,7 +1,10 @@
 #include "Engine.h"
-#include "Extensions.h"
+#include "graphics/Extensions.h"
 #include "Profiler.h"
 #include "EngineInstance.h"
+#include "loader/ShaderLoader.h"
+
+#include "graphics/ShaderCompiler.h"
 
 #include <volk.h>
 #include <SDL_vulkan.h>
@@ -19,6 +22,11 @@ namespace Atlas {
 			SDL_Init(SDL_INIT_EVERYTHING);
 		}
 
+        Loader::AssetLoader::SetAssetDirectory(assetDirectory);
+        Loader::ShaderLoader::SetSourceDirectory(shaderDirectory);
+
+        Graphics::ShaderCompiler::Init();
+
         auto engineInstance = GetEngineInstance();
 		EngineInstance::instance = engineInstance;
 
@@ -28,16 +36,13 @@ namespace Atlas {
         engineInstance->graphicInstance->InitializeGraphicsDevice(engineInstance->window->surface);
 
 		// Do the setup for all the classes that need static setup
-		// Extensions::Process();
+		Graphics::Extensions::Process();
 		// Texture::Texture::GetMaxAnisotropyLevel();
 
 		Loader::AssetLoader::Init();
 		Common::Random::Init();
 
 		Audio::AudioManager::Configure(48000, 2, 1024);
-
-		Loader::AssetLoader::SetAssetDirectory(assetDirectory);
-		Shader::ShaderStage::SetSourceDirectory(shaderDirectory);
 
 		// Renderer::OpaqueRenderer::InitShaderBatch();
 		// Renderer::ShadowRenderer::InitShaderBatch();
@@ -49,6 +54,7 @@ namespace Atlas {
     void Engine::Shutdown() {
 
         Shader::ShaderManager::Clear();
+        Graphics::ShaderCompiler::Shutdown();
 
 #ifdef AE_NO_APP
         SDL_Quit();

@@ -5,6 +5,7 @@
 #include "Surface.h"
 #include "SwapChain.h"
 #include "CommandList.h"
+#include "Shader.h"
 
 #include <optional>
 #include <vector>
@@ -29,6 +30,8 @@ namespace Atlas {
             ~GraphicsDevice();
 
             GraphicsDevice& operator=(const GraphicsDevice& that) = delete;
+
+            Shader* CreateShader(ShaderDesc shaderDesc);
 
             CommandList* GetCommandList(QueueType queueType = QueueType::GraphicsQueue);
 

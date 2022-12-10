@@ -2,7 +2,7 @@
 #include "../loader/AssetLoader.h"
 #include "../common/Path.h"
 #include "../Log.h"
-#include "../Extensions.h"
+#include "graphics/Extensions.h"
 
 #include <fstream>
 #include <sstream>
@@ -88,7 +88,7 @@ namespace Atlas {
 
             composedCode.append("#version 460\n\n#define AE_API_GL\n");
 
-            if (Extensions::IsSupported("GL_EXT_texture_shadow_lod")) {
+            if (Graphics::Extensions::IsSupported("GL_EXT_texture_shadow_lod")) {
                 composedCode.append("#define AE_TEXTURE_SHADOW_LOD\n");
             }
 

@@ -7,10 +7,13 @@
 #include "../scene/Scene.h"
 #include "../Viewport.h"
 #include "../Profiler.h"
+#include "../graphics/GraphicsDevice.h"
 
 namespace Atlas {
 
 	namespace Renderer {
+
+        // using namespace Graphics;
 
 		class Renderer {
 
@@ -24,6 +27,9 @@ namespace Atlas {
 			Renderer& operator=(const Renderer&) = delete;
 
 			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) = 0;
+
+        protected:
+            Graphics::GraphicsDevice* device = nullptr;
 
 		};
 

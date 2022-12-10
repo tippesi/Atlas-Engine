@@ -5,7 +5,7 @@ const std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
 
-
+    testRenderer.Init(graphicInstance->GetGraphicsDevice());
 
 }
 
