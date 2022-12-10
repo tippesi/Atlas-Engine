@@ -30,6 +30,19 @@ namespace Atlas {
 
             VkSemaphoreCreateInfo InitSemaphoreCreateInfo(VkSemaphoreCreateFlags flags = 0);
 
+            VkPipelineShaderStageCreateInfo InitPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
+                VkShaderModule shaderModule);
+
+            VkPipelineVertexInputStateCreateInfo InitPipelineVertexInputStateCreateInfo();
+
+            VkPipelineInputAssemblyStateCreateInfo InitPipelineInputAssemblyStateCreateInfo(VkPrimitiveTopology topology);
+
+            VkPipelineRasterizationStateCreateInfo InitPipelineRasterizationStateCreateInfo(VkPolygonMode polygonMode);
+
+            VkPipelineMultisampleStateCreateInfo InitPipelineMultisampleStateCreateInfo();
+
+            VkPipelineColorBlendAttachmentState InitPipelineColorBlendAttachmentState();
+
         }
 
     }

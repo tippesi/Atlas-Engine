@@ -3,7 +3,6 @@
 
 #include "Common.h"
 
-#define VMA_IMPLEMENTATION
 #define VMA_STATS_STRING_ENABLED 0
 #include <vk_mem_alloc.h>
 
@@ -11,18 +10,21 @@ namespace Atlas {
 
     namespace Graphics {
 
-        struct MemoryAllocatorDesc {
+        class MemoryManager {
+
+        public:
+            MemoryManager(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device);
+
+            ~MemoryManager();
+
+            VmaAllocator allocator;
+
             VkInstance instance;
             VkPhysicalDevice physicalDevice;
             VkDevice device;
-        };
 
-        class MemoryAllocator {
+        private:
 
-        public:
-            MemoryAllocator(const MemoryAllocatorDesc desc, bool& success);
-
-            VmaAllocator allocator;
 
         };
 

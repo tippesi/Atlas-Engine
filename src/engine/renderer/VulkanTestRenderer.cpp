@@ -8,13 +8,15 @@ namespace Atlas {
 
         void VulkanTestRenderer::Init(Graphics::GraphicsDevice *device) {
 
+            auto stages = std::vector<Graphics::ShaderStageFile> {
+                Loader::ShaderLoader::LoadFile("test.vsh", VK_SHADER_STAGE_VERTEX_BIT),
+                Loader::ShaderLoader::LoadFile("test.fsh", VK_SHADER_STAGE_FRAGMENT_BIT)
+            };
             auto shaderDesc = Graphics::ShaderDesc {
-                .vertexShaderStage = Loader::ShaderLoader::LoadFile("test.vsh", VK_SHADER_STAGE_VERTEX_BIT),
-                .fragmentShaderStage = Loader::ShaderLoader::LoadFile("test.fsh", VK_SHADER_STAGE_FRAGMENT_BIT)
+                .stages = stages
             };
 
-            shaderDesc.vertexShaderStage.Compile();
-            shaderDesc.fragmentShaderStage.Compile();
+            shader = device->CreateShader(shaderDesc);
 
         }
 

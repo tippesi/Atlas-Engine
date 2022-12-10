@@ -50,6 +50,7 @@ namespace Atlas {
             }
 
             glslang::GlslangToSpv(*program.getIntermediate(stage), shaderStageFile.spirvBinary);
+            shaderStageFile.isCompiled = true;
 
         }
 

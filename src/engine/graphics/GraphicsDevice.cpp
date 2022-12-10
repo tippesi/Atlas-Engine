@@ -53,6 +53,8 @@ namespace Atlas {
             vkGetDeviceQueue(device, queueFamilyIndices.queueFamilies[QueueType::PresentationQueue].value(), 0,
                              &queueFamilyIndices.queues[QueueType::PresentationQueue]);
 
+            memoryManager = new MemoryManager(instance->instance, physicalDevice, device);
+
             CreateSwapChain(surface);
             CreateFrameData();
 
@@ -72,15 +74,24 @@ namespace Atlas {
                 delete commandList;
             }
 
+            for (auto shader : shaders) {
+                delete shader;
+            }
+
             DestroyFrameData();
 
+            delete memoryManager;
             vkDestroyDevice(device, nullptr);
 
         }
 
         Shader* GraphicsDevice::CreateShader(ShaderDesc shaderDesc) {
 
+            auto shader = new Shader(memoryManager, shaderDesc);
 
+            shaders.push_back(shader);
+
+            return shader;
 
         }
 
@@ -253,9 +264,6 @@ namespace Atlas {
                 bool isFamilyValid = true;
 
                 if (!(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
-                    isFamilyValid = false;
-
-                if (!(queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT))
                     isFamilyValid = false;
 
                 if (!(queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT))

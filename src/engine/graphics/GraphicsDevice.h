@@ -6,6 +6,7 @@
 #include "SwapChain.h"
 #include "CommandList.h"
 #include "Shader.h"
+#include "MemoryManager.h"
 
 #include <optional>
 #include <vector>
@@ -40,6 +41,7 @@ namespace Atlas {
             void CompleteFrame();
 
             SwapChain* swapChain = nullptr;
+            MemoryManager* memoryManager = nullptr;
 
             bool isComplete = false;
 
@@ -79,7 +81,9 @@ namespace Atlas {
             VkDevice device;
 
             QueueFamilyIndices queueFamilyIndices;
+
             std::vector<CommandList*> commandLists;
+            std::vector<Shader*> shaders;
 
             int32_t frameIndex = 0;
             FrameData frameData[FRAME_DATA_COUNT];

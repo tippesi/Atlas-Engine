@@ -2,11 +2,13 @@
 #include "Extensions.h"
 #include "ShaderCompiler.h"
 
+#include <cassert>
+
 namespace Atlas {
 
     namespace Graphics {
 
-        const std::string ShaderStageFile::GetGlslCode(std::vector<std::string> macros) const {
+        const std::string ShaderStageFile::GetGlslCode() const {
 
             std::string glslCode = "";
             glslCode.append("#version 460\n\n");
@@ -35,11 +37,55 @@ namespace Atlas {
 
         }
 
-        void ShaderStageFile::Compile() {
+        Shader::Shader(MemoryManager *memManager, ShaderDesc &desc) : memoryManager(memManager) {
 
-            ShaderCompiler::Compile(*this);
+            shaderModules.resize(desc.stages.size());
+            for (size_t i = 0; i < desc.stages.size(); i++) {
+                auto& stage = desc.stages[i];
+
+                if (!stage.isCompiled) {
+                    ShaderCompiler::Compile(stage);
+                }
+
+                if (!stage.isCompiled) return;
+
+                VkShaderModuleCreateInfo createInfo = {};
+                createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+                createInfo.pNext = nullptr;
+                createInfo.codeSize = stage.spirvBinary.size() * sizeof(uint32_t);
+                createInfo.pCode = stage.spirvBinary.data();
+
+                bool success = vkCreateShaderModule(memManager->device, &createInfo,
+                    nullptr, &shaderModules[i]) == VK_SUCCESS;
+                assert(success && "Error creating shader module");
+                if (!success) {
+                    return;
+                }
+
+                // Compute shaders need a different pipeline creation
+                if (stage.shaderStage != VK_SHADER_STAGE_COMPUTE_BIT)
+                    isCompute = false;
+
+            }
+
+            if (!isCompute) {
+
+            }
+            else {
+
+            }
+
+            isComplete = true;
 
         }
+
+        Shader::~Shader() {
+
+
+
+        }
+
+
 
     }
 

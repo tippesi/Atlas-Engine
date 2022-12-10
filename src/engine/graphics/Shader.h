@@ -2,6 +2,7 @@
 #define AE_GRAPHICSSHADER_H
 
 #include "Common.h"
+#include "MemoryManager.h"
 
 #include <vector>
 #include <string>
@@ -14,9 +15,7 @@ namespace Atlas {
         public:
             ShaderStageFile() = default;
 
-            const std::string GetGlslCode(std::vector<std::string> macros = std::vector<std::string>()) const;
-
-            void Compile();
+            const std::string GetGlslCode() const;
 
             struct Extension {
                 std::string extension;
@@ -26,20 +25,33 @@ namespace Atlas {
             std::string filename;
             std::string code;
             std::vector<std::string> includes;
+            std::vector<std::string> macros;
             std::vector<Extension> extensions;
 
             VkShaderStageFlagBits shaderStage;
             std::vector<uint32_t> spirvBinary;
-            bool compiled = false;
+            bool isCompiled = false;
 
         };
 
         struct ShaderDesc {
-            ShaderStageFile vertexShaderStage;
-            ShaderStageFile fragmentShaderStage;
+            std::vector<ShaderStageFile> stages;
         };
 
         class Shader {
+
+        public:
+            Shader(MemoryManager* memManager, ShaderDesc& shaderDesc);
+
+            ~Shader();
+
+            bool isComplete = false;
+            bool isCompute = true;
+
+        private:
+            VkPipeline pipeline;
+            std::vector<VkShaderModule> shaderModules;
+            MemoryManager* memoryManager = nullptr;
 
         };
 
