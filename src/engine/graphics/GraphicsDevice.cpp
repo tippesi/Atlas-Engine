@@ -91,13 +91,38 @@ namespace Atlas {
 
         }
 
+        Buffer* GraphicsDevice::CreateBuffer(BufferDesc bufferDesc) {
+
+            return nullptr;
+
+        }
+
+        Texture* GraphicsDevice::CreateTexture(TextureDesc textureDesc) {
+
+            return nullptr;
+
+        }
+
         CommandList* GraphicsDevice::GetCommandList(QueueType queueType) {
 
             auto frameData = GetFrameData();
+
+            // Lock to find a command list or create a new one
+            std::lock_guard<std::mutex> lock(frameData->commandListsMutex);
+
             auto& commandLists = frameData->commandLists;
             auto it = std::find_if(commandLists.begin(), commandLists.end(),
                 [&](CommandList* commandList) {
-                    return commandList->queueType == queueType;
+                    if (commandList->queueType == queueType) {
+                        bool expected = false;
+                        // Check if isLocked is set to false and if so, set it to true
+                        // In that case we can use this command list, otherwise continue
+                        // the search for another one
+                        if (commandList->isLocked.compare_exchange_strong(expected, true)) {
+                            return true;
+                        }
+                    }
+                    return false;
                 });
 
             if (it == commandLists.end()) {
@@ -113,6 +138,9 @@ namespace Atlas {
 
         void GraphicsDevice::SubmitCommandList(CommandList *cmd) {
 
+            // After the submission of a command list, we don't unlock it anymore
+            // for further use in this frame. Instead, we will unlock it again
+            // when we get back to this frames data and start a new frame with it.
             VkSubmitInfo submit = {};
             submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             submit.pNext = nullptr;
@@ -155,12 +183,23 @@ namespace Atlas {
             VkQueue& presenterQueue = queueFamilyIndices.queues[QueueType::PresentationQueue];
             VK_CHECK(vkQueuePresentKHR(presenterQueue, &presentInfo));
 
+            // Delete data that is marked for deletion for this frame
+            memoryManager->DeleteData();
+
             frameIndex++;
+
+            memoryManager->UpdateFrameIndex(frameIndex);
 
             auto nextFrameData = GetFrameData();
             // Need to check if we can use the next frame data
             VK_CHECK(vkWaitForFences(device, 1, &nextFrameData->fence, true, 1000000000))
             VK_CHECK(vkResetFences(device, 1, &nextFrameData->fence))
+
+            // Unlock all commandLists for use in next frame (or new current frame,
+            // however you want to call it)
+            for (auto commandList : nextFrameData->commandLists) {
+                commandList->isLocked = false;
+            }
 
         }
 
@@ -351,6 +390,8 @@ namespace Atlas {
 
             VkFenceCreateInfo fenceInfo = Initializers::InitFenceCreateInfo();
             for (int32_t i = 0; i < FRAME_DATA_COUNT; i++) {
+                // Create secondary fences in a signaled state
+                if (i > 0) fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
                 VK_CHECK(vkCreateFence(device, &fenceInfo, nullptr, &frameData[i].fence))
             }
 

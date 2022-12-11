@@ -4,6 +4,8 @@
 #include "Common.h"
 #include "SwapChain.h"
 
+#include <atomic>
+
 namespace Atlas {
 
     namespace Graphics {
@@ -13,7 +15,12 @@ namespace Atlas {
             PresentationQueue
         };
 
+        class GraphicsDevice;
+
         class CommandList {
+
+            friend GraphicsDevice;
+
         public:
             CommandList(VkDevice device, QueueType queueType, uint32_t queueFamilyIndex);
 
@@ -38,6 +45,7 @@ namespace Atlas {
 
         private:
             VkDevice device;
+            std::atomic_bool isLocked = false;
 
             SwapChain* currentSwapChain;
 

@@ -6,10 +6,13 @@
 #include "SwapChain.h"
 #include "CommandList.h"
 #include "Shader.h"
+#include "Buffer.h"
+#include "Texture.h"
 #include "MemoryManager.h"
 
 #include <optional>
 #include <vector>
+#include <mutex>
 
 namespace Atlas {
 
@@ -20,6 +23,7 @@ namespace Atlas {
         struct FrameData {
             VkFence fence;
 
+            std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;
         };
 
@@ -35,6 +39,10 @@ namespace Atlas {
             GraphicsDevice& operator=(const GraphicsDevice& that) = delete;
 
             Shader* CreateShader(ShaderDesc shaderDesc);
+
+            Buffer* CreateBuffer(BufferDesc bufferDesc);
+
+            Texture* CreateTexture(TextureDesc textureDesc);
 
             CommandList* GetCommandList(QueueType queueType = QueueType::GraphicsQueue);
 

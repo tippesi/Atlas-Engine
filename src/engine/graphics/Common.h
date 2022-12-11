@@ -9,7 +9,7 @@
 #include <string>
 #include <cassert>
 
-#define FRAME_DATA_COUNT 1
+#define FRAME_DATA_COUNT 2
 
 #define VK_CHECK(x) {                                                               \
                 VkResult err = x;                                                   \

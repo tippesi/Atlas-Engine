@@ -29,6 +29,37 @@ namespace Atlas {
 
         }
 
+        void MemoryManager::DestroyAllocation(BufferAllocation allocation) {
+
+            deleteBufferAllocations.emplace_back(DeleteBufferAllocation { allocation, frameIndex + framesToDeletion });
+
+        }
+
+        void MemoryManager::DestroyAllocation(ImageAllocation allocation) {
+
+            deleteImageAllocations.emplace_back(DeleteImageAllocation { allocation, frameIndex  +framesToDeletion });
+
+        }
+
+        void MemoryManager::UpdateFrameIndex(size_t frameIndex) {
+
+            this->frameIndex = frameIndex;
+
+        }
+
+        void MemoryManager::DeleteData() {
+
+            if (deleteBufferAllocations.size()) {
+                while (deleteBufferAllocations.front().deleteFrame <= frameIndex) {
+                    auto &allocation = deleteBufferAllocations.front();
+
+
+                    deleteBufferAllocations.pop_front();
+                }
+            }
+
+        }
+
     }
 
 }
