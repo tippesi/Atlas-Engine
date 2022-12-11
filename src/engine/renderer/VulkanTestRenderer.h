@@ -14,6 +14,8 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
+            void Render();
+
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
         private:

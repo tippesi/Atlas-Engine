@@ -1,5 +1,5 @@
-#ifndef AE_PIPELINEBUILDER_H
-#define AE_PIPELINEBUILDER_H
+#ifndef AE_GRAPHICSPIPELINEBUILDER_H
+#define AE_GRAPHICSPIPELINEBUILDER_H
 
 #include "Common.h"
 #include "MemoryManager.h"
@@ -27,11 +27,11 @@ namespace Atlas {
 
             };
 
-            PipelineBuilder() = default;
+            static VkPipeline BuildGraphicsPipeline(MemoryManager* memManager,
+                VkRenderPass renderPass, GraphicsPipelineDesc desc);
 
-            VkPipeline BuildGraphicsPipeline(MemoryManager* memManager, VkRenderPass renderPass, GraphicsPipelineDesc desc);
-
-            VkPipeline BuildComputePipeline(MemoryManager* memManager, ComputePipelineDesc desc);
+            static VkPipeline BuildComputePipeline(MemoryManager* memManager,
+                ComputePipelineDesc desc);
 
         };
 

@@ -70,10 +70,6 @@ namespace Atlas {
 
             delete swapChain;
 
-            for (auto commandList : commandLists) {
-                delete commandList;
-            }
-
             for (auto shader : shaders) {
                 delete shader;
             }
@@ -97,6 +93,8 @@ namespace Atlas {
 
         CommandList* GraphicsDevice::GetCommandList(QueueType queueType) {
 
+            auto frameData = GetFrameData();
+            auto& commandLists = frameData->commandLists;
             auto it = std::find_if(commandLists.begin(), commandLists.end(),
                 [&](CommandList* commandList) {
                     return commandList->queueType == queueType;
@@ -137,8 +135,10 @@ namespace Atlas {
 
         void GraphicsDevice::CompleteFrame() {
 
+            auto frameData = GetFrameData();
             std::vector<VkSemaphore> semaphores;
-            for (auto cmd : commandLists) semaphores.push_back(cmd->semaphore);
+            for (auto cmd : frameData->commandLists)
+                semaphores.push_back(cmd->semaphore);
 
             VkPresentInfoKHR presentInfo = {};
             presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -157,10 +157,10 @@ namespace Atlas {
 
             frameIndex++;
 
-            auto frameData = GetFrameData();
+            auto nextFrameData = GetFrameData();
             // Need to check if we can use the next frame data
-            VK_CHECK(vkWaitForFences(device, 1, &frameData->fence, true, 1000000000))
-            VK_CHECK(vkResetFences(device, 1, &frameData->fence))
+            VK_CHECK(vkWaitForFences(device, 1, &nextFrameData->fence, true, 1000000000))
+            VK_CHECK(vkResetFences(device, 1, &nextFrameData->fence))
 
         }
 
@@ -359,12 +359,17 @@ namespace Atlas {
         void GraphicsDevice::DestroyFrameData() {
 
             for (int32_t i = 0; i < FRAME_DATA_COUNT; i++) {
+                auto& commandLists = frameData[i].commandLists;
+                for (auto commandList : commandLists) {
+                    delete commandList;
+                }
+
                 vkDestroyFence(device, frameData[i].fence, nullptr);
             }
 
         }
 
-        const FrameData *GraphicsDevice::GetFrameData() const {
+        FrameData *GraphicsDevice::GetFrameData() {
 
             return &frameData[frameIndex % FRAME_DATA_COUNT];
 

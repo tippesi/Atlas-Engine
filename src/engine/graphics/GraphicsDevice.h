@@ -19,6 +19,8 @@ namespace Atlas {
 
         struct FrameData {
             VkFence fence;
+
+            std::vector<CommandList*> commandLists;
         };
 
         class GraphicsDevice {
@@ -75,14 +77,13 @@ namespace Atlas {
 
             void DestroyFrameData();
 
-            const FrameData* GetFrameData() const;
+            FrameData* GetFrameData();
 
             VkPhysicalDevice physicalDevice;
             VkDevice device;
 
             QueueFamilyIndices queueFamilyIndices;
 
-            std::vector<CommandList*> commandLists;
             std::vector<Shader*> shaders;
 
             int32_t frameIndex = 0;

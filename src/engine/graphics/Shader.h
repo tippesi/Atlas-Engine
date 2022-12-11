@@ -36,6 +36,9 @@ namespace Atlas {
 
         struct ShaderDesc {
             std::vector<ShaderStageFile> stages;
+            VkRenderPass renderPass;
+            uint32_t viewportWidth;
+            uint32_t viewportHeight;
         };
 
         class Shader {
@@ -45,11 +48,13 @@ namespace Atlas {
 
             ~Shader();
 
+            VkPipeline pipeline;
+            VkPipelineLayout pipelineLayout;
+
             bool isComplete = false;
             bool isCompute = true;
 
         private:
-            VkPipeline pipeline;
             std::vector<VkShaderModule> shaderModules;
             MemoryManager* memoryManager = nullptr;
 

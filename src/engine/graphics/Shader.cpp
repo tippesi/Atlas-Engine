@@ -1,6 +1,7 @@
 #include "Shader.h"
 #include "Extensions.h"
 #include "ShaderCompiler.h"
+#include "PipelineBuilder.h"
 
 #include <cassert>
 
@@ -40,6 +41,7 @@ namespace Atlas {
         Shader::Shader(MemoryManager *memManager, ShaderDesc &desc) : memoryManager(memManager) {
 
             shaderModules.resize(desc.stages.size());
+            std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos;
             for (size_t i = 0; i < desc.stages.size(); i++) {
                 auto& stage = desc.stages[i];
 
@@ -66,9 +68,41 @@ namespace Atlas {
                 if (stage.shaderStage != VK_SHADER_STAGE_COMPUTE_BIT)
                     isCompute = false;
 
+                shaderStageCreateInfos.push_back(Initializers::InitPipelineShaderStageCreateInfo(
+                    stage.shaderStage, shaderModules[i]
+                    ));
+
             }
 
             if (!isCompute) {
+
+                auto layoutPipelineCreateInfo = Initializers::InitPipelineLayoutCreateInfo();
+                VK_CHECK(vkCreatePipelineLayout(memManager->device, &layoutPipelineCreateInfo, nullptr, &pipelineLayout))
+
+                PipelineBuilder::GraphicsPipelineDesc graphicsPipelineDesc;
+                graphicsPipelineDesc = PipelineBuilder::GraphicsPipelineDesc{
+                    .shaderStages = shaderStageCreateInfos,
+                    .vertexInputInfo = Initializers::InitPipelineVertexInputStateCreateInfo(),
+                    .inputAssembly = Initializers::InitPipelineInputAssemblyStateCreateInfo(
+                        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
+                    .rasterizer = Initializers::InitPipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL),
+                    .colorBlendAttachment = Initializers::InitPipelineColorBlendAttachmentState(),
+                    .multisampling = Initializers::InitPipelineMultisampleStateCreateInfo(),
+                    .pipelineLayout = pipelineLayout
+                };
+
+                graphicsPipelineDesc.viewport.x = 0.0f;
+                graphicsPipelineDesc.viewport.y = 0.0f;
+                graphicsPipelineDesc.viewport.width = (float)desc.viewportWidth;
+                graphicsPipelineDesc.viewport.height = (float)desc.viewportHeight;
+                graphicsPipelineDesc.viewport.minDepth = 0.0f;
+                graphicsPipelineDesc.viewport.maxDepth = 1.0f;
+
+                graphicsPipelineDesc.scissor.offset = { 0, 0 };
+                graphicsPipelineDesc.scissor.extent = { desc.viewportWidth, desc.viewportHeight } ;
+
+                pipeline = PipelineBuilder::BuildGraphicsPipeline(memManager, desc.renderPass,
+                    graphicsPipelineDesc);
 
             }
             else {
