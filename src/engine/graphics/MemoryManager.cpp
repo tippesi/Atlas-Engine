@@ -46,7 +46,7 @@ namespace Atlas {
 
         void MemoryManager::DestroyAllocation(ImageAllocation allocation) {
 
-            deleteImageAllocations.emplace_back(DeleteImageAllocation { allocation, frameIndex  +framesToDeletion });
+            deleteImageAllocations.emplace_back(DeleteImageAllocation { allocation, frameIndex + framesToDeletion });
 
         }
 
@@ -58,14 +58,22 @@ namespace Atlas {
 
         void MemoryManager::DeleteData() {
 
-            if (deleteBufferAllocations.size()) {
-                while (deleteBufferAllocations.front().deleteFrame <= frameIndex) {
-                    auto &allocation = deleteBufferAllocations.front();
+            while (deleteBufferAllocations.size() &&
+                deleteBufferAllocations.front().deleteFrame <= frameIndex) {
+                auto &allocation = deleteBufferAllocations.front();
 
-                    vmaDestroyBuffer(allocator, allocation.allocation.buffer, allocation.allocation.allocation);
+                vmaDestroyBuffer(allocator, allocation.allocation.buffer, allocation.allocation.allocation);
 
-                    deleteBufferAllocations.pop_front();
-                }
+                deleteBufferAllocations.pop_front();
+            }
+
+            while (deleteImageAllocations.size() &&
+                deleteImageAllocations.front().deleteFrame <= frameIndex) {
+                auto &allocation = deleteImageAllocations.front();
+
+                vmaDestroyImage(allocator, allocation.allocation.image, allocation.allocation.allocation);
+
+                deleteImageAllocations.pop_front();
             }
 
         }

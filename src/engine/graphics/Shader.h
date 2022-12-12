@@ -41,6 +41,15 @@ namespace Atlas {
             uint32_t viewportHeight;
         };
 
+        class ShaderModule {
+        public:
+            ShaderModule();
+
+            VkShaderModule shaderModule;
+            VkShaderStageFlagBits shaderStageFlag;
+
+        };
+
         class Shader {
 
         public:

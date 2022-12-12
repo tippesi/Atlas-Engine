@@ -400,9 +400,8 @@ namespace Atlas {
             int32_t width, height;
             SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
 
-            swapChain = new SwapChain(supportDetails, nativeSurface, device,
-                width, height,
-                VK_PRESENT_MODE_FIFO_KHR, nullptr);
+            swapChain = new SwapChain(supportDetails, nativeSurface, memoryManager,
+                width, height, VK_PRESENT_MODE_FIFO_KHR, nullptr);
 
         }
 

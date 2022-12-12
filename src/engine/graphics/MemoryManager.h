@@ -19,7 +19,8 @@ namespace Atlas {
         };
 
         struct ImageAllocation {
-
+            VkImage image;
+            VmaAllocation allocation;
         };
 
         // Forward declare such that it can be a friend

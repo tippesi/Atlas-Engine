@@ -16,6 +16,12 @@ namespace Atlas {
             viewportState.scissorCount = 1;
             viewportState.pScissors = &desc.scissor;
 
+            VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT };
+            VkPipelineDynamicStateCreateInfo dynamicStateInfo = {};
+            dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+            dynamicStateInfo.dynamicStateCount = 1;
+            dynamicStateInfo.pDynamicStates = dynamicStates;
+
             VkPipelineColorBlendStateCreateInfo colorBlending = {};
             colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
             colorBlending.pNext = nullptr;
@@ -32,7 +38,8 @@ namespace Atlas {
             pipelineInfo.stageCount = desc.shaderStages.size();
             pipelineInfo.pStages = desc.shaderStages.data();
             pipelineInfo.pVertexInputState = &desc.vertexInputInfo;
-            pipelineInfo.pInputAssemblyState = &desc.inputAssembly;
+            pipelineInfo.pInputAssemblyState = &desc.assemblyInputInfo;
+            pipelineInfo.pDepthStencilState = &desc.depthStencilInputInfo;
             pipelineInfo.pViewportState = &viewportState;
             pipelineInfo.pRasterizationState = &desc.rasterizer;
             pipelineInfo.pMultisampleState = &desc.multisampling;
@@ -41,6 +48,7 @@ namespace Atlas {
             pipelineInfo.renderPass = renderPass;
             pipelineInfo.subpass = 0;
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+            pipelineInfo.pDynamicState = &dynamicStateInfo;
 
             auto& device = memManager->device;
             VkPipeline pipeline;

@@ -83,8 +83,9 @@ namespace Atlas {
                 graphicsPipelineDesc = PipelineBuilder::GraphicsPipelineDesc{
                     .shaderStages = shaderStageCreateInfos,
                     .vertexInputInfo = Initializers::InitPipelineVertexInputStateCreateInfo(),
-                    .inputAssembly = Initializers::InitPipelineInputAssemblyStateCreateInfo(
+                    .assemblyInputInfo = Initializers::InitPipelineInputAssemblyStateCreateInfo(
                         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
+                    .depthStencilInputInfo = Initializers::InitPipelineDepthStencilStateCreateInfo(true, true, VK_COMPARE_OP_LESS),
                     .rasterizer = Initializers::InitPipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL),
                     .colorBlendAttachment = Initializers::InitPipelineColorBlendAttachmentState(),
                     .multisampling = Initializers::InitPipelineMultisampleStateCreateInfo(),

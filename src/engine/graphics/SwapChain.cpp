@@ -36,8 +36,8 @@ namespace Atlas {
         }
 
         SwapChain::SwapChain(const SwapChainSupportDetails& supportDetails, VkSurfaceKHR surface,
-                             VkDevice device, int desiredWidth, int32_t desiredHeight,
-                             VkPresentModeKHR desiredMode, SwapChain* oldSwapchain) : device(device) {
+            MemoryManager* memManager, int desiredWidth, int32_t desiredHeight, VkPresentModeKHR desiredMode,
+            SwapChain* oldSwapchain) : memoryManager(memManager), device(memManager->device) {
 
             surfaceFormat = ChooseSurfaceFormat(supportDetails.formats);
             presentMode = ChoosePresentMode(supportDetails.presentModes, desiredMode);
@@ -70,21 +70,44 @@ namespace Atlas {
             images.resize(imageCount);
             VK_CHECK(vkGetSwapchainImagesKHR(device, swapChain, &imageCount, images.data()))
 
-            VkAttachmentDescription2 attachmentDescription = Initializers::InitAttachmentDescription(surfaceFormat.format,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-            VkAttachmentReference2 attachmentReference = Initializers::InitAttachmentReference(0,
+            VkExtent3D depthImageExtent = { extent.width, extent.height, 1} ;
+
+            const VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
+            VkImageCreateInfo imageCreateInfo = Initializers::InitImageCreateInfo(depthFormat,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, depthImageExtent);
+
+            VmaAllocationCreateInfo allocationCreateInfo = {};
+            allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+            allocationCreateInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+            vmaCreateImage(memManager->allocator, &imageCreateInfo, &allocationCreateInfo,
+                &depthImageAllocation.image, &depthImageAllocation.allocation, nullptr);
+
+            VkImageViewCreateInfo depthImageViewCreateInfo = Initializers::InitImageViewCreateInfo(depthFormat,
+                depthImageAllocation.image, VK_IMAGE_ASPECT_DEPTH_BIT);
+            VK_CHECK(vkCreateImageView(device, &depthImageViewCreateInfo, nullptr, &depthImageView));
+
+            VkAttachmentDescription2 colorAttachmentDescription = Initializers::InitAttachmentDescription(
+                surfaceFormat.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+            VkAttachmentDescription2 depthAttachmentDescription = Initializers::InitAttachmentDescription(
+                depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+            VkAttachmentReference2 colorAttachmentReference = Initializers::InitAttachmentReference(0,
                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+            VkAttachmentReference2 depthAttachmentReference = Initializers::InitAttachmentReference(1,
+                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
             VkSubpassDescription2 subPassDescription = {};
             subPassDescription.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
             subPassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
             subPassDescription.colorAttachmentCount = 1;
-            subPassDescription.pColorAttachments = &attachmentReference;
+            subPassDescription.pColorAttachments = &colorAttachmentReference;
+            subPassDescription.pDepthStencilAttachment = &depthAttachmentReference;
 
-            VkRenderPassCreateInfo2 renderPassCreateInfo = Initializers::InitRenderPassCreateInfo(1,
-                &attachmentDescription,1, &subPassDescription);
+            VkAttachmentDescription2 attachmentDescriptions[] =
+                { colorAttachmentDescription, depthAttachmentDescription };
+            VkRenderPassCreateInfo2 renderPassCreateInfo = Initializers::InitRenderPassCreateInfo(2,
+                attachmentDescriptions, 1, &subPassDescription);
             VK_CHECK(vkCreateRenderPass2(device, &renderPassCreateInfo, nullptr, &defaultRenderPass))
-
 
             imageViews.resize(imageCount);
             frameBuffers.resize(imageCount);
@@ -106,11 +129,13 @@ namespace Atlas {
 
                 VK_CHECK(vkCreateImageView(device, &imageViewCreateInfo, nullptr, &imageViews[i]))
 
+                // We can use a single depth texture for all frame buffers
+                VkImageView attachments[] = { imageViews[i], depthImageView };
                 VkFramebufferCreateInfo frameBufferInfo = {};
                 frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
                 frameBufferInfo.renderPass = defaultRenderPass;
-                frameBufferInfo.attachmentCount = 1;
-                frameBufferInfo.pAttachments = &imageViews[i];
+                frameBufferInfo.attachmentCount = 2;
+                frameBufferInfo.pAttachments = attachments;
                 frameBufferInfo.width = extent.width;
                 frameBufferInfo.height = extent.height;
                 frameBufferInfo.layers = 1;
@@ -132,6 +157,9 @@ namespace Atlas {
             for (auto& imageView : imageViews) {
                 vkDestroyImageView(device, imageView, nullptr);
             }
+
+            vkDestroyImageView(device, depthImageView, nullptr);
+            memoryManager->DestroyAllocation(depthImageAllocation);
 
             vkDestroySemaphore(device, semaphore, nullptr);
             vkDestroyRenderPass(device, defaultRenderPass, nullptr);

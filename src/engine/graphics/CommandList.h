@@ -3,6 +3,7 @@
 
 #include "Common.h"
 #include "SwapChain.h"
+#include "Pipeline.h"
 
 #include <atomic>
 
@@ -35,6 +36,10 @@ namespace Atlas {
 
             void EndRenderPass();
 
+            void BindPipeline(Pipeline* pipeline);
+
+            void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+
             VkCommandPool commandPool;
             VkCommandBuffer commandBuffer;
             VkSemaphore semaphore;
@@ -43,6 +48,9 @@ namespace Atlas {
             bool isComplete = false;
 
             QueueType queueType;
+
+            SwapChain* swapChainInUse = nullptr;
+            Pipeline* pipelineInUse = nullptr;
 
         private:
             VkDevice device;

@@ -63,9 +63,9 @@ namespace Atlas {
             rpInfo.renderArea.extent = swapChain->extent;
             rpInfo.framebuffer = swapChain->frameBuffers[swapChain->aquiredImageIndex];
 
-            //connect clear values
-            rpInfo.clearValueCount = 1;
-            rpInfo.pClearValues = &swapChain->clearValue;
+            VkClearValue clearValues[] = { swapChain->colorClearValue, swapChain->depthClearValue };
+            rpInfo.clearValueCount = 2;
+            rpInfo.pClearValues = clearValues;
 
             vkCmdBeginRenderPass(commandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -74,6 +74,22 @@ namespace Atlas {
         void CommandList::EndRenderPass() {
 
             vkCmdEndRenderPass(commandBuffer);
+
+        }
+
+        void CommandList::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
+
+            // if (!pipelineInUse) return;
+
+            VkViewport viewport = {};
+            viewport.x = float(x);
+            viewport.y = float(y);
+            viewport.width = float(width);
+            viewport.height = float(height);
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+
+            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
         }
 

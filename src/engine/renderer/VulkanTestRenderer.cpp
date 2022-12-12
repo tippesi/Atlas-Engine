@@ -31,6 +31,14 @@ namespace Atlas {
             };
             buffer = device->CreateBuffer(bufferDesc);
 
+            int data2 = 10;
+            bufferDesc = Graphics::BufferDesc {
+                .usageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                .data = &data,
+                .size = sizeof(int)
+            };
+            buffer = device->CreateBuffer(bufferDesc);
+
 
         }
 
@@ -43,10 +51,12 @@ namespace Atlas {
 
             commandList->BeginCommands();
 
-            swapChain->clearValue.color = { 0.0f, 0.0f, blue, 1.0f};
+            swapChain->colorClearValue.color = { 0.0f, 0.0f, blue, 1.0f};
             commandList->BeginRenderPass(swapChain);
 
             vkCmdBindPipeline(commandList->commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->pipeline);
+
+            commandList->SetViewport(0, 0, swapChain->extent.width, swapChain->extent.height);
             vkCmdDraw(commandList->commandBuffer, 3, 1, 0, 0);
 
             commandList->EndRenderPass();

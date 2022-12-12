@@ -48,6 +48,21 @@ namespace Atlas {
             VkCommandBufferBeginInfo InitCommandBufferBeginInfo(VkCommandBufferUsageFlags flags = 0);
 
             VkSubmitInfo InitSubmitInfo(VkCommandBuffer* commandBuffer);
+
+            VkImageCreateInfo InitImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags,
+                VkExtent3D extent, VkImageType imageType = VK_IMAGE_TYPE_2D);
+
+            VkImageViewCreateInfo InitImageViewCreateInfo(VkFormat format, VkImage image,
+                VkImageAspectFlags aspectFlags, VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D);
+
+            VkPipelineDepthStencilStateCreateInfo InitPipelineDepthStencilStateCreateInfo(bool depthTest,
+                bool depthWrite, VkCompareOp compareOperation);
+
+            VkVertexInputBindingDescription InitVertexInputBindingDescription(uint32_t binding, uint32_t stride,
+                VkVertexInputRate inputRate = VK_VERTEX_INPUT_RATE_VERTEX);
+
+            VkVertexInputAttributeDescription InitVertexInputAttributeDescription(uint32_t binding, VkFormat format);
+
         }
 
     }
