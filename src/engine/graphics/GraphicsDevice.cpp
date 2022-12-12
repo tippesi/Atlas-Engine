@@ -49,11 +49,15 @@ namespace Atlas {
             VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device))
 
             vkGetDeviceQueue(device, queueFamilyIndices.queueFamilies[QueueType::GraphicsQueue].value(), 0,
-                             &queueFamilyIndices.queues[QueueType::GraphicsQueue]);
+                &queueFamilyIndices.queues[QueueType::GraphicsQueue]);
             vkGetDeviceQueue(device, queueFamilyIndices.queueFamilies[QueueType::PresentationQueue].value(), 0,
-                             &queueFamilyIndices.queues[QueueType::PresentationQueue]);
+                &queueFamilyIndices.queues[QueueType::PresentationQueue]);
+            vkGetDeviceQueue(device, queueFamilyIndices.queueFamilies[QueueType::TransferQueue].value(), 0,
+                &queueFamilyIndices.queues[QueueType::TransferQueue]);
 
-            memoryManager = new MemoryManager(instance->instance, physicalDevice, device);
+            memoryManager = new MemoryManager(instance->instance, physicalDevice, device,
+                queueFamilyIndices.queueFamilies[QueueType::TransferQueue].value(),
+                queueFamilyIndices.queues[QueueType::TransferQueue]);
 
             CreateSwapChain(surface);
             CreateFrameData();
@@ -74,8 +78,14 @@ namespace Atlas {
                 delete shader;
             }
 
+            for (auto buffer : buffers) {
+                delete buffer;
+            }
+
             DestroyFrameData();
 
+            // Delete memory manager at last, since it needs to clean up
+            // all remaining memory which was destroyed by buffers, images, etc.
             delete memoryManager;
             vkDestroyDevice(device, nullptr);
 
@@ -93,11 +103,15 @@ namespace Atlas {
 
         Buffer* GraphicsDevice::CreateBuffer(BufferDesc bufferDesc) {
 
-            return nullptr;
+            auto buffer = new Buffer(memoryManager, bufferDesc);
+
+            buffers.push_back(buffer);
+
+            return buffer;
 
         }
 
-        Texture* GraphicsDevice::CreateTexture(TextureDesc textureDesc) {
+        Image* GraphicsDevice::CreateImage(ImageDesc imageDesc) {
 
             return nullptr;
 
@@ -300,16 +314,24 @@ namespace Atlas {
 
             int32_t counter = 0;
             for (auto& queueFamily : queueFamilies) {
-                bool isFamilyValid = true;
+                bool isGraphicsFamilyValid = true;
+                bool isTransferFamilyValid = true;
 
                 if (!(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
-                    isFamilyValid = false;
+                    isGraphicsFamilyValid = false;
 
                 if (!(queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT))
-                    isFamilyValid = false;
+                    isGraphicsFamilyValid = false;
 
-                if (isFamilyValid) {
+                if (!(queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT))
+                    isTransferFamilyValid = false;
+
+                if (isGraphicsFamilyValid) {
                     queueFamilyIndices.queueFamilies[QueueType::GraphicsQueue] = counter;
+                }
+
+                if (isTransferFamilyValid) {
+                    queueFamilyIndices.queueFamilies[QueueType::TransferQueue] = counter;
                 }
 
                 VkBool32 presentSupport = false;
@@ -322,8 +344,6 @@ namespace Atlas {
 
                 counter++;
             }
-
-
 
             return false;
 

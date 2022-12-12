@@ -20,6 +20,7 @@ namespace Atlas {
 
         private:
             Graphics::Shader* shader;
+            Graphics::Buffer* buffer;
 
         };
 

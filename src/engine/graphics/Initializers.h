@@ -44,6 +44,10 @@ namespace Atlas {
             VkPipelineColorBlendAttachmentState InitPipelineColorBlendAttachmentState();
 
             VkPipelineLayoutCreateInfo InitPipelineLayoutCreateInfo();
+
+            VkCommandBufferBeginInfo InitCommandBufferBeginInfo(VkCommandBufferUsageFlags flags = 0);
+
+            VkSubmitInfo InitSubmitInfo(VkCommandBuffer* commandBuffer);
         }
 
     }

@@ -6,8 +6,9 @@
 #include "SwapChain.h"
 #include "CommandList.h"
 #include "Shader.h"
+#include "Pipeline.h"
 #include "Buffer.h"
-#include "Texture.h"
+#include "Image.h"
 #include "MemoryManager.h"
 
 #include <optional>
@@ -42,7 +43,7 @@ namespace Atlas {
 
             Buffer* CreateBuffer(BufferDesc bufferDesc);
 
-            Texture* CreateTexture(TextureDesc textureDesc);
+            Image* CreateImage(ImageDesc imageDesc);
 
             CommandList* GetCommandList(QueueType queueType = QueueType::GraphicsQueue);
 
@@ -57,12 +58,13 @@ namespace Atlas {
 
         private:
             struct QueueFamilyIndices {
-                std::optional<uint32_t> queueFamilies[2];
-                VkQueue queues[2];
+                std::optional<uint32_t> queueFamilies[3];
+                VkQueue queues[3];
 
                 bool IsComplete() {
                     return queueFamilies[QueueType::GraphicsQueue].has_value() &&
-                        queueFamilies[QueueType::PresentationQueue].has_value();
+                        queueFamilies[QueueType::PresentationQueue].has_value() &&
+                        queueFamilies[QueueType::TransferQueue].has_value();
                 }
             };
 
@@ -93,6 +95,9 @@ namespace Atlas {
             QueueFamilyIndices queueFamilyIndices;
 
             std::vector<Shader*> shaders;
+            std::vector<Pipeline*> pipelines;
+            std::vector<Buffer*> buffers;
+            std::vector<Image*> textures;
 
             int32_t frameIndex = 0;
             FrameData frameData[FRAME_DATA_COUNT];

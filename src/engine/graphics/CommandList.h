@@ -12,7 +12,8 @@ namespace Atlas {
 
         enum QueueType {
             GraphicsQueue = 0,
-            PresentationQueue
+            PresentationQueue,
+            TransferQueue
         };
 
         class GraphicsDevice;

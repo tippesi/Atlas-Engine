@@ -9,7 +9,10 @@ namespace Atlas {
     namespace Graphics {
 
         struct BufferDesc {
+            VkBufferUsageFlags usageFlags;
 
+            void* data = nullptr;
+            size_t size;
         };
 
         class Buffer {
@@ -17,6 +20,8 @@ namespace Atlas {
             Buffer(MemoryManager* memManager, BufferDesc desc);
 
             ~Buffer();
+
+            void SetData(void* data, size_t offset, size_t length);
 
             VkBuffer buffer;
             VmaAllocation allocation;

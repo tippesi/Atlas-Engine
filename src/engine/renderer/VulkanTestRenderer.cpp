@@ -23,6 +23,15 @@ namespace Atlas {
 
             shader = device->CreateShader(shaderDesc);
 
+            int data = 5;
+            auto bufferDesc = Graphics::BufferDesc {
+                .usageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                .data = &data,
+                .size = sizeof(int)
+            };
+            buffer = device->CreateBuffer(bufferDesc);
+
+
         }
 
         void VulkanTestRenderer::Render() {

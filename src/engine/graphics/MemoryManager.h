@@ -2,6 +2,7 @@
 #define AE_GRAPHICSMEMORYMANAGER_H
 
 #include "Common.h"
+#include "MemoryUploadManager.h"
 
 #define VMA_STATS_STRING_ENABLED 0
 #include <vk_mem_alloc.h>
@@ -13,7 +14,8 @@ namespace Atlas {
     namespace Graphics {
 
         struct BufferAllocation {
-
+            VkBuffer buffer;
+            VmaAllocation allocation;
         };
 
         struct ImageAllocation {
@@ -28,7 +30,8 @@ namespace Atlas {
             friend GraphicsDevice;
 
         public:
-            MemoryManager(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device);
+            MemoryManager(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device,
+                uint32_t transferQueueFamilyIndex, VkQueue transferQueue);
 
             ~MemoryManager();
 
@@ -41,6 +44,8 @@ namespace Atlas {
             VkInstance instance;
             VkPhysicalDevice physicalDevice;
             VkDevice device;
+
+            MemoryUploadManager* uploadManager;
 
         private:
             struct DeleteBufferAllocation {

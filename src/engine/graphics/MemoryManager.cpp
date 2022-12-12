@@ -7,8 +7,9 @@ namespace Atlas {
 
     namespace Graphics {
 
-        MemoryManager::MemoryManager(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device)
-            : instance(instance), physicalDevice(physicalDevice), device(device) {
+        MemoryManager::MemoryManager(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device,
+            uint32_t transferQueueFamilyIndex, VkQueue transferQueue) : instance(instance),
+            physicalDevice(physicalDevice), device(device) {
 
             VmaVulkanFunctions vulkanFunctions = {};
             vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
@@ -21,9 +22,17 @@ namespace Atlas {
             allocatorInfo.pVulkanFunctions = &vulkanFunctions;
             VK_CHECK(vmaCreateAllocator(&allocatorInfo, &allocator))
 
+            uploadManager = new MemoryUploadManager(this, transferQueueFamilyIndex, transferQueue);
+
         }
 
         MemoryManager::~MemoryManager() {
+
+            delete uploadManager;
+
+            // Cheap trick to make sure everything is deleted
+            frameIndex += framesToDeletion;
+            DeleteData();
 
             vmaDestroyAllocator(allocator);
 
@@ -53,6 +62,7 @@ namespace Atlas {
                 while (deleteBufferAllocations.front().deleteFrame <= frameIndex) {
                     auto &allocation = deleteBufferAllocations.front();
 
+                    vmaDestroyBuffer(allocator, allocation.allocation.buffer, allocation.allocation.allocation);
 
                     deleteBufferAllocations.pop_front();
                 }

@@ -7,11 +7,11 @@ namespace Atlas {
 
     namespace Graphics {
 
-        struct TextureDesc {
+        struct ImageDesc {
 
         };
 
-        class Texture {
+        class Image {
 
         };
 

@@ -1,4 +1,4 @@
-#include "Texture.h"
+#include "Image.h"
 
 namespace Atlas {
 
