@@ -41,6 +41,10 @@ namespace Atlas {
 
             Shader* CreateShader(ShaderDesc shaderDesc);
 
+            Pipeline* CreatePipeline(GraphicsPipelineDesc desc);
+
+            Pipeline* CreatePipeline(ComputePipelineDesc desc);
+
             Buffer* CreateBuffer(BufferDesc bufferDesc);
 
             Image* CreateImage(ImageDesc imageDesc);

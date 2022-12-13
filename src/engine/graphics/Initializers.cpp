@@ -127,13 +127,17 @@ namespace Atlas {
 
             }
 
-            VkPipelineVertexInputStateCreateInfo InitPipelineVertexInputStateCreateInfo() {
+            VkPipelineVertexInputStateCreateInfo InitPipelineVertexInputStateCreateInfo(
+                VkVertexInputBindingDescription* inputBindingDescriptions, uint32_t inputBindingDescriptionsCount,
+                VkVertexInputAttributeDescription* inputAttributeDescriptions, uint32_t inputAttributeDescriptionsCount) {
 
                 VkPipelineVertexInputStateCreateInfo info = {};
                 info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
                 info.pNext = nullptr;
-                info.vertexBindingDescriptionCount = 0;
-                info.vertexAttributeDescriptionCount = 0;
+                info.vertexBindingDescriptionCount = inputBindingDescriptionsCount;
+                info.pVertexBindingDescriptions = inputBindingDescriptions;
+                info.vertexAttributeDescriptionCount = inputAttributeDescriptionsCount;
+                info.pVertexAttributeDescriptions = inputAttributeDescriptions;
 
                 return info;
 
@@ -316,7 +320,7 @@ namespace Atlas {
 
                 VkVertexInputAttributeDescription attributeDescription = {};
                 attributeDescription.binding = binding;
-                attributeDescription.location = 0;
+                attributeDescription.location = binding;
                 attributeDescription.format = format;
                 attributeDescription.offset = 0;
 

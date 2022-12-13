@@ -27,6 +27,10 @@ public:
 private:
     Atlas::Renderer::VulkanTestRenderer testRenderer;
 
+    Atlas::Camera camera;
+    Atlas::Input::MouseHandler mouseHandler;
+    Atlas::Input::KeyboardHandler keyboardHandler;
+
 };
 
 #endif

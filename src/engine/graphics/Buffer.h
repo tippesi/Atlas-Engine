@@ -31,6 +31,18 @@ namespace Atlas {
 
         };
 
+        // Lightweight specializations of the buffer class
+        struct IndexBuffer {
+            Graphics::Buffer* buffer = nullptr;
+            VkIndexType type = {};
+        };
+
+        struct VertexBuffer {
+            Graphics::Buffer* buffer = nullptr;
+            VkVertexInputBindingDescription bindingDescription = {};
+            VkVertexInputAttributeDescription attributeDescription = {};
+        };
+
     }
 
 }

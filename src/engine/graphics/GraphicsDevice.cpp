@@ -101,6 +101,26 @@ namespace Atlas {
 
         }
 
+        Pipeline* GraphicsDevice::CreatePipeline(GraphicsPipelineDesc desc) {
+
+            auto pipeline = new Pipeline(memoryManager, desc);
+
+            pipelines.push_back(pipeline);
+
+            return pipeline;
+
+        }
+
+        Pipeline* GraphicsDevice::CreatePipeline(ComputePipelineDesc desc) {
+
+            auto pipeline = new Pipeline(memoryManager, desc);
+
+            pipelines.push_back(pipeline);
+
+            return pipeline;
+
+        }
+
         Buffer* GraphicsDevice::CreateBuffer(BufferDesc bufferDesc) {
 
             auto buffer = new Buffer(memoryManager, bufferDesc);

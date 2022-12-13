@@ -33,7 +33,12 @@ namespace Atlas {
             VkPipelineShaderStageCreateInfo InitPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
                 VkShaderModule shaderModule);
 
-            VkPipelineVertexInputStateCreateInfo InitPipelineVertexInputStateCreateInfo();
+            VkPipelineVertexInputStateCreateInfo InitPipelineVertexInputStateCreateInfo(
+                VkVertexInputBindingDescription* inputBindingDescriptions = nullptr,
+                uint32_t inputBindingDescriptionsCount = 0,
+                VkVertexInputAttributeDescription* inputAttributeDescriptions = nullptr,
+                uint32_t inputAttributeDescriptionsCount = 0
+                );
 
             VkPipelineInputAssemblyStateCreateInfo InitPipelineInputAssemblyStateCreateInfo(VkPrimitiveTopology topology);
 

@@ -1,8 +1,8 @@
 #include "Shader.h"
 #include "Extensions.h"
 #include "ShaderCompiler.h"
-#include "PipelineBuilder.h"
 
+#include <spirv_reflect.h>
 #include <cassert>
 
 namespace Atlas {
@@ -40,8 +40,9 @@ namespace Atlas {
 
         Shader::Shader(MemoryManager *memManager, ShaderDesc &desc) : memoryManager(memManager) {
 
+            uint32_t allStageFlags = 0;
+
             shaderModules.resize(desc.stages.size());
-            std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos;
             for (size_t i = 0; i < desc.stages.size(); i++) {
                 auto& stage = desc.stages[i];
 
@@ -58,7 +59,7 @@ namespace Atlas {
                 createInfo.pCode = stage.spirvBinary.data();
 
                 bool success = vkCreateShaderModule(memManager->device, &createInfo,
-                    nullptr, &shaderModules[i]) == VK_SUCCESS;
+                    nullptr, &shaderModules[i].module) == VK_SUCCESS;
                 assert(success && "Error creating shader module");
                 if (!success) {
                     return;
@@ -69,46 +70,22 @@ namespace Atlas {
                     isCompute = false;
 
                 shaderStageCreateInfos.push_back(Initializers::InitPipelineShaderStageCreateInfo(
-                    stage.shaderStage, shaderModules[i]
+                    stage.shaderStage, shaderModules[i].module
                     ));
 
-            }
+                GenerateReflectionData(shaderModules[i], stage);
 
-            if (!isCompute) {
-
-                auto layoutPipelineCreateInfo = Initializers::InitPipelineLayoutCreateInfo();
-                VK_CHECK(vkCreatePipelineLayout(memManager->device, &layoutPipelineCreateInfo, nullptr, &pipelineLayout))
-
-                PipelineBuilder::GraphicsPipelineDesc graphicsPipelineDesc;
-                graphicsPipelineDesc = PipelineBuilder::GraphicsPipelineDesc{
-                    .shaderStages = shaderStageCreateInfos,
-                    .vertexInputInfo = Initializers::InitPipelineVertexInputStateCreateInfo(),
-                    .assemblyInputInfo = Initializers::InitPipelineInputAssemblyStateCreateInfo(
-                        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
-                    .depthStencilInputInfo = Initializers::InitPipelineDepthStencilStateCreateInfo(true, true, VK_COMPARE_OP_LESS),
-                    .rasterizer = Initializers::InitPipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL),
-                    .colorBlendAttachment = Initializers::InitPipelineColorBlendAttachmentState(),
-                    .multisampling = Initializers::InitPipelineMultisampleStateCreateInfo(),
-                    .pipelineLayout = pipelineLayout
-                };
-
-                graphicsPipelineDesc.viewport.x = 0.0f;
-                graphicsPipelineDesc.viewport.y = 0.0f;
-                graphicsPipelineDesc.viewport.width = (float)desc.viewportWidth;
-                graphicsPipelineDesc.viewport.height = (float)desc.viewportHeight;
-                graphicsPipelineDesc.viewport.minDepth = 0.0f;
-                graphicsPipelineDesc.viewport.maxDepth = 1.0f;
-
-                graphicsPipelineDesc.scissor.offset = { 0, 0 };
-                graphicsPipelineDesc.scissor.extent = { desc.viewportWidth, desc.viewportHeight } ;
-
-                pipeline = PipelineBuilder::BuildGraphicsPipeline(memManager, desc.renderPass,
-                    graphicsPipelineDesc);
+                shaderModules[i].shaderStageFlag = stage.shaderStage;
+                allStageFlags |= shaderModules[i].shaderStageFlag;
 
             }
-            else {
 
-            }
+            // For now just take the reflection data of the first module
+            // In this case we assume each stage receives the same data
+            pushConstantRanges = shaderModules.front().pushConstantRanges;
+            // Need to have the flags for all stages used by this shader
+            for (auto& pushRange : pushConstantRanges)
+                pushRange.range.stageFlags |= allStageFlags;
 
             isComplete = true;
 
@@ -120,7 +97,68 @@ namespace Atlas {
 
         }
 
+        PushConstantRange* Shader::GetPushConstantRange(const std::string &name) {
 
+            auto it = std::find_if(pushConstantRanges.begin(), pushConstantRanges.end(),
+                [name](const auto& pushConstantRange) { return pushConstantRange.name == name; });
+
+            if (it != pushConstantRanges.end())
+                return &(*it);
+            else
+                assert(0 && "Couldn't find the requested push constant range");
+
+            return nullptr;
+
+        }
+
+        void Shader::GenerateReflectionData(ShaderModule &shaderModule, ShaderStageFile& shaderStageFile) {
+
+            SpvReflectShaderModule module;
+            SpvReflectResult result = spvReflectCreateShaderModule(shaderStageFile.spirvBinary.size() * sizeof(uint32_t),
+                shaderStageFile.spirvBinary.data(), &module);
+            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't create shader reflection module");
+
+            uint32_t pushConstantCount = 0;
+            result = spvReflectEnumeratePushConstantBlocks(&module, &pushConstantCount, nullptr);
+            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve push constants");
+
+            std::vector<SpvReflectBlockVariable*> pushConstants(pushConstantCount);
+            result = spvReflectEnumeratePushConstantBlocks(&module, &pushConstantCount, pushConstants.data());
+            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve push constants");
+
+            for (auto pushConstant : pushConstants) {
+                PushConstantRange range;
+                range.name.assign(pushConstant->name);
+                range.range.offset = pushConstant->offset;
+                range.range.size = pushConstant->size;
+                range.range.stageFlags = shaderModule.shaderStageFlag;
+                shaderModule.pushConstantRanges.push_back(range);
+            }
+
+            // Sort by offset to make compatibility checking easy
+            std::sort(shaderModule.pushConstantRanges.begin(), shaderModule.pushConstantRanges.end(),
+                [](PushConstantRange& range0, PushConstantRange& range1) {
+                    return range0.name < range1.name;
+                });
+
+            spvReflectDestroyShaderModule(&module);
+
+        }
+
+        bool Shader::CheckPushConstantsStageCompatibility() {
+
+            /*
+            for(size_t i = 1; i < shaderModules.size(); i++) {
+                auto& ranges = shaderModules[i].pushConstantRanges;
+                auto& prevRanges = shaderModules[i - 1].pushConstantRanges;
+
+                if (ranges.size() != prevRanges.size())
+            }
+            */
+
+            return true;
+
+        }
 
     }
 

@@ -162,7 +162,8 @@ namespace Atlas {
 				auto& images = materialImages[i];
 				auto& subData = meshData.subData[i];
 
-				LoadMaterial(scene->mMaterials[i], images, material);
+                // No material loading for now
+				// LoadMaterial(scene->mMaterials[i], images, material);
 
 				subData.material = &material;
 				subData.indicesOffset = usedFaces * 3;

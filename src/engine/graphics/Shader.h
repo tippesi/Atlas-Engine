@@ -36,18 +36,17 @@ namespace Atlas {
 
         struct ShaderDesc {
             std::vector<ShaderStageFile> stages;
-            VkRenderPass renderPass;
-            uint32_t viewportWidth;
-            uint32_t viewportHeight;
         };
 
-        class ShaderModule {
-        public:
-            ShaderModule();
+        struct PushConstantRange {
+            std::string name;
+            VkPushConstantRange range = {};
+        };
 
-            VkShaderModule shaderModule;
+        struct ShaderModule {
+            VkShaderModule module;
             VkShaderStageFlagBits shaderStageFlag;
-
+            std::vector<PushConstantRange> pushConstantRanges;
         };
 
         class Shader {
@@ -57,14 +56,21 @@ namespace Atlas {
 
             ~Shader();
 
-            VkPipeline pipeline;
-            VkPipelineLayout pipelineLayout;
+            PushConstantRange* GetPushConstantRange(const std::string& name);
+
+            std::vector<ShaderModule> shaderModules;
+            std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos;
+
+            std::vector<PushConstantRange> pushConstantRanges;
 
             bool isComplete = false;
             bool isCompute = true;
 
         private:
-            std::vector<VkShaderModule> shaderModules;
+            void GenerateReflectionData(ShaderModule& shaderModule, ShaderStageFile& shaderStageFile);
+
+            bool CheckPushConstantsStageCompatibility();
+
             MemoryManager* memoryManager = nullptr;
 
         };

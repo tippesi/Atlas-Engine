@@ -30,4 +30,4 @@ namespace Atlas {
 
 }
 
-#endif //ATLASENGINE_SURFACE_H
+#endif

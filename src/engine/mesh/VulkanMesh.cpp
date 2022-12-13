@@ -1,13 +1,37 @@
 #include "VulkanMesh.h"
 #include "../EngineInstance.h"
 
+#include "../graphics/Initializers.h"
+
 namespace Atlas {
 
     namespace Mesh {
 
-        VulkanMesh::VulkanMesh(Atlas::Mesh::MeshData &meshData) {
+        VulkanMesh::VulkanMesh(Atlas::Mesh::MeshData &meshData) : data(meshData) {
 
+            UploadData(meshData);
 
+        }
+
+        VkPipelineVertexInputStateCreateInfo VulkanMesh::GetVertexInputState() {
+
+            bindingDescriptions.clear();
+            attributeDescriptions.clear();
+
+            if (vertexBuffer.buffer) bindingDescriptions.push_back(vertexBuffer.bindingDescription);
+            if (normalBuffer.buffer) bindingDescriptions.push_back(normalBuffer.bindingDescription);
+            if (tangentBuffer.buffer) bindingDescriptions.push_back(tangentBuffer.bindingDescription);
+            if (texCoordBuffer.buffer) bindingDescriptions.push_back(texCoordBuffer.bindingDescription);
+
+            if (vertexBuffer.buffer) attributeDescriptions.push_back(vertexBuffer.attributeDescription);
+            if (normalBuffer.buffer) attributeDescriptions.push_back(normalBuffer.attributeDescription);
+            if (tangentBuffer.buffer) attributeDescriptions.push_back(tangentBuffer.attributeDescription);
+            if (texCoordBuffer.buffer) attributeDescriptions.push_back(texCoordBuffer.attributeDescription);
+
+            return Graphics::Initializers::InitPipelineVertexInputStateCreateInfo(
+                bindingDescriptions.data(), uint32_t(bindingDescriptions.size()),
+                attributeDescriptions.data(), uint32_t(attributeDescriptions.size())
+                );
 
         }
 
@@ -18,11 +42,12 @@ namespace Atlas {
 
             if (data.indices.ContainsData()) {
                 Graphics::BufferDesc desc {
-                  .usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                  .usageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                   .data = data.indices.GetConvertedVoid(),
                   .size = data.indices.GetElementSize() * data.GetIndexCount()
                 };
-                indexBuffer = graphicsDevice->CreateBuffer(desc);
+                indexBuffer.buffer = graphicsDevice->CreateBuffer(desc);
+                indexBuffer.type = data.indices.GetElementSize() == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
             }
             if (data.vertices.ContainsData()) {
                 Graphics::BufferDesc desc {
@@ -34,7 +59,7 @@ namespace Atlas {
                 vertexBuffer.bindingDescription = Graphics::Initializers::InitVertexInputBindingDescription(0,
                     data.vertices.GetElementSize());
                 vertexBuffer.attributeDescription = Graphics::Initializers::InitVertexInputAttributeDescription(0,
-                    VK_FORMAT_R32G32B32_SFLOAT);
+                    data.vertices.GetFormat());
             }
             if (data.normals.ContainsData()) {
                 Graphics::BufferDesc desc {
@@ -46,7 +71,7 @@ namespace Atlas {
                 normalBuffer.bindingDescription = Graphics::Initializers::InitVertexInputBindingDescription(1,
                     data.normals.GetElementSize());
                 normalBuffer.attributeDescription = Graphics::Initializers::InitVertexInputAttributeDescription(1,
-                    VK_FORMAT_R32G32B32_SFLOAT);
+                    data.normals.GetFormat());
             }
             if (data.texCoords.ContainsData()) {
                 Graphics::BufferDesc desc {
@@ -58,7 +83,7 @@ namespace Atlas {
                 texCoordBuffer.bindingDescription = Graphics::Initializers::InitVertexInputBindingDescription(2,
                     data.texCoords.GetElementSize());
                 texCoordBuffer.attributeDescription = Graphics::Initializers::InitVertexInputAttributeDescription(2,
-                    VK_FORMAT_R32G32B32_SFLOAT);
+                    data.texCoords.GetFormat());
             }
             if (data.tangents.ContainsData()) {
                 Graphics::BufferDesc desc {
@@ -70,7 +95,7 @@ namespace Atlas {
                 tangentBuffer.bindingDescription = Graphics::Initializers::InitVertexInputBindingDescription(3,
                     data.tangents.GetElementSize());
                 tangentBuffer.attributeDescription = Graphics::Initializers::InitVertexInputAttributeDescription(3,
-                    VK_FORMAT_R32G32B32_SFLOAT);
+                    data.tangents.GetFormat());
             }
 
         }

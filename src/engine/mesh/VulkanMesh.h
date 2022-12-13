@@ -25,25 +25,26 @@ namespace Atlas {
 
         };
 
-        struct VertexBuffer {
-            Graphics::Buffer* buffer = nullptr;
-            VkVertexInputBindingDescription bindingDescription = {};
-            VkVertexInputAttributeDescription attributeDescription = {};
-        };
-
         class VulkanMesh {
 
         public:
             VulkanMesh(MeshData& meshData);
 
-            Graphics::Buffer* indexBuffer;
-            VertexBuffer vertexBuffer;
-            VertexBuffer normalBuffer;
-            VertexBuffer tangentBuffer;
-            VertexBuffer texCoordBuffer;
+            Graphics::IndexBuffer indexBuffer;
+            Graphics::VertexBuffer vertexBuffer;
+            Graphics::VertexBuffer normalBuffer;
+            Graphics::VertexBuffer tangentBuffer;
+            Graphics::VertexBuffer texCoordBuffer;
+
+            VkPipelineVertexInputStateCreateInfo GetVertexInputState();
+
+            MeshData data;
 
         private:
             void UploadData(MeshData& data);
+
+            std::vector<VkVertexInputBindingDescription> bindingDescriptions;
+            std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
         };
 
