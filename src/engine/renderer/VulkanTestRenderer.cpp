@@ -48,7 +48,7 @@ namespace Atlas {
             }
 
             {
-                auto meshData = Loader::ModelLoader::LoadMesh("sponza/sponza.obj");
+                auto meshData = Loader::ModelLoader::LoadMesh("sponza/sponza.obj", false, glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
                 mesh = new Mesh::VulkanMesh(meshData);
 
                 auto meshStages = std::vector<Graphics::ShaderStageFile>{
@@ -104,7 +104,6 @@ namespace Atlas {
 
             // TODO: Implement in command list
             // vkCmdDraw(commandList->commandBuffer, 3, 1, 0, 0);
-
 
             commandList->EndRenderPass();
             commandList->EndCommands();

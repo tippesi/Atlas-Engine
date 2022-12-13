@@ -23,7 +23,9 @@ namespace Atlas {
             LoadSupportedLayersAndExtensions();
 
             auto requiredExtensions = extensionNames;
+#ifdef AE_OS_MACOS
             requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
             requiredExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
             const std::vector<const char*> validationLayers = {
@@ -38,7 +40,9 @@ namespace Atlas {
             createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
             createInfo.pApplicationInfo = &appInfo;
             createInfo.enabledLayerCount = 0;
+#ifdef AE_OS_MACOS
             createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
             createInfo.enabledExtensionCount = uint32_t(requiredExtensions.size());
             createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 

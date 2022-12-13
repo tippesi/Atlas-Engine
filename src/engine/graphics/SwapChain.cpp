@@ -107,6 +107,29 @@ namespace Atlas {
                 { colorAttachmentDescription, depthAttachmentDescription };
             VkRenderPassCreateInfo2 renderPassCreateInfo = Initializers::InitRenderPassCreateInfo(2,
                 attachmentDescriptions, 1, &subPassDescription);
+
+            VkSubpassDependency2 colorDependency = {};
+            colorDependency.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2;
+            colorDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+            colorDependency.dstSubpass = 0;
+            colorDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            colorDependency.srcAccessMask = 0;
+            colorDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            colorDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+            VkSubpassDependency2 depthDependency = {};
+            depthDependency.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2;
+            depthDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+            depthDependency.dstSubpass = 0;
+            depthDependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            depthDependency.srcAccessMask = 0;
+            depthDependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            depthDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+            VkSubpassDependency2 dependencies[] = { colorDependency, depthDependency };
+            renderPassCreateInfo.dependencyCount = 2;
+            renderPassCreateInfo.pDependencies = dependencies;
+
             VK_CHECK(vkCreateRenderPass2(device, &renderPassCreateInfo, nullptr, &defaultRenderPass))
 
             imageViews.resize(imageCount);

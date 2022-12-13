@@ -15,9 +15,9 @@ layout(push_constant) uniform constants {
 void main() {
 
 	positionVS = vec3(PushConstants.pMatrix * PushConstants.vMatrix * vec4(vPosition, 1.0));
-	normalVS = vec3(PushConstants.pMatrix * PushConstants.vMatrix * vec4(vNormal, 0.0));
+	normalVS = vNormal;
 
 	//output the position of each vertex
-	gl_Position = vec4(positionVS, 1.0f);
+	gl_Position = PushConstants.pMatrix * PushConstants.vMatrix * vec4(vPosition, 1.0);
 
 }

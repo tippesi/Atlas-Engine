@@ -13,6 +13,14 @@ namespace Atlas {
 
         }
 
+        void VulkanMesh::SetTransform(mat4 matrix) {
+
+            data.SetTransform(matrix);
+
+            UploadData(data);
+
+        }
+
         VkPipelineVertexInputStateCreateInfo VulkanMesh::GetVertexInputState() {
 
             bindingDescriptions.clear();

@@ -30,13 +30,15 @@ namespace Atlas {
         public:
             VulkanMesh(MeshData& meshData);
 
+            void SetTransform(mat4 transform);
+
+            VkPipelineVertexInputStateCreateInfo GetVertexInputState();
+
             Graphics::IndexBuffer indexBuffer;
             Graphics::VertexBuffer vertexBuffer;
             Graphics::VertexBuffer normalBuffer;
             Graphics::VertexBuffer tangentBuffer;
             Graphics::VertexBuffer texCoordBuffer;
-
-            VkPipelineVertexInputStateCreateInfo GetVertexInputState();
 
             MeshData data;
 

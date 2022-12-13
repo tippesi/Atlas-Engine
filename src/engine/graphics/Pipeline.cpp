@@ -5,7 +5,7 @@ namespace Atlas {
     namespace Graphics {
 
         Pipeline::Pipeline(MemoryManager *memManager, GraphicsPipelineDesc desc) :
-            shader(desc.shader), memoryManager(memManager) {
+            bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS), shader(desc.shader), memoryManager(memManager) {
 
             if (desc.shader->isCompute) return;
 
@@ -69,7 +69,7 @@ namespace Atlas {
         }
 
         Pipeline::Pipeline(MemoryManager *memManager, ComputePipelineDesc desc) :
-            shader(desc.shader), memoryManager(memManager) {
+            bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE), shader(desc.shader), memoryManager(memManager) {
 
             // TODO..
 

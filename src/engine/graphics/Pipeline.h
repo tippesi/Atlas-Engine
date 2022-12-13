@@ -20,7 +20,7 @@ namespace Atlas {
             VkPipelineInputAssemblyStateCreateInfo assemblyInputInfo =
                 Initializers::InitPipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
             VkPipelineDepthStencilStateCreateInfo depthStencilInputInfo =
-                Initializers::InitPipelineDepthStencilStateCreateInfo(true, true, VK_COMPARE_OP_LESS);
+                Initializers::InitPipelineDepthStencilStateCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
             VkPipelineRasterizationStateCreateInfo rasterizer =
                 Initializers::InitPipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL);
             VkPipelineColorBlendAttachmentState colorBlendAttachment =
