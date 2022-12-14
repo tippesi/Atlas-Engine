@@ -8,8 +8,22 @@ namespace Atlas {
 
     namespace Graphics {
 
+        enum BufferDomain {
+            Device = 0,
+            Host = 1
+        };
+
+        enum BufferHostAccess {
+            Sequential = 0,
+            Random = 1
+        };
+
         struct BufferDesc {
             VkBufferUsageFlags usageFlags;
+
+            BufferDomain domain = BufferDomain::Device;
+            // This one is only used when accessing data from the host directly
+            BufferHostAccess hostAccess = BufferHostAccess::Random;
 
             void* data = nullptr;
             size_t size;
@@ -23,11 +37,20 @@ namespace Atlas {
 
             void SetData(void* data, size_t offset, size_t length);
 
+            void Map();
+
+            void Unmap();
+
             VkBuffer buffer;
             VmaAllocation allocation;
 
+            BufferDomain domain;
+
         private:
             MemoryManager* memoryManager;
+
+            bool isMapped = false;
+            void* mappedData = nullptr;
 
         };
 

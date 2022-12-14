@@ -4,6 +4,8 @@
 
 #include <spirv_reflect.h>
 #include <cassert>
+#include <unordered_map>
+#include <string>
 
 namespace Atlas {
 
@@ -87,6 +89,23 @@ namespace Atlas {
             for (auto& pushRange : pushConstantRanges)
                 pushRange.range.stageFlags |= allStageFlags;
 
+            std::unordered_map<std::string, ShaderBinding> bindings;
+
+            for (auto& shaderModule : shaderModules) {
+                for (auto& bindGroup : shaderModule.bindGroups) {
+                    for (auto& binding : bindGroup.bindings) {
+                        if (bindings.contains(binding.name)) {
+                            bindings[binding.name].layoutBinding.stageFlags |= shaderModule.shaderStageFlag;
+                        }
+                        else {
+                            bindings[binding.name] = binding;
+                        }
+                    }
+                }
+            }
+
+
+
             isComplete = true;
 
         }
@@ -140,6 +159,40 @@ namespace Atlas {
                 [](PushConstantRange& range0, PushConstantRange& range1) {
                     return range0.name < range1.name;
                 });
+
+            uint32_t descSetCount = 0;
+            result = spvReflectEnumerateDescriptorSets(&module, &descSetCount, nullptr);
+            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
+
+            std::vector<SpvReflectDescriptorSet*> descSets(descSetCount);
+            result = spvReflectEnumerateDescriptorSets(&module, &descSetCount, descSets.data());
+            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
+
+            for (auto descriptorSet : descSets) {
+                ShaderBindGroup bindGroup;
+
+                for(uint32_t i = 0; i < descriptorSet->binding_count; i++) {
+                    auto descriptorBinding = descriptorSet->bindings[i];
+
+                    ShaderBinding binding;
+
+                    binding.name.assign(descriptorBinding->name);
+                    binding.set = descriptorBinding->set;
+
+                    binding.layoutBinding.binding = descriptorBinding->binding;
+                    binding.layoutBinding.descriptorCount = descriptorBinding->count;
+                    binding.layoutBinding.descriptorType = (VkDescriptorType)descriptorBinding->descriptor_type;
+                    binding.layoutBinding.stageFlags = shaderModule.shaderStageFlag;
+
+                    binding.layoutBinding.descriptorType =
+                        binding.layoutBinding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ?
+                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : binding.layoutBinding.descriptorType;
+
+                    bindGroup.bindings.push_back(binding);
+                }
+
+                shaderModule.bindGroups.push_back(bindGroup);
+            }
 
             spvReflectDestroyShaderModule(&module);
 
