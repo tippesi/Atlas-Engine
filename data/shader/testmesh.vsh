@@ -13,17 +13,16 @@ layout(push_constant) uniform constants {
 } PushConstants;
 
 layout(set = 0, binding = 0) uniform  CameraBuffer{
-	mat4 view;
-	mat4 proj;
-	mat4 viewproj;
+	mat4 vMatrix;
+	mat4 pMatrix;
 } cameraData;
 
 void main() {
 
-	positionVS = vec3(PushConstants.pMatrix * PushConstants.vMatrix * vec4(vPosition, 1.0));
+	positionVS = vec3(cameraData.pMatrix * cameraData.vMatrix * vec4(vPosition, 1.0));
 	normalVS = vNormal;
 
 	//output the position of each vertex
-	gl_Position = PushConstants.pMatrix * PushConstants.vMatrix * vec4(vPosition, 1.0);
+	gl_Position = cameraData.pMatrix * cameraData.vMatrix * vec4(vPosition, 1.0);
 
 }

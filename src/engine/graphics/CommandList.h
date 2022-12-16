@@ -75,6 +75,39 @@ namespace Atlas {
             Pipeline* pipelineInUse = nullptr;
 
         private:
+            struct DescriptorBindingData {
+                Buffer* buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                Image* images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+
+                VkDescriptorSet sets[DESCRIPTOR_SET_COUNT];
+
+                DescriptorBindingData() {
+                    for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+                        sets[i] = nullptr;
+                    }
+                }
+
+                void Reset() {
+                    for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+                        for (uint32_t j = 0; j <  BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                            buffers[i][j] = nullptr;
+                            images[i][j] = nullptr;
+                        }
+                    }
+                }
+
+                bool IsEqual(const DescriptorBindingData& that, uint32_t set) {
+                    for (uint32_t i = 0; i < BINDINGS_PER_DESCRIPTOR_SET; i++) {
+                        if (buffers[set][i] != that.buffers[set][i] ||
+                            images[set][i] != that.images[set][i])
+                            return false;
+                    }
+                    return true;
+                }
+            }descriptorBindingData, prevDescriptorBindingData;
+
+            void BindDescriptorSets();
+
             const VkExtent2D GetRenderPassExtent() const;
 
             VkDevice device;

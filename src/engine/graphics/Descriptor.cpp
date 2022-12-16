@@ -18,11 +18,28 @@ namespace Atlas {
 
         }
 
-        DescriptorAllocation DescriptorPool::Allocate(const DescriptorAllocationDesc &desc) {
+        VkDescriptorSet DescriptorPool::Allocate(VkDescriptorSetLayout layout) {
 
-            DescriptorAllocation allocation;
+            VkDescriptorSetAllocateInfo allocInfo = {};
+            allocInfo.pNext = nullptr;
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = pools.back();
+            allocInfo.descriptorSetCount = 1;
+            allocInfo.pSetLayouts = &layout;
 
+            VkDescriptorSet set;
+            auto result = vkAllocateDescriptorSets(memoryManager->device, &allocInfo, &set);
+            // Handle the pool out of memory error by allocating a new pool
+            if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
+                pools.push_back(InitPool());
+                allocInfo.descriptorPool = pools.back();
+                VK_CHECK(vkAllocateDescriptorSets(memoryManager->device, &allocInfo, &set))
+            }
+            else {
+                VK_CHECK(result);
+            }
 
+            return set;
 
         }
 

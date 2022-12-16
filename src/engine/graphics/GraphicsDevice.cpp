@@ -234,6 +234,7 @@ namespace Atlas {
             // Unlock all commandLists for use in next frame (or new current frame,
             // however you want to call it)
             for (auto commandList : nextFrameData->commandLists) {
+                commandList->descriptorBindingData.Reset();
                 commandList->isLocked = false;
             }
 

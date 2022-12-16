@@ -20,6 +20,9 @@ namespace Atlas {
 
             descriptorPool = new DescriptorPool(memManager);
 
+            descriptorBindingData.Reset();
+            prevDescriptorBindingData.Reset();
+
             isComplete = true;
 
         }
@@ -169,14 +172,75 @@ namespace Atlas {
 
         }
 
+        void CommandList::BindBuffer(Buffer *buffer, uint32_t set, uint32_t binding) {
+
+            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point not allowed for use");
+
+            descriptorBindingData.buffers[set][binding] = buffer;
+
+        }
+
         void CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
             int32_t vertexOffset, uint32_t firstInstance) {
 
             assert(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
-
             assert(indexCount && instanceCount && "Index or instance count should not be zero");
+
+            BindDescriptorSets();
+
             vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+
+        }
+
+        void CommandList::BindDescriptorSets() {
+
+            VkWriteDescriptorSet setWrites[2 * BINDINGS_PER_DESCRIPTOR_SET];
+            VkDescriptorBufferInfo bufferInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
+
+            auto shader = pipelineInUse->shader;
+
+            for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+
+                if (!prevDescriptorBindingData.IsEqual(descriptorBindingData, i)) {
+                    uint32_t bindingCounter = 0;
+
+                    descriptorBindingData.sets[i] = descriptorPool->Allocate(shader->sets[i].layout);
+
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                        if (!descriptorBindingData.buffers[i][j]) continue;
+                        const auto& binding = shader->sets[i].bindings[j];
+
+                        auto& bufferInfo = bufferInfos[bindingCounter];
+                        bufferInfo.offset = 0;
+                        bufferInfo.buffer = descriptorBindingData.buffers[i][j]->buffer;
+                        bufferInfo.range = binding.size;
+
+                        auto& setWrite = setWrites[bindingCounter++];
+                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        setWrite.pNext = nullptr;
+                        setWrite.dstBinding = binding.layoutBinding.binding;
+                        setWrite.dstArrayElement = 0;
+                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.descriptorCount = 1;
+                        setWrite.descriptorType = binding.layoutBinding.descriptorType;
+                        setWrite.pBufferInfo = &bufferInfo;
+                    }
+
+                    vkUpdateDescriptorSets(device, bindingCounter, setWrites, 0, nullptr);
+                }
+
+                if (descriptorBindingData.sets[i] != nullptr) {
+                    uint32_t offset = 0;
+                    vkCmdBindDescriptorSets(commandBuffer, pipelineInUse->bindPoint,
+                        pipelineInUse->layout, i, 1, &descriptorBindingData.sets[i], 1, &offset);
+                }
+
+            }
+
+            prevDescriptorBindingData = descriptorBindingData;
+            descriptorBindingData.Reset();
 
         }
 

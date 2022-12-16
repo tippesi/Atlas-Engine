@@ -75,9 +75,9 @@ namespace Atlas {
                     stage.shaderStage, shaderModules[i].module
                     ));
 
+                shaderModules[i].shaderStageFlag = stage.shaderStage;
                 GenerateReflectionData(shaderModules[i], stage);
 
-                shaderModules[i].shaderStageFlag = stage.shaderStage;
                 allStageFlags |= shaderModules[i].shaderStageFlag;
 
             }
@@ -107,9 +107,11 @@ namespace Atlas {
 
             for (auto& [key, binding] : bindings) {
 
-                auto idx = sets[binding.set].bindingCount++;
+                auto layoutIdx = sets[binding.set].bindingCount++;
+
+                auto idx = binding.layoutBinding.binding;
                 sets[binding.set].bindings[idx] = binding;
-                sets[binding.set].layoutBindings[idx] = binding.layoutBinding;
+                sets[binding.set].layoutBindings[layoutIdx] = binding.layoutBinding;
 
             }
 

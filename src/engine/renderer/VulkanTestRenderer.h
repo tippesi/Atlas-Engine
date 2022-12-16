@@ -26,9 +26,16 @@ namespace Atlas {
             Graphics::Pipeline* meshPipeline;
             Graphics::Buffer* buffer;
 
+            Graphics::Buffer* uniformBuffer[2];
+
             Mesh::VulkanMesh* mesh;
 
             struct PushConstants {
+                mat4 vMatrix;
+                mat4 pMatrix;
+            };
+
+            struct Uniforms {
                 mat4 vMatrix;
                 mat4 pMatrix;
             };

@@ -46,6 +46,8 @@ namespace Atlas {
             VkPhysicalDevice physicalDevice;
             VkDevice device;
 
+            VkPhysicalDeviceProperties deviceProperties;
+
             MemoryUploadManager* uploadManager;
 
         private:

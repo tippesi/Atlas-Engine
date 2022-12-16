@@ -52,7 +52,6 @@ namespace Atlas {
         };
 
         struct ShaderDescriptorSet {
-
             ShaderDescriptorBinding bindings[BINDINGS_PER_DESCRIPTOR_SET];
             uint32_t bindingCount = 0;
 
@@ -79,7 +78,6 @@ namespace Atlas {
 
             std::vector<ShaderModule> shaderModules;
             std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos;
-            std::vector<VkDescriptorSetLayoutCreateInfo> descriptorLayoutCreateInfos;
 
             std::vector<PushConstantRange> pushConstantRanges;
             ShaderDescriptorSet sets[DESCRIPTOR_SET_COUNT];

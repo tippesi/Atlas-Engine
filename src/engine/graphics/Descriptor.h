@@ -27,7 +27,7 @@ namespace Atlas {
 
             void Reset();
 
-            DescriptorAllocation Allocate(const DescriptorAllocationDesc& desc);
+            VkDescriptorSet Allocate(VkDescriptorSetLayout layout);
 
         private:
             VkDescriptorPool InitPool();

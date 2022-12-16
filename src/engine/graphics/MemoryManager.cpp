@@ -22,6 +22,8 @@ namespace Atlas {
             allocatorInfo.pVulkanFunctions = &vulkanFunctions;
             VK_CHECK(vmaCreateAllocator(&allocatorInfo, &allocator))
 
+            vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+
             uploadManager = new MemoryUploadManager(this, transferQueueFamilyIndex, transferQueue);
 
         }

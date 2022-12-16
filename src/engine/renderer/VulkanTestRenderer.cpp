@@ -68,10 +68,21 @@ namespace Atlas {
                 meshPipeline = device->CreatePipeline(meshPipelineDesc);
             }
 
+            {
+                auto bufferDesc = Graphics::BufferDesc{
+                    .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    .domain = Graphics::BufferDomain::Host,
+                    .size = sizeof(Uniforms)
+                };
+                uniformBuffer[0] = device->CreateBuffer(bufferDesc);
+                uniformBuffer[1] = device->CreateBuffer(bufferDesc);
+            }
 
         }
 
         void VulkanTestRenderer::Render(Camera* camera) {
+
+            static int32_t frameIdx = 0;
 
             auto blue = abs(sin(Clock::Get()));
 
@@ -91,6 +102,14 @@ namespace Atlas {
                 .pMatrix = camera->projectionMatrix
             };
 
+            auto uniforms = Uniforms {
+                .vMatrix = camera->viewMatrix,
+                .pMatrix = camera->projectionMatrix
+            };
+            uniformBuffer[frameIdx % 2]->SetData(&uniforms, 0, sizeof(Uniforms));
+
+            auto size = sizeof(Uniforms);
+
             auto pushConstantRange = meshShader->GetPushConstantRange("constants");
             commandList->PushConstants(pushConstantRange, &pushConstants);
 
@@ -99,6 +118,8 @@ namespace Atlas {
             commandList->BindVertexBuffer(&mesh->texCoordBuffer);
             commandList->BindVertexBuffer(&mesh->tangentBuffer);
             commandList->BindIndexBuffer(&mesh->indexBuffer);
+
+            commandList->BindBuffer(uniformBuffer[frameIdx % 2], 0, 0);
 
             commandList->DrawIndexed(mesh->data.GetIndexCount());
 
@@ -110,6 +131,8 @@ namespace Atlas {
 
             device->SubmitCommandList(commandList);
             device->CompleteFrame();
+
+            frameIdx++;
 
         }
 
