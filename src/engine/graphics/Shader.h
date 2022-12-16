@@ -43,16 +43,21 @@ namespace Atlas {
             VkPushConstantRange range = {};
         };
 
-        struct ShaderBinding {
+        struct ShaderDescriptorBinding {
             std::string name;
 
             uint32_t set = 0;
+            uint32_t size = 0;
             VkDescriptorSetLayoutBinding layoutBinding;
         };
 
-        struct ShaderBindGroup {
-            std::vector<ShaderBinding> bindings;
+        struct ShaderDescriptorSet {
+
+            ShaderDescriptorBinding bindings[BINDINGS_PER_DESCRIPTOR_SET];
+            uint32_t bindingCount = 0;
+
             VkDescriptorSetLayout layout;
+            VkDescriptorSetLayoutBinding layoutBindings[BINDINGS_PER_DESCRIPTOR_SET];
         };
 
         struct ShaderModule {
@@ -60,7 +65,7 @@ namespace Atlas {
             VkShaderStageFlagBits shaderStageFlag;
 
             std::vector<PushConstantRange> pushConstantRanges;
-            std::vector<ShaderBindGroup> bindGroups;
+            std::vector<ShaderDescriptorSet> sets;
         };
 
         class Shader {
@@ -74,9 +79,10 @@ namespace Atlas {
 
             std::vector<ShaderModule> shaderModules;
             std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos;
+            std::vector<VkDescriptorSetLayoutCreateInfo> descriptorLayoutCreateInfos;
 
             std::vector<PushConstantRange> pushConstantRanges;
-            std::vector<ShaderBindGroup> bindGroups;
+            ShaderDescriptorSet sets[DESCRIPTOR_SET_COUNT];
 
             bool isComplete = false;
             bool isCompute = true;

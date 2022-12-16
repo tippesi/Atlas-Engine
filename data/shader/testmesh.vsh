@@ -12,6 +12,12 @@ layout(push_constant) uniform constants {
 	mat4 pMatrix;
 } PushConstants;
 
+layout(set = 0, binding = 0) uniform  CameraBuffer{
+	mat4 view;
+	mat4 proj;
+	mat4 viewproj;
+} cameraData;
+
 void main() {
 
 	positionVS = vec3(PushConstants.pMatrix * PushConstants.vMatrix * vec4(vPosition, 1.0));

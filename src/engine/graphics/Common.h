@@ -10,6 +10,9 @@
 #include <cassert>
 
 #define FRAME_DATA_COUNT 2
+#define DESCRIPTOR_POOL_SIZE 128
+#define DESCRIPTOR_SET_COUNT 4
+#define BINDINGS_PER_DESCRIPTOR_SET 16
 
 #define VK_CHECK(x) {                                                               \
                 VkResult err = x;                                                   \

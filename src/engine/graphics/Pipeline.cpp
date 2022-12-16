@@ -94,6 +94,18 @@ namespace Atlas {
                 createInfo.pPushConstantRanges = pushConstantRanges.data();
             }
 
+            std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+            for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+                // We need to check if there are any bindings at all
+                if (!shader->sets[i].bindingCount) continue;
+                descriptorSetLayouts.push_back(shader->sets[i].layout);
+            }
+
+            if (descriptorSetLayouts.size() > 0) {
+                createInfo.setLayoutCount = uint32_t(descriptorSetLayouts.size());
+                createInfo.pSetLayouts = descriptorSetLayouts.data();
+            }
+
             VK_CHECK(vkCreatePipelineLayout(memoryManager->device, &createInfo, nullptr, &layout))
 
         }

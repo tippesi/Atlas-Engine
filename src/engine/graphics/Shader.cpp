@@ -89,11 +89,12 @@ namespace Atlas {
             for (auto& pushRange : pushConstantRanges)
                 pushRange.range.stageFlags |= allStageFlags;
 
-            std::unordered_map<std::string, ShaderBinding> bindings;
+            std::unordered_map<std::string, ShaderDescriptorBinding> bindings;
 
             for (auto& shaderModule : shaderModules) {
-                for (auto& bindGroup : shaderModule.bindGroups) {
-                    for (auto& binding : bindGroup.bindings) {
+                for (auto& set : shaderModule.sets) {
+                    for (uint32_t i = 0; i < set.bindingCount; i++) {
+                        auto& binding = set.bindings[i];
                         if (bindings.contains(binding.name)) {
                             bindings[binding.name].layoutBinding.stageFlags |= shaderModule.shaderStageFlag;
                         }
@@ -104,7 +105,28 @@ namespace Atlas {
                 }
             }
 
+            for (auto& [key, binding] : bindings) {
 
+                auto idx = sets[binding.set].bindingCount++;
+                sets[binding.set].bindings[idx] = binding;
+                sets[binding.set].layoutBindings[idx] = binding.layoutBinding;
+
+            }
+
+            for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+                // We need to check if there are any bindings at all
+                if (!sets[i].bindingCount) continue;
+
+                VkDescriptorSetLayoutCreateInfo setInfo = {};
+                setInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                setInfo.pNext = nullptr;
+
+                setInfo.bindingCount = sets[i].bindingCount;
+                setInfo.flags = 0;
+                setInfo.pBindings = sets[i].layoutBindings;
+
+                VK_CHECK(vkCreateDescriptorSetLayout(memManager->device, &setInfo, nullptr, &sets[i].layout))
+            }
 
             isComplete = true;
 
@@ -147,7 +169,7 @@ namespace Atlas {
 
             for (auto pushConstant : pushConstants) {
                 PushConstantRange range;
-                range.name.assign(pushConstant->name);
+                range.name.assign(spvReflectBlockVariableTypeName(pushConstant));
                 range.range.offset = pushConstant->offset;
                 range.range.size = pushConstant->size;
                 range.range.stageFlags = shaderModule.shaderStageFlag;
@@ -169,15 +191,20 @@ namespace Atlas {
             assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
 
             for (auto descriptorSet : descSets) {
-                ShaderBindGroup bindGroup;
+                ShaderDescriptorSet bindGroup;
+
+                assert(descriptorSet->binding_count <= BINDINGS_PER_DESCRIPTOR_SET && "Too many bindings for this shader");
 
                 for(uint32_t i = 0; i < descriptorSet->binding_count; i++) {
                     auto descriptorBinding = descriptorSet->bindings[i];
 
-                    ShaderBinding binding;
+                    ShaderDescriptorBinding binding;
 
                     binding.name.assign(descriptorBinding->name);
                     binding.set = descriptorBinding->set;
+                    binding.size = descriptorBinding->block.size;
+
+                    assert(binding.set < DESCRIPTOR_SET_COUNT && "Too many descriptor sets for this shader");
 
                     binding.layoutBinding.binding = descriptorBinding->binding;
                     binding.layoutBinding.descriptorCount = descriptorBinding->count;
@@ -188,10 +215,11 @@ namespace Atlas {
                         binding.layoutBinding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ?
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : binding.layoutBinding.descriptorType;
 
-                    bindGroup.bindings.push_back(binding);
+                    bindGroup.bindings[i] = binding;
+                    bindGroup.bindingCount++;
                 }
 
-                shaderModule.bindGroups.push_back(bindGroup);
+                shaderModule.sets.push_back(bindGroup);
             }
 
             spvReflectDestroyShaderModule(&module);

@@ -25,6 +25,8 @@ namespace Atlas {
             SelectPhysicalDevice(instance->instance,
                 surface->GetNativeSurface(), requiredExtensions);
 
+            vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+
             float priority = 1.0f;
             auto queueCreateInfos = CreateQueueInfos(&priority);
 
@@ -161,7 +163,7 @@ namespace Atlas {
 
             if (it == commandLists.end()) {
                 auto queueFamilyIndex = queueFamilyIndices.queueFamilies[queueType];
-                CommandList* cmd = new CommandList(device, queueType, queueFamilyIndex.value());
+                CommandList* cmd = new CommandList(memoryManager, queueType, queueFamilyIndex.value());
                 commandLists.push_back(cmd);
                 return cmd;
             }

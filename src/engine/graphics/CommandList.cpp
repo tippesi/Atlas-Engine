@@ -6,8 +6,8 @@ namespace Atlas {
 
     namespace Graphics {
 
-        CommandList::CommandList(VkDevice device, QueueType queueType, uint32_t queueFamilyIndex) : device(device),
-            queueType(queueType), queueFamilyIndex(queueFamilyIndex) {
+        CommandList::CommandList(MemoryManager* memManager, QueueType queueType, uint32_t queueFamilyIndex) :
+            device(memManager->device), queueType(queueType), queueFamilyIndex(queueFamilyIndex) {
 
             VkCommandPoolCreateInfo poolCreateInfo = Initializers::InitCommandPoolCreateInfo(queueFamilyIndex);
             VK_CHECK(vkCreateCommandPool(device, &poolCreateInfo, nullptr, &commandPool))
@@ -18,11 +18,15 @@ namespace Atlas {
             VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
             VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore))
 
+            descriptorPool = new DescriptorPool(memManager);
+
             isComplete = true;
 
         }
 
         CommandList::~CommandList() {
+
+            delete descriptorPool;
 
             vkDestroySemaphore(device, semaphore, nullptr);
             vkDestroyCommandPool(device, commandPool, nullptr);

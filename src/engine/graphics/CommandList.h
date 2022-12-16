@@ -2,10 +2,12 @@
 #define AE_GRAPHICSCOMMANDLIST_H
 
 #include "Common.h"
+#include "MemoryManager.h"
 #include "SwapChain.h"
 #include "RenderPass.h"
 #include "Pipeline.h"
 #include "Buffer.h"
+#include "Descriptor.h"
 
 #include <atomic>
 
@@ -26,7 +28,7 @@ namespace Atlas {
             friend GraphicsDevice;
 
         public:
-            CommandList(VkDevice device, QueueType queueType, uint32_t queueFamilyIndex);
+            CommandList(MemoryManager* memManager, QueueType queueType, uint32_t queueFamilyIndex);
 
             ~CommandList();
 
@@ -52,6 +54,10 @@ namespace Atlas {
 
             void BindVertexBuffer(VertexBuffer* buffer);
 
+            void BindBuffer(Buffer* buffer, uint32_t set, uint32_t binding);
+
+            void BindImage(Image* buffer, uint32_t set, uint32_t binding);
+
             void DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0,
                 int32_t vertexOffset = 0, uint32_t firstInstance = 0);
 
@@ -72,6 +78,8 @@ namespace Atlas {
             const VkExtent2D GetRenderPassExtent() const;
 
             VkDevice device;
+            DescriptorPool* descriptorPool = nullptr;
+
             std::atomic_bool isLocked = false;
 
         };

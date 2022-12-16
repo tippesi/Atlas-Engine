@@ -58,6 +58,8 @@ namespace Atlas {
             SwapChain* swapChain = nullptr;
             MemoryManager* memoryManager = nullptr;
 
+            VkPhysicalDeviceProperties deviceProperties;
+
             bool isComplete = false;
 
         private:
