@@ -48,6 +48,7 @@ namespace Atlas {
 
             uint32_t set = 0;
             uint32_t size = 0;
+            uint32_t arrayElement = 0;
             VkDescriptorSetLayoutBinding layoutBinding;
         };
 

@@ -1,6 +1,10 @@
 #include "MemoryUploadManager.h"
 #include "MemoryManager.h"
 
+#include "Buffer.h"
+#include "Image.h"
+#include "Format.h"
+
 #include <cstring>
 
 namespace Atlas {
@@ -31,7 +35,7 @@ namespace Atlas {
 
         }
 
-        void MemoryUploadManager::UploadBufferData(void *data, VkBuffer destinationBuffer,
+        void MemoryUploadManager::UploadBufferData(void *data, Buffer* destinationBuffer,
             VkBufferCopy bufferCopyDesc) {
 
             VkDevice device = memoryManager->device;
@@ -48,7 +52,91 @@ namespace Atlas {
                 Initializers::InitCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
             VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo));
 
-            vkCmdCopyBuffer(commandBuffer, stagingAllocation.buffer, destinationBuffer, 1, &bufferCopyDesc);
+            vkCmdCopyBuffer(commandBuffer, stagingAllocation.buffer, destinationBuffer->buffer, 1, &bufferCopyDesc);
+
+            VK_CHECK(vkEndCommandBuffer(commandBuffer));
+
+            VkSubmitInfo submit = Initializers::InitSubmitInfo(&commandBuffer);
+            VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
+
+            // We wait here until the operation is finished
+            vkWaitForFences(device, 1, &fence, true, 9999999999);
+            vkResetFences(device, 1, &fence);
+
+            vkResetCommandPool(device, commandPool, 0);
+            DestroyStagingBuffer(stagingAllocation);
+
+        }
+
+        void MemoryUploadManager::UploadImageData(void *data, Image* image, VkOffset3D offset, VkExtent3D extent) {
+
+            VkDevice device = memoryManager->device;
+            VmaAllocator allocator = memoryManager->allocator;
+
+            auto formatSize = GetFormatSize(image->format);
+            auto pixelCount = image->width * image->height * image->depth;
+            auto stagingAllocation = CreateStagingBuffer(pixelCount * formatSize);
+
+            void* destination;
+            vmaMapMemory(allocator, stagingAllocation.allocation, &destination);
+            std::memcpy(destination, data, pixelCount * formatSize);
+            vmaUnmapMemory(allocator, stagingAllocation.allocation);
+
+            VkCommandBufferBeginInfo cmdBeginInfo =
+                Initializers::InitCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+            VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo));
+
+            VkImageSubresourceRange range;
+            range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            range.baseMipLevel = 0;
+            range.levelCount = 1;
+            range.baseArrayLayer = offset.z;
+            range.layerCount = extent.depth;
+
+            VkImageMemoryBarrier imageBarrier = {};
+            // Create first barrier to transition image
+            {
+                imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                imageBarrier.image = image->image;
+                imageBarrier.subresourceRange = range;
+                imageBarrier.srcAccessMask = 0;
+                imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+                vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+            }
+
+            // Copy buffer to image
+            {
+                VkBufferImageCopy copyRegion = {};
+                copyRegion.bufferOffset = 0;
+                copyRegion.bufferRowLength = 0;
+                copyRegion.bufferImageHeight = 0;
+                copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                copyRegion.imageSubresource.mipLevel = 0;
+                copyRegion.imageSubresource.baseArrayLayer = 0;
+                copyRegion.imageSubresource.baseArrayLayer = offset.z;
+                copyRegion.imageSubresource.layerCount = extent.depth;
+                copyRegion.imageOffset = offset;
+                copyRegion.imageExtent = extent;
+
+                vkCmdCopyBufferToImage(commandBuffer, stagingAllocation.buffer, image->image,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+            }
+
+            // Transition image again to make it shader readable
+            {
+                imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                imageBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+                image->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
 
             VK_CHECK(vkEndCommandBuffer(commandBuffer));
 

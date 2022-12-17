@@ -268,7 +268,7 @@ namespace Atlas {
             }
 
             VkImageViewCreateInfo InitImageViewCreateInfo(VkFormat format, VkImage image,
-                VkImageAspectFlags aspectFlags, VkImageViewType viewType) {
+                VkImageAspectFlags aspectFlags, VkImageViewType viewType, size_t layerCount) {
 
                 VkImageViewCreateInfo info = {};
                 info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -279,7 +279,7 @@ namespace Atlas {
                 info.subresourceRange.baseMipLevel = 0;
                 info.subresourceRange.levelCount = 1;
                 info.subresourceRange.baseArrayLayer = 0;
-                info.subresourceRange.layerCount = 1;
+                info.subresourceRange.layerCount = layerCount;
                 info.subresourceRange.aspectMask = aspectFlags;
 
                 return info;
@@ -325,6 +325,21 @@ namespace Atlas {
                 attributeDescription.offset = 0;
 
                 return attributeDescription;
+
+            }
+
+            VkSamplerCreateInfo InitSamplerCreateInfo(VkFilter filters, VkSamplerAddressMode samplerAddressMode) {
+
+                VkSamplerCreateInfo info = {};
+                info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+                info.pNext = nullptr;
+                info.magFilter = filters;
+                info.minFilter = filters;
+                info.addressModeU = samplerAddressMode;
+                info.addressModeV = samplerAddressMode;
+                info.addressModeW = samplerAddressMode;
+
+                return info;
 
             }
 

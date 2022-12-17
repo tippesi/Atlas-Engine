@@ -58,6 +58,8 @@ namespace Atlas {
             SwapChain* swapChain = nullptr;
             MemoryManager* memoryManager = nullptr;
 
+            VkPhysicalDevice physicalDevice;
+            VkDevice device;
             VkPhysicalDeviceProperties deviceProperties;
 
             bool isComplete = false;
@@ -95,15 +97,12 @@ namespace Atlas {
 
             FrameData* GetFrameData();
 
-            VkPhysicalDevice physicalDevice;
-            VkDevice device;
-
             QueueFamilyIndices queueFamilyIndices;
 
             std::vector<Shader*> shaders;
             std::vector<Pipeline*> pipelines;
             std::vector<Buffer*> buffers;
-            std::vector<Image*> textures;
+            std::vector<Image*> images;
 
             int32_t frameIndex = 0;
             FrameData frameData[FRAME_DATA_COUNT];

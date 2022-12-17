@@ -205,6 +205,7 @@ namespace Atlas {
                     binding.name.assign(descriptorBinding->name);
                     binding.set = descriptorBinding->set;
                     binding.size = descriptorBinding->block.size;
+                    binding.arrayElement = 0;
 
                     assert(binding.set < DESCRIPTOR_SET_COUNT && "Too many descriptor sets for this shader");
 

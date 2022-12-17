@@ -8,6 +8,7 @@
 #include "Pipeline.h"
 #include "Buffer.h"
 #include "Descriptor.h"
+#include "Sampler.h"
 
 #include <atomic>
 
@@ -56,7 +57,11 @@ namespace Atlas {
 
             void BindBuffer(Buffer* buffer, uint32_t set, uint32_t binding);
 
-            void BindImage(Image* buffer, uint32_t set, uint32_t binding);
+            void BindImage(Image* image, uint32_t set, uint32_t binding);
+
+            void BindImage(Image* image, Sampler* sampler, uint32_t set, uint32_t binding);
+
+            // void ImageBarrier(Image* image, )
 
             void DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0,
                 int32_t vertexOffset = 0, uint32_t firstInstance = 0);
@@ -78,10 +83,12 @@ namespace Atlas {
             struct DescriptorBindingData {
                 Buffer* buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 Image* images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                std::pair<Image*, Sampler*> sampledImages[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
 
                 VkDescriptorSet sets[DESCRIPTOR_SET_COUNT];
 
                 DescriptorBindingData() {
+                    Reset();
                     for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                         sets[i] = nullptr;
                     }
@@ -92,6 +99,7 @@ namespace Atlas {
                         for (uint32_t j = 0; j <  BINDINGS_PER_DESCRIPTOR_SET; j++) {
                             buffers[i][j] = nullptr;
                             images[i][j] = nullptr;
+                            sampledImages[i][j] = { nullptr, nullptr };
                         }
                     }
                 }
@@ -99,7 +107,8 @@ namespace Atlas {
                 bool IsEqual(const DescriptorBindingData& that, uint32_t set) {
                     for (uint32_t i = 0; i < BINDINGS_PER_DESCRIPTOR_SET; i++) {
                         if (buffers[set][i] != that.buffers[set][i] ||
-                            images[set][i] != that.images[set][i])
+                            images[set][i] != that.images[set][i] ||
+                            sampledImages[set][i] != that.sampledImages[set][i])
                             return false;
                     }
                     return true;
@@ -107,6 +116,8 @@ namespace Atlas {
             }descriptorBindingData, prevDescriptorBindingData;
 
             void BindDescriptorSets();
+
+            void ResetDescriptors();
 
             const VkExtent2D GetRenderPassExtent() const;
 

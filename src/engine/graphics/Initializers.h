@@ -58,7 +58,8 @@ namespace Atlas {
                 VkExtent3D extent, VkImageType imageType = VK_IMAGE_TYPE_2D);
 
             VkImageViewCreateInfo InitImageViewCreateInfo(VkFormat format, VkImage image,
-                VkImageAspectFlags aspectFlags, VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D);
+                VkImageAspectFlags aspectFlags, VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D,
+                size_t layerCount = 1);
 
             VkPipelineDepthStencilStateCreateInfo InitPipelineDepthStencilStateCreateInfo(bool depthTest,
                 bool depthWrite, VkCompareOp compareOperation);
@@ -67,6 +68,8 @@ namespace Atlas {
                 VkVertexInputRate inputRate = VK_VERTEX_INPUT_RATE_VERTEX);
 
             VkVertexInputAttributeDescription InitVertexInputAttributeDescription(uint32_t binding, VkFormat format);
+
+            VkSamplerCreateInfo InitSamplerCreateInfo(VkFilter filters, VkSamplerAddressMode samplerAddressMode);
 
         }
 

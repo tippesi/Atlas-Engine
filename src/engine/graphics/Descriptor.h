@@ -1,5 +1,5 @@
-#ifndef AE_DESCRIPTOR_H
-#define AE_DESCRIPTOR_H
+#ifndef AE_GRAPHICSDESCRIPTOR_H
+#define AE_GRAPHICSDESCRIPTOR_H
 
 #include "Common.h"
 #include "MemoryManager.h"

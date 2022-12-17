@@ -8,7 +8,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        enum BufferDomain {
+        enum class BufferDomain {
             Device = 0,
             Host = 1
         };
@@ -64,6 +64,13 @@ namespace Atlas {
             Graphics::Buffer* buffer = nullptr;
             VkVertexInputBindingDescription bindingDescription = {};
             VkVertexInputAttributeDescription attributeDescription = {};
+        };
+
+        struct MultiBuffer {
+            Graphics::Buffer* buffer = nullptr;
+
+        private:
+            Graphics::Buffer* frameBuffer[FRAME_DATA_COUNT];
         };
 
     }

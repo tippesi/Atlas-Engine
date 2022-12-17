@@ -135,7 +135,11 @@ namespace Atlas {
 
         Image* GraphicsDevice::CreateImage(ImageDesc imageDesc) {
 
-            return nullptr;
+            auto image = new Image(this, imageDesc);
+
+            images.push_back(image);
+
+            return image;
 
         }
 
@@ -234,7 +238,7 @@ namespace Atlas {
             // Unlock all commandLists for use in next frame (or new current frame,
             // however you want to call it)
             for (auto commandList : nextFrameData->commandLists) {
-                commandList->descriptorBindingData.Reset();
+                commandList->ResetDescriptors();
                 commandList->isLocked = false;
             }
 

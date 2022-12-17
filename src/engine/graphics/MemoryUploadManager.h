@@ -11,6 +11,8 @@ namespace Atlas {
     namespace Graphics {
 
         class MemoryManager;
+        class Buffer;
+        class Image;
 
         class MemoryUploadManager {
 
@@ -19,9 +21,9 @@ namespace Atlas {
 
             ~MemoryUploadManager();
 
-            void UploadBufferData(void* data, VkBuffer destinationBuffer, VkBufferCopy bufferCopyDesc);
+            void UploadBufferData(void* data, Buffer* buffer, VkBufferCopy bufferCopyDesc);
 
-            void UploadImageData(void* data, VkImage destinationImage);
+            void UploadImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent);
 
         private:
             struct StagingBufferAllocation {

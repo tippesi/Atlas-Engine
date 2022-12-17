@@ -20,9 +20,6 @@ namespace Atlas {
 
             descriptorPool = new DescriptorPool(memManager);
 
-            descriptorBindingData.Reset();
-            prevDescriptorBindingData.Reset();
-
             isComplete = true;
 
         }
@@ -181,6 +178,24 @@ namespace Atlas {
 
         }
 
+        void CommandList::BindImage(Image *image, uint32_t set, uint32_t binding) {
+
+            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point not allowed for use");
+
+            descriptorBindingData.images[set][binding] = image;
+
+        }
+
+        void CommandList::BindImage(Image *image, Sampler *sampler, uint32_t set, uint32_t binding) {
+
+            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point not allowed for use");
+
+            descriptorBindingData.sampledImages[set][binding] = { image, sampler };
+
+        }
+
         void CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
             int32_t vertexOffset, uint32_t firstInstance) {
 
@@ -198,6 +213,7 @@ namespace Atlas {
 
             VkWriteDescriptorSet setWrites[2 * BINDINGS_PER_DESCRIPTOR_SET];
             VkDescriptorBufferInfo bufferInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
+            VkDescriptorImageInfo imageInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
 
             auto shader = pipelineInUse->shader;
 
@@ -208,6 +224,7 @@ namespace Atlas {
 
                     descriptorBindingData.sets[i] = descriptorPool->Allocate(shader->sets[i].layout);
 
+                    // BUFFER
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
                         if (!descriptorBindingData.buffers[i][j]) continue;
                         const auto& binding = shader->sets[i].bindings[j];
@@ -221,11 +238,35 @@ namespace Atlas {
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = binding.layoutBinding.binding;
-                        setWrite.dstArrayElement = 0;
+                        setWrite.dstArrayElement = binding.arrayElement;
                         setWrite.dstSet = descriptorBindingData.sets[i];
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = binding.layoutBinding.descriptorType;
                         setWrite.pBufferInfo = &bufferInfo;
+                    }
+
+                    // SAMPLED IMAGES
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                        if (!descriptorBindingData.sampledImages[i][j].first ||
+                            !descriptorBindingData.sampledImages[i][j].second) continue;
+                        const auto& binding = shader->sets[i].bindings[j];
+
+                        auto [image, sampler] = descriptorBindingData.sampledImages[i][j];
+
+                        auto& imageInfo = imageInfos[bindingCounter];
+                        imageInfo.sampler = sampler->sampler;
+                        imageInfo.imageView = image->view;
+                        imageInfo.imageLayout = image->layout;
+
+                        auto& setWrite = setWrites[bindingCounter++];
+                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        setWrite.pNext = nullptr;
+                        setWrite.dstBinding = binding.layoutBinding.binding;
+                        setWrite.dstArrayElement = binding.arrayElement;
+                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.descriptorCount = 1;
+                        setWrite.descriptorType = binding.layoutBinding.descriptorType;
+                        setWrite.pImageInfo = &imageInfo;
                     }
 
                     vkUpdateDescriptorSets(device, bindingCounter, setWrites, 0, nullptr);
@@ -241,6 +282,14 @@ namespace Atlas {
 
             prevDescriptorBindingData = descriptorBindingData;
             descriptorBindingData.Reset();
+
+        }
+
+        void CommandList::ResetDescriptors() {
+
+            prevDescriptorBindingData.Reset();
+            descriptorBindingData.Reset();
+            descriptorPool->Reset();
 
         }
 
