@@ -4,6 +4,9 @@
 #include "../loader/ModelLoader.h"
 #include "../Clock.h"
 
+#include <thread>
+#include <chrono>
+
 namespace Atlas {
 
     namespace Renderer {
@@ -121,7 +124,15 @@ namespace Atlas {
 
             commandList->BindBuffer(uniformBuffer[frameIdx % 2], 0, 0);
 
-            commandList->DrawIndexed(mesh->data.GetIndexCount());
+            for (auto& subData : mesh->data.subData) {
+
+                auto baseColorTexture = subData.vulkanMaterial->baseColorMap;
+                if (baseColorTexture) {
+                    commandList->BindImage(baseColorTexture->image, baseColorTexture->sampler, 0, 1);
+                }
+
+                commandList->DrawIndexed(subData.indicesCount, 1, subData.indicesOffset);
+            }
 
             // TODO: Implement in command list
             // vkCmdDraw(commandList->commandBuffer, 3, 1, 0, 0);

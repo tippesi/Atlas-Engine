@@ -61,6 +61,8 @@ namespace Atlas {
 
             void BindImage(Image* image, Sampler* sampler, uint32_t set, uint32_t binding);
 
+            void ResetBindings();
+
             // void ImageBarrier(Image* image, )
 
             void DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0,

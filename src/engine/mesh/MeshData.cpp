@@ -131,17 +131,21 @@ namespace Atlas {
 
 			aabb = that.aabb;
 
+            vulkanMaterials.clear();
 			materials.clear();
 			subData.clear();
 
+            vulkanMaterials.resize(that.vulkanMaterials.size());
 			materials.resize(that.materials.size());
 			subData.resize(that.subData.size());
 
 			// We need to refresh the pointers in the sub data
 			for (size_t i = 0; i < that.subData.size(); i++) {
+                vulkanMaterials[i] = that.vulkanMaterials[i];
 				materials[i] = that.materials[i];
 				subData[i] = that.subData[i];
 				subData[i].material = &materials[i];
+				subData[i].vulkanMaterial = &vulkanMaterials[i];
 			}
 
 		}

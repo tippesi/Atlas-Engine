@@ -3,6 +3,7 @@
 
 #include "System.h"
 #include "texture/Texture2D.h"
+#include "texture/VulkanTexture.h"
 #include "texture/Texture2DArray.h"
 #include "loader/ImageLoader.h"
 #include "shader/Shader.h"
@@ -74,6 +75,69 @@ namespace Atlas {
 		void DeleteTextures();
 
 	};
+
+    class VulkanMaterial {
+
+    public:
+        VulkanMaterial();
+
+        VulkanMaterial(const VulkanMaterial& that);
+
+        ~VulkanMaterial();
+
+        VulkanMaterial& operator=(const VulkanMaterial& that);
+
+        bool HasBaseColorMap() const;
+        bool HasOpacityMap() const;
+        bool HasNormalMap() const;
+        bool HasRoughnessMap() const;
+        bool HasMetalnessMap() const;
+        bool HasAoMap() const;
+        bool HasDisplacementMap() const;
+
+        std::string name;
+
+        Texture::VulkanTexture* baseColorMap = nullptr;
+        Texture::VulkanTexture* opacityMap = nullptr;
+        Texture::VulkanTexture* normalMap = nullptr;
+        Texture::VulkanTexture* roughnessMap = nullptr;
+        Texture::VulkanTexture* metalnessMap = nullptr;
+        Texture::VulkanTexture* aoMap = nullptr;
+        Texture::VulkanTexture* displacementMap = nullptr;
+
+        vec3 baseColor = vec3(1.0f);
+        vec3 emissiveColor = vec3(0.0f);
+        vec3 transmissiveColor = vec3(0.0f);
+
+        float opacity = 1.0f;
+
+        float roughness = 1.0f;
+        float metalness = 0.0f;
+        float ao = 1.0f;
+
+        float reflectance = 0.5f;
+
+        float normalScale = 0.5f;
+        float displacementScale = 0.01f;
+
+        float tiling = 1.0f;
+
+        std::string baseColorMapPath;
+        std::string opacityMapPath;
+        std::string normalMapPath;
+        std::string roughnessMapPath;
+        std::string metalnessMapPath;
+        std::string aoMapPath;
+        std::string displacementMapPath;
+
+        bool twoSided = false;
+
+    private:
+        void DeepCopy(const VulkanMaterial& that);
+
+        void DeleteTextures();
+
+    };
 
 
 }

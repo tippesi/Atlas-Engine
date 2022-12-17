@@ -49,11 +49,15 @@ namespace Atlas {
 
             Image* CreateImage(ImageDesc imageDesc);
 
+            Sampler* CreateSampler(SamplerDesc samplerDesc);
+
             CommandList* GetCommandList(QueueType queueType = QueueType::GraphicsQueue);
 
             void SubmitCommandList(CommandList* cmd);
 
             void CompleteFrame();
+
+            bool CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags);
 
             SwapChain* swapChain = nullptr;
             MemoryManager* memoryManager = nullptr;
@@ -103,6 +107,7 @@ namespace Atlas {
             std::vector<Pipeline*> pipelines;
             std::vector<Buffer*> buffers;
             std::vector<Image*> images;
+            std::vector<Sampler*> samplers;
 
             int32_t frameIndex = 0;
             FrameData frameData[FRAME_DATA_COUNT];

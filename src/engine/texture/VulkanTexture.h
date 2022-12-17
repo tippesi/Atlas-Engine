@@ -3,6 +3,9 @@
 
 #include "../System.h"
 
+#include "../common/Image.h"
+#include "../loader/ImageLoader.h"
+
 #include "../graphics/Image.h"
 #include "../graphics/Sampler.h"
 
@@ -24,10 +27,19 @@ namespace Atlas {
               * @param wrapping The wrapping of the texture. Controls texture border behaviour.
               * @param filtering The filtering of the texture.
               */
-            VulkanTexture(int32_t width, int32_t height, int32_t depth, VkFormat format,
+            VulkanTexture(uint32_t width, uint32_t height, uint32_t depth, VkFormat format,
                 VkSamplerAddressMode wrapping = VK_SAMPLER_ADDRESS_MODE_REPEAT,
                 VkFilter filtering = VK_FILTER_NEAREST,
                 bool anisotropicFiltering = false, bool generateMipMaps = false);
+
+            /**
+			 * Constructs a Texture2D object from an image object.
+			 * @param image The image object.
+			 * @param anisotropicFiltering Whether or not anisotropic filtering is used.
+			 * @param generateMipMaps Whether or not mipmap can be used. Generate using GenerateMipmap()
+			 */
+            explicit VulkanTexture(Common::Image<uint8_t>& image, bool anisotropicFiltering = true,
+                bool generateMipMaps = true);
 
             /**
 			 * Sets the data of the texture
@@ -43,6 +55,10 @@ namespace Atlas {
 
             Graphics::Image* image;
             Graphics::Sampler* sampler;
+
+            uint32_t width = 0;
+            uint32_t height = 0;
+            uint32_t depth = 1;
 
         };
 

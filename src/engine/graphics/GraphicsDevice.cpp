@@ -143,6 +143,16 @@ namespace Atlas {
 
         }
 
+        Sampler* GraphicsDevice::CreateSampler(SamplerDesc samplerDesc) {
+
+            auto sampler = new Sampler(this, samplerDesc);
+
+            samplers.push_back(sampler);
+
+            return sampler;
+
+        }
+
         CommandList* GraphicsDevice::GetCommandList(QueueType queueType) {
 
             auto frameData = GetFrameData();
@@ -241,6 +251,14 @@ namespace Atlas {
                 commandList->ResetDescriptors();
                 commandList->isLocked = false;
             }
+
+        }
+
+        bool GraphicsDevice::CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags) {
+
+            VkFormatProperties properties;
+            vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &properties);
+            return (properties.optimalTilingFeatures & featureFlags) == featureFlags;
 
         }
 

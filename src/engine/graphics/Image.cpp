@@ -14,7 +14,8 @@ namespace Atlas {
             imageExtent.depth = desc.depth;
 
             VkImageCreateInfo imageInfo = Initializers::InitImageCreateInfo(desc.format,
-                desc.usageFlags, imageExtent);
+                desc.usageFlags, imageExtent, desc.type);
+            imageInfo.tiling = VK_IMAGE_TILING_LINEAR;
 
             VmaAllocationCreateInfo allocationCreateInfo = {};
             allocationCreateInfo.usage = desc.domain == ImageDomain::Host ?
@@ -23,8 +24,16 @@ namespace Atlas {
             VK_CHECK(vmaCreateImage(memoryManager->allocator, &imageInfo,
                 &allocationCreateInfo, &image, &allocation, nullptr))
 
+            VkImageViewType viewType;
+            switch(desc.type) {
+                case VK_IMAGE_TYPE_1D: viewType = VK_IMAGE_VIEW_TYPE_1D; break;
+                case VK_IMAGE_TYPE_2D: viewType = VK_IMAGE_VIEW_TYPE_2D; break;
+                case VK_IMAGE_TYPE_3D: viewType = VK_IMAGE_VIEW_TYPE_3D; break;
+                default: viewType = VK_IMAGE_VIEW_TYPE_3D; break;
+            }
+
             VkImageViewCreateInfo imageViewInfo = Initializers::InitImageViewCreateInfo(desc.format,
-                image, desc.aspectFlags, desc.viewType, desc.depth);
+                image, desc.aspectFlags, viewType, desc.depth);
             VK_CHECK(vkCreateImageView(memoryManager->device, &imageViewInfo, nullptr, &view))
 
             if (desc.data) SetData(desc.data, 0, 0, 0, desc.width, desc.height, desc.depth);

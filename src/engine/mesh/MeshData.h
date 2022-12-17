@@ -23,6 +23,7 @@ namespace Atlas {
 			uint32_t indicesCount;
 			
 			Material* material;
+            VulkanMaterial* vulkanMaterial;
 
 			Volume::AABB aabb;
 		
@@ -88,6 +89,7 @@ namespace Atlas {
 			DataComponent<vec4> tangents;
 
 			std::vector<Material> materials;
+            std::vector<VulkanMaterial> vulkanMaterials;
 			std::vector<MeshSubData> subData;
 
 			int32_t primitiveType = AE_PRIMITIVE_TRIANGLES;

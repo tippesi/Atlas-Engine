@@ -5,6 +5,7 @@ layout(location=3) in vec4 vTangent;
 
 layout (location = 0) out vec3 positionVS;
 layout (location = 1) out vec3 normalVS;
+layout (location = 2) out vec2 texCoordVS;
 
 //push constants block
 layout(push_constant) uniform constants {
@@ -21,6 +22,7 @@ void main() {
 
 	positionVS = vec3(cameraData.pMatrix * cameraData.vMatrix * vec4(vPosition, 1.0));
 	normalVS = vNormal;
+	texCoordVS = vTexCoord;
 
 	//output the position of each vertex
 	gl_Position = cameraData.pMatrix * cameraData.vMatrix * vec4(vPosition, 1.0);

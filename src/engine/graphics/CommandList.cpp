@@ -196,6 +196,12 @@ namespace Atlas {
 
         }
 
+        void CommandList::ResetBindings() {
+
+            descriptorBindingData.Reset();
+
+        }
+
         void CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
             int32_t vertexOffset, uint32_t firstInstance) {
 
@@ -267,6 +273,7 @@ namespace Atlas {
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = binding.layoutBinding.descriptorType;
                         setWrite.pImageInfo = &imageInfo;
+
                     }
 
                     vkUpdateDescriptorSets(device, bindingCounter, setWrites, 0, nullptr);
@@ -281,7 +288,6 @@ namespace Atlas {
             }
 
             prevDescriptorBindingData = descriptorBindingData;
-            descriptorBindingData.Reset();
 
         }
 

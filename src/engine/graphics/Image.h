@@ -16,9 +16,9 @@ namespace Atlas {
         };
 
         struct ImageDesc {
-            VkImageUsageFlags usageFlags;
+            VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
             ImageDomain domain = ImageDomain::Device;
-            VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
+            VkImageType type = VK_IMAGE_TYPE_2D;
             VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
 
             uint32_t width = 1;

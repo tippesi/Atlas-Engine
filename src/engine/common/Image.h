@@ -211,6 +211,13 @@ namespace Atlas {
 			 */
 			void FlipHorizontally();
 
+            /**
+             * Expands the images channels
+             * @param channels The amount of channels the image should expand to
+             * @param fill The data used to expand the missing channels
+             */
+            void ExpandToChannelCount(int32_t channels, T fill);
+
 			/**
 			 * Determines the maximum pixel value depending on the format type T.
 			 * @return The maximum pixel value depending on the format type T.
@@ -655,6 +662,28 @@ namespace Atlas {
 			mipLevels[0].data = flippedData;
 
 		}
+
+        template<typename T>
+        void Image<T>::ExpandToChannelCount(int32_t channels, T fill) {
+
+            auto oldChannels = this->channels;
+            auto oldData = mipLevels[0].data;
+
+            mipLevels[0].data.clear();
+
+            this->channels = channels;
+            Resize(width, height);
+
+            auto& data = mipLevels[0].data;
+            int32_t size = int32_t(data.size()) / channels;
+
+            for (int32_t i = 0; i < size; i++) {
+                for (int32_t j = 0; j < channels; j++) {
+                    data[i * channels + j] = j < oldChannels ? oldData[i * oldChannels + j] : fill;
+                }
+            }
+
+        }
 
 		template<typename T>
 		inline float Image<T>::MaxPixelValue() const {
