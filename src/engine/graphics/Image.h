@@ -26,6 +26,8 @@ namespace Atlas {
             uint32_t depth = 1;
             VkFormat format;
 
+            bool mipMapping = false;
+
             void* data = nullptr;
         };
 
@@ -43,12 +45,15 @@ namespace Atlas {
             VmaAllocation allocation;
 
             VkImageView view;
+            VkImageType type;
             VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
             uint32_t width = 1;
             uint32_t height = 1;
             uint32_t depth = 1;
             VkFormat format;
+
+            uint32_t mipLevels = 1;
 
             ImageDomain domain;
 

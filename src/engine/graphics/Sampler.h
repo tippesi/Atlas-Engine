@@ -13,6 +13,12 @@ namespace Atlas {
         struct SamplerDesc {
             VkFilter filter = VK_FILTER_NEAREST;
             VkSamplerAddressMode mode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+            VkSamplerMipmapMode mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            float maxLod = 0.0f;
+            float mipLodBias = 0.0f;
+
+            bool anisotropicFiltering = false;
         };
 
         class Sampler {

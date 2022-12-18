@@ -24,13 +24,13 @@ namespace Atlas {
 
             vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
 
-            uploadManager = new MemoryUploadManager(this, transferQueueFamilyIndex, transferQueue);
+            transferManager = new MemoryTransferManager(this, transferQueueFamilyIndex, transferQueue);
 
         }
 
         MemoryManager::~MemoryManager() {
 
-            delete uploadManager;
+            delete transferManager;
 
             // Cheap trick to make sure everything is deleted
             frameIndex += framesToDeletion;

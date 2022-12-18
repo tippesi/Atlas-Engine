@@ -14,16 +14,18 @@ namespace Atlas {
         class Buffer;
         class Image;
 
-        class MemoryUploadManager {
+        class MemoryTransferManager {
 
         public:
-            MemoryUploadManager(MemoryManager* memManager, uint32_t transferQueueFamilyIndex, VkQueue transferQueue);
+            MemoryTransferManager(MemoryManager* memManager, uint32_t transferQueueFamilyIndex, VkQueue transferQueue);
 
-            ~MemoryUploadManager();
+            ~MemoryTransferManager();
 
             void UploadBufferData(void* data, Buffer* buffer, VkBufferCopy bufferCopyDesc);
 
             void UploadImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent);
+
+            void GenerateMipMaps(Image* image, VkCommandBuffer cmd);
 
         private:
             struct StagingBufferAllocation {

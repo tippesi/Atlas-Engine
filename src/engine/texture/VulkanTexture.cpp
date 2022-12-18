@@ -13,8 +13,13 @@ namespace Atlas {
             auto graphicsInstance = EngineInstance::GetGraphicsInstance();
             auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
 
+            VkImageUsageFlags additionalUsageFlags = {};
+            if (generateMipMaps) {
+                additionalUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            }
             auto imageDesc = Graphics::ImageDesc {
-                .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_DST_BIT | additionalUsageFlags,
                 .type = VK_IMAGE_TYPE_2D,
                 .width = width,
                 .height = height,
@@ -25,7 +30,11 @@ namespace Atlas {
 
             auto samplerDesc = Graphics::SamplerDesc {
                 .filter = filtering,
-                .mode = wrapping
+                .mode = wrapping,
+                .mipmapMode = generateMipMaps ? VK_SAMPLER_MIPMAP_MODE_LINEAR :
+                              VK_SAMPLER_MIPMAP_MODE_NEAREST,
+                .maxLod = float(this->image->mipLevels),
+                .anisotropicFiltering = generateMipMaps && anisotropicFiltering
             };
             sampler = graphicsDevice->CreateSampler(samplerDesc);
 
@@ -45,19 +54,30 @@ namespace Atlas {
                 default: format = VK_FORMAT_R8G8B8A8_UNORM; break;
             }
 
+            VkImageUsageFlags additionalUsageFlags = {};
+            if (generateMipMaps) {
+                additionalUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            }
+
             auto imageDesc = Graphics::ImageDesc {
-                .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_DST_BIT | additionalUsageFlags,
                 .type = VK_IMAGE_TYPE_2D,
                 .width = width,
                 .height = height,
                 .depth = depth,
-                .format = format
+                .format = format,
+                .mipMapping = generateMipMaps
             };
             this->image = graphicsDevice->CreateImage(imageDesc);
 
             auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_LINEAR,
-                .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT
+                .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                .mipmapMode = generateMipMaps ? VK_SAMPLER_MIPMAP_MODE_LINEAR :
+                    VK_SAMPLER_MIPMAP_MODE_NEAREST,
+                .maxLod = float(this->image->mipLevels),
+                .anisotropicFiltering = generateMipMaps && anisotropicFiltering
             };
             sampler = graphicsDevice->CreateSampler(samplerDesc);
 

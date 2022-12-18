@@ -69,7 +69,9 @@ namespace Atlas {
 
             VkVertexInputAttributeDescription InitVertexInputAttributeDescription(uint32_t binding, VkFormat format);
 
-            VkSamplerCreateInfo InitSamplerCreateInfo(VkFilter filters, VkSamplerAddressMode samplerAddressMode);
+            VkSamplerCreateInfo InitSamplerCreateInfo(VkFilter filters, VkSamplerAddressMode samplerAddressMode,
+                VkSamplerMipmapMode mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST, float maxLod = 0.0f,
+                float mipLodBias = 0.0f);
 
         }
 

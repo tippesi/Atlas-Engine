@@ -31,6 +31,7 @@ namespace Atlas {
             auto queueCreateInfos = CreateQueueInfos(&priority);
 
             VkPhysicalDeviceFeatures deviceFeatures{};
+            deviceFeatures.samplerAnisotropy = VK_TRUE;
 
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -341,6 +342,10 @@ namespace Atlas {
 
                 auto swapchainSupportDetails = SwapChainSupportDetails(device, surface);
                 if (!swapchainSupportDetails.IsAdequate()) {
+                    return 0;
+                }
+
+                if (!deviceFeatures.samplerAnisotropy) {
                     return 0;
                 }
             }

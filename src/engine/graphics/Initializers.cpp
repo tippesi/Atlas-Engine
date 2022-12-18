@@ -328,7 +328,8 @@ namespace Atlas {
 
             }
 
-            VkSamplerCreateInfo InitSamplerCreateInfo(VkFilter filters, VkSamplerAddressMode samplerAddressMode) {
+            VkSamplerCreateInfo InitSamplerCreateInfo(VkFilter filters, VkSamplerAddressMode samplerAddressMode,
+                VkSamplerMipmapMode mipmapMode, float maxLod, float mipLodBias) {
 
                 VkSamplerCreateInfo info = {};
                 info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -338,6 +339,9 @@ namespace Atlas {
                 info.addressModeU = samplerAddressMode;
                 info.addressModeV = samplerAddressMode;
                 info.addressModeW = samplerAddressMode;
+                info.mipmapMode = mipmapMode;
+                info.maxLod = maxLod;
+                info.mipLodBias = mipLodBias;
 
                 return info;
 

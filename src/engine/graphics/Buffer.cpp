@@ -46,7 +46,7 @@ namespace Atlas {
                 bufferCopy.dstOffset = 0;
                 bufferCopy.size = length;
 
-                memoryManager->uploadManager->UploadBufferData(data, this, bufferCopy);
+                memoryManager->transferManager->UploadBufferData(data, this, bufferCopy);
             }
             else {
                 // If there isn't a valid mapping yet start and complete it in this call

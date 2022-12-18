@@ -5,7 +5,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        Image::Image(GraphicsDevice *device, ImageDesc &desc) : width(desc.width), height(desc.height),
+        Image::Image(GraphicsDevice *device, ImageDesc &desc) : type(desc.type), width(desc.width), height(desc.height),
             depth(desc.depth), format(desc.format), domain(desc.domain), memoryManager(device->memoryManager) {
 
             VkExtent3D imageExtent;
@@ -15,7 +15,10 @@ namespace Atlas {
 
             VkImageCreateInfo imageInfo = Initializers::InitImageCreateInfo(desc.format,
                 desc.usageFlags, imageExtent, desc.type);
-            imageInfo.tiling = VK_IMAGE_TILING_LINEAR;
+            if (desc.mipMapping) {
+                mipLevels = uint32_t(floor(log2(glm::max(float(width), float(height)))) + 1);
+                imageInfo.mipLevels = mipLevels;
+            }
 
             VmaAllocationCreateInfo allocationCreateInfo = {};
             allocationCreateInfo.usage = desc.domain == ImageDomain::Host ?
@@ -34,6 +37,10 @@ namespace Atlas {
 
             VkImageViewCreateInfo imageViewInfo = Initializers::InitImageViewCreateInfo(desc.format,
                 image, desc.aspectFlags, viewType, desc.depth);
+            if (desc.mipMapping) {
+                imageViewInfo.subresourceRange.levelCount = mipLevels;
+            }
+
             VK_CHECK(vkCreateImageView(memoryManager->device, &imageViewInfo, nullptr, &view))
 
             if (desc.data) SetData(desc.data, 0, 0, 0, desc.width, desc.height, desc.depth);
@@ -60,7 +67,7 @@ namespace Atlas {
                 extent.height = height;
                 extent.depth = depth;
 
-                memoryManager->uploadManager->UploadImageData(data, this, offset, extent);
+                memoryManager->transferManager->UploadImageData(data, this, offset, extent);
             }
 
         }

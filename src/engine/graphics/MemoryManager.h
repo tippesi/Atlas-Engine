@@ -2,7 +2,7 @@
 #define AE_GRAPHICSMEMORYMANAGER_H
 
 #include "Common.h"
-#include "MemoryUploadManager.h"
+#include "MemoryTransferManager.h"
 
 #define VMA_STATS_STRING_ENABLED 0
 #include <vk_mem_alloc.h>
@@ -48,7 +48,7 @@ namespace Atlas {
 
             VkPhysicalDeviceProperties deviceProperties;
 
-            MemoryUploadManager* uploadManager;
+            MemoryTransferManager* transferManager;
 
         private:
             struct DeleteBufferAllocation {
