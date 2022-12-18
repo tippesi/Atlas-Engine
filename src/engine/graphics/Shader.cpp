@@ -136,7 +136,16 @@ namespace Atlas {
 
         Shader::~Shader() {
 
+            if (!isComplete) return;
 
+            for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+                if (!sets[i].bindingCount) continue;
+                vkDestroyDescriptorSetLayout(memoryManager->device, sets[i].layout, nullptr);
+            }
+
+            for (auto& shaderModule : shaderModules) {
+                vkDestroyShaderModule(memoryManager->device, shaderModule.module, nullptr);
+            }
 
         }
 

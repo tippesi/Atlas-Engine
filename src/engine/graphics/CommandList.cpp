@@ -57,8 +57,6 @@ namespace Atlas {
 
         void CommandList::BeginRenderPass(SwapChain* swapChain) {
 
-            swapChain->AquireImageIndex();
-
             VkRenderPassBeginInfo rpInfo = {};
             rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             rpInfo.pNext = nullptr;

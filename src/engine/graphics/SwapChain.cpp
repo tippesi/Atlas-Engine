@@ -190,9 +190,14 @@ namespace Atlas {
 
         }
 
-        void SwapChain::AquireImageIndex() {
+        bool SwapChain::AcquireImageIndex() {
 
-            VK_CHECK(vkAcquireNextImageKHR(device, swapChain, 1000000000, semaphore, nullptr, &aquiredImageIndex));
+            auto result = vkAcquireNextImageKHR(device, swapChain, 1000000000, semaphore, nullptr, &aquiredImageIndex);
+
+            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) return true;
+            VK_CHECK(result);
+
+            return false;
 
         }
 

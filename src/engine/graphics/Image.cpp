@@ -49,6 +49,7 @@ namespace Atlas {
 
         Image::~Image() {
 
+            vkDestroyImageView(memoryManager->device, view, nullptr);
             memoryManager->DestroyAllocation(ImageAllocation { image, allocation });
 
         }

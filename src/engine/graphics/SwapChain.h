@@ -39,7 +39,7 @@ namespace Atlas {
 
             ~SwapChain();
 
-            void AquireImageIndex();
+            bool AcquireImageIndex();
 
             VkSwapchainKHR swapChain;
             VkSurfaceFormatKHR surfaceFormat;

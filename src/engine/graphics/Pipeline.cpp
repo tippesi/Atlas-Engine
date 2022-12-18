@@ -77,7 +77,10 @@ namespace Atlas {
 
         Pipeline::~Pipeline() {
 
+            if (!isComplete) return;
 
+            vkDestroyPipeline(memoryManager->device, pipeline, nullptr);
+            vkDestroyPipelineLayout(memoryManager->device, layout, nullptr);
 
         }
 

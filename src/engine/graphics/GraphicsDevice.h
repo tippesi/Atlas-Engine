@@ -93,13 +93,17 @@ namespace Atlas {
             bool CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice,
                 const std::vector<const char*>& extensionNames);
 
-            void CreateSwapChain(Surface* surface);
+            void CreateSwapChain();
+
+            bool CheckForWindowResize();
 
             void CreateFrameData();
 
             void DestroyFrameData();
 
             FrameData* GetFrameData();
+
+            Surface* surface;
 
             QueueFamilyIndices queueFamilyIndices;
 
@@ -108,6 +112,9 @@ namespace Atlas {
             std::vector<Buffer*> buffers;
             std::vector<Image*> images;
             std::vector<Sampler*> samplers;
+
+            int32_t windowWidth = 0;
+            int32_t windowHeight = 0;
 
             int32_t frameIndex = 0;
             FrameData frameData[FRAME_DATA_COUNT];

@@ -11,7 +11,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        GraphicsDevice::GraphicsDevice(Surface* surface, bool enableValidationLayers) {
+        GraphicsDevice::GraphicsDevice(Surface* surface, bool enableValidationLayers) : surface(surface) {
 
             auto instance = EngineInstance::GetGraphicsInstance();
 
@@ -62,8 +62,11 @@ namespace Atlas {
                 queueFamilyIndices.queueFamilies[QueueType::TransferQueue].value(),
                 queueFamilyIndices.queues[QueueType::TransferQueue]);
 
-            CreateSwapChain(surface);
+            CreateSwapChain();
             CreateFrameData();
+
+            // Acquire first index since normally these are acquired at completion of frame
+            swapChain->AcquireImageIndex();
 
             isComplete = true;
 
@@ -77,12 +80,25 @@ namespace Atlas {
 
             delete swapChain;
 
+            // The whole deletion thing should be reworked a bit
             for (auto shader : shaders) {
                 delete shader;
             }
 
+            for (auto pipeline : pipelines) {
+                delete pipeline;
+            }
+
             for (auto buffer : buffers) {
                 delete buffer;
+            }
+
+            for (auto image : images) {
+                delete image;
+            }
+
+            for (auto sampler : samplers) {
+                delete sampler;
             }
 
             DestroyFrameData();
@@ -208,11 +224,13 @@ namespace Atlas {
 
             auto queue = queueFamilyIndices.queues[cmd->queueType];
             auto frameData = GetFrameData();
-            VK_CHECK(vkQueueSubmit(queue, 1, &submit, frameData->fence));
+            VK_CHECK(vkQueueSubmit(queue, 1, &submit, frameData->fence))
 
         }
 
         void GraphicsDevice::CompleteFrame() {
+
+            bool recreateSwapChain = false;
 
             auto frameData = GetFrameData();
             std::vector<VkSemaphore> semaphores;
@@ -232,7 +250,14 @@ namespace Atlas {
             presentInfo.pImageIndices = &swapChain->aquiredImageIndex;
 
             VkQueue& presenterQueue = queueFamilyIndices.queues[QueueType::PresentationQueue];
-            VK_CHECK(vkQueuePresentKHR(presenterQueue, &presentInfo));
+            auto result = vkQueuePresentKHR(presenterQueue, &presentInfo);
+
+            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+                recreateSwapChain = true;
+            }
+            else {
+                VK_CHECK(result)
+            }
 
             // Delete data that is marked for deletion for this frame
             memoryManager->DeleteData();
@@ -245,6 +270,17 @@ namespace Atlas {
             // Need to check if we can use the next frame data
             VK_CHECK(vkWaitForFences(device, 1, &nextFrameData->fence, true, 1000000000))
             VK_CHECK(vkResetFences(device, 1, &nextFrameData->fence))
+
+            if (swapChain->AcquireImageIndex()) {
+                recreateSwapChain = true;
+            }
+
+            if (recreateSwapChain || CheckForWindowResize()) {
+                vkDeviceWaitIdle(device);
+                CreateSwapChain();
+                // Acquire a new image index for new swap chain
+                swapChain->AcquireImageIndex();
+            }
 
             // Unlock all commandLists for use in next frame (or new current frame,
             // however you want to call it)
@@ -440,7 +476,7 @@ namespace Atlas {
 
         }
 
-        void GraphicsDevice::CreateSwapChain(Surface *surface) {
+        void GraphicsDevice::CreateSwapChain() {
 
             auto nativeSurface = surface->GetNativeSurface();
             auto nativeWindow = surface->GetNativeWindow();
@@ -450,8 +486,33 @@ namespace Atlas {
             int32_t width, height;
             SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
 
+            windowWidth = width;
+            windowHeight = height;
+
+            auto oldSwapChain = swapChain;
+
             swapChain = new SwapChain(supportDetails, nativeSurface, memoryManager,
-                width, height, VK_PRESENT_MODE_FIFO_KHR, nullptr);
+                width, height, VK_PRESENT_MODE_FIFO_KHR, oldSwapChain);
+
+            // Clean up old swap chain
+            delete oldSwapChain;
+
+        }
+
+        bool GraphicsDevice::CheckForWindowResize() {
+
+            auto nativeWindow = surface->GetNativeWindow();
+
+            int32_t width, height;
+            SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
+
+            if (width != windowWidth || height != windowHeight) {
+                windowWidth = width;
+                windowHeight = height;
+                return true;
+            }
+
+            return false;
 
         }
 
