@@ -6,6 +6,7 @@
 
 #include <thread>
 #include <chrono>
+#include <imgui.h>
 
 namespace Atlas {
 
@@ -95,7 +96,7 @@ namespace Atlas {
             commandList->BeginCommands();
 
             swapChain->colorClearValue.color = { 0.0f, 0.0f, blue, 1.0f};
-            commandList->BeginRenderPass(swapChain);
+            commandList->BeginRenderPass(swapChain, true);
 
             // Viewport and scissor are set to a default when binding a pipeline
             commandList->BindPipeline(meshPipeline);
@@ -111,8 +112,6 @@ namespace Atlas {
             };
             uniformBuffer[frameIdx % 2]->SetData(&uniforms, 0, sizeof(Uniforms));
 
-            auto size = sizeof(Uniforms);
-
             auto pushConstantRange = meshShader->GetPushConstantRange("constants");
             commandList->PushConstants(pushConstantRange, &pushConstants);
 
@@ -125,7 +124,6 @@ namespace Atlas {
             commandList->BindBuffer(uniformBuffer[frameIdx % 2], 0, 0);
 
             for (auto& subData : mesh->data.subData) {
-
                 auto baseColorTexture = subData.vulkanMaterial->baseColorMap;
                 if (baseColorTexture) {
                     commandList->BindImage(baseColorTexture->image, baseColorTexture->sampler, 0, 1);
@@ -141,7 +139,6 @@ namespace Atlas {
             commandList->EndCommands();
 
             device->SubmitCommandList(commandList);
-            device->CompleteFrame();
 
             frameIdx++;
 

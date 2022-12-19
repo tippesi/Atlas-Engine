@@ -10,24 +10,20 @@ namespace Atlas {
 
     namespace Graphics {
 
-        struct DescriptorAllocationDesc {
-            // VkDescriptorBufferInfo
-        };
-
-        struct DescriptorAllocation {
-            VkDescriptorSet uniformBufferSets[BINDINGS_PER_DESCRIPTOR_SET];
-        };
+        class GraphicsDevice;
 
         class DescriptorPool {
 
         public:
-            DescriptorPool(MemoryManager* memManager);
+            DescriptorPool(GraphicsDevice* device);
 
             ~DescriptorPool();
 
             void Reset();
 
             VkDescriptorSet Allocate(VkDescriptorSetLayout layout);
+
+            VkDescriptorPool GetNativePool();
 
         private:
             VkDescriptorPool InitPool();

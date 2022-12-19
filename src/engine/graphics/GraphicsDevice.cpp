@@ -76,7 +76,7 @@ namespace Atlas {
 
             // Make sure that all commands were processed before
             // deleting resources
-            vkDeviceWaitIdle(device);
+            WaitForIdle();
 
             delete swapChain;
 
@@ -99,6 +99,10 @@ namespace Atlas {
 
             for (auto sampler : samplers) {
                 delete sampler;
+            }
+
+            for (auto pool : descriptorPools) {
+                delete pool;
             }
 
             DestroyFrameData();
@@ -170,6 +174,16 @@ namespace Atlas {
 
         }
 
+        DescriptorPool* GraphicsDevice::CreateDescriptorPool() {
+
+            auto pool = new DescriptorPool(this);
+
+            descriptorPools.push_back(pool);
+
+            return pool;
+
+        }
+
         CommandList* GraphicsDevice::GetCommandList(QueueType queueType) {
 
             auto frameData = GetFrameData();
@@ -194,7 +208,7 @@ namespace Atlas {
 
             if (it == commandLists.end()) {
                 auto queueFamilyIndex = queueFamilyIndices.queueFamilies[queueType];
-                CommandList* cmd = new CommandList(memoryManager, queueType, queueFamilyIndex.value());
+                CommandList* cmd = new CommandList(this, queueType, queueFamilyIndex.value());
                 commandLists.push_back(cmd);
                 return cmd;
             }
@@ -203,28 +217,34 @@ namespace Atlas {
 
         }
 
-        void GraphicsDevice::SubmitCommandList(CommandList *cmd) {
+        void GraphicsDevice::SubmitCommandList(CommandList *cmd, VkPipelineStageFlags waitStage, ExecutionOrder order) {
 
             // After the submission of a command list, we don't unlock it anymore
             // for further use in this frame. Instead, we will unlock it again
             // when we get back to this frames data and start a new frame with it.
+            auto frameData = GetFrameData();
+
+            std::vector<VkSemaphore> waitSemaphores = { swapChain->semaphore };
+            std::vector<VkPipelineStageFlags> waitStages = { waitStage };
+            if (frameData->submittedCommandLists.size() > 0) {
+                waitSemaphores[0] = frameData->submittedCommandLists.back()->semaphore;
+            }
+
             VkSubmitInfo submit = {};
             submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             submit.pNext = nullptr;
-
-            VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-            submit.pWaitDstStageMask = &waitStage;
-            submit.waitSemaphoreCount = 1;
-            submit.pWaitSemaphores = &swapChain->semaphore;
+            submit.pWaitDstStageMask = waitStages.data();
+            submit.waitSemaphoreCount = uint32_t(waitSemaphores.size());
+            submit.pWaitSemaphores = waitSemaphores.data();
             submit.signalSemaphoreCount = 1;
             submit.pSignalSemaphores = &cmd->semaphore;
             submit.commandBufferCount = 1;
             submit.pCommandBuffers = &cmd->commandBuffer;
 
             auto queue = queueFamilyIndices.queues[cmd->queueType];
-            auto frameData = GetFrameData();
-            VK_CHECK(vkQueueSubmit(queue, 1, &submit, frameData->fence))
+            VK_CHECK(vkQueueSubmit(queue, 1, &submit, cmd->fence))
+
+            frameData->submittedCommandLists.push_back(cmd);
 
         }
 
@@ -234,19 +254,19 @@ namespace Atlas {
 
             auto frameData = GetFrameData();
             std::vector<VkSemaphore> semaphores;
-            for (auto cmd : frameData->commandLists)
-                semaphores.push_back(cmd->semaphore);
+            // For now, we will only use sequential execution of queue submits,
+            // which means only the latest submit can signal its semaphore here
+            //for (auto cmd : frameData->submittedCommandLists)
+            //    semaphores.push_back(cmd->semaphore);
+            semaphores.push_back(frameData->submittedCommandLists.back()->semaphore);
 
             VkPresentInfoKHR presentInfo = {};
             presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
             presentInfo.pNext = nullptr;
-
             presentInfo.pSwapchains = &swapChain->swapChain;
             presentInfo.swapchainCount = 1;
-
             presentInfo.pWaitSemaphores = semaphores.data();
             presentInfo.waitSemaphoreCount = uint32_t(semaphores.size());
-
             presentInfo.pImageIndices = &swapChain->aquiredImageIndex;
 
             VkQueue& presenterQueue = queueFamilyIndices.queues[QueueType::PresentationQueue];
@@ -261,15 +281,11 @@ namespace Atlas {
 
             // Delete data that is marked for deletion for this frame
             memoryManager->DeleteData();
-
             frameIndex++;
-
             memoryManager->UpdateFrameIndex(frameIndex);
 
             auto nextFrameData = GetFrameData();
-            // Need to check if we can use the next frame data
-            VK_CHECK(vkWaitForFences(device, 1, &nextFrameData->fence, true, 1000000000))
-            VK_CHECK(vkResetFences(device, 1, &nextFrameData->fence))
+            nextFrameData->WaitAndReset(device);
 
             if (swapChain->AcquireImageIndex()) {
                 recreateSwapChain = true;
@@ -282,13 +298,6 @@ namespace Atlas {
                 swapChain->AcquireImageIndex();
             }
 
-            // Unlock all commandLists for use in next frame (or new current frame,
-            // however you want to call it)
-            for (auto commandList : nextFrameData->commandLists) {
-                commandList->ResetDescriptors();
-                commandList->isLocked = false;
-            }
-
         }
 
         bool GraphicsDevice::CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags) {
@@ -296,6 +305,18 @@ namespace Atlas {
             VkFormatProperties properties;
             vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &properties);
             return (properties.optimalTilingFeatures & featureFlags) == featureFlags;
+
+        }
+
+        VkQueue GraphicsDevice::GetQueue(Atlas::Graphics::QueueType queueType) const {
+
+            return queueFamilyIndices.queues[queueType];
+
+        }
+
+        void GraphicsDevice::WaitForIdle() const {
+
+            vkDeviceWaitIdle(device);
 
         }
 

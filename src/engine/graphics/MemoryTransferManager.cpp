@@ -230,6 +230,30 @@ namespace Atlas {
 
         }
 
+        void MemoryTransferManager::ImmediateSubmit(std::function<void(VkCommandBuffer)> &&function) {
+
+            VkDevice device = memoryManager->device;
+
+            VkCommandBufferBeginInfo cmdBeginInfo =
+                Initializers::InitCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+            VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo));
+
+            function(commandBuffer);
+
+            VK_CHECK(vkEndCommandBuffer(commandBuffer));
+
+            VkSubmitInfo submit = Initializers::InitSubmitInfo(&commandBuffer);
+            VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
+
+            // We wait here until the operation is finished
+            vkWaitForFences(device, 1, &fence, true, 9999999999);
+            vkResetFences(device, 1, &fence);
+
+            vkResetCommandPool(device, commandPool, 0);
+
+        }
+
         MemoryTransferManager::StagingBufferAllocation MemoryTransferManager::CreateStagingBuffer(size_t size) {
 
             VkBufferCreateInfo stagingBufferInfo = {};

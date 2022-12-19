@@ -1,10 +1,11 @@
 #include "Descriptor.h"
+#include "GraphicsDevice.h"
 
 namespace Atlas {
 
     namespace Graphics {
 
-        DescriptorPool::DescriptorPool(MemoryManager *memManager) : memoryManager(memManager) {
+        DescriptorPool::DescriptorPool(GraphicsDevice* device) : memoryManager(device->memoryManager) {
 
             pools.push_back(InitPool());
 
@@ -48,6 +49,12 @@ namespace Atlas {
             for (auto pool : pools) {
                 vkResetDescriptorPool(memoryManager->device, pool, 0);
             }
+
+        }
+
+        VkDescriptorPool DescriptorPool::GetNativePool() {
+
+            return pools.back();
 
         }
 

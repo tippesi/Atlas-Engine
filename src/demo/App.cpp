@@ -13,11 +13,23 @@ void App::LoadContent() {
     mouseHandler = Atlas::Input::MouseHandler(&camera, 1.5f, 6.0f);
     keyboardHandler = Atlas::Input::KeyboardHandler(&camera, 7.0f, 6.0f);
 
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    imguiWrapper.Load(window);
+
+    /*
+    io.Fonts->AddFontFromFileTTF(
+        Atlas::Loader::AssetLoader::GetFullPath("font/roboto.ttf").c_str(),
+        20.0f);
+    */
+
+    ImGui::StyleColorsDark();
+
 }
 
 void App::UnloadContent() {
 
-
+    imguiWrapper.Unload();
 
 }
 
@@ -27,12 +39,20 @@ void App::Update(float deltaTime) {
     keyboardHandler.Update(&camera, deltaTime);
 
     camera.Update();
+    imguiWrapper.Update(window, deltaTime);
 
 }
 
 void App::Render(float deltaTime) {
 
     testRenderer.Render(&camera);
+
+    ImGui::NewFrame();
+
+    ImGui::ShowDemoWindow();
+
+    ImGui::Render();
+    imguiWrapper.Render();
 
 }
 

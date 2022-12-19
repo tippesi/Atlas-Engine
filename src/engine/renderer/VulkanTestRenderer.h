@@ -20,15 +20,15 @@ namespace Atlas {
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
         private:
-            Graphics::Shader* shader;
-            Graphics::Shader* meshShader;
-            Graphics::Pipeline* pipeline;
-            Graphics::Pipeline* meshPipeline;
-            Graphics::Buffer* buffer;
+            Graphics::Shader* shader = nullptr;
+            Graphics::Shader* meshShader = nullptr;
+            Graphics::Pipeline* pipeline = nullptr;
+            Graphics::Pipeline* meshPipeline = nullptr;
+            Graphics::Buffer* buffer = nullptr;
 
-            Graphics::Buffer* uniformBuffer[2];
+            Graphics::Buffer* uniformBuffer[2] = { nullptr, nullptr };
 
-            Mesh::VulkanMesh* mesh;
+            Mesh::VulkanMesh* mesh = nullptr;
 
             struct PushConstants {
                 mat4 vMatrix;

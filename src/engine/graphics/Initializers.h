@@ -73,6 +73,10 @@ namespace Atlas {
                 VkSamplerMipmapMode mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST, float maxLod = 0.0f,
                 float mipLodBias = 0.0f);
 
+            VkImageMemoryBarrier InitImageMemoryBarrier(VkImage image, VkImageLayout oldLayout,
+                VkImageLayout newLayout, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+                VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
+
         }
 
     }

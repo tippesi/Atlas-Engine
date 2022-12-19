@@ -347,6 +347,27 @@ namespace Atlas {
 
             }
 
+            VkImageMemoryBarrier InitImageMemoryBarrier(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
+                VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask, VkImageAspectFlags aspectMask) {
+
+                VkImageMemoryBarrier imageBarrier = {};
+                imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                imageBarrier.image = image;
+                imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.subresourceRange.aspectMask = aspectMask;
+                imageBarrier.subresourceRange.baseArrayLayer = 0;
+                imageBarrier.subresourceRange.layerCount = 1;
+                imageBarrier.subresourceRange.levelCount = 1;
+                imageBarrier.oldLayout = oldLayout;
+                imageBarrier.newLayout = newLayout;
+                imageBarrier.srcAccessMask = srcAccessMask;
+                imageBarrier.dstAccessMask = dstAccessMask;
+
+                return imageBarrier;
+
+            }
+
         }
 
     }

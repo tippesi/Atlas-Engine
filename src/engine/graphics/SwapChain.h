@@ -48,10 +48,12 @@ namespace Atlas {
 
             uint32_t aquiredImageIndex;
             std::vector<VkImage> images;
+            std::vector<VkImageLayout> imageLayouts;
             std::vector<VkImageView> imageViews;
             std::vector<VkFramebuffer> frameBuffers;
 
             ImageAllocation depthImageAllocation;
+            VkImageLayout depthImageLayout;
             VkImageView depthImageView;
 
             VkRenderPass defaultRenderPass;

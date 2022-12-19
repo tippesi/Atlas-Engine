@@ -23,13 +23,15 @@ namespace Atlas {
         };
 
         class GraphicsDevice;
+        class FrameData;
 
         class CommandList {
 
             friend GraphicsDevice;
+            friend FrameData;
 
         public:
-            CommandList(MemoryManager* memManager, QueueType queueType, uint32_t queueFamilyIndex);
+            CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex);
 
             ~CommandList();
 
@@ -37,9 +39,9 @@ namespace Atlas {
 
             void EndCommands();
 
-            void BeginRenderPass(SwapChain* swapChain);
+            void BeginRenderPass(SwapChain* swapChain, bool clear = false);
 
-            void BeginRenderPass(RenderPass* renderPass);
+            void BeginRenderPass(RenderPass* renderPass, bool clear = false);
 
             void EndRenderPass();
 
@@ -48,6 +50,8 @@ namespace Atlas {
             void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 
             void SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+
+            void ClearAttachments();
 
             void PushConstants(PushConstantRange* pushConstantRange, void* data);
 
@@ -71,6 +75,7 @@ namespace Atlas {
             VkCommandPool commandPool;
             VkCommandBuffer commandBuffer;
             VkSemaphore semaphore;
+            VkFence fence;
             uint32_t queueFamilyIndex;
 
             bool isComplete = false;
@@ -126,7 +131,7 @@ namespace Atlas {
             VkDevice device;
             DescriptorPool* descriptorPool = nullptr;
 
-            std::atomic_bool isLocked = false;
+            std::atomic_bool isLocked = true;
 
         };
 

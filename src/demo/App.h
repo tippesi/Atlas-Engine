@@ -8,6 +8,7 @@
 #include <input/Touch.h>
 
 #include <renderer/VulkanTestRenderer.h>
+#include <ImguiExtension/ImguiWrapper.h>
 
 #define WINDOW_FLAGS AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI
 
@@ -30,6 +31,8 @@ private:
     Atlas::Camera camera;
     Atlas::Input::MouseHandler mouseHandler;
     Atlas::Input::KeyboardHandler keyboardHandler;
+
+    ImguiWrapper imguiWrapper;
 
 };
 

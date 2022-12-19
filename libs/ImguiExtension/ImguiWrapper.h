@@ -6,15 +6,16 @@
 
 // Atlas engine includes
 #include <Window.h>
+#include <graphics/Descriptor.h>
 
 class ImguiWrapper {
 
 public:
-	ImguiWrapper() {}
+	ImguiWrapper() = default;
 
-	ImguiWrapper(Atlas::Window* window);
+    void Load(Atlas::Window* window);
 
-	~ImguiWrapper();
+    void Unload();
 
 	void Update(Atlas::Window* window, float deltaTime);
 
@@ -39,7 +40,8 @@ private:
 	int32_t keyboardID = 0;
 	int32_t textInputID = 0;
 
-	Atlas::Window* window;
+	Atlas::Window* window = nullptr;
+    Atlas::Graphics::DescriptorPool* pool = nullptr;
 
 };
 

@@ -88,9 +88,11 @@ namespace Atlas {
             VK_CHECK(vkCreateImageView(device, &depthImageViewCreateInfo, nullptr, &depthImageView));
 
             VkAttachmentDescription2 colorAttachmentDescription = Initializers::InitAttachmentDescription(
-                surfaceFormat.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+                surfaceFormat.format, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                VK_ATTACHMENT_LOAD_OP_LOAD);
             VkAttachmentDescription2 depthAttachmentDescription = Initializers::InitAttachmentDescription(
-                depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+                depthFormat, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                VK_ATTACHMENT_LOAD_OP_LOAD);
             VkAttachmentReference2 colorAttachmentReference = Initializers::InitAttachmentReference(0,
                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
             VkAttachmentReference2 depthAttachmentReference = Initializers::InitAttachmentReference(1,
@@ -132,6 +134,7 @@ namespace Atlas {
 
             VK_CHECK(vkCreateRenderPass2(device, &renderPassCreateInfo, nullptr, &defaultRenderPass))
 
+            imageLayouts.resize(imageCount);
             imageViews.resize(imageCount);
             frameBuffers.resize(imageCount);
             for(size_t i = 0; i < images.size(); i++) {
@@ -164,7 +167,10 @@ namespace Atlas {
                 frameBufferInfo.layers = 1;
                 VK_CHECK(vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &frameBuffers[i]));
 
+                imageLayouts[i] = VK_IMAGE_LAYOUT_UNDEFINED;
             }
+
+            depthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
             VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
             VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore))
@@ -192,7 +198,8 @@ namespace Atlas {
 
         bool SwapChain::AcquireImageIndex() {
 
-            auto result = vkAcquireNextImageKHR(device, swapChain, 1000000000, semaphore, nullptr, &aquiredImageIndex);
+            auto result = vkAcquireNextImageKHR(device, swapChain, 1000000000,
+                semaphore, nullptr, &aquiredImageIndex);
 
             if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) return true;
             VK_CHECK(result);

@@ -1,4 +1,5 @@
 #include "CommandList.h"
+#include "GraphicsDevice.h"
 
 #include <cassert>
 
@@ -6,19 +7,22 @@ namespace Atlas {
 
     namespace Graphics {
 
-        CommandList::CommandList(MemoryManager* memManager, QueueType queueType, uint32_t queueFamilyIndex) :
-            device(memManager->device), queueType(queueType), queueFamilyIndex(queueFamilyIndex) {
+        CommandList::CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex) :
+            device(device->device), queueType(queueType), queueFamilyIndex(queueFamilyIndex) {
 
             VkCommandPoolCreateInfo poolCreateInfo = Initializers::InitCommandPoolCreateInfo(queueFamilyIndex);
-            VK_CHECK(vkCreateCommandPool(device, &poolCreateInfo, nullptr, &commandPool))
+            VK_CHECK(vkCreateCommandPool(device->device, &poolCreateInfo, nullptr, &commandPool))
 
             VkCommandBufferAllocateInfo bufferAllocateInfo = Initializers::InitCommandBufferAllocateInfo(commandPool, 1);
-            VK_CHECK(vkAllocateCommandBuffers(device, &bufferAllocateInfo, &commandBuffer))
+            VK_CHECK(vkAllocateCommandBuffers(device->device, &bufferAllocateInfo, &commandBuffer))
 
             VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
-            VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore))
+            VK_CHECK(vkCreateSemaphore(device->device, &semaphoreInfo, nullptr, &semaphore))
 
-            descriptorPool = new DescriptorPool(memManager);
+            VkFenceCreateInfo fenceInfo = Initializers::InitFenceCreateInfo();
+            VK_CHECK(vkCreateFence(device->device, &fenceInfo, nullptr, &fence))
+
+            descriptorPool = new DescriptorPool(device);
 
             isComplete = true;
 
@@ -29,6 +33,7 @@ namespace Atlas {
             delete descriptorPool;
 
             vkDestroySemaphore(device, semaphore, nullptr);
+            vkDestroyFence(device, fence, nullptr);
             vkDestroyCommandPool(device, commandPool, nullptr);
 
         }
@@ -55,29 +60,47 @@ namespace Atlas {
 
         }
 
-        void CommandList::BeginRenderPass(SwapChain* swapChain) {
+        void CommandList::BeginRenderPass(SwapChain* swapChain, bool clear) {
+
+            auto imageIdx = swapChain->aquiredImageIndex;
 
             VkRenderPassBeginInfo rpInfo = {};
             rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             rpInfo.pNext = nullptr;
-
             rpInfo.renderPass = swapChain->defaultRenderPass;
             rpInfo.renderArea.offset.x = 0;
             rpInfo.renderArea.offset.y = 0;
             rpInfo.renderArea.extent = swapChain->extent;
-            rpInfo.framebuffer = swapChain->frameBuffers[swapChain->aquiredImageIndex];
+            rpInfo.framebuffer = swapChain->frameBuffers[imageIdx];
 
-            VkClearValue clearValues[] = { swapChain->colorClearValue, swapChain->depthClearValue };
-            rpInfo.clearValueCount = 2;
-            rpInfo.pClearValues = clearValues;
+            // Transition images to something usable
+            if(swapChain->imageLayouts[imageIdx] == VK_IMAGE_LAYOUT_UNDEFINED) {
+                auto barrier = Initializers::InitImageMemoryBarrier(swapChain->images[imageIdx],
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ACCESS_MEMORY_READ_BIT,
+                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+                vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+                swapChain->imageLayouts[imageIdx] = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            }
+            if (swapChain->depthImageLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                auto barrier = Initializers::InitImageMemoryBarrier(swapChain->depthImageAllocation.image,
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                    VK_ACCESS_MEMORY_READ_BIT, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+                vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+                swapChain->depthImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            }
 
             vkCmdBeginRenderPass(commandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
-
             swapChainInUse = swapChain;
+
+            if (clear) ClearAttachments();
 
         }
 
-        void CommandList::BeginRenderPass(RenderPass *renderPass) {
+        void CommandList::BeginRenderPass(RenderPass *renderPass, bool clear) {
 
             renderPassInUse = renderPass;
 
@@ -134,6 +157,35 @@ namespace Atlas {
             scissor.extent.height = height;
 
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        }
+
+        void CommandList::ClearAttachments() {
+
+            std::vector<VkClearAttachment> clearAttachments;
+            VkClearRect clearRect = {};
+            if (swapChainInUse) {
+                VkClearAttachment colorClear = {}, depthClear = {};
+                colorClear.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                colorClear.clearValue = swapChainInUse->colorClearValue;
+                colorClear.colorAttachment = 0;
+                depthClear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                depthClear.clearValue = swapChainInUse->depthClearValue;
+                depthClear.colorAttachment = 0;
+                clearAttachments.push_back(colorClear);
+                clearAttachments.push_back(depthClear);
+
+                clearRect.layerCount = 1;
+                clearRect.baseArrayLayer = 0;
+                clearRect.rect.offset = { 0, 0 };
+                clearRect.rect.extent = swapChainInUse->extent;
+            }
+            if (renderPassInUse) {
+
+            }
+
+            vkCmdClearAttachments(commandBuffer, uint32_t(clearAttachments.size()),
+                clearAttachments.data(), 1, &clearRect);
 
         }
 

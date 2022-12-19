@@ -49,20 +49,20 @@ namespace Atlas {
             uint32_t set = 0;
             uint32_t size = 0;
             uint32_t arrayElement = 0;
-            VkDescriptorSetLayoutBinding layoutBinding;
+            VkDescriptorSetLayoutBinding layoutBinding = {};
         };
 
         struct ShaderDescriptorSet {
             ShaderDescriptorBinding bindings[BINDINGS_PER_DESCRIPTOR_SET];
             uint32_t bindingCount = 0;
 
-            VkDescriptorSetLayout layout;
+            VkDescriptorSetLayout layout = {};
             VkDescriptorSetLayoutBinding layoutBindings[BINDINGS_PER_DESCRIPTOR_SET];
         };
 
         struct ShaderModule {
             VkShaderModule module;
-            VkShaderStageFlagBits shaderStageFlag;
+            VkShaderStageFlagBits shaderStageFlag = {};
 
             std::vector<PushConstantRange> pushConstantRanges;
             std::vector<ShaderDescriptorSet> sets;

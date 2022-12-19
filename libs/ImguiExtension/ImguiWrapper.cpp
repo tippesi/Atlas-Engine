@@ -1,9 +1,11 @@
 #include "ImguiWrapper.h"
-#include "ImguiOpenGL.h"
 
+#define VK_NO_PROTOTYPES
 #include <SDL2/SDL_mouse.h>
+#include <EngineInstance.h>
+#include <ImguiVulkan.h>
 
-ImguiWrapper::ImguiWrapper(Atlas::Window* window) {
+void ImguiWrapper::Load(Atlas::Window* window) {
 
 	 // Setup back-end capabilities flags
     ImGuiIO& io = ImGui::GetIO();
@@ -69,14 +71,43 @@ ImguiWrapper::ImguiWrapper(Atlas::Window* window) {
 	auto textInputEventHandler = std::bind(&ImguiWrapper::TextInputHandler, this, std::placeholders::_1);
 	textInputID = Atlas::Events::EventManager::TextInputEventDelegate.Subscribe(textInputEventHandler);
 
-	ImGui_ImplOpenGL3_Init("#version 410");
+    auto instance = Atlas::EngineInstance::GetGraphicsInstance();
+	auto device = instance->GetGraphicsDevice();
+    pool = device->CreateDescriptorPool();
+
+    //this initializes imgui for Vulkan
+    ImGui_ImplVulkan_InitInfo init_info = {};
+    init_info.Instance = instance->GetNativeInstance();
+    init_info.PhysicalDevice = device->physicalDevice;
+    init_info.Device = device->device;
+    init_info.Queue = device->GetQueue(Atlas::Graphics::GraphicsQueue);
+    init_info.DescriptorPool = pool->GetNativePool();
+    init_info.MinImageCount = 3;
+    init_info.ImageCount = 3;
+    init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+    ImGui_ImplVulkan_Init(&init_info, device->swapChain->defaultRenderPass);
+
+    //execute a gpu command to upload imgui font textures
+    device->memoryManager->transferManager->ImmediateSubmit(
+        [&](VkCommandBuffer cmd) {
+        ImGui_ImplVulkan_CreateFontsTexture(cmd);
+    });
+
+    //clear font textures from cpu data
+    ImGui_ImplVulkan_DestroyFontUploadObjects();
 
 }
 
-ImguiWrapper::~ImguiWrapper() {
+void ImguiWrapper::Unload() {
 
-	// Unsubscribe from all events
+    auto instance = Atlas::EngineInstance::GetGraphicsInstance();
+    auto device = instance->GetGraphicsDevice();
 
+    device->WaitForIdle();
+
+    // Unsubscribe from all events
+    ImGui_ImplVulkan_Shutdown();
 
 }
 
@@ -99,8 +130,7 @@ void ImguiWrapper::Update(Atlas::Window* window, float deltaTime) {
 		Atlas::Events::EventManager::DisableTextInput();
 
 	UpdateMouseCursor();
-
-	ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplVulkan_NewFrame();
 
 }
 
@@ -108,8 +138,21 @@ void ImguiWrapper::Render() {
 
 	ImGuiIO& io = ImGui::GetIO();
 
-	glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    auto instance = Atlas::EngineInstance::GetGraphicsInstance();
+    auto device = instance->GetGraphicsDevice();
+
+    auto commandList = device->GetCommandList(Atlas::Graphics::GraphicsQueue);
+    auto swapChain = device->swapChain;
+
+    commandList->BeginCommands();
+    commandList->BeginRenderPass(swapChain);
+
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandList->commandBuffer);
+
+    commandList->EndRenderPass();
+    commandList->EndCommands();
+
+    device->SubmitCommandList(commandList, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
 }
 

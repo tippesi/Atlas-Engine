@@ -20,15 +20,43 @@ namespace Atlas {
     namespace Graphics {
 
         class Instance;
+        class ImguiWrapper;
 
-        struct FrameData {
+        enum class ExecutionOrder {
+            Sequential = 0,
+            Parallel = 1
+        };
+
+        class FrameData {
+        public:
             VkFence fence;
 
             std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;
+
+            std::vector<CommandList*> submittedCommandLists;
+
+            void WaitAndReset(VkDevice device) {
+                if (submittedCommandLists.size() > 0) {
+                    std::vector<VkFence> fences;
+                    for (auto commandList : submittedCommandLists) {
+                        fences.push_back(commandList->fence);
+                    }
+                    VK_CHECK(vkWaitForFences(device, uint32_t(fences.size()), fences.data(), true, 1000000000))
+                    VK_CHECK(vkResetFences(device, uint32_t(fences.size()), fences.data()))
+                }
+
+                for (auto commandList : submittedCommandLists) {
+                    commandList->ResetDescriptors();
+                    commandList->isLocked = false;
+                }
+                submittedCommandLists.clear();
+            }
         };
 
         class GraphicsDevice {
+
+            friend ImguiWrapper;
 
         public:
             GraphicsDevice(Surface* surface, bool enableValidationLayers = false);
@@ -51,13 +79,20 @@ namespace Atlas {
 
             Sampler* CreateSampler(SamplerDesc samplerDesc);
 
+            DescriptorPool* CreateDescriptorPool();
+
             CommandList* GetCommandList(QueueType queueType = QueueType::GraphicsQueue);
 
-            void SubmitCommandList(CommandList* cmd);
+            void SubmitCommandList(CommandList* cmd, VkPipelineStageFlags waitStage =
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, ExecutionOrder order = ExecutionOrder::Sequential);
 
             void CompleteFrame();
 
             bool CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags);
+
+            VkQueue GetQueue(QueueType queueType) const;
+
+            void WaitForIdle() const;
 
             SwapChain* swapChain = nullptr;
             MemoryManager* memoryManager = nullptr;
@@ -112,12 +147,13 @@ namespace Atlas {
             std::vector<Buffer*> buffers;
             std::vector<Image*> images;
             std::vector<Sampler*> samplers;
-
-            int32_t windowWidth = 0;
-            int32_t windowHeight = 0;
+            std::vector<DescriptorPool*> descriptorPools;
 
             int32_t frameIndex = 0;
             FrameData frameData[FRAME_DATA_COUNT];
+
+            int32_t windowWidth = 0;
+            int32_t windowHeight = 0;
         };
 
     }

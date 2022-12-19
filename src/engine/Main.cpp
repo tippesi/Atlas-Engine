@@ -74,6 +74,8 @@ int main(int argc, char* argv[]) {
         engineInstance->Update(deltaTime);
         engineInstance->Render(deltaTime);
 
+        graphicsDevice->CompleteFrame();
+
         engineInstance->window->Update();
 
 	}

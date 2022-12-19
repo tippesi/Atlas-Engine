@@ -27,6 +27,8 @@ namespace Atlas {
 
             void GenerateMipMaps(Image* image, VkCommandBuffer cmd);
 
+            void ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function);
+
         private:
             struct StagingBufferAllocation {
                 VkBuffer buffer;

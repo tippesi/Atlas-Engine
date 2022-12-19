@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.7)
 project(ImguiExtension)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../src/engine)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/)
 
 file(GLOB_RECURSE IMGUI_SOURCE_FILES
@@ -28,4 +29,4 @@ find_package(imgui CONFIG REQUIRED)
 # after the engine is added
 add_library(${PROJECT_NAME} STATIC ${IMGUI_SOURCE_FILES})
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
-target_link_libraries(${PROJECT_NAME} imgui::imgui SDL2::SDL2)
+target_link_libraries(${PROJECT_NAME} imgui::imgui volk::volk volk::volk_headers SDL2::SDL2)
