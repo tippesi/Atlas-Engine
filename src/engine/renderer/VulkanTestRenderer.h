@@ -26,7 +26,7 @@ namespace Atlas {
             Graphics::Pipeline* meshPipeline = nullptr;
             Graphics::Buffer* buffer = nullptr;
 
-            Graphics::Buffer* uniformBuffer[2] = { nullptr, nullptr };
+            Graphics::MultiBuffer* uniformBuffer = nullptr;
 
             Mesh::VulkanMesh* mesh = nullptr;
 

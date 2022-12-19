@@ -29,9 +29,11 @@ namespace Atlas {
             size_t size;
         };
 
+        class GraphicsDevice;
+
         class Buffer {
         public:
-            Buffer(MemoryManager* memManager, BufferDesc desc);
+            Buffer(GraphicsDevice* device, BufferDesc& desc);
 
             ~Buffer();
 
@@ -54,6 +56,24 @@ namespace Atlas {
 
         };
 
+        class MultiBuffer {
+            friend GraphicsDevice;
+        public:
+            MultiBuffer(GraphicsDevice* device, BufferDesc& desc);
+
+            ~MultiBuffer();
+
+            void SetData(void* data, size_t offset, size_t length);
+
+            Buffer* GetCurrent() const;
+
+        private:
+            void UpdateFrameIndex(size_t frameIndex);
+
+            size_t frameIndex = 0;
+            Buffer* frameBuffer[FRAME_DATA_COUNT];
+        };
+
         // Lightweight specializations of the buffer class
         struct IndexBuffer {
             Graphics::Buffer* buffer = nullptr;
@@ -64,13 +84,6 @@ namespace Atlas {
             Graphics::Buffer* buffer = nullptr;
             VkVertexInputBindingDescription bindingDescription = {};
             VkVertexInputAttributeDescription attributeDescription = {};
-        };
-
-        struct MultiBuffer {
-            Graphics::Buffer* buffer = nullptr;
-
-        private:
-            Graphics::Buffer* frameBuffer[FRAME_DATA_COUNT];
         };
 
     }

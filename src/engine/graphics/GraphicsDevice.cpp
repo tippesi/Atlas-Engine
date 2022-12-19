@@ -93,6 +93,10 @@ namespace Atlas {
                 delete buffer;
             }
 
+            for (auto multiBuffer : multiBuffers) {
+                delete multiBuffer;
+            }
+
             for (auto image : images) {
                 delete image;
             }
@@ -146,11 +150,21 @@ namespace Atlas {
 
         Buffer* GraphicsDevice::CreateBuffer(BufferDesc bufferDesc) {
 
-            auto buffer = new Buffer(memoryManager, bufferDesc);
+            auto buffer = new Buffer(this, bufferDesc);
 
             buffers.push_back(buffer);
 
             return buffer;
+
+        }
+
+        MultiBuffer* GraphicsDevice::CreateMultiBuffer(BufferDesc bufferDesc) {
+
+            auto multiBuffer = new MultiBuffer(this, bufferDesc);
+
+            multiBuffers.push_back(multiBuffer);
+
+            return multiBuffer;
 
         }
 
@@ -282,7 +296,12 @@ namespace Atlas {
             // Delete data that is marked for deletion for this frame
             memoryManager->DeleteData();
             frameIndex++;
+
+            // Update frame index of all objects in need
             memoryManager->UpdateFrameIndex(frameIndex);
+            for (auto& multiBuffer : multiBuffers) {
+                multiBuffer->UpdateFrameIndex(frameIndex);
+            }
 
             auto nextFrameData = GetFrameData();
             nextFrameData->WaitAndReset(device);

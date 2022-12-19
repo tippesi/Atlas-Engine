@@ -75,6 +75,8 @@ namespace Atlas {
 
             Buffer* CreateBuffer(BufferDesc bufferDesc);
 
+            MultiBuffer* CreateMultiBuffer(BufferDesc bufferDesc);
+
             Image* CreateImage(ImageDesc imageDesc);
 
             Sampler* CreateSampler(SamplerDesc samplerDesc);
@@ -145,6 +147,7 @@ namespace Atlas {
             std::vector<Shader*> shaders;
             std::vector<Pipeline*> pipelines;
             std::vector<Buffer*> buffers;
+            std::vector<MultiBuffer*> multiBuffers;
             std::vector<Image*> images;
             std::vector<Sampler*> samplers;
             std::vector<DescriptorPool*> descriptorPools;

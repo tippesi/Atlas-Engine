@@ -5,6 +5,7 @@
 
 #define VMA_STATS_STRING_ENABLED 0
 #include <vk_mem_alloc.h>
+#include <functional>
 
 namespace Atlas {
 
