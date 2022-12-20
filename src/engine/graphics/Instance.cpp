@@ -166,7 +166,7 @@ namespace Atlas {
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
             createInfo.pfnUserCallback = DebugCallback;
-            createInfo.pUserData = (void*)name.c_str();
+            createInfo.pUserData = static_cast<void*>(const_cast<char*>(name.c_str()));
             return createInfo;
 
         }

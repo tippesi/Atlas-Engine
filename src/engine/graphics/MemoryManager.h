@@ -34,7 +34,11 @@ namespace Atlas {
             MemoryManager(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device,
                 uint32_t transferQueueFamilyIndex, VkQueue transferQueue);
 
+            MemoryManager(const MemoryManager& that) = delete;
+
             ~MemoryManager();
+
+            MemoryManager& operator=(const MemoryManager& that) = delete;
 
             void DestroyAllocation(BufferAllocation allocation);
 

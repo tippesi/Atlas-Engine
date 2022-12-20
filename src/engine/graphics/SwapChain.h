@@ -46,7 +46,7 @@ namespace Atlas {
             VkPresentModeKHR presentMode;
             VkExtent2D extent;
 
-            uint32_t aquiredImageIndex;
+            uint32_t aquiredImageIndex = 0;
             std::vector<VkImage> images;
             std::vector<VkImageLayout> imageLayouts;
             std::vector<VkImageView> imageViews;

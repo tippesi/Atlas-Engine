@@ -28,7 +28,7 @@ namespace Atlas {
         class VulkanMesh {
 
         public:
-            VulkanMesh(MeshData& meshData);
+            explicit VulkanMesh(MeshData& meshData);
 
             void SetTransform(mat4 transform);
 

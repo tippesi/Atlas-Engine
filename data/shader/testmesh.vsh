@@ -20,7 +20,7 @@ layout(set = 0, binding = 0) uniform  CameraBuffer{
 
 void main() {
 
-	positionVS = vec3(cameraData.pMatrix * cameraData.vMatrix * vec4(vPosition, 1.0));
+	positionVS = vec3(PushConstants.pMatrix * PushConstants.vMatrix * vec4(vPosition, 1.0));
 	normalVS = vNormal;
 	texCoordVS = vTexCoord;
 

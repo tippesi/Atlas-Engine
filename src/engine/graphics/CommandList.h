@@ -33,7 +33,11 @@ namespace Atlas {
         public:
             CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex);
 
+            CommandList(const CommandList& that) = delete;
+
             ~CommandList();
+
+            CommandList& operator=(const CommandList& that) = delete;
 
             void BeginCommands();
 

@@ -236,12 +236,12 @@ namespace Atlas {
             // After the submission of a command list, we don't unlock it anymore
             // for further use in this frame. Instead, we will unlock it again
             // when we get back to this frames data and start a new frame with it.
-            auto frameData = GetFrameData();
+            auto frame = GetFrameData();
 
             std::vector<VkSemaphore> waitSemaphores = { swapChain->semaphore };
             std::vector<VkPipelineStageFlags> waitStages = { waitStage };
-            if (frameData->submittedCommandLists.size() > 0) {
-                waitSemaphores[0] = frameData->submittedCommandLists.back()->semaphore;
+            if (frame->submittedCommandLists.size() > 0) {
+                waitSemaphores[0] = frame->submittedCommandLists.back()->semaphore;
             }
 
             VkSubmitInfo submit = {};
@@ -258,7 +258,7 @@ namespace Atlas {
             auto queue = queueFamilyIndices.queues[cmd->queueType];
             VK_CHECK(vkQueueSubmit(queue, 1, &submit, cmd->fence))
 
-            frameData->submittedCommandLists.push_back(cmd);
+            frame->submittedCommandLists.push_back(cmd);
 
         }
 
@@ -266,13 +266,13 @@ namespace Atlas {
 
             bool recreateSwapChain = false;
 
-            auto frameData = GetFrameData();
+            auto frame = GetFrameData();
             std::vector<VkSemaphore> semaphores;
             // For now, we will only use sequential execution of queue submits,
             // which means only the latest submit can signal its semaphore here
             //for (auto cmd : frameData->submittedCommandLists)
             //    semaphores.push_back(cmd->semaphore);
-            semaphores.push_back(frameData->submittedCommandLists.back()->semaphore);
+            semaphores.push_back(frame->submittedCommandLists.back()->semaphore);
 
             VkPresentInfoKHR presentInfo = {};
             presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -303,8 +303,8 @@ namespace Atlas {
                 multiBuffer->UpdateFrameIndex(frameIndex);
             }
 
-            auto nextFrameData = GetFrameData();
-            nextFrameData->WaitAndReset(device);
+            auto nextFrame = GetFrameData();
+            nextFrame->WaitAndReset(device);
 
             if (swapChain->AcquireImageIndex()) {
                 recreateSwapChain = true;

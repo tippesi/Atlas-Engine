@@ -53,8 +53,8 @@ namespace Atlas {
              */
             void SetData(std::vector<uint16_t>& data);
 
-            Graphics::Image* image;
-            Graphics::Sampler* sampler;
+            Graphics::Image* image = nullptr;
+            Graphics::Sampler* sampler = nullptr;
 
             uint32_t width = 0;
             uint32_t height = 0;

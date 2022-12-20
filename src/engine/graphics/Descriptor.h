@@ -15,7 +15,7 @@ namespace Atlas {
         class DescriptorPool {
 
         public:
-            DescriptorPool(GraphicsDevice* device);
+            explicit DescriptorPool(GraphicsDevice* device);
 
             ~DescriptorPool();
 

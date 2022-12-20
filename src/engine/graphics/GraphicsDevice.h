@@ -59,7 +59,7 @@ namespace Atlas {
             friend ImguiWrapper;
 
         public:
-            GraphicsDevice(Surface* surface, bool enableValidationLayers = false);
+            explicit GraphicsDevice(Surface* surface, bool enableValidationLayers = false);
 
             GraphicsDevice(const GraphicsDevice& that) = delete;
 

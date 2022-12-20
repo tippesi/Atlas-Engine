@@ -27,7 +27,7 @@ namespace Atlas {
             friend Extensions;
 
         public:
-            Instance(const std::string& instanceName, bool enableValidationLayers = false);
+            explicit Instance(const std::string& instanceName, bool enableValidationLayers = false);
 
             Instance(const Instance& that) = delete;
 
