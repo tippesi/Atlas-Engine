@@ -1,6 +1,5 @@
 #include "Extensions.h"
-
-#include "EngineInstance.h"
+#include "Instance.h"
 
 namespace Atlas {
 
@@ -10,7 +9,7 @@ namespace Atlas {
 
         void Extensions::Process() {
 
-            auto graphicsInstance = EngineInstance::GetGraphicsInstance();
+            auto graphicsInstance = Instance::defaultInstance;
 
             for (auto extension : graphicsInstance->extensionNames) {
                 supportedExtensions.insert(std::string(extension));

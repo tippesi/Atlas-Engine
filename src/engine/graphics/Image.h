@@ -2,13 +2,16 @@
 #define AE_GRAPHICSTEXTURE_H
 
 #include "Common.h"
-#include "MemoryManager.h"
+
+#define VMA_STATS_STRING_ENABLED 0
+#include <vk_mem_alloc.h>
 
 namespace Atlas {
 
     namespace Graphics {
 
-        class Device;
+        class GraphicsDevice;
+        class MemoryManager;
 
         enum class ImageDomain {
             Device = 0,
@@ -29,6 +32,11 @@ namespace Atlas {
             bool mipMapping = false;
 
             void* data = nullptr;
+        };
+
+        struct ImageAllocation {
+            VkImage image;
+            VmaAllocation allocation;
         };
 
         class Image {

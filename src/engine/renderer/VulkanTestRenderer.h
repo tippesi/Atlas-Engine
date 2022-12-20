@@ -13,6 +13,8 @@ namespace Atlas {
         public:
             VulkanTestRenderer() = default;
 
+            ~VulkanTestRenderer();
+
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Camera* camera);
@@ -20,13 +22,13 @@ namespace Atlas {
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
         private:
-            Graphics::Shader* shader = nullptr;
-            Graphics::Shader* meshShader = nullptr;
-            Graphics::Pipeline* pipeline = nullptr;
-            Graphics::Pipeline* meshPipeline = nullptr;
-            Graphics::Buffer* buffer = nullptr;
+            Ref<Graphics::Shader> shader = nullptr;
+            Ref<Graphics::Shader> meshShader = nullptr;
+            Ref<Graphics::Pipeline> pipeline = nullptr;
+            Ref<Graphics::Pipeline> meshPipeline = nullptr;
+            Ref<Graphics::Buffer> buffer = nullptr;
 
-            Graphics::MultiBuffer* uniformBuffer = nullptr;
+            Ref<Graphics::MultiBuffer> uniformBuffer = nullptr;
 
             Mesh::VulkanMesh* mesh = nullptr;
 

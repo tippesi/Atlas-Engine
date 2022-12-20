@@ -162,7 +162,7 @@ namespace Atlas {
 
     VulkanMaterial::~VulkanMaterial() {
 
-        DeleteTextures();
+
 
     }
 
@@ -222,8 +222,6 @@ namespace Atlas {
 
     void VulkanMaterial::DeepCopy(const VulkanMaterial& that) {
 
-        DeleteTextures();
-
         name = that.name;
 
         baseColorMap = that.baseColorMap;
@@ -281,20 +279,6 @@ namespace Atlas {
         displacementScale = that.displacementScale;
 
         twoSided = that.twoSided;
-
-    }
-
-    void VulkanMaterial::DeleteTextures() {
-
-        /*
-        delete baseColorMap;
-        delete opacityMap;
-        delete normalMap;
-        delete roughnessMap;
-        delete metalnessMap;
-        delete aoMap;
-        delete displacementMap;
-        */
 
     }
 

@@ -11,9 +11,11 @@ namespace Atlas {
 
     namespace Graphics {
 
+        GraphicsDevice* GraphicsDevice::defaultDevice = nullptr;
+
         GraphicsDevice::GraphicsDevice(Surface* surface, bool enableValidationLayers) : surface(surface) {
 
-            auto instance = EngineInstance::GetGraphicsInstance();
+            auto instance = Instance::defaultInstance;
 
             const std::vector<const char*> requiredExtensions = {
                     VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -80,36 +82,42 @@ namespace Atlas {
 
             delete swapChain;
 
-            // The whole deletion thing should be reworked a bit
-            for (auto shader : shaders) {
-                delete shader;
-            }
-
-            for (auto pipeline : pipelines) {
-                delete pipeline;
-            }
-
-            for (auto buffer : buffers) {
-                delete buffer;
-            }
-
-            for (auto multiBuffer : multiBuffers) {
-                delete multiBuffer;
-            }
-
-            for (auto image : images) {
-                delete image;
-            }
-
-            for (auto sampler : samplers) {
-                delete sampler;
-            }
-
-            for (auto pool : descriptorPools) {
-                delete pool;
-            }
-
             DestroyFrameData();
+
+            for (auto& pipelineRef : pipelines) {
+                assert(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
+                pipelineRef.reset();
+            }
+
+            for (auto& shaderRef : shaders) {
+                assert(shaderRef.use_count() == 1 && "Shader wasn't deallocated or allocated wrongly");
+                shaderRef.reset();
+            }
+
+            for (auto& bufferRef : buffers) {
+                assert(bufferRef.use_count() == 1 && "Buffer wasn't deallocated or allocated wrongly");
+                bufferRef.reset();
+            }
+
+            for (auto& multiBufferRef : multiBuffers) {
+                assert(multiBufferRef.use_count() == 1 && "Multi buffer wasn't deallocated or allocated wrongly");
+                multiBufferRef.reset();
+            }
+
+            for (auto& imageRef : images) {
+                assert(imageRef.use_count() == 1 && "Image wasn't deallocated or allocated wrongly");
+                imageRef.reset();
+            }
+
+            for (auto& samplerRef : samplers) {
+                assert(samplerRef.use_count() == 1 && "Sampler wasn't deallocated or allocated wrongly");
+                samplerRef.reset();
+            }
+
+            for (auto& poolRef : descriptorPools) {
+                assert(poolRef.use_count() == 1 && "Descriptor pool wasn't deallocated or allocated wrongly");
+                poolRef.reset();
+            }
 
             // Delete memory manager at last, since it needs to clean up
             // all remaining memory which was destroyed by buffers, images, etc.
@@ -118,9 +126,9 @@ namespace Atlas {
 
         }
 
-        Shader* GraphicsDevice::CreateShader(ShaderDesc shaderDesc) {
+        Ref<Shader> GraphicsDevice::CreateShader(ShaderDesc shaderDesc) {
 
-            auto shader = new Shader(memoryManager, shaderDesc);
+            auto shader = std::make_shared<Shader>(memoryManager, shaderDesc);
 
             shaders.push_back(shader);
 
@@ -128,19 +136,9 @@ namespace Atlas {
 
         }
 
-        Pipeline* GraphicsDevice::CreatePipeline(GraphicsPipelineDesc desc) {
+        Ref<Pipeline> GraphicsDevice::CreatePipeline(GraphicsPipelineDesc desc) {
 
-            auto pipeline = new Pipeline(memoryManager, desc);
-
-            pipelines.push_back(pipeline);
-
-            return pipeline;
-
-        }
-
-        Pipeline* GraphicsDevice::CreatePipeline(ComputePipelineDesc desc) {
-
-            auto pipeline = new Pipeline(memoryManager, desc);
+            auto pipeline = std::make_shared<Pipeline>(memoryManager, desc);
 
             pipelines.push_back(pipeline);
 
@@ -148,9 +146,19 @@ namespace Atlas {
 
         }
 
-        Buffer* GraphicsDevice::CreateBuffer(BufferDesc bufferDesc) {
+        Ref<Pipeline> GraphicsDevice::CreatePipeline(ComputePipelineDesc desc) {
 
-            auto buffer = new Buffer(this, bufferDesc);
+            auto pipeline = std::make_shared<Pipeline>(memoryManager, desc);
+
+            pipelines.push_back(pipeline);
+
+            return pipeline;
+
+        }
+
+        Ref<Buffer> GraphicsDevice::CreateBuffer(BufferDesc bufferDesc) {
+
+            auto buffer = std::make_shared<Buffer>(this, bufferDesc);
 
             buffers.push_back(buffer);
 
@@ -158,9 +166,9 @@ namespace Atlas {
 
         }
 
-        MultiBuffer* GraphicsDevice::CreateMultiBuffer(BufferDesc bufferDesc) {
+        Ref<MultiBuffer> GraphicsDevice::CreateMultiBuffer(BufferDesc bufferDesc) {
 
-            auto multiBuffer = new MultiBuffer(this, bufferDesc);
+            auto multiBuffer = std::make_shared<MultiBuffer>(this, bufferDesc);
 
             multiBuffers.push_back(multiBuffer);
 
@@ -168,9 +176,9 @@ namespace Atlas {
 
         }
 
-        Image* GraphicsDevice::CreateImage(ImageDesc imageDesc) {
+        Ref<Image> GraphicsDevice::CreateImage(ImageDesc imageDesc) {
 
-            auto image = new Image(this, imageDesc);
+            auto image = std::make_shared<Image>(this, imageDesc);
 
             images.push_back(image);
 
@@ -178,9 +186,9 @@ namespace Atlas {
 
         }
 
-        Sampler* GraphicsDevice::CreateSampler(SamplerDesc samplerDesc) {
+        Ref<Sampler> GraphicsDevice::CreateSampler(SamplerDesc samplerDesc) {
 
-            auto sampler = new Sampler(this, samplerDesc);
+            auto sampler = std::make_shared<Sampler>(this, samplerDesc);
 
             samplers.push_back(sampler);
 
@@ -188,9 +196,9 @@ namespace Atlas {
 
         }
 
-        DescriptorPool* GraphicsDevice::CreateDescriptorPool() {
+        Ref<DescriptorPool> GraphicsDevice::CreateDescriptorPool() {
 
-            auto pool = new DescriptorPool(this);
+            auto pool = std::make_shared<DescriptorPool>(this);
 
             descriptorPools.push_back(pool);
 
@@ -296,6 +304,9 @@ namespace Atlas {
             // Delete data that is marked for deletion for this frame
             memoryManager->DeleteData();
             frameIndex++;
+
+            // Do before update anything, don't want to do unnecessary work
+            DestroyUnusedGraphicObjects();
 
             // Update frame index of all objects in need
             memoryManager->UpdateFrameIndex(frameIndex);
@@ -583,6 +594,80 @@ namespace Atlas {
         FrameData *GraphicsDevice::GetFrameData() {
 
             return &frameData[frameIndex % FRAME_DATA_COUNT];
+
+        }
+
+        void GraphicsDevice::DestroyUnusedGraphicObjects() {
+
+            for (size_t i = 0; i < pipelines.size(); i++) {
+                auto& pipelineRef = pipelines[i];
+                if (pipelineRef.unique()) {
+                    pipelineRef.swap(pipelines.back());
+                    memoryManager->DestroyAllocation(pipelines.back());
+                    pipelines.pop_back();
+                    i--;
+                }
+            }
+
+            for (size_t i = 0; i < shaders.size(); i++) {
+                auto& shaderRef = shaders[i];
+                if (shaderRef.unique()) {
+                    shaderRef.swap(shaders.back());
+                    memoryManager->DestroyAllocation(shaders.back());
+                    shaders.pop_back();
+                    i--;
+                }
+            }
+
+            for (size_t i = 0; i < buffers.size(); i++) {
+                auto& bufferRef = buffers[i];
+                if (bufferRef.unique()) {
+                    bufferRef.swap(buffers.back());
+                    memoryManager->DestroyAllocation(buffers.back());
+                    buffers.pop_back();
+                    i--;
+                }
+            }
+
+            for (size_t i = 0; i < multiBuffers.size(); i++) {
+                auto& multiBufferRef = multiBuffers[i];
+                if (multiBufferRef.unique()) {
+                    multiBufferRef.swap(multiBuffers.back());
+                    memoryManager->DestroyAllocation(multiBuffers.back());
+                    multiBuffers.pop_back();
+                    i--;
+                }
+            }
+
+            for (size_t i = 0; i < images.size(); i++) {
+                auto& imageRef = images[i];
+                if (imageRef.unique()) {
+                    imageRef.swap(images.back());
+                    memoryManager->DestroyAllocation(images.back());
+                    images.pop_back();
+                    i--;
+                }
+            }
+
+            for (size_t i = 0; i < samplers.size(); i++) {
+                auto& samplerRef = samplers[i];
+                if (samplerRef.unique()) {
+                    samplerRef.swap(samplers.back());
+                    memoryManager->DestroyAllocation(samplers.back());
+                    samplers.pop_back();
+                    i--;
+                }
+            }
+
+            for (size_t i = 0; i < descriptorPools.size(); i++) {
+                auto& poolRef = descriptorPools[i];
+                if (poolRef.unique()) {
+                    poolRef.swap(descriptorPools.back());
+                    memoryManager->DestroyAllocation(descriptorPools.back());
+                    descriptorPools.pop_back();
+                    i--;
+                }
+            }
 
         }
 

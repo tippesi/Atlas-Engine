@@ -5,7 +5,7 @@ const std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
 
-    testRenderer.Init(graphicInstance->GetGraphicsDevice());
+    testRenderer.Init(Atlas::Graphics::GraphicsDevice::defaultDevice);
 
     camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f,
         glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));

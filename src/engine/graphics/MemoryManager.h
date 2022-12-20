@@ -2,6 +2,12 @@
 #define AE_GRAPHICSMEMORYMANAGER_H
 
 #include "Common.h"
+#include "Shader.h"
+#include "Pipeline.h"
+#include "Buffer.h"
+#include "Image.h"
+#include "Sampler.h"
+#include "Descriptor.h"
 #include "MemoryTransferManager.h"
 
 #define VMA_STATS_STRING_ENABLED 0
@@ -13,18 +19,16 @@ namespace Atlas {
 
     namespace Graphics {
 
-        struct BufferAllocation {
-            VkBuffer buffer;
-            VmaAllocation allocation;
-        };
-
-        struct ImageAllocation {
-            VkImage image;
-            VmaAllocation allocation;
-        };
-
         // Forward declare such that it can be a friend
         class GraphicsDevice;
+        class MemoryManager;
+
+        template<typename T>
+        class DeleteResource {
+        public:
+            Ref<T> resource;
+            size_t deleteFrame;
+        };
 
         class MemoryManager {
 
@@ -40,9 +44,19 @@ namespace Atlas {
 
             MemoryManager& operator=(const MemoryManager& that) = delete;
 
-            void DestroyAllocation(BufferAllocation allocation);
+            void DestroyAllocation(Ref<Shader>& allocation);
 
-            void DestroyAllocation(ImageAllocation allocation);
+            void DestroyAllocation(Ref<Pipeline>& allocation);
+
+            void DestroyAllocation(Ref<Buffer>& allocation);
+
+            void DestroyAllocation(Ref<MultiBuffer>& allocation);
+
+            void DestroyAllocation(Ref<Image>& allocation);
+
+            void DestroyAllocation(Ref<Sampler>& allocation);
+
+            void DestroyAllocation(Ref<DescriptorPool>& allocation);
 
             VmaAllocator allocator;
 
@@ -55,25 +69,32 @@ namespace Atlas {
             MemoryTransferManager* transferManager;
 
         private:
-            struct DeleteBufferAllocation {
-                BufferAllocation allocation;
-                size_t deleteFrame;
-            };
-
-            struct DeleteImageAllocation {
-                ImageAllocation allocation;
-                size_t deleteFrame;
-            };
-
             void UpdateFrameIndex(size_t frameIndex);
 
             void DeleteData();
 
+            template<class T>
+            void DeleteAllocations(std::deque<DeleteResource<T>>& deleteAllocations) {
+                while (deleteAllocations.size() &&
+                    deleteAllocations.front().deleteFrame <= frameIndex) {
+                    auto &allocation = deleteAllocations.front();
+
+                    allocation.resource.reset();
+
+                    deleteAllocations.pop_front();
+                }
+            }
+
             const size_t framesToDeletion = 3;
 
             size_t frameIndex = 0;
-            std::deque<DeleteBufferAllocation> deleteBufferAllocations;
-            std::deque<DeleteImageAllocation> deleteImageAllocations;
+            std::deque<DeleteResource<Shader>> deleteShaderAllocations;
+            std::deque<DeleteResource<Pipeline>> deletePipelineAllocations;
+            std::deque<DeleteResource<Buffer>> deleteBufferAllocations;
+            std::deque<DeleteResource<MultiBuffer>> deleteMultiBufferAllocations;
+            std::deque<DeleteResource<Image>> deleteImageAllocations;
+            std::deque<DeleteResource<Sampler>> deleteSamplerAllocations;
+            std::deque<DeleteResource<DescriptorPool>> deleteDescriptorPoolAllocations;
 
         };
 

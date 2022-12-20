@@ -2,7 +2,7 @@
 
 #define VK_NO_PROTOTYPES
 #include <SDL2/SDL_mouse.h>
-#include <EngineInstance.h>
+#include <graphics/Instance.h>
 #include <ImguiVulkan.h>
 
 void ImguiWrapper::Load(Atlas::Window* window) {
@@ -71,7 +71,7 @@ void ImguiWrapper::Load(Atlas::Window* window) {
 	auto textInputEventHandler = std::bind(&ImguiWrapper::TextInputHandler, this, std::placeholders::_1);
 	textInputID = Atlas::Events::EventManager::TextInputEventDelegate.Subscribe(textInputEventHandler);
 
-    auto instance = Atlas::EngineInstance::GetGraphicsInstance();
+    auto instance = Atlas::Graphics::Instance::defaultInstance;
 	auto device = instance->GetGraphicsDevice();
     pool = device->CreateDescriptorPool();
 
@@ -101,7 +101,7 @@ void ImguiWrapper::Load(Atlas::Window* window) {
 
 void ImguiWrapper::Unload() {
 
-    auto instance = Atlas::EngineInstance::GetGraphicsInstance();
+    auto instance = Atlas::Graphics::Instance::defaultInstance;
     auto device = instance->GetGraphicsDevice();
 
     device->WaitForIdle();
@@ -138,7 +138,7 @@ void ImguiWrapper::Render() {
 
 	ImGuiIO& io = ImGui::GetIO();
 
-    auto instance = Atlas::EngineInstance::GetGraphicsInstance();
+    auto instance = Atlas::Graphics::Instance::defaultInstance;
     auto device = instance->GetGraphicsDevice();
 
     auto commandList = device->GetCommandList(Atlas::Graphics::GraphicsQueue);

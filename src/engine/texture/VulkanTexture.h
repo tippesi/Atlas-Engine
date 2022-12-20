@@ -6,6 +6,7 @@
 #include "../common/Image.h"
 #include "../loader/ImageLoader.h"
 
+#include "../common/Ref.h"
 #include "../graphics/Image.h"
 #include "../graphics/Sampler.h"
 
@@ -53,8 +54,8 @@ namespace Atlas {
              */
             void SetData(std::vector<uint16_t>& data);
 
-            Graphics::Image* image = nullptr;
-            Graphics::Sampler* sampler = nullptr;
+            Ref<Graphics::Image> image = nullptr;
+            Ref<Graphics::Sampler> sampler = nullptr;
 
             uint32_t width = 0;
             uint32_t height = 0;

@@ -188,7 +188,7 @@ namespace Atlas {
             }
 
             vkDestroyImageView(device, depthImageView, nullptr);
-            memoryManager->DestroyAllocation(depthImageAllocation);
+            vmaDestroyImage(memoryManager->allocator, depthImageAllocation.image, depthImageAllocation.allocation);
 
             vkDestroySemaphore(device, semaphore, nullptr);
             vkDestroyRenderPass(device, defaultRenderPass, nullptr);

@@ -2,13 +2,13 @@
 #define AE_GRAPHICSSAMPLER_H
 
 #include "Common.h"
-#include "MemoryManager.h"
 
 namespace Atlas {
 
     namespace Graphics {
 
         class GraphicsDevice;
+        class MemoryManager;
 
         struct SamplerDesc {
             VkFilter filter = VK_FILTER_NEAREST;

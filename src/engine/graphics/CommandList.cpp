@@ -100,7 +100,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::BeginRenderPass(RenderPass *renderPass, bool clear) {
+        void CommandList::BeginRenderPass(Ref<RenderPass>& renderPass, bool clear) {
 
             renderPassInUse = renderPass;
 
@@ -115,7 +115,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::BindPipeline(Pipeline *pipeline) {
+        void CommandList::BindPipeline(Ref<Pipeline>& pipeline) {
 
             pipelineInUse = pipeline;
 
@@ -219,30 +219,41 @@ namespace Atlas {
 
         }
 
-        void CommandList::BindBuffer(Buffer *buffer, uint32_t set, uint32_t binding) {
+        void CommandList::BindBuffer(Ref<Buffer>& buffer, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point not allowed for use");
 
-            descriptorBindingData.buffers[set][binding] = buffer;
+            // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
+            descriptorBindingData.buffers[set][binding] = buffer.get();
 
         }
 
-        void CommandList::BindImage(Image *image, uint32_t set, uint32_t binding) {
+        void CommandList::BindBuffer(Ref<MultiBuffer>& buffer, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point not allowed for use");
 
-            descriptorBindingData.images[set][binding] = image;
+            // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
+            descriptorBindingData.buffers[set][binding] = buffer->GetCurrent();
 
         }
 
-        void CommandList::BindImage(Image *image, Sampler *sampler, uint32_t set, uint32_t binding) {
+        void CommandList::BindImage(Ref<Image>& image, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point not allowed for use");
 
-            descriptorBindingData.sampledImages[set][binding] = { image, sampler };
+            descriptorBindingData.images[set][binding] = image.get();
+
+        }
+
+        void CommandList::BindImage(Ref<Image>& image, Ref<Sampler>& sampler, uint32_t set, uint32_t binding) {
+
+            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point not allowed for use");
+
+            descriptorBindingData.sampledImages[set][binding] = { image.get(), sampler.get() };
 
         }
 

@@ -1,7 +1,6 @@
 #include "VulkanMesh.h"
-#include "../EngineInstance.h"
 
-#include "../graphics/Initializers.h"
+#include "../graphics/Instance.h"
 
 namespace Atlas {
 
@@ -45,7 +44,7 @@ namespace Atlas {
 
         void VulkanMesh::UploadData(Atlas::Mesh::MeshData &data) {
 
-            auto graphicsInstance = EngineInstance::GetGraphicsInstance();
+            auto graphicsInstance = Graphics::Instance::defaultInstance;
             auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
 
             if (data.indices.ContainsData()) {

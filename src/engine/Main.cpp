@@ -1,5 +1,6 @@
 #include "Engine.h"
 #include "EngineInstance.h"
+#include "graphics/Instance.h"
 #include "common/Path.h"
 
 #if defined(AE_OS_ANDROID) || defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
@@ -26,6 +27,14 @@ int main(int argc, char* argv[]) {
     Atlas::Engine::Init(Atlas::EngineInstance::assetDirectory,
                         Atlas::EngineInstance::shaderDirectory);
 
+    auto graphicsInstance = Atlas::Graphics::Instance::defaultInstance;
+
+    if (!graphicsInstance->isComplete) {
+        Atlas::Log::Error("Couldn't initialize graphics instance");
+        Atlas::Engine::Shutdown();
+        return 0;
+    }
+
     auto engineInstance = Atlas::EngineInstance::GetInstance();
     if (!engineInstance) {
         Atlas::Log::Warning("Shutdown of application");
@@ -33,22 +42,8 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    auto graphicsInstance = Atlas::EngineInstance::GetGraphicsInstance();
-
-	if (!graphicsInstance) {
-		Atlas::Log::Warning("Shutdown of application");
-		Atlas::Engine::Shutdown();
-		return 0;
-	}
-
     auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
-
     bool needed = graphicsDevice == nullptr;
-
-
-	// No need to clean the context up, will be released
-	// when the instance is being deleted.
-	// instance->context = *context;
 
 	// We need to pass the command line arguments
 	for (int32_t i = 0; i < argc; i++)
@@ -81,9 +76,10 @@ int main(int argc, char* argv[]) {
 	}
 
     engineInstance->UnloadContent();
-
-	Atlas::Engine::Shutdown();
     delete engineInstance;
+
+    delete graphicsInstance;
+	Atlas::Engine::Shutdown();
 
     // Need this right now just for linking to be successful
     if (needed && !gladLoadGL()) {

@@ -1,13 +1,13 @@
 #include "Window.h"
-#include "EngineInstance.h"
+#include "graphics/Instance.h"
 
 #include <SDL_vulkan.h>
 
 namespace Atlas {
 
-	Window::Window(std::string title, int32_t x, int32_t y, int32_t width, int32_t height, int32_t flags, bool createSurface) :
-			x(x == AE_WINDOWPOSITION_UNDEFINED ? 0 : x), y(y == AE_WINDOWPOSITION_UNDEFINED ? 0 : y),
-			width(width), height(height) {
+	Window::Window(const std::string& title, int32_t x, int32_t y, int32_t width, int32_t height,
+            int32_t flags, bool createSurface) : title(title), x(x == AE_WINDOWPOSITION_UNDEFINED ? 0 : x),
+            y(y == AE_WINDOWPOSITION_UNDEFINED ? 0 : y), width(width), height(height) {
 
 		sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_VULKAN);
 		if (!sdlWindow) {
@@ -187,7 +187,7 @@ namespace Atlas {
     bool Window::CreateSurface() {
 
         bool success = false;
-        auto graphicsInstance = EngineInstance::GetGraphicsInstance();
+        auto graphicsInstance = Graphics::Instance::defaultInstance;
         surface = graphicsInstance->CreateSurface(sdlWindow);
         if (!surface) {
             Log::Error("Error initializing window surface");

@@ -2,7 +2,11 @@
 #define AE_GRAPHICSBUFFER_H
 
 #include "Common.h"
-#include "MemoryManager.h"
+
+#include "../common/Ref.h"
+
+#define VMA_STATS_STRING_ENABLED 0
+#include <vk_mem_alloc.h>
 
 namespace Atlas {
 
@@ -29,7 +33,13 @@ namespace Atlas {
             size_t size;
         };
 
+        struct BufferAllocation {
+            VkBuffer buffer;
+            VmaAllocation allocation;
+        };
+
         class GraphicsDevice;
+        class MemoryManager;
 
         class Buffer {
         public:
@@ -76,12 +86,12 @@ namespace Atlas {
 
         // Lightweight specializations of the buffer class
         struct IndexBuffer {
-            Graphics::Buffer* buffer = nullptr;
+            Ref<Buffer> buffer = nullptr;
             VkIndexType type = {};
         };
 
         struct VertexBuffer {
-            Graphics::Buffer* buffer = nullptr;
+            Ref<Buffer> buffer = nullptr;
             VkVertexInputBindingDescription bindingDescription = {};
             VkVertexInputAttributeDescription attributeDescription = {};
         };

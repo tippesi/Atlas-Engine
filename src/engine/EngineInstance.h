@@ -2,7 +2,6 @@
 #define AE_ENGINEINSTANCE_H
 
 #include "Engine.h"
-#include "graphics/Instance.h"
 
 #include <vector>
 
@@ -75,11 +74,6 @@ namespace Atlas {
 		 */
 		Window* window = nullptr;
 
-		/**
-		 * A graphics instance which needs to be used for rendering.
-		 */
-		Graphics::Instance* graphicInstance = nullptr;
-
         /**
          * Command line arguments.
          * @note This member will be first available when LoadContent() is called.
@@ -87,8 +81,6 @@ namespace Atlas {
 		std::vector<std::string> args;
 
         static EngineInstance* GetInstance();
-
-        static Graphics::Instance* GetGraphicsInstance();
 
 	protected:
 		/**

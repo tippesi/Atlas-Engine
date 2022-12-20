@@ -60,6 +60,8 @@ namespace Atlas {
          */
         static void UnlockFramerate();
 
+        static Window* defaultWindow;
+
 	};
 
 }

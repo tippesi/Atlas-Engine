@@ -3,6 +3,8 @@
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
+#include <forward_list>
+
 namespace Atlas {
 
     namespace Graphics {
@@ -40,15 +42,52 @@ namespace Atlas {
 
         }
 
-        void MemoryManager::DestroyAllocation(BufferAllocation allocation) {
+        void MemoryManager::DestroyAllocation(Ref<Shader>& allocation) {
 
-            deleteBufferAllocations.emplace_back(DeleteBufferAllocation { allocation, frameIndex + framesToDeletion });
+            deleteShaderAllocations.
+                emplace_back(DeleteResource<Shader> { allocation, frameIndex + framesToDeletion });
 
         }
 
-        void MemoryManager::DestroyAllocation(ImageAllocation allocation) {
+        void MemoryManager::DestroyAllocation(Ref<Pipeline>& allocation) {
 
-            deleteImageAllocations.emplace_back(DeleteImageAllocation { allocation, frameIndex + framesToDeletion });
+            deletePipelineAllocations.
+                emplace_back(DeleteResource<Pipeline> { allocation, frameIndex + framesToDeletion });
+
+        }
+
+        void MemoryManager::DestroyAllocation(Ref<Buffer>& allocation) {
+
+            deleteBufferAllocations.
+                emplace_back(DeleteResource<Buffer> { allocation, frameIndex + framesToDeletion });
+
+        }
+
+        void MemoryManager::DestroyAllocation(Ref<MultiBuffer>& allocation) {
+
+            deleteMultiBufferAllocations.emplace_back(
+                DeleteResource<MultiBuffer> { allocation, frameIndex + framesToDeletion });
+
+        }
+
+        void MemoryManager::DestroyAllocation(Ref<Image>& allocation) {
+
+            deleteImageAllocations
+                .emplace_back(DeleteResource<Image> { allocation, frameIndex + framesToDeletion });
+
+        }
+
+        void MemoryManager::DestroyAllocation(Ref<Sampler>& allocation) {
+
+            deleteSamplerAllocations
+                .emplace_back(DeleteResource<Sampler> { allocation, frameIndex + framesToDeletion });
+
+        }
+
+        void MemoryManager::DestroyAllocation(Ref<DescriptorPool>& allocation) {
+
+            deleteDescriptorPoolAllocations
+                .emplace_back(DeleteResource<DescriptorPool> { allocation, frameIndex + framesToDeletion });
 
         }
 
@@ -60,23 +99,13 @@ namespace Atlas {
 
         void MemoryManager::DeleteData() {
 
-            while (deleteBufferAllocations.size() &&
-                deleteBufferAllocations.front().deleteFrame <= frameIndex) {
-                auto &allocation = deleteBufferAllocations.front();
-
-                vmaDestroyBuffer(allocator, allocation.allocation.buffer, allocation.allocation.allocation);
-
-                deleteBufferAllocations.pop_front();
-            }
-
-            while (deleteImageAllocations.size() &&
-                deleteImageAllocations.front().deleteFrame <= frameIndex) {
-                auto &allocation = deleteImageAllocations.front();
-
-                vmaDestroyImage(allocator, allocation.allocation.image, allocation.allocation.allocation);
-
-                deleteImageAllocations.pop_front();
-            }
+            DeleteAllocations(deletePipelineAllocations);
+            DeleteAllocations(deleteShaderAllocations);
+            DeleteAllocations(deleteBufferAllocations);
+            DeleteAllocations(deleteMultiBufferAllocations);
+            DeleteAllocations(deleteImageAllocations);
+            DeleteAllocations(deleteSamplerAllocations);
+            DeleteAllocations(deleteDescriptorPoolAllocations);
 
         }
 

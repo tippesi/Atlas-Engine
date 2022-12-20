@@ -43,6 +43,8 @@ namespace Atlas {
 
             bool isComplete = false;
 
+            static Instance* defaultInstance;
+
         private:
             void LoadSupportedLayersAndExtensions();
 

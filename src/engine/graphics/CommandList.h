@@ -10,6 +10,8 @@
 #include "Descriptor.h"
 #include "Sampler.h"
 
+#include "../common/Ref.h"
+
 #include <atomic>
 
 namespace Atlas {
@@ -45,11 +47,11 @@ namespace Atlas {
 
             void BeginRenderPass(SwapChain* swapChain, bool clear = false);
 
-            void BeginRenderPass(RenderPass* renderPass, bool clear = false);
+            void BeginRenderPass(Ref<RenderPass>& renderPass, bool clear = false);
 
             void EndRenderPass();
 
-            void BindPipeline(Pipeline* pipeline);
+            void BindPipeline(Ref<Pipeline>& pipeline);
 
             void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 
@@ -63,11 +65,13 @@ namespace Atlas {
 
             void BindVertexBuffer(VertexBuffer* buffer);
 
-            void BindBuffer(Buffer* buffer, uint32_t set, uint32_t binding);
+            void BindBuffer(Ref<Buffer>& buffer, uint32_t set, uint32_t binding);
 
-            void BindImage(Image* image, uint32_t set, uint32_t binding);
+            void BindBuffer(Ref<MultiBuffer>& buffer, uint32_t set, uint32_t binding);
 
-            void BindImage(Image* image, Sampler* sampler, uint32_t set, uint32_t binding);
+            void BindImage(Ref<Image>& image, uint32_t set, uint32_t binding);
+
+            void BindImage(Ref<Image>& image, Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
             void ResetBindings();
 
@@ -87,8 +91,8 @@ namespace Atlas {
             QueueType queueType;
 
             SwapChain* swapChainInUse = nullptr;
-            RenderPass* renderPassInUse = nullptr;
-            Pipeline* pipelineInUse = nullptr;
+            Ref<RenderPass> renderPassInUse = nullptr;
+            Ref<Pipeline> pipelineInUse = nullptr;
 
         private:
             struct DescriptorBindingData {

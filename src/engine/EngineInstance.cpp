@@ -9,24 +9,18 @@ namespace Atlas {
 
 		LockFramerate();
 
-        graphicInstance = new Graphics::Instance(instanceName, true);
-
-        if (!graphicInstance->isComplete) {
-            Atlas::Log::Error("Couldn't initialize engine instance");
-        }
-
-        // Create window after creation of graphics instance
-        window = new Window(instanceName,AE_WINDOWPOSITION_UNDEFINED,
-            AE_WINDOWPOSITION_UNDEFINED, windowWidth,windowHeight,
-            flags, false);
+        window = Engine::defaultWindow;
+        window->SetTitle(instanceName);
+        window->SetPosition(AE_WINDOWPOSITION_UNDEFINED, AE_WINDOWPOSITION_UNDEFINED);
+        window->SetSize(windowWidth, windowHeight);
+        if (flags & AE_WINDOW_BORDERLESS) window->SetBordered(false);
+        if (flags & AE_WINDOW_FULLSCREEN) window->SetFullscreen(true);
 
 	}
 
     EngineInstance::~EngineInstance() {
 
-        delete graphicInstance;
-        // Surface needs to be deleted after swap chain
-        delete window;
+
 
     }
 
@@ -65,12 +59,6 @@ namespace Atlas {
     EngineInstance* EngineInstance::GetInstance() {
 
         return instance;
-
-    }
-
-    Graphics::Instance *EngineInstance::GetGraphicsInstance() {
-
-        return instance->graphicInstance;
 
     }
 

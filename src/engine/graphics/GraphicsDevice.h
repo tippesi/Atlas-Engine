@@ -11,6 +11,8 @@
 #include "Image.h"
 #include "MemoryManager.h"
 
+#include "../common/Ref.h"
+
 #include <optional>
 #include <vector>
 #include <mutex>
@@ -67,21 +69,21 @@ namespace Atlas {
 
             GraphicsDevice& operator=(const GraphicsDevice& that) = delete;
 
-            Shader* CreateShader(ShaderDesc shaderDesc);
+            Ref<Shader> CreateShader(ShaderDesc shaderDesc);
 
-            Pipeline* CreatePipeline(GraphicsPipelineDesc desc);
+            Ref<Pipeline> CreatePipeline(GraphicsPipelineDesc desc);
 
-            Pipeline* CreatePipeline(ComputePipelineDesc desc);
+            Ref<Pipeline> CreatePipeline(ComputePipelineDesc desc);
 
-            Buffer* CreateBuffer(BufferDesc bufferDesc);
+            Ref<Buffer> CreateBuffer(BufferDesc bufferDesc);
 
-            MultiBuffer* CreateMultiBuffer(BufferDesc bufferDesc);
+            Ref<MultiBuffer> CreateMultiBuffer(BufferDesc bufferDesc);
 
-            Image* CreateImage(ImageDesc imageDesc);
+            Ref<Image> CreateImage(ImageDesc imageDesc);
 
-            Sampler* CreateSampler(SamplerDesc samplerDesc);
+            Ref<Sampler> CreateSampler(SamplerDesc samplerDesc);
 
-            DescriptorPool* CreateDescriptorPool();
+            Ref<DescriptorPool> CreateDescriptorPool();
 
             CommandList* GetCommandList(QueueType queueType = QueueType::GraphicsQueue);
 
@@ -104,6 +106,8 @@ namespace Atlas {
             VkPhysicalDeviceProperties deviceProperties;
 
             bool isComplete = false;
+
+            static GraphicsDevice* defaultDevice;
 
         private:
             struct QueueFamilyIndices {
@@ -140,17 +144,19 @@ namespace Atlas {
 
             FrameData* GetFrameData();
 
+            void DestroyUnusedGraphicObjects();
+
             Surface* surface;
 
             QueueFamilyIndices queueFamilyIndices;
 
-            std::vector<Shader*> shaders;
-            std::vector<Pipeline*> pipelines;
-            std::vector<Buffer*> buffers;
-            std::vector<MultiBuffer*> multiBuffers;
-            std::vector<Image*> images;
-            std::vector<Sampler*> samplers;
-            std::vector<DescriptorPool*> descriptorPools;
+            std::vector<Ref<Shader>> shaders;
+            std::vector<Ref<Pipeline>> pipelines;
+            std::vector<Ref<Buffer>> buffers;
+            std::vector<Ref<MultiBuffer>> multiBuffers;
+            std::vector<Ref<Image>> images;
+            std::vector<Ref<Sampler>> samplers;
+            std::vector<Ref<DescriptorPool>> descriptorPools;
 
             int32_t frameIndex = 0;
             FrameData frameData[FRAME_DATA_COUNT];

@@ -52,6 +52,8 @@
 #include <glm/gtx/common.hpp>
 #include <glm/gtx/transform.hpp>
 
+#include "common/Ref.h"
+
 namespace Atlas {
 
 	// Important definitions
@@ -66,12 +68,6 @@ namespace Atlas {
 	using glm::mat3;
 
 	typedef short float16;
-
-	template<typename T>
-	using Ref = std::shared_ptr<T>;
-
-	template<typename T>
-	using Scope = std::unique_ptr<T>;
 
 }
 

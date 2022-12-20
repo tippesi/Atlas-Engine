@@ -12,6 +12,12 @@ namespace Atlas {
 
     namespace Renderer {
 
+        VulkanTestRenderer::~VulkanTestRenderer() {
+
+            delete mesh;
+
+        }
+
         void VulkanTestRenderer::Init(Graphics::GraphicsDevice *device) {
 
             this->device = device;
@@ -118,7 +124,7 @@ namespace Atlas {
             commandList->BindVertexBuffer(&mesh->tangentBuffer);
             commandList->BindIndexBuffer(&mesh->indexBuffer);
 
-            commandList->BindBuffer(uniformBuffer->GetCurrent(), 0, 0);
+            commandList->BindBuffer(uniformBuffer, 0, 0);
 
             for (auto& subData : mesh->data.subData) {
                 auto baseColorTexture = subData.vulkanMaterial->baseColorMap;

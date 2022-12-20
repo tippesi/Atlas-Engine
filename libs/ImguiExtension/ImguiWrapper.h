@@ -41,7 +41,7 @@ private:
 	int32_t textInputID = 0;
 
 	Atlas::Window* window = nullptr;
-    Atlas::Graphics::DescriptorPool* pool = nullptr;
+    Atlas::Ref<Atlas::Graphics::DescriptorPool> pool = nullptr;
 
 };
 

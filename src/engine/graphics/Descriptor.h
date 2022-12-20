@@ -2,7 +2,6 @@
 #define AE_GRAPHICSDESCRIPTOR_H
 
 #include "Common.h"
-#include "MemoryManager.h"
 
 #include <vector>
 
@@ -11,6 +10,7 @@ namespace Atlas {
     namespace Graphics {
 
         class GraphicsDevice;
+        class MemoryManager;
 
         class DescriptorPool {
 

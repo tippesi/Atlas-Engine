@@ -1,6 +1,7 @@
 #include "Shader.h"
 #include "Extensions.h"
 #include "ShaderCompiler.h"
+#include "GraphicsDevice.h"
 
 #include <spirv_reflect.h>
 #include <cassert>

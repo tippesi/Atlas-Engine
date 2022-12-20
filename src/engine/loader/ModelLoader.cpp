@@ -3,7 +3,7 @@
 #include "AssetLoader.h"
 #include "../Log.h"
 #include "../common/Path.h"
-#include "../EngineInstance.h"
+#include "../graphics/Instance.h"
 
 #include <vector>
 #include <limits>
@@ -127,7 +127,7 @@ namespace Atlas {
             std::vector<vec4> normals(vertexCount);
             std::vector<vec4> tangents(hasTangents ? vertexCount : 0);
 
-            auto graphicsInstance = EngineInstance::GetGraphicsInstance();
+            auto graphicsInstance = Graphics::Instance::defaultInstance;
             auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
 
             auto rgbSupport = graphicsDevice->CheckFormatSupport(VK_FORMAT_R8G8B8_UNORM,
@@ -304,27 +304,27 @@ namespace Atlas {
 			material.twoSided = twoSided;
 			
 			if (images.baseColorImage.HasData()) {
-				material.baseColorMap = new Texture::VulkanTexture(images.baseColorImage);
+				material.baseColorMap = std::make_shared<Texture::VulkanTexture>(images.baseColorImage);
 				material.baseColorMapPath = images.baseColorImage.fileName;
 			}
 			if (images.opacityImage.HasData()) {
-				material.opacityMap = new Texture::VulkanTexture(images.opacityImage);
+				material.opacityMap = std::make_shared<Texture::VulkanTexture>(images.opacityImage);
 				material.opacityMapPath = images.opacityImage.fileName;
 			}
 			if (images.roughnessImage.HasData()) {
-				material.roughnessMap = new Texture::VulkanTexture(images.roughnessImage);
+				material.roughnessMap = std::make_shared<Texture::VulkanTexture>(images.roughnessImage);
 				material.roughnessMapPath = images.roughnessImage.fileName;
 			}
 			if (images.metallicImage.HasData()) {
-				material.metalnessMap = new Texture::VulkanTexture(images.metallicImage);
+				material.metalnessMap = std::make_shared<Texture::VulkanTexture>(images.metallicImage);
 				material.metalnessMapPath = images.metallicImage.fileName;
 			}
 			if (images.normalImage.HasData()) {
-				material.normalMap = new Texture::VulkanTexture(images.normalImage);
+				material.normalMap = std::make_shared<Texture::VulkanTexture>(images.normalImage);
 				material.normalMapPath = images.normalImage.fileName;
 			}
 			if (images.displacementImage.HasData()) {
-				material.displacementMap = new Texture::VulkanTexture(images.displacementImage);
+				material.displacementMap = std::make_shared<Texture::VulkanTexture>(images.displacementImage);
 				material.displacementMapPath = images.displacementImage.fileName;
 			}
 			

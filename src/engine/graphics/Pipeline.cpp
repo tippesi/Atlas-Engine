@@ -1,4 +1,5 @@
 #include "Pipeline.h"
+#include "GraphicsDevice.h"
 
 namespace Atlas {
 
@@ -9,7 +10,7 @@ namespace Atlas {
 
             if (desc.shader->isCompute) return;
 
-            GeneratePipelineLayoutFromShader(desc.shader);
+            GeneratePipelineLayoutFromShader(desc.shader.get());
 
             VkPipelineViewportStateCreateInfo viewportState = {};
             viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;

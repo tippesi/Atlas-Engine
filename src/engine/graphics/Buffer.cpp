@@ -35,7 +35,7 @@ namespace Atlas {
 
         Buffer::~Buffer() {
 
-            memoryManager->DestroyAllocation(BufferAllocation { buffer, allocation });
+            vmaDestroyBuffer(memoryManager->allocator, buffer, allocation);
 
         }
 
@@ -100,7 +100,7 @@ namespace Atlas {
 
         }
 
-        Buffer *MultiBuffer::GetCurrent() const {
+        Buffer* MultiBuffer::GetCurrent() const {
 
             return frameBuffer[frameIndex % FRAME_DATA_COUNT];
 

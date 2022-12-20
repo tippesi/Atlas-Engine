@@ -2,8 +2,9 @@
 #define AE_GRAPHICSPIPELINE_H
 
 #include "Common.h"
-#include "MemoryManager.h"
 #include "Shader.h"
+
+#include "../common/Ref.h"
 
 namespace Atlas {
 
@@ -12,7 +13,7 @@ namespace Atlas {
         struct GraphicsPipelineDesc {
             // These need to be set
             VkRenderPass renderPass = {};
-            Shader* shader = nullptr;
+            Ref<Shader> shader = nullptr;
 
             // These have a valid default state
             VkPipelineVertexInputStateCreateInfo vertexInputInfo =
@@ -31,8 +32,10 @@ namespace Atlas {
 
         struct ComputePipelineDesc {
             // These need to be set
-            Shader* shader = nullptr;
+            Ref<Shader> shader = nullptr;
         };
+
+        class MemoryManager;
 
         class Pipeline {
         public:
@@ -46,7 +49,7 @@ namespace Atlas {
             VkPipelineLayout layout;
             VkPipelineBindPoint bindPoint;
 
-            Shader* shader = nullptr;
+            Ref<Shader> shader = nullptr;
 
             bool isComplete = false;
 

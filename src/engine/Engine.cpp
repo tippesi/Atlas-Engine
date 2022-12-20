@@ -3,15 +3,18 @@
 #include "Profiler.h"
 #include "EngineInstance.h"
 #include "loader/ShaderLoader.h"
+#include "graphics/Instance.h"
 
 #include "graphics/ShaderCompiler.h"
 
-#include <volk.h>
 #include <SDL_vulkan.h>
 
 extern Atlas::EngineInstance* GetEngineInstance();
+extern Atlas::Window* GetWindow();
 
 namespace Atlas {
+
+    Window* Engine::defaultWindow = nullptr;
 
 	void Engine::Init(std::string assetDirectory, std::string shaderDirectory) {
 
@@ -27,18 +30,22 @@ namespace Atlas {
 
         Graphics::ShaderCompiler::Init();
 
-        auto engineInstance = GetEngineInstance();
-		EngineInstance::instance = engineInstance;
+        // First need to get a window to retrieve the title
+        defaultWindow = new Window("Default window", AE_WINDOWPOSITION_UNDEFINED,
+            AE_WINDOWPOSITION_UNDEFINED, 100, 100,
+            SDL_WINDOW_VULKAN, false);
+        // Then create graphics instance
+        auto graphicsInstance = new Graphics::Instance("AtlasEngineInstance", true);
+        Graphics::Instance::defaultInstance = graphicsInstance;
+        // Initialize window surface
+        defaultWindow->CreateSurface();
+        // Initialize device
+        graphicsInstance->InitializeGraphicsDevice(defaultWindow->surface);
+        Graphics::GraphicsDevice::defaultDevice = graphicsInstance->GetGraphicsDevice();
 
-        // Create the surface to render to.
-        engineInstance->window->CreateSurface();
-        // Initialize the graphics device
-        engineInstance->graphicInstance->InitializeGraphicsDevice(engineInstance->window->surface);
+        Graphics::Extensions::Process();
 
-		// Do the setup for all the classes that need static setup
-		Graphics::Extensions::Process();
-		// Texture::Texture::GetMaxAnisotropyLevel();
-
+        // Do the setup for all the classes that need static setup
 		Loader::AssetLoader::Init();
 		Common::Random::Init();
 
@@ -49,12 +56,20 @@ namespace Atlas {
 
 		Clock::Update();
 
-	}
+        // Only then create engine instance. This makes sure that the engine instance already
+        // has access to all graphics functionality and all other functionality on construction
+        auto engineInstance = GetEngineInstance();
+        EngineInstance::instance = engineInstance;
+
+
+    }
 
     void Engine::Shutdown() {
 
         Shader::ShaderManager::Clear();
         Graphics::ShaderCompiler::Shutdown();
+
+        delete defaultWindow;
 
 #ifdef AE_NO_APP
         SDL_Quit();

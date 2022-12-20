@@ -8,6 +8,7 @@
 #include "loader/ImageLoader.h"
 #include "shader/Shader.h"
 #include "shader/ShaderConfig.h"
+#include "common/Ref.h"
 
 #include <string>
 
@@ -97,13 +98,13 @@ namespace Atlas {
 
         std::string name;
 
-        Texture::VulkanTexture* baseColorMap = nullptr;
-        Texture::VulkanTexture* opacityMap = nullptr;
-        Texture::VulkanTexture* normalMap = nullptr;
-        Texture::VulkanTexture* roughnessMap = nullptr;
-        Texture::VulkanTexture* metalnessMap = nullptr;
-        Texture::VulkanTexture* aoMap = nullptr;
-        Texture::VulkanTexture* displacementMap = nullptr;
+        Ref<Texture::VulkanTexture> baseColorMap = nullptr;
+        Ref<Texture::VulkanTexture> opacityMap = nullptr;
+        Ref<Texture::VulkanTexture> normalMap = nullptr;
+        Ref<Texture::VulkanTexture> roughnessMap = nullptr;
+        Ref<Texture::VulkanTexture> metalnessMap = nullptr;
+        Ref<Texture::VulkanTexture> aoMap = nullptr;
+        Ref<Texture::VulkanTexture> displacementMap = nullptr;
 
         vec3 baseColor = vec3(1.0f);
         vec3 emissiveColor = vec3(0.0f);
@@ -134,8 +135,6 @@ namespace Atlas {
 
     private:
         void DeepCopy(const VulkanMaterial& that);
-
-        void DeleteTextures();
 
     };
 

@@ -2,14 +2,14 @@
 #define AE_GRAPHICSSHADER_H
 
 #include "Common.h"
-#include "MemoryManager.h"
-
 #include <vector>
 #include <string>
 
 namespace Atlas {
 
     namespace Graphics {
+
+        class MemoryManager;
 
         class ShaderStageFile {
         public:
