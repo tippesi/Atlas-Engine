@@ -33,7 +33,7 @@ namespace Atlas {
                 shader = device->CreateShader(shaderDesc);
 
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                    .renderPass = device->swapChain->defaultRenderPass,
+                    .renderPass = device->swapChain->renderPass,
                     .shader = shader
                 };
                 pipeline = device->CreatePipeline(pipelineDesc);
@@ -71,7 +71,7 @@ namespace Atlas {
                 meshShader = device->CreateShader(meshShaderDesc);
 
                 auto meshPipelineDesc = Graphics::GraphicsPipelineDesc{
-                    .renderPass = device->swapChain->defaultRenderPass,
+                    .renderPass = device->swapChain->renderPass,
                     .shader = meshShader,
                     .vertexInputInfo = mesh->GetVertexInputState()
                 };
@@ -85,6 +85,44 @@ namespace Atlas {
                     .size = sizeof(Uniforms)
                 };
                 uniformBuffer = device->CreateMultiBuffer(bufferDesc);
+            }
+
+            {
+                auto colorImageDesc = Graphics::ImageDesc{
+                    .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                    .aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .width = 1280,
+                    .height = 720,
+                    .format = VK_FORMAT_R8G8B8A8_UNORM
+                };
+                auto depthImageDesc = Graphics::ImageDesc{
+                    .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                    .aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT,
+                    .width = 1280,
+                    .height = 720,
+                    .format = VK_FORMAT_D32_SFLOAT
+                };
+                auto colorImage = device->CreateImage(colorImageDesc);
+                auto depthImage = device->CreateImage(depthImageDesc);
+            
+                auto colorAttachment = Graphics::RenderPassAttachment{
+                    .image = colorImage,
+                    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                    .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                    .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                };
+                auto depthAttachment = Graphics::RenderPassAttachment{
+                    .image = depthImage,
+                    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                    .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                    .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                };
+                auto renderPassDesc = Graphics::RenderPassDesc{
+                    .colorAttachments = { colorAttachment },
+                    .depthAttachment = depthAttachment,
+                    .extent = { 1280, 720 }
+                };
+                mainRenderPass = device->CreateRenderPass(renderPassDesc);
             }
 
         }

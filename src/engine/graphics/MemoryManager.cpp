@@ -42,6 +42,13 @@ namespace Atlas {
 
         }
 
+        void MemoryManager::DestroyAllocation(Ref<RenderPass>& allocation) {
+
+            deleteRenderPassAllocations.
+                emplace_back(DeleteResource<RenderPass> { allocation, frameIndex + framesToDeletion });
+
+        }
+
         void MemoryManager::DestroyAllocation(Ref<Shader>& allocation) {
 
             deleteShaderAllocations.
@@ -99,6 +106,7 @@ namespace Atlas {
 
         void MemoryManager::DeleteData() {
 
+            DeleteAllocations(deleteRenderPassAllocations);
             DeleteAllocations(deletePipelineAllocations);
             DeleteAllocations(deleteShaderAllocations);
             DeleteAllocations(deleteBufferAllocations);

@@ -10,7 +10,7 @@ namespace Atlas {
             VkSamplerAddressMode wrapping, VkFilter filtering, bool anisotropicFiltering, bool generateMipMaps)
             : width(width), height(height), depth(depth) {
 
-            auto graphicsInstance = Graphics::Instance::defaultInstance;
+            auto graphicsInstance = Graphics::Instance::DefaultInstance;
             auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
 
             VkImageUsageFlags additionalUsageFlags = {};
@@ -43,7 +43,7 @@ namespace Atlas {
         VulkanTexture::VulkanTexture(Common::Image<uint8_t>& image, bool anisotropicFiltering, bool generateMipMaps)
             : width(image.width), height(image.height) {
 
-            auto graphicsInstance = Graphics::Instance::defaultInstance;
+            auto graphicsInstance = Graphics::Instance::DefaultInstance;
             auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
 
             VkFormat format;

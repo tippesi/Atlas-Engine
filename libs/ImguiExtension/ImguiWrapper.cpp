@@ -71,7 +71,7 @@ void ImguiWrapper::Load(Atlas::Window* window) {
 	auto textInputEventHandler = std::bind(&ImguiWrapper::TextInputHandler, this, std::placeholders::_1);
 	textInputID = Atlas::Events::EventManager::TextInputEventDelegate.Subscribe(textInputEventHandler);
 
-    auto instance = Atlas::Graphics::Instance::defaultInstance;
+    auto instance = Atlas::Graphics::Instance::DefaultInstance;
 	auto device = instance->GetGraphicsDevice();
     pool = device->CreateDescriptorPool();
 
@@ -86,7 +86,7 @@ void ImguiWrapper::Load(Atlas::Window* window) {
     init_info.ImageCount = 3;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
-    ImGui_ImplVulkan_Init(&init_info, device->swapChain->defaultRenderPass);
+    ImGui_ImplVulkan_Init(&init_info, device->swapChain->renderPass);
 
     //execute a gpu command to upload imgui font textures
     device->memoryManager->transferManager->ImmediateSubmit(
@@ -101,7 +101,7 @@ void ImguiWrapper::Load(Atlas::Window* window) {
 
 void ImguiWrapper::Unload() {
 
-    auto instance = Atlas::Graphics::Instance::defaultInstance;
+    auto instance = Atlas::Graphics::Instance::DefaultInstance;
     auto device = instance->GetGraphicsDevice();
 
     device->WaitForIdle();
@@ -138,7 +138,7 @@ void ImguiWrapper::Render() {
 
 	ImGuiIO& io = ImGui::GetIO();
 
-    auto instance = Atlas::Graphics::Instance::defaultInstance;
+    auto instance = Atlas::Graphics::Instance::DefaultInstance;
     auto device = instance->GetGraphicsDevice();
 
     auto commandList = device->GetCommandList(Atlas::Graphics::GraphicsQueue);

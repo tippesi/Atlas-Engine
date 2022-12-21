@@ -56,7 +56,7 @@ namespace Atlas {
             VkImageLayout depthImageLayout;
             VkImageView depthImageView;
 
-            VkRenderPass defaultRenderPass;
+            VkRenderPass renderPass;
             VkSemaphore semaphore;
 
             VkClearValue colorClearValue = { .color = { { 1.0f, 1.0f, 1.0f, 1.0f } } };

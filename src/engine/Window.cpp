@@ -187,7 +187,7 @@ namespace Atlas {
     bool Window::CreateSurface() {
 
         bool success = false;
-        auto graphicsInstance = Graphics::Instance::defaultInstance;
+        auto graphicsInstance = Graphics::Instance::DefaultInstance;
         surface = graphicsInstance->CreateSurface(sdlWindow);
         if (!surface) {
             Log::Error("Error initializing window surface");

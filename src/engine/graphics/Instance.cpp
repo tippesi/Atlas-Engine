@@ -7,7 +7,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        Instance* Instance::defaultInstance = nullptr;
+        Instance* Instance::DefaultInstance = nullptr;
 
         Instance::Instance(const std::string &instanceName, bool enableValidationLayers) :
             name(instanceName), validationLayersEnabled(enableValidationLayers) {

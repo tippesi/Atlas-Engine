@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
     Atlas::Engine::Init(Atlas::EngineInstance::assetDirectory,
                         Atlas::EngineInstance::shaderDirectory);
 
-    auto graphicsInstance = Atlas::Graphics::Instance::defaultInstance;
+    auto graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;
 
     if (!graphicsInstance->isComplete) {
         Atlas::Log::Error("Couldn't initialize graphics instance");

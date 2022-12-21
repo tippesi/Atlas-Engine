@@ -59,14 +59,14 @@ namespace Atlas {
 
             if (domain == ImageDomain::Device) {
                 VkOffset3D offset = {};
-                offset.x = offsetX;
-                offset.y = offsetY;
-                offset.z = offsetZ;
+                offset.x = int32_t(offsetX);
+                offset.y = int32_t(offsetY);
+                offset.z = int32_t(offsetZ);
 
                 VkExtent3D extent = {};
-                extent.width = width;
-                extent.height = height;
-                extent.depth = depth;
+                extent.width = uint32_t(width);
+                extent.height = uint32_t(height);
+                extent.depth = uint32_t(depth);
 
                 memoryManager->transferManager->UploadImageData(data, this, offset, extent);
             }

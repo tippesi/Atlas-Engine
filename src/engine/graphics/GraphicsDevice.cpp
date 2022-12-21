@@ -11,11 +11,11 @@ namespace Atlas {
 
     namespace Graphics {
 
-        GraphicsDevice* GraphicsDevice::defaultDevice = nullptr;
+        GraphicsDevice* GraphicsDevice::DefaultDevice = nullptr;
 
         GraphicsDevice::GraphicsDevice(Surface* surface, bool enableValidationLayers) : surface(surface) {
 
-            auto instance = Instance::defaultInstance;
+            auto instance = Instance::DefaultInstance;
 
             const std::vector<const char*> requiredExtensions = {
                     VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -64,11 +64,7 @@ namespace Atlas {
                 queueFamilyIndices.queueFamilies[QueueType::TransferQueue].value(),
                 queueFamilyIndices.queues[QueueType::TransferQueue]);
 
-            CreateSwapChain();
             CreateFrameData();
-
-            // Acquire first index since normally these are acquired at completion of frame
-            swapChain->AcquireImageIndex();
 
             isComplete = true;
 
@@ -83,6 +79,11 @@ namespace Atlas {
             delete swapChain;
 
             DestroyFrameData();
+
+            for (auto& renderPassRef : renderPasses) {
+                assert(renderPassRef.use_count() == 1 && "Render pass wasn't deallocated or allocated wrongly");
+                renderPassRef.reset();
+            }
 
             for (auto& pipelineRef : pipelines) {
                 assert(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
@@ -125,6 +126,17 @@ namespace Atlas {
             vkDestroyDevice(device, nullptr);
 
         }
+
+        Ref<RenderPass> GraphicsDevice::CreateRenderPass(RenderPassDesc shaderDesc) {
+
+            auto renderPass = std::make_shared<RenderPass>(this, shaderDesc);
+
+            renderPasses.push_back(renderPass);
+
+            return renderPass;
+
+        }
+
 
         Ref<Shader> GraphicsDevice::CreateShader(ShaderDesc shaderDesc) {
 
@@ -548,6 +560,11 @@ namespace Atlas {
             // Clean up old swap chain
             delete oldSwapChain;
 
+            if (!oldSwapChain) {
+                // Acquire first index since normally these are acquired at completion of frame
+                swapChain->AcquireImageIndex();
+            }
+
         }
 
         bool GraphicsDevice::CheckForWindowResize() {
@@ -599,9 +616,19 @@ namespace Atlas {
 
         void GraphicsDevice::DestroyUnusedGraphicObjects() {
 
+            for (size_t i = 0; i < renderPasses.size(); i++) {
+                auto& renderPassRef = renderPasses[i];
+                if (renderPassRef.use_count() == 1) {
+                    renderPassRef.swap(renderPasses.back());
+                    memoryManager->DestroyAllocation(renderPasses.back());
+                    renderPasses.pop_back();
+                    i--;
+                }
+            }
+
             for (size_t i = 0; i < pipelines.size(); i++) {
                 auto& pipelineRef = pipelines[i];
-                if (pipelineRef.unique()) {
+                if (pipelineRef.use_count() == 1) {
                     pipelineRef.swap(pipelines.back());
                     memoryManager->DestroyAllocation(pipelines.back());
                     pipelines.pop_back();
@@ -611,7 +638,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < shaders.size(); i++) {
                 auto& shaderRef = shaders[i];
-                if (shaderRef.unique()) {
+                if (shaderRef.use_count() == 1) {
                     shaderRef.swap(shaders.back());
                     memoryManager->DestroyAllocation(shaders.back());
                     shaders.pop_back();
@@ -621,7 +648,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < buffers.size(); i++) {
                 auto& bufferRef = buffers[i];
-                if (bufferRef.unique()) {
+                if (bufferRef.use_count() == 1) {
                     bufferRef.swap(buffers.back());
                     memoryManager->DestroyAllocation(buffers.back());
                     buffers.pop_back();
@@ -631,7 +658,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < multiBuffers.size(); i++) {
                 auto& multiBufferRef = multiBuffers[i];
-                if (multiBufferRef.unique()) {
+                if (multiBufferRef.use_count() == 1) {
                     multiBufferRef.swap(multiBuffers.back());
                     memoryManager->DestroyAllocation(multiBuffers.back());
                     multiBuffers.pop_back();
@@ -641,7 +668,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < images.size(); i++) {
                 auto& imageRef = images[i];
-                if (imageRef.unique()) {
+                if (imageRef.use_count() == 1) {
                     imageRef.swap(images.back());
                     memoryManager->DestroyAllocation(images.back());
                     images.pop_back();
@@ -651,7 +678,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < samplers.size(); i++) {
                 auto& samplerRef = samplers[i];
-                if (samplerRef.unique()) {
+                if (samplerRef.use_count() == 1) {
                     samplerRef.swap(samplers.back());
                     memoryManager->DestroyAllocation(samplers.back());
                     samplers.pop_back();
@@ -661,7 +688,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < descriptorPools.size(); i++) {
                 auto& poolRef = descriptorPools[i];
-                if (poolRef.unique()) {
+                if (poolRef.use_count() == 1) {
                     poolRef.swap(descriptorPools.back());
                     memoryManager->DestroyAllocation(descriptorPools.back());
                     descriptorPools.pop_back();

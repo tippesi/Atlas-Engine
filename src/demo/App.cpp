@@ -5,7 +5,7 @@ const std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
 
-    testRenderer.Init(Atlas::Graphics::GraphicsDevice::defaultDevice);
+    testRenderer.Init(Atlas::Graphics::GraphicsDevice::DefaultDevice);
 
     camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f,
         glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
@@ -24,6 +24,13 @@ void App::LoadContent() {
     */
 
     ImGui::StyleColorsDark();
+    for (int32_t i = 0; i < 55; i++) {
+        float gamma = 2.2f;
+        ImGui::GetStyle().Colors[i].x = powf(ImGui::GetStyle().Colors[i].x, gamma);
+        ImGui::GetStyle().Colors[i].y = powf(ImGui::GetStyle().Colors[i].y, gamma);
+        ImGui::GetStyle().Colors[i].z = powf(ImGui::GetStyle().Colors[i].z, gamma);
+    }
+   
 
 }
 

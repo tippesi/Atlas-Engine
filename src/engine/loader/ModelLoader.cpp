@@ -127,7 +127,7 @@ namespace Atlas {
             std::vector<vec4> normals(vertexCount);
             std::vector<vec4> tangents(hasTangents ? vertexCount : 0);
 
-            auto graphicsInstance = Graphics::Instance::defaultInstance;
+            auto graphicsInstance = Graphics::Instance::DefaultInstance;
             auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
 
             auto rgbSupport = graphicsDevice->CheckFormatSupport(VK_FORMAT_R8G8B8_UNORM,

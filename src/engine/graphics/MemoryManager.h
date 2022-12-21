@@ -2,6 +2,7 @@
 #define AE_GRAPHICSMEMORYMANAGER_H
 
 #include "Common.h"
+#include "RenderPass.h"
 #include "Shader.h"
 #include "Pipeline.h"
 #include "Buffer.h"
@@ -43,6 +44,8 @@ namespace Atlas {
             ~MemoryManager();
 
             MemoryManager& operator=(const MemoryManager& that) = delete;
+
+            void DestroyAllocation(Ref<RenderPass>& allocation);
 
             void DestroyAllocation(Ref<Shader>& allocation);
 
@@ -88,6 +91,7 @@ namespace Atlas {
             const size_t framesToDeletion = 3;
 
             size_t frameIndex = 0;
+            std::deque<DeleteResource<RenderPass>> deleteRenderPassAllocations;
             std::deque<DeleteResource<Shader>> deleteShaderAllocations;
             std::deque<DeleteResource<Pipeline>> deletePipelineAllocations;
             std::deque<DeleteResource<Buffer>> deleteBufferAllocations;

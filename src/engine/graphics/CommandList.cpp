@@ -67,7 +67,7 @@ namespace Atlas {
             VkRenderPassBeginInfo rpInfo = {};
             rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             rpInfo.pNext = nullptr;
-            rpInfo.renderPass = swapChain->defaultRenderPass;
+            rpInfo.renderPass = swapChain->renderPass;
             rpInfo.renderArea.offset.x = 0;
             rpInfo.renderArea.offset.y = 0;
             rpInfo.renderArea.extent = swapChain->extent;
@@ -102,13 +102,33 @@ namespace Atlas {
 
         void CommandList::BeginRenderPass(Ref<RenderPass>& renderPass, bool clear) {
 
+            VkRenderPassBeginInfo rpInfo = {};
+            rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            rpInfo.pNext = nullptr;
+            rpInfo.renderPass = renderPass->renderPass;
+            rpInfo.renderArea.offset.x = 0;
+            rpInfo.renderArea.offset.y = 0;
+            rpInfo.renderArea.extent = renderPass->extent;
+            rpInfo.framebuffer = renderPass->frameBuffer;
+
+            vkCmdBeginRenderPass(commandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
             renderPassInUse = renderPass;
+
+            if (clear) ClearAttachments();
 
         }
 
         void CommandList::EndRenderPass() {
 
             vkCmdEndRenderPass(commandBuffer);
+
+            // We need to keep track of the image layouts
+            if (swapChainInUse) {
+
+            }
+            if (renderPassInUse) {
+
+            }
 
             swapChainInUse = nullptr;
             renderPassInUse = nullptr;
@@ -181,7 +201,25 @@ namespace Atlas {
                 clearRect.rect.extent = swapChainInUse->extent;
             }
             if (renderPassInUse) {
+                VkClearAttachment colorClear = {}, depthClear = {};
 
+                colorClear.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
+                    if (!renderPassInUse->colorAttachments[i].image) continue;
+                    colorClear.clearValue = renderPassInUse->colorClearValue;
+                    colorClear.colorAttachment = i;
+                    clearAttachments.push_back(colorClear);
+                }
+
+                depthClear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                depthClear.clearValue = renderPassInUse->depthClearValue;
+                depthClear.colorAttachment = 0;
+                clearAttachments.push_back(depthClear);
+
+                clearRect.layerCount = 1;
+                clearRect.baseArrayLayer = 0;
+                clearRect.rect.offset = { 0, 0 };
+                clearRect.rect.extent = renderPassInUse->extent;
             }
 
             vkCmdClearAttachments(commandBuffer, uint32_t(clearAttachments.size()),
@@ -368,7 +406,7 @@ namespace Atlas {
                 extent = swapChainInUse->extent;
             }
             else if (renderPassInUse) {
-                // TODO...
+                extent = renderPassInUse->extent;
             }
             else {
                 assert(0 && "No valid render pass found");

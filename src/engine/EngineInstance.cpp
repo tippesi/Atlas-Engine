@@ -9,18 +9,24 @@ namespace Atlas {
 
 		LockFramerate();
 
-        window = Engine::defaultWindow;
-        window->SetTitle(instanceName);
-        window->SetPosition(AE_WINDOWPOSITION_UNDEFINED, AE_WINDOWPOSITION_UNDEFINED);
-        window->SetSize(windowWidth, windowHeight);
-        if (flags & AE_WINDOW_BORDERLESS) window->SetBordered(false);
-        if (flags & AE_WINDOW_FULLSCREEN) window->SetFullscreen(true);
+		window = new Window(instanceName, AE_WINDOWPOSITION_UNDEFINED,
+			AE_WINDOWPOSITION_UNDEFINED, windowWidth, windowHeight,
+			flags);
+
+		// Only create swap chain after the engine instance window was created and
+		// it's surface was assigned to the default graphics device
+		Graphics::GraphicsDevice::DefaultDevice->surface = window->surface;
+		Graphics::GraphicsDevice::DefaultDevice->CreateSwapChain();
+
+		// Clean up old invisible default window and assign this one
+		delete Engine::DefaultWindow;
+		Engine::DefaultWindow = window;
 
 	}
 
     EngineInstance::~EngineInstance() {
 
-
+		delete window;
 
     }
 

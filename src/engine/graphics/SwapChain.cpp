@@ -132,7 +132,7 @@ namespace Atlas {
             renderPassCreateInfo.dependencyCount = 2;
             renderPassCreateInfo.pDependencies = dependencies;
 
-            VK_CHECK(vkCreateRenderPass2(device, &renderPassCreateInfo, nullptr, &defaultRenderPass))
+            VK_CHECK(vkCreateRenderPass2(device, &renderPassCreateInfo, nullptr, &renderPass))
 
             imageLayouts.resize(imageCount);
             imageViews.resize(imageCount);
@@ -159,7 +159,7 @@ namespace Atlas {
                 VkImageView attachments[] = { imageViews[i], depthImageView };
                 VkFramebufferCreateInfo frameBufferInfo = {};
                 frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-                frameBufferInfo.renderPass = defaultRenderPass;
+                frameBufferInfo.renderPass = renderPass;
                 frameBufferInfo.attachmentCount = 2;
                 frameBufferInfo.pAttachments = attachments;
                 frameBufferInfo.width = extent.width;
@@ -191,7 +191,7 @@ namespace Atlas {
             vmaDestroyImage(memoryManager->allocator, depthImageAllocation.image, depthImageAllocation.allocation);
 
             vkDestroySemaphore(device, semaphore, nullptr);
-            vkDestroyRenderPass(device, defaultRenderPass, nullptr);
+            vkDestroyRenderPass(device, renderPass, nullptr);
             vkDestroySwapchainKHR(device, swapChain, nullptr);
 
         }

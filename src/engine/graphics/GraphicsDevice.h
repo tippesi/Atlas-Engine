@@ -69,6 +69,10 @@ namespace Atlas {
 
             GraphicsDevice& operator=(const GraphicsDevice& that) = delete;
 
+            void CreateSwapChain();
+
+            Ref<RenderPass> CreateRenderPass(RenderPassDesc desc);
+
             Ref<Shader> CreateShader(ShaderDesc shaderDesc);
 
             Ref<Pipeline> CreatePipeline(GraphicsPipelineDesc desc);
@@ -100,6 +104,7 @@ namespace Atlas {
 
             SwapChain* swapChain = nullptr;
             MemoryManager* memoryManager = nullptr;
+            Surface* surface = nullptr;
 
             VkPhysicalDevice physicalDevice;
             VkDevice device;
@@ -107,7 +112,7 @@ namespace Atlas {
 
             bool isComplete = false;
 
-            static GraphicsDevice* defaultDevice;
+            static GraphicsDevice* DefaultDevice;
 
         private:
             struct QueueFamilyIndices {
@@ -134,8 +139,6 @@ namespace Atlas {
             bool CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice,
                 const std::vector<const char*>& extensionNames);
 
-            void CreateSwapChain();
-
             bool CheckForWindowResize();
 
             void CreateFrameData();
@@ -146,10 +149,9 @@ namespace Atlas {
 
             void DestroyUnusedGraphicObjects();
 
-            Surface* surface;
-
             QueueFamilyIndices queueFamilyIndices;
 
+            std::vector<Ref<RenderPass>> renderPasses;
             std::vector<Ref<Shader>> shaders;
             std::vector<Ref<Pipeline>> pipelines;
             std::vector<Ref<Buffer>> buffers;

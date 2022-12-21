@@ -14,7 +14,7 @@ extern Atlas::Window* GetWindow();
 
 namespace Atlas {
 
-    Window* Engine::defaultWindow = nullptr;
+    Window* Engine::DefaultWindow = nullptr;
 
 	void Engine::Init(std::string assetDirectory, std::string shaderDirectory) {
 
@@ -31,17 +31,17 @@ namespace Atlas {
         Graphics::ShaderCompiler::Init();
 
         // First need to get a window to retrieve the title
-        defaultWindow = new Window("Default window", AE_WINDOWPOSITION_UNDEFINED,
+        DefaultWindow = new Window("Default window", AE_WINDOWPOSITION_UNDEFINED,
             AE_WINDOWPOSITION_UNDEFINED, 100, 100,
-            SDL_WINDOW_VULKAN, false);
+            SDL_WINDOW_VULKAN | AE_WINDOW_HIDDEN, false);
+
         // Then create graphics instance
-        auto graphicsInstance = new Graphics::Instance("AtlasEngineInstance", true);
-        Graphics::Instance::defaultInstance = graphicsInstance;
+        Graphics::Instance::DefaultInstance = new Graphics::Instance("AtlasEngineInstance", true);
         // Initialize window surface
-        defaultWindow->CreateSurface();
+        DefaultWindow->CreateSurface();
         // Initialize device
-        graphicsInstance->InitializeGraphicsDevice(defaultWindow->surface);
-        Graphics::GraphicsDevice::defaultDevice = graphicsInstance->GetGraphicsDevice();
+        Graphics::Instance::DefaultInstance->InitializeGraphicsDevice(DefaultWindow->surface);
+        Graphics::GraphicsDevice::DefaultDevice = Graphics::Instance::DefaultInstance->GetGraphicsDevice();
 
         Graphics::Extensions::Process();
 
@@ -68,8 +68,6 @@ namespace Atlas {
 
         Shader::ShaderManager::Clear();
         Graphics::ShaderCompiler::Shutdown();
-
-        delete defaultWindow;
 
 #ifdef AE_NO_APP
         SDL_Quit();

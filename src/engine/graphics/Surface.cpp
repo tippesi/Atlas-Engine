@@ -11,7 +11,7 @@ namespace Atlas {
 
         Surface::Surface(SDL_Window* window, bool& success) : window(window) {
 
-            auto nativeInstance = Instance::defaultInstance->GetNativeInstance();
+            auto nativeInstance = Instance::DefaultInstance->GetNativeInstance();
             success = SDL_Vulkan_CreateSurface(window, nativeInstance, &surface);
             assert(success && "Error creating surface for window");
 
@@ -19,7 +19,7 @@ namespace Atlas {
 
         Surface::~Surface() {
 
-            auto nativeInstance = Instance::defaultInstance->GetNativeInstance();
+            auto nativeInstance = Instance::DefaultInstance->GetNativeInstance();
             vkDestroySurfaceKHR(nativeInstance, surface, nullptr);
 
         }

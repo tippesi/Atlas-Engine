@@ -279,7 +279,7 @@ namespace Atlas {
                 info.subresourceRange.baseMipLevel = 0;
                 info.subresourceRange.levelCount = 1;
                 info.subresourceRange.baseArrayLayer = 0;
-                info.subresourceRange.layerCount = layerCount;
+                info.subresourceRange.layerCount = uint32_t(layerCount);
                 info.subresourceRange.aspectMask = aspectFlags;
 
                 return info;

@@ -43,7 +43,7 @@ namespace Atlas {
             pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
             pipelineInfo.pNext = nullptr;
 
-            pipelineInfo.stageCount = desc.shader->shaderStageCreateInfos.size();
+            pipelineInfo.stageCount = uint32_t(desc.shader->shaderStageCreateInfos.size());
             pipelineInfo.pStages = desc.shader->shaderStageCreateInfos.data();
             pipelineInfo.pVertexInputState = &desc.vertexInputInfo;
             pipelineInfo.pInputAssemblyState = &desc.assemblyInputInfo;

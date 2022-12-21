@@ -13,6 +13,7 @@
 #define DESCRIPTOR_POOL_SIZE 128
 #define DESCRIPTOR_SET_COUNT 4
 #define BINDINGS_PER_DESCRIPTOR_SET 16
+#define MAX_COLOR_ATTACHMENTS 8
 
 #define VK_CHECK(x) {                                                               \
                 VkResult err = x;                                                   \

@@ -9,7 +9,7 @@ namespace Atlas {
 
         void Extensions::Process() {
 
-            auto graphicsInstance = Instance::defaultInstance;
+            auto graphicsInstance = Instance::DefaultInstance;
 
             for (auto extension : graphicsInstance->extensionNames) {
                 supportedExtensions.insert(std::string(extension));

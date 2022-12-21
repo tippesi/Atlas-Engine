@@ -44,7 +44,7 @@ namespace Atlas {
 
         void VulkanMesh::UploadData(Atlas::Mesh::MeshData &data) {
 
-            auto graphicsInstance = Graphics::Instance::defaultInstance;
+            auto graphicsInstance = Graphics::Instance::DefaultInstance;
             auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
 
             if (data.indices.ContainsData()) {
