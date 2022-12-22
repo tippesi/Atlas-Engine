@@ -42,6 +42,10 @@ namespace Atlas {
 
             void AttachDepth(RenderPassAttachment& attachment);
 
+            Ref<Image>& GetColorImage(uint32_t slot);
+
+            Ref<Image>& GetDepthImage();
+
             void Complete();
 
             VkRenderPass renderPass = {};

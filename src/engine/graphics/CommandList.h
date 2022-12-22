@@ -2,6 +2,7 @@
 #define AE_GRAPHICSCOMMANDLIST_H
 
 #include "Common.h"
+#include "Barrier.h"
 #include "MemoryManager.h"
 #include "SwapChain.h"
 #include "RenderPass.h"
@@ -9,10 +10,12 @@
 #include "Buffer.h"
 #include "Descriptor.h"
 #include "Sampler.h"
+#include "QueryPool.h"
 
 #include "../common/Ref.h"
 
 #include <atomic>
+#include <vector>
 
 namespace Atlas {
 
@@ -47,12 +50,12 @@ namespace Atlas {
 
             void BeginRenderPass(SwapChain* swapChain, bool clear = false);
 
-            void BeginRenderPass(Ref<RenderPass>& renderPass, bool clear = false,
+            void BeginRenderPass(const Ref<RenderPass>& renderPass, bool clear = false,
                 bool autoAdjustImageLayouts = false);
 
             void EndRenderPass();
 
-            void BindPipeline(Ref<Pipeline>& pipeline);
+            void BindPipeline(const Ref<Pipeline>& pipeline);
 
             void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 
@@ -66,19 +69,24 @@ namespace Atlas {
 
             void BindVertexBuffer(VertexBuffer* buffer);
 
-            void BindBuffer(Ref<Buffer>& buffer, uint32_t set, uint32_t binding);
+            void BindBuffer(const Ref<Buffer>& buffer, uint32_t set, uint32_t binding);
 
-            void BindBuffer(Ref<MultiBuffer>& buffer, uint32_t set, uint32_t binding);
+            void BindBuffer(const Ref<MultiBuffer>& buffer, uint32_t set, uint32_t binding);
 
-            void BindImage(Ref<Image>& image, uint32_t set, uint32_t binding);
+            void BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding);
 
-            void BindImage(Ref<Image>& image, Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
+            void BindImage(const Ref<Image>& image, Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
             void ResetBindings();
 
-            void ImageBarrier(Ref<Image>& image, VkImageLayout newLayout, VkPipelineStageFlags srcStageMask,
-                VkPipelineStageFlags dstStageMask,VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
-                VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
+            void ImageMemoryBarrier(ImageBarrier& barrier, VkPipelineStageFlags srcStageMask,
+                VkPipelineStageFlags dstStageMask);
+
+            void BufferMemoryBarrier(BufferBarrier& barrier, VkPipelineStageFlags srcStageMask,
+                VkPipelineStageFlags dstStageMask);
+
+            void PipelineBarrier(std::vector<ImageBarrier>& imageBarriers, std::vector<BufferBarrier>& bufferBarriers,
+                VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
 
             void DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0,
                 int32_t vertexOffset = 0, uint32_t firstInstance = 0);
@@ -87,6 +95,14 @@ namespace Atlas {
                 uint32_t firstInstance = 0);
 
             void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+
+            void CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer);
+
+            void CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer, VkBufferCopy copy);
+
+            void CopyImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage);
+
+            void CopyImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage, VkImageCopy copy);
 
             VkCommandPool commandPool;
             VkCommandBuffer commandBuffer;

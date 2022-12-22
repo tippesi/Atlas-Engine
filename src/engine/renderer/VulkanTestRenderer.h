@@ -33,6 +33,7 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> uniformBuffer = nullptr;
             Ref<Graphics::RenderPass> mainRenderPass = nullptr;
             Ref<Graphics::Sampler> mainRenderPassSampler = nullptr;
+            Ref<Graphics::Image> dstImage = nullptr;
 
             Mesh::VulkanMesh* mesh = nullptr;
 
@@ -48,6 +49,7 @@ namespace Atlas {
 
             struct ComputeConstants {
                 float randomSeed;
+                float time;
             };
 
         };

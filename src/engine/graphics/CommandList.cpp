@@ -100,7 +100,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::BeginRenderPass(Ref<RenderPass>& renderPass, bool clear, bool autoAdjustImageLayouts) {
+        void CommandList::BeginRenderPass(const Ref<RenderPass>& renderPass, bool clear, bool autoAdjustImageLayouts) {
 
             if (autoAdjustImageLayouts) {
                 std::vector<VkImageMemoryBarrier> barriers;
@@ -172,7 +172,7 @@ namespace Atlas {
 
             // We need to keep track of the image layouts
             if (swapChainInUse) {
-
+                // TODO...
             }
             if (renderPassInUse) {
                 for (auto& attachment : renderPassInUse->colorAttachments) {
@@ -190,7 +190,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::BindPipeline(Ref<Pipeline>& pipeline) {
+        void CommandList::BindPipeline(const Ref<Pipeline>& pipeline) {
 
             pipelineInUse = pipeline;
 
@@ -320,7 +320,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::BindBuffer(Ref<Buffer>& buffer, uint32_t set, uint32_t binding) {
+        void CommandList::BindBuffer(const Ref<Buffer>& buffer, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
@@ -330,7 +330,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::BindBuffer(Ref<MultiBuffer>& buffer, uint32_t set, uint32_t binding) {
+        void CommandList::BindBuffer(const Ref<MultiBuffer>& buffer, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
@@ -340,7 +340,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::BindImage(Ref<Image>& image, uint32_t set, uint32_t binding) {
+        void CommandList::BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
@@ -349,7 +349,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::BindImage(Ref<Image>& image, Ref<Sampler>& sampler, uint32_t set, uint32_t binding) {
+        void CommandList::BindImage(const Ref<Image>& image, Ref<Sampler>& sampler, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
@@ -364,16 +364,42 @@ namespace Atlas {
 
         }
 
-        void CommandList::ImageBarrier(Ref<Image> &image, VkImageLayout newLayout, VkPipelineStageFlags srcStageMask,
-            VkPipelineStageFlags dstStageMask, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
-            VkImageAspectFlags aspectMask) {
+        void CommandList::ImageMemoryBarrier(ImageBarrier& barrier, VkPipelineStageFlags srcStageMask,
+            VkPipelineStageFlags dstStageMask) {
 
-            auto barrier = Initializers::InitImageMemoryBarrier(image->image, image->layout,
-                newLayout, srcAccessMask, dstAccessMask, aspectMask);
+            vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0,
+                nullptr, 0, nullptr, 1, &barrier.barrier);
 
-            vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+            barrier.image->layout = barrier.newLayout;
 
-            image->layout = newLayout;
+        }
+
+        void CommandList::BufferMemoryBarrier(BufferBarrier& barrier, VkPipelineStageFlags srcStageMask,
+            VkPipelineStageFlags dstStageMask) {
+
+            vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0,
+                nullptr, 1, &barrier.barrier, 0, nullptr);
+
+        }
+
+        void CommandList::PipelineBarrier(std::vector<ImageBarrier>& imageBarriers,
+            std::vector<BufferBarrier>& bufferBarriers, VkPipelineStageFlags srcStageMask,
+            VkPipelineStageFlags dstStageMask) {
+
+            // Not so sure about the cost of these vector allocations on the heap
+            std::vector<VkImageMemoryBarrier> nativeImageBarriers(imageBarriers.size());
+            for (auto& barrier : imageBarriers) {
+                nativeImageBarriers.push_back(barrier.barrier);
+            }
+
+            std::vector<VkBufferMemoryBarrier> nativeBufferBarriers(bufferBarriers.size());
+            for (auto& barrier : bufferBarriers) {
+                nativeBufferBarriers.push_back(barrier.barrier);
+            }
+
+            vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0,
+                nullptr, uint32_t(nativeBufferBarriers.size()), nativeBufferBarriers.data(),
+                uint32_t(nativeImageBarriers.size()), nativeImageBarriers.data());
 
         }
 
@@ -414,6 +440,43 @@ namespace Atlas {
             BindDescriptorSets();
 
             vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
+
+        }
+
+        void CommandList::CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer) {
+
+            VkBufferCopy copy = {};
+            copy.srcOffset = 0;
+            copy.dstOffset = 0;
+            copy.size = srcBuffer->size;
+
+            CopyBuffer(srcBuffer, dstBuffer, copy);
+
+        }
+
+        void CommandList::CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer, VkBufferCopy copy) {
+
+            vkCmdCopyBuffer(commandBuffer, srcBuffer->buffer, dstBuffer->buffer, 1, &copy);
+
+        }
+
+        void CommandList::CopyImage(const Ref<Image>& srcImage,const Ref<Image>& dstImage) {
+
+            VkImageCopy copy = {};
+            copy.srcSubresource.aspectMask = srcImage->aspectFlags;
+            copy.srcSubresource.layerCount = uint32_t(srcImage->depth);
+            copy.dstSubresource.aspectMask = dstImage->aspectFlags;
+            copy.dstSubresource.layerCount = uint32_t(dstImage->depth);
+            copy.extent = { srcImage->width, srcImage->height, srcImage->depth };
+
+            CopyImage(srcImage, dstImage, copy);
+
+        }
+
+        void CommandList::CopyImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage, VkImageCopy copy) {
+
+            vkCmdCopyImage(commandBuffer, srcImage->image, srcImage->layout,
+                dstImage->image, dstImage->layout, 1, &copy);
 
         }
 

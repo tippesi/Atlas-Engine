@@ -24,7 +24,13 @@ namespace Atlas {
 
             void UploadBufferData(void* data, Buffer* buffer, VkBufferCopy bufferCopyDesc);
 
+            void UploadBufferData(void* data, Buffer* buffer, VkBufferCopy bufferCopyDesc, VkCommandBuffer cmd);
+
             void UploadImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent);
+
+            void UploadImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent, VkCommandBuffer cmd);
+
+            void GenerateMipMaps(Image* image);
 
             void GenerateMipMaps(Image* image, VkCommandBuffer cmd);
 

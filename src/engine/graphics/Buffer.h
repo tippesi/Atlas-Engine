@@ -58,6 +58,8 @@ namespace Atlas {
 
             BufferDomain domain;
 
+            const size_t size = 0;
+
         private:
             MemoryManager* memoryManager;
 

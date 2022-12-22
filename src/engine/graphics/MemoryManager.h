@@ -15,6 +15,7 @@
 #include <vk_mem_alloc.h>
 
 #include <deque>
+#include <cassert>
 
 namespace Atlas {
 
@@ -82,6 +83,8 @@ namespace Atlas {
                     deleteAllocations.front().deleteFrame <= frameIndex) {
                     auto &allocation = deleteAllocations.front();
 
+                    // This should never happen
+                    assert(allocation.resource.use_count() == 1 && "Resource allocation is not uniquely owned");
                     allocation.resource.reset();
 
                     deleteAllocations.pop_front();

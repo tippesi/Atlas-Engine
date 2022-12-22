@@ -368,6 +368,23 @@ namespace Atlas {
 
             }
 
+            VkBufferMemoryBarrier InitBufferMemoryBarrier(VkBuffer buffer, VkAccessFlags srcAccessMask,
+                VkAccessFlags dstAccessMask) {
+
+                VkBufferMemoryBarrier bufferBarrier = {};
+                bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+                bufferBarrier.buffer = buffer;
+                bufferBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                bufferBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                bufferBarrier.offset = 0;
+                bufferBarrier.size = VK_WHOLE_SIZE;
+                bufferBarrier.srcAccessMask = srcAccessMask;
+                bufferBarrier.dstAccessMask = dstAccessMask;
+
+                return bufferBarrier;
+
+            }
+
         }
 
     }

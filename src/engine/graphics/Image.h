@@ -55,6 +55,7 @@ namespace Atlas {
             VkImageView view;
             VkImageType type;
             VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            VkImageAspectFlags aspectFlags;
 
             uint32_t width = 1;
             uint32_t height = 1;

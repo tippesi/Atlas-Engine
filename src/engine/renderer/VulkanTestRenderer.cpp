@@ -60,7 +60,8 @@ namespace Atlas {
             {
                 auto colorImageDesc = Graphics::ImageDesc{
                     .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
-                        | VK_IMAGE_USAGE_STORAGE_BIT,
+                        | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+                        | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                     .aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT,
                     .width = 1280,
                     .height = 720,
@@ -74,6 +75,7 @@ namespace Atlas {
                     .format = VK_FORMAT_D32_SFLOAT
                 };
                 auto colorImage = device->CreateImage(colorImageDesc);
+                dstImage = device->CreateImage(colorImageDesc);
                 auto depthImage = device->CreateImage(depthImageDesc);
 
                 auto colorAttachment = Graphics::RenderPassAttachment{
@@ -142,7 +144,6 @@ namespace Atlas {
                 };
                 computePipeline = device->CreatePipeline(pipelineDesc);
             }
-
         }
 
         void VulkanTestRenderer::Render(Camera* camera) {
@@ -197,22 +198,42 @@ namespace Atlas {
 
             auto randomPushConstants = computeShader->GetPushConstantRange("randomConstant");
             auto randomConstants = ComputeConstants {
-                .randomSeed = Common::Random::SampleFastUniformFloat()
+                .randomSeed = Common::Random::SampleFastUniformFloat(),
+                .time = Clock::Get()
             };
             commandList->PushConstants(randomPushConstants, &randomConstants);
 
-            commandList->BindImage(mainRenderPass->colorAttachments[0].image, 0, 0);
+            commandList->BindImage(mainRenderPass->GetColorImage(0), 0, 0);
             commandList->Dispatch(1280 / 8, 720 / 8, 1);
 
-            commandList->ImageBarrier(mainRenderPass->colorAttachments[0].image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT);
+            // Barrier after compute, transition layout to be transfer optimal
+            Graphics::ImageBarrier imageBarrier(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT);
+            imageBarrier.Update(mainRenderPass->GetColorImage(0));
+            commandList->ImageMemoryBarrier(imageBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+            Graphics::ImageBarrier imageBarrier2(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT);
+            imageBarrier2.Update(dstImage);
+            commandList->ImageMemoryBarrier(imageBarrier2, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+            // Copy to other image
+            commandList->CopyImage(mainRenderPass->GetColorImage(0), dstImage);
+
+            // Other image needs transition to be read optimal
+            Graphics::ImageBarrier secondaryImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT);
+            secondaryImageBarrier.Update(dstImage);
+            commandList->ImageMemoryBarrier(secondaryImageBarrier, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
             swapChain->colorClearValue.color = { 0.0f, 0.0f, blue, 1.0f};
             commandList->BeginRenderPass(swapChain, true);
             commandList->BindPipeline(pipeline);
 
-            commandList->BindImage(mainRenderPass->colorAttachments[0].image, mainRenderPassSampler, 0, 0);
+            commandList->BindImage(dstImage, mainRenderPassSampler, 0, 0);
 
             commandList->Draw(6, 1, 0, 0);
 

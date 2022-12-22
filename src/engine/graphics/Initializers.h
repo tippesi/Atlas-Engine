@@ -77,6 +77,9 @@ namespace Atlas {
                 VkImageLayout newLayout, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
                 VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 
+            VkBufferMemoryBarrier InitBufferMemoryBarrier(VkBuffer buffer, VkAccessFlags srcAccessMask,
+                VkAccessFlags dstAccessMask);
+
         }
 
     }

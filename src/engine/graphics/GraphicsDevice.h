@@ -9,6 +9,9 @@
 #include "Pipeline.h"
 #include "Buffer.h"
 #include "Image.h"
+#include "Sampler.h"
+#include "Descriptor.h"
+#include "QueryPool.h"
 #include "MemoryManager.h"
 
 #include "../common/Ref.h"

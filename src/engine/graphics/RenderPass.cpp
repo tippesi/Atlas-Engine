@@ -43,6 +43,18 @@ namespace Atlas {
 
         }
 
+        Ref<Image> &RenderPass::GetColorImage(uint32_t slot) {
+
+            return colorAttachments[slot].image;
+
+        }
+
+        Ref<Image> &RenderPass::GetDepthImage() {
+
+            return depthAttachment.image;
+
+        }
+
         void RenderPass::Complete() {
 
             // Can't create a rende pass twice, might still be in use by device
