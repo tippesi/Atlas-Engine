@@ -24,13 +24,12 @@ void App::LoadContent() {
     */
 
     ImGui::StyleColorsDark();
-    for (int32_t i = 0; i < 55; i++) {
+    for (auto& color : ImGui::GetStyle().Colors) {
         float gamma = 2.2f;
-        ImGui::GetStyle().Colors[i].x = powf(ImGui::GetStyle().Colors[i].x, gamma);
-        ImGui::GetStyle().Colors[i].y = powf(ImGui::GetStyle().Colors[i].y, gamma);
-        ImGui::GetStyle().Colors[i].z = powf(ImGui::GetStyle().Colors[i].z, gamma);
+        color.x = powf(color.x, gamma);
+        color.y = powf(color.y, gamma);
+        color.z = powf(color.z, gamma);
     }
-   
 
 }
 

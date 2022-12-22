@@ -387,12 +387,14 @@ namespace Atlas {
             VkPipelineStageFlags dstStageMask) {
 
             // Not so sure about the cost of these vector allocations on the heap
-            std::vector<VkImageMemoryBarrier> nativeImageBarriers(imageBarriers.size());
+            std::vector<VkImageMemoryBarrier> nativeImageBarriers;
+            nativeImageBarriers.reserve(imageBarriers.size());
             for (auto& barrier : imageBarriers) {
                 nativeImageBarriers.push_back(barrier.barrier);
             }
 
-            std::vector<VkBufferMemoryBarrier> nativeBufferBarriers(bufferBarriers.size());
+            std::vector<VkBufferMemoryBarrier> nativeBufferBarriers;
+            nativeBufferBarriers.reserve(bufferBarriers.size());
             for (auto& barrier : bufferBarriers) {
                 nativeBufferBarriers.push_back(barrier.barrier);
             }
@@ -400,6 +402,11 @@ namespace Atlas {
             vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0,
                 nullptr, uint32_t(nativeBufferBarriers.size()), nativeBufferBarriers.data(),
                 uint32_t(nativeImageBarriers.size()), nativeImageBarriers.data());
+
+            // Only update image layouts afterwards for clarity
+            for (auto& barrier : imageBarriers) {
+                barrier.image->layout = barrier.newLayout;
+            }
 
         }
 

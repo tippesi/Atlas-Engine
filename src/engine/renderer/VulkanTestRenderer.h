@@ -35,6 +35,11 @@ namespace Atlas {
             Ref<Graphics::Sampler> mainRenderPassSampler = nullptr;
             Ref<Graphics::Image> dstImage = nullptr;
 
+            Graphics::ImageBarrier renderPassToComputeBarrier;
+            Graphics::ImageBarrier attachmentToTransferBarrier;
+            Graphics::ImageBarrier dstToTransferBarrier;
+            Graphics::ImageBarrier dstToShaderReadBarrier;
+
             Mesh::VulkanMesh* mesh = nullptr;
 
             struct PushConstants {

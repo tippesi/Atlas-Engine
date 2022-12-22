@@ -118,7 +118,7 @@ namespace Atlas {
                 auto meshPipelineDesc = Graphics::GraphicsPipelineDesc{
                     .renderPass = mainRenderPass->renderPass,
                     .shader = meshShader,
-                    .vertexInputInfo = mesh->GetVertexInputState()
+                    .vertexInputInfo = mesh->GetVertexInputState(),
                 };
                 meshPipeline = device->CreatePipeline(meshPipelineDesc);
             }
@@ -144,6 +144,16 @@ namespace Atlas {
                 };
                 computePipeline = device->CreatePipeline(pipelineDesc);
             }
+            {
+                renderPassToComputeBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+                attachmentToTransferBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT);
+                dstToTransferBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT);
+                dstToShaderReadBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT);
+            }
         }
 
         void VulkanTestRenderer::Render(Camera* camera) {
@@ -155,89 +165,95 @@ namespace Atlas {
 
             commandList->BeginCommands();
 
-            mainRenderPass->colorClearValue.color = { 0.0f, 0.0f, blue, 1.0f};
-            commandList->BeginRenderPass(mainRenderPass, true);
+            {
+                mainRenderPass->colorClearValue.color = {0.0f, 0.0f, blue, 1.0f};
+                commandList->BeginRenderPass(mainRenderPass, true);
 
-            // Viewport and scissor are set to a default when binding a pipeline
-            commandList->BindPipeline(meshPipeline);
+                // Viewport and scissor are set to a default when binding a pipeline
+                commandList->BindPipeline(meshPipeline);
 
-            auto pushConstants = PushConstants {
-                .vMatrix = camera->viewMatrix,
-                .pMatrix = camera->projectionMatrix
-            };
+                auto pushConstants = PushConstants{
+                    .vMatrix = camera->viewMatrix,
+                    .pMatrix = camera->projectionMatrix
+                };
 
-            auto uniforms = Uniforms {
-                .vMatrix = camera->viewMatrix,
-                .pMatrix = camera->projectionMatrix
-            };
-            uniformBuffer->SetData(&uniforms, 0, sizeof(Uniforms));
+                auto uniforms = Uniforms{
+                    .vMatrix = camera->viewMatrix,
+                    .pMatrix = camera->projectionMatrix
+                };
+                uniformBuffer->SetData(&uniforms, 0, sizeof(Uniforms));
 
-            auto pushConstantRange = meshShader->GetPushConstantRange("constants");
-            commandList->PushConstants(pushConstantRange, &pushConstants);
+                auto pushConstantRange = meshShader->GetPushConstantRange("constants");
+                commandList->PushConstants(pushConstantRange, &pushConstants);
 
-            commandList->BindVertexBuffer(&mesh->vertexBuffer);
-            commandList->BindVertexBuffer(&mesh->normalBuffer);
-            commandList->BindVertexBuffer(&mesh->texCoordBuffer);
-            commandList->BindVertexBuffer(&mesh->tangentBuffer);
-            commandList->BindIndexBuffer(&mesh->indexBuffer);
+                commandList->BindVertexBuffer(&mesh->vertexBuffer);
+                commandList->BindVertexBuffer(&mesh->normalBuffer);
+                commandList->BindVertexBuffer(&mesh->texCoordBuffer);
+                commandList->BindVertexBuffer(&mesh->tangentBuffer);
+                commandList->BindIndexBuffer(&mesh->indexBuffer);
 
-            commandList->BindBuffer(uniformBuffer, 0, 0);
+                commandList->BindBuffer(uniformBuffer, 0, 0);
 
-            for (auto& subData : mesh->data.subData) {
-                auto baseColorTexture = subData.vulkanMaterial->baseColorMap;
-                if (baseColorTexture) {
-                    commandList->BindImage(baseColorTexture->image, baseColorTexture->sampler, 0, 1);
+                for (auto &subData: mesh->data.subData) {
+                    auto baseColorTexture = subData.vulkanMaterial->baseColorMap;
+                    if (baseColorTexture) {
+                        commandList->BindImage(baseColorTexture->image, baseColorTexture->sampler, 0, 1);
+                    }
+
+                    commandList->DrawIndexed(subData.indicesCount, 1, subData.indicesOffset);
                 }
 
-                commandList->DrawIndexed(subData.indicesCount, 1, subData.indicesOffset);
+                commandList->EndRenderPass();
             }
 
-            commandList->EndRenderPass();
+            {
+                renderPassToComputeBarrier.Update(mainRenderPass->GetColorImage(0));
+                commandList->ImageMemoryBarrier(renderPassToComputeBarrier,
+                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-            commandList->BindPipeline(computePipeline);
+                commandList->BindPipeline(computePipeline);
 
-            auto randomPushConstants = computeShader->GetPushConstantRange("randomConstant");
-            auto randomConstants = ComputeConstants {
-                .randomSeed = Common::Random::SampleFastUniformFloat(),
-                .time = Clock::Get()
-            };
-            commandList->PushConstants(randomPushConstants, &randomConstants);
+                auto randomPushConstants = computeShader->GetPushConstantRange("randomConstant");
+                auto randomConstants = ComputeConstants{
+                    .randomSeed = Common::Random::SampleFastUniformFloat(),
+                    .time = Clock::Get()
+                };
+                commandList->PushConstants(randomPushConstants, &randomConstants);
 
-            commandList->BindImage(mainRenderPass->GetColorImage(0), 0, 0);
-            commandList->Dispatch(1280 / 8, 720 / 8, 1);
+                commandList->BindImage(mainRenderPass->GetColorImage(0), 0, 0);
+                commandList->Dispatch(1280 / 8, 720 / 8, 1);
+            }
 
-            // Barrier after compute, transition layout to be transfer optimal
-            Graphics::ImageBarrier imageBarrier(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT);
-            imageBarrier.Update(mainRenderPass->GetColorImage(0));
-            commandList->ImageMemoryBarrier(imageBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT);
+            {
+                attachmentToTransferBarrier.Update(mainRenderPass->GetColorImage(0));
+                dstToTransferBarrier.Update(dstImage);
+                auto imageBarriers = std::vector<Graphics::ImageBarrier>
+                    { attachmentToTransferBarrier, dstToTransferBarrier };
+                auto bufferBarriers = std::vector<Graphics::BufferBarrier>();
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-            Graphics::ImageBarrier imageBarrier2(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT);
-            imageBarrier2.Update(dstImage);
-            commandList->ImageMemoryBarrier(imageBarrier2, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT);
+                // Copy to other image
+                commandList->CopyImage(mainRenderPass->GetColorImage(0), dstImage);
 
-            // Copy to other image
-            commandList->CopyImage(mainRenderPass->GetColorImage(0), dstImage);
+                // Other image needs transition to be read optimal
+                dstToShaderReadBarrier.Update(dstImage);
+                commandList->ImageMemoryBarrier(dstToShaderReadBarrier, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+            }
 
-            // Other image needs transition to be read optimal
-            Graphics::ImageBarrier secondaryImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT);
-            secondaryImageBarrier.Update(dstImage);
-            commandList->ImageMemoryBarrier(secondaryImageBarrier, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+            {
+                swapChain->colorClearValue.color = {0.0f, 0.0f, blue, 1.0f};
+                commandList->BeginRenderPass(swapChain, true);
+                commandList->BindPipeline(pipeline);
 
-            swapChain->colorClearValue.color = { 0.0f, 0.0f, blue, 1.0f};
-            commandList->BeginRenderPass(swapChain, true);
-            commandList->BindPipeline(pipeline);
+                commandList->BindImage(dstImage, mainRenderPassSampler, 0, 0);
 
-            commandList->BindImage(dstImage, mainRenderPassSampler, 0, 0);
+                commandList->Draw(6, 1, 0, 0);
 
-            commandList->Draw(6, 1, 0, 0);
+                commandList->EndRenderPass();
+            }
 
-            commandList->EndRenderPass();
             commandList->EndCommands();
 
             device->SubmitCommandList(commandList);
