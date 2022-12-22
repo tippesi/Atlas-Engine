@@ -1,11 +1,15 @@
 #include "ShaderCompiler.h"
 #include "Log.h"
 
+#include <glslang/SPIRV/GlslangToSpv.h>
+
 namespace Atlas {
 
     namespace Graphics {
 
-
+        void InitBuildInResources(TBuiltInResource &Resources);
+        EShLanguage FindLanguage(const VkShaderStageFlagBits shaderType);
+        void LogError(ShaderStageFile &shaderStageFile, glslang::TShader& shader);
 
         void ShaderCompiler::Init() {
 
@@ -35,8 +39,7 @@ namespace Atlas {
             shader.setStrings(shaderStrings, 1);
 
             if (!shader.parse(&Resources, 100, false, messages)) {
-                Log::Error(shader.getInfoLog());
-                Log::Error(shader.getInfoDebugLog());
+                LogError(shaderStageFile, shader);
                 return;
             }
 
@@ -44,8 +47,7 @@ namespace Atlas {
             program.addShader(&shader);
 
             if (!program.link(messages)) {
-                Log::Error(shader.getInfoLog());
-                Log::Error(shader.getInfoDebugLog());
+                LogError(shaderStageFile, shader);
                 return;
             }
 
@@ -54,7 +56,7 @@ namespace Atlas {
 
         }
 
-        void ShaderCompiler::InitBuildInResources(TBuiltInResource &Resources) {
+        void InitBuildInResources(TBuiltInResource &Resources) {
             Resources.maxLights = 32;
             Resources.maxClipPlanes = 6;
             Resources.maxTextureUnits = 32;
@@ -158,7 +160,7 @@ namespace Atlas {
             Resources.limits.generalConstantMatrixVectorIndexing = 1;
         }
 
-        EShLanguage ShaderCompiler::FindLanguage(const VkShaderStageFlagBits shaderType) {
+        EShLanguage FindLanguage(const VkShaderStageFlagBits shaderType) {
             switch (shaderType) {
                 case VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT:
                     return EShLangVertex;
@@ -175,6 +177,53 @@ namespace Atlas {
                 default:
                     return EShLangCompute;
             }
+        }
+
+        void LogError(ShaderStageFile &shaderStageFile, glslang::TShader& shader) {
+            std::string infoLog(shader.getInfoLog());
+            if (!infoLog.empty()) {
+                Log::Error(infoLog);
+            }
+            std::string debugInfoLog(shader.getInfoDebugLog());
+            if (!debugInfoLog.empty()) {
+                Log::Error(debugInfoLog);
+            }
+            if (infoLog.empty() && debugInfoLog.empty()) {
+                Log::Error("Shader compilation failed with unknown error");
+            }
+
+            std::string log;
+            if (shaderStageFile.shaderStage == VK_SHADER_STAGE_VERTEX_BIT) {
+                log.append("Compiling vertex stage failed.");
+            }
+            else if (shaderStageFile.shaderStage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+                log.append("Compiling fragment stage failed.");
+            }
+            else if (shaderStageFile.shaderStage == VK_SHADER_STAGE_GEOMETRY_BIT) {
+                log.append("Compiling geometry stage failed.");
+            }
+            else if (shaderStageFile.shaderStage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
+                log.append("Compiling tessellation control stage failed.");
+            }
+            else if (shaderStageFile.shaderStage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+                log.append("Compiling tessellation evaluation stage failed.");
+            }
+            else if (shaderStageFile.shaderStage == VK_SHADER_STAGE_COMPUTE_BIT) {
+                log.append("Compiling compute stage failed.");
+            }
+
+            int32_t lineCount = 1;
+            size_t pos = 0, lastPos = 0;
+            log.append("\nFile: " + shaderStageFile.filename);
+
+            auto stageCode = shaderStageFile.GetGlslCode();
+            while ((pos = stageCode.find('\n', lastPos)) != std::string::npos) {
+                log.append("[" + std::to_string(lineCount++) + "] ");
+                log.append(stageCode.substr(lastPos, pos - lastPos + 1));
+                lastPos = pos + 1;
+            }
+
+            Log::Error(log);
         }
 
     }

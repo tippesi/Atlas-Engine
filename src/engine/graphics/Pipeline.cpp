@@ -43,6 +43,7 @@ namespace Atlas {
             pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
             pipelineInfo.pNext = nullptr;
 
+            pipelineInfo.flags = 0;
             pipelineInfo.stageCount = uint32_t(desc.shader->shaderStageCreateInfos.size());
             pipelineInfo.pStages = desc.shader->shaderStageCreateInfos.data();
             pipelineInfo.pVertexInputState = &desc.vertexInputInfo;
@@ -56,23 +57,47 @@ namespace Atlas {
             pipelineInfo.renderPass = desc.renderPass;
             pipelineInfo.subpass = 0;
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+            pipelineInfo.basePipelineIndex = 0;
             pipelineInfo.pDynamicState = &dynamicStateInfo;
 
             auto& device = memManager->device;
             if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1,
-                &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
-                Log::Error("Failed to create pipeline");
+                    &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+                Log::Error("Failed to create graphics pipeline");
                 return;
             }
 
             isComplete = true;
+            isCompute = false;
 
         }
 
         Pipeline::Pipeline(MemoryManager *memManager, ComputePipelineDesc desc) :
             bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE), shader(desc.shader), memoryManager(memManager) {
 
-            // TODO..
+            if (!desc.shader->isCompute) return;
+
+            GeneratePipelineLayoutFromShader(desc.shader.get());
+
+            VkComputePipelineCreateInfo pipelineInfo = {};
+            pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+            pipelineInfo.pNext = nullptr;
+
+            pipelineInfo.flags = 0;
+            pipelineInfo.stage = shader->shaderStageCreateInfos.front();
+            pipelineInfo.layout = layout;
+            pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+            pipelineInfo.basePipelineIndex = 0;
+
+            auto& device = memManager->device;
+            if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1,
+                    &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+                Log::Error("Failed to create compute pipeline");
+                return;
+            }
+
+            isComplete = true;
+            isCompute = true;
 
         }
 

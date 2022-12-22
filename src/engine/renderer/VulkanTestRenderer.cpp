@@ -2,6 +2,7 @@
 
 #include "../loader/ShaderLoader.h"
 #include "../loader/ModelLoader.h"
+#include "../common/RandomHelper.h"
 #include "../Clock.h"
 
 #include <thread>
@@ -58,7 +59,8 @@ namespace Atlas {
             }
             {
                 auto colorImageDesc = Graphics::ImageDesc{
-                    .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                    .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+                        | VK_IMAGE_USAGE_STORAGE_BIT,
                     .aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT,
                     .width = 1280,
                     .height = 720,
@@ -78,7 +80,7 @@ namespace Atlas {
                     .image = colorImage,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                    .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    .outputLayout = VK_IMAGE_LAYOUT_GENERAL,
                 };
                 auto depthAttachment = Graphics::RenderPassAttachment{
                     .image = depthImage,
@@ -126,6 +128,19 @@ namespace Atlas {
                     .size = sizeof(Uniforms)
                 };
                 uniformBuffer = device->CreateMultiBuffer(bufferDesc);
+            }
+            {
+                auto computeStages = std::vector<Graphics::ShaderStageFile>{
+                    Loader::ShaderLoader::LoadFile("test.csh", VK_SHADER_STAGE_COMPUTE_BIT)
+                };
+                auto computeShaderDesc = Graphics::ShaderDesc{
+                    .stages = computeStages
+                };
+                computeShader = device->CreateShader(computeShaderDesc);
+                auto pipelineDesc = Graphics::ComputePipelineDesc {
+                    .shader = computeShader
+                };
+                computePipeline = device->CreatePipeline(pipelineDesc);
             }
 
         }
@@ -177,6 +192,21 @@ namespace Atlas {
             }
 
             commandList->EndRenderPass();
+
+            commandList->BindPipeline(computePipeline);
+
+            auto randomPushConstants = computeShader->GetPushConstantRange("randomConstant");
+            auto randomConstants = ComputeConstants {
+                .randomSeed = Common::Random::SampleFastUniformFloat()
+            };
+            commandList->PushConstants(randomPushConstants, &randomConstants);
+
+            commandList->BindImage(mainRenderPass->colorAttachments[0].image, 0, 0);
+            commandList->Dispatch(1280 / 8, 720 / 8, 1);
+
+            commandList->ImageBarrier(mainRenderPass->colorAttachments[0].image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT);
 
             swapChain->colorClearValue.color = { 0.0f, 0.0f, blue, 1.0f};
             commandList->BeginRenderPass(swapChain, true);

@@ -52,6 +52,7 @@ namespace Atlas {
             Ref<Shader> shader = nullptr;
 
             bool isComplete = false;
+            bool isCompute = false;
 
         private:
             void GeneratePipelineLayoutFromShader(Shader* shader);

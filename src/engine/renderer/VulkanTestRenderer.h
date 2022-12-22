@@ -24,8 +24,10 @@ namespace Atlas {
         private:
             Ref<Graphics::Shader> shader = nullptr;
             Ref<Graphics::Shader> meshShader = nullptr;
+            Ref<Graphics::Shader> computeShader = nullptr;
             Ref<Graphics::Pipeline> pipeline = nullptr;
             Ref<Graphics::Pipeline> meshPipeline = nullptr;
+            Ref<Graphics::Pipeline> computePipeline = nullptr;
             Ref<Graphics::Buffer> buffer = nullptr;
 
             Ref<Graphics::MultiBuffer> uniformBuffer = nullptr;
@@ -42,6 +44,10 @@ namespace Atlas {
             struct Uniforms {
                 mat4 vMatrix;
                 mat4 pMatrix;
+            };
+
+            struct ComputeConstants {
+                float randomSeed;
             };
 
         };

@@ -76,13 +76,17 @@ namespace Atlas {
 
             void ResetBindings();
 
-            // void ImageBarrier(Image* image, )
+            void ImageBarrier(Ref<Image>& image, VkImageLayout newLayout, VkPipelineStageFlags srcStageMask,
+                VkPipelineStageFlags dstStageMask,VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+                VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 
             void DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0,
                 int32_t vertexOffset = 0, uint32_t firstInstance = 0);
 
             void Draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0,
                 uint32_t firstInstance = 0);
+
+            void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
             VkCommandPool commandPool;
             VkCommandBuffer commandBuffer;

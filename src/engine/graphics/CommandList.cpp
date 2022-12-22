@@ -196,10 +196,12 @@ namespace Atlas {
 
             vkCmdBindPipeline(commandBuffer, pipeline->bindPoint, pipeline->pipeline);
 
-            // Set default values for viewport/scissor, they are required
-            auto extent = GetRenderPassExtent();
-            SetViewport(0, 0, extent.width, extent.height);
-            SetScissor(0, 0, extent.width, extent.height);
+            if (!pipeline->isCompute) {
+                // Set default values for viewport/scissor, they are required
+                auto extent = GetRenderPassExtent();
+                SetViewport(0, 0, extent.width, extent.height);
+                SetScissor(0, 0, extent.width, extent.height);
+            }
 
             // Not sure if this will be really needed
             descriptorBindingData.Reset();
@@ -321,7 +323,7 @@ namespace Atlas {
         void CommandList::BindBuffer(Ref<Buffer>& buffer, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point not allowed for use");
+            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = buffer.get();
@@ -331,7 +333,7 @@ namespace Atlas {
         void CommandList::BindBuffer(Ref<MultiBuffer>& buffer, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point not allowed for use");
+            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = buffer->GetCurrent();
@@ -341,7 +343,7 @@ namespace Atlas {
         void CommandList::BindImage(Ref<Image>& image, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point not allowed for use");
+            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
             descriptorBindingData.images[set][binding] = image.get();
 
@@ -350,7 +352,7 @@ namespace Atlas {
         void CommandList::BindImage(Ref<Image>& image, Ref<Sampler>& sampler, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point not allowed for use");
+            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
             descriptorBindingData.sampledImages[set][binding] = { image.get(), sampler.get() };
 
@@ -362,9 +364,23 @@ namespace Atlas {
 
         }
 
+        void CommandList::ImageBarrier(Ref<Image> &image, VkImageLayout newLayout, VkPipelineStageFlags srcStageMask,
+            VkPipelineStageFlags dstStageMask, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            VkImageAspectFlags aspectMask) {
+
+            auto barrier = Initializers::InitImageMemoryBarrier(image->image, image->layout,
+                newLayout, srcAccessMask, dstAccessMask, aspectMask);
+
+            vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+            image->layout = newLayout;
+
+        }
+
         void CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
             int32_t vertexOffset, uint32_t firstInstance) {
 
+            assert((swapChainInUse || renderPassInUse) && "No render pass is in use");
             assert(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
             assert(indexCount && instanceCount && "Index or instance count should not be zero");
@@ -385,6 +401,19 @@ namespace Atlas {
             BindDescriptorSets();
 
             vkCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+
+        }
+
+        void CommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+
+            assert(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
+            assert(pipelineInUse && "No pipeline is bound");
+            if (!pipelineInUse) return;
+            assert(groupCountX && groupCountY && groupCountZ && "Group counts have to be larger equal to one");
+
+            BindDescriptorSets();
+
+            vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 
         }
 
@@ -412,7 +441,6 @@ namespace Atlas {
                     uint32_t bindingCounter = 0;
 
                     descriptorBindingData.sets[i] = descriptorPool->Allocate(shader->sets[i].layout);
-
 
                     // BUFFER
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
@@ -459,15 +487,15 @@ namespace Atlas {
                         setWrite.pImageInfo = &imageInfo;
                     }
 
+                    // STORAGE IMAGES OR IMAGES SEPARATED FROM SAMPLER
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
-                        if (!descriptorBindingData.sampledImages[i][j].first ||
-                            !descriptorBindingData.sampledImages[i][j].second) continue;
+                        if (!descriptorBindingData.images[i][j]) continue;
                         const auto& binding = shader->sets[i].bindings[j];
 
-                        auto [image, sampler] = descriptorBindingData.sampledImages[i][j];
+                        auto image = descriptorBindingData.images[i][j];
 
                         auto& imageInfo = imageInfos[bindingCounter];
-                        imageInfo.sampler = sampler->sampler;
+                        imageInfo.sampler = VK_NULL_HANDLE;
                         imageInfo.imageView = image->view;
                         imageInfo.imageLayout = image->layout;
 
