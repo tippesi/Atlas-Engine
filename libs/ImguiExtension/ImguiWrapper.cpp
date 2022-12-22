@@ -145,7 +145,7 @@ void ImguiWrapper::Render() {
     auto swapChain = device->swapChain;
 
     commandList->BeginCommands();
-    commandList->BeginRenderPass(swapChain);
+    commandList->BeginRenderPass(swapChain, false);
 
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandList->commandBuffer);
 

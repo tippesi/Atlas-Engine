@@ -100,7 +100,38 @@ namespace Atlas {
 
         }
 
-        void CommandList::BeginRenderPass(Ref<RenderPass>& renderPass, bool clear) {
+        void CommandList::BeginRenderPass(Ref<RenderPass>& renderPass, bool clear, bool autoAdjustImageLayouts) {
+
+            if (autoAdjustImageLayouts) {
+                std::vector<VkImageMemoryBarrier> barriers;
+                for (auto &attachment: renderPass->colorAttachments) {
+                    if (!attachment.image) continue;
+                    if (attachment.image->layout != attachment.initialLayout) {
+                        auto barrier = Initializers::InitImageMemoryBarrier(attachment.image->image,
+                            attachment.image->layout, attachment.initialLayout, VK_ACCESS_MEMORY_READ_BIT,
+                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+                        barriers.push_back(barrier);
+                        attachment.image->layout = attachment.initialLayout;
+                    }
+                }
+
+                auto& attachment = renderPass->depthAttachment;
+                if (attachment.image && attachment.image->layout != attachment.initialLayout) {
+                    auto barrier = Initializers::InitImageMemoryBarrier(attachment.image->image,
+                        attachment.image->layout, attachment.initialLayout, VK_ACCESS_MEMORY_READ_BIT,
+                        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+                    barriers.push_back(barrier);
+                    attachment.image->layout = attachment.initialLayout;
+                }
+
+                if (barriers.size()) {
+                    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                        0, 0, nullptr, 0, nullptr, uint32_t(barriers.size()), barriers.data());
+                }
+            }
 
             VkRenderPassBeginInfo rpInfo = {};
             rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -110,6 +141,23 @@ namespace Atlas {
             rpInfo.renderArea.offset.y = 0;
             rpInfo.renderArea.extent = renderPass->extent;
             rpInfo.framebuffer = renderPass->frameBuffer;
+
+            std::vector<VkClearValue> clearValues;
+            for (auto& attachment : renderPass->colorAttachments) {
+                if (!attachment.image) continue;
+                if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+                    clearValues.push_back(renderPass->colorClearValue);
+                }
+            }
+            auto& attachment = renderPass->depthAttachment;
+            if (attachment.image && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+                clearValues.push_back(renderPass->depthClearValue);
+            }
+
+            if (clearValues.size()) {
+                rpInfo.clearValueCount = uint32_t(clearValues.size());
+                rpInfo.pClearValues = clearValues.data();
+            }
 
             vkCmdBeginRenderPass(commandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
             renderPassInUse = renderPass;
@@ -127,7 +175,14 @@ namespace Atlas {
 
             }
             if (renderPassInUse) {
-
+                for (auto& attachment : renderPassInUse->colorAttachments) {
+                    if (!attachment.image) continue;
+                    attachment.image->layout = attachment.outputLayout;
+                }
+                if (renderPassInUse->depthAttachment.image) {
+                    auto& attachment = renderPassInUse->depthAttachment;
+                    attachment.image->layout = attachment.outputLayout;
+                }
             }
 
             swapChainInUse = nullptr;
@@ -145,6 +200,10 @@ namespace Atlas {
             auto extent = GetRenderPassExtent();
             SetViewport(0, 0, extent.width, extent.height);
             SetScissor(0, 0, extent.width, extent.height);
+
+            // Not sure if this will be really needed
+            descriptorBindingData.Reset();
+            prevDescriptorBindingData.Reset();
 
         }
 
@@ -202,8 +261,9 @@ namespace Atlas {
             }
             if (renderPassInUse) {
                 VkClearAttachment colorClear = {}, depthClear = {};
-
                 colorClear.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                depthClear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
                 for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
                     if (!renderPassInUse->colorAttachments[i].image) continue;
                     colorClear.clearValue = renderPassInUse->colorClearValue;
@@ -211,10 +271,11 @@ namespace Atlas {
                     clearAttachments.push_back(colorClear);
                 }
 
-                depthClear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                depthClear.clearValue = renderPassInUse->depthClearValue;
-                depthClear.colorAttachment = 0;
-                clearAttachments.push_back(depthClear);
+                if (renderPassInUse->depthAttachment.image) {
+                    depthClear.clearValue = renderPassInUse->depthClearValue;
+                    depthClear.colorAttachment = 0;
+                    clearAttachments.push_back(depthClear);
+                }
 
                 clearRect.layerCount = 1;
                 clearRect.baseArrayLayer = 0;
@@ -314,20 +375,44 @@ namespace Atlas {
 
         }
 
+        void CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
+            uint32_t firstInstance) {
+
+            assert(pipelineInUse && "No pipeline is bound");
+            if (!pipelineInUse) return;
+            assert(vertexCount && instanceCount && "Index or instance count should not be zero");
+
+            BindDescriptorSets();
+
+            vkCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+
+        }
+
         void CommandList::BindDescriptorSets() {
 
             VkWriteDescriptorSet setWrites[2 * BINDINGS_PER_DESCRIPTOR_SET];
             VkDescriptorBufferInfo bufferInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
             VkDescriptorImageInfo imageInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
 
+            uint32_t dynamicOffsets[2 * BINDINGS_PER_DESCRIPTOR_SET];
+
             auto shader = pipelineInUse->shader;
 
             for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+                uint32_t dynamicOffsetCounter = 0;
+
+                // TODO: Differantiate between uniform and storage buffer
+                // Only uniform buffer should have a dynamic offset
+                for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                    if (!descriptorBindingData.buffers[i][j]) continue;
+                    dynamicOffsets[dynamicOffsetCounter++] = 0;
+                }
 
                 if (!prevDescriptorBindingData.IsEqual(descriptorBindingData, i)) {
                     uint32_t bindingCounter = 0;
 
                     descriptorBindingData.sets[i] = descriptorPool->Allocate(shader->sets[i].layout);
+
 
                     // BUFFER
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
@@ -372,16 +457,38 @@ namespace Atlas {
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = binding.layoutBinding.descriptorType;
                         setWrite.pImageInfo = &imageInfo;
+                    }
 
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                        if (!descriptorBindingData.sampledImages[i][j].first ||
+                            !descriptorBindingData.sampledImages[i][j].second) continue;
+                        const auto& binding = shader->sets[i].bindings[j];
+
+                        auto [image, sampler] = descriptorBindingData.sampledImages[i][j];
+
+                        auto& imageInfo = imageInfos[bindingCounter];
+                        imageInfo.sampler = sampler->sampler;
+                        imageInfo.imageView = image->view;
+                        imageInfo.imageLayout = image->layout;
+
+                        auto& setWrite = setWrites[bindingCounter++];
+                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        setWrite.pNext = nullptr;
+                        setWrite.dstBinding = binding.layoutBinding.binding;
+                        setWrite.dstArrayElement = binding.arrayElement;
+                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.descriptorCount = 1;
+                        setWrite.descriptorType = binding.layoutBinding.descriptorType;
+                        setWrite.pImageInfo = &imageInfo;
                     }
 
                     vkUpdateDescriptorSets(device, bindingCounter, setWrites, 0, nullptr);
                 }
 
                 if (descriptorBindingData.sets[i] != nullptr) {
-                    uint32_t offset = 0;
                     vkCmdBindDescriptorSets(commandBuffer, pipelineInUse->bindPoint,
-                        pipelineInUse->layout, i, 1, &descriptorBindingData.sets[i], 1, &offset);
+                        pipelineInUse->layout, i, 1, &descriptorBindingData.sets[i],
+                        dynamicOffsetCounter, dynamicOffsets);
                 }
 
             }

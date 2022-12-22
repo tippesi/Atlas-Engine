@@ -30,6 +30,7 @@ namespace Atlas {
 
             Ref<Graphics::MultiBuffer> uniformBuffer = nullptr;
             Ref<Graphics::RenderPass> mainRenderPass = nullptr;
+            Ref<Graphics::Sampler> mainRenderPassSampler = nullptr;
 
             Mesh::VulkanMesh* mesh = nullptr;
 

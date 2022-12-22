@@ -56,47 +56,16 @@ namespace Atlas {
                 };
                 buffer = device->CreateBuffer(bufferDesc);
             }
-
-            {
-                auto meshData = Loader::ModelLoader::LoadMesh("sponza/sponza.obj", false, glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
-                mesh = new Mesh::VulkanMesh(meshData);
-
-                auto meshStages = std::vector<Graphics::ShaderStageFile>{
-                    Loader::ShaderLoader::LoadFile("testmesh.vsh", VK_SHADER_STAGE_VERTEX_BIT),
-                    Loader::ShaderLoader::LoadFile("testmesh.fsh", VK_SHADER_STAGE_FRAGMENT_BIT)
-                };
-                auto meshShaderDesc = Graphics::ShaderDesc{
-                    .stages = meshStages
-                };
-                meshShader = device->CreateShader(meshShaderDesc);
-
-                auto meshPipelineDesc = Graphics::GraphicsPipelineDesc{
-                    .renderPass = device->swapChain->renderPass,
-                    .shader = meshShader,
-                    .vertexInputInfo = mesh->GetVertexInputState()
-                };
-                meshPipeline = device->CreatePipeline(meshPipelineDesc);
-            }
-
-            {
-                auto bufferDesc = Graphics::BufferDesc{
-                    .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                    .domain = Graphics::BufferDomain::Host,
-                    .size = sizeof(Uniforms)
-                };
-                uniformBuffer = device->CreateMultiBuffer(bufferDesc);
-            }
-
             {
                 auto colorImageDesc = Graphics::ImageDesc{
-                    .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                    .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     .aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT,
                     .width = 1280,
                     .height = 720,
                     .format = VK_FORMAT_R8G8B8A8_UNORM
                 };
                 auto depthImageDesc = Graphics::ImageDesc{
-                    .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                    .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     .aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT,
                     .width = 1280,
                     .height = 720,
@@ -104,7 +73,7 @@ namespace Atlas {
                 };
                 auto colorImage = device->CreateImage(colorImageDesc);
                 auto depthImage = device->CreateImage(depthImageDesc);
-            
+
                 auto colorAttachment = Graphics::RenderPassAttachment{
                     .image = colorImage,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -123,6 +92,40 @@ namespace Atlas {
                     .extent = { 1280, 720 }
                 };
                 mainRenderPass = device->CreateRenderPass(renderPassDesc);
+                auto samplerDesc = Graphics::SamplerDesc{
+                    .filter = VK_FILTER_LINEAR,
+                    .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT
+                };
+                mainRenderPassSampler = device->CreateSampler(samplerDesc);
+            }
+            {
+                auto meshData = Loader::ModelLoader::LoadMesh("sponza/sponza.obj", false, glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
+                mesh = new Mesh::VulkanMesh(meshData);
+
+                auto meshStages = std::vector<Graphics::ShaderStageFile>{
+                    Loader::ShaderLoader::LoadFile("testmesh.vsh", VK_SHADER_STAGE_VERTEX_BIT),
+                    Loader::ShaderLoader::LoadFile("testmesh.fsh", VK_SHADER_STAGE_FRAGMENT_BIT)
+                };
+                auto meshShaderDesc = Graphics::ShaderDesc{
+                    .stages = meshStages
+                };
+                meshShader = device->CreateShader(meshShaderDesc);
+
+                auto meshPipelineDesc = Graphics::GraphicsPipelineDesc{
+                    .renderPass = mainRenderPass->renderPass,
+                    .shader = meshShader,
+                    .vertexInputInfo = mesh->GetVertexInputState()
+                };
+                meshPipeline = device->CreatePipeline(meshPipelineDesc);
+            }
+
+            {
+                auto bufferDesc = Graphics::BufferDesc{
+                    .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    .domain = Graphics::BufferDomain::Host,
+                    .size = sizeof(Uniforms)
+                };
+                uniformBuffer = device->CreateMultiBuffer(bufferDesc);
             }
 
         }
@@ -136,8 +139,8 @@ namespace Atlas {
 
             commandList->BeginCommands();
 
-            swapChain->colorClearValue.color = { 0.0f, 0.0f, blue, 1.0f};
-            commandList->BeginRenderPass(swapChain, true);
+            mainRenderPass->colorClearValue.color = { 0.0f, 0.0f, blue, 1.0f};
+            commandList->BeginRenderPass(mainRenderPass, true);
 
             // Viewport and scissor are set to a default when binding a pipeline
             commandList->BindPipeline(meshPipeline);
@@ -173,8 +176,15 @@ namespace Atlas {
                 commandList->DrawIndexed(subData.indicesCount, 1, subData.indicesOffset);
             }
 
-            // TODO: Implement in command list
-            // vkCmdDraw(commandList->commandBuffer, 3, 1, 0, 0);
+            commandList->EndRenderPass();
+
+            swapChain->colorClearValue.color = { 0.0f, 0.0f, blue, 1.0f};
+            commandList->BeginRenderPass(swapChain, true);
+            commandList->BindPipeline(pipeline);
+
+            commandList->BindImage(mainRenderPass->colorAttachments[0].image, mainRenderPassSampler, 0, 0);
+
+            commandList->Draw(6, 1, 0, 0);
 
             commandList->EndRenderPass();
             commandList->EndCommands();

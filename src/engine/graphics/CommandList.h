@@ -47,7 +47,8 @@ namespace Atlas {
 
             void BeginRenderPass(SwapChain* swapChain, bool clear = false);
 
-            void BeginRenderPass(Ref<RenderPass>& renderPass, bool clear = false);
+            void BeginRenderPass(Ref<RenderPass>& renderPass, bool clear = false,
+                bool autoAdjustImageLayouts = false);
 
             void EndRenderPass();
 
@@ -79,6 +80,9 @@ namespace Atlas {
 
             void DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0,
                 int32_t vertexOffset = 0, uint32_t firstInstance = 0);
+
+            void Draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0,
+                uint32_t firstInstance = 0);
 
             VkCommandPool commandPool;
             VkCommandBuffer commandBuffer;
