@@ -20,7 +20,7 @@ namespace Atlas {
             auto imageDesc = Graphics::ImageDesc {
                 .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT |
                     VK_IMAGE_USAGE_TRANSFER_DST_BIT | additionalUsageFlags,
-                .type = VK_IMAGE_TYPE_2D,
+                .type = Graphics::ImageType::Image2D,
                 .width = width,
                 .height = height,
                 .depth = depth,
@@ -62,7 +62,7 @@ namespace Atlas {
             auto imageDesc = Graphics::ImageDesc {
                 .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT |
                     VK_IMAGE_USAGE_TRANSFER_DST_BIT | additionalUsageFlags,
-                .type = VK_IMAGE_TYPE_2D,
+                .type = Graphics::ImageType::Image2D,
                 .width = width,
                 .height = height,
                 .depth = depth,

@@ -61,8 +61,8 @@ namespace Atlas {
             VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
 
             // We wait here until the operation is finished
-            vkWaitForFences(device, 1, &fence, true, 9999999999);
-            vkResetFences(device, 1, &fence);
+            VK_CHECK(vkWaitForFences(device, 1, &fence, true, 9999999999))
+            VK_CHECK(vkResetFences(device, 1, &fence))
 
             vkResetCommandPool(device, commandPool, 0);
             DestroyStagingBuffer(stagingAllocation);
@@ -94,8 +94,8 @@ namespace Atlas {
             VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
 
             // We wait here until the operation is finished
-            vkWaitForFences(device, 1, &fence, true, 9999999999);
-            vkResetFences(device, 1, &fence);
+            VK_CHECK(vkWaitForFences(device, 1, &fence, true, 9999999999))
+            VK_CHECK(vkResetFences(device, 1, &fence))
 
             vkResetCommandPool(device, commandPool, 0);
             DestroyStagingBuffer(stagingAllocation);
@@ -122,12 +122,19 @@ namespace Atlas {
 
             auto mipLevels = image->mipLevels;
 
-            VkImageSubresourceRange range;
+            VkImageSubresourceRange range = {};
             range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             range.baseMipLevel = 0;
             range.levelCount = mipLevels;
-            range.baseArrayLayer = offset.z;
-            range.layerCount = extent.depth;
+            // This applies only to layered images, not 3D images
+            if (image->layers > 1) {
+                range.baseArrayLayer = offset.z;
+                range.layerCount = extent.depth;
+            }
+            else {
+                range.baseArrayLayer = 0;
+                range.layerCount = 1;
+            }
 
             VkImageMemoryBarrier imageBarrier = {};
             // Create first barrier to transition image
@@ -152,10 +159,22 @@ namespace Atlas {
                 copyRegion.bufferImageHeight = 0;
                 copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                 copyRegion.imageSubresource.mipLevel = 0;
-                copyRegion.imageSubresource.baseArrayLayer = offset.z;
-                copyRegion.imageSubresource.layerCount = extent.depth;
+                // Again, only applies to layered images
+                if (image->layers > 1) {
+                    copyRegion.imageSubresource.baseArrayLayer = offset.z;
+                    copyRegion.imageSubresource.layerCount = extent.depth;
+                }
+                else {
+                    copyRegion.imageSubresource.baseArrayLayer = 0;
+                    copyRegion.imageSubresource.layerCount = 1;
+                }
                 copyRegion.imageOffset = offset;
                 copyRegion.imageExtent = extent;
+
+                // We likely want to upload data to a layered image
+                if (image->type != ImageType::Image3D && extent.depth > 1) {
+                    copyRegion.imageExtent.depth = 1;
+                }
 
                 vkCmdCopyBufferToImage(commandBuffer, stagingAllocation.buffer, image->image,
                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
@@ -188,8 +207,8 @@ namespace Atlas {
             VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
 
             // We wait here until the operation is finished
-            vkWaitForFences(device, 1, &fence, true, 9999999999);
-            vkResetFences(device, 1, &fence);
+            VK_CHECK(vkWaitForFences(device, 1, &fence, true, 9999999999))
+            VK_CHECK(vkResetFences(device, 1, &fence))
 
             vkResetCommandPool(device, commandPool, 0);
             DestroyStagingBuffer(stagingAllocation);
@@ -205,7 +224,7 @@ namespace Atlas {
 
         void MemoryTransferManager::GenerateMipMaps(Image *image, VkCommandBuffer cmd) {
 
-            assert(image->type == VK_IMAGE_TYPE_2D && "Generating mip maps for non 2D images not supported");
+            assert(image->type == ImageType::Image2D && "Generating mip maps for non 2D images not supported");
 
             VkImageMemoryBarrier imageBarrier = {};
             imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

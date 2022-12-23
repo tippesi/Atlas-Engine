@@ -36,7 +36,8 @@ namespace Atlas {
             friend FrameData;
 
         public:
-            CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex);
+            CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex,
+                bool frameIndependent = false);
 
             CommandList(const CommandList& that) = delete;
 
@@ -51,7 +52,7 @@ namespace Atlas {
             void BeginRenderPass(SwapChain* swapChain, bool clear = false);
 
             void BeginRenderPass(const Ref<RenderPass>& renderPass, bool clear = false,
-                bool autoAdjustImageLayouts = false);
+                uint32_t layer = 0, bool autoAdjustImageLayouts = false);
 
             void EndRenderPass();
 
@@ -111,6 +112,7 @@ namespace Atlas {
             uint32_t queueFamilyIndex;
 
             bool isComplete = false;
+            const bool frameIndependent = false;
 
             QueueType queueType;
 
@@ -164,6 +166,7 @@ namespace Atlas {
             DescriptorPool* descriptorPool = nullptr;
 
             std::atomic_bool isLocked = true;
+            std::atomic_bool isSubmitted = true;
 
         };
 

@@ -52,7 +52,7 @@ namespace Atlas {
 
             RenderPassAttachment colorAttachments[MAX_COLOR_ATTACHMENTS];
             RenderPassAttachment depthAttachment;
-            VkFramebuffer frameBuffer;
+            std::vector<VkFramebuffer> frameBuffers;
 
             VkExtent2D extent;
 

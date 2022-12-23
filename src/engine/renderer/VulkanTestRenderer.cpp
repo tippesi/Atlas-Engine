@@ -225,10 +225,8 @@ namespace Atlas {
             }
 
             {
-                attachmentToTransferBarrier.Update(mainRenderPass->GetColorImage(0));
-                dstToTransferBarrier.Update(dstImage);
-                auto imageBarriers = std::vector<Graphics::ImageBarrier>
-                    { attachmentToTransferBarrier, dstToTransferBarrier };
+                auto imageBarriers = std::vector<Graphics::ImageBarrier>{ dstToTransferBarrier.Update(dstImage),
+                    attachmentToTransferBarrier.Update(mainRenderPass->GetColorImage(0)) };
                 auto bufferBarriers = std::vector<Graphics::BufferBarrier>();
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);

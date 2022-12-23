@@ -11,10 +11,12 @@ namespace Atlas {
 
         }
 
-        void BufferBarrier::Update(const Ref<Atlas::Graphics::Buffer> &buffer) {
+        BufferBarrier& BufferBarrier::Update(const Ref<Atlas::Graphics::Buffer> &buffer) {
 
             barrier = Initializers::InitBufferMemoryBarrier(buffer->buffer,
                 srcAccessMask, dstAccessMask);
+
+            return *this;
 
         }
 
@@ -25,11 +27,13 @@ namespace Atlas {
 
         }
 
-        void ImageBarrier::Update(const Ref<Atlas::Graphics::Image> &image) {
+        ImageBarrier& ImageBarrier::Update(const Ref<Atlas::Graphics::Image> &image) {
 
             this->image = image.get();
             barrier = Initializers::InitImageMemoryBarrier(image->image, image->layout,
                 newLayout, srcAccessMask, dstAccessMask, image->aspectFlags);
+
+            return *this;
 
         }
 

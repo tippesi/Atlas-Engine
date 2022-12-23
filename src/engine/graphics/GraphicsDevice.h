@@ -39,6 +39,7 @@ namespace Atlas {
             std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;
 
+            std::mutex submissionMutex;
             std::vector<CommandList*> submittedCommandLists;
 
             void WaitAndReset(VkDevice device) {
@@ -92,10 +93,13 @@ namespace Atlas {
 
             Ref<DescriptorPool> CreateDescriptorPool();
 
-            CommandList* GetCommandList(QueueType queueType = QueueType::GraphicsQueue);
+            CommandList* GetCommandList(QueueType queueType = QueueType::GraphicsQueue,
+                bool frameIndependentList = false);
 
             void SubmitCommandList(CommandList* cmd, VkPipelineStageFlags waitStage =
                 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, ExecutionOrder order = ExecutionOrder::Sequential);
+
+            void FlushCommandList(CommandList* cmd);
 
             void CompleteFrame();
 
@@ -152,6 +156,9 @@ namespace Atlas {
 
             void DestroyUnusedGraphicObjects();
 
+            CommandList* GetOrCreateCommandList(QueueType queueType, std::mutex& mutex,
+                std::vector<CommandList*>& commandLists, bool frameIndependent);
+
             QueueFamilyIndices queueFamilyIndices;
 
             std::vector<Ref<RenderPass>> renderPasses;
@@ -162,6 +169,9 @@ namespace Atlas {
             std::vector<Ref<Image>> images;
             std::vector<Ref<Sampler>> samplers;
             std::vector<Ref<DescriptorPool>> descriptorPools;
+
+            std::mutex commandListsMutex;
+            std::vector<CommandList*> commandLists;
 
             int32_t frameIndex = 0;
             FrameData frameData[FRAME_DATA_COUNT];

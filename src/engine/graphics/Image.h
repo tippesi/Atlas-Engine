@@ -18,15 +18,24 @@ namespace Atlas {
             Host = 1
         };
 
+        enum class ImageType {
+            Image1D = 0,
+            Image1DArray,
+            Image2D,
+            Image2DArray,
+            Image3D
+        };
+
         struct ImageDesc {
             VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
             ImageDomain domain = ImageDomain::Device;
-            VkImageType type = VK_IMAGE_TYPE_2D;
+            ImageType type = ImageType::Image2D;
             VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
 
             uint32_t width = 1;
             uint32_t height = 1;
             uint32_t depth = 1;
+            uint32_t layers = 1;
             VkFormat format;
 
             bool mipMapping = false;
@@ -47,24 +56,29 @@ namespace Atlas {
             ~Image();
 
             void SetData(void* data, size_t offsetX, size_t offsetY, size_t offsetZ,
-                size_t width, size_t height, size_t depth);
+                size_t width, size_t height, size_t layers);
+
+            VkImageType GetImageType() const;
 
             VkImage image;
             VmaAllocation allocation;
 
             VkImageView view;
-            VkImageType type;
             VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
             VkImageAspectFlags aspectFlags;
+
+            std::vector<VkImageView> layerViews;
 
             uint32_t width = 1;
             uint32_t height = 1;
             uint32_t depth = 1;
+            uint32_t layers = 1;
             VkFormat format;
 
             uint32_t mipLevels = 1;
 
             ImageDomain domain;
+            ImageType type;
 
         private:
             MemoryManager* memoryManager;

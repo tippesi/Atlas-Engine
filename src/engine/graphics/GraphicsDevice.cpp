@@ -218,40 +218,34 @@ namespace Atlas {
 
         }
 
-        CommandList* GraphicsDevice::GetCommandList(QueueType queueType) {
+        CommandList* GraphicsDevice::GetCommandList(QueueType queueType, bool frameIndependentList) {
 
-            auto frameData = GetFrameData();
+            if (frameIndependentList) {
+                auto commandList = GetOrCreateCommandList(queueType, commandListsMutex,
+                    commandLists, true);
 
-            // Lock to find a command list or create a new one
-            std::lock_guard<std::mutex> lock(frameData->commandListsMutex);
+                commandList->isSubmitted = false;
 
-            auto& commandLists = frameData->commandLists;
-            auto it = std::find_if(commandLists.begin(), commandLists.end(),
-                [&](CommandList* commandList) {
-                    if (commandList->queueType == queueType) {
-                        bool expected = false;
-                        // Check if isLocked is set to false and if so, set it to true
-                        // In that case we can use this command list, otherwise continue
-                        // the search for another one
-                        if (commandList->isLocked.compare_exchange_strong(expected, true)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                });
-
-            if (it == commandLists.end()) {
-                auto queueFamilyIndex = queueFamilyIndices.queueFamilies[queueType];
-                CommandList* cmd = new CommandList(this, queueType, queueFamilyIndex.value());
-                commandLists.push_back(cmd);
-                return cmd;
+                return commandList;
             }
+            else {
+                auto frameData = GetFrameData();
 
-            return *it;
+                auto &commandLists = frameData->commandLists;
+                auto commandList = GetOrCreateCommandList(queueType, frameData->commandListsMutex,
+                    frameData->commandLists, false);
+
+                commandList->isSubmitted = false;
+
+                return commandList;
+            }
 
         }
 
         void GraphicsDevice::SubmitCommandList(CommandList *cmd, VkPipelineStageFlags waitStage, ExecutionOrder order) {
+
+            assert(!cmd->frameIndependent && "Submitted command list is frame independent."
+                && "Please use the flush method instead");
 
             // After the submission of a command list, we don't unlock it anymore
             // for further use in this frame. Instead, we will unlock it again
@@ -278,7 +272,39 @@ namespace Atlas {
             auto queue = queueFamilyIndices.queues[cmd->queueType];
             VK_CHECK(vkQueueSubmit(queue, 1, &submit, cmd->fence))
 
+            // Make sure only one command list at a time can be added
+            std::lock_guard<std::mutex> lock(frame->submissionMutex);
+
             frame->submittedCommandLists.push_back(cmd);
+            cmd->isSubmitted = true;
+
+        }
+
+        void GraphicsDevice::FlushCommandList(CommandList *cmd) {
+
+            assert(cmd->frameIndependent && "Flushed command list is not frame independent."
+                   && "Please use the submit method instead");
+
+            VkSubmitInfo submit = {};
+            submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submit.pNext = nullptr;
+            submit.pWaitDstStageMask = nullptr;
+            submit.waitSemaphoreCount = 0;
+            submit.pWaitSemaphores = nullptr;
+            submit.signalSemaphoreCount = 0;
+            submit.pSignalSemaphores = nullptr;
+            submit.commandBufferCount = 1;
+            submit.pCommandBuffers = &cmd->commandBuffer;
+
+            auto queue = queueFamilyIndices.queues[cmd->queueType];
+            VK_CHECK(vkQueueSubmit(queue, 1, &submit, cmd->fence))
+
+            VK_CHECK(vkWaitForFences(device, 1, &cmd->fence, true, 9999999999));
+            VK_CHECK(vkResetFences(device, 1, &cmd->fence));
+
+            // Is submitted now and must be unlocked
+            cmd->isSubmitted = true;
+            cmd->isLocked = false;
 
         }
 
@@ -287,6 +313,17 @@ namespace Atlas {
             bool recreateSwapChain = false;
 
             auto frame = GetFrameData();
+            // Lock mutex such that submissions can't happen anymore
+            std::lock_guard<std::mutex> lock(frame->submissionMutex);
+
+            bool allListSubmitted = true;
+            for (auto commandList : commandLists) {
+                allListSubmitted &= commandList->isSubmitted;
+            }
+
+            assert(allListSubmitted && "Not all command list were submitted before frame completion." &&
+                "Consider using a frame independent command lists for longer executions.");
+
             std::vector<VkSemaphore> semaphores;
             // For now, we will only use sequential execution of queue submits,
             // which means only the latest submit can signal its semaphore here
@@ -695,6 +732,37 @@ namespace Atlas {
                     i--;
                 }
             }
+
+        }
+
+        CommandList* GraphicsDevice::GetOrCreateCommandList(QueueType queueType, std::mutex &mutex,
+            std::vector<CommandList*> &commandLists, bool frameIndependent) {
+
+            std::lock_guard<std::mutex> lock(mutex);
+
+            auto it = std::find_if(commandLists.begin(), commandLists.end(),
+                [&](CommandList *commandList) {
+                    if (commandList->queueType == queueType) {
+                        bool expected = false;
+                        // Check if isLocked is set to false and if so, set it to true
+                        // In that case we can use this command list, otherwise continue
+                        // the search for another one
+                        if (commandList->isLocked.compare_exchange_strong(expected, true)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+
+            if (it == commandLists.end()) {
+                auto queueFamilyIndex = queueFamilyIndices.queueFamilies[queueType];
+                CommandList *cmd = new CommandList(this, queueType,
+                    queueFamilyIndex.value(), frameIndependent);
+                commandLists.push_back(cmd);
+                return cmd;
+            }
+
+            return *it;
 
         }
 

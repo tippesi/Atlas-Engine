@@ -5,9 +5,9 @@ namespace Atlas {
 
     namespace Graphics {
 
-        Image::Image(GraphicsDevice *device, ImageDesc &desc) : type(desc.type), aspectFlags(desc.aspectFlags),
-            width(desc.width), height(desc.height), depth(desc.depth), format(desc.format),
-            domain(desc.domain), memoryManager(device->memoryManager) {
+        Image::Image(GraphicsDevice *device, ImageDesc &desc) : aspectFlags(desc.aspectFlags),
+            width(desc.width), height(desc.height), depth(desc.depth), layers(desc.layers), format(desc.format),
+            domain(desc.domain), type(desc.type), memoryManager(device->memoryManager) {
 
             VkExtent3D imageExtent;
             imageExtent.width = desc.width;
@@ -15,10 +15,13 @@ namespace Atlas {
             imageExtent.depth = desc.depth;
 
             VkImageCreateInfo imageInfo = Initializers::InitImageCreateInfo(desc.format,
-                desc.usageFlags, imageExtent, desc.type);
+                desc.usageFlags, imageExtent, GetImageType());
             if (desc.mipMapping) {
                 mipLevels = uint32_t(floor(log2(glm::max(float(width), float(height)))) + 1);
                 imageInfo.mipLevels = mipLevels;
+            }
+            if (desc.type == ImageType::Image1DArray || desc.type == ImageType::Image2DArray) {
+                imageInfo.arrayLayers = desc.layers;
             }
 
             VmaAllocationCreateInfo allocationCreateInfo = {};
@@ -30,27 +33,40 @@ namespace Atlas {
 
             VkImageViewType viewType;
             switch(desc.type) {
-                case VK_IMAGE_TYPE_1D: viewType = VK_IMAGE_VIEW_TYPE_1D; break;
-                case VK_IMAGE_TYPE_2D: viewType = VK_IMAGE_VIEW_TYPE_2D; break;
-                case VK_IMAGE_TYPE_3D: viewType = VK_IMAGE_VIEW_TYPE_3D; break;
+                case ImageType::Image1D: viewType = VK_IMAGE_VIEW_TYPE_1D; break;
+                case ImageType::Image1DArray: viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY; break;
+                case ImageType::Image2D: viewType = VK_IMAGE_VIEW_TYPE_2D; break;
+                case ImageType::Image2DArray: viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY; break;
+                case ImageType::Image3D: viewType = VK_IMAGE_VIEW_TYPE_3D; break;
                 default: viewType = VK_IMAGE_VIEW_TYPE_3D; break;
             }
 
+
             VkImageViewCreateInfo imageViewInfo = Initializers::InitImageViewCreateInfo(desc.format,
-                image, desc.aspectFlags, viewType, desc.depth);
+                image, desc.aspectFlags, viewType, imageInfo.arrayLayers);
             if (desc.mipMapping) {
                 imageViewInfo.subresourceRange.levelCount = mipLevels;
             }
-
             VK_CHECK(vkCreateImageView(memoryManager->device, &imageViewInfo, nullptr, &view))
 
-            if (desc.data) SetData(desc.data, 0, 0, 0, desc.width, desc.height, desc.depth);
+            // This will just duplicate the view for single-layered images, don't care for now
+            layerViews.resize(layers);
+            for (uint32_t i = 0; i < layers; i++) {
+                imageViewInfo.subresourceRange.baseArrayLayer = i;
+                imageViewInfo.subresourceRange.layerCount = 1;
+                VK_CHECK(vkCreateImageView(memoryManager->device, &imageViewInfo, nullptr, &layerViews[i]))
+            }
+
+            if (desc.data) SetData(desc.data, 0, 0, 0, desc.width, desc.height, desc.layers);
 
         }
 
         Image::~Image() {
 
             vkDestroyImageView(memoryManager->device, view, nullptr);
+            for (auto layerView : layerViews) {
+                vkDestroyImageView(memoryManager->device, layerView, nullptr);
+            }
             vmaDestroyImage(memoryManager->allocator, image, allocation);
 
         }
@@ -70,6 +86,18 @@ namespace Atlas {
                 extent.depth = uint32_t(depth);
 
                 memoryManager->transferManager->UploadImageData(data, this, offset, extent);
+            }
+
+        }
+
+        VkImageType Image::GetImageType() const {
+
+            switch(type) {
+                case ImageType::Image1D:
+                case ImageType::Image1DArray: return VK_IMAGE_TYPE_1D;
+                case ImageType::Image2D:
+                case ImageType::Image2DArray: return VK_IMAGE_TYPE_2D;
+                case ImageType::Image3D: return VK_IMAGE_TYPE_3D;
             }
 
         }

@@ -7,8 +7,9 @@ namespace Atlas {
 
     namespace Graphics {
 
-        CommandList::CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex) :
-            device(device->device), queueType(queueType), queueFamilyIndex(queueFamilyIndex) {
+        CommandList::CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex,
+            bool frameIndependent) : device(device->device), frameIndependent(frameIndependent),
+            queueType(queueType), queueFamilyIndex(queueFamilyIndex) {
 
             VkCommandPoolCreateInfo poolCreateInfo = Initializers::InitCommandPoolCreateInfo(queueFamilyIndex);
             VK_CHECK(vkCreateCommandPool(device->device, &poolCreateInfo, nullptr, &commandPool))
@@ -100,7 +101,10 @@ namespace Atlas {
 
         }
 
-        void CommandList::BeginRenderPass(const Ref<RenderPass>& renderPass, bool clear, bool autoAdjustImageLayouts) {
+        void CommandList::BeginRenderPass(const Ref<RenderPass>& renderPass, bool clear,
+            uint32_t layer, bool autoAdjustImageLayouts) {
+
+            assert(layer < uint32_t(renderPass->frameBuffers.size()) && "Layer not available");
 
             if (autoAdjustImageLayouts) {
                 std::vector<VkImageMemoryBarrier> barriers;
@@ -140,7 +144,7 @@ namespace Atlas {
             rpInfo.renderArea.offset.x = 0;
             rpInfo.renderArea.offset.y = 0;
             rpInfo.renderArea.extent = renderPass->extent;
-            rpInfo.framebuffer = renderPass->frameBuffer;
+            rpInfo.framebuffer = renderPass->frameBuffers[layer];
 
             std::vector<VkClearValue> clearValues;
             for (auto& attachment : renderPass->colorAttachments) {
@@ -471,9 +475,9 @@ namespace Atlas {
 
             VkImageCopy copy = {};
             copy.srcSubresource.aspectMask = srcImage->aspectFlags;
-            copy.srcSubresource.layerCount = uint32_t(srcImage->depth);
+            copy.srcSubresource.layerCount = uint32_t(srcImage->layers);
             copy.dstSubresource.aspectMask = dstImage->aspectFlags;
-            copy.dstSubresource.layerCount = uint32_t(dstImage->depth);
+            copy.dstSubresource.layerCount = uint32_t(dstImage->layers);
             copy.extent = { srcImage->width, srcImage->height, srcImage->depth };
 
             CopyImage(srcImage, dstImage, copy);

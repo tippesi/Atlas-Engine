@@ -24,7 +24,9 @@ namespace Atlas {
 
             if (!isComplete) return;
 
-            vkDestroyFramebuffer(device->device, frameBuffer, nullptr);
+            for(auto frameBuffer : frameBuffers) {
+                vkDestroyFramebuffer(device->device, frameBuffer, nullptr);
+            }
             vkDestroyRenderPass(device->device, renderPass, nullptr);
 
         }
@@ -86,15 +88,41 @@ namespace Atlas {
 
             VK_CHECK(vkCreateRenderPass2(device->device, &renderPassCreateInfo, nullptr, &renderPass))
 
-            VkFramebufferCreateInfo frameBufferInfo = {};
-            frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            frameBufferInfo.renderPass = renderPass;
-            frameBufferInfo.attachmentCount = uint32_t(imageViews.size());
-            frameBufferInfo.pAttachments = imageViews.data();
-            frameBufferInfo.width = extent.width;
-            frameBufferInfo.height = extent.height;
-            frameBufferInfo.layers = 1;
-            VK_CHECK(vkCreateFramebuffer(device->device, &frameBufferInfo, nullptr, &frameBuffer));
+            uint32_t maxLayers = 1;
+            for (auto& attachment : colorAttachments) {
+                if (!attachment.image) continue;
+                maxLayers = std::max(attachment.image->layers, maxLayers);
+            }
+            if (depthAttachment.image) {
+                maxLayers = std::max(depthAttachment.image->layers, maxLayers);
+            }
+
+            frameBuffers.resize(maxLayers);
+            for (uint32_t i = 0; i < maxLayers; i++) {
+                std::vector<VkImageView> imageViews;
+                for (auto& attachment : colorAttachments) {
+                    if (!attachment.image) continue;
+                    // Subtract one because we want to stay inside array bounds
+                    auto attachmentLayerCount = attachment.image->layers - 1;
+                    auto layer = std::min(i, attachmentLayerCount);
+                    imageViews.push_back(attachment.image->layerViews[layer]);
+                }
+                if (depthAttachment.image) {
+                    auto attachmentLayerCount = depthAttachment.image->layers - 1;
+                    auto layer = std::min(i, attachmentLayerCount);
+                    imageViews.push_back(depthAttachment.image->layerViews[layer]);
+                }
+
+                VkFramebufferCreateInfo frameBufferInfo = {};
+                frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+                frameBufferInfo.renderPass = renderPass;
+                frameBufferInfo.attachmentCount = uint32_t(imageViews.size());
+                frameBufferInfo.pAttachments = imageViews.data();
+                frameBufferInfo.width = extent.width;
+                frameBufferInfo.height = extent.height;
+                frameBufferInfo.layers = 1;
+                VK_CHECK(vkCreateFramebuffer(device->device, &frameBufferInfo, nullptr, &frameBuffers[i]));
+            }
 
             isComplete = true;
 
