@@ -9,6 +9,7 @@ namespace Atlas {
 
 		DDGIRenderer::DDGIRenderer() {
 
+            /*
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 			Helper::GeometryHelper::GenerateSphereVertexArray(sphereArray, 10, 10);
 
@@ -38,6 +39,7 @@ namespace Atlas {
 			probeDebugShader.AddStage(AE_VERTEX_STAGE, "ddgi/probeDebug.vsh");
 			probeDebugShader.AddStage(AE_FRAGMENT_STAGE, "ddgi/probeDebug.fsh");
 			probeDebugShader.Compile();
+             */
 
 		}
 
@@ -47,6 +49,7 @@ namespace Atlas {
 		}
 
 		void DDGIRenderer::TraceAndUpdateProbes(Scene::Scene* scene) {
+            /*
 			auto volume = scene->irradianceVolume;
 			if (!volume || !volume->enable || !volume->update)
 				return;
@@ -294,12 +297,14 @@ namespace Atlas {
 
 			Profiler::EndQuery();
 			Profiler::EndQuery();
+             */
 
 		}
 
 		void DDGIRenderer::DebugProbes(Viewport* viewport, RenderTarget* target,
 			Camera* camera, Scene::Scene* scene, std::unordered_map<void*, uint16_t>& materialMap) {
 
+            /*
 			auto volume = scene->irradianceVolume;
 			if (!volume || !volume->enable || !volume->update || !volume->debug)
 				return;
@@ -346,6 +351,7 @@ namespace Atlas {
 				sphereArray.GetIndexComponent()->GetDataType(), nullptr, instanceCount);
 
 			glEnable(GL_CULL_FACE);
+             */
 
 		}
 

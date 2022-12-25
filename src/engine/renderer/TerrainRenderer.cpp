@@ -6,6 +6,7 @@ namespace Atlas {
 
 		TerrainRenderer::TerrainRenderer() {
 
+            /*
 			shaderBatch.AddStage(AE_VERTEX_STAGE, "terrain/terrain.vsh");
 			shaderBatch.AddStage(AE_TESSELLATION_CONTROL_STAGE, "terrain/terrain.tcsh");
 			shaderBatch.AddStage(AE_TESSELLATION_EVALUATION_STAGE, "terrain/terrain.tesh");
@@ -21,12 +22,14 @@ namespace Atlas {
 			terrainMaterialBuffer = Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(TerrainMaterial),
 				AE_BUFFER_DYNAMIC_STORAGE);
 			terrainMaterialBuffer.SetSize(256);
+             */
 
 		}
 
 		void TerrainRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
 			Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap) {
 
+            /*
 			if (!scene->terrain)
 				return;
 
@@ -142,11 +145,13 @@ namespace Atlas {
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 			Profiler::EndQuery();
+             */
 
 		}
 
 		void TerrainRenderer::GetUniforms() {
 
+            /*
 			heightScale = shaderBatch.GetUniform("heightScale");
 
 			offset = shaderBatch.GetUniform("offset");
@@ -177,6 +182,7 @@ namespace Atlas {
 			pvMatrixLast = shaderBatch.GetUniform("pvMatrixLast");
 			jitterLast = shaderBatch.GetUniform("jitterLast");
 			jitterCurrent = shaderBatch.GetUniform("jitterCurrent");
+             */
 
 		}
 

@@ -31,7 +31,7 @@ namespace Atlas {
               * @param filtering The filtering of the texture.
               */
             Texture3D(int32_t width, int32_t height, int32_t depth, int32_t sizedFormat,
-                      int32_t wrapping = GL_CLAMP_TO_EDGE, int32_t filtering = GL_NEAREST,
+                      int32_t wrapping = /*GL_CLAMP_TO_EDGE*/0, int32_t filtering = /*GL_NEAREST*/0,
                       bool anisotropicFiltering = false, bool generateMipMaps = false);
 
             /**

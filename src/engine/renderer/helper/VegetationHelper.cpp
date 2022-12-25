@@ -1,5 +1,5 @@
 #include "VegetationHelper.h"
-#include "../../Profiler.h"
+#include "../../graphics/Profiler.h"
 
 namespace Atlas {
 
@@ -9,6 +9,7 @@ namespace Atlas {
 
 			VegetationHelper::VegetationHelper() {
 
+                /*
 				instanceCullingShader.AddStage(AE_COMPUTE_STAGE, "vegetation/instanceCulling.csh");
 				instanceCullingShader.Compile();
 
@@ -38,12 +39,13 @@ namespace Atlas {
 
 				binOffsetBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
 					sizeof(uint32_t), 0);
+                 */
 
 			}
 
 			void VegetationHelper::PrepareInstanceBuffer(Scene::Vegetation& vegetation, Camera* camera) {
 
-				Profiler::BeginQuery("Culling");
+				Graphics::Profiler::BeginQuery("Culling");
 
 				auto meshes = vegetation.GetMeshes();
 
@@ -59,7 +61,7 @@ namespace Atlas {
 				binOffsetBuffer.BindBase(3);
 				instanceCounterBuffer.BindBase(4);
 
-				Profiler::BeginQuery("Cull and count bins");
+                Graphics::Profiler::BeginQuery("Cull and count bins");
 
 				// Cull unseen vegetation and count bins
 				{
@@ -85,12 +87,12 @@ namespace Atlas {
 						auto groupCount = instanceCount / groupSize;
 						groupCount += (groupCount % groupSize == 0) ? 0 : 1;
 
-						glDispatchCompute(groupCount, 1, 1);
+                        // glDispatchCompute(groupCount, 1, 1);
 					}
 				}
 
 
-				Profiler::EndAndBeginQuery("Compute bin offsets");
+                Graphics::Profiler::EndAndBeginQuery("Compute bin offsets");
 
 				{
 					instanceBinningOffsetShader.Bind();
@@ -101,11 +103,11 @@ namespace Atlas {
 					auto groupCount = binCount / groupSize;
 					groupCount += (groupCount % groupSize == 0) ? 0 : 1;
 
-					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-					glDispatchCompute(groupCount, 1, 1);
+                    // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                    // glDispatchCompute(groupCount, 1, 1);
 				}
 
-				Profiler::EndAndBeginQuery("Sort by bins");
+                Graphics::Profiler::EndAndBeginQuery("Sort by bins");
 
 				// Move culled per instance data into own buffer
 				{
@@ -135,14 +137,14 @@ namespace Atlas {
 						// It's synchronized afterwards
 						if (firstMesh) {
 							firstMesh = false;
-							glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                            // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 						}
 
-						glDispatchCompute(groupCount, 1, 1);
+                        // glDispatchCompute(groupCount, 1, 1);
 					}
 				}
 
-				Profiler::EndAndBeginQuery("Command buffer update");
+                Graphics::Profiler::EndAndBeginQuery("Command buffer update");
 
 				// Prepare the command buffer
 				{
@@ -157,10 +159,10 @@ namespace Atlas {
 					if (drawCallCount > groupSize)
 						groupCount += groupCount % groupSize == 0 ? 0 : 1;
 
-					indirectDrawCallBuffer.BindBaseAs(AE_SHADER_STORAGE_BUFFER, 7);
+                    // indirectDrawCallBuffer.BindBaseAs(AE_SHADER_STORAGE_BUFFER, 7);
 
-					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-					glDispatchCompute(groupCount, 1, 1);
+                    // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                    // glDispatchCompute(groupCount, 1, 1);
 				}
 
 				// Reset lod counter buffer
@@ -169,8 +171,8 @@ namespace Atlas {
 					ResetCounterBuffer(instanceCounterBuffer);
 				}
 
-				Profiler::EndQuery();
-				Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
 
 			}
 
@@ -239,7 +241,7 @@ namespace Atlas {
 				meshSubdataInformationBuffer.SetSize(meshSubdataInformation.size(),
 					meshSubdataInformation.data());
 
-				glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+                // glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
 			}
 
 			void VegetationHelper::ResetCounterBuffer(Buffer::Buffer& buffer) {
@@ -247,7 +249,7 @@ namespace Atlas {
 				uint32_t zero = 0;
 				buffer.Bind();
 				buffer.InvalidateData();
-				buffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
+                // buffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
 
 			}
 

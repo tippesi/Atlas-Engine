@@ -10,7 +10,6 @@
 #include "scene/Scene.h"
 #include "RenderTarget.h"
 #include "shader/Shader.h"
-#include "shader/ShaderManager.h"
 #include "renderer/MainRenderer.h"
 #include "events/EventManager.h"
 #include "audio/AudioManager.h"

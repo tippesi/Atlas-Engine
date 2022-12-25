@@ -10,6 +10,7 @@ namespace Atlas {
 
         RTReflectionRenderer::RTReflectionRenderer() {
 
+            /*
             const int32_t filterSize = 2;
             blurFilter.CalculateBoxFilter(filterSize);
             
@@ -34,11 +35,13 @@ namespace Atlas {
             atrousShader[2].AddStage(AE_COMPUTE_STAGE, "reflection/atrous.csh");
             atrousShader[2].AddMacro("STEP_SIZE4");
             atrousShader[2].Compile();
+             */
 
 		}
 
 		void RTReflectionRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+            /*
             auto reflection = scene->reflection;
             if (!reflection || !reflection->enable) return;
 
@@ -252,6 +255,7 @@ namespace Atlas {
 
             Profiler::EndQuery();
             Profiler::EndQuery();
+             */
 
 		}
 

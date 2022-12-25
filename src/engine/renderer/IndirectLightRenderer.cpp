@@ -6,14 +6,17 @@ namespace Atlas {
 
 		IndirectLightRenderer::IndirectLightRenderer() {
 
+            /*
 			shader.AddStage(AE_COMPUTE_STAGE, "deferred/indirect.csh");
 			shader.Compile();
+             */
 
 		}
 
 		void IndirectLightRenderer::Render(Viewport* viewport, RenderTarget* target,
 			Camera* camera, Scene::Scene* scene) {
 
+            /*
 			Profiler::BeginQuery("Indirect lighting");
 
 			shader.Bind();
@@ -72,6 +75,7 @@ namespace Atlas {
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			Profiler::EndQuery();
+             */
 
 		}
 

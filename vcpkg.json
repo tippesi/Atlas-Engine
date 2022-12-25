@@ -16,12 +16,6 @@
         "glm",
         "stb",
         {
-            "name": "glad",
-            "features": [
-                "gl-api-46"
-            ]
-        },
-        {
             "name": "imgui",
             "version>=": "1.88",
             "features": [

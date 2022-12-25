@@ -12,17 +12,20 @@ namespace Atlas {
 
 		AtmosphereRenderer::AtmosphereRenderer() {
 
+            /*
 			Helper::GeometryHelper::GenerateSphereVertexArray(vertexArray, 50, 50);
 
 			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
 			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
 
 			shader.Compile();
+             */
 
 		}
 
 		void AtmosphereRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+            /*
 			Profiler::BeginQuery("Atmosphere");
 
 			shader.Bind();
@@ -51,11 +54,13 @@ namespace Atlas {
 				vertexArray.GetIndexComponent()->GetDataType(), nullptr);
 
 			Profiler::EndQuery();
+             */
 
 		}
 
 		void AtmosphereRenderer::Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene) {
 
+            /*
 			Profiler::BeginQuery("Atmosphere environment probe");
 
 			glDisable(GL_DEPTH_TEST);
@@ -109,8 +114,9 @@ namespace Atlas {
 
 			Profiler::EndQuery();
 			Profiler::EndQuery();
-
+            */
 		}
+
 
 	}
 

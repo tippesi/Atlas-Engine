@@ -14,6 +14,7 @@ namespace Atlas {
 
 		PathTracingRenderer::PathTracingRenderer() {
 
+            /*
 			// Load shader stages from hard drive and compile the shader
 			rayGenShader.AddStage(AE_COMPUTE_STAGE, "pathtracer/rayGen.csh");
 			rayGenShader.Compile();
@@ -25,6 +26,7 @@ namespace Atlas {
 			rayHitShader.Compile();
 
 			GetRayHitUniforms();
+             */
 
 		}
 
@@ -38,6 +40,7 @@ namespace Atlas {
 		void PathTracingRenderer::Render(Viewport* viewport, PathTracerRenderTarget* renderTarget,
 			ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene) {
 
+            /*
 			Profiler::BeginQuery("Path tracing");
 
 			auto width = renderTarget->GetWidth();
@@ -140,6 +143,7 @@ namespace Atlas {
 			helper.InvalidateRayBuffer();
 
 			Profiler::EndQuery();
+             */
 
 		}
 
@@ -157,6 +161,7 @@ namespace Atlas {
 
 		void PathTracingRenderer::GetRayGenUniforms() {
 
+            /*
 			cameraLocationRayGenUniform = rayGenShader.GetUniform("cameraLocation");
 
 			originRayGenUniform = rayGenShader.GetUniform("origin");
@@ -168,11 +173,13 @@ namespace Atlas {
 
 			tileSizeRayGenUniform = rayGenShader.GetUniform("tileSize");
 			resolutionRayGenUniform = rayGenShader.GetUniform("resolution");
+             */
 
 		}
 
 		void PathTracingRenderer::GetRayHitUniforms() {
 
+            /*
 			maxBouncesRayHitUniform = rayHitShader.GetUniform("maxBounces");
 
 			sampleCountRayHitUniform = rayHitShader.GetUniform("sampleCount");
@@ -180,6 +187,7 @@ namespace Atlas {
 
 			resolutionRayHitUniform = rayHitShader.GetUniform("resolution");
 			seedRayHitUniform = rayHitShader.GetUniform("seed");
+             */
 
 		}
 

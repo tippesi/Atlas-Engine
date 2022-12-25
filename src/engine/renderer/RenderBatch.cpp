@@ -6,6 +6,7 @@ namespace Atlas {
 
 		RenderBatch::RenderBatch() {
 
+            /*
 			lineVertices = Atlas::Buffer::VertexBuffer(GL_FLOAT,
 				3, sizeof(vec3), 0, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
 			lineColors = Atlas::Buffer::VertexBuffer(GL_FLOAT,
@@ -29,11 +30,13 @@ namespace Atlas {
 			triangleVertexArray.AddComponent(1, &triangleColors);
 
 			triangleVertexArray.Unbind();
+             */
 
 		}
 
 		void RenderBatch::AddLine(vec3 from, vec3 to, vec3 fromColor, vec3 toColor) {
 
+            /*
 			lineVertexData.push_back(from);
 			lineVertexData.push_back(to);
 
@@ -41,6 +44,7 @@ namespace Atlas {
 			lineColorData.push_back(toColor);
 
 			lineDataValid = false;
+             */
 
 		}
 

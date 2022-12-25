@@ -2,7 +2,6 @@
 #define AE_DATACOMPONENT_H
 
 #include "../System.h"
-#include "../TypeFormat.h"
 #include "../common/Packing.h"
 #include "../graphics/Common.h"
 
@@ -18,11 +17,11 @@ namespace Atlas {
 	namespace Mesh {
 
         enum class ComponentFormat {
-            UnsignedInt = AE_UINT,
-            UnsignedShort = AE_USHORT,
-            Float = AE_FLOAT,
-            HalfFloat = AE_HALF_FLOAT,
-            PackedFloat = AE_INT_2_10_10_10
+            UnsignedInt = 0,
+            UnsignedShort = 1,
+            Float = 2,
+            HalfFloat = 3,
+            PackedFloat = 4
         };
 
 		/**

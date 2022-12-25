@@ -8,6 +8,7 @@ namespace Atlas {
             float* kernelOffsets, float* kernelWeights, int32_t kernelSize, bool bilateral) : 
             kernelSize(kernelSize), bilateralBlur(bilateral) {
 
+            /*
             shader.AddStage(AE_VERTEX_STAGE, vertexSource);
             shader.AddStage(AE_FRAGMENT_STAGE, fragmentSource);
 
@@ -30,6 +31,7 @@ namespace Atlas {
             shader.Compile();
 
             GetUniforms();
+             */
 
         }
 
@@ -42,6 +44,7 @@ namespace Atlas {
         void BlurRenderer::Render(Texture::Texture2D *texture, Texture::Texture2D *swapTexture,
                 Texture::Texture2D* depthTexture) {
 
+            /*
             framebuffer.Bind();
 
             if (bilateralBlur) {
@@ -65,12 +68,13 @@ namespace Atlas {
             blurDirection->SetValue(vec2(0.0f, 1.0f / (float)texture->height));
 
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+             */
 
         }
 
         void BlurRenderer::GetUniforms() {
 
-            blurDirection = shader.GetUniform("blurDirection");
+            //blurDirection = shader.GetUniform("blurDirection");
 
         }
 

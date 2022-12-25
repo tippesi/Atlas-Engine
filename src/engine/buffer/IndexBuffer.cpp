@@ -12,7 +12,7 @@ namespace Atlas {
 
         IndexBuffer::IndexBuffer(uint32_t dataType, size_t elementSize, size_t elementCount,
 			void* data, uint32_t flags) : 
-			Buffer(AE_INDEX_BUFFER, elementSize, flags, elementCount, data), dataType(dataType) {
+			/*Buffer(AE_INDEX_BUFFER, elementSize, flags, elementCount, data),*/ dataType(dataType) {
 
 
 
@@ -41,6 +41,7 @@ namespace Atlas {
         void IndexBuffer::SetData(void *data, size_t offset, size_t length) {
 
 			if (!dynamicStorage && immutable) {
+                /*
 				Buffer stagingBuffer(AE_STAGING_BUFFER, elementSize, AE_BUFFER_DYNAMIC_STORAGE);
 				stagingBuffer.SetSize(length);
 
@@ -48,6 +49,7 @@ namespace Atlas {
 				stagingBuffer.SetData(data, 0, length);
 
 				Copy(&stagingBuffer, 0, offset * elementSize, length * elementSize);
+                 */
 			}
 			else {
 				Buffer::SetData(data, offset, length);

@@ -25,7 +25,7 @@ namespace Atlas {
 
             lastModified = GetLastModified();
 
-            ID = glCreateShader(type);
+            // ID = glCreateShader(type);
 
             Log::Message("Loaded shader file " + filename);
 
@@ -39,7 +39,7 @@ namespace Atlas {
 
         ShaderStage::~ShaderStage() {
 
-            glDeleteShader(ID);
+            // glDeleteShader(ID);
 
         }
 
@@ -114,9 +114,11 @@ namespace Atlas {
 
             int compiled = 0;
 
+            /*
             glShaderSource(ID, 1, &convertedCode, 0);
             glCompileShader(ID);
             glGetShaderiv(ID, GL_COMPILE_STATUS, &compiled);
+            */
 
             if (!compiled && !error) {
 
@@ -142,6 +144,7 @@ namespace Atlas {
 
             std::string log;
 
+            /*
             int32_t shaderLogLength, length;
             glGetShaderiv(ID, GL_INFO_LOG_LENGTH, &shaderLogLength);
 
@@ -169,6 +172,7 @@ namespace Atlas {
             else if (type == AE_COMPUTE_STAGE) {
                 log.append("Compiling compute stage failed.");
             }
+            */
 
             int32_t lineCount = 1;
             size_t pos = 0, lastPos = 0;
@@ -180,7 +184,7 @@ namespace Atlas {
             }
 
             log.append("\nFile: " + filename);
-            log.append("\nError: " + std::string(shaderLog.data()));
+            //log.append("\nError: " + std::string(shaderLog.data()));
 
             return log;
 
@@ -379,7 +383,7 @@ namespace Atlas {
             stageCode = that.stageCode;
 #endif
 
-            ID = glCreateShader(that.type);
+            // ID = glCreateShader(that.type);
 
         }
 

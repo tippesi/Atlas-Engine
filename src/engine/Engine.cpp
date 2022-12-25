@@ -10,7 +10,6 @@
 #include <SDL_vulkan.h>
 
 extern Atlas::EngineInstance* GetEngineInstance();
-extern Atlas::Window* GetWindow();
 
 namespace Atlas {
 
@@ -66,7 +65,6 @@ namespace Atlas {
 
     void Engine::Shutdown() {
 
-        Shader::ShaderManager::Clear();
         Graphics::ShaderCompiler::Shutdown();
         Graphics::Profiler::Shutdown();
 

@@ -8,6 +8,7 @@ namespace Atlas {
 
         VolumetricRenderer::VolumetricRenderer() {
 
+            /*
             const int32_t filterSize = 4;
             blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
 
@@ -28,12 +29,14 @@ namespace Atlas {
 
             volumetricResolveShader.AddStage(AE_COMPUTE_STAGE, "volumetric/volumetricResolve.csh");
             volumetricResolveShader.Compile();
+             */
 
         }
 
         void VolumetricRenderer::Render(Viewport* viewport, RenderTarget* target,
             Camera* camera, Scene::Scene* scene) {
 
+            /*
             Profiler::BeginQuery("Render volumetric");
 
             volumetricShader.Bind();
@@ -222,6 +225,7 @@ namespace Atlas {
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
             Profiler::EndQuery();
+             */
 
         }
 

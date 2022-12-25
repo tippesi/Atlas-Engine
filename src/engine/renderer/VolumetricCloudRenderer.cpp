@@ -9,6 +9,7 @@ namespace Atlas {
 
 		VolumetricCloudRenderer::VolumetricCloudRenderer() {
 
+            /*
 			auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("noise.png");
 			blueNoiseTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, GL_RGBA8, GL_REPEAT, GL_NEAREST);
 			blueNoiseTexture.SetData(noiseImage.GetData());
@@ -24,12 +25,14 @@ namespace Atlas {
 
 			temporalShader.AddStage(AE_COMPUTE_STAGE, "clouds/temporal.csh");
 			temporalShader.Compile();
+             */
 
 		}
 
 		void VolumetricCloudRenderer::Render(Viewport* viewport, RenderTarget* target,
 			Camera* camera, Scene::Scene* scene) {
 
+            /*
 			auto clouds = scene->sky.clouds;
 			auto sun = scene->sky.sun;
 			if (!clouds) return;
@@ -137,6 +140,7 @@ namespace Atlas {
 			target->historyVolumetricCloudsTexture = target->volumetricCloudsTexture;
 			
 			Profiler::EndQuery();
+             */
 
 		}
 
@@ -155,6 +159,7 @@ namespace Atlas {
 
 		void VolumetricCloudRenderer::GenerateShapeTexture(Texture::Texture3D* texture, float baseScale) {
 
+            /*
 			Profiler::BeginQuery("Generate shape cloud texture");
 
 			// Expect the resolution to be a power of 2 and larger equal 4
@@ -169,11 +174,13 @@ namespace Atlas {
 			glDispatchCompute(groupCount.x, groupCount.y, groupCount.z);
 
 			Profiler::EndQuery();
+             */
 
 		}
 
 		void VolumetricCloudRenderer::GenerateDetailTexture(Texture::Texture3D* texture, float baseScale) {
 
+            /*
 			Profiler::BeginQuery("Generate detail cloud texture");
 
 			// Expect the resolution to be a power of 2 and larger equal 4
@@ -188,6 +195,7 @@ namespace Atlas {
 			glDispatchCompute(groupCount.x, groupCount.y, groupCount.z);
 
 			Profiler::EndQuery();
+             */
 
 		}
 

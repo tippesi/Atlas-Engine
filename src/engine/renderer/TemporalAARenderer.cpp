@@ -9,13 +9,16 @@ namespace Atlas {
 
 		TemporalAARenderer::TemporalAARenderer() {
 
+            /*
 			shader.AddStage(AE_COMPUTE_STAGE, "taa.csh");
 			shader.Compile();
+             */
 
 		}
 
 		void TemporalAARenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+            /*
 			Profiler::BeginQuery("TAA");
 
 			shader.Bind();
@@ -47,6 +50,7 @@ namespace Atlas {
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			Profiler::EndQuery();
+             */
 
 		}
 

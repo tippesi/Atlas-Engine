@@ -7,17 +7,20 @@ namespace Atlas {
 
 		TerrainShadowRenderer::TerrainShadowRenderer() {
 
+            /*
 			shader.AddStage(AE_VERTEX_STAGE, "terrain/shadowmapping.vsh");
 			shader.AddStage(AE_FRAGMENT_STAGE, "terrain/shadowmapping.fsh");
 
 			shader.Compile();
 
 			GetUniforms();
+             */
 
 		}
 
 		void TerrainShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+            /*
 			if (!scene->terrain)
 				return;
 
@@ -99,11 +102,13 @@ namespace Atlas {
 			}
 
 			Profiler::EndQuery();
+             */
 
 		}
 
 		void TerrainShadowRenderer::GetUniforms() {
 
+            /*
 			heightScale = shader.GetUniform("heightScale");
 			tileScale = shader.GetUniform("tileScale");
 			patchSize = shader.GetUniform("patchSize");
@@ -117,6 +122,7 @@ namespace Atlas {
 			bottomLoD = shader.GetUniform("bottomLoD");
 
 			lightSpaceMatrix = shader.GetUniform("lightSpaceMatrix");
+             */
 
 		}
 

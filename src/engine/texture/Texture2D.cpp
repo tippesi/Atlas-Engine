@@ -17,7 +17,7 @@ namespace Atlas {
             this->height = height;
 			this->depth = 1;
 
-            Generate(GL_TEXTURE_2D, sizedFormat, wrapping, filtering, anisotropicFiltering, generateMipMaps);
+            // Generate(GL_TEXTURE_2D, sizedFormat, wrapping, filtering, anisotropicFiltering, generateMipMaps);
 
         }
 
@@ -51,8 +51,8 @@ namespace Atlas {
 		void Texture2D::SetData(std::vector<uint8_t>& data) {
 
 			Bind();
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
-				TextureFormat::GetBaseFormat(sizedFormat), AE_UBYTE, data.data());
+            // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
+            // 	TextureFormat::GetBaseFormat(sizedFormat), AE_UBYTE, data.data());
 
 			GenerateMipmap();
 
@@ -65,16 +65,16 @@ namespace Atlas {
 			auto height = this->height / div;
 
 			Bind();
-            glTexSubImage2D(GL_TEXTURE_2D, mipLevel, 0, 0, width, height,
-				TextureFormat::GetBaseFormat(sizedFormat), AE_UBYTE, data.data());
+            // glTexSubImage2D(GL_TEXTURE_2D, mipLevel, 0, 0, width, height,
+            // 	TextureFormat::GetBaseFormat(sizedFormat), AE_UBYTE, data.data());
 
         }
 
 		void Texture2D::SetData(std::vector<uint16_t>& data) {
 
 			Bind();
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
-				TextureFormat::GetBaseFormat(sizedFormat), AE_USHORT, data.data());
+            // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
+            // 	TextureFormat::GetBaseFormat(sizedFormat), AE_USHORT, data.data());
 
 			GenerateMipmap();
 
@@ -87,16 +87,16 @@ namespace Atlas {
 			auto height = this->height / div;
 
 			Bind();
-            glTexSubImage2D(GL_TEXTURE_2D, mipLevel, 0, 0, width, height,
-				TextureFormat::GetBaseFormat(sizedFormat), AE_USHORT, data.data());
+            // glTexSubImage2D(GL_TEXTURE_2D, mipLevel, 0, 0, width, height,
+            // 	TextureFormat::GetBaseFormat(sizedFormat), AE_USHORT, data.data());
 
         }
 
         void Texture2D::SetData(std::vector<float16>& data) {
 
             Bind();
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
-                TextureFormat::GetBaseFormat(sizedFormat), AE_HALF_FLOAT, data.data());
+            // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
+            //    TextureFormat::GetBaseFormat(sizedFormat), AE_HALF_FLOAT, data.data());
 
             GenerateMipmap();
 
@@ -105,8 +105,8 @@ namespace Atlas {
 		void Texture2D::SetData(std::vector<float>& data) {
 
 			Bind();
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
-				TextureFormat::GetBaseFormat(sizedFormat), AE_FLOAT, data.data());
+            // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
+            // 	TextureFormat::GetBaseFormat(sizedFormat), AE_FLOAT, data.data());
 
 			GenerateMipmap();
 
@@ -119,10 +119,10 @@ namespace Atlas {
 				this->width = width;
 				this->height = height;
 
-				glDeleteTextures(1, &ID);
-				glGenTextures(1, &ID);
+                // glDeleteTextures(1, &ID);
+                // glGenTextures(1, &ID);
 
-				Generate(GL_TEXTURE_2D, sizedFormat, wrapping, filtering, anisotropicFiltering, mipmaps);
+                // Generate(GL_TEXTURE_2D, sizedFormat, wrapping, filtering, anisotropicFiltering, mipmaps);
 
 			}
 
@@ -130,7 +130,7 @@ namespace Atlas {
 
         void Texture2D::ReserveStorage(int32_t mipCount) {
 
-            glTexStorage2D(GL_TEXTURE_2D, mipCount, sizedFormat, width, height);
+            // glTexStorage2D(GL_TEXTURE_2D, mipCount, sizedFormat, width, height);
 
         }
 
@@ -139,20 +139,22 @@ namespace Atlas {
 
 			int32_t sizedFormat;
 
+            /*
 			switch (image.channels) {
 				case 4: sizedFormat = AE_RGBA8; break;
 				case 3: sizedFormat = AE_RGB8; break;
 				case 2: sizedFormat = AE_RG8; break;
 				case 1: sizedFormat = AE_R8; break;
 			}
+             */
 
 			width = image.width;
 			height = image.height;
 			channels = image.channels;
 			this->depth = 1;
 
-			Generate(GL_TEXTURE_2D, sizedFormat, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
-					 anisotropicFiltering, generateMipMaps);
+            // Generate(GL_TEXTURE_2D, sizedFormat, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
+            // 		 anisotropicFiltering, generateMipMaps);
 
 			SetData(image.GetData());
 

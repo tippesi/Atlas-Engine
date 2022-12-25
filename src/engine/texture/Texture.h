@@ -2,7 +2,6 @@
 #define AE_TEXTURE_H
 
 #include "../System.h"
-#include "TextureFormat.h"
 
 #include <vector>
 
@@ -235,6 +234,7 @@ namespace Atlas {
             static_assert(std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> ||
                 std::is_same_v<T, float>, "Unsupported type. Supported are uint8_t, uint16_t and float");
 
+            /*
             // We need to use raw OpenGL here, because forward declaring the framebuffer won't work
             uint32_t framebufferID;
             glGenFramebuffers(1, &framebufferID);
@@ -274,8 +274,9 @@ namespace Atlas {
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glDeleteFramebuffers(1, &framebufferID);
+            */
 
-            return data;
+            return std::vector<T>();
 
         }
 

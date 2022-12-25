@@ -9,6 +9,7 @@ namespace Atlas {
 
 		AORenderer::AORenderer() {
 
+            /*
             const int32_t filterSize = 4;
             blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
 
@@ -36,11 +37,13 @@ namespace Atlas {
             verticalBlurShader.AddMacro("DEPTH_WEIGHT");
             verticalBlurShader.AddMacro("NORMAL_WEIGHT");
             verticalBlurShader.Compile();
+             */
 
 		}
 
 		void AORenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+            /*
             auto ao = scene->ao;
             if (!ao || !ao->enable) return;
 
@@ -76,7 +79,7 @@ namespace Atlas {
 
                 helper.DispatchAndHit(&rtaoShader, ivec3(groupCount.x * groupCount.y, 1, 1), 
                     [=]() {
-                        target->swapAoTexture.Bind(GL_WRITE_ONLY, 3);
+                        // target->swapAoTexture.Bind(GL_WRITE_ONLY, 3);
 
                         // Bind the geometry normal texure and depth texture
                         normalTexture->Bind(0);
@@ -215,6 +218,7 @@ namespace Atlas {
             
             Profiler::EndQuery();
             Profiler::EndQuery();
+             */
 
 		}
 

@@ -7,6 +7,7 @@ namespace Atlas {
 
 		TextRenderer::TextRenderer() {
 
+            /*
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
 			auto vertexBuffer = new Buffer::VertexBuffer(AE_FLOAT, 3,
@@ -19,6 +20,7 @@ namespace Atlas {
 			shader.Compile();
 
 			GetUniforms();
+             */
 
 		}
 
@@ -31,6 +33,7 @@ namespace Atlas {
 		void TextRenderer::Render(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color,
 								  float scale, Framebuffer* framebuffer) {
 
+            /*
 			float width = (float)(framebuffer == nullptr ? viewport->width : framebuffer->width);
 			float height = (float)(framebuffer == nullptr ? viewport->height : framebuffer->height);
 
@@ -38,13 +41,14 @@ namespace Atlas {
 			vec4 blendArea = vec4(0.0f, 0.0f, width, height);
 
 			RenderOutlined(viewport, font, text, x, y, color, vec4(1.0f), 0.0f, clipArea, blendArea, scale, framebuffer);
+             */
 
 		}
 
 		void TextRenderer::Render(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 clipArea,
 								  vec4 blendArea, float scale, Framebuffer* framebuffer) {
 
-			RenderOutlined(viewport, font, text, x, y, color, vec4(1.0f), 0.0f, clipArea, blendArea, scale, framebuffer);
+            // RenderOutlined(viewport, font, text, x, y, color, vec4(1.0f), 0.0f, clipArea, blendArea, scale, framebuffer);
 
 
 		}
@@ -52,6 +56,7 @@ namespace Atlas {
 		void TextRenderer::RenderOutlined(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor,
 										  float outlineScale, float scale, Framebuffer* framebuffer) {
 
+            /*
 			float width = (float)(framebuffer == nullptr ? viewport->width : framebuffer->width);
 			float height = (float)(framebuffer == nullptr ? viewport->height : framebuffer->height);
 
@@ -60,12 +65,14 @@ namespace Atlas {
 
 			RenderOutlined(viewport, font, text, x, y, color, outlineColor, outlineScale, 
 				clipArea, blendArea, scale, framebuffer);
+             */
 
 		}
 
 		void TextRenderer::RenderOutlined(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
 										  vec4 clipArea, vec4 blendArea, float scale, Framebuffer* framebuffer) {
 
+            /*
 			int32_t characterCount;
 
 			shader.Bind();
@@ -122,6 +129,7 @@ namespace Atlas {
 			font->secondGlyphBuffer.Unbind();
 
 			glEnable(GL_CULL_FACE);
+             */
 
 		}
 

@@ -8,6 +8,7 @@ namespace Atlas {
 
 		PostProcessRenderer::PostProcessRenderer() {
 
+            /*
 			shader.AddStage(AE_VERTEX_STAGE, "postprocessing.vsh");
 			shader.AddStage(AE_FRAGMENT_STAGE, "postprocessing.fsh");
 
@@ -20,11 +21,13 @@ namespace Atlas {
 			sharpenShader.Compile();
 
 			sharpenFactor = sharpenShader.GetUniform("sharpenFactor");
+             */
 
 		}
 
 		void PostProcessRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+            /*
 			Profiler::BeginQuery("Postprocessing");
 
 			Profiler::BeginQuery("Main");
@@ -101,11 +104,13 @@ namespace Atlas {
 			}
 
 			Profiler::EndQuery();
+             */
 
 		}
 
 		void PostProcessRenderer::GetUniforms() {
 
+            /*
 			hdrTextureResolution = shader.GetUniform("hdrTextureResolution");
 			exposure = shader.GetUniform("exposure");
 			saturation = shader.GetUniform("saturation");
@@ -117,6 +122,7 @@ namespace Atlas {
 			vignetteStrength = shader.GetUniform("vignetteStrength");
 			vignetteColor = shader.GetUniform("vignetteColor");
 			timeInMilliseconds = shader.GetUniform("timeInMilliseconds");
+             */
 
 		}
 

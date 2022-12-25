@@ -6,7 +6,6 @@
 #include "../Camera.h"
 #include "../scene/Scene.h"
 #include "../Viewport.h"
-#include "../Profiler.h"
 
 #include "../graphics/Profiler.h"
 #include "../graphics/GraphicsDevice.h"

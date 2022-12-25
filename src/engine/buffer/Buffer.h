@@ -2,9 +2,6 @@
 #define AE_BUFFER_H
 
 #include "../System.h"
-#include "../TypeFormat.h"
-#include "BufferLock.h"
-
 /**
  * If this bit is set the buffer will use double buffering. Use
  * Increment() to switch to the next part of the buffer.
@@ -41,15 +38,6 @@
  * from another buffer. You therefore use staging buffers.
  */
 #define AE_BUFFER_DYNAMIC_STORAGE  64
-
-#define AE_VERTEX_BUFFER			GL_ARRAY_BUFFER
-#define AE_INDEX_BUFFER				GL_ELEMENT_ARRAY_BUFFER
-#define AE_UNIFORM_BUFFER			GL_UNIFORM_BUFFER
-#define AE_DRAW_INDIRECT_BUFFER		GL_DRAW_INDIRECT_BUFFER
-#define AE_DISPATCH_INDIRECT_BUFFER	GL_DISPATCH_INDIRECT_BUFFER 
-#define AE_STAGING_BUFFER			GL_COPY_READ_BUFFER
-#define AE_SHADER_STORAGE_BUFFER	GL_SHADER_STORAGE_BUFFER
-#define AE_ATOMIC_COUNTER_BUFFER	GL_ATOMIC_COUNTER_BUFFER
 
 namespace Atlas {
 
@@ -297,8 +285,6 @@ namespace Atlas {
 
 			size_t bufferingCount = 0;
 			size_t bufferingIndex = 0;
-
-			BufferLock bufferLock;
 
 		};
 

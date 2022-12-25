@@ -2,7 +2,7 @@
 #include "../../common/RandomHelper.h"
 #include "../../common/Piecewise.h"
 #include "../../volume/BVH.h"
-#include "../../Profiler.h"
+#include "../../graphics/Profiler.h"
 
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1
@@ -17,6 +17,7 @@ namespace Atlas {
 
 				const size_t lightCount = 512;
 
+                /*
 				glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &textureUnitCount);
 				glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &workGroupLimit);
 
@@ -60,6 +61,7 @@ namespace Atlas {
 
 				binningOffsetShader.AddStage(AE_COMPUTE_STAGE, "raytracer/binningOffset.csh");
 				binningOffsetShader.Compile();
+                */
 
 			}
 
@@ -123,6 +125,7 @@ namespace Atlas {
 
 				// Bind textures and buffers
 				{
+                    /*
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 0);
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 1);
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 2);
@@ -130,6 +133,7 @@ namespace Atlas {
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 4);
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 5);
 					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, 6);
+                     */
 
 					if (rtData.baseColorTextureAtlas.slices.size())
 						rtData.baseColorTextureAtlas.textureArray.Bind(0);
@@ -159,10 +163,11 @@ namespace Atlas {
 					dispatchAndHitShader->GetUniform("lightCount")->SetValue(int32_t(selectedLights.size()));
 
 					prepare();
-
+                    /*
 					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
 						GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 					glDispatchCompute(dimensions.x, dimensions.y, dimensions.z);
+                     */
 				}
 
 			}
@@ -226,10 +231,11 @@ namespace Atlas {
 				rayGenShader->GetUniform("useRayBinning")->SetValue(binning);
 
 				prepare();
-
+                /*
 				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
 					GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 				glDispatchCompute(dimensions.x, dimensions.y, dimensions.z);
+                 */
 
 			}
 
@@ -240,6 +246,7 @@ namespace Atlas {
 
 				// Bind textures and buffers
 				{
+                    /*
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 0);
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 1);
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 2);
@@ -247,6 +254,7 @@ namespace Atlas {
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 4);
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 5);
 					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, 6);
+                     */
 
 					if (rtData.baseColorTextureAtlas.slices.size())
 						rtData.baseColorTextureAtlas.textureArray.Bind(0);
@@ -270,11 +278,11 @@ namespace Atlas {
 					lightBuffer.BindBase(8);
 				}
 
-				Profiler::BeginQuery("Setup command buffer");
+				Graphics::Profiler::BeginQuery("Setup command buffer");
 
 				// Set up command buffer, reset ray count
 				{
-					indirectDispatchBuffer.BindBaseAs(AE_SHADER_STORAGE_BUFFER, 4);
+                    // indirectDispatchBuffer.BindBaseAs(AE_SHADER_STORAGE_BUFFER, 4);
 					traceDispatchShader.Bind();
 
 					if (dispatchCounter % 2 == 0) {
@@ -286,8 +294,8 @@ namespace Atlas {
 						counterBuffer1.BindBase(0);
 					}
 
-					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-					glDispatchCompute(1, 1, 1);
+                    // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                    // glDispatchCompute(1, 1, 1);
 				}
 
 				indirectDispatchBuffer.Bind();
@@ -296,7 +304,7 @@ namespace Atlas {
 
 				if (binning) {
 
-					Profiler::EndAndBeginQuery("Binning offsets");
+                    Graphics::Profiler::EndAndBeginQuery("Binning offsets");
 
 					// Calculate binning offsets
 					{
@@ -305,11 +313,11 @@ namespace Atlas {
 						rayBinCounterBuffer.BindBase(11);
 						rayBinOffsetBuffer.BindBase(12);
 
-						glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-						glDispatchCompute(1, 1, 1);
+                        // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                        // glDispatchCompute(1, 1, 1);
 					}
 
-					Profiler::EndAndBeginQuery("Binning rays");
+                    Graphics::Profiler::EndAndBeginQuery("Binning rays");
 
 					// Order rays by their bins
 					{
@@ -319,18 +327,18 @@ namespace Atlas {
 						binningShader.GetUniform("rayPayloadBufferOffset")->SetValue(uint32_t(payloadOffsetCounter++ % 2));
 						binningShader.GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
 
-						glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
-						glDispatchComputeIndirect(0);
+                        // glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+                        // glDispatchComputeIndirect(0);
 
 						uint32_t zero = 0;
 						rayBinCounterBuffer.Bind();
 						rayBinCounterBuffer.InvalidateData();
-						rayBinCounterBuffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
+                        // rayBinCounterBuffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
 					}
 
 				}
-				
-				Profiler::EndAndBeginQuery("Trace rays");
+
+                Graphics::Profiler::EndAndBeginQuery("Trace rays");
 
 				// Trace rays for closest intersection
 				{
@@ -339,11 +347,11 @@ namespace Atlas {
 					traceClosestShader.GetUniform("rayBufferOffset")->SetValue(uint32_t(rayOffsetCounter++ % 2));
 					traceClosestShader.GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
 
-					glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
-					glDispatchComputeIndirect(0);
+                    // glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+                    // glDispatchComputeIndirect(0);
 				}
 
-				Profiler::EndAndBeginQuery("Execute hit shader");
+                Graphics::Profiler::EndAndBeginQuery("Execute hit shader");
 				
 				// Shade rays
 				{
@@ -359,12 +367,12 @@ namespace Atlas {
 
 					prepare();
 
-					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
-						GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-					glDispatchComputeIndirect(0);
+                    // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
+                    // 	GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                    // glDispatchComputeIndirect(0);
 				}
 
-				Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
 
 				dispatchCounter++;
 
@@ -375,11 +383,11 @@ namespace Atlas {
 				uint32_t zero = 0;
 				counterBuffer0.Bind();
 				counterBuffer0.InvalidateData();
-				counterBuffer0.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
+                // counterBuffer0.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
 
 				counterBuffer1.Bind();
 				counterBuffer1.InvalidateData();
-				counterBuffer1.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
+                // counterBuffer1.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
 
 			}
 

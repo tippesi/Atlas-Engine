@@ -35,8 +35,8 @@ namespace Atlas {
 			 * @param anisotropicFiltering Whether or not anisotropic filtering is used.
 			 * @param generateMipMaps Whether or not mipmap can be used. Generate using GenerateMipmap()
 			 */
-            Texture2D(int32_t width, int32_t height, int32_t sizedFormat, int32_t wrapping = GL_CLAMP_TO_EDGE, 
-				int32_t filtering = GL_NEAREST, bool anisotropicFiltering = false, bool generateMipMaps = false);
+            Texture2D(int32_t width, int32_t height, int32_t sizedFormat, int32_t wrapping = /*GL_CLAMP_TO_EDGE*/0,
+				int32_t filtering = /*GL_NEAREST*/0, bool anisotropicFiltering = false, bool generateMipMaps = false);
 
             /**
              * Constructs a Texture2D object from an image file.

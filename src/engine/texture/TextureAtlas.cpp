@@ -1,6 +1,5 @@
 #include "TextureAtlas.h"
 
-#include "../shader/ShaderManager.h"
 #include "../Framebuffer.h"
 #include "../Log.h"
 
@@ -98,6 +97,7 @@ namespace Atlas {
 
 			int32_t sizedFormat;
 
+            /*
 			switch (channels) {
 			case 1: sizedFormat = AE_R8; break;
 			case 2: sizedFormat = AE_RG8; break;
@@ -107,6 +107,7 @@ namespace Atlas {
 
 			textureArray = Texture2DArray(width, height, layers, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
+            */
 			// Copy all levels to the texture array (note that the order levels are added is important)
 			for (auto& levelSlices : levels) {
 				FillAtlas(levelSlices);
@@ -226,6 +227,7 @@ namespace Atlas {
 
 				if (tex->channels == channels) {
 
+                    /*
 					readFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, tex);
 					writeFramebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, &textureArray, slice.layer);
 
@@ -237,6 +239,7 @@ namespace Atlas {
 						slice.offset.x + slice.size.x, 
 						slice.offset.y + slice.size.y,
 						GL_COLOR_BUFFER_BIT, GL_LINEAR);
+                    */
 
 				}
 				else {

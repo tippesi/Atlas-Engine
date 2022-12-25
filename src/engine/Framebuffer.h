@@ -54,7 +54,7 @@ namespace Atlas {
          * @param target
          */
 		void AddComponent(int32_t attachment, int32_t sizedFormat, int32_t wrapping,
-						  int32_t filtering, uint32_t target = GL_FRAMEBUFFER);
+						  int32_t filtering, uint32_t target = 0);
 
 		/**
          *
@@ -63,7 +63,7 @@ namespace Atlas {
          * @param target
 		 * @note The framebuffer doesn't take the ownership of the texture.
          */
-		void AddComponentTexture(int32_t attachment, Texture::Texture2D *texture, uint32_t target = GL_FRAMEBUFFER);
+		void AddComponentTexture(int32_t attachment, Texture::Texture2D *texture, uint32_t target = 0);
 
 		/**
          *
@@ -74,7 +74,7 @@ namespace Atlas {
 		 * @note The framebuffer doesn't take the ownership of the texture.
          */
 		void AddComponentTextureArray(int32_t attachment, Texture::Texture2DArray *texture, int32_t layer,
-									  uint32_t target = GL_FRAMEBUFFER);
+									  uint32_t target = 0);
 
 		/**
          *
@@ -83,7 +83,7 @@ namespace Atlas {
          * @param face
          * @param target
          */
-		void AddComponentCubemap(int32_t attachment, Texture::Cubemap *cubemap, int32_t face, uint32_t target = GL_FRAMEBUFFER);
+		void AddComponentCubemap(int32_t attachment, Texture::Cubemap *cubemap, int32_t face, uint32_t target = 0);
 
 		/**
          *

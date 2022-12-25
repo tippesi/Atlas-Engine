@@ -20,8 +20,8 @@ namespace Atlas {
             this->height = height;
             this->depth = layers;
 
-            Generate(GL_TEXTURE_2D_ARRAY, sizedFormat, wrapping, filtering,
-                     anisotropicFiltering, generateMipMaps);
+            // Generate(GL_TEXTURE_2D_ARRAY, sizedFormat, wrapping, filtering,
+            //          anisotropicFiltering, generateMipMaps);
 
         }
 
@@ -47,8 +47,8 @@ namespace Atlas {
 			int32_t width, int32_t height, int32_t layers) {
 
 			Bind();
-			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, x, y, z, width, height, layers,
-				TextureFormat::GetBaseFormat(sizedFormat), AE_UBYTE, data.data());
+            // glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, x, y, z, width, height, layers,
+            // 	TextureFormat::GetBaseFormat(sizedFormat), AE_UBYTE, data.data());
 
 			GenerateMipmap();
 
@@ -64,8 +64,8 @@ namespace Atlas {
 			int32_t width, int32_t height, int32_t layers) {
 
 			Bind();
-			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, x, y, z, width, height, layers,
-				TextureFormat::GetBaseFormat(sizedFormat), AE_USHORT, data.data());
+            // glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, x, y, z, width, height, layers,
+            // 	TextureFormat::GetBaseFormat(sizedFormat), AE_USHORT, data.data());
 
 			GenerateMipmap();
 
@@ -81,8 +81,8 @@ namespace Atlas {
 			int32_t width, int32_t height, int32_t layers) {
 
 			Bind();
-			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, x, y, z, width, height, layers,
-				TextureFormat::GetBaseFormat(sizedFormat), AE_FLOAT, data.data());
+            // glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, x, y, z, width, height, layers,
+            // 	TextureFormat::GetBaseFormat(sizedFormat), AE_FLOAT, data.data());
 
 			GenerateMipmap();
 
@@ -97,11 +97,13 @@ namespace Atlas {
 				this->height = height;
 				this->depth = layers;
 
+                /*
 				glDeleteTextures(1, &ID);
 				glGenTextures(1, &ID);
 
 				Generate(GL_TEXTURE_2D_ARRAY, sizedFormat, wrapping,
 					filtering, anisotropicFiltering, mipmaps);
+                 */
 
 			}
 
@@ -121,7 +123,7 @@ namespace Atlas {
 
         void Texture2DArray::ReserveStorage(int32_t mipCount) {
 
-            glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, sizedFormat, width, height, depth);
+            // glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, sizedFormat, width, height, depth);
 
         }
 

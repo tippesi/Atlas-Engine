@@ -4,6 +4,7 @@ namespace Atlas {
 
 	RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height(height) {
 
+        /*
 		// We want a shared depth and velocity texture across the geometry and lighting framebuffers
 		depthTexture = Texture::Texture2D(width, height, AE_DEPTH32F,
 			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
@@ -54,6 +55,7 @@ namespace Atlas {
 		ivec2 halfRes = GetRelativeResolution(HALF_RES);
 		downsampledTarget2x = DownsampledRenderTarget(halfRes);
 		downsampledSwapTarget2x = DownsampledRenderTarget(halfRes);
+         */
 
 	}
 
@@ -62,10 +64,12 @@ namespace Atlas {
 		geometryFramebuffer.Resize(width, height);
 		lightingFramebuffer.Resize(width, height);
 
+        /*
 		geometryFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
 		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &velocityTexture);
 		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT6, &stencilTexture);
 
+         */
 		postProcessFramebuffer.Resize(width, height);
 
 		// We have to also resize the other part of the history
@@ -104,6 +108,7 @@ namespace Atlas {
 
 	void RenderTarget::Swap() {
 
+        /*
 		if (swap) {
 			geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &velocityTexture);
 			lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, &velocityTexture);
@@ -112,7 +117,7 @@ namespace Atlas {
 			geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &swapVelocityTexture);
 			lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, &swapVelocityTexture);
 		}
-
+*/
 		swap = !swap;
 
 	}
@@ -135,11 +140,13 @@ namespace Atlas {
 		auto res = GetRelativeResolution(resolution);
 		aoResolution = resolution;
 
+        /*
 		aoTexture = Texture::Texture2D(res.x, res.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		swapAoTexture = Texture::Texture2D(res.x, res.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 		aoMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		historyAoMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+         */
 
 	}
 
@@ -154,12 +161,14 @@ namespace Atlas {
 		auto res = GetRelativeResolution(resolution);
 		volumetricResolution = resolution;
 
+        /*
 		volumetricTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
 		swapVolumetricTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
 
 		volumetricCloudsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		swapVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		historyVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+         */
 
 	}
 
@@ -174,11 +183,13 @@ namespace Atlas {
 		auto res = GetRelativeResolution(resolution);
 		reflectionResolution = resolution;
 
+        /*
 		reflectionTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		swapReflectionTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 		reflectionMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 		historyReflectionMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+         */
 	
 	}
 
@@ -190,6 +201,7 @@ namespace Atlas {
 
 	DownsampledRenderTarget* RenderTarget::GetDownsampledTextures(RenderResolution resolution) {
 
+        /*
 		switch (resolution) {
 		case FULL_RES:
 			downsampledTarget1x.depthTexture = &depthTexture;
@@ -201,11 +213,13 @@ namespace Atlas {
 			return &downsampledTarget1x;
 		default: return swap ? &downsampledTarget2x : &downsampledSwapTarget2x;
 		}
+         */
 
 	}
 
 	DownsampledRenderTarget* RenderTarget::GetDownsampledHistoryTextures(RenderResolution resolution) {
 
+        /*
 		switch (resolution) {
 		case FULL_RES:
 			downsampledTarget1x.depthTexture = &depthTexture;
@@ -216,6 +230,7 @@ namespace Atlas {
 			return &downsampledTarget1x;
 		default: return swap ? &downsampledSwapTarget2x : &downsampledTarget2x;
 		}
+         */
 
 	}
 

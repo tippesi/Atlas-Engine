@@ -16,6 +16,7 @@ namespace Atlas {
 		DownsampledRenderTarget() = default;
 
 		DownsampledRenderTarget(ivec2 resolution) {
+            /*
 			depthTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R32F, GL_CLAMP_TO_EDGE, GL_NEAREST);
 			normalTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
 			geometryNormalTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
@@ -23,7 +24,8 @@ namespace Atlas {
 			velocityTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_NEAREST);
 			offsetTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R8I, GL_CLAMP_TO_EDGE, GL_LINEAR);
 			materialIdxTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST);
-		}
+             */
+             }
 
 		void Resize(ivec2 resolution) {
 			depthTexture->Resize(resolution.x, resolution.y);

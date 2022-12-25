@@ -12,8 +12,8 @@
 ## Introduction
 This is a cross platform toy engine developed in my spare time that is available on Linux and Windows.
 ## Requirements
-- OpenGL 4.6
-- C++17 compatible compiler
+- Vulkan
+- C++20 compatible compiler
 - CMake
 - Vcpkg
 ## Set up

@@ -74,8 +74,6 @@ if(ATLAS_ASSIMP)
 endif()
 if (ANDROID)
     add_subdirectory(${HIDAPI_LOCATION})
-else()
-    find_package(glad CONFIG REQUIRED)
 endif()
 
 find_package(VulkanHeaders CONFIG REQUIRED)

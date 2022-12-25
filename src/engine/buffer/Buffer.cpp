@@ -1,6 +1,4 @@
 #include "Buffer.h"
-#include "../TypeFormat.h"
-#include "../texture/TextureFormat.h"
 #include "graphics/Extensions.h"
 
 namespace Atlas {
@@ -33,6 +31,7 @@ namespace Atlas {
             immutable = (flags & AE_BUFFER_IMMUTABLE);
 
             // Configure mapping and storage flags.
+            /*
             mapFlags |= ((flags & AE_BUFFER_MAP_READ) ? GL_MAP_READ_BIT : 0);
             mapFlags |= ((flags & AE_BUFFER_MAP_WRITE) ? GL_MAP_WRITE_BIT : 0);
 
@@ -47,6 +46,7 @@ namespace Atlas {
             else if (!(flags & AE_BUFFER_DYNAMIC_STORAGE) && !immutable) {
                 dataFlags |= GL_STATIC_DRAW;
             }
+             */
 
 			if (elementCount) {
 				SetSize(elementCount, data);
@@ -74,38 +74,38 @@ namespace Atlas {
 
         void Buffer::Bind() const {
 
-            glBindBuffer(type, ID);
+            // glBindBuffer(type, ID);
 
         }
 
         void Buffer::BindAs(uint32_t target) const {
 
-            glBindBuffer(target, ID);
+            // glBindBuffer(target, ID);
 
         }
 
         void Buffer::BindRange(size_t offset, size_t length, int32_t base) const {
 
-            glBindBufferRange(type, base, ID, offset * elementSize,
-                              length * elementSize);
+            // glBindBufferRange(type, base, ID, offset * elementSize,
+            //                   length * elementSize);
 
         }
 
         void Buffer::BindBase(int32_t base) const {
 
-            glBindBufferBase(type, base, ID);
+            // glBindBufferBase(type, base, ID);
 
         }
 
         void Buffer::BindBaseAs(uint32_t target, int32_t base) const {
 
-            glBindBufferBase(target, base, ID);
+            // glBindBufferBase(target, base, ID);
 
         }
 
         void Buffer::Unbind() const {
 
-            glBindBuffer(type, 0);
+            // glBindBuffer(type, 0);
 
         }
 
@@ -115,12 +115,12 @@ namespace Atlas {
                 return;
 
             // Always map the whole range
-            void* data = glMapBufferRange(type, 0, sizeInBytes, mapFlags);
-            mappedDataOffset = (size_t)((uint8_t*)data);
+            // void* data = glMapBufferRange(type, 0, sizeInBytes, mapFlags);
+            // mappedDataOffset = (size_t)((uint8_t*)data);
             mappedData = 0;
 
             if (immutable)
-                bufferLock.LockRange(0, elementCount * elementSize);
+                // bufferLock.LockRange(0, elementCount * elementSize);
 
             mapped = true;
 
@@ -131,7 +131,7 @@ namespace Atlas {
             if (!mapped)
                 return;
 
-            glUnmapBuffer(type);
+            // glUnmapBuffer(type);
 
             mappedData = 0;
             mappedDataOffset = 0;
@@ -143,8 +143,8 @@ namespace Atlas {
         void Buffer::Increment() {
 
             if (mapped && immutable) {
-                bufferLock.LockRange(bufferingIndex * elementSize * elementCount,
-                                     elementCount * elementSize);
+                // bufferLock.LockRange(bufferingIndex * elementSize * elementCount,
+                //                      elementCount * elementSize);
             }
 
             bufferingIndex = (bufferingIndex + 1) % bufferingCount;
@@ -152,7 +152,7 @@ namespace Atlas {
             mappedData = bufferingIndex * elementSize * elementCount;
 
             if (mapped && immutable) {
-                bufferLock.WaitForLockedRange(mappedData, elementCount * elementSize);
+                // bufferLock.WaitForLockedRange(mappedData, elementCount * elementSize);
             }
 
         }
@@ -186,7 +186,7 @@ namespace Atlas {
             }
             else {
                 Bind();
-                glBufferData(type, sizeInBytes, data, dataFlags);
+                // glBufferData(type, sizeInBytes, data, dataFlags);
             }
 
         }
@@ -204,7 +204,7 @@ namespace Atlas {
             if (dataOffset + length * elementSize > sizeInBytes)
                 return;
 
-            glBufferSubData(type, dataOffset, length * elementSize, data);
+            // glBufferSubData(type, dataOffset, length * elementSize, data);
 
         }
 
@@ -234,15 +234,15 @@ namespace Atlas {
 
 		void Buffer::InvalidateData() {
 
-			glInvalidateBufferData(ID);
+            // glInvalidateBufferData(ID);
 
 		}
 
 		void Buffer::ClearData(int32_t sizedFormat, int32_t type, void* data) {
 
-			glClearBufferData(this->type, sizedFormat,
-				Texture::TextureFormat::GetBaseFormat(sizedFormat),
-				type, data);
+            // glClearBufferData(this->type, sizedFormat,
+            // 	Texture::TextureFormat::GetBaseFormat(sizedFormat),
+            // 	type, data);
 
 		}
 
@@ -252,6 +252,7 @@ namespace Atlas {
 			if (!length)
 				return;
 
+            /*
 			glBindBuffer(GL_COPY_WRITE_BUFFER, ID);
 			glBindBuffer(GL_COPY_READ_BUFFER, copyBuffer->ID);
 
@@ -260,6 +261,7 @@ namespace Atlas {
 
 			glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
 			glBindBuffer(GL_COPY_READ_BUFFER, 0);
+            */
 
         }
 
@@ -312,7 +314,7 @@ namespace Atlas {
 
         void Buffer::CreateInternal(void* data) {
 
-            glGenBuffers(1, &ID);
+            // glGenBuffers(1, &ID);
 
             Bind();
 
@@ -321,12 +323,12 @@ namespace Atlas {
 #ifdef AE_API_GLES
                 glBufferStorageEXT(type, sizeInBytes, data, dataFlags);
 #else
-                glBufferStorage(type, sizeInBytes, data, dataFlags);
+                //     glBufferStorage(type, sizeInBytes, data, dataFlags);
 #endif
 #endif
             }
             else {
-                glBufferData(type, sizeInBytes, data, dataFlags);
+                // glBufferData(type, sizeInBytes, data, dataFlags);
             }
 
         }
@@ -338,7 +340,7 @@ namespace Atlas {
             if (mapped)
                 Unmap();
 
-            glDeleteBuffers(1, &ID);
+            // glDeleteBuffers(1, &ID);
 
             ID = 0;
 

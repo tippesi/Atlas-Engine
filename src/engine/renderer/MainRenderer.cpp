@@ -18,6 +18,7 @@ namespace Atlas {
 
 		MainRenderer::MainRenderer() {
 
+            /*
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 			Helper::GeometryHelper::GenerateCubeVertexArray(cubeVertexArray);
 
@@ -35,6 +36,7 @@ namespace Atlas {
 
 			filterDiffuseShader.AddStage(AE_VERTEX_STAGE, "brdf/filterProbe.vsh");
 			filterDiffuseShader.AddStage(AE_FRAGMENT_STAGE, "brdf/filterProbe.fsh");
+            */
 
 			haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16 + 1);
 
@@ -51,6 +53,7 @@ namespace Atlas {
 		void MainRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
 			Scene::Scene* scene, Texture::Texture2D* texture, RenderBatch* batch) {
 
+            /*
 			Profiler::BeginQuery("Render scene");
 
 			glDisable(GL_DEPTH_TEST);
@@ -282,12 +285,14 @@ namespace Atlas {
 			}
 
 			Profiler::EndQuery();
+            */
 
 		}
 
 		void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
 			bool alphaBlending, Framebuffer* framebuffer) {
 
+            /*
 			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
 			float viewportHeight = (float)(!framebuffer ? viewport->height : framebuffer->height);
 
@@ -300,12 +305,14 @@ namespace Atlas {
 			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
 			RenderRectangle(viewport, color, x, y, width, height, clipArea, blendArea, alphaBlending, framebuffer);
+            */
 
 		}
 
 		void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
 			vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
 
+            /*
 			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
 			float viewportHeight = (float)(!framebuffer ? viewport->height : framebuffer->height);
 
@@ -350,11 +357,13 @@ namespace Atlas {
 			}
 
 			glEnable(GL_CULL_FACE);
+            */
 
 		}
 
 		void MainRenderer::RenderBatched(Viewport* viewport, Camera* camera, RenderBatch* batch) {
 
+            /*
 			batch->TransferData();
 
 			if (viewport)
@@ -383,11 +392,13 @@ namespace Atlas {
 
 				glDrawArrays(GL_TRIANGLES, 0, GLsizei(batch->GetTriangleCount() * 3));
 			}
+            */
 
 		}
 
 		void MainRenderer::RenderProbe(Lighting::EnvironmentProbe* probe, RenderTarget* target, Scene::Scene* scene) {
 
+            /*
 		    if (probe->resolution != target->GetWidth() ||
 		        probe->resolution != target->GetHeight())
 		        return;
@@ -566,11 +577,13 @@ namespace Atlas {
 			if (skyProbe) {
 				scene->sky.probe = skyProbe;
 			}
+            */
 
 		}
 
 		void MainRenderer::FilterProbe(Lighting::EnvironmentProbe* probe) {
 
+            /*
 			Profiler::BeginQuery("Filter probe");
 
 			mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
@@ -611,6 +624,7 @@ namespace Atlas {
 			framebuffer.Unbind();
 
 			Profiler::EndQuery();
+            */
 
 		}
 
@@ -626,6 +640,7 @@ namespace Atlas {
 
 		void MainRenderer::GetUniforms() {
 
+            /*
 			rectangleProjectionMatrix = rectangleShader.GetUniform("pMatrix");
 			rectangleOffset = rectangleShader.GetUniform("rectangleOffset");
 			rectangleScale = rectangleShader.GetUniform("rectangleScale");
@@ -635,6 +650,7 @@ namespace Atlas {
 
 			lineViewMatrix = lineShader.GetUniform("vMatrix");
 			lineProjectionMatrix = lineShader.GetUniform("pMatrix");
+            */
 
 		}
 
@@ -748,6 +764,7 @@ namespace Atlas {
 
 		void MainRenderer::PreintegrateBRDF() {
 
+            /*
 			Shader::Shader shader;
 
 			shader.AddStage(AE_COMPUTE_STAGE, "brdf/preintegrateDFG.csh");
@@ -769,6 +786,7 @@ namespace Atlas {
 			glDispatchCompute(groupCount, groupCount, 1);
 
 			glFlush();
+            */
 
 		}
 

@@ -7,6 +7,7 @@ namespace Atlas {
 
 		TextureRenderer::TextureRenderer() {
 
+            /*
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
 			texture2DShader.AddStage(AE_VERTEX_STAGE, "rectangle.vsh");
@@ -23,11 +24,13 @@ namespace Atlas {
 			texture3DShader.AddStage(AE_FRAGMENT_STAGE, "rectangle.fsh");
 			texture3DShader.AddMacro("TEXTURE3D");
 			texture3DShader.Compile();
+             */
 
 		}
 
 		void TextureRenderer::RenderTexture2D(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
 			bool alphaBlending, bool invert, Framebuffer* framebuffer) {
+
 
 			float viewportWidth = (float)viewport->width;
 			float viewportHeight = (float)viewport->height;
@@ -37,11 +40,13 @@ namespace Atlas {
 
 			RenderTexture2D(viewport, texture, x, y, width, height, clipArea, blendArea, alphaBlending, invert, framebuffer);
 
+
 		}
 
 		void TextureRenderer::RenderTexture2D(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
 			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert, Framebuffer* framebuffer) {
 
+            /*
 			vertexArray.Bind();
 			texture2DShader.Bind();
 
@@ -76,6 +81,7 @@ namespace Atlas {
 				framebuffer->Unbind();
 
 			glEnable(GL_CULL_FACE);
+             */
 
 		}
 
@@ -95,6 +101,7 @@ namespace Atlas {
 		void TextureRenderer::RenderTexture2DArray(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
 			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert, Framebuffer* framebuffer) {
 
+            /*
 			vertexArray.Bind();
 			texture2DArrayShader.Bind();
 
@@ -138,6 +145,7 @@ namespace Atlas {
 			}
 
 			glEnable(GL_CULL_FACE);
+             */
 
 		}
 
@@ -157,6 +165,7 @@ namespace Atlas {
 		void TextureRenderer::RenderTexture3D(Viewport* viewport, Texture::Texture3D* texture, float depth, float x, float y, float width, float height,
 			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert, Framebuffer* framebuffer) {
 
+            /*
 			vertexArray.Bind();
 			texture3DShader.Bind();
 
@@ -200,6 +209,7 @@ namespace Atlas {
 			}
 
 			glEnable(GL_CULL_FACE);
+             */
 
 		}
 

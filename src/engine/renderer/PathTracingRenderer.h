@@ -19,11 +19,13 @@ namespace Atlas {
 			PathTracerRenderTarget() {}
 
 			PathTracerRenderTarget(int32_t width, int32_t height) : width(width), height(height) {
+                /*
 				texture = Texture::Texture2D(width, height, AE_RGBA8,
 					GL_CLAMP_TO_EDGE, GL_LINEAR);
 
 				accumTexture0 = Texture::Texture2D(width, height, AE_RGBA32F);
 				accumTexture1 = Texture::Texture2D(width, height, AE_RGBA32F);
+                */
 
 			}
 

@@ -6,10 +6,10 @@ namespace Atlas {
 
 		VertexArray::VertexArray() {
 
-			glGenVertexArrays(1, &ID);
+            // glGenVertexArrays(1, &ID);
 
 			int32_t maxVertexAttribs;
-			glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxVertexAttribs);
+            // glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxVertexAttribs);
 
 			maxAttribArrayCount = (uint32_t)maxVertexAttribs;
 
@@ -17,7 +17,7 @@ namespace Atlas {
 
 		VertexArray::~VertexArray() {
 
-			glDeleteVertexArrays(1, &ID);
+            // glDeleteVertexArrays(1, &ID);
 
 			delete indexComponent;
 
@@ -97,8 +97,8 @@ namespace Atlas {
 			Bind();
 			buffer->Bind();
 
-			glEnableVertexAttribArray(attribArray);
-			glVertexAttribPointer(attribArray, buffer->GetStride(), buffer->GetDataType(), normalized, 0, nullptr);
+            // glEnableVertexAttribArray(attribArray);
+            // glVertexAttribPointer(attribArray, buffer->GetStride(), buffer->GetDataType(), normalized, 0, nullptr);
 
 			vertexComponents[attribArray] = buffer;
 
@@ -133,10 +133,12 @@ namespace Atlas {
 
 				for (int32_t i = 0; i < numAttribArrays; i++) {
 
+                    /*
 					glEnableVertexAttribArray(attribArray + i);
 					glVertexAttribPointer(attribArray + i, internalStride, buffer->GetDataType(), normalized,
 							(int32_t)buffer->GetElementSize(), (void*)((uint64_t)(buffer->GetElementSize() / numAttribArrays * i)));
 					glVertexAttribDivisor(attribArray + i, 1);
+                     */
 
 					vertexComponents[attribArray + i] = buffer;
 
@@ -148,9 +150,11 @@ namespace Atlas {
 				if (attribArray >= maxAttribArrayCount)
 					return;
 
+                /*
 				glEnableVertexAttribArray(attribArray);
 				glVertexAttribPointer(attribArray, buffer->GetStride(), buffer->GetDataType(), normalized, 0, nullptr);
 				glVertexAttribDivisor(attribArray, 1);
+                */
 
 				vertexComponents[attribArray] = buffer;
 
@@ -184,8 +188,8 @@ namespace Atlas {
 
 				for (int32_t i = 0; i < numAttribArrays; i++) {
 
-					glDisableVertexAttribArray(attribArray + i);
-					glVertexAttribDivisor(attribArray + i, 0);
+                    // glDisableVertexAttribArray(attribArray + i);
+                    // glVertexAttribDivisor(attribArray + i, 0);
 
 					vertexComponents.erase(attribArray + i);
 
@@ -197,8 +201,8 @@ namespace Atlas {
 				if (attribArray >= maxAttribArrayCount)
 					return;
 
-				glDisableVertexAttribArray(attribArray);
-				glVertexAttribDivisor(attribArray, 0);
+                // glDisableVertexAttribArray(attribArray);
+                // glVertexAttribDivisor(attribArray, 0);
 
 				vertexComponents.erase(attribArray);
 
@@ -211,7 +215,7 @@ namespace Atlas {
 
 			Bind();
 
-			glDisableVertexAttribArray(attribArray);
+            // glDisableVertexAttribArray(attribArray);
 
 		}
 
@@ -247,15 +251,15 @@ namespace Atlas {
 
 		}
 
-		void VertexArray::Bind() const {			
+		void VertexArray::Bind() const {
 
-			glBindVertexArray(ID);
+            // glBindVertexArray(ID);
 
 		}
 
 		void VertexArray::Unbind() const {
 
-			glBindVertexArray(0);
+            // glBindVertexArray(0);
 
 		}
 

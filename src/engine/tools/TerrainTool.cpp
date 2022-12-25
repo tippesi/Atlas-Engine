@@ -59,6 +59,7 @@ namespace Atlas {
 				for (int32_t j = 0; j < maxNodesPerSide; j++) {
 					auto cell = terrain->storage->GetCell(i, j, LoDCount - 1);
 
+                    /*
 					// Create the data structures for the cell
 					cell->heightData.resize(tileResolutionSquared);
 					cell->heightField = new Texture::Texture2D(tileResolution, 
@@ -67,6 +68,7 @@ namespace Atlas {
 						tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 					cell->splatMap = new Texture::Texture2D(tileResolution,
 						tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+                     */
 
 					// Now copy a tile of the original image
 					// We make sure that every tile has the same size
@@ -151,6 +153,7 @@ namespace Atlas {
 				for (int32_t j = 0; j < maxNodesPerSide; j++) {
 					auto cell = terrain->storage->GetCell(i, j, LoDCount - 1);
 
+                    /*
 					// Create the data structures for the cell
 					cell->heightData.resize(tileResolutionSquared);
 					cell->heightField = new Texture::Texture2D(tileResolution,
@@ -159,6 +162,7 @@ namespace Atlas {
 						tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
 					cell->splatMap = new Texture::Texture2D(tileResolution,
 						tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+                    */
 
 					// Now copy a tile of the original image
 					// We make sure that every tile has the same size
@@ -352,6 +356,7 @@ namespace Atlas {
 							}
 						}
 
+                        /*
 						if (!cell->heightField) {
 							cell->heightField = new Texture::Texture2D(tileResolution,
 								tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
@@ -371,6 +376,7 @@ namespace Atlas {
 							cell->normalMap = new Texture::Texture2D(normalDataResolution,
 								normalDataResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 						}
+                        */
 						
 						cell->normalMap->SetData(tileNormalData);
 						cell->heightField->SetData(tileHeightData);
@@ -886,12 +892,12 @@ namespace Atlas {
 			
 			image.ApplyFilter(filter);
 
-			Texture::Texture2D shoreTexture(resolution, resolution, AE_RGBA8,
-				GL_CLAMP_TO_BORDER, GL_LINEAR);
+            //Texture::Texture2D shoreTexture(resolution, resolution, AE_RGBA8,
+            //	GL_CLAMP_TO_BORDER, GL_LINEAR);
 
-			shoreTexture.SetData(image.GetData());
+			//shoreTexture.SetData(image.GetData());
 
-			return shoreTexture;
+			return Texture::Texture2D();
 
 		}
 

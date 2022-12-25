@@ -13,6 +13,7 @@ namespace Atlas {
 
 		OpaqueRenderer::OpaqueRenderer() {
 
+            /*
 			renderList = RenderList(AE_OPAQUE_CONFIG);
 
 			modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
@@ -41,12 +42,14 @@ namespace Atlas {
 
 			jitterLast = shaderBatch.GetUniform("jitterLast");
 			jitterCurrent = shaderBatch.GetUniform("jitterCurrent");
+             */
 
 		}
 
 		void OpaqueRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
 			Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap) {
 
+            /*
 			Profiler::BeginQuery("Opaque geometry");
 
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
@@ -178,12 +181,14 @@ namespace Atlas {
 			renderList.Clear();
 
 			Profiler::EndQuery();
+             */
 
 		}
 
 		void OpaqueRenderer::RenderImpostor(Viewport* viewport, Framebuffer* framebuffer, std::vector<mat4> viewMatrices,
 			mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor) {
 
+            /*
 			if (!viewMatrices.size())
 				return;
 
@@ -326,36 +331,44 @@ namespace Atlas {
 			framebuffer->Unbind();
 
 			glEnable(GL_CULL_FACE);
+             */
 
 		}
 
 		void OpaqueRenderer::InitShaderBatch() {
 
+            /*
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			shaderBatch.AddStage(AE_VERTEX_STAGE, "deferred/geometry.vsh");
 			shaderBatch.AddStage(AE_FRAGMENT_STAGE, "deferred/geometry.fsh");
+             */
 
 		}
 
 		void OpaqueRenderer::AddConfig(Shader::ShaderConfig* config) {
 
+            /*
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			shaderBatch.AddConfig(config);
+             */
 
 		}
 
 		void OpaqueRenderer::RemoveConfig(Shader::ShaderConfig* config) {
 
+            /*
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			shaderBatch.RemoveConfig(config);
+             */
 
 		}
 
 		void OpaqueRenderer::AdjustFaceCulling(bool cullFaces, bool& state) {
 
+            /*
 			if (!cullFaces && state) {
 				glDisable(GL_CULL_FACE);
 				state = false;
@@ -364,6 +377,7 @@ namespace Atlas {
 				glEnable(GL_CULL_FACE);
 				state = true;
 			}
+             */
 
 		}
 

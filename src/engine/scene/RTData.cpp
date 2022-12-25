@@ -9,6 +9,7 @@ namespace Atlas {
 
 		RTData::RTData(Scene* scene) : scene(scene) {
 
+            /*
 			glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &shaderStorageLimit);
 
 			triangleBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUTriangle),
@@ -19,11 +20,13 @@ namespace Atlas {
 				AE_BUFFER_DYNAMIC_STORAGE);
 			nodeBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUBVHNode),
 				AE_BUFFER_DYNAMIC_STORAGE);
+             */
 
 		}
 
 		void RTData::Update() {
 
+            /*
 			auto actors = scene->GetMeshActors();
 
 			if (!actors.size()) return;
@@ -471,6 +474,7 @@ namespace Atlas {
 			roughnessTextureAtlas = Texture::TextureAtlas(roughnessTextures, 1, textureDownscale);
 			metalnessTextureAtlas = Texture::TextureAtlas(metalnessTextures, 1, textureDownscale);
 			aoTextureAtlas = Texture::TextureAtlas(aoTextures, 1, textureDownscale);
+             */
 
 		}
 

@@ -17,8 +17,8 @@ namespace Atlas {
             this->height = height;
             this->depth = depth;
 
-            Generate(GL_TEXTURE_3D, sizedFormat, wrapping, filtering,
-                     anisotropicFiltering, generateMipMaps);
+            // Generate(GL_TEXTURE_3D, sizedFormat, wrapping, filtering,
+            //          anisotropicFiltering, generateMipMaps);
 
         }
 
@@ -43,11 +43,13 @@ namespace Atlas {
                 this->height = height;
                 this->depth = depth;
 
+                /*
                 glDeleteTextures(1, &ID);
                 glGenTextures(1, &ID);
 
                 Generate(GL_TEXTURE_3D, sizedFormat, wrapping,
                          filtering, anisotropicFiltering, mipmaps);
+                         */
 
             }
 
@@ -55,7 +57,7 @@ namespace Atlas {
 
         void Texture3D::ReserveStorage(int32_t mipCount) {
 
-            glTexStorage3D(GL_TEXTURE_3D, mipCount, sizedFormat, width, height, depth);
+            // glTexStorage3D(GL_TEXTURE_3D, mipCount, sizedFormat, width, height, depth);
 
         }
 

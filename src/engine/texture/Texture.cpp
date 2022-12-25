@@ -11,13 +11,13 @@ namespace Atlas {
 
         Texture::Texture() {
 
-            glGenTextures(1, &ID);
+            // glGenTextures(1, &ID);
 
         }
 
         Texture::~Texture() {
 
-            glDeleteTextures(1, &ID);
+            // glDeleteTextures(1, &ID);
 
         }
 
@@ -28,8 +28,8 @@ namespace Atlas {
                 // Remember that we have persistent texture memory.
                 // We can't just change the format, but are required to
                 // retrieve a new texture ID.
-                glDeleteTextures(1, &ID);
-                glGenTextures(1, &ID);
+                // glDeleteTextures(1, &ID);
+                // glGenTextures(1, &ID);
 
 				DeepCopy(that);
 
@@ -44,7 +44,7 @@ namespace Atlas {
 			if (!target)
 				return;
 
-			glBindTexture(target, ID);
+            // glBindTexture(target, ID);
 
 		}
 
@@ -53,14 +53,14 @@ namespace Atlas {
 			if (!target)
 				return;
 
-			glActiveTexture(GL_TEXTURE0 + unit);
+            // glActiveTexture(GL_TEXTURE0 + unit);
 			Bind();
 
 		}
 
 		void Texture::Bind(uint32_t access, uint32_t unit, int32_t level) const {
 
-			glBindImageTexture(unit, ID, level, depth > 1, 0, access, sizedFormat);
+            // glBindImageTexture(unit, ID, level, depth > 1, 0, access, sizedFormat);
 
 		}
 
@@ -69,7 +69,7 @@ namespace Atlas {
 			if (!target)
 				return;
 
-			glBindTexture(target, 0);
+            // glBindTexture(target, 0);
 
 		}
 
@@ -78,7 +78,7 @@ namespace Atlas {
 			if (!target)
 				return;
 
-			glActiveTexture(unit);
+            // glActiveTexture(unit);
 			Unbind();
 
 		}
@@ -94,7 +94,7 @@ namespace Atlas {
 
 #ifdef AE_API_GL
 			Bind();
-			glTexParameterf(target, GL_TEXTURE_LOD_BIAS, bias);
+            // glTexParameterf(target, GL_TEXTURE_LOD_BIAS, bias);
 			this->bias = bias;
 #endif
 
@@ -146,10 +146,10 @@ namespace Atlas {
 
 			Bind();
 
-			glCopyImageSubData(texture.ID, texture.target, 
-				0, srcX, srcY, srcZ, ID, target,
-				0, destX, destY, destZ,
-				width, height, depth);
+            // glCopyImageSubData(texture.ID, texture.target,
+            // 	0, srcX, srcY, srcZ, ID, target,
+            // 	0, destX, destY, destZ,
+            // 	width, height, depth);
 
 			GenerateMipmap();
 
@@ -158,8 +158,8 @@ namespace Atlas {
 		void Texture::GenerateMipmap() {
 
             Bind();
-			if (mipmaps)
-				glGenerateMipmap(target);
+            // if (mipmaps)
+            // glGenerateMipmap(target);
 
 		}
 
@@ -171,8 +171,8 @@ namespace Atlas {
 
         int32_t Texture::GetMaxAnisotropyLevel() {
 
-            float maxAnisotropy;
-            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
+            float maxAnisotropy = 0;
+            // glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
 
             if (!anisotropyLevel)
                 anisotropyLevel = (int32_t)maxAnisotropy;
@@ -190,8 +190,8 @@ namespace Atlas {
                 GetMaxAnisotropyLevel();
 
             if (Texture::anisotropyLevel) {
-                float maxAnisotropy;
-                glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
+                float maxAnisotropy = 0;
+                // glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
 
                 Texture::anisotropyLevel = glm::min(anisotropyLevel, (int32_t)maxAnisotropy);
             }
@@ -200,6 +200,7 @@ namespace Atlas {
 
         int32_t Texture::GetChannelCount(int32_t baseFormat) {
 
+            /*
             switch(baseFormat) {
                 case AE_RGBA: return 4;
 				case AE_RGBA_INT: return 4;
@@ -210,24 +211,27 @@ namespace Atlas {
                 case AE_DEPTH: return 1;
                 default: return 3;
             }
+            */
 
         }
 
         int32_t Texture::GetSuggestedFormat(int32_t channelCount) {
 
+            /*
             switch(channelCount) {
                 case 1: return AE_R8;
                 case 2: return AE_RG8;
                 case 4: return AE_RGBA8;
                 default: return AE_RGB8;
             }
+             */
 
         }
 
         void Texture::Unbind(uint32_t target, uint32_t unit) {
 
-            glActiveTexture(GL_TEXTURE0 + unit);
-            glBindTexture(target, 0);
+            // glActiveTexture(GL_TEXTURE0 + unit);
+            //  glBindTexture(target, 0);
 
         }
 
@@ -238,14 +242,15 @@ namespace Atlas {
 				return;
 
             this->target = target;
-            this->channels = GetChannelCount(TextureFormat::GetBaseFormat(sizedFormat));
-            this->dataType = TextureFormat::GetType(sizedFormat);
+            // this->channels = GetChannelCount(TextureFormat::GetBaseFormat(sizedFormat));
+            // this->dataType = TextureFormat::GetType(sizedFormat);
             this->sizedFormat = sizedFormat;
             this->wrapping = wrapping;
             this->filtering = filtering;
             this->anisotropicFiltering = anisotropicFiltering;
             this->mipmaps = generateMipMaps;
 
+            /*
             glBindTexture(target, ID);
 
             int32_t mipCount = mipmaps ? GetMipMapLevel() : 1;
@@ -267,9 +272,10 @@ namespace Atlas {
             glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapping);
             glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
             glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapping);
+             */
 
-			if (width > 0 && height > 0 && depth > 0)
-				ReserveStorage(mipCount);
+            // if (width > 0 && height > 0 && depth > 0)
+            // 	ReserveStorage(mipCount);
 
 			Unbind();
 

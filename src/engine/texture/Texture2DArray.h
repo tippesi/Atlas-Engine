@@ -34,7 +34,7 @@ namespace Atlas {
               * @param generateMipMaps Whether or not mipmap can be used. Generate using GenerateMipmap()
               */
             Texture2DArray(int32_t width, int32_t height, int32_t layers, int32_t sizedFormat,
-                int32_t wrapping = GL_CLAMP_TO_EDGE, int32_t filtering = GL_NEAREST,
+                int32_t wrapping = /*GL_CLAMP_TO_EDGE*/0, int32_t filtering = /*GL_NEAREST*/0,
 				bool anisotropicFiltering = false, bool generateMipMaps = false);
 
 			/**

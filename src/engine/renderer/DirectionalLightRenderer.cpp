@@ -8,6 +8,7 @@ namespace Atlas {
 
 		DirectionalLightRenderer::DirectionalLightRenderer() {
 
+            /*
 			shader.AddStage(AE_VERTEX_STAGE, "deferred/directional.vsh");
 			shader.AddStage(AE_FRAGMENT_STAGE, "deferred/directional.fsh");
 
@@ -17,12 +18,14 @@ namespace Atlas {
 			shader.Compile();
 
 			GetUniforms();
+             */
 
 		}
 
 		void DirectionalLightRenderer::Render(Viewport* viewport, RenderTarget* target,
 				Camera* camera, Scene::Scene* scene) {
 
+            /*
 			Profiler::BeginQuery("Directional lights");
 
 			shader.Bind();
@@ -108,11 +111,13 @@ namespace Atlas {
 			}
 
 			Profiler::EndQuery();
+             */
 
 		}
 
 		void DirectionalLightRenderer::GetUniforms() {
 
+            /*
 			inverseViewMatrix = shader.GetUniform("ivMatrix");
 			inverseProjectionMatrix = shader.GetUniform("ipMatrix");
 
@@ -147,6 +152,7 @@ namespace Atlas {
 			volumeProbeCount = shader.GetUniform("volumeProbeCount");
 			volumeIrradianceRes = shader.GetUniform("volumeIrradianceRes");
 			volumeMomentsRes = shader.GetUniform("volumeMomentsRes");
+             */
 
 		}
 

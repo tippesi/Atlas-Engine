@@ -26,7 +26,7 @@ namespace Atlas {
                 delete uniform;
             }
 
-            glDeleteProgram(ID);
+            // glDeleteProgram(ID);
 
         }
 
@@ -132,6 +132,7 @@ namespace Atlas {
 
             if (compile) {
 
+                /*
                 // We only want to create a program once
                 if (ID == 0) {
                     ID = glCreateProgram();
@@ -181,6 +182,7 @@ namespace Atlas {
                     log.append(programLog.data());
 
 				Log::Error(log);
+                 */
 
             }
 
@@ -218,7 +220,7 @@ namespace Atlas {
 #endif
 
             if (boundShaderID != ID) {
-                glUseProgram(ID);
+                // glUseProgram(ID);
 
                 boundShaderID = ID;
             }
@@ -227,7 +229,7 @@ namespace Atlas {
 
         void Shader::Unbind() {
 
-            glUseProgram(0);
+            // glUseProgram(0);
             boundShaderID = 0;
 
         }

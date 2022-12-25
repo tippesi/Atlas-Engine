@@ -103,6 +103,7 @@ namespace Atlas {
 
 		InternalIrradianceVolume::InternalIrradianceVolume(ivec2 irrRes, ivec2 momRes, ivec3 probeCount) {
 
+            /*
 			rayDirBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
 				AE_BUFFER_DYNAMIC_STORAGE);
 			rayDirInactiveBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
@@ -123,6 +124,7 @@ namespace Atlas {
 
 			momentsArray1 = Texture::Texture2DArray(momRes.x, momRes.y, probeCount.y, AE_RG16F,
 				GL_CLAMP_TO_EDGE, GL_LINEAR);
+            */
 
 			SwapTextures();
 			ClearProbes(irrRes, momRes, probeCount);

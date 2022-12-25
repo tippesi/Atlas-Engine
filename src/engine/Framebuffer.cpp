@@ -4,7 +4,7 @@ namespace Atlas {
 
 	Framebuffer::Framebuffer() {
 
-		glGenFramebuffers(1, &ID);
+		// glGenFramebuffers(1, &ID);
 
 		drawBuffersSet = false;
 
@@ -12,7 +12,7 @@ namespace Atlas {
 
 	Framebuffer::Framebuffer(const Framebuffer& that) {
 
-		glGenFramebuffers(1, &ID);
+		// glGenFramebuffers(1, &ID);
 
 		drawBuffersSet = false;
 
@@ -20,7 +20,7 @@ namespace Atlas {
 
 	Framebuffer::Framebuffer(int32_t width, int32_t height) : width(width), height(height) {
 
-		glGenFramebuffers(1, &ID);
+		// glGenFramebuffers(1, &ID);
 
 		drawBuffersSet = false;
 
@@ -34,7 +34,7 @@ namespace Atlas {
 			}
 		}
 
-		glDeleteFramebuffers(1, &ID);
+		// glDeleteFramebuffers(1, &ID);
 
 	}
 
@@ -65,7 +65,7 @@ namespace Atlas {
 
 		Bind();
 
-		glFramebufferTexture2D(target, attachment, GL_TEXTURE_2D, component.texture->GetID(), 0);
+        // glFramebufferTexture2D(target, attachment, GL_TEXTURE_2D, component.texture->GetID(), 0);
 
 		UpdateDrawBuffers(attachment);
 		components[attachment] = component;		
@@ -81,7 +81,7 @@ namespace Atlas {
 
 		Bind();
 
-		glFramebufferTexture2D(target, attachment, GL_TEXTURE_2D, component.texture->GetID(), 0);
+        // glFramebufferTexture2D(target, attachment, GL_TEXTURE_2D, component.texture->GetID(), 0);
 
 		UpdateDrawBuffers(attachment);
 		components[attachment] = component;
@@ -98,7 +98,7 @@ namespace Atlas {
 
 		Bind();
 
-		glFramebufferTextureLayer(target, attachment, texture->GetID(), 0, layer);
+        // glFramebufferTextureLayer(target, attachment, texture->GetID(), 0, layer);
 
 		UpdateDrawBuffers(attachment);
 		components[attachment] = component;
@@ -114,7 +114,7 @@ namespace Atlas {
 
 		Bind();
 
-		glFramebufferTexture2D(target, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, cubemap->GetID(), 0);
+        // glFramebufferTexture2D(target, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, cubemap->GetID(), 0);
 
 		UpdateDrawBuffers(attachment);
 		components[attachment] = component;
@@ -169,14 +169,14 @@ namespace Atlas {
 
 			if (component.texture) {
 				component.texture->Resize(width, height);
-				glFramebufferTexture2D(component.target, componentKey.first,
-									   GL_TEXTURE_2D, component.texture->GetID(), 0);
+                // glFramebufferTexture2D(component.target, componentKey.first,
+                // 					   GL_TEXTURE_2D, component.texture->GetID(), 0);
 			}
 
 			if (component.textureArray) {
 				component.textureArray->Resize(width, height, component.textureArray->depth);
-				glFramebufferTextureLayer(component.target, componentKey.first,
-										  component.textureArray->GetID(), 0, component.index);
+                // glFramebufferTextureLayer(component.target, componentKey.first,
+                // 						  component.textureArray->GetID(), 0, component.index);
 			}
 
 		}
@@ -186,24 +186,24 @@ namespace Atlas {
 	void Framebuffer::Bind(bool resizeViewport) {
 
 		if (resizeViewport) {
-			glViewport(0, 0, width, height);
+            // glViewport(0, 0, width, height);
 		}
 
-		glBindFramebuffer(GL_FRAMEBUFFER, ID);
+        // glBindFramebuffer(GL_FRAMEBUFFER, ID);
 	}
 
 	void Framebuffer::Bind(int32_t target, bool resizeViewport) {
 
 		if (resizeViewport) {
-			glViewport(0, 0, width, height);
+            // glViewport(0, 0, width, height);
 		}
 
-		glBindFramebuffer(target, ID);
+        // glBindFramebuffer(target, ID);
 	}
 
 	void Framebuffer::Unbind() {
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	}
 
@@ -211,7 +211,7 @@ namespace Atlas {
 
 		Bind();
 
-		glDrawBuffers((int32_t)drawBuffers.size(), drawBuffers.data());
+        // glDrawBuffers((int32_t)drawBuffers.size(), drawBuffers.data());
 
 		drawBuffersSet = true;
 
@@ -238,11 +238,13 @@ namespace Atlas {
 
 		auto search = components.find(attachment);
 
+        /*
 		if (attachment >= GL_COLOR_ATTACHMENT0 && attachment <= GL_COLOR_ATTACHMENT15 &&
 			search == components.end() && !drawBuffersSet) {
 			drawBuffers.push_back(attachment);
 			glDrawBuffers((GLsizei)drawBuffers.size(), &drawBuffers[0]);
 		}
+         */
 
 	}
 

@@ -7,6 +7,7 @@ namespace Atlas {
 
 		SkyboxRenderer::SkyboxRenderer() {
 
+            /*
 			Helper::GeometryHelper::GenerateCubeVertexArray(vertexArray);
 
 			shader.AddStage(AE_VERTEX_STAGE, "skybox.vsh");
@@ -15,11 +16,13 @@ namespace Atlas {
 			shader.Compile();
 
 			GetUniforms();
+             */
 
 		}
 
 		void SkyboxRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+            /*
 			Profiler::BeginQuery("Skybox");
 
 			shader.Bind();
@@ -56,11 +59,13 @@ namespace Atlas {
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 
 			Profiler::EndQuery();
+             */
 
 		}
 
 		void SkyboxRenderer::GetUniforms() {
 
+            /*
 			mvpMatrix = shader.GetUniform("mvpMatrix");
 			ivMatrix = shader.GetUniform("ivMatrix");
 			ipMatrix = shader.GetUniform("ipMatrix");
@@ -76,6 +81,7 @@ namespace Atlas {
 			fogHeight = shader.GetUniform("fogHeight");
 			fogColor = shader.GetUniform("fogColor");
 			fogScatteringPower = shader.GetUniform("fogScatteringPower");
+             */
 
 		}
 

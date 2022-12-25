@@ -6,12 +6,14 @@ namespace Atlas {
 
         GBufferDownscaleRenderer::GBufferDownscaleRenderer() {
 
+            /*
             downscale.AddStage(AE_COMPUTE_STAGE, "downsampleGBuffer2x.csh");
             downscale.Compile();
 
             downscaleDepthOnly.AddStage(AE_COMPUTE_STAGE, "downsampleGBuffer2x.csh");
             downscaleDepthOnly.AddMacro("DEPTH_ONLY");
             downscaleDepthOnly.Compile();
+             */
 
         }
 
@@ -24,6 +26,7 @@ namespace Atlas {
 
         void GBufferDownscaleRenderer::Downscale(RenderTarget* target) {
 
+            /*
             Profiler::BeginQuery("Downsample GBuffer");
 
             downscale.Bind();
@@ -34,11 +37,13 @@ namespace Atlas {
             Downscale(rt, downsampledRt);
 
             Profiler::EndQuery();
+             */
 
         }
 
         void GBufferDownscaleRenderer::DownscaleDepthOnly(RenderTarget* target) {
 
+            /*
             Profiler::BeginQuery("Downsample GBuffer depth only");
 
             downscaleDepthOnly.Bind();
@@ -49,11 +54,13 @@ namespace Atlas {
             Downscale(rt, downsampledRt);
 
             Profiler::EndQuery();
+             */
 
         }
 
         void GBufferDownscaleRenderer::Downscale(DownsampledRenderTarget* rt, DownsampledRenderTarget* downsampledRt) {
 
+            /*
             auto depthIn = rt->depthTexture;
             auto normalIn = rt->normalTexture;
             auto geometryNormalIn = rt->geometryNormalTexture;
@@ -92,6 +99,7 @@ namespace Atlas {
 
             glDispatchCompute(groupCount.x, groupCount.y, 1);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+             */
 
         }
 

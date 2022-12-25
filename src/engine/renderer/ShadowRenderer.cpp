@@ -14,6 +14,7 @@ namespace Atlas {
 
 		ShadowRenderer::ShadowRenderer() {
 
+            /*
 			renderList = RenderList(AE_SHADOW_CONFIG);
 
 			modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
@@ -23,11 +24,13 @@ namespace Atlas {
 
 			vegetationUniform = shaderBatch.GetUniform("vegetation");
 			invertUVsUniform = shaderBatch.GetUniform("invertUVs");
+             */
 
 		}
 
 		void ShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+            /*
 			Profiler::BeginQuery("Shadows");
 
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
@@ -168,36 +171,44 @@ namespace Atlas {
 			}
 
 			Profiler::EndQuery();
+             */
 
 		}
 
 		void ShadowRenderer::InitShaderBatch() {
 
+            /*
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			shaderBatch.AddStage(AE_VERTEX_STAGE, "shadowmapping.vsh");
 			shaderBatch.AddStage(AE_FRAGMENT_STAGE, "shadowmapping.fsh");
+             */
 
 		}
 
 		void ShadowRenderer::AddConfig(Shader::ShaderConfig* config) {
 
+            /*
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			shaderBatch.AddConfig(config);
+             */
 
 		}
 
 		void ShadowRenderer::RemoveConfig(Shader::ShaderConfig* config) {
 
+            /*
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
 
 			shaderBatch.RemoveConfig(config);
+             */
 
 		}
 
 		void ShadowRenderer::AdjustFaceCulling(bool cullFaces, bool& state) {
 
+            /*
 			if (!cullFaces && state) {
 				glDisable(GL_CULL_FACE);
 				state = false;
@@ -206,6 +217,7 @@ namespace Atlas {
 				glEnable(GL_CULL_FACE);
 				state = true;
 			}
+             */
 
 		}
 

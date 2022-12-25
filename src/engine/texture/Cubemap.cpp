@@ -34,8 +34,8 @@ namespace Atlas {
 		   this->height = images[0].height;
 		   this->depth = 6;
 
-		   Generate(GL_TEXTURE_CUBE_MAP, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR_MIPMAP_LINEAR,
-			   false, true);
+		   //Generate(GL_TEXTURE_CUBE_MAP, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR_MIPMAP_LINEAR,
+			 //  false, true);
 
 		   for (int32_t i = 0; i < 6; i++)
 			   SetData(images[i].GetData(), i);
@@ -55,8 +55,8 @@ namespace Atlas {
 		   this->height = resolution;
 		   this->depth = 6;
 
-		   Generate(GL_TEXTURE_CUBE_MAP, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR_MIPMAP_LINEAR,
-			   false, true);
+           // Generate(GL_TEXTURE_CUBE_MAP, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR_MIPMAP_LINEAR,
+           //    false, true);
 
 		   mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
 		   vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
@@ -117,12 +117,14 @@ namespace Atlas {
 		   this->height = height;
 		   this->depth = 6;
 
+           /*
 		   Generate(GL_TEXTURE_CUBE_MAP, sizedFormat, wrapping, filtering,
 			   anisotropicFiltering, generateMipmaps);
 
 		   glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapping);
 		   glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
 		   glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapping);
+           */
 
        }
 
@@ -141,8 +143,8 @@ namespace Atlas {
 	   void Cubemap::SetData(std::vector<uint8_t> &data, int32_t layer) {
 
 		   Bind();
-		   glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, 0, 0, 0, width, height,
-			   TextureFormat::GetBaseFormat(sizedFormat), AE_UBYTE, data.data());
+           // glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, 0, 0, 0, width, height,
+           //    TextureFormat::GetBaseFormat(sizedFormat), AE_UBYTE, data.data());
 
 		   GenerateMipmap();
 
@@ -151,8 +153,8 @@ namespace Atlas {
 	   void Cubemap::SetData(std::vector<float>& data, int32_t layer) {
 
 		   Bind();
-		   glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, 0, 0, 0, width, height,
-			   TextureFormat::GetBaseFormat(sizedFormat), AE_FLOAT, data.data());
+           // glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, 0, 0, 0, width, height,
+           //    TextureFormat::GetBaseFormat(sizedFormat), AE_FLOAT, data.data());
 
 		   GenerateMipmap();
 
@@ -162,22 +164,22 @@ namespace Atlas {
 
 		   auto framebuffer = Framebuffer(width, height);
 
-		   std::vector<uint8_t> data(width * height * channels * TypeFormat::GetSize(dataType));
+           // std::vector<uint8_t> data(width * height * channels * TypeFormat::GetSize(dataType));
 
-		   framebuffer.AddComponentCubemap(GL_COLOR_ATTACHMENT0, this, layer);
+           // framebuffer.AddComponentCubemap(GL_COLOR_ATTACHMENT0, this, layer);
 
-		   glReadPixels(0, 0, width, height,
-			   TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
+           // glReadPixels(0, 0, width, height,
+           //    TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
 
 		   framebuffer.Unbind();
 
-		   return data;
+		   return std::vector<uint8_t>();
 
 	   }
 
 	   void Cubemap::ReserveStorage(int32_t mipCount) {
 
-		   glTexStorage2D(GL_TEXTURE_CUBE_MAP, mipCount, sizedFormat, width, height);
+           //std::vector<uint8_t>glTexStorage2D(GL_TEXTURE_CUBE_MAP, mipCount, sizedFormat, width, height);
 
 	   }
 
