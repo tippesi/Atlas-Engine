@@ -98,6 +98,13 @@ namespace Atlas {
 
         }
 
+        void MemoryManager::DestroyAllocation(Ref<QueryPool>& allocation) {
+
+            deleteQueryPoolAllocations
+                .emplace_back(DeleteResource<QueryPool> { allocation, frameIndex + framesToDeletion });
+
+        }
+
         void MemoryManager::UpdateFrameIndex(size_t frameIndex) {
 
             this->frameIndex = frameIndex;
@@ -114,6 +121,7 @@ namespace Atlas {
             DeleteAllocations(deleteImageAllocations);
             DeleteAllocations(deleteSamplerAllocations);
             DeleteAllocations(deleteDescriptorPoolAllocations);
+            DeleteAllocations(deleteQueryPoolAllocations);
 
         }
 

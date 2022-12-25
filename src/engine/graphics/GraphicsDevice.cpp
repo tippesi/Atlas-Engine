@@ -51,6 +51,13 @@ namespace Atlas {
                 createInfo.enabledLayerCount = 0;
             }
 
+            VkPhysicalDeviceHostQueryResetFeatures resetFeatures;
+            resetFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES;
+            resetFeatures.pNext = nullptr;
+            resetFeatures.hostQueryReset = VK_TRUE;
+
+            createInfo.pNext = &resetFeatures;
+
             VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device))
 
             vkGetDeviceQueue(device, queueFamilyIndices.queueFamilies[QueueType::GraphicsQueue].value(), 0,
@@ -120,6 +127,11 @@ namespace Atlas {
                 poolRef.reset();
             }
 
+            for (auto& poolRef : queryPools) {
+                assert(poolRef.use_count() == 1 && "Query pool wasn't deallocated or allocated wrongly");
+                poolRef.reset();
+            }
+
             // Delete memory manager at last, since it needs to clean up
             // all remaining memory which was destroyed by buffers, images, etc.
             delete memoryManager;
@@ -136,7 +148,6 @@ namespace Atlas {
             return renderPass;
 
         }
-
 
         Ref<Shader> GraphicsDevice::CreateShader(ShaderDesc shaderDesc) {
 
@@ -213,6 +224,16 @@ namespace Atlas {
             auto pool = std::make_shared<DescriptorPool>(this);
 
             descriptorPools.push_back(pool);
+
+            return pool;
+
+        }
+
+        Ref<QueryPool> GraphicsDevice::CreateQueryPool(QueryPoolDesc desc) {
+
+            auto pool = std::make_shared<QueryPool>(this, desc);
+
+            queryPools.push_back(pool);
 
             return pool;
 
@@ -729,6 +750,16 @@ namespace Atlas {
                     poolRef.swap(descriptorPools.back());
                     memoryManager->DestroyAllocation(descriptorPools.back());
                     descriptorPools.pop_back();
+                    i--;
+                }
+            }
+
+            for (size_t i = 0; i < queryPools.size(); i++) {
+                auto& poolRef = queryPools[i];
+                if (poolRef.use_count() == 1) {
+                    poolRef.swap(queryPools.back());
+                    memoryManager->DestroyAllocation(queryPools.back());
+                    queryPools.pop_back();
                     i--;
                 }
             }

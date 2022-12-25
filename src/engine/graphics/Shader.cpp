@@ -7,6 +7,7 @@
 #include <cassert>
 #include <unordered_map>
 #include <string>
+#include <algorithm>
 
 namespace Atlas {
 

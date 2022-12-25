@@ -56,6 +56,12 @@ namespace Atlas {
 
             void EndRenderPass();
 
+            void BeginQuery(const Ref<QueryPool>& queryPool, uint32_t queryIdx);
+
+            void EndQuery(const Ref<QueryPool>& queryPool, uint32_t queryIdx);
+
+            void Timestamp(const Ref<QueryPool>& queryPool, uint32_t queryIdx);
+
             void BindPipeline(const Ref<Pipeline>& pipeline);
 
             void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);

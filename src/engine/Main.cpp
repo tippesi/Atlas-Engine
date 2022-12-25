@@ -78,8 +78,8 @@ int main(int argc, char* argv[]) {
     engineInstance->UnloadContent();
     delete engineInstance;
 
+    Atlas::Engine::Shutdown();
     delete graphicsInstance;
-	Atlas::Engine::Shutdown();
 
     // Need this right now just for linking to be successful
     if (needed && !gladLoadGL()) {

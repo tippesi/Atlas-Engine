@@ -1,6 +1,6 @@
 #include "Engine.h"
 #include "graphics/Extensions.h"
-#include "Profiler.h"
+#include "graphics/Profiler.h"
 #include "EngineInstance.h"
 #include "loader/ShaderLoader.h"
 #include "graphics/Instance.h"
@@ -68,6 +68,7 @@ namespace Atlas {
 
         Shader::ShaderManager::Clear();
         Graphics::ShaderCompiler::Shutdown();
+        Graphics::Profiler::Shutdown();
 
 #ifdef AE_NO_APP
         SDL_Quit();
@@ -77,7 +78,7 @@ namespace Atlas {
     void Engine::Update() {
 
         Clock::Update();
-		Profiler::Update();
+		Graphics::Profiler::BeginFrame();
         Events::EventManager::Update();
 
     }

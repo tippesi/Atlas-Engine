@@ -9,6 +9,7 @@
 #include "Image.h"
 #include "Sampler.h"
 #include "Descriptor.h"
+#include "QueryPool.h"
 #include "MemoryTransferManager.h"
 
 #define VMA_STATS_STRING_ENABLED 0
@@ -62,6 +63,8 @@ namespace Atlas {
 
             void DestroyAllocation(Ref<DescriptorPool>& allocation);
 
+            void DestroyAllocation(Ref<QueryPool>& allocation);
+
             VmaAllocator allocator;
 
             VkInstance instance;
@@ -102,6 +105,7 @@ namespace Atlas {
             std::deque<DeleteResource<Image>> deleteImageAllocations;
             std::deque<DeleteResource<Sampler>> deleteSamplerAllocations;
             std::deque<DeleteResource<DescriptorPool>> deleteDescriptorPoolAllocations;
+            std::deque<DeleteResource<QueryPool>> deleteQueryPoolAllocations;
 
         };
 

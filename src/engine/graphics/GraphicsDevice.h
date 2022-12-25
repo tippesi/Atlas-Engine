@@ -93,6 +93,8 @@ namespace Atlas {
 
             Ref<DescriptorPool> CreateDescriptorPool();
 
+            Ref<QueryPool> CreateQueryPool(QueryPoolDesc desc);
+
             CommandList* GetCommandList(QueueType queueType = QueueType::GraphicsQueue,
                 bool frameIndependentList = false);
 
@@ -169,6 +171,7 @@ namespace Atlas {
             std::vector<Ref<Image>> images;
             std::vector<Ref<Sampler>> samplers;
             std::vector<Ref<DescriptorPool>> descriptorPools;
+            std::vector<Ref<QueryPool>> queryPools;
 
             std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;

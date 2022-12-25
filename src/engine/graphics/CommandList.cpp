@@ -194,6 +194,30 @@ namespace Atlas {
 
         }
 
+        void CommandList::BeginQuery(const Ref<QueryPool> &queryPool, uint32_t queryIdx) {
+
+            // TODO...
+            switch(queryPool->type) {
+                case VK_QUERY_TYPE_TIMESTAMP: vkCmdWriteTimestamp(commandBuffer,
+                    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, queryPool->pool, queryIdx); break;
+                default: break;
+            }
+
+        }
+
+        void CommandList::EndQuery(const Ref<QueryPool> &queryPool, uint32_t queryIdx) {
+
+            // TODO...
+
+        }
+
+        void CommandList::Timestamp(const Ref<QueryPool> &queryPool, uint32_t queryIdx) {
+
+            vkCmdWriteTimestamp(commandBuffer,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, queryPool->pool, queryIdx);
+
+        }
+
         void CommandList::BindPipeline(const Ref<Pipeline>& pipeline) {
 
             pipelineInUse = pipeline;

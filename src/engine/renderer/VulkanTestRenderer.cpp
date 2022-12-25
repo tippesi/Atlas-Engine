@@ -60,8 +60,8 @@ namespace Atlas {
             {
                 auto colorImageDesc = Graphics::ImageDesc{
                     .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
-                        | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-                        | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                  | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+                                  | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                     .aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT,
                     .width = 1280,
                     .height = 720,
@@ -91,9 +91,9 @@ namespace Atlas {
                     .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 };
                 auto renderPassDesc = Graphics::RenderPassDesc{
-                    .colorAttachments = { colorAttachment },
+                    .colorAttachments = {colorAttachment},
                     .depthAttachment = depthAttachment,
-                    .extent = { 1280, 720 }
+                    .extent = {1280, 720}
                 };
                 mainRenderPass = device->CreateRenderPass(renderPassDesc);
                 auto samplerDesc = Graphics::SamplerDesc{
@@ -103,7 +103,8 @@ namespace Atlas {
                 mainRenderPassSampler = device->CreateSampler(samplerDesc);
             }
             {
-                auto meshData = Loader::ModelLoader::LoadMesh("sponza/sponza.obj", false, glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
+                auto meshData = Loader::ModelLoader::LoadMesh("sponza/sponza.obj", false,
+                    glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
                 mesh = new Mesh::VulkanMesh(meshData);
 
                 auto meshStages = std::vector<Graphics::ShaderStageFile>{
@@ -139,7 +140,7 @@ namespace Atlas {
                     .stages = computeStages
                 };
                 computeShader = device->CreateShader(computeShaderDesc);
-                auto pipelineDesc = Graphics::ComputePipelineDesc {
+                auto pipelineDesc = Graphics::ComputePipelineDesc{
                     .shader = computeShader
                 };
                 computePipeline = device->CreatePipeline(pipelineDesc);
@@ -154,6 +155,13 @@ namespace Atlas {
                 dstToShaderReadBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT);
             }
+            {
+                auto queryPoolDesc = Graphics::QueryPoolDesc {
+                    .queryType = VK_QUERY_TYPE_TIMESTAMP,
+                    .queryCount = 1000
+                };
+                queryPool = device->CreateQueryPool(queryPoolDesc);
+            }
         }
 
         void VulkanTestRenderer::Render(Camera* camera) {
@@ -163,7 +171,11 @@ namespace Atlas {
             auto commandList = device->GetCommandList(Atlas::Graphics::GraphicsQueue);
             auto swapChain = device->swapChain;
 
+            Graphics::Profiler::BeginThread("Main thread", commandList);
+
             commandList->BeginCommands();
+
+            Graphics::Profiler::BeginQuery("Main model");
 
             {
                 mainRenderPass->colorClearValue.color = {0.0f, 0.0f, blue, 1.0f};
@@ -206,6 +218,8 @@ namespace Atlas {
                 commandList->EndRenderPass();
             }
 
+            Graphics::Profiler::EndAndBeginQuery("Compute pass");
+
             {
                 renderPassToComputeBarrier.Update(mainRenderPass->GetColorImage(0));
                 commandList->ImageMemoryBarrier(renderPassToComputeBarrier,
@@ -224,6 +238,8 @@ namespace Atlas {
                 commandList->Dispatch(1280 / 8, 720 / 8, 1);
             }
 
+            Graphics::Profiler::EndAndBeginQuery("Copy image");
+
             {
                 auto imageBarriers = std::vector<Graphics::ImageBarrier>{ dstToTransferBarrier.Update(dstImage),
                     attachmentToTransferBarrier.Update(mainRenderPass->GetColorImage(0)) };
@@ -240,6 +256,8 @@ namespace Atlas {
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
             }
 
+            Graphics::Profiler::EndAndBeginQuery("Post processing");
+
             {
                 swapChain->colorClearValue.color = {0.0f, 0.0f, blue, 1.0f};
                 commandList->BeginRenderPass(swapChain, true);
@@ -251,6 +269,9 @@ namespace Atlas {
 
                 commandList->EndRenderPass();
             }
+
+            Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndThread();
 
             commandList->EndCommands();
 

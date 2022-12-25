@@ -35,6 +35,8 @@ namespace Atlas {
             Ref<Graphics::Sampler> mainRenderPassSampler = nullptr;
             Ref<Graphics::Image> dstImage = nullptr;
 
+            Ref<Graphics::QueryPool> queryPool = nullptr;
+
             Graphics::ImageBarrier renderPassToComputeBarrier;
             Graphics::ImageBarrier attachmentToTransferBarrier;
             Graphics::ImageBarrier dstToTransferBarrier;
