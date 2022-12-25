@@ -41,7 +41,6 @@ namespace Atlas {
                 default: viewType = VK_IMAGE_VIEW_TYPE_3D; break;
             }
 
-
             VkImageViewCreateInfo imageViewInfo = Initializers::InitImageViewCreateInfo(desc.format,
                 image, desc.aspectFlags, viewType, imageInfo.arrayLayers);
             if (desc.mipMapping) {

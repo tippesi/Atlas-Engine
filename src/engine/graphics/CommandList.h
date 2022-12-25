@@ -111,6 +111,8 @@ namespace Atlas {
 
             void CopyImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage, VkImageCopy copy);
 
+            void GenerateMipMap(const Ref<Image>& image);
+
             VkCommandPool commandPool;
             VkCommandBuffer commandBuffer;
             VkSemaphore semaphore;
@@ -169,6 +171,7 @@ namespace Atlas {
             const VkExtent2D GetRenderPassExtent() const;
 
             VkDevice device;
+            MemoryManager* memoryManager = nullptr;
             DescriptorPool* descriptorPool = nullptr;
 
             std::atomic_bool isLocked = true;

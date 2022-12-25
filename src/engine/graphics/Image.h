@@ -66,6 +66,8 @@ namespace Atlas {
             VkImageView view;
             VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
             VkImageAspectFlags aspectFlags;
+            VkAccessFlags accessMask = VK_ACCESS_MEMORY_READ_BIT |
+                VK_ACCESS_MEMORY_WRITE_BIT;
 
             std::vector<VkImageView> layerViews;
 

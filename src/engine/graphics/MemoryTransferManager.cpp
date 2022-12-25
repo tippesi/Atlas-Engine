@@ -100,6 +100,8 @@ namespace Atlas {
             vkResetCommandPool(device, commandPool, 0);
             DestroyStagingBuffer(stagingAllocation);
 
+            destinationBuffer->accessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
         }
 
         void MemoryTransferManager::UploadImageData(void *data, Image* image, VkOffset3D offset, VkExtent3D extent) {
@@ -213,6 +215,8 @@ namespace Atlas {
             vkResetCommandPool(device, commandPool, 0);
             DestroyStagingBuffer(stagingAllocation);
 
+            image->accessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
         }
 
         void MemoryTransferManager::UploadImageData(void *data, Image* image, VkOffset3D offset,
@@ -272,7 +276,8 @@ namespace Atlas {
                 imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
                 vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                    0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
 
                 if (mipWidth > 1) mipWidth /= 2;
                 if (mipHeight > 1) mipHeight /= 2;
@@ -285,7 +290,10 @@ namespace Atlas {
             imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
             vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+
+            image->accessMask = VK_ACCESS_SHADER_READ_BIT;
 
         }
 

@@ -14,6 +14,14 @@ namespace Atlas {
 
     namespace Texture {
 
+        enum class Wrapping {
+
+        };
+
+        enum class Filtering {
+
+        };
+
         class VulkanTexture {
 
         public:

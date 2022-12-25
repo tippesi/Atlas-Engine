@@ -8,8 +8,8 @@ namespace Atlas {
     namespace Graphics {
 
         CommandList::CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex,
-            bool frameIndependent) : device(device->device), frameIndependent(frameIndependent),
-            queueType(queueType), queueFamilyIndex(queueFamilyIndex) {
+            bool frameIndependent) : memoryManager(device->memoryManager), device(device->device),
+            frameIndependent(frameIndependent), queueType(queueType), queueFamilyIndex(queueFamilyIndex) {
 
             VkCommandPoolCreateInfo poolCreateInfo = Initializers::InitCommandPoolCreateInfo(queueFamilyIndex);
             VK_CHECK(vkCreateCommandPool(device->device, &poolCreateInfo, nullptr, &commandPool))
@@ -182,10 +182,12 @@ namespace Atlas {
                 for (auto& attachment : renderPassInUse->colorAttachments) {
                     if (!attachment.image) continue;
                     attachment.image->layout = attachment.outputLayout;
+                    attachment.image->accessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
                 }
                 if (renderPassInUse->depthAttachment.image) {
                     auto& attachment = renderPassInUse->depthAttachment;
                     attachment.image->layout = attachment.outputLayout;
+                    attachment.image->accessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
                 }
             }
 
@@ -399,6 +401,7 @@ namespace Atlas {
                 nullptr, 0, nullptr, 1, &barrier.barrier);
 
             barrier.image->layout = barrier.newLayout;
+            barrier.image->accessMask = barrier.newAccessMask;
 
         }
 
@@ -407,6 +410,8 @@ namespace Atlas {
 
             vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0,
                 nullptr, 1, &barrier.barrier, 0, nullptr);
+
+            barrier.buffer->accessMask = barrier.newAccessMask;
 
         }
 
@@ -434,6 +439,11 @@ namespace Atlas {
             // Only update image layouts afterwards for clarity
             for (auto& barrier : imageBarriers) {
                 barrier.image->layout = barrier.newLayout;
+                barrier.image->accessMask = barrier.newAccessMask;
+            }
+
+            for (auto& barrier : bufferBarriers) {
+                barrier.buffer->accessMask = barrier.newAccessMask;
             }
 
         }
@@ -512,6 +522,12 @@ namespace Atlas {
 
             vkCmdCopyImage(commandBuffer, srcImage->image, srcImage->layout,
                 dstImage->image, dstImage->layout, 1, &copy);
+
+        }
+
+        void CommandList::GenerateMipMap(const Ref<Image> &image) {
+
+            memoryManager->transferManager->GenerateMipMaps(image.get(), commandBuffer);
 
         }
 

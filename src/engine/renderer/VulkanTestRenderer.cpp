@@ -147,13 +147,13 @@ namespace Atlas {
             }
             {
                 renderPassToComputeBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
                 attachmentToTransferBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT);
+                    VK_ACCESS_TRANSFER_READ_BIT);
                 dstToTransferBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                    VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT);
+                    VK_ACCESS_TRANSFER_WRITE_BIT);
                 dstToShaderReadBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT);
+                    VK_ACCESS_SHADER_READ_BIT);
             }
             {
                 auto queryPoolDesc = Graphics::QueryPoolDesc {

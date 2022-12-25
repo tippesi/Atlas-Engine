@@ -139,7 +139,7 @@ namespace Atlas {
             colorDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
             colorDependency.dstSubpass = 0;
             colorDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            colorDependency.srcAccessMask = 0;
+            colorDependency.srcAccessMask = 0; // TODO: This could be an issue
             colorDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             colorDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 

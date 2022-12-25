@@ -4,8 +4,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        BufferBarrier::BufferBarrier(VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) :
-            srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask) {
+        BufferBarrier::BufferBarrier(VkAccessFlags newAccessMask) : newAccessMask(newAccessMask) {
 
 
 
@@ -14,14 +13,14 @@ namespace Atlas {
         BufferBarrier& BufferBarrier::Update(const Ref<Atlas::Graphics::Buffer> &buffer) {
 
             barrier = Initializers::InitBufferMemoryBarrier(buffer->buffer,
-                srcAccessMask, dstAccessMask);
+                buffer->accessMask, newAccessMask);
 
             return *this;
 
         }
 
-        ImageBarrier::ImageBarrier(VkImageLayout newLayout, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask)
-            : newLayout(newLayout), srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask) {
+        ImageBarrier::ImageBarrier(VkImageLayout newLayout, VkAccessFlags newAccessMask)
+            : newLayout(newLayout), newAccessMask(newAccessMask) {
 
 
 
@@ -31,7 +30,7 @@ namespace Atlas {
 
             this->image = image.get();
             barrier = Initializers::InitImageMemoryBarrier(image->image, image->layout,
-                newLayout, srcAccessMask, dstAccessMask, image->aspectFlags);
+                newLayout, image->accessMask, newAccessMask, image->aspectFlags);
 
             return *this;
 

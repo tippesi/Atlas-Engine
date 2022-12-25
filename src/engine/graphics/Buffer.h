@@ -55,6 +55,8 @@ namespace Atlas {
 
             VkBuffer buffer;
             VmaAllocation allocation;
+            VkAccessFlags accessMask = VK_ACCESS_MEMORY_READ_BIT |
+                VK_ACCESS_MEMORY_WRITE_BIT;
 
             BufferDomain domain;
 
