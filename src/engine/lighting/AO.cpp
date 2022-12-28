@@ -10,7 +10,7 @@ namespace Atlas {
 
 		AO::AO(int32_t sampleCount) : sampleCount(sampleCount) {
 
-            // noiseTexture = Texture::Texture2D(8, 8, GL_RG16F, GL_REPEAT, GL_NEAREST);
+            noiseTexture = Texture::Texture2D(8, 8, VK_FORMAT_R16G16_SFLOAT);
 
 			// Generate vec2 noise (4 * 4 * 2 floats)
 			std::vector<float> noise;

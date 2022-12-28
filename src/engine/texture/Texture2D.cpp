@@ -8,7 +8,7 @@ namespace Atlas {
 
             this->format = format;
 
-            Reallocate(width, height, 1, filtering, wrapping);
+            Reallocate(Graphics::ImageType::Image2D, width, height, 1, filtering, wrapping);
             RecreateSampler(filtering, wrapping);
 
         }
@@ -32,7 +32,7 @@ namespace Atlas {
 
 			if (width != this->width || height != this->height) {
 
-                Reallocate(width, height, depth, filtering, wrapping);
+                Reallocate(Graphics::ImageType::Image2D, width, height, 1, filtering, wrapping);
 
 			}
 
@@ -48,7 +48,7 @@ namespace Atlas {
                 default: format = VK_FORMAT_R8G8B8A8_UNORM; break;
             }
 
-            Reallocate(image.width, image.height, 1, filtering, wrapping);
+            Reallocate(Graphics::ImageType::Image2D, image.width, image.height, 1, filtering, wrapping);
             RecreateSampler(filtering, wrapping);
 
 			SetData(image.GetData());

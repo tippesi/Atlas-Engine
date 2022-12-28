@@ -55,8 +55,9 @@ namespace Atlas {
 
             ~Image();
 
-            void SetData(void* data, size_t offsetX, size_t offsetY, size_t offsetZ,
-                size_t width, size_t height, size_t layers);
+            void SetData(void* data, uint32_t offsetX, uint32_t offsetY, uint32_t offsetZ,
+                uint32_t width, uint32_t height, uint32_t depth, uint32_t layerOffset = 0,
+                uint32_t layerCount = 1);
 
             VkImageType GetImageType() const;
 

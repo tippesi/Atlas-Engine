@@ -72,7 +72,7 @@ namespace Atlas {
 		/**
 		 * The main window to which the context is attached to
 		 */
-		Window* window = nullptr;
+		Window window;
 
         /**
          * Command line arguments.

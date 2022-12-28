@@ -43,7 +43,6 @@ int main(int argc, char* argv[]) {
     }
 
     auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
-    bool needed = graphicsDevice == nullptr;
 
 	// We need to pass the command line arguments
 	for (int32_t i = 0; i < argc; i++)
@@ -71,7 +70,7 @@ int main(int argc, char* argv[]) {
 
         graphicsDevice->CompleteFrame();
 
-        engineInstance->window->Update();
+        engineInstance->window.Update();
 
 	}
 

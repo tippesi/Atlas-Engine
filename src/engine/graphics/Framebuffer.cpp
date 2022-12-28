@@ -79,7 +79,11 @@ namespace Atlas {
 
             if (isComplete) {
                 // Delete the previous frame buffer
-                device->memoryManager->DestroyRawAllocation([=]() {
+                device->memoryManager->DestroyRawAllocation(
+                    // We need to have copies of the captured objects since
+                    // frame buffer will be used again to create a new one and
+                    // the frame buffer object might be destroyed in the meanwhile
+                    [device = device, frameBuffer = frameBuffer]() {
                     vkDestroyFramebuffer(device->device, frameBuffer, nullptr);
                 });
             }

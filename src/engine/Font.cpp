@@ -112,11 +112,9 @@ namespace Atlas {
 
 		depth = AE_GPU_GLYPH_COUNT < depth ? AE_GPU_GLYPH_COUNT : depth;
 
-        /*
 		// Create texture and process texture data
-		glyphTexture = Texture::Texture2DArray(width, height, depth, AE_R8, 
-			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-         */
+		glyphTexture = Texture::Texture2DArray(width, height, depth, VK_FORMAT_R8_UNORM,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
 		std::vector<uint8_t> glyphData(width * height);
 

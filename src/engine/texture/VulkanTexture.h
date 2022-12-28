@@ -92,8 +92,11 @@ namespace Atlas {
             Filtering filtering;
 
         protected:
-            void Reallocate(int32_t width, int32_t height, int32_t depth,
-                Filtering filtering, Wrapping wrapping);
+            void SetData(void* data, int32_t x, int32_t y, int32_t z,
+                int32_t width, int32_t height, int32_t depth);
+
+            void Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height,
+                int32_t depth, Filtering filtering, Wrapping wrapping);
 
             void RecreateSampler(Filtering filtering, Wrapping wrapping);
 

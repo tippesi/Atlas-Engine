@@ -112,19 +112,18 @@ namespace Atlas {
 				AE_BUFFER_DYNAMIC_STORAGE, probeCount.x * probeCount.y * probeCount.z);
 			probeOffsetBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
 				AE_BUFFER_DYNAMIC_STORAGE, probeCount.x * probeCount.y * probeCount.z);
-
-			irradianceArray0 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y, AE_RGB10A2,
-				GL_CLAMP_TO_EDGE, GL_LINEAR);
-
-			momentsArray0 = Texture::Texture2DArray(momRes.x, momRes.y, probeCount.y, AE_RG16F,
-				GL_CLAMP_TO_EDGE, GL_LINEAR);
-
-			irradianceArray1 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y, AE_RGB10A2,
-				GL_CLAMP_TO_EDGE, GL_LINEAR);
-
-			momentsArray1 = Texture::Texture2DArray(momRes.x, momRes.y, probeCount.y, AE_RG16F,
-				GL_CLAMP_TO_EDGE, GL_LINEAR);
             */
+			irradianceArray0 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y,
+                VK_FORMAT_A2B10G10R10_UNORM_PACK32, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
+			momentsArray0 = Texture::Texture2DArray(momRes.x, momRes.y, probeCount.y, VK_FORMAT_R16G16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
+			irradianceArray1 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y,
+                VK_FORMAT_A2B10G10R10_UNORM_PACK32, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
+			momentsArray1 = Texture::Texture2DArray(momRes.x, momRes.y, probeCount.y, VK_FORMAT_R16G16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
 			SwapTextures();
 			ClearProbes(irrRes, momRes, probeCount);

@@ -105,15 +105,15 @@ namespace Atlas {
 			using SceneNode::Add;
 			using SceneNode::Remove;
 
-			Terrain::Terrain* terrain = nullptr;
-			Ocean::Ocean* ocean = nullptr;
-			Vegetation* vegetation = nullptr;
+			Ref<Terrain::Terrain> terrain = nullptr;
+			Ref<Ocean::Ocean> ocean = nullptr;
+			Ref<Vegetation> vegetation = nullptr;
 
 			Lighting::Sky sky;
-			Lighting::Fog* fog = nullptr;
-			Lighting::IrradianceVolume* irradianceVolume = nullptr;
-			Lighting::AO* ao = nullptr;
-			Lighting::Reflection* reflection = nullptr;
+			Ref<Lighting::Fog> fog = nullptr;
+			Ref<Lighting::IrradianceVolume> irradianceVolume = nullptr;
+			Ref<Lighting::AO> ao = nullptr;
+			Ref<Lighting::Reflection> reflection = nullptr;
 			PostProcessing::PostProcessing postProcessing;
 
 		private:

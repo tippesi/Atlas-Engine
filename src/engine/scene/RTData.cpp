@@ -337,6 +337,7 @@ namespace Atlas {
 					triangleLights.push_back(light);
 				}
 			}
+             */
 
 		}
 
@@ -474,7 +475,6 @@ namespace Atlas {
 			roughnessTextureAtlas = Texture::TextureAtlas(roughnessTextures, 1, textureDownscale);
 			metalnessTextureAtlas = Texture::TextureAtlas(metalnessTextures, 1, textureDownscale);
 			aoTextureAtlas = Texture::TextureAtlas(aoTextures, 1, textureDownscale);
-             */
 
 		}
 

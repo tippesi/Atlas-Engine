@@ -7,6 +7,7 @@
 #include "../texture/TextureAtlas.h"
 
 #include <vector>
+#include <unordered_map>
 
 namespace Atlas {
 

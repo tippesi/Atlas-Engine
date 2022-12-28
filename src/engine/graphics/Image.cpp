@@ -56,7 +56,7 @@ namespace Atlas {
                 VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &layerViews[i]))
             }
 
-            if (desc.data) SetData(desc.data, 0, 0, 0, desc.width, desc.height, desc.layers);
+            if (desc.data) SetData(desc.data, 0, 0, 0, desc.width, desc.height, desc.depth, 0, desc.layers);
 
         }
 
@@ -70,8 +70,8 @@ namespace Atlas {
 
         }
 
-        void Image::SetData(void *data, size_t offsetX, size_t offsetY, size_t offsetZ,
-            size_t width, size_t height, size_t depth) {
+        void Image::SetData(void *data, uint32_t offsetX, uint32_t offsetY, uint32_t offsetZ,
+            uint32_t width, uint32_t height, uint32_t depth, uint32_t layerOffset, uint32_t layerCount) {
 
             if (domain == ImageDomain::Device) {
                 VkOffset3D offset = {};
@@ -84,7 +84,7 @@ namespace Atlas {
                 extent.height = uint32_t(height);
                 extent.depth = uint32_t(depth);
 
-                memoryManager->transferManager->UploadImageData(data, this, offset, extent);
+                memoryManager->transferManager->UploadImageData(data, this, offset, extent, layerOffset, layerCount);
             }
 
         }

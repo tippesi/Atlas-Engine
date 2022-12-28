@@ -13,12 +13,6 @@ namespace Atlas {
 
     namespace Renderer {
 
-        VulkanTestRenderer::~VulkanTestRenderer() {
-
-            delete mesh;
-
-        }
-
         void VulkanTestRenderer::Init(Graphics::GraphicsDevice *device) {
 
             this->device = device;
@@ -120,7 +114,7 @@ namespace Atlas {
             {
                 auto meshData = Loader::ModelLoader::LoadMesh("sponza/sponza.obj", false,
                     glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
-                mesh = new Mesh::VulkanMesh(meshData);
+                mesh = std::make_shared<Mesh::Mesh>(meshData);
 
                 auto meshStages = std::vector<Graphics::ShaderStageFile>{
                     Loader::ShaderLoader::LoadFile("testmesh.vsh", VK_SHADER_STAGE_VERTEX_BIT),
@@ -192,6 +186,8 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Main renderer");
             Graphics::Profiler::BeginQuery("Main model");
+
+            mainFrameBuffer->Refresh();
 
             {
                 mainRenderPass->colorClearValue.color = {0.0f, 0.0f, blue, 1.0f};

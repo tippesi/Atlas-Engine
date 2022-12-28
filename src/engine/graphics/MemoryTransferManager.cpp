@@ -101,7 +101,8 @@ namespace Atlas {
 
         }
 
-        void MemoryTransferManager::UploadImageData(void *data, Image* image, VkOffset3D offset, VkExtent3D extent) {
+        void MemoryTransferManager::UploadImageData(void *data, Image* image, VkOffset3D offset, VkExtent3D extent,
+            uint32_t layerOffset, uint32_t layerCount) {
 
             VmaAllocator allocator = memoryManager->allocator;
 
@@ -124,15 +125,8 @@ namespace Atlas {
             range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             range.baseMipLevel = 0;
             range.levelCount = mipLevels;
-            // This applies only to layered images, not 3D images
-            if (image->layers > 1) {
-                range.baseArrayLayer = offset.z;
-                range.layerCount = extent.depth;
-            }
-            else {
-                range.baseArrayLayer = 0;
-                range.layerCount = 1;
-            }
+            range.baseArrayLayer = layerOffset;
+            range.layerCount = layerCount;
 
             VkImageMemoryBarrier imageBarrier = {};
             // Create first barrier to transition image
@@ -157,15 +151,8 @@ namespace Atlas {
                 copyRegion.bufferImageHeight = 0;
                 copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                 copyRegion.imageSubresource.mipLevel = 0;
-                // Again, only applies to layered images
-                if (image->layers > 1) {
-                    copyRegion.imageSubresource.baseArrayLayer = offset.z;
-                    copyRegion.imageSubresource.layerCount = extent.depth;
-                }
-                else {
-                    copyRegion.imageSubresource.baseArrayLayer = 0;
-                    copyRegion.imageSubresource.layerCount = 1;
-                }
+                copyRegion.imageSubresource.baseArrayLayer = layerOffset;
+                copyRegion.imageSubresource.layerCount = layerCount;
                 copyRegion.imageOffset = offset;
                 copyRegion.imageExtent = extent;
 

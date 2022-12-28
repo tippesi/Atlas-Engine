@@ -10,7 +10,7 @@ namespace Atlas {
 
 		}
 
-		VegetationMesh::VegetationMesh(MeshData data, int32_t mobility) : Mesh(data, mobility) {
+		VegetationMesh::VegetationMesh(MeshData data, MeshMobility mobility) : Mesh(data, mobility) {
 
 
 

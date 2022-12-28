@@ -407,7 +407,7 @@ namespace Atlas {
 				auto lightSources = scene->GetLights();
 
 				if (scene->sky.sun) {
-					lightSources.push_back(scene->sky.sun);
+					lightSources.push_back(scene->sky.sun.get());
 				}
 
 				for (auto light : lightSources) {

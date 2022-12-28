@@ -2,7 +2,6 @@
 #define ATLASENGINE_VULKANTESTRENDERER_H
 
 #include "Renderer.h"
-#include "../mesh/VulkanMesh.h"
 
 namespace Atlas {
 
@@ -12,8 +11,6 @@ namespace Atlas {
 
         public:
             VulkanTestRenderer() = default;
-
-            ~VulkanTestRenderer();
 
             void Init(Graphics::GraphicsDevice* device);
 
@@ -43,7 +40,7 @@ namespace Atlas {
             Graphics::ImageBarrier dstToTransferBarrier;
             Graphics::ImageBarrier dstToShaderReadBarrier;
 
-            Mesh::VulkanMesh* mesh = nullptr;
+            Ref<Mesh::Mesh> mesh = nullptr;
 
             struct PushConstants {
                 mat4 vMatrix;

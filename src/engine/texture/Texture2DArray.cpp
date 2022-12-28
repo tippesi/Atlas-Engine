@@ -11,47 +11,47 @@ namespace Atlas {
             Wrapping wrapping, Filtering filtering) {
 
             this->format = format;
-            Reallocate(width, height, layers, filtering, wrapping);
+            Reallocate(Graphics::ImageType::Image2DArray, width, height, layers, filtering, wrapping);
             RecreateSampler(filtering, wrapping);
 
         }
 
         void Texture2DArray::SetData(std::vector<uint8_t> &data, int32_t layer, int32_t count) {
 
-			SetData(data, 0, 0, layer, width, height, count);
+            VulkanTexture::SetData(data.data(), 0, 0, layer, width, height, count);
 
         }
 
 		void Texture2DArray::SetData(std::vector<uint8_t>& data, int32_t x, int32_t y, int32_t z,
 			int32_t width, int32_t height, int32_t layers) {
 
-            SetData(data, x, y, z, width, height, layers);
+            VulkanTexture::SetData(data.data(), x, y, z, width, height, layers);
 
 		}
 
         void Texture2DArray::SetData(std::vector<uint16_t> &data, int32_t layer, int32_t count) {
 
-			SetData(data, 0, 0, layer, width, height, count);
+            VulkanTexture::SetData(data.data(), 0, 0, layer, width, height, count);
 
         }
 
 		void Texture2DArray::SetData(std::vector<uint16_t>& data, int32_t x, int32_t y, int32_t z,
 			int32_t width, int32_t height, int32_t layers) {
 
-            SetData(data, x, y, z, width, height, layers);
+            VulkanTexture::SetData(data.data(), x, y, z, width, height, layers);
 
 		}
 
 		void Texture2DArray::SetData(std::vector<float>& data, int32_t layer, int32_t count) {
 
-			SetData(data, 0, 0, layer, width, height, count);
+            VulkanTexture::SetData(data.data(), 0, 0, layer, width, height, count);
 
 		}
 
 		void Texture2DArray::SetData(std::vector<float>& data, int32_t x, int32_t y, int32_t z,
 			int32_t width, int32_t height, int32_t layers) {
 
-            SetData(data, x, y, z, width, height, layers);
+            VulkanTexture::SetData(data.data(), x, y, z, width, height, layers);
 
 		}
 
@@ -60,7 +60,7 @@ namespace Atlas {
 			if (width != this->width || height != this->height ||
                 layers != this->depth) {
 
-                Reallocate(width, height, layers, filtering, wrapping);
+                Reallocate(Graphics::ImageType::Image2DArray, width, height, layers, filtering, wrapping);
 
 			}
 

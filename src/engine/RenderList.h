@@ -21,7 +21,7 @@ namespace Atlas {
 	class RenderList {
 
 	public:
-		RenderList(int32_t type = AE_OPAQUE_CONFIG);
+		RenderList(int32_t type = 0/*AE_OPAQUE_CONFIG*/);
 
 		void Add(Actor::MeshActor *actor);
 

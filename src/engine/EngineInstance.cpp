@@ -5,34 +5,31 @@ namespace Atlas {
     EngineInstance* EngineInstance::instance;
 
 	EngineInstance::EngineInstance(std::string instanceName, int32_t windowWidth,
-		int32_t windowHeight, int32_t flags) : window() {
+		int32_t windowHeight, int32_t flags) : window(instanceName, AE_WINDOWPOSITION_UNDEFINED,
+        AE_WINDOWPOSITION_UNDEFINED, windowWidth, windowHeight, flags) {
 
 		LockFramerate();
 
-		window = new Window(instanceName, AE_WINDOWPOSITION_UNDEFINED,
-			AE_WINDOWPOSITION_UNDEFINED, windowWidth, windowHeight,
-			flags);
-
 		// Only create swap chain after the engine instance window was created and
 		// it's surface was assigned to the default graphics device
-		Graphics::GraphicsDevice::DefaultDevice->surface = window->surface;
+		Graphics::GraphicsDevice::DefaultDevice->surface = window.surface;
 		Graphics::GraphicsDevice::DefaultDevice->CreateSwapChain();
 
 		// Clean up old invisible default window and assign this one
 		delete Engine::DefaultWindow;
-		Engine::DefaultWindow = window;
+		Engine::DefaultWindow = &window;
 
 	}
 
     EngineInstance::~EngineInstance() {
 
-		delete window;
+
 
     }
 
 	void EngineInstance::Update() {
 
-		window->Clear();
+		window.Clear();
 
 		// mainRenderer.Update();
 

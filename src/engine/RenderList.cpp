@@ -12,6 +12,7 @@ namespace Atlas {
 
 	void RenderList::Add(Actor::MeshActor *actor) {
 
+        /*
 		auto actorBatchIt = actorBatches.find(actor->mesh);
 
 		if (actorBatchIt != actorBatches.end()) {
@@ -51,11 +52,13 @@ namespace Atlas {
 		for (auto &renderListBatchKey : renderListBatches) {
 			orderedRenderBatches[renderListBatchKey.first].push_back(renderListBatchKey.second);
 		}
+        */
 
 	}
 
 	void RenderList::AddRange(std::vector<Actor::MeshActor*>& actors) {
 
+        /*
 		auto mesh = actors[0]->mesh;
 		auto actorBatchIt = actorBatches.find(mesh);
 
@@ -98,11 +101,13 @@ namespace Atlas {
 		for (auto& renderListBatchKey : renderListBatches) {
 			orderedRenderBatches[renderListBatchKey.first].push_back(renderListBatchKey.second);
 		}
+         */
 
 	}
 
 	void RenderList::UpdateBuffers(Camera* camera) {
 
+        /*
 		auto cameraLocation = camera->GetLocation();
 
 		for (auto& [mesh, actorBatch] : actorBatches) {
@@ -156,7 +161,7 @@ namespace Atlas {
 				Buffers buffers;
 				auto it = actorBatchBuffers.find(mesh);
 				if (it == actorBatchBuffers.end()) {
-                    /*
+
 					buffers.currentMatrices = new Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
 						sizeof(mat4), AE_BUFFER_DYNAMIC_STORAGE, currentActorMatrices.size(),
 						currentActorMatrices.data());
@@ -165,7 +170,7 @@ namespace Atlas {
 							sizeof(mat4), AE_BUFFER_DYNAMIC_STORAGE, lastActorMatrices.size(),
 							lastActorMatrices.data());
 					actorBatchBuffers[mesh] = buffers;
-                     */
+
 				}
 				else {
 					buffers = it->second;
@@ -181,12 +186,12 @@ namespace Atlas {
 				Buffer::Buffer* buffer = nullptr;
 				auto key = impostorBuffers.find(mesh);
 				if (key == impostorBuffers.end()) {
-                    /*
+
 					buffer = new Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
 						sizeof(mat4), AE_BUFFER_DYNAMIC_STORAGE, impostorMatrices.size(),
 						impostorMatrices.data());
 					impostorBuffers[mesh] = buffer;
-                     */
+
 				}
 				else {
 					buffer = key->second;
@@ -195,11 +200,13 @@ namespace Atlas {
 			}
 
 		}
+         */
 
 	}
 
 	void RenderList::Clear() {
 
+        /*
 		// Set buffers to size zero if no actors were added to them
 		for (auto& [mesh, actorBatch] : actorBatches) {
 			auto it0 = actorBatchBuffers.find(mesh);
@@ -228,6 +235,7 @@ namespace Atlas {
 
 		actorBatches.clear();
 		orderedRenderBatches.clear();
+        */
 
 	}
 

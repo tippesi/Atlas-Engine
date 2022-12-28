@@ -13,7 +13,7 @@ namespace Atlas {
 
             channels = int32_t(Graphics::GetFormatChannels(format));
 
-            Reallocate(width, height, depth, filtering, wrapping);
+            Reallocate(Graphics::ImageType::Image2D, width, height, depth, filtering, wrapping);
             RecreateSampler(filtering, wrapping);
 
         }
@@ -48,7 +48,23 @@ namespace Atlas {
 
         }
 
-        void VulkanTexture::Reallocate(int32_t width, int32_t height, int32_t depth,
+        void VulkanTexture::SetData(void* data, int32_t x, int32_t y, int32_t z,
+            int32_t width, int32_t height, int32_t depth) {
+
+            if (image->type == Graphics::ImageType::Image1DArray ||
+                image->type == Graphics::ImageType::Image2DArray)   {
+                image->SetData(data, uint32_t(x), uint32_t(y), 0,
+                    uint32_t(width), uint32_t(height), 1,
+                    uint32_t(z), uint32_t(depth));
+            }
+            else {
+                image->SetData(data, uint32_t(x), uint32_t(y), uint32_t(z),
+                    uint32_t(width), uint32_t(height), uint32_t(depth));
+            }
+
+        }
+
+        void VulkanTexture::Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height, int32_t depth,
             Filtering filtering, Wrapping wrapping) {
 
             auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
@@ -64,13 +80,18 @@ namespace Atlas {
             if (generateMipMaps) {
                 additionalUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
             }
+
+            auto arrayType = imageType == Graphics::ImageType::Image2DArray ||
+                imageType == Graphics::ImageType::Image1DArray;
+
             auto imageDesc = Graphics::ImageDesc {
                 .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT |
                               VK_IMAGE_USAGE_TRANSFER_DST_BIT | additionalUsageFlags,
-                .type = Graphics::ImageType::Image2D,
+                .type = imageType,
                 .width = uint32_t(width),
                 .height = uint32_t(height),
-                .depth = uint32_t(depth),
+                .depth = arrayType ? 1 : uint32_t(depth),
+                .layers = arrayType ? uint32_t(depth) : 1,
                 .format = format,
                 .mipMapping = generateMipMaps,
             };
