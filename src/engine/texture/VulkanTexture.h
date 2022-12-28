@@ -97,10 +97,10 @@ namespace Atlas {
             int32_t depth = 1;
             int32_t channels = 1;
 
-            Wrapping wrapping;
-            Filtering filtering;
+            Wrapping wrapping = Wrapping::Repeat;
+            Filtering filtering = Filtering::Nearest;
 
-            VkFormat format;
+            VkFormat format = {};
 
         protected:
             void SetData(void* data, int32_t x, int32_t y, int32_t z,

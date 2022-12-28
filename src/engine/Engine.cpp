@@ -92,13 +92,13 @@ namespace Atlas {
 
     void Engine::LockFramerate() {
 
-        SDL_GL_SetSwapInterval(1);
+        //SDL_GL_SetSwapInterval(1);
 
     }
 
     void Engine::UnlockFramerate() {
 
-        SDL_GL_SetSwapInterval(0);
+        // SDL_GL_SetSwapInterval(0);
 
     }
 

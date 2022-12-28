@@ -12,7 +12,7 @@ namespace Atlas {
 
         DirectionalLight::~DirectionalLight() {
 
-            
+			if (shadow) delete shadow;
 
         }
 

@@ -105,11 +105,13 @@ namespace Atlas {
                 imageType == Graphics::ImageType::Image1DArray ||
                 imageType == Graphics::ImageType::ImageCube;
 
+            VkImageAspectFlags aspectFlag = depthFormat ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+
             auto imageDesc = Graphics::ImageDesc {
                 .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT |
                               VK_IMAGE_USAGE_TRANSFER_DST_BIT | additionalUsageFlags,
                 .type = imageType,
-                .aspectFlags = depthFormat ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT,
+                .aspectFlags = aspectFlag,
                 .width = uint32_t(width),
                 .height = uint32_t(height),
                 .depth = arrayType ? 1 : uint32_t(depth),

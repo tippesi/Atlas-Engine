@@ -21,6 +21,8 @@ namespace Atlas {
 
         void Profiler::BeginFrame() {
 
+            if (!activate) return;
+
             threadContextCount = 0;
             threadContexts.clear();
             threadContexts.resize(PROFILER_MAX_THREADS);
@@ -67,6 +69,8 @@ namespace Atlas {
 
         void Profiler::BeginThread(const std::string &name, CommandList *commandList) {
 
+            if (!activate) return;
+
             // Create thread context
             auto context = ThreadContext {
               .id = std::this_thread::get_id(),
@@ -88,6 +92,8 @@ namespace Atlas {
 
         void Profiler::EndThread() {
 
+            if (!activate) return;
+
             std::lock_guard lock(unevaluatedThreadContextsMutex);
 
             auto& context = GetThreadContext();
@@ -98,6 +104,8 @@ namespace Atlas {
         }
 
         void Profiler::SetCommandList(CommandList *commandList) {
+
+            if (!activate) return;
 
             auto& context = GetThreadContext();
 

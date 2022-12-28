@@ -147,7 +147,7 @@ namespace Atlas {
                 std::thread::id id;
 
                 std::string name;
-                CommandList* commandList;
+                CommandList* commandList = nullptr;
 
                 std::vector<Query> stack;
                 std::vector<Query> queries;
@@ -155,7 +155,7 @@ namespace Atlas {
                 std::vector<Ref<QueryPool>> queryPools;
                 uint32_t poolIdx = 0;
 
-                size_t frameIdx;
+                size_t frameIdx = 0;
                 bool isValid = false;
             };
 
