@@ -16,6 +16,7 @@ namespace Atlas {
         GraphicsDevice::GraphicsDevice(Surface* surface, bool enableValidationLayers) : surface(surface) {
 
             auto instance = Instance::DefaultInstance;
+            this->instance = instance->instance;
 
             const std::vector<const char*> requiredExtensions = {
                     VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -34,6 +35,7 @@ namespace Atlas {
 
             VkPhysicalDeviceFeatures deviceFeatures{};
             deviceFeatures.samplerAnisotropy = VK_TRUE;
+            deviceFeatures.independentBlend = VK_TRUE;
 
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -67,7 +69,7 @@ namespace Atlas {
             vkGetDeviceQueue(device, queueFamilyIndices.queueFamilies[QueueType::TransferQueue].value(), 0,
                 &queueFamilyIndices.queues[QueueType::TransferQueue]);
 
-            memoryManager = new MemoryManager(instance->instance, physicalDevice, device,
+            memoryManager = new MemoryManager(this,
                 queueFamilyIndices.queueFamilies[QueueType::TransferQueue].value(),
                 queueFamilyIndices.queues[QueueType::TransferQueue]);
 
@@ -87,14 +89,19 @@ namespace Atlas {
 
             DestroyFrameData();
 
-            for (auto& renderPassRef : renderPasses) {
-                assert(renderPassRef.use_count() == 1 && "Render pass wasn't deallocated or allocated wrongly");
-                renderPassRef.reset();
-            }
-
             for (auto& pipelineRef : pipelines) {
                 assert(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
                 pipelineRef.reset();
+            }
+
+            for (auto& frameBufferRef : frameBuffers) {
+                assert(frameBufferRef.use_count() == 1 && "Frame buffer wasn't deallocated or allocated wrongly");
+                frameBufferRef.reset();
+            }
+
+            for (auto& renderPassRef : renderPasses) {
+                assert(renderPassRef.use_count() == 1 && "Render pass wasn't deallocated or allocated wrongly");
+                renderPassRef.reset();
             }
 
             for (auto& shaderRef : shaders) {
@@ -139,9 +146,9 @@ namespace Atlas {
 
         }
 
-        Ref<RenderPass> GraphicsDevice::CreateRenderPass(RenderPassDesc shaderDesc) {
+        Ref<RenderPass> GraphicsDevice::CreateRenderPass(RenderPassDesc desc) {
 
-            auto renderPass = std::make_shared<RenderPass>(this, shaderDesc);
+            auto renderPass = std::make_shared<RenderPass>(this, desc);
 
             renderPasses.push_back(renderPass);
 
@@ -149,9 +156,19 @@ namespace Atlas {
 
         }
 
-        Ref<Shader> GraphicsDevice::CreateShader(ShaderDesc shaderDesc) {
+        Ref<FrameBuffer> GraphicsDevice::CreateFrameBuffer(FrameBufferDesc desc) {
 
-            auto shader = std::make_shared<Shader>(memoryManager, shaderDesc);
+            auto frameBuffer = std::make_shared<FrameBuffer>(this, desc);
+
+            frameBuffers.push_back(frameBuffer);
+
+            return frameBuffer;
+
+        }
+
+        Ref<Shader> GraphicsDevice::CreateShader(ShaderDesc desc) {
+
+            auto shader = std::make_shared<Shader>(this, desc);
 
             shaders.push_back(shader);
 
@@ -161,7 +178,7 @@ namespace Atlas {
 
         Ref<Pipeline> GraphicsDevice::CreatePipeline(GraphicsPipelineDesc desc) {
 
-            auto pipeline = std::make_shared<Pipeline>(memoryManager, desc);
+            auto pipeline = std::make_shared<Pipeline>(this, desc);
 
             pipelines.push_back(pipeline);
 
@@ -171,7 +188,7 @@ namespace Atlas {
 
         Ref<Pipeline> GraphicsDevice::CreatePipeline(ComputePipelineDesc desc) {
 
-            auto pipeline = std::make_shared<Pipeline>(memoryManager, desc);
+            auto pipeline = std::make_shared<Pipeline>(this, desc);
 
             pipelines.push_back(pipeline);
 
@@ -179,9 +196,9 @@ namespace Atlas {
 
         }
 
-        Ref<Buffer> GraphicsDevice::CreateBuffer(BufferDesc bufferDesc) {
+        Ref<Buffer> GraphicsDevice::CreateBuffer(BufferDesc desc) {
 
-            auto buffer = std::make_shared<Buffer>(this, bufferDesc);
+            auto buffer = std::make_shared<Buffer>(this, desc);
 
             buffers.push_back(buffer);
 
@@ -189,9 +206,9 @@ namespace Atlas {
 
         }
 
-        Ref<MultiBuffer> GraphicsDevice::CreateMultiBuffer(BufferDesc bufferDesc) {
+        Ref<MultiBuffer> GraphicsDevice::CreateMultiBuffer(BufferDesc desc) {
 
-            auto multiBuffer = std::make_shared<MultiBuffer>(this, bufferDesc);
+            auto multiBuffer = std::make_shared<MultiBuffer>(this, desc);
 
             multiBuffers.push_back(multiBuffer);
 
@@ -199,9 +216,9 @@ namespace Atlas {
 
         }
 
-        Ref<Image> GraphicsDevice::CreateImage(ImageDesc imageDesc) {
+        Ref<Image> GraphicsDevice::CreateImage(ImageDesc desc) {
 
-            auto image = std::make_shared<Image>(this, imageDesc);
+            auto image = std::make_shared<Image>(this, desc);
 
             images.push_back(image);
 
@@ -209,9 +226,9 @@ namespace Atlas {
 
         }
 
-        Ref<Sampler> GraphicsDevice::CreateSampler(SamplerDesc samplerDesc) {
+        Ref<Sampler> GraphicsDevice::CreateSampler(SamplerDesc desc) {
 
-            auto sampler = std::make_shared<Sampler>(this, samplerDesc);
+            auto sampler = std::make_shared<Sampler>(this, desc);
 
             samplers.push_back(sampler);
 
@@ -612,7 +629,7 @@ namespace Atlas {
 
             auto oldSwapChain = swapChain;
 
-            swapChain = new SwapChain(supportDetails, nativeSurface, memoryManager,
+            swapChain = new SwapChain(supportDetails, nativeSurface, this,
                 width, height, VK_PRESENT_MODE_FIFO_KHR, oldSwapChain);
 
             // Clean up old swap chain

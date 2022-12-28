@@ -59,7 +59,7 @@ namespace Atlas {
 
 		auto component = GetComponent(attachment);
 
-		component.texture = new Texture::Texture2D(width, height, sizedFormat, wrapping, filtering, false, false);
+		//component.texture = new Texture::Texture2D(width, height, sizedFormat, wrapping, filtering, false, false);
 		component.internalTexture = true;
 		component.target = target;
 

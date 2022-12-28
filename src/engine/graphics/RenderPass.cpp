@@ -5,8 +5,8 @@ namespace Atlas {
 
     namespace Graphics {
 
-        RenderPass::RenderPass(GraphicsDevice* device, RenderPassDesc& desc) : extent(desc.extent),
-            colorClearValue(desc.colorClearValue), depthClearValue(desc.depthClearValue), device(device) {
+        RenderPass::RenderPass(GraphicsDevice* device, RenderPassDesc& desc) : colorClearValue(desc.colorClearValue),
+            depthClearValue(desc.depthClearValue), device(device) {
 
             for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
                 auto& attachment = desc.colorAttachments[i];
@@ -24,9 +24,6 @@ namespace Atlas {
 
             if (!isComplete) return;
 
-            for(auto frameBuffer : frameBuffers) {
-                vkDestroyFramebuffer(device->device, frameBuffer, nullptr);
-            }
             vkDestroyRenderPass(device->device, renderPass, nullptr);
 
         }
@@ -42,6 +39,25 @@ namespace Atlas {
         void RenderPass::AttachDepth(RenderPassAttachment& attachment) {
 
             depthAttachment = attachment;
+
+        }
+
+        void RenderPass::RefreshColorImage(Ref<Image> &image, uint32_t slot) {
+
+            assert(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
+            assert(colorAttachments[slot].image && "Attachment wasn't valid");
+            assert(image->format == colorAttachments[slot].image->format && "Image formats need to be the same");
+
+            colorAttachments[slot].image = image;
+
+        }
+
+        void RenderPass::RefreshDepthImage(Ref<Image> &image) {
+
+            assert(depthAttachment.image && "Attachment wasn't valid");
+            assert(image->format == depthAttachment.image->format && "Image formats need to be the same");
+
+            depthAttachment.image = image;
 
         }
 
@@ -80,6 +96,8 @@ namespace Atlas {
                 subPassDescription.pDepthStencilAttachment = &depthAttachmentReference;
             }
 
+            colorAttachmentCount = subPassDescription.colorAttachmentCount;
+
             VkRenderPassCreateInfo2 renderPassCreateInfo = Initializers::InitRenderPassCreateInfo(
                 uint32_t(attachmentDescriptions.size()), attachmentDescriptions.data(), 1, &subPassDescription);
 
@@ -87,42 +105,6 @@ namespace Atlas {
             renderPassCreateInfo.pDependencies = subPassDependencies.data();
 
             VK_CHECK(vkCreateRenderPass2(device->device, &renderPassCreateInfo, nullptr, &renderPass))
-
-            uint32_t maxLayers = 1;
-            for (auto& attachment : colorAttachments) {
-                if (!attachment.image) continue;
-                maxLayers = std::max(attachment.image->layers, maxLayers);
-            }
-            if (depthAttachment.image) {
-                maxLayers = std::max(depthAttachment.image->layers, maxLayers);
-            }
-
-            frameBuffers.resize(maxLayers);
-            for (uint32_t i = 0; i < maxLayers; i++) {
-                std::vector<VkImageView> imageViews;
-                for (auto& attachment : colorAttachments) {
-                    if (!attachment.image) continue;
-                    // Subtract one because we want to stay inside array bounds
-                    auto attachmentLayerCount = attachment.image->layers - 1;
-                    auto layer = std::min(i, attachmentLayerCount);
-                    imageViews.push_back(attachment.image->layerViews[layer]);
-                }
-                if (depthAttachment.image) {
-                    auto attachmentLayerCount = depthAttachment.image->layers - 1;
-                    auto layer = std::min(i, attachmentLayerCount);
-                    imageViews.push_back(depthAttachment.image->layerViews[layer]);
-                }
-
-                VkFramebufferCreateInfo frameBufferInfo = {};
-                frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-                frameBufferInfo.renderPass = renderPass;
-                frameBufferInfo.attachmentCount = uint32_t(imageViews.size());
-                frameBufferInfo.pAttachments = imageViews.data();
-                frameBufferInfo.width = extent.width;
-                frameBufferInfo.height = extent.height;
-                frameBufferInfo.layers = 1;
-                VK_CHECK(vkCreateFramebuffer(device->device, &frameBufferInfo, nullptr, &frameBuffers[i]));
-            }
 
             isComplete = true;
 
@@ -148,7 +130,6 @@ namespace Atlas {
 
             attachmentDescriptions.push_back(colorAttachmentDescription);
             subPassDependencies.push_back(colorDependency);
-            imageViews.push_back(attachment.image->view);
 
             colorAttachmentReferences.push_back(colorAttachmentReference);
 
@@ -175,7 +156,6 @@ namespace Atlas {
 
             attachmentDescriptions.push_back(depthAttachmentDescription);
             subPassDependencies.push_back(depthDependency);
-            imageViews.push_back(attachment.image->view);
 
             this->depthAttachmentReference = depthAttachmentReference;
 

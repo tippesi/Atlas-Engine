@@ -5,7 +5,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        DescriptorPool::DescriptorPool(GraphicsDevice* device) : memoryManager(device->memoryManager) {
+        DescriptorPool::DescriptorPool(GraphicsDevice* device) : device(device) {
 
             pools.push_back(InitPool());
 
@@ -14,7 +14,7 @@ namespace Atlas {
         DescriptorPool::~DescriptorPool() {
 
             for (auto pool : pools) {
-                vkDestroyDescriptorPool(memoryManager->device, pool, nullptr);
+                vkDestroyDescriptorPool(device->device, pool, nullptr);
             }
 
         }
@@ -29,12 +29,12 @@ namespace Atlas {
             allocInfo.pSetLayouts = &layout;
 
             VkDescriptorSet set;
-            auto result = vkAllocateDescriptorSets(memoryManager->device, &allocInfo, &set);
+            auto result = vkAllocateDescriptorSets(device->device, &allocInfo, &set);
             // Handle the pool out of memory error by allocating a new pool
             if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
                 pools.push_back(InitPool());
                 allocInfo.descriptorPool = pools.back();
-                VK_CHECK(vkAllocateDescriptorSets(memoryManager->device, &allocInfo, &set))
+                VK_CHECK(vkAllocateDescriptorSets(device->device, &allocInfo, &set))
             }
             else {
                 VK_CHECK(result);
@@ -47,7 +47,7 @@ namespace Atlas {
         void DescriptorPool::Reset() {
 
             for (auto pool : pools) {
-                vkResetDescriptorPool(memoryManager->device, pool, 0);
+                vkResetDescriptorPool(device->device, pool, 0);
             }
 
         }
@@ -77,7 +77,7 @@ namespace Atlas {
             poolInfo.pPoolSizes = sizes.data();
 
             VkDescriptorPool pool;
-            VK_CHECK(vkCreateDescriptorPool(memoryManager->device, &poolInfo, nullptr, &pool))
+            VK_CHECK(vkCreateDescriptorPool(device->device, &poolInfo, nullptr, &pool))
 
             return pool;
 

@@ -145,11 +145,17 @@ void ImguiWrapper::Render() {
     auto swapChain = device->swapChain;
 
     commandList->BeginCommands();
+
+    Atlas::Graphics::Profiler::BeginThread("ImGui thread", commandList);
+    Atlas::Graphics::Profiler::BeginQuery("ImGui");
+
     commandList->BeginRenderPass(swapChain, false);
-
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandList->commandBuffer);
-
     commandList->EndRenderPass();
+
+    Atlas::Graphics::Profiler::EndQuery();
+    Atlas::Graphics::Profiler::EndThread();
+
     commandList->EndCommands();
 
     device->SubmitCommandList(commandList, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);

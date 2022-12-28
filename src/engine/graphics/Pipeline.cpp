@@ -1,16 +1,23 @@
 #include "Pipeline.h"
+#include "SwapChain.h"
 #include "GraphicsDevice.h"
+
+#include <cassert>
 
 namespace Atlas {
 
     namespace Graphics {
 
-        Pipeline::Pipeline(MemoryManager *memManager, GraphicsPipelineDesc desc) :
-            bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS), shader(desc.shader), memoryManager(memManager) {
+        Pipeline::Pipeline(GraphicsDevice* device, GraphicsPipelineDesc desc) :
+            bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS), shader(desc.shader),
+            frameBuffer(desc.frameBuffer), device(device) {
 
+            assert(!desc.shader->isCompute && "Can't create a graphics pipeline with a compute shader");
             if (desc.shader->isCompute) return;
 
-            GeneratePipelineLayoutFromShader(desc.shader.get());
+            assert((desc.swapChain || desc.frameBuffer) && "Must provide a swap chain or a frame buffer");
+
+            GeneratePipelineLayoutFromShader();
 
             VkPipelineViewportStateCreateInfo viewportState = {};
             viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -34,15 +41,23 @@ namespace Atlas {
             colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
             colorBlending.pNext = nullptr;
 
+            // Color blend attachments count must match the number of color attachments
+            std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
+            if (frameBuffer != nullptr) {
+                colorBlendAttachments = GenerateBlendAttachmentStateFromFrameBuffer(desc.colorBlendAttachment);
+            }
+            else {
+                colorBlendAttachments.push_back(desc.colorBlendAttachment);
+            }
+
             colorBlending.logicOpEnable = VK_FALSE;
             colorBlending.logicOp = VK_LOGIC_OP_COPY;
-            colorBlending.attachmentCount = 1;
-            colorBlending.pAttachments = &desc.colorBlendAttachment;
+            colorBlending.attachmentCount = uint32_t(colorBlendAttachments.size());
+            colorBlending.pAttachments = colorBlendAttachments.data();
 
             VkGraphicsPipelineCreateInfo pipelineInfo = {};
             pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
             pipelineInfo.pNext = nullptr;
-
             pipelineInfo.flags = 0;
             pipelineInfo.stageCount = uint32_t(desc.shader->shaderStageCreateInfos.size());
             pipelineInfo.pStages = desc.shader->shaderStageCreateInfos.data();
@@ -54,16 +69,16 @@ namespace Atlas {
             pipelineInfo.pMultisampleState = &desc.multisampling;
             pipelineInfo.pColorBlendState = &colorBlending;
             pipelineInfo.layout = layout;
-            pipelineInfo.renderPass = desc.renderPass;
+            pipelineInfo.renderPass = frameBuffer ? frameBuffer->renderPass->renderPass : desc.swapChain->renderPass;
             pipelineInfo.subpass = 0;
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
             pipelineInfo.basePipelineIndex = 0;
             pipelineInfo.pDynamicState = &dynamicStateInfo;
 
-            auto& device = memManager->device;
-            if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1,
-                    &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
-                Log::Error("Failed to create graphics pipeline");
+            auto result = vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1,
+                &pipelineInfo, nullptr, &pipeline);
+            if (result != VK_SUCCESS) {
+                Log::Error("Failed to create graphics pipeline: " + VkResultToString(result));
                 return;
             }
 
@@ -72,12 +87,13 @@ namespace Atlas {
 
         }
 
-        Pipeline::Pipeline(MemoryManager *memManager, ComputePipelineDesc desc) :
-            bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE), shader(desc.shader), memoryManager(memManager) {
+        Pipeline::Pipeline(GraphicsDevice* device, ComputePipelineDesc desc) :
+            bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE), shader(desc.shader), device(device) {
 
+            assert(desc.shader->isCompute && "Can't create a compute pipeline without a compute shader");
             if (!desc.shader->isCompute) return;
 
-            GeneratePipelineLayoutFromShader(desc.shader.get());
+            GeneratePipelineLayoutFromShader();
 
             VkComputePipelineCreateInfo pipelineInfo = {};
             pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -89,10 +105,10 @@ namespace Atlas {
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
             pipelineInfo.basePipelineIndex = 0;
 
-            auto& device = memManager->device;
-            if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1,
-                    &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
-                Log::Error("Failed to create compute pipeline");
+            auto result = vkCreateComputePipelines(device->device, VK_NULL_HANDLE, 1,
+                &pipelineInfo, nullptr, &pipeline);
+            if (result != VK_SUCCESS) {
+                Log::Error("Failed to create compute pipeline: " + VkResultToString(result));
                 return;
             }
 
@@ -105,12 +121,12 @@ namespace Atlas {
 
             if (!isComplete) return;
 
-            vkDestroyPipeline(memoryManager->device, pipeline, nullptr);
-            vkDestroyPipelineLayout(memoryManager->device, layout, nullptr);
+            vkDestroyPipeline(device->device, pipeline, nullptr);
+            vkDestroyPipelineLayout(device->device, layout, nullptr);
 
         }
 
-        void Pipeline::GeneratePipelineLayoutFromShader(Shader *shader) {
+        void Pipeline::GeneratePipelineLayoutFromShader() {
 
             auto createInfo = Initializers::InitPipelineLayoutCreateInfo();
 
@@ -135,7 +151,32 @@ namespace Atlas {
                 createInfo.pSetLayouts = descriptorSetLayouts.data();
             }
 
-            VK_CHECK(vkCreatePipelineLayout(memoryManager->device, &createInfo, nullptr, &layout))
+            VK_CHECK(vkCreatePipelineLayout(device->device, &createInfo, nullptr, &layout))
+
+        }
+
+        std::vector<VkPipelineColorBlendAttachmentState> Pipeline::GenerateBlendAttachmentStateFromFrameBuffer(
+            VkPipelineColorBlendAttachmentState blendAttachmentState) {
+
+            std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
+
+            auto& renderPass = frameBuffer->renderPass;
+            for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
+                auto& rpColorAttachment = renderPass->colorAttachments[i];
+                auto& fbColorAttachment = frameBuffer->colorAttachments[i];
+
+                // No valid attachment in the render pass, continue
+                if (!rpColorAttachment.image) continue;
+
+                auto blendAttachment = blendAttachmentState;
+                // Disable writing to attachments that are not in the frame buffer
+                if (!fbColorAttachment.isValid) {
+                    blendAttachment.colorWriteMask = 0;
+                }
+                colorBlendAttachments.push_back(blendAttachment);
+            }
+
+            return colorBlendAttachments;
 
         }
 

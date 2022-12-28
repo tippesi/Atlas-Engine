@@ -134,7 +134,7 @@ namespace Atlas {
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 5);
 					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, 6);
                      */
-
+                    /*
 					if (rtData.baseColorTextureAtlas.slices.size())
 						rtData.baseColorTextureAtlas.textureArray.Bind(0);
 					if (rtData.opacityTextureAtlas.slices.size())
@@ -155,6 +155,7 @@ namespace Atlas {
 					rtData.bvhTriangleBuffer.BindBase(13);
 					rtData.nodeBuffer.BindBase(7);
 					lightBuffer.BindBase(8);
+                    */
 				}
 
 				// Execute shader
@@ -254,7 +255,6 @@ namespace Atlas {
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 4);
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 5);
 					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, 6);
-                     */
 
 					if (rtData.baseColorTextureAtlas.slices.size())
 						rtData.baseColorTextureAtlas.textureArray.Bind(0);
@@ -276,6 +276,7 @@ namespace Atlas {
 					rtData.bvhTriangleBuffer.BindBase(13);
 					rtData.nodeBuffer.BindBase(7);
 					lightBuffer.BindBase(8);
+                    */
 				}
 
 				Graphics::Profiler::BeginQuery("Setup command buffer");

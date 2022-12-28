@@ -98,13 +98,13 @@ namespace Atlas {
 
         std::string name;
 
-        Ref<Texture::VulkanTexture> baseColorMap = nullptr;
-        Ref<Texture::VulkanTexture> opacityMap = nullptr;
-        Ref<Texture::VulkanTexture> normalMap = nullptr;
-        Ref<Texture::VulkanTexture> roughnessMap = nullptr;
-        Ref<Texture::VulkanTexture> metalnessMap = nullptr;
-        Ref<Texture::VulkanTexture> aoMap = nullptr;
-        Ref<Texture::VulkanTexture> displacementMap = nullptr;
+        Ref<Texture::Texture2D> baseColorMap = nullptr;
+        Ref<Texture::Texture2D> opacityMap = nullptr;
+        Ref<Texture::Texture2D> normalMap = nullptr;
+        Ref<Texture::Texture2D> roughnessMap = nullptr;
+        Ref<Texture::Texture2D> metalnessMap = nullptr;
+        Ref<Texture::Texture2D> aoMap = nullptr;
+        Ref<Texture::Texture2D> displacementMap = nullptr;
 
         vec3 baseColor = vec3(1.0f);
         vec3 emissiveColor = vec3(0.0f);

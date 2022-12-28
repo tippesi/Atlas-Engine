@@ -1,87 +1,20 @@
 #include "VulkanTexture.h"
 
 #include "../graphics/Instance.h"
+#include "../graphics/Format.h"
 
 namespace Atlas {
 
     namespace Texture {
 
-        VulkanTexture::VulkanTexture(uint32_t width, uint32_t height, uint32_t depth, VkFormat format,
-            VkSamplerAddressMode wrapping, VkFilter filtering, bool anisotropicFiltering, bool generateMipMaps)
-            : width(width), height(height), depth(depth) {
+        VulkanTexture::VulkanTexture(int32_t width, int32_t height, int32_t depth, VkFormat format,
+            Wrapping wrapping, Filtering filtering) : width(width), height(height), depth(depth),
+            wrapping(wrapping), filtering(filtering), format(format) {
 
-            auto graphicsInstance = Graphics::Instance::DefaultInstance;
-            auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
+            channels = int32_t(Graphics::GetFormatChannels(format));
 
-            VkImageUsageFlags additionalUsageFlags = {};
-            if (generateMipMaps) {
-                additionalUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-            }
-            auto imageDesc = Graphics::ImageDesc {
-                .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT |
-                    VK_IMAGE_USAGE_TRANSFER_DST_BIT | additionalUsageFlags,
-                .type = Graphics::ImageType::Image2D,
-                .width = width,
-                .height = height,
-                .depth = depth,
-                .format = format
-            };
-            image = graphicsDevice->CreateImage(imageDesc);
-
-            auto samplerDesc = Graphics::SamplerDesc {
-                .filter = filtering,
-                .mode = wrapping,
-                .mipmapMode = generateMipMaps ? VK_SAMPLER_MIPMAP_MODE_LINEAR :
-                              VK_SAMPLER_MIPMAP_MODE_NEAREST,
-                .maxLod = float(this->image->mipLevels),
-                .anisotropicFiltering = generateMipMaps && anisotropicFiltering
-            };
-            sampler = graphicsDevice->CreateSampler(samplerDesc);
-
-        }
-
-        VulkanTexture::VulkanTexture(Common::Image<uint8_t>& image, bool anisotropicFiltering, bool generateMipMaps)
-            : width(image.width), height(image.height) {
-
-            auto graphicsInstance = Graphics::Instance::DefaultInstance;
-            auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
-
-            VkFormat format;
-            switch(image.channels) {
-                case 1: format = VK_FORMAT_R8_UNORM; break;
-                case 2: format = VK_FORMAT_R8G8_UNORM; break;
-                case 3: format = VK_FORMAT_R8G8B8_UNORM; break;
-                default: format = VK_FORMAT_R8G8B8A8_UNORM; break;
-            }
-
-            VkImageUsageFlags additionalUsageFlags = {};
-            if (generateMipMaps) {
-                additionalUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-            }
-
-            auto imageDesc = Graphics::ImageDesc {
-                .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT |
-                    VK_IMAGE_USAGE_TRANSFER_DST_BIT | additionalUsageFlags,
-                .type = Graphics::ImageType::Image2D,
-                .width = width,
-                .height = height,
-                .depth = depth,
-                .format = format,
-                .mipMapping = generateMipMaps
-            };
-            this->image = graphicsDevice->CreateImage(imageDesc);
-
-            auto samplerDesc = Graphics::SamplerDesc {
-                .filter = VK_FILTER_LINEAR,
-                .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                .mipmapMode = generateMipMaps ? VK_SAMPLER_MIPMAP_MODE_LINEAR :
-                    VK_SAMPLER_MIPMAP_MODE_NEAREST,
-                .maxLod = float(this->image->mipLevels),
-                .anisotropicFiltering = generateMipMaps && anisotropicFiltering
-            };
-            sampler = graphicsDevice->CreateSampler(samplerDesc);
-
-            SetData(image.GetData());
+            Reallocate(width, height, depth, filtering, wrapping);
+            RecreateSampler(filtering, wrapping);
 
         }
 
@@ -94,6 +27,97 @@ namespace Atlas {
         void VulkanTexture::SetData(std::vector<uint16_t> &data) {
 
             image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
+
+        }
+
+        void VulkanTexture::SetData(std::vector<float16> &data) {
+
+            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
+
+        }
+
+        void VulkanTexture::SetData(std::vector<float> &data) {
+
+            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
+
+        }
+
+        void VulkanTexture::GenerateMipmap() {
+
+            // TODO...
+
+        }
+
+        void VulkanTexture::Reallocate(int32_t width, int32_t height, int32_t depth,
+            Filtering filtering, Wrapping wrapping) {
+
+            auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
+
+            this->width = width;
+            this->height = height;
+            this->depth = depth;
+
+            bool generateMipMaps = filtering == Filtering::MipMapLinear ||
+                filtering == Filtering::MipMapNearest || filtering == Filtering::Anisotropic;
+
+            VkImageUsageFlags additionalUsageFlags = {};
+            if (generateMipMaps) {
+                additionalUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            }
+            auto imageDesc = Graphics::ImageDesc {
+                .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT |
+                              VK_IMAGE_USAGE_TRANSFER_DST_BIT | additionalUsageFlags,
+                .type = Graphics::ImageType::Image2D,
+                .width = uint32_t(width),
+                .height = uint32_t(height),
+                .depth = uint32_t(depth),
+                .format = format,
+                .mipMapping = generateMipMaps,
+            };
+            image = graphicsDevice->CreateImage(imageDesc);
+
+        }
+
+        void VulkanTexture::RecreateSampler(Filtering filtering, Wrapping wrapping) {
+
+            auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
+
+            this->filtering = filtering;
+            this->wrapping = wrapping;
+
+            bool generateMipMaps = filtering == Filtering::MipMapLinear ||
+                filtering == Filtering::MipMapNearest || filtering == Filtering::Anisotropic;
+            bool anisotropicFiltering = filtering == Filtering::Anisotropic;
+
+            VkFilter filter;
+            switch (filtering) {
+                case Filtering::Nearest: filter = VK_FILTER_NEAREST; break;
+                case Filtering::MipMapNearest: filter = VK_FILTER_NEAREST; break;
+                default: filter = VK_FILTER_LINEAR; break;
+            }
+
+            VkSamplerAddressMode mode;
+            switch(wrapping) {
+                case Wrapping::Repeat: mode = VK_SAMPLER_ADDRESS_MODE_REPEAT; break;
+                case Wrapping::ClampToEdge: mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE; break;
+                default: mode = VK_SAMPLER_ADDRESS_MODE_REPEAT; break;
+            }
+
+            VkSamplerMipmapMode mipmapMode;
+            switch(filtering) {
+                case Filtering::MipMapLinear: mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR; break;
+                case Filtering::Anisotropic: mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR; break;
+                default: mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST; break;
+            }
+
+            auto samplerDesc = Graphics::SamplerDesc {
+                .filter = filter,
+                .mode = mode,
+                .mipmapMode = mipmapMode,
+                .maxLod = float(this->image->mipLevels),
+                .anisotropicFiltering = generateMipMaps && anisotropicFiltering
+            };
+            sampler = graphicsDevice->CreateSampler(samplerDesc);
 
         }
 

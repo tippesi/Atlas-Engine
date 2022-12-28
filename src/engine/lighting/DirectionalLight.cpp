@@ -55,7 +55,7 @@ namespace Atlas {
 			shadow->maps.Resize(shadow->resolution, shadow->resolution,
                                 shadow->maps.depth + 1);
 
-			shadow->maps.Bind(0);
+			// shadow->maps.Bind(0);
 
             // glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
             // glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);

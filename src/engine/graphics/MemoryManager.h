@@ -10,6 +10,7 @@
 #include "Sampler.h"
 #include "Descriptor.h"
 #include "QueryPool.h"
+#include "Framebuffer.h"
 #include "MemoryTransferManager.h"
 
 #define VMA_STATS_STRING_ENABLED 0
@@ -17,6 +18,7 @@
 
 #include <deque>
 #include <cassert>
+#include <functional>
 
 namespace Atlas {
 
@@ -33,13 +35,18 @@ namespace Atlas {
             size_t deleteFrame;
         };
 
+        class DeleteLambda {
+        public:
+            std::function<void(void)> lambda;
+            size_t deleteFrame;
+        };
+
         class MemoryManager {
 
             friend GraphicsDevice;
 
         public:
-            MemoryManager(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device,
-                uint32_t transferQueueFamilyIndex, VkQueue transferQueue);
+            MemoryManager(GraphicsDevice* device, uint32_t transferQueueFamilyIndex, VkQueue transferQueue);
 
             MemoryManager(const MemoryManager& that) = delete;
 
@@ -48,6 +55,8 @@ namespace Atlas {
             MemoryManager& operator=(const MemoryManager& that) = delete;
 
             void DestroyAllocation(Ref<RenderPass>& allocation);
+
+            void DestroyAllocation(Ref<FrameBuffer>& allocation);
 
             void DestroyAllocation(Ref<Shader>& allocation);
 
@@ -65,14 +74,13 @@ namespace Atlas {
 
             void DestroyAllocation(Ref<QueryPool>& allocation);
 
-            VmaAllocator allocator;
+            void DestroyRawAllocation(std::function<void(void)> destroyLambda);
 
-            VkInstance instance;
-            VkPhysicalDevice physicalDevice;
-            VkDevice device;
+            VmaAllocator allocator;
 
             VkPhysicalDeviceProperties deviceProperties;
 
+            GraphicsDevice* device;
             MemoryTransferManager* transferManager;
 
         private:
@@ -97,7 +105,9 @@ namespace Atlas {
             const size_t framesToDeletion = 3;
 
             size_t frameIndex = 0;
+            std::deque<DeleteLambda> deleteRawAllocations;
             std::deque<DeleteResource<RenderPass>> deleteRenderPassAllocations;
+            std::deque<DeleteResource<FrameBuffer>> deleteFrameBufferAllocations;
             std::deque<DeleteResource<Shader>> deleteShaderAllocations;
             std::deque<DeleteResource<Pipeline>> deletePipelineAllocations;
             std::deque<DeleteResource<Buffer>> deleteBufferAllocations;

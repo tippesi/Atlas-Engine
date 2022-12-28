@@ -51,8 +51,8 @@ namespace Atlas {
 
             void BeginRenderPass(SwapChain* swapChain, bool clear = false);
 
-            void BeginRenderPass(const Ref<RenderPass>& renderPass, bool clear = false,
-                uint32_t layer = 0, bool autoAdjustImageLayouts = false);
+            void BeginRenderPass(const Ref<RenderPass>& renderPass, const Ref<FrameBuffer>& frameBuffer,
+                bool clear = false, bool autoAdjustImageLayouts = false);
 
             void EndRenderPass();
 
@@ -127,6 +127,7 @@ namespace Atlas {
             SwapChain* swapChainInUse = nullptr;
             Ref<RenderPass> renderPassInUse = nullptr;
             Ref<Pipeline> pipelineInUse = nullptr;
+            Ref<FrameBuffer> frameBufferInUse = nullptr;
 
         private:
             struct DescriptorBindingData {

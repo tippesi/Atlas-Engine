@@ -42,7 +42,7 @@ namespace Atlas {
 
         }
 
-        Shader::Shader(MemoryManager *memManager, ShaderDesc &desc) : memoryManager(memManager) {
+        Shader::Shader(GraphicsDevice *device, ShaderDesc &desc) : device(device) {
 
             uint32_t allStageFlags = 0;
 
@@ -62,7 +62,7 @@ namespace Atlas {
                 createInfo.codeSize = stage.spirvBinary.size() * sizeof(uint32_t);
                 createInfo.pCode = stage.spirvBinary.data();
 
-                bool success = vkCreateShaderModule(memManager->device, &createInfo,
+                bool success = vkCreateShaderModule(device->device, &createInfo,
                     nullptr, &shaderModules[i].module) == VK_SUCCESS;
                 assert(success && "Error creating shader module");
                 if (!success) {
@@ -129,7 +129,7 @@ namespace Atlas {
                 setInfo.flags = 0;
                 setInfo.pBindings = sets[i].layoutBindings;
 
-                VK_CHECK(vkCreateDescriptorSetLayout(memManager->device, &setInfo, nullptr, &sets[i].layout))
+                VK_CHECK(vkCreateDescriptorSetLayout(device->device, &setInfo, nullptr, &sets[i].layout))
             }
 
             isComplete = true;
@@ -142,11 +142,11 @@ namespace Atlas {
 
             for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                 if (!sets[i].bindingCount) continue;
-                vkDestroyDescriptorSetLayout(memoryManager->device, sets[i].layout, nullptr);
+                vkDestroyDescriptorSetLayout(device->device, sets[i].layout, nullptr);
             }
 
             for (auto& shaderModule : shaderModules) {
-                vkDestroyShaderModule(memoryManager->device, shaderModule.module, nullptr);
+                vkDestroyShaderModule(device->device, shaderModule.module, nullptr);
             }
 
         }

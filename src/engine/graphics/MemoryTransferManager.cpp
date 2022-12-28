@@ -1,5 +1,6 @@
 #include "MemoryTransferManager.h"
 #include "MemoryManager.h"
+#include "GraphicsDevice.h"
 
 #include "Buffer.h"
 #include "Image.h"
@@ -12,34 +13,31 @@ namespace Atlas {
 
     namespace Graphics {
 
-        MemoryTransferManager::MemoryTransferManager(Atlas::Graphics::MemoryManager *memManager,
-            uint32_t transferQueueFamilyIndex, VkQueue transferQueue) : memoryManager(memManager),
+        MemoryTransferManager::MemoryTransferManager(GraphicsDevice* device, MemoryManager *memManager,
+            uint32_t transferQueueFamilyIndex, VkQueue transferQueue) : device(device), memoryManager(memManager),
             transferQueueFamilyIndex(transferQueueFamilyIndex), transferQueue(transferQueue) {
 
-            auto& device = memManager->device;
-
             VkCommandPoolCreateInfo poolCreateInfo = Initializers::InitCommandPoolCreateInfo(transferQueueFamilyIndex);
-            VK_CHECK(vkCreateCommandPool(device, &poolCreateInfo, nullptr, &commandPool))
+            VK_CHECK(vkCreateCommandPool(device->device, &poolCreateInfo, nullptr, &commandPool))
 
             VkCommandBufferAllocateInfo bufferAllocateInfo = Initializers::InitCommandBufferAllocateInfo(commandPool, 1);
-            VK_CHECK(vkAllocateCommandBuffers(device, &bufferAllocateInfo, &commandBuffer))
+            VK_CHECK(vkAllocateCommandBuffers(device->device, &bufferAllocateInfo, &commandBuffer))
 
             VkFenceCreateInfo fenceInfo = Initializers::InitFenceCreateInfo();
-            VK_CHECK(vkCreateFence(device, &fenceInfo, nullptr, &fence))
+            VK_CHECK(vkCreateFence(device->device, &fenceInfo, nullptr, &fence))
 
         }
 
         MemoryTransferManager::~MemoryTransferManager() {
 
-            vkDestroyFence(memoryManager->device, fence, nullptr);
-            vkDestroyCommandPool(memoryManager->device, commandPool, nullptr);
+            vkDestroyFence(device->device, fence, nullptr);
+            vkDestroyCommandPool(device->device, commandPool, nullptr);
 
         }
 
         void MemoryTransferManager::UploadBufferData(void *data, Buffer* destinationBuffer,
             VkBufferCopy bufferCopyDesc) {
 
-            VkDevice device = memoryManager->device;
             VmaAllocator allocator = memoryManager->allocator;
 
             auto stagingAllocation = CreateStagingBuffer(bufferCopyDesc.size);
@@ -61,10 +59,10 @@ namespace Atlas {
             VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
 
             // We wait here until the operation is finished
-            VK_CHECK(vkWaitForFences(device, 1, &fence, true, 9999999999))
-            VK_CHECK(vkResetFences(device, 1, &fence))
+            VK_CHECK(vkWaitForFences(device->device, 1, &fence, true, 9999999999))
+            VK_CHECK(vkResetFences(device->device, 1, &fence))
 
-            vkResetCommandPool(device, commandPool, 0);
+            vkResetCommandPool(device->device, commandPool, 0);
             DestroyStagingBuffer(stagingAllocation);
 
         }
@@ -72,7 +70,6 @@ namespace Atlas {
         void MemoryTransferManager::UploadBufferData(void *data, Buffer* destinationBuffer,
             VkBufferCopy bufferCopyDesc, VkCommandBuffer cmd) {
 
-            VkDevice device = memoryManager->device;
             VmaAllocator allocator = memoryManager->allocator;
 
             auto stagingAllocation = CreateStagingBuffer(bufferCopyDesc.size);
@@ -94,10 +91,10 @@ namespace Atlas {
             VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
 
             // We wait here until the operation is finished
-            VK_CHECK(vkWaitForFences(device, 1, &fence, true, 9999999999))
-            VK_CHECK(vkResetFences(device, 1, &fence))
+            VK_CHECK(vkWaitForFences(device->device, 1, &fence, true, 9999999999))
+            VK_CHECK(vkResetFences(device->device, 1, &fence))
 
-            vkResetCommandPool(device, commandPool, 0);
+            vkResetCommandPool(device->device, commandPool, 0);
             DestroyStagingBuffer(stagingAllocation);
 
             destinationBuffer->accessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -106,7 +103,6 @@ namespace Atlas {
 
         void MemoryTransferManager::UploadImageData(void *data, Image* image, VkOffset3D offset, VkExtent3D extent) {
 
-            VkDevice device = memoryManager->device;
             VmaAllocator allocator = memoryManager->allocator;
 
             VkCommandBufferBeginInfo cmdBeginInfo =
@@ -187,7 +183,7 @@ namespace Atlas {
                 auto newLayout = mipLevels > 1 ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL :
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 auto dstAccessMask = mipLevels > 1 ? VK_ACCESS_TRANSFER_READ_BIT :
-                    VK_ACCESS_TRANSFER_WRITE_BIT;
+                    VK_ACCESS_SHADER_READ_BIT;
                 auto dstStageMask = mipLevels > 1 ? VK_PIPELINE_STAGE_TRANSFER_BIT :
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
@@ -198,7 +194,8 @@ namespace Atlas {
 
                 vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
                     dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
-                image->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                image->layout = newLayout;
+                image->accessMask = dstAccessMask;
             }
 
             if (mipLevels > 1) GenerateMipMaps(image, commandBuffer);
@@ -209,10 +206,10 @@ namespace Atlas {
             VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
 
             // We wait here until the operation is finished
-            VK_CHECK(vkWaitForFences(device, 1, &fence, true, 9999999999))
-            VK_CHECK(vkResetFences(device, 1, &fence))
+            VK_CHECK(vkWaitForFences(device->device, 1, &fence, true, 9999999999))
+            VK_CHECK(vkResetFences(device->device, 1, &fence))
 
-            vkResetCommandPool(device, commandPool, 0);
+            vkResetCommandPool(device->device, commandPool, 0);
             DestroyStagingBuffer(stagingAllocation);
 
             image->accessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -221,6 +218,15 @@ namespace Atlas {
 
         void MemoryTransferManager::UploadImageData(void *data, Image* image, VkOffset3D offset,
             VkExtent3D extent, VkCommandBuffer cmd) {
+
+
+
+        }
+
+        void MemoryTransferManager::RetrieveImageData(void *data, Image *image, VkOffset3D offset,
+            VkExtent3D extent, bool block) {
+
+            if (block) device->WaitForIdle();
 
 
 
@@ -293,13 +299,12 @@ namespace Atlas {
                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
 
-            image->accessMask = VK_ACCESS_SHADER_READ_BIT;
+            image->layout = imageBarrier.newLayout;
+            image->accessMask = imageBarrier.dstAccessMask;
 
         }
 
         void MemoryTransferManager::ImmediateSubmit(std::function<void(VkCommandBuffer)> &&function) {
-
-            VkDevice device = memoryManager->device;
 
             VkCommandBufferBeginInfo cmdBeginInfo =
                 Initializers::InitCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -314,10 +319,10 @@ namespace Atlas {
             VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
 
             // We wait here until the operation is finished
-            vkWaitForFences(device, 1, &fence, true, 9999999999);
-            vkResetFences(device, 1, &fence);
+            vkWaitForFences(device->device, 1, &fence, true, 9999999999);
+            vkResetFences(device->device, 1, &fence);
 
-            vkResetCommandPool(device, commandPool, 0);
+            vkResetCommandPool(device->device, commandPool, 0);
 
         }
 

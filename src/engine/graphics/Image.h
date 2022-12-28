@@ -83,6 +83,7 @@ namespace Atlas {
             ImageType type;
 
         private:
+            GraphicsDevice* device;
             MemoryManager* memoryManager;
 
         };

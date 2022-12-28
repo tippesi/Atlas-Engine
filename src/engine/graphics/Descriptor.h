@@ -28,7 +28,7 @@ namespace Atlas {
         private:
             VkDescriptorPool InitPool();
 
-            MemoryManager* memoryManager;
+            GraphicsDevice* device;
             std::vector<VkDescriptorPool> pools;
 
         };

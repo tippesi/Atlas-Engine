@@ -304,27 +304,27 @@ namespace Atlas {
 			material.twoSided = twoSided;
 			
 			if (images.baseColorImage.HasData()) {
-				material.baseColorMap = std::make_shared<Texture::VulkanTexture>(images.baseColorImage);
+				material.baseColorMap = std::make_shared<Texture::Texture2D>(images.baseColorImage);
 				material.baseColorMapPath = images.baseColorImage.fileName;
 			}
 			if (images.opacityImage.HasData()) {
-				material.opacityMap = std::make_shared<Texture::VulkanTexture>(images.opacityImage);
+				material.opacityMap = std::make_shared<Texture::Texture2D>(images.opacityImage);
 				material.opacityMapPath = images.opacityImage.fileName;
 			}
 			if (images.roughnessImage.HasData()) {
-				material.roughnessMap = std::make_shared<Texture::VulkanTexture>(images.roughnessImage);
+				material.roughnessMap = std::make_shared<Texture::Texture2D>(images.roughnessImage);
 				material.roughnessMapPath = images.roughnessImage.fileName;
 			}
 			if (images.metallicImage.HasData()) {
-				material.metalnessMap = std::make_shared<Texture::VulkanTexture>(images.metallicImage);
+				material.metalnessMap = std::make_shared<Texture::Texture2D>(images.metallicImage);
 				material.metalnessMapPath = images.metallicImage.fileName;
 			}
 			if (images.normalImage.HasData()) {
-				material.normalMap = std::make_shared<Texture::VulkanTexture>(images.normalImage);
+				material.normalMap = std::make_shared<Texture::Texture2D>(images.normalImage);
 				material.normalMapPath = images.normalImage.fileName;
 			}
 			if (images.displacementImage.HasData()) {
-				material.displacementMap = std::make_shared<Texture::VulkanTexture>(images.displacementImage);
+				material.displacementMap = std::make_shared<Texture::Texture2D>(images.displacementImage);
 				material.displacementMapPath = images.displacementImage.fileName;
 			}
 			

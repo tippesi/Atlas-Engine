@@ -66,6 +66,7 @@ namespace Atlas {
 
 			materials[slot] = material;
 
+            /*
 			if (material->HasBaseColorMap()) {
 				baseColorMaps.Copy(*material->baseColorMap, 0, 0, 0, 0, 0, slot,
 					baseColorMaps.width, baseColorMaps.height, 1);
@@ -101,6 +102,7 @@ namespace Atlas {
 
 			displacementMaps.Bind();
 			displacementMaps.GenerateMipmap();
+             */
 
 		}
 

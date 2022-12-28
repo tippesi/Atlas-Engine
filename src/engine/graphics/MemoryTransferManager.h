@@ -11,6 +11,7 @@ namespace Atlas {
 
     namespace Graphics {
 
+        class GraphicsDevice;
         class MemoryManager;
         class Buffer;
         class Image;
@@ -18,7 +19,8 @@ namespace Atlas {
         class MemoryTransferManager {
 
         public:
-            MemoryTransferManager(MemoryManager* memManager, uint32_t transferQueueFamilyIndex, VkQueue transferQueue);
+            MemoryTransferManager(GraphicsDevice* device, MemoryManager* memManager,
+                uint32_t transferQueueFamilyIndex, VkQueue transferQueue);
 
             ~MemoryTransferManager();
 
@@ -29,6 +31,8 @@ namespace Atlas {
             void UploadImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent);
 
             void UploadImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent, VkCommandBuffer cmd);
+
+            void RetrieveImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent, bool block = true);
 
             void GenerateMipMaps(Image* image);
 
@@ -53,6 +57,7 @@ namespace Atlas {
             uint32_t transferQueueFamilyIndex;
             VkQueue transferQueue;
 
+            GraphicsDevice* device;
             MemoryManager* memoryManager;
 
         };

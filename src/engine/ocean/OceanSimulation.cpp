@@ -99,12 +99,12 @@ namespace Atlas {
 			h0.GetUniform("windDependency")->SetValue(windDependency);
 			h0.GetUniform("waveSurpression")->SetValue(waveSurpression);
 
+            /*
 			noise0.Bind(2);
 			noise1.Bind(3);
 			noise2.Bind(4);
 			noise3.Bind(5);
 
-            /*
 			h0K.Bind(GL_WRITE_ONLY, 0);
 
 			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
@@ -154,7 +154,7 @@ namespace Atlas {
 
 			if (!update) return;
 
-			displacementMapPrev.Copy(displacementMap);
+			// displacementMapPrev.Copy(displacementMap);
 
             Graphics::Profiler::BeginQuery("Compute h(t)");
 

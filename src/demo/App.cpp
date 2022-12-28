@@ -108,8 +108,23 @@ void App::Render(float deltaTime) {
                 ImGui::TableHeadersRow();
 
                 auto threadData = Atlas::Graphics::Profiler::GetQueriesAverage(64, order);
-                for (auto& query : threadData.front().queries)
-                    displayQuery(query);
+                for (auto& thread : threadData) {
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+
+                    ImGuiTreeNodeFlags expandable = 0;
+                    if (!thread.queries.size()) expandable = ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                                                             ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet;
+
+                    bool open = ImGui::TreeNodeEx(thread.name.c_str(), expandable | ImGuiTreeNodeFlags_SpanFullWidth);
+
+                    if (open && thread.queries.size()) {
+                        for (auto &query: thread.queries)
+                            displayQuery(query);
+                        ImGui::TreePop();
+                    }
+                }
+
 
                 ImGui::EndTable();
             }

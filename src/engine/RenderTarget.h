@@ -16,16 +16,21 @@ namespace Atlas {
 		DownsampledRenderTarget() = default;
 
 		DownsampledRenderTarget(ivec2 resolution) {
-            /*
-			depthTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R32F, GL_CLAMP_TO_EDGE, GL_NEAREST);
-			normalTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-			geometryNormalTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-			roughnessMetallicAoTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
-			velocityTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_NEAREST);
-			offsetTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R8I, GL_CLAMP_TO_EDGE, GL_LINEAR);
-			materialIdxTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST);
-             */
-             }
+			depthTexture = new Texture::Texture2D(resolution.x, resolution.y, VK_FORMAT_R32_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+			normalTexture = new Texture::Texture2D(resolution.x, resolution.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+			geometryNormalTexture = new Texture::Texture2D(resolution.x, resolution.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+			roughnessMetallicAoTexture = new Texture::Texture2D(resolution.x, resolution.y, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+			velocityTexture = new Texture::Texture2D(resolution.x, resolution.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+			offsetTexture = new Texture::Texture2D(resolution.x, resolution.y, VK_FORMAT_R8_SINT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+			materialIdxTexture = new Texture::Texture2D(resolution.x, resolution.y, VK_FORMAT_R16_UINT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+        }
 
 		void Resize(ivec2 resolution) {
 			depthTexture->Resize(resolution.x, resolution.y);

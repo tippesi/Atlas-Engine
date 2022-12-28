@@ -1,4 +1,5 @@
 #include "MemoryManager.h"
+#include "GraphicsDevice.h"
 
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
@@ -9,24 +10,23 @@ namespace Atlas {
 
     namespace Graphics {
 
-        MemoryManager::MemoryManager(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device,
-            uint32_t transferQueueFamilyIndex, VkQueue transferQueue) : instance(instance),
-            physicalDevice(physicalDevice), device(device) {
+        MemoryManager::MemoryManager(GraphicsDevice* device,
+            uint32_t transferQueueFamilyIndex, VkQueue transferQueue) : device(device) {
 
             VmaVulkanFunctions vulkanFunctions = {};
             vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
             vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
 
             VmaAllocatorCreateInfo allocatorInfo = {};
-            allocatorInfo.physicalDevice = physicalDevice;
-            allocatorInfo.device = device;
-            allocatorInfo.instance = instance;
+            allocatorInfo.physicalDevice = device->physicalDevice;
+            allocatorInfo.device = device->device;
+            allocatorInfo.instance = device->instance;
             allocatorInfo.pVulkanFunctions = &vulkanFunctions;
             VK_CHECK(vmaCreateAllocator(&allocatorInfo, &allocator))
 
-            vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+            vkGetPhysicalDeviceProperties(device->physicalDevice, &deviceProperties);
 
-            transferManager = new MemoryTransferManager(this, transferQueueFamilyIndex, transferQueue);
+            transferManager = new MemoryTransferManager(device, this, transferQueueFamilyIndex, transferQueue);
 
         }
 
@@ -46,6 +46,13 @@ namespace Atlas {
 
             deleteRenderPassAllocations.
                 emplace_back(DeleteResource<RenderPass> { allocation, frameIndex + framesToDeletion });
+
+        }
+
+        void MemoryManager::DestroyAllocation(Ref<FrameBuffer>& allocation) {
+
+            deleteFrameBufferAllocations.
+                emplace_back(DeleteResource<FrameBuffer> { allocation, frameIndex + framesToDeletion });
 
         }
 
@@ -105,6 +112,12 @@ namespace Atlas {
 
         }
 
+        void MemoryManager::DestroyRawAllocation(std::function<void()> destroyLambda) {
+
+            deleteRawAllocations.push_back(DeleteLambda { destroyLambda, frameIndex + framesToDeletion } );
+
+        }
+
         void MemoryManager::UpdateFrameIndex(size_t frameIndex) {
 
             this->frameIndex = frameIndex;
@@ -113,8 +126,19 @@ namespace Atlas {
 
         void MemoryManager::DeleteData() {
 
-            DeleteAllocations(deleteRenderPassAllocations);
+            // First delete raw data, mustn't have dependencies
+            while (deleteRawAllocations.size() &&
+                deleteRawAllocations.front().deleteFrame <= frameIndex) {
+                auto &deleteLambda = deleteRawAllocations.front();
+
+                deleteLambda.lambda();
+
+                deleteRawAllocations.pop_front();
+            }
+
             DeleteAllocations(deletePipelineAllocations);
+            DeleteAllocations(deleteFrameBufferAllocations);
+            DeleteAllocations(deleteRenderPassAllocations);
             DeleteAllocations(deleteShaderAllocations);
             DeleteAllocations(deleteBufferAllocations);
             DeleteAllocations(deleteMultiBufferAllocations);

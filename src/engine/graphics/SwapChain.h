@@ -29,13 +29,15 @@ namespace Atlas {
 
         };
 
+        class GraphicsDevice;
+
         class SwapChain {
 
         public:
             SwapChain(const SwapChainSupportDetails& supportDetails, VkSurfaceKHR surface,
-                      MemoryManager* memManager, int desiredWidth, int32_t desiredHeight,
-                      VkPresentModeKHR desiredMode = VK_PRESENT_MODE_FIFO_KHR,
-                      SwapChain* oldSwapchain = nullptr);
+                GraphicsDevice* Device, int desiredWidth, int32_t desiredHeight,
+                VkPresentModeKHR desiredMode = VK_PRESENT_MODE_FIFO_KHR,
+                SwapChain* oldSwapchain = nullptr);
 
             ~SwapChain();
 
@@ -69,8 +71,7 @@ namespace Atlas {
             VkExtent2D ChooseExtent(VkSurfaceCapabilitiesKHR capabilities,
                                     int32_t desiredWidth, int32_t desiredHeight);
 
-            MemoryManager* memoryManager;
-            VkDevice device;
+            GraphicsDevice* device;
 
         };
 

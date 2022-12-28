@@ -12,6 +12,7 @@
 #include "Sampler.h"
 #include "Descriptor.h"
 #include "QueryPool.h"
+#include "Framebuffer.h"
 #include "MemoryManager.h"
 
 #include "../common/Ref.h"
@@ -77,19 +78,21 @@ namespace Atlas {
 
             Ref<RenderPass> CreateRenderPass(RenderPassDesc desc);
 
-            Ref<Shader> CreateShader(ShaderDesc shaderDesc);
+            Ref<FrameBuffer> CreateFrameBuffer(FrameBufferDesc desc);
+
+            Ref<Shader> CreateShader(ShaderDesc desc);
 
             Ref<Pipeline> CreatePipeline(GraphicsPipelineDesc desc);
 
             Ref<Pipeline> CreatePipeline(ComputePipelineDesc desc);
 
-            Ref<Buffer> CreateBuffer(BufferDesc bufferDesc);
+            Ref<Buffer> CreateBuffer(BufferDesc desc);
 
-            Ref<MultiBuffer> CreateMultiBuffer(BufferDesc bufferDesc);
+            Ref<MultiBuffer> CreateMultiBuffer(BufferDesc desc);
 
-            Ref<Image> CreateImage(ImageDesc imageDesc);
+            Ref<Image> CreateImage(ImageDesc desc);
 
-            Ref<Sampler> CreateSampler(SamplerDesc samplerDesc);
+            Ref<Sampler> CreateSampler(SamplerDesc desc);
 
             Ref<DescriptorPool> CreateDescriptorPool();
 
@@ -115,6 +118,7 @@ namespace Atlas {
             MemoryManager* memoryManager = nullptr;
             Surface* surface = nullptr;
 
+            VkInstance instance;
             VkPhysicalDevice physicalDevice;
             VkDevice device;
             VkPhysicalDeviceProperties deviceProperties;
@@ -164,6 +168,7 @@ namespace Atlas {
             QueueFamilyIndices queueFamilyIndices;
 
             std::vector<Ref<RenderPass>> renderPasses;
+            std::vector<Ref<FrameBuffer>> frameBuffers;
             std::vector<Ref<Shader>> shaders;
             std::vector<Ref<Pipeline>> pipelines;
             std::vector<Ref<Buffer>> buffers;

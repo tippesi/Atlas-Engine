@@ -34,7 +34,7 @@ namespace Atlas {
          * Author: Dave Houlton <daveh@lunarg.com>
          *
          */
-        std::map<VkFormat, VulkanFormatInfo> FormatTable = {
+        inline std::map<VkFormat, VulkanFormatInfo> FormatTable = {
             {VK_FORMAT_UNDEFINED,                   {0, 0 }},
             {VK_FORMAT_R4G4_UNORM_PACK8,            {1, 2 }},
             {VK_FORMAT_R4G4B4A4_UNORM_PACK16,       {2, 4 }},
@@ -264,13 +264,13 @@ namespace Atlas {
             {VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM,                {6, 3 }}
         };
 
-        size_t GetFormatSize(VkFormat format) {
+        inline size_t GetFormatSize(VkFormat format) {
 
             return FormatTable[format].size;
 
         }
 
-        size_t GetFormatChannels(VkFormat format) {
+        inline size_t GetFormatChannels(VkFormat format) {
 
             return FormatTable[format].channels;
 

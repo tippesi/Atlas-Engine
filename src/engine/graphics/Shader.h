@@ -9,7 +9,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        class MemoryManager;
+        class GraphicsDevice;
 
         class ShaderStageFile {
         public:
@@ -71,7 +71,7 @@ namespace Atlas {
         class Shader {
 
         public:
-            Shader(MemoryManager* memManager, ShaderDesc& shaderDesc);
+            Shader(GraphicsDevice* device, ShaderDesc& shaderDesc);
 
             ~Shader();
 
@@ -91,7 +91,7 @@ namespace Atlas {
 
             bool CheckPushConstantsStageCompatibility();
 
-            MemoryManager* memoryManager = nullptr;
+            GraphicsDevice* device = nullptr;
 
         };
 

@@ -1,4 +1,5 @@
 #include "SwapChain.h"
+#include "GraphicsDevice.h"
 
 #include <cstdint>
 #include <limits>
@@ -36,8 +37,8 @@ namespace Atlas {
         }
 
         SwapChain::SwapChain(const SwapChainSupportDetails& supportDetails, VkSurfaceKHR surface,
-            MemoryManager* memManager, int desiredWidth, int32_t desiredHeight, VkPresentModeKHR desiredMode,
-            SwapChain* oldSwapchain) : memoryManager(memManager), device(memManager->device) {
+            GraphicsDevice* device, int desiredWidth, int32_t desiredHeight, VkPresentModeKHR desiredMode,
+            SwapChain* oldSwapchain) : device(device) {
 
             surfaceFormat = ChooseSurfaceFormat(supportDetails.formats);
             presentMode = ChoosePresentMode(supportDetails.presentModes, desiredMode);
@@ -64,11 +65,11 @@ namespace Atlas {
             createInfo.clipped = VK_TRUE;
             createInfo.oldSwapchain = oldSwapchain ? oldSwapchain->swapChain : VK_NULL_HANDLE;
 
-            VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain))
+            VK_CHECK(vkCreateSwapchainKHR(device->device, &createInfo, nullptr, &swapChain))
 
-            VK_CHECK(vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr))
+            VK_CHECK(vkGetSwapchainImagesKHR(device->device, swapChain, &imageCount, nullptr))
             images.resize(imageCount);
-            VK_CHECK(vkGetSwapchainImagesKHR(device, swapChain, &imageCount, images.data()))
+            VK_CHECK(vkGetSwapchainImagesKHR(device->device, swapChain, &imageCount, images.data()))
 
             VkExtent3D depthImageExtent = { extent.width, extent.height, 1} ;
 
@@ -80,12 +81,12 @@ namespace Atlas {
             allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
             allocationCreateInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-            vmaCreateImage(memManager->allocator, &imageCreateInfo, &allocationCreateInfo,
+            vmaCreateImage(device->memoryManager->allocator, &imageCreateInfo, &allocationCreateInfo,
                 &depthImageAllocation.image, &depthImageAllocation.allocation, nullptr);
 
             VkImageViewCreateInfo depthImageViewCreateInfo = Initializers::InitImageViewCreateInfo(depthFormat,
                 depthImageAllocation.image, VK_IMAGE_ASPECT_DEPTH_BIT);
-            VK_CHECK(vkCreateImageView(device, &depthImageViewCreateInfo, nullptr, &depthImageView));
+            VK_CHECK(vkCreateImageView(device->device, &depthImageViewCreateInfo, nullptr, &depthImageView));
 
             VkAttachmentDescription2 colorAttachmentDescription = Initializers::InitAttachmentDescription(
                 surfaceFormat.format, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
@@ -132,7 +133,7 @@ namespace Atlas {
             renderPassCreateInfo.dependencyCount = 2;
             renderPassCreateInfo.pDependencies = dependencies;
 
-            VK_CHECK(vkCreateRenderPass2(device, &renderPassCreateInfo, nullptr, &renderPass))
+            VK_CHECK(vkCreateRenderPass2(device->device, &renderPassCreateInfo, nullptr, &renderPass))
 
             imageLayouts.resize(imageCount);
             imageViews.resize(imageCount);
@@ -153,7 +154,7 @@ namespace Atlas {
                 imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
                 imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-                VK_CHECK(vkCreateImageView(device, &imageViewCreateInfo, nullptr, &imageViews[i]))
+                VK_CHECK(vkCreateImageView(device->device, &imageViewCreateInfo, nullptr, &imageViews[i]))
 
                 // We can use a single depth texture for all frame buffers
                 VkImageView attachments[] = { imageViews[i], depthImageView };
@@ -165,7 +166,7 @@ namespace Atlas {
                 frameBufferInfo.width = extent.width;
                 frameBufferInfo.height = extent.height;
                 frameBufferInfo.layers = 1;
-                VK_CHECK(vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &frameBuffers[i]));
+                VK_CHECK(vkCreateFramebuffer(device->device, &frameBufferInfo, nullptr, &frameBuffers[i]));
 
                 imageLayouts[i] = VK_IMAGE_LAYOUT_UNDEFINED;
             }
@@ -173,32 +174,33 @@ namespace Atlas {
             depthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
             VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
-            VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore))
+            VK_CHECK(vkCreateSemaphore(device->device, &semaphoreInfo, nullptr, &semaphore))
 
         }
 
         SwapChain::~SwapChain() {
 
             for (auto& frameBuffer : frameBuffers) {
-                vkDestroyFramebuffer(device, frameBuffer, nullptr);
+                vkDestroyFramebuffer(device->device, frameBuffer, nullptr);
             }
 
             for (auto& imageView : imageViews) {
-                vkDestroyImageView(device, imageView, nullptr);
+                vkDestroyImageView(device->device, imageView, nullptr);
             }
 
-            vkDestroyImageView(device, depthImageView, nullptr);
-            vmaDestroyImage(memoryManager->allocator, depthImageAllocation.image, depthImageAllocation.allocation);
+            vkDestroyImageView(device->device, depthImageView, nullptr);
+            vmaDestroyImage(device->memoryManager->allocator,
+                depthImageAllocation.image, depthImageAllocation.allocation);
 
-            vkDestroySemaphore(device, semaphore, nullptr);
-            vkDestroyRenderPass(device, renderPass, nullptr);
-            vkDestroySwapchainKHR(device, swapChain, nullptr);
+            vkDestroySemaphore(device->device, semaphore, nullptr);
+            vkDestroyRenderPass(device->device, renderPass, nullptr);
+            vkDestroySwapchainKHR(device->device, swapChain, nullptr);
 
         }
 
         bool SwapChain::AcquireImageIndex() {
 
-            auto result = vkAcquireNextImageKHR(device, swapChain, 1000000000,
+            auto result = vkAcquireNextImageKHR(device->device, swapChain, 1000000000,
                 semaphore, nullptr, &aquiredImageIndex);
 
             if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) return true;

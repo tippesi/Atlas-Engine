@@ -7,35 +7,14 @@ namespace Atlas {
 
     namespace Texture {
 
-		Texture2DArray::Texture2DArray(const Texture2DArray& that) {
+        Texture2DArray::Texture2DArray(int32_t width, int32_t height, int32_t layers, VkFormat format,
+            Wrapping wrapping, Filtering filtering) {
 
-			DeepCopy(that);
-
-		}
-
-        Texture2DArray::Texture2DArray(int32_t width, int32_t height, int32_t layers, int32_t sizedFormat,
-                                       int32_t wrapping, int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
-
-            this->width = width;
-            this->height = height;
-            this->depth = layers;
-
-            // Generate(GL_TEXTURE_2D_ARRAY, sizedFormat, wrapping, filtering,
-            //          anisotropicFiltering, generateMipMaps);
+            this->format = format;
+            Reallocate(width, height, layers, filtering, wrapping);
+            RecreateSampler(filtering, wrapping);
 
         }
-
-		Texture2DArray& Texture2DArray::operator=(const Texture2DArray &that) {
-
-			if (this != &that) {
-
-				Texture::operator=(that);
-
-			}
-
-			return *this;
-
-		}
 
         void Texture2DArray::SetData(std::vector<uint8_t> &data, int32_t layer, int32_t count) {
 
@@ -46,11 +25,7 @@ namespace Atlas {
 		void Texture2DArray::SetData(std::vector<uint8_t>& data, int32_t x, int32_t y, int32_t z,
 			int32_t width, int32_t height, int32_t layers) {
 
-			Bind();
-            // glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, x, y, z, width, height, layers,
-            // 	TextureFormat::GetBaseFormat(sizedFormat), AE_UBYTE, data.data());
-
-			GenerateMipmap();
+            SetData(data, x, y, z, width, height, layers);
 
 		}
 
@@ -63,11 +38,7 @@ namespace Atlas {
 		void Texture2DArray::SetData(std::vector<uint16_t>& data, int32_t x, int32_t y, int32_t z,
 			int32_t width, int32_t height, int32_t layers) {
 
-			Bind();
-            // glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, x, y, z, width, height, layers,
-            // 	TextureFormat::GetBaseFormat(sizedFormat), AE_USHORT, data.data());
-
-			GenerateMipmap();
+            SetData(data, x, y, z, width, height, layers);
 
 		}
 
@@ -80,11 +51,7 @@ namespace Atlas {
 		void Texture2DArray::SetData(std::vector<float>& data, int32_t x, int32_t y, int32_t z,
 			int32_t width, int32_t height, int32_t layers) {
 
-			Bind();
-            // glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, x, y, z, width, height, layers,
-            // 	TextureFormat::GetBaseFormat(sizedFormat), AE_FLOAT, data.data());
-
-			GenerateMipmap();
+            SetData(data, x, y, z, width, height, layers);
 
 		}
 
@@ -93,17 +60,7 @@ namespace Atlas {
 			if (width != this->width || height != this->height ||
                 layers != this->depth) {
 
-				this->width = width;
-				this->height = height;
-				this->depth = layers;
-
-                /*
-				glDeleteTextures(1, &ID);
-				glGenTextures(1, &ID);
-
-				Generate(GL_TEXTURE_2D_ARRAY, sizedFormat, wrapping,
-					filtering, anisotropicFiltering, mipmaps);
-                 */
+                Reallocate(width, height, layers, filtering, wrapping);
 
 			}
 
@@ -111,19 +68,7 @@ namespace Atlas {
 
         void Texture2DArray::SaveToPNG(std::string filename, int32_t depth) {
 
-			Common::Image<uint8_t> image(width, height, channels);
-            image.fileFormat = AE_IMAGE_PNG;
 
-			image.SetData(GetData<uint8_t>(depth));
-			image.FlipHorizontally();
-
-            Loader::ImageLoader::SaveImage(image, filename);
-
-        }
-
-        void Texture2DArray::ReserveStorage(int32_t mipCount) {
-
-            // glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipCount, sizedFormat, width, height, depth);
 
         }
 

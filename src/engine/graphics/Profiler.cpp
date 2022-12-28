@@ -90,6 +90,8 @@ namespace Atlas {
             std::lock_guard lock(unevaluatedThreadContextsMutex);
 
             auto& context = GetThreadContext();
+
+            context.isValid = false;
             unevaluatedThreadContexts.push_back(context);
 
         }
@@ -302,7 +304,7 @@ namespace Atlas {
 
             auto it = std::find_if(threadContexts.begin(), threadContexts.end(),
                 [&](ThreadContext& context) {
-                    return threadId == context.id;
+                    return threadId == context.id && context.isValid;
                 });
 
             assert(it != threadContexts.end() && "Thread context not found. Missing a \

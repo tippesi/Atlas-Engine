@@ -23,8 +23,6 @@ namespace Atlas {
             RenderPassAttachment colorAttachments[MAX_COLOR_ATTACHMENTS];
             RenderPassAttachment depthAttachment;
 
-            VkExtent2D extent = { 1, 1 };
-
             VkClearValue colorClearValue = { .color = { { 1.0f, 1.0f, 1.0f, 1.0f } } };
             VkClearValue depthClearValue = { .depthStencil = {.depth = 1.0f } };
 
@@ -42,6 +40,10 @@ namespace Atlas {
 
             void AttachDepth(RenderPassAttachment& attachment);
 
+            void RefreshColorImage(Ref<Image>& image, uint32_t slot);
+
+            void RefreshDepthImage(Ref<Image>& image);
+
             Ref<Image>& GetColorImage(uint32_t slot);
 
             Ref<Image>& GetDepthImage();
@@ -52,9 +54,8 @@ namespace Atlas {
 
             RenderPassAttachment colorAttachments[MAX_COLOR_ATTACHMENTS];
             RenderPassAttachment depthAttachment;
-            std::vector<VkFramebuffer> frameBuffers;
 
-            VkExtent2D extent;
+            uint32_t colorAttachmentCount = 0;
 
             VkClearValue colorClearValue = { .color = { { 1.0f, 1.0f, 1.0f, 1.0f } } };
             VkClearValue depthClearValue = { .depthStencil = {.depth = 1.0f } };
@@ -68,7 +69,6 @@ namespace Atlas {
 
             std::vector<VkAttachmentDescription2> attachmentDescriptions;
             std::vector<VkSubpassDependency2> subPassDependencies;
-            std::vector<VkImageView> imageViews;
 
             std::vector<VkAttachmentReference2> colorAttachmentReferences;
             VkAttachmentReference2 depthAttachmentReference;

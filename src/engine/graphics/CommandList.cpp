@@ -101,10 +101,8 @@ namespace Atlas {
 
         }
 
-        void CommandList::BeginRenderPass(const Ref<RenderPass>& renderPass, bool clear,
-            uint32_t layer, bool autoAdjustImageLayouts) {
-
-            assert(layer < uint32_t(renderPass->frameBuffers.size()) && "Layer not available");
+        void CommandList::BeginRenderPass(const Ref<RenderPass>& renderPass, const Ref<FrameBuffer>& frameBuffer,
+            bool clear, bool autoAdjustImageLayouts) {
 
             if (autoAdjustImageLayouts) {
                 std::vector<VkImageMemoryBarrier> barriers;
@@ -143,8 +141,8 @@ namespace Atlas {
             rpInfo.renderPass = renderPass->renderPass;
             rpInfo.renderArea.offset.x = 0;
             rpInfo.renderArea.offset.y = 0;
-            rpInfo.renderArea.extent = renderPass->extent;
-            rpInfo.framebuffer = renderPass->frameBuffers[layer];
+            rpInfo.renderArea.extent = frameBuffer->extent;
+            rpInfo.framebuffer = frameBuffer->frameBuffer;
 
             std::vector<VkClearValue> clearValues;
             for (auto& attachment : renderPass->colorAttachments) {
@@ -165,6 +163,7 @@ namespace Atlas {
 
             vkCmdBeginRenderPass(commandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
             renderPassInUse = renderPass;
+            frameBufferInUse = frameBuffer;
 
             if (clear) ClearAttachments();
 
@@ -193,6 +192,7 @@ namespace Atlas {
 
             swapChainInUse = nullptr;
             renderPassInUse = nullptr;
+            frameBufferInUse = nullptr;
 
         }
 
@@ -312,7 +312,7 @@ namespace Atlas {
                 clearRect.layerCount = 1;
                 clearRect.baseArrayLayer = 0;
                 clearRect.rect.offset = { 0, 0 };
-                clearRect.rect.extent = renderPassInUse->extent;
+                clearRect.rect.extent = frameBufferInUse->extent;
             }
 
             vkCmdClearAttachments(commandBuffer, uint32_t(clearAttachments.size()),
@@ -655,7 +655,7 @@ namespace Atlas {
                 extent = swapChainInUse->extent;
             }
             else if (renderPassInUse) {
-                extent = renderPassInUse->extent;
+                extent = frameBufferInUse->extent;
             }
             else {
                 assert(0 && "No valid render pass found");

@@ -2,25 +2,19 @@
 #define AE_TEXTURE2DARRAY_H
 
 #include "../System.h"
-#include "Texture.h"
+#include "VulkanTexture.h"
 
 namespace Atlas {
 
     namespace Texture {
 
-        class Texture2DArray : public Texture {
+        class Texture2DArray : public VulkanTexture {
 
         public:
 			/**
 			 * Constructs a Texture2DArray object.
 			 */
             Texture2DArray() = default;
-
-            /**
-             * Constructs a Texture2DArray object.
-             * @param that Another Texture2DArray object.
-             */
-            Texture2DArray(const Texture2DArray& that);
 
             /**
               * Construct a Texture2DArray object.
@@ -33,17 +27,8 @@ namespace Atlas {
               * @param anisotropicFiltering Whether or not anisotropic filtering is used.
               * @param generateMipMaps Whether or not mipmap can be used. Generate using GenerateMipmap()
               */
-            Texture2DArray(int32_t width, int32_t height, int32_t layers, int32_t sizedFormat,
-                int32_t wrapping = /*GL_CLAMP_TO_EDGE*/0, int32_t filtering = /*GL_NEAREST*/0,
-				bool anisotropicFiltering = false, bool generateMipMaps = false);
-
-			/**
-			 * Copies the data from another texture to the texture object.
-			 * @param that Another texture.
-			 * @return A reference to the texture.
-			 * @note The graphics API object will be changed.
-			 */
-			Texture2DArray& operator=(const Texture2DArray& that);
+            Texture2DArray(int32_t width, int32_t height, int32_t layers, VkFormat format,
+                Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest);
 
             /**
              * Sets the data of the texture object.
@@ -126,9 +111,6 @@ namespace Atlas {
              * @param layer
              */
             void SaveToPNG(std::string filename, int32_t layer);
-
-        protected:
-            void ReserveStorage(int32_t mipCount) override;
 
         };
 

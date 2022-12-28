@@ -7,7 +7,7 @@ namespace Atlas {
 
         Image::Image(GraphicsDevice *device, ImageDesc &desc) : aspectFlags(desc.aspectFlags),
             width(desc.width), height(desc.height), depth(desc.depth), layers(desc.layers), format(desc.format),
-            domain(desc.domain), type(desc.type), memoryManager(device->memoryManager) {
+            domain(desc.domain), type(desc.type), device(device), memoryManager(device->memoryManager) {
 
             VkExtent3D imageExtent;
             imageExtent.width = desc.width;
@@ -46,14 +46,14 @@ namespace Atlas {
             if (desc.mipMapping) {
                 imageViewInfo.subresourceRange.levelCount = mipLevels;
             }
-            VK_CHECK(vkCreateImageView(memoryManager->device, &imageViewInfo, nullptr, &view))
+            VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &view))
 
             // This will just duplicate the view for single-layered images, don't care for now
             layerViews.resize(layers);
             for (uint32_t i = 0; i < layers; i++) {
                 imageViewInfo.subresourceRange.baseArrayLayer = i;
                 imageViewInfo.subresourceRange.layerCount = 1;
-                VK_CHECK(vkCreateImageView(memoryManager->device, &imageViewInfo, nullptr, &layerViews[i]))
+                VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &layerViews[i]))
             }
 
             if (desc.data) SetData(desc.data, 0, 0, 0, desc.width, desc.height, desc.layers);
@@ -62,9 +62,9 @@ namespace Atlas {
 
         Image::~Image() {
 
-            vkDestroyImageView(memoryManager->device, view, nullptr);
+            vkDestroyImageView(device->device, view, nullptr);
             for (auto layerView : layerViews) {
-                vkDestroyImageView(memoryManager->device, layerView, nullptr);
+                vkDestroyImageView(device->device, layerView, nullptr);
             }
             vmaDestroyImage(memoryManager->allocator, image, allocation);
 
