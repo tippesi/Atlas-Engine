@@ -20,8 +20,12 @@ namespace Atlas {
                 mipLevels = uint32_t(floor(log2(glm::max(float(width), float(height)))) + 1);
                 imageInfo.mipLevels = mipLevels;
             }
-            if (desc.type == ImageType::Image1DArray || desc.type == ImageType::Image2DArray) {
+            if (desc.type == ImageType::Image1DArray || desc.type == ImageType::Image2DArray ||
+                desc.type == ImageType::ImageCube) {
                 imageInfo.arrayLayers = desc.layers;
+            }
+            if (desc.type == ImageType::ImageCube) {
+                imageInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
             }
 
             VmaAllocationCreateInfo allocationCreateInfo = {};
@@ -38,6 +42,7 @@ namespace Atlas {
                 case ImageType::Image2D: viewType = VK_IMAGE_VIEW_TYPE_2D; break;
                 case ImageType::Image2DArray: viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY; break;
                 case ImageType::Image3D: viewType = VK_IMAGE_VIEW_TYPE_3D; break;
+                case ImageType::ImageCube: viewType = VK_IMAGE_VIEW_TYPE_CUBE; break;
                 default: viewType = VK_IMAGE_VIEW_TYPE_3D; break;
             }
 
@@ -49,11 +54,18 @@ namespace Atlas {
             VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &view))
 
             // This will just duplicate the view for single-layered images, don't care for now
-            layerViews.resize(layers);
-            for (uint32_t i = 0; i < layers; i++) {
-                imageViewInfo.subresourceRange.baseArrayLayer = i;
-                imageViewInfo.subresourceRange.layerCount = 1;
-                VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &layerViews[i]))
+            if (desc.type != ImageType::ImageCube) {
+                layerViews.resize(layers);
+                for (uint32_t i = 0; i < layers; i++) {
+                    imageViewInfo.subresourceRange.baseArrayLayer = i;
+                    imageViewInfo.subresourceRange.layerCount = 1;
+                    VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &layerViews[i]))
+                }
+            }
+            else {
+                // A cubemap can only have one valid view
+                layerViews.resize(1);
+                VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &layerViews[0]))
             }
 
             if (desc.data) SetData(desc.data, 0, 0, 0, desc.width, desc.height, desc.depth, 0, desc.layers);
@@ -95,6 +107,7 @@ namespace Atlas {
                 case ImageType::Image1D:
                 case ImageType::Image1DArray: return VK_IMAGE_TYPE_1D;
                 case ImageType::Image2D:
+                case ImageType::ImageCube:
                 case ImageType::Image2DArray: return VK_IMAGE_TYPE_2D;
                 case ImageType::Image3D: return VK_IMAGE_TYPE_3D;
             }

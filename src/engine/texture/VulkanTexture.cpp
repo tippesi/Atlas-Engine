@@ -18,6 +18,13 @@ namespace Atlas {
 
         }
 
+        bool VulkanTexture::IsValid() const {
+
+            return width > 0 && height > 0 &&
+                   channels > 0 && depth > 0;
+
+        }
+
         void VulkanTexture::SetData(std::vector<uint8_t> &data) {
 
             image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
@@ -52,7 +59,8 @@ namespace Atlas {
             int32_t width, int32_t height, int32_t depth) {
 
             if (image->type == Graphics::ImageType::Image1DArray ||
-                image->type == Graphics::ImageType::Image2DArray)   {
+                image->type == Graphics::ImageType::Image2DArray ||
+                image->type == Graphics::ImageType::ImageCube)   {
                 image->SetData(data, uint32_t(x), uint32_t(y), 0,
                     uint32_t(width), uint32_t(height), 1,
                     uint32_t(z), uint32_t(depth));
@@ -82,7 +90,8 @@ namespace Atlas {
             }
 
             auto arrayType = imageType == Graphics::ImageType::Image2DArray ||
-                imageType == Graphics::ImageType::Image1DArray;
+                imageType == Graphics::ImageType::Image1DArray ||
+                imageType == Graphics::ImageType::ImageCube;
 
             auto imageDesc = Graphics::ImageDesc {
                 .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT |

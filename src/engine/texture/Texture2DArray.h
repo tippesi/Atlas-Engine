@@ -21,11 +21,9 @@ namespace Atlas {
               * @param width The width of the texture.
               * @param height The height of the texture.
               * @param layers The number of texture depth.
-              * @param sizedFormat The sized texture format. See {@link TextureFormat.h} for more.
+              * @param format The texture format.
               * @param wrapping The wrapping of the texture. Controls texture border behaviour.
               * @param filtering The filtering of the texture.
-              * @param anisotropicFiltering Whether or not anisotropic filtering is used.
-              * @param generateMipMaps Whether or not mipmap can be used. Generate using GenerateMipmap()
               */
             Texture2DArray(int32_t width, int32_t height, int32_t layers, VkFormat format,
                 Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest);

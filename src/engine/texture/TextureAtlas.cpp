@@ -2,6 +2,7 @@
 
 #include "../Framebuffer.h"
 #include "../Log.h"
+#include "../graphics/GraphicsDevice.h"
 
 #include <algorithm>
 
@@ -98,19 +99,26 @@ namespace Atlas {
 				levels.push_back(levelSlices);
 			}
 
-			int32_t sizedFormat;
+			VkFormat format;
 
-            /*
 			switch (channels) {
-			case 1: sizedFormat = AE_R8; break;
-			case 2: sizedFormat = AE_RG8; break;
-			case 3: sizedFormat = AE_RGB8; break;
-			default: sizedFormat = AE_RGBA8; break;
+			case 1: format = VK_FORMAT_R8_UNORM; break;
+			case 2: format = VK_FORMAT_R8G8_UNORM; break;
+			case 3: format = VK_FORMAT_R8G8B8_UNORM; break;
+			default: format = VK_FORMAT_R8G8B8A8_UNORM; break;
 			}
 
-			textureArray = Texture2DArray(width, height, layers, sizedFormat, GL_CLAMP_TO_EDGE, GL_LINEAR);
+            auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
+            // Some device (like Apple M1) don't support RGB8_UNORM
+            if (!graphicsDevice->CheckFormatSupport(VK_FORMAT_R8G8B8_UNORM,
+                VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) && channels == 3) {
+                format = VK_FORMAT_R8G8B8A8_UNORM;
+                channels = 4;
+            }
 
-            */
+			textureArray = Texture2DArray(width, height, layers, format,
+                Wrapping::ClampToEdge, Filtering::Linear);
+
 			// Copy all levels to the texture array (note that the order levels are added is important)
 			for (auto& levelSlices : levels) {
 				FillAtlas(levelSlices);

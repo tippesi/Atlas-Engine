@@ -23,7 +23,7 @@ namespace Atlas {
 			 * Construct a Texture2D object.
 			 * @param width The width of the texture.
 			 * @param height The height of the texture.
-			 * @param sizedFormat The sized texture format. See {@link TextureFormat.h} for more.
+			 * @param format The texture format.
 			 * @param wrapping The wrapping of the texture. Controls texture border behaviour.
 			 * @param filtering The filtering of the texture.
 			 */

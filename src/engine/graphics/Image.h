@@ -23,7 +23,8 @@ namespace Atlas {
             Image1DArray,
             Image2D,
             Image2DArray,
-            Image3D
+            Image3D,
+            ImageCube
         };
 
         struct ImageDesc {

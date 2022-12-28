@@ -45,6 +45,15 @@ namespace Atlas {
                 Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest);
 
             /**
+             * Validates a texture.
+             * @return True, if the texture is considered valid, false otherwise
+             * @note The validity is checked by checking the width,
+             * height, channels and depth of the texture. No data is
+             * validated with this method.
+             */
+            bool IsValid() const;
+
+            /**
 			 * Sets the data of the texture
 			 * @param data A vector holding the new data.
 			 */
