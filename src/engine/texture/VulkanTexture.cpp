@@ -83,10 +83,22 @@ namespace Atlas {
 
             bool generateMipMaps = filtering == Filtering::MipMapLinear ||
                 filtering == Filtering::MipMapNearest || filtering == Filtering::Anisotropic;
+            bool depthFormat = format == VK_FORMAT_D32_SFLOAT || format == VK_FORMAT_D16_UNORM ||
+                format == VK_FORMAT_D16_UNORM_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 
             VkImageUsageFlags additionalUsageFlags = {};
             if (generateMipMaps) {
-                additionalUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+                additionalUsageFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            }
+            // We assume this texture was generated not for exclusive, but e.g. as framebuffer/storage texture
+            if (!generateMipMaps) {
+                if (depthFormat) {
+                    additionalUsageFlags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+                }
+                else {
+                    additionalUsageFlags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                    additionalUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
+                }
             }
 
             auto arrayType = imageType == Graphics::ImageType::Image2DArray ||
@@ -97,6 +109,7 @@ namespace Atlas {
                 .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT |
                               VK_IMAGE_USAGE_TRANSFER_DST_BIT | additionalUsageFlags,
                 .type = imageType,
+                .aspectFlags = depthFormat ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT,
                 .width = uint32_t(width),
                 .height = uint32_t(height),
                 .depth = arrayType ? 1 : uint32_t(depth),

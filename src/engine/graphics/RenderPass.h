@@ -13,10 +13,12 @@ namespace Atlas {
         class GraphicsDevice;
 
         struct RenderPassAttachment {
-            Ref<Image> image;
+            VkFormat imageFormat = {};
             VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
             VkImageLayout initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             VkImageLayout outputLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+            bool isValid = false;
         };
 
         struct RenderPassDesc {
@@ -39,14 +41,6 @@ namespace Atlas {
             void AttachColor(RenderPassAttachment& attachment, uint32_t slot);
 
             void AttachDepth(RenderPassAttachment& attachment);
-
-            void RefreshColorImage(Ref<Image>& image, uint32_t slot);
-
-            void RefreshDepthImage(Ref<Image>& image);
-
-            Ref<Image>& GetColorImage(uint32_t slot);
-
-            Ref<Image>& GetDepthImage();
 
             void Complete();
 

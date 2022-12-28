@@ -52,7 +52,7 @@ private:
     SceneSelection sceneSelection = SPONZA;
 
     Atlas::Renderer::PathTracerRenderTarget pathTraceTarget;
-    Atlas::RenderTarget* renderTarget;
+    Atlas::RenderTarget renderTarget;
     Atlas::Viewport viewport;
 
     Atlas::Font font;

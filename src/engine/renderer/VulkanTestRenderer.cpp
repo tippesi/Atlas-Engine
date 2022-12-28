@@ -74,19 +74,19 @@ namespace Atlas {
                 auto depthImage = device->CreateImage(depthImageDesc);
 
                 auto colorAttachment = Graphics::RenderPassAttachment{
-                    .image = colorImage,
+                    .imageFormat = colorImage->format,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                     .outputLayout = VK_IMAGE_LAYOUT_GENERAL,
                 };
                 auto colorAttachment2 = Graphics::RenderPassAttachment{
-                    .image = dummyImage,
+                    .imageFormat = dummyImage->format,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                     .outputLayout = VK_IMAGE_LAYOUT_GENERAL,
                 };
                 auto depthAttachment = Graphics::RenderPassAttachment{
-                    .image = depthImage,
+                    .imageFormat = depthImage->format,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                     .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -98,10 +98,11 @@ namespace Atlas {
                 mainRenderPass = device->CreateRenderPass(renderPassDesc);
                 auto frameBufferDesc = Graphics::FrameBufferDesc {
                     .renderPass = mainRenderPass,
-                    .attachments = {
-                        { Graphics::Attachment::ColorAttachment0 },
-                        { Graphics::Attachment::DepthAttachment }
+                    .colorAttachments = {
+                        { colorImage, 0, true },
+                        { dummyImage, 0, false }
                         },
+                    .depthAttachment = { depthImage, 0, true },
                     .extent = {1280, 720}
                 };
                 mainFrameBuffer = device->CreateFrameBuffer(frameBufferDesc);
@@ -233,7 +234,7 @@ namespace Atlas {
             Graphics::Profiler::EndAndBeginQuery("Compute pass");
 
             {
-                renderPassToComputeBarrier.Update(mainRenderPass->GetColorImage(0));
+                renderPassToComputeBarrier.Update(mainFrameBuffer->GetColorImage(0));
                 commandList->ImageMemoryBarrier(renderPassToComputeBarrier,
                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
@@ -246,7 +247,7 @@ namespace Atlas {
                 };
                 commandList->PushConstants(randomPushConstants, &randomConstants);
 
-                commandList->BindImage(mainRenderPass->GetColorImage(0), 0, 0);
+                commandList->BindImage(mainFrameBuffer->GetColorImage(0), 0, 0);
                 commandList->Dispatch(1280 / 8, 720 / 8, 1);
             }
 
@@ -254,13 +255,13 @@ namespace Atlas {
 
             {
                 auto imageBarriers = std::vector<Graphics::ImageBarrier>{ dstToTransferBarrier.Update(dstImage),
-                    attachmentToTransferBarrier.Update(mainRenderPass->GetColorImage(0)) };
+                    attachmentToTransferBarrier.Update(mainFrameBuffer->GetColorImage(0)) };
                 auto bufferBarriers = std::vector<Graphics::BufferBarrier>();
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 // Copy to other image
-                commandList->CopyImage(mainRenderPass->GetColorImage(0), dstImage);
+                commandList->CopyImage(mainFrameBuffer->GetColorImage(0), dstImage);
 
                 // Other image needs transition to be read optimal
                 dstToShaderReadBarrier.Update(dstImage);

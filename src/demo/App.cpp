@@ -10,7 +10,7 @@ void App::LoadContent() {
 
     UnlockFramerate();
 
-    renderTarget = new Atlas::RenderTarget(1920, 1080);
+    renderTarget = Atlas::RenderTarget(1920, 1080);
     pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
 
     auto icon = Atlas::Texture::Texture2D("icon.png");
@@ -890,7 +890,7 @@ void App::UnloadScene() {
 
 void App::SetResolution(int32_t width, int32_t height) {
 
-    renderTarget->Resize(width, height);
+    renderTarget.Resize(width, height);
     pathTraceTarget.Resize(width, height);
 
 }

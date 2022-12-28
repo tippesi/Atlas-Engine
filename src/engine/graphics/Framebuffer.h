@@ -10,38 +10,29 @@ namespace Atlas {
 
         class GraphicsDevice;
 
-        enum class Attachment {
-            ColorAttachment0 = 0,
-            ColorAttachment1 = 1,
-            ColorAttachment2 = 2,
-            ColorAttachment3 = 3,
-            ColorAttachment4 = 4,
-            ColorAttachment5 = 5,
-            ColorAttachment6 = 6,
-            ColorAttachment7 = 7,
-            DepthAttachment
-        };
-
         struct FrameBufferAttachmentDesc {
-            Attachment attachment;
+            Ref<Image> image = nullptr;
+
             uint32_t layer = 0;
+            bool writeEnabled = true;
         };
 
         struct FrameBufferDesc {
             Ref<RenderPass> renderPass;
-            std::vector<FrameBufferAttachmentDesc> attachments;
+
+            FrameBufferAttachmentDesc colorAttachments[MAX_COLOR_ATTACHMENTS];
+            FrameBufferAttachmentDesc depthAttachment;
 
             VkExtent2D extent;
             uint32_t layers = 1;
         };
 
         struct FrameBufferAttachment {
-            Attachment attachment;
-
-            uint32_t idx = 0;
+            Ref<Image> image = nullptr;
             uint32_t layer = 0;
 
             bool isValid = false;
+            bool writeEnabled = true;
         };
 
         class FrameBuffer {
@@ -51,6 +42,14 @@ namespace Atlas {
             ~FrameBuffer();
 
             void Refresh();
+
+            void ChangeColorAttachmentImage(Ref<Image>& image, uint32_t slot);
+
+            void ChangeDepthAttachmentImage(Ref<Image>& image);
+
+            Ref<Image>& GetColorImage(uint32_t slot);
+
+            Ref<Image>& GetDepthImage();
 
             VkFramebuffer frameBuffer;
 

@@ -166,11 +166,11 @@ namespace Atlas {
                 auto& fbColorAttachment = frameBuffer->colorAttachments[i];
 
                 // No valid attachment in the render pass, continue
-                if (!rpColorAttachment.image) continue;
+                if (!rpColorAttachment.isValid) continue;
 
                 auto blendAttachment = blendAttachmentState;
                 // Disable writing to attachments that are not in the frame buffer
-                if (!fbColorAttachment.isValid) {
+                if (!fbColorAttachment.writeEnabled) {
                     blendAttachment.colorWriteMask = 0;
                 }
                 colorBlendAttachments.push_back(blendAttachment);

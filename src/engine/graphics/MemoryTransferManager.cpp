@@ -221,8 +221,6 @@ namespace Atlas {
 
         void MemoryTransferManager::GenerateMipMaps(Image *image, VkCommandBuffer cmd) {
 
-            assert(image->type == ImageType::Image2D && "Generating mip maps for non 2D images not supported");
-
             VkImageMemoryBarrier imageBarrier = {};
             imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             imageBarrier.image = image->image;
@@ -230,11 +228,12 @@ namespace Atlas {
             imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             imageBarrier.subresourceRange.baseArrayLayer = 0;
-            imageBarrier.subresourceRange.layerCount = 1;
+            imageBarrier.subresourceRange.layerCount = image->layers;
             imageBarrier.subresourceRange.levelCount = 1;
 
             auto mipWidth = int32_t(image->width);
             auto mipHeight = int32_t(image->height);
+            auto mipDepth = int32_t(image->depth);
 
             for (uint32_t i = 1; i < image->mipLevels; i++) {
                 imageBarrier.subresourceRange.baseMipLevel = i - 1;
@@ -248,17 +247,19 @@ namespace Atlas {
 
                 VkImageBlit blit = {};
                 blit.srcOffsets[0] = { 0, 0, 0 };
-                blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+                blit.srcOffsets[1] = { mipWidth, mipHeight, mipDepth };
                 blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                 blit.srcSubresource.mipLevel = i - 1;
                 blit.srcSubresource.baseArrayLayer = 0;
-                blit.srcSubresource.layerCount = 1;
+                blit.srcSubresource.layerCount = image->layers;
                 blit.dstOffsets[0] = { 0, 0, 0 };
-                blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+                blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1,
+                                       mipHeight > 1 ? mipHeight / 2 : 1,
+                                       mipDepth > 1 ? mipDepth / 2 : 1 };
                 blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                 blit.dstSubresource.mipLevel = i;
                 blit.dstSubresource.baseArrayLayer = 0;
-                blit.dstSubresource.layerCount = 1;
+                blit.dstSubresource.layerCount = image->layers;
 
                 vkCmdBlitImage(cmd, image->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                     image->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
@@ -274,6 +275,7 @@ namespace Atlas {
 
                 if (mipWidth > 1) mipWidth /= 2;
                 if (mipHeight > 1) mipHeight /= 2;
+                if (mipDepth > 1) mipDepth /= 2;
             }
 
             imageBarrier.subresourceRange.baseMipLevel = image->mipLevels - 1;

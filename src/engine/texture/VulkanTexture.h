@@ -100,6 +100,8 @@ namespace Atlas {
             Wrapping wrapping;
             Filtering filtering;
 
+            VkFormat format;
+
         protected:
             void SetData(void* data, int32_t x, int32_t y, int32_t z,
                 int32_t width, int32_t height, int32_t depth);
@@ -108,8 +110,6 @@ namespace Atlas {
                 int32_t depth, Filtering filtering, Wrapping wrapping);
 
             void RecreateSampler(Filtering filtering, Wrapping wrapping);
-
-            VkFormat format;
 
         };
 

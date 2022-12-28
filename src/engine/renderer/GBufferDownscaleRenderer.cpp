@@ -58,7 +58,7 @@ namespace Atlas {
 
         }
 
-        void GBufferDownscaleRenderer::Downscale(DownsampledRenderTarget* rt, DownsampledRenderTarget* downsampledRt) {
+        void GBufferDownscaleRenderer::Downscale(RenderTargetData* rt, RenderTargetData* downsampledRt) {
 
             /*
             auto depthIn = rt->depthTexture;

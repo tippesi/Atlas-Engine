@@ -10,12 +10,12 @@ namespace Atlas {
 
             for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
                 auto& attachment = desc.colorAttachments[i];
-                if (!attachment.image) continue;
+                if (!attachment.imageFormat) continue;
 
                 AttachColor(attachment, i);
             }
 
-            if (desc.depthAttachment.image) AttachDepth(desc.depthAttachment);
+            if (desc.depthAttachment.imageFormat) AttachDepth(desc.depthAttachment);
             if (desc.completeInConstructor) Complete();
 
         }
@@ -32,44 +32,15 @@ namespace Atlas {
 
             assert(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
 
+            attachment.isValid = true;
             colorAttachments[slot] = attachment;
 
         }
 
         void RenderPass::AttachDepth(RenderPassAttachment& attachment) {
 
+            attachment.isValid = true;
             depthAttachment = attachment;
-
-        }
-
-        void RenderPass::RefreshColorImage(Ref<Image> &image, uint32_t slot) {
-
-            assert(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
-            assert(colorAttachments[slot].image && "Attachment wasn't valid");
-            assert(image->format == colorAttachments[slot].image->format && "Image formats need to be the same");
-
-            colorAttachments[slot].image = image;
-
-        }
-
-        void RenderPass::RefreshDepthImage(Ref<Image> &image) {
-
-            assert(depthAttachment.image && "Attachment wasn't valid");
-            assert(image->format == depthAttachment.image->format && "Image formats need to be the same");
-
-            depthAttachment.image = image;
-
-        }
-
-        Ref<Image> &RenderPass::GetColorImage(uint32_t slot) {
-
-            return colorAttachments[slot].image;
-
-        }
-
-        Ref<Image> &RenderPass::GetDepthImage() {
-
-            return depthAttachment.image;
 
         }
 
@@ -80,19 +51,19 @@ namespace Atlas {
 
             for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
                 auto& attachment = colorAttachments[i];
-                if (!attachment.image) continue;
+                if (!attachment.imageFormat) continue;
 
                 CompleteColorAttachment(attachment, i);
             }
 
-            if (depthAttachment.image) CompleteDepthAttachment(depthAttachment);
+            if (depthAttachment.imageFormat) CompleteDepthAttachment(depthAttachment);
 
             VkSubpassDescription2 subPassDescription = {};
             subPassDescription.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
             subPassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
             subPassDescription.colorAttachmentCount = uint32_t(colorAttachmentReferences.size());
             subPassDescription.pColorAttachments = colorAttachmentReferences.data();
-            if (depthAttachment.image) {
+            if (depthAttachment.imageFormat) {
                 subPassDescription.pDepthStencilAttachment = &depthAttachmentReference;
             }
 
@@ -113,7 +84,7 @@ namespace Atlas {
         void RenderPass::CompleteColorAttachment(RenderPassAttachment& attachment, uint32_t slot) {
 
             VkAttachmentDescription2 colorAttachmentDescription = Initializers::InitAttachmentDescription(
-                attachment.image->format, attachment.initialLayout, 
+                attachment.imageFormat, attachment.initialLayout,
                 attachment.outputLayout, attachment.loadOp);
 
             VkSubpassDependency2 colorDependency = {};
@@ -138,7 +109,7 @@ namespace Atlas {
         void RenderPass::CompleteDepthAttachment(RenderPassAttachment& attachment) {
 
             VkAttachmentDescription2 depthAttachmentDescription = Initializers::InitAttachmentDescription(
-                attachment.image->format, attachment.initialLayout,
+                attachment.imageFormat, attachment.initialLayout,
                 attachment.outputLayout, attachment.loadOp);
 
             VkSubpassDependency2 depthDependency = {};

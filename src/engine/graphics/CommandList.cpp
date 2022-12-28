@@ -106,26 +106,29 @@ namespace Atlas {
 
             if (autoAdjustImageLayouts) {
                 std::vector<VkImageMemoryBarrier> barriers;
-                for (auto &attachment: renderPass->colorAttachments) {
-                    if (!attachment.image) continue;
-                    if (attachment.image->layout != attachment.initialLayout) {
-                        auto barrier = Initializers::InitImageMemoryBarrier(attachment.image->image,
-                            attachment.image->layout, attachment.initialLayout, VK_ACCESS_MEMORY_READ_BIT,
+                for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
+                    auto& rpAttachment = renderPass->colorAttachments[i];
+                    auto& fbAttachment = frameBuffer->colorAttachments[i];
+                    if (!fbAttachment.isValid) continue;
+                    if (fbAttachment.image->layout != rpAttachment.initialLayout) {
+                        auto barrier = Initializers::InitImageMemoryBarrier(fbAttachment.image->image,
+                            fbAttachment.image->layout, rpAttachment.initialLayout, VK_ACCESS_MEMORY_READ_BIT,
                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 
                         barriers.push_back(barrier);
-                        attachment.image->layout = attachment.initialLayout;
+                        fbAttachment.image->layout = rpAttachment.initialLayout;
                     }
                 }
 
-                auto& attachment = renderPass->depthAttachment;
-                if (attachment.image && attachment.image->layout != attachment.initialLayout) {
-                    auto barrier = Initializers::InitImageMemoryBarrier(attachment.image->image,
-                        attachment.image->layout, attachment.initialLayout, VK_ACCESS_MEMORY_READ_BIT,
+                auto& rpAttachment = renderPass->depthAttachment;
+                auto& fbAttachment = frameBuffer->depthAttachment;
+                if (fbAttachment.isValid && fbAttachment.image->layout != rpAttachment.initialLayout) {
+                    auto barrier = Initializers::InitImageMemoryBarrier(fbAttachment.image->image,
+                        fbAttachment.image->layout, rpAttachment.initialLayout, VK_ACCESS_MEMORY_READ_BIT,
                         VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
 
                     barriers.push_back(barrier);
-                    attachment.image->layout = attachment.initialLayout;
+                    fbAttachment.image->layout = rpAttachment.initialLayout;
                 }
 
                 if (barriers.size()) {
@@ -146,13 +149,13 @@ namespace Atlas {
 
             std::vector<VkClearValue> clearValues;
             for (auto& attachment : renderPass->colorAttachments) {
-                if (!attachment.image) continue;
+                if (!attachment.isValid) continue;
                 if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
                     clearValues.push_back(renderPass->colorClearValue);
                 }
             }
             auto& attachment = renderPass->depthAttachment;
-            if (attachment.image && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+            if (attachment.isValid && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
                 clearValues.push_back(renderPass->depthClearValue);
             }
 
@@ -178,15 +181,18 @@ namespace Atlas {
                 // TODO...
             }
             if (renderPassInUse) {
-                for (auto& attachment : renderPassInUse->colorAttachments) {
-                    if (!attachment.image) continue;
-                    attachment.image->layout = attachment.outputLayout;
-                    attachment.image->accessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
+                    auto& rpAttachment = renderPassInUse->colorAttachments[i];
+                    auto& fbAttachment = frameBufferInUse->colorAttachments[i];
+                    if (!fbAttachment.isValid) continue;
+                    fbAttachment.image->layout = rpAttachment.outputLayout;
+                    fbAttachment.image->accessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
                 }
-                if (renderPassInUse->depthAttachment.image) {
-                    auto& attachment = renderPassInUse->depthAttachment;
-                    attachment.image->layout = attachment.outputLayout;
-                    attachment.image->accessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                if (frameBufferInUse->depthAttachment.isValid) {
+                    auto& rpAttachment = renderPassInUse->depthAttachment;
+                    auto& fbAttachment = frameBufferInUse->depthAttachment;
+                    fbAttachment.image->layout = rpAttachment.outputLayout;
+                    fbAttachment.image->accessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
                 }
             }
 
@@ -297,13 +303,13 @@ namespace Atlas {
                 depthClear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
                 for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
-                    if (!renderPassInUse->colorAttachments[i].image) continue;
+                    if (!renderPassInUse->colorAttachments[i].isValid) continue;
                     colorClear.clearValue = renderPassInUse->colorClearValue;
                     colorClear.colorAttachment = i;
                     clearAttachments.push_back(colorClear);
                 }
 
-                if (renderPassInUse->depthAttachment.image) {
+                if (renderPassInUse->depthAttachment.isValid) {
                     depthClear.clearValue = renderPassInUse->depthClearValue;
                     depthClear.colorAttachment = 0;
                     clearAttachments.push_back(depthClear);

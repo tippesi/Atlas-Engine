@@ -10,22 +10,32 @@ namespace Atlas {
         FrameBuffer::FrameBuffer(GraphicsDevice *device, FrameBufferDesc &desc) : renderPass(desc.renderPass),
             extent(desc.extent), layers(desc.layers), device(device) {
 
-            for (auto& attachmentDesc : desc.attachments) {
+            for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
+
+                auto& attachmentDesc = desc.colorAttachments[i];
 
                 FrameBufferAttachment attachment {
-                  .attachment = attachmentDesc.attachment,
-                  .idx = static_cast<uint32_t>(attachmentDesc.attachment),
+                  .image = attachmentDesc.image,
                   .layer = attachmentDesc.layer,
-                  .isValid = true
+                  .isValid = attachmentDesc.image != nullptr,
+                  .writeEnabled = attachmentDesc.writeEnabled
                 };
 
-                if (attachment.attachment == Attachment::DepthAttachment) {
-                    depthAttachment = attachment;
-                }
-                else {
-                    colorAttachments[attachment.idx] = attachment;
-                }
+                colorAttachments[i] = attachment;
 
+            }
+
+            if (desc.depthAttachment.image) {
+                auto& attachmentDesc = desc.depthAttachment;
+
+                FrameBufferAttachment attachment {
+                    .image = attachmentDesc.image,
+                    .layer = attachmentDesc.layer,
+                    .isValid = attachmentDesc.image != nullptr,
+                    .writeEnabled = attachmentDesc.writeEnabled
+                };
+
+                depthAttachment = attachment;
             }
 
             Refresh();
@@ -53,28 +63,27 @@ namespace Atlas {
             for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
                 auto& rpColorAttachment = rpColorAttachments[i];
                 auto& colorAttachment = colorAttachments[i];
-                // No valid render pass attachment
-                if (!rpColorAttachment.image) continue;
+
+                assert(rpColorAttachment.isValid == colorAttachment.isValid && "Framebuffer color attachment \
+                    to render pass color attachment mismatch");
+                if (!rpColorAttachment.isValid) continue;
+
+                assert(rpColorAttachment.imageFormat == colorAttachment.image->format && "Image format doesn't \
+                    match the format of the attachment in the render pass");
                 // Check if we want to write to this attachment
                 if (colorAttachment.isValid) {
-                    assert(colorAttachment.layer < rpColorAttachment.image->layers &&
+                    assert(colorAttachment.layer < colorAttachment.image->layers &&
                         "Image doesn't contain this layer");
-                    imageViews.push_back(rpColorAttachment.image->layerViews[colorAttachment.layer]);
-                }
-                else {
-                    imageViews.push_back(rpColorAttachment.image->layerViews.front());
+                    imageViews.push_back(colorAttachment.image->layerViews[colorAttachment.layer]);
                 }
             }
 
-            if (rpDepthAttachment.image) {
-                if (depthAttachment.isValid) {
-                    assert(depthAttachment.layer < rpDepthAttachment.image->layers &&
-                        "Image doesn't contain this layer");
-                    imageViews.push_back(rpDepthAttachment.image->layerViews[depthAttachment.layer]);
-                }
-                else {
-                    imageViews.push_back(rpDepthAttachment.image->layerViews.front());
-                }
+            assert(rpDepthAttachment.isValid == depthAttachment.isValid && "Framebuffer depth attachment \
+                    to render pass depth attachment mismatch");
+            if (depthAttachment.isValid) {
+                assert(depthAttachment.layer < depthAttachment.image->layers &&
+                       "Image doesn't contain this layer");
+                imageViews.push_back(depthAttachment.image->layerViews[depthAttachment.layer]);
             }
 
             if (isComplete) {
@@ -97,6 +106,37 @@ namespace Atlas {
             frameBufferInfo.height = extent.height;
             frameBufferInfo.layers = layers;
             VK_CHECK(vkCreateFramebuffer(device->device, &frameBufferInfo, nullptr, &frameBuffer))
+
+        }
+
+        void FrameBuffer::ChangeColorAttachmentImage(Ref<Image> &image, uint32_t slot) {
+
+            assert(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
+            assert(colorAttachments[slot].isValid && "Color attachment is not valid");
+
+            colorAttachments[slot].image = image;
+
+        }
+
+        void FrameBuffer::ChangeDepthAttachmentImage(Ref<Image> &image) {
+
+            assert(depthAttachment.isValid && "Depth attachment is not valid");
+
+            depthAttachment.image = image;
+
+        }
+
+        Ref<Image> &FrameBuffer::GetColorImage(uint32_t slot) {
+
+            assert(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
+
+            return colorAttachments[slot].image;
+
+        }
+
+        Ref<Image> &FrameBuffer::GetDepthImage() {
+
+            return depthAttachment.image;
 
         }
 
