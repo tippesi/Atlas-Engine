@@ -219,7 +219,7 @@ namespace Atlas {
                 commandList->BindBuffer(uniformBuffer, 0, 0);
 
                 for (auto &subData: mesh->data.subData) {
-                    auto baseColorTexture = subData.vulkanMaterial->baseColorMap;
+                    auto baseColorTexture = subData.material->baseColorMap;
                     if (baseColorTexture) {
                         commandList->BindImage(baseColorTexture->image, baseColorTexture->sampler, 0, 1);
                     }

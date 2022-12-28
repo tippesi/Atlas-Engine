@@ -386,37 +386,37 @@ namespace Atlas {
 						gpuMaterial.twoSided = material.twoSided ? 1 : 0;
 
 						if (material.HasBaseColorMap()) {
-							auto& slices = baseColorTextureAtlas.slices[material.baseColorMap];
+							auto& slices = baseColorTextureAtlas.slices[material.baseColorMap.get()];
 
 							gpuMaterial.baseColorTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasOpacityMap()) {
-							auto& slices = opacityTextureAtlas.slices[material.opacityMap];
+							auto& slices = opacityTextureAtlas.slices[material.opacityMap.get()];
 
 							gpuMaterial.opacityTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasNormalMap()) {
-							auto& slices = normalTextureAtlas.slices[material.normalMap];
+							auto& slices = normalTextureAtlas.slices[material.normalMap.get()];
 
 							gpuMaterial.normalTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasRoughnessMap()) {
-							auto& slices = roughnessTextureAtlas.slices[material.roughnessMap];
+							auto& slices = roughnessTextureAtlas.slices[material.roughnessMap.get()];
 
 							gpuMaterial.roughnessTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasMetalnessMap()) {
-							auto& slices = metalnessTextureAtlas.slices[material.metalnessMap];
+							auto& slices = metalnessTextureAtlas.slices[material.metalnessMap.get()];
 
 							gpuMaterial.metalnessTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasAoMap()) {
-							auto& slices = aoTextureAtlas.slices[material.aoMap];
+							auto& slices = aoTextureAtlas.slices[material.aoMap.get()];
 
 							gpuMaterial.aoTexture = CreateGPUTextureStruct(slices);
 						}
@@ -440,12 +440,12 @@ namespace Atlas {
 			auto actors = scene->GetMeshActors();
 
 			std::unordered_set<Mesh::Mesh*> meshes;
-			std::vector<Texture::Texture2D*> baseColorTextures;
-			std::vector<Texture::Texture2D*> opacityTextures;
-			std::vector<Texture::Texture2D*> normalTextures;
-			std::vector<Texture::Texture2D*> roughnessTextures;
-			std::vector<Texture::Texture2D*> metalnessTextures;
-			std::vector<Texture::Texture2D*> aoTextures;
+			std::vector<Ref<Texture::Texture2D>> baseColorTextures;
+			std::vector<Ref<Texture::Texture2D>> opacityTextures;
+			std::vector<Ref<Texture::Texture2D>> normalTextures;
+			std::vector<Ref<Texture::Texture2D>> roughnessTextures;
+			std::vector<Ref<Texture::Texture2D>> metalnessTextures;
+			std::vector<Ref<Texture::Texture2D>> aoTextures;
 
 			for (auto& actor : actors) {
 				if (meshes.find(actor->mesh) == meshes.end()) {

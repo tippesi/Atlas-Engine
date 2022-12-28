@@ -15,7 +15,7 @@ namespace Atlas {
 
 		}
 
-		TextureAtlas::TextureAtlas(std::vector<Texture2D*>& textures, int32_t padding,
+		TextureAtlas::TextureAtlas(std::vector<Ref<Texture2D>>& textures, int32_t padding,
 			int32_t downscale) : padding(padding), downscale(downscale) {
 
 			Update(textures);
@@ -37,20 +37,23 @@ namespace Atlas {
 
 		}
 
-		void TextureAtlas::Update(std::vector<Texture2D*>& textures) {
+		void TextureAtlas::Update(std::vector<Ref<Texture2D>>& textures) {
 
 			if (!textures.size())
 				return;			
 
 			std::vector<TextureStructure> textureStructures;
+            this->textures = textures;
 
+            // We can use raw pointers, as we have partial ownership of these textures,
+            // thus they can't be deleted
 			for (auto texture : textures) {
 				textureStructures.emplace_back(
 					TextureStructure{
 					texture->width / downscale,
 					texture->height / downscale,
 					texture->channels,
-					texture
+					texture.get()
 					}
 				);
 			};

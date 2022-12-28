@@ -31,7 +31,7 @@ namespace Atlas {
 				Common::Image<uint8_t> displacementImage;
 			};
 
-			static void LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, VulkanMaterial& material);
+			static void LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material);
 
 			static void LoadMaterialImages(aiMaterial* material, MaterialImages& images,
 				std::string directory, bool isObj, bool hasTangents, int32_t maxTextureResolution,

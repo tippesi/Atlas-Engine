@@ -162,20 +162,17 @@ namespace Atlas {
 
 			meshData.subData = std::vector<Mesh::MeshSubData>(scene->mNumMaterials);
 			meshData.materials = std::vector<Material>(scene->mNumMaterials);
-			meshData.vulkanMaterials = std::vector<VulkanMaterial>(scene->mNumMaterials);
 
 			for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 
 				auto& material = meshData.materials[i];
-                auto& vulkanMaterial = meshData.vulkanMaterials[i];
 				auto& images = materialImages[i];
 				auto& subData = meshData.subData[i];
 
                 // No material loading for now
-				LoadMaterial(scene->mMaterials[i], images, vulkanMaterial);
+				LoadMaterial(scene->mMaterials[i], images, material);
 
 				subData.material = &material;
-                subData.vulkanMaterial = &vulkanMaterial;
 				subData.indicesOffset = usedFaces * 3;
 
 				for (auto assimpMesh : meshSorted[i]) {
@@ -258,7 +255,7 @@ namespace Atlas {
 
 		}
 
-		void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, VulkanMaterial& material) {
+		void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material) {
 
 			bool roughnessMetalnessTexture = false;
 
