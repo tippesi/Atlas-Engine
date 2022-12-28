@@ -1,6 +1,5 @@
 #include "TextureAtlas.h"
 
-#include "../Framebuffer.h"
 #include "../Log.h"
 #include "../graphics/GraphicsDevice.h"
 
@@ -229,8 +228,8 @@ namespace Atlas {
 
 		void TextureAtlas::FillAtlas(std::map<Texture2D*, TextureAtlas::Slice> levelSlices) {
 
-			Framebuffer readFramebuffer;
-			Framebuffer writeFramebuffer;
+			//Framebuffer readFramebuffer;
+			//Framebuffer writeFramebuffer;
 
 			for (auto& key : levelSlices) {
 				auto tex = key.first;

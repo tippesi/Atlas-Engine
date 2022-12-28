@@ -2,6 +2,7 @@
 #include "GraphicsDevice.h"
 
 #include <thread>
+#include <algorithm>
 
 namespace Atlas {
 

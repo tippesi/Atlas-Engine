@@ -29,7 +29,7 @@ namespace Atlas {
 		}
 
 		void TextureRenderer::RenderTexture2D(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-			bool alphaBlending, bool invert, Framebuffer* framebuffer) {
+			bool alphaBlending, bool invert) {
 
 
 			float viewportWidth = (float)viewport->width;
@@ -38,13 +38,13 @@ namespace Atlas {
 			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
-			RenderTexture2D(viewport, texture, x, y, width, height, clipArea, blendArea, alphaBlending, invert, framebuffer);
+			RenderTexture2D(viewport, texture, x, y, width, height, clipArea, blendArea, alphaBlending, invert);
 
 
 		}
 
 		void TextureRenderer::RenderTexture2D(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert, Framebuffer* framebuffer) {
+			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
             /*
 			vertexArray.Bind();
@@ -86,20 +86,20 @@ namespace Atlas {
 		}
 
 		void TextureRenderer::RenderTexture2DArray(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x,
-			float y, float width, float height, bool alphaBlending, bool invert, Framebuffer* framebuffer) {
+			float y, float width, float height, bool alphaBlending, bool invert) {
 
-			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
-			float viewportHeight = (float)(!framebuffer ? viewport->height : framebuffer->height);
+			float viewportWidth = (float)(viewport->width);
+			float viewportHeight = (float)(viewport->height);
 
 			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
-			RenderTexture2DArray(viewport, texture, depth, x, y, width, height, clipArea, blendArea, alphaBlending, invert, framebuffer);
+			RenderTexture2DArray(viewport, texture, depth, x, y, width, height, clipArea, blendArea, alphaBlending, invert);
 
 		}
 
 		void TextureRenderer::RenderTexture2DArray(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
-			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert, Framebuffer* framebuffer) {
+			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
             /*
 			vertexArray.Bind();
@@ -150,20 +150,20 @@ namespace Atlas {
 		}
 
 		void TextureRenderer::RenderTexture3D(Viewport* viewport, Texture::Texture3D* texture, float depth, float x,
-			float y, float width, float height, bool alphaBlending, bool invert, Framebuffer* framebuffer) {
+			float y, float width, float height, bool alphaBlending, bool invert) {
 
-			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
-			float viewportHeight = (float)(!framebuffer ? viewport->height : framebuffer->height);
+			float viewportWidth = (float)(viewport->width);
+			float viewportHeight = (float)(viewport->height);
 
 			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
-			RenderTexture3D(viewport, texture, depth, x, y, width, height, clipArea, blendArea, alphaBlending, invert, framebuffer);
+			RenderTexture3D(viewport, texture, depth, x, y, width, height, clipArea, blendArea, alphaBlending, invert);
 
 		}
 
 		void TextureRenderer::RenderTexture3D(Viewport* viewport, Texture::Texture3D* texture, float depth, float x, float y, float width, float height,
-			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert, Framebuffer* framebuffer) {
+			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
             /*
 			vertexArray.Bind();

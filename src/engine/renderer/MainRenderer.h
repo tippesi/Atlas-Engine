@@ -63,7 +63,7 @@ namespace Atlas {
              * @param framebuffer
              */
 			void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-								 bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+								 bool alphaBlending = false);
 
 			/**
              *
@@ -79,7 +79,7 @@ namespace Atlas {
              * @param framebuffer
              */
 			void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-								 vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+								 vec4 clipArea, vec4 blendArea, bool alphaBlending = false);
 
 			/**
 			 *
@@ -139,9 +139,6 @@ namespace Atlas {
 				std::unordered_map<void*, uint16_t>& materialMap);
 
 			void PreintegrateBRDF();
-
-			Framebuffer framebuffer;
-			Framebuffer depthFramebuffer;
 
 			Texture::Texture2D dfgPreintegrationTexture;
 

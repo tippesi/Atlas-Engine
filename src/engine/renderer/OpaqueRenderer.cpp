@@ -185,7 +185,7 @@ namespace Atlas {
 
 		}
 
-		void OpaqueRenderer::RenderImpostor(Viewport* viewport, Framebuffer* framebuffer, std::vector<mat4> viewMatrices,
+		void OpaqueRenderer::RenderImpostor(Viewport* viewport, std::vector<mat4> viewMatrices,
 			mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor) {
 
             /*

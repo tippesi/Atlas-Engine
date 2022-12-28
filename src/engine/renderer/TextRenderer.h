@@ -19,16 +19,16 @@ namespace Atlas {
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 			void Render(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color = vec4(1.0f),
-					float scale = 1.0f, Framebuffer* framebuffer = nullptr);
+					float scale = 1.0f);
 
 			void Render(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 clipArea,
-					vec4 blendArea, float scale = 1.0f, Framebuffer* framebuffer = nullptr);
+					vec4 blendArea, float scale = 1.0f);
 
 			void RenderOutlined(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor,
-					float outlineScale, float scale = 1.0f, Framebuffer* framebuffer = nullptr);
+					float outlineScale, float scale = 1.0f);
 
 			void RenderOutlined(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
-					vec4 clipArea, vec4 blendArea, float scale = 1.0f, Framebuffer* framebuffer = nullptr);
+					vec4 clipArea, vec4 blendArea, float scale = 1.0f);
 
 			void Update();
 

@@ -15,7 +15,7 @@ namespace Atlas {
 			Renderer::OpaqueRenderer renderer;
 			Viewport viewport(0, 0, resolution, resolution);
 
-			auto framebuffer = new Framebuffer(resolution, resolution);
+			//auto framebuffer = new Framebuffer(resolution, resolution);
             /*
 			auto depthTexture = new Texture::Texture2D(resolution, resolution, AE_DEPTH24,
 				GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
@@ -28,7 +28,7 @@ namespace Atlas {
 
 			auto impostor = new Mesh::Impostor(views, resolution);
 
-			framebuffer->Unbind();
+			//framebuffer->Unbind();
 
 			std::vector<mat4> viewMatrices;
 
@@ -84,8 +84,8 @@ namespace Atlas {
 					1.0f, 1.0f, dist + 2.0f * radius);
 			}
 
-			renderer.RenderImpostor(&viewport, framebuffer, viewMatrices, 
-				projectionMatrix, mesh, impostor);
+			//renderer.RenderImpostor(&viewport, framebuffer, viewMatrices,
+			//	projectionMatrix, mesh, impostor);
 
 			impostor->center = center;
 			impostor->radius = radius;
@@ -97,7 +97,7 @@ namespace Atlas {
 				impostor->transmissiveColor += material.transmissiveColor / (float)mesh->data.materials.size();
 			}
 
-			delete framebuffer;
+			//delete framebuffer;
 
 			impostor->baseColorTexture.GenerateMipmap();
 			impostor->roughnessMetalnessAoTexture.GenerateMipmap();

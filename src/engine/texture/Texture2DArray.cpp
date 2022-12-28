@@ -1,6 +1,5 @@
 #include "Texture2DArray.h"
 
-#include "../Framebuffer.h"
 #include "../loader/ImageLoader.h"
 
 namespace Atlas {

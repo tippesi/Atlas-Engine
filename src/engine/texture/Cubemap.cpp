@@ -1,6 +1,5 @@
 #include "Cubemap.h"
 #include "../loader/ImageLoader.h"
-#include "../Framebuffer.h"
 #include "../Log.h"
 #include "../volume/Frustum.h"
 

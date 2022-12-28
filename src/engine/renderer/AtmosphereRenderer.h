@@ -26,8 +26,6 @@ namespace Atlas {
 		private:
 			Buffer::VertexArray vertexArray;
 
-			Framebuffer framebuffer;
-
 			Shader::Shader shader;
 
 		};

@@ -33,8 +33,6 @@ namespace Atlas {
 
 			ImpostorShadowRenderer impostorRenderer;
 
-			Framebuffer framebuffer;
-
 			Shader::Uniform* lightSpaceMatrixUniform = nullptr;
 			Shader::Uniform* modelMatrixUniform = nullptr;
 

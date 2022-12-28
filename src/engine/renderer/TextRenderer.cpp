@@ -31,7 +31,7 @@ namespace Atlas {
 		}
 
 		void TextRenderer::Render(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color,
-								  float scale, Framebuffer* framebuffer) {
+								  float scale) {
 
             /*
 			float width = (float)(framebuffer == nullptr ? viewport->width : framebuffer->width);
@@ -46,7 +46,7 @@ namespace Atlas {
 		}
 
 		void TextRenderer::Render(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 clipArea,
-								  vec4 blendArea, float scale, Framebuffer* framebuffer) {
+								  vec4 blendArea, float scale) {
 
             // RenderOutlined(viewport, font, text, x, y, color, vec4(1.0f), 0.0f, clipArea, blendArea, scale, framebuffer);
 
@@ -54,7 +54,7 @@ namespace Atlas {
 		}
 
 		void TextRenderer::RenderOutlined(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor,
-										  float outlineScale, float scale, Framebuffer* framebuffer) {
+										  float outlineScale, float scale) {
 
             /*
 			float width = (float)(framebuffer == nullptr ? viewport->width : framebuffer->width);
@@ -70,7 +70,7 @@ namespace Atlas {
 		}
 
 		void TextRenderer::RenderOutlined(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
-										  vec4 clipArea, vec4 blendArea, float scale, Framebuffer* framebuffer) {
+										  vec4 clipArea, vec4 blendArea, float scale) {
 
             /*
 			int32_t characterCount;

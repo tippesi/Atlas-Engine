@@ -17,22 +17,22 @@ namespace Atlas {
 			TextureRenderer();
 
 			void RenderTexture2D(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-				bool alphaBlending = false, bool invert = false, Framebuffer* framebuffer = nullptr);
+				bool alphaBlending = false, bool invert = false);
 
 			void RenderTexture2D(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-				vec4 clipArea, vec4 blendArea, bool alphaBlending = false, bool invert = false, Framebuffer* framebuffer = nullptr);
+				vec4 clipArea, vec4 blendArea, bool alphaBlending = false, bool invert = false);
 
 			void RenderTexture2DArray(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x,
-				float y, float width, float height, bool alphaBlending = false, bool invert = false, Framebuffer* framebuffer = nullptr);
+				float y, float width, float height, bool alphaBlending = false, bool invert = false);
 
 			void RenderTexture2DArray(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
-				vec4 clipArea, vec4 blendArea, bool alphaBlending = false, bool invert = false, Framebuffer* framebuffer = nullptr);
+				vec4 clipArea, vec4 blendArea, bool alphaBlending = false, bool invert = false);
 
 			void RenderTexture3D(Viewport* viewport, Texture::Texture3D* texture, float depth, float x,
-				float y, float width, float height, bool alphaBlending = false, bool invert = false, Framebuffer* framebuffer = nullptr);
+				float y, float width, float height, bool alphaBlending = false, bool invert = false);
 
 			void RenderTexture3D(Viewport* viewport, Texture::Texture3D* texture, float depth, float x, float y, float width, float height,
-				vec4 clipArea, vec4 blendArea, bool alphaBlending = false, bool invert = false, Framebuffer* framebuffer = nullptr);
+				vec4 clipArea, vec4 blendArea, bool alphaBlending = false, bool invert = false);
 
 		private:
 			Buffer::VertexArray vertexArray;

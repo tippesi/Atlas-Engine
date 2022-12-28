@@ -290,7 +290,7 @@ namespace Atlas {
 		}
 
 		void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-			bool alphaBlending, Framebuffer* framebuffer) {
+			bool alphaBlending) {
 
             /*
 			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
@@ -310,7 +310,7 @@ namespace Atlas {
 		}
 
 		void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-			vec4 clipArea, vec4 blendArea, bool alphaBlending, Framebuffer* framebuffer) {
+			vec4 clipArea, vec4 blendArea, bool alphaBlending) {
 
             /*
 			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);

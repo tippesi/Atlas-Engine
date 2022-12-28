@@ -20,8 +20,6 @@ namespace Atlas {
 
 			Shader::Shader shader;
 
-			Framebuffer framebuffer;
-
 			Shader::Uniform* heightScale = nullptr;
 			Shader::Uniform* tileScale = nullptr;
 			Shader::Uniform* patchSize = nullptr;

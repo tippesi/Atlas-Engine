@@ -30,9 +30,6 @@ namespace Atlas {
 			Material probeDebugOffsetMaterial;
 
 		private:
-			Framebuffer irradianceFramebuffer;
-			Framebuffer momentsFramebuffer;
-
 			Buffer::Buffer rayHitBuffer;
 
 			Buffer::VertexArray vertexArray;
