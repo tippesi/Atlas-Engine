@@ -57,15 +57,15 @@ namespace Atlas {
                                   | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
                                   | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                     .aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .width = 1280,
-                    .height = 720,
+                    .width = 1920,
+                    .height = 1080,
                     .format = VK_FORMAT_R8G8B8A8_UNORM
                 };
                 auto depthImageDesc = Graphics::ImageDesc{
                     .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     .aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT,
-                    .width = 1280,
-                    .height = 720,
+                    .width = 1920,
+                    .height = 1080,
                     .format = VK_FORMAT_D32_SFLOAT
                 };
                 auto colorImage = device->CreateImage(colorImageDesc);
@@ -103,7 +103,7 @@ namespace Atlas {
                         { dummyImage, 0, false }
                         },
                     .depthAttachment = { depthImage, 0, true },
-                    .extent = {1280, 720}
+                    .extent = {1920, 1080}
                 };
                 mainFrameBuffer = device->CreateFrameBuffer(frameBufferDesc);
                 auto samplerDesc = Graphics::SamplerDesc{
@@ -248,7 +248,7 @@ namespace Atlas {
                 commandList->PushConstants(randomPushConstants, &randomConstants);
 
                 commandList->BindImage(mainFrameBuffer->GetColorImage(0), 0, 0);
-                commandList->Dispatch(1280 / 8, 720 / 8, 1);
+                commandList->Dispatch(1920 / 8, 1080 / 8, 1);
             }
 
             Graphics::Profiler::EndAndBeginQuery("Copy image");
