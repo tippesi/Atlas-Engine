@@ -2,7 +2,7 @@
 #define AE_TEXTURE2D_H
 
 #include "../System.h"
-#include "VulkanTexture.h"
+#include "Texture.h"
 
 #include "../common/Image.h"
 #include "../loader/ImageLoader.h"
@@ -11,7 +11,7 @@ namespace Atlas {
 
     namespace Texture {
 
-        class Texture2D : public VulkanTexture {
+        class Texture2D : public Texture {
 
         public:
 			/**

@@ -1,4 +1,4 @@
-#include "VulkanTexture.h"
+#include "Texture.h"
 
 #include "../graphics/Instance.h"
 #include "../graphics/Format.h"
@@ -7,7 +7,7 @@ namespace Atlas {
 
     namespace Texture {
 
-        VulkanTexture::VulkanTexture(int32_t width, int32_t height, int32_t depth, VkFormat format,
+        Texture::Texture(int32_t width, int32_t height, int32_t depth, VkFormat format,
             Wrapping wrapping, Filtering filtering) : width(width), height(height), depth(depth),
             wrapping(wrapping), filtering(filtering), format(format) {
 
@@ -18,44 +18,44 @@ namespace Atlas {
 
         }
 
-        bool VulkanTexture::IsValid() const {
+        bool Texture::IsValid() const {
 
             return width > 0 && height > 0 &&
                    channels > 0 && depth > 0;
 
         }
 
-        void VulkanTexture::SetData(std::vector<uint8_t> &data) {
+        void Texture::SetData(std::vector<uint8_t> &data) {
 
             image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
 
         }
 
-        void VulkanTexture::SetData(std::vector<uint16_t> &data) {
+        void Texture::SetData(std::vector<uint16_t> &data) {
 
             image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
 
         }
 
-        void VulkanTexture::SetData(std::vector<float16> &data) {
+        void Texture::SetData(std::vector<float16> &data) {
 
             image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
 
         }
 
-        void VulkanTexture::SetData(std::vector<float> &data) {
+        void Texture::SetData(std::vector<float> &data) {
 
             image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
 
         }
 
-        void VulkanTexture::GenerateMipmap() {
+        void Texture::GenerateMipmap() {
 
             // TODO...
 
         }
 
-        void VulkanTexture::SetData(void* data, int32_t x, int32_t y, int32_t z,
+        void Texture::SetData(void* data, int32_t x, int32_t y, int32_t z,
             int32_t width, int32_t height, int32_t depth) {
 
             if (image->type == Graphics::ImageType::Image1DArray ||
@@ -72,7 +72,7 @@ namespace Atlas {
 
         }
 
-        void VulkanTexture::Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height, int32_t depth,
+        void Texture::Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height, int32_t depth,
             Filtering filtering, Wrapping wrapping) {
 
             auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
@@ -123,7 +123,7 @@ namespace Atlas {
 
         }
 
-        void VulkanTexture::RecreateSampler(Filtering filtering, Wrapping wrapping) {
+        void Texture::RecreateSampler(Filtering filtering, Wrapping wrapping) {
 
             auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 

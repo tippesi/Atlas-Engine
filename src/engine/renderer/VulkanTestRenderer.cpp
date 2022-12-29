@@ -3,6 +3,7 @@
 #include "../loader/ShaderLoader.h"
 #include "../loader/ModelLoader.h"
 #include "../common/RandomHelper.h"
+#include "../shader/PipelineManager.h"
 #include "../Clock.h"
 
 #include <thread>
@@ -18,20 +19,15 @@ namespace Atlas {
             this->device = device;
 
             {
-                auto stages = std::vector<Graphics::ShaderStageFile>{
-                    Loader::ShaderLoader::LoadFile("test.vsh", VK_SHADER_STAGE_VERTEX_BIT),
-                    Loader::ShaderLoader::LoadFile("test.fsh", VK_SHADER_STAGE_FRAGMENT_BIT)
+                auto shaderConfig = ShaderConfig {
+                    {"test.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                    {"test.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
                 };
-                auto shaderDesc = Graphics::ShaderDesc{
-                    .stages = stages
-                };
-                shader = device->CreateShader(shaderDesc);
-
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
                     .swapChain = device->swapChain,
-                    .shader = shader
                 };
-                pipeline = device->CreatePipeline(pipelineDesc);
+                auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc);
+                pipeline = PipelineManager::GetPipeline(pipelineConfig);
             }
 
             {
@@ -117,21 +113,16 @@ namespace Atlas {
                     glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
                 mesh = std::make_shared<Mesh::Mesh>(meshData);
 
-                auto meshStages = std::vector<Graphics::ShaderStageFile>{
-                    Loader::ShaderLoader::LoadFile("testmesh.vsh", VK_SHADER_STAGE_VERTEX_BIT),
-                    Loader::ShaderLoader::LoadFile("testmesh.fsh", VK_SHADER_STAGE_FRAGMENT_BIT)
+                auto shaderConfig = ShaderConfig {
+                    {"testmesh.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                    {"testmesh.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
                 };
-                auto meshShaderDesc = Graphics::ShaderDesc{
-                    .stages = meshStages
-                };
-                meshShader = device->CreateShader(meshShaderDesc);
-
-                auto meshPipelineDesc = Graphics::GraphicsPipelineDesc{
+                auto pipelineDesc = Graphics::GraphicsPipelineDesc{
                     .frameBuffer = mainFrameBuffer,
-                    .shader = meshShader,
                     .vertexInputInfo = mesh->GetVertexInputState(),
                 };
-                meshPipeline = device->CreatePipeline(meshPipelineDesc);
+                auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc, { "MYMACRO" });
+                meshPipeline = PipelineManager::GetPipeline(pipelineConfig);
             }
 
             {
@@ -143,17 +134,12 @@ namespace Atlas {
                 uniformBuffer = device->CreateMultiBuffer(bufferDesc);
             }
             {
-                auto computeStages = std::vector<Graphics::ShaderStageFile>{
-                    Loader::ShaderLoader::LoadFile("test.csh", VK_SHADER_STAGE_COMPUTE_BIT)
+                auto shaderConfig = ShaderConfig {
+                    {"test.csh", VK_SHADER_STAGE_COMPUTE_BIT},
                 };
-                auto computeShaderDesc = Graphics::ShaderDesc{
-                    .stages = computeStages
-                };
-                computeShader = device->CreateShader(computeShaderDesc);
-                auto pipelineDesc = Graphics::ComputePipelineDesc{
-                    .shader = computeShader
-                };
-                computePipeline = device->CreatePipeline(pipelineDesc);
+                auto pipelineDesc = Graphics::ComputePipelineDesc();
+                auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc);
+                computePipeline = PipelineManager::GetPipeline(pipelineConfig);
             }
             {
                 renderPassToComputeBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_GENERAL,
@@ -208,7 +194,7 @@ namespace Atlas {
                 };
                 uniformBuffer->SetData(&uniforms, 0, sizeof(Uniforms));
 
-                auto pushConstantRange = meshShader->GetPushConstantRange("constants");
+                auto pushConstantRange = meshPipeline->shader->GetPushConstantRange("constants");
                 commandList->PushConstants(pushConstantRange, &pushConstants);
 
                 commandList->BindVertexBuffer(&mesh->vertexBuffer);
@@ -240,7 +226,7 @@ namespace Atlas {
 
                 commandList->BindPipeline(computePipeline);
 
-                auto randomPushConstants = computeShader->GetPushConstantRange("randomConstant");
+                auto randomPushConstants = computePipeline->shader->GetPushConstantRange("randomConstant");
                 auto randomConstants = ComputeConstants{
                     .randomSeed = Common::Random::SampleFastUniformFloat(),
                     .time = Clock::Get()

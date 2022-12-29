@@ -4,6 +4,7 @@
 #include "Common.h"
 #include <vector>
 #include <string>
+#include <mutex>
 
 namespace Atlas {
 
@@ -15,7 +16,7 @@ namespace Atlas {
         public:
             ShaderStageFile() = default;
 
-            const std::string GetGlslCode() const;
+            const std::string GetGlslCode(const std::vector<std::string>& macros) const;
 
             struct Extension {
                 std::string extension;
@@ -25,12 +26,9 @@ namespace Atlas {
             std::string filename;
             std::string code;
             std::vector<std::string> includes;
-            std::vector<std::string> macros;
             std::vector<Extension> extensions;
 
             VkShaderStageFlagBits shaderStage;
-            std::vector<uint32_t> spirvBinary;
-            bool isCompiled = false;
 
         };
 
@@ -60,38 +58,61 @@ namespace Atlas {
             VkDescriptorSetLayoutBinding layoutBindings[BINDINGS_PER_DESCRIPTOR_SET];
         };
 
-        struct ShaderModule {
-            VkShaderModule module;
-            VkShaderStageFlagBits shaderStageFlag = {};
-
-            std::vector<PushConstantRange> pushConstantRanges;
-            std::vector<ShaderDescriptorSet> sets;
-        };
-
-        class Shader {
-
+        class ShaderVariant {
         public:
-            Shader(GraphicsDevice* device, ShaderDesc& shaderDesc);
+            ShaderVariant(GraphicsDevice* device, std::vector<ShaderStageFile>& stages,
+                const std::vector<std::string>& macros);
 
-            ~Shader();
+            ~ShaderVariant();
 
             PushConstantRange* GetPushConstantRange(const std::string& name);
 
-            std::vector<ShaderModule> shaderModules;
-            std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos;
+            std::vector<VkShaderModule> modules;
+            std::vector<VkPipelineShaderStageCreateInfo> stageCreateInfos;
 
             std::vector<PushConstantRange> pushConstantRanges;
             ShaderDescriptorSet sets[DESCRIPTOR_SET_COUNT];
+
+            std::vector<std::string> macros;
 
             bool isComplete = false;
             bool isCompute = true;
 
         private:
-            void GenerateReflectionData(ShaderModule& shaderModule, ShaderStageFile& shaderStageFile);
+            // Temporary data structure
+            struct ShaderModule {
+                VkShaderStageFlagBits shaderStageFlag = {};
 
-            bool CheckPushConstantsStageCompatibility();
+                std::vector<PushConstantRange> pushConstantRanges;
+                std::vector<ShaderDescriptorSet> sets;
+            };
+
+            void GenerateReflectionData(ShaderModule& shaderModule, const std::vector<uint32_t>& spirvBinary);
 
             GraphicsDevice* device = nullptr;
+
+        };
+
+        class Shader {
+
+        public:
+            Shader(GraphicsDevice* device, ShaderDesc& desc);
+
+            ~Shader();
+
+            Ref<ShaderVariant> GetVariant();
+
+            Ref<ShaderVariant> GetVariant(std::vector<std::string> macros);
+
+        private:
+            Ref<ShaderVariant> FindVariant(const std::vector<std::string>& macros);
+
+            GraphicsDevice* device = nullptr;
+
+            std::vector<ShaderStageFile> shaderStageFiles;
+
+            std::mutex variantMutex;
+            std::vector<Ref<ShaderVariant>> shaderVariants;
 
         };
 

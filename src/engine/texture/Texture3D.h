@@ -1,13 +1,13 @@
 #ifndef AE_TEXTURE3D_H
 #define AE_TEXTURE3D_H
 
-#include "VulkanTexture.h"
+#include "Texture.h"
 
 namespace Atlas {
 
     namespace Texture {
 
-        class Texture3D : public VulkanTexture {
+        class Texture3D : public Texture {
 
         public:
             /**

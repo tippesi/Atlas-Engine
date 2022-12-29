@@ -13,7 +13,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        const std::string ShaderStageFile::GetGlslCode() const {
+        const std::string ShaderStageFile::GetGlslCode(const std::vector<std::string>& macros) const {
 
             std::string glslCode = "";
             glslCode.append("#version 460\n\n");
@@ -42,28 +42,97 @@ namespace Atlas {
 
         }
 
-        Shader::Shader(GraphicsDevice *device, ShaderDesc &desc) : device(device) {
+        Shader::Shader(GraphicsDevice *device, ShaderDesc &desc) : device(device), shaderStageFiles(desc.stages) {
+
+
+
+        }
+
+        Shader::~Shader() {
+
+
+
+        }
+
+        Ref<ShaderVariant> Shader::GetVariant() {
+
+            std::vector<std::string> macros;
+            return GetVariant(macros);
+
+        }
+
+        Ref<ShaderVariant> Shader::GetVariant(std::vector<std::string> macros) {
+
+            std::sort(macros.begin(), macros.end());;
+
+            {
+                std::lock_guard lock(variantMutex);
+
+                auto existingVariant = FindVariant(macros);
+
+                if (existingVariant) return existingVariant;
+            }
+
+            auto variant = std::make_shared<ShaderVariant>(device, shaderStageFiles, macros);
+
+            // In the meanwhile another process could have created this variant, check again
+            {
+                std::lock_guard lock(variantMutex);
+
+                if (!FindVariant(macros)) {
+                    shaderVariants.push_back(variant);
+                }
+            }
+
+            return variant;
+
+        }
+
+        Ref<ShaderVariant> Shader::FindVariant(const std::vector<std::string> &macros) {
+
+            for (auto& variant : shaderVariants) {
+                if (variant->macros.size() != macros.size())
+                    continue;
+
+                int32_t i;
+                for (i = 0; i < (int32_t)variant->macros.size(); i++) {
+                    if (variant->macros.at(i) != macros.at(i)) {
+                        i = -1;
+                        break;
+                    }
+                }
+                if (i >= 0) {
+                    return variant;
+                }
+            }
+
+            return nullptr;
+
+        }
+
+        ShaderVariant::ShaderVariant(GraphicsDevice* device, std::vector<ShaderStageFile>& stages,
+            const std::vector<std::string>& macros) : macros(macros), device(device) {
 
             uint32_t allStageFlags = 0;
 
-            shaderModules.resize(desc.stages.size());
-            for (size_t i = 0; i < desc.stages.size(); i++) {
-                auto& stage = desc.stages[i];
+            std::vector<ShaderModule> shaderModules(stages.size());
+            modules.resize(stages.size());
+            for (size_t i = 0; i < stages.size(); i++) {
+                auto& stage = stages[i];
 
-                if (!stage.isCompiled) {
-                    ShaderCompiler::Compile(stage);
-                }
+                bool isCompiled = false;
+                auto spirvBinary = ShaderCompiler::Compile(stage, macros, isCompiled);
 
-                if (!stage.isCompiled) return;
+                if (!isCompiled) return;
 
                 VkShaderModuleCreateInfo createInfo = {};
                 createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
                 createInfo.pNext = nullptr;
-                createInfo.codeSize = stage.spirvBinary.size() * sizeof(uint32_t);
-                createInfo.pCode = stage.spirvBinary.data();
+                createInfo.codeSize = spirvBinary.size() * sizeof(uint32_t);
+                createInfo.pCode = spirvBinary.data();
 
                 bool success = vkCreateShaderModule(device->device, &createInfo,
-                    nullptr, &shaderModules[i].module) == VK_SUCCESS;
+                    nullptr, &modules[i]) == VK_SUCCESS;
                 assert(success && "Error creating shader module");
                 if (!success) {
                     return;
@@ -73,12 +142,12 @@ namespace Atlas {
                 if (stage.shaderStage != VK_SHADER_STAGE_COMPUTE_BIT)
                     isCompute = false;
 
-                shaderStageCreateInfos.push_back(Initializers::InitPipelineShaderStageCreateInfo(
-                    stage.shaderStage, shaderModules[i].module
-                    ));
+                stageCreateInfos.push_back(Initializers::InitPipelineShaderStageCreateInfo(
+                    stage.shaderStage, modules[i]
+                ));
 
                 shaderModules[i].shaderStageFlag = stage.shaderStage;
-                GenerateReflectionData(shaderModules[i], stage);
+                GenerateReflectionData(shaderModules[i], spirvBinary);
 
                 allStageFlags |= shaderModules[i].shaderStageFlag;
 
@@ -136,7 +205,7 @@ namespace Atlas {
 
         }
 
-        Shader::~Shader() {
+        ShaderVariant::~ShaderVariant() {
 
             if (!isComplete) return;
 
@@ -145,13 +214,13 @@ namespace Atlas {
                 vkDestroyDescriptorSetLayout(device->device, sets[i].layout, nullptr);
             }
 
-            for (auto& shaderModule : shaderModules) {
-                vkDestroyShaderModule(device->device, shaderModule.module, nullptr);
+            for (auto module : modules) {
+                vkDestroyShaderModule(device->device, module, nullptr);
             }
 
         }
 
-        PushConstantRange* Shader::GetPushConstantRange(const std::string &name) {
+        PushConstantRange* ShaderVariant::GetPushConstantRange(const std::string &name) {
 
             auto it = std::find_if(pushConstantRanges.begin(), pushConstantRanges.end(),
                 [name](const auto& pushConstantRange) { return pushConstantRange.name == name; });
@@ -165,11 +234,11 @@ namespace Atlas {
 
         }
 
-        void Shader::GenerateReflectionData(ShaderModule &shaderModule, ShaderStageFile& shaderStageFile) {
+        void ShaderVariant::GenerateReflectionData(ShaderModule &shaderModule, const std::vector<uint32_t>& spirvBinary) {
 
             SpvReflectShaderModule module;
-            SpvReflectResult result = spvReflectCreateShaderModule(shaderStageFile.spirvBinary.size() * sizeof(uint32_t),
-                shaderStageFile.spirvBinary.data(), &module);
+            SpvReflectResult result = spvReflectCreateShaderModule(spirvBinary.size() * sizeof(uint32_t),
+                spirvBinary.data(), &module);
             assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't create shader reflection module");
 
             uint32_t pushConstantCount = 0;
@@ -237,21 +306,6 @@ namespace Atlas {
             }
 
             spvReflectDestroyShaderModule(&module);
-
-        }
-
-        bool Shader::CheckPushConstantsStageCompatibility() {
-
-            /*
-            for(size_t i = 1; i < shaderModules.size(); i++) {
-                auto& ranges = shaderModules[i].pushConstantRanges;
-                auto& prevRanges = shaderModules[i - 1].pushConstantRanges;
-
-                if (ranges.size() != prevRanges.size())
-            }
-            */
-
-            return true;
 
         }
 

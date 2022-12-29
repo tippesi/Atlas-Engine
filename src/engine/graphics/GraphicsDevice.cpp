@@ -630,7 +630,7 @@ namespace Atlas {
             auto oldSwapChain = swapChain;
 
             swapChain = new SwapChain(supportDetails, nativeSurface, this,
-                width, height, VK_PRESENT_MODE_FIFO_KHR, oldSwapChain);
+                width, height, VK_PRESENT_MODE_IMMEDIATE_KHR, oldSwapChain);
 
             // Clean up old swap chain
             delete oldSwapChain;

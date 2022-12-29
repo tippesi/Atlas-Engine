@@ -27,10 +27,10 @@ namespace Atlas {
             Anisotropic
         };
 
-        class VulkanTexture {
+        class Texture {
 
         public:
-            VulkanTexture() = default;
+            Texture() = default;
 
             /**
               * Construct a Texture2DArray object.
@@ -41,7 +41,7 @@ namespace Atlas {
               * @param wrapping The wrapping of the texture. Controls texture border behaviour.
               * @param filtering The filtering of the texture.
               */
-            VulkanTexture(int32_t width, int32_t height, int32_t depth, VkFormat format,
+            Texture(int32_t width, int32_t height, int32_t depth, VkFormat format,
                 Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest);
 
             /**
@@ -114,7 +114,7 @@ namespace Atlas {
         };
 
         template<typename T>
-        std::vector<T> VulkanTexture::GetData(int32_t depth) {
+        std::vector<T> Texture::GetData(int32_t depth) {
 
             static_assert(std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> ||
                           std::is_same_v<T, float>, "Unsupported type. Supported are uint8_t, uint16_t and float");

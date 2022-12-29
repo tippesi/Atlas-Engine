@@ -9,7 +9,8 @@ namespace Atlas {
 
         void InitBuildInResources(TBuiltInResource &Resources);
         EShLanguage FindLanguage(const VkShaderStageFlagBits shaderType);
-        void LogError(ShaderStageFile &shaderStageFile, glslang::TShader& shader);
+        void LogError(const ShaderStageFile &shaderStageFile, const std::vector<std::string>& macros,
+            glslang::TShader& shader);
 
         void ShaderCompiler::Init() {
 
@@ -23,36 +24,43 @@ namespace Atlas {
 
         }
 
-        void ShaderCompiler::Compile(ShaderStageFile &shaderStageFile) {
+        std::vector<uint32_t> ShaderCompiler::Compile(const ShaderStageFile& shaderFile,
+            const std::vector<std::string>& macros, bool& success) {
+
+            std::vector<uint32_t> spirvBinary;
 
             TBuiltInResource Resources = {};
             InitBuildInResources(Resources);
 
-            EShLanguage stage = FindLanguage(shaderStageFile.shaderStage);
+            EShLanguage stage = FindLanguage(shaderFile.shaderStage);
             glslang::TShader shader(stage);
 
             // Enable SPIR-V and Vulkan rules when parsing GLSL
             EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules);
 
-            auto glslCode = shaderStageFile.GetGlslCode();
+            auto glslCode = shaderFile.GetGlslCode(macros);
             const char* shaderStrings[] = { glslCode.data() };
             shader.setStrings(shaderStrings, 1);
 
             if (!shader.parse(&Resources, 100, false, messages)) {
-                LogError(shaderStageFile, shader);
-                return;
+                LogError(shaderFile, macros, shader);
+                success = false;
+                return spirvBinary;
             }
 
             glslang::TProgram program;
             program.addShader(&shader);
 
             if (!program.link(messages)) {
-                LogError(shaderStageFile, shader);
-                return;
+                LogError(shaderFile, macros, shader);
+                success = false;
+                return spirvBinary;
             }
 
-            glslang::GlslangToSpv(*program.getIntermediate(stage), shaderStageFile.spirvBinary);
-            shaderStageFile.isCompiled = true;
+            glslang::GlslangToSpv(*program.getIntermediate(stage), spirvBinary);
+            success = true;
+
+            return spirvBinary;
 
         }
 
@@ -179,7 +187,9 @@ namespace Atlas {
             }
         }
 
-        void LogError(ShaderStageFile &shaderStageFile, glslang::TShader& shader) {
+        void LogError(const ShaderStageFile &shaderStageFile, const std::vector<std::string>& macros,
+            glslang::TShader& shader) {
+
             std::string infoLog(shader.getInfoLog());
             if (!infoLog.empty()) {
                 Log::Error(infoLog);
@@ -216,7 +226,7 @@ namespace Atlas {
             size_t pos = 0, lastPos = 0;
             log.append("\nFile: " + shaderStageFile.filename);
 
-            auto stageCode = shaderStageFile.GetGlslCode();
+            auto stageCode = shaderStageFile.GetGlslCode(macros);
             while ((pos = stageCode.find('\n', lastPos)) != std::string::npos) {
                 log.append("[" + std::to_string(lineCount++) + "] ");
                 log.append(stageCode.substr(lastPos, pos - lastPos + 1));
@@ -224,6 +234,7 @@ namespace Atlas {
             }
 
             Log::Error(log);
+
         }
 
     }

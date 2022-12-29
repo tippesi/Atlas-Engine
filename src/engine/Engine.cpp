@@ -4,6 +4,7 @@
 #include "EngineInstance.h"
 #include "loader/ShaderLoader.h"
 #include "graphics/Instance.h"
+#include "shader/PipelineManager.h"
 
 #include "graphics/ShaderCompiler.h"
 
@@ -47,6 +48,7 @@ namespace Atlas {
         // Do the setup for all the classes that need static setup
 		Loader::AssetLoader::Init();
 		Common::Random::Init();
+        PipelineManager::Init();
 
 		Audio::AudioManager::Configure(48000, 2, 1024);
 
@@ -67,6 +69,7 @@ namespace Atlas {
 
         Graphics::ShaderCompiler::Shutdown();
         Graphics::Profiler::Shutdown();
+        PipelineManager::Shutdown();
 
 #ifdef AE_NO_APP
         SDL_Quit();

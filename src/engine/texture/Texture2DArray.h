@@ -2,13 +2,13 @@
 #define AE_TEXTURE2DARRAY_H
 
 #include "../System.h"
-#include "VulkanTexture.h"
+#include "Texture.h"
 
 namespace Atlas {
 
     namespace Texture {
 
-        class Texture2DArray : public VulkanTexture {
+        class Texture2DArray : public Texture {
 
         public:
 			/**

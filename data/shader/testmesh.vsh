@@ -3,9 +3,11 @@ layout(location=1) in vec3 vNormal;
 layout(location=2) in vec2 vTexCoord;
 layout(location=3) in vec4 vTangent;
 
+#ifdef MYMACRO
 layout (location = 0) out vec3 positionVS;
 layout (location = 1) out vec3 normalVS;
 layout (location = 2) out vec2 texCoordVS;
+#endif
 
 //push constants block
 layout(push_constant) uniform constants {

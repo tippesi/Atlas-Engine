@@ -59,8 +59,8 @@ namespace Atlas {
             pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
             pipelineInfo.pNext = nullptr;
             pipelineInfo.flags = 0;
-            pipelineInfo.stageCount = uint32_t(desc.shader->shaderStageCreateInfos.size());
-            pipelineInfo.pStages = desc.shader->shaderStageCreateInfos.data();
+            pipelineInfo.stageCount = uint32_t(desc.shader->stageCreateInfos.size());
+            pipelineInfo.pStages = desc.shader->stageCreateInfos.data();
             pipelineInfo.pVertexInputState = &desc.vertexInputInfo;
             pipelineInfo.pInputAssemblyState = &desc.assemblyInputInfo;
             pipelineInfo.pDepthStencilState = &desc.depthStencilInputInfo;
@@ -100,7 +100,7 @@ namespace Atlas {
             pipelineInfo.pNext = nullptr;
 
             pipelineInfo.flags = 0;
-            pipelineInfo.stage = shader->shaderStageCreateInfos.front();
+            pipelineInfo.stage = shader->stageCreateInfos.front();
             pipelineInfo.layout = layout;
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
             pipelineInfo.basePipelineIndex = 0;

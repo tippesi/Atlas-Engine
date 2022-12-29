@@ -4,6 +4,9 @@
 #include "Common.h"
 #include "Shader.h"
 
+#include <stdint.h>
+#include <vector>
+
 namespace Atlas {
 
     namespace Graphics {
@@ -15,7 +18,8 @@ namespace Atlas {
 
             static void Shutdown();
 
-            static void Compile(ShaderStageFile& shaderFile);
+            static std::vector<uint32_t> Compile(const ShaderStageFile& shaderFile,
+                const std::vector<std::string>& macros, bool& success);
 
         };
 

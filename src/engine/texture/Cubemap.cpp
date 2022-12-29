@@ -108,7 +108,7 @@ namespace Atlas {
 
 	   void Cubemap::SetData(std::vector<uint8_t> &data, int32_t layer) {
 
-           VulkanTexture::SetData(data.data(), 0, 0, layer, width, height, 1);
+           Texture::SetData(data.data(), 0, 0, layer, width, height, 1);
 
 		   GenerateMipmap();
 
@@ -116,7 +116,7 @@ namespace Atlas {
 
 	   void Cubemap::SetData(std::vector<float>& data, int32_t layer) {
 
-           VulkanTexture::SetData(data.data(), 0, 0, layer, width, height, 1);
+           Texture::SetData(data.data(), 0, 0, layer, width, height, 1);
 
 		   GenerateMipmap();
 

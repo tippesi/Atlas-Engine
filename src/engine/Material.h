@@ -3,7 +3,7 @@
 
 #include "System.h"
 #include "texture/Texture2D.h"
-#include "texture/VulkanTexture.h"
+#include "texture/Texture.h"
 #include "texture/Texture2DArray.h"
 #include "loader/ImageLoader.h"
 #include "shader/Shader.h"

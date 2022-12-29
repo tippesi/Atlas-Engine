@@ -19,7 +19,7 @@ namespace Atlas {
             // If renderPass isn't set, we need the swap chain
             SwapChain* swapChain = nullptr;
             Ref<FrameBuffer> frameBuffer = nullptr;
-            Ref<Shader> shader = nullptr;
+            Ref<ShaderVariant> shader = nullptr;
 
                 // These have a valid default state
             VkPipelineVertexInputStateCreateInfo vertexInputInfo =
@@ -39,7 +39,7 @@ namespace Atlas {
 
         struct ComputePipelineDesc {
             // These need to be set
-            Ref<Shader> shader = nullptr;
+            Ref<ShaderVariant> shader = nullptr;
         };
 
         class Pipeline {
@@ -54,7 +54,7 @@ namespace Atlas {
             VkPipelineLayout layout;
             VkPipelineBindPoint bindPoint;
 
-            Ref<Shader> shader = nullptr;
+            Ref<ShaderVariant> shader = nullptr;
             Ref<FrameBuffer> frameBuffer = nullptr;
 
             bool isComplete = false;

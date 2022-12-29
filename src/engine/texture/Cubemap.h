@@ -2,7 +2,7 @@
 #define AE_CUBEMAP_H
 
 #include "System.h"
-#include "VulkanTexture.h"
+#include "Texture.h"
 
 #include <vector>
 
@@ -10,7 +10,7 @@ namespace Atlas {
 
     namespace Texture {
 
-        class Cubemap : public VulkanTexture {
+        class Cubemap : public Texture {
 
         public:
 			/**
