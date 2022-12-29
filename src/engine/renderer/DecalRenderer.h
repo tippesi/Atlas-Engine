@@ -21,22 +21,22 @@ namespace Atlas {
 		private:
 			void GetUniforms();
 
-			Buffer::VertexArray vertexArray;
+			OldBuffer::VertexArray vertexArray;
 
-			Shader::Shader shader;
+			OldShader::OldShader shader;
 
-			Shader::Uniform* modelMatrix = nullptr;
-			Shader::Uniform* viewMatrix = nullptr;
-			Shader::Uniform* projectionMatrix = nullptr;
-			Shader::Uniform* inverseViewMatrix = nullptr;
-			Shader::Uniform* inverseProjectionMatrix = nullptr;
+			OldShader::Uniform* modelMatrix = nullptr;
+			OldShader::Uniform* viewMatrix = nullptr;
+			OldShader::Uniform* projectionMatrix = nullptr;
+			OldShader::Uniform* inverseViewMatrix = nullptr;
+			OldShader::Uniform* inverseProjectionMatrix = nullptr;
 
-			Shader::Uniform* color = nullptr;
+			OldShader::Uniform* color = nullptr;
 
-			Shader::Uniform* timeInMilliseconds = nullptr;
-			Shader::Uniform* animationLength = nullptr;
-			Shader::Uniform* rowCount = nullptr;
-			Shader::Uniform* columnCount = nullptr;
+			OldShader::Uniform* timeInMilliseconds = nullptr;
+			OldShader::Uniform* animationLength = nullptr;
+			OldShader::Uniform* rowCount = nullptr;
+			OldShader::Uniform* columnCount = nullptr;
 
 		};
 

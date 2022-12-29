@@ -2,7 +2,7 @@
 #define AE_MAINRENDERER_H
 
 #include "../System.h"
-#include "buffer/VertexArray.h"
+#include "../graphics/GraphicsDevice.h"
 
 #include "RenderBatch.h"
 
@@ -36,9 +36,9 @@ namespace Atlas {
 		class MainRenderer {
 
 		public:
-			MainRenderer();
+			MainRenderer() = default;
 
-			~MainRenderer();
+			void Init(GraphicsDevice* device);
 
 			/**
              *
@@ -140,28 +140,30 @@ namespace Atlas {
 
 			void PreintegrateBRDF();
 
+            GraphicsDevice* device;
+
 			Texture::Texture2D dfgPreintegrationTexture;
 
-			Buffer::VertexArray vertexArray;
-			Buffer::VertexArray cubeVertexArray;
+			OldBuffer::VertexArray vertexArray;
+			OldBuffer::VertexArray cubeVertexArray;
 
-			Shader::Shader rectangleShader;
+			OldShader::OldShader rectangleShader;
 
-			Shader::Shader lineShader;
+			OldShader::OldShader lineShader;
 
-			Shader::Shader createProbeFaceShader;
-			Shader::Shader filterDiffuseShader;
-			Shader::Shader filterSpecularShader;
+			OldShader::OldShader createProbeFaceShader;
+			OldShader::OldShader filterDiffuseShader;
+			OldShader::OldShader filterSpecularShader;
 
-			Shader::Uniform* rectangleProjectionMatrix = nullptr;
-			Shader::Uniform* rectangleOffset = nullptr;
-			Shader::Uniform* rectangleScale = nullptr;
-			Shader::Uniform* rectangleColor = nullptr;
-			Shader::Uniform* rectangleClipArea = nullptr;
-			Shader::Uniform* rectangleBlendArea = nullptr;
+			OldShader::Uniform* rectangleProjectionMatrix = nullptr;
+			OldShader::Uniform* rectangleOffset = nullptr;
+			OldShader::Uniform* rectangleScale = nullptr;
+			OldShader::Uniform* rectangleColor = nullptr;
+			OldShader::Uniform* rectangleClipArea = nullptr;
+			OldShader::Uniform* rectangleBlendArea = nullptr;
 
-			Shader::Uniform* lineViewMatrix = nullptr;
-			Shader::Uniform* lineProjectionMatrix = nullptr;
+			OldShader::Uniform* lineViewMatrix = nullptr;
+			OldShader::Uniform* lineProjectionMatrix = nullptr;
 
 			OpaqueRenderer opaqueRenderer;
 			TerrainRenderer terrainRenderer;

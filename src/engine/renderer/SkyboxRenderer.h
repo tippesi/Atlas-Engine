@@ -23,25 +23,25 @@ namespace Atlas {
 
 			std::unordered_map<Camera*, vec3> cameraMap;
 
-			Buffer::VertexArray vertexArray;
+			OldBuffer::VertexArray vertexArray;
 
-			Shader::Shader shader;
+			OldShader::OldShader shader;
 
-			Shader::Uniform* mvpMatrix = nullptr;
-			Shader::Uniform* ivMatrix = nullptr;
-			Shader::Uniform* ipMatrix = nullptr;
-			Shader::Uniform* cameraLocation = nullptr;
-			Shader::Uniform* cameraLocationLast = nullptr;
+			OldShader::Uniform* mvpMatrix = nullptr;
+			OldShader::Uniform* ivMatrix = nullptr;
+			OldShader::Uniform* ipMatrix = nullptr;
+			OldShader::Uniform* cameraLocation = nullptr;
+			OldShader::Uniform* cameraLocationLast = nullptr;
 
-			Shader::Uniform* pvMatrixLast = nullptr;
-			Shader::Uniform* jitterLast = nullptr;
-			Shader::Uniform* jitterCurrent = nullptr;
+			OldShader::Uniform* pvMatrixLast = nullptr;
+			OldShader::Uniform* jitterLast = nullptr;
+			OldShader::Uniform* jitterCurrent = nullptr;
 
-			Shader::Uniform* fogScale = nullptr;
-			Shader::Uniform* fogDistanceScale = nullptr;
-			Shader::Uniform* fogHeight = nullptr;
-			Shader::Uniform* fogColor = nullptr;
-			Shader::Uniform* fogScatteringPower = nullptr;
+			OldShader::Uniform* fogScale = nullptr;
+			OldShader::Uniform* fogDistanceScale = nullptr;
+			OldShader::Uniform* fogHeight = nullptr;
+			OldShader::Uniform* fogColor = nullptr;
+			OldShader::Uniform* fogScatteringPower = nullptr;
 
 		};
 

@@ -9,7 +9,7 @@
 
 namespace Atlas {
 
-	namespace Shader {
+	namespace OldShader {
 
 		/**
 		 * A shader stage is a module/stage of a shader, e.g it might be a vertex shader.

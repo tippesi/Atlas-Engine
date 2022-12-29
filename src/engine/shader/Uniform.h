@@ -6,7 +6,7 @@
 
 namespace Atlas {
 
-	namespace Shader {
+	namespace OldShader {
 
 		class ShaderBatch;
 

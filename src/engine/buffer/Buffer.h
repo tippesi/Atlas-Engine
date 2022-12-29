@@ -41,7 +41,7 @@
 
 namespace Atlas {
 
-	namespace Buffer {
+	namespace OldBuffer {
 
 		/**
          * Base class for all other buffer classes. Can be used as standalone class.

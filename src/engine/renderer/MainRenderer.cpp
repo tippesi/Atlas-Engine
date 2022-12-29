@@ -16,39 +16,15 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		MainRenderer::MainRenderer() {
+        void MainRenderer::Init(GraphicsDevice *device) {
 
-            /*
-			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
-			Helper::GeometryHelper::GenerateCubeVertexArray(cubeVertexArray);
+            this->device = device;
 
-			rectangleShader.AddStage(AE_VERTEX_STAGE, "rectangle.vsh");
-			rectangleShader.AddStage(AE_FRAGMENT_STAGE, "rectangle.fsh");
+            haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16 + 1);
 
-			rectangleShader.Compile();
+            PreintegrateBRDF();
 
-			lineShader.AddStage(AE_VERTEX_STAGE, "primitive.vsh");
-			lineShader.AddStage(AE_FRAGMENT_STAGE, "primitive.fsh");
-
-			GetUniforms();
-
-			createProbeFaceShader.AddStage(AE_COMPUTE_STAGE, "brdf/createProbeFace.csh");
-
-			filterDiffuseShader.AddStage(AE_VERTEX_STAGE, "brdf/filterProbe.vsh");
-			filterDiffuseShader.AddStage(AE_FRAGMENT_STAGE, "brdf/filterProbe.fsh");
-            */
-
-			haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16 + 1);
-
-			PreintegrateBRDF();
-
-		}
-
-		MainRenderer::~MainRenderer() {
-
-			
-
-		}
+        }
 
 		void MainRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
 			Scene::Scene* scene, Texture::Texture2D* texture, RenderBatch* batch) {
@@ -764,29 +740,39 @@ namespace Atlas {
 
 		void MainRenderer::PreintegrateBRDF() {
 
-            /*
-			Shader::Shader shader;
+            auto shaderConfig = ShaderConfig {
+                {"brdf/preintegrateDFG.csh", VK_SHADER_STAGE_COMPUTE_BIT},
+            };
+            auto pipelineDesc = Graphics::ComputePipelineDesc();
+            auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc);
+            auto computePipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-			shader.AddStage(AE_COMPUTE_STAGE, "brdf/preintegrateDFG.csh");
+            const int32_t res = 256;
+            dfgPreintegrationTexture = Texture::Texture2D(res, res, VK_FORMAT_R16G16B16A16_SFLOAT);
 
-			shader.Compile();
+            auto commandList = device->GetCommandList(QueueType::GraphicsQueue, true);
 
-			const int32_t res = 256;
-			dfgPreintegrationTexture = Texture::Texture2D(res, res, AE_RGBA16F);
+            commandList->BeginCommands();
+            commandList->BindPipeline(computePipeline);
 
-			int32_t groupCount = res / 8;
-			groupCount += ((res % groupCount) ? 1 : 0);
+            auto barrier = ImageBarrier(VK_IMAGE_LAYOUT_GENERAL,
+                VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+            commandList->ImageMemoryBarrier(barrier.Update(dfgPreintegrationTexture.image),
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-			dfgPreintegrationTexture.Bind(GL_WRITE_ONLY, 0);
+            uint32_t groupCount = res / 8;
+            groupCount += ((res % groupCount) ? 1 : 0);
 
-			shader.Bind();
+            commandList->BindImage(dfgPreintegrationTexture.image, 0, 0);
+            commandList->Dispatch(groupCount, groupCount, 1);
 
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            barrier = ImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_SHADER_READ_BIT);
+            commandList->ImageMemoryBarrier(barrier.Update(dfgPreintegrationTexture.image),
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
-			glDispatchCompute(groupCount, groupCount, 1);
-
-			glFlush();
-            */
+            commandList->EndCommands();
+            device->FlushCommandList(commandList);
 
 		}
 

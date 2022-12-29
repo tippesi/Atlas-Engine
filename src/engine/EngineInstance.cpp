@@ -19,6 +19,8 @@ namespace Atlas {
 		delete Engine::DefaultWindow;
 		Engine::DefaultWindow = &window;
 
+        mainRenderer.Init(Graphics::GraphicsDevice::DefaultDevice);
+
 	}
 
     EngineInstance::~EngineInstance() {

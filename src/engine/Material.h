@@ -6,8 +6,7 @@
 #include "texture/Texture.h"
 #include "texture/Texture2DArray.h"
 #include "loader/ImageLoader.h"
-#include "shader/Shader.h"
-#include "shader/ShaderConfig.h"
+#include "shader/PipelineConfig.h"
 #include "common/Ref.h"
 
 #include <string>
@@ -63,6 +62,9 @@ namespace Atlas {
 		std::string displacementMapPath;
 
 		bool twoSided = false;
+
+        PipelineConfig mainConfig;
+        PipelineConfig shadowConfig;
 
 	};
 

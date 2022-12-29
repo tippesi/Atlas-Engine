@@ -37,22 +37,22 @@ namespace Atlas {
 
 			std::vector<vec3> CalculateCharacterInstances(Font* font, std::string text, int32_t* characterCount);
 
-			Buffer::VertexArray vertexArray;
+			OldBuffer::VertexArray vertexArray;
 
-			Shader::Shader shader;
+			OldShader::OldShader shader;
 
-			Shader::Uniform* projectionMatrix = nullptr;
-			Shader::Uniform* characterScales = nullptr;
-			Shader::Uniform* characterSizes = nullptr;
-			Shader::Uniform* textOffset = nullptr;
-			Shader::Uniform* textScale = nullptr;
-			Shader::Uniform* textColor = nullptr;
-			Shader::Uniform* outlineColor = nullptr;
-			Shader::Uniform* outlineScale = nullptr;
-			Shader::Uniform* edgeValue = nullptr;
-			Shader::Uniform* smoothness = nullptr;
-			Shader::Uniform* clipArea = nullptr;
-			Shader::Uniform* blendArea = nullptr;
+			OldShader::Uniform* projectionMatrix = nullptr;
+			OldShader::Uniform* characterScales = nullptr;
+			OldShader::Uniform* characterSizes = nullptr;
+			OldShader::Uniform* textOffset = nullptr;
+			OldShader::Uniform* textScale = nullptr;
+			OldShader::Uniform* textColor = nullptr;
+			OldShader::Uniform* outlineColor = nullptr;
+			OldShader::Uniform* outlineScale = nullptr;
+			OldShader::Uniform* edgeValue = nullptr;
+			OldShader::Uniform* smoothness = nullptr;
+			OldShader::Uniform* clipArea = nullptr;
+			OldShader::Uniform* blendArea = nullptr;
 
 		};
 

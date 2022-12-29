@@ -12,7 +12,7 @@
 
 namespace Atlas {
 
-    namespace Shader {
+    namespace OldShader {
 
         std::string ShaderStage::sourceDirectory = "";
 

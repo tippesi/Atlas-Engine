@@ -22,9 +22,9 @@ namespace Atlas {
 
 			static void InitShaderBatch();
 
-			static void AddConfig(Shader::ShaderConfig* config);
+			static void AddConfig(OldShader::ShaderConfig* config);
 
-			static void RemoveConfig(Shader::ShaderConfig* config);
+			static void RemoveConfig(OldShader::ShaderConfig* config);
 
 		private:
 			void AdjustFaceCulling(bool cullFaces, bool& state);
@@ -33,15 +33,15 @@ namespace Atlas {
 
 			ImpostorShadowRenderer impostorRenderer;
 
-			Shader::Uniform* lightSpaceMatrixUniform = nullptr;
-			Shader::Uniform* modelMatrixUniform = nullptr;
+			OldShader::Uniform* lightSpaceMatrixUniform = nullptr;
+			OldShader::Uniform* modelMatrixUniform = nullptr;
 
-			Shader::Uniform* timeUniform = nullptr;
+			OldShader::Uniform* timeUniform = nullptr;
 
-			Shader::Uniform* vegetationUniform = nullptr;
-			Shader::Uniform* invertUVsUniform = nullptr;
+			OldShader::Uniform* vegetationUniform = nullptr;
+			OldShader::Uniform* invertUVsUniform = nullptr;
 
-			static Shader::ShaderBatch shaderBatch;
+			static OldShader::ShaderBatch shaderBatch;
 			static std::mutex shaderBatchMutex;
 
 		};

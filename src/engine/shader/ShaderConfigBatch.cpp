@@ -2,9 +2,9 @@
 
 namespace Atlas {
 
-	namespace Shader {
+	namespace OldShader {
 
-		ShaderConfigBatch::ShaderConfigBatch(Shader* shader) : shader(shader) {
+		ShaderConfigBatch::ShaderConfigBatch(OldShader* shader) : shader(shader) {
 
 			ID = 0;
 
@@ -46,7 +46,7 @@ namespace Atlas {
 
 		}
 
-		Shader* ShaderConfigBatch::GetShader() {
+		OldShader* ShaderConfigBatch::GetShader() {
 
 			return shader;
 

@@ -89,29 +89,29 @@ namespace Atlas {
 			int32_t sampleCount = 0;
 			ivec2 imageOffset = ivec2(0);
 
-			Shader::Shader rayGenShader;
+			OldShader::OldShader rayGenShader;
 
-			Shader::Uniform* cameraLocationRayGenUniform = nullptr;
-			Shader::Uniform* originRayGenUniform = nullptr;
-			Shader::Uniform* rightRayGenUniform = nullptr;
-			Shader::Uniform* bottomRayGenUniform = nullptr;
+			OldShader::Uniform* cameraLocationRayGenUniform = nullptr;
+			OldShader::Uniform* originRayGenUniform = nullptr;
+			OldShader::Uniform* rightRayGenUniform = nullptr;
+			OldShader::Uniform* bottomRayGenUniform = nullptr;
 
-			Shader::Uniform* sampleCountRayGenUniform = nullptr;
-			Shader::Uniform* pixelOffsetRayGenUniform = nullptr;
+			OldShader::Uniform* sampleCountRayGenUniform = nullptr;
+			OldShader::Uniform* pixelOffsetRayGenUniform = nullptr;
 
-			Shader::Uniform* tileSizeRayGenUniform = nullptr;
-			Shader::Uniform* resolutionRayGenUniform = nullptr;
+			OldShader::Uniform* tileSizeRayGenUniform = nullptr;
+			OldShader::Uniform* resolutionRayGenUniform = nullptr;
 
-			Shader::Shader rayHitShader;
+			OldShader::OldShader rayHitShader;
 
-			Shader::Uniform* maxBouncesRayHitUniform = nullptr;
+			OldShader::Uniform* maxBouncesRayHitUniform = nullptr;
 
-			Shader::Uniform* sampleCountRayHitUniform = nullptr;
-			Shader::Uniform* bounceCountRayHitUniform = nullptr;
+			OldShader::Uniform* sampleCountRayHitUniform = nullptr;
+			OldShader::Uniform* bounceCountRayHitUniform = nullptr;
 
-			Shader::Uniform* resolutionRayHitUniform = nullptr;
+			OldShader::Uniform* resolutionRayHitUniform = nullptr;
 
-			Shader::Uniform* seedRayHitUniform = nullptr;
+			OldShader::Uniform* seedRayHitUniform = nullptr;
 
 		};
 

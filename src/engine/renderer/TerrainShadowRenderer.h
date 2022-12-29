@@ -18,21 +18,21 @@ namespace Atlas {
 		private:
 			void GetUniforms();
 
-			Shader::Shader shader;
+			OldShader::OldShader shader;
 
-			Shader::Uniform* heightScale = nullptr;
-			Shader::Uniform* tileScale = nullptr;
-			Shader::Uniform* patchSize = nullptr;
+			OldShader::Uniform* heightScale = nullptr;
+			OldShader::Uniform* tileScale = nullptr;
+			OldShader::Uniform* patchSize = nullptr;
 
-			Shader::Uniform* nodeLocation = nullptr;
-			Shader::Uniform* nodeSideLength = nullptr;
+			OldShader::Uniform* nodeLocation = nullptr;
+			OldShader::Uniform* nodeSideLength = nullptr;
 
-			Shader::Uniform* leftLoD = nullptr;
-			Shader::Uniform* topLoD = nullptr;
-			Shader::Uniform* rightLoD = nullptr;
-			Shader::Uniform* bottomLoD = nullptr;
+			OldShader::Uniform* leftLoD = nullptr;
+			OldShader::Uniform* topLoD = nullptr;
+			OldShader::Uniform* rightLoD = nullptr;
+			OldShader::Uniform* bottomLoD = nullptr;
 
-			Shader::Uniform* lightSpaceMatrix = nullptr;
+			OldShader::Uniform* lightSpaceMatrix = nullptr;
 
 
 		};

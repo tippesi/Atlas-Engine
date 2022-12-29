@@ -83,7 +83,7 @@ namespace Atlas {
 
 			}
 
-			void RayTracingHelper::DispatchAndHit(Shader::Shader* dispatchAndHitShader, glm::ivec3 dimensions, std::function<void(void)> prepare) {
+			void RayTracingHelper::DispatchAndHit(OldShader::OldShader* dispatchAndHitShader, glm::ivec3 dimensions, std::function<void(void)> prepare) {
 
 				// Select lights once per initial ray dispatch
 				{
@@ -173,7 +173,7 @@ namespace Atlas {
 
 			}
 
-			void RayTracingHelper::DispatchRayGen(Shader::Shader* rayGenShader, glm::ivec3 dimensions, 
+			void RayTracingHelper::DispatchRayGen(OldShader::OldShader* rayGenShader, glm::ivec3 dimensions,
 				bool binning, std::function<void(void)> prepare) {
 
 				dispatchCounter = 0;
@@ -240,7 +240,7 @@ namespace Atlas {
 
 			}
 
-			void RayTracingHelper::DispatchHitClosest(Shader::Shader* hitShader, 
+			void RayTracingHelper::DispatchHitClosest(OldShader::OldShader* hitShader,
 				bool binning, std::function<void(void)> prepare) {
 
 				auto& rtData = scene->rayTracingData;
@@ -392,7 +392,7 @@ namespace Atlas {
 
 			}
 
-			Buffer::Buffer* RayTracingHelper::GetRayBuffer() {
+			OldBuffer::Buffer* RayTracingHelper::GetRayBuffer() {
 
 				// This is the latest write buffer in all tracing functions
 				return &rayBuffer;

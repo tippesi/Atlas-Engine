@@ -2,7 +2,7 @@
 #define RAYTRACINGHELPER_H
 
 #include "../../System.h"
-#include "../../shader/Shader.h"
+#include "shader/OldShader.h"
 #include "../../scene/Scene.h"
 #include "../../buffer/Buffer.h"
 #include <functional>
@@ -26,19 +26,19 @@ namespace Atlas {
 
 				void SetRayBufferSize(size_t rayCount);
 
-				void DispatchAndHit(Shader::Shader* dispatchAndHitShader, glm::ivec3 dimensions, std::function<void(void)> prepare);
+				void DispatchAndHit(OldShader::OldShader* dispatchAndHitShader, glm::ivec3 dimensions, std::function<void(void)> prepare);
 
-				void DispatchRayGen(Shader::Shader* rayGenShader, glm::ivec3 dimensions, bool binning, std::function<void(void)> prepare);
+				void DispatchRayGen(OldShader::OldShader* rayGenShader, glm::ivec3 dimensions, bool binning, std::function<void(void)> prepare);
 
-				void DispatchHitClosest(Shader::Shader* hitShader, bool binning, std::function<void(void)> prepare);
+				void DispatchHitClosest(OldShader::OldShader* hitShader, bool binning, std::function<void(void)> prepare);
 
-				void DispatchHitAny(Shader::Shader* hitShader, std::function<void(void)> prepare);
+				void DispatchHitAny(OldShader::OldShader* hitShader, std::function<void(void)> prepare);
 
-				void DispatchGather(Shader::Shader* gatherShader, std::function<void(void)> prepare);
+				void DispatchGather(OldShader::OldShader* gatherShader, std::function<void(void)> prepare);
 
 				void InvalidateRayBuffer();
 
-				Buffer::Buffer* GetRayBuffer();
+				OldBuffer::Buffer* GetRayBuffer();
 
 				void UpdateLights();
 
@@ -52,24 +52,24 @@ namespace Atlas {
 				std::vector<Scene::RTData::GPULight> lights;
 				std::vector<Scene::RTData::GPULight> selectedLights;
 
-				Shader::Shader traceDispatchShader;
-				Shader::Shader traceClosestShader;
-				Shader::Shader traceAnyShader;
+				OldShader::OldShader traceDispatchShader;
+				OldShader::OldShader traceClosestShader;
+				OldShader::OldShader traceAnyShader;
 
-				Shader::Shader binningOffsetShader;
-				Shader::Shader binningShader;
-				Buffer::Buffer indirectDispatchBuffer;
+				OldShader::OldShader binningOffsetShader;
+				OldShader::OldShader binningShader;
+				OldBuffer::Buffer indirectDispatchBuffer;
 
-				Buffer::Buffer counterBuffer0;
-				Buffer::Buffer counterBuffer1;
+				OldBuffer::Buffer counterBuffer0;
+				OldBuffer::Buffer counterBuffer1;
 
-				Buffer::Buffer rayBuffer;
-				Buffer::Buffer rayPayloadBuffer;
+				OldBuffer::Buffer rayBuffer;
+				OldBuffer::Buffer rayPayloadBuffer;
 
-				Buffer::Buffer rayBinCounterBuffer;
-				Buffer::Buffer rayBinOffsetBuffer;
+				OldBuffer::Buffer rayBinCounterBuffer;
+				OldBuffer::Buffer rayBinOffsetBuffer;
 				
-				Buffer::Buffer lightBuffer;
+				OldBuffer::Buffer lightBuffer;
 
 				int32_t dispatchCounter = 0;
 				int32_t rayOffsetCounter = 0;

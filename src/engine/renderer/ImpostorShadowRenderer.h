@@ -21,18 +21,18 @@ namespace Atlas {
 		private:
 			void GetUniforms();
 
-			Shader::Shader shader;
-			Buffer::VertexArray vertexArray;
+			OldShader::OldShader shader;
+			OldBuffer::VertexArray vertexArray;
 
-			Shader::Uniform* vMatrix = nullptr;
-			Shader::Uniform* pMatrix = nullptr;
-			Shader::Uniform* cameraLocation = nullptr;
+			OldShader::Uniform* vMatrix = nullptr;
+			OldShader::Uniform* pMatrix = nullptr;
+			OldShader::Uniform* cameraLocation = nullptr;
 
-			Shader::Uniform* center = nullptr;
-			Shader::Uniform* radius = nullptr;
+			OldShader::Uniform* center = nullptr;
+			OldShader::Uniform* radius = nullptr;
 
-			Shader::Uniform* views = nullptr;
-			Shader::Uniform* cutoff = nullptr;
+			OldShader::Uniform* views = nullptr;
+			OldShader::Uniform* cutoff = nullptr;
 
 		};
 

@@ -105,7 +105,7 @@ namespace Atlas {
 		 */
 		void Exit();
 
-		// Renderer::MainRenderer mainRenderer;
+		Renderer::MainRenderer mainRenderer;
 
         /**
          * The main instance, needs to be implemented by user

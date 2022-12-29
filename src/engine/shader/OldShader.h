@@ -9,27 +9,27 @@
 
 namespace Atlas {
 
-	namespace Shader {
+	namespace OldShader {
 
-        class Shader {
+        class OldShader {
 
         public:
             /**
              * Constructs a Shader object.
              */
-            Shader();
+            OldShader();
 
-			Shader(const Shader& that) = delete;
+			OldShader(const OldShader& that) = delete;
 
             /**
              * Destructs a Shader object.
              */
-            ~Shader();
+            ~OldShader();
 
 			/**
 			 * A Shader object shouldn't be copied because of the uniforms.
 			 */
-			Shader& operator=(const Shader& that) = delete;
+			OldShader& operator=(const OldShader& that) = delete;
 
             /**
              * Adds a shader stage to the shader (e.g the vertex shader)

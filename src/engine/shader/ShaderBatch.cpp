@@ -3,7 +3,7 @@
 
 namespace Atlas {
 
-	namespace Shader {
+	namespace OldShader {
 
 		ShaderBatch::ShaderBatch() {
 
@@ -53,7 +53,7 @@ namespace Atlas {
 			}
 
 			// No batch was found, we need to create a new shader
-			auto shader = new Shader();
+			auto shader = new OldShader();
 			auto batch = new ShaderConfigBatch(shader);
 
 			for (auto stage : stages) {
@@ -101,7 +101,7 @@ namespace Atlas {
 
 		}
 
-		Shader* ShaderBatch::GetShader(int32_t shaderID) {
+		OldShader* ShaderBatch::GetShader(int32_t shaderID) {
 
 			return configBatches[shaderID]->GetShader();
 

@@ -3,7 +3,7 @@
 
 #include "../System.h"
 #include "Renderer.h"
-#include "../shader/Shader.h"
+#include "shader/OldShader.h"
 
 namespace Atlas {
 
@@ -19,21 +19,21 @@ namespace Atlas {
 		private:
 			void GetUniforms();
 
-			Shader::Shader shader;
-			Shader::Shader sharpenShader;
+			OldShader::OldShader shader;
+			OldShader::OldShader sharpenShader;
 
-			Shader::Uniform* hdrTextureResolution = nullptr;
-			Shader::Uniform* exposure = nullptr;
-			Shader::Uniform* saturation = nullptr;
-			Shader::Uniform* bloomPassses = nullptr;
-			Shader::Uniform* aberrationStrength = nullptr;
-			Shader::Uniform* aberrationReversed = nullptr;
-			Shader::Uniform* vignetteOffset = nullptr;
-			Shader::Uniform* vignettePower = nullptr;
-			Shader::Uniform* vignetteStrength = nullptr;
-			Shader::Uniform* vignetteColor = nullptr;
-			Shader::Uniform* sharpenFactor = nullptr;
-			Shader::Uniform* timeInMilliseconds = nullptr;
+			OldShader::Uniform* hdrTextureResolution = nullptr;
+			OldShader::Uniform* exposure = nullptr;
+			OldShader::Uniform* saturation = nullptr;
+			OldShader::Uniform* bloomPassses = nullptr;
+			OldShader::Uniform* aberrationStrength = nullptr;
+			OldShader::Uniform* aberrationReversed = nullptr;
+			OldShader::Uniform* vignetteOffset = nullptr;
+			OldShader::Uniform* vignettePower = nullptr;
+			OldShader::Uniform* vignetteStrength = nullptr;
+			OldShader::Uniform* vignetteColor = nullptr;
+			OldShader::Uniform* sharpenFactor = nullptr;
+			OldShader::Uniform* timeInMilliseconds = nullptr;
 
 		};
 

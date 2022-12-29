@@ -17,7 +17,7 @@ namespace Atlas {
 				Camera* camera, Scene::Scene* scene);
 
 		private:
-			Shader::Shader shader;
+			OldShader::OldShader shader;
 
 		};
 

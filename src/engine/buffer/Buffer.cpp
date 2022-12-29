@@ -3,7 +3,7 @@
 
 namespace Atlas {
 
-    namespace Buffer {
+    namespace OldBuffer {
 
         Buffer::Buffer(const Buffer& that) {
 

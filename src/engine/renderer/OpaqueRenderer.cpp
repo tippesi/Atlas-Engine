@@ -8,7 +8,7 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		Shader::ShaderBatch OpaqueRenderer::shaderBatch;
+		OldShader::ShaderBatch OpaqueRenderer::shaderBatch;
 		std::mutex OpaqueRenderer::shaderBatchMutex;
 
 		OpaqueRenderer::OpaqueRenderer() {
@@ -346,7 +346,7 @@ namespace Atlas {
 
 		}
 
-		void OpaqueRenderer::AddConfig(Shader::ShaderConfig* config) {
+		void OpaqueRenderer::AddConfig(OldShader::ShaderConfig* config) {
 
             /*
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
@@ -356,7 +356,7 @@ namespace Atlas {
 
 		}
 
-		void OpaqueRenderer::RemoveConfig(Shader::ShaderConfig* config) {
+		void OpaqueRenderer::RemoveConfig(OldShader::ShaderConfig* config) {
 
             /*
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);

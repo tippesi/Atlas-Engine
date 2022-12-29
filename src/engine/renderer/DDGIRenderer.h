@@ -30,22 +30,22 @@ namespace Atlas {
 			Material probeDebugOffsetMaterial;
 
 		private:
-			Buffer::Buffer rayHitBuffer;
+			OldBuffer::Buffer rayHitBuffer;
 
-			Buffer::VertexArray vertexArray;
-			Buffer::VertexArray sphereArray;
+			OldBuffer::VertexArray vertexArray;
+			OldBuffer::VertexArray sphereArray;
 
 			Helper::RayTracingHelper helper;
 
-			Shader::Shader probeDebugShader;
+			OldShader::OldShader probeDebugShader;
 
-			Shader::Shader rayGenShader;
-			Shader::Shader rayHitShader;
+			OldShader::OldShader rayGenShader;
+			OldShader::OldShader rayHitShader;
 
-			Shader::Shader probeStateShader;
-			Shader::Shader probeIrradianceUpdateShader;
-			Shader::Shader probeMomentsUpdateShader;
-			Shader::Shader copyEdgeShader;
+			OldShader::OldShader probeStateShader;
+			OldShader::OldShader probeIrradianceUpdateShader;
+			OldShader::OldShader probeMomentsUpdateShader;
+			OldShader::OldShader copyEdgeShader;
 
 		};
 

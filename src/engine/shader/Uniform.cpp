@@ -3,7 +3,7 @@
 
 namespace Atlas {
 
-	namespace Shader {
+	namespace OldShader {
 
 		Uniform::Uniform(uint32_t shaderID, const std::string& name, ShaderBatch* shaderBatch, int32_t ID) :  
 			shaderID(shaderID), name(name), shaderBatch(shaderBatch), ID(ID) {

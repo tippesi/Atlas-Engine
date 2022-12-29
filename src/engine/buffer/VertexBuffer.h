@@ -6,7 +6,7 @@
 
 namespace Atlas {
 
-	namespace Buffer {
+	namespace OldBuffer {
 
 		/**
 		 * Manages the vertex data flow between the CPU and GPU

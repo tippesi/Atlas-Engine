@@ -2,6 +2,8 @@
 
 #include "../common/Hash.h"
 
+#include <algorithm>
+
 namespace Atlas {
 
     PipelineConfig::PipelineConfig(ShaderConfig shaderConfig, Graphics::GraphicsPipelineDesc desc,

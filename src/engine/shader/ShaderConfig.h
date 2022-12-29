@@ -7,7 +7,7 @@
 
 namespace Atlas {
 
-	namespace Shader {
+	namespace OldShader {
 
 		/**
 		 * A shader configuration consists of macros which configure a

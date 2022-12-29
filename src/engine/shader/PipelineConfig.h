@@ -18,6 +18,8 @@ namespace Atlas {
         friend PipelineManager;
 
     public:
+        PipelineConfig() = default;
+
         PipelineConfig(ShaderConfig shaderConfig, Graphics::GraphicsPipelineDesc desc);
 
         PipelineConfig(ShaderConfig shaderConfig, Graphics::GraphicsPipelineDesc desc, std::vector<std::string> macros);

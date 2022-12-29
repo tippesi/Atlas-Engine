@@ -3,13 +3,13 @@
 
 #include "../System.h"
 #include "ShaderConfig.h"
-#include "Shader.h"
+#include "OldShader.h"
 
 #include <vector>
 
 namespace Atlas {
 
-	namespace Shader {
+	namespace OldShader {
 
 		/**
 		 * A ShaderConfigBatch groups an arbitrary number of ShaderConfigs
@@ -25,7 +25,7 @@ namespace Atlas {
              * @note The shader will be managed by the shader configuration batch.
              * This means that it wiil be released from memory if the batch gets destructed.
              */
-			explicit ShaderConfigBatch(Shader* shader);
+			explicit ShaderConfigBatch(OldShader* shader);
 
 			/**
              * Destructs a ShaderConfigBatch object.
@@ -59,7 +59,7 @@ namespace Atlas {
              * Returns the shader of the batch
              * @return A pointer to the shader object.
              */
-			Shader* GetShader();
+			OldShader* GetShader();
 
 			/**
              * The ID of the batch
@@ -67,7 +67,7 @@ namespace Atlas {
 			int32_t ID;
 
 		private:
-			Shader* shader;
+			OldShader* shader;
 			std::vector<ShaderConfig*> configs;
 
 		};

@@ -19,41 +19,41 @@ namespace Atlas {
         private:
             void GetUniforms();
 
-            Shader::Shader shader;
+            OldShader::OldShader shader;
 
-            Shader::Uniform* inverseViewMatrix = nullptr;
-            Shader::Uniform* inverseProjectionMatrix = nullptr;
+            OldShader::Uniform* inverseViewMatrix = nullptr;
+            OldShader::Uniform* inverseProjectionMatrix = nullptr;
 
-			Shader::Uniform* cameraLocation = nullptr;
+			OldShader::Uniform* cameraLocation = nullptr;
 
-            Shader::Uniform* lightDirection = nullptr;
-            Shader::Uniform* lightColor = nullptr;
-            Shader::Uniform* lightIntensity = nullptr;
+            OldShader::Uniform* lightDirection = nullptr;
+            OldShader::Uniform* lightColor = nullptr;
+            OldShader::Uniform* lightIntensity = nullptr;
 
-            Shader::Uniform* scatteringFactor = nullptr;
+            OldShader::Uniform* scatteringFactor = nullptr;
 
-            Shader::Uniform* shadowDistance = nullptr;
-            Shader::Uniform* shadowBias = nullptr;
-			Shader::Uniform* shadowCascadeBlendDistance = nullptr;
-            Shader::Uniform* shadowCascadeCount = nullptr;
-            Shader::Uniform* shadowResolution = nullptr;
+            OldShader::Uniform* shadowDistance = nullptr;
+            OldShader::Uniform* shadowBias = nullptr;
+			OldShader::Uniform* shadowCascadeBlendDistance = nullptr;
+            OldShader::Uniform* shadowCascadeCount = nullptr;
+            OldShader::Uniform* shadowResolution = nullptr;
 
-			Shader::Uniform* fogScale = nullptr;
-			Shader::Uniform* fogDistanceScale = nullptr;
-			Shader::Uniform* fogHeight = nullptr;
-			Shader::Uniform* fogColor = nullptr;
-			Shader::Uniform* fogScatteringPower = nullptr;
+			OldShader::Uniform* fogScale = nullptr;
+			OldShader::Uniform* fogDistanceScale = nullptr;
+			OldShader::Uniform* fogHeight = nullptr;
+			OldShader::Uniform* fogColor = nullptr;
+			OldShader::Uniform* fogScatteringPower = nullptr;
 
-            Shader::Uniform* volumeMin = nullptr;
-            Shader::Uniform* volumeMax = nullptr;
-            Shader::Uniform* volumeProbeCount = nullptr;
-            Shader::Uniform* volumeIrradianceRes = nullptr;
-            Shader::Uniform* volumeMomentsRes = nullptr;
+            OldShader::Uniform* volumeMin = nullptr;
+            OldShader::Uniform* volumeMax = nullptr;
+            OldShader::Uniform* volumeProbeCount = nullptr;
+            OldShader::Uniform* volumeIrradianceRes = nullptr;
+            OldShader::Uniform* volumeMomentsRes = nullptr;
 
             struct ShadowCascadeUniform {
-                Shader::Uniform* distance = nullptr;
-                Shader::Uniform* lightSpace = nullptr;
-				Shader::Uniform* texelSize = nullptr;
+                OldShader::Uniform* distance = nullptr;
+                OldShader::Uniform* lightSpace = nullptr;
+				OldShader::Uniform* texelSize = nullptr;
             }cascades[MAX_SHADOW_CASCADE_COUNT + 1];
 
         };

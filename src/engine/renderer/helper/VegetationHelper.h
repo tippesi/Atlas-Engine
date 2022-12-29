@@ -2,7 +2,7 @@
 #define AE_VEGETATIONHELPER_H
 
 #include "../../System.h"
-#include "../../shader/Shader.h"
+#include "shader/OldShader.h"
 #include "../../scene/Vegetation.h"
 #include "../../buffer/Buffer.h"
 
@@ -22,7 +22,7 @@ namespace Atlas {
 				void PrepareInstanceBuffer(Scene::Vegetation& vegetation,
 					Camera* camera);
 
-				Buffer::Buffer* GetCommandBuffer();
+				OldBuffer::Buffer* GetCommandBuffer();
 
 				size_t GetCommandBufferOffset(Mesh::VegetationMesh& mesh,
 					Mesh::MeshSubData& subData);
@@ -51,22 +51,22 @@ namespace Atlas {
 
 				void GenerateBuffers(Scene::Vegetation& vegetation);
 
-				void ResetCounterBuffer(Buffer::Buffer& buffer);
+				void ResetCounterBuffer(OldBuffer::Buffer& buffer);
 
-				Shader::Shader instanceCullingShader;
-				Shader::Shader instanceBinningShader;
-				Shader::Shader instanceBinningOffsetShader;
-				Shader::Shader instanceDrawCallShader;
+				OldShader::OldShader instanceCullingShader;
+				OldShader::OldShader instanceBinningShader;
+				OldShader::OldShader instanceBinningOffsetShader;
+				OldShader::OldShader instanceDrawCallShader;
 
-				Buffer::Buffer indirectDrawCallBuffer;
+				OldBuffer::Buffer indirectDrawCallBuffer;
 
-				Buffer::Buffer instanceCounterBuffer;
+				OldBuffer::Buffer instanceCounterBuffer;
 				
-				Buffer::Buffer binCounterBuffer;
-				Buffer::Buffer binOffsetBuffer;
+				OldBuffer::Buffer binCounterBuffer;
+				OldBuffer::Buffer binOffsetBuffer;
 
-				Buffer::Buffer meshInformationBuffer;
-				Buffer::Buffer meshSubdataInformationBuffer;
+				OldBuffer::Buffer meshInformationBuffer;
+				OldBuffer::Buffer meshSubdataInformationBuffer;
 
 				std::map<Mesh::VegetationMesh*, int32_t> meshToIdxMap;
 				std::vector<MeshSubdataInformation> meshSubdataInformation;

@@ -2,7 +2,7 @@
 
 namespace Atlas {
 
-	namespace Buffer {
+	namespace OldBuffer {
 
 		VertexBuffer::VertexBuffer(const VertexBuffer& that) : Buffer(that) {
 

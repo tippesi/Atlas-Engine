@@ -2,7 +2,7 @@
 #define AE_SHADERBATCH_H
 
 #include "../System.h"
-#include "Shader.h"
+#include "OldShader.h"
 #include "ShaderConfigBatch.h"
 
 #include <vector>
@@ -10,7 +10,7 @@
 
 namespace Atlas {
 
-	namespace Shader {
+	namespace OldShader {
 
 		class ShaderBatch {
 
@@ -50,7 +50,7 @@ namespace Atlas {
 			 * Returns the shader of a config batch
 			 * @param shaderID The ID of the config batch.
 			 */
-			Shader* GetShader(int32_t shaderID);
+			OldShader* GetShader(int32_t shaderID);
 
 			/**
              * Returns a Uniform object for a specific uniform of the shader.

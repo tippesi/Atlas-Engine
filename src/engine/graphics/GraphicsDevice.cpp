@@ -89,6 +89,10 @@ namespace Atlas {
 
             DestroyFrameData();
 
+            for (auto commandList : commandLists) {
+                delete commandList;
+            }
+
             for (auto& pipelineRef : pipelines) {
                 assert(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
                 pipelineRef.reset();

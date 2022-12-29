@@ -9,7 +9,7 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		Shader::ShaderBatch ShadowRenderer::shaderBatch;
+		OldShader::ShaderBatch ShadowRenderer::shaderBatch;
 		std::mutex ShadowRenderer::shaderBatchMutex;
 
 		ShadowRenderer::ShadowRenderer() {
@@ -186,7 +186,7 @@ namespace Atlas {
 
 		}
 
-		void ShadowRenderer::AddConfig(Shader::ShaderConfig* config) {
+		void ShadowRenderer::AddConfig(OldShader::ShaderConfig* config) {
 
             /*
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);
@@ -196,7 +196,7 @@ namespace Atlas {
 
 		}
 
-		void ShadowRenderer::RemoveConfig(Shader::ShaderConfig* config) {
+		void ShadowRenderer::RemoveConfig(OldShader::ShaderConfig* config) {
 
             /*
 			std::lock_guard<std::mutex> guard(shaderBatchMutex);

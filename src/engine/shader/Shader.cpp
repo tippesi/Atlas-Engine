@@ -1,22 +1,22 @@
-#include "Shader.h"
+#include "OldShader.h"
 #include "../Log.h"
 
 #include <algorithm>
 
 namespace Atlas {
 
-	namespace Shader {
+	namespace OldShader {
 
-        uint32_t Shader::boundShaderID = 0;
+        uint32_t OldShader::boundShaderID = 0;
 
-        Shader::Shader() {
+        OldShader::OldShader() {
 
             ID = 0;
             isCompiled = false;
 
         }
 
-        Shader::~Shader() {
+        OldShader::~OldShader() {
 
             for (auto& stage : stages) {
                 delete stage;
@@ -30,7 +30,7 @@ namespace Atlas {
 
         }
 
-        void Shader::AddStage(int32_t type, const std::string& filename) {
+        void OldShader::AddStage(int32_t type, const std::string& filename) {
 
             auto source = new ShaderStage(type, filename);
 
@@ -38,13 +38,13 @@ namespace Atlas {
 
         }
 
-        void Shader::AddStage(ShaderStage* stage) {
+        void OldShader::AddStage(ShaderStage* stage) {
 
             stages.push_back(stage);
 
         }
 
-        ShaderStage* Shader::GetStage(int32_t type) {
+        ShaderStage* OldShader::GetStage(int32_t type) {
 
 			auto it = std::find_if(stages.begin(), stages.end(),
 				[type](const auto& stage) { return stage->type == type; });
@@ -56,7 +56,7 @@ namespace Atlas {
 
         }
 
-        Uniform* Shader::GetUniform(const std::string& name) {
+        Uniform* OldShader::GetUniform(const std::string& name) {
 
 			// Check if we have the uniform cached
 			auto it = std::find_if(uniforms.begin(), uniforms.end(),
@@ -75,7 +75,7 @@ namespace Atlas {
 
         }
 
-        void Shader::AddMacro(const std::string& macro) {
+        void OldShader::AddMacro(const std::string& macro) {
 
             isCompiled = false;
 
@@ -87,7 +87,7 @@ namespace Atlas {
 
         }
 
-        void Shader::RemoveMacro(const std::string& macro) {
+        void OldShader::RemoveMacro(const std::string& macro) {
 
             for (auto& stage : stages) {
                 stage->RemoveMacro(macro);
@@ -102,14 +102,14 @@ namespace Atlas {
 
         }
 
-        bool Shader::HasMacro(const std::string& macro) {
+        bool OldShader::HasMacro(const std::string& macro) {
 
 			return std::any_of(macros.begin(), macros.end(),
 				[macro](const auto& value) { return value == macro; });
 
         }
 
-        bool Shader::ManageMacro(const std::string& macro, bool enable) {
+        bool OldShader::ManageMacro(const std::string& macro, bool enable) {
 
             bool hasMacro = HasMacro(macro);
             if (enable && !hasMacro) {
@@ -122,7 +122,7 @@ namespace Atlas {
 
         }
 
-        bool Shader::Compile() {
+        bool OldShader::Compile() {
 
             bool compile = true;
 
@@ -192,13 +192,13 @@ namespace Atlas {
 
         }
 
-        bool Shader::IsCompiled() {
+        bool OldShader::IsCompiled() {
 
             return isCompiled;
 
         }
 
-        void Shader::Bind() {
+        void OldShader::Bind() {
 
             if (!isCompiled) {
                 Compile();
@@ -227,14 +227,14 @@ namespace Atlas {
 
         }
 
-        void Shader::Unbind() {
+        void OldShader::Unbind() {
 
             // glUseProgram(0);
             boundShaderID = 0;
 
         }
 
-        uint32_t Shader::GetID() {
+        uint32_t OldShader::GetID() {
 
             return ID;
 

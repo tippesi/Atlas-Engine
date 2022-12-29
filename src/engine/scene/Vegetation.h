@@ -15,9 +15,9 @@ namespace Atlas {
 
 		public:
 			struct Buffers {
-				Buffer::Buffer instanceData;
-				Buffer::Buffer culledInstanceData;
-				Buffer::Buffer binnedInstanceData;
+				OldBuffer::Buffer instanceData;
+				OldBuffer::Buffer culledInstanceData;
+				OldBuffer::Buffer binnedInstanceData;
 			};
 
 			Vegetation() = default;

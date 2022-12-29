@@ -6,7 +6,7 @@
 
 namespace Atlas {
 
-    namespace Buffer {
+    namespace OldBuffer {
 
         class IndexBuffer : public Buffer {
 

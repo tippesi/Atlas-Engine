@@ -20,75 +20,75 @@ namespace Atlas {
 		private:
 			void GetUniforms();
 
-			Buffer::VertexArray vertexArray;
+			OldBuffer::VertexArray vertexArray;
 
 			Texture::Texture2D refractionTexture;
 			Texture::Texture2D depthTexture;
 
-			Shader::Shader causticsShader;
+			OldShader::OldShader causticsShader;
 
-			Shader::Shader shader;
+			OldShader::OldShader shader;
 
-			Shader::Uniform* nodeLocation = nullptr;
-			Shader::Uniform* nodeSideLength = nullptr;
+			OldShader::Uniform* nodeLocation = nullptr;
+			OldShader::Uniform* nodeSideLength = nullptr;
 
-			Shader::Uniform* viewMatrix = nullptr;
-			Shader::Uniform* inverseViewMatrix = nullptr;
-			Shader::Uniform* projectionMatrix = nullptr;
-			Shader::Uniform* inverseProjectionMatrix = nullptr;
+			OldShader::Uniform* viewMatrix = nullptr;
+			OldShader::Uniform* inverseViewMatrix = nullptr;
+			OldShader::Uniform* projectionMatrix = nullptr;
+			OldShader::Uniform* inverseProjectionMatrix = nullptr;
 
-			Shader::Uniform* cameraLocation = nullptr;
+			OldShader::Uniform* cameraLocation = nullptr;
 
-			Shader::Uniform* time = nullptr;
+			OldShader::Uniform* time = nullptr;
 
-			Shader::Uniform* translation = nullptr;
+			OldShader::Uniform* translation = nullptr;
 
-			Shader::Uniform* displacementScale = nullptr;
-			Shader::Uniform* choppyScale = nullptr;
-			Shader::Uniform* tiling = nullptr;
+			OldShader::Uniform* displacementScale = nullptr;
+			OldShader::Uniform* choppyScale = nullptr;
+			OldShader::Uniform* tiling = nullptr;
 
-			Shader::Uniform* shoreWaveDistanceOffset = nullptr;
-			Shader::Uniform* shoreWaveDistanceScale = nullptr;
-			Shader::Uniform* shoreWaveAmplitude = nullptr;
-			Shader::Uniform* shoreWaveSteepness = nullptr;
-			Shader::Uniform* shoreWavePower = nullptr;
-			Shader::Uniform* shoreWaveSpeed = nullptr;
-			Shader::Uniform* shoreWaveLength = nullptr;
+			OldShader::Uniform* shoreWaveDistanceOffset = nullptr;
+			OldShader::Uniform* shoreWaveDistanceScale = nullptr;
+			OldShader::Uniform* shoreWaveAmplitude = nullptr;
+			OldShader::Uniform* shoreWaveSteepness = nullptr;
+			OldShader::Uniform* shoreWavePower = nullptr;
+			OldShader::Uniform* shoreWaveSpeed = nullptr;
+			OldShader::Uniform* shoreWaveLength = nullptr;
 
-			Shader::Uniform* leftLoD = nullptr;
-			Shader::Uniform* topLoD = nullptr;
-			Shader::Uniform* rightLoD = nullptr;
-			Shader::Uniform* bottomLoD = nullptr;
+			OldShader::Uniform* leftLoD = nullptr;
+			OldShader::Uniform* topLoD = nullptr;
+			OldShader::Uniform* rightLoD = nullptr;
+			OldShader::Uniform* bottomLoD = nullptr;
 
-			Shader::Uniform* lightDirection = nullptr;
-			Shader::Uniform* lightColor = nullptr;
-			Shader::Uniform* lightAmbient = nullptr;
+			OldShader::Uniform* lightDirection = nullptr;
+			OldShader::Uniform* lightColor = nullptr;
+			OldShader::Uniform* lightAmbient = nullptr;
 
-			Shader::Uniform* shadowDistance = nullptr;
-			Shader::Uniform* shadowBias = nullptr;
-			Shader::Uniform* shadowCascadeCount = nullptr;
-			Shader::Uniform* shadowResolution = nullptr;
+			OldShader::Uniform* shadowDistance = nullptr;
+			OldShader::Uniform* shadowBias = nullptr;
+			OldShader::Uniform* shadowCascadeCount = nullptr;
+			OldShader::Uniform* shadowResolution = nullptr;
 
-			Shader::Uniform* terrainTranslation = nullptr;
-			Shader::Uniform* terrainSideLength = nullptr;
-			Shader::Uniform* terrainHeightScale = nullptr;
+			OldShader::Uniform* terrainTranslation = nullptr;
+			OldShader::Uniform* terrainSideLength = nullptr;
+			OldShader::Uniform* terrainHeightScale = nullptr;
 
-			Shader::Uniform* hasRippleTexture = nullptr;
+			OldShader::Uniform* hasRippleTexture = nullptr;
 
-			Shader::Uniform* fogScale = nullptr;
-			Shader::Uniform* fogDistanceScale = nullptr;
-			Shader::Uniform* fogHeight = nullptr;
-			Shader::Uniform* fogColor = nullptr;
-			Shader::Uniform* fogScatteringPower = nullptr;
+			OldShader::Uniform* fogScale = nullptr;
+			OldShader::Uniform* fogDistanceScale = nullptr;
+			OldShader::Uniform* fogHeight = nullptr;
+			OldShader::Uniform* fogColor = nullptr;
+			OldShader::Uniform* fogScatteringPower = nullptr;
 
 			struct ShadowCascadeUniform {
-				Shader::Uniform* distance = nullptr;
-				Shader::Uniform* lightSpace = nullptr;
+				OldShader::Uniform* distance = nullptr;
+				OldShader::Uniform* lightSpace = nullptr;
 			}cascades[MAX_SHADOW_CASCADE_COUNT + 1];
 
-			Shader::Uniform* pvMatrixLast = nullptr;
-			Shader::Uniform* jitterLast = nullptr;
-			Shader::Uniform* jitterCurrent = nullptr;
+			OldShader::Uniform* pvMatrixLast = nullptr;
+			OldShader::Uniform* jitterLast = nullptr;
+			OldShader::Uniform* jitterCurrent = nullptr;
 
 		};
 

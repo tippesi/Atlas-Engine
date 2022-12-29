@@ -4,7 +4,7 @@
 
 namespace Atlas {
 
-	namespace Shader {
+	namespace OldShader {
 
 		void ShaderConfig::AddMacro(const std::string& macro) {
 

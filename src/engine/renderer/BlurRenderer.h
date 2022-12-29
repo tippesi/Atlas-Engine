@@ -27,9 +27,9 @@ namespace Atlas {
 
             bool bilateralBlur = true;
 
-            Shader::Shader shader;
+            OldShader::OldShader shader;
 
-            Shader::Uniform* blurDirection = nullptr;
+            OldShader::Uniform* blurDirection = nullptr;
 
 
         };

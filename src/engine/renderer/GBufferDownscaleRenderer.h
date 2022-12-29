@@ -21,8 +21,8 @@ namespace Atlas {
         private:
             void Downscale(RenderTargetData* rt, RenderTargetData* downsampledRt);
 
-            Shader::Shader downscale;
-            Shader::Shader downscaleDepthOnly;
+            OldShader::OldShader downscale;
+            OldShader::OldShader downscaleDepthOnly;
 
         };
 
