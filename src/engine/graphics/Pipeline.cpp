@@ -55,13 +55,18 @@ namespace Atlas {
             colorBlending.attachmentCount = uint32_t(colorBlendAttachments.size());
             colorBlending.pAttachments = colorBlendAttachments.data();
 
+            std::vector<VkVertexInputBindingDescription> bindingDescriptions;
+            std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+            auto vertexInputInfo = GenerateVertexInputStateInfoFromShader(desc.vertexInputInfo,
+                bindingDescriptions, attributeDescriptions);
+
             VkGraphicsPipelineCreateInfo pipelineInfo = {};
             pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
             pipelineInfo.pNext = nullptr;
             pipelineInfo.flags = 0;
             pipelineInfo.stageCount = uint32_t(desc.shader->stageCreateInfos.size());
             pipelineInfo.pStages = desc.shader->stageCreateInfos.data();
-            pipelineInfo.pVertexInputState = &desc.vertexInputInfo;
+            pipelineInfo.pVertexInputState = &vertexInputInfo;
             pipelineInfo.pInputAssemblyState = &desc.assemblyInputInfo;
             pipelineInfo.pDepthStencilState = &desc.depthStencilInputInfo;
             pipelineInfo.pViewportState = &viewportState;
@@ -142,7 +147,7 @@ namespace Atlas {
             std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
             for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                 // We need to check if there are any bindings at all
-                if (!shader->sets[i].bindingCount) continue;
+                //if (!shader->sets[i].bindingCount) continue;
                 descriptorSetLayouts.push_back(shader->sets[i].layout);
             }
 
@@ -152,6 +157,37 @@ namespace Atlas {
             }
 
             VK_CHECK(vkCreatePipelineLayout(device->device, &createInfo, nullptr, &layout))
+
+        }
+
+        VkPipelineVertexInputStateCreateInfo Pipeline::GenerateVertexInputStateInfoFromShader(
+            VkPipelineVertexInputStateCreateInfo descVertexInputState,
+            std::vector<VkVertexInputBindingDescription>& bindingDescriptions,
+            std::vector<VkVertexInputAttributeDescription>& attributeDescriptions) {
+
+            assert(descVertexInputState.vertexBindingDescriptionCount ==
+                descVertexInputState.vertexAttributeDescriptionCount && "Expected bindings and attributes \
+                to have the same amount of elements");
+
+            for (auto& vertexInput : shader->vertexInputs) {
+                bool found = false;
+                for (uint32_t i = 0; i < descVertexInputState.vertexBindingDescriptionCount; i++) {
+                    auto vertexBinding = descVertexInputState.pVertexBindingDescriptions[i];
+                    auto vertexAttribute = descVertexInputState.pVertexAttributeDescriptions[i];
+                    if (vertexBinding.binding == vertexInput.location) {
+                        bindingDescriptions.push_back(vertexBinding);
+                        attributeDescriptions.push_back(vertexAttribute);
+                        found = true;
+                        break;
+                    }
+                }
+                assert(found && "Vertex input was not specified in the pipeline desc");
+            }
+
+            return Graphics::Initializers::InitPipelineVertexInputStateCreateInfo(
+                bindingDescriptions.data(), uint32_t(bindingDescriptions.size()),
+                attributeDescriptions.data(), uint32_t(attributeDescriptions.size())
+            );
 
         }
 

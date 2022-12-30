@@ -184,6 +184,8 @@ void App::Render(float deltaTime) {
     }
     */
 
+    mainRenderer.RenderScene(&viewport, &renderTarget, &camera, &scene);
+
     testRenderer.Render(&camera);
 
     float averageFramerate = Atlas::Clock::GetAverage();

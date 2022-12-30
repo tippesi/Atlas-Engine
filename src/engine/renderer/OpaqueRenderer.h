@@ -17,57 +17,37 @@ namespace Atlas {
 		class OpaqueRenderer : public Renderer {
 
 		public:
-			OpaqueRenderer();
+			OpaqueRenderer() = default;
+
+            void Init(GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
-				Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap);
+				Scene::Scene* scene, CommandList* commandList, RenderList* renderList,
+                std::unordered_map<void*, uint16_t> materialMap);
 
 			void RenderImpostor(Viewport* viewport, std::vector<mat4> viewMatrices,
 				mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor);
 
-			static void InitShaderBatch();
-
-			static void AddConfig(OldShader::ShaderConfig* config);
-
-			static void RemoveConfig(OldShader::ShaderConfig* config);
-
 		private:
 			void AdjustFaceCulling(bool cullFaces, bool& state);
 
+            GraphicsDevice* device;
 			RenderList renderList;
 
 			ImpostorRenderer impostorRenderer;
 
-			OldShader::Uniform* modelMatrixUniform = nullptr;
-			OldShader::Uniform* viewMatrixUniform = nullptr;
-			OldShader::Uniform* projectionMatrixUniform = nullptr;
+			struct PushConstants {
+                uint32_t vegetation;
+                uint32_t invertUVs;
+                uint32_t twoSided;
+                uint32_t staticMesh;
+                uint32_t materialIdx;
+                float normalScale;
+                float displacementScale;
+            };
 
-			OldShader::Uniform* cameraLocationUniform = nullptr;
-			OldShader::Uniform* baseColorUniform = nullptr;
-			OldShader::Uniform* roughnessUniform = nullptr;
-			OldShader::Uniform* metalnessUniform = nullptr;
-			OldShader::Uniform* aoUniform = nullptr;
-			OldShader::Uniform* normalScaleUniform = nullptr;
-			OldShader::Uniform* displacementScaleUniform = nullptr;
-			OldShader::Uniform* materialIdxUniform = nullptr;
-
-			OldShader::Uniform* timeUniform = nullptr;
-			OldShader::Uniform* deltaTimeUniform = nullptr;
-
-			OldShader::Uniform* vegetationUniform = nullptr;
-			OldShader::Uniform* invertUVsUniform = nullptr;
-			OldShader::Uniform* staticMeshUniform = nullptr;
-			OldShader::Uniform* twoSidedUniform = nullptr;
-
-			OldShader::Uniform* pvMatrixLast = nullptr;
-
-			OldShader::Uniform* jitterCurrent = nullptr;
-			OldShader::Uniform* jitterLast = nullptr;
-
-			static OldShader::ShaderBatch shaderBatch;
-			static std::mutex shaderBatchMutex;
 
 		};
 

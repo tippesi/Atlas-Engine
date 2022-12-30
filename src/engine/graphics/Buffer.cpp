@@ -78,7 +78,7 @@ namespace Atlas {
 
         }
 
-        MultiBuffer::MultiBuffer(GraphicsDevice* device, BufferDesc& desc) {
+        MultiBuffer::MultiBuffer(GraphicsDevice* device, BufferDesc& desc) : size(desc.size) {
 
             for (uint32_t i = 0; i < FRAME_DATA_COUNT; i++) {
                 frameBuffer[i] = new Buffer(device, desc);

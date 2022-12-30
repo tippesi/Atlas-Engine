@@ -42,7 +42,8 @@ namespace Atlas {
 
             VkPipelineInputAssemblyStateCreateInfo InitPipelineInputAssemblyStateCreateInfo(VkPrimitiveTopology topology);
 
-            VkPipelineRasterizationStateCreateInfo InitPipelineRasterizationStateCreateInfo(VkPolygonMode polygonMode);
+            VkPipelineRasterizationStateCreateInfo InitPipelineRasterizationStateCreateInfo(VkPolygonMode polygonMode,
+                VkCullModeFlagBits cullMode = VK_CULL_MODE_BACK_BIT);
 
             VkPipelineMultisampleStateCreateInfo InitPipelineMultisampleStateCreateInfo();
 

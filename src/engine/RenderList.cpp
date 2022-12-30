@@ -1,140 +1,138 @@
 #include <actor/MeshActor.h>
 #include "RenderList.h"
 
+#include "graphics/GraphicsDevice.h"
+
 #include <glm/gtx/norm.hpp>
 
 namespace Atlas {
 
-	RenderList::RenderList(int32_t type) : type(type) {
+	RenderList::RenderList()  {
+
 
 
 	}
+
+    void RenderList::NewFrame() {
+
+        auto lastSize = currentActorMatrices.size();
+        currentActorMatrices.clear();
+        if (lastSize) currentActorMatrices.reserve(lastSize);
+
+        lastSize = lastActorMatrices.size();
+        lastActorMatrices.clear();
+        if (lastSize) lastActorMatrices.reserve(lastSize);
+
+        lastSize = impostorMatrices.size();
+        impostorMatrices.clear();
+        if (lastSize) impostorMatrices.reserve(lastSize);
+
+        passes.clear();
+
+    }
+
+    void RenderList::NewMainPass() {
+
+        Pass pass {
+            .type = RenderPassType::Main,
+            .light = nullptr,
+            .layer = 0
+        };
+
+        passes.push_back(pass);
+
+    }
+
+    void RenderList::NewShadowPass(Lighting::Light *light, uint32_t layer) {
+
+        Pass pass {
+            .type = RenderPassType::Shadow,
+            .light = light,
+            .layer = layer
+        };
+
+        passes.push_back(pass);
+
+    }
+
+
+    RenderList::Pass& RenderList::GetMainPass() {
+
+        for (auto& pass : passes) {
+            if (pass.type == RenderPassType::Main) return pass;
+        }
+
+
+
+    }
+
+    RenderList::Pass& RenderList::GetShadowPass(Lighting::Light *light, uint32_t layer) {
+
+        for (auto& pass : passes) {
+            if (pass.type == RenderPassType::Shadow &&
+                pass.light == light && pass.layer == layer) return pass;
+        }
+
+    }
 
 	void RenderList::Add(Actor::MeshActor *actor) {
 
-        /*
-		auto actorBatchIt = actorBatches.find(actor->mesh);
+        auto& pass = passes.back();
+        auto& meshToActorMap = pass.meshToActorMap;
 
-		if (actorBatchIt != actorBatches.end()) {
-			actorBatchIt->second->Add(actor);
-			return;
-		}
-
-		// Create new actor batch
-		auto actorBatch = new Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>(actor->mesh);		
-
-		actorBatch->Add(actor);
-
-		actorBatches[actor->mesh] = actorBatch;
-
-		// Build up all render list batches
-		std::map<int32_t, RenderListBatch> renderListBatches;
-
-		for (auto &subData : actor->mesh->data.subData) {
-
-			auto shaderConfig = actor->mesh->GetConfig(subData.material, type);
-
-			auto batchKey = renderListBatches.find(shaderConfig->shaderID);
-
-			if (batchKey != renderListBatches.end()) {
-				batchKey->second.subData.push_back(&subData);
-				continue;
-			}
-
-			RenderListBatch batch;
-			batch.actorBatch = actorBatch;
-			batch.subData.push_back(&subData);
-			renderListBatches[shaderConfig->shaderID] = batch;
-
-		}
-
-		// Integrate the render list batches into the ordered render batches
-		for (auto &renderListBatchKey : renderListBatches) {
-			orderedRenderBatches[renderListBatchKey.first].push_back(renderListBatchKey.second);
-		}
-        */
+        if (!meshToActorMap.contains(actor->mesh)) {
+            meshToActorMap[actor->mesh] = { actor };
+        }
+        else {
+            meshToActorMap[actor->mesh].push_back(actor);
+        }
 
 	}
 
-	void RenderList::AddRange(std::vector<Actor::MeshActor*>& actors) {
+	void RenderList::Update(Camera* camera) {
 
-        /*
-		auto mesh = actors[0]->mesh;
-		auto actorBatchIt = actorBatches.find(mesh);
-
-		if (actorBatchIt != actorBatches.end()) {
-			for (auto actor : actors)
-				actorBatchIt->second->Add(actor);
-			return;
-		}
-
-		// Create new actor batch
-		auto actorBatch = new Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>(mesh);
-
-		for (auto actor : actors)
-			actorBatch->Add(actor);
-
-		actorBatches[mesh] = actorBatch;
-
-		// Build up all render list batches
-		std::map<int32_t, RenderListBatch> renderListBatches;
-
-		for (auto& subData : mesh->data.subData) {
-
-			auto shaderConfig = mesh->GetConfig(subData.material, type);
-
-			auto batchKey = renderListBatches.find(shaderConfig->shaderID);
-
-			if (batchKey != renderListBatches.end()) {
-				batchKey->second.subData.push_back(&subData);
-				continue;
-			}
-
-			RenderListBatch batch;
-			batch.actorBatch = actorBatch;
-			batch.subData.push_back(&subData);
-			renderListBatches[shaderConfig->shaderID] = batch;
-
-		}
-
-		// Integrate the render list batches into the ordered render batches
-		for (auto& renderListBatchKey : renderListBatches) {
-			orderedRenderBatches[renderListBatchKey.first].push_back(renderListBatchKey.second);
-		}
-         */
-
-	}
-
-	void RenderList::UpdateBuffers(Camera* camera) {
-
-        /*
 		auto cameraLocation = camera->GetLocation();
 
-		for (auto& [mesh, actorBatch] : actorBatches) {
+        auto& pass = passes.back();
+        auto type = pass.type;
+        auto& meshToActorMap = pass.meshToActorMap;
+        auto& meshToInstancesMap = pass.meshToInstancesMap;
+
+        size_t maxActorCount = 0;
+        size_t maxImpostorCount = 0;
+
+        for (auto& [mesh, actors] : meshToActorMap) {
+            if (!mesh->castShadow && type == RenderPassType::Shadow)
+                continue;
+
+            auto hasImpostor = mesh->impostor != nullptr;
+            maxActorCount += actors.size();
+            maxImpostorCount += hasImpostor ? actors.size() : 0;
+        }
+
+        currentActorMatrices.reserve(maxActorCount);
+        lastActorMatrices.reserve(maxActorCount);
+        impostorMatrices.reserve(maxImpostorCount);
+
+		for (auto& [mesh, actors] : meshToActorMap) {
+            if (!actors.size()) continue;
+            if (!mesh->castShadow && type == RenderPassType::Shadow) continue;
+
 			auto hasImpostor = mesh->impostor != nullptr;
-			auto needsHistory = mesh->mobility != AE_STATIONARY_MESH
-				&& type != AE_SHADOW_CONFIG;
+			auto needsHistory = mesh->mobility != Mesh::MeshMobility::Stationary
+				&& type != RenderPassType::Shadow;
 
-			if (!actorBatch->GetSize())
-				continue;
-
-			if (!mesh->castShadow && type == AE_SHADOW_CONFIG)
-				continue;
-
-			std::vector<mat4> currentActorMatrices;
-			std::vector<mat4> lastActorMatrices;
-			std::vector<mat4> impostorMatrices;
-
-			currentActorMatrices.reserve(actorBatch->GetSize());
-			lastActorMatrices.reserve(actorBatch->GetSize());
-			impostorMatrices.reserve(actorBatch->GetSize());
-
-			auto typeDistance = type == AE_SHADOW_CONFIG ? 
+			auto typeDistance = type == RenderPassType::Shadow ?
 				mesh->impostorShadowDistance : mesh->impostorDistance;
 			auto sqdDistance = typeDistance * typeDistance;
 
+            MeshInstances instances;
+
+            instances.offset = currentActorMatrices.size();
+            instances.impostorOffset = impostorMatrices.size();
+
 			if (hasImpostor) {
-				for (auto actor : actorBatch->actors) {
+				for (auto actor : actors) {
 					auto distance = glm::distance2(
 						vec3(actor->globalMatrix[3]),
 						cameraLocation);
@@ -149,94 +147,61 @@ namespace Atlas {
 				}
 			}
 			else {
-				for (auto actor : actorBatch->actors) {
+				for (auto actor : actors) {
 					currentActorMatrices.push_back(actor->globalMatrix);
-					if (mesh->mobility != AE_STATIONARY_MESH) {
+					if (mesh->mobility != Mesh::MeshMobility::Stationary) {
 						lastActorMatrices.push_back(actor->lastGlobalMatrix);
 					}
-				}
-			}
-			
-			if (currentActorMatrices.size()) {
-				Buffers buffers;
-				auto it = actorBatchBuffers.find(mesh);
-				if (it == actorBatchBuffers.end()) {
-
-					buffers.currentMatrices = new Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
-						sizeof(mat4), AE_BUFFER_DYNAMIC_STORAGE, currentActorMatrices.size(),
-						currentActorMatrices.data());
-					if (needsHistory)
-						buffers.lastMatrices = new Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
-							sizeof(mat4), AE_BUFFER_DYNAMIC_STORAGE, lastActorMatrices.size(),
-							lastActorMatrices.data());
-					actorBatchBuffers[mesh] = buffers;
-
-				}
-				else {
-					buffers = it->second;
-					buffers.currentMatrices->SetSize(currentActorMatrices.size(),
-						currentActorMatrices.data());
-					if (needsHistory)
-						buffers.lastMatrices->SetSize(lastActorMatrices.size(),
-							lastActorMatrices.data());
+                    else {
+                        // For now push back anyways
+                        lastActorMatrices.push_back(actor->globalMatrix);
+                    }
 				}
 			}
 
-			if (impostorMatrices.size()) {
-				Buffer::Buffer* buffer = nullptr;
-				auto key = impostorBuffers.find(mesh);
-				if (key == impostorBuffers.end()) {
-
-					buffer = new Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
-						sizeof(mat4), AE_BUFFER_DYNAMIC_STORAGE, impostorMatrices.size(),
-						impostorMatrices.data());
-					impostorBuffers[mesh] = buffer;
-
-				}
-				else {
-					buffer = key->second;
-					buffer->SetSize(impostorMatrices.size(), impostorMatrices.data());
-				}
-			}
+            instances.count = currentActorMatrices.size() - instances.offset;
+            instances.impostorCount = impostorMatrices.size() - instances.impostorOffset;
+            meshToInstancesMap[mesh] = instances;
 
 		}
-         */
 
 	}
 
-	void RenderList::Clear() {
+	void RenderList::FillBuffers() {
 
-        /*
-		// Set buffers to size zero if no actors were added to them
-		for (auto& [mesh, actorBatch] : actorBatches) {
-			auto it0 = actorBatchBuffers.find(mesh);
-			if (it0 != actorBatchBuffers.end() && !actorBatch->GetSize()) {
-				auto needsHistory = mesh->mobility != AE_STATIONARY_MESH
-					&& type != AE_SHADOW_CONFIG;
-				if (it0->second.currentMatrices && it0->second.currentMatrices->GetElementCount()) {
-					it0->second.currentMatrices->SetSize(0);
-					if (needsHistory) it0->second.lastMatrices->SetSize(0);
-				}
-			}
-			auto it1 = impostorBuffers.find(mesh);
-			if (it1 != impostorBuffers.end() && !actorBatch->GetSize()) {
-				if (it1->second && it1->second->GetElementCount()) {
-					it1->second->SetSize(0);
-				}
-			}
-		}
+        auto device = Graphics::GraphicsDevice::DefaultDevice;
 
-		for (auto& [mesh, actorBatch] : actorBatches) {
-			auto buffer = actorBatchBuffers.find(mesh);
-			if (!buffer->second.currentMatrices)
-				continue;
-			delete actorBatch;
-		}
+        if (!currentMatricesBuffer || currentMatricesBuffer->size < sizeof(mat4) * currentActorMatrices.size()) {
+            auto newSize = currentMatricesBuffer != nullptr ? currentMatricesBuffer->size * 2 :
+                           sizeof(mat4) * currentActorMatrices.size();
+            auto bufferDesc = Graphics::BufferDesc {
+                .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                .domain = Graphics::BufferDomain::Host,
+                .size = newSize
+            };
+            if (newSize > 0) currentMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
+            if (newSize > 0) lastMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
+        }
 
-		actorBatches.clear();
-		orderedRenderBatches.clear();
-        */
+        if (!impostorMatricesBuffer || impostorMatricesBuffer->size < sizeof(mat4) * impostorMatrices.size()) {
+            auto newSize = impostorMatricesBuffer != nullptr ? impostorMatricesBuffer->size * 2 :
+                           sizeof(mat4) * impostorMatrices.size();
+            auto bufferDesc = Graphics::BufferDesc {
+                .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                .domain = Graphics::BufferDomain::Host,
+                .size = newSize
+            };
+            if (newSize > 0) impostorMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
+        }
 
-	}
+        // Probably better to use a device local buffer since we upload once per frame
+        if (currentActorMatrices.size() > 0)
+            currentMatricesBuffer->SetData(currentActorMatrices.data(), 0, currentActorMatrices.size() * sizeof(mat4));
+        if (lastActorMatrices.size() > 0)
+            lastMatricesBuffer->SetData(lastActorMatrices.data(), 0, lastActorMatrices.size() * sizeof(mat4));
+        if (impostorMatrices.size() > 0)
+            impostorMatricesBuffer->SetData(impostorMatrices.data(), 0, impostorMatrices.size() * sizeof(mat4));
+
+    }
 
 }

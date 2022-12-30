@@ -23,8 +23,11 @@ namespace Atlas {
                     {"test.vsh", VK_SHADER_STAGE_VERTEX_BIT},
                     {"test.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
                 };
-                auto pipelineDesc = Graphics::GraphicsPipelineDesc{
+                auto pipelineDesc = GraphicsPipelineDesc{
                     .swapChain = device->swapChain,
+                    .rasterizer = Initializers::InitPipelineRasterizationStateCreateInfo(
+                        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE
+                        )
                 };
                 auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc);
                 pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -32,7 +35,7 @@ namespace Atlas {
 
             {
                 int data = 5;
-                auto bufferDesc = Graphics::BufferDesc{
+                auto bufferDesc = BufferDesc{
                     .usageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                     .data = &data,
                     .size = sizeof(int)
@@ -40,7 +43,7 @@ namespace Atlas {
                 buffer = device->CreateBuffer(bufferDesc);
 
                 int data2 = 10;
-                bufferDesc = Graphics::BufferDesc{
+                bufferDesc = BufferDesc{
                     .usageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                     .data = &data2,
                     .size = sizeof(int)
@@ -48,7 +51,7 @@ namespace Atlas {
                 buffer = device->CreateBuffer(bufferDesc);
             }
             {
-                auto colorImageDesc = Graphics::ImageDesc{
+                auto colorImageDesc = ImageDesc{
                     .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
                                   | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
                                   | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
@@ -57,7 +60,7 @@ namespace Atlas {
                     .height = 1080,
                     .format = VK_FORMAT_R8G8B8A8_UNORM
                 };
-                auto depthImageDesc = Graphics::ImageDesc{
+                auto depthImageDesc = ImageDesc{
                     .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     .aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT,
                     .width = 1920,
@@ -69,30 +72,30 @@ namespace Atlas {
                 dstImage = device->CreateImage(colorImageDesc);
                 auto depthImage = device->CreateImage(depthImageDesc);
 
-                auto colorAttachment = Graphics::RenderPassAttachment{
+                auto colorAttachment = RenderPassAttachment{
                     .imageFormat = colorImage->format,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                     .outputLayout = VK_IMAGE_LAYOUT_GENERAL,
                 };
-                auto colorAttachment2 = Graphics::RenderPassAttachment{
+                auto colorAttachment2 = RenderPassAttachment{
                     .imageFormat = dummyImage->format,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                     .outputLayout = VK_IMAGE_LAYOUT_GENERAL,
                 };
-                auto depthAttachment = Graphics::RenderPassAttachment{
+                auto depthAttachment = RenderPassAttachment{
                     .imageFormat = depthImage->format,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                     .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 };
-                auto renderPassDesc = Graphics::RenderPassDesc{
+                auto renderPassDesc = RenderPassDesc{
                     .colorAttachments = { colorAttachment,colorAttachment2 },
                     .depthAttachment = depthAttachment
                 };
                 mainRenderPass = device->CreateRenderPass(renderPassDesc);
-                auto frameBufferDesc = Graphics::FrameBufferDesc {
+                auto frameBufferDesc = FrameBufferDesc {
                     .renderPass = mainRenderPass,
                     .colorAttachments = {
                         { colorImage, 0, true },
@@ -102,7 +105,7 @@ namespace Atlas {
                     .extent = {1920, 1080}
                 };
                 mainFrameBuffer = device->CreateFrameBuffer(frameBufferDesc);
-                auto samplerDesc = Graphics::SamplerDesc{
+                auto samplerDesc = SamplerDesc{
                     .filter = VK_FILTER_LINEAR,
                     .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT
                 };
@@ -117,7 +120,7 @@ namespace Atlas {
                     {"testmesh.vsh", VK_SHADER_STAGE_VERTEX_BIT},
                     {"testmesh.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
                 };
-                auto pipelineDesc = Graphics::GraphicsPipelineDesc{
+                auto pipelineDesc = GraphicsPipelineDesc{
                     .frameBuffer = mainFrameBuffer,
                     .vertexInputInfo = mesh->GetVertexInputState(),
                 };
@@ -126,9 +129,9 @@ namespace Atlas {
             }
 
             {
-                auto bufferDesc = Graphics::BufferDesc{
+                auto bufferDesc = BufferDesc{
                     .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                    .domain = Graphics::BufferDomain::Host,
+                    .domain = BufferDomain::Host,
                     .size = sizeof(Uniforms)
                 };
                 uniformBuffer = device->CreateMultiBuffer(bufferDesc);
@@ -137,22 +140,22 @@ namespace Atlas {
                 auto shaderConfig = ShaderConfig {
                     {"test.csh", VK_SHADER_STAGE_COMPUTE_BIT},
                 };
-                auto pipelineDesc = Graphics::ComputePipelineDesc();
+                auto pipelineDesc = ComputePipelineDesc();
                 auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc);
                 computePipeline = PipelineManager::GetPipeline(pipelineConfig);
             }
             {
-                renderPassToComputeBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_GENERAL,
+                renderPassToComputeBarrier = ImageBarrier(VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-                attachmentToTransferBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                attachmentToTransferBarrier = ImageBarrier(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                     VK_ACCESS_TRANSFER_READ_BIT);
-                dstToTransferBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                dstToTransferBarrier = ImageBarrier(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                     VK_ACCESS_TRANSFER_WRITE_BIT);
-                dstToShaderReadBarrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                dstToShaderReadBarrier = ImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     VK_ACCESS_SHADER_READ_BIT);
             }
             {
-                auto queryPoolDesc = Graphics::QueryPoolDesc {
+                auto queryPoolDesc = QueryPoolDesc {
                     .queryType = VK_QUERY_TYPE_TIMESTAMP,
                     .queryCount = 1000
                 };

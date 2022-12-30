@@ -1,0 +1,16 @@
+layout(set = 0, binding = 0) uniform GlobalBuffer {
+	mat4 vMatrix;
+    mat4 pMatrix;
+    mat4 ivMatrix;
+    mat4 ipMatrix;
+    mat4 pvMatrixLast;
+    mat4 pvMatrixCurrent;
+    vec2 jitterLast;
+    vec2 jitterCurrent;
+    float time;
+    float deltaTime;
+    // We need to align the struct to 16 bytes
+    vec2 alignment0;
+    vec4 alignment1;
+    vec4 alignment2;
+} globalData;

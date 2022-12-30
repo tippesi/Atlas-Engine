@@ -151,6 +151,7 @@ namespace Atlas {
                             images[i][j] = nullptr;
                             sampledImages[i][j] = { nullptr, nullptr };
                         }
+                        sets[i] = nullptr;
                     }
                 }
 

@@ -63,6 +63,11 @@ namespace Atlas {
         private:
             void GeneratePipelineLayoutFromShader();
 
+            VkPipelineVertexInputStateCreateInfo GenerateVertexInputStateInfoFromShader(
+                VkPipelineVertexInputStateCreateInfo descVertexInputState,
+                std::vector<VkVertexInputBindingDescription>& bindingDescriptions,
+                std::vector<VkVertexInputAttributeDescription>& attributeDescriptions);
+
             std::vector<VkPipelineColorBlendAttachmentState> GenerateBlendAttachmentStateFromFrameBuffer(
                 VkPipelineColorBlendAttachmentState blendAttachmentState);
 

@@ -48,7 +48,7 @@ namespace Atlas {
                     {targetData.roughnessMetallicAoTexture->image, 0, true},
                     {targetData.materialIdxTexture->image, 0, true},
                     {targetData.velocityTexture->image, 0, true},
-                    {targetData.stencilTexture->image, 0, true},
+                    {targetData.stencilTexture->image, 0, false},
                 },
                 .depthAttachment = {targetData.depthTexture->image, 0, true},
                 .extent = {uint32_t(width), uint32_t(height)}

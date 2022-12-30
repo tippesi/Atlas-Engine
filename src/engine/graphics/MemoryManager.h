@@ -76,6 +76,8 @@ namespace Atlas {
 
             void DestroyRawAllocation(std::function<void(void)> destroyLambda);
 
+            void DestroyAllImmediate();
+
             VmaAllocator allocator;
 
             VkPhysicalDeviceProperties deviceProperties;

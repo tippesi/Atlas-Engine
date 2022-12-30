@@ -4,20 +4,10 @@
 #include "../loader/ShaderLoader.h"
 #include "../graphics/GraphicsDevice.h"
 
-#include <algorithm>
-
 namespace Atlas {
 
     std::mutex PipelineManager::shaderToVariantsMutex;
     std::unordered_map<size_t, Ref<PipelineManager::PipelineVariants>> PipelineManager::shaderToVariantsMap;
-
-    PipelineConfig::PipelineConfig(ShaderConfig shaderConfig, Graphics::GraphicsPipelineDesc desc) :
-        shaderConfig(shaderConfig), graphicsPipelineDesc(desc), isCompute(false) {
-
-        CalculateShaderHash();
-        CalculateVariantHash();
-
-    }
 
     void PipelineManager::Init() {
 
@@ -77,7 +67,7 @@ namespace Atlas {
             }
 
             Ref<Graphics::Pipeline> pipeline;
-            if (!variants->variants.contains(config.shaderHash)) {
+            if (!variants->variants.contains(config.variantHash)) {
                 if (config.isCompute) {
                     config.computePipelineDesc.shader = variants->shader->GetVariant(config.macros);
                     pipeline = graphicsDevice->CreatePipeline(config.computePipelineDesc);

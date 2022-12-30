@@ -34,9 +34,7 @@ namespace Atlas {
 
             delete transferManager;
 
-            // Cheap trick to make sure everything is deleted
-            frameIndex += framesToDeletion;
-            DeleteData();
+            DestroyAllImmediate();
 
             vmaDestroyAllocator(allocator);
 
@@ -115,6 +113,14 @@ namespace Atlas {
         void MemoryManager::DestroyRawAllocation(std::function<void()> destroyLambda) {
 
             deleteRawAllocations.push_back(DeleteLambda { destroyLambda, frameIndex + framesToDeletion } );
+
+        }
+
+        void MemoryManager::DestroyAllImmediate() {
+
+            // Cheap trick to make sure everything is deleted
+            frameIndex += framesToDeletion;
+            DeleteData();
 
         }
 

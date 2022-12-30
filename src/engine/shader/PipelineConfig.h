@@ -28,6 +28,8 @@ namespace Atlas {
 
         PipelineConfig(ShaderConfig shaderConfig, Graphics::ComputePipelineDesc desc, std::vector<std::string> macros);
 
+        bool IsValid() const;
+
         size_t shaderHash = 0;
         size_t variantHash = 0;
 

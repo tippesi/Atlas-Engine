@@ -81,6 +81,8 @@ namespace Atlas {
 
             Buffer* GetCurrent() const;
 
+            const size_t size = 0;
+
         private:
             void UpdateFrameIndex(size_t frameIndex);
 

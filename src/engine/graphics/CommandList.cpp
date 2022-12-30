@@ -239,10 +239,6 @@ namespace Atlas {
                 SetScissor(0, 0, extent.width, extent.height);
             }
 
-            // Not sure if this will be really needed
-            descriptorBindingData.Reset();
-            prevDescriptorBindingData.Reset();
-
         }
 
         void CommandList::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
@@ -340,6 +336,7 @@ namespace Atlas {
 
             assert(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse || !buffer->buffer) return;
+            assert(buffer->buffer->size > 0 && "Invalid buffer size");
 
             vkCmdBindIndexBuffer(commandBuffer, buffer->buffer->buffer, 0, buffer->type);
 
@@ -349,6 +346,7 @@ namespace Atlas {
 
             assert(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse || !buffer->buffer) return;
+            assert(buffer->buffer->size > 0 && "Invalid buffer size");
 
             VkDeviceSize offset = 0;
             vkCmdBindVertexBuffers(commandBuffer, buffer->bindingDescription.binding, 1,
@@ -360,6 +358,7 @@ namespace Atlas {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            assert(buffer->size > 0 && "Invalid buffer size");
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = buffer.get();
@@ -370,6 +369,7 @@ namespace Atlas {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            assert(buffer->size > 0 && "Invalid buffer size");
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = buffer->GetCurrent();
@@ -554,6 +554,15 @@ namespace Atlas {
                 // Only uniform buffer should have a dynamic offset
                 for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
                     if (!descriptorBindingData.buffers[i][j]) continue;
+                    const auto& binding = shader->sets[i].bindings[j];
+                    // This probably is an old binding, which isn't used by this shader
+                    if (!binding.valid) continue;
+                    // Check that the descriptor types match up
+                    const auto descriptorType = binding.layoutBinding.descriptorType;
+                    if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC &&
+                        descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
+                        continue;
+
                     dynamicOffsets[dynamicOffsetCounter++] = 0;
                 }
 
@@ -566,11 +575,19 @@ namespace Atlas {
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
                         if (!descriptorBindingData.buffers[i][j]) continue;
                         const auto& binding = shader->sets[i].bindings[j];
+                        // This probably is an old binding, which isn't used by this shader
+                        if (!binding.valid) continue;
+                        // Check that the descriptor types match up
+                        const auto descriptorType = binding.layoutBinding.descriptorType;
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER &&
+                            descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC &&
+                            descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
+                            continue;
 
                         auto& bufferInfo = bufferInfos[bindingCounter];
                         bufferInfo.offset = 0;
                         bufferInfo.buffer = descriptorBindingData.buffers[i][j]->buffer;
-                        bufferInfo.range = binding.size;
+                        bufferInfo.range = binding.size ? binding.size : VK_WHOLE_SIZE;
 
                         auto& setWrite = setWrites[bindingCounter++];
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -588,6 +605,13 @@ namespace Atlas {
                         if (!descriptorBindingData.sampledImages[i][j].first ||
                             !descriptorBindingData.sampledImages[i][j].second) continue;
                         const auto& binding = shader->sets[i].bindings[j];
+                        // This probably is an old binding, which isn't used by this shader
+                        // This probably is an old binding, which isn't used by this shader
+                        if (!binding.valid) continue;
+                        // Check that the descriptor types match up
+                        const auto descriptorType = binding.layoutBinding.descriptorType;
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+                            continue;
 
                         auto [image, sampler] = descriptorBindingData.sampledImages[i][j];
 
@@ -611,6 +635,13 @@ namespace Atlas {
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
                         if (!descriptorBindingData.images[i][j]) continue;
                         const auto& binding = shader->sets[i].bindings[j];
+                        // This probably is an old binding, which isn't used by this shader
+                        // This probably is an old binding, which isn't used by this shader
+                        if (!binding.valid) continue;
+                        // Check that the descriptor types match up
+                        const auto descriptorType = binding.layoutBinding.descriptorType;
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+                            continue;
 
                         auto image = descriptorBindingData.images[i][j];
 
@@ -630,7 +661,12 @@ namespace Atlas {
                         setWrite.pImageInfo = &imageInfo;
                     }
 
-                    vkUpdateDescriptorSets(device, bindingCounter, setWrites, 0, nullptr);
+                    if (bindingCounter > 0) {
+                        vkUpdateDescriptorSets(device, bindingCounter, setWrites, 0, nullptr);
+                    }
+                    else {
+                        descriptorBindingData.sets[i] = nullptr;
+                    }
                 }
 
                 if (descriptorBindingData.sets[i] != nullptr) {

@@ -155,7 +155,8 @@ namespace Atlas {
 
             }
 
-            VkPipelineRasterizationStateCreateInfo InitPipelineRasterizationStateCreateInfo(VkPolygonMode polygonMode) {
+            VkPipelineRasterizationStateCreateInfo InitPipelineRasterizationStateCreateInfo(VkPolygonMode polygonMode,
+                VkCullModeFlagBits cullMode) {
 
                 VkPipelineRasterizationStateCreateInfo info = {};
                 info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -166,8 +167,8 @@ namespace Atlas {
 
                 info.polygonMode = polygonMode;
                 info.lineWidth = 1.0f;
-                info.cullMode = VK_CULL_MODE_NONE;
-                info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+                info.cullMode = cullMode;
+                info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
                 info.depthBiasEnable = VK_FALSE;
                 info.depthBiasConstantFactor = 0.0f;
                 info.depthBiasClamp = 0.0f;

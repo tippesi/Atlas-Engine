@@ -133,16 +133,37 @@ namespace Atlas {
 
 			};
 
+            struct GlobalUniforms {
+                mat4 vMatrix;
+                mat4 pMatrix;
+                mat4 ivMatrix;
+                mat4 ipMatrix;
+                mat4 pvMatrixLast;
+                mat4 pvMatrixCurrent;
+                vec2 jitterLast;
+                vec2 jitterCurrent;
+                float time;
+                float deltaTime;
+                // We need to align the struct to 16 bytes
+                vec2 alignment0;
+                vec4 alignment1;
+                vec4 alignment2;
+            };
+
 			void GetUniforms();
 
 			void PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
 				std::unordered_map<void*, uint16_t>& materialMap);
+
+            void FillRenderList(Scene::Scene* scene, Camera* camera);
 
 			void PreintegrateBRDF();
 
             GraphicsDevice* device;
 
 			Texture::Texture2D dfgPreintegrationTexture;
+
+            Ref<MultiBuffer> globalUniformBuffer;
 
 			OldBuffer::VertexArray vertexArray;
 			OldBuffer::VertexArray cubeVertexArray;
@@ -183,6 +204,8 @@ namespace Atlas {
 			RTReflectionRenderer rtrRenderer;
 			VolumetricRenderer volumetricRenderer;
 			VolumetricCloudRenderer volumetricCloudRenderer;
+
+            RenderList renderList;
 
 			std::vector<vec2> haltonSequence;
 			size_t haltonIndex = 0;

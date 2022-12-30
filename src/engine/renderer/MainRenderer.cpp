@@ -3,6 +3,7 @@
 #include "helper/HaltonSequence.h"
 
 #include "../common/Packing.h"
+#include "../Clock.h"
 
 #define FEATURE_BASE_COLOR_MAP (1 << 1)
 #define FEATURE_OPACITY_MAP (1 << 2)
@@ -24,32 +25,64 @@ namespace Atlas {
 
             PreintegrateBRDF();
 
+            auto uniformBufferDesc = BufferDesc {
+                .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                .domain = BufferDomain::Host,
+                .hostAccess = BufferHostAccess::Sequential,
+                .size = sizeof(GlobalUniforms),
+            };
+            globalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
+
+            opaqueRenderer.Init(device);
+
         }
 
 		void MainRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
 			Scene::Scene* scene, Texture::Texture2D* texture, RenderBatch* batch) {
 
-            /*
-			Profiler::BeginQuery("Render scene");
+            auto commandList = device->GetCommandList(QueueType::GraphicsQueue);
 
-			glDisable(GL_DEPTH_TEST);
-			glDisable(GL_CULL_FACE);
+            commandList->BeginCommands();
+
+            Profiler::BeginThread("Main renderer", commandList);
+            Profiler::BeginQuery("Render scene");
+
+            FillRenderList(scene, camera);
 
 			if (scene->vegetation)
 				vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera);
-
-			glEnable(GL_DEPTH_TEST);
-			glEnable(GL_CULL_FACE);
 
 			std::vector<PackedMaterial> materials;
 			std::unordered_map<void*, uint16_t> materialMap;
 
 			PrepareMaterials(scene, materials, materialMap);
 
-			dfgPreintegrationTexture.Bind(31);
+			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
 
-			auto materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(PackedMaterial), 0,
-				materials.size(), materials.data());
+            auto globalUniforms = GlobalUniforms {
+                .vMatrix = camera->viewMatrix,
+                .pMatrix = camera->projectionMatrix,
+                .ivMatrix = camera->invViewMatrix,
+                .ipMatrix = camera->invProjectionMatrix,
+                .pvMatrixLast = camera->GetLastJitteredMatrix(),
+                .pvMatrixCurrent = mat4(),
+                .jitterLast = camera->GetLastJitter(),
+                .jitterCurrent = camera->GetJitter(),
+                .time = Clock::Get(),
+                .deltaTime = Clock::GetDelta()
+            };
+
+            globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
+            commandList->BindBuffer(globalUniformBuffer, 0, 0);
+
+            auto materialBufferDesc = BufferDesc {
+                .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                .domain = BufferDomain::Host,
+                .hostAccess = BufferHostAccess::Sequential,
+                .data = materials.data(),
+                .size = sizeof(PackedMaterial) * materials.size(),
+            };
+            auto materialBuffer = device->CreateBuffer(materialBufferDesc);
 
 			auto& taa = scene->postProcessing.taa;
 			if (taa.enable) {
@@ -65,6 +98,28 @@ namespace Atlas {
 				camera->Jitter(vec2(0.0f));
 			}
 
+            {
+                Profiler::BeginQuery("Main render pass");
+
+                commandList->BeginRenderPass(target->gBufferRenderPass, target->gBufferFrameBuffer, true);
+
+                commandList->BindBuffer(renderList.currentMatricesBuffer, 1, 0);
+                commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 1);
+
+                opaqueRenderer.Render(viewport, target, camera, scene, commandList, &renderList, materialMap);
+
+                commandList->EndRenderPass();
+
+                Profiler::EndQuery();
+            }
+
+            Profiler::EndQuery();
+            Profiler::EndThread();
+
+            commandList->EndCommands();
+            device->SubmitCommandList(commandList);
+
+            /*
 			if (scene->sky.probe) {
 				if (scene->sky.probe->update) {
 					scene->sky.probe->filteredDiffuse.Bind(0);
@@ -737,6 +792,45 @@ namespace Atlas {
 			
 
 		}
+
+        void MainRenderer::FillRenderList(Scene::Scene *scene, Atlas::Camera *camera) {
+
+            renderList.NewFrame();
+            renderList.NewMainPass();
+
+            scene->GetRenderList(camera->frustum, renderList);
+            renderList.Update(camera);
+
+            auto lights = scene->GetLights();
+
+            if (scene->sky.sun) {
+                lights.push_back(scene->sky.sun.get());
+            }
+
+            for (auto light : lights) {
+                if (!light->GetShadow())
+                    continue;
+                if (!light->GetShadow()->update)
+                    continue;
+
+                auto componentCount = light->GetShadow()->longRange ?
+                    light->GetShadow()->componentCount - 1 :
+                    light->GetShadow()->componentCount;
+
+                for (int32_t i = 0; i < componentCount; i++) {
+                    auto component = &light->GetShadow()->components[i];
+                    auto frustum = Volume::Frustum(component->frustumMatrix);
+
+                    renderList.NewShadowPass(light, i);
+                    scene->GetRenderList(frustum, renderList);
+                    renderList.Update(camera);
+                }
+
+            }
+
+            renderList.FillBuffers();
+
+        }
 
 		void MainRenderer::PreintegrateBRDF() {
 

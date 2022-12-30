@@ -43,11 +43,14 @@ namespace Atlas {
 
         struct ShaderDescriptorBinding {
             std::string name;
+            size_t hash = 0;
 
             uint32_t set = 0;
             uint32_t size = 0;
             uint32_t arrayElement = 0;
             VkDescriptorSetLayoutBinding layoutBinding = {};
+
+            bool valid = false;
         };
 
         struct ShaderDescriptorSet {
@@ -56,6 +59,13 @@ namespace Atlas {
 
             VkDescriptorSetLayout layout = {};
             VkDescriptorSetLayoutBinding layoutBindings[BINDINGS_PER_DESCRIPTOR_SET];
+        };
+
+        struct ShaderVertexInput {
+            std::string name;
+
+            uint32_t location;
+            VkFormat format;
         };
 
         class ShaderVariant {
@@ -70,6 +80,7 @@ namespace Atlas {
             std::vector<VkShaderModule> modules;
             std::vector<VkPipelineShaderStageCreateInfo> stageCreateInfos;
 
+            std::vector<ShaderVertexInput> vertexInputs;
             std::vector<PushConstantRange> pushConstantRanges;
             ShaderDescriptorSet sets[DESCRIPTOR_SET_COUNT];
 
@@ -83,6 +94,7 @@ namespace Atlas {
             struct ShaderModule {
                 VkShaderStageFlagBits shaderStageFlag = {};
 
+                std::vector<ShaderVertexInput> inputs;
                 std::vector<PushConstantRange> pushConstantRanges;
                 std::vector<ShaderDescriptorSet> sets;
             };

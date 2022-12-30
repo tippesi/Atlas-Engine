@@ -3,6 +3,8 @@
 #include "ShaderCompiler.h"
 #include "GraphicsDevice.h"
 
+#include "../common/Hash.h"
+
 #include <spirv_reflect.h>
 #include <cassert>
 #include <unordered_map>
@@ -123,6 +125,7 @@ namespace Atlas {
                 bool isCompiled = false;
                 auto spirvBinary = ShaderCompiler::Compile(stage, macros, isCompiled);
 
+                assert(isCompiled && "Shader compilation was unsuccessful");
                 if (!isCompiled) return;
 
                 VkShaderModuleCreateInfo createInfo = {};
@@ -149,6 +152,9 @@ namespace Atlas {
                 shaderModules[i].shaderStageFlag = stage.shaderStage;
                 GenerateReflectionData(shaderModules[i], spirvBinary);
 
+                if (stage.shaderStage == VK_SHADER_STAGE_VERTEX_BIT)
+                    vertexInputs = shaderModules[i].inputs;
+
                 allStageFlags |= shaderModules[i].shaderStageFlag;
 
             }
@@ -160,17 +166,17 @@ namespace Atlas {
             for (auto& pushRange : pushConstantRanges)
                 pushRange.range.stageFlags |= allStageFlags;
 
-            std::unordered_map<std::string, ShaderDescriptorBinding> bindings;
+            std::unordered_map<size_t, ShaderDescriptorBinding> bindings;
 
             for (auto& shaderModule : shaderModules) {
                 for (auto& set : shaderModule.sets) {
                     for (uint32_t i = 0; i < set.bindingCount; i++) {
                         auto& binding = set.bindings[i];
-                        if (bindings.contains(binding.name)) {
-                            bindings[binding.name].layoutBinding.stageFlags |= shaderModule.shaderStageFlag;
+                        if (bindings.contains(binding.hash)) {
+                            bindings[binding.hash].layoutBinding.stageFlags |= shaderModule.shaderStageFlag;
                         }
                         else {
-                            bindings[binding.name] = binding;
+                            bindings[binding.hash] = binding;
                         }
                     }
                 }
@@ -187,16 +193,12 @@ namespace Atlas {
             }
 
             for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
-                // We need to check if there are any bindings at all
-                if (!sets[i].bindingCount) continue;
-
                 VkDescriptorSetLayoutCreateInfo setInfo = {};
                 setInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
                 setInfo.pNext = nullptr;
-
                 setInfo.bindingCount = sets[i].bindingCount;
                 setInfo.flags = 0;
-                setInfo.pBindings = sets[i].layoutBindings;
+                setInfo.pBindings = sets[i].bindingCount ? sets[i].layoutBindings : VK_NULL_HANDLE;
 
                 VK_CHECK(vkCreateDescriptorSetLayout(device->device, &setInfo, nullptr, &sets[i].layout))
             }
@@ -210,7 +212,6 @@ namespace Atlas {
             if (!isComplete) return;
 
             for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
-                if (!sets[i].bindingCount) continue;
                 vkDestroyDescriptorSetLayout(device->device, sets[i].layout, nullptr);
             }
 
@@ -286,6 +287,7 @@ namespace Atlas {
                     binding.set = descriptorBinding->set;
                     binding.size = descriptorBinding->block.size;
                     binding.arrayElement = 0;
+                    binding.valid = true;
 
                     assert(binding.set < DESCRIPTOR_SET_COUNT && "Too many descriptor sets for this shader");
 
@@ -298,11 +300,39 @@ namespace Atlas {
                         binding.layoutBinding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ?
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : binding.layoutBinding.descriptorType;
 
+                    HashCombine(binding.hash, binding.set);
+                    HashCombine(binding.hash, binding.layoutBinding.binding);
+
                     bindGroup.bindings[i] = binding;
                     bindGroup.bindingCount++;
                 }
 
                 shaderModule.sets.push_back(bindGroup);
+            }
+
+            if (shaderModule.shaderStageFlag == VK_SHADER_STAGE_VERTEX_BIT) {
+                uint32_t inputVariableCount = 0;
+                result = spvReflectEnumerateInputVariables(&module, &inputVariableCount, nullptr);
+                assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
+
+                std::vector<SpvReflectInterfaceVariable *> inputVariables(inputVariableCount);
+                result = spvReflectEnumerateInputVariables(&module, &inputVariableCount, inputVariables.data());
+                assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
+
+                for (auto inputVariable: inputVariables) {
+                    // Reject all build in variables
+                    if (inputVariable->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
+                        continue;
+                    }
+
+                    ShaderVertexInput input;
+
+                    input.name.assign(inputVariable->name);
+                    input.location = inputVariable->location;
+                    input.format = (VkFormat)inputVariable->format;
+
+                    shaderModule.inputs.push_back(input);
+                }
             }
 
             spvReflectDestroyShaderModule(&module);

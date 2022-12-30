@@ -93,6 +93,10 @@ namespace Atlas {
                 delete commandList;
             }
 
+            // Deleted pipelines might reference e.g. still active frame buffers,
+            // so delete all of the memoryManager content before cleaning the rest
+            memoryManager->DestroyAllImmediate();
+
             for (auto& pipelineRef : pipelines) {
                 assert(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
                 pipelineRef.reset();
