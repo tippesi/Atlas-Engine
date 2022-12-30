@@ -34,6 +34,7 @@ namespace Atlas {
             globalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
 
             opaqueRenderer.Init(device);
+			directLightRenderer.Init(device);
 
         }
 
@@ -112,6 +113,16 @@ namespace Atlas {
 
                 Profiler::EndQuery();
             }
+
+			commandList->PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+			{
+				Profiler::BeginQuery("Lighting pass");
+
+				directLightRenderer.Render(viewport, target, camera, scene, commandList);
+
+				Profiler::EndQuery();
+			}
 
             Profiler::EndQuery();
             Profiler::EndThread();

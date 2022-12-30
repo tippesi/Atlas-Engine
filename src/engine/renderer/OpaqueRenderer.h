@@ -33,9 +33,7 @@ namespace Atlas {
 		private:
 			void AdjustFaceCulling(bool cullFaces, bool& state);
 
-            GraphicsDevice* device;
 			RenderList renderList;
-
 			ImpostorRenderer impostorRenderer;
 
 			struct PushConstants {

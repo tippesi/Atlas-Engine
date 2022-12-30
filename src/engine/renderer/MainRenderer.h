@@ -12,6 +12,7 @@
 #include "ShadowRenderer.h"
 #include "TerrainShadowRenderer.h"
 #include "DecalRenderer.h"
+#include "DirectLightRenderer.h"
 #include "DirectionalLightRenderer.h"
 #include "PointLightRenderer.h"
 #include "IndirectLightRenderer.h"
@@ -192,6 +193,7 @@ namespace Atlas {
 			VegetationRenderer vegetationRenderer;
 			TerrainShadowRenderer terrainShadowRenderer;
 			DecalRenderer decalRenderer;
+			DirectLightRenderer directLightRenderer;
 			DirectionalLightRenderer directionalLightRenderer;
 			IndirectLightRenderer indirectLightRenderer;
 

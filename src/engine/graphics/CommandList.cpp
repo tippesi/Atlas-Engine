@@ -421,6 +421,13 @@ namespace Atlas {
 
         }
 
+        void CommandList::PipelineBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask) {
+
+            vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0,
+                nullptr, 0, nullptr, 0, nullptr);
+
+        }
+
         void CommandList::PipelineBarrier(std::vector<ImageBarrier>& imageBarriers,
             std::vector<BufferBarrier>& bufferBarriers, VkPipelineStageFlags srcStageMask,
             VkPipelineStageFlags dstStageMask) {

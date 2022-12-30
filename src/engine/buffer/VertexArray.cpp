@@ -8,7 +8,7 @@ namespace Atlas {
 
             // glGenVertexArrays(1, &ID);
 
-			int32_t maxVertexAttribs;
+			int32_t maxVertexAttribs = 0;
             // glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxVertexAttribs);
 
 			maxAttribArrayCount = (uint32_t)maxVertexAttribs;

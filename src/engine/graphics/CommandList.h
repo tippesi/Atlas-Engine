@@ -92,6 +92,8 @@ namespace Atlas {
             void BufferMemoryBarrier(BufferBarrier& barrier, VkPipelineStageFlags srcStageMask,
                 VkPipelineStageFlags dstStageMask);
 
+            void PipelineBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
+
             void PipelineBarrier(std::vector<ImageBarrier>& imageBarriers, std::vector<BufferBarrier>& bufferBarriers,
                 VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
 
