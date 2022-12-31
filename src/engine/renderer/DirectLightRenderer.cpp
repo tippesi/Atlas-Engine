@@ -70,10 +70,6 @@ namespace Atlas {
 
             commandList->BindPipeline(pipeline);
 
-            vec4 dir = vec4(light->direction, 0.0f);
-            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-            commandList->PushConstants(constantRange, &dir[0]);
-
             commandList->BindImage(target->lightingTexture.image, 3, 0);
             commandList->BindBuffer(uniformBuffer, 3, 1);
 

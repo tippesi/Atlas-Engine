@@ -38,16 +38,14 @@ void main() {
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     Light light = lightData.light;
-    light.direction = PushConstants.lightDirection;
 
     vec3 direct = vec3(0.0);
     if (depth < 1.0) {
         vec3 geometryNormal;
         // We don't have any light direction, that's why we use vec3(0.0, -1.0, 0.0) as a placeholder
-        Surface surface = GetSurface(texCoord, depth, vec3(0.0, -1.0, 0.0), geometryNormal);
+        Surface surface = GetSurface(texCoord, depth, -light.direction.xyz, geometryNormal);
 
         float shadowFactor = 1.0;
-        vec3 volumetric = vec3(1.0);
 
         // Direct diffuse + specular BRDF
         vec3 directDiffuse = EvaluateDiffuseBRDF(surface);
@@ -82,17 +80,6 @@ void main() {
         if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.01) {	
             direct += surface.material.emissiveColor;
         }
-
-            const vec3 lightDirection = -vec3(1.0, 1.0, 0.0);
-	const vec3 lightColor = vec3(1.0);
-	const float lightAmbient = 0.1;
-
-	float NdotL = dot(normalize(surface.N), -normalize(lightDirection));
-	direct = NdotL * lightColor + lightAmbient * lightColor;
-	direct *= surface.material.baseColor;
-
-        direct = surface.N;
-
 
     }
     
