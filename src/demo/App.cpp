@@ -3,7 +3,7 @@
 #include <chrono>
 #include <thread>
 
-const std::string Atlas::EngineInstance::assetDirectory = "../data";
+const std::string Atlas::EngineInstance::assetDirectory = "../../data";
 const std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
@@ -94,7 +94,7 @@ void App::LoadContent() {
         color.z = powf(color.z, gamma);
     }
 
-    testRenderer.Init(Atlas::Graphics::GraphicsDevice::DefaultDevice);
+    // testRenderer.Init(Atlas::Graphics::GraphicsDevice::DefaultDevice);
 
 }
 
@@ -186,7 +186,7 @@ void App::Render(float deltaTime) {
 
     mainRenderer.RenderScene(&viewport, &renderTarget, &camera, &scene);
 
-    testRenderer.Render(&camera);
+    // testRenderer.Render(&camera);
 
     float averageFramerate = Atlas::Clock::GetAverage();
 

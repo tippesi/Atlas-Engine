@@ -27,7 +27,7 @@ namespace Atlas {
 
             BufferDomain domain = BufferDomain::Device;
             // This one is only used when accessing data from the host directly
-            BufferHostAccess hostAccess = BufferHostAccess::Random;
+            BufferHostAccess hostAccess = BufferHostAccess::Sequential;
 
             void* data = nullptr;
             size_t size;
@@ -57,6 +57,7 @@ namespace Atlas {
             VmaAllocation allocation;
             VkAccessFlags accessMask = VK_ACCESS_MEMORY_READ_BIT |
                 VK_ACCESS_MEMORY_WRITE_BIT;
+            VkBufferUsageFlags usageFlags;
 
             BufferDomain domain;
 

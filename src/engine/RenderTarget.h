@@ -140,9 +140,9 @@ namespace Atlas {
 		 */
 		RenderResolution GetReflectionResolution();
 
-		RenderTargetData* GetDownsampledTextures(RenderResolution resolution);
+		RenderTargetData* GetData(RenderResolution resolution);
 
-		RenderTargetData* GetDownsampledHistoryTextures(RenderResolution resolution);
+		RenderTargetData* GetHistoryData(RenderResolution resolution);
 
 		Texture::Texture2D* GetHistory();
 
@@ -176,11 +176,13 @@ namespace Atlas {
 		Texture::Texture2D reflectionMomentsTexture;
 		Texture::Texture2D historyReflectionMomentsTexture;
 
+        Texture::Texture2D lightingTexture;
+
 	private:
 		Texture::Texture2D historyTexture;
 		Texture::Texture2D swapHistoryTexture;
 
-		RenderTargetData targetData;
+        RenderTargetData targetData;
 		RenderTargetData targetDataDownsampled2x;
 		RenderTargetData targetDataSwapDownsampled2x;
 

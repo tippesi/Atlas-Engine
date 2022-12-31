@@ -12,28 +12,40 @@ namespace Atlas {
 		class PostProcessRenderer : public Renderer {
 
 		public:
-			PostProcessRenderer();
+			PostProcessRenderer() = default;
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
+            void Init(GraphicsDevice* device);
+
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
+
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, CommandList* commandList);
 
 		private:
-			void GetUniforms();
+            struct alignas(16) Uniforms {
+                float exposure;
+                float saturation;
+                float timeInMilliseconds;
+                int32_t bloomPasses;
+                float aberrationStrength;
+                float aberrationReversed;
+                float vignetteOffset;
+                float vignettePower;
+                float vignetteStrength;
+                vec4 vignetteColor;
+            };
 
-			OldShader::OldShader shader;
-			OldShader::OldShader sharpenShader;
+			void SetUniforms(Camera* camera, Scene::Scene* scene);
 
-			OldShader::Uniform* hdrTextureResolution = nullptr;
-			OldShader::Uniform* exposure = nullptr;
-			OldShader::Uniform* saturation = nullptr;
-			OldShader::Uniform* bloomPassses = nullptr;
-			OldShader::Uniform* aberrationStrength = nullptr;
-			OldShader::Uniform* aberrationReversed = nullptr;
-			OldShader::Uniform* vignetteOffset = nullptr;
-			OldShader::Uniform* vignettePower = nullptr;
-			OldShader::Uniform* vignetteStrength = nullptr;
-			OldShader::Uniform* vignetteColor = nullptr;
-			OldShader::Uniform* sharpenFactor = nullptr;
-			OldShader::Uniform* timeInMilliseconds = nullptr;
+            PipelineConfig GetMainPipelineConfig();
+
+            PipelineConfig GetMainPipelineConfig(const Ref<FrameBuffer> frameBuffer);
+
+            PipelineConfig mainPipelineSwapChainConfig;
+            PipelineConfig mainPipelineFrameBufferConfig;
+            PipelineConfig sharpenPipelineConfig;
+
+            Ref<MultiBuffer> uniformBuffer;
 
 		};
 

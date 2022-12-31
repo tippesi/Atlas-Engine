@@ -6,125 +6,177 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		PostProcessRenderer::PostProcessRenderer() {
+        void PostProcessRenderer::Init(GraphicsDevice *device) {
 
-            /*
-			shader.AddStage(AE_VERTEX_STAGE, "postprocessing.vsh");
-			shader.AddStage(AE_FRAGMENT_STAGE, "postprocessing.fsh");
+            this->device = device;
 
-			shader.Compile();
+            auto mainShaderConfig = ShaderConfig {
+                { "postprocessing.vsh", VK_SHADER_STAGE_VERTEX_BIT },
+                { "postprocessing.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
+            };
+            auto mainPipelineDesc = GraphicsPipelineDesc();
+            mainPipelineSwapChainConfig = PipelineConfig(mainShaderConfig, mainPipelineDesc);
+            mainPipelineFrameBufferConfig = PipelineConfig(mainShaderConfig, mainPipelineDesc);
 
-			GetUniforms();
+            sharpenPipelineConfig = PipelineConfig("sharpen.csh");
 
-			sharpenShader.AddStage(AE_COMPUTE_STAGE, "sharpen.csh");
+            BufferDesc bufferDesc {
+                .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                .domain = BufferDomain::Host,
+                .size = sizeof(Uniforms)
+            };
+            uniformBuffer = device->CreateMultiBuffer(bufferDesc);
 
-			sharpenShader.Compile();
+        }
 
-			sharpenFactor = sharpenShader.GetUniform("sharpenFactor");
-             */
+		void PostProcessRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            Scene::Scene* scene, CommandList* commandList) {
 
-		}
-
-		void PostProcessRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
-
-            /*
 			Profiler::BeginQuery("Postprocessing");
 
-			Profiler::BeginQuery("Main");
+            auto& postProcessing = scene->postProcessing;
 
-			target->postProcessFramebuffer.Bind();
+            auto& chromaticAberration = postProcessing.chromaticAberration;
+            auto& vignette = postProcessing.vignette;
+            auto& taa = postProcessing.taa;
+            auto& sharpen = postProcessing.sharpen;
 
-			auto& postProcessing = scene->postProcessing;
+            ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
 
-			auto& chromaticAberration = postProcessing.chromaticAberration;
-			auto& vignette = postProcessing.vignette;
-			auto& taa = postProcessing.taa;
-			auto& sharpen = postProcessing.sharpen;
+            if (sharpen.enable) {
+                Profiler::BeginQuery("Sharpen");
 
-			shader.ManageMacro("FILMIC_TONEMAPPING", postProcessing.filmicTonemapping);
-			shader.ManageMacro("VIGNETTE", postProcessing.vignette.enable);
-			shader.ManageMacro("CHROMATIC_ABERRATION", postProcessing.chromaticAberration.enable);
+                auto pipeline = PipelineManager::GetPipeline(sharpenPipelineConfig);
 
-			shader.Bind();
+                commandList->BindPipeline(pipeline);
 
-			ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
+                ivec2 groupCount = resolution / 8;
 
-			hdrTextureResolution->SetValue(vec2(resolution));
+                groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
-			exposure->SetValue(camera->exposure);
-			saturation->SetValue(postProcessing.saturation);
-			timeInMilliseconds->SetValue(1000.0f * Clock::Get());
+                auto& image = target->postProcessTexture.image;
 
-			if (chromaticAberration.enable) {
-				float reversedValue = chromaticAberration.colorsReversed ? 1.0f : 0.0f;
-				aberrationStrength->SetValue(chromaticAberration.strength);
-				aberrationReversed->SetValue(reversedValue);
-			}
+                commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-			if (vignette.enable) {
-				vignetteOffset->SetValue(vignette.offset);
-				vignettePower->SetValue(vignette.power);
-				vignetteStrength->SetValue(vignette.strength);
-				vignetteColor->SetValue(vignette.color);
-			}
+                commandList->BindImage(image, 3, 0);
+                commandList->BindImage(target->lightingTexture.image, target->lightingTexture.sampler, 3, 1);
 
-			if (taa.enable) {
-				target->GetHistory()->Bind(0);
-			}
-			else {
-				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(0);
-			}
+                /*
+                 * if (taa.enable) {
+                    target->GetHistory()->Bind(0);
+                }
+                else {
+                    target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(0);
+                }
+                 *
+                 */
 
-			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                auto constantRange = pipeline->shader->GetPushConstantRange("constants");
+                commandList->PushConstants(constantRange, &sharpen.factor);
 
-			target->postProcessFramebuffer.Unbind();
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+                commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+                Profiler::EndQuery();
+            }
+
+            {
+                Profiler::BeginQuery("Main");
+
+                commandList->BeginRenderPass(device->swapChain, true);
+
+                auto pipelineConfig = GetMainPipelineConfig();
+                pipelineConfig.ManageMacro("FILMIC_TONEMAPPING", postProcessing.filmicTonemapping);
+                pipelineConfig.ManageMacro("VIGNETTE", postProcessing.vignette.enable);
+                pipelineConfig.ManageMacro("CHROMATIC_ABERRATION", postProcessing.chromaticAberration.enable);
+
+                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+                commandList->BindPipeline(pipeline);
+
+                SetUniforms(camera, scene);
+
+                commandList->BindImage(target->postProcessTexture.image, target->postProcessTexture.sampler, 3, 0);
+                commandList->BindBuffer(uniformBuffer, 3, 4);
+
+                commandList->Draw(6, 1, 0, 0);
+
+                commandList->EndRenderPass();
+
+                Profiler::EndQuery();
+            }
 
 			Profiler::EndQuery();
 
-			if (sharpen.enable) {
-				Profiler::BeginQuery("Sharpen");
+		}
 
-				sharpenShader.Bind();
+		void PostProcessRenderer::SetUniforms(Camera* camera, Scene::Scene* scene) {
 
-				ivec2 groupCount = resolution / 8;
+            auto& postProcessing = scene->postProcessing;
 
-				groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
-				groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
+            auto& chromaticAberration = postProcessing.chromaticAberration;
+            auto& vignette = postProcessing.vignette;
 
-				target->postProcessTexture.Bind(GL_WRITE_ONLY, 0);
-				target->postProcessFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(1);
+            Uniforms uniforms = {
+                .exposure = camera->exposure,
+                .saturation = postProcessing.saturation,
+                .timeInMilliseconds = Clock::Get() * 1000.0f,
+            };
 
-				sharpenFactor->SetValue(sharpen.factor);
+            if (chromaticAberration.enable) {
+                uniforms.aberrationStrength = chromaticAberration.strength;
+                uniforms.aberrationReversed = chromaticAberration.colorsReversed ? 1.0f : 0.0f;
+            }
+            else {
+                uniforms.aberrationStrength = 0.0f;
+            }
 
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            if (vignette.enable) {
+                uniforms.vignetteOffset = vignette.offset;
+                uniforms.vignettePower = vignette.power;
+                uniforms.vignetteStrength = vignette.strength;
+                uniforms.vignetteColor = vec4(vignette.color, 0.0f);
+            }
 
-				glDispatchCompute(groupCount.x, groupCount.y, 1);
-
-				Profiler::EndQuery();
-			}
-
-			Profiler::EndQuery();
-             */
+            uniformBuffer->SetData(&uniforms, 0, sizeof(Uniforms));
 
 		}
 
-		void PostProcessRenderer::GetUniforms() {
+        PipelineConfig PostProcessRenderer::GetMainPipelineConfig() {
 
-            /*
-			hdrTextureResolution = shader.GetUniform("hdrTextureResolution");
-			exposure = shader.GetUniform("exposure");
-			saturation = shader.GetUniform("saturation");
-			bloomPassses = shader.GetUniform("bloomPassses");
-			aberrationStrength = shader.GetUniform("aberrationStrength");
-			aberrationReversed = shader.GetUniform("aberrationReversed");
-			vignetteOffset = shader.GetUniform("vignetteOffset");
-			vignettePower = shader.GetUniform("vignettePower");
-			vignetteStrength = shader.GetUniform("vignetteStrength");
-			vignetteColor = shader.GetUniform("vignetteColor");
-			timeInMilliseconds = shader.GetUniform("timeInMilliseconds");
-             */
+            auto shaderConfig = ShaderConfig {
+                { "postprocessing.vsh", VK_SHADER_STAGE_VERTEX_BIT },
+                { "postprocessing.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
+            };
+            auto pipelineDesc = GraphicsPipelineDesc {
+                .swapChain = device->swapChain,
+                .rasterizer = Initializers::InitPipelineRasterizationStateCreateInfo(
+                    VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE
+                )
+            };
+            return PipelineConfig(shaderConfig, pipelineDesc);
 
-		}
+        }
+
+        PipelineConfig PostProcessRenderer::GetMainPipelineConfig(const Ref<FrameBuffer> frameBuffer) {
+
+            auto shaderConfig = ShaderConfig {
+                { "postprocessing.vsh", VK_SHADER_STAGE_VERTEX_BIT },
+                { "postprocessing.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
+            };
+            auto pipelineDesc = GraphicsPipelineDesc {
+                .frameBuffer = frameBuffer,
+                .rasterizer = Initializers::InitPipelineRasterizationStateCreateInfo(
+                    VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE
+                )
+            };
+            return PipelineConfig(shaderConfig, pipelineDesc);
+
+        }
 
 	}
 

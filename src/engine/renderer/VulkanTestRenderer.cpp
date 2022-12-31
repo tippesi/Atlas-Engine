@@ -137,11 +137,7 @@ namespace Atlas {
                 uniformBuffer = device->CreateMultiBuffer(bufferDesc);
             }
             {
-                auto shaderConfig = ShaderConfig {
-                    {"test.csh", VK_SHADER_STAGE_COMPUTE_BIT},
-                };
-                auto pipelineDesc = ComputePipelineDesc();
-                auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc);
+                auto pipelineConfig = PipelineConfig("test.csh");
                 computePipeline = PipelineManager::GetPipeline(pipelineConfig);
             }
             {

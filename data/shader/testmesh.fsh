@@ -18,6 +18,10 @@ const float lightAmbient = 0.1;
 
 void main() {
 
+	const vec3 lightDirection = -vec3(1.0, 1.0, 0.0);
+	const vec3 lightColor = vec3(1.0);
+	const float lightAmbient = 0.1;
+
 	float NdotL = dot(normalize(normalVS), -normalize(lightDirection));
 	colorFS = vec4(NdotL * lightColor + lightAmbient * lightColor, 1.0);
 

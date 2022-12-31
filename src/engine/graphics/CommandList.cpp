@@ -239,6 +239,10 @@ namespace Atlas {
                 SetScissor(0, 0, extent.width, extent.height);
             }
 
+            // Reset previous descriptor data such that a new descriptor
+            // set must be provided to the new pipeline
+            // prevDescriptorBindingData.Reset();
+
         }
 
         void CommandList::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
@@ -362,6 +366,8 @@ namespace Atlas {
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = buffer.get();
+            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
+            descriptorBindingData.images[set][binding] = nullptr;
 
         }
 
@@ -373,6 +379,8 @@ namespace Atlas {
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = buffer->GetCurrent();
+            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
+            descriptorBindingData.images[set][binding] = nullptr;
 
         }
 
@@ -382,6 +390,8 @@ namespace Atlas {
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
             descriptorBindingData.images[set][binding] = image.get();
+            descriptorBindingData.buffers[set][binding] = nullptr;
+            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
 
         }
 
@@ -391,12 +401,28 @@ namespace Atlas {
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
             descriptorBindingData.sampledImages[set][binding] = { image.get(), sampler.get() };
+            descriptorBindingData.buffers[set][binding] = nullptr;
+            descriptorBindingData.images[set][binding] = nullptr;
 
         }
 
         void CommandList::ResetBindings() {
 
             descriptorBindingData.Reset();
+
+        }
+
+        void CommandList::ImageMemoryBarrier(const Ref<Image> &image, VkImageLayout newLayout,
+            VkAccessFlags newAccessMask, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask) {
+
+            auto barrier = Initializers::InitImageMemoryBarrier(image->image, image->layout,
+                newLayout, image->accessMask, newAccessMask, image->aspectFlags);
+
+            vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0,
+                nullptr, 0, nullptr, 1, &barrier);
+
+            image->layout = newLayout;
+            image->accessMask = newAccessMask;
 
         }
 
@@ -408,6 +434,19 @@ namespace Atlas {
 
             barrier.image->layout = barrier.newLayout;
             barrier.image->accessMask = barrier.newAccessMask;
+
+        }
+
+        void CommandList::BufferMemoryBarrier(const Ref<Buffer> &buffer, VkAccessFlags newAccessMask,
+            VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask) {
+
+            auto barrier = Initializers::InitBufferMemoryBarrier(buffer->buffer,
+                buffer->accessMask, newAccessMask);
+
+            vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0,
+                nullptr, 1, &barrier, 0, nullptr);
+
+            buffer->accessMask = newAccessMask;
 
         }
 
@@ -573,10 +612,12 @@ namespace Atlas {
                     dynamicOffsets[dynamicOffsetCounter++] = 0;
                 }
 
+                // We could run into issue
                 if (!prevDescriptorBindingData.IsEqual(descriptorBindingData, i)) {
                     uint32_t bindingCounter = 0;
 
                     descriptorBindingData.sets[i] = descriptorPool->Allocate(shader->sets[i].layout);
+                    prevDescriptorBindingData.Reset(i);
 
                     // BUFFER
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
@@ -585,26 +626,31 @@ namespace Atlas {
                         // This probably is an old binding, which isn't used by this shader
                         if (!binding.valid) continue;
                         // Check that the descriptor types match up
-                        const auto descriptorType = binding.layoutBinding.descriptorType;
+                        auto descriptorType = binding.layoutBinding.descriptorType;
                         if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER &&
                             descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC &&
-                            descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
-                            continue;
+                            descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) continue;
+
+                        auto buffer = descriptorBindingData.buffers[i][j];
 
                         auto& bufferInfo = bufferInfos[bindingCounter];
                         bufferInfo.offset = 0;
-                        bufferInfo.buffer = descriptorBindingData.buffers[i][j]->buffer;
+                        bufferInfo.buffer = buffer->buffer;
                         bufferInfo.range = binding.size ? binding.size : VK_WHOLE_SIZE;
 
                         auto& setWrite = setWrites[bindingCounter++];
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                         setWrite.pNext = nullptr;
-                        setWrite.dstBinding = binding.layoutBinding.binding;
+                        setWrite.dstBinding = j;
                         setWrite.dstArrayElement = binding.arrayElement;
                         setWrite.dstSet = descriptorBindingData.sets[i];
                         setWrite.descriptorCount = 1;
-                        setWrite.descriptorType = binding.layoutBinding.descriptorType;
+                        setWrite.descriptorType = descriptorType;
                         setWrite.pBufferInfo = &bufferInfo;
+
+                        // We keep track in here since old bindings might be rejected.
+                        // We need to keep track of all valid binding, not all bindings
+                        prevDescriptorBindingData.buffers[i][j] = buffer;
                     }
 
                     // SAMPLED IMAGES
@@ -612,7 +658,6 @@ namespace Atlas {
                         if (!descriptorBindingData.sampledImages[i][j].first ||
                             !descriptorBindingData.sampledImages[i][j].second) continue;
                         const auto& binding = shader->sets[i].bindings[j];
-                        // This probably is an old binding, which isn't used by this shader
                         // This probably is an old binding, which isn't used by this shader
                         if (!binding.valid) continue;
                         // Check that the descriptor types match up
@@ -630,12 +675,16 @@ namespace Atlas {
                         auto& setWrite = setWrites[bindingCounter++];
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                         setWrite.pNext = nullptr;
-                        setWrite.dstBinding = binding.layoutBinding.binding;
+                        setWrite.dstBinding = j;
                         setWrite.dstArrayElement = binding.arrayElement;
                         setWrite.dstSet = descriptorBindingData.sets[i];
                         setWrite.descriptorCount = 1;
-                        setWrite.descriptorType = binding.layoutBinding.descriptorType;
+                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                         setWrite.pImageInfo = &imageInfo;
+
+                        // We keep track in here since old bindings might be rejected.
+                        // We need to keep track of all valid binding, not all bindings
+                        prevDescriptorBindingData.sampledImages[i][j] = { image, sampler };
                     }
 
                     // STORAGE IMAGES OR IMAGES SEPARATED FROM SAMPLER
@@ -660,12 +709,16 @@ namespace Atlas {
                         auto& setWrite = setWrites[bindingCounter++];
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                         setWrite.pNext = nullptr;
-                        setWrite.dstBinding = binding.layoutBinding.binding;
+                        setWrite.dstBinding = j;
                         setWrite.dstArrayElement = binding.arrayElement;
                         setWrite.dstSet = descriptorBindingData.sets[i];
                         setWrite.descriptorCount = 1;
-                        setWrite.descriptorType = binding.layoutBinding.descriptorType;
+                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
                         setWrite.pImageInfo = &imageInfo;
+
+                        // We keep track in here since old bindings might be rejected.
+                        // We need to keep track of all valid binding, not all bindings
+                        prevDescriptorBindingData.images[i][j] = image;
                     }
 
                     if (bindingCounter > 0) {
@@ -676,15 +729,13 @@ namespace Atlas {
                     }
                 }
 
-                if (descriptorBindingData.sets[i] != nullptr) {
+                if (descriptorBindingData.sets[i] != nullptr && shader->sets[i].bindingCount > 0) {
                     vkCmdBindDescriptorSets(commandBuffer, pipelineInUse->bindPoint,
                         pipelineInUse->layout, i, 1, &descriptorBindingData.sets[i],
                         dynamicOffsetCounter, dynamicOffsets);
                 }
 
             }
-
-            prevDescriptorBindingData = descriptorBindingData;
 
         }
 

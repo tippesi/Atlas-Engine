@@ -143,12 +143,12 @@ namespace Atlas {
                 mat4 pvMatrixCurrent;
                 vec2 jitterLast;
                 vec2 jitterCurrent;
+                vec4 cameraLocation;
+                vec4 cameraDirection;
                 float time;
                 float deltaTime;
                 // We need to align the struct to 16 bytes
                 vec2 alignment0;
-                vec4 alignment1;
-                vec4 alignment2;
             };
 
 			void GetUniforms();

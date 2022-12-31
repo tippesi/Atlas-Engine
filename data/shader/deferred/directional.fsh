@@ -37,7 +37,7 @@ void main() {
 
 	// Direct diffuse + specular BRDF
 	vec3 directDiffuse = EvaluateDiffuseBRDF(surface);
-	vec3 directSpecular = EvaluateSpecularBRDF(surface);
+	vec3 directSpecular = EvaluateSpecularBRDF(surface);	
 
 	vec3 direct = directDiffuse + directSpecular;
 	

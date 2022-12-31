@@ -1,30 +1,24 @@
-in vec2 fPosition;
+layout (location = 0) out vec4 outColor;
 
-layout(binding = 0) uniform sampler2D hdrTexture;
-layout(binding = 1) uniform sampler2D bloomFirstTexture;
-layout(binding = 2) uniform sampler2D bloomSecondTexture;
-layout(binding = 3) uniform sampler2D bloomThirdTexture;
+layout (location = 0) in vec2 positionVS;
 
-uniform vec2 hdrTextureResolution;
-uniform float exposure;
-uniform float saturation;
-uniform float timeInMilliseconds;
+layout(set = 3, binding = 0) uniform sampler2D hdrTexture;
+layout(set = 3, binding = 1) uniform sampler2D bloomFirstTexture;
+layout(set = 3, binding = 2) uniform sampler2D bloomSecondTexture;
+layout(set = 3, binding = 3) uniform sampler2D bloomThirdTexture;
 
-#ifdef BLOOM
-uniform int bloomPasses;
-#endif
-#ifdef CHROMATIC_ABERRATION
-uniform float aberrationStrength;
-uniform float aberrationReversed;
-#endif
-#ifdef VIGNETTE
-uniform float vignetteOffset;
-uniform float vignettePower;
-uniform float vignetteStrength;
-uniform vec3 vignetteColor;
-#endif
-
-out vec3 color;
+layout(set = 3, binding = 4) uniform UniformBuffer {
+	float exposure;
+	float saturation;
+	float timeInMilliseconds;
+	int bloomPasses;
+	float aberrationStrength;
+	float aberrationReversed;
+	float vignetteOffset;
+	float vignettePower;
+	float vignetteStrength;
+	vec4 vignetteColor;
+} Uniforms;
 
 const float gamma = 1.0 / 2.2;
 
@@ -52,24 +46,20 @@ vec3 saturate(vec3 color, float factor) {
 
 
 //note: uniformly distributed, normalized rand, [0;1[
-float nrand( vec2 n )
-{
+float nrand( vec2 n ) {
 	return fract(sin(dot(n.xy, vec2(12.9898, 78.233)))* 43758.5453);
 }
 //note: remaps v to [0;1] in interval [a;b]
-float remap( float a, float b, float v )
-{
+float remap( float a, float b, float v ) {
 	return clamp( (v-a) / (b-a), 0.0, 1.0 );
 }
 //note: quantizes in l levels
-float truncf( float a, float l )
-{
+float truncf( float a, float l ) {
 	return floor(a*l)/l;
 }
 
-float n2rand( vec2 n )
-{
-	float t = fract(timeInMilliseconds/1000000.0f);
+float n2rand( vec2 n ) {
+	float t = fract(Uniforms.timeInMilliseconds/1000000.0f);
 	float nrnd0 = nrand( n + 0.07*t );
 	float nrnd1 = nrand( n + 0.11*t );
 	return (nrnd0+nrnd1) / 2.0;
@@ -77,19 +67,15 @@ float n2rand( vec2 n )
 
 void main() {
 	
-	vec2 fTexCoord = 0.5 * fPosition + 0.5;
-	fTexCoord.y = 1.0 - fTexCoord.y;
+	vec2 texCoord = 0.5 * positionVS + 0.5;
+	vec3 color = vec3(0.0);
 	
 #ifdef CHROMATIC_ABERRATION
-	vec2 uvRedChannel = (fPosition - fPosition * 0.005f * aberrationStrength 
+	vec2 uvRedChannel = (positionVS - positionVS * 0.005f * Uniforms.aberrationStrength
 		* aberrationReversed) * 0.5f + 0.5f;
-	vec2 uvGreenChannel = (fPosition - fPosition * 0.0025f * aberrationStrength) * 0.5f + 0.5f;
-	vec2 uvBlueChannel =  (fPosition - fPosition * 0.005f * aberrationStrength
-		* (1.0f - aberrationReversed)) * 0.5f + 0.5f;
-		
-	uvRedChannel.y = 1.0 - uvRedChannel.y;
-	uvGreenChannel.y = 1.0 - uvGreenChannel.y;
-	uvBlueChannel.y = 1.0 - uvBlueChannel.y;	
+	vec2 uvGreenChannel = (positionVS - positionVS * 0.0025f * Uniforms.aberrationStrength) * 0.5f + 0.5f;
+	vec2 uvBlueChannel =  (positionVS - positionVS * 0.005f * Uniforms.aberrationStrength
+		* (1.0f - Uniforms.aberrationReversed)) * 0.5f + 0.5f;
 	
 	color.r = texture(hdrTexture, uvRedChannel).r;
 	color.g = texture(hdrTexture, uvGreenChannel).g;
@@ -99,38 +85,38 @@ void main() {
     // We want to keep a constant expression in texture[const]
 	// because OpenGL ES doesn't support dynamic texture fetches
 	// inside a loop
-	if (bloomPasses > 0) {
+	if (Uniforms.bloomPasses > 0) {
 		color.r += texture(bloomFirstTexture, uvRedChannel).r;
 		color.g += texture(bloomFirstTexture, uvGreenChannel).g;
 		color.b += texture(bloomFirstTexture, uvBlueChannel).b;
 	}
-	if (bloomPasses > 1) {
+	if (Uniforms.bloomPasses > 1) {
 		color.r += texture(bloomSecondTexture, uvRedChannel).r;
 		color.g += texture(bloomSecondTexture, uvGreenChannel).g;
 		color.b += texture(bloomSecondTexture, uvBlueChannel).b;
 	}
-	if (bloomPasses > 2) {
+	if (Uniforms.bloomPasses > 2) {
 		color.r += texture(bloomThirdTexture, uvRedChannel).r;
 		color.g += texture(bloomThirdTexture, uvGreenChannel).g;
 		color.b += texture(bloomThirdTexture, uvBlueChannel).b;
 	}
 #endif
 #else
-	color = texture(hdrTexture, fTexCoord).rgb;
+	color = texture(hdrTexture, texCoord).rgb;
 #ifdef BLOOM
-	if (bloomPasses > 0) {
-		color += texture(bloomFirstTexture, fTexCoord).rgb;
+	if (Uniforms.bloomPasses > 0) {
+		color += texture(bloomFirstTexture, texCoord).rgb;
 	}
-	if (bloomPasses > 1) {
-		color += texture(bloomSecondTexture, fTexCoord).rgb;
+	if (Uniforms.bloomPasses > 1) {
+		color += texture(bloomSecondTexture, texCoord).rgb;
 	}
-	if (bloomPasses > 2) {
-		color += texture(bloomThirdTexture, fTexCoord).rgb;
+	if (Uniforms.bloomPasses > 2) {
+		color += texture(bloomThirdTexture, texCoord).rgb;
 	}
 #endif
 #endif
 
-	color *= exposure;
+	color *= Uniforms.exposure;
 	
 	//color = color + n2rand(2.0 * fTexCoord - 1.0) / 256.0;
 	
@@ -143,14 +129,15 @@ void main() {
 #endif
 	color = pow(color, vec3(gamma));
 	
-	color = clamp(saturate(color, saturation), vec3(0.0), vec3(1.0));	
+	color = clamp(saturate(color, Uniforms.saturation), vec3(0.0), vec3(1.0));
 
 #ifdef VIGNETTE	
-	float vignetteFactor = max(1.0 - max(pow(length(fPosition) - vignetteOffset, vignettePower), 0.0)
-		* vignetteStrength, 0.0);
+	float vignetteFactor = max(1.0 - max(pow(length(fPosition) - Uniforms.vignetteOffset,
+		Uniforms.vignettePower), 0.0) * Uniforms.vignetteStrength, 0.0);
 	
-	color = mix(vignetteColor, color, vignetteFactor);
+	color = mix(Uniforms.vignetteColor.rgb, color, Uniforms.vignetteFactor);
 #endif
-	//color = vec3(texture(hdrTexture, fTexCoord).a);
+
+	outColor = vec4(color, 1.0);
 	
 }

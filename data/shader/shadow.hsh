@@ -7,8 +7,8 @@ struct Cascade {
 	
 	float distance;
 	float texelSize;
-	mat4 cascadeSpace;	
-	
+	mat4 cascadeSpace;
+
 };
 
 //Shadow struct has to be implemented like this

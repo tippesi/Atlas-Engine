@@ -24,9 +24,17 @@ namespace Atlas {
 
         PipelineConfig(ShaderConfig shaderConfig, Graphics::GraphicsPipelineDesc desc, std::vector<std::string> macros);
 
-        PipelineConfig(ShaderConfig shaderConfig, Graphics::ComputePipelineDesc desc);
+        PipelineConfig(const std::string& shaderFile);
 
-        PipelineConfig(ShaderConfig shaderConfig, Graphics::ComputePipelineDesc desc, std::vector<std::string> macros);
+        PipelineConfig(const std::string& shaderFile, std::vector<std::string> macros);
+
+        void AddMacro(const std::string& macro);
+
+        void RemoveMacro(const std::string& macro);
+
+        bool HasMacro(const std::string& macro);
+
+        bool ManageMacro(const std::string& macro, bool enable);
 
         bool IsValid() const;
 
@@ -43,8 +51,6 @@ namespace Atlas {
         bool isCompute = false;
 
         Graphics::GraphicsPipelineDesc graphicsPipelineDesc;
-        Graphics::ComputePipelineDesc computePipelineDesc;
-
     };
 
 }

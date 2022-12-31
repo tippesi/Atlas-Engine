@@ -2,16 +2,16 @@
 #include <../common/convert.hsh>
 #include <../brdf/surface.hsh>
 
-layout(binding = 0) uniform sampler2D baseColorTexture;
-layout(binding = 1) uniform sampler2D normalTexture;
-layout(binding = 2) uniform sampler2D geometryNormalTexture;
-layout(binding = 3) uniform sampler2D roughnessMetalnessAoTexture;
-layout(binding = 4) uniform usampler2D materialIdxTexture;
-layout(binding = 5) uniform sampler2D depthTexture;
-layout(binding = 7) uniform sampler2D volumetricTexture;
+layout(set = 2, binding = 0) uniform sampler2D baseColorTexture;
+layout(set = 2, binding = 1) uniform sampler2D normalTexture;
+layout(set = 2, binding = 2) uniform sampler2D geometryNormalTexture;
+layout(set = 2, binding = 3) uniform sampler2D roughnessMetalnessAoTexture;
+layout(set = 2, binding = 4) uniform usampler2D materialIdxTexture;
+layout(set = 2, binding = 5) uniform sampler2D depthTexture;
+layout(set = 2, binding = 7) uniform sampler2D volumetricTexture;
 
-layout(binding = 10) uniform samplerCube specularProbe;
-layout(binding = 11) uniform samplerCube diffuseProbe;
+layout(set = 2, binding = 10) uniform samplerCube specularProbe;
+layout(set = 2, binding = 11) uniform samplerCube diffuseProbe;
 
 Material GetMaterial(vec2 texCoord) {
     uint materialIdx = textureLod(materialIdxTexture, texCoord, 0).r;

@@ -23,17 +23,20 @@ namespace Atlas {
 
     }
 
-    PipelineConfig::PipelineConfig(ShaderConfig shaderConfig, Graphics::ComputePipelineDesc desc) :
-        shaderConfig(shaderConfig), computePipelineDesc(desc), isCompute(true) {
+    PipelineConfig::PipelineConfig(const std::string& shaderFile) :
+        shaderConfig(shaderConfig), isCompute(true) {
+
+        shaderConfig = {{shaderFile, VK_SHADER_STAGE_COMPUTE_BIT}};
 
         CalculateShaderHash();
         CalculateVariantHash();
 
     }
 
-    PipelineConfig::PipelineConfig(ShaderConfig shaderConfig, Graphics::ComputePipelineDesc desc,
-        std::vector<std::string> macros) : shaderConfig(shaderConfig), macros(macros),
-        computePipelineDesc(desc), isCompute(true) {
+    PipelineConfig::PipelineConfig(const std::string& shaderFile, std::vector<std::string> macros) :
+        shaderConfig(shaderConfig), macros(macros), isCompute(true) {
+
+        shaderConfig = {{shaderFile, VK_SHADER_STAGE_COMPUTE_BIT}};
 
         CalculateShaderHash();
         CalculateVariantHash();
@@ -43,6 +46,42 @@ namespace Atlas {
     bool PipelineConfig::IsValid() const {
 
         return !shaderConfig.empty();
+
+    }
+
+    void PipelineConfig::AddMacro(const std::string& macro) {
+
+        macros.push_back(macro);
+
+    }
+
+    void PipelineConfig::RemoveMacro(const std::string& macro) {
+
+        auto it = std::find(macros.begin(), macros.end(), macro);
+
+        if (it != macros.end()) {
+            macros.erase(it);
+        }
+
+    }
+
+    bool PipelineConfig::HasMacro(const std::string& macro) {
+
+        return std::any_of(macros.begin(), macros.end(),
+            [macro](const auto& value) { return value == macro; });
+
+    }
+
+    bool PipelineConfig::ManageMacro(const std::string& macro, bool enable) {
+
+        bool hasMacro = HasMacro(macro);
+        if (enable && !hasMacro) {
+            AddMacro(macro);
+        }
+        if (!enable && hasMacro) {
+            RemoveMacro(macro);
+        }
+        return hasMacro != enable;
 
     }
 

@@ -16,6 +16,8 @@ namespace Atlas {
 
             BufferBarrier(VkAccessFlags newAccessMask);
 
+            BufferBarrier(const Ref<Buffer>& buffer, VkAccessFlags newAccessMask);
+
             BufferBarrier& Update(const Ref<Buffer>& buffer);
 
             Buffer* buffer = nullptr;
@@ -31,6 +33,8 @@ namespace Atlas {
             ImageBarrier() = default;
 
             ImageBarrier(VkImageLayout newLayout, VkAccessFlags newAccessMask);
+
+            ImageBarrier(const Ref<Image>& image, VkImageLayout newLayout, VkAccessFlags newAccessMask);
 
             ImageBarrier& Update(const Ref<Image>& image);
 

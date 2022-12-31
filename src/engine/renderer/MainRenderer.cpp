@@ -35,6 +35,7 @@ namespace Atlas {
 
             opaqueRenderer.Init(device);
 			directLightRenderer.Init(device);
+            postProcessRenderer.Init(device);
 
         }
 
@@ -66,9 +67,11 @@ namespace Atlas {
                 .ivMatrix = camera->invViewMatrix,
                 .ipMatrix = camera->invProjectionMatrix,
                 .pvMatrixLast = camera->GetLastJitteredMatrix(),
-                .pvMatrixCurrent = mat4(),
+                .pvMatrixCurrent = camera->projectionMatrix * camera->viewMatrix,
                 .jitterLast = camera->GetLastJitter(),
                 .jitterCurrent = camera->GetJitter(),
+                .cameraLocation = vec4(camera->location, 0.0f),
+                .cameraDirection = vec4(camera->direction, 0.0f),
                 .time = Clock::Get(),
                 .deltaTime = Clock::GetDelta()
             };
@@ -84,6 +87,7 @@ namespace Atlas {
                 .size = sizeof(PackedMaterial) * materials.size(),
             };
             auto materialBuffer = device->CreateBuffer(materialBufferDesc);
+            commandList->BindBuffer(materialBuffer, 0, 2);
 
 			auto& taa = scene->postProcessing.taa;
 			if (taa.enable) {
@@ -116,13 +120,36 @@ namespace Atlas {
 
 			commandList->PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
+            auto targetData = target->GetData(FULL_RES);
+
+            commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 2, 0);
+            commandList->BindImage(targetData->normalTexture->image, targetData->normalTexture->sampler, 2, 1);
+            commandList->BindImage(targetData->geometryNormalTexture->image, targetData->geometryNormalTexture->sampler, 2, 2);
+            commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 2, 3);
+            commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 2, 4);
+            commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 2, 5);
+
 			{
 				Profiler::BeginQuery("Lighting pass");
 
+                ImageBarrier inBarrier(target->lightingTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+                commandList->ImageMemoryBarrier(inBarrier, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
 				directLightRenderer.Render(viewport, target, camera, scene, commandList);
+
+                ImageBarrier outBarrier(target->lightingTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+                commandList->ImageMemoryBarrier(outBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 				Profiler::EndQuery();
 			}
+
+            {
+                postProcessRenderer.Render(viewport, target, camera, scene, commandList);
+            }
 
             Profiler::EndQuery();
             Profiler::EndThread();
@@ -845,11 +872,7 @@ namespace Atlas {
 
 		void MainRenderer::PreintegrateBRDF() {
 
-            auto shaderConfig = ShaderConfig {
-                {"brdf/preintegrateDFG.csh", VK_SHADER_STAGE_COMPUTE_BIT},
-            };
-            auto pipelineDesc = Graphics::ComputePipelineDesc();
-            auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc);
+            auto pipelineConfig = PipelineConfig("brdf/preintegrateDFG.csh");
             auto computePipeline = PipelineManager::GetPipeline(pipelineConfig);
 
             const int32_t res = 256;

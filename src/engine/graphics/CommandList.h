@@ -86,8 +86,14 @@ namespace Atlas {
 
             void ResetBindings();
 
+            void ImageMemoryBarrier(const Ref<Image>& image, VkImageLayout newLayout, VkAccessFlags newAccessMask,
+                VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
+
             void ImageMemoryBarrier(ImageBarrier& barrier, VkPipelineStageFlags srcStageMask,
                 VkPipelineStageFlags dstStageMask);
+
+            void BufferMemoryBarrier(const Ref<Buffer>& buffer, VkAccessFlags newAccessMask,
+                VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
 
             void BufferMemoryBarrier(BufferBarrier& barrier, VkPipelineStageFlags srcStageMask,
                 VkPipelineStageFlags dstStageMask);
@@ -155,6 +161,15 @@ namespace Atlas {
                         }
                         sets[i] = nullptr;
                     }
+                }
+
+                void Reset(uint32_t set) {
+                    for (uint32_t j = 0; j <  BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                        buffers[set][j] = nullptr;
+                        images[set][j] = nullptr;
+                        sampledImages[set][j] = { nullptr, nullptr };
+                    }
+                    sets[set] = nullptr;
                 }
 
                 bool IsEqual(const DescriptorBindingData& that, uint32_t set) {

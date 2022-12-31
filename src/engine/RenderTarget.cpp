@@ -60,6 +60,8 @@ namespace Atlas {
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 		swapHistoryTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        lightingTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 		postProcessTexture = Texture::Texture2D(width, height, VK_FORMAT_R8G8B8A8_UNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
@@ -199,7 +201,7 @@ namespace Atlas {
 
 	}
 
-	RenderTargetData* RenderTarget::GetDownsampledTextures(RenderResolution resolution) {
+	RenderTargetData* RenderTarget::GetData(RenderResolution resolution) {
 
 		switch (resolution) {
 		case FULL_RES: return &targetData;
@@ -208,7 +210,7 @@ namespace Atlas {
 
 	}
 
-	RenderTargetData* RenderTarget::GetDownsampledHistoryTextures(RenderResolution resolution) {
+	RenderTargetData* RenderTarget::GetHistoryData(RenderResolution resolution) {
 
 		switch (resolution) {
 		case FULL_RES: return &targetData; // This is not correct

@@ -1,10 +1,9 @@
 #include <surface.hsh>
 #include <brdf.hsh>
 
+#include <../globals.hsh>
 #include <../common/PI.hsh>
 #include <../common/utility.hsh>
-
-layout(binding = 31) uniform sampler2D dfgTexture;
 
 vec3 EvaluateDiffuseBRDF(Surface surface) {
 
@@ -34,14 +33,14 @@ vec3 EvaluateSpecularBRDF(Surface surface) {
 
 vec3 EvaluateIndirectDiffuseBRDF(Surface surface) {
 
-    float preIntegrated = texture(dfgTexture, vec2(surface.NdotV, surface.material.roughness)).b;
+    float preIntegrated = texture(dfgTexture, vec2(surface.NdotV, 1.0 - surface.material.roughness)).b;
     return (1.0 - surface.material.metalness) * surface.material.baseColor * preIntegrated; 
 
 }
 
 vec3 EvaluateIndirectSpecularBRDF(Surface surface) {
 
-    vec2 preIntegrated = texture(dfgTexture, vec2(surface.NdotV, surface.material.roughness)).rg;
+    vec2 preIntegrated = texture(dfgTexture, vec2(surface.NdotV, 1.0 - surface.material.roughness)).rg;
     return surface.F0 * preIntegrated.x + surface.F90 * preIntegrated.y;
 
 }

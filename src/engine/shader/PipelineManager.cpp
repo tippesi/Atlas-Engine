@@ -69,8 +69,10 @@ namespace Atlas {
             Ref<Graphics::Pipeline> pipeline;
             if (!variants->variants.contains(config.variantHash)) {
                 if (config.isCompute) {
-                    config.computePipelineDesc.shader = variants->shader->GetVariant(config.macros);
-                    pipeline = graphicsDevice->CreatePipeline(config.computePipelineDesc);
+                    auto pipelineDesc = Graphics::ComputePipelineDesc {
+                        .shader = variants->shader->GetVariant(config.macros)
+                    };
+                    pipeline = graphicsDevice->CreatePipeline(pipelineDesc);
                 }
                 else {
                     config.graphicsPipelineDesc.shader = variants->shader->GetVariant(config.macros);
