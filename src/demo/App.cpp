@@ -3,7 +3,7 @@
 #include <chrono>
 #include <thread>
 
-const std::string Atlas::EngineInstance::assetDirectory = "../../data";
+const std::string Atlas::EngineInstance::assetDirectory = "../data";
 const std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {

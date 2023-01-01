@@ -18,6 +18,13 @@ namespace Atlas {
             auto pipelineConfig = PipelineConfig("deferred/direct.csh");
             pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
+            auto samplerDesc = SamplerDesc {
+                .filter = VK_FILTER_LINEAR,
+                .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                .compareEnabled = true
+            };
+            shadowSampler = device->CreateSampler(samplerDesc);
+
 		}
 
 		void DirectLightRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
@@ -45,6 +52,13 @@ namespace Atlas {
                 shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
                 shadowUniform.cascadeCount = shadow->componentCount;
                 shadowUniform.resolution = vec2(shadow->resolution);
+
+                if (shadow->useCubemap) {
+                    commandList->BindImage(shadow->cubemap.image, shadowSampler, 3, 2);
+                }
+                else {
+                    commandList->BindImage(shadow->maps.image, shadowSampler, 3, 2);
+                }
 
                 auto componentCount = shadow->componentCount;
                 for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {

@@ -13,6 +13,11 @@ namespace Atlas {
                 samplerInfo.anisotropyEnable = VK_TRUE;
                 samplerInfo.maxAnisotropy = device->deviceProperties.limits.maxSamplerAnisotropy;
             }
+            if (desc.compareEnabled) {
+                samplerInfo.compareEnable = VK_TRUE;
+                samplerInfo.compareOp = desc.compareOp;
+            }
+
             VK_CHECK(vkCreateSampler(device->device, &samplerInfo, nullptr, &sampler))
 
         }

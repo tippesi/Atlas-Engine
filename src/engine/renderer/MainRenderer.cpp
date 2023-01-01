@@ -33,6 +33,7 @@ namespace Atlas {
             };
             globalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
 
+            shadowRenderer.Init(device);
             opaqueRenderer.Init(device);
 			directLightRenderer.Init(device);
             postProcessRenderer.Init(device);
@@ -103,13 +104,18 @@ namespace Atlas {
 				camera->Jitter(vec2(0.0f));
 			}
 
+            // Bind before any shadows etc. are rendered, this is a shared buffer for all these passes
+            commandList->BindBuffer(renderList.currentMatricesBuffer, 1, 0);
+            commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 1);
+
+            {
+                shadowRenderer.Render(viewport, target, camera, scene, commandList, &renderList);
+            }
+
             {
                 Profiler::BeginQuery("Main render pass");
 
                 commandList->BeginRenderPass(target->gBufferRenderPass, target->gBufferFrameBuffer, true);
-
-                commandList->BindBuffer(renderList.currentMatricesBuffer, 1, 0);
-                commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 1);
 
                 opaqueRenderer.Render(viewport, target, camera, scene, commandList, &renderList, materialMap);
 
@@ -118,7 +124,8 @@ namespace Atlas {
                 Profiler::EndQuery();
             }
 
-			commandList->PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			commandList->PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             auto targetData = target->GetData(FULL_RES);
 

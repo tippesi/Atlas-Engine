@@ -1,7 +1,6 @@
 #ifdef OPACITY_MAP
-layout(binding = 0) uniform sampler2D opacityMap;
-
-in vec2 texCoordVS;
+layout(location = 0) in vec2 texCoordVS;
+layout(set = 3, binding = 0) uniform sampler2D opacityMap;
 #endif
 
 void main() {

@@ -1,4 +1,5 @@
-#define SHADOW_FILTER_7x7
+#define SHADOWS
+#define SHADOW_FILTER_1x1
 #define SHADOW_CASCADE_BLENDING
 
 #include <deferred.hsh>
@@ -15,6 +16,7 @@
 layout (local_size_x = 8, local_size_y = 8) in;
 
 layout(set = 3, binding = 0, rgba16f) uniform image2D image;
+layout(set = 3, binding = 2) uniform sampler2DArrayShadow cascadeMaps;
 
 layout(set = 3, binding = 1) uniform LightBuffer {
 	Light light;
@@ -59,8 +61,9 @@ void main() {
         // for transmissive materials
         vec3 shadowNormal = surface.material.transmissive ? dot(-light.direction.xyz, geometryNormal) < 0.0 ? 
             -geometryNormal : geometryNormal : geometryNormal;
+        vec3 suv;
         shadowFactor = CalculateCascadedShadow(light.shadow, cascadeMaps, surface.P,
-            shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal))); 
+            shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)), suv); 
 #endif
 
         vec3 radiance = light.color.rgb * light.intensity;
@@ -80,6 +83,12 @@ void main() {
         if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.01) {	
             direct += surface.material.emissiveColor;
         }
+
+        if (shadowFactor < 0.01) {
+            direct += 0.05 * surface.material.baseColor;
+        }
+
+        //direct = vec3(suv.z);
 
     }
     

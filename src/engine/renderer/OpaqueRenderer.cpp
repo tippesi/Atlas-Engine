@@ -75,7 +75,7 @@ namespace Atlas {
 
             Profiler::BeginQuery("Opaque geometry");
 
-            auto mainPass = renderList->GetMainPass();
+            auto& mainPass = renderList->GetMainPass();
 
             // Retrieve all possible materials
             std::vector<std::pair<Mesh::MeshSubData*, Mesh::Mesh*>> subDatas;

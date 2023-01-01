@@ -7,6 +7,8 @@
 #include <cassert>
 #include <set>
 
+#include <vulkan/vulkan_beta.h>
+
 namespace Atlas {
 
     namespace Graphics {
@@ -53,9 +55,15 @@ namespace Atlas {
                 createInfo.enabledLayerCount = 0;
             }
 
-            VkPhysicalDeviceHostQueryResetFeatures resetFeatures;
+            VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
+            // This is hacked since I can't get it to work otherwise
+            // See VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR in vulkan_core.h
+            portabilityFeatures.sType = static_cast<VkStructureType>(1000163000);
+            portabilityFeatures.mutableComparisonSamplers = VK_TRUE;
+
+            VkPhysicalDeviceHostQueryResetFeatures resetFeatures = {};
             resetFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES;
-            resetFeatures.pNext = nullptr;
+            resetFeatures.pNext = &portabilityFeatures;
             resetFeatures.hostQueryReset = VK_TRUE;
 
             createInfo.pNext = &resetFeatures;

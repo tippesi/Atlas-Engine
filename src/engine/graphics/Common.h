@@ -4,6 +4,7 @@
 #include "Initializers.h"
 #include "../Log.h"
 
+#define VK_ENABLE_BETA_EXTENSIONS
 #include <volk.h>
 
 #include <string>

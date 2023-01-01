@@ -46,12 +46,17 @@ float offsetLookup(sampler2DArrayShadow cascadeMaps, vec2 flooredUV, float u, fl
 
 float cascadeLookup(Shadow shadow, sampler2DArrayShadow cascadeMaps, float cascadeIndex, mat4 cascadeTransform, vec3 fragmentPosition, float bias, bool fade) {
 
-	vec4 shadowCoords = cascadeTransform * vec4(fragmentPosition, 1.0);
+	mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f,-1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.5f, 0.0f,
+		0.0f, 0.0f, 0.5f, 1.0f);
+
+	vec4 shadowCoords = clip * cascadeTransform * vec4(fragmentPosition, 1.0);
 	shadowCoords.xyz /= shadowCoords.w;
 	
 	float fadeout = fade ? clamp((-fragmentPosition.z + 2.0 - shadow.distance) * 0.5, 0.0, 1.0) : 0.0;
 	
-	shadowCoords.z = shadowCoords.z * 0.5 + 0.5;
+	//shadowCoords.z = shadowCoords.z * 0.5 + 0.5;
 	
 	if (abs(fadeout - 1.0) < 1e-6)
 		return 1.0;
@@ -173,7 +178,7 @@ float cascadeLookup(Shadow shadow, sampler2DArrayShadow cascadeMaps, float casca
 
 }
 
-float CalculateCascadedShadow(Shadow shadow, sampler2DArrayShadow cascadeMaps, vec3 fragmentPosition, vec3 normal, float cosTheta) {
+float CalculateCascadedShadow(Shadow shadow, sampler2DArrayShadow cascadeMaps, vec3 fragmentPosition, vec3 normal, float cosTheta, out vec3 suv) {
 	
 	// Note: The code below is actually the fastest code on every platform tested
 	// Some platforms have problems directly indexing the cascade array.
@@ -210,6 +215,17 @@ float CalculateCascadedShadow(Shadow shadow, sampler2DArrayShadow cascadeMaps, v
 
 	float visibility = cascadeLookup(shadow, cascadeMaps, float(cascadeIndex),
 		cascadeMatrix, fragmentPosition, 0.0, true);
+
+	mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f,-1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.5f, 0.0f,
+		0.0f, 0.0f, 0.5f, 1.0f);
+
+	vec4 shadowCoords = clip * cascadeMatrix * vec4(fragmentPosition, 1.0);
+	shadowCoords.xyz /= shadowCoords.w;
+
+	suv.xy = 0.5 * shadowCoords.xy + 0.5;
+	suv.z = shadowCoords.z;
 
 #ifdef SHADOW_CASCADE_BLENDING
 	if (cascadeIndex < shadow.cascadeCount - 1) {

@@ -8,6 +8,7 @@
 #include "../shader/ShaderBatch.h"
 
 #include <mutex>
+#include <map>
 
 namespace Atlas {
 
@@ -16,20 +17,29 @@ namespace Atlas {
 		class ShadowRenderer : public Renderer {
 
 		public:
-			ShadowRenderer();
+			ShadowRenderer() = default;
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
+            void Init(GraphicsDevice* device);
 
-			static void InitShaderBatch();
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
 
-			static void AddConfig(OldShader::ShaderConfig* config);
-
-			static void RemoveConfig(OldShader::ShaderConfig* config);
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, CommandList* commandList, RenderList* renderList);
 
 		private:
+            using LightMap = std::map<Lighting::Light*, Ref<FrameBuffer>>;
+
+            struct PushConstants {
+                mat4 lightSpaceMatrix;
+                uint32_t vegetation;
+                uint32_t invertUVs;
+            };
+
+            Ref<FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);
+
 			void AdjustFaceCulling(bool cullFaces, bool& state);
 
-			RenderList renderList;
+            LightMap lightMap;
 
 			ImpostorShadowRenderer impostorRenderer;
 
@@ -40,9 +50,6 @@ namespace Atlas {
 
 			OldShader::Uniform* vegetationUniform = nullptr;
 			OldShader::Uniform* invertUVsUniform = nullptr;
-
-			static OldShader::ShaderBatch shaderBatch;
-			static std::mutex shaderBatchMutex;
 
 		};
 

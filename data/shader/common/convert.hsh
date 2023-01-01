@@ -1,15 +1,20 @@
 #include <../globals.hsh>
 
+const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f,-1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.5f, 0.0f,
+		0.0f, 0.0f, 0.5f, 1.0f);
+
 vec3 ConvertDepthToViewSpace(float depth, vec2 texcoords) {
 	
-	vec4 viewSpace = globalData.ipMatrix * vec4(texcoords * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+	vec4 viewSpace = globalData.ipMatrix * inverse(clip) * vec4(texcoords, depth, 1.0);
 	return viewSpace.xyz / viewSpace.w;
 	
 }
 
 float ConvertDepthToViewSpaceDepth(float depth) {
 	
-	vec2 viewSpace = (globalData.ipMatrix * vec4(0.0, 0.0, depth * 2.0 - 1.0, 1.0)).zw;
+	vec2 viewSpace = (globalData.ipMatrix  * inverse(clip) * vec4(0.0, 0.0, depth, 1.0)).zw;
 	return viewSpace.x / viewSpace.y;
 	
 }

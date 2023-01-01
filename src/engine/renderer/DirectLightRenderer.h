@@ -54,6 +54,7 @@ namespace Atlas {
 
             Ref<MultiBuffer> uniformBuffer;
             Ref<Pipeline> pipeline;
+            Ref<Sampler> shadowSampler;
 
 		};
 

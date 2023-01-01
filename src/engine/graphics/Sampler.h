@@ -18,6 +18,9 @@ namespace Atlas {
             float maxLod = 0.0f;
             float mipLodBias = 0.0f;
 
+            bool compareEnabled = false;
+            VkCompareOp compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+
             bool anisotropicFiltering = false;
         };
 

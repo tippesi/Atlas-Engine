@@ -71,8 +71,13 @@ void main() {
 
 	vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
 	positionVS = positionToCamera.xyz;
+
+	mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f,-1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.5f, 0.0f,
+		0.0f, 0.0f, 0.5f, 1.0f);
 	
-	gl_Position = globalData.pMatrix * positionToCamera;
+	gl_Position = clip * globalData.pMatrix * positionToCamera;
 
 	// Needed for velocity buffer calculation 
 	ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
