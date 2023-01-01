@@ -22,10 +22,6 @@ layout(set = 3, binding = 1) uniform LightBuffer {
 	Light light;
 } lightData;
 
-layout(push_constant) uniform constants {
-	vec4 lightDirection;
-} PushConstants;
-
 void main() {
 
     if (gl_GlobalInvocationID.x > imageSize(image).x ||

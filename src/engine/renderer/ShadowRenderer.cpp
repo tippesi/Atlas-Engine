@@ -143,9 +143,9 @@ namespace Atlas {
                             commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 0);
 
                         auto pushConstants = PushConstants {
+                            .lightSpaceMatrix = component->projectionMatrix * component->viewMatrix,
                             .vegetation = mesh->vegetation ? 1u : 0u,
-                            .invertUVs = mesh->invertUVs ? 1u : 0u,
-                            .lightSpaceMatrix = component->projectionMatrix * component->viewMatrix
+                            .invertUVs = mesh->invertUVs ? 1u : 0u
                         };
 
                         auto constantRange = currentPipeline->shader->GetPushConstantRange("constants");

@@ -26,6 +26,10 @@ struct Shadow {
 	
 };
 
+layout(push_constant) uniform constants {
+	mat4 lightSpaceMatrix;
+} PushConstants;
+
 // Filtering based on http://the-witness.net/news/2013/09/shadow-mapping-summary-part-1/
 
 float offsetLookup(sampler2DArrayShadow cascadeMaps, vec2 flooredUV, float u, float v, float cascadeIndex,
@@ -51,7 +55,7 @@ float cascadeLookup(Shadow shadow, sampler2DArrayShadow cascadeMaps, float casca
 		0.0f, 0.0f, 0.5f, 0.0f,
 		0.0f, 0.0f, 0.5f, 1.0f);
 
-	vec4 shadowCoords = clip * cascadeTransform * vec4(fragmentPosition, 1.0);
+	vec4 shadowCoords = clip * PushConstants.lightSpaceMatrix * vec4(fragmentPosition, 1.0);
 	shadowCoords.xyz /= shadowCoords.w;
 	
 	float fadeout = fade ? clamp((-fragmentPosition.z + 2.0 - shadow.distance) * 0.5, 0.0, 1.0) : 0.0;
@@ -184,9 +188,9 @@ float CalculateCascadedShadow(Shadow shadow, sampler2DArrayShadow cascadeMaps, v
 	// Some platforms have problems directly indexing the cascade array.
 	// We allow 6 cascades
 #ifdef SHADOW_CASCADE_BLENDING
-	float distance = -fragmentPosition.z - shadow.cascadeBlendDistance;
+	float distance = fragmentPosition.z - shadow.cascadeBlendDistance;
 #else
-	float distance = -fragmentPosition.z;
+	float distance = fragmentPosition.z;
 #endif
 	int cascadeIndex = 0;
 	cascadeIndex = distance >= shadow.cascades[0].distance ? 1 : cascadeIndex;
