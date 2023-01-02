@@ -13,7 +13,9 @@
 // Per vertex attributes
 layout(location=0) in vec3 vPosition;
 layout(location=1) in vec3 vNormal;
+#ifdef TEX_COORDS
 layout(location=2) in vec2 vTexCoord;
+#endif
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=3) in vec4 vTangent;
@@ -30,7 +32,9 @@ layout(std430, set = 1, binding = 1) buffer LastMatrices {
 // Vertex out parameters
 layout(location=0) out vec3 positionVS;
 layout(location=1) out vec3 normalVS;
+#ifdef TEX_COORDS
 layout(location=2) out vec2 texCoordVS;
+#endif
 
 layout(location=3) out vec3 ndcCurrentVS;
 layout(location=4) out vec3 ndcLastVS;
@@ -55,7 +59,9 @@ void main() {
 	mat4 mMatrix = currentMatrices[gl_InstanceIndex];
 	mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : lastMatrices[gl_InstanceIndex];
 
+#ifdef TEX_COORDS
 	texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
+#endif
 	
 	mat4 mvMatrix = globalData.vMatrix * mMatrix;
 

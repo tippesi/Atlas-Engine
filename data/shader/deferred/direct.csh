@@ -1,5 +1,5 @@
 #define SHADOWS
-#define SHADOW_FILTER_1x1
+#define SHADOW_FILTER_7x7
 #define SHADOW_CASCADE_BLENDING
 
 #include <deferred.hsh>
@@ -24,10 +24,6 @@ layout(set = 3, binding = 1) uniform LightBuffer {
 
 void main() {
 
-    if (gl_GlobalInvocationID.x > imageSize(image).x ||
-        gl_GlobalInvocationID.y > imageSize(image).y)
-        return;
-
     ivec2 resolution = imageSize(image);
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
 
@@ -35,13 +31,11 @@ void main() {
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
-    Light light = lightData.light;
-
     vec3 direct = vec3(0.0);
     if (depth < 1.0) {
         vec3 geometryNormal;
         // We don't have any light direction, that's why we use vec3(0.0, -1.0, 0.0) as a placeholder
-        Surface surface = GetSurface(texCoord, depth, -light.direction.xyz, geometryNormal);
+        Surface surface = GetSurface(texCoord, depth, -lightData.light.direction.xyz, geometryNormal);
 
         float shadowFactor = 1.0;
 
@@ -55,14 +49,14 @@ void main() {
         // Only need to test in the direction of the light and can the be used
         // for both the transmission and reflection. The inversion is only done
         // for transmissive materials
-        vec3 shadowNormal = surface.material.transmissive ? dot(-light.direction.xyz, geometryNormal) < 0.0 ? 
+        vec3 shadowNormal = surface.material.transmissive ? dot(-lightData.light.direction.xyz, geometryNormal) < 0.0 ? 
             -geometryNormal : geometryNormal : geometryNormal;
-        vec3 suv;
-        shadowFactor = CalculateCascadedShadow(light.shadow, cascadeMaps, surface.P,
-            shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)), suv); 
+        shadowFactor = CalculateCascadedShadow(lightData.light.shadow, cascadeMaps, surface.P,
+            shadowNormal, saturate(dot(-lightData.light.direction.xyz, shadowNormal)));
+        shadowFactor = max(0.05, shadowFactor); 
 #endif
 
-        vec3 radiance = light.color.rgb * light.intensity;
+        vec3 radiance = lightData.light.color.rgb * lightData.light.intensity;
 	    direct = direct * radiance * surface.NdotL * shadowFactor;
 
         if (surface.material.transmissive) {
@@ -79,12 +73,6 @@ void main() {
         if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.01) {	
             direct += surface.material.emissiveColor;
         }
-
-        if (shadowFactor < 0.01) {
-            direct += 0.05 * surface.material.baseColor;
-        }
-
-        //direct = vec3(suv.z);
 
     }
     

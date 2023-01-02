@@ -23,6 +23,8 @@ namespace Atlas {
             struct alignas(16) Cascade {
                 float distance;
                 float texelSize;
+                float aligment0;
+                float aligment1;
                 mat4 cascadeSpace;
             };
 

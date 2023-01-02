@@ -119,7 +119,7 @@ namespace Atlas {
                                    subData1.first->material->shadowConfig.variantHash;
                         });
 
-                    auto prevHash = 0;
+                    size_t prevHash = 0;
                     Ref<Pipeline> currentPipeline = nullptr;
                     Mesh::Mesh* prevMesh = nullptr;
                     for (auto [subData, mesh] : subDatas) {

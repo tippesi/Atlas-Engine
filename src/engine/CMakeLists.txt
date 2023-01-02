@@ -32,7 +32,7 @@ endif()
 if(WIN32)
 	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
-	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main
+	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
 			volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator
 			unofficial::spirv-reflect::spirv-reflect HLSL SPIRV glslang OGLCompiler)
     set(ATLAS_ENGINE_SYSTEM_LIBS opengl32 user32 Shlwapi)
@@ -53,7 +53,7 @@ if(APPLE)
 	mark_as_advanced(COCOA_LIBRARY OpenGL_LIBRARY)
 
 	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
-			volk::volk volk::volk_headers
+			volk::volk volk::volk_headers SPIRV-Tools-opt
 			unofficial::vulkan-memory-allocator::vulkan-memory-allocator
 			unofficial::spirv-reflect::spirv-reflect HLSL SPIRV glslang OGLCompiler)
 	set(ATLAS_ENGINE_SYSTEM_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
@@ -82,7 +82,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
 	
 	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
 			volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator
-			unofficial::spirv-reflect::spirv-reflect HLSL SPIRV glslang OGLCompiler)
+			unofficial::spirv-reflect::spirv-reflect HLSL SPIRV glslang OGLCompiler SPIRV-Tools-opt)
 	set(ATLAS_ENGINE_SYSTEM_LIBS X11 GL dl pthread)
 endif()
 

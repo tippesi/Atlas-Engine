@@ -36,7 +36,9 @@ layout(set = 3, binding = 6) uniform sampler2D heightMap;
 
 layout(location=0) in vec3 positionVS;
 layout(location=1) in vec3 normalVS;
+#ifdef TEX_COORDS
 layout(location=2) in vec2 texCoordVS;
+#endif
 
 layout(location=3) in vec3 ndcCurrentVS;
 layout(location=4) in vec3 ndcLastVS;
@@ -109,8 +111,10 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 }
 
 void main() {
-	
+
+#ifdef TEX_COORDS
 	vec2 texCoords = texCoordVS;
+#endif
 	
 	// Check if usage is valid (otherwise texCoords won't be used)
 #if defined(HEIGHT_MAP) && (defined(BASE_COLOR_MAP) || defined(NORMAL_MAP) || defined(ROUGHNESS_MAP) || defined(METALNESS_MAP) || defined(AO_MAP)) 

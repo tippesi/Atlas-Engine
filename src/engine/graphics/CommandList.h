@@ -144,11 +144,13 @@ namespace Atlas {
                 std::pair<Image*, Sampler*> sampledImages[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
 
                 VkDescriptorSet sets[DESCRIPTOR_SET_COUNT];
+                bool changed[DESCRIPTOR_SET_COUNT];
 
                 DescriptorBindingData() {
                     Reset();
                     for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                         sets[i] = nullptr;
+                        changed[i] = true;
                     }
                 }
 
@@ -160,6 +162,7 @@ namespace Atlas {
                             sampledImages[i][j] = { nullptr, nullptr };
                         }
                         sets[i] = nullptr;
+                        changed[i] = true;
                     }
                 }
 
@@ -170,18 +173,9 @@ namespace Atlas {
                         sampledImages[set][j] = { nullptr, nullptr };
                     }
                     sets[set] = nullptr;
+                    changed[set] = true;
                 }
-
-                bool IsEqual(const DescriptorBindingData& that, uint32_t set) {
-                    for (uint32_t i = 0; i < BINDINGS_PER_DESCRIPTOR_SET; i++) {
-                        if (buffers[set][i] != that.buffers[set][i] ||
-                            images[set][i] != that.images[set][i] ||
-                            sampledImages[set][i] != that.sampledImages[set][i])
-                            return false;
-                    }
-                    return true;
-                }
-            }descriptorBindingData, prevDescriptorBindingData;
+            }descriptorBindingData;
 
             void BindDescriptorSets();
 

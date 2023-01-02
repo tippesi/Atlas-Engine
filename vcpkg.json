@@ -26,7 +26,8 @@
         "vulkan-memory-allocator",
         "volk",
         "glslang",
-        "spirv-reflect"
+        "spirv-reflect",
+        "spirv-tools"
     ],
     "overrides": [
             { "name": "glm", "version": "0.9.8.0" },

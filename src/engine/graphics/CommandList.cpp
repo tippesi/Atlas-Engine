@@ -241,7 +241,8 @@ namespace Atlas {
 
             // Reset previous descriptor data such that a new descriptor
             // set must be provided to the new pipeline
-            // prevDescriptorBindingData.Reset();
+            for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++)
+                descriptorBindingData.changed[i] = true;
 
         }
 
@@ -364,10 +365,14 @@ namespace Atlas {
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
             assert(buffer->size > 0 && "Invalid buffer size");
 
+            if (descriptorBindingData.buffers[set][binding] == buffer.get())
+                return;
+
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = buffer.get();
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.images[set][binding] = nullptr;
+            descriptorBindingData.changed[set] = true;
 
         }
 
@@ -377,10 +382,14 @@ namespace Atlas {
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
             assert(buffer->size > 0 && "Invalid buffer size");
 
+            if (descriptorBindingData.buffers[set][binding] == buffer->GetCurrent())
+                return;
+
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = buffer->GetCurrent();
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.images[set][binding] = nullptr;
+            descriptorBindingData.changed[set] = true;
 
         }
 
@@ -389,9 +398,13 @@ namespace Atlas {
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
+            if (descriptorBindingData.images[set][binding] == image.get())
+                return;
+
             descriptorBindingData.images[set][binding] = image.get();
             descriptorBindingData.buffers[set][binding] = nullptr;
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
+            descriptorBindingData.changed[set] = true;
 
         }
 
@@ -400,9 +413,14 @@ namespace Atlas {
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
+            if (descriptorBindingData.sampledImages[set][binding].first == image.get() ||
+                descriptorBindingData.sampledImages[set][binding].second == sampler.get())
+                return;
+
             descriptorBindingData.sampledImages[set][binding] = { image.get(), sampler.get() };
             descriptorBindingData.buffers[set][binding] = nullptr;
             descriptorBindingData.images[set][binding] = nullptr;
+            descriptorBindingData.changed[set] = true;
 
         }
 
@@ -613,11 +631,11 @@ namespace Atlas {
                 }
 
                 // We could run into issue
-                if (!prevDescriptorBindingData.IsEqual(descriptorBindingData, i)) {
+                if (descriptorBindingData.changed[i] && shader->sets[i].bindingCount > 0) {
                     uint32_t bindingCounter = 0;
+                    descriptorBindingData.changed[i] = false;
 
                     descriptorBindingData.sets[i] = descriptorPool->Allocate(shader->sets[i].layout);
-                    prevDescriptorBindingData.Reset(i);
 
                     // BUFFER
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
@@ -647,10 +665,6 @@ namespace Atlas {
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = descriptorType;
                         setWrite.pBufferInfo = &bufferInfo;
-
-                        // We keep track in here since old bindings might be rejected.
-                        // We need to keep track of all valid binding, not all bindings
-                        prevDescriptorBindingData.buffers[i][j] = buffer;
                     }
 
                     // SAMPLED IMAGES
@@ -681,10 +695,6 @@ namespace Atlas {
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                         setWrite.pImageInfo = &imageInfo;
-
-                        // We keep track in here since old bindings might be rejected.
-                        // We need to keep track of all valid binding, not all bindings
-                        prevDescriptorBindingData.sampledImages[i][j] = { image, sampler };
                     }
 
                     // STORAGE IMAGES OR IMAGES SEPARATED FROM SAMPLER
@@ -715,18 +725,10 @@ namespace Atlas {
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
                         setWrite.pImageInfo = &imageInfo;
-
-                        // We keep track in here since old bindings might be rejected.
-                        // We need to keep track of all valid binding, not all bindings
-                        prevDescriptorBindingData.images[i][j] = image;
                     }
 
-                    if (bindingCounter > 0) {
-                        vkUpdateDescriptorSets(device, bindingCounter, setWrites, 0, nullptr);
-                    }
-                    else {
-                        descriptorBindingData.sets[i] = nullptr;
-                    }
+                    vkUpdateDescriptorSets(device, bindingCounter, setWrites, 0, nullptr);
+
                 }
 
                 if (descriptorBindingData.sets[i] != nullptr && shader->sets[i].bindingCount > 0) {
@@ -741,7 +743,6 @@ namespace Atlas {
 
         void CommandList::ResetDescriptors() {
 
-            prevDescriptorBindingData.Reset();
             descriptorBindingData.Reset();
             descriptorPool->Reset();
 

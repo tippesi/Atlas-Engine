@@ -2,6 +2,7 @@
 #include "Log.h"
 
 #include <glslang/SPIRV/GlslangToSpv.h>
+#include <spirv-tools/optimizer.hpp>
 
 namespace Atlas {
 
@@ -60,7 +61,15 @@ namespace Atlas {
             glslang::GlslangToSpv(*program.getIntermediate(stage), spirvBinary);
             success = true;
 
-            return spirvBinary;
+            spvtools::Optimizer opt(SPV_ENV_VULKAN_1_2);
+            opt.RegisterPerformancePasses();
+
+            std::vector<uint32_t> optimizedBinary;
+            if (opt.Run(spirvBinary.data(), spirvBinary.size(), &optimizedBinary)) {
+                return optimizedBinary;
+            }
+
+            return optimizedBinary;
 
         }
 

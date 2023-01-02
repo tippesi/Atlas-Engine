@@ -125,6 +125,10 @@ namespace Atlas {
                 if (material->HasDisplacementMap()) {
                     macros.push_back("HEIGHT_MAP");
                 }
+                // This is a check if we have any maps at all (no macros, no maps)
+                if (macros.size()) {
+                    macros.push_back("TEX_COORDS");
+                }
                 if (glm::length(material->emissiveColor) > 0.0f) {
                     macros.push_back("EMISSIVE");
                 }
@@ -139,7 +143,7 @@ namespace Atlas {
                     subData1.first->material->mainConfig.variantHash;
             });
 
-            auto prevHash = 0;
+            size_t prevHash = 0;
             Ref<Pipeline> currentPipeline = nullptr;
             Mesh::Mesh* prevMesh = nullptr;
             for (auto [subData, mesh] : subDatas) {

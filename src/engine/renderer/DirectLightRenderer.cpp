@@ -84,13 +84,6 @@ namespace Atlas {
 
             commandList->BindPipeline(pipeline);
 
-            auto cascade = &light->GetShadow()->components[0];
-
-            mat4 matrix = cascade->projectionMatrix *
-                cascade->viewMatrix * camera->invViewMatrix;
-            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-            commandList->PushConstants(constantRange, &matrix[0][0]);
-
             commandList->BindImage(target->lightingTexture.image, 3, 0);
             commandList->BindBuffer(uniformBuffer, 3, 1);
 
