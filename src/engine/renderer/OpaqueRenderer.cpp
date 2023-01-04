@@ -75,11 +75,11 @@ namespace Atlas {
 
             Profiler::BeginQuery("Opaque geometry");
 
-            auto& mainPass = renderList->GetMainPass();
+            auto mainPass = renderList->GetMainPass();
 
             // Retrieve all possible materials
             std::vector<std::pair<Mesh::MeshSubData*, Mesh::Mesh*>> subDatas;
-            for (auto& [mesh, _] : mainPass.meshToInstancesMap) {
+            for (auto& [mesh, _] : mainPass->meshToInstancesMap) {
                 for (auto& subData : mesh->data.subData) {
                     subDatas.push_back({ &subData, mesh });
                 }
@@ -163,7 +163,7 @@ namespace Atlas {
                     prevMesh = mesh;
                 }
 
-                auto& instance = mainPass.meshToInstancesMap[mesh];
+                auto& instance = mainPass->meshToInstancesMap[mesh];
 
                 if (material->HasBaseColorMap())
                     commandList->BindImage(material->baseColorMap->image, material->baseColorMap->sampler, 3, 0);

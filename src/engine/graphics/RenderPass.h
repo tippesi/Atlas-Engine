@@ -57,9 +57,9 @@ namespace Atlas {
             bool isComplete = false;
         
         private:
-            void CompleteColorAttachment(RenderPassAttachment& attachment, uint32_t slot);
+            void CompleteColorAttachment(const RenderPassAttachment& attachment, uint32_t slot);
 
-            void CompleteDepthAttachment(RenderPassAttachment& attachment);
+            void CompleteDepthAttachment(const RenderPassAttachment& attachment);
 
             std::vector<VkAttachmentDescription2> attachmentDescriptions;
             std::vector<VkSubpassDependency2> subPassDependencies;

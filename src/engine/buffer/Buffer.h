@@ -123,7 +123,7 @@ namespace Atlas {
             Ref<Graphics::Buffer> buffer;
             Ref<Graphics::MultiBuffer> multiBuffer;
 
-			BufferUsage usage;
+			BufferUsage usage = 0;
 
 			size_t elementSize = 0;
 			size_t elementCount = 0;

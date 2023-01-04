@@ -81,7 +81,7 @@ namespace Atlas {
 
         }
 
-        void RenderPass::CompleteColorAttachment(RenderPassAttachment& attachment, uint32_t slot) {
+        void RenderPass::CompleteColorAttachment(const RenderPassAttachment& attachment, uint32_t slot) {
 
             VkAttachmentDescription2 colorAttachmentDescription = Initializers::InitAttachmentDescription(
                 attachment.imageFormat, attachment.initialLayout,
@@ -106,7 +106,7 @@ namespace Atlas {
 
         }
 
-        void RenderPass::CompleteDepthAttachment(RenderPassAttachment& attachment) {
+        void RenderPass::CompleteDepthAttachment(const RenderPassAttachment& attachment) {
 
             VkAttachmentDescription2 depthAttachmentDescription = Initializers::InitAttachmentDescription(
                 attachment.imageFormat, attachment.initialLayout,

@@ -56,22 +56,24 @@ namespace Atlas {
     }
 
 
-    RenderList::Pass& RenderList::GetMainPass() {
+    RenderList::Pass* RenderList::GetMainPass() {
 
         for (auto& pass : passes) {
-            if (pass.type == RenderPassType::Main) return pass;
+            if (pass.type == RenderPassType::Main) return &pass;
         }
 
-
+        return nullptr;
 
     }
 
-    RenderList::Pass& RenderList::GetShadowPass(Lighting::Light *light, uint32_t layer) {
+    RenderList::Pass* RenderList::GetShadowPass(const Lighting::Light *light, const uint32_t layer) {
 
         for (auto& pass : passes) {
             if (pass.type == RenderPassType::Shadow &&
-                pass.light == light && pass.layer == layer) return pass;
+                pass.light == light && pass.layer == layer) return &pass;
         }
+
+        return nullptr;
 
     }
 

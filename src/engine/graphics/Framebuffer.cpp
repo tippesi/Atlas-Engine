@@ -109,7 +109,7 @@ namespace Atlas {
 
         }
 
-        void FrameBuffer::ChangeColorAttachmentImage(Ref<Image> &image, uint32_t slot) {
+        void FrameBuffer::ChangeColorAttachmentImage(const Ref<Image> &image, const uint32_t slot) {
 
             assert(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
             assert(colorAttachments[slot].isValid && "Color attachment is not valid");
@@ -118,7 +118,7 @@ namespace Atlas {
 
         }
 
-        void FrameBuffer::ChangeDepthAttachmentImage(Ref<Image> &image) {
+        void FrameBuffer::ChangeDepthAttachmentImage(const Ref<Image> &image) {
 
             assert(depthAttachment.isValid && "Depth attachment is not valid");
 

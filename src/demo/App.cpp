@@ -110,7 +110,7 @@ void App::UnloadContent() {
 
 void App::Update(float deltaTime) {
 
-    ImGuiIO& io = ImGui::GetIO();
+    const ImGuiIO& io = ImGui::GetIO();
 
     imguiWrapper.Update(&window, deltaTime);
 

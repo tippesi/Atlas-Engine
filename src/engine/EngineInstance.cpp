@@ -4,7 +4,7 @@ namespace Atlas {
 
     EngineInstance* EngineInstance::instance;
 
-	EngineInstance::EngineInstance(std::string instanceName, int32_t windowWidth,
+	EngineInstance::EngineInstance(const std::string& instanceName, int32_t windowWidth,
 		int32_t windowHeight, int32_t flags) : window(instanceName, AE_WINDOWPOSITION_UNDEFINED,
         AE_WINDOWPOSITION_UNDEFINED, windowWidth, windowHeight, flags) {
 

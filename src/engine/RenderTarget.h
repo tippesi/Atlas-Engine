@@ -17,7 +17,7 @@ namespace Atlas {
 	public:
 		RenderTargetData() = default;
 
-		RenderTargetData(ivec2 resolution) {
+		explicit RenderTargetData(ivec2 resolution) {
             baseColorTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
                 VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 			depthTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_D32_SFLOAT,

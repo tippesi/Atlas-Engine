@@ -17,8 +17,7 @@ namespace Atlas {
 
         GraphicsDevice::GraphicsDevice(Surface* surface, bool enableValidationLayers) : surface(surface) {
 
-            auto instance = Instance::DefaultInstance;
-            this->instance = instance->instance;
+            instance = Instance::DefaultInstance;
 
             const std::vector<const char*> requiredExtensions = {
                     VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -283,11 +282,11 @@ namespace Atlas {
                 return commandList;
             }
             else {
-                auto frameData = GetFrameData();
+                auto currentFrameData = GetFrameData();
 
-                auto &commandLists = frameData->commandLists;
-                auto commandList = GetOrCreateCommandList(queueType, frameData->commandListsMutex,
-                    frameData->commandLists, false);
+                auto &commandLists = currentFrameData->commandLists;
+                auto commandList = GetOrCreateCommandList(queueType, currentFrameData->commandListsMutex,
+                    currentFrameData->commandLists, false);
 
                 commandList->isSubmitted = false;
 

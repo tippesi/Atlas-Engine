@@ -1,5 +1,6 @@
 #include "MemoryManager.h"
 #include "GraphicsDevice.h"
+#include "Instance.h"
 
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
@@ -20,7 +21,7 @@ namespace Atlas {
             VmaAllocatorCreateInfo allocatorInfo = {};
             allocatorInfo.physicalDevice = device->physicalDevice;
             allocatorInfo.device = device->device;
-            allocatorInfo.instance = device->instance;
+            allocatorInfo.instance = device->instance->GetNativeInstance();
             allocatorInfo.pVulkanFunctions = &vulkanFunctions;
             VK_CHECK(vmaCreateAllocator(&allocatorInfo, &allocator))
 

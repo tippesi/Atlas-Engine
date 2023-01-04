@@ -74,13 +74,13 @@ namespace Atlas {
                         frameBuffer->Refresh();
                     }
 
-                    auto& shadowPass = renderList->GetShadowPass(light, i);
+                    auto shadowPass = renderList->GetShadowPass(light, i);
 
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
 
                     // Retrieve all possible materials
                     std::vector<std::pair<Mesh::MeshSubData*, Mesh::Mesh*>> subDatas;
-                    for (auto& [mesh, _] : shadowPass.meshToInstancesMap) {
+                    for (auto& [mesh, _] : shadowPass->meshToInstancesMap) {
                         for (auto& subData : mesh->data.subData) {
                             subDatas.push_back({ &subData, mesh });
                         }
@@ -137,7 +137,7 @@ namespace Atlas {
                             prevMesh = mesh;
                         }
 
-                        auto& instance = shadowPass.meshToInstancesMap[mesh];
+                        auto& instance = shadowPass->meshToInstancesMap[mesh];
 
                         if (material->HasOpacityMap())
                             commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 0);

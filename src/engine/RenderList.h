@@ -48,9 +48,9 @@ namespace Atlas {
 
         void NewShadowPass(Lighting::Light* light, uint32_t layer);
 
-        Pass& GetMainPass();
+        Pass* GetMainPass();
 
-        Pass& GetShadowPass(Lighting::Light* light, uint32_t layer);
+        Pass* GetShadowPass(const Lighting::Light* light, const uint32_t layer);
 
 		void Add(Actor::MeshActor *actor);
 

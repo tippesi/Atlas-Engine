@@ -21,7 +21,7 @@ namespace Atlas {
 	     * @note The constructors of derived classes shouldn't do anything,
 	     * except calling this. For everything else use LoadContent().
 	     */
-		EngineInstance(std::string windowTitle, int32_t windowWidth,
+		EngineInstance(const std::string& windowTitle, int32_t windowWidth,
 			int32_t windowHeight, int32_t flags = AE_WINDOW_RESIZABLE);
 
         EngineInstance(const EngineInstance& that) = delete;

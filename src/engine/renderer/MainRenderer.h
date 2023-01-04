@@ -160,7 +160,7 @@ namespace Atlas {
 
 			void PreintegrateBRDF();
 
-            GraphicsDevice* device;
+            GraphicsDevice* device = nullptr;
 
 			Texture::Texture2D dfgPreintegrationTexture;
 

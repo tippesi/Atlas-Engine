@@ -114,11 +114,11 @@ namespace Atlas {
 
             void WaitForIdle() const;
 
+            Instance* instance = nullptr;
             SwapChain* swapChain = nullptr;
             MemoryManager* memoryManager = nullptr;
             Surface* surface = nullptr;
 
-            VkInstance instance;
             VkPhysicalDevice physicalDevice;
             VkDevice device;
             VkPhysicalDeviceProperties deviceProperties;

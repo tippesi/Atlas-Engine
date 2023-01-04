@@ -43,9 +43,9 @@ namespace Atlas {
 
             void Refresh();
 
-            void ChangeColorAttachmentImage(Ref<Image>& image, uint32_t slot);
+            void ChangeColorAttachmentImage(const Ref<Image>& image, const uint32_t slot);
 
-            void ChangeDepthAttachmentImage(Ref<Image>& image);
+            void ChangeDepthAttachmentImage(const Ref<Image>& image);
 
             Ref<Image>& GetColorImage(uint32_t slot);
 

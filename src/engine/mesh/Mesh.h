@@ -40,7 +40,7 @@ namespace Atlas {
             Graphics::VertexBuffer texCoordBuffer;
 
             MeshData data;
-            MeshMobility mobility;
+            MeshMobility mobility = MeshMobility::Stationary;
 
             Impostor* impostor = nullptr;
 

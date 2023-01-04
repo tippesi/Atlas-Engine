@@ -312,7 +312,7 @@ namespace Atlas {
             auto threadId = std::this_thread::get_id();
 
             auto it = std::find_if(threadContexts.begin(), threadContexts.end(),
-                [&](ThreadContext& context) {
+                [&](const ThreadContext& context) {
                     return threadId == context.id && context.isValid;
                 });
 

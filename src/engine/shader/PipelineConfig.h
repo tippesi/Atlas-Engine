@@ -20,13 +20,13 @@ namespace Atlas {
     public:
         PipelineConfig() = default;
 
+        explicit PipelineConfig(const std::string& shaderFile);
+
+        PipelineConfig(const std::string& shaderFile, std::vector<std::string> macros);
+
         PipelineConfig(ShaderConfig shaderConfig, Graphics::GraphicsPipelineDesc desc);
 
         PipelineConfig(ShaderConfig shaderConfig, Graphics::GraphicsPipelineDesc desc, std::vector<std::string> macros);
-
-        PipelineConfig(const std::string& shaderFile);
-
-        PipelineConfig(const std::string& shaderFile, std::vector<std::string> macros);
 
         void AddMacro(const std::string& macro);
 

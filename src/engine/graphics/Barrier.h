@@ -14,7 +14,7 @@ namespace Atlas {
         public:
             BufferBarrier() = default;
 
-            BufferBarrier(VkAccessFlags newAccessMask);
+            explicit BufferBarrier(VkAccessFlags newAccessMask);
 
             BufferBarrier(const Ref<Buffer>& buffer, VkAccessFlags newAccessMask);
 
