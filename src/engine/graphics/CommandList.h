@@ -92,6 +92,8 @@ namespace Atlas {
             void ImageMemoryBarrier(ImageBarrier& barrier, VkPipelineStageFlags srcStageMask,
                 VkPipelineStageFlags dstStageMask);
 
+            void ImageTransition(const Ref<Image>& image, VkImageLayout newLayout, VkAccessFlags newAccessMask);
+
             void BufferMemoryBarrier(const Ref<Buffer>& buffer, VkAccessFlags newAccessMask,
                 VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
 
@@ -115,9 +117,15 @@ namespace Atlas {
 
             void CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer, VkBufferCopy copy);
 
+            void FillBuffer(const Ref<Buffer>& buffer, void* data);
+
             void CopyImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage);
 
             void CopyImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage, VkImageCopy copy);
+
+            void BlitImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage);
+
+            void BlitImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage, VkImageBlit blit);
 
             void GenerateMipMap(const Ref<Image>& image);
 

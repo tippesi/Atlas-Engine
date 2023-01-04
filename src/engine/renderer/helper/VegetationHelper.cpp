@@ -55,11 +55,13 @@ namespace Atlas {
 				if (meshFoundCount != meshToIdxMap.size() || meshFoundCount != meshes.size()) 
 					GenerateBuffers(vegetation);
 
+                /*
 				meshInformationBuffer.BindBase(0);
 				meshSubdataInformationBuffer.BindBase(1);
 				binCounterBuffer.BindBase(2);
 				binOffsetBuffer.BindBase(3);
 				instanceCounterBuffer.BindBase(4);
+                */
 
                 Graphics::Profiler::BeginQuery("Cull and count bins");
 
@@ -76,8 +78,10 @@ namespace Atlas {
 						auto instanceCount = int32_t(buffers->instanceData.GetElementCount());
 						auto idx = meshToIdxMap[mesh];
 
+                        /*
 						buffers->instanceData.BindBase(5);
 						buffers->culledInstanceData.BindBase(6);
+                        */
 
 						instanceCullingShader.GetUniform("instanceCount")->SetValue(instanceCount);
 						instanceCullingShader.GetUniform("meshIdx")->SetValue(idx);
@@ -122,8 +126,10 @@ namespace Atlas {
 						auto instanceCount = int32_t(buffers->instanceData.GetElementCount());
 						auto idx = meshToIdxMap[mesh];
 
+                        /*
 						buffers->culledInstanceData.BindBase(5);
 						buffers->binnedInstanceData.BindBase(6);
+                        */
 						
 						instanceBinningShader.GetUniform("instanceCount")->SetValue(instanceCount);
 						instanceBinningShader.GetUniform("meshIdx")->SetValue(idx);
@@ -247,10 +253,11 @@ namespace Atlas {
 			void VegetationHelper::ResetCounterBuffer(OldBuffer::Buffer& buffer) {
 
 				uint32_t zero = 0;
-				buffer.Bind();
+				/*
+                buffer.Bind();
 				buffer.InvalidateData();
-                // buffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
-
+                buffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
+                */
 			}
 
 		}

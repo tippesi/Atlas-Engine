@@ -23,8 +23,7 @@ namespace Atlas {
 
     }
 
-    PipelineConfig::PipelineConfig(const std::string& shaderFile) :
-        shaderConfig(shaderConfig), isCompute(true) {
+    PipelineConfig::PipelineConfig(const std::string& shaderFile) : isCompute(true) {
 
         shaderConfig = {{shaderFile, VK_SHADER_STAGE_COMPUTE_BIT}};
 
@@ -34,7 +33,7 @@ namespace Atlas {
     }
 
     PipelineConfig::PipelineConfig(const std::string& shaderFile, std::vector<std::string> macros) :
-        shaderConfig(shaderConfig), macros(macros), isCompute(true) {
+        macros(macros), isCompute(true) {
 
         shaderConfig = {{shaderFile, VK_SHADER_STAGE_COMPUTE_BIT}};
 

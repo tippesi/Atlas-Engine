@@ -11,8 +11,6 @@ namespace Atlas {
             Wrapping wrapping, Filtering filtering) : width(width), height(height), depth(depth),
             wrapping(wrapping), filtering(filtering), format(format) {
 
-            channels = int32_t(Graphics::GetFormatChannels(format));
-
             Reallocate(Graphics::ImageType::Image2D, width, height, depth, filtering, wrapping);
             RecreateSampler(filtering, wrapping);
 
@@ -80,6 +78,7 @@ namespace Atlas {
             this->width = width;
             this->height = height;
             this->depth = depth;
+            channels = int32_t(Graphics::GetFormatChannels(format));
 
             bool generateMipMaps = filtering == Filtering::MipMapLinear ||
                 filtering == Filtering::MipMapNearest || filtering == Filtering::Anisotropic;

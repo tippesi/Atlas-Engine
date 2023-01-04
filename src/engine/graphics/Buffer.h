@@ -49,7 +49,7 @@ namespace Atlas {
 
             void SetData(void* data, size_t offset, size_t length);
 
-            void Map();
+            void* Map();
 
             void Unmap();
 

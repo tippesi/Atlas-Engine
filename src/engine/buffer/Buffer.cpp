@@ -1,52 +1,16 @@
 #include "Buffer.h"
 #include "graphics/Extensions.h"
+#include "graphics/GraphicsDevice.h"
 
 namespace Atlas {
 
     namespace OldBuffer {
 
-        Buffer::Buffer(const Buffer& that) {
+        Buffer::Buffer(BufferUsage bufferUsage, size_t elementSize, size_t elementCount,
+            void* data) : usage(bufferUsage), elementSize(elementSize) {
 
-			DeepCopy(that);
-
-        }
-
-        Buffer::Buffer(uint32_t type, size_t elementSize, uint32_t flags,
-			size_t elementCount, void* data) : type(type), elementSize(elementSize),
-			flags(flags) {
-
-            dynamicStorage = flags & AE_BUFFER_DYNAMIC_STORAGE;
-
-            // Check flags.
-            if (flags & AE_BUFFER_DOUBLE_BUFFERING) {
-                bufferingCount = 2;
-            }
-            else if (flags & AE_BUFFER_TRIPLE_BUFFERING) {
-                bufferingCount = 3;
-            }
-            else {
-                bufferingCount = 1;
-            }
-
-            immutable = (flags & AE_BUFFER_IMMUTABLE);
-
-            // Configure mapping and storage flags.
-            /*
-            mapFlags |= ((flags & AE_BUFFER_MAP_READ) ? GL_MAP_READ_BIT : 0);
-            mapFlags |= ((flags & AE_BUFFER_MAP_WRITE) ? GL_MAP_WRITE_BIT : 0);
-
-            if (flags & AE_BUFFER_DYNAMIC_STORAGE && immutable) {
-                dataFlags |= GL_DYNAMIC_STORAGE_BIT | GL_MAP_COHERENT_BIT
-                             | GL_MAP_PERSISTENT_BIT | mapFlags;
-                mapFlags |= GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-            }
-            else if (flags & AE_BUFFER_DYNAMIC_STORAGE && !immutable) {
-                dataFlags |= GL_STREAM_DRAW;
-            }
-            else if (!(flags & AE_BUFFER_DYNAMIC_STORAGE) && !immutable) {
-                dataFlags |= GL_STATIC_DRAW;
-            }
-             */
+            multiBuffered = bufferUsage & MultiBuffered;
+            hostAccessible = bufferUsage & HostAccess;
 
 			if (elementCount) {
 				SetSize(elementCount, data);
@@ -54,117 +18,36 @@ namespace Atlas {
 
         }
 
-        Buffer::~Buffer() {
+        Graphics::Buffer *Buffer::Get() {
 
-            DestroyInternal();
-
-        }
-
-        Buffer& Buffer::operator=(const Buffer &that) {
-
-            if (this != &that) {
-
-				DeepCopy(that);
-
+            if (multiBuffered) {
+                return multiBuffer->GetCurrent();
+            }
+            else {
+                return buffer.get();
             }
 
-            return *this;
-
         }
 
-        void Buffer::Bind() const {
+        void* Buffer::Map() {
 
-            // glBindBuffer(type, ID);
+            if (!hostAccessible) return nullptr;
 
-        }
-
-        void Buffer::BindAs(uint32_t target) const {
-
-            // glBindBuffer(target, ID);
-
-        }
-
-        void Buffer::BindRange(size_t offset, size_t length, int32_t base) const {
-
-            // glBindBufferRange(type, base, ID, offset * elementSize,
-            //                   length * elementSize);
-
-        }
-
-        void Buffer::BindBase(int32_t base) const {
-
-            // glBindBufferBase(type, base, ID);
-
-        }
-
-        void Buffer::BindBaseAs(uint32_t target, int32_t base) const {
-
-            // glBindBufferBase(target, base, ID);
-
-        }
-
-        void Buffer::Unbind() const {
-
-            // glBindBuffer(type, 0);
-
-        }
-
-        void Buffer::Map() {
-
-            if (mapped || !dynamicStorage)
-                return;
-
-            // Always map the whole range
-            // void* data = glMapBufferRange(type, 0, sizeInBytes, mapFlags);
-            // mappedDataOffset = (size_t)((uint8_t*)data);
-            mappedData = 0;
-
-            if (immutable)
-                // bufferLock.LockRange(0, elementCount * elementSize);
-
-            mapped = true;
+            return Get()->Map();
 
         }
 
         void Buffer::Unmap() {
 
-            if (!mapped)
-                return;
+            if (!hostAccessible) return;
 
-            // glUnmapBuffer(type);
-
-            mappedData = 0;
-            mappedDataOffset = 0;
-
-            mapped = false;
-
-        }
-
-        void Buffer::Increment() {
-
-            if (mapped && immutable) {
-                // bufferLock.LockRange(bufferingIndex * elementSize * elementCount,
-                //                      elementCount * elementSize);
-            }
-
-            bufferingIndex = (bufferingIndex + 1) % bufferingCount;
-
-            mappedData = bufferingIndex * elementSize * elementCount;
-
-            if (mapped && immutable) {
-                // bufferLock.WaitForLockedRange(mappedData, elementCount * elementSize);
-            }
-
-        }
-
-        inline int32_t Buffer::GetIncrement() {
-
-            return (int32_t)bufferingIndex;
+            Get()->Unmap();
 
         }
 
         void Buffer::SetSize(size_t elementCount, void* data) {
 
+            // If the element count is the same we can reuse the old buffer
 			if (this->elementCount == elementCount) {
 				if (!data)
 					return;
@@ -173,78 +56,22 @@ namespace Atlas {
 			}
 
             this->elementCount = elementCount;
-            sizeInBytes = elementCount * elementSize * bufferingCount;
+            sizeInBytes = elementCount * elementSize;
 
-            if (!ID) {
-                CreateInternal(data);
-                return;
-            }
-
-            if (immutable) {
-                DestroyInternal();
-                CreateInternal(data);
-            }
-            else {
-                Bind();
-                // glBufferData(type, sizeInBytes, data, dataFlags);
-            }
+            Reallocate(data);
 
         }
 
         void Buffer::SetData(void *data, size_t offset, size_t length) {
 
-            if (mapped || (!dynamicStorage && immutable) || !length || !data)
-                return;
-
-            Bind();
-
-            size_t dataOffset = offset * elementSize +
-                                bufferingIndex * elementCount * elementSize;
-
-            if (dataOffset + length * elementSize > sizeInBytes)
-                return;
-
-            // glBufferSubData(type, dataOffset, length * elementSize, data);
+            if (multiBuffered) {
+                multiBuffer->SetData(data, offset * elementSize, length * elementSize);
+            }
+            else {
+                buffer->SetData(data, offset * elementSize, length * elementSize);
+            }
 
         }
-
-        void Buffer::SetDataMapped(void *data, size_t length) {
-
-            if (!mapped || !dynamicStorage || !length || !data)
-                return;
-
-            size_t copyLength = length * elementSize;
-
-            if (sizeInBytes < mappedData + copyLength)
-                return;
-
-            void* bufferData = (uint8_t*)(mappedDataOffset + mappedData);
-
-            std::memcpy(bufferData, data, copyLength);
-
-            mappedData = mappedData + copyLength;
-
-        }
-
-        int32_t Buffer::GetDataMappedAdvancement() {
-
-            return (int32_t)(mappedData / elementSize);
-
-        }
-
-		void Buffer::InvalidateData() {
-
-            // glInvalidateBufferData(ID);
-
-		}
-
-		void Buffer::ClearData(int32_t sizedFormat, int32_t type, void* data) {
-
-            // glClearBufferData(this->type, sizedFormat,
-            // 	Texture::TextureFormat::GetBaseFormat(sizedFormat),
-            // 	type, data);
-
-		}
 
         void Buffer::Copy(const Buffer *copyBuffer, size_t readOffset, 
 			size_t writeOffset, size_t length) {
@@ -252,22 +79,13 @@ namespace Atlas {
 			if (!length)
 				return;
 
-            /*
-			glBindBuffer(GL_COPY_WRITE_BUFFER, ID);
-			glBindBuffer(GL_COPY_READ_BUFFER, copyBuffer->ID);
 
-            glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 
-				readOffset, writeOffset, length);
-
-			glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-			glBindBuffer(GL_COPY_READ_BUFFER, 0);
-            */
 
         }
 
-        uint32_t Buffer::GetType() {
+        uint32_t Buffer::GetUsage() {
 
-            return type;
+            return usage;
 
         }
 
@@ -289,62 +107,42 @@ namespace Atlas {
 
         }
 
-		void Buffer::DeepCopy(const Buffer& that) {
+        void Buffer::Reallocate(void *data) {
 
-			if (mapped && !immutable)
-				Unmap();
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
 
-			type = that.type;
+            VkBufferUsageFlags usageFlags = {};
+            if (usage & BufferUsageBits::UniformBuffer) {
+                usageFlags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            }
+            if (usage & BufferUsageBits::StorageBuffer) {
+                usageFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            }
 
-			elementSize = that.elementSize;
+            if (usage & BufferUsageBits::MemoryTransfers) {
+                usageFlags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            }
 
-			mapFlags = that.mapFlags;
-			dataFlags = that.dataFlags;
-			
-			immutable = that.immutable;
-			dynamicStorage = that.dynamicStorage;
+            sizeInBytes = elementCount * elementSize;
 
-			bufferingCount = that.bufferingCount;
-			bufferingIndex = 0;
+            Graphics::BufferDesc desc {
+                .usageFlags = usageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                .domain = hostAccessible ? Graphics::BufferDomain::Host : Graphics::BufferDomain::Device,
+                .data = data,
+                .size = sizeInBytes
+            };
 
-			SetSize(that.elementCount);
-			Copy(&that, 0, 0, that.sizeInBytes);
-
-		}
-
-        void Buffer::CreateInternal(void* data) {
-
-            // glGenBuffers(1, &ID);
-
-            Bind();
-
-            if (immutable) {
-#ifndef AE_OS_ANDROID
-#ifdef AE_API_GLES
-                glBufferStorageEXT(type, sizeInBytes, data, dataFlags);
-#else
-                //     glBufferStorage(type, sizeInBytes, data, dataFlags);
-#endif
-#endif
+            if (multiBuffered) {
+                multiBuffer = device->CreateMultiBuffer(desc);
+                buffer.reset();
             }
             else {
-                // glBufferData(type, sizeInBytes, data, dataFlags);
+                buffer = device->CreateBuffer(desc);
+                multiBuffer.reset();
             }
 
         }
 
-        void Buffer::DestroyInternal() {
-
-            Bind();
-
-            if (mapped)
-                Unmap();
-
-            // glDeleteBuffers(1, &ID);
-
-            ID = 0;
-
-        }
 
     }
 

@@ -103,16 +103,13 @@ namespace Atlas {
 
 		InternalIrradianceVolume::InternalIrradianceVolume(ivec2 irrRes, ivec2 momRes, ivec3 probeCount) {
 
-            /*
-			rayDirBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
-				AE_BUFFER_DYNAMIC_STORAGE);
-			rayDirInactiveBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
-				AE_BUFFER_DYNAMIC_STORAGE);
-			probeStateBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
-				AE_BUFFER_DYNAMIC_STORAGE, probeCount.x * probeCount.y * probeCount.z);
-			probeOffsetBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
-				AE_BUFFER_DYNAMIC_STORAGE, probeCount.x * probeCount.y * probeCount.z);
-            */
+			rayDirBuffer = OldBuffer::Buffer(OldBuffer::BufferUsageBits::StorageBuffer, sizeof(vec4));
+			rayDirInactiveBuffer = OldBuffer::Buffer(OldBuffer::BufferUsageBits::StorageBuffer, sizeof(vec4));
+			probeStateBuffer = OldBuffer::Buffer(OldBuffer::BufferUsageBits::StorageBuffer, sizeof(vec4),
+				probeCount.x * probeCount.y * probeCount.z);
+			probeOffsetBuffer = OldBuffer::Buffer(OldBuffer::BufferUsageBits::StorageBuffer, sizeof(vec4),
+				probeCount.x * probeCount.y * probeCount.z);
+
 			irradianceArray0 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y,
                 VK_FORMAT_A2B10G10R10_UNORM_PACK32, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 

@@ -50,9 +50,9 @@ namespace Atlas {
 				sky.sun->Update(camera);
 			}
 
+            hasChanged = SceneNode::Update(camera, deltaTime, mat4(1.0f), false);
+
 			rayTracingData.UpdateMaterials();
-			
-			hasChanged = SceneNode::Update(camera, deltaTime, mat4(1.0f), false);
 
 		}
 

@@ -118,10 +118,20 @@ namespace Atlas {
 			textureArray = Texture2DArray(width, height, layers, format,
                 Wrapping::ClampToEdge, Filtering::Linear);
 
+            auto commandList = graphicsDevice->GetCommandList(Graphics::TransferQueue, true);
+
+            commandList->BeginCommands();
+
+            commandList->ImageTransition(textureArray.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_ACCESS_TRANSFER_WRITE_BIT);
+
 			// Copy all levels to the texture array (note that the order levels are added is important)
 			for (auto& levelSlices : levels) {
-				FillAtlas(levelSlices);
+				FillAtlas(commandList, levelSlices);
 			}
+
+            commandList->EndCommands();
+            graphicsDevice->FlushCommandList(commandList);
 
 		}
 
@@ -226,80 +236,37 @@ namespace Atlas {
 
 		}
 
-		void TextureAtlas::FillAtlas(std::map<Texture2D*, TextureAtlas::Slice> levelSlices) {
-
-			//Framebuffer readFramebuffer;
-			//Framebuffer writeFramebuffer;
+		void TextureAtlas::FillAtlas(Graphics::CommandList* commandList,
+            std::map<Texture2D*, TextureAtlas::Slice> levelSlices) {
 
 			for (auto& key : levelSlices) {
 				auto tex = key.first;
 				auto slice = key.second;
 
-				if (tex->channels == channels) {
+                auto prevLayout = tex->image->layout;
+                auto prevAccessMask = tex->image->accessMask;
+                commandList->ImageTransition(tex->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                    VK_ACCESS_TRANSFER_READ_BIT);
 
-                    /*
-					readFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, tex);
-					writeFramebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, &textureArray, slice.layer);
+                VkImageBlit blit = {};
+                blit.srcOffsets[0] = { 0, 0, 0 };
+                blit.srcOffsets[1] = { int32_t(tex->width), int32_t(tex->height), 1};
+                blit.srcSubresource.aspectMask = tex->image->aspectFlags;
+                blit.srcSubresource.mipLevel = 0;
+                blit.srcSubresource.baseArrayLayer = 0;
+                blit.srcSubresource.layerCount = 1;
 
-					readFramebuffer.Bind(GL_READ_FRAMEBUFFER);
-					writeFramebuffer.Bind(GL_DRAW_FRAMEBUFFER);
+                blit.dstOffsets[0] = { slice.offset.x, slice.offset.y, 0 };
+                blit.dstOffsets[1] = { slice.offset.x + slice.size.x,
+                                       slice.offset.y + slice.size.y, 1};
+                blit.dstSubresource.aspectMask = textureArray.image->aspectFlags;
+                blit.dstSubresource.mipLevel = 0;
+                blit.dstSubresource.baseArrayLayer = slice.layer;
+                blit.dstSubresource.layerCount = 1;
 
-					glBlitFramebuffer(0, 0, tex->width, tex->height,
-						slice.offset.x, slice.offset.y, 
-						slice.offset.x + slice.size.x, 
-						slice.offset.y + slice.size.y,
-						GL_COLOR_BUFFER_BIT, GL_LINEAR);
-                    */
+				commandList->BlitImage(tex->image, textureArray.image, blit);
 
-				}
-				else {
-
-					auto data = tex->GetData<uint8_t>();
-
-					std::vector<uint8_t> convertedData;
-
-					auto pixelCount = (size_t)tex->width *
-						(size_t)tex->height;
-					auto texChannels = tex->channels;
-
-					convertedData.resize(pixelCount * channels);
-
-					for (size_t i = 0; i < pixelCount; i++) {
-
-						for (int32_t j = 0; j < channels; j++) {
-							if (j < texChannels) {
-								convertedData[i * channels + j] =
-									data[i * texChannels + j];
-							}
-							else {
-								// Alpha channel should be always 1.0 (if there is no alpha channel)
-								if (j == 3) {
-									convertedData[i * channels + j] = 255;
-								}
-								else {
-									convertedData[i * channels + j] = 0;
-								}
-							}
-						}
-
-					}
-
-					if (!convertedData.size())
-						continue;
-
-					// Downscale the texture data if it hasn't the right size
-					if (slice.size.x != tex->width || slice.size.y != tex->height) {
-						Common::Image<uint8_t> image(tex->width, tex->height, tex->channels);
-						image.SetData(convertedData);
-						image.Resize(slice.size.x, slice.size.y);
-						convertedData = image.GetData();
-					}
-
-					textureArray.SetData(convertedData, slice.offset.x,
-						slice.offset.y, slice.layer, slice.size.x,
-						slice.size.y, 1);
-
-				}
+                commandList->ImageTransition(tex->image, prevLayout, prevAccessMask);
 
 				slices[tex].push_back(slice);
 			}

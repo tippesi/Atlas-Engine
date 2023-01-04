@@ -218,6 +218,7 @@ namespace Atlas {
 
 				rayGenShader->Bind();
 
+                /*
 				counterBuffer0.BindBase(1);
 				counterBuffer1.BindBase(0);
 
@@ -225,6 +226,7 @@ namespace Atlas {
 				rayPayloadBuffer.BindBase(3);
 
 				rayBinCounterBuffer.BindBase(11);
+                */
 
 				rayGenShader->GetUniform("lightCount")->SetValue(int32_t(selectedLights.size()));
 				rayGenShader->GetUniform("rayBufferOffset")->SetValue(uint32_t(rayOffsetCounter++));
@@ -286,6 +288,7 @@ namespace Atlas {
                     // indirectDispatchBuffer.BindBaseAs(AE_SHADER_STORAGE_BUFFER, 4);
 					traceDispatchShader.Bind();
 
+                    /*
 					if (dispatchCounter % 2 == 0) {
 						counterBuffer0.BindBase(0);
 						counterBuffer1.BindBase(1);
@@ -294,14 +297,17 @@ namespace Atlas {
 						counterBuffer0.BindBase(1);
 						counterBuffer1.BindBase(0);
 					}
+                    */
 
                     // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
                     // glDispatchCompute(1, 1, 1);
 				}
 
+                /*
 				indirectDispatchBuffer.Bind();
 				rayBuffer.BindBase(2);
 				rayPayloadBuffer.BindBase(3);
+                */
 
 				if (binning) {
 
@@ -311,8 +317,10 @@ namespace Atlas {
 					{
 						binningOffsetShader.Bind();
 
+                        /*
 						rayBinCounterBuffer.BindBase(11);
 						rayBinOffsetBuffer.BindBase(12);
+                        */
 
                         // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
                         // glDispatchCompute(1, 1, 1);
@@ -331,9 +339,11 @@ namespace Atlas {
                         // glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
                         // glDispatchComputeIndirect(0);
 
+                        /*
 						uint32_t zero = 0;
 						rayBinCounterBuffer.Bind();
 						rayBinCounterBuffer.InvalidateData();
+                        */
                         // rayBinCounterBuffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
 					}
 
@@ -364,7 +374,7 @@ namespace Atlas {
 					hitShader->GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
 					hitShader->GetUniform("useRayBinning")->SetValue(binning);
 
-					rayBinCounterBuffer.BindBase(11);
+					//rayBinCounterBuffer.BindBase(11);
 
 					prepare();
 
@@ -381,14 +391,16 @@ namespace Atlas {
 
 			void RayTracingHelper::InvalidateRayBuffer() {
 
+                /*
 				uint32_t zero = 0;
 				counterBuffer0.Bind();
 				counterBuffer0.InvalidateData();
-                // counterBuffer0.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
+                counterBuffer0.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
 
 				counterBuffer1.Bind();
 				counterBuffer1.InvalidateData();
-                // counterBuffer1.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
+                counterBuffer1.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
+                */
 
 			}
 

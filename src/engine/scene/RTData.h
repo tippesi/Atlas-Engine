@@ -127,8 +127,6 @@ namespace Atlas {
 
 			Scene* scene;
 
-			int32_t shaderStorageLimit;
-
 			OldBuffer::Buffer triangleBuffer;
 			OldBuffer::Buffer bvhTriangleBuffer;
 			OldBuffer::Buffer materialBuffer;

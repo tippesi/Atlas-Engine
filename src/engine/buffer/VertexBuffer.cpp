@@ -13,7 +13,6 @@ namespace Atlas {
 
 		VertexBuffer::VertexBuffer(uint32_t dataType, int32_t stride, size_t elementSize,
 			size_t elementCount, void* data, uint32_t flags) :
-			Buffer(0, elementSize, flags, elementCount, data),
 			dataType(dataType), stride(stride) {
 
 
@@ -43,18 +42,7 @@ namespace Atlas {
 
 		void VertexBuffer::SetData(void *data, size_t offset, size_t length) {
 
-			if (!dynamicStorage && immutable) {
-				Buffer stagingBuffer(0, elementSize, AE_BUFFER_DYNAMIC_STORAGE);
-				stagingBuffer.SetSize(length);
 
-				// We don't need to bind because it is already bound by previous operations
-				stagingBuffer.SetData(data, 0, length);
-
-				Copy(&stagingBuffer, 0, offset * elementSize, length * elementSize);
-			}
-			else {
-				Buffer::SetData(data, offset, length);
-			}
 
 		}
 

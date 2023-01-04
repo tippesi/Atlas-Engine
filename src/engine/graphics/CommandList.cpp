@@ -435,6 +435,8 @@ namespace Atlas {
 
             auto barrier = Initializers::InitImageMemoryBarrier(image->image, image->layout,
                 newLayout, image->accessMask, newAccessMask, image->aspectFlags);
+            barrier.subresourceRange.layerCount = image->layers;
+            barrier.subresourceRange.levelCount = image->mipLevels;
 
             vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0,
                 nullptr, 0, nullptr, 1, &barrier);
@@ -452,6 +454,22 @@ namespace Atlas {
 
             barrier.image->layout = barrier.newLayout;
             barrier.image->accessMask = barrier.newAccessMask;
+
+        }
+
+        void CommandList::ImageTransition(const Ref<Image> &image, VkImageLayout newLayout,
+            VkAccessFlags newAccessMask) {
+
+            auto barrier = Initializers::InitImageMemoryBarrier(image->image, image->layout,
+                newLayout, image->accessMask, newAccessMask, image->aspectFlags);
+            barrier.subresourceRange.layerCount = image->layers;
+            barrier.subresourceRange.levelCount = image->mipLevels;
+
+            vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+            image->layout = newLayout;
+            image->accessMask = newAccessMask;
 
         }
 
@@ -575,6 +593,14 @@ namespace Atlas {
 
         }
 
+        void CommandList::FillBuffer(const Ref<Buffer> &buffer, void *data) {
+
+            // The data has to have a size of 4 bytes and only 4 bytes are taken
+            uint32_t word = *static_cast<uint32_t*>(data);
+            vkCmdFillBuffer(commandBuffer, buffer->buffer, 0, VK_WHOLE_SIZE, word);
+
+        }
+
         void CommandList::CopyImage(const Ref<Image>& srcImage,const Ref<Image>& dstImage) {
 
             VkImageCopy copy = {};
@@ -592,6 +618,35 @@ namespace Atlas {
 
             vkCmdCopyImage(commandBuffer, srcImage->image, srcImage->layout,
                 dstImage->image, dstImage->layout, 1, &copy);
+
+        }
+
+        void CommandList::BlitImage(const Ref<Image> &srcImage, const Ref<Image> &dstImage) {
+
+            VkImageBlit blit = {};
+            blit.srcOffsets[0] = { 0, 0, 0 };
+            blit.srcOffsets[1] = { int32_t(srcImage->width), int32_t(srcImage->height),
+                                   int32_t(srcImage->depth) };
+            blit.srcSubresource.aspectMask = srcImage->aspectFlags;
+            blit.srcSubresource.mipLevel = 0;
+            blit.srcSubresource.baseArrayLayer = 0;
+            blit.srcSubresource.layerCount = srcImage->layers;
+            blit.dstOffsets[0] = { 0, 0, 0 };
+            blit.dstOffsets[1] = { int32_t(dstImage->width), int32_t(dstImage->height),
+                                   int32_t(dstImage->depth) };
+            blit.dstSubresource.aspectMask = dstImage->aspectFlags;
+            blit.dstSubresource.mipLevel = 0;
+            blit.dstSubresource.baseArrayLayer = 0;
+            blit.dstSubresource.layerCount = dstImage->layers;
+
+            BlitImage(srcImage, dstImage, blit);
+
+        }
+
+        void CommandList::BlitImage(const Ref<Image> &srcImage, const Ref<Image> &dstImage, VkImageBlit blit) {
+
+            vkCmdBlitImage(commandBuffer, srcImage->image, srcImage->layout, dstImage->image,
+                dstImage->layout, 1, &blit, VK_FILTER_LINEAR);
 
         }
 

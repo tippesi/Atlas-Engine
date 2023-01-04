@@ -42,7 +42,7 @@ namespace Atlas {
              * and perform storage access by using a staging buffer.
              */
 			VertexBuffer(uint32_t dataType, int32_t stride, size_t elementSize, size_t elementCount,
-				void* data = nullptr, uint32_t flags = AE_BUFFER_IMMUTABLE);
+				void* data = nullptr, uint32_t flags = 0);
 
 			~VertexBuffer();
 
@@ -61,7 +61,7 @@ namespace Atlas {
              * @param offset The offset in the buffer in elements (not bytes).
              * @param length The number of elements in data.
              */
-			void SetData(void* data, size_t offset, size_t length) override;
+			void SetData(void* data, size_t offset, size_t length);
 
 			/**
             * Returns the type of the data which the buffer holds.

@@ -63,10 +63,12 @@ namespace Atlas {
 
         }
 
-        void Buffer::Map() {
+        void* Buffer::Map() {
 
             VK_CHECK(vmaMapMemory(memoryManager->allocator, allocation, &mappedData))
             isMapped = true;
+
+            return mappedData;
 
         }
 

@@ -46,6 +46,8 @@ namespace Atlas {
             this->image = image.get();
             barrier = Initializers::InitImageMemoryBarrier(image->image, image->layout,
                 newLayout, image->accessMask, newAccessMask, image->aspectFlags);
+            barrier.subresourceRange.layerCount = image->layers;
+            barrier.subresourceRange.levelCount = image->mipLevels;
 
             return *this;
 

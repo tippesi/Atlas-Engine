@@ -5,6 +5,8 @@
 #include "Texture2D.h"
 #include "Texture2DArray.h"
 
+#include "../graphics/CommandList.h"
+
 #include <map>
 #include <vector>
 
@@ -68,7 +70,7 @@ namespace Atlas {
 
 			std::map<Texture2D*, TextureAtlas::Slice> CreateSlicesForAtlasLevel(std::vector<TextureStructure> textures, int32_t level);
 
-			void FillAtlas(std::map<Texture2D*, TextureAtlas::Slice> levelSlices);
+			void FillAtlas(Graphics::CommandList* commandList, std::map<Texture2D*, TextureAtlas::Slice> levelSlices);
 
 			int32_t padding = 1;
 			int32_t downscale = 1;

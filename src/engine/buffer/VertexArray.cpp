@@ -83,7 +83,6 @@ namespace Atlas {
 		void VertexArray::AddIndexComponent(IndexBuffer* buffer) {
 
 			Bind();
-			buffer->Bind();
 
 			indexComponent = buffer;
 
@@ -95,7 +94,6 @@ namespace Atlas {
 				return;
 
 			Bind();
-			buffer->Bind();
 
             // glEnableVertexAttribArray(attribArray);
             // glVertexAttribPointer(attribArray, buffer->GetStride(), buffer->GetDataType(), normalized, 0, nullptr);
@@ -107,7 +105,6 @@ namespace Atlas {
 		void VertexArray::AddInstancedComponent(uint32_t attribArray, VertexBuffer* buffer, bool normalized) {
 
 			Bind();
-			buffer->Bind();
 
 			auto bufferStride = buffer->GetStride();
 
