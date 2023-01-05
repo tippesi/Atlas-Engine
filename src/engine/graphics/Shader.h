@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include <filesystem>
 
 namespace Atlas {
 
@@ -27,6 +28,8 @@ namespace Atlas {
             std::string code;
             std::vector<std::string> includes;
             std::vector<Extension> extensions;
+
+            std::filesystem::file_time_type lastModified;
 
             VkShaderStageFlagBits shaderStage;
 
@@ -115,6 +118,8 @@ namespace Atlas {
             Ref<ShaderVariant> GetVariant();
 
             Ref<ShaderVariant> GetVariant(std::vector<std::string> macros);
+
+            bool Reload();
 
         private:
             Ref<ShaderVariant> FindVariant(const std::vector<std::string>& macros);

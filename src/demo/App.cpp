@@ -85,17 +85,10 @@ void App::LoadContent() {
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     imguiWrapper.Load(&window);
 
+
     //io.Fonts->AddFontFromFileTTF(
     //    Atlas::Loader::AssetLoader::GetFullPath("font/roboto.ttf").c_str(),
     //    20.0f);
-
-    ImGui::StyleColorsDark();
-    for (auto& color : ImGui::GetStyle().Colors) {
-        float gamma = 2.2f;
-        color.x = powf(color.x, gamma);
-        color.y = powf(color.y, gamma);
-        color.z = powf(color.z, gamma);
-    }
 
     // testRenderer.Init(Atlas::Graphics::GraphicsDevice::DefaultDevice);
 

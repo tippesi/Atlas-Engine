@@ -177,6 +177,7 @@ namespace Atlas {
 		Texture::Texture2D historyReflectionMomentsTexture;
 
         Texture::Texture2D lightingTexture;
+        Texture::Texture2D hdrTexture;
 
 	private:
 		Texture::Texture2D historyTexture;

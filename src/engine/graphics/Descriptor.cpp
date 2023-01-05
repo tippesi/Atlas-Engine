@@ -24,7 +24,7 @@ namespace Atlas {
             VkDescriptorSetAllocateInfo allocInfo = {};
             allocInfo.pNext = nullptr;
             allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            allocInfo.descriptorPool = pools.back();
+            allocInfo.descriptorPool = pools[poolIdx];
             allocInfo.descriptorSetCount = 1;
             allocInfo.pSetLayouts = &layout;
 
@@ -32,8 +32,11 @@ namespace Atlas {
             auto result = vkAllocateDescriptorSets(device->device, &allocInfo, &set);
             // Handle the pool out of memory error by allocating a new pool
             if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
-                pools.push_back(InitPool());
-                allocInfo.descriptorPool = pools.back();
+                poolIdx++;
+                if (poolIdx == pools.size()) {
+                    pools.push_back(InitPool());
+                }
+                allocInfo.descriptorPool = pools[poolIdx];
                 VK_CHECK(vkAllocateDescriptorSets(device->device, &allocInfo, &set))
             }
             else {
@@ -46,15 +49,17 @@ namespace Atlas {
 
         void DescriptorPool::Reset() {
 
-            for (auto pool : pools) {
+            for (auto& pool : pools) {
                 vkResetDescriptorPool(device->device, pool, 0);
             }
+
+            poolIdx = 0;
 
         }
 
         VkDescriptorPool DescriptorPool::GetNativePool() {
 
-            return pools.back();
+            return pools[poolIdx];
 
         }
 

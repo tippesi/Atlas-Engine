@@ -55,7 +55,7 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
-                auto& image = target->postProcessTexture.image;
+                auto& image = target->hdrTexture.image;
 
                 commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
@@ -100,7 +100,7 @@ namespace Atlas {
 
                 SetUniforms(camera, scene);
 
-                commandList->BindImage(target->postProcessTexture.image, target->postProcessTexture.sampler, 3, 0);
+                commandList->BindImage(target->hdrTexture.image, target->hdrTexture.sampler, 3, 0);
                 commandList->BindBuffer(uniformBuffer, 3, 4);
 
                 commandList->Draw(6, 1, 0, 0);

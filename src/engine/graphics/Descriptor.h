@@ -31,9 +31,7 @@ namespace Atlas {
             GraphicsDevice* device;
             std::vector<VkDescriptorPool> pools;
 
-        };
-
-        class DescriptorBindings {
+            uint32_t poolIdx = 0;
 
         };
 

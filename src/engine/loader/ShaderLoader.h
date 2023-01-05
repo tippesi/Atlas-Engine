@@ -5,6 +5,7 @@
 #include "../graphics/Shader.h"
 
 #include <vector>
+#include <filesystem>
 
 namespace Atlas {
 
@@ -14,6 +15,8 @@ namespace Atlas {
 
         public:
             static Graphics::ShaderStageFile LoadFile(const std::string& filename, VkShaderStageFlagBits shaderStage);
+
+            static bool CheckForReload(const std::string& filename, const std::filesystem::file_time_type fileTime);
 
             static void SetSourceDirectory(const std::string& sourceDirectory);
 

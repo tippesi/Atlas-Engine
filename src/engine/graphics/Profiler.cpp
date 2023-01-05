@@ -17,7 +17,7 @@ namespace Atlas {
         std::unordered_map<std::string, Profiler::ThreadHistory> Profiler::queryHistory;
         size_t Profiler::frameIdx = -1;
 
-        bool Profiler::activate = true;
+        bool Profiler::activate = false;
 
         void Profiler::BeginFrame() {
 
@@ -45,8 +45,12 @@ namespace Atlas {
                     history.history.resize(64);
                 }
 
+                std::vector<uint64_t> timeData(context.poolIdx);
+                context.queryPool->GetResult(0, context.poolIdx, context.poolIdx * sizeof(uint64_t),
+                    timeData.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+
                 for (auto& query : context.queries)
-                    EvaluateQuery(context, query);
+                    EvaluateQuery(context, query, timeData);
 
                 history.history[history.historyIdx] = context.queries;
 
@@ -71,11 +75,18 @@ namespace Atlas {
 
             if (!activate) return;
 
+            // We don't expect to have more than 2000 profiler queries
+            auto queryPoolDesc = QueryPoolDesc {
+                .queryType = VK_QUERY_TYPE_TIMESTAMP,
+                .queryCount = 2000
+            };
+
             // Create thread context
             auto context = ThreadContext {
               .id = std::this_thread::get_id(),
               .name = name,
               .commandList = nullptr,
+              .queryPool = GraphicsDevice::DefaultDevice->CreateQueryPool(queryPoolDesc),
               .frameIdx = frameIdx,
               .isValid = true
             };
@@ -108,16 +119,7 @@ namespace Atlas {
             if (!activate) return;
 
             auto& context = GetThreadContext();
-
-            auto queryPoolDesc = QueryPoolDesc {
-                .queryType = VK_QUERY_TYPE_TIMESTAMP,
-                .queryCount = 1000
-            };
-
-            // Creating a new pool per command list is not really necessary, might be changed
             context.commandList = commandList;
-            context.queryPools.push_back(GraphicsDevice::DefaultDevice->CreateQueryPool(queryPoolDesc));
-            context.poolIdx = 0;
 
         }
 
@@ -135,14 +137,14 @@ namespace Atlas {
             Query query;
 
             query.name = name;
-            query.timer.poolId = int32_t(context.queryPools.size()) - 1;
+            query.timer.poolId = 0;
             query.timer.startId = context.poolIdx++;
             query.timer.endId = context.poolIdx++;
             query.stackLevel = context.stack.size() + 1;
 
             context.stack.push_back(query);
 
-            context.commandList->Timestamp(context.queryPools.back(), query.timer.startId);
+            context.commandList->Timestamp(context.queryPool, query.timer.startId);
 
         }
 
@@ -156,7 +158,7 @@ namespace Atlas {
 			    times or code misses a BeginQuery.");
 
             auto query = context.stack.back();
-            context.commandList->Timestamp(context.queryPools.back(), query.timer.endId);
+            context.commandList->Timestamp(context.queryPool, query.timer.endId);
 
             context.stack.pop_back();
 
@@ -225,18 +227,12 @@ namespace Atlas {
 
         }
 
-        void Profiler::EvaluateQuery(ThreadContext& context, Query& query) {
+        void Profiler::EvaluateQuery(ThreadContext& context, Query& query, const std::vector<uint64_t>& timeData) {
 
             // Only evaluate query once
             if (query.timer.startId >= 0 && query.timer.endId >= 0) {
-                // This will stall the pipeline if the results aren't available yet
-                uint64_t results[2];
-                auto& pool = context.queryPools[query.timer.poolId];
-                pool->GetResult(query.timer.startId, 2, 2 * sizeof(uint64_t),
-                    results, sizeof(uint64_t), VK_QUERY_RESULT_64_BIT);
-
-                query.timer.startTime = results[0];
-                query.timer.endTime = results[1];
+                query.timer.startTime = timeData[query.timer.startId];
+                query.timer.endTime = timeData[query.timer.endId];
 
                 query.timer.elapsedTime = query.timer.endTime - query.timer.startTime;
 
@@ -245,7 +241,7 @@ namespace Atlas {
             }
 
             for (auto& child : query.children)
-                EvaluateQuery(context, child);
+                EvaluateQuery(context, child, timeData);
 
         }
 

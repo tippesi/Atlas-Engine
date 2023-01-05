@@ -1,6 +1,7 @@
 #include "Path.h"
 
 #include <algorithm>
+#include <filesystem>
 
 #ifdef AE_OS_WINDOWS
 #include <direct.h>
@@ -81,20 +82,10 @@ namespace Atlas {
 
 		}
 
-		std::string Path::GetAbsolute(std::string path) {
+		std::string Path::GetAbsolute(const std::string& path) {
 
-#if defined(AE_OS_ANDROID) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
-			char fullPath[PATH_MAX];
-			realpath(path.c_str(), fullPath);
-			path = std::string(fullPath);
-#else
-			char fullPath[MAX_PATH];
-			_fullpath(fullPath, path.c_str(), MAX_PATH);
-			path = std::string(fullPath);
-			std::replace(path.begin(), path.end(), '\\', '/');
-#endif
-
-			return path;
+            auto absolute = std::filesystem::absolute(path);
+			return absolute.string();
 
 		}
 

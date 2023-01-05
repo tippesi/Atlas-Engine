@@ -26,8 +26,18 @@ namespace Atlas {
             shaderStageFile.includes = includes;
             shaderStageFile.extensions = extensions;
             shaderStageFile.shaderStage = shaderStage;
+            shaderStageFile.lastModified = std::filesystem::last_write_time(Loader::AssetLoader::GetFullPath(path));
 
             return shaderStageFile;
+
+        }
+
+        bool ShaderLoader::CheckForReload(const std::string& filename, const std::filesystem::file_time_type fileTime) {
+
+            auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
+            path += filename;
+
+            return std::filesystem::last_write_time(Loader::AssetLoader::GetFullPath(path)) != fileTime;
 
         }
 

@@ -62,6 +62,8 @@ namespace Atlas {
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         lightingTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        hdrTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 		postProcessTexture = Texture::Texture2D(width, height, VK_FORMAT_R8G8B8A8_UNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
@@ -81,7 +83,8 @@ namespace Atlas {
         // We have to also resize the other part of the history
 		historyTexture.Resize(width, height);
 		swapHistoryTexture.Resize(width, height);
-
+        lightingTexture.Resize(width, height);
+        hdrTexture.Resize(width, height);
 		postProcessTexture.Resize(width, height);
 
 		SetAOResolution(aoResolution);

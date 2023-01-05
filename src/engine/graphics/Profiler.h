@@ -152,14 +152,14 @@ namespace Atlas {
                 std::vector<Query> stack;
                 std::vector<Query> queries;
 
-                std::vector<Ref<QueryPool>> queryPools;
+                Ref<QueryPool> queryPool;
                 uint32_t poolIdx = 0;
 
                 size_t frameIdx = 0;
                 bool isValid = false;
             };
 
-            static void EvaluateQuery(ThreadContext& context, Query& query);
+            static void EvaluateQuery(ThreadContext& context, Query& query, const std::vector<uint64_t>& timeData);
 
             static void OrderQueries(std::vector<Query>& queries, OrderBy order);
 

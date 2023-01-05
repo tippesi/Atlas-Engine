@@ -4,6 +4,8 @@
 #include "GraphicsDevice.h"
 
 #include "../common/Hash.h"
+#include "../common/Path.h"
+#include "../loader/ShaderLoader.h"
 
 #include <spirv_reflect.h>
 #include <cassert>
@@ -87,6 +89,32 @@ namespace Atlas {
             }
 
             return variant;
+
+        }
+
+        bool Shader::Reload() {
+
+            std::lock_guard lock(variantMutex);
+
+            bool reload = false;
+            for (auto& shaderStage : shaderStageFiles) {
+                if (Loader::ShaderLoader::CheckForReload(shaderStage.filename, shaderStage.lastModified)) {
+                    reload = true;
+                }
+            }
+
+            std::vector<ShaderStageFile> newShaderStageFiles;
+            if (reload) {
+                for (auto& shaderStage : shaderStageFiles) {
+                    newShaderStageFiles.push_back(
+                        Loader::ShaderLoader::LoadFile(shaderStage.filename, shaderStage.shaderStage));
+                }
+                // Reload means clearing all existing data
+                shaderStageFiles = newShaderStageFiles;
+                shaderVariants.clear();
+            }
+
+            return reload;
 
         }
 

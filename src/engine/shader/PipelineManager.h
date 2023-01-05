@@ -21,6 +21,10 @@ namespace Atlas {
 
         static void Shutdown();
 
+        static void EnableHotReload();
+
+        static void DisableHotReload();
+
         static Ref<Graphics::Pipeline> GetPipeline(PipelineConfig& config);
 
         static void AddPipeline(PipelineConfig& config);
@@ -37,6 +41,7 @@ namespace Atlas {
 
         static Ref<Graphics::Pipeline> GetOrCreatePipeline(PipelineConfig &config);
 
+        static bool hotReload;
         static std::mutex shaderToVariantsMutex;
         static std::unordered_map<size_t, Ref<PipelineVariants>> shaderToVariantsMap;
 

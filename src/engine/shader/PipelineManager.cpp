@@ -6,6 +6,7 @@
 
 namespace Atlas {
 
+    bool PipelineManager::hotReload = true;
     std::mutex PipelineManager::shaderToVariantsMutex;
     std::unordered_map<size_t, Ref<PipelineManager::PipelineVariants>> PipelineManager::shaderToVariantsMap;
 
@@ -64,6 +65,11 @@ namespace Atlas {
                 };
                 variants->shader = graphicsDevice->CreateShader(shaderDesc);
                 variants->isComplete = true;
+            }
+
+            if (hotReload && variants->shader->Reload()) {
+                // Clear variants on hot reload
+                variants->variants.clear();
             }
 
             Ref<Graphics::Pipeline> pipeline;
