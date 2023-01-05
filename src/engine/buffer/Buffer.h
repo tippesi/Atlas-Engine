@@ -7,7 +7,7 @@
 
 namespace Atlas {
 
-	namespace OldBuffer {
+	namespace Buffer {
 
         typedef uint32_t BufferUsage;
 

@@ -163,8 +163,8 @@ namespace Atlas {
 			// Every LOD >= LodCount - detailNodeIdx is rendered with the detail shader.
 			int32_t detailNodeIdx = 2;
 
-			OldBuffer::VertexArray vertexArray;
-			OldBuffer::VertexArray distanceVertexArray;
+			Buffer::VertexArray vertexArray;
+			Buffer::VertexArray distanceVertexArray;
 			std::vector<TerrainNode*> renderList;
 
 			Common::Image<uint8_t> LoDImage;

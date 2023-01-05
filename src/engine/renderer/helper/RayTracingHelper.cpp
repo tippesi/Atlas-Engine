@@ -404,7 +404,7 @@ namespace Atlas {
 
 			}
 
-			OldBuffer::Buffer* RayTracingHelper::GetRayBuffer() {
+			Buffer::Buffer* RayTracingHelper::GetRayBuffer() {
 
 				// This is the latest write buffer in all tracing functions
 				return &rayBuffer;

@@ -24,7 +24,7 @@ namespace Atlas {
 			static std::string fragmentPath;
 
 		private:
-			OldBuffer::VertexArray vertexArray;
+			Buffer::VertexArray vertexArray;
 
 			OldShader::OldShader shader;
 

@@ -20,7 +20,7 @@ namespace Atlas {
 		private:
 			void GetUniforms();
 
-			OldBuffer::VertexArray vertexArray;
+			Buffer::VertexArray vertexArray;
 
 			Texture::Texture2D refractionTexture;
 			Texture::Texture2D depthTexture;

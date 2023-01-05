@@ -4,21 +4,20 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		void DirectLightRenderer::Init(GraphicsDevice* device) {
+		void DirectLightRenderer::Init(Graphics::GraphicsDevice* device) {
 
             this->device = device;
 
-            auto bufferDesc = BufferDesc {
+            auto bufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                .domain = BufferDomain::Host,
+                .domain = Graphics::BufferDomain::Host,
                 .size = sizeof(Light)
             };
             uniformBuffer = device->CreateMultiBuffer(bufferDesc);
 
-            auto pipelineConfig = PipelineConfig("deferred/direct.csh");
-            pipeline = PipelineManager::GetPipeline(pipelineConfig);
+            pipelineConfig = PipelineConfig("deferred/direct.csh");
 
-            auto samplerDesc = SamplerDesc {
+            auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_LINEAR,
                 .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                 .compareEnabled = true
@@ -28,7 +27,7 @@ namespace Atlas {
 		}
 
 		void DirectLightRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-			Scene::Scene* scene, CommandList* commandList) {
+			Scene::Scene* scene, Graphics::CommandList* commandList) {
 
             if (!scene->sky.sun) return;
 
@@ -82,6 +81,7 @@ namespace Atlas {
 
             uniformBuffer->SetData(&lightUniform, 0, sizeof(lightUniform));
 
+            auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);

@@ -14,12 +14,12 @@ namespace Atlas {
 		public:
 			PostProcessRenderer() = default;
 
-            void Init(GraphicsDevice* device);
+            void Init(Graphics::GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
 
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, CommandList* commandList);
+                Scene::Scene* scene, Graphics::CommandList* commandList);
 
 		private:
             struct alignas(16) Uniforms {
@@ -39,13 +39,13 @@ namespace Atlas {
 
             PipelineConfig GetMainPipelineConfig();
 
-            PipelineConfig GetMainPipelineConfig(const Ref<FrameBuffer> frameBuffer);
+            PipelineConfig GetMainPipelineConfig(const Ref<Graphics::FrameBuffer> frameBuffer);
 
             PipelineConfig mainPipelineSwapChainConfig;
             PipelineConfig mainPipelineFrameBufferConfig;
             PipelineConfig sharpenPipelineConfig;
 
-            Ref<MultiBuffer> uniformBuffer;
+            Ref<Graphics::MultiBuffer> uniformBuffer;
 
 		};
 

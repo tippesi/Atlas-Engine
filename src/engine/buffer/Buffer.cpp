@@ -4,7 +4,7 @@
 
 namespace Atlas {
 
-    namespace OldBuffer {
+    namespace Buffer {
 
         Buffer::Buffer(BufferUsage bufferUsage, size_t elementSize, size_t elementCount,
             void* data) : usage(bufferUsage), elementSize(elementSize) {

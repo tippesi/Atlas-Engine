@@ -22,7 +22,7 @@ namespace Atlas {
 			void GetUniforms();
 
 			OldShader::OldShader shader;
-			OldBuffer::VertexArray vertexArray;
+			Buffer::VertexArray vertexArray;
 
 			OldShader::Uniform* vMatrix = nullptr;
 			OldShader::Uniform* pMatrix = nullptr;

@@ -40,9 +40,9 @@ namespace Atlas {
 
 		private:
 			// Line data
-			OldBuffer::VertexArray lineVertexArray;
-			OldBuffer::VertexBuffer lineVertices;
-			OldBuffer::VertexBuffer lineColors;
+			Buffer::VertexArray lineVertexArray;
+			Buffer::VertexBuffer lineVertices;
+			Buffer::VertexBuffer lineColors;
 
 			std::vector<vec3> lineVertexData;
 			std::vector<vec3> lineColorData;
@@ -52,9 +52,9 @@ namespace Atlas {
 			bool lineDataValid = true;
 
 			// Triangle data
-			OldBuffer::VertexArray triangleVertexArray;
-			OldBuffer::VertexBuffer triangleVertices;
-			OldBuffer::VertexBuffer triangleColors;
+			Buffer::VertexArray triangleVertexArray;
+			Buffer::VertexBuffer triangleVertices;
+			Buffer::VertexBuffer triangleColors;
 
 			std::vector<vec3> triangleVertexData;
 			std::vector<vec3> triangleColorData;

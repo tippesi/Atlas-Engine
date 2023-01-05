@@ -15,13 +15,13 @@ namespace Atlas {
 			class GeometryHelper {
 
 			public:
-				static void GenerateRectangleVertexArray(OldBuffer::VertexArray& vertexArray);
+				static void GenerateRectangleVertexArray(Buffer::VertexArray& vertexArray);
 
-				static void GenerateCubeVertexArray(OldBuffer::VertexArray& vertexArray);
+				static void GenerateCubeVertexArray(Buffer::VertexArray& vertexArray);
 
-				static void GenerateGridVertexArray(OldBuffer::VertexArray& vertexArray, int32_t subdivisions, float scale, bool strip = true);
+				static void GenerateGridVertexArray(Buffer::VertexArray& vertexArray, int32_t subdivisions, float scale, bool strip = true);
 
-				static void GenerateSphereVertexArray(OldBuffer::VertexArray& vertexArray, uint32_t rings, uint32_t segments);
+				static void GenerateSphereVertexArray(Buffer::VertexArray& vertexArray, uint32_t rings, uint32_t segments);
 
 			private:
 				static void GenerateSphere(uint32_t rings, uint32_t segments, std::vector<uint32_t>& indices,

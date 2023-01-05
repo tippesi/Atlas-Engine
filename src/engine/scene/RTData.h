@@ -127,10 +127,10 @@ namespace Atlas {
 
 			Scene* scene;
 
-			OldBuffer::Buffer triangleBuffer;
-			OldBuffer::Buffer bvhTriangleBuffer;
-			OldBuffer::Buffer materialBuffer;
-			OldBuffer::Buffer nodeBuffer;
+			Buffer::Buffer triangleBuffer;
+			Buffer::Buffer bvhTriangleBuffer;
+			Buffer::Buffer materialBuffer;
+			Buffer::Buffer nodeBuffer;
 
 			Texture::TextureAtlas baseColorTextureAtlas;
 			Texture::TextureAtlas opacityTextureAtlas;

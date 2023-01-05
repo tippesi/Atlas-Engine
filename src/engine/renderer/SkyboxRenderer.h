@@ -23,7 +23,7 @@ namespace Atlas {
 
 			std::unordered_map<Camera*, vec3> cameraMap;
 
-			OldBuffer::VertexArray vertexArray;
+			Buffer::VertexArray vertexArray;
 
 			OldShader::OldShader shader;
 

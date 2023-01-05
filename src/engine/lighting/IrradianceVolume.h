@@ -32,10 +32,10 @@ namespace Atlas {
 
 			void ResetProbeOffsets();
 
-			OldBuffer::Buffer rayDirBuffer;
-			OldBuffer::Buffer rayDirInactiveBuffer;
-			OldBuffer::Buffer probeOffsetBuffer;
-			OldBuffer::Buffer probeStateBuffer;
+			Buffer::Buffer rayDirBuffer;
+			Buffer::Buffer rayDirInactiveBuffer;
+			Buffer::Buffer probeOffsetBuffer;
+			Buffer::Buffer probeStateBuffer;
 
 		private:
 			void FillRayBuffers();

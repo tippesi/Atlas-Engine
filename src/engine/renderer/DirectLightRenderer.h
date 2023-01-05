@@ -12,12 +12,12 @@ namespace Atlas {
 		public:
 			DirectLightRenderer() = default;
 
-			void Init(GraphicsDevice* device);
+			void Init(Graphics::GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-				Scene::Scene* scene, CommandList* commandList);
+				Scene::Scene* scene, Graphics::CommandList* commandList);
 
 		private:
             struct alignas(16) Cascade {
@@ -54,9 +54,10 @@ namespace Atlas {
                 Shadow shadow;
             };
 
-            Ref<MultiBuffer> uniformBuffer;
-            Ref<Pipeline> pipeline;
-            Ref<Sampler> shadowSampler;
+            PipelineConfig pipelineConfig;
+
+            Ref<Graphics::MultiBuffer> uniformBuffer;
+            Ref<Graphics::Sampler> shadowSampler;
 
 		};
 

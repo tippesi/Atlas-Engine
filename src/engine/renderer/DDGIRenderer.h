@@ -30,10 +30,10 @@ namespace Atlas {
 			Material probeDebugOffsetMaterial;
 
 		private:
-			OldBuffer::Buffer rayHitBuffer;
+			Buffer::Buffer rayHitBuffer;
 
-			OldBuffer::VertexArray vertexArray;
-			OldBuffer::VertexArray sphereArray;
+			Buffer::VertexArray vertexArray;
+			Buffer::VertexArray sphereArray;
 
 			Helper::RayTracingHelper helper;
 

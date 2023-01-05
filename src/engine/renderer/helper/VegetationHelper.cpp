@@ -182,7 +182,7 @@ namespace Atlas {
 
 			}
 
-			OldBuffer::Buffer* VegetationHelper::GetCommandBuffer() {
+			Buffer::Buffer* VegetationHelper::GetCommandBuffer() {
 				
 				return &indirectDrawCallBuffer;
 
@@ -250,7 +250,7 @@ namespace Atlas {
                 // glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
 			}
 
-			void VegetationHelper::ResetCounterBuffer(OldBuffer::Buffer& buffer) {
+			void VegetationHelper::ResetCounterBuffer(Buffer::Buffer& buffer) {
 
 				uint32_t zero = 0;
 				/*

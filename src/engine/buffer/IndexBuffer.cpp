@@ -2,7 +2,7 @@
 
 namespace Atlas {
 
-    namespace OldBuffer {
+    namespace Buffer {
 
 		IndexBuffer::IndexBuffer(const IndexBuffer& that) : Buffer(that) {
 

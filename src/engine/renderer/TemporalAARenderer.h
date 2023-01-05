@@ -19,7 +19,7 @@ namespace Atlas {
 
 			OldShader::OldShader shader;
 
-			OldBuffer::VertexArray vertexArray;
+			Buffer::VertexArray vertexArray;
 
 			mat4 pvMatrixPrev = mat4(1.0f);
 

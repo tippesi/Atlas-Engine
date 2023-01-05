@@ -10,7 +10,7 @@
 
 namespace Atlas {
 
-	namespace OldBuffer {
+	namespace Buffer {
 
 		class VertexArray {
 

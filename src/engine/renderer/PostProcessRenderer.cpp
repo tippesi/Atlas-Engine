@@ -6,7 +6,7 @@ namespace Atlas {
 
 	namespace Renderer {
 
-        void PostProcessRenderer::Init(GraphicsDevice *device) {
+        void PostProcessRenderer::Init(Graphics::GraphicsDevice *device) {
 
             this->device = device;
 
@@ -14,15 +14,15 @@ namespace Atlas {
                 { "postprocessing.vsh", VK_SHADER_STAGE_VERTEX_BIT },
                 { "postprocessing.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
             };
-            auto mainPipelineDesc = GraphicsPipelineDesc();
+            auto mainPipelineDesc = Graphics::GraphicsPipelineDesc();
             mainPipelineSwapChainConfig = PipelineConfig(mainShaderConfig, mainPipelineDesc);
             mainPipelineFrameBufferConfig = PipelineConfig(mainShaderConfig, mainPipelineDesc);
 
             sharpenPipelineConfig = PipelineConfig("sharpen.csh");
 
-            BufferDesc bufferDesc {
+            Graphics::BufferDesc bufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                .domain = BufferDomain::Host,
+                .domain = Graphics::BufferDomain::Host,
                 .size = sizeof(Uniforms)
             };
             uniformBuffer = device->CreateMultiBuffer(bufferDesc);
@@ -30,9 +30,9 @@ namespace Atlas {
         }
 
 		void PostProcessRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, CommandList* commandList) {
+            Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-			Profiler::BeginQuery("Postprocessing");
+            Graphics::Profiler::BeginQuery("Postprocessing");
 
             auto& postProcessing = scene->postProcessing;
 
@@ -44,7 +44,7 @@ namespace Atlas {
             ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
 
             if (sharpen.enable) {
-                Profiler::BeginQuery("Sharpen");
+                Graphics::Profiler::BeginQuery("Sharpen");
 
                 auto pipeline = PipelineManager::GetPipeline(sharpenPipelineConfig);
 
@@ -82,11 +82,11 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-                Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
             }
 
             {
-                Profiler::BeginQuery("Main");
+                Graphics::Profiler::BeginQuery("Main");
 
                 commandList->BeginRenderPass(device->swapChain, true);
 
@@ -107,10 +107,10 @@ namespace Atlas {
 
                 commandList->EndRenderPass();
 
-                Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
             }
 
-			Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
 		}
 
@@ -152,9 +152,9 @@ namespace Atlas {
                 { "postprocessing.vsh", VK_SHADER_STAGE_VERTEX_BIT },
                 { "postprocessing.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
             };
-            auto pipelineDesc = GraphicsPipelineDesc {
+            auto pipelineDesc = Graphics::GraphicsPipelineDesc {
                 .swapChain = device->swapChain,
-                .rasterizer = Initializers::InitPipelineRasterizationStateCreateInfo(
+                .rasterizer = Graphics::Initializers::InitPipelineRasterizationStateCreateInfo(
                     VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE
                 )
             };
@@ -162,15 +162,15 @@ namespace Atlas {
 
         }
 
-        PipelineConfig PostProcessRenderer::GetMainPipelineConfig(const Ref<FrameBuffer> frameBuffer) {
+        PipelineConfig PostProcessRenderer::GetMainPipelineConfig(const Ref<Graphics::FrameBuffer> frameBuffer) {
 
             auto shaderConfig = ShaderConfig {
                 { "postprocessing.vsh", VK_SHADER_STAGE_VERTEX_BIT },
                 { "postprocessing.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
             };
-            auto pipelineDesc = GraphicsPipelineDesc {
+            auto pipelineDesc = Graphics::GraphicsPipelineDesc {
                 .frameBuffer = frameBuffer,
-                .rasterizer = Initializers::InitPipelineRasterizationStateCreateInfo(
+                .rasterizer = Graphics::Initializers::InitPipelineRasterizationStateCreateInfo(
                     VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE
                 )
             };

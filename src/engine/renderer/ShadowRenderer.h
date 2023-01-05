@@ -19,15 +19,15 @@ namespace Atlas {
 		public:
 			ShadowRenderer() = default;
 
-            void Init(GraphicsDevice* device);
+            void Init(Graphics::GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, CommandList* commandList, RenderList* renderList);
+                Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList);
 
 		private:
-            using LightMap = std::map<Lighting::Light*, Ref<FrameBuffer>>;
+            using LightMap = std::map<Lighting::Light*, Ref<Graphics::FrameBuffer>>;
 
             struct PushConstants {
                 mat4 lightSpaceMatrix;
@@ -35,21 +35,11 @@ namespace Atlas {
                 uint32_t invertUVs;
             };
 
-            Ref<FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);
-
-			void AdjustFaceCulling(bool cullFaces, bool& state);
+            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);
 
             LightMap lightMap;
 
 			ImpostorShadowRenderer impostorRenderer;
-
-			OldShader::Uniform* lightSpaceMatrixUniform = nullptr;
-			OldShader::Uniform* modelMatrixUniform = nullptr;
-
-			OldShader::Uniform* timeUniform = nullptr;
-
-			OldShader::Uniform* vegetationUniform = nullptr;
-			OldShader::Uniform* invertUVsUniform = nullptr;
 
 		};
 

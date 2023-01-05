@@ -37,7 +37,7 @@ namespace Atlas {
 
 			std::vector<vec3> CalculateCharacterInstances(Font* font, std::string text, int32_t* characterCount);
 
-			OldBuffer::VertexArray vertexArray;
+			Buffer::VertexArray vertexArray;
 
 			OldShader::OldShader shader;
 

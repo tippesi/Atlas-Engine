@@ -17,7 +17,7 @@ namespace Atlas {
 
 	namespace Renderer {
 
-        void MainRenderer::Init(GraphicsDevice *device) {
+        void MainRenderer::Init(Graphics::GraphicsDevice *device) {
 
             this->device = device;
 
@@ -25,10 +25,10 @@ namespace Atlas {
 
             PreintegrateBRDF();
 
-            auto uniformBufferDesc = BufferDesc {
+            auto uniformBufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                .domain = BufferDomain::Host,
-                .hostAccess = BufferHostAccess::Sequential,
+                .domain = Graphics::BufferDomain::Host,
+                .hostAccess = Graphics::BufferHostAccess::Sequential,
                 .size = sizeof(GlobalUniforms),
             };
             globalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
@@ -43,12 +43,12 @@ namespace Atlas {
 		void MainRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
 			Scene::Scene* scene, Texture::Texture2D* texture, RenderBatch* batch) {
 
-            auto commandList = device->GetCommandList(QueueType::GraphicsQueue);
+            auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
             commandList->BeginCommands();
 
-            Profiler::BeginThread("Main renderer", commandList);
-            Profiler::BeginQuery("Render scene");
+            Graphics::Profiler::BeginThread("Main renderer", commandList);
+            Graphics::Profiler::BeginQuery("Render scene");
 
             FillRenderList(scene, camera);
 
@@ -80,10 +80,10 @@ namespace Atlas {
             globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
             commandList->BindBuffer(globalUniformBuffer, 0, 0);
 
-            auto materialBufferDesc = BufferDesc {
+            auto materialBufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                .domain = BufferDomain::Host,
-                .hostAccess = BufferHostAccess::Sequential,
+                .domain = Graphics::BufferDomain::Host,
+                .hostAccess = Graphics::BufferHostAccess::Sequential,
                 .data = materials.data(),
                 .size = sizeof(PackedMaterial) * materials.size(),
             };
@@ -113,7 +113,7 @@ namespace Atlas {
             }
 
             {
-                Profiler::BeginQuery("Main render pass");
+                Graphics::Profiler::BeginQuery("Main render pass");
 
                 commandList->BeginRenderPass(target->gBufferRenderPass, target->gBufferFrameBuffer, true);
 
@@ -121,7 +121,7 @@ namespace Atlas {
 
                 commandList->EndRenderPass();
 
-                Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
             }
 
 			commandList->PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
@@ -137,29 +137,29 @@ namespace Atlas {
             commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 2, 5);
 
 			{
-				Profiler::BeginQuery("Lighting pass");
+                Graphics::Profiler::BeginQuery("Lighting pass");
 
-                ImageBarrier inBarrier(target->lightingTexture.image,
+                Graphics::ImageBarrier inBarrier(target->lightingTexture.image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
                 commandList->ImageMemoryBarrier(inBarrier, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 				directLightRenderer.Render(viewport, target, camera, scene, commandList);
 
-                ImageBarrier outBarrier(target->lightingTexture.image,
+                Graphics::ImageBarrier outBarrier(target->lightingTexture.image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
                 commandList->ImageMemoryBarrier(outBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-				Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
 			}
 
             {
                 postProcessRenderer.Render(viewport, target, camera, scene, commandList);
             }
 
-            Profiler::EndQuery();
-            Profiler::EndThread();
+            Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndThread();
 
             commandList->EndCommands();
             device->SubmitCommandList(commandList);
@@ -885,12 +885,12 @@ namespace Atlas {
             const int32_t res = 256;
             dfgPreintegrationTexture = Texture::Texture2D(res, res, VK_FORMAT_R16G16B16A16_SFLOAT);
 
-            auto commandList = device->GetCommandList(QueueType::GraphicsQueue, true);
+            auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue, true);
 
             commandList->BeginCommands();
             commandList->BindPipeline(computePipeline);
 
-            auto barrier = ImageBarrier(VK_IMAGE_LAYOUT_GENERAL,
+            auto barrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_GENERAL,
                 VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
             commandList->ImageMemoryBarrier(barrier.Update(dfgPreintegrationTexture.image),
                 VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -901,7 +901,7 @@ namespace Atlas {
             commandList->BindImage(dfgPreintegrationTexture.image, 0, 0);
             commandList->Dispatch(groupCount, groupCount, 1);
 
-            barrier = ImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            barrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_SHADER_READ_BIT);
             commandList->ImageMemoryBarrier(barrier.Update(dfgPreintegrationTexture.image),
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);

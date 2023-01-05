@@ -27,7 +27,7 @@ namespace Atlas {
 			Texture::Texture2DArray roughnessMetalnessAoTexture;
 			Texture::Texture2DArray normalTexture;
 
-			OldBuffer::Buffer viewPlaneBuffer;
+			Buffer::Buffer viewPlaneBuffer;
 
 			vec3 center = vec3(0.0f);
 			float radius = 1.0f;

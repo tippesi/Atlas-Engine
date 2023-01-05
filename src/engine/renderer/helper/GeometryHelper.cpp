@@ -6,7 +6,7 @@ namespace Atlas {
 
 		namespace Helper {
 
-			void GeometryHelper::GenerateRectangleVertexArray(OldBuffer::VertexArray& vertexArray) {
+			void GeometryHelper::GenerateRectangleVertexArray(Buffer::VertexArray& vertexArray) {
 
 				vertexArray.Bind();
 
@@ -18,7 +18,7 @@ namespace Atlas {
 
 			}
 
-			void GeometryHelper::GenerateCubeVertexArray(OldBuffer::VertexArray& vertexArray) {
+			void GeometryHelper::GenerateCubeVertexArray(Buffer::VertexArray& vertexArray) {
 
 				vertexArray.Bind();
 
@@ -30,7 +30,7 @@ namespace Atlas {
 
 			}
 
-			void GeometryHelper::GenerateGridVertexArray(OldBuffer::VertexArray& vertexArray, int32_t subdivisions, float scale, bool strip) {
+			void GeometryHelper::GenerateGridVertexArray(Buffer::VertexArray& vertexArray, int32_t subdivisions, float scale, bool strip) {
 
 				vertexArray.Bind();
 
@@ -102,7 +102,7 @@ namespace Atlas {
 
 			}
 
-			void GeometryHelper::GenerateSphereVertexArray(OldBuffer::VertexArray& vertexArray, uint32_t rings, uint32_t segments) {
+			void GeometryHelper::GenerateSphereVertexArray(Buffer::VertexArray& vertexArray, uint32_t rings, uint32_t segments) {
 
 				std::vector<uint32_t> indices;
 				std::vector<vec3> vertices;

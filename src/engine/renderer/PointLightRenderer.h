@@ -18,7 +18,7 @@ namespace Atlas {
 		private:
 			void GetUniforms();
 
-			OldBuffer::VertexArray vertexArray;
+			Buffer::VertexArray vertexArray;
 
 			OldShader::OldShader shader;
 

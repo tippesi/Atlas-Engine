@@ -30,7 +30,7 @@ namespace Atlas {
 			OldShader::ShaderConfig normalConfig;
 			OldShader::ShaderConfig interpolationConfig;
 
-			OldBuffer::VertexArray vertexArray;
+			Buffer::VertexArray vertexArray;
 
 			OldShader::Uniform* vMatrix = nullptr;
 			OldShader::Uniform* pMatrix = nullptr;

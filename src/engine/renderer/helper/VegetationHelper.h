@@ -22,7 +22,7 @@ namespace Atlas {
 				void PrepareInstanceBuffer(Scene::Vegetation& vegetation,
 					Camera* camera);
 
-				OldBuffer::Buffer* GetCommandBuffer();
+				Buffer::Buffer* GetCommandBuffer();
 
 				size_t GetCommandBufferOffset(Mesh::VegetationMesh& mesh,
 					Mesh::MeshSubData& subData);
@@ -51,22 +51,22 @@ namespace Atlas {
 
 				void GenerateBuffers(Scene::Vegetation& vegetation);
 
-				void ResetCounterBuffer(OldBuffer::Buffer& buffer);
+				void ResetCounterBuffer(Buffer::Buffer& buffer);
 
 				OldShader::OldShader instanceCullingShader;
 				OldShader::OldShader instanceBinningShader;
 				OldShader::OldShader instanceBinningOffsetShader;
 				OldShader::OldShader instanceDrawCallShader;
 
-				OldBuffer::Buffer indirectDrawCallBuffer;
+				Buffer::Buffer indirectDrawCallBuffer;
 
-				OldBuffer::Buffer instanceCounterBuffer;
+				Buffer::Buffer instanceCounterBuffer;
 				
-				OldBuffer::Buffer binCounterBuffer;
-				OldBuffer::Buffer binOffsetBuffer;
+				Buffer::Buffer binCounterBuffer;
+				Buffer::Buffer binOffsetBuffer;
 
-				OldBuffer::Buffer meshInformationBuffer;
-				OldBuffer::Buffer meshSubdataInformationBuffer;
+				Buffer::Buffer meshInformationBuffer;
+				Buffer::Buffer meshSubdataInformationBuffer;
 
 				std::map<Mesh::VegetationMesh*, int32_t> meshToIdxMap;
 				std::vector<MeshSubdataInformation> meshSubdataInformation;

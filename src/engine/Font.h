@@ -107,8 +107,8 @@ namespace Atlas {
 		Texture::Texture2DArray glyphTexture;
 
 		// We need two glyph buffers to store 2048 glyphs
-		OldBuffer::Buffer firstGlyphBuffer;
-		OldBuffer::Buffer secondGlyphBuffer;
+		Buffer::Buffer firstGlyphBuffer;
+		Buffer::Buffer secondGlyphBuffer;
 
 	private:
 		std::vector<Glyph> glyphs;

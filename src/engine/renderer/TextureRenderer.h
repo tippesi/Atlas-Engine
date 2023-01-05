@@ -35,7 +35,7 @@ namespace Atlas {
 				vec4 clipArea, vec4 blendArea, bool alphaBlending = false, bool invert = false);
 
 		private:
-			OldBuffer::VertexArray vertexArray;
+			Buffer::VertexArray vertexArray;
 
 			OldShader::OldShader texture2DShader;
 			OldShader::OldShader texture2DArrayShader;

@@ -38,7 +38,7 @@ namespace Atlas {
 
 				void InvalidateRayBuffer();
 
-				OldBuffer::Buffer* GetRayBuffer();
+				Buffer::Buffer* GetRayBuffer();
 
 				void UpdateLights();
 
@@ -58,18 +58,18 @@ namespace Atlas {
 
 				OldShader::OldShader binningOffsetShader;
 				OldShader::OldShader binningShader;
-				OldBuffer::Buffer indirectDispatchBuffer;
+				Buffer::Buffer indirectDispatchBuffer;
 
-				OldBuffer::Buffer counterBuffer0;
-				OldBuffer::Buffer counterBuffer1;
+				Buffer::Buffer counterBuffer0;
+				Buffer::Buffer counterBuffer1;
 
-				OldBuffer::Buffer rayBuffer;
-				OldBuffer::Buffer rayPayloadBuffer;
+				Buffer::Buffer rayBuffer;
+				Buffer::Buffer rayPayloadBuffer;
 
-				OldBuffer::Buffer rayBinCounterBuffer;
-				OldBuffer::Buffer rayBinOffsetBuffer;
+				Buffer::Buffer rayBinCounterBuffer;
+				Buffer::Buffer rayBinOffsetBuffer;
 				
-				OldBuffer::Buffer lightBuffer;
+				Buffer::Buffer lightBuffer;
 
 				int32_t dispatchCounter = 0;
 				int32_t rayOffsetCounter = 0;

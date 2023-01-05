@@ -15,8 +15,6 @@ namespace Atlas {
 
 	namespace Renderer {
 
-        using namespace Graphics;
-
 		class Renderer {
 
 		public:
@@ -31,7 +29,7 @@ namespace Atlas {
 			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) = 0;
 
         protected:
-            GraphicsDevice* device = nullptr;
+            Graphics::GraphicsDevice* device = nullptr;
 
 		};
 

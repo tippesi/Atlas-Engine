@@ -103,11 +103,11 @@ namespace Atlas {
 
 		InternalIrradianceVolume::InternalIrradianceVolume(ivec2 irrRes, ivec2 momRes, ivec3 probeCount) {
 
-			rayDirBuffer = OldBuffer::Buffer(OldBuffer::BufferUsageBits::StorageBuffer, sizeof(vec4));
-			rayDirInactiveBuffer = OldBuffer::Buffer(OldBuffer::BufferUsageBits::StorageBuffer, sizeof(vec4));
-			probeStateBuffer = OldBuffer::Buffer(OldBuffer::BufferUsageBits::StorageBuffer, sizeof(vec4),
+			rayDirBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(vec4));
+			rayDirInactiveBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(vec4));
+			probeStateBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(vec4),
 				probeCount.x * probeCount.y * probeCount.z);
-			probeOffsetBuffer = OldBuffer::Buffer(OldBuffer::BufferUsageBits::StorageBuffer, sizeof(vec4),
+			probeOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(vec4),
 				probeCount.x * probeCount.y * probeCount.z);
 
 			irradianceArray0 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y,

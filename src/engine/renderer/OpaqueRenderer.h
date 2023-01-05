@@ -19,21 +19,18 @@ namespace Atlas {
 		public:
 			OpaqueRenderer() = default;
 
-            void Init(GraphicsDevice* device);
+            void Init(Graphics::GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
-				Scene::Scene* scene, CommandList* commandList, RenderList* renderList,
+				Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList,
                 std::unordered_map<void*, uint16_t> materialMap);
 
 			void RenderImpostor(Viewport* viewport, std::vector<mat4> viewMatrices,
 				mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor);
 
 		private:
-			void AdjustFaceCulling(bool cullFaces, bool& state);
-
-			RenderList renderList;
 			ImpostorRenderer impostorRenderer;
 
 			struct PushConstants {

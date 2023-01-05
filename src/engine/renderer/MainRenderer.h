@@ -39,7 +39,7 @@ namespace Atlas {
 		public:
 			MainRenderer() = default;
 
-			void Init(GraphicsDevice* device);
+			void Init(Graphics::GraphicsDevice* device);
 
 			/**
              *
@@ -160,14 +160,14 @@ namespace Atlas {
 
 			void PreintegrateBRDF();
 
-            GraphicsDevice* device = nullptr;
+            Graphics::GraphicsDevice* device = nullptr;
 
 			Texture::Texture2D dfgPreintegrationTexture;
 
-            Ref<MultiBuffer> globalUniformBuffer;
+            Ref<Graphics::MultiBuffer> globalUniformBuffer;
 
-			OldBuffer::VertexArray vertexArray;
-			OldBuffer::VertexArray cubeVertexArray;
+			Buffer::VertexArray vertexArray;
+			Buffer::VertexArray cubeVertexArray;
 
 			OldShader::OldShader rectangleShader;
 

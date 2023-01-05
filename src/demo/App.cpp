@@ -7,10 +7,7 @@ const std::string Atlas::EngineInstance::assetDirectory = "../data";
 const std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
-
-    Atlas::OldBuffer::BufferUsage usage = Atlas::OldBuffer::BufferUsageBits::HostAccess |
-        Atlas::OldBuffer::BufferUsageBits::UniformBuffer;
-
+    
     UnlockFramerate();
 
     renderTarget = Atlas::RenderTarget(1920, 1080);

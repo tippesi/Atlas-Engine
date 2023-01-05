@@ -2,7 +2,7 @@
 
 namespace Atlas {
 
-	namespace OldBuffer {
+	namespace Buffer {
 
 		VertexArray::VertexArray() {
 

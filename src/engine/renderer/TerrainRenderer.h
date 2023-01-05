@@ -41,7 +41,7 @@ namespace Atlas {
 			OldShader::ShaderConfig detailConfig;
 			OldShader::ShaderConfig distanceConfig;
 
-			OldBuffer::Buffer terrainMaterialBuffer;
+			Buffer::Buffer terrainMaterialBuffer;
 
 			OldShader::Uniform* heightScale = nullptr;
 			OldShader::Uniform* offset = nullptr;
