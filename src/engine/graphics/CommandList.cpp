@@ -576,6 +576,18 @@ namespace Atlas {
 
         }
 
+        void CommandList::DispatchIndirect(const Ref<Buffer> &buffer, uint32_t offset) {
+
+            assert(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
+            assert(pipelineInUse && "No pipeline is bound");
+            if (!pipelineInUse) return;
+
+            BindDescriptorSets();
+
+            vkCmdDispatchIndirect(commandBuffer, buffer->buffer, VkDeviceSize(offset));
+
+        }
+
         void CommandList::CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer) {
 
             VkBufferCopy copy = {};
@@ -791,7 +803,6 @@ namespace Atlas {
                         pipelineInUse->layout, i, 1, &descriptorBindingData.sets[i],
                         dynamicOffsetCounter, dynamicOffsets);
                 }
-
             }
 
         }

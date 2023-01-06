@@ -14,9 +14,10 @@ namespace Atlas {
         typedef enum BufferUsageBits {
             StorageBuffer = (1 << 0),
             UniformBuffer = (1 << 1),
-            MultiBuffered = (1 << 2),
-            HostAccess = (1 << 3),
-            MemoryTransfers = (1 << 4)
+            IndirectBuffer = (1 << 2),
+            MultiBuffered = (1 << 3),
+            HostAccess = (1 << 4),
+            MemoryTransfers = (1 << 5)
         }BufferUsageBits;
 
 		/**
@@ -42,10 +43,16 @@ namespace Atlas {
 				size_t elementCount = 0, void* data = nullptr);
 
             /**
-             * Returns a non-owning pointer to a graphics buffer
+             * Returns an owning pointer to a graphics buffer
              * @return
              */
-            Graphics::Buffer* Get();
+            Ref<Graphics::Buffer> Get();
+
+            /**
+             * Returns an owning pointer to a graphics multi buffer
+             * @return
+             */
+            Ref<Graphics::MultiBuffer> GetMultiBuffer();
 
 			/**
              * Maps the data of the buffer into the memory.
@@ -119,6 +126,8 @@ namespace Atlas {
 
 		protected:
 			void Reallocate(void* data);
+
+            Graphics::Buffer* GetPointer();
 
             Ref<Graphics::Buffer> buffer;
             Ref<Graphics::MultiBuffer> multiBuffer;

@@ -199,18 +199,6 @@ namespace Atlas {
         void LogError(const ShaderStageFile &shaderStageFile, const std::vector<std::string>& macros,
             glslang::TShader& shader) {
 
-            std::string infoLog(shader.getInfoLog());
-            if (!infoLog.empty()) {
-                Log::Error(infoLog);
-            }
-            std::string debugInfoLog(shader.getInfoDebugLog());
-            if (!debugInfoLog.empty()) {
-                Log::Error(debugInfoLog);
-            }
-            if (infoLog.empty() && debugInfoLog.empty()) {
-                Log::Error("Shader compilation failed with unknown error");
-            }
-
             std::string log;
             if (shaderStageFile.shaderStage == VK_SHADER_STAGE_VERTEX_BIT) {
                 log.append("Compiling vertex stage failed.");
@@ -243,6 +231,18 @@ namespace Atlas {
             }
 
             Log::Error(log);
+
+            std::string infoLog(shader.getInfoLog());
+            if (!infoLog.empty()) {
+                Log::Error(infoLog);
+            }
+            std::string debugInfoLog(shader.getInfoDebugLog());
+            if (!debugInfoLog.empty()) {
+                Log::Error(debugInfoLog);
+            }
+            if (infoLog.empty() && debugInfoLog.empty()) {
+                Log::Error("Shader compilation failed with unknown error");
+            }
 
         }
 

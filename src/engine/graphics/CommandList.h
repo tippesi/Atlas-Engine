@@ -87,23 +87,28 @@ namespace Atlas {
             void ResetBindings();
 
             void ImageMemoryBarrier(const Ref<Image>& image, VkImageLayout newLayout, VkAccessFlags newAccessMask,
-                VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
+                VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-            void ImageMemoryBarrier(ImageBarrier& barrier, VkPipelineStageFlags srcStageMask,
-                VkPipelineStageFlags dstStageMask);
+            void ImageMemoryBarrier(ImageBarrier& barrier,
+                VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             void ImageTransition(const Ref<Image>& image, VkImageLayout newLayout, VkAccessFlags newAccessMask);
 
             void BufferMemoryBarrier(const Ref<Buffer>& buffer, VkAccessFlags newAccessMask,
-                VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
+                VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             void BufferMemoryBarrier(BufferBarrier& barrier, VkPipelineStageFlags srcStageMask,
                 VkPipelineStageFlags dstStageMask);
 
-            void PipelineBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
+            void PipelineBarrier(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             void PipelineBarrier(std::vector<ImageBarrier>& imageBarriers, std::vector<BufferBarrier>& bufferBarriers,
-                VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
+                VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             void DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0,
                 int32_t vertexOffset = 0, uint32_t firstInstance = 0);
@@ -112,6 +117,8 @@ namespace Atlas {
                 uint32_t firstInstance = 0);
 
             void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+
+            void DispatchIndirect(const Ref<Buffer>& buffer, uint32_t offset = 0);
 
             void CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer);
 

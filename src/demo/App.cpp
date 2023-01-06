@@ -3,11 +3,11 @@
 #include <chrono>
 #include <thread>
 
-const std::string Atlas::EngineInstance::assetDirectory = "../data";
+const std::string Atlas::EngineInstance::assetDirectory = "../../data";
 const std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
-    
+
     UnlockFramerate();
 
     renderTarget = Atlas::RenderTarget(1920, 1080);
@@ -22,7 +22,7 @@ void App::LoadContent() {
     DisplayLoadingScreen();
 
     camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f,
-        glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
+        glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 3.14f / 2.0f));
 
     scene = Atlas::Scene::Scene(glm::vec3(-2048.0f), glm::vec3(2048.0f));
 
@@ -135,7 +135,7 @@ void App::Render(float deltaTime) {
 
     static bool firstFrame = true;
     static bool animateLight = false;
-    static bool pathTrace = false;
+    static bool pathTrace = true;
     static bool debugAo = false;
     static bool debugReflection = false;
     static bool debugClouds = false;
@@ -177,7 +177,19 @@ void App::Render(float deltaTime) {
     }
     */
 
-    mainRenderer.RenderScene(&viewport, &renderTarget, &camera, &scene);
+    if (pathTrace) {
+        viewport.Set(0, 0, pathTraceTarget.GetWidth(), pathTraceTarget.GetHeight());
+        mainRenderer.PathTraceScene(&viewport, &pathTraceTarget, &camera, &scene);
+
+        /*
+        viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
+        mainRenderer.textureRenderer.RenderTexture2D(&viewport, &pathTraceTarget.texture, 0.0f, 0.0f,
+            float(viewport.width), float(viewport.height));
+        */
+    }
+    else {
+        mainRenderer.RenderScene(&viewport, &renderTarget, &camera, &scene);
+    }
 
     // testRenderer.Render(&camera);
 
@@ -698,7 +710,7 @@ bool App::LoadScene() {
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
-        camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+        camera.rotation = glm::vec2(-3.14f / 2.0f, 3.14f / 2.0f);
         camera.exposure = 0.125f;
 
         scene.fog->enable = true;
@@ -850,6 +862,8 @@ bool App::LoadScene() {
 
         scene.fog->enable = true;
     }
+
+    scene.sky.probe = std::make_shared<Atlas::Lighting::EnvironmentProbe>(sky);
 
     actors.reserve(meshes.size());
     for (auto& mesh : meshes) {

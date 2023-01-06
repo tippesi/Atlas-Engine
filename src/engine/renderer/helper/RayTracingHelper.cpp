@@ -3,6 +3,7 @@
 #include "../../common/Piecewise.h"
 #include "../../volume/BVH.h"
 #include "../../graphics/Profiler.h"
+#include "../../shader/PipelineManager.h"
 
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1
@@ -17,15 +18,11 @@ namespace Atlas {
 
 				const size_t lightCount = 512;
 
-                /*
-				glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &textureUnitCount);
-				glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &workGroupLimit);
-
-				indirectDispatchBuffer = Buffer::Buffer(AE_DISPATCH_INDIRECT_BUFFER, 3 *
+				indirectDispatchBuffer = Buffer::Buffer(Buffer::BufferUsageBits::IndirectBuffer, 3 *
 					sizeof(uint32_t), 0);
-				counterBuffer0 = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
+				counterBuffer0 = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer,
 					sizeof(uint32_t), 0);
-				counterBuffer1 = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
+				counterBuffer1 = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer,
 					sizeof(uint32_t), 0);
 
 				indirectDispatchBuffer.SetSize(1);
@@ -33,35 +30,31 @@ namespace Atlas {
 				counterBuffer1.SetSize(1);
 
 				// Create dynamic resizable shader storage buffers
-				lightBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(Scene::RTData::GPULight),
-					AE_BUFFER_DYNAMIC_STORAGE, lightCount);
-				rayBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, 2 * sizeof(vec4),
-					AE_BUFFER_DYNAMIC_STORAGE);
-				rayPayloadBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
-					AE_BUFFER_DYNAMIC_STORAGE);
-				rayBinCounterBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(uint32_t),
-					AE_BUFFER_DYNAMIC_STORAGE);
-				rayBinOffsetBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(uint32_t),
-					AE_BUFFER_DYNAMIC_STORAGE);
+				lightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer |
+                    Buffer::BufferUsageBits::HostAccess | Buffer::BufferUsageBits::MultiBuffered,
+                    sizeof(Scene::RTData::GPULight), lightCount);
+				rayBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, 2 * sizeof(vec4));
+				rayPayloadBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(vec4));
+				rayBinCounterBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(uint32_t));
+				rayBinOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(uint32_t));
 
 				rayBinCounterBuffer.SetSize(1024);
 				rayBinOffsetBuffer.SetSize(1024);
 
-				traceDispatchShader.AddStage(AE_COMPUTE_STAGE, "raytracer/traceDispatch.csh");
-				traceDispatchShader.Compile();
+                traceDispatchPipelineConfig = PipelineConfig("raytracer/traceDispatch.csh");
+                traceClosestPipelineConfig = PipelineConfig("raytracer/traceClosest.csh");
+                traceAnyPipelineConfig = PipelineConfig("raytracer/traceAny.csh");
 
-				traceClosestShader.AddStage(AE_COMPUTE_STAGE, "raytracer/traceClosest.csh");
-				traceClosestShader.Compile();
+                PipelineManager::AddPipeline(traceDispatchPipelineConfig);
+                PipelineManager::AddPipeline(traceClosestPipelineConfig);
+                PipelineManager::AddPipeline(traceAnyPipelineConfig);
 
-				traceAnyShader.AddStage(AE_COMPUTE_STAGE, "raytracer/traceAny.csh");
-				traceAnyShader.Compile();
+                binningOffsetPipelineConfig = PipelineConfig("raytracer/binning.csh");
+                binningPipelineConfig = PipelineConfig("raytracer/binningOffset.csh");
 
-				binningShader.AddStage(AE_COMPUTE_STAGE, "raytracer/binning.csh");
-				binningShader.Compile();
-
-				binningOffsetShader.AddStage(AE_COMPUTE_STAGE, "raytracer/binningOffset.csh");
-				binningOffsetShader.Compile();
-                */
+                std::vector<uint8_t> dummyData = { 0 };
+                dummyTexture = Texture::Texture2DArray(1, 1, 1, VK_FORMAT_R8_UNORM);
+                dummyTexture.SetData(dummyData, 0);
 
 			}
 
@@ -83,7 +76,9 @@ namespace Atlas {
 
 			}
 
-			void RayTracingHelper::DispatchAndHit(OldShader::OldShader* dispatchAndHitShader, glm::ivec3 dimensions, std::function<void(void)> prepare) {
+			void RayTracingHelper::DispatchAndHit(Graphics::CommandList* commandList,
+                const Ref<Graphics::Pipeline>& dispatchAndHitPipeline,
+                glm::ivec3 dimensions, std::function<void(void)> prepare) {
 
 				// Select lights once per initial ray dispatch
 				{
@@ -133,48 +128,71 @@ namespace Atlas {
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 4);
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 5);
 					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, 6);
-                     */
-                    /*
-					if (rtData.baseColorTextureAtlas.slices.size())
-						rtData.baseColorTextureAtlas.textureArray.Bind(0);
-					if (rtData.opacityTextureAtlas.slices.size())
-						rtData.opacityTextureAtlas.textureArray.Bind(1);
-					if (rtData.normalTextureAtlas.slices.size())
-						rtData.normalTextureAtlas.textureArray.Bind(2);
-					if (rtData.roughnessTextureAtlas.slices.size())
-						rtData.roughnessTextureAtlas.textureArray.Bind(3);
-					if (rtData.metalnessTextureAtlas.slices.size())
-						rtData.metalnessTextureAtlas.textureArray.Bind(4);
-					if (rtData.aoTextureAtlas.slices.size())
-						rtData.aoTextureAtlas.textureArray.Bind(5);
-					if (scene->sky.GetProbe())
-						scene->sky.GetProbe()->cubemap.Bind(6);
-
-					rtData.materialBuffer.BindBase(5);
-					rtData.triangleBuffer.BindBase(6);
-					rtData.bvhTriangleBuffer.BindBase(13);
-					rtData.nodeBuffer.BindBase(7);
-					lightBuffer.BindBase(8);
                     */
+
+					if (rtData.baseColorTextureAtlas.slices.size())
+                        commandList->BindImage(rtData.baseColorTextureAtlas.textureArray.image,
+                            rtData.baseColorTextureAtlas.textureArray.sampler, 2, 0);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 0);
+					if (rtData.opacityTextureAtlas.slices.size())
+                        commandList->BindImage(rtData.opacityTextureAtlas.textureArray.image,
+                            rtData.opacityTextureAtlas.textureArray.sampler, 2, 1);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 1);
+					if (rtData.normalTextureAtlas.slices.size())
+                        commandList->BindImage(rtData.normalTextureAtlas.textureArray.image,
+                            rtData.normalTextureAtlas.textureArray.sampler, 2, 2);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 2);
+					if (rtData.roughnessTextureAtlas.slices.size())
+                        commandList->BindImage(rtData.roughnessTextureAtlas.textureArray.image,
+                            rtData.roughnessTextureAtlas.textureArray.sampler, 2, 3);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 3);
+					if (rtData.metalnessTextureAtlas.slices.size())
+                        commandList->BindImage(rtData.metalnessTextureAtlas.textureArray.image,
+                            rtData.metalnessTextureAtlas.textureArray.sampler, 2, 4);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 4);
+					if (rtData.aoTextureAtlas.slices.size())
+                        commandList->BindImage(rtData.aoTextureAtlas.textureArray.image,
+                            rtData.aoTextureAtlas.textureArray.sampler, 2, 5);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 5);
+					if (scene->sky.GetProbe())
+                        commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
+                            scene->sky.GetProbe()->cubemap.sampler, 2, 6);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
+
+                    commandList->BindBuffer(rtData.materialBuffer.Get(), 2, 7);
+                    commandList->BindBuffer(rtData.triangleBuffer.Get(), 2, 8);
+                    commandList->BindBuffer(rtData.bvhTriangleBuffer.Get(), 2, 9);
+                    commandList->BindBuffer(rtData.nodeBuffer.Get(), 2, 10);
+                    commandList->BindBuffer(lightBuffer.GetMultiBuffer(), 2, 11);
 				}
 
 				// Execute shader
 				{
-					dispatchAndHitShader->Bind();
-					dispatchAndHitShader->GetUniform("lightCount")->SetValue(int32_t(selectedLights.size()));
+                    commandList->BindPipeline(dispatchAndHitPipeline);
+
+                    PushConstants constants;
+                    constants.lightCount = int32_t(selectedLights.size());
+
+                    auto constRange = dispatchAndHitPipeline->shader->GetPushConstantRange("constants");
+                    commandList->PushConstants(constRange, &constants);
 
 					prepare();
-                    /*
-					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
-						GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-					glDispatchCompute(dimensions.x, dimensions.y, dimensions.z);
-                     */
+
+                    commandList->Dispatch(dimensions.x, dimensions.y, dimensions.z);
 				}
 
 			}
 
-			void RayTracingHelper::DispatchRayGen(OldShader::OldShader* rayGenShader, glm::ivec3 dimensions,
-				bool binning, std::function<void(void)> prepare) {
+			void RayTracingHelper::DispatchRayGen(Graphics::CommandList* commandList,
+                const Ref<Graphics::Pipeline>& rayGenPipeline, glm::ivec3 dimensions,
+                bool binning, std::function<void(void)> prepare) {
 
 				dispatchCounter = 0;
 				rayOffsetCounter = 0;
@@ -216,34 +234,46 @@ namespace Atlas {
 					lightBuffer.SetData(selectedLights.data(), 0, selectedLights.size());
 				}
 
-				rayGenShader->Bind();
+                // From last invalidation we need to take care of the transfer stage as well
+                commandList->BufferMemoryBarrier(counterBuffer0.Get(), VK_ACCESS_SHADER_WRITE_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+                commandList->BufferMemoryBarrier(counterBuffer1.Get(), VK_ACCESS_SHADER_READ_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-                /*
-				counterBuffer0.BindBase(1);
-				counterBuffer1.BindBase(0);
+                commandList->BufferMemoryBarrier(rayBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT);
+                commandList->BufferMemoryBarrier(rayPayloadBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT);
 
-				rayBuffer.BindBase(2);
-				rayPayloadBuffer.BindBase(3);
+                commandList->BindBuffer(counterBuffer0.Get(), 2, 14);
+                commandList->BindBuffer(counterBuffer1.Get(), 2, 13);
 
-				rayBinCounterBuffer.BindBase(11);
-                */
+                commandList->BindBuffer(rayBuffer.Get(), 2, 15);
+                commandList->BindBuffer(rayPayloadBuffer.Get(), 2, 16);
 
-				rayGenShader->GetUniform("lightCount")->SetValue(int32_t(selectedLights.size()));
-				rayGenShader->GetUniform("rayBufferOffset")->SetValue(uint32_t(rayOffsetCounter++));
-				rayGenShader->GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
-				rayGenShader->GetUniform("useRayBinning")->SetValue(binning);
+                commandList->BindBuffer(rayBinCounterBuffer.Get(), 2, 17);
+
+                commandList->BindPipeline(rayGenPipeline);
+
+                PushConstants constants;
+                constants.lightCount = int32_t(selectedLights.size());
+                constants.rayBufferOffset = uint32_t(rayOffsetCounter++);
+                constants.rayBufferSize = uint32_t(rayBuffer.GetElementCount() / 2);
+                constants.useRayBinning = binning ? 1 : 0;
+
+                auto constRange = rayGenPipeline->shader->GetPushConstantRange("constants");
+                commandList->PushConstants(constRange, &constants);
 
 				prepare();
+                commandList->Dispatch(dimensions.x, dimensions.y, dimensions.z);
                 /*
 				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
 					GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-				glDispatchCompute(dimensions.x, dimensions.y, dimensions.z);
                  */
 
 			}
 
-			void RayTracingHelper::DispatchHitClosest(OldShader::OldShader* hitShader,
-				bool binning, std::function<void(void)> prepare) {
+			void RayTracingHelper::DispatchHitClosest(Graphics::CommandList* commandList,
+                const Ref<Graphics::Pipeline>& hitPipeline, bool binning,
+                std::function<void(void)> prepare) {
 
 				auto& rtData = scene->rayTracingData;
 
@@ -257,70 +287,103 @@ namespace Atlas {
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 4);
 					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 5);
 					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, 6);
-
-					if (rtData.baseColorTextureAtlas.slices.size())
-						rtData.baseColorTextureAtlas.textureArray.Bind(0);
-					if (rtData.opacityTextureAtlas.slices.size())
-						rtData.opacityTextureAtlas.textureArray.Bind(1);
-					if (rtData.normalTextureAtlas.slices.size())
-						rtData.normalTextureAtlas.textureArray.Bind(2);
-					if (rtData.roughnessTextureAtlas.slices.size())
-						rtData.roughnessTextureAtlas.textureArray.Bind(3);
-					if (rtData.metalnessTextureAtlas.slices.size())
-						rtData.metalnessTextureAtlas.textureArray.Bind(4);
-					if (rtData.aoTextureAtlas.slices.size())
-						rtData.aoTextureAtlas.textureArray.Bind(5);
-					if (scene->sky.GetProbe())
-						scene->sky.GetProbe()->cubemap.Bind(6);
-
-					rtData.materialBuffer.BindBase(5);
-					rtData.triangleBuffer.BindBase(6);
-					rtData.bvhTriangleBuffer.BindBase(13);
-					rtData.nodeBuffer.BindBase(7);
-					lightBuffer.BindBase(8);
                     */
+
+                    if (rtData.baseColorTextureAtlas.slices.size())
+                        commandList->BindImage(rtData.baseColorTextureAtlas.textureArray.image,
+                            rtData.baseColorTextureAtlas.textureArray.sampler, 2, 0);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 0);
+                    if (rtData.opacityTextureAtlas.slices.size())
+                        commandList->BindImage(rtData.opacityTextureAtlas.textureArray.image,
+                            rtData.opacityTextureAtlas.textureArray.sampler, 2, 1);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 1);
+                    if (rtData.normalTextureAtlas.slices.size())
+                        commandList->BindImage(rtData.normalTextureAtlas.textureArray.image,
+                            rtData.normalTextureAtlas.textureArray.sampler, 2, 2);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 2);
+                    if (rtData.roughnessTextureAtlas.slices.size())
+                        commandList->BindImage(rtData.roughnessTextureAtlas.textureArray.image,
+                            rtData.roughnessTextureAtlas.textureArray.sampler, 2, 3);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 3);
+                    if (rtData.metalnessTextureAtlas.slices.size())
+                        commandList->BindImage(rtData.metalnessTextureAtlas.textureArray.image,
+                            rtData.metalnessTextureAtlas.textureArray.sampler, 2, 4);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 4);
+                    if (rtData.aoTextureAtlas.slices.size())
+                        commandList->BindImage(rtData.aoTextureAtlas.textureArray.image,
+                            rtData.aoTextureAtlas.textureArray.sampler, 2, 5);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 5);
+                    if (scene->sky.GetProbe())
+                        commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
+                            scene->sky.GetProbe()->cubemap.sampler, 2, 6);
+                    else
+                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
+
+                    commandList->BindBuffer(rtData.materialBuffer.Get(), 2, 7);
+                    commandList->BindBuffer(rtData.triangleBuffer.Get(), 2, 8);
+                    commandList->BindBuffer(rtData.bvhTriangleBuffer.Get(), 2, 9);
+                    commandList->BindBuffer(rtData.nodeBuffer.Get(), 2, 10);
+                    commandList->BindBuffer(lightBuffer.GetMultiBuffer(), 2, 11);
 				}
 
 				Graphics::Profiler::BeginQuery("Setup command buffer");
 
+                commandList->BufferMemoryBarrier(indirectDispatchBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT);
+                commandList->BindBuffer(indirectDispatchBuffer.Get(), 2, 12);
+
 				// Set up command buffer, reset ray count
 				{
-                    // indirectDispatchBuffer.BindBaseAs(AE_SHADER_STORAGE_BUFFER, 4);
-					traceDispatchShader.Bind();
+                    auto pipeline = PipelineManager::GetPipeline(traceDispatchPipelineConfig);
+                    commandList->BindPipeline(pipeline);
 
-                    /*
 					if (dispatchCounter % 2 == 0) {
-						counterBuffer0.BindBase(0);
-						counterBuffer1.BindBase(1);
+                        commandList->BufferMemoryBarrier(counterBuffer0.Get(), VK_ACCESS_SHADER_READ_BIT);
+                        commandList->BufferMemoryBarrier(counterBuffer1.Get(), VK_ACCESS_SHADER_WRITE_BIT);
+                        commandList->BindBuffer(counterBuffer0.Get(), 2, 13);
+                        commandList->BindBuffer(counterBuffer1.Get(), 2, 14);
 					}
 					else {
-						counterBuffer0.BindBase(1);
-						counterBuffer1.BindBase(0);
+                        commandList->BufferMemoryBarrier(counterBuffer0.Get(), VK_ACCESS_SHADER_WRITE_BIT);
+                        commandList->BufferMemoryBarrier(counterBuffer1.Get(), VK_ACCESS_SHADER_READ_BIT);
+                        commandList->BindBuffer(counterBuffer0.Get(), 2, 14);
+                        commandList->BindBuffer(counterBuffer1.Get(), 2, 13);
 					}
-                    */
 
-                    // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-                    // glDispatchCompute(1, 1, 1);
+                    commandList->Dispatch(1, 1, 1);
 				}
 
-                /*
-				indirectDispatchBuffer.Bind();
-				rayBuffer.BindBase(2);
-				rayPayloadBuffer.BindBase(3);
-                */
+                commandList->BufferMemoryBarrier(indirectDispatchBuffer.Get(), VK_ACCESS_MEMORY_READ_BIT);
 
+                commandList->BufferMemoryBarrier(rayBuffer.Get(),
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+                commandList->BufferMemoryBarrier(rayPayloadBuffer.Get(),
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+                commandList->BindBuffer(rayBuffer.Get(), 2, 15);
+                commandList->BindBuffer(rayPayloadBuffer.Get(), 2, 16);
+
+                commandList->BindBuffer(rayBinCounterBuffer.Get(), 2, 17);
+                commandList->BindBuffer(rayBinOffsetBuffer.Get(), 2, 18);
+
+                /*
 				if (binning) {
 
                     Graphics::Profiler::EndAndBeginQuery("Binning offsets");
 
 					// Calculate binning offsets
 					{
-						binningOffsetShader.Bind();
+						auto pipeline = PipelineManager::GetPipeline(binningOffsetPipelineConfig);
+                        commandList->BindPipeline(pipeline);
 
-                        /*
-						rayBinCounterBuffer.BindBase(11);
-						rayBinOffsetBuffer.BindBase(12);
-                        */
+                        commandList->BindBuffer(rayBinCounterBuffer.Get(), 2, 15);
+                        commandList->BindBuffer(rayBinOffsetBuffer.Get(), 2, 16);
+
 
                         // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
                         // glDispatchCompute(1, 1, 1);
@@ -330,7 +393,9 @@ namespace Atlas {
 
 					// Order rays by their bins
 					{
-						binningShader.Bind();
+                        auto pipeline = PipelineManager::GetPipeline(binningPipelineConfig);
+                        commandList->BindPipeline(pipeline);
+
 
 						binningShader.GetUniform("rayBufferOffset")->SetValue(uint32_t(rayOffsetCounter++ % 2));
 						binningShader.GetUniform("rayPayloadBufferOffset")->SetValue(uint32_t(payloadOffsetCounter++ % 2));
@@ -339,48 +404,63 @@ namespace Atlas {
                         // glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
                         // glDispatchComputeIndirect(0);
 
-                        /*
 						uint32_t zero = 0;
 						rayBinCounterBuffer.Bind();
 						rayBinCounterBuffer.InvalidateData();
-                        */
                         // rayBinCounterBuffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
 					}
 
 				}
+                */
 
                 Graphics::Profiler::EndAndBeginQuery("Trace rays");
 
 				// Trace rays for closest intersection
 				{
-					traceClosestShader.Bind();
+                    auto pipeline = PipelineManager::GetPipeline(traceClosestPipelineConfig);
+                    commandList->BindPipeline(pipeline);
 
-					traceClosestShader.GetUniform("rayBufferOffset")->SetValue(uint32_t(rayOffsetCounter++ % 2));
-					traceClosestShader.GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
+                    PushConstants constants;
+                    constants.rayBufferOffset = uint32_t(rayOffsetCounter++ % 2);
+                    constants.rayBufferSize = uint32_t(rayBuffer.GetElementCount() / 2);
 
-                    // glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
-                    // glDispatchComputeIndirect(0);
+                    commandList->DispatchIndirect(indirectDispatchBuffer.Get());
 				}
 
                 Graphics::Profiler::EndAndBeginQuery("Execute hit shader");
+
+                commandList->BufferMemoryBarrier(rayBuffer.Get(),
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+                commandList->BufferMemoryBarrier(rayPayloadBuffer.Get(),
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+                if (dispatchCounter % 2 == 0) {
+                    commandList->BufferMemoryBarrier(counterBuffer1.Get(),
+                        VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT);
+                }
+                else {
+                    commandList->BufferMemoryBarrier(counterBuffer0.Get(),
+                        VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT);
+                }
 				
 				// Shade rays
 				{
-					hitShader->Bind();
+                    commandList->BindPipeline(hitPipeline);
 
-					hitShader->GetUniform("lightCount")->SetValue(int32_t(selectedLights.size()));
-					hitShader->GetUniform("rayBufferOffset")->SetValue(uint32_t(rayOffsetCounter++ % 2));
-					hitShader->GetUniform("rayPayloadBufferOffset")->SetValue(uint32_t(payloadOffsetCounter++ % 2));
-					hitShader->GetUniform("rayBufferSize")->SetValue(uint32_t(rayBuffer.GetElementCount() / 2));
-					hitShader->GetUniform("useRayBinning")->SetValue(binning);
+                    PushConstants constants;
+                    constants.lightCount = int32_t(selectedLights.size());
+                    constants.rayBufferOffset = uint32_t(rayOffsetCounter++ % 2);
+                    constants.rayPayloadBufferOffset = uint32_t(payloadOffsetCounter++ % 2);
+                    constants.rayBufferSize = uint32_t(rayBuffer.GetElementCount() / 2);
+                    constants.useRayBinning = binning ? 1 : 0;
 
+					auto constRange = hitPipeline->shader->GetPushConstantRange("constants");
+                    commandList->PushConstants(constRange, &constants);
 					//rayBinCounterBuffer.BindBase(11);
 
 					prepare();
 
-                    // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
-                    // 	GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-                    // glDispatchComputeIndirect(0);
+                    commandList->DispatchIndirect(indirectDispatchBuffer.Get());
 				}
 
                 Graphics::Profiler::EndQuery();
@@ -389,18 +469,16 @@ namespace Atlas {
 
 			}
 
-			void RayTracingHelper::InvalidateRayBuffer() {
+			void RayTracingHelper::InvalidateRayBuffer(Graphics::CommandList* commandList) {
 
-                /*
-				uint32_t zero = 0;
-				counterBuffer0.Bind();
-				counterBuffer0.InvalidateData();
-                counterBuffer0.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
+                commandList->BufferMemoryBarrier(counterBuffer0.Get(), VK_ACCESS_TRANSFER_WRITE_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+                commandList->BufferMemoryBarrier(counterBuffer1.Get(), VK_ACCESS_TRANSFER_WRITE_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-				counterBuffer1.Bind();
-				counterBuffer1.InvalidateData();
-                counterBuffer1.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
-                */
+                uint32_t zero = 0;
+                commandList->FillBuffer(counterBuffer0.Get(), &zero);
+                commandList->FillBuffer(counterBuffer1.Get(), &zero);
 
 			}
 

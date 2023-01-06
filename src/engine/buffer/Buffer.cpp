@@ -18,14 +18,15 @@ namespace Atlas {
 
         }
 
-        Graphics::Buffer *Buffer::Get() {
+        Ref<Graphics::Buffer> Buffer::Get() {
 
-            if (multiBuffered) {
-                return multiBuffer->GetCurrent();
-            }
-            else {
-                return buffer.get();
-            }
+            return buffer;
+
+        }
+
+        Ref<Graphics::MultiBuffer> Buffer::GetMultiBuffer() {
+
+            return multiBuffer;
 
         }
 
@@ -33,7 +34,7 @@ namespace Atlas {
 
             if (!hostAccessible) return nullptr;
 
-            return Get()->Map();
+            return GetPointer()->Map();
 
         }
 
@@ -41,7 +42,7 @@ namespace Atlas {
 
             if (!hostAccessible) return;
 
-            Get()->Unmap();
+            GetPointer()->Unmap();
 
         }
 
@@ -118,6 +119,9 @@ namespace Atlas {
             if (usage & BufferUsageBits::StorageBuffer) {
                 usageFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             }
+            if (usage & BufferUsageBits::IndirectBuffer) {
+                usageFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+            }
 
             if (usage & BufferUsageBits::MemoryTransfers) {
                 usageFlags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -143,6 +147,16 @@ namespace Atlas {
 
         }
 
+        Graphics::Buffer *Buffer::GetPointer() {
+
+            if (multiBuffered) {
+                return multiBuffer->GetCurrent();
+            }
+            else {
+                return buffer.get();
+            }
+
+        }
 
     }
 

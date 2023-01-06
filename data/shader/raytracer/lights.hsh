@@ -4,6 +4,10 @@
 
 #include <../brdf/surface.hsh>
 
+layout (std430, set = 2, binding = 11) buffer Lights {
+	PackedLight lights[];
+};
+
 LightSample SampleTriangleLight(Light light, Triangle triangle,
 	Surface surface, float r0, float r1) {
 

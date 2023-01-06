@@ -2,6 +2,8 @@
 #include "../Log.h"
 #include "../Clock.h"
 #include "../common/Packing.h"
+#include "../common/RandomHelper.h"
+#include "../shader/PipelineManager.h"
 
 #include "../volume/BVH.h"
 
@@ -12,21 +14,28 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		PathTracingRenderer::PathTracingRenderer() {
+		void PathTracingRenderer::Init(Graphics::GraphicsDevice *device) {
 
-            /*
-			// Load shader stages from hard drive and compile the shader
-			rayGenShader.AddStage(AE_COMPUTE_STAGE, "pathtracer/rayGen.csh");
-			rayGenShader.Compile();
+            this->device = device;
 
-			// Retrieve uniforms
-			GetRayGenUniforms();
+            rayGenPipelineConfig = PipelineConfig("pathtracer/rayGen.csh");
+            rayHitPipelineConfig = PipelineConfig("pathtracer/rayHit.csh");
 
-			rayHitShader.AddStage(AE_COMPUTE_STAGE, "pathtracer/rayHit.csh");
-			rayHitShader.Compile();
+            PipelineManager::AddPipeline(rayGenPipelineConfig);
+            PipelineManager::AddPipeline(rayHitPipelineConfig);
 
-			GetRayHitUniforms();
-             */
+            Graphics::BufferDesc bufferDesc {
+                .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                .domain = Graphics::BufferDomain::Host,
+                .size = sizeof(RayGenUniforms)
+            };
+            rayGenUniformBuffer = device->CreateMultiBuffer(bufferDesc);
+
+            bufferDesc.size = sizeof(RayHitUniforms);
+            rayHitUniformBuffers.resize(bounces + 1);
+            for (uint32_t i = 0; i < uint32_t(rayHitUniformBuffers.size()); i++) {
+                rayHitUniformBuffers[i] = device->CreateMultiBuffer(bufferDesc);
+            }
 
 		}
 
@@ -38,10 +47,9 @@ namespace Atlas {
 		}
 
 		void PathTracingRenderer::Render(Viewport* viewport, PathTracerRenderTarget* renderTarget,
-			ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene) {
+			ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-            /*
-			Profiler::BeginQuery("Path tracing");
+			Graphics::Profiler::BeginQuery("Path tracing");
 
 			auto width = renderTarget->GetWidth();
 			auto height = renderTarget->GetHeight();
@@ -67,14 +75,24 @@ namespace Atlas {
 			ivec2 tileSize = resolution / imageSubdivisions;
 
 			// Bind texture only for writing
-			renderTarget->texture.Bind(GL_WRITE_ONLY, 1);
+            commandList->ImageTransition(renderTarget->texture.image, VK_IMAGE_LAYOUT_GENERAL,
+                VK_ACCESS_SHADER_WRITE_BIT);
+            commandList->BindImage(renderTarget->texture.image, 3, 1);
 			if (sampleCount % 2 == 0) {
-				renderTarget->accumTexture0.Bind(GL_READ_ONLY, 2);
-				renderTarget->accumTexture1.Bind(GL_WRITE_ONLY, 3);
+                commandList->ImageTransition(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_READ_BIT);
+                commandList->ImageTransition(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_WRITE_BIT);
+                commandList->BindImage(renderTarget->accumTexture0.image, 3, 2);
+                commandList->BindImage(renderTarget->accumTexture1.image, 3, 3);
 			}
 			else {
-				renderTarget->accumTexture1.Bind(GL_WRITE_ONLY, 2);
-				renderTarget->accumTexture0.Bind(GL_READ_ONLY, 3);
+                commandList->ImageTransition(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_WRITE_BIT);
+                commandList->ImageTransition(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_READ_BIT);
+                commandList->BindImage(renderTarget->accumTexture0.image, 3, 2);
+                commandList->BindImage(renderTarget->accumTexture1.image, 3, 3);
 			}
 
 			auto tileResolution = resolution / imageSubdivisions;
@@ -83,50 +101,57 @@ namespace Atlas {
 			groupCount.x += ((groupCount.x * 8 == tileResolution.x) ? 0 : 1);
 			groupCount.y += ((groupCount.y * 8 == tileResolution.y) ? 0 : 1);
 
-			Profiler::BeginQuery("Ray generation");
+            Graphics::Profiler::BeginQuery("Ray generation");
 
-			helper.DispatchRayGen(&rayGenShader, ivec3(groupCount.x, groupCount.y, 1), false,
+			helper.DispatchRayGen(commandList, PipelineManager::GetPipeline(rayGenPipelineConfig),
+                ivec3(groupCount.x, groupCount.y, 1), false,
 				[=]() {
 					auto corners = camera->GetFrustumCorners(camera->nearPlane, camera->farPlane);
 
-					cameraLocationRayGenUniform->SetValue(camera->GetLocation());
+                    RayGenUniforms uniforms;
+                    uniforms.origin = vec4(corners[4], 1.0f);
+                    uniforms.right = vec4(corners[5] - corners[4], 1.0f);
+                    uniforms.bottom = vec4(corners[6] - corners[4], 1.0f);
 
-					originRayGenUniform->SetValue(corners[4]);
-					rightRayGenUniform->SetValue(corners[5] - corners[4]);
-					bottomRayGenUniform->SetValue(corners[6] - corners[4]);
+                    uniforms.sampleCount = sampleCount;
+                    uniforms.pixelOffset = ivec2(renderTarget->GetWidth(),
+                        renderTarget->GetHeight()) / imageSubdivisions * imageOffset;
 
-					sampleCountRayGenUniform->SetValue(sampleCount);
-					pixelOffsetRayGenUniform->SetValue(ivec2(renderTarget->GetWidth(),
-						renderTarget->GetHeight()) / imageSubdivisions * imageOffset);
+                    uniforms.tileSize = tileSize;
+                    uniforms.resolution = resolution;
 
-					tileSizeRayGenUniform->SetValue(tileSize);
-					resolutionRayGenUniform->SetValue(resolution);
+                    rayGenUniformBuffer->SetData(&uniforms, 0, sizeof(RayGenUniforms));
+                    commandList->BindBuffer(rayGenUniformBuffer, 3, 4);
 				}
 				);
 
 			
 			for (int32_t i = 0; i <= bounces; i++) {
 
-				Profiler::EndAndBeginQuery("Bounce " + std::to_string(i));
+                Graphics::Profiler::EndAndBeginQuery("Bounce " + std::to_string(i));
 
-				helper.DispatchHitClosest(&rayHitShader, false,
+				helper.DispatchHitClosest(commandList, PipelineManager::GetPipeline(rayHitPipelineConfig), false,
 					[=]() {
-						maxBouncesRayHitUniform->SetValue(bounces);
+                        RayHitUniforms uniforms;
+                        uniforms.maxBounces = bounces;
 
-						sampleCountRayHitUniform->SetValue(sampleCount);
-						bounceCountRayHitUniform->SetValue(i);
+                        uniforms.sampleCount = sampleCount;
+                        uniforms.bounceCount = i;
 
-						resolutionRayHitUniform->SetValue(resolution);
-						seedRayHitUniform->SetValue(float(rand()) / float(RAND_MAX));
+                        uniforms.resolution = resolution;
+                        uniforms.seed = Common::Random::SampleFastUniformFloat();
 
-						rayHitShader.GetUniform("exposure")->SetValue(camera->exposure);
+                        uniforms.exposure = camera->exposure;
+
+                        rayHitUniformBuffers[i]->SetData(&uniforms, 0, sizeof(RayHitUniforms));
+                        commandList->BindBuffer(rayHitUniformBuffers[i], 3, 4);
 					}
 					);
 			}
 
-			Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
-			renderTarget->texture.Unbind();
+			// renderTarget->texture.Unbind();
 
 			imageOffset.x++;
 
@@ -140,10 +165,12 @@ namespace Atlas {
 				sampleCount++;
 			}
 
-			helper.InvalidateRayBuffer();
+            commandList->ImageTransition(renderTarget->texture.image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
-			Profiler::EndQuery();
-             */
+			helper.InvalidateRayBuffer(commandList);
+
+            Graphics::Profiler::EndQuery();
 
 		}
 
@@ -156,38 +183,6 @@ namespace Atlas {
 		int32_t PathTracingRenderer::GetSampleCount() const {
 
 			return sampleCount;
-
-		}
-
-		void PathTracingRenderer::GetRayGenUniforms() {
-
-            /*
-			cameraLocationRayGenUniform = rayGenShader.GetUniform("cameraLocation");
-
-			originRayGenUniform = rayGenShader.GetUniform("origin");
-			rightRayGenUniform = rayGenShader.GetUniform("right");
-			bottomRayGenUniform = rayGenShader.GetUniform("bottom");
-
-			sampleCountRayGenUniform = rayGenShader.GetUniform("sampleCount");
-			pixelOffsetRayGenUniform = rayGenShader.GetUniform("pixelOffset");
-
-			tileSizeRayGenUniform = rayGenShader.GetUniform("tileSize");
-			resolutionRayGenUniform = rayGenShader.GetUniform("resolution");
-             */
-
-		}
-
-		void PathTracingRenderer::GetRayHitUniforms() {
-
-            /*
-			maxBouncesRayHitUniform = rayHitShader.GetUniform("maxBounces");
-
-			sampleCountRayHitUniform = rayHitShader.GetUniform("sampleCount");
-			bounceCountRayHitUniform = rayHitShader.GetUniform("bounceCount");
-
-			resolutionRayHitUniform = rayHitShader.GetUniform("resolution");
-			seedRayHitUniform = rayHitShader.GetUniform("seed");
-             */
 
 		}
 

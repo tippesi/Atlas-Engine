@@ -14,26 +14,24 @@
 
 layout (local_size_x = 32) in;
 
-layout (binding = 1, rgba8) writeonly uniform image2D outputImage;
+layout (set = 3, binding = 1, rgba8) writeonly uniform image2D outputImage;
 
 /*
 Except for image variables qualified with the format qualifiers r32f, r32i, and r32ui, 
 image variables must specify either memory qualifier readonly or the memory qualifier writeonly.
 Reading and writing simultaneously to other formats is not supported on OpenGL ES
 */
-layout (binding = 2, rgba32f) readonly uniform image2D inAccumImage;
-layout (binding = 3, rgba32f) writeonly uniform image2D outAccumImage;
+layout (set = 3, binding = 2, rgba32f) readonly uniform image2D inAccumImage;
+layout (set = 3, binding = 3, rgba32f) writeonly uniform image2D outAccumImage;
 
-uniform int maxBounces;
-
-uniform int sampleCount;
-uniform int bounceCount;
-
-uniform ivec2 resolution;
-
-uniform float seed;
-
-uniform float exposure;
+layout(set = 3, binding = 4) uniform UniformBuffer {
+	ivec2 resolution;
+    int maxBounces;
+    int sampleCount;
+    int bounceCount;
+    float seed;
+    float exposure;
+} Uniforms;
 
 const float gamma = 1.0 / 2.2;
 
@@ -52,34 +50,41 @@ void main() {
 		payload.throughput = vec3(1.0);
 
 		// Read payload when not in first bounce
-		if (bounceCount > 0)
+		if (Uniforms.bounceCount > 0)
 			payload = ReadRayPayload();
 		
-		ivec2 pixel = Unflatten2D(ray.ID, resolution);
+		ivec2 pixel = Unflatten2D(ray.ID, Uniforms.resolution);
 		
 		EvaluateBounce(ray, payload);
 		
 		vec4 accumColor = vec4(0.0);
 
 		float energy = dot(payload.throughput, vec3(1.0));
+		payload.radiance = vec3(1.0);
 		
-		if (energy == 0 || bounceCount == maxBounces) {			
-			if (sampleCount > 0)
+		if (energy == 0 || Uniforms.bounceCount == Uniforms.maxBounces) {			
+			if (Uniforms.sampleCount > 0)
 				accumColor = imageLoad(inAccumImage, pixel);
 			
 			accumColor += vec4(payload.radiance, 1.0);			
 			imageStore(outAccumImage, pixel, accumColor);
 			
-			vec3 color = accumColor.rgb * exposure / float(sampleCount + 1);
+			vec3 color = accumColor.rgb * Uniforms.exposure / float(Uniforms.sampleCount + 1);
 			color = vec3(1.0) - exp(-color);
 			//color = color / (vec3(1.0) + color);
 
 			imageStore(outputImage, pixel,
 				vec4(pow(color, vec3(gamma)), 1.0));
+			pixel = Unflatten2D(int(gl_GlobalInvocationID.x), Uniforms.resolution);
+			imageStore(outputImage, pixel, vec4(1.0));
 		}
 		else {
 			WriteRay(ray, payload);
 		}
+	}
+	else {
+		ivec2 pixel = Unflatten2D(int(gl_GlobalInvocationID.x), Uniforms.resolution);
+		imageStore(outputImage, pixel, vec4(1.0));
 	}
 
 }
@@ -102,7 +107,7 @@ void EvaluateBounce(inout Ray ray, inout RayPayload payload) {
 
 	// If we hit an emissive surface we need to terminate the ray
 	if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.0 &&
-		bounceCount == 0) {
+		Uniforms.bounceCount == 0) {
 		payload.radiance += surface.material.emissiveColor;
 	}
 
@@ -117,7 +122,7 @@ void EvaluateBounce(inout Ray ray, inout RayPayload payload) {
 	// the contribution might be reduced by this and the lighting
 	// will be heavily biased or not there entirely. Better lobe
 	// selection etc. helps
-	if (bounceCount > 0) {
+	if (Uniforms.bounceCount > 0) {
 		const float radianceLimit = 100.0;
 		float radianceMax = max(max(radiance.r, 
 			max(radiance.g, radiance.b)), radianceLimit);
@@ -135,7 +140,7 @@ vec3 EvaluateDirectLight(inout Surface surface) {
 	if (GetLightCount() == 0)
 		return vec3(0.0);
 
-	float curSeed = seed;
+	float curSeed = Uniforms.seed;
 	float raySeed = float(gl_GlobalInvocationID.x);
 
 	float lightPdf;
@@ -170,7 +175,7 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
 	Material mat = surface.material;
 	ray.origin = surface.P;
 
-	float curSeed = seed;
+	float curSeed = Uniforms.seed;
 	float raySeed = float(ray.ID);
 
 	float refractChance = clamp(1.0 - mat.opacity, 0.1, 0.9);

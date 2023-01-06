@@ -27,15 +27,15 @@ struct PackedBVHTriangle {
 	vec4 v2;
 };
 
-layout (std430, binding = 6) buffer Triangles {
+layout (std430, set = 2, binding = 8) buffer Triangles {
 	PackedTriangle triangles[];
 };
 
-layout (std430, binding = 13) buffer BVHTriangles {
+layout (std430, set = 2, binding = 9) buffer BVHTriangles {
 	PackedBVHTriangle bvhTriangles[];
 };
 
-layout(std430, binding = 7) buffer Nodes {
+layout(std430, set = 2, binding = 10) buffer Nodes {
 	PackedBVHNode nodes[];
 };
 

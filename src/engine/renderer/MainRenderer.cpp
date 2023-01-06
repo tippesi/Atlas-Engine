@@ -32,11 +32,13 @@ namespace Atlas {
                 .size = sizeof(GlobalUniforms),
             };
             globalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
+            pathTraceGlobalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
 
             shadowRenderer.Init(device);
             opaqueRenderer.Init(device);
 			directLightRenderer.Init(device);
             postProcessRenderer.Init(device);
+            pathTracingRenderer.Init(device);
 
         }
 
@@ -364,6 +366,67 @@ namespace Atlas {
             */
 
 		}
+
+        void MainRenderer::PathTraceScene(Viewport *viewport, PathTracerRenderTarget *target, Camera *camera,
+            Scene::Scene *scene, Texture::Texture2D *texture) {
+
+            auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
+
+            commandList->BeginCommands();
+
+            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
+
+            auto globalUniforms = GlobalUniforms {
+                .vMatrix = camera->viewMatrix,
+                .pMatrix = camera->projectionMatrix,
+                .ivMatrix = camera->invViewMatrix,
+                .ipMatrix = camera->invProjectionMatrix,
+                .pvMatrixLast = camera->GetLastJitteredMatrix(),
+                .pvMatrixCurrent = camera->projectionMatrix * camera->viewMatrix,
+                .jitterLast = camera->GetLastJitter(),
+                .jitterCurrent = camera->GetJitter(),
+                .cameraLocation = vec4(camera->location, 0.0f),
+                .cameraDirection = vec4(camera->direction, 0.0f),
+                .time = Clock::Get(),
+                .deltaTime = Clock::GetDelta()
+            };
+
+            globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
+            commandList->BindBuffer(globalUniformBuffer, 0, 0);
+
+            pathTracingRenderer.Render(viewport, target, ivec2(1, 1), camera, scene, commandList);
+
+            {
+                auto swapChain = device->swapChain;
+                swapChain->colorClearValue.color = {0.0f, 0.0f, 0.0f, 1.0f};
+                commandList->BeginRenderPass(swapChain, true);
+
+                auto shaderConfig = ShaderConfig {
+                    {"test.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                    {"test.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+                };
+                auto pipelineDesc = Graphics::GraphicsPipelineDesc{
+                    .swapChain = device->swapChain,
+                    .rasterizer = Graphics::Initializers::InitPipelineRasterizationStateCreateInfo(
+                        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE
+                    )
+                };
+                auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc);
+                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+                commandList->BindPipeline(pipeline);
+
+                commandList->BindImage(target->texture.image, target->texture.sampler, 0, 0);
+
+                commandList->Draw(6, 1, 0, 0);
+
+                commandList->EndRenderPass();
+            }
+
+            commandList->EndCommands();
+
+            device->SubmitCommandList(commandList);
+
+        }
 
 		void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
 			bool alphaBlending) {

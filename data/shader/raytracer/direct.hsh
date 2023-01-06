@@ -2,14 +2,8 @@
 #include <common.hsh>
 #include <../common/random.hsh>
 
-layout (std430, binding = 8) buffer Lights {
-	PackedLight lights[];
-};
-
-uniform int lightCount;
-
 int GetLightCount() {
-    return lightCount;
+    return PushConstants.lightCount;
 }
 
 Light GetLight(Surface surface, float seed0, float seed1, out float lightPdf) {
@@ -19,7 +13,7 @@ Light GetLight(Surface surface, float seed0, float seed1, out float lightPdf) {
     Light selectedLight;
 	float totalWeight = 0.0;
 	lightPdf = 1.0;
-	for (int i = 0; i < lightCount; i++) {
+	for (int i = 0; i < PushConstants.lightCount; i++) {
 		Light light = UnpackLight(lights[i]);
 		float weight = 1.0;
 		if (light.type == uint(TRIANGLE_LIGHT)) {

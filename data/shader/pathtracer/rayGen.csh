@@ -1,3 +1,4 @@
+#include <../globals.hsh>
 #include <../raytracer/structures.hsh>
 #include <../raytracer/common.hsh>
 #include <../raytracer/buffers.hsh>
@@ -7,48 +8,44 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
-// Camera
-uniform vec3 cameraLocation;
-
-// Far plane for ray calculation
-uniform vec3 origin;
-uniform vec3 right;
-uniform vec3 bottom;
-
-uniform int sampleCount;
-uniform ivec2 pixelOffset;
-
-uniform ivec2 tileSize;
-uniform ivec2 resolution;
+layout(set = 3, binding = 4) uniform UniformBuffer {
+	vec4 origin;
+    vec4 right;
+    vec4 bottom;
+    ivec2 pixelOffset;
+    ivec2 resolution;
+    ivec2 tileSize;
+    int sampleCount;
+} Uniforms;
 
 void main() {
 
-	if (int(gl_GlobalInvocationID.x) < tileSize.x &&
-		int(gl_GlobalInvocationID.y) < tileSize.y) {
+	if (int(gl_GlobalInvocationID.x) < Uniforms.tileSize.x &&
+		int(gl_GlobalInvocationID.y) < Uniforms.tileSize.y) {
 
-		ivec2 pixel = ivec2(gl_GlobalInvocationID.xy) + pixelOffset;
+		ivec2 pixel = ivec2(gl_GlobalInvocationID.xy) + Uniforms.pixelOffset;
 		
 		// Apply a subpixel jitter to get supersampling
-		float jitterX = random(vec2(float(sampleCount), 0.0));
-		float jitterY = random(vec2(float(sampleCount), 1.0));
+		float jitterX = random(vec2(float(Uniforms.sampleCount), 0.0));
+		float jitterY = random(vec2(float(Uniforms.sampleCount), 1.0));
 
 		vec2 coord = (vec2(pixel) + vec2(jitterX, jitterY)) / 
-			vec2(float(resolution.x), float(resolution.y));
+			vec2(float(Uniforms.resolution.x), float(Uniforms.resolution.y));
 		
 		Ray ray;
 		
-		ray.ID = Flatten2D(pixel, resolution);
+		ray.ID = Flatten2D(pixel, Uniforms.resolution);
 		
-		ray.direction = normalize(origin + right * coord.x 
-			+ bottom * coord.y - cameraLocation);
-		ray.origin = cameraLocation;
+		ray.direction = normalize(Uniforms.origin.xyz + Uniforms.right.xyz * coord.x 
+			+ Uniforms.bottom.xyz * coord.y - globalData.cameraLocation.xyz);
+		ray.origin = globalData.cameraLocation.xyz;
 
 		ray.hitID = 0;
 
 		// Calculate number of potential overlapping pixels at the borders of a tile
-		ivec2 overlappingPixels = tileSize % ivec2(gl_WorkGroupSize);
+		ivec2 overlappingPixels = Uniforms.tileSize % ivec2(gl_WorkGroupSize);
 		// Calculate number of groups that don't have overlapping pixels
-		ivec2 perfectGroupCount = tileSize / ivec2(gl_WorkGroupSize);				
+		ivec2 perfectGroupCount = Uniforms.tileSize / ivec2(gl_WorkGroupSize);				
 
 		int index = 0;
 
