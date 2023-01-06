@@ -4,39 +4,12 @@ namespace Atlas {
 
 	namespace Buffer {
 
-		VertexBuffer::VertexBuffer(const VertexBuffer& that) : Buffer(that) {
-
-			dataType = that.dataType;
-			stride = that.stride;
-
-		}
 
 		VertexBuffer::VertexBuffer(uint32_t dataType, int32_t stride, size_t elementSize,
 			size_t elementCount, void* data, uint32_t flags) :
 			dataType(dataType), stride(stride) {
 
 
-
-		}
-
-		VertexBuffer::~VertexBuffer() {
-
-
-
-		}
-
-		VertexBuffer& VertexBuffer::operator=(const VertexBuffer& that) {
-
-			if (this != &that) {
-
-				Buffer::operator=(that);
-
-				dataType = that.dataType;
-				stride = that.stride;
-
-			}
-
-			return *this;
 
 		}
 

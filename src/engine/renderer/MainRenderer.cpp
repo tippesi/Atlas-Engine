@@ -375,6 +375,7 @@ namespace Atlas {
             commandList->BeginCommands();
 
             Graphics::Profiler::BeginThread("Path tracing", commandList);
+            Graphics::Profiler::BeginQuery("Buffer operations");
 
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
 
@@ -396,7 +397,11 @@ namespace Atlas {
             pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 0);
 
+            Graphics::Profiler::EndQuery();
+
             pathTracingRenderer.Render(viewport, target, ivec2(1, 1), camera, scene, commandList);
+
+            Graphics::Profiler::BeginQuery("Post processing");
 			
             {
                 auto swapChain = device->swapChain;
@@ -423,7 +428,8 @@ namespace Atlas {
 
                 commandList->EndRenderPass();
             }
-			
+
+            Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndThread();
 
             commandList->EndCommands();

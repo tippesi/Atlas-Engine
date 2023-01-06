@@ -119,13 +119,13 @@ namespace Atlas {
 
 		void RenderBatch::BindLineBuffer() {
 
-			lineVertexArray.Bind();
+			// lineVertexArray.Bind();
 
 		}
 
 		void RenderBatch::BindTriangleBuffer() {
 
-			triangleVertexArray.Bind();
+			// triangleVertexArray.Bind();
 
 		}
 

@@ -27,11 +27,6 @@ namespace Atlas {
 			~VertexArray();
 
 			/**
-			 *
-			 */
-			VertexArray& operator=(const VertexArray& that);
-
-			/**
              *
              * @param buffer
              * @note The object takes the ownership of the buffer.
@@ -46,17 +41,6 @@ namespace Atlas {
              * @note The object takes the ownership of the buffer.
              */
 			void AddComponent(uint32_t attribArray, VertexBuffer* buffer, bool normalized = false);
-
-			/**
-             *
-             * @param attribArray
-             * @param buffer
-             * @param normalized
-             * @note The object takes the ownership of the buffer.
-             */
-			void AddInstancedComponent(uint32_t attribArray, VertexBuffer* buffer, bool normalized = false);
-
-			void RemoveInstanceComponent(uint32_t attribArray);
 
 			/**
 			 *
@@ -79,16 +63,6 @@ namespace Atlas {
 
 
 			void UpdateComponents();
-
-			/**
-			 * Binds the vertex array.
-			 */
-			void Bind() const;
-
-			/**
-			 * Unbinds any vertex array.
-			 */
-			void Unbind() const;
 
 		private:
 			uint32_t ID;

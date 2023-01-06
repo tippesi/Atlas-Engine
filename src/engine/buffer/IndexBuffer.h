@@ -8,6 +8,11 @@ namespace Atlas {
 
     namespace Buffer {
 
+        enum class IndexType {
+            UInt = 0,
+            HalfUInt = 1
+        };
+
         class IndexBuffer : public Buffer {
 
         public:
@@ -15,14 +20,6 @@ namespace Atlas {
 			 * Constructs an IndexBuffer object.
 			 */
             IndexBuffer() = default;
-
-			/**
-			 * Constructs an IndexBuffer object.
-			 * @param that Another IndexBuffer object.
-			 * @note The state of the other buffer won't be copied (e.g. if the
-			 * other buffer is mapped this buffer won't be mapped automatically)
-			 */
-            IndexBuffer(const IndexBuffer& that);
 
             /**
              * Constructs an IndexBuffer object.
@@ -39,17 +36,6 @@ namespace Atlas {
              */
             IndexBuffer(uint32_t dataType, size_t elementSize, size_t elementCount,
 				void* data = nullptr, uint32_t flags = 0);
-
-            ~IndexBuffer();
-
-			/**
-			 * Copies the data from another IndexBuffer to the IndexBuffer object.
-			 * @param that Another IndexBuffer object.
-			 * @return A reference to the buffer.
-			 * @note The state of the other buffer won't be copied (e.g. if the
-			 * other buffer is mapped this buffer won't be mapped automatically)
-			 */
-			IndexBuffer& operator=(const IndexBuffer& that);
 
             /**
              * Sets the data of a buffer if it isn't mapped.

@@ -17,15 +17,7 @@ namespace Atlas {
 			/**
 			 * Constructs a VertexBuffer object.
 			 */
-			VertexBuffer() {}
-
-			/**
-			 * Constructs a VertexBuffer object.
-			 * @param that Another VertexBuffer object.
-			 * @note The state of the other buffer won't be copied (e.g. if the
-			 * other buffer is mapped this buffer won't be mapped automatically)
-			 */
-			VertexBuffer(const VertexBuffer& that);
+			VertexBuffer() = default;
 
 			/**
              * Constructs a VertexBuffer object.
@@ -43,17 +35,6 @@ namespace Atlas {
              */
 			VertexBuffer(uint32_t dataType, int32_t stride, size_t elementSize, size_t elementCount,
 				void* data = nullptr, uint32_t flags = 0);
-
-			~VertexBuffer();
-
-			/**
-			 * Copies the data from another VertexBuffer to the VertexBuffer object.
-			 * @param that Another VertexBuffer object.
-			 * @return A reference to the buffer.
-			 * @note The state of the other buffer won't be copied (e.g. if the
-			 * other buffer is mapped this buffer won't be mapped automatically)
-			 */
-			VertexBuffer& operator=(const VertexBuffer& that);
 
 			/**
              * Sets the data of a buffer if it isn't mapped.

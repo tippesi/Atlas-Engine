@@ -8,31 +8,21 @@ namespace Atlas {
 
 			void GeometryHelper::GenerateRectangleVertexArray(Buffer::VertexArray& vertexArray) {
 
-				vertexArray.Bind();
-
                 // auto buffer = new Buffer::VertexBuffer(AE_BYTE, 2, sizeof(int8_t) * 2, 4);
                 // buffer->SetData(&rectangleVertices[0], 0, 4);
                 // vertexArray.AddComponent(0, buffer);
-
-				vertexArray.Unbind();
 
 			}
 
 			void GeometryHelper::GenerateCubeVertexArray(Buffer::VertexArray& vertexArray) {
 
-				vertexArray.Bind();
-
                 // auto vertexBuffer = new Buffer::VertexBuffer(AE_FLOAT, 3, sizeof(vec3), 36);
                 // vertexBuffer->SetData(&cubeVertices[0], 0, 36);
                 // vertexArray.AddComponent(0, vertexBuffer);
 
-				vertexArray.Unbind();
-
 			}
 
 			void GeometryHelper::GenerateGridVertexArray(Buffer::VertexArray& vertexArray, int32_t subdivisions, float scale, bool strip) {
-
-				vertexArray.Bind();
 
 				int32_t vertexCount = subdivisions * subdivisions;
 				int32_t indexCount = 0;
@@ -97,8 +87,6 @@ namespace Atlas {
 
                 // vertexArray.AddIndexComponent(indexBuffer);
                 // vertexArray.AddComponent(0, vertexBuffer);
-
-				vertexArray.Unbind();
 
 			}
 
