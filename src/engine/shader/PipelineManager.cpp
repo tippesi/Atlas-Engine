@@ -6,7 +6,7 @@
 
 namespace Atlas {
 
-    bool PipelineManager::hotReload = true;
+    bool PipelineManager::hotReload = false;
     std::mutex PipelineManager::shaderToVariantsMutex;
     std::unordered_map<size_t, Ref<PipelineManager::PipelineVariants>> PipelineManager::shaderToVariantsMap;
 
