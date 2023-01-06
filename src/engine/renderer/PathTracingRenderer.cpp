@@ -21,9 +21,6 @@ namespace Atlas {
             rayGenPipelineConfig = PipelineConfig("pathtracer/rayGen.csh");
             rayHitPipelineConfig = PipelineConfig("pathtracer/rayHit.csh");
 
-            PipelineManager::AddPipeline(rayGenPipelineConfig);
-            PipelineManager::AddPipeline(rayHitPipelineConfig);
-
             Graphics::BufferDesc bufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 .domain = Graphics::BufferDomain::Host,
@@ -74,22 +71,37 @@ namespace Atlas {
 			ivec2 resolution = ivec2(width, height);
 			ivec2 tileSize = resolution / imageSubdivisions;
 
+			for (int32_t i = 0; i <= bounces; i++) {
+				RayHitUniforms uniforms;
+				uniforms.maxBounces = bounces;
+
+				uniforms.sampleCount = sampleCount;
+				uniforms.bounceCount = i;
+
+				uniforms.resolution = resolution;
+				uniforms.seed = Common::Random::SampleFastUniformFloat();
+
+				uniforms.exposure = camera->exposure;
+
+				rayHitUniformBuffers[i]->SetData(&uniforms, 0, sizeof(RayHitUniforms));
+			}
+
 			// Bind texture only for writing
-            commandList->ImageTransition(renderTarget->texture.image, VK_IMAGE_LAYOUT_GENERAL,
+            commandList->ImageMemoryBarrier(renderTarget->texture.image, VK_IMAGE_LAYOUT_GENERAL,
                 VK_ACCESS_SHADER_WRITE_BIT);
             commandList->BindImage(renderTarget->texture.image, 3, 1);
 			if (sampleCount % 2 == 0) {
-                commandList->ImageTransition(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
+                commandList->ImageMemoryBarrier(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT);
-                commandList->ImageTransition(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
+                commandList->ImageMemoryBarrier(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_WRITE_BIT);
                 commandList->BindImage(renderTarget->accumTexture0.image, 3, 2);
                 commandList->BindImage(renderTarget->accumTexture1.image, 3, 3);
 			}
 			else {
-                commandList->ImageTransition(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
+                commandList->ImageMemoryBarrier(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_WRITE_BIT);
-                commandList->ImageTransition(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
+                commandList->ImageMemoryBarrier(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT);
                 commandList->BindImage(renderTarget->accumTexture0.image, 3, 3);
                 commandList->BindImage(renderTarget->accumTexture1.image, 3, 2);
@@ -132,26 +144,12 @@ namespace Atlas {
 
 				helper.DispatchHitClosest(commandList, PipelineManager::GetPipeline(rayHitPipelineConfig), false,
 					[=]() {
-                        RayHitUniforms uniforms;
-                        uniforms.maxBounces = bounces;
-
-                        uniforms.sampleCount = sampleCount;
-                        uniforms.bounceCount = i;
-
-                        uniforms.resolution = resolution;
-                        uniforms.seed = Common::Random::SampleFastUniformFloat();
-
-                        uniforms.exposure = camera->exposure;
-
-                        rayHitUniformBuffers[i]->SetData(&uniforms, 0, sizeof(RayHitUniforms));
                         commandList->BindBuffer(rayHitUniformBuffers[i], 3, 4);
 					}
 					);
 			}
 
             Graphics::Profiler::EndQuery();
-
-			// renderTarget->texture.Unbind();
 
 			imageOffset.x++;
 

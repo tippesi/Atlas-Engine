@@ -393,11 +393,11 @@ namespace Atlas {
                 .deltaTime = Clock::GetDelta()
             };
 
-            globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
-            commandList->BindBuffer(globalUniformBuffer, 0, 0);
+            pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
+            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 0);
 
             pathTracingRenderer.Render(viewport, target, ivec2(1, 1), camera, scene, commandList);
-
+			
             {
                 auto swapChain = device->swapChain;
                 swapChain->colorClearValue.color = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -423,7 +423,7 @@ namespace Atlas {
 
                 commandList->EndRenderPass();
             }
-
+			
             Graphics::Profiler::EndThread();
 
             commandList->EndCommands();

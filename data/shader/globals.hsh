@@ -1,4 +1,4 @@
-layout(set = 0, binding = 0) uniform GlobalBuffer {
+layout(std140, set = 0, binding = 0) uniform GlobalBuffer {
 	mat4 vMatrix;
     mat4 pMatrix;
     mat4 ivMatrix;

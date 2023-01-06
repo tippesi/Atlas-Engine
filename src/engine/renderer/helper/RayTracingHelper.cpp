@@ -45,10 +45,6 @@ namespace Atlas {
                 traceClosestPipelineConfig = PipelineConfig("raytracer/traceClosest.csh");
                 traceAnyPipelineConfig = PipelineConfig("raytracer/traceAny.csh");
 
-                PipelineManager::AddPipeline(traceDispatchPipelineConfig);
-                PipelineManager::AddPipeline(traceClosestPipelineConfig);
-                PipelineManager::AddPipeline(traceAnyPipelineConfig);
-
                 binningOffsetPipelineConfig = PipelineConfig("raytracer/binning.csh");
                 binningPipelineConfig = PipelineConfig("raytracer/binningOffset.csh");
 

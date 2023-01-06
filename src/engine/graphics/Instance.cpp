@@ -76,7 +76,9 @@ namespace Atlas {
                 delete surface;
             }
 
-            vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+            if (validationLayersEnabled) {
+                vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+            }
             vkDestroyInstance(instance, nullptr);
 
         }
