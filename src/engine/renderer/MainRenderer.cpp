@@ -374,6 +374,8 @@ namespace Atlas {
 
             commandList->BeginCommands();
 
+            Graphics::Profiler::BeginThread("Path tracing", commandList);
+
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
 
             auto globalUniforms = GlobalUniforms {
@@ -421,6 +423,8 @@ namespace Atlas {
 
                 commandList->EndRenderPass();
             }
+
+            Graphics::Profiler::EndThread();
 
             commandList->EndCommands();
 

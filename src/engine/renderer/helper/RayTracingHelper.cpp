@@ -334,8 +334,10 @@ namespace Atlas {
 
 				Graphics::Profiler::BeginQuery("Setup command buffer");
 
-                commandList->BufferMemoryBarrier(indirectDispatchBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT);
                 commandList->BindBuffer(indirectDispatchBuffer.Get(), 2, 12);
+
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers;
 
 				// Set up command buffer, reset ray count
 				{
@@ -343,27 +345,31 @@ namespace Atlas {
                     commandList->BindPipeline(pipeline);
 
 					if (dispatchCounter % 2 == 0) {
-                        commandList->BufferMemoryBarrier(counterBuffer0.Get(), VK_ACCESS_SHADER_READ_BIT);
-                        commandList->BufferMemoryBarrier(counterBuffer1.Get(), VK_ACCESS_SHADER_WRITE_BIT);
+                        bufferBarriers.push_back({ counterBuffer0.Get(), VK_ACCESS_SHADER_READ_BIT });
+                        bufferBarriers.push_back({ counterBuffer1.Get(), VK_ACCESS_SHADER_WRITE_BIT });
                         commandList->BindBuffer(counterBuffer0.Get(), 2, 13);
                         commandList->BindBuffer(counterBuffer1.Get(), 2, 14);
 					}
 					else {
-                        commandList->BufferMemoryBarrier(counterBuffer0.Get(), VK_ACCESS_SHADER_WRITE_BIT);
-                        commandList->BufferMemoryBarrier(counterBuffer1.Get(), VK_ACCESS_SHADER_READ_BIT);
+                        bufferBarriers.push_back({ counterBuffer0.Get(), VK_ACCESS_SHADER_WRITE_BIT });
+                        bufferBarriers.push_back({ counterBuffer1.Get(), VK_ACCESS_SHADER_READ_BIT });
                         commandList->BindBuffer(counterBuffer0.Get(), 2, 14);
                         commandList->BindBuffer(counterBuffer1.Get(), 2, 13);
 					}
 
+                    bufferBarriers.push_back({ indirectDispatchBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT });
+                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+
                     commandList->Dispatch(1, 1, 1);
 				}
 
-                commandList->BufferMemoryBarrier(indirectDispatchBuffer.Get(), VK_ACCESS_MEMORY_READ_BIT);
+                bufferBarriers.clear();
+                imageBarriers.clear();
 
-                commandList->BufferMemoryBarrier(rayBuffer.Get(),
-                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-                commandList->BufferMemoryBarrier(rayPayloadBuffer.Get(),
-                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+                bufferBarriers.push_back({ indirectDispatchBuffer.Get(), VK_ACCESS_MEMORY_READ_BIT });
+                bufferBarriers.push_back({ rayBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
+                bufferBarriers.push_back({ rayPayloadBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                 commandList->BindBuffer(rayBuffer.Get(), 2, 15);
                 commandList->BindBuffer(rayPayloadBuffer.Get(), 2, 16);
@@ -432,19 +438,19 @@ namespace Atlas {
 
                 Graphics::Profiler::EndAndBeginQuery("Execute hit shader");
 
-                commandList->BufferMemoryBarrier(rayBuffer.Get(),
-                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-                commandList->BufferMemoryBarrier(rayPayloadBuffer.Get(),
-                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+                bufferBarriers.clear();
+                imageBarriers.clear();
+
+                bufferBarriers.push_back({ rayBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
+                bufferBarriers.push_back({ rayPayloadBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
 
                 if (dispatchCounter % 2 == 0) {
-                    commandList->BufferMemoryBarrier(counterBuffer1.Get(),
-                        VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT);
+                    bufferBarriers.push_back({ counterBuffer1.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
                 }
                 else {
-                    commandList->BufferMemoryBarrier(counterBuffer0.Get(),
-                        VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT);
+                    bufferBarriers.push_back({ counterBuffer0.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
                 }
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 				
 				// Shade rays
 				{
@@ -474,10 +480,13 @@ namespace Atlas {
 
 			void RayTracingHelper::InvalidateRayBuffer(Graphics::CommandList* commandList) {
 
-                commandList->BufferMemoryBarrier(counterBuffer0.Get(), VK_ACCESS_TRANSFER_WRITE_BIT,
-                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-                commandList->BufferMemoryBarrier(counterBuffer1.Get(), VK_ACCESS_TRANSFER_WRITE_BIT,
-                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+
+                bufferBarriers.push_back({counterBuffer0.Get(), VK_ACCESS_TRANSFER_WRITE_BIT});
+                bufferBarriers.push_back({counterBuffer1.Get(), VK_ACCESS_TRANSFER_WRITE_BIT});
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 uint32_t zero = 0;
                 commandList->FillBuffer(counterBuffer0.Get(), &zero);
