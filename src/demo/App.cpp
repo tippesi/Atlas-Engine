@@ -3,7 +3,7 @@
 #include <chrono>
 #include <thread>
 
-const std::string Atlas::EngineInstance::assetDirectory = "../../data";
+const std::string Atlas::EngineInstance::assetDirectory = "../../../data";
 const std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
@@ -22,7 +22,7 @@ void App::LoadContent() {
     DisplayLoadingScreen();
 
     camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f,
-        glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 3.14f / 2.0f));
+        glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
 
     scene = Atlas::Scene::Scene(glm::vec3(-2048.0f), glm::vec3(2048.0f));
 
@@ -710,7 +710,7 @@ bool App::LoadScene() {
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
-        camera.rotation = glm::vec2(-3.14f / 2.0f, 3.14f / 2.0f);
+        camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
         camera.exposure = 0.125f;
 
         scene.fog->enable = true;

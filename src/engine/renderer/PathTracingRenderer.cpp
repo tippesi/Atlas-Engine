@@ -91,8 +91,8 @@ namespace Atlas {
                     VK_ACCESS_SHADER_WRITE_BIT);
                 commandList->ImageTransition(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT);
-                commandList->BindImage(renderTarget->accumTexture0.image, 3, 2);
-                commandList->BindImage(renderTarget->accumTexture1.image, 3, 3);
+                commandList->BindImage(renderTarget->accumTexture0.image, 3, 3);
+                commandList->BindImage(renderTarget->accumTexture1.image, 3, 2);
 			}
 
 			auto tileResolution = resolution / imageSubdivisions;

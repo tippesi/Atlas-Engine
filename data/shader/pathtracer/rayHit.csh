@@ -60,7 +60,6 @@ void main() {
 		vec4 accumColor = vec4(0.0);
 
 		float energy = dot(payload.throughput, vec3(1.0));
-		payload.radiance = vec3(1.0);
 		
 		if (energy == 0 || Uniforms.bounceCount == Uniforms.maxBounces) {			
 			if (Uniforms.sampleCount > 0)
@@ -75,16 +74,10 @@ void main() {
 
 			imageStore(outputImage, pixel,
 				vec4(pow(color, vec3(gamma)), 1.0));
-			pixel = Unflatten2D(int(gl_GlobalInvocationID.x), Uniforms.resolution);
-			imageStore(outputImage, pixel, vec4(1.0));
 		}
 		else {
 			WriteRay(ray, payload);
 		}
-	}
-	else {
-		ivec2 pixel = Unflatten2D(int(gl_GlobalInvocationID.x), Uniforms.resolution);
-		imageStore(outputImage, pixel, vec4(1.0));
 	}
 
 }

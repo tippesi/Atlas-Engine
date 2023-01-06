@@ -69,7 +69,7 @@ namespace Atlas {
                 return optimizedBinary;
             }
 
-            return optimizedBinary;
+            return spirvBinary;
 
         }
 

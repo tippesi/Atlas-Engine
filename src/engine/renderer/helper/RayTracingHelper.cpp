@@ -424,6 +424,9 @@ namespace Atlas {
                     constants.rayBufferOffset = uint32_t(rayOffsetCounter++ % 2);
                     constants.rayBufferSize = uint32_t(rayBuffer.GetElementCount() / 2);
 
+					auto constRange = hitPipeline->shader->GetPushConstantRange("constants");
+					commandList->PushConstants(constRange, &constants);
+
                     commandList->DispatchIndirect(indirectDispatchBuffer.Get());
 				}
 
