@@ -69,6 +69,9 @@ namespace Atlas {
             bool isMapped = false;
             void* mappedData = nullptr;
 
+        public:
+            static size_t GetAlignedSize(size_t size);
+
         };
 
         class MultiBuffer {
@@ -79,6 +82,10 @@ namespace Atlas {
             ~MultiBuffer();
 
             void SetData(void* data, size_t offset, size_t length);
+
+            void* Map();
+
+            void Unmap();
 
             Buffer* GetCurrent() const;
 

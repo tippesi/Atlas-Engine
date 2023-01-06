@@ -107,8 +107,8 @@ namespace Atlas {
             PipelineConfig rayGenPipelineConfig;
             PipelineConfig rayHitPipelineConfig;
 
-            Ref<Graphics::MultiBuffer> rayGenUniformBuffer;
-            std::vector<Ref<Graphics::MultiBuffer>> rayHitUniformBuffers;
+            Buffer::Buffer rayGenUniformBuffer;
+            Buffer::Buffer rayHitUniformBuffer;
 
 		};
 

@@ -65,11 +65,41 @@ namespace Atlas {
 
         void Buffer::SetData(void *data, size_t offset, size_t length) {
 
-            if (multiBuffered) {
-                multiBuffer->SetData(data, offset * elementSize, length * elementSize);
+            if (usage & BufferUsageBits::UniformBuffer) {
+                auto alignedSize = Graphics::Buffer::GetAlignedSize(elementSize);
+                // If the buffer is host accessible we can speed the writes up by just mapping once
+                if (hostAccessible) {
+                    if (multiBuffered) {
+                        multiBuffer->Map();
+                    } else {
+                        buffer->Map();
+                    }
+                }
+                // We need to respect the alignment for uniform buffers, in this case just write
+                // to it one by one
+                for(size_t i = 0; i < length; i++) {
+                    auto elementIdx = i + offset;
+                    if (multiBuffered) {
+                        multiBuffer->SetData(data, elementIdx * alignedSize, elementSize);
+                    } else {
+                        buffer->SetData(data, elementIdx * alignedSize, elementSize);
+                    }
+                }
+                // If the buffer is host accessible we can speed the writes up by just mapping once
+                if (hostAccessible) {
+                    if (multiBuffered) {
+                        multiBuffer->Unmap();
+                    } else {
+                        buffer->Unmap();
+                    }
+                }
             }
             else {
-                buffer->SetData(data, offset * elementSize, length * elementSize);
+                if (multiBuffered) {
+                    multiBuffer->SetData(data, offset * elementSize, length * elementSize);
+                } else {
+                    buffer->SetData(data, offset * elementSize, length * elementSize);
+                }
             }
 
         }
@@ -108,13 +138,24 @@ namespace Atlas {
 
         }
 
+        size_t Buffer::GetAlignedOffset(size_t elementIndex) {
+
+            return Graphics::Buffer::GetAlignedSize(elementSize) * elementIndex;
+
+        }
+
         void Buffer::Reallocate(void *data) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
+            sizeInBytes = elementCount * elementSize;
+
             VkBufferUsageFlags usageFlags = {};
             if (usage & BufferUsageBits::UniformBuffer) {
                 usageFlags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+                // Adjust size for uniform buffers to be aligned. This way we can use
+                // them with dynamic offsets
+                sizeInBytes = Graphics::Buffer::GetAlignedSize(elementSize) * elementCount;
             }
             if (usage & BufferUsageBits::StorageBuffer) {
                 usageFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -126,8 +167,6 @@ namespace Atlas {
             if (usage & BufferUsageBits::MemoryTransfers) {
                 usageFlags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             }
-
-            sizeInBytes = elementCount * elementSize;
 
             Graphics::BufferDesc desc {
                 .usageFlags = usageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT,

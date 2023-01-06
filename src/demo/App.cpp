@@ -3,7 +3,7 @@
 #include <chrono>
 #include <thread>
 
-const std::string Atlas::EngineInstance::assetDirectory = "../../../data";
+const std::string Atlas::EngineInstance::assetDirectory = "../data";
 const std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
@@ -230,7 +230,7 @@ void App::Render(float deltaTime) {
         }
 
         if (ImGui::Begin("Settings", (bool*)0, ImGuiWindowFlags_HorizontalScrollbar)) {
-            if(pathTrace) ImGui::Text(("Samples: " + std::to_string(pathTracingRenderer.GetSampleCount())).c_str());
+            if(pathTrace) ImGui::Text(("Samples: " + std::to_string(mainRenderer.pathTracingRenderer.GetSampleCount())).c_str());
             ImGui::Text(("Average frametime: " + std::to_string(averageFramerate * 1000.0f) + " ms").c_str());
             ImGui::Text(("Current frametime: " + std::to_string(deltaTime * 1000.0f) + " ms").c_str());
             ImGui::Text(("Camera location: " + vecToString(camera.location)).c_str());
@@ -258,7 +258,7 @@ void App::Render(float deltaTime) {
 
             ImGui::Checkbox("Pathtrace", &pathTrace);
 
-            if (pathTrace) ImGui::SliderInt("Pathtrace bounces", &pathTracingRenderer.bounces, 0, 100);
+            if (pathTrace) ImGui::SliderInt("Pathtrace bounces", &mainRenderer.pathTracingRenderer.bounces, 0, 100);
 
             if (ImGui::CollapsingHeader("General")) {
                 static bool fullscreenMode = false;

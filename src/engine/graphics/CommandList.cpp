@@ -365,14 +365,48 @@ namespace Atlas {
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
             assert(buffer->size > 0 && "Invalid buffer size");
 
-            if (descriptorBindingData.buffers[set][binding] == buffer.get())
-                return;
+            // Only uniform buffers support dynamic binding for now
+            if (buffer->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
+                if (descriptorBindingData.dynamicBuffers[set][binding].first == buffer.get())
+                    return;
 
+                // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
+                descriptorBindingData.dynamicBuffers[set][binding] = {buffer.get(), 0};
+                descriptorBindingData.buffers[set][binding] = nullptr;
+                descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
+                descriptorBindingData.images[set][binding] = nullptr;
+                descriptorBindingData.changed[set] = true;
+            }
+            else {
+                if (descriptorBindingData.buffers[set][binding] == buffer.get())
+                    return;
+
+                // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
+                descriptorBindingData.buffers[set][binding] = buffer.get();
+                descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
+                descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
+                descriptorBindingData.images[set][binding] = nullptr;
+                descriptorBindingData.changed[set] = true;
+            }
+
+        }
+
+        void CommandList::BindBufferOffset(const Ref<Buffer> &buffer, size_t offset, uint32_t set, uint32_t binding) {
+
+            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            assert(buffer->size > 0 && "Invalid buffer size");
+            assert(buffer->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
+                "Only uniform buffers support dynamic bindings");
+
+            // Only indicate a change of the buffer has changed, not just the offset
+            descriptorBindingData.changed[set] =
+                descriptorBindingData.dynamicBuffers[set][binding].first != buffer.get();
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
-            descriptorBindingData.buffers[set][binding] = buffer.get();
-            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
+            descriptorBindingData.dynamicBuffers[set][binding] = {buffer.get(), uint32_t(offset)};
+            descriptorBindingData.buffers[set][binding] = nullptr;
+            descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
             descriptorBindingData.images[set][binding] = nullptr;
-            descriptorBindingData.changed[set] = true;
 
         }
 
@@ -382,14 +416,47 @@ namespace Atlas {
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
             assert(buffer->size > 0 && "Invalid buffer size");
 
-            if (descriptorBindingData.buffers[set][binding] == buffer->GetCurrent())
-                return;
+            // Only uniform buffers support dynamic binding for now
+            if (buffer->GetCurrent()->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
+                if (descriptorBindingData.dynamicBuffers[set][binding].first == buffer->GetCurrent())
+                    return;
 
+                // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
+                descriptorBindingData.dynamicBuffers[set][binding] = {buffer->GetCurrent(), 0};
+                descriptorBindingData.buffers[set][binding] = nullptr;
+                descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
+                descriptorBindingData.images[set][binding] = nullptr;
+                descriptorBindingData.changed[set] = true;
+            }
+            else {
+                if (descriptorBindingData.buffers[set][binding] == buffer->GetCurrent())
+                    return;
+
+                // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
+                descriptorBindingData.buffers[set][binding] = buffer->GetCurrent();
+                descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
+                descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
+                descriptorBindingData.images[set][binding] = nullptr;
+                descriptorBindingData.changed[set] = true;
+            }
+        }
+
+        void CommandList::BindBufferOffset(const Ref<MultiBuffer> &buffer, size_t offset, uint32_t set, uint32_t binding) {
+
+            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            assert(buffer->size > 0 && "Invalid buffer size");
+            assert(buffer->GetCurrent()->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
+                   "Only uniform buffers support dynamic bindings");
+
+            // Only indicate a change of the buffer has changed, not just the offset
+            descriptorBindingData.changed[set] =
+                descriptorBindingData.dynamicBuffers[set][binding].first != buffer->GetCurrent();
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
-            descriptorBindingData.buffers[set][binding] = buffer->GetCurrent();
-            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
+            descriptorBindingData.dynamicBuffers[set][binding] = {buffer->GetCurrent(), uint32_t(offset)};
+            descriptorBindingData.buffers[set][binding] = nullptr;
+            descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
             descriptorBindingData.images[set][binding] = nullptr;
-            descriptorBindingData.changed[set] = true;
 
         }
 
@@ -403,6 +470,7 @@ namespace Atlas {
 
             descriptorBindingData.images[set][binding] = image.get();
             descriptorBindingData.buffers[set][binding] = nullptr;
+            descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.changed[set] = true;
 
@@ -419,6 +487,7 @@ namespace Atlas {
 
             descriptorBindingData.sampledImages[set][binding] = { image.get(), sampler.get() };
             descriptorBindingData.buffers[set][binding] = nullptr;
+            descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
             descriptorBindingData.images[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
@@ -681,10 +750,10 @@ namespace Atlas {
             for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                 uint32_t dynamicOffsetCounter = 0;
 
-                // TODO: Differantiate between uniform and storage buffer
-                // Only uniform buffer should have a dynamic offset
+                // We need to collect the dynamic offsets everytime we bind a descriptor set
+                // This also means if just the offset changed, we don't need to update the set
                 for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
-                    if (!descriptorBindingData.buffers[i][j]) continue;
+                    if (!descriptorBindingData.dynamicBuffers[i][j].first) continue;
                     const auto& binding = shader->sets[i].bindings[j];
                     // This probably is an old binding, which isn't used by this shader
                     if (!binding.valid) continue;
@@ -694,7 +763,9 @@ namespace Atlas {
                         descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
                         continue;
 
-                    dynamicOffsets[dynamicOffsetCounter++] = 0;
+                    auto [_, offset] = descriptorBindingData.dynamicBuffers[i][j];
+
+                    dynamicOffsets[dynamicOffsetCounter++] = offset;
                 }
 
                 // We could run into issue
@@ -704,6 +775,35 @@ namespace Atlas {
 
                     descriptorBindingData.sets[i] = descriptorPool->Allocate(shader->sets[i].layout);
 
+                    // DYNAMIC BUFFER
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                        if (!descriptorBindingData.dynamicBuffers[i][j].first) continue;
+                        const auto& binding = shader->sets[i].bindings[j];
+                        // This probably is an old binding, which isn't used by this shader
+                        if (!binding.valid) continue;
+                        // Check that the descriptor types match up
+                        auto descriptorType = binding.layoutBinding.descriptorType;
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC &&
+                            descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) continue;
+
+                        auto [buffer, offset] = descriptorBindingData.dynamicBuffers[i][j];
+
+                        auto& bufferInfo = bufferInfos[bindingCounter];
+                        bufferInfo.offset = 0;
+                        bufferInfo.buffer = buffer->buffer;
+                        bufferInfo.range = binding.size ? binding.size : VK_WHOLE_SIZE;
+
+                        auto& setWrite = setWrites[bindingCounter++];
+                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        setWrite.pNext = nullptr;
+                        setWrite.dstBinding = j;
+                        setWrite.dstArrayElement = binding.arrayElement;
+                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.descriptorCount = 1;
+                        setWrite.descriptorType = descriptorType;
+                        setWrite.pBufferInfo = &bufferInfo;
+                    }
+
                     // BUFFER
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
                         if (!descriptorBindingData.buffers[i][j]) continue;
@@ -712,9 +812,7 @@ namespace Atlas {
                         if (!binding.valid) continue;
                         // Check that the descriptor types match up
                         auto descriptorType = binding.layoutBinding.descriptorType;
-                        if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER &&
-                            descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC &&
-                            descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) continue;
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) continue;
 
                         auto buffer = descriptorBindingData.buffers[i][j];
 

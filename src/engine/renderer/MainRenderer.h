@@ -127,6 +127,7 @@ namespace Atlas {
 			TextureRenderer textureRenderer;
 			OceanRenderer oceanRenderer;
 			AtmosphereRenderer atmosphereRenderer;
+            PathTracingRenderer pathTracingRenderer;
 
 		private:
 			struct PackedMaterial {
@@ -218,8 +219,6 @@ namespace Atlas {
 			RTReflectionRenderer rtrRenderer;
 			VolumetricRenderer volumetricRenderer;
 			VolumetricCloudRenderer volumetricCloudRenderer;
-
-            PathTracingRenderer pathTracingRenderer;
 
             RenderList renderList;
 

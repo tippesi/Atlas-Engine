@@ -21,18 +21,10 @@ namespace Atlas {
             rayGenPipelineConfig = PipelineConfig("pathtracer/rayGen.csh");
             rayHitPipelineConfig = PipelineConfig("pathtracer/rayHit.csh");
 
-            Graphics::BufferDesc bufferDesc {
-                .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                .domain = Graphics::BufferDomain::Host,
-                .size = sizeof(RayGenUniforms)
-            };
-            rayGenUniformBuffer = device->CreateMultiBuffer(bufferDesc);
-
-            bufferDesc.size = sizeof(RayHitUniforms);
-            rayHitUniformBuffers.resize(bounces + 1);
-            for (uint32_t i = 0; i < uint32_t(rayHitUniformBuffers.size()); i++) {
-                rayHitUniformBuffers[i] = device->CreateMultiBuffer(bufferDesc);
-            }
+            auto bufferUsage = Buffer::BufferUsageBits::UniformBuffer | Buffer::BufferUsageBits::HostAccess
+                | Buffer::BufferUsageBits::MultiBuffered;
+            rayGenUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(RayGenUniforms), 1);
+            rayHitUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(RayHitUniforms), bounces + 1);
 
 		}
 
@@ -71,6 +63,11 @@ namespace Atlas {
 			ivec2 resolution = ivec2(width, height);
 			ivec2 tileSize = resolution / imageSubdivisions;
 
+            // The number of bounces may change
+            if (rayHitUniformBuffer.GetElementCount() != bounces + 1) {
+                rayHitUniformBuffer.SetSize(bounces + 1);
+            }
+
 			for (int32_t i = 0; i <= bounces; i++) {
 				RayHitUniforms uniforms;
 				uniforms.maxBounces = bounces;
@@ -83,7 +80,7 @@ namespace Atlas {
 
 				uniforms.exposure = camera->exposure;
 
-				rayHitUniformBuffers[i]->SetData(&uniforms, 0, sizeof(RayHitUniforms));
+				rayHitUniformBuffer.SetData(&uniforms, i, 1);
 			}
 
 			// Bind texture only for writing
@@ -132,8 +129,8 @@ namespace Atlas {
                     uniforms.tileSize = tileSize;
                     uniforms.resolution = resolution;
 
-                    rayGenUniformBuffer->SetData(&uniforms, 0, sizeof(RayGenUniforms));
-                    commandList->BindBuffer(rayGenUniformBuffer, 3, 4);
+                    rayGenUniformBuffer.SetData(&uniforms, 0, 1);
+                    commandList->BindBuffer(rayGenUniformBuffer.GetMultiBuffer(), 3, 4);
 				}
 				);
 
@@ -144,7 +141,8 @@ namespace Atlas {
 
 				helper.DispatchHitClosest(commandList, PipelineManager::GetPipeline(rayHitPipelineConfig), false,
 					[=]() {
-                        commandList->BindBuffer(rayHitUniformBuffers[i], 3, 4);
+                        commandList->BindBufferOffset(rayHitUniformBuffer.GetMultiBuffer(),
+                            rayHitUniformBuffer.GetAlignedOffset(i), 3, 4);
 					}
 					);
 			}

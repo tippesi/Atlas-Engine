@@ -80,6 +80,19 @@ namespace Atlas {
 
         }
 
+        size_t Buffer::GetAlignedSize(size_t size) {
+
+            auto device = GraphicsDevice::DefaultDevice;
+
+            size_t minUboAlignment = device->deviceProperties.limits.minUniformBufferOffsetAlignment;
+            size_t alignedSize = size;
+            if (minUboAlignment > 0) {
+                alignedSize = (alignedSize + minUboAlignment - 1) & ~(minUboAlignment - 1);
+            }
+            return alignedSize;
+
+        }
+
         MultiBuffer::MultiBuffer(GraphicsDevice* device, BufferDesc& desc) : size(desc.size) {
 
             for (uint32_t i = 0; i < FRAME_DATA_COUNT; i++) {
@@ -99,6 +112,18 @@ namespace Atlas {
         void MultiBuffer::SetData(void *data, size_t offset, size_t length) {
 
             GetCurrent()->SetData(data, offset, length);
+
+        }
+
+        void* MultiBuffer::Map() {
+
+            return GetCurrent()->Map();
+
+        }
+
+        void MultiBuffer::Unmap() {
+
+            GetCurrent()->Unmap();
 
         }
 

@@ -85,9 +85,6 @@ private:
 
     float cameraSpeed = 7.0f;
 
-    Atlas::Renderer::PathTracingRenderer pathTracingRenderer;
-    Atlas::Renderer::VulkanTestRenderer testRenderer;
-
     ImguiWrapper imguiWrapper;
 
 };
