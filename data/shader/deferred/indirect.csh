@@ -1,23 +1,25 @@
 #include <deferred.hsh>
 
-#include <../ddgi/ddgi.hsh>
 #include <../brdf/brdfEval.hsh>
 #include <../common/flatten.hsh>
 
+#ifdef DDGI
+#include <../ddgi/ddgi.hsh>
+#endif
+
 layout (local_size_x = 8, local_size_y = 8) in;
 
-layout(binding = 0, rgba16f) uniform image2D image;
-layout(binding = 6) uniform sampler2D aoTexture;
-layout(binding = 16) uniform sampler2D reflectionTexture;
-layout(binding = 14) uniform sampler2D lowResDepthTexture;
+layout(set = 3, binding = 0, rgba16f) uniform image2D image;
+layout(set = 3, binding = 1) uniform sampler2D aoTexture;
+layout(set = 3, binding = 2) uniform sampler2D reflectionTexture;
+layout(set = 3, binding = 3) uniform sampler2D lowResDepthTexture;
 
-uniform mat4 ivMatrix;
-
-uniform float indirectStrength = 1.0;
-uniform bool aoEnabled = true;
-uniform bool aoDownsampled2x;
-uniform bool reflectionEnabled = true;
-uniform float aoStrength = 1.0;
+layout(set = 3, binding = 4) uniform UniformBuffer {
+	int aoEnabled;
+	int aoDownsampled2x;
+	int reflectionEnabled;
+	float aoStrength;
+} Uniforms;
 
 // (localSize / 2 + 2)^2
 shared float depths[36];
@@ -110,7 +112,7 @@ vec3 UpsampleReflection2x(float referenceDepth) {
 
 void main() {
 
-	if (aoDownsampled2x) LoadGroupSharedData();
+	if (Uniforms.aoDownsampled2x > 0) LoadGroupSharedData();
 
 	if (gl_GlobalInvocationID.x > imageSize(image).x ||
         gl_GlobalInvocationID.y > imageSize(image).y)
@@ -127,36 +129,48 @@ void main() {
 	// We don't have any light direction, that's why we use vec3(0.0, -1.0, 0.0) as a placeholder
     Surface surface = GetSurface(texCoord, depth, vec3(0.0, -1.0, 0.0), geometryNormal);
 
-    vec3 worldView = normalize(vec3(ivMatrix * vec4(surface.P, 0.0)));
-	vec3 worldPosition = vec3(ivMatrix * vec4(surface.P, 1.0));
-	vec3 worldNormal = normalize(vec3(ivMatrix * vec4(surface.N, 0.0)));
-	vec3 geometryWorldNormal = normalize(vec3(ivMatrix * vec4(geometryNormal, 0.0)));
+    vec3 worldView = normalize(vec3(globalData.ivMatrix * vec4(surface.P, 0.0)));
+	vec3 worldPosition = vec3(globalData.ivMatrix * vec4(surface.P, 1.0));
+	vec3 worldNormal = normalize(vec3(globalData.ivMatrix * vec4(surface.N, 0.0)));
+	vec3 geometryWorldNormal = normalize(vec3(globalData.ivMatrix * vec4(geometryNormal, 0.0)));
 
 	// Indirect diffuse BRDF
+#ifdef DDGI
 	vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
-	vec4 prefilteredDiffuseLocal = volumeEnabled ? GetLocalIrradiance(worldPosition, worldView, worldNormal, geometryWorldNormal)
-		 : vec4(0.0, 0.0, 0.0, 1.0);
+	vec4 prefilteredDiffuseLocal = ddgiData.volumeEnabled > 0 ? 
+		GetLocalIrradiance(worldPosition, worldView, worldNormal, geometryWorldNormal) : vec4(0.0, 0.0, 0.0, 1.0);
 	prefilteredDiffuseLocal = IsInsideVolume(worldPosition) ? prefilteredDiffuseLocal : vec4(0.0, 0.0, 0.0, 1.0);
 	prefilteredDiffuse = prefilteredDiffuseLocal.rgb + prefilteredDiffuse * prefilteredDiffuseLocal.a;
+	vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface) * ddgiData.indirectStrength;
+#else
+	vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
 	vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface);
+#endif
 
 	// Indirect specular BRDF
-	vec3 R = normalize(mat3(ivMatrix) * reflect(-surface.V, surface.N));
+	vec3 R = normalize(mat3(globalData.ivMatrix) * reflect(-surface.V, surface.N));
 	float mipLevel = sqrt(surface.material.roughness) * 9.0;
 	vec3 prefilteredSpecular = textureLod(specularProbe, R, mipLevel).rgb;
 	// We multiply by local sky visibility because the reflection probe only includes the sky
 	//vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
 	//	* prefilteredDiffuseLocal.a;
-	vec3 indirectSpecular = reflectionEnabled ? true ? UpsampleReflection2x(depth) : texture(reflectionTexture, texCoord).rgb 
-		: vec3(0.0);
+#ifdef REFLECTIONS
+	vec3 indirectSpecular = Uniforms.reflectionEnabled > 0 ? true ? 
+		UpsampleReflection2x(depth) : texture(reflectionTexture, texCoord).rgb : vec3(0.0);
+#else
+	vec3 indirectSpecular = prefilteredSpecular;
+#endif
 
 	indirectSpecular *= EvaluateIndirectSpecularBRDF(surface);
-	vec3 indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao * indirectStrength;
+	vec3 indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
 	
 	// This normally only accounts for diffuse occlusion, we need seperate terms
 	// for diffuse and specular.
-	float occlusionFactor = aoEnabled ? aoDownsampled2x ? UpsampleAo2x(depth) : texture(aoTexture, texCoord).r : 1.0;
-	indirect *= pow(occlusionFactor, aoStrength);
+#ifdef AO
+	float occlusionFactor = Uniforms.aoEnabled > 0 ? Uniforms.aoDownsampled2x > 0 ? 
+		UpsampleAo2x(depth) : texture(aoTexture, texCoord).r : 1.0;
+	indirect *= pow(occlusionFactor, Uniforms.aoStrength);
+#endif	
 
     vec3 direct = imageLoad(image, pixel).rgb;
     imageStore(image, pixel, vec4(direct + indirect, 0.0));

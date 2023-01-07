@@ -37,9 +37,13 @@ namespace Atlas {
             globalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
             pathTraceGlobalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
 
+            uniformBufferDesc.size = sizeof(DDGIUniforms);
+            ddgiUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
+
             shadowRenderer.Init(device);
             opaqueRenderer.Init(device);
 			directLightRenderer.Init(device);
+			indirectLightRenderer.Init(device);
 			skyboxRenderer.Init(device);
             postProcessRenderer.Init(device);
             pathTracingRenderer.Init(device);
@@ -66,24 +70,9 @@ namespace Atlas {
 
 			PrepareMaterials(scene, materials, materialMap);
 
+            SetUniforms(scene, camera);
+
 			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
-
-            auto globalUniforms = GlobalUniforms {
-                .vMatrix = camera->viewMatrix,
-                .pMatrix = camera->projectionMatrix,
-                .ivMatrix = camera->invViewMatrix,
-                .ipMatrix = camera->invProjectionMatrix,
-                .pvMatrixLast = camera->GetLastJitteredMatrix(),
-                .pvMatrixCurrent = camera->projectionMatrix * camera->viewMatrix,
-                .jitterLast = camera->GetLastJitter(),
-                .jitterCurrent = camera->GetJitter(),
-                .cameraLocation = vec4(camera->location, 0.0f),
-                .cameraDirection = vec4(camera->direction, 0.0f),
-                .time = Clock::Get(),
-                .deltaTime = Clock::GetDelta()
-            };
-
-            globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
             commandList->BindBuffer(globalUniformBuffer, 0, 0);
 
             auto materialBufferDesc = Graphics::BufferDesc {
@@ -126,6 +115,10 @@ namespace Atlas {
             commandList->BindBuffer(renderList.currentMatricesBuffer, 1, 0);
             commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 1);
 
+            if (scene->irradianceVolume) {
+                commandList->BindBuffer(ddgiUniformBuffer, 2, 26);
+            }
+
             {
                 shadowRenderer.Render(viewport, target, camera, scene, commandList, &renderList);
             }
@@ -144,12 +137,19 @@ namespace Atlas {
 
             auto targetData = target->GetData(FULL_RES);
 
-            commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 2, 0);
-            commandList->BindImage(targetData->normalTexture->image, targetData->normalTexture->sampler, 2, 1);
-            commandList->BindImage(targetData->geometryNormalTexture->image, targetData->geometryNormalTexture->sampler, 2, 2);
-            commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 2, 3);
-            commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 2, 4);
-            commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 2, 5);
+            commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 1, 2);
+            commandList->BindImage(targetData->normalTexture->image, targetData->normalTexture->sampler, 1, 3);
+            commandList->BindImage(targetData->geometryNormalTexture->image, targetData->geometryNormalTexture->sampler, 1, 4);
+            commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 1, 5);
+            commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 6);
+            commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 7);
+
+            if (scene->sky.GetProbe()) {
+                commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
+                    scene->sky.GetProbe()->cubemap.sampler, 1, 9);
+                commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
+                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 10);
+            }
 
 			{
                 Graphics::Profiler::BeginQuery("Lighting pass");
@@ -160,6 +160,11 @@ namespace Atlas {
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 				directLightRenderer.Render(viewport, target, camera, scene, commandList);
+
+                commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+                indirectLightRenderer.Render(viewport, target, camera, scene, commandList);
 
                 Graphics::ImageBarrier outBarrier(target->lightingTexture.image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
@@ -824,6 +829,55 @@ namespace Atlas {
             */
 
 		}
+
+        void MainRenderer::SetUniforms(Scene::Scene *scene, Camera *camera) {
+
+            auto globalUniforms = GlobalUniforms {
+                .vMatrix = camera->viewMatrix,
+                .pMatrix = camera->projectionMatrix,
+                .ivMatrix = camera->invViewMatrix,
+                .ipMatrix = camera->invProjectionMatrix,
+                .pvMatrixLast = camera->GetLastJitteredMatrix(),
+                .pvMatrixCurrent = camera->projectionMatrix * camera->viewMatrix,
+                .jitterLast = camera->GetLastJitter(),
+                .jitterCurrent = camera->GetJitter(),
+                .cameraLocation = vec4(camera->location, 0.0f),
+                .cameraDirection = vec4(camera->direction, 0.0f),
+                .time = Clock::Get(),
+                .deltaTime = Clock::GetDelta()
+            };
+
+            globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
+
+            if (scene->irradianceVolume) {
+                auto volume = scene->irradianceVolume;
+                auto ddgiUniforms = DDGIUniforms {
+                    .volumeMin = vec4(volume->aabb.min, 1.0f),
+                    .volumeMax = vec4(volume->aabb.max, 1.0f),
+                    .volumeProbeCount = ivec4(volume->probeCount, 0),
+                    .cellSize = vec4(volume->cellSize, 0.0f),
+                    .volumeBias = volume->bias,
+                    .volumeIrradianceRes = volume->irrRes,
+                    .volumeMomentsRes = volume->momRes,
+                    .rayCount = volume->rayCount,
+                    .inactiveRayCount = volume->rayCountInactive,
+                    .hysteresis = volume->hysteresis,
+                    .volumeGamma = volume->gamma,
+                    .volumeStrength = volume->strength,
+                    .volumeEnabled = volume->enable ? 1 : 0
+                };
+                ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
+            }
+            else {
+                auto ddgiUniforms = DDGIUniforms {
+                    .volumeMin = vec4(0.0f),
+                    .volumeMax = vec4(0.0f),
+                    .volumeEnabled = 0
+                };
+                ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
+            }
+
+        }
 
 		void MainRenderer::PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
 			std::unordered_map<void*, uint16_t>& materialMap) {

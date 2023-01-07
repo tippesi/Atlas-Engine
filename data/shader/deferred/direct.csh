@@ -53,7 +53,6 @@ void main() {
             -geometryNormal : geometryNormal : geometryNormal;
         shadowFactor = CalculateCascadedShadow(lightData.light.shadow, cascadeMaps, surface.P,
             shadowNormal, saturate(dot(-lightData.light.direction.xyz, shadowNormal)));
-        shadowFactor = max(0.05, shadowFactor); 
 #endif
 
         vec3 radiance = lightData.light.color.rgb * lightData.light.intensity;

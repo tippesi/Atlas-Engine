@@ -12,35 +12,38 @@
 #define PROBE_STATE_ACTIVE 1
 #define PROBE_STATE_INACTIVE 2
 
-layout(binding = 24) uniform sampler2DArray irradianceVolume;
-layout(binding = 25) uniform sampler2DArray momentsVolume;
+layout(set = 2, binding = 24) uniform sampler2DArray irradianceVolume;
+layout(set = 2, binding = 25) uniform sampler2DArray momentsVolume;
 
-layout(std430, binding = 14) buffer ProbeStates {
+layout(std430, set = 2, binding = 14) buffer ProbeStates {
 	vec4 probeStates[];
 };
 
-layout(std430, binding = 15) buffer ProbeOffsets {
+layout(std430, set = 2, binding = 15) buffer ProbeOffsets {
 	vec4 probeOffsets[];
 };
 
-uniform vec3 volumeMin;
-uniform vec3 volumeMax;
-uniform ivec3 volumeProbeCount;
-uniform vec3 cellSize;
+layout(std140, set = 2, binding = 26) uniform DDGIBuffer {
+    vec4 volumeMin;
+	vec4 volumeMax;
+	ivec4 volumeProbeCount;
+	vec4 cellSize;
 
-uniform float volumeBias;
+	float volumeBias;
 
-uniform int volumeIrradianceRes;
-uniform int volumeMomentsRes;
+	int volumeIrradianceRes;
+	int volumeMomentsRes;
 
-uniform uint rayCount = 100;
-uniform uint inactiveRayCount = 32;
+	uint rayCount;
+	uint inactiveRayCount;
 
-uniform float hysteresis = 0.99;
+	float hysteresis;
 
-uniform float volumeGamma = 5.0;
+	float volumeGamma;
+	float volumeStrength;
 
-uniform bool volumeEnabled;
+	int volumeEnabled;
+} ddgiData;
 
 struct RayHit {
 	vec3 direction;
@@ -83,11 +86,11 @@ PackedRayHit PackRayHit(RayHit hit) {
 }
 
 uint GetProbeRayCount(uint state) {
-	return state == PROBE_STATE_INACTIVE ? inactiveRayCount : rayCount;
+	return state == PROBE_STATE_INACTIVE ? ddgiData.inactiveRayCount : ddgiData.rayCount;
 }
 
 vec3 GetProbePosition(ivec3 probeIdx) {
-	return volumeMin + vec3(probeIdx) * cellSize;
+	return ddgiData.volumeMin.xyz + vec3(probeIdx) * ddgiData.cellSize.xyz;
 }
 
 uint GetProbeState(uint idx) {
@@ -99,21 +102,21 @@ vec3 GetProbeOffset(uint idx) {
 }
 
 ivec3 GetNearestProbe(vec3 position) {
-	vec3 localPosition = position - volumeMin;
-	return ivec3(round(localPosition / cellSize));
+	vec3 localPosition = position - ddgiData.volumeMin.xyz;
+	return ivec3(round(localPosition / ddgiData.cellSize.xyz));
 }
 
 uint GetProbeIdx(ivec3 probe) {
-	return Flatten3D(probe.xzy, volumeProbeCount.xzy);
+	return Flatten3D(probe.xzy, ddgiData.volumeProbeCount.xzy);
 }
 
 ivec3 GetProbeGridCoord(uint idx) {
-	return Unflatten3D(int(idx), volumeProbeCount.xzy).xzy;
+	return Unflatten3D(int(idx), ddgiData.volumeProbeCount.xzy).xzy;
 }
 
 bool IsInsideVolume(vec3 position) {
-	return !any(lessThan(position, volumeMin))
-		&& !any(greaterThan(position, volumeMax));
+	return !any(lessThan(position, ddgiData.volumeMin.xyz))
+		&& !any(greaterThan(position, ddgiData.volumeMax.xyz));
 }
 
 vec3 GetProbeCoord(ivec3 probeIndex, vec2 octCoord, vec2 probeRes, vec2 texelSize, float volumeRes) {
@@ -130,20 +133,21 @@ vec3 GetProbeCoord(ivec3 probeIndex, vec2 octCoord, vec2 probeRes, vec2 texelSiz
 
 vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 
-	float minAxialDistance = min3(cellSize);
-	vec3 biasedP = P + (0.7 * geometryNormal - 0.3 * V) * (0.75 * minAxialDistance) * volumeBias;
+	float minAxialDistance = min3(ddgiData.cellSize.xyz);
+	vec3 biasedP = P + (0.7 * geometryNormal - 0.3 * V) * 
+		(0.75 * minAxialDistance) * ddgiData.volumeBias;
 
-	vec2 irrRes = vec2(volumeIrradianceRes + 2);
-	vec2 totalResolution = vec2(volumeProbeCount.xz) * irrRes;
+	vec2 irrRes = vec2(ddgiData.volumeIrradianceRes + 2);
+	vec2 totalResolution = vec2(ddgiData.volumeProbeCount.xz) * irrRes;
 	vec2 irrTexelSize = 1.0 / totalResolution;
 	vec2 irrOctCoord = UnitVectorToOctahedron(N);
 
-	vec2 momRes = vec2(volumeMomentsRes + 2);
-	totalResolution = vec2(volumeProbeCount.xz) * momRes;
+	vec2 momRes = vec2(ddgiData.volumeMomentsRes + 2);
+	totalResolution = vec2(ddgiData.volumeProbeCount.xz) * momRes;
 	vec2 momTexelSize = 1.0 / totalResolution;
 
-	vec3 localPosition = biasedP - volumeMin;
-	ivec3 baseCell = ivec3(localPosition / cellSize);
+	vec3 localPosition = biasedP - ddgiData.volumeMin.xyz;
+	ivec3 baseCell = ivec3(localPosition / ddgiData.cellSize.xyz);
 
 	float sumWeight = 0.0;
 	vec3 sumIrradiance = vec3(0.0);
@@ -151,18 +155,19 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 	float sumWeightCheb = 0.0;
 	vec3 sumIrradianceCheb = vec3(0.0);
 
-	vec3 alpha = localPosition / cellSize - vec3(baseCell);
+	vec3 alpha = localPosition / ddgiData.cellSize.xyz - vec3(baseCell);
 
 	for (int i = 0; i < 8; i++) {
 		ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
-		ivec3 gridCell = min(baseCell + offset, volumeProbeCount - ivec3(1));
+		ivec3 gridCell = min(baseCell + offset, ddgiData.volumeProbeCount.xyz - ivec3(1));
 
 		uint probeIdx = GetProbeIdx(gridCell);
 		uint probeState = GetProbeState(probeIdx);
 		if (probeState == PROBE_STATE_INACTIVE) continue;
 
 		vec3 probeOffset = probeOffsets[probeIdx].xyz;
-		vec3 probePos = vec3(gridCell) * cellSize + probeOffset + volumeMin;
+		vec3 probePos = vec3(gridCell) * ddgiData.cellSize.xyz +
+			probeOffset + ddgiData.volumeMin.xyz;
 		vec3 pointToProbe = probePos - P;
 		vec3 L = normalize(pointToProbe);
 
@@ -178,7 +183,7 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 		if (weight < 0.0) continue;
 
 		vec2 momOctCoord = UnitVectorToOctahedron(biasedProbeToPosition);
-		vec3 momCoord = GetProbeCoord(gridCell, momOctCoord, momRes, momTexelSize, volumeMomentsRes);
+		vec3 momCoord = GetProbeCoord(gridCell, momOctCoord, momRes, momTexelSize, ddgiData.volumeMomentsRes);
 		vec2 temp = textureLod(momentsVolume, momCoord, 0).rg;
 		float mean = temp.x;
 		float mean2 = temp.y;
@@ -198,8 +203,8 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 		weight *= trilinearWeight;
 		weightCheb *= trilinearWeight;
 
-		vec3 irrCoord = GetProbeCoord(gridCell, irrOctCoord, irrRes, irrTexelSize, volumeIrradianceRes);
-		vec3 irradiance = pow(textureLod(irradianceVolume, irrCoord, 0).rgb, vec3(0.5 * volumeGamma));
+		vec3 irrCoord = GetProbeCoord(gridCell, irrOctCoord, irrRes, irrTexelSize, ddgiData.volumeIrradianceRes);
+		vec3 irradiance = pow(textureLod(irradianceVolume, irrCoord, 0).rgb, vec3(0.5 * ddgiData.volumeGamma));
 
 		sumIrradiance += weight * irradiance;
 		sumIrradianceCheb += weightCheb * irradiance;

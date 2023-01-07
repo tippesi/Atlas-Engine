@@ -163,7 +163,31 @@ namespace Atlas {
                 vec2 alignment0;
             };
 
+            struct DDGIUniforms {
+                vec4 volumeMin;
+                vec4 volumeMax;
+                ivec4 volumeProbeCount;
+                vec4 cellSize;
+
+                float volumeBias;
+
+                int32_t volumeIrradianceRes;
+                int32_t volumeMomentsRes;
+
+                uint32_t rayCount;
+                uint32_t inactiveRayCount;
+
+                float hysteresis;
+
+                float volumeGamma;
+                float volumeStrength;
+
+                int32_t volumeEnabled;
+            };
+
 			void GetUniforms();
+
+            void SetUniforms(Scene::Scene* scene, Camera* camera);
 
 			void PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
 				std::unordered_map<void*, uint16_t>& materialMap);
@@ -178,6 +202,7 @@ namespace Atlas {
 
             Ref<Graphics::MultiBuffer> globalUniformBuffer;
             Ref<Graphics::MultiBuffer> pathTraceGlobalUniformBuffer;
+            Ref<Graphics::MultiBuffer> ddgiUniformBuffer;
 
 			Buffer::VertexArray vertexArray;
 			Buffer::VertexArray cubeVertexArray;
