@@ -29,3 +29,4 @@ data/forest
 CMakeSettings.json
 .vscode/settings.json
 xcode
+bin

@@ -36,7 +36,11 @@ namespace Atlas {
             SDL_WINDOW_VULKAN | AE_WINDOW_HIDDEN, false);
 
         // Then create graphics instance
+#ifdef AE_BUILDTYPE_RELEASE
         Graphics::Instance::DefaultInstance = new Graphics::Instance("AtlasEngineInstance", false);
+#else
+        Graphics::Instance::DefaultInstance = new Graphics::Instance("AtlasEngineInstance", true);
+#endif
         // Initialize window surface
         DefaultWindow->CreateSurface();
         // Initialize device

@@ -730,7 +730,7 @@ namespace Atlas {
 
 		}
 
-		void MainRenderer::FilterProbe(Lighting::EnvironmentProbe* probe) {
+		void MainRenderer::FilterProbe(Lighting::EnvironmentProbe* probe, Graphics::CommandList* commandList) {
 
             /*
 			Profiler::BeginQuery("Filter probe");

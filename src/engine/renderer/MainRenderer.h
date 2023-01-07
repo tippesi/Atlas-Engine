@@ -115,7 +115,7 @@ namespace Atlas {
 			 * @param probe The environment probe.
 			 * @note A probe has to be filtered to support image based lighting
 			 */
-			void FilterProbe(Lighting::EnvironmentProbe* probe);
+			void FilterProbe(Lighting::EnvironmentProbe* probe, Graphics::CommandList* commandList);
 
 			/**
              * Update of the renderer

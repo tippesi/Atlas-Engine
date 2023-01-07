@@ -28,6 +28,19 @@ else()
 	message(STATUS "Building with app class")
 endif()
 
+# Set built type macros ###########################################################################
+if (DEFINED CMAKE_BUILD_TYPE)
+	if(CMAKE_BUILD_TYPE STREQUAL "Release")
+		set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE)
+	elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+		set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELWITHDEBINFO)
+	else()
+		set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_DEBUG)
+	endif()
+else()
+	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE)
+endif()
+
 # Configure platform specific stuff ###############################################################
 if(WIN32)
 	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
