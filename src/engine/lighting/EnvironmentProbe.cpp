@@ -13,7 +13,8 @@ namespace Atlas {
 		}
 
 		EnvironmentProbe::EnvironmentProbe(int32_t res, vec3 position) : resolution(res),
-            cubemap(res, res, VK_FORMAT_R16G16B16A16_SFLOAT), depth(res, res, VK_FORMAT_D16_UNORM),
+            cubemap(res, res, VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge,
+                Texture::Filtering::MipMapLinear), depth(res, res, VK_FORMAT_D16_UNORM),
             filteredDiffuse(8, 8, VK_FORMAT_R16G16B16A16_SFLOAT) {
 
 			SetPosition(position);

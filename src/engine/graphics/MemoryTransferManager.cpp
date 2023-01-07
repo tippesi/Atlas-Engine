@@ -125,8 +125,8 @@ namespace Atlas {
             range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             range.baseMipLevel = 0;
             range.levelCount = mipLevels;
-            range.baseArrayLayer = layerOffset;
-            range.layerCount = layerCount;
+            range.baseArrayLayer = 0;
+            range.layerCount = image->layers;
 
             VkImageMemoryBarrier imageBarrier = {};
             // Create first barrier to transition image

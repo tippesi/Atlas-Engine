@@ -12,7 +12,7 @@ namespace Atlas {
 		/**
 		 * Manages the vertex data flow between the CPU and GPU
 		 */
-		class VertexBuffer : public Buffer {
+		class VertexBuffer {
 
 		public:
 			/**

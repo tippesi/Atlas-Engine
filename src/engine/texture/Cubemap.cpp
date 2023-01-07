@@ -23,9 +23,12 @@ namespace Atlas {
 
 		   }
 
-           this->format = VK_FORMAT_R8G8B8A8_UNORM;
+           format = VK_FORMAT_R16G16B16A16_SFLOAT;
+           filtering = Filtering::MipMapLinear;
+           wrapping = Wrapping::ClampToEdge;
+
            Reallocate(Graphics::ImageType::ImageCube, images[0].width, images[0].height, 6, filtering, wrapping);
-           RecreateSampler(Filtering::Linear, Wrapping::ClampToEdge);
+           RecreateSampler(filtering, wrapping);
 
 		   for (int32_t i = 0; i < 6; i++)
 			   SetData(images[i].GetData(), i);
@@ -41,9 +44,12 @@ namespace Atlas {
 			   return;
 		   }
 
-           this->format = VK_FORMAT_R32G32B32A32_SFLOAT;
+           format = VK_FORMAT_R16G16B16A16_SFLOAT;
+           filtering = Filtering::MipMapLinear;
+           wrapping = Wrapping::ClampToEdge;
+
            Reallocate(Graphics::ImageType::ImageCube, resolution, resolution, 6, filtering, wrapping);
-           RecreateSampler(Filtering::Linear, Wrapping::ClampToEdge);
+           RecreateSampler(filtering, wrapping);
 
 		   mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
 		   vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
@@ -91,7 +97,12 @@ namespace Atlas {
 				   }
 			   }
 
-			   SetData(faceImage.GetData(), i);
+               std::vector<float16> halfFloatData;
+               for (auto data : faceImage.GetData()) {
+                   halfFloatData.push_back(glm::detail::toFloat16(data));
+               }
+
+			   SetData(halfFloatData, i);
 		
 		   }
 
@@ -121,6 +132,14 @@ namespace Atlas {
 		   GenerateMipmap();
 
 	   }
+
+       void Cubemap::SetData(std::vector<float16>& data, int32_t layer) {
+
+           Texture::SetData(data.data(), 0, 0, layer, width, height, 1);
+
+           GenerateMipmap();
+
+       }
 
 	   std::vector<uint8_t> Cubemap::GetData(int32_t layer) {
 

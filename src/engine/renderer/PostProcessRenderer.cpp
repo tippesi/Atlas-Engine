@@ -51,7 +51,6 @@ namespace Atlas {
                 commandList->BindPipeline(pipeline);
 
                 ivec2 groupCount = resolution / 8;
-
                 groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 

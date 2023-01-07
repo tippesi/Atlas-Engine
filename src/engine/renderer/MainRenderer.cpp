@@ -21,6 +21,9 @@ namespace Atlas {
 
             this->device = device;
 
+            Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
+            Helper::GeometryHelper::GenerateCubeVertexArray(cubeVertexArray);
+
             haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16 + 1);
 
             PreintegrateBRDF();
@@ -107,6 +110,18 @@ namespace Atlas {
 				camera->Jitter(vec2(0.0f));
 			}
 
+            if (scene->sky.probe) {
+                if (scene->sky.probe->update) {
+                    FilterProbe(scene->sky.probe.get(), commandList);
+                    //scene->sky.probe->update = false;
+                }
+            }
+            else if (scene->sky.atmosphere) {
+                //atmosphereRenderer.Render(&scene->sky.atmosphere->probe, scene);
+                //scene->sky.atmosphere->probe.filteredDiffuse.Bind(0);
+                //FilterProbe(&scene->sky.atmosphere->probe);
+            }
+
             // Bind before any shadows etc. are rendered, this is a shared buffer for all these passes
             commandList->BindBuffer(renderList.currentMatricesBuffer, 1, 0);
             commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 1);
@@ -126,9 +141,6 @@ namespace Atlas {
 
                 Graphics::Profiler::EndQuery();
             }
-
-			commandList->PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             auto targetData = target->GetData(FULL_RES);
 
@@ -164,9 +176,6 @@ namespace Atlas {
 
                 commandList->EndRenderPass();
             }
-
-            commandList->PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             {
                 postProcessRenderer.Render(viewport, target, camera, scene, commandList);
@@ -741,8 +750,7 @@ namespace Atlas {
 
 		void MainRenderer::FilterProbe(Lighting::EnvironmentProbe* probe, Graphics::CommandList* commandList) {
 
-            /*
-			Profiler::BeginQuery("Filter probe");
+			Graphics::Profiler::BeginQuery("Filter probe");
 
 			mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
 			vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
@@ -753,36 +761,41 @@ namespace Atlas {
 						   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
 						   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
-			Framebuffer framebuffer;
-			filterDiffuseShader.Bind();
+            auto pipelineConfig = PipelineConfig("brdf/filterProbe.csh");
+            auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-			auto matrixUniform = filterDiffuseShader.GetUniform("pvMatrix");
+            struct PushConstants {
+                mat4 vMatrix;
+                mat4 pMatrix;
+            };
 
-			cubeVertexArray.Bind();
-			framebuffer.Bind();
+            commandList->BindPipeline(pipeline);
 
-			probe->cubemap.Bind(0);
+            //auto constantRange = pipeline->shader->GetPushConstantRange("constants");
+            //commandList->PushConstants()
 
-			glViewport(0, 0, probe->filteredDiffuse.width, probe->filteredDiffuse.height);
-			glDisable(GL_DEPTH_TEST);
+            // It's only accessed in compute shaders
+            commandList->ImageMemoryBarrier(probe->filteredDiffuse.image, VK_IMAGE_LAYOUT_GENERAL,
+                VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-			for (uint8_t i = 0; i < 6; i++) {
-				auto matrix = projectionMatrix *
-					mat4(mat3(glm::lookAt(vec3(0.0f), faces[i], ups[i])));
+            commandList->BindImage(probe->filteredDiffuse.image, 3, 0);
+            commandList->BindImage(probe->cubemap.image, probe->cubemap.sampler, 3, 1);
 
-				matrixUniform->SetValue(matrix);
+            ivec2 res = ivec2(probe->filteredDiffuse.width, probe->filteredDiffuse.height);
+            ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
+            groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+            groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
-				framebuffer.AddComponentCubemap(GL_COLOR_ATTACHMENT0, &probe->filteredDiffuse, i);
-				glClear(GL_COLOR_BUFFER_BIT);
+			commandList->Dispatch(groupCount.x, groupCount.y, 6);
 
-				glDrawArrays(GL_TRIANGLES, 0, 36);
-			}
+            // It's only accessed in compute shaders
+            commandList->ImageMemoryBarrier(probe->filteredDiffuse.image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-			glEnable(GL_DEPTH_TEST);
-			framebuffer.Unbind();
-
-			Profiler::EndQuery();
-            */
+            Graphics::Profiler::EndQuery();
 
 		}
 

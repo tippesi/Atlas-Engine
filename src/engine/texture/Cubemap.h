@@ -67,6 +67,14 @@ namespace Atlas {
             void SetData(std::vector<float>& data, int32_t layer);
 
             /**
+             * Sets the data of the texture
+             * @param data A vector holding the new data.
+             * @param layer The layer where the data should be set.
+             * @note The data has to have the size of width * height * channels.
+             */
+            void SetData(std::vector<float16>& data, int32_t layer);
+
+            /**
              *
              * @param layer
              * @return
