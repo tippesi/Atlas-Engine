@@ -4,84 +4,72 @@ namespace Atlas {
 
 	namespace Buffer {
 
-		VertexArray::VertexArray() {
+		void VertexArray::AddIndexComponent(IndexBuffer buffer) {
 
-
-
-		}
-
-		VertexArray::~VertexArray() {
-
-            // glDeleteVertexArrays(1, &ID);
-
-			delete indexComponent;
-
-			// Instanced buffers are in multiple slots
-			std::unordered_set<VertexBuffer*> buffers;
-
-			for (auto& key : vertexComponents) {
-				buffers.insert(key.second);
-			}
-
-			for (auto buffer : buffers) {
-				delete buffer;
-			}
-				
-		}
-
-		void VertexArray::AddIndexComponent(IndexBuffer* buffer) {
-
+            hasIndexComponent = true;
 			indexComponent = buffer;
 
 		}
 
-		void VertexArray::AddComponent(uint32_t attribArray, VertexBuffer* buffer, bool normalized) {
+		void VertexArray::AddComponent(uint32_t attribArray, VertexBuffer buffer) {
 
-			if (attribArray >= maxAttribArrayCount)
-				return;
+            VertexComponent component;
+            component.vertexBuffer = buffer;
+            component.attributeDescription = Graphics::Initializers::InitVertexInputAttributeDescription(
+                attribArray, buffer.format);
+            component.bindingDescription = Graphics::Initializers::InitVertexInputBindingDescription(
+                attribArray, buffer.elementSize);
 
-            // glEnableVertexAttribArray(attribArray);
-            // glVertexAttribPointer(attribArray, buffer->GetStride(), buffer->GetDataType(), normalized, 0, nullptr);
-
-			vertexComponents[attribArray] = buffer;
-
-		}
-
-		void VertexArray::DisableComponent(uint32_t attribArray) {
-
-            // glDisableVertexAttribArray(attribArray);
+			vertexComponents[attribArray] = component;
 
 		}
 
-		IndexBuffer* VertexArray::GetIndexComponent() {
+		IndexBuffer VertexArray::GetIndexComponent() {
 
 			return indexComponent;
 
 		}
 
-		VertexBuffer* VertexArray::GetComponent(uint32_t attribArray) {
+        bool VertexArray::HasIndexComponent() const {
 
-			return vertexComponents[attribArray];
+            return hasIndexComponent;
 
-		}
+        }
 
-		void VertexArray::UpdateComponents() {
+		VertexBuffer VertexArray::GetComponent(uint32_t attribArray) {
 
-			if (indexComponent) {
-				AddIndexComponent(indexComponent);
-			}
-
-			// Instanced buffers are in multiple slots
-			std::unordered_set<VertexBuffer*> buffers;
-
-			for (auto& key : vertexComponents) {
-				if (buffers.find(key.second) == buffers.end()) {
-					AddComponent(key.first, key.second);
-					buffers.insert(key.second);
-				}
-			}
+			return vertexComponents[attribArray].vertexBuffer;
 
 		}
+
+        void VertexArray::Bind(Graphics::CommandList *commandList) const {
+
+            if (hasIndexComponent) {
+                commandList->BindIndexBuffer(indexComponent.buffer, indexComponent.type);
+            }
+
+            for (auto& [attribArray, vertexComponent] : vertexComponents) {
+                commandList->BindVertexBuffer(vertexComponent.vertexBuffer.buffer, attribArray);
+            }
+
+        }
+
+        VkPipelineVertexInputStateCreateInfo VertexArray::GetVertexInputState() {
+
+            bindingDescriptions.clear();
+            attributeDescriptions.clear();
+
+            for (auto& [attribArray, vertexComponent] : vertexComponents) {
+                bindingDescriptions.push_back(vertexComponent.bindingDescription);
+                attributeDescriptions.push_back(vertexComponent.attributeDescription);
+            }
+
+            return Graphics::Initializers::InitPipelineVertexInputStateCreateInfo(
+                bindingDescriptions.data(), uint32_t(bindingDescriptions.size()),
+                attributeDescriptions.data(), uint32_t(attributeDescriptions.size())
+            );
+
+        }
 
 	}
 

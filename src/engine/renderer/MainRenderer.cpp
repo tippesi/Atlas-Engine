@@ -413,10 +413,7 @@ namespace Atlas {
                     {"test.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
                 };
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                    .swapChain = device->swapChain,
-                    .rasterizer = Graphics::Initializers::InitPipelineRasterizationStateCreateInfo(
-                        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE
-                    )
+                    .swapChain = device->swapChain
                 };
                 auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc);
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);

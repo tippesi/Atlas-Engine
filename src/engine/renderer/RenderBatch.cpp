@@ -96,8 +96,6 @@ namespace Atlas {
 				lineColors.SetSize(GetLineCount() * 2,
 					lineColorData.data());
 
-				lineVertexArray.UpdateComponents();
-
 				lineDataValid = true;
 
 			}
@@ -108,8 +106,6 @@ namespace Atlas {
 					triangleVertexData.data());
 				triangleColors.SetSize(GetTriangleCount() * 3,
 					triangleColorData.data());
-
-				lineVertexArray.UpdateComponents();
 
 				triangleDataValid = true;
 

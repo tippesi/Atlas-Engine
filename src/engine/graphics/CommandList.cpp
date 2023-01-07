@@ -337,25 +337,24 @@ namespace Atlas {
 
         }
 
-        void CommandList::BindIndexBuffer(IndexBuffer *buffer) {
+        void CommandList::BindIndexBuffer(const Ref<Buffer>& buffer, VkIndexType type) {
 
             assert(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse || !buffer->buffer) return;
-            assert(buffer->buffer->size > 0 && "Invalid buffer size");
+            assert(buffer->size > 0 && "Invalid buffer size");
 
-            vkCmdBindIndexBuffer(commandBuffer, buffer->buffer->buffer, 0, buffer->type);
+            vkCmdBindIndexBuffer(commandBuffer, buffer->buffer, 0, type);
 
         }
 
-        void CommandList::BindVertexBuffer(VertexBuffer *buffer) {
+        void CommandList::BindVertexBuffer(const Ref<Buffer>& buffer, uint32_t binding) {
 
             assert(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse || !buffer->buffer) return;
-            assert(buffer->buffer->size > 0 && "Invalid buffer size");
+            assert(buffer->size > 0 && "Invalid buffer size");
 
             VkDeviceSize offset = 0;
-            vkCmdBindVertexBuffers(commandBuffer, buffer->bindingDescription.binding, 1,
-                &buffer->buffer->buffer, &offset);
+            vkCmdBindVertexBuffers(commandBuffer, binding, 1, &buffer->buffer, &offset);
 
         }
 

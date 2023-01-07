@@ -97,7 +97,7 @@ namespace Atlas {
                         };
                         auto pipelineDesc = Graphics::GraphicsPipelineDesc {
                             .frameBuffer = frameBuffer,
-                            .vertexInputInfo = mesh->GetVertexInputState(),
+                            .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
                         };
 
                         if (!mesh->cullBackFaces) {
@@ -131,9 +131,7 @@ namespace Atlas {
                         }
 
                         if (mesh != prevMesh) {
-                            if (mesh->vertexBuffer.buffer) commandList->BindVertexBuffer(&mesh->vertexBuffer);
-                            if (mesh->texCoordBuffer.buffer) commandList->BindVertexBuffer(&mesh->texCoordBuffer);
-                            if (mesh->indexBuffer.buffer) commandList->BindIndexBuffer(&mesh->indexBuffer);
+                            mesh->vertexArray.Bind(commandList);
                             prevMesh = mesh;
                         }
 

@@ -41,7 +41,7 @@ namespace Atlas {
                 };
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
                     .frameBuffer = target->gBufferFrameBuffer,
-                    .vertexInputInfo = mesh->GetVertexInputState(),
+                    .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
                 };
 
                 if (!mesh->cullBackFaces) {
@@ -100,11 +100,7 @@ namespace Atlas {
                 }
 
                 if (mesh != prevMesh) {
-                    if (mesh->vertexBuffer.buffer) commandList->BindVertexBuffer(&mesh->vertexBuffer);
-                    if (mesh->normalBuffer.buffer) commandList->BindVertexBuffer(&mesh->normalBuffer);
-                    if (mesh->texCoordBuffer.buffer) commandList->BindVertexBuffer(&mesh->texCoordBuffer);
-                    if (mesh->tangentBuffer.buffer) commandList->BindVertexBuffer(&mesh->tangentBuffer);
-                    if (mesh->indexBuffer.buffer) commandList->BindIndexBuffer(&mesh->indexBuffer);
+                    mesh->vertexArray.Bind(commandList);
                     prevMesh = mesh;
                 }
 

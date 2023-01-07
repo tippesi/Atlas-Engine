@@ -3,6 +3,7 @@
 
 #include "../System.h"
 #include "Buffer.h"
+#include "../graphics/Buffer.h"
 
 namespace Atlas {
 
@@ -21,20 +22,18 @@ namespace Atlas {
 
 			/**
              * Constructs a VertexBuffer object.
-             * @param dataType The data type of the data, e.g AE_FLOAT
-             * @param stride The number of elements of dataType per element
-             * @param elementSize The size of each element in bytes
+             * @param format The format of the data
              * @param elementCount The number of elements in the vertex buffer will be filled with
 			 * @param data Optional parameter for directly filling the buffer with data
-             * @param flags The flags of the vertex buffer. Shouldn't be changed unless it's really needed. See {@link Buffer.h} for more.
-             * @note This is similar to
-             * <a href="https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBufferData.xhtml">glBufferData</a>.
-             * For all available data types see <a href="https://www.khronos.org/opengl/wiki/OpenGL_Type">Common Enums</a>.
-             * GL_FIXED is not supported. Note that every vertex buffers don't support dynamic storage
-             * and perform storage access by using a staging buffer.
              */
-			VertexBuffer(uint32_t dataType, int32_t stride, size_t elementSize, size_t elementCount,
-				void* data = nullptr, uint32_t flags = 0);
+			VertexBuffer(VkFormat format, size_t elementCount, void* data = nullptr);
+
+            /**
+             * Sets the size of the buffer
+             * @param elementCount The number of elements in the buffer
+			 * @param data Optional parameter for directly filling the buffer
+             */
+            void SetSize(size_t elementCount, void* data = nullptr);
 
 			/**
              * Sets the data of a buffer if it isn't mapped.
@@ -44,25 +43,14 @@ namespace Atlas {
              */
 			void SetData(void* data, size_t offset, size_t length);
 
-			/**
-            * Returns the type of the data which the buffer holds.
-            * @return An integer corresponding to an OpenGL data type.
-            * @remark For all available data types see https://www.khronos.org/opengl/wiki/OpenGL_Type
-            * <a href="https://www.khronos.org/opengl/wiki/OpenGL_Type">Common Enums</a>. GL_FIXED is not supported.
-            */
-			uint32_t GetDataType();
+			VkFormat format;
+            Ref<Graphics::Buffer> buffer;
 
-			/**
-            * Returns the stride of each element
-            * @return
-            * @note Stride is not in bytes but is the number of base elements of type dataType. Have a look at
-            * {@link VertexBuffer()} for an example.
-            */
-			int32_t GetStride();
+            size_t elementCount = 0;
+            size_t elementSize = 0;
 
-		private:
-			uint32_t dataType = 0;
-			int32_t stride = 1;
+        private:
+            void Reallocate(void* data);
 
 		};
 

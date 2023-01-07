@@ -4,12 +4,12 @@ void main() {
 
 	//const array of positions for the triangle
 	const vec3 positions[6] = vec3[6](
+		vec3(1.f,1.f, 0.0f),
+		vec3(-1.f,-1.f, 0.0f),
 		vec3(-1.f,1.f, 0.0f),
+		vec3(1.f,-1.f, 0.0f),
 		vec3(-1.f,-1.f, 0.0f),
-		vec3(1.f,1.f, 0.0f),
-		vec3(1.f,1.f, 0.0f),
-		vec3(-1.f,-1.f, 0.0f),
-		vec3(1.f,-1.f, 0.0f)
+		vec3(1.f,1.f, 0.0f)
 		);
 
 	positionVS = positions[gl_VertexIndex].xy;

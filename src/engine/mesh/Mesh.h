@@ -3,6 +3,7 @@
 
 #include "../System.h"
 #include "../Material.h"
+#include "../buffer/VertexArray.h"
 
 #include "MeshData.h"
 #include "Impostor.h"
@@ -29,18 +30,11 @@ namespace Atlas {
 
             void UpdateData();
 
-            VkPipelineVertexInputStateCreateInfo GetVertexInputState();
-
             std::string name = "";
-
-            Graphics::IndexBuffer indexBuffer;
-            Graphics::VertexBuffer vertexBuffer;
-            Graphics::VertexBuffer normalBuffer;
-            Graphics::VertexBuffer tangentBuffer;
-            Graphics::VertexBuffer texCoordBuffer;
 
             MeshData data;
             MeshMobility mobility = MeshMobility::Stationary;
+            Buffer::VertexArray vertexArray;
 
             Impostor* impostor = nullptr;
 
@@ -56,10 +50,6 @@ namespace Atlas {
             float impostorShadowDistance = 100.0f;
 
             bool invertUVs = false;
-
-        private:
-            std::vector<VkVertexInputBindingDescription> bindingDescriptions;
-            std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
         };
 

@@ -153,10 +153,7 @@ namespace Atlas {
                 { "postprocessing.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                .swapChain = device->swapChain,
-                .rasterizer = Graphics::Initializers::InitPipelineRasterizationStateCreateInfo(
-                    VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE
-                )
+                .swapChain = device->swapChain
             };
             return PipelineConfig(shaderConfig, pipelineDesc);
 
@@ -169,10 +166,7 @@ namespace Atlas {
                 { "postprocessing.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                .frameBuffer = frameBuffer,
-                .rasterizer = Graphics::Initializers::InitPipelineRasterizationStateCreateInfo(
-                    VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE
-                )
+                .frameBuffer = frameBuffer
             };
             return PipelineConfig(shaderConfig, pipelineDesc);
 

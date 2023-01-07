@@ -3,17 +3,13 @@
 
 #include "../System.h"
 #include "Buffer.h"
+#include "../graphics/Buffer.h"
 
 namespace Atlas {
 
     namespace Buffer {
 
-        enum class IndexType {
-            UInt = 0,
-            HalfUInt = 1
-        };
-
-        class IndexBuffer : public Buffer {
+        class IndexBuffer {
 
         public:
 			/**
@@ -23,19 +19,18 @@ namespace Atlas {
 
             /**
              * Constructs an IndexBuffer object.
-             * @param dataType The data type of the data, e.g GL_FLOAT
-             * @param elementSize The size of each element in bytes
+             * @param type The data type of the data
              * @param elementCount The number of elements in the vertex buffer will be filled with
 			 * @param data Optional parameter for directly filling the buffer with data
-			 * @param flags The flags of the vertex buffer. Shouldn't be changed unless it's really needed. See {@link Buffer.h} for more.
-             * @note This is similar to
-             * <a href="https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBufferData.xhtml">glBufferData</a>.
-             * For all available data types see <a href="https://www.khronos.org/opengl/wiki/OpenGL_Type">Common Enums</a>.
-             * GL_FIXED is not supported. Note that every vertex buffers don't support dynamic storage
-             * and perform storage access by using a staging buffer.
              */
-            IndexBuffer(uint32_t dataType, size_t elementSize, size_t elementCount,
-				void* data = nullptr, uint32_t flags = 0);
+            IndexBuffer(VkIndexType type, size_t elementCount, void* data = nullptr);
+
+            /**
+             * Sets the size of the buffer
+             * @param elementCount The number of elements in the buffer
+			 * @param data Optional parameter for directly filling the buffer
+             */
+            void SetSize(size_t elementCount, void* data = nullptr);
 
             /**
              * Sets the data of a buffer if it isn't mapped.
@@ -45,16 +40,14 @@ namespace Atlas {
              */
             void SetData(void* data, size_t offset, size_t length);
 
-            /**
-            * Returns the type of the data which the buffer holds.
-            * @return An integer corresponding to an OpenGL data type.
-            * @remark For all available data types see https://www.khronos.org/opengl/wiki/OpenGL_Type
-            * <a href="https://www.khronos.org/opengl/wiki/OpenGL_Type">Common Enums</a>. GL_FIXED is not supported.
-            */
-            uint32_t GetDataType();
+            VkIndexType type;
+            Ref<Graphics::Buffer> buffer;
+
+            size_t elementCount = 0;
+            size_t elementSize = 0;
 
         private:
-            uint32_t dataType = 0;
+            void Reallocate(void* data);
 
         };
 

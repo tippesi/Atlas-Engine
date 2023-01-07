@@ -72,9 +72,9 @@ namespace Atlas {
 
             void PushConstants(PushConstantRange* pushConstantRange, void* data);
 
-            void BindIndexBuffer(IndexBuffer* buffer);
+            void BindIndexBuffer(const Ref<Buffer>& buffer, VkIndexType type);
 
-            void BindVertexBuffer(VertexBuffer* buffer);
+            void BindVertexBuffer(const Ref<Buffer>& buffer, uint32_t binding);
 
             void BindBuffer(const Ref<Buffer>& buffer, uint32_t set, uint32_t binding);
 

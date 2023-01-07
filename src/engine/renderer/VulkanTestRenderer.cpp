@@ -122,7 +122,7 @@ namespace Atlas {
                 };
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
                     .frameBuffer = mainFrameBuffer,
-                    .vertexInputInfo = mesh->GetVertexInputState(),
+                    .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
                 };
                 auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc, { "MYMACRO" });
                 meshPipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -196,11 +196,7 @@ namespace Atlas {
                 auto pushConstantRange = meshPipeline->shader->GetPushConstantRange("constants");
                 commandList->PushConstants(pushConstantRange, &pushConstants);
 
-                commandList->BindVertexBuffer(&mesh->vertexBuffer);
-                commandList->BindVertexBuffer(&mesh->normalBuffer);
-                commandList->BindVertexBuffer(&mesh->texCoordBuffer);
-                commandList->BindVertexBuffer(&mesh->tangentBuffer);
-                commandList->BindIndexBuffer(&mesh->indexBuffer);
+                mesh->vertexArray.Bind(commandList);
 
                 commandList->BindBuffer(uniformBuffer, 0, 0);
 
