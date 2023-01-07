@@ -14,6 +14,17 @@ namespace Atlas {
         targetDataDownsampled2x = RenderTargetData(halfRes);
         targetDataSwapDownsampled2x = RenderTargetData(halfRes);
 
+        historyTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        swapHistoryTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        lightingTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        hdrTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        postProcessTexture = Texture::Texture2D(width, height, VK_FORMAT_R8G8B8A8_UNORM,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
         {
             Graphics::RenderPassAttachment attachments[] = {
                 {.imageFormat = targetData.baseColorTexture->format},
@@ -56,16 +67,50 @@ namespace Atlas {
             gBufferFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
         }
 
-		historyTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-		swapHistoryTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        lightingTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        hdrTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-		postProcessTexture = Texture::Texture2D(width, height, VK_FORMAT_R8G8B8A8_UNORM,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        {
+            Graphics::RenderPassAttachment attachments[] = {
+                {.imageFormat = lightingTexture.format},
+                {.imageFormat = targetData.velocityTexture->format},
+                {.imageFormat = targetData.stencilTexture->format},
+                {.imageFormat = targetData.depthTexture->format}
+            };
+
+            for (auto &attachment: attachments) {
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+
+            auto lightingRenderPassDesc = Graphics::RenderPassDesc{
+                .colorAttachments = {attachments[0], attachments[1], attachments[2]},
+                .depthAttachment = {attachments[3]}
+            };
+            lightingRenderPass = graphicsDevice->CreateRenderPass(lightingRenderPassDesc);
+
+            auto lightingFrameBufferDesc = Graphics::FrameBufferDesc{
+                .renderPass = lightingRenderPass,
+                .colorAttachments = {
+                    {lightingTexture.image, 0, true},
+                    {targetData.velocityTexture->image, 0, true},
+                    {targetData.stencilTexture->image, 0, false}
+                },
+                .depthAttachment = {targetData.depthTexture->image, 0, true},
+                .extent = {uint32_t(width), uint32_t(height)}
+            };
+            lightingFrameBuffer = graphicsDevice->CreateFrameBuffer(lightingFrameBufferDesc);
+
+            lightingFrameBufferDesc = Graphics::FrameBufferDesc{
+                .renderPass = lightingRenderPass,
+                .colorAttachments = {
+                    {lightingTexture.image, 0, true},
+                    {targetData.velocityTexture->image, 0, true},
+                    {targetData.stencilTexture->image, 0, true}
+                },
+                .depthAttachment = {targetData.depthTexture->image, 0, true},
+                .extent = {uint32_t(width), uint32_t(height)}
+            };
+            lightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(lightingFrameBufferDesc);
+        }
 
 		SetAOResolution(HALF_RES);
 		SetVolumetricResolution(HALF_RES);

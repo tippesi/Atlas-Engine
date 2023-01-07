@@ -76,6 +76,12 @@ namespace Atlas {
 		 */
 		vec3 GetLocation();
 
+        /**
+         * Calculates the last camera location.
+		 * @return The location as a 3-component vector.
+         */
+        vec3 GetLastLocation();
+
 		/**
          * Calculates the view frustum corners in world space.
          * @param nearPlane The near plane where the corners should be calculated.
@@ -128,6 +134,8 @@ namespace Atlas {
 
 		mat4 jitteredMatrix = mat4{ 1.0f };
 		mat4 lastJitteredMatrix = mat4{ 1.0f };
+
+        mat4 lastViewMatrix = mat4{ 1.0f };
 
 	};
 

@@ -14,34 +14,19 @@ namespace Atlas {
 		class SkyboxRenderer : public Renderer {
 
 		public:
-			SkyboxRenderer();
+			SkyboxRenderer() = default;
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
+            void Init(Graphics::GraphicsDevice* device);
+
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {};
+
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene,
+                Graphics::CommandList* commandList);
 
 		private:
-			void GetUniforms();
-
-			std::unordered_map<Camera*, vec3> cameraMap;
+            PipelineConfig GetPipelineConfig(RenderTarget* target);
 
 			Buffer::VertexArray vertexArray;
-
-			OldShader::OldShader shader;
-
-			OldShader::Uniform* mvpMatrix = nullptr;
-			OldShader::Uniform* ivMatrix = nullptr;
-			OldShader::Uniform* ipMatrix = nullptr;
-			OldShader::Uniform* cameraLocation = nullptr;
-			OldShader::Uniform* cameraLocationLast = nullptr;
-
-			OldShader::Uniform* pvMatrixLast = nullptr;
-			OldShader::Uniform* jitterLast = nullptr;
-			OldShader::Uniform* jitterCurrent = nullptr;
-
-			OldShader::Uniform* fogScale = nullptr;
-			OldShader::Uniform* fogDistanceScale = nullptr;
-			OldShader::Uniform* fogHeight = nullptr;
-			OldShader::Uniform* fogColor = nullptr;
-			OldShader::Uniform* fogScatteringPower = nullptr;
 
 		};
 

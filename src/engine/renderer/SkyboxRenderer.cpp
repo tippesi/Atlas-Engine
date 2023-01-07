@@ -5,83 +5,54 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		SkyboxRenderer::SkyboxRenderer() {
+        void SkyboxRenderer::Init(Graphics::GraphicsDevice *device) {
 
-            /*
-			Helper::GeometryHelper::GenerateCubeVertexArray(vertexArray);
+            this->device = device;
 
-			shader.AddStage(AE_VERTEX_STAGE, "skybox.vsh");
-			shader.AddStage(AE_FRAGMENT_STAGE, "skybox.fsh");
+            Helper::GeometryHelper::GenerateCubeVertexArray(vertexArray);
 
-			shader.Compile();
+        }
 
-			GetUniforms();
-             */
+		void SkyboxRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-		}
+			Graphics::Profiler::BeginQuery("Skybox");
 
-		void SkyboxRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+			vertexArray.Bind(commandList);
 
-            /*
-			Profiler::BeginQuery("Skybox");
+            auto pipelineConfig = GetPipelineConfig(target);
+            auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-			shader.Bind();
+            commandList->BindPipeline(pipeline);
 
-			mat4 matrix = camera->projectionMatrix * camera->viewMatrix;
+            vec4 lastCameraLocation = vec4(camera->GetLastLocation(), 1.0f);
+            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
+            commandList->PushConstants(constantRange, &lastCameraLocation);
 
-			vec3 lastCameraLocation = vec3(0.0f);
-			auto key = cameraMap.find(camera);
-			if (key != cameraMap.end()) {
-				lastCameraLocation = key->second;
-			}
-			else {
-				cameraMap[camera] = camera->GetLocation();
-				key = cameraMap.find(camera);
-			}
+            auto& cubemap = scene->sky.probe->cubemap;
+            commandList->BindImage(cubemap.image, cubemap.sampler, 3, 0);
 
-			mvpMatrix->SetValue(matrix);
-			ivMatrix->SetValue(camera->invViewMatrix);
-			ipMatrix->SetValue(camera->invProjectionMatrix);
-			
-			cameraLocation->SetValue(camera->GetLocation());
-			cameraLocationLast->SetValue(lastCameraLocation);
+            commandList->Draw(36, 1, 0, 0);
 
-			cameraMap[camera] = camera->GetLocation();
-
-			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
-			jitterLast->SetValue(camera->GetLastJitter());
-			jitterCurrent->SetValue(camera->GetJitter());
-
-			vertexArray.Bind();
-
-			scene->sky.probe->cubemap.Bind(0);
-
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-
-			Profiler::EndQuery();
-             */
+            Graphics::Profiler::EndQuery();
 
 		}
 
-		void SkyboxRenderer::GetUniforms() {
+        PipelineConfig SkyboxRenderer::GetPipelineConfig(RenderTarget *target) {
 
-            /*
-			mvpMatrix = shader.GetUniform("mvpMatrix");
-			ivMatrix = shader.GetUniform("ivMatrix");
-			ipMatrix = shader.GetUniform("ipMatrix");
-			cameraLocation = shader.GetUniform("cameraLocation");
-			cameraLocationLast = shader.GetUniform("cameraLocationLast");
-
-			pvMatrixLast = shader.GetUniform("pvMatrixLast");
-			jitterLast = shader.GetUniform("jitterLast");
-			jitterCurrent = shader.GetUniform("jitterCurrent");
-
-			fogScale = shader.GetUniform("fogScale");
-			fogDistanceScale = shader.GetUniform("fogDistanceScale");
-			fogHeight = shader.GetUniform("fogHeight");
-			fogColor = shader.GetUniform("fogColor");
-			fogScatteringPower = shader.GetUniform("fogScatteringPower");
-             */
+            auto shaderConfig = ShaderConfig {
+                { "skybox.vsh", VK_SHADER_STAGE_VERTEX_BIT },
+                { "skybox.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
+            };
+            auto pipelineDesc = Graphics::GraphicsPipelineDesc {
+                .frameBuffer = target->lightingFrameBuffer,
+                .vertexInputInfo = vertexArray.GetVertexInputState(),
+                .depthStencilInputInfo = Graphics::Initializers::InitPipelineDepthStencilStateCreateInfo(
+                    true, false, VK_COMPARE_OP_LESS_OR_EQUAL),
+                .rasterizer = Graphics::Initializers::InitPipelineRasterizationStateCreateInfo(
+                    VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE)
+            };
+            return PipelineConfig(shaderConfig, pipelineDesc);
 
 		}
 

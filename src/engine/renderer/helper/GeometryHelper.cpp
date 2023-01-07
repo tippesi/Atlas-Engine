@@ -8,17 +8,17 @@ namespace Atlas {
 
 			void GeometryHelper::GenerateRectangleVertexArray(Buffer::VertexArray& vertexArray) {
 
-                // auto buffer = new Buffer::VertexBuffer(AE_BYTE, 2, sizeof(int8_t) * 2, 4);
-                // buffer->SetData(&rectangleVertices[0], 0, 4);
-                // vertexArray.AddComponent(0, buffer);
+                auto buffer = Buffer::VertexBuffer(VK_FORMAT_R8G8_SINT, 4);
+                buffer.SetData(&rectangleVertices[0], 0, 4);
+                vertexArray.AddComponent(0, buffer);
 
 			}
 
 			void GeometryHelper::GenerateCubeVertexArray(Buffer::VertexArray& vertexArray) {
 
-                // auto vertexBuffer = new Buffer::VertexBuffer(AE_FLOAT, 3, sizeof(vec3), 36);
-                // vertexBuffer->SetData(&cubeVertices[0], 0, 36);
-                // vertexArray.AddComponent(0, vertexBuffer);
+                auto buffer = Buffer::VertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, 36);
+                buffer.SetData(&cubeVertices[0], 0, 36);
+                vertexArray.AddComponent(0, buffer);
 
 			}
 
@@ -32,8 +32,8 @@ namespace Atlas {
 				else
 					indexCount = (subdivisions - 1) * (subdivisions - 1) * 6;
 
-                // auto vertexBuffer = new Buffer::VertexBuffer(AE_FLOAT, 3, sizeof(vec3), vertexCount);
-                // auto indexBuffer = new Buffer::IndexBuffer(AE_UINT, sizeof(uint32_t), indexCount);
+                auto vertexBuffer = Buffer::VertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, vertexCount);
+                auto indexBuffer = Buffer::IndexBuffer(VK_INDEX_TYPE_UINT32, indexCount);
 
 				std::vector<vec3> vertices(vertexCount);
 				std::vector<uint32_t> indices(indexCount);
@@ -49,7 +49,7 @@ namespace Atlas {
 					}
 				}
 
-                // vertexBuffer->SetData(vertices.data(), 0, vertexCount);
+                vertexBuffer.SetData(vertices.data(), 0, vertexCount);
 
 				int32_t i = 0;
 
@@ -83,10 +83,10 @@ namespace Atlas {
 
 				}
 
-                // indexBuffer->SetData(indices.data(), 0, indexCount);
+                indexBuffer.SetData(indices.data(), 0, indexCount);
 
-                // vertexArray.AddIndexComponent(indexBuffer);
-                // vertexArray.AddComponent(0, vertexBuffer);
+                vertexArray.AddIndexComponent(indexBuffer);
+                vertexArray.AddComponent(0, vertexBuffer);
 
 			}
 
@@ -101,12 +101,12 @@ namespace Atlas {
 				// This helps us for both atmospheric and point light rendering
 				GenerateSphere(rings, segments, indices, vertices, &indexCount, &vertexCount);
 
-                // auto indicesBuffer = new Buffer::IndexBuffer(AE_UINT, sizeof(uint32_t), indexCount);
-                // auto verticesBuffer = new Buffer::VertexBuffer(AE_FLOAT, 3, sizeof(vec3), vertexCount);
-                // indicesBuffer->SetData(indices.data(), 0, indexCount);
-                // verticesBuffer->SetData(vertices.data(), 0, vertexCount);
-                // vertexArray.AddIndexComponent(indicesBuffer);
-                // vertexArray.AddComponent(0, verticesBuffer);
+                auto vertexBuffer = Buffer::VertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, vertexCount);
+                auto indexBuffer = Buffer::IndexBuffer(VK_INDEX_TYPE_UINT32, indexCount);
+                indexBuffer.SetData(indices.data(), 0, indexCount);
+                vertexBuffer.SetData(vertices.data(), 0, vertexCount);
+                vertexArray.AddIndexComponent(indexBuffer);
+                vertexArray.AddComponent(0, vertexBuffer);
 
 			}
 

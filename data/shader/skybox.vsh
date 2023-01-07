@@ -1,30 +1,33 @@
-layout(location = 0)in vec3 vPosition;
+#include <globals.hsh>
 
-out vec3 worldPositionVS;
-out vec3 texCoordVS;
-out vec3 ndcCurrentVS;
-out vec3 ndcLastVS;
+layout(location = 0) in vec3 vPosition;
 
-uniform mat4 mvpMatrix;
-uniform mat4 ivMatrix;
-uniform mat4 ipMatrix;
-uniform vec3 cameraLocation;
-uniform vec3 cameraLocationLast;
+// layout (location = 0) out vec3 worldPositionVS;
+layout (location = 1) out vec3 texCoordVS;
+layout (location = 2) out vec3 ndcCurrentVS;
+layout (location = 3) out vec3 ndcLastVS;
 
-uniform mat4 pvMatrixLast;
+layout(push_constant) uniform constants {
+	vec4 cameraLocationLast;
+} PushConstants;
 
 void main() {
+
+	mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f,-1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.5f, 0.0f,
+		0.0f, 0.0f, 0.5f, 1.0f);
 	
-    vec4 pos = mvpMatrix * vec4(vPosition + cameraLocation, 1.0);
+    vec4 pos = clip * globalData.pMatrix * globalData.vMatrix * vec4(vPosition + globalData.cameraLocation.xyz, 1.0);
     gl_Position = pos.xyww;
 	
 	// We need position for fog calculation
-	worldPositionVS = vec3(vPosition);
+	// worldPositionVS = vec3(vPosition);
 	
 	// Velocity buffer
 	ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
 	// For moving objects we need the last matrix
-	vec4 last = pvMatrixLast * vec4(vPosition + cameraLocationLast, 1.0);
+	vec4 last = globalData.pvMatrixLast * vec4(vPosition + PushConstants.cameraLocationLast.xyz, 1.0);
 	ndcLastVS = vec3(last.xy, last.w);
 	
     texCoordVS = vPosition;

@@ -135,7 +135,7 @@ void App::Render(float deltaTime) {
 
     static bool firstFrame = true;
     static bool animateLight = false;
-    static bool pathTrace = true;
+    static bool pathTrace = false;
     static bool debugAo = false;
     static bool debugReflection = false;
     static bool debugClouds = false;

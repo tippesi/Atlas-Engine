@@ -155,6 +155,10 @@ namespace Atlas {
         Ref<Graphics::RenderPass> gBufferRenderPass;
         Ref<Graphics::FrameBuffer> gBufferFrameBuffer;
 
+        Ref<Graphics::RenderPass> lightingRenderPass;
+        Ref<Graphics::FrameBuffer> lightingFrameBuffer;
+        Ref<Graphics::FrameBuffer> lightingFrameBufferWithStencil;
+
 		Texture::Texture2D postProcessTexture;
 
 		Texture::Texture2D aoTexture;

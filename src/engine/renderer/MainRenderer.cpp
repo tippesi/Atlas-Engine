@@ -37,6 +37,7 @@ namespace Atlas {
             shadowRenderer.Init(device);
             opaqueRenderer.Init(device);
 			directLightRenderer.Init(device);
+			skyboxRenderer.Init(device);
             postProcessRenderer.Init(device);
             pathTracingRenderer.Init(device);
 
@@ -143,7 +144,7 @@ namespace Atlas {
 
                 Graphics::ImageBarrier inBarrier(target->lightingTexture.image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
-                commandList->ImageMemoryBarrier(inBarrier, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                commandList->ImageMemoryBarrier(inBarrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 				directLightRenderer.Render(viewport, target, camera, scene, commandList);
@@ -155,6 +156,17 @@ namespace Atlas {
 
                 Graphics::Profiler::EndQuery();
 			}
+
+            {
+                commandList->BeginRenderPass(target->lightingRenderPass, target->lightingFrameBuffer);
+
+                skyboxRenderer.Render(viewport, target, camera, scene, commandList);
+
+                commandList->EndRenderPass();
+            }
+
+            commandList->PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             {
                 postProcessRenderer.Render(viewport, target, camera, scene, commandList);

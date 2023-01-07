@@ -57,6 +57,7 @@ namespace Atlas {
 
 		lastJitteredMatrix = jitteredMatrix;
 		lastJitterVector = jitterVector;
+        lastViewMatrix = viewMatrix;
 
 		auto helper = glm::translate(vec3(jitter, 0.0f));
 		projectionMatrix = helper * unjitterdProjection;
@@ -90,9 +91,15 @@ namespace Atlas {
 
 	vec3 Camera::GetLocation() {
 
-		return  thirdPerson ? location - direction * thirdPersonDistance : location;
+		return vec3(invViewMatrix[3]);
 
 	}
+
+    vec3 Camera::GetLastLocation() {
+
+        return vec3(glm::inverse(lastViewMatrix)[3]);
+
+    }
 
 	std::vector<vec3> Camera::GetFrustumCorners(float nearPlane, float farPlane) {
 
