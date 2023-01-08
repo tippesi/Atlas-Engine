@@ -6,7 +6,7 @@
 
 namespace Atlas {
 
-    PipelineConfig::PipelineConfig(ShaderConfig shaderConfig, Graphics::GraphicsPipelineDesc desc) :
+    PipelineConfig::PipelineConfig(const ShaderConfig& shaderConfig, const Graphics::GraphicsPipelineDesc& desc) :
         shaderConfig(shaderConfig), graphicsPipelineDesc(desc), isCompute(false) {
 
         CalculateShaderHash();
@@ -14,7 +14,7 @@ namespace Atlas {
 
     }
 
-    PipelineConfig::PipelineConfig(ShaderConfig shaderConfig, Graphics::GraphicsPipelineDesc desc,
+    PipelineConfig::PipelineConfig(const ShaderConfig& shaderConfig, const Graphics::GraphicsPipelineDesc& desc,
         std::vector<std::string> macros) : shaderConfig(shaderConfig), macros(macros),
         graphicsPipelineDesc(desc), isCompute(false) {
 
@@ -32,7 +32,7 @@ namespace Atlas {
 
     }
 
-    PipelineConfig::PipelineConfig(const std::string& shaderFile, std::vector<std::string> macros) :
+    PipelineConfig::PipelineConfig(const std::string& shaderFile, const std::vector<std::string>& macros) :
         macros(macros), isCompute(true) {
 
         shaderConfig = {{shaderFile, VK_SHADER_STAGE_COMPUTE_BIT}};

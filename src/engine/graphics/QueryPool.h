@@ -16,7 +16,7 @@ namespace Atlas {
 
         class QueryPool {
         public:
-            QueryPool(GraphicsDevice* device, QueryPoolDesc& desc);
+            QueryPool(GraphicsDevice* device, const QueryPoolDesc& desc);
 
             ~QueryPool();
 

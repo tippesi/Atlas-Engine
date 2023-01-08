@@ -5,8 +5,8 @@ namespace Atlas {
 
     namespace Graphics {
 
-        RenderPass::RenderPass(GraphicsDevice* device, RenderPassDesc& desc) : colorClearValue(desc.colorClearValue),
-            depthClearValue(desc.depthClearValue), device(device) {
+        RenderPass::RenderPass(GraphicsDevice* device, const RenderPassDesc& desc) :
+            colorClearValue(desc.colorClearValue), depthClearValue(desc.depthClearValue), device(device) {
 
             for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
                 auto& attachment = desc.colorAttachments[i];
@@ -28,19 +28,19 @@ namespace Atlas {
 
         }
 
-        void RenderPass::AttachColor(RenderPassAttachment& attachment, uint32_t slot) {
+        void RenderPass::AttachColor(const RenderPassAttachment& attachment, uint32_t slot) {
 
             assert(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
 
-            attachment.isValid = true;
             colorAttachments[slot] = attachment;
+            colorAttachments[slot].isValid = true;
 
         }
 
-        void RenderPass::AttachDepth(RenderPassAttachment& attachment) {
+        void RenderPass::AttachDepth(const RenderPassAttachment& attachment) {
 
-            attachment.isValid = true;
             depthAttachment = attachment;
+            depthAttachment.isValid = true;
 
         }
 
@@ -122,13 +122,11 @@ namespace Atlas {
             depthDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
             uint32_t depthAttachmentSlot = uint32_t(colorAttachmentReferences.size());
-            VkAttachmentReference2 depthAttachmentReference = Initializers::InitAttachmentReference(depthAttachmentSlot,
+            depthAttachmentReference = Initializers::InitAttachmentReference(depthAttachmentSlot,
                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
             attachmentDescriptions.push_back(depthAttachmentDescription);
             subPassDependencies.push_back(depthDependency);
-
-            this->depthAttachmentReference = depthAttachmentReference;
 
         }
 

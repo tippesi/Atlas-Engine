@@ -26,7 +26,7 @@ namespace Atlas {
 
         class Sampler {
         public:
-            Sampler(GraphicsDevice* device, SamplerDesc& desc);
+            Sampler(GraphicsDevice* device, const SamplerDesc& desc);
 
             ~Sampler();
 

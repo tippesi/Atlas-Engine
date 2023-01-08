@@ -5,7 +5,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        QueryPool::QueryPool(GraphicsDevice *device, QueryPoolDesc &desc) :
+        QueryPool::QueryPool(GraphicsDevice *device, const QueryPoolDesc &desc) :
             type(desc.queryType), device(device), queryCount(desc.queryCount) {
 
             VkQueryPoolCreateInfo poolInfo = {};

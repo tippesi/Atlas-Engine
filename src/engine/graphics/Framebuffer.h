@@ -37,7 +37,7 @@ namespace Atlas {
 
         class FrameBuffer {
         public:
-            FrameBuffer(GraphicsDevice* device, FrameBufferDesc& desc);
+            FrameBuffer(GraphicsDevice* device, const FrameBufferDesc& desc);
 
             ~FrameBuffer();
 

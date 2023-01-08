@@ -44,9 +44,9 @@ namespace Atlas {
 
         class Pipeline {
         public:
-            Pipeline(GraphicsDevice* memManager, GraphicsPipelineDesc desc);
+            Pipeline(GraphicsDevice* memManager, const GraphicsPipelineDesc& desc);
 
-            Pipeline(GraphicsDevice* memManager, ComputePipelineDesc desc);
+            Pipeline(GraphicsDevice* memManager, const ComputePipelineDesc& desc);
 
             ~Pipeline();
 

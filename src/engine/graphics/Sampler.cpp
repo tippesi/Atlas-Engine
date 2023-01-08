@@ -5,7 +5,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        Sampler::Sampler(GraphicsDevice *device, SamplerDesc &desc) : device(device) {
+        Sampler::Sampler(GraphicsDevice *device, const SamplerDesc &desc) : device(device) {
 
             VkSamplerCreateInfo samplerInfo = Initializers::InitSamplerCreateInfo(desc.filter,
                 desc.mode, desc.mipmapMode, desc.maxLod, desc.mipLodBias);

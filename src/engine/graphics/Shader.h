@@ -111,7 +111,7 @@ namespace Atlas {
         class Shader {
 
         public:
-            Shader(GraphicsDevice* device, ShaderDesc& desc);
+            Shader(GraphicsDevice* device, const ShaderDesc& desc);
 
             ~Shader();
 

@@ -7,7 +7,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        FrameBuffer::FrameBuffer(GraphicsDevice *device, FrameBufferDesc &desc) : renderPass(desc.renderPass),
+        FrameBuffer::FrameBuffer(GraphicsDevice *device, const FrameBufferDesc &desc) : renderPass(desc.renderPass),
             extent(desc.extent), layers(desc.layers), device(device) {
 
             for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {

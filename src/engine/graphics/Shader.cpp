@@ -46,7 +46,8 @@ namespace Atlas {
 
         }
 
-        Shader::Shader(GraphicsDevice *device, ShaderDesc &desc) : device(device), shaderStageFiles(desc.stages) {
+        Shader::Shader(GraphicsDevice *device, const ShaderDesc &desc) :
+            device(device), shaderStageFiles(desc.stages) {
 
 
 

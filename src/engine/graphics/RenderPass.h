@@ -34,13 +34,13 @@ namespace Atlas {
         class RenderPass {
 
         public:
-            RenderPass(GraphicsDevice* device, RenderPassDesc& desc);
+            RenderPass(GraphicsDevice* device, const RenderPassDesc& desc);
 
             ~RenderPass();
 
-            void AttachColor(RenderPassAttachment& attachment, uint32_t slot);
+            void AttachColor(const RenderPassAttachment& attachment, uint32_t slot);
 
-            void AttachDepth(RenderPassAttachment& attachment);
+            void AttachDepth(const RenderPassAttachment& attachment);
 
             void Complete();
 

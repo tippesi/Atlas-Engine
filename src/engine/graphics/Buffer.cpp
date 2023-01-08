@@ -7,7 +7,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        Buffer::Buffer(GraphicsDevice *device, BufferDesc& desc) : usageFlags(desc.usageFlags),
+        Buffer::Buffer(GraphicsDevice *device, const BufferDesc& desc) : usageFlags(desc.usageFlags),
             domain(desc.domain), size(desc.size), memoryManager(device->memoryManager) {
 
             VkBufferCreateInfo bufferInfo = {};

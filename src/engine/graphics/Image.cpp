@@ -5,7 +5,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        Image::Image(GraphicsDevice *device, ImageDesc &desc) : aspectFlags(desc.aspectFlags),
+        Image::Image(GraphicsDevice *device, const ImageDesc &desc) : aspectFlags(desc.aspectFlags),
             width(desc.width), height(desc.height), depth(desc.depth), layers(desc.layers), format(desc.format),
             domain(desc.domain), type(desc.type), device(device), memoryManager(device->memoryManager) {
 

@@ -43,7 +43,7 @@ namespace Atlas {
 
         class Buffer {
         public:
-            Buffer(GraphicsDevice* device, BufferDesc& desc);
+            Buffer(GraphicsDevice* device, const BufferDesc& desc);
 
             ~Buffer();
 

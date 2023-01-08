@@ -17,7 +17,7 @@ namespace Atlas {
 
         }
 
-        bool Extensions::IsSupported(std::string extension) {
+        bool Extensions::IsSupported(const std::string& extension) {
 
             return supportedExtensions.find(extension) != supportedExtensions.end();
 

@@ -8,7 +8,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        Pipeline::Pipeline(GraphicsDevice* device, GraphicsPipelineDesc desc) :
+        Pipeline::Pipeline(GraphicsDevice* device, const GraphicsPipelineDesc& desc) :
             bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS), shader(desc.shader),
             frameBuffer(desc.frameBuffer), device(device) {
 
@@ -92,7 +92,7 @@ namespace Atlas {
 
         }
 
-        Pipeline::Pipeline(GraphicsDevice* device, ComputePipelineDesc desc) :
+        Pipeline::Pipeline(GraphicsDevice* device, const ComputePipelineDesc& desc) :
             bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE), shader(desc.shader), device(device) {
 
             assert(desc.shader->isCompute && "Can't create a compute pipeline without a compute shader");

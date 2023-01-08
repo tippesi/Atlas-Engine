@@ -23,7 +23,7 @@ namespace Atlas {
              * @param extension The extension to be checked
              * @return True if the extension is supported, false otherwise
              */
-            static bool IsSupported(std::string extension);
+            static bool IsSupported(const std::string& extension);
 
         private:
             static std::unordered_set<std::string> supportedExtensions;

@@ -286,7 +286,6 @@ namespace Atlas {
             else {
                 auto currentFrameData = GetFrameData();
 
-                auto &commandLists = currentFrameData->commandLists;
                 auto commandList = GetOrCreateCommandList(queueType, currentFrameData->commandListsMutex,
                     currentFrameData->commandLists, false);
 
@@ -690,8 +689,8 @@ namespace Atlas {
         void GraphicsDevice::DestroyFrameData() {
 
             for (int32_t i = 0; i < FRAME_DATA_COUNT; i++) {
-                auto& commandLists = frameData[i].commandLists;
-                for (auto commandList : commandLists) {
+                auto& frameCommandLists = frameData[i].commandLists;
+                for (auto commandList : frameCommandLists) {
                     delete commandList;
                 }
 
@@ -801,11 +800,11 @@ namespace Atlas {
         }
 
         CommandList* GraphicsDevice::GetOrCreateCommandList(QueueType queueType, std::mutex &mutex,
-            std::vector<CommandList*> &commandLists, bool frameIndependent) {
+            std::vector<CommandList*> &cmdLists, bool frameIndependent) {
 
             std::lock_guard<std::mutex> lock(mutex);
 
-            auto it = std::find_if(commandLists.begin(), commandLists.end(),
+            auto it = std::find_if(cmdLists.begin(), cmdLists.end(),
                 [&](CommandList *commandList) {
                     if (commandList->queueType == queueType) {
                         bool expected = false;
@@ -819,11 +818,11 @@ namespace Atlas {
                     return false;
                 });
 
-            if (it == commandLists.end()) {
+            if (it == cmdLists.end()) {
                 auto queueFamilyIndex = queueFamilyIndices.queueFamilies[queueType];
                 CommandList *cmd = new CommandList(this, queueType,
                     queueFamilyIndex.value(), frameIndependent);
-                commandLists.push_back(cmd);
+                cmdLists.push_back(cmd);
                 return cmd;
             }
 

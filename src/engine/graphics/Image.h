@@ -52,7 +52,7 @@ namespace Atlas {
         class Image {
 
         public:
-            Image(GraphicsDevice* device, ImageDesc& desc);
+            Image(GraphicsDevice* device, const ImageDesc& desc);
 
             ~Image();
 
