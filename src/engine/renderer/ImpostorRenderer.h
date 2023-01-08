@@ -4,8 +4,6 @@
 #include "../System.h"
 #include "Renderer.h"
 
-#include "../shader/ShaderBatch.h"
-
 namespace Atlas {
 
 	namespace Renderer {
@@ -25,13 +23,16 @@ namespace Atlas {
 
 			void GetInterpolationUniforms();
 
+            /*
 			OldShader::ShaderBatch shaderBatch;
 
 			OldShader::ShaderConfig normalConfig;
 			OldShader::ShaderConfig interpolationConfig;
+             */
 
 			Buffer::VertexArray vertexArray;
 
+            /*
 			OldShader::Uniform* vMatrix = nullptr;
 			OldShader::Uniform* pMatrix = nullptr;
 			OldShader::Uniform* cameraLocation = nullptr;
@@ -49,6 +50,7 @@ namespace Atlas {
 			OldShader::Uniform* pvMatrixLast = nullptr;
 			OldShader::Uniform* jitterCurrent = nullptr;
 			OldShader::Uniform* jitterLast = nullptr;
+             */
 
 		};
 

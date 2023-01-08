@@ -24,10 +24,12 @@ namespace Atlas {
 
 			Texture::Texture2D blueNoiseTexture;
 
+            /*
 			OldShader::OldShader rtrShader;
 			OldShader::OldShader temporalShader;
 
 			OldShader::OldShader atrousShader[3];
+            */
 		};
 
 	}

@@ -3,7 +3,7 @@
 #include "../loader/ShaderLoader.h"
 #include "../loader/ModelLoader.h"
 #include "../common/RandomHelper.h"
-#include "../shader/PipelineManager.h"
+#include "../pipeline/PipelineManager.h"
 #include "../Clock.h"
 
 #include <thread>

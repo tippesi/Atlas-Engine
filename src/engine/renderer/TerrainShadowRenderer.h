@@ -18,6 +18,7 @@ namespace Atlas {
 		private:
 			void GetUniforms();
 
+            /*
 			OldShader::OldShader shader;
 
 			OldShader::Uniform* heightScale = nullptr;
@@ -33,6 +34,7 @@ namespace Atlas {
 			OldShader::Uniform* bottomLoD = nullptr;
 
 			OldShader::Uniform* lightSpaceMatrix = nullptr;
+            */
 
 
 		};

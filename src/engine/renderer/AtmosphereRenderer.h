@@ -26,7 +26,7 @@ namespace Atlas {
 		private:
 			Buffer::VertexArray vertexArray;
 
-			OldShader::OldShader shader;
+			//OldShader::OldShader shader;
 
 		};
 

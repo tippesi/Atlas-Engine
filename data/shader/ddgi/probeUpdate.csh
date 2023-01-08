@@ -27,7 +27,7 @@ layout(std430, set = 3, binding = 1) buffer RayHits {
 	PackedRayHit hits[];
 };
 
-const uint sharedSize = 64;
+const uint sharedSize = 32;
 
 #ifdef IRRADIANCE
 layout (set = 3, binding = 0, rgb10_a2) writeonly uniform image2DArray irradiance;

@@ -4,8 +4,6 @@
 #include "../System.h"
 #include "Renderer.h"
 
-#include "../shader/ShaderBatch.h"
-
 namespace Atlas {
 
 	namespace Renderer {
@@ -36,6 +34,7 @@ namespace Atlas {
 				float padding1;
 			};
 
+            /*
 			OldShader::ShaderBatch shaderBatch;
 
 			OldShader::ShaderConfig detailConfig;
@@ -73,6 +72,7 @@ namespace Atlas {
 			OldShader::Uniform* pvMatrixLast = nullptr;
 			OldShader::Uniform* jitterLast = nullptr;
 			OldShader::Uniform* jitterCurrent = nullptr;
+            */
 
 		};
 

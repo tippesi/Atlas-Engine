@@ -2,7 +2,6 @@
 #define AE_VEGETATIONHELPER_H
 
 #include "../../System.h"
-#include "shader/OldShader.h"
 #include "../../scene/Vegetation.h"
 #include "../../buffer/Buffer.h"
 
@@ -53,10 +52,12 @@ namespace Atlas {
 
 				void ResetCounterBuffer(Buffer::Buffer& buffer);
 
+                /*
 				OldShader::OldShader instanceCullingShader;
 				OldShader::OldShader instanceBinningShader;
 				OldShader::OldShader instanceBinningOffsetShader;
 				OldShader::OldShader instanceDrawCallShader;
+                */
 
 				Buffer::Buffer indirectDrawCallBuffer;
 

@@ -2,6 +2,7 @@
 #include "../Log.h"
 
 #include <volk.h>
+#include <set>
 
 namespace Atlas {
 

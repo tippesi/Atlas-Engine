@@ -819,22 +819,6 @@ namespace Atlas {
 
 		}
 
-		void MainRenderer::GetUniforms() {
-
-            /*
-			rectangleProjectionMatrix = rectangleShader.GetUniform("pMatrix");
-			rectangleOffset = rectangleShader.GetUniform("rectangleOffset");
-			rectangleScale = rectangleShader.GetUniform("rectangleScale");
-			rectangleColor = rectangleShader.GetUniform("rectangleColor");
-			rectangleBlendArea = rectangleShader.GetUniform("rectangleBlendArea");
-			rectangleClipArea = rectangleShader.GetUniform("rectangleClipArea");
-
-			lineViewMatrix = lineShader.GetUniform("vMatrix");
-			lineProjectionMatrix = lineShader.GetUniform("pMatrix");
-            */
-
-		}
-
         void MainRenderer::SetUniforms(Scene::Scene *scene, Camera *camera) {
 
             auto globalUniforms = GlobalUniforms {

@@ -6,7 +6,7 @@
 #include "../Camera.h"
 #include "../scene/Scene.h"
 #include "../Viewport.h"
-#include "../shader/PipelineManager.h"
+#include "../pipeline/PipelineManager.h"
 
 #include "../graphics/Profiler.h"
 #include "../graphics/GraphicsDevice.h"

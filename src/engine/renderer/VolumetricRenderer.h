@@ -19,12 +19,14 @@ namespace Atlas {
 		private:
 			Filter blurFilter;
 
+            /*
 			OldShader::OldShader volumetricShader;
 			
 			OldShader::OldShader horizontalBlurShader;
 			OldShader::OldShader verticalBlurShader;
 
 			OldShader::OldShader volumetricResolveShader;
+            */
 
 		};
 

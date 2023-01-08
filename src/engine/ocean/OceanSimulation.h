@@ -4,7 +4,6 @@
 #include "../System.h"
 #include "../common/NoiseGenerator.h"
 #include "../texture/Texture2D.h"
-#include "shader/OldShader.h"
 
 #include <vector>
 
@@ -63,6 +62,7 @@ namespace Atlas {
 
 			float time = 0.0f;
 
+            /*
 			OldShader::OldShader h0;
 			OldShader::OldShader ht;
 			OldShader::OldShader twiddle;
@@ -70,6 +70,7 @@ namespace Atlas {
 			OldShader::OldShader verticalButterfly;
 			OldShader::OldShader inversion;
 			OldShader::OldShader normal;
+            */
 
 			// Precomputed noise textures
 			Texture::Texture2D noise0;
@@ -82,6 +83,7 @@ namespace Atlas {
 			Texture::Texture2D hTD;
 			Texture::Texture2D hTDPingpong;
 
+            /*
 			OldShader::Uniform* htNUniform;
 			OldShader::Uniform* htLUniform;
 			OldShader::Uniform* htTimeUniform;
@@ -102,6 +104,7 @@ namespace Atlas {
 			OldShader::Uniform* normalFoamTemporalWeightUniform;
 			OldShader::Uniform* normalFoamTemporalThresholdUniform;
 			OldShader::Uniform* normalFoamOffsetUniform;
+            */
 
 		};
 

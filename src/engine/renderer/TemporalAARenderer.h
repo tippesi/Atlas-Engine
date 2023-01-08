@@ -16,9 +16,6 @@ namespace Atlas {
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 		private:
-
-			OldShader::OldShader shader;
-
 			Buffer::VertexArray vertexArray;
 
 			mat4 pvMatrixPrev = mat4(1.0f);

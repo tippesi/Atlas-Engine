@@ -13,7 +13,6 @@
 #include "TerrainShadowRenderer.h"
 #include "DecalRenderer.h"
 #include "DirectLightRenderer.h"
-#include "DirectionalLightRenderer.h"
 #include "PointLightRenderer.h"
 #include "IndirectLightRenderer.h"
 #include "TemporalAARenderer.h"
@@ -188,8 +187,6 @@ namespace Atlas {
                 int32_t volumeEnabled;
             };
 
-			void GetUniforms();
-
             void SetUniforms(Scene::Scene* scene, Camera* camera);
 
 			void PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
@@ -210,24 +207,6 @@ namespace Atlas {
 			Buffer::VertexArray vertexArray;
 			Buffer::VertexArray cubeVertexArray;
 
-			OldShader::OldShader rectangleShader;
-
-			OldShader::OldShader lineShader;
-
-			OldShader::OldShader createProbeFaceShader;
-			OldShader::OldShader filterDiffuseShader;
-			OldShader::OldShader filterSpecularShader;
-
-			OldShader::Uniform* rectangleProjectionMatrix = nullptr;
-			OldShader::Uniform* rectangleOffset = nullptr;
-			OldShader::Uniform* rectangleScale = nullptr;
-			OldShader::Uniform* rectangleColor = nullptr;
-			OldShader::Uniform* rectangleClipArea = nullptr;
-			OldShader::Uniform* rectangleBlendArea = nullptr;
-
-			OldShader::Uniform* lineViewMatrix = nullptr;
-			OldShader::Uniform* lineProjectionMatrix = nullptr;
-
 			OpaqueRenderer opaqueRenderer;
 			TerrainRenderer terrainRenderer;
 			ShadowRenderer shadowRenderer;
@@ -235,7 +214,6 @@ namespace Atlas {
 			TerrainShadowRenderer terrainShadowRenderer;
 			DecalRenderer decalRenderer;
 			DirectLightRenderer directLightRenderer;
-			DirectionalLightRenderer directionalLightRenderer;
 			IndirectLightRenderer indirectLightRenderer;
 
 			TemporalAARenderer taaRenderer;

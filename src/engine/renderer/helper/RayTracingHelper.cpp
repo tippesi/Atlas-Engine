@@ -3,7 +3,7 @@
 #include "../../common/Piecewise.h"
 #include "../../volume/BVH.h"
 #include "../../graphics/Profiler.h"
-#include "../../shader/PipelineManager.h"
+#include "../../pipeline/PipelineManager.h"
 
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1

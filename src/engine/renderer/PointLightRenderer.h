@@ -20,6 +20,7 @@ namespace Atlas {
 
 			Buffer::VertexArray vertexArray;
 
+            /*
 			OldShader::OldShader shader;
 
 			OldShader::Uniform* viewMatrix = nullptr;
@@ -33,6 +34,7 @@ namespace Atlas {
 			OldShader::Uniform* lightAmbient = nullptr;
 			OldShader::Uniform* lightRadius = nullptr;
 			OldShader::Uniform* shadowEnabled = nullptr;
+            */
 
 		};
 

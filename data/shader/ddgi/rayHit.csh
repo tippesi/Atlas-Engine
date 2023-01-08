@@ -66,7 +66,7 @@ vec3 EvaluateHit(inout Ray ray) {
 	// If we didn't find a triangle along the ray,
 	// we add the contribution of the environment map
 	if (ray.hitID == -1) {
-		return SampleEnvironmentMap(ray.direction).rgb;
+		return SampleEnvironmentMap(ray.direction, 4).rgb;
 	}
 	
 	// Unpack the compressed triangle and extract surface parameters

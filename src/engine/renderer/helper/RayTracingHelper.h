@@ -2,7 +2,6 @@
 #define RAYTRACINGHELPER_H
 
 #include "../../System.h"
-#include "shader/OldShader.h"
 #include "../../scene/Scene.h"
 #include "../../buffer/Buffer.h"
 #include <functional>

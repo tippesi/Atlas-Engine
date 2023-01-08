@@ -6,7 +6,7 @@
 #include "texture/Texture.h"
 #include "texture/Texture2DArray.h"
 #include "loader/ImageLoader.h"
-#include "shader/PipelineConfig.h"
+#include "pipeline/PipelineConfig.h"
 #include "common/Ref.h"
 
 #include <string>

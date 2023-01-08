@@ -21,8 +21,10 @@ namespace Atlas {
 		private:
 			void GetUniforms();
 
-			OldShader::OldShader shader;
 			Buffer::VertexArray vertexArray;
+
+            /*
+            OldShader::OldShader shader;
 
 			OldShader::Uniform* vMatrix = nullptr;
 			OldShader::Uniform* pMatrix = nullptr;
@@ -33,6 +35,7 @@ namespace Atlas {
 
 			OldShader::Uniform* views = nullptr;
 			OldShader::Uniform* cutoff = nullptr;
+             */
 
 		};
 

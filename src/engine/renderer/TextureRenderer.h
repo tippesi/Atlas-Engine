@@ -37,9 +37,11 @@ namespace Atlas {
 		private:
 			Buffer::VertexArray vertexArray;
 
+            /*
 			OldShader::OldShader texture2DShader;
 			OldShader::OldShader texture2DArrayShader;
 			OldShader::OldShader texture3DShader;
+            */
 
 		};
 

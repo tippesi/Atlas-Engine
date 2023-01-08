@@ -39,6 +39,7 @@ namespace Atlas {
 
 			Buffer::VertexArray vertexArray;
 
+            /*
 			OldShader::OldShader shader;
 
 			OldShader::Uniform* projectionMatrix = nullptr;
@@ -53,6 +54,7 @@ namespace Atlas {
 			OldShader::Uniform* smoothness = nullptr;
 			OldShader::Uniform* clipArea = nullptr;
 			OldShader::Uniform* blendArea = nullptr;
+             */
 
 		};
 

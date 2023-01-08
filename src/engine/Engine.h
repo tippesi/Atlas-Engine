@@ -9,7 +9,6 @@
 #include "ResourceManager.h"
 #include "scene/Scene.h"
 #include "RenderTarget.h"
-#include "shader/OldShader.h"
 #include "renderer/MainRenderer.h"
 #include "events/EventManager.h"
 #include "audio/AudioManager.h"

@@ -24,10 +24,12 @@ namespace Atlas {
 			
 			void GenerateDetailTexture(Texture::Texture3D* texture, float baseScale);
 
+            /*
 			OldShader::OldShader shapeNoiseShader;
 			OldShader::OldShader detailNoiseShader;
 			OldShader::OldShader integrateShader;
 			OldShader::OldShader temporalShader;
+            */
 			
 			Texture::Texture2D blueNoiseTexture;
 

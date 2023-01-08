@@ -54,7 +54,7 @@ namespace Atlas {
 			verticalButterfly.AddStage(AE_COMPUTE_STAGE, "ocean/butterfly.csh");
 			inversion.AddStage(AE_COMPUTE_STAGE, "ocean/inversion.csh");
 			normal.AddStage(AE_COMPUTE_STAGE, "ocean/normal.csh");
-             */
+
 
 			horizontalButterfly.AddMacro("HORIZONTAL");
 			verticalButterfly.AddMacro("VERTICAL");
@@ -79,7 +79,7 @@ namespace Atlas {
 			normalFoamTemporalWeightUniform = normal.GetUniform("temporalWeight");
 			normalFoamTemporalThresholdUniform = normal.GetUniform("temporalThreshold");
 			normalFoamOffsetUniform = normal.GetUniform("foamOffset");
-
+            */
 			ComputeTwiddleIndices();
 			ComputeSpectrum();
 
@@ -89,6 +89,7 @@ namespace Atlas {
 
 			Graphics::Profiler::BeginQuery("Compute ocean spectrum");
 
+            /*
 			h0.Bind();
 
 			h0.GetUniform("N")->SetValue(N);
@@ -99,7 +100,7 @@ namespace Atlas {
 			h0.GetUniform("windDependency")->SetValue(windDependency);
 			h0.GetUniform("waveSurpression")->SetValue(waveSurpression);
 
-            /*
+
 			noise0.Bind(2);
 			noise1.Bind(3);
 			noise2.Bind(4);
@@ -119,6 +120,7 @@ namespace Atlas {
 
 		void OceanSimulation::ComputeTwiddleIndices() {
 
+            /*
 			auto nUniform = twiddle.GetUniform("N");
 
 			auto bitCount = (int32_t)log2f((float)N);
@@ -128,7 +130,6 @@ namespace Atlas {
 				indices[i] = ReverseBits(i, bitCount);
 			}
 
-            /*
 			Buffer::Buffer buffer(AE_SHADER_STORAGE_BUFFER, sizeof(int32_t), AE_BUFFER_DYNAMIC_STORAGE);
 			buffer.SetSize(indices.size());
 			buffer.SetData(indices.data(), 0, indices.size());
@@ -154,6 +155,7 @@ namespace Atlas {
 
 			if (!update) return;
 
+            /*
 			// displacementMapPrev.Copy(displacementMap);
 
             Graphics::Profiler::BeginQuery("Compute h(t)");
@@ -164,7 +166,6 @@ namespace Atlas {
 			htLUniform->SetValue(L);
 			htTimeUniform->SetValue(simulationSpeed * time);
 
-            /*
 			hTD.Bind(GL_WRITE_ONLY, 0);
 			h0K.Bind(GL_READ_ONLY, 1);
 

@@ -127,3 +127,9 @@ vec4 SampleEnvironmentMap(vec3 v) {
 	return textureLod(environmentMap, v, 0);
 
 }
+
+vec4 SampleEnvironmentMap(vec3 v, float lod) {
+
+	return textureLod(environmentMap, v, lod);
+
+}

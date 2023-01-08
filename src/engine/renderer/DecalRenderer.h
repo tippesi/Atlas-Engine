@@ -23,6 +23,7 @@ namespace Atlas {
 
 			Buffer::VertexArray vertexArray;
 
+            /*
 			OldShader::OldShader shader;
 
 			OldShader::Uniform* modelMatrix = nullptr;
@@ -37,6 +38,7 @@ namespace Atlas {
 			OldShader::Uniform* animationLength = nullptr;
 			OldShader::Uniform* rowCount = nullptr;
 			OldShader::Uniform* columnCount = nullptr;
+             */
 
 		};
 

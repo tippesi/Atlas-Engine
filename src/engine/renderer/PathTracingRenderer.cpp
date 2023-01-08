@@ -3,7 +3,7 @@
 #include "../Clock.h"
 #include "../common/Packing.h"
 #include "../common/RandomHelper.h"
-#include "../shader/PipelineManager.h"
+#include "../pipeline/PipelineManager.h"
 
 #include "../volume/BVH.h"
 

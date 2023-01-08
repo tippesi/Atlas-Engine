@@ -25,8 +25,10 @@ namespace Atlas {
 			void DepthPrepass(Scene::Vegetation& vegetation, std::vector<Mesh::VegetationMesh*>& meshes, 
 				Camera* camera, float time, float deltaTime);
 
+            /*
 			OldShader::OldShader shader;
 			OldShader::OldShader depthShader;
+            */
 
 		};
 

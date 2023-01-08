@@ -33,13 +33,6 @@ namespace Atlas {
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 			commandList->BindPipeline(pipeline);
 
-			if (volume && volume->enable) {
-				auto [irradianceArray, momentsArray] = volume->internal.GetCurrentProbes();
-				//irradianceArray.Bind(24);
-				//momentsArray.Bind(25);
-				//volume->internal.probeStateBuffer.BindBase(14);
-			}
-
             /*
 			target->aoTexture.Bind(6);
 			target->GetDownsampledTextures(target->GetAOResolution())->depthTexture->Bind(14);

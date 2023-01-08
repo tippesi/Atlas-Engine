@@ -4,7 +4,7 @@
 #include "EngineInstance.h"
 #include "loader/ShaderLoader.h"
 #include "graphics/Instance.h"
-#include "shader/PipelineManager.h"
+#include "pipeline/PipelineManager.h"
 
 #include "graphics/ShaderCompiler.h"
 

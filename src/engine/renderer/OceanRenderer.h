@@ -25,6 +25,7 @@ namespace Atlas {
 			Texture::Texture2D refractionTexture;
 			Texture::Texture2D depthTexture;
 
+            /*
 			OldShader::OldShader causticsShader;
 
 			OldShader::OldShader shader;
@@ -89,6 +90,7 @@ namespace Atlas {
 			OldShader::Uniform* pvMatrixLast = nullptr;
 			OldShader::Uniform* jitterLast = nullptr;
 			OldShader::Uniform* jitterCurrent = nullptr;
+             */
 
 		};
 

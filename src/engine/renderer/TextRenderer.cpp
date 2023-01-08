@@ -141,6 +141,7 @@ namespace Atlas {
 
 		void TextRenderer::GetUniforms() {
 
+            /*
 			projectionMatrix = shader.GetUniform("pMatrix");
 			characterScales = shader.GetUniform("characterScales");
 			characterSizes = shader.GetUniform("characterSizes");
@@ -153,6 +154,7 @@ namespace Atlas {
 			smoothness = shader.GetUniform("smoothness");
 			clipArea = shader.GetUniform("clipArea");
 			blendArea = shader.GetUniform("blendArea");
+             */
 
 		}
 

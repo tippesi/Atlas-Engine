@@ -5,7 +5,6 @@
 #include "../RenderList.h"
 #include "Renderer.h"
 #include "ImpostorShadowRenderer.h"
-#include "../shader/ShaderBatch.h"
 
 #include <mutex>
 #include <map>

@@ -3,7 +3,6 @@
 
 #include "../System.h"
 #include "Renderer.h"
-#include "shader/OldShader.h"
 
 namespace Atlas {
 

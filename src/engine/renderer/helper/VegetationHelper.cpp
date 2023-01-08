@@ -65,6 +65,7 @@ namespace Atlas {
 
                 Graphics::Profiler::BeginQuery("Cull and count bins");
 
+                /*
 				// Cull unseen vegetation and count bins
 				{
 					instanceCullingShader.Bind();
@@ -78,10 +79,9 @@ namespace Atlas {
 						auto instanceCount = int32_t(buffers->instanceData.GetElementCount());
 						auto idx = meshToIdxMap[mesh];
 
-                        /*
 						buffers->instanceData.BindBase(5);
 						buffers->culledInstanceData.BindBase(6);
-                        */
+
 
 						instanceCullingShader.GetUniform("instanceCount")->SetValue(instanceCount);
 						instanceCullingShader.GetUniform("meshIdx")->SetValue(idx);
@@ -94,10 +94,11 @@ namespace Atlas {
                         // glDispatchCompute(groupCount, 1, 1);
 					}
 				}
-
+                 */
 
                 Graphics::Profiler::EndAndBeginQuery("Compute bin offsets");
 
+                /*
 				{
 					instanceBinningOffsetShader.Bind();
 
@@ -126,10 +127,8 @@ namespace Atlas {
 						auto instanceCount = int32_t(buffers->instanceData.GetElementCount());
 						auto idx = meshToIdxMap[mesh];
 
-                        /*
 						buffers->culledInstanceData.BindBase(5);
 						buffers->binnedInstanceData.BindBase(6);
-                        */
 						
 						instanceBinningShader.GetUniform("instanceCount")->SetValue(instanceCount);
 						instanceBinningShader.GetUniform("meshIdx")->SetValue(idx);
@@ -179,6 +178,7 @@ namespace Atlas {
 
                 Graphics::Profiler::EndQuery();
                 Graphics::Profiler::EndQuery();
+                 */
 
 			}
 

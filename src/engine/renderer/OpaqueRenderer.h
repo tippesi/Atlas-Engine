@@ -3,7 +3,6 @@
 
 #include "../System.h"
 #include "../RenderList.h"
-#include "../shader/ShaderBatch.h"
 
 #include "Renderer.h"
 #include "ImpostorRenderer.h"
