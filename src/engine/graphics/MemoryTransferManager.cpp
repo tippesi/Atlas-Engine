@@ -199,8 +199,6 @@ namespace Atlas {
             vkResetCommandPool(device->device, commandPool, 0);
             DestroyStagingBuffer(stagingAllocation);
 
-            image->accessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
         }
 
         void MemoryTransferManager::UploadImageData(void *data, Image* image, VkOffset3D offset,

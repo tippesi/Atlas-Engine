@@ -475,7 +475,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::BindImage(const Ref<Image>& image, Ref<Sampler>& sampler, uint32_t set, uint32_t binding) {
+        void CommandList::BindImage(const Ref<Image>& image, const Ref<Sampler>& sampler, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");

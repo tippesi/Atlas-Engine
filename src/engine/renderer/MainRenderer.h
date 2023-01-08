@@ -146,7 +146,7 @@ namespace Atlas {
 
 			};
 
-            struct GlobalUniforms {
+            struct alignas(16) GlobalUniforms {
                 mat4 vMatrix;
                 mat4 pMatrix;
                 mat4 ivMatrix;
@@ -163,7 +163,7 @@ namespace Atlas {
                 vec2 alignment0;
             };
 
-            struct DDGIUniforms {
+            struct alignas(16) DDGIUniforms {
                 vec4 volumeMin;
                 vec4 volumeMax;
                 ivec4 volumeProbeCount;
@@ -181,6 +181,9 @@ namespace Atlas {
 
                 float volumeGamma;
                 float volumeStrength;
+
+                float depthSharpness;
+                int optimizeProbes;
 
                 int32_t volumeEnabled;
             };

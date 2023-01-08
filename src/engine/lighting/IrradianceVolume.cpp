@@ -237,7 +237,6 @@ namespace Atlas {
 
 			}
 
-
 			// Fill probe state buffer with values of 0 (indicates a new probe)
 			uint32_t zero = 0;
 			std::vector<vec4> probeStates(probeStateBuffer.GetElementCount());

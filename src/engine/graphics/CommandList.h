@@ -86,7 +86,7 @@ namespace Atlas {
 
             void BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding);
 
-            void BindImage(const Ref<Image>& image, Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
+            void BindImage(const Ref<Image>& image, const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
             void ResetBindings();
 

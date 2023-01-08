@@ -51,6 +51,7 @@ namespace Atlas {
     void PipelineConfig::AddMacro(const std::string& macro) {
 
         macros.push_back(macro);
+        CalculateVariantHash();
 
     }
 
@@ -60,6 +61,7 @@ namespace Atlas {
 
         if (it != macros.end()) {
             macros.erase(it);
+            CalculateVariantHash();
         }
 
     }

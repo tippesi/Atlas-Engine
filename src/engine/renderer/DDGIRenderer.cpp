@@ -7,54 +7,60 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		DDGIRenderer::DDGIRenderer() {
+        void DDGIRenderer::Init(Graphics::GraphicsDevice *device) {
 
-            /*
+            this->device = device;
+
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 			Helper::GeometryHelper::GenerateSphereVertexArray(sphereArray, 10, 10);
 
-			rayHitBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
-				AE_BUFFER_DYNAMIC_STORAGE);
+			rayHitBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(vec4));
+            rayGenUniformBuffer = Buffer::Buffer(Buffer::BufferUsageBits::UniformBuffer |
+                Buffer::BufferUsageBits::HostAccess | Buffer::BufferUsageBits::MultiBuffered,
+                sizeof(RayGenUniforms), 1);
+            rayHitUniformBuffer = Buffer::Buffer(Buffer::BufferUsageBits::UniformBuffer |
+                Buffer::BufferUsageBits::HostAccess | Buffer::BufferUsageBits::MultiBuffered,
+                sizeof(RayHitUniforms), 1);
 
-			rayGenShader.AddStage(AE_COMPUTE_STAGE, "ddgi/rayGen.csh");
-			rayGenShader.Compile();
+            rayGenPipelineConfig = PipelineConfig("ddgi/rayGen.csh");
+            rayHitPipelineConfig = PipelineConfig("ddgi/rayHit.csh");
 
-			rayHitShader.AddStage(AE_COMPUTE_STAGE, "ddgi/rayHit.csh");
-			rayHitShader.Compile();
+            probeStatePipelineConfig = PipelineConfig("ddgi/probeState.csh");
+            probeIrradianceUpdatePipelineConfig = PipelineConfig("ddgi/probeUpdate.csh", {"IRRADIANCE"});
+            probeMomentsUpdatePipelineConfig = PipelineConfig("ddgi/probeUpdate.csh");
+            irradianceCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh", {"IRRADIANCE"});
+            momentsCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh");
 
-			probeStateShader.AddStage(AE_COMPUTE_STAGE, "ddgi/probeState.csh");
-			probeStateShader.Compile();
+            auto samplerDesc = Graphics::SamplerDesc {
+                .filter = VK_FILTER_LINEAR,
+                .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                .compareEnabled = true
+            };
+            shadowSampler = device->CreateSampler(samplerDesc);
 
-			probeIrradianceUpdateShader.AddStage(AE_COMPUTE_STAGE, "ddgi/probeUpdate.csh");
-			probeIrradianceUpdateShader.AddMacro("IRRADIANCE");
-			probeIrradianceUpdateShader.Compile();
+            PipelineManager::AddPipeline(rayGenPipelineConfig);
+            PipelineManager::AddPipeline(rayHitPipelineConfig);
+            PipelineManager::AddPipeline(probeStatePipelineConfig);
+            PipelineManager::AddPipeline(probeIrradianceUpdatePipelineConfig);
+            PipelineManager::AddPipeline(probeMomentsUpdatePipelineConfig);
+            PipelineManager::AddPipeline(irradianceCopyEdgePipelineConfig);
+            PipelineManager::AddPipeline(momentsCopyEdgePipelineConfig);
 
-			probeMomentsUpdateShader.AddStage(AE_COMPUTE_STAGE, "ddgi/probeUpdate.csh");
-			probeMomentsUpdateShader.Compile();
-
-			copyEdgeShader.AddStage(AE_VERTEX_STAGE, "ddgi/dummy.vsh");
-			copyEdgeShader.AddStage(AE_FRAGMENT_STAGE, "ddgi/copyEdge.fsh");
-			copyEdgeShader.Compile();
-
+            /*
 			probeDebugShader.AddStage(AE_VERTEX_STAGE, "ddgi/probeDebug.vsh");
 			probeDebugShader.AddStage(AE_FRAGMENT_STAGE, "ddgi/probeDebug.fsh");
 			probeDebugShader.Compile();
-             */
+            */
 
 		}
 
-		void DDGIRenderer::Render(Viewport* viewport, RenderTarget* target,
-			Camera* camera, Scene::Scene* scene) {
+		void DDGIRenderer::TraceAndUpdateProbes(Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-		}
-
-		void DDGIRenderer::TraceAndUpdateProbes(Scene::Scene* scene) {
-            /*
 			auto volume = scene->irradianceVolume;
 			if (!volume || !volume->enable || !volume->update)
 				return;
 
-			Profiler::BeginQuery("DDGI");
+			Graphics::Profiler::BeginQuery("DDGI");
 
 			// Try to get a shadow map
 			Lighting::Shadow* shadow = nullptr;
@@ -70,7 +76,7 @@ namespace Atlas {
 				shadow = scene->sky.sun->GetShadow();
 			}
 
-			rayHitShader.ManageMacro("USE_SHADOW_MAP", volume->useShadowMap);
+			rayHitPipelineConfig.ManageMacro("USE_SHADOW_MAP", shadow && volume->useShadowMap);
 			
 			auto& internalVolume = volume->internal;
 			internalVolume.SwapTextures();
@@ -84,7 +90,7 @@ namespace Atlas {
 
 			auto totalRayCount = rayCount * totalProbeCount;
 
-			Profiler::BeginQuery("Scene update");
+			Graphics::Profiler::BeginQuery("Scene update");
 
 			if (totalRayCount != rayHitBuffer.GetElementCount()) {
 				helper.SetRayBufferSize(totalRayCount);
@@ -103,12 +109,13 @@ namespace Atlas {
 			helper.SetScene(scene, 8, volume->sampleEmissives);
 			helper.UpdateLights();
 
-			probeStateBuffer.BindBase(14);
-			probeOffsetBuffer.BindBase(15);
+            commandList->BindBuffer(probeStateBuffer.Get(), 2, 19);
+            commandList->BindBuffer(probeOffsetBuffer.Get(), 2, 20);
 
-			Profiler::EndAndBeginQuery("Ray generation");
+			Graphics::Profiler::EndAndBeginQuery("Ray generation");
 
-			helper.DispatchRayGen(&rayGenShader, volume->probeCount, false,
+            auto rayGenPipeline = PipelineManager::GetPipeline(rayGenPipelineConfig);
+			helper.DispatchRayGen(commandList, rayGenPipeline, volume->probeCount, false,
 				[&]() {
 					using namespace Common;
 
@@ -124,180 +131,166 @@ namespace Atlas {
 					auto epsilon = glm::two_pi<float>() * float(rand()) / float(RAND_MAX);
 					auto rot = mat3(glm::rotate(epsilon, dir));
 
-					rayGenShader.GetUniform("rayCount")->SetValue(rayCount);
-					rayGenShader.GetUniform("rayCountInactive")->SetValue(rayCountInactive);
-					rayGenShader.GetUniform("randomRotation")->SetValue(rot);
+                    auto uniforms = RayGenUniforms {
+                        .rotationMatrix = mat4(rot)
+                    };
+                    rayGenUniformBuffer.SetData(&uniforms, 0, 1);
 
-					rayGenShader.GetUniform("volumeMin")->SetValue(volume->aabb.min);
-					rayGenShader.GetUniform("volumeMax")->SetValue(volume->aabb.max);
-					rayGenShader.GetUniform("volumeProbeCount")->SetValue(volume->probeCount);
-					rayGenShader.GetUniform("cellSize")->SetValue(volume->cellSize);
-
-					rayDirBuffer.BindBase(4);
-					rayDirInactiveBuffer.BindBase(5);
+                    commandList->BindBuffer(rayDirBuffer.Get(), 3, 0);
+                    commandList->BindBuffer(rayDirInactiveBuffer.Get(), 3, 1);
+                    commandList->BindBuffer(rayGenUniformBuffer.GetMultiBuffer(), 3, 2);
 				}
 			);
 
-			Profiler::EndAndBeginQuery("Ray evaluation");
+            Graphics::Profiler::EndAndBeginQuery("Ray evaluation");
 
-			lastIrradianceArray.Bind(24);
-			lastMomentsArray.Bind(25);
+            commandList->BindImage(lastIrradianceArray.image, lastIrradianceArray.sampler, 2, 24);
+            commandList->BindImage(lastMomentsArray.image, lastMomentsArray.sampler, 2, 25);
 
-			helper.DispatchHitClosest(&rayHitShader, false,
+            auto rayHitPipeline = PipelineManager::GetPipeline(rayHitPipelineConfig);
+			helper.DispatchHitClosest(commandList, rayHitPipeline, false,
 				[&]() {
-					rayHitShader.GetUniform("seed")->SetValue(float(rand()) / float(RAND_MAX));
+                    RayHitUniforms uniforms;
+                    uniforms.seed = Common::Random::SampleUniformFloat();
 
-					rayHitShader.GetUniform("volumeMin")->SetValue(volume->aabb.min);
-					rayHitShader.GetUniform("volumeMax")->SetValue(volume->aabb.max);
-					rayHitShader.GetUniform("volumeProbeCount")->SetValue(volume->probeCount);
+                    if (shadow && volume->useShadowMap) {
+                        auto &shadowUniform = uniforms.shadow;
+                        shadowUniform.distance = !shadow->longRange ? shadow->distance : shadow->longRangeDistance;
+                        shadowUniform.bias = shadow->bias;
+                        shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
+                        shadowUniform.cascadeCount = shadow->componentCount;
+                        shadowUniform.resolution = vec2(shadow->resolution);
 
-					rayHitShader.GetUniform("volumeBias")->SetValue(volume->bias);
-					rayHitShader.GetUniform("volumeGamma")->SetValue(volume->gamma);
-					rayHitShader.GetUniform("cellSize")->SetValue(volume->cellSize);
+                        commandList->BindImage(shadow->maps.image, shadowSampler, 3, 0);
 
-					rayHitShader.GetUniform("volumeIrradianceRes")->SetValue(volume->irrRes);
-					rayHitShader.GetUniform("volumeMomentsRes")->SetValue(volume->momRes);
-
-					if (shadow && volume->useShadowMap) {
-						auto distance = shadow->longRange ? shadow->distance : shadow->longRangeDistance;
-
-						rayHitShader.GetUniform("shadow.distance")->SetValue(distance);
-						rayHitShader.GetUniform("shadow.bias")->SetValue(shadow->bias);
-						rayHitShader.GetUniform("shadow.cascadeCount")->SetValue(shadow->componentCount);
-						rayHitShader.GetUniform("shadow.resolution")->SetValue(vec2((float)shadow->resolution));
-
-						shadow->maps.Bind(26);
-
-						for (int32_t i = 0; i < shadow->componentCount; i++) {
-							auto cascade = &shadow->components[i];
-							auto frustum = Volume::Frustum(cascade->frustumMatrix);
-							auto corners = frustum.GetCorners();
-							auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
-								abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
-							auto lightSpace = cascade->projectionMatrix * cascade->viewMatrix;
-							rayHitShader.GetUniform("shadow.cascades[" + std::to_string(i) + "].distance")->SetValue(cascade->farDistance);
-							rayHitShader.GetUniform("shadow.cascades[" + std::to_string(i) + "].cascadeSpace")->SetValue(lightSpace);
-							rayHitShader.GetUniform("shadow.cascades[" + std::to_string(i) + "].texelSize")->SetValue(texelSize);
-						}
-					}
-					else {
-						rayHitShader.GetUniform("shadow.distance")->SetValue(0.0f);
-					}
+                        auto componentCount = shadow->componentCount;
+                        for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
+                            if (i < componentCount) {
+                                auto cascade = &shadow->components[i];
+                                auto frustum = Volume::Frustum(cascade->frustumMatrix);
+                                auto corners = frustum.GetCorners();
+                                auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
+                                    abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
+                                shadowUniform.cascades[i].distance = cascade->farDistance;
+                                shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
+                                    cascade->viewMatrix;
+                                shadowUniform.cascades[i].texelSize = texelSize;
+                            } else {
+                                auto cascade = &shadow->components[componentCount - 1];
+                                shadowUniform.cascades[i].distance = cascade->farDistance;
+                            }
+                        }
+                    }
+                    rayHitUniformBuffer.SetData(&uniforms, 0, 1);
 
 					// Use this buffer instead of the default writeRays buffer of the helper
-					rayHitBuffer.BindBase(3);
+                    commandList->BindBuffer(rayHitBuffer.Get(), 3, 1);
+                    commandList->BindBuffer(rayHitUniformBuffer.GetMultiBuffer(), 3, 2);
 				}
 			);
 
-			rayHitBuffer.BindBase(0);
-			
-			Profiler::EndAndBeginQuery("Update probes");
+            commandList->BufferMemoryBarrier(rayHitBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
+            commandList->BindBuffer(rayHitBuffer.Get(), 3, 1);
+
+            commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_GENERAL,
+                VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+            commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_GENERAL,
+                VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+            Graphics::Profiler::EndAndBeginQuery("Update probes");
 
 			ivec3 probeCount = volume->probeCount;
 
 			// Update the probes
 			{
-				Profiler::BeginQuery("Update irradiance");
+                Graphics::Profiler::BeginQuery("Update irradiance");
 
-				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                commandList->BindImage(irradianceArray.image, 3, 0);
 
-				irradianceArray.Bind(GL_WRITE_ONLY, 0);
-				momentsArray.Bind(GL_WRITE_ONLY, 1);
+                auto pipeline = PipelineManager::GetPipeline(probeIrradianceUpdatePipelineConfig);
+                commandList->BindPipeline(pipeline);
 
-				probeIrradianceUpdateShader.Bind();
-				probeIrradianceUpdateShader.GetUniform("irrProbeRes")->SetValue(volume->irrRes);
-				probeIrradianceUpdateShader.GetUniform("momProbeRes")->SetValue(volume->momRes);
-				probeIrradianceUpdateShader.GetUniform("rayCount")->SetValue(rayCount);
-				probeIrradianceUpdateShader.GetUniform("rayCountInactive")->SetValue(rayCountInactive);
-				probeIrradianceUpdateShader.GetUniform("hysteresis")->SetValue(volume->hysteresis);
-				probeIrradianceUpdateShader.GetUniform("cellSize")->SetValue(volume->cellSize);
-				probeIrradianceUpdateShader.GetUniform("volumeGamma")->SetValue(volume->gamma);
-				probeIrradianceUpdateShader.GetUniform("depthSharpness")->SetValue(volume->sharpness);
+				commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
 
-				glDispatchCompute(probeCount.x, probeCount.y, probeCount.z);
+                Graphics::Profiler::EndAndBeginQuery("Update moments");
 
-				Profiler::EndAndBeginQuery("Update moments");
+                commandList->BindImage(momentsArray.image, 3, 0);
 
-				irradianceArray.Bind(GL_WRITE_ONLY, 0);
-				momentsArray.Bind(GL_WRITE_ONLY, 1);
+                pipeline = PipelineManager::GetPipeline(probeMomentsUpdatePipelineConfig);
+                commandList->BindPipeline(pipeline);
 
-				probeMomentsUpdateShader.Bind();
-				probeMomentsUpdateShader.GetUniform("irrProbeRes")->SetValue(volume->irrRes);
-				probeMomentsUpdateShader.GetUniform("momProbeRes")->SetValue(volume->momRes);
-				probeMomentsUpdateShader.GetUniform("rayCount")->SetValue(rayCount);
-				probeMomentsUpdateShader.GetUniform("rayCountInactive")->SetValue(rayCountInactive);
-				probeMomentsUpdateShader.GetUniform("hysteresis")->SetValue(volume->hysteresis);
-				probeMomentsUpdateShader.GetUniform("cellSize")->SetValue(volume->cellSize);
-				probeMomentsUpdateShader.GetUniform("volumeGamma")->SetValue(volume->gamma);
-				probeMomentsUpdateShader.GetUniform("depthSharpness")->SetValue(volume->sharpness);
-				probeMomentsUpdateShader.GetUniform("optimizeProbes")->SetValue(volume->optimizeProbes);
+				commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
 
-				glDispatchCompute(probeCount.x, probeCount.y, probeCount.z);
-
-				Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
 			}
 
-			Profiler::EndAndBeginQuery("Update probe states");
+            Graphics::Profiler::EndAndBeginQuery("Update probe states");
 
 			// Update the states of the probes
 			{
-				probeStateShader.Bind();
-				probeStateShader.GetUniform("rayCount")->SetValue(rayCount);
-				probeStateShader.GetUniform("rayCountInactive")->SetValue(rayCountInactive);
-				probeStateShader.GetUniform("cellLength")->SetValue(glm::length(volume->cellSize));
-				probeStateShader.GetUniform("cellSize")->SetValue(volume->cellSize);
-				probeStateShader.GetUniform("hysteresis")->SetValue(volume->hysteresis);
+                auto pipeline = PipelineManager::GetPipeline(probeStatePipelineConfig);
+                commandList->BindPipeline(pipeline);
 
-				glDispatchCompute(probeCount.x, probeCount.y, probeCount.z);
+                commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
 			}
 
-			Profiler::EndAndBeginQuery("Update probe edges");
+            Graphics::Profiler::EndAndBeginQuery("Update probe edges");
 
 			// Copy the probe edges
 			{
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-				for (int32_t y = 0; y < probeCount.y; y++) {
+                auto pipeline = PipelineManager::GetPipeline(irradianceCopyEdgePipelineConfig);
+                commandList->BindPipeline(pipeline);
 
-					irradianceFramebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, 
-						const_cast<Texture::Texture2DArray*>(&irradianceArray), y);
-					momentsFramebuffer.AddComponentTextureArray(GL_COLOR_ATTACHMENT0, 
-						const_cast<Texture::Texture2DArray*>(&momentsArray), y);
+                auto probeRes = volume->irrRes;
+                auto constantRange = pipeline->shader->GetPushConstantRange("constants");
 
-					vertexArray.Bind();
+                auto res = ivec2(irradianceArray.width, irradianceArray.height);
+                auto groupCount = res / 8;
 
-					glViewport(0, 0, irradianceArray.width, irradianceArray.height);
+                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
 
-					irradianceFramebuffer.Bind();
+                commandList->PushConstants(constantRange, &probeRes);
+                commandList->BindImage(irradianceArray.image, 3, 0);
+                commandList->Dispatch(groupCount.x, groupCount.y, probeCount.z);
 
-					copyEdgeShader.Bind();
-					copyEdgeShader.GetUniform("probeRes")->SetValue(volume->irrRes);
-					copyEdgeShader.GetUniform("volumeLayer")->SetValue(y);
+                commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-					irradianceArray.Bind(0);
+                pipeline = PipelineManager::GetPipeline(momentsCopyEdgePipelineConfig);
+                commandList->BindPipeline(pipeline);
 
-					glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                probeRes = volume->momRes;
+                constantRange = pipeline->shader->GetPushConstantRange("constants");
 
-					glViewport(0, 0, momentsArray.width, momentsArray.height);
+                res = ivec2(momentsArray.width, momentsArray.height);
+                groupCount = res / 8;
 
-					momentsFramebuffer.Bind();
+                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
 
-					copyEdgeShader.Bind();
-					copyEdgeShader.GetUniform("probeRes")->SetValue(volume->momRes);
-					copyEdgeShader.GetUniform("volumeLayer")->SetValue(y);
+                commandList->PushConstants(constantRange, &probeRes);
+                commandList->BindImage(momentsArray.image, 3, 0);
+                commandList->Dispatch(groupCount.x, groupCount.y, probeCount.z);
 
-					momentsArray.Bind(0);
-
-					glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-				}
 			}
 
-			helper.InvalidateRayBuffer();
+			helper.InvalidateRayBuffer(commandList);
 
-			Profiler::EndQuery();
-			Profiler::EndQuery();
-             */
+            commandList->BufferMemoryBarrier(probeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
+            commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_SHADER_READ_BIT);
+            commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_SHADER_READ_BIT);
+
+            commandList->BindImage(irradianceArray.image, irradianceArray.sampler, 2, 24);
+            commandList->BindImage(momentsArray.image, momentsArray.sampler, 2, 25);
+
+            Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
 		}
 

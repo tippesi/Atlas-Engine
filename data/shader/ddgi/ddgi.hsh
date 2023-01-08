@@ -15,11 +15,11 @@
 layout(set = 2, binding = 24) uniform sampler2DArray irradianceVolume;
 layout(set = 2, binding = 25) uniform sampler2DArray momentsVolume;
 
-layout(std430, set = 2, binding = 14) buffer ProbeStates {
+layout(std430, set = 2, binding = 19) buffer ProbeStates {
 	vec4 probeStates[];
 };
 
-layout(std430, set = 2, binding = 15) buffer ProbeOffsets {
+layout(std430, set = 2, binding = 20) buffer ProbeOffsets {
 	vec4 probeOffsets[];
 };
 
@@ -41,6 +41,9 @@ layout(std140, set = 2, binding = 26) uniform DDGIBuffer {
 
 	float volumeGamma;
 	float volumeStrength;
+
+	float depthSharpness;
+	int optimizeProbes;
 
 	int volumeEnabled;
 } ddgiData;

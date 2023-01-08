@@ -141,7 +141,7 @@ void main() {
 		GetLocalIrradiance(worldPosition, worldView, worldNormal, geometryWorldNormal) : vec4(0.0, 0.0, 0.0, 1.0);
 	prefilteredDiffuseLocal = IsInsideVolume(worldPosition) ? prefilteredDiffuseLocal : vec4(0.0, 0.0, 0.0, 1.0);
 	prefilteredDiffuse = prefilteredDiffuseLocal.rgb + prefilteredDiffuse * prefilteredDiffuseLocal.a;
-	vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface) * ddgiData.indirectStrength;
+	vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface) * ddgiData.volumeStrength;
 #else
 	vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
 	vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface);
@@ -158,7 +158,11 @@ void main() {
 	vec3 indirectSpecular = Uniforms.reflectionEnabled > 0 ? true ? 
 		UpsampleReflection2x(depth) : texture(reflectionTexture, texCoord).rgb : vec3(0.0);
 #else
+#ifdef DDGI
+	vec3 indirectSpecular = IsInsideVolume(worldPosition) ? vec3(0.0) : prefilteredSpecular;
+#else
 	vec3 indirectSpecular = prefilteredSpecular;
+#endif
 #endif
 
 	indirectSpecular *= EvaluateIndirectSpecularBRDF(surface);

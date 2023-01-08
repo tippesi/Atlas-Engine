@@ -42,6 +42,7 @@ namespace Atlas {
 
             shadowRenderer.Init(device);
             opaqueRenderer.Init(device);
+            ddgiRenderer.Init(device);
 			directLightRenderer.Init(device);
 			indirectLightRenderer.Init(device);
 			skyboxRenderer.Init(device);
@@ -116,12 +117,16 @@ namespace Atlas {
             commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 1);
 
             if (scene->irradianceVolume) {
+                //auto& irradianceTexture = scene->irradianceVolume->internal->
+                //commandList->
                 commandList->BindBuffer(ddgiUniformBuffer, 2, 26);
             }
 
             {
                 shadowRenderer.Render(viewport, target, camera, scene, commandList, &renderList);
             }
+
+            ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
 
             {
                 Graphics::Profiler::BeginQuery("Main render pass");
@@ -864,6 +869,8 @@ namespace Atlas {
                     .hysteresis = volume->hysteresis,
                     .volumeGamma = volume->gamma,
                     .volumeStrength = volume->strength,
+                    .depthSharpness = volume->sharpness,
+                    .optimizeProbes = volume->optimizeProbes ? 1 : 0,
                     .volumeEnabled = volume->enable ? 1 : 0
                 };
                 ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));

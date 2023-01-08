@@ -26,18 +26,17 @@
 
 layout (local_size_x = 32) in;
 
-layout(binding = 26) uniform sampler2DArrayShadow cascadeMaps;
+layout(set = 3, binding = 0) uniform sampler2DArrayShadow cascadeMaps;
 
 // Instead of write ray array use hits array
-layout(std430, binding = 3) buffer RayHits {
+layout(std430, set = 3, binding = 1) buffer RayHits {
 	PackedRayHit hits[];
 };
 
-uniform float seed;
-
-#ifdef USE_SHADOW_MAP
-uniform Shadow shadow;
-#endif
+layout(std140, set = 3, binding = 2) uniform UniformBuffer {
+	float seed;
+	Shadow shadow;
+} Uniforms;
 
 vec3 EvaluateHit(inout Ray ray);
 vec3 EvaluateDirectLight(inout Surface surface);
@@ -99,7 +98,7 @@ vec3 EvaluateDirectLight(inout Surface surface) {
 	if (GetLightCount() == 0)
 		return vec3(0.0);
 
-	float curSeed = seed;
+	float curSeed = Uniforms.seed;
 	float raySeed = float(gl_GlobalInvocationID.x);
 
 	float lightPdf;
@@ -117,7 +116,7 @@ vec3 EvaluateDirectLight(inout Surface surface) {
 	// estimate of the solid angle of the light from point P
 	// on the surface.
 #ifdef USE_SHADOW_MAP
-	radiance *= CalculateShadowWorldSpace(shadow, cascadeMaps, surface.P,
+	radiance *= CalculateShadowWorldSpace(Uniforms.shadow, cascadeMaps, surface.P,
 		surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
 #else
 	radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;

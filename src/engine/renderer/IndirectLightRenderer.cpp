@@ -27,8 +27,8 @@ namespace Atlas {
             auto reflection = scene->reflection;
 
             pipelineConfig.ManageMacro("DDGI", volume && volume->enable);
-            pipelineConfig.ManageMacro("REFLECTION", reflection && reflection->enable);
-            pipelineConfig.ManageMacro("AO", ao && ao->enable);
+            //pipelineConfig.ManageMacro("REFLECTION", reflection && reflection->enable);
+            //pipelineConfig.ManageMacro("AO", ao && ao->enable);
 
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 			commandList->BindPipeline(pipeline);

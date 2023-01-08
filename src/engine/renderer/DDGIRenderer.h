@@ -9,15 +9,20 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		class DDGIRenderer {
+		class DDGIRenderer : public Renderer {
 
 		public:
-			DDGIRenderer();
+			DDGIRenderer() = default;
+
+            void Init(Graphics::GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene);
+				Camera* camera, Scene::Scene* scene) final {};
 
-			void TraceAndUpdateProbes(Scene::Scene* scene);
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
+
+			void TraceAndUpdateProbes(Scene::Scene* scene, Graphics::CommandList* commandList);
 
 			void DebugProbes(Viewport* viewport, RenderTarget* target,
 				Camera* camera, Scene::Scene* scene, 
@@ -30,22 +35,58 @@ namespace Atlas {
 			Material probeDebugOffsetMaterial;
 
 		private:
+            struct alignas(16) RayGenUniforms {
+                mat4 rotationMatrix;
+            };
+
+            struct alignas(16) Cascade {
+                float distance;
+                float texelSize;
+                float aligment0;
+                float aligment1;
+                mat4 cascadeSpace;
+            };
+
+            struct alignas(16) Shadow {
+                float distance;
+                float bias;
+
+                float cascadeBlendDistance;
+
+                int cascadeCount;
+                vec2 resolution;
+
+                Cascade cascades[6];
+            };
+
+            struct alignas(16) RayHitUniforms {
+                float seed;
+                Shadow shadow;
+            };
+
 			Buffer::Buffer rayHitBuffer;
+
+			Buffer::Buffer rayGenUniformBuffer;
+			Buffer::Buffer rayHitUniformBuffer;
 
 			Buffer::VertexArray vertexArray;
 			Buffer::VertexArray sphereArray;
 
 			Helper::RayTracingHelper helper;
 
-			OldShader::OldShader probeDebugShader;
+            PipelineConfig probeDebugPipelineConfig;
 
-			OldShader::OldShader rayGenShader;
-			OldShader::OldShader rayHitShader;
+            PipelineConfig rayGenPipelineConfig;
+            PipelineConfig rayHitPipelineConfig;
 
-			OldShader::OldShader probeStateShader;
-			OldShader::OldShader probeIrradianceUpdateShader;
-			OldShader::OldShader probeMomentsUpdateShader;
-			OldShader::OldShader copyEdgeShader;
+            PipelineConfig probeStatePipelineConfig;
+            PipelineConfig probeIrradianceUpdatePipelineConfig;
+            PipelineConfig probeMomentsUpdatePipelineConfig;
+
+            PipelineConfig irradianceCopyEdgePipelineConfig;
+            PipelineConfig momentsCopyEdgePipelineConfig;
+
+            Ref<Graphics::Sampler> shadowSampler;
 
 		};
 
