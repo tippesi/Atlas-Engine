@@ -33,7 +33,7 @@ namespace Atlas {
 
 		window.Clear();
 
-		// mainRenderer.Update();
+        mainRenderer.Update();
 
 	}
 

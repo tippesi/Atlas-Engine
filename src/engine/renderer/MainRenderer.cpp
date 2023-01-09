@@ -46,6 +46,7 @@ namespace Atlas {
 			directLightRenderer.Init(device);
 			indirectLightRenderer.Init(device);
 			skyboxRenderer.Init(device);
+            taaRenderer.Init(device);
             postProcessRenderer.Init(device);
             pathTracingRenderer.Init(device);
 
@@ -57,6 +58,20 @@ namespace Atlas {
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
             commandList->BeginCommands();
+
+            auto& taa = scene->postProcessing.taa;
+            if (taa.enable) {
+                auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
+                jitter.x /= (float)target->GetWidth();
+                jitter.y /= (float)target->GetHeight();
+
+                camera->Jitter(jitter * taa.jitterRange);
+            }
+            else {
+                // Even if there is no TAA we need to update the jitter for other techniques
+                // E.g. the reflections and ambient occlusion use reprojection
+                camera->Jitter(vec2(0.0f));
+            }
 
             Graphics::Profiler::BeginThread("Main renderer", commandList);
             Graphics::Profiler::BeginQuery("Render scene");
@@ -86,20 +101,6 @@ namespace Atlas {
             auto materialBuffer = device->CreateBuffer(materialBufferDesc);
             commandList->BindBuffer(materialBuffer, 0, 2);
 
-			auto& taa = scene->postProcessing.taa;
-			if (taa.enable) {
-				auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
-				jitter.x /= (float)target->GetWidth();
-				jitter.y /= (float)target->GetHeight();
-
-				camera->Jitter(jitter * taa.jitterRange);
-			}
-			else {
-				// Even if there is no TAA we need to update the jitter for other techniques
-				// E.g. the reflections and ambient occlusion use reprojection
-				camera->Jitter(vec2(0.0f));
-			}
-
             if (scene->sky.probe) {
                 if (scene->sky.probe->update) {
                     FilterProbe(scene->sky.probe.get(), commandList);
@@ -117,8 +118,6 @@ namespace Atlas {
             commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 1);
 
             if (scene->irradianceVolume) {
-                //auto& irradianceTexture = scene->irradianceVolume->internal->
-                //commandList->
                 commandList->BindBuffer(ddgiUniformBuffer, 2, 26);
             }
 
@@ -161,7 +160,7 @@ namespace Atlas {
 
                 Graphics::ImageBarrier inBarrier(target->lightingTexture.image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
-                commandList->ImageMemoryBarrier(inBarrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                commandList->ImageMemoryBarrier(inBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 				directLightRenderer.Render(viewport, target, camera, scene, commandList);
@@ -188,6 +187,10 @@ namespace Atlas {
             }
 
             {
+                taaRenderer.Render(viewport, target, camera, scene, commandList);
+
+                target->Swap();
+
                 postProcessRenderer.Render(viewport, target, camera, scene, commandList);
             }
 

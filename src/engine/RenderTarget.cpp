@@ -163,6 +163,9 @@ namespace Atlas {
         gBufferFrameBuffer->ChangeColorAttachmentImage(targetData.velocityTexture->image, 5);
         gBufferFrameBuffer->Refresh();
 
+        lightingFrameBuffer->ChangeColorAttachmentImage(targetData.velocityTexture->image, 1);
+        lightingFrameBuffer->Refresh();
+
 		swap = !swap;
 
 	}

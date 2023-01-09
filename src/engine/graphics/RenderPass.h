@@ -16,7 +16,8 @@ namespace Atlas {
             VkFormat imageFormat = {};
             VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
             VkImageLayout initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            VkImageLayout outputLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            VkImageLayout outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            VkAccessFlags outputAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
             bool isValid = false;
         };

@@ -57,11 +57,22 @@ namespace Atlas {
                 auto& image = target->hdrTexture.image;
 
                 commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+                    VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
                 commandList->BindImage(image, 3, 0);
-                commandList->BindImage(target->lightingTexture.image, target->lightingTexture.sampler, 3, 1);
+
+                if (taa.enable) {
+                    commandList->ImageMemoryBarrier(target->GetHistory()->image,
+                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+                    commandList->BindImage(target->GetHistory()->image,
+                        target->GetHistory()->sampler, 3, 1);
+                }
+                else {
+                    commandList->BindImage(target->lightingTexture.image,
+                        target->lightingTexture.sampler, 3, 1);
+                }
+
 
                 /*
                  * if (taa.enable) {
