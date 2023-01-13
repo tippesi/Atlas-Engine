@@ -34,9 +34,12 @@ namespace Atlas {
 
 	void Camera::UpdateProjection() {
 
-		projectionMatrix = glm::perspective(glm::radians(fieldOfView), aspectRatio, nearPlane, farPlane);
-		// Vulkan has an inverted y-axis
-		//projectionMatrix[1][1] *= -1.0f;
+		const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, -1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.5f, 0.0f,
+			0.0f, 0.0f, 0.5f, 1.0f);
+
+		projectionMatrix = clip * glm::perspective(glm::radians(fieldOfView), aspectRatio, nearPlane, farPlane);
 		invProjectionMatrix = inverse(projectionMatrix);
 
 		unjitterdProjection = projectionMatrix;

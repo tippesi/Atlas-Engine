@@ -12,13 +12,8 @@ layout(push_constant) uniform constants {
 } PushConstants;
 
 void main() {
-
-	mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
-		0.0f,-1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.5f, 0.0f,
-		0.0f, 0.0f, 0.5f, 1.0f);
 	
-    vec4 pos = clip * globalData.pMatrix * globalData.vMatrix * vec4(vPosition + globalData.cameraLocation.xyz, 1.0);
+    vec4 pos = globalData.pMatrix * globalData.vMatrix * vec4(vPosition + globalData.cameraLocation.xyz, 1.0);
     gl_Position = pos.xyww;
 	
 	// We need position for fog calculation

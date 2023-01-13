@@ -91,7 +91,8 @@ void main() {
 	vec4 last = globalData.pvMatrixLast * mMatrixLast * vec4(lastPosition, 1.0);
 	ndcLastVS = vec3(last.xy, last.w);
 
-	gl_Position = clip * gl_Position;
+	// Only after ndc calculation apply the clip correction
+	gl_Position = gl_Position;
 	
 #ifdef GENERATE_IMPOSTOR
 	mvMatrix = globalData.mMatrix;

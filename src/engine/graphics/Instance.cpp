@@ -29,13 +29,13 @@ namespace Atlas {
 #ifdef AE_OS_MACOS
             requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
-            requiredExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+            //requiredExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
             const std::vector<const char*> validationLayers = {
                     "VK_LAYER_KHRONOS_validation"
             };
 
-            if (!CheckValidationLayerSupport(validationLayers) && enableValidationLayers) {
+            if (enableValidationLayers && !CheckValidationLayerSupport(validationLayers)) {
                 return;
             }
 

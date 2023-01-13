@@ -36,12 +36,7 @@ void main() {
 		position = WindAnimation(vPosition, globalData.time, mMatrix[3].xyz);
 
 	}
-
-	mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
-		0.0f,-1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.5f, 0.0f,
-		0.0f, 0.0f, 0.5f, 1.0f);
 	
-	gl_Position = clip * PushConstants.lightSpaceMatrix * matrix * vec4(position, 1.0f);
+	gl_Position = PushConstants.lightSpaceMatrix * matrix * vec4(position, 1.0f);
 	
 }

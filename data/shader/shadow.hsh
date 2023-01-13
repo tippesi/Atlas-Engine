@@ -51,7 +51,7 @@ float cascadeLookup(Shadow shadow, sampler2DArrayShadow cascadeMaps, float casca
 		0.0f, 0.0f, 0.5f, 0.0f,
 		0.0f, 0.0f, 0.5f, 1.0f);
 
-	vec4 shadowCoords = clip * cascadeTransform * vec4(fragmentPosition, 1.0);
+	vec4 shadowCoords = cascadeTransform * vec4(fragmentPosition, 1.0);
 	shadowCoords.xyz /= shadowCoords.w;
 	
 	float fadeout = fade ? clamp((-fragmentPosition.z + 2.0 - shadow.distance) * 0.5, 0.0, 1.0) : 0.0;

@@ -19,9 +19,6 @@ namespace Atlas {
 			maps = Texture::Texture2DArray(resolution, resolution, cascadeCount, 
 				VK_FORMAT_D16_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-			//glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-			//glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-
 			components = std::vector<ShadowComponent>(cascadeCount);
 
 			Update();
@@ -38,9 +35,6 @@ namespace Atlas {
 
 				cubemap  = Texture::Cubemap(resolution, resolution, VK_FORMAT_D16_UNORM,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-
-				//glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-				//glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 			}
 			else {
 				componentCount = 1;
@@ -48,9 +42,6 @@ namespace Atlas {
 
 				maps = Texture::Texture2DArray(resolution, resolution, 1, VK_FORMAT_D16_UNORM,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-
-				//glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-				//glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 			}
 
 			components = std::vector<ShadowComponent>(componentCount);

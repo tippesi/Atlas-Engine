@@ -394,7 +394,7 @@ void main() {
 #endif
 
     StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
-    //blendFactor = features.responsivePixel ? 0.5 : blendFactor;
+    blendFactor = features.responsivePixel ? 0.5 : blendFactor;
 
     // Check if we sampled outside the viewport area
     blendFactor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
