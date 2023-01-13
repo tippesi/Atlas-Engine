@@ -9,6 +9,7 @@
 #include "../common/Ref.h"
 #include "../graphics/Image.h"
 #include "../graphics/Sampler.h"
+#include "../graphics/GraphicsDevice.h"
 
 namespace Atlas {
 
@@ -114,14 +115,19 @@ namespace Atlas {
         };
 
         template<typename T>
-        std::vector<T> Texture::GetData(int32_t depth) {
+        std::vector<T> Texture::GetData(int32_t layerOffset) {
 
             static_assert(std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> ||
                           std::is_same_v<T, float>, "Unsupported type. Supported are uint8_t, uint16_t and float");
 
             std::vector<T> data(width * height * channels);
-            // Get data via memory transfer manager
+            
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
 
+            VkOffset3D offset = {};
+            VkExtent3D extent = { width, height, depth };
+            device->memoryManager->transferManager->RetrieveImageData(data.data(), image.get(), offset,
+                extent, layerOffset, 1, true);
 
             return data;
 
