@@ -8,18 +8,25 @@ layout (local_size_x = 256, local_size_y = 1) in;
 layout (local_size_x = 1, local_size_y = 256) in;
 #endif
 
-layout(binding = 0) uniform sampler2D inputTexture;
-layout(binding = 1) uniform sampler2D depthTexture;
-layout(binding = 2) uniform sampler2D normalTexture;
-layout(binding = 0) writeonly uniform image2D outputImage;
+#ifdef BLUR_RGB
+layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D outputImage;
+#else
+layout(set = 3, binding = 0, r16f) writeonly uniform image2D outputImage;
+#endif
+layout(set = 3, binding = 1) uniform sampler2D inputTexture;
+layout(set = 3, binding = 2) uniform sampler2D depthTexture;
+layout(set = 3, binding = 3) uniform sampler2D normalTexture;
 
-// Actual size of the kernel is 2 * kernelSize + 1
-// This assumption holds, because the kernel is symmetric
-uniform int kernelSize;
-uniform float weights[80];
+layout(push_constant) uniform constants {
+	int kernelSize;
+} pushConstants;
 
-uniform float normalPhi = 32.0;
-uniform float depthPhi = 1.0;
+layout(set = 3, binding = 4, std140) uniform  WeightBuffer {
+	vec4 data[32];
+} weights;
+
+const float normalPhi = 32.0;
+const float depthPhi = 1.0;
 
 #ifdef BLUR_RGB
 shared vec3 inputs[320];
@@ -35,15 +42,15 @@ shared vec3 normals[320];
 
 void LoadGroupSharedData() {
 
-    uint dataSize = 2u * uint(kernelSize) + 256u;
+    uint dataSize = 2u * uint(pushConstants.kernelSize) + 256u;
 
     // Get offset of the group in image
     ivec2 offset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize);
     // Substract left extend of kernel
 #ifdef HORIZONTAL
-    offset.x -= kernelSize;
+    offset.x -= pushConstants.kernelSize;
 #else
-    offset.y -= kernelSize;
+    offset.y -= pushConstants.kernelSize;
 #endif
 
     // Cooperatively load data into shared memory
@@ -84,7 +91,7 @@ void main() {
 
     // Get offset of the group in image
     ivec2 offset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize);
-    int sharedDataOffset = kernelSize;
+    int sharedDataOffset = pushConstants.kernelSize;
     // Adds the biggest component to the shared offset
     // E.g. this is the x component for horizontal blurring
     sharedDataOffset += max3(ivec3(gl_LocalInvocationID));
@@ -95,8 +102,8 @@ void main() {
     float center, result;
 #endif
     center = inputs[sharedDataOffset];
-    result = center * weights[0];
-    float totalWeight = weights[0];
+    result = center * weights.data[0][0];
+    float totalWeight = weights.data[0][0];
 
 #ifdef DEPTH_WEIGHT
     float centerDepth = depths[sharedDataOffset];
@@ -106,8 +113,8 @@ void main() {
 #endif
 
     // First sum and weight left kernel extend
-    for (int i = 1; i <= kernelSize; i++) {
-        float weight = weights[i];
+    for (int i = 1; i <= pushConstants.kernelSize; i++) {
+        float weight = weights.data[i / 4][i % 4];
 #ifdef DEPTH_WEIGHT
         float depth = depths[sharedDataOffset - i];
 
@@ -127,8 +134,8 @@ void main() {
     }
 
     // Then sum and weight right kernel extend
-    for (int i = 1; i <= kernelSize; i++) {
-        float weight = weights[i];
+    for (int i = 1; i <= pushConstants.kernelSize; i++) {
+        float weight = weights.data[i / 4][i % 4];
 #ifdef DEPTH_WEIGHT
         float depth = depths[sharedDataOffset + i];
 
@@ -150,7 +157,7 @@ void main() {
     ivec2 pixel = offset + ivec2(gl_LocalInvocationID);
 
 #ifdef BLUR_RGB
-    imageStore(outputImage, pixel, vec4(center, 0.0));
+    imageStore(outputImage, pixel, vec4(result / totalWeight, 0.0));
 #else
     imageStore(outputImage, pixel, vec4(result / totalWeight));
 #endif

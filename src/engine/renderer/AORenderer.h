@@ -50,6 +50,7 @@ namespace Atlas {
             Buffer::Buffer rtUniformBuffer;
             Buffer::Buffer ssUniformBuffer;
             Buffer::Buffer ssSamplesUniformBuffer;
+            Buffer::Buffer blurWeightsUniformBuffer;
 
 		};
 

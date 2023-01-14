@@ -257,8 +257,6 @@ namespace Atlas {
 
             if (it != pushConstantRanges.end())
                 return &(*it);
-            else
-                assert(0 && "Couldn't find the requested push constant range");
 
             return nullptr;
 

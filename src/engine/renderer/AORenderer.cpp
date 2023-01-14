@@ -31,7 +31,9 @@ namespace Atlas {
                                | Buffer::BufferUsageBits::MultiBuffered;
             rtUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(RTUniforms), 1);
             ssUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(SSUniforms), 1);
-            ssSamplesUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(vec4), 64);
+            // If we don't set the element size to the whole thing, otherwise uniform buffer element alignment kicks in
+            ssSamplesUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(vec4) * 64, 1);
+            blurWeightsUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(vec4) * (size_t(filterSize / 4) + 1), 1);
 
 		}
 
@@ -114,7 +116,7 @@ namespace Atlas {
                     .frameCount = 0
                 };
                 ssUniformBuffer.SetData(&uniforms, 0, 1);
-                ssSamplesUniformBuffer.SetData(&ao->samples[0], 0, ao->samples.size());
+                ssSamplesUniformBuffer.SetData(&ao->samples[0], 0, 1);
 
                 commandList->BindImage(target->aoTexture.image, 3, 0);
 
@@ -196,14 +198,10 @@ namespace Atlas {
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
             }
 
-            /*
             {
                 Graphics::Profiler::EndAndBeginQuery("Blur");
 
                 const int32_t groupSize = 256;
-
-                depthTexture->Bind(1);
-                normalTexture->Bind(2);
 
                 std::vector<float> kernelWeights;
                 std::vector<float> kernelOffsets;
@@ -214,39 +212,63 @@ namespace Atlas {
                 kernelWeights = std::vector<float>(kernelWeights.begin() + mean, kernelWeights.end());
                 kernelOffsets = std::vector<float>(kernelOffsets.begin() + mean, kernelOffsets.end());
 
+                auto kernelSize = int32_t(kernelWeights.size() - 1);
+
+                auto horizontalBlurPipeline = PipelineManager::GetPipeline(horizontalBlurPipelineConfig);
+                auto verticalBlurPipeline = PipelineManager::GetPipeline(verticalBlurPipelineConfig);
+
+                auto horizontalConstRange = horizontalBlurPipeline->shader->GetPushConstantRange("constants");
+                auto verticalConstRange = verticalBlurPipeline->shader->GetPushConstantRange("constants");
+
+
+                blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0, 1);
+
+                commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
+                commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
+                commandList->BindBuffer(blurWeightsUniformBuffer.GetMultiBuffer(), 3, 4);
+
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+
                 for (int32_t i = 0; i < 5; i++) {
                     ivec2 groupCount = ivec2(res.x / groupSize, res.y);
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
+                    imageBarriers = {
+                       {target->aoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                       {target->swapAoTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                    };
+                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
-                    horizontalBlurShader.Bind();
+                    commandList->BindPipeline(horizontalBlurPipeline);
+                    commandList->PushConstants(horizontalConstRange, &kernelSize);
 
-                    horizontalBlurShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
-                    horizontalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
-                    horizontalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
+                    commandList->BindImage(target->swapAoTexture.image, 3, 0);
+                    commandList->BindImage(target->aoTexture.image, target->aoTexture.sampler, 3, 1);
 
-                    target->aoTexture.Bind(0);
-                    target->swapAoTexture.Bind(GL_WRITE_ONLY, 0);
-
-                    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-                    glDispatchCompute(groupCount.x, groupCount.y, 1);
+                    commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
                     groupCount = ivec2(res.x, res.y / groupSize);
                     groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                    verticalBlurShader.Bind();
+                    imageBarriers = {
+                        {target->swapAoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                        {target->aoTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                    };
+                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
-                    verticalBlurShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
-                    verticalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
-                    verticalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
+                    commandList->BindPipeline(verticalBlurPipeline);
+                    commandList->PushConstants(horizontalConstRange, &kernelSize);
 
-                    target->swapAoTexture.Bind(0);
-                    target->aoTexture.Bind(GL_WRITE_ONLY, 0);
+                    commandList->BindImage(target->aoTexture.image, 3, 0);
+                    commandList->BindImage(target->swapAoTexture.image, target->swapAoTexture.sampler, 3, 1);
 
-                    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-                    glDispatchCompute(groupCount.x, groupCount.y, 1);
+                    commandList->Dispatch(groupCount.x, groupCount.y, 1);
                 }
             }
-            */
+
+            commandList->ImageMemoryBarrier(target->aoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_SHADER_READ_BIT);
+            
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndQuery();
 

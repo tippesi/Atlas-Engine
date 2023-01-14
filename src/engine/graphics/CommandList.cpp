@@ -331,6 +331,8 @@ namespace Atlas {
 
             assert(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
+            assert(pushConstantRange != nullptr && "Push constant range should not be null");
+            if (!pushConstantRange) return;
 
             vkCmdPushConstants(commandBuffer, pipelineInUse->layout, pushConstantRange->range.stageFlags,
                 pushConstantRange->range.offset, pushConstantRange->range.size, data);
@@ -551,6 +553,19 @@ namespace Atlas {
                 nullptr, 1, &barrier, 0, nullptr);
 
             buffer->accessMask = newAccessMask;
+
+        }
+
+        void CommandList::BufferMemoryBarrier(const Ref<MultiBuffer>& buffer, VkAccessFlags newAccessMask,
+            VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask) {
+
+            auto barrier = Initializers::InitBufferMemoryBarrier(buffer->GetCurrent()->buffer,
+                buffer->GetCurrent()->accessMask, newAccessMask);
+
+            vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0,
+                nullptr, 1, &barrier, 0, nullptr);
+
+            buffer->GetCurrent()->accessMask = newAccessMask;
 
         }
 
@@ -790,7 +805,7 @@ namespace Atlas {
                         auto& bufferInfo = bufferInfos[bindingCounter];
                         bufferInfo.offset = 0;
                         bufferInfo.buffer = buffer->buffer;
-                        bufferInfo.range = binding.size ? binding.size : VK_WHOLE_SIZE;
+                        bufferInfo.range = binding.size ? std::min(binding.size, uint32_t(buffer->size)) : VK_WHOLE_SIZE;
 
                         auto& setWrite = setWrites[bindingCounter++];
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -818,7 +833,7 @@ namespace Atlas {
                         auto& bufferInfo = bufferInfos[bindingCounter];
                         bufferInfo.offset = 0;
                         bufferInfo.buffer = buffer->buffer;
-                        bufferInfo.range = binding.size ? binding.size : VK_WHOLE_SIZE;
+                        bufferInfo.range = binding.size ? std::min(binding.size, uint32_t(buffer->size)) : VK_WHOLE_SIZE;
 
                         auto& setWrite = setWrites[bindingCounter++];
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
