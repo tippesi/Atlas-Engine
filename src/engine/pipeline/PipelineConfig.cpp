@@ -15,7 +15,7 @@ namespace Atlas {
     }
 
     PipelineConfig::PipelineConfig(const ShaderConfig& shaderConfig, const Graphics::GraphicsPipelineDesc& desc,
-        std::vector<std::string> macros) : shaderConfig(shaderConfig), macros(macros),
+        const std::vector<std::string>& macros) : shaderConfig(shaderConfig), macros(macros),
         graphicsPipelineDesc(desc), isCompute(false) {
 
         CalculateShaderHash();

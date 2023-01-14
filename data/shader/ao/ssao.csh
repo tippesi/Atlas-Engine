@@ -54,7 +54,7 @@ void main() {
     for(uint i = 0; i < uniforms.sampleCount; i++) {
         float rnd = 2.0 * random(texCoord, seed);
         // get sample position
-        vec3 ssaoSample = TBN * samples.data[i]; // From tangent to view-space
+        vec3 ssaoSample = TBN * samples.data[i].xyz; // From tangent to view-space
         ssaoSample = fragPos + ssaoSample * uniforms.radius;
         
         // project sample position (to sample texture) (to get position on screen/texture)

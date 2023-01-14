@@ -27,7 +27,7 @@ namespace Atlas {
         PipelineConfig(const ShaderConfig& shaderConfig, const Graphics::GraphicsPipelineDesc& desc);
 
         PipelineConfig(const ShaderConfig& shaderConfig, const Graphics::GraphicsPipelineDesc& desc,
-            std::vector<std::string> macros);
+            const std::vector<std::string>& macros);
 
         void AddMacro(const std::string& macro);
 

@@ -10,9 +10,9 @@
 
 ![GI scene](wiki/images/intel_sponza.gif) <br/>*Realtime Sponza scene with software raytraced GI, AO and reflections (model from [Intel Graphics Research Sample Library](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html))* <br/>
 ## Introduction
-This is a cross platform toy engine developed in my spare time that is available on Linux and Windows.
+This is a cross platform toy engine developed in my spare time that is available on Linux, Windows and MacOS.
 ## Requirements
-- Vulkan
+- Vulkan SDK
 - C++20 compatible compiler
 - CMake
 - Vcpkg

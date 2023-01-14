@@ -26,7 +26,7 @@ namespace Atlas {
 				Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList,
                 std::unordered_map<void*, uint16_t> materialMap);
 
-			void RenderImpostor(Viewport* viewport, std::vector<mat4> viewMatrices,
+			void RenderImpostor(Viewport* viewport, const std::vector<mat4>& viewMatrices,
 				mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor);
 
 		private:

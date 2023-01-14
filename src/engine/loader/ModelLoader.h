@@ -34,8 +34,8 @@ namespace Atlas {
 			static void LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material);
 
 			static void LoadMaterialImages(aiMaterial* material, MaterialImages& images,
-				std::string directory, bool isObj, bool hasTangents, int32_t maxTextureResolution,
-                bool rgbSupport);
+				const std::string& directory, bool isObj, bool hasTangents,
+                int32_t maxTextureResolution, bool rgbSupport);
 
             static std::string GetDirectoryPath(std::string filename);
 

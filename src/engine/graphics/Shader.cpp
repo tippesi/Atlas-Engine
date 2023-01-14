@@ -288,7 +288,7 @@ namespace Atlas {
 
             // Sort by offset to make compatibility checking easy
             std::sort(shaderModule.pushConstantRanges.begin(), shaderModule.pushConstantRanges.end(),
-                [](PushConstantRange& range0, PushConstantRange& range1) {
+                [](const PushConstantRange& range0, const PushConstantRange& range1) {
                     return range0.name < range1.name;
                 });
 

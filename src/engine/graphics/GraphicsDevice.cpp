@@ -464,9 +464,9 @@ namespace Atlas {
             VK_CHECK(vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data()))
 
             std::multimap<int32_t, VkPhysicalDevice> candidates;
-            for (const auto& device : devices) {
-                int32_t score = RateDeviceSuitability(device, surface, requiredExtensions);
-                candidates.insert(std::make_pair(score, device));
+            for (const auto& candidate : devices) {
+                int32_t score = RateDeviceSuitability(candidate, surface, requiredExtensions);
+                candidates.insert(std::make_pair(score, candidate));
             }
 
             auto foundSuitableDevice = candidates.rbegin()->first > 0;
@@ -504,18 +504,18 @@ namespace Atlas {
 
             int32_t score = 0;
 
-            VkPhysicalDeviceProperties deviceProperties;
-            VkPhysicalDeviceFeatures deviceFeatures;
-            vkGetPhysicalDeviceProperties(device, &deviceProperties);
-            vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+            VkPhysicalDeviceProperties physicalDeviceProperties;
+            VkPhysicalDeviceFeatures physicalDeviceFeatures;
+            vkGetPhysicalDeviceProperties(device, &physicalDeviceProperties);
+            vkGetPhysicalDeviceFeatures(device, &physicalDeviceFeatures);
 
             // This property has to outweigh any other
-            if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+            if (physicalDeviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
                 score += 10000;
             }
 
             // Maximum possible size of textures affects graphics quality
-            score += deviceProperties.limits.maxImageDimension2D;
+            score += physicalDeviceProperties.limits.maxImageDimension2D;
 
             // The following are the requirements we MUST meet
             {
@@ -535,7 +535,7 @@ namespace Atlas {
                     return 0;
                 }
 
-                if (!deviceFeatures.samplerAnisotropy) {
+                if (!physicalDeviceFeatures.samplerAnisotropy) {
                     return 0;
                 }
             }

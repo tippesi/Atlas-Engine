@@ -331,7 +331,7 @@ namespace Atlas {
 			
 		}
 
-		void ModelLoader::LoadMaterialImages(aiMaterial* material, MaterialImages& images, std::string directory,
+		void ModelLoader::LoadMaterialImages(aiMaterial* material, MaterialImages& images, const std::string& directory,
             bool isObj, bool hasTangents, int32_t maxTextureResolution, bool rgbSupport) {
 			if (material->GetTextureCount(aiTextureType_BASE_COLOR) > 0 ||
 				material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {

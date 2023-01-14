@@ -74,6 +74,8 @@ jobs:
             data
             README.md
             LICENSE
+            ${{ github.workspace }}/bin/**/AtlasEngineDemo.exe
+            ${{ github.workspace }}/bin/**/*.dll
             ${{ github.workspace }}/build/**/AtlasEngineDemo.exe
             ${{ github.workspace }}/build/**/*.dll
             !**/CMakeFiles
@@ -139,6 +141,8 @@ jobs:
             data
             README.md
             LICENSE
+            ${{ github.workspace }}/bin/**/AtlasEngineDemo
+            ${{ github.workspace }}/bin/**/*.so*
             ${{ github.workspace }}/build/**/AtlasEngineDemo
             ${{ github.workspace }}/build/**/*.so*
             !**/CMakeFiles
