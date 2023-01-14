@@ -67,40 +67,6 @@ namespace Atlas {
 
         }
 
-        void MemoryTransferManager::UploadBufferData(void *data, Buffer* destinationBuffer,
-            VkBufferCopy bufferCopyDesc, VkCommandBuffer cmd) {
-
-            VmaAllocator allocator = memoryManager->allocator;
-
-            auto stagingAllocation = CreateStagingBuffer(bufferCopyDesc.size);
-
-            void* destination;
-            vmaMapMemory(allocator, stagingAllocation.allocation, &destination);
-            std::memcpy(destination, data, bufferCopyDesc.size);
-            vmaUnmapMemory(allocator, stagingAllocation.allocation);
-
-            VkCommandBufferBeginInfo cmdBeginInfo =
-                Initializers::InitCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-            VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo));
-
-            vkCmdCopyBuffer(commandBuffer, stagingAllocation.buffer, destinationBuffer->buffer, 1, &bufferCopyDesc);
-
-            VK_CHECK(vkEndCommandBuffer(commandBuffer));
-
-            VkSubmitInfo submit = Initializers::InitSubmitInfo(&commandBuffer);
-            VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
-
-            // We wait here until the operation is finished
-            VK_CHECK(vkWaitForFences(device->device, 1, &fence, true, 9999999999))
-            VK_CHECK(vkResetFences(device->device, 1, &fence))
-
-            vkResetCommandPool(device->device, commandPool, 0);
-            DestroyStagingBuffer(stagingAllocation);
-
-            destinationBuffer->accessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-        }
-
         void MemoryTransferManager::UploadImageData(void *data, Image* image, VkOffset3D offset, VkExtent3D extent,
             uint32_t layerOffset, uint32_t layerCount) {
 
@@ -195,14 +161,7 @@ namespace Atlas {
             DestroyStagingBuffer(stagingAllocation);
 
         }
-
-        void MemoryTransferManager::UploadImageData(void *data, Image* image, VkOffset3D offset,
-            VkExtent3D extent, VkCommandBuffer cmd) {
-
-
-
-        }
-
+        
         void MemoryTransferManager::RetrieveImageData(void *data, Image *image, VkOffset3D offset,
             VkExtent3D extent, uint32_t layerOffset, uint32_t layerCount, bool block) {
 

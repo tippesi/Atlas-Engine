@@ -26,12 +26,8 @@ namespace Atlas {
 
             void UploadBufferData(void* data, Buffer* buffer, VkBufferCopy bufferCopyDesc);
 
-            void UploadBufferData(void* data, Buffer* buffer, VkBufferCopy bufferCopyDesc, VkCommandBuffer cmd);
-
             void UploadImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent,
                 uint32_t layerOffset, uint32_t layerCount);
-
-            void UploadImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent, VkCommandBuffer cmd);
 
             void RetrieveImageData(void* data, Image* image, VkOffset3D offset, VkExtent3D extent,
                 uint32_t layerOffset, uint32_t layerCount, bool block = true);

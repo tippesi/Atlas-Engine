@@ -125,7 +125,7 @@ namespace Atlas {
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
             VkOffset3D offset = {};
-            VkExtent3D extent = { width, height, depth };
+            VkExtent3D extent = { uint32_t(width), uint32_t(height), uint32_t(depth) };
             device->memoryManager->transferManager->RetrieveImageData(data.data(), image.get(), offset,
                 extent, layerOffset, 1, true);
 
