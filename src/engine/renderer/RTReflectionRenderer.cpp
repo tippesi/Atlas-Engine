@@ -8,40 +8,35 @@ namespace Atlas {
 
 	namespace Renderer {
 
-        RTReflectionRenderer::RTReflectionRenderer() {
-
-            /*
-            const int32_t filterSize = 2;
-            blurFilter.CalculateBoxFilter(filterSize);
+        void RTReflectionRenderer::Init(Graphics::GraphicsDevice* device) {
             
             auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("noise.png");
-            blueNoiseTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, GL_RGBA8, GL_REPEAT, GL_NEAREST);
+            blueNoiseTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, VK_FORMAT_R8G8B8A8_UNORM);
             blueNoiseTexture.SetData(noiseImage.GetData());
 
-            rtrShader.AddStage(AE_COMPUTE_STAGE, "reflection/rtreflection.csh");
-            rtrShader.Compile();
+            rtrPipelineConfig = PipelineConfig("reflection/rtreflection.csh");
+            temporalPipelineConfig = PipelineConfig("reflection/temporal.csh");
 
-            temporalShader.AddStage(AE_COMPUTE_STAGE, "reflection/temporal.csh");
-            temporalShader.Compile();
+            atrousPipelineConfig[0] = PipelineConfig("reflection/atrous.csh", { "STEP_SIZE1" });
+            atrousPipelineConfig[1] = PipelineConfig("reflection/atrous.csh", { "STEP_SIZE2" });
+            atrousPipelineConfig[2] = PipelineConfig("reflection/atrous.csh", { "STEP_SIZE4" });
 
-            atrousShader[0].AddStage(AE_COMPUTE_STAGE, "reflection/atrous.csh");
-            atrousShader[0].AddMacro("STEP_SIZE1");
-            atrousShader[0].Compile();
+            auto bufferUsage = Buffer::BufferUsageBits::UniformBuffer | Buffer::BufferUsageBits::HostAccess
+                | Buffer::BufferUsageBits::MultiBuffered;
+            rtrUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(RTRUniforms), 1);
 
-            atrousShader[1].AddStage(AE_COMPUTE_STAGE, "reflection/atrous.csh");
-            atrousShader[1].AddMacro("STEP_SIZE2");
-            atrousShader[1].Compile();
-
-            atrousShader[2].AddStage(AE_COMPUTE_STAGE, "reflection/atrous.csh");
-            atrousShader[2].AddMacro("STEP_SIZE4");
-            atrousShader[2].Compile();
-             */
+            auto samplerDesc = Graphics::SamplerDesc{
+                .filter = VK_FILTER_LINEAR,
+                .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                .compareEnabled = true
+            };
+            shadowSampler = device->CreateSampler(samplerDesc);
 
 		}
 
-		void RTReflectionRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
-
-            /*
+		void RTReflectionRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
+            Scene::Scene* scene, Graphics::CommandList* commandList) {
+            
             auto reflection = scene->reflection;
             if (!reflection || !reflection->enable) return;
 
@@ -50,8 +45,8 @@ namespace Atlas {
 
             ivec2 res = ivec2(target->aoTexture.width, target->aoTexture.height);
 
-            Profiler::BeginQuery("Render RT Reflections");
-            Profiler::BeginQuery("Trace rays");
+            Graphics::Profiler::BeginQuery("Render RT Reflections");
+            Graphics::Profiler::BeginQuery("Trace rays");
 
             // Try to get a shadow map
             Lighting::Shadow* shadow = nullptr;
@@ -67,8 +62,8 @@ namespace Atlas {
                 shadow = scene->sky.sun->GetShadow();
             }
 
-            auto downsampledRT = target->GetDownsampledTextures(target->GetReflectionResolution());
-            auto downsampledHistoryRT = target->GetDownsampledHistoryTextures(target->GetReflectionResolution());
+            auto downsampledRT = target->GetData(target->GetReflectionResolution());
+            auto downsampledHistoryRT = target->GetHistoryData(target->GetReflectionResolution());
 
             // Should be reflection resolution
             auto depthTexture = downsampledRT->depthTexture;
@@ -84,178 +79,195 @@ namespace Atlas {
             auto historyNormalTexture = downsampledHistoryRT->geometryNormalTexture;
 
             // Bind the geometry normal texure and depth texture
-            normalTexture->Bind(16);
-            depthTexture->Bind(17);
-            roughnessTexture->Bind(18);
-            offsetTexture->Bind(19);
-            materialIdxTexture->Bind(20);
-            blueNoiseTexture.Bind(21);
+            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
+            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
+            commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 3);
+            commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 4);
+            commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
+            commandList->BindImage(blueNoiseTexture.image, blueNoiseTexture.sampler, 3, 6);
 
-            // Calculate RTAO
+            // Cast rays and calculate radiance
             {
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
                 
-                rtrShader.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap);
-                rtrShader.ManageMacro("GI", reflection->gi);
+                rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap);
+                rtrPipelineConfig.ManageMacro("GI", reflection->gi);
 
-                helper.DispatchAndHit(&rtrShader, ivec3(groupCount, 1),
+                auto pipeline = PipelineManager::GetPipeline(rtrPipelineConfig);
+
+                commandList->ImageMemoryBarrier(target->reflectionTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+
+                helper.DispatchAndHit(commandList, pipeline, ivec3(groupCount, 1),
                     [=]() {
-                        target->swapReflectionTexture.Bind(GL_WRITE_ONLY, 4);                        
+                        commandList->BindImage(target->reflectionTexture.image, 3, 0);
 
-                        rtrShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
-                        rtrShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
-                        rtrShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
-
-                        rtrShader.GetUniform("sampleCount")->SetValue(reflection->sampleCount);
-                        rtrShader.GetUniform("radianceLimit")->SetValue(reflection->radianceLimit);
-                        rtrShader.GetUniform("useShadowMap")->SetValue(reflection->useShadowMap);
-                        rtrShader.GetUniform("resolution")->SetValue(res);
-
-                        rtrShader.GetUniform("jitter")->SetValue(camera->GetJitter());
-                        rtrShader.GetUniform("bias")->SetValue(reflection->bias);
-
-                        rtrShader.GetUniform("frameSeed")->SetValue(Common::Random::SampleUniformInt(0, 255));
-
-                        auto volume = scene->irradianceVolume;
-                        if (volume && volume->enable) {
-                            auto [irradianceArray, momentsArray] = volume->internal.GetCurrentProbes();
-                            irradianceArray.Bind(24);
-                            momentsArray.Bind(25);
-                            volume->internal.probeStateBuffer.BindBase(14);
-                            rtrShader.GetUniform("volumeEnabled")->SetValue(true);
-                            rtrShader.GetUniform("volumeMin")->SetValue(volume->aabb.min);
-                            rtrShader.GetUniform("volumeMax")->SetValue(volume->aabb.max);
-                            rtrShader.GetUniform("volumeProbeCount")->SetValue(volume->probeCount);
-                            rtrShader.GetUniform("volumeIrradianceRes")->SetValue(volume->irrRes);
-                            rtrShader.GetUniform("volumeMomentsRes")->SetValue(volume->momRes);
-                            rtrShader.GetUniform("volumeBias")->SetValue(volume->bias);
-                            rtrShader.GetUniform("volumeGamma")->SetValue(volume->gamma);
-                            rtrShader.GetUniform("cellSize")->SetValue(volume->cellSize);
-                            rtrShader.GetUniform("indirectStrength")->SetValue(volume->strength);
-                        }
-                        else {
-                            rtrShader.GetUniform("volumeEnabled")->SetValue(false);
-                            rtrShader.GetUniform("volumeMin")->SetValue(vec3(0.0f));
-                            rtrShader.GetUniform("volumeMax")->SetValue(vec3(0.0f));
-                        }
+                        RTRUniforms uniforms;
+                        uniforms.radianceLimit = reflection->radianceLimit;
+                        uniforms.bias = reflection->bias;
+                        uniforms.frameSeed = Common::Random::SampleUniformInt(0, 255);
 
                         if (shadow && reflection->useShadowMap) {
-                            auto distance = shadow->longRange ? shadow->distance : shadow->longRangeDistance;
+                            auto& shadowUniform = uniforms.shadow;
+                            shadowUniform.distance = !shadow->longRange ? shadow->distance : shadow->longRangeDistance;
+                            shadowUniform.bias = shadow->bias;
+                            shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
+                            shadowUniform.cascadeCount = shadow->componentCount;
+                            shadowUniform.resolution = vec2(shadow->resolution);
 
-                            rtrShader.GetUniform("shadow.distance")->SetValue(distance);
-                            rtrShader.GetUniform("shadow.bias")->SetValue(shadow->bias);
-                            rtrShader.GetUniform("shadow.cascadeCount")->SetValue(shadow->componentCount);
-                            rtrShader.GetUniform("shadow.resolution")->SetValue(vec2((float)shadow->resolution));
+                            commandList->BindImage(shadow->maps.image, shadowSampler, 3, 7);
 
-                            shadow->maps.Bind(26);
-
-                            for (int32_t i = 0; i < shadow->componentCount; i++) {
-                                auto cascade = &shadow->components[i];
-                                auto frustum = Volume::Frustum(cascade->frustumMatrix);
-                                auto corners = frustum.GetCorners();
-                                auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
-                                    abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
-                                auto lightSpace = cascade->projectionMatrix * cascade->viewMatrix;
-                                rtrShader.GetUniform("shadow.cascades[" + std::to_string(i) + "].distance")->SetValue(cascade->farDistance);
-                                rtrShader.GetUniform("shadow.cascades[" + std::to_string(i) + "].cascadeSpace")->SetValue(lightSpace);
-                                rtrShader.GetUniform("shadow.cascades[" + std::to_string(i) + "].texelSize")->SetValue(texelSize);
+                            auto componentCount = shadow->componentCount;
+                            for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
+                                if (i < componentCount) {
+                                    auto cascade = &shadow->components[i];
+                                    auto frustum = Volume::Frustum(cascade->frustumMatrix);
+                                    auto corners = frustum.GetCorners();
+                                    auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
+                                        abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
+                                    shadowUniform.cascades[i].distance = cascade->farDistance;
+                                    shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
+                                        cascade->viewMatrix;
+                                    shadowUniform.cascades[i].texelSize = texelSize;
+                                }
+                                else {
+                                    auto cascade = &shadow->components[componentCount - 1];
+                                    shadowUniform.cascades[i].distance = cascade->farDistance;
+                                }
                             }
                         }
-                        else {
-                            rtrShader.GetUniform("shadow.distance")->SetValue(0.0f);
-                        }
+                        rtrUniformBuffer.SetData(&uniforms, 0, 1);
+                        commandList->BindBuffer(rtrUniformBuffer.GetMultiBuffer(), 3, 8);
+
                     });
+
+                commandList->ImageMemoryBarrier(target->reflectionTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
             }
 
-            Profiler::EndAndBeginQuery("Temporal filter");
+            Graphics::Profiler::EndAndBeginQuery("Temporal filter");
+
+            {
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+
+                ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
+                groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
+
+                auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
+                commandList->BindPipeline(pipeline);
+
+                imageBarriers = {
+                    {target->swapReflectionTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                    {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+
+                commandList->BindImage(target->swapReflectionTexture.image, 3, 0);
+                commandList->BindImage(target->reflectionMomentsTexture.image, 3, 1);
+
+                commandList->BindImage(target->reflectionTexture.image, target->reflectionTexture.sampler, 3, 2);
+                commandList->BindImage(velocityTexture->image, velocityTexture->sampler, 3, 3);
+                commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 4);
+                commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 5);
+                commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 6);
+                commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 7);
+
+                commandList->BindImage(target->historyReflectionTexture.image, target->historyReflectionTexture.sampler, 3, 8);
+                commandList->BindImage(target->historyReflectionMomentsTexture.image, target->historyReflectionMomentsTexture.sampler, 3, 9);
+                commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 10);
+                commandList->BindImage(historyNormalTexture->image, historyNormalTexture->sampler, 3, 11);
+                commandList->BindImage(historyMaterialIdxTexture->image, historyMaterialIdxTexture->sampler, 3, 12);
+
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+                // Need barriers for all four images
+                imageBarriers = {
+                    {target->swapReflectionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
+                    {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
+                    {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+                    {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+                commandList->CopyImage(target->swapReflectionTexture.image, target->historyReflectionTexture.image);
+                commandList->CopyImage(target->reflectionMomentsTexture.image, target->historyReflectionMomentsTexture.image);
+
+                // Need barriers for all four images
+                imageBarriers = {
+                    {target->swapReflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+            }
+
+            Graphics::Profiler::EndAndBeginQuery("Spatial filter");
 
             {
                 ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
                 groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
 
-                temporalShader.Bind();
+                bool pingpong = false;
 
-                target->reflectionTexture.Bind(GL_WRITE_ONLY, 0);
-                target->reflectionMomentsTexture.Bind(GL_WRITE_ONLY, 1);
+                commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
+                commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
+                commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 4);
 
-                target->swapReflectionTexture.Bind(0);
-                velocityTexture->Bind(1);
-                depthTexture->Bind(2);
-                roughnessTexture->Bind(3);
-                normalTexture->Bind(4);
-                materialIdxTexture->Bind(5);
-
-                target->historyReflectionTexture.Bind(6);
-                target->historyReflectionMomentsTexture.Bind(7);
-                historyDepthTexture->Bind(8);
-                historyNormalTexture->Bind(9);
-                historyMaterialIdxTexture->Bind(10);
-
-                temporalShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
-                temporalShader.GetUniform("invResolution")->SetValue(1.0f / vec2((float)res.x, (float)res.y));
-                temporalShader.GetUniform("resolution")->SetValue(vec2((float)res.x, (float)res.y));
-
-                glMemoryBarrier(GL_ALL_BARRIER_BITS);
-                glDispatchCompute(groupCount.x, groupCount.y, 1);
-            }
-
-            target->historyReflectionTexture = target->reflectionTexture;
-            target->historyReflectionMomentsTexture = target->reflectionMomentsTexture;
-
-            Profiler::EndAndBeginQuery("Spatial filter");
-
-            {
-                ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
-                groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
-
-                
-
-                bool pingpong = true;
-
-                depthTexture->Bind(1);
-                normalTexture->Bind(2);
-                roughnessTexture->Bind(3);
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
 
                 for (int32_t i = 0; i < 3; i++) {
-                    Profiler::BeginQuery("Subpass " + std::to_string(i));
+                    Graphics::Profiler::BeginQuery("Subpass " + std::to_string(i));
 
-                    atrousShader[i].Bind();
+                    auto pipeline = PipelineManager::GetPipeline(atrousPipelineConfig[i]);
+                    commandList->BindPipeline(pipeline);
 
-                    atrousShader[i].GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
-                    atrousShader[i].GetUniform("resolution")->SetValue(res);
-                    atrousShader[i].GetUniform("strength")->SetValue(reflection->spatialFilterStrength);
-
-                    atrousShader[i].GetUniform("stepSize")->SetValue(1 << i);
+                    auto constantRange = pipeline->shader->GetPushConstantRange("constants");
+                    AtrousConstants constants = {
+                        .stepSize = 1 << i,
+                        .strength = reflection->spatialFilterStrength
+                    };
+                    commandList->PushConstants(constantRange, &constants);
 
                     if (pingpong) {
-                        target->reflectionTexture.Bind(0);
-                        target->swapReflectionTexture.Bind(GL_WRITE_ONLY, 0);
+                        imageBarriers = {
+                            {target->reflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                            {target->swapReflectionTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                        };
+                        commandList->BindImage(target->swapReflectionTexture.image, 3, 0);
+                        commandList->BindImage(target->reflectionTexture.image, target->reflectionTexture.sampler, 3, 1);
                     }
                     else {
-                        target->swapReflectionTexture.Bind(0);
-                        target->reflectionTexture.Bind(GL_WRITE_ONLY, 0);
+                        imageBarriers = {
+                            {target->swapReflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                            {target->reflectionTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                        };
+                        commandList->BindImage(target->reflectionTexture.image, 3, 0);
+                        commandList->BindImage(target->swapReflectionTexture.image, target->swapReflectionTexture.sampler, 3, 1);
                     }
+                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                     pingpong = !pingpong;
 
-                    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-                    glDispatchCompute(groupCount.x, groupCount.y, 1);
-                    Profiler::EndQuery();
+                    commandList->Dispatch(groupCount.x, groupCount.y, 1);
+                    Graphics::Profiler::EndQuery();
                 }
 
-                if (!pingpong) {
-                    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-                    target->reflectionTexture = target->swapReflectionTexture;
-                }
+                // Transition to final layout, the loop won't do that
+                commandList->ImageMemoryBarrier(target->reflectionTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
             }
-
-            Profiler::EndQuery();
-            Profiler::EndQuery();
-             */
+            
+            Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
 		}
 

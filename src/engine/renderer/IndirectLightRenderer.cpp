@@ -27,7 +27,7 @@ namespace Atlas {
             auto reflection = scene->reflection;
 
             pipelineConfig.ManageMacro("DDGI", volume && volume->enable);
-            //pipelineConfig.ManageMacro("REFLECTION", reflection && reflection->enable);
+            pipelineConfig.ManageMacro("REFLECTION", reflection && reflection->enable);
             pipelineConfig.ManageMacro("AO", ao && ao->enable);
 
             auto depthTexture = target->GetData(HALF_RES)->depthTexture;
@@ -39,7 +39,7 @@ namespace Atlas {
                 commandList->BindImage(target->aoTexture.image, target->aoTexture.sampler, 3, 1);
             }
             if (reflection && reflection->enable) {
-
+                commandList->BindImage(target->reflectionTexture.image, target->reflectionTexture.sampler, 3, 2);
             }
 
             auto uniforms = Uniforms {

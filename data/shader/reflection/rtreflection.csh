@@ -1,5 +1,6 @@
 #define SHADOW_FILTER_1x1
 
+#include <../globals.hsh>
 #include <../raytracer/lights.hsh>
 #include <../raytracer/tracing.hsh>
 #include <../raytracer/direct.hsh>
@@ -19,15 +20,15 @@
 
 layout (local_size_x = 8, local_size_y = 4) in;
 
-layout (binding = 4, rgba16f) writeonly uniform image2D rtrImage;
+layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D rtrImage;
 
-layout(binding = 16) uniform sampler2D normalTexture;
-layout(binding = 17) uniform sampler2D depthTexture;
-layout(binding = 18) uniform sampler2D roughnessMetallicAoTexture;
-layout(binding = 19) uniform isampler2D offsetTexture;
-layout(binding = 20) uniform usampler2D materialIdxTexture;
-layout(binding = 21) uniform sampler2D randomTexture;
-layout(binding = 26) uniform sampler2DArrayShadow cascadeMaps;
+layout(set = 3, binding = 1) uniform sampler2D normalTexture;
+layout(set = 3, binding = 2) uniform sampler2D depthTexture;
+layout(set = 3, binding = 3) uniform sampler2D roughnessMetallicAoTexture;
+layout(set = 3, binding = 4) uniform isampler2D offsetTexture;
+layout(set = 3, binding = 5) uniform usampler2D materialIdxTexture;
+layout(set = 3, binding = 6) uniform sampler2D randomTexture;
+layout(set = 3, binding = 7) uniform sampler2DArrayShadow cascadeMaps;
 
 const ivec2 offsets[4] = ivec2[4](
     ivec2(0, 0),
@@ -36,27 +37,21 @@ const ivec2 offsets[4] = ivec2[4](
     ivec2(1, 1)
 );
 
-uniform int sampleCount;
-uniform float radianceLimit;
-
-uniform mat4 pMatrix;
-uniform mat4 ivMatrix;
-
-uniform ivec2 resolution;
-uniform uint frameSeed;
-
-uniform vec2 jitter;
-uniform float bias;
-
-#ifdef USE_SHADOW_MAP
-uniform Shadow shadow;
-#endif
+layout(std140, set = 3, binding = 8) uniform UniformBuffer {
+	float radianceLimit;
+	uint frameSeed;
+	float bias;
+	float padding;
+	Shadow shadow;
+} uniforms;
 
 vec3 EvaluateHit(inout Ray ray);
 vec3 EvaluateDirectLight(inout Surface surface);
 bool CheckVisibility(Surface surface, float lightDistance);
 
 void main() {
+
+	ivec2 resolution = ivec2(imageSize(rtrImage));
 
 	if (int(gl_GlobalInvocationID.x) < resolution.x &&
 		int(gl_GlobalInvocationID.y) < resolution.y) {
@@ -72,11 +67,11 @@ void main() {
 
         vec2 recontructTexCoord = (2.0 * vec2(pixel) + offset + vec2(0.5)) / (2.0 * vec2(resolution));
         vec3 viewPos = ConvertDepthToViewSpace(depth, recontructTexCoord);
-	    vec3 worldPos = vec3(ivMatrix * vec4(viewPos, 1.0));
-        vec3 viewVec = vec3(ivMatrix * vec4(viewPos, 0.0));
-        vec3 worldNorm = normalize(vec3(ivMatrix * vec4(2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0, 0.0)));
+	    vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
+        vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
+        vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0, 0.0)));
 		
-		ivec2 noiseOffset = Unflatten2D(int(frameSeed), ivec2(16)) * ivec2(8);
+		ivec2 noiseOffset = Unflatten2D(int(uniforms.frameSeed), ivec2(16)) * ivec2(8);
         vec2 blueNoiseVec = texelFetch(randomTexture, (pixel + noiseOffset) % ivec2(128), 0).xy * 256.0;
 		blueNoiseVec = clamp(blueNoiseVec, 0.0, 255.0);
 		blueNoiseVec = (blueNoiseVec + 0.5) / 256.0;
@@ -91,6 +86,7 @@ void main() {
 
         if (material.roughness < 1.0) {
 
+			const uint sampleCount = 1u;
             for (uint i = 0; i < sampleCount; i++) {
                 Ray ray;
 
@@ -99,7 +95,7 @@ void main() {
 				vec3 V = normalize(-viewVec);
 				vec3 N = worldNorm;
 
-				blueNoiseVec.y *= (1.0 - bias);
+				blueNoiseVec.y *= (1.0 - uniforms.bias);
 
 				if (material.roughness > 0.02) {
 					float pdf;
@@ -135,8 +131,8 @@ void main() {
 				}
 
 				float radianceMax = max(max(max(radiance.r, 
-						max(radiance.g, radiance.b)), radianceLimit), 0.01);
-				reflection += radiance * (radianceLimit / radianceMax);
+						max(radiance.g, radiance.b)), uniforms.radianceLimit), 0.01);
+				reflection += radiance * (uniforms.radianceLimit / radianceMax);
             }
 
             reflection /= float(sampleCount);
@@ -187,7 +183,7 @@ vec3 EvaluateDirectLight(inout Surface surface) {
 	if (GetLightCount() == 0)
 		return vec3(0.0);
 
-	float curSeed = float(frameSeed) / 255.0;
+	float curSeed = float(uniforms.frameSeed) / 255.0;
 	float raySeed = float(gl_GlobalInvocationID.x);
 
 	float lightPdf;
@@ -205,7 +201,7 @@ vec3 EvaluateDirectLight(inout Surface surface) {
 	// estimate of the solid angle of the light from point P
 	// on the surface.
 #ifdef USE_SHADOW_MAP
-	radiance *= CalculateShadowWorldSpace(shadow, cascadeMaps, surface.P,
+	radiance *= CalculateShadowWorldSpace(uniforms.shadow, cascadeMaps, surface.P,
 		surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
 #else
 	radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;

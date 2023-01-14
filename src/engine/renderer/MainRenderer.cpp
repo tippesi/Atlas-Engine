@@ -45,6 +45,7 @@ namespace Atlas {
             downscaleRenderer.Init(device);
             ddgiRenderer.Init(device);
             aoRenderer.Init(device);
+            rtrRenderer.Init(device);
 			directLightRenderer.Init(device);
 			indirectLightRenderer.Init(device);
 			skyboxRenderer.Init(device);
@@ -184,6 +185,8 @@ namespace Atlas {
             downscaleRenderer.Downscale(target, commandList);
 
             aoRenderer.Render(viewport, target, camera, scene, commandList);
+
+			rtrRenderer.Render(viewport, target, camera, scene, commandList);
 
 			{
                 Graphics::Profiler::BeginQuery("Lighting pass");

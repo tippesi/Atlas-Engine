@@ -154,7 +154,7 @@ void main() {
 	// We multiply by local sky visibility because the reflection probe only includes the sky
 	//vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
 	//	* prefilteredDiffuseLocal.a;
-#ifdef REFLECTIONS
+#ifdef REFLECTION
 	vec3 indirectSpecular = Uniforms.reflectionEnabled > 0 ? true ? 
 		UpsampleReflection2x(depth) : texture(reflectionTexture, texCoord).rgb : vec3(0.0);
 #else
