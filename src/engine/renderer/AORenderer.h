@@ -10,26 +10,46 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		class AORenderer {
+		class AORenderer : public Renderer {
 
 		public:
-			AORenderer();
+			AORenderer() = default;
+
+            void Init(Graphics::GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene);
+				Camera* camera, Scene::Scene* scene) final {};
+
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
 
 		private:
+            struct alignas(16) RTUniforms {
+                float radius;
+                uint32_t frameSeed;
+            };
+
+            struct alignas(16) SSUniforms {
+                float radius;
+                int32_t sampleCount;
+                int32_t frameCount;
+            };
+
 			Filter blurFilter;
 			Helper::RayTracingHelper helper;
 
 			Texture::Texture2D blueNoiseTexture;
 
-			//OldShader::OldShader ssaoShader;
-			//OldShader::OldShader rtaoShader;
-			//OldShader::OldShader temporalShader;
-			
-			//OldShader::OldShader horizontalBlurShader;
-			//OldShader::OldShader verticalBlurShader;
+            PipelineConfig ssaoPipelineConfig;
+            PipelineConfig rtaoPipelineConfig;
+            PipelineConfig temporalPipelineConfig;
+
+            PipelineConfig horizontalBlurPipelineConfig;
+            PipelineConfig verticalBlurPipelineConfig;
+
+            Buffer::Buffer rtUniformBuffer;
+            Buffer::Buffer ssUniformBuffer;
+            Buffer::Buffer ssSamplesUniformBuffer;
 
 		};
 

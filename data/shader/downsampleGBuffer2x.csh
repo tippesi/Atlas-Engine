@@ -3,20 +3,20 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
-layout (binding = 0) uniform sampler2D depthIn;
-layout (binding = 1) uniform sampler2D normalIn;
-layout (binding = 2) uniform sampler2D geometryNormalIn;
-layout (binding = 3) uniform sampler2D roughnessMetallicAoIn;
-layout (binding = 4) uniform sampler2D velocityIn;
-layout (binding = 5) uniform usampler2D materialIdxIn;
+layout (set = 3, binding = 0) uniform sampler2D depthIn;
+layout (set = 3, binding = 1) uniform sampler2D normalIn;
+layout (set = 3, binding = 2) uniform sampler2D geometryNormalIn;
+layout (set = 3, binding = 3) uniform sampler2D roughnessMetallicAoIn;
+layout (set = 3, binding = 4) uniform sampler2D velocityIn;
+layout (set = 3, binding = 5) uniform usampler2D materialIdxIn;
 
-layout (binding = 0) writeonly uniform image2D depthOut;
-layout (binding = 1) writeonly uniform image2D normalOut;
-layout (binding = 2) writeonly uniform image2D geometryNormalOut;
-layout (binding = 3) writeonly uniform image2D roughnessMetallicAoOut;
-layout (binding = 4) writeonly uniform image2D velocityOut;
-layout (binding = 5) writeonly uniform uimage2D materialIdxOut;
-layout (binding = 6) writeonly uniform iimage2D offsetOut;
+layout (set = 3, binding = 6, r32f) writeonly uniform image2D depthOut;
+layout (set = 3, binding = 7, rgba16f) writeonly uniform image2D normalOut;
+layout (set = 3, binding = 8, rgba16f) writeonly uniform image2D geometryNormalOut;
+layout (set = 3, binding = 9, rgba8) writeonly uniform image2D roughnessMetallicAoOut;
+layout (set = 3, binding = 10, rg16f) writeonly uniform image2D velocityOut;
+layout (set = 3, binding = 11, r16ui) writeonly uniform uimage2D materialIdxOut;
+layout (set = 3, binding = 12, r8i) writeonly uniform iimage2D offsetOut;
 
 float Checkerboard(ivec2 coord) {
 

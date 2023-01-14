@@ -8,11 +8,11 @@ namespace Atlas {
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
         ivec2 res = GetRelativeResolution(FULL_RES);
-        targetData = RenderTargetData(res);
+        targetData = RenderTargetData(res, true);
 
         ivec2 halfRes = GetRelativeResolution(HALF_RES);
-        targetDataDownsampled2x = RenderTargetData(halfRes);
-        targetDataSwapDownsampled2x = RenderTargetData(halfRes);
+        targetDataDownsampled2x = RenderTargetData(halfRes, false);
+        targetDataSwapDownsampled2x = RenderTargetData(halfRes, false);
 
         historyTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
@@ -141,6 +141,7 @@ namespace Atlas {
 		targetDataSwapDownsampled2x.Resize(halfRes);
 
         gBufferFrameBuffer->Refresh();
+        hasHistory = false;
 
 	}
 
@@ -166,6 +167,7 @@ namespace Atlas {
         lightingFrameBuffer->ChangeColorAttachmentImage(targetData.velocityTexture->image, 1);
         lightingFrameBuffer->Refresh();
 
+        hasHistory = true;
 		swap = !swap;
 
 	}
@@ -191,6 +193,8 @@ namespace Atlas {
 		aoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 		swapAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        historyAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
 		aoMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -237,6 +241,8 @@ namespace Atlas {
 		reflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 		swapReflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        historyReflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
 		reflectionMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -303,5 +309,11 @@ namespace Atlas {
 		return targetData.swapVelocityTexture.get();
 
 	}
+
+    bool RenderTarget::HasHistory() const {
+
+        return hasHistory;
+
+    }
 
 }

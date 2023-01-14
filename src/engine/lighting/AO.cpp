@@ -42,7 +42,7 @@ namespace Atlas {
 				scale = glm::mix(0.1f, 1.0f, scale * scale);
 				sample *= scale;
 
-				samples.push_back(sample);
+				samples.push_back(vec4(sample, 0.0f));
 
 			}
 		}

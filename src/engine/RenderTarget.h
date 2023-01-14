@@ -17,11 +17,17 @@ namespace Atlas {
 	public:
 		RenderTargetData() = default;
 
-		explicit RenderTargetData(ivec2 resolution) {
+		explicit RenderTargetData(ivec2 resolution, bool useDepthFormat) {
             baseColorTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
                 VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-			depthTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_D32_SFLOAT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+            if (useDepthFormat) {
+                depthTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_D32_SFLOAT,
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+            }
+            else {
+                depthTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R32_SFLOAT,
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+            }
 			normalTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
                 VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 			geometryNormalTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
@@ -29,7 +35,7 @@ namespace Atlas {
 			roughnessMetallicAoTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
                 VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 			offsetTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R8_SINT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
 			materialIdxTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R16_UINT,
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
             stencilTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R8_UINT,
@@ -152,6 +158,8 @@ namespace Atlas {
 
 		Texture::Texture2D* GetLastVelocity();
 
+        bool HasHistory() const;
+
         Ref<Graphics::RenderPass> gBufferRenderPass;
         Ref<Graphics::FrameBuffer> gBufferFrameBuffer;
 
@@ -199,6 +207,7 @@ namespace Atlas {
 		RenderResolution reflectionResolution;
 
 		bool swap = false;
+        bool hasHistory = false;
 
 	};
 

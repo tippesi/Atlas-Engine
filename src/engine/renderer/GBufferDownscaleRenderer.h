@@ -10,16 +10,21 @@ namespace Atlas {
         class GBufferDownscaleRenderer : public Renderer {
 
         public:
-            GBufferDownscaleRenderer();
+            GBufferDownscaleRenderer() = default;
+
+            void Init(Graphics::GraphicsDevice* device);
 
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
-            void Downscale(RenderTarget* target);
+            void Downscale(RenderTarget* target, Graphics::CommandList* commandList);
 
-            void DownscaleDepthOnly(RenderTarget* target);
+            void DownscaleDepthOnly(RenderTarget* target, Graphics::CommandList* commandList);
 
         private:
-            void Downscale(RenderTargetData* rt, RenderTargetData* downsampledRt);
+            void Downscale(RenderTargetData* rt, RenderTargetData* downsampledRt, Graphics::CommandList* commandList);
+
+            PipelineConfig downscalePipelineConfig;
+            PipelineConfig downscaleDepthOnlyPipelineConfig;
 
             //OldShader::OldShader downscale;
             //OldShader::OldShader downscaleDepthOnly;

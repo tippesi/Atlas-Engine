@@ -28,16 +28,19 @@ namespace Atlas {
 
             pipelineConfig.ManageMacro("DDGI", volume && volume->enable);
             //pipelineConfig.ManageMacro("REFLECTION", reflection && reflection->enable);
-            //pipelineConfig.ManageMacro("AO", ao && ao->enable);
+            pipelineConfig.ManageMacro("AO", ao && ao->enable);
+
+            auto depthTexture = target->GetData(HALF_RES)->depthTexture;
 
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 			commandList->BindPipeline(pipeline);
 
-            /*
-			target->aoTexture.Bind(6);
-			target->GetDownsampledTextures(target->GetAOResolution())->depthTexture->Bind(14);
-			target->reflectionTexture.Bind(16);
-            */
+            if (ao && ao->enable) {
+                commandList->BindImage(target->aoTexture.image, target->aoTexture.sampler, 3, 1);
+            }
+            if (reflection && reflection->enable) {
+
+            }
 
             auto uniforms = Uniforms {
                 .aoEnabled = ao && ao->enable ? 1 : 0,
@@ -48,6 +51,7 @@ namespace Atlas {
             uniformBuffer.SetData(&uniforms, 0, 1);
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
+            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 3);
             commandList->BindBuffer(uniformBuffer.GetMultiBuffer(), 3, 4);
 
 			auto resolution = ivec2(target->GetWidth(), target->GetHeight());

@@ -107,7 +107,7 @@ namespace Atlas {
             VkImageAspectFlags aspectFlag = depthFormat ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 
             auto imageDesc = Graphics::ImageDesc {
-                .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT |
+                .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                               VK_IMAGE_USAGE_TRANSFER_DST_BIT | additionalUsageFlags,
                 .type = imageType,
                 .aspectFlags = aspectFlag,

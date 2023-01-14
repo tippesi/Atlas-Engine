@@ -116,16 +116,6 @@ namespace Atlas {
 
 				// Bind textures and buffers
 				{
-                    /*
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 0);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 1);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 2);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 3);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 4);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 5);
-					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, 6);
-                    */
-
 					if (rtData.baseColorTextureAtlas.slices.size())
                         commandList->BindImage(rtData.baseColorTextureAtlas.textureArray.image,
                             rtData.baseColorTextureAtlas.textureArray.sampler, 2, 0);
@@ -177,7 +167,9 @@ namespace Atlas {
                     constants.lightCount = int32_t(selectedLights.size());
 
                     auto constRange = dispatchAndHitPipeline->shader->GetPushConstantRange("constants");
-                    commandList->PushConstants(constRange, &constants);
+                    if (constRange != nullptr) {
+                        commandList->PushConstants(constRange, &constants);
+                    }
 
 					prepare();
 
@@ -256,15 +248,12 @@ namespace Atlas {
                 constants.useRayBinning = binning ? 1 : 0;
 
                 auto constRange = rayGenPipeline->shader->GetPushConstantRange("constants");
-                commandList->PushConstants(constRange, &constants);
+                if (constRange != nullptr) {
+                    commandList->PushConstants(constRange, &constants);
+                }
 
 				prepare();
                 commandList->Dispatch(dimensions.x, dimensions.y, dimensions.z);
-                /*
-				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
-					GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-                 */
-
 			}
 
 			void RayTracingHelper::DispatchHitClosest(Graphics::CommandList* commandList,
@@ -275,16 +264,6 @@ namespace Atlas {
 
 				// Bind textures and buffers
 				{
-                    /*
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 0);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 1);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 2);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 3);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 4);
-					Texture::Texture::Unbind(GL_TEXTURE_2D_ARRAY, 5);
-					Texture::Texture::Unbind(GL_TEXTURE_CUBE_MAP, 6);
-                    */
-
                     if (rtData.baseColorTextureAtlas.slices.size())
                         commandList->BindImage(rtData.baseColorTextureAtlas.textureArray.image,
                             rtData.baseColorTextureAtlas.textureArray.sampler, 2, 0);
@@ -427,7 +406,9 @@ namespace Atlas {
                     constants.rayBufferSize = uint32_t(rayBuffer.GetElementCount() / 2);
 
 					auto constRange = hitPipeline->shader->GetPushConstantRange("constants");
-					commandList->PushConstants(constRange, &constants);
+                    if (constRange != nullptr) {
+                        commandList->PushConstants(constRange, &constants);
+                    }
 
                     commandList->DispatchIndirect(indirectDispatchBuffer.Get());
 				}
@@ -460,7 +441,9 @@ namespace Atlas {
                     constants.useRayBinning = binning ? 1 : 0;
 
 					auto constRange = hitPipeline->shader->GetPushConstantRange("constants");
-                    commandList->PushConstants(constRange, &constants);
+                    if (constRange != nullptr) {
+                        commandList->PushConstants(constRange, &constants);
+                    }
 					//rayBinCounterBuffer.BindBase(11);
 
 					prepare();

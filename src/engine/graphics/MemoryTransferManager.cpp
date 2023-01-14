@@ -161,7 +161,7 @@ namespace Atlas {
             DestroyStagingBuffer(stagingAllocation);
 
         }
-        
+
         void MemoryTransferManager::RetrieveImageData(void *data, Image *image, VkOffset3D offset,
             VkExtent3D extent, uint32_t layerOffset, uint32_t layerCount, bool block) {
 

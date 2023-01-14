@@ -42,7 +42,9 @@ namespace Atlas {
 
             shadowRenderer.Init(device);
             opaqueRenderer.Init(device);
+            downscaleRenderer.Init(device);
             ddgiRenderer.Init(device);
+            aoRenderer.Init(device);
 			directLightRenderer.Init(device);
 			indirectLightRenderer.Init(device);
 			skyboxRenderer.Init(device);
@@ -154,6 +156,34 @@ namespace Atlas {
                 commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
                     scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 10);
             }
+
+            if (!target->HasHistory()) {
+                auto rtData = target->GetHistoryData(HALF_RES);
+                auto layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                auto access = VK_ACCESS_SHADER_READ_BIT;
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                    {rtData->baseColorTexture->image, layout, access},
+                    {rtData->depthTexture->image, layout, access},
+                    {rtData->normalTexture->image, layout, access},
+                    {rtData->geometryNormalTexture->image, layout, access},
+                    {rtData->offsetTexture->image, layout, access},
+                    {rtData->materialIdxTexture->image, layout, access},
+                    {rtData->stencilTexture->image, layout, access},
+                    {rtData->velocityTexture->image, layout, access},
+                    {rtData->swapVelocityTexture->image, layout, access},
+                    {target->historyAoTexture.image, layout, access},
+                    {target->historyAoMomentsTexture.image, layout, access},
+                    {target->historyReflectionTexture.image, layout, access},
+                    {target->historyReflectionMomentsTexture.image, layout, access},
+                    {target->historyVolumetricCloudsTexture.image, layout, access},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+            }
+
+            downscaleRenderer.Downscale(target, commandList);
+
+            aoRenderer.Render(viewport, target, camera, scene, commandList);
 
 			{
                 Graphics::Profiler::BeginQuery("Lighting pass");
