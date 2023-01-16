@@ -21,7 +21,6 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Shadows");
 
             auto lights = scene->GetLights();
-
             if (scene->sky.sun) {
                 lights.push_back(scene->sky.sun.get());
             }

@@ -26,7 +26,7 @@ namespace Atlas {
             rtrUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(RTRUniforms), 1);
 
             auto samplerDesc = Graphics::SamplerDesc{
-                .filter = VK_FILTER_LINEAR,
+                .filter = VK_FILTER_NEAREST,
                 .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                 .compareEnabled = true
             };

@@ -55,7 +55,7 @@ namespace Atlas {
 		public:
 			IrradianceVolume() = default;
 
-			IrradianceVolume(Volume::AABB aabb, ivec3 probeCount);
+			IrradianceVolume(Volume::AABB aabb, ivec3 probeCount, bool lowerResMoments = true);
 
 			ivec3 GetIrradianceArrayOffset(ivec3 probeIndex);
 
@@ -99,6 +99,7 @@ namespace Atlas {
 			bool debug = false;
 			bool optimizeProbes = true;
 			bool useShadowMap = false;
+            bool lowerResMoments = false;
 
 			InternalIrradianceVolume internal;
 

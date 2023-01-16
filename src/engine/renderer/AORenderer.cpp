@@ -220,7 +220,6 @@ namespace Atlas {
                 auto horizontalConstRange = horizontalBlurPipeline->shader->GetPushConstantRange("constants");
                 auto verticalConstRange = verticalBlurPipeline->shader->GetPushConstantRange("constants");
 
-
                 blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0, 1);
 
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
@@ -257,7 +256,7 @@ namespace Atlas {
                     commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                     commandList->BindPipeline(verticalBlurPipeline);
-                    commandList->PushConstants(horizontalConstRange, &kernelSize);
+                    commandList->PushConstants(verticalConstRange, &kernelSize);
 
                     commandList->BindImage(target->aoTexture.image, 3, 0);
                     commandList->BindImage(target->swapAoTexture.image, target->swapAoTexture.sampler, 3, 1);

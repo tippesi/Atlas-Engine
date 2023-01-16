@@ -69,6 +69,7 @@ void App::LoadContent() {
     scene.sky.clouds = std::make_shared<Atlas::Lighting::VolumetricClouds>();
     scene.sky.clouds->minHeight = 300.0f;
     scene.sky.clouds->maxHeight = 600.0f;
+    scene.sky.clouds->enable = false;
 
     scene.sky.atmosphere = std::make_shared<Atlas::Lighting::Atmosphere>();
 

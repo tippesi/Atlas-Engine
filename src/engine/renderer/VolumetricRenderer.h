@@ -12,21 +12,92 @@ namespace Atlas {
 		class VolumetricRenderer : public Renderer {
 
 		public:
-			VolumetricRenderer();
+			VolumetricRenderer() = default;
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
+            void Init(Graphics::GraphicsDevice* device);
+
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {};
+
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
 
 		private:
+            struct alignas(16) Cascade {
+                float distance;
+                float texelSize;
+                float aligment0;
+                float aligment1;
+                mat4 cascadeSpace;
+            };
+
+            struct alignas(16) Shadow {
+                float distance;
+                float bias;
+
+                float cascadeBlendDistance;
+
+                int cascadeCount;
+                vec2 resolution;
+
+                Cascade cascades[6];
+            };
+
+            struct alignas(16) Light {
+                vec4 location;
+                vec4 direction;
+
+                vec4 color;
+                float intensity;
+
+                float scatteringFactor;
+
+                float radius;
+
+                Shadow shadow;
+            };
+
+            struct alignas(16) Fog {
+                float density;
+                float heightFalloff;
+                float height;
+                float scatteringAnisotropy;
+                vec4 color;
+            };
+
+            struct alignas(16) VolumetricUniforms {
+                int sampleCount;
+                float intensity;
+                float seed;
+                int fogEnabled;
+                Fog fog;
+                Light light;
+            };
+
+            struct alignas(16) BlurConstants {
+
+            };
+
+            struct alignas(16) ResolveUniforms {
+                Fog fog;
+                int downsampled2x;
+                int cloudsEnabled;
+                int fogEnabled;
+            };
+
 			Filter blurFilter;
 
-            /*
-			OldShader::OldShader volumetricShader;
-			
-			OldShader::OldShader horizontalBlurShader;
-			OldShader::OldShader verticalBlurShader;
+            PipelineConfig volumetricPipelineConfig;
 
-			OldShader::OldShader volumetricResolveShader;
-            */
+            PipelineConfig horizontalBlurPipelineConfig;
+            PipelineConfig verticalBlurPipelineConfig;
+
+            PipelineConfig resolvePipelineConfig;
+
+            Buffer::Buffer volumetricUniformBuffer;
+            Buffer::Buffer blurWeightsUniformBuffer;
+            Buffer::Buffer resolveUniformBuffer;
+
+            Ref<Graphics::Sampler> shadowSampler;
 
 		};
 

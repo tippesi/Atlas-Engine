@@ -4,8 +4,8 @@ namespace Atlas {
 
 	namespace Lighting {
 
-		IrradianceVolume::IrradianceVolume(Volume::AABB aabb, ivec3 probeCount) :
-			aabb(aabb), probeCount(probeCount) {
+		IrradianceVolume::IrradianceVolume(Volume::AABB aabb, ivec3 probeCount, bool lowerResMoments) :
+			aabb(aabb), probeCount(probeCount), momRes(lowerResMoments ? 6 : 14), lowerResMoments(lowerResMoments) {
 
 			auto irrRes = ivec2(this->irrRes + 2);
 			irrRes.x *= probeCount.x;

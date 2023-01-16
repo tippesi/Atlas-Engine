@@ -14,8 +14,12 @@ layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D outputImage;
 layout(set = 3, binding = 0, r16f) writeonly uniform image2D outputImage;
 #endif
 layout(set = 3, binding = 1) uniform sampler2D inputTexture;
+#ifdef DEPTH_WEIGHT
 layout(set = 3, binding = 2) uniform sampler2D depthTexture;
+#endif
+#ifdef NORMAL_WEIGHT
 layout(set = 3, binding = 3) uniform sampler2D normalTexture;
+#endif
 
 layout(push_constant) uniform constants {
 	int kernelSize;

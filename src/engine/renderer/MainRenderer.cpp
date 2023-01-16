@@ -49,6 +49,7 @@ namespace Atlas {
 			directLightRenderer.Init(device);
 			indirectLightRenderer.Init(device);
 			skyboxRenderer.Init(device);
+            volumetricRenderer.Init(device);
             taaRenderer.Init(device);
             postProcessRenderer.Init(device);
             pathTracingRenderer.Init(device);
@@ -217,6 +218,10 @@ namespace Atlas {
                 skyboxRenderer.Render(viewport, target, camera, scene, commandList);
 
                 commandList->EndRenderPass();
+            }
+
+            {
+                volumetricRenderer.Render(viewport, target, camera, scene, commandList);
             }
 
             {

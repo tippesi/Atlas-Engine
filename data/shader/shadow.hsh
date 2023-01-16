@@ -46,11 +46,6 @@ float offsetLookup(sampler2DArrayShadow cascadeMaps, vec2 flooredUV, float u, fl
 
 float cascadeLookup(Shadow shadow, sampler2DArrayShadow cascadeMaps, float cascadeIndex, mat4 cascadeTransform, vec3 fragmentPosition, float bias, bool fade) {
 
-	mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
-		0.0f,-1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.5f, 0.0f,
-		0.0f, 0.0f, 0.5f, 1.0f);
-
 	vec4 shadowCoords = cascadeTransform * vec4(fragmentPosition, 1.0);
 	shadowCoords.xyz /= shadowCoords.w;
 	

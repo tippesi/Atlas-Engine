@@ -20,7 +20,11 @@
 #ifdef IRRADIANCE
 layout (local_size_x = 6, local_size_y = 6) in;
 #else
+#ifdef LOWER_RES_MOMENTS
+layout (local_size_x = 6, local_size_y = 6) in;
+#else
 layout (local_size_x = 14, local_size_y = 14) in;
+#endif
 #endif
 
 layout(std430, set = 3, binding = 1) buffer RayHits {

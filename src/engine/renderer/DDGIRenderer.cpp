@@ -32,7 +32,7 @@ namespace Atlas {
             momentsCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh");
 
             auto samplerDesc = Graphics::SamplerDesc {
-                .filter = VK_FILTER_LINEAR,
+                .filter = VK_FILTER_NEAREST,
                 .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                 .compareEnabled = true
             };
@@ -216,6 +216,7 @@ namespace Atlas {
 
                 commandList->BindImage(momentsArray.image, 3, 0);
 
+                probeMomentsUpdatePipelineConfig.ManageMacro("LOWER_RES_MOMENTS", volume->lowerResMoments);
                 pipeline = PipelineManager::GetPipeline(probeMomentsUpdatePipelineConfig);
                 commandList->BindPipeline(pipeline);
 
