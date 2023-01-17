@@ -38,20 +38,6 @@ namespace Atlas {
             };
             shadowSampler = device->CreateSampler(samplerDesc);
 
-            PipelineManager::AddPipeline(rayGenPipelineConfig);
-            PipelineManager::AddPipeline(rayHitPipelineConfig);
-            PipelineManager::AddPipeline(probeStatePipelineConfig);
-            PipelineManager::AddPipeline(probeIrradianceUpdatePipelineConfig);
-            PipelineManager::AddPipeline(probeMomentsUpdatePipelineConfig);
-            PipelineManager::AddPipeline(irradianceCopyEdgePipelineConfig);
-            PipelineManager::AddPipeline(momentsCopyEdgePipelineConfig);
-
-            /*
-			probeDebugShader.AddStage(AE_VERTEX_STAGE, "ddgi/probeDebug.vsh");
-			probeDebugShader.AddStage(AE_FRAGMENT_STAGE, "ddgi/probeDebug.fsh");
-			probeDebugShader.Compile();
-            */
-
 		}
 
 		void DDGIRenderer::TraceAndUpdateProbes(Scene::Scene* scene, Graphics::CommandList* commandList) {
@@ -295,57 +281,44 @@ namespace Atlas {
 
 		}
 
-		void DDGIRenderer::DebugProbes(Viewport* viewport, RenderTarget* target,
-			Camera* camera, Scene::Scene* scene, std::unordered_map<void*, uint16_t>& materialMap) {
+		void DDGIRenderer::DebugProbes(Viewport* viewport, RenderTarget* target, Camera* camera,
+            Scene::Scene* scene, Graphics::CommandList* commandList, std::unordered_map<void*, uint16_t>& materialMap) {
 
-            /*
 			auto volume = scene->irradianceVolume;
 			if (!volume || !volume->enable || !volume->update || !volume->debug)
 				return;
 
-			glDisable(GL_CULL_FACE);
-            
+            auto shaderConfig = ShaderConfig {
+                {"ddgi/probeDebug.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                {"ddgi/probeDebug.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+            };
+            auto pipelineDesc = Graphics::GraphicsPipelineDesc{
+                .frameBuffer = target->gBufferFrameBuffer,
+                .vertexInputInfo = sphereArray.GetVertexInputState(),
+                .rasterizer = Graphics::Initializers::InitPipelineRasterizationStateCreateInfo(
+                    VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE)
+            };
+            auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc);
+            auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+            commandList->BindPipeline(pipeline);
+
 			probeDebugActiveMaterial.emissiveColor = vec3(0.0f, 1.0f, 0.0f);
 			probeDebugInactiveMaterial.emissiveColor = vec3(1.0f, 0.0f, 0.0f);
 			probeDebugOffsetMaterial.emissiveColor = vec3(0.0f, 0.0f, 1.0f);
 
-			sphereArray.Bind();
-			probeDebugShader.Bind();
+			sphereArray.Bind(commandList);
 
-			volume->internal.probeStateBuffer.BindBase(9);
-
-			probeDebugShader.GetUniform("vMatrix")->SetValue(camera->viewMatrix);
-			probeDebugShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
-			probeDebugShader.GetUniform("pvMatrixLast")->SetValue(camera->GetLastJitteredMatrix());
-
-			probeDebugShader.GetUniform("jitterLast")->SetValue(camera->GetLastJitter());
-			probeDebugShader.GetUniform("jitterCurrent")->SetValue(camera->GetJitter());
-
-			probeDebugShader.GetUniform("probeMaterialIdx")->SetValue(uint32_t(materialMap[&probeDebugMaterial]));
-			probeDebugShader.GetUniform("probeActiveMaterialIdx")->SetValue(uint32_t(materialMap[&probeDebugActiveMaterial]));
-			probeDebugShader.GetUniform("probeInactiveMaterialIdx")->SetValue(uint32_t(materialMap[&probeDebugInactiveMaterial]));
-			probeDebugShader.GetUniform("probeOffsetMaterialIdx")->SetValue(uint32_t(materialMap[&probeDebugOffsetMaterial]));
-
-			probeDebugShader.GetUniform("volumeMin")->SetValue(volume->aabb.min);
-			probeDebugShader.GetUniform("volumeMax")->SetValue(volume->aabb.max);
-			probeDebugShader.GetUniform("volumeProbeCount")->SetValue(volume->probeCount);
-
-			probeDebugShader.GetUniform("cellSize")->SetValue(volume->cellSize);
-			probeDebugShader.GetUniform("cellLength")->SetValue(glm::length(volume->cellSize));
-
-			auto [irradianceArray, momentsArray] = volume->internal.GetCurrentProbes();
-			irradianceArray.Bind(12);
-			momentsArray.Bind(13);
-
-			volume->internal.probeStateBuffer.BindBase(9);
-			volume->internal.probeOffsetBuffer.BindBase(10);
+            ProbeDebugConstants constants = {
+                .probeMaterialIdx = uint32_t(materialMap[&probeDebugMaterial]),
+                .probeActiveMaterialIdx = uint32_t(materialMap[&probeDebugActiveMaterial]),
+                .probeInactiveMaterialIdx = uint32_t(materialMap[&probeDebugInactiveMaterial]),
+                .probeOffsetMaterialIdx = uint32_t(materialMap[&probeDebugOffsetMaterial])
+            };
+            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
+            commandList->PushConstants(constantRange, &constants);
 
 			auto instanceCount = volume->probeCount.x * volume->probeCount.y * volume->probeCount.z;
-			glDrawElementsInstanced(GL_TRIANGLES, (int32_t)sphereArray.GetIndexComponent()->GetElementCount(),
-				sphereArray.GetIndexComponent()->GetDataType(), nullptr, instanceCount);
-
-			glEnable(GL_CULL_FACE);
-             */
+            commandList->DrawIndexed(sphereArray.GetIndexComponent().elementCount, uint32_t(instanceCount));
 
 		}
 

@@ -138,6 +138,8 @@ namespace Atlas {
 
                 opaqueRenderer.Render(viewport, target, camera, scene, commandList, &renderList, materialMap);
 
+                ddgiRenderer.DebugProbes(viewport, target, camera, scene, commandList, materialMap);
+
                 commandList->EndRenderPass();
 
                 Graphics::Profiler::EndQuery();

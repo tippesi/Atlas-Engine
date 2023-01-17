@@ -708,6 +708,7 @@ bool App::LoadScene() {
         directionalLight->GetVolumetric()->intensity = 0.28f;
         scene.irradianceVolume->SetRayCount(128, 32);
         scene.irradianceVolume->strength = 1.5f;
+        scene.irradianceVolume->debug = true;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);

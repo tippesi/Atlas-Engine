@@ -25,7 +25,7 @@ namespace Atlas {
 			void TraceAndUpdateProbes(Scene::Scene* scene, Graphics::CommandList* commandList);
 
 			void DebugProbes(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene, 
+				Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList,
 				std::unordered_map<void*, uint16_t>& materialMap);
 
 			// Used for debugging
@@ -64,6 +64,13 @@ namespace Atlas {
                 Shadow shadow;
             };
 
+            struct alignas(16) ProbeDebugConstants {
+                uint32_t probeMaterialIdx;
+                uint32_t probeActiveMaterialIdx;
+                uint32_t probeInactiveMaterialIdx;
+                uint32_t probeOffsetMaterialIdx;
+            };
+
 			Buffer::Buffer rayHitBuffer;
 
 			Buffer::Buffer rayGenUniformBuffer;
@@ -87,6 +94,7 @@ namespace Atlas {
             PipelineConfig momentsCopyEdgePipelineConfig;
 
             Ref<Graphics::Sampler> shadowSampler;
+
 
 		};
 

@@ -188,16 +188,18 @@ namespace Atlas {
 
             }
 
-            // For now just take the reflection data of the first module
-            // In this case we assume each stage receives the same data
-            pushConstantRanges = shaderModules.front().pushConstantRanges;
-            // Need to have the flags for all stages used by this shader
-            for (auto& pushRange : pushConstantRanges)
-                pushRange.range.stageFlags |= allStageFlags;
-
+            std::unordered_map<std::string, PushConstantRange> ranges;
             std::unordered_map<size_t, ShaderDescriptorBinding> bindings;
 
             for (auto& shaderModule : shaderModules) {
+                for (auto& constantRange : shaderModule.pushConstantRanges) {
+                    if (ranges.contains(constantRange.name)) {
+                        ranges[constantRange.name].range.stageFlags |= shaderModule.shaderStageFlag;
+                    }
+                    else {
+                        ranges[constantRange.name] = constantRange;
+                    }
+                }
                 for (auto& set : shaderModule.sets) {
                     for (uint32_t i = 0; i < set.bindingCount; i++) {
                         auto& binding = set.bindings[i];
@@ -209,6 +211,10 @@ namespace Atlas {
                         }
                     }
                 }
+            }
+
+            for (auto& [_, range] : ranges) {
+                pushConstantRanges.push_back(range);
             }
 
             for (auto& [key, binding] : bindings) {
