@@ -105,10 +105,7 @@ namespace Atlas {
 		std::vector<GlyphInfo> glyphInfo;
 
 		Texture::Texture2DArray glyphTexture;
-
-		// We need two glyph buffers to store 2048 glyphs
-		Buffer::Buffer firstGlyphBuffer;
-		Buffer::Buffer secondGlyphBuffer;
+		Buffer::Buffer glyphBuffer;
 
 	private:
 		std::vector<Glyph> glyphs;

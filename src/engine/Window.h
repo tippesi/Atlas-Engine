@@ -138,16 +138,6 @@ namespace Atlas {
 		 */
 		void SetBordered(bool border);
 
-		/**
-         * Updates the window events and the rendering surface.
-         */
-		void Update();
-
-		/**
-         * Clears the rendering surface of the window.
-         */
-		void Clear(vec3 color = vec3(0.0f));
-
         /**
          * Creates a surface for the window to render to.
          */

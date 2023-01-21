@@ -16,8 +16,8 @@ layout(binding = 2) uniform sampler2D depthTexture;
 layout(binding = 3) uniform sampler2D historyTexture;
 layout(binding = 4) uniform sampler2D historyDepthTexture;
 
-uniform vec2 invResolution;
-uniform vec2 resolution;
+vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
+vec2 resolution = vec2(imageSize(resolveImage));
 
 const int kernelRadius = 3;
 

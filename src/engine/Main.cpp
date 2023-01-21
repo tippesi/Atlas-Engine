@@ -70,8 +70,6 @@ int main(int argc, char* argv[]) {
 
         graphicsDevice->CompleteFrame();
 
-        engineInstance->window.Update();
-
 	}
 
     engineInstance->UnloadContent();

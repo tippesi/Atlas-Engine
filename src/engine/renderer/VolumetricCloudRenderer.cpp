@@ -7,52 +7,45 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		VolumetricCloudRenderer::VolumetricCloudRenderer() {
+        void VolumetricCloudRenderer::Init(Graphics::GraphicsDevice *device) {
 
-            /*
-			auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("noise.png");
-			blueNoiseTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, GL_RGBA8, GL_REPEAT, GL_NEAREST);
-			blueNoiseTexture.SetData(noiseImage.GetData());
+            this->device = device;
 
-			shapeNoiseShader.AddStage(AE_COMPUTE_STAGE, "clouds/shapeNoise.csh");
-			shapeNoiseShader.Compile();
+            auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("noise.png");
+            blueNoiseTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, VK_FORMAT_R8G8B8A8_UNORM);
+            blueNoiseTexture.SetData(noiseImage.GetData());
 
-			detailNoiseShader.AddStage(AE_COMPUTE_STAGE, "clouds/detailNoise.csh");
-			detailNoiseShader.Compile();
-
-			integrateShader.AddStage(AE_COMPUTE_STAGE, "clouds/integrate.csh");
-			integrateShader.Compile();
-
-			temporalShader.AddStage(AE_COMPUTE_STAGE, "clouds/temporal.csh");
-			temporalShader.Compile();
-             */
+            shapeNoisePipelineConfig = PipelineConfig("clouds/shapeNoise.csh");
+            shapeNoisePipelineConfig = PipelineConfig("clouds/detailNoise.csh");
+            shapeNoisePipelineConfig = PipelineConfig("clouds/integrate.csh");
+            shapeNoisePipelineConfig = PipelineConfig("clouds/temporal.csh");
 
 		}
 
 		void VolumetricCloudRenderer::Render(Viewport* viewport, RenderTarget* target,
-			Camera* camera, Scene::Scene* scene) {
+			Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-            /*
+
 			auto clouds = scene->sky.clouds;
 			auto sun = scene->sky.sun;
 			if (!clouds) return;
 
-			Profiler::BeginQuery("Volumetric clouds");
+			Graphics::Profiler::BeginQuery("Volumetric clouds");
 
 			if (clouds->needsNoiseUpdate) {
-				GenerateTextures(scene);
+				GenerateTextures(scene, commandList);
 				clouds->needsNoiseUpdate = false;
 			}
 
-			auto downsampledRT = target->GetDownsampledTextures(target->GetVolumetricResolution());
+			auto downsampledRT = target->GetData(target->GetVolumetricResolution());
 
 			ivec2 res = ivec2(target->volumetricCloudsTexture.width, target->volumetricCloudsTexture.height);
 
 			auto depthTexture = downsampledRT->depthTexture;
 			auto velocityTexture = downsampledRT->velocityTexture;
-
+            /*
 			{
-				Profiler::BeginQuery("Integrate");
+				Graphics::Profiler::BeginQuery("Integrate");
 
 				ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
 				groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
@@ -107,13 +100,13 @@ namespace Atlas {
 				integrateShader.GetUniform("time")->SetValue(Clock::Get());
 				integrateShader.GetUniform("frameSeed")->SetValue(Common::Random::SampleUniformInt(0, 255));
 
-				glDispatchCompute(groupCount.x, groupCount.y, 1);
+				commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-				Profiler::EndQuery();
+				Graphics::Profiler::EndQuery();
 			}
 
 			{
-				Profiler::BeginQuery("Temporal accumulation");
+                Graphics::Profiler::BeginQuery("Temporal accumulation");
 
 				ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
 				groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
@@ -127,75 +120,90 @@ namespace Atlas {
 				target->historyVolumetricCloudsTexture.Bind(3);
 				target->volumetricCloudsTexture.Bind(GL_WRITE_ONLY, 0);
 
-				temporalShader.GetUniform("invResolution")->SetValue(1.0f / vec2((float)res.x, (float)res.y));
-				temporalShader.GetUniform("resolution")->SetValue(vec2((float)res.x, (float)res.y));
-
 				glMemoryBarrier(GL_ALL_BARRIER_BITS);
-				glDispatchCompute(groupCount.x, groupCount.y, 1);
+				commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-				Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
 			}
 
 			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            */
 			target->historyVolumetricCloudsTexture = target->volumetricCloudsTexture;
 			
-			Profiler::EndQuery();
-             */
+			Graphics::Profiler::EndQuery();
 
 		}
 
-		void VolumetricCloudRenderer::GenerateTextures(Scene::Scene* scene) {
+		void VolumetricCloudRenderer::GenerateTextures(Scene::Scene* scene, Graphics::CommandList* commandList) {
 
 			auto clouds = scene->sky.clouds;
 			if (!clouds) return;
 
-			GenerateShapeTexture(&clouds->shapeTexture, clouds->shapeScale);
-			GenerateDetailTexture(&clouds->detailTexture, clouds->detailScale);
+			GenerateShapeTexture(commandList, &clouds->shapeTexture, clouds->shapeScale);
+			GenerateDetailTexture(commandList, &clouds->detailTexture, clouds->detailScale);
 
 			clouds->shapeTexture.GenerateMipmap();
 			clouds->detailTexture.GenerateMipmap();
 
 		}
 
-		void VolumetricCloudRenderer::GenerateShapeTexture(Texture::Texture3D* texture, float baseScale) {
+		void VolumetricCloudRenderer::GenerateShapeTexture(Graphics::CommandList* commandList,
+            Texture::Texture3D* texture, float baseScale) {
 
-            /*
-			Profiler::BeginQuery("Generate shape cloud texture");
+			Graphics::Profiler::BeginQuery("Generate shape cloud texture");
 
 			// Expect the resolution to be a power of 2 and larger equal 4
 			ivec3 groupCount = ivec3(texture->width, texture->height, texture->depth) / 4;
 
-			shapeNoiseShader.Bind();
+            auto pipeline = PipelineManager::GetPipeline(shapeNoisePipelineConfig);
+            commandList->BindPipeline(pipeline);
 
-			texture->Bind(GL_WRITE_ONLY, 0);
+            auto randomFloat = Common::Random::SampleUniformFloat() * 10.0f;
 
-			shapeNoiseShader.GetUniform("seed")->SetValue(Common::Random::SampleUniformFloat() * 10.0f);
+            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
+            commandList->PushConstants(constantRange, &randomFloat);
+
+            commandList->ImageMemoryBarrier(texture->image,
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+
+            commandList->BindImage(texture->image, 3, 0);
 			
-			glDispatchCompute(groupCount.x, groupCount.y, groupCount.z);
+			commandList->Dispatch(groupCount.x, groupCount.y, groupCount.z);
 
-			Profiler::EndQuery();
-             */
+            commandList->ImageMemoryBarrier(texture->image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+
+            Graphics::Profiler::EndQuery();
 
 		}
 
-		void VolumetricCloudRenderer::GenerateDetailTexture(Texture::Texture3D* texture, float baseScale) {
+		void VolumetricCloudRenderer::GenerateDetailTexture(Graphics::CommandList* commandList,
+            Texture::Texture3D* texture, float baseScale) {
 
-            /*
-			Profiler::BeginQuery("Generate detail cloud texture");
+            Graphics::Profiler::BeginQuery("Generate detail cloud texture");
 
 			// Expect the resolution to be a power of 2 and larger equal 4
 			ivec3 groupCount = ivec3(texture->width, texture->height, texture->depth) / 4;
 
-			detailNoiseShader.Bind();
+            auto pipeline = PipelineManager::GetPipeline(detailNoisePipelineConfig);
+            commandList->BindPipeline(pipeline);
 
-			texture->Bind(GL_WRITE_ONLY, 0);
+            auto randomFloat = Common::Random::SampleUniformFloat() * 10.0f;
 
-			detailNoiseShader.GetUniform("seed")->SetValue(Common::Random::SampleUniformFloat() * 10.0f);
+            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
+            commandList->PushConstants(constantRange, &randomFloat);
 
-			glDispatchCompute(groupCount.x, groupCount.y, groupCount.z);
+            commandList->ImageMemoryBarrier(texture->image,
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-			Profiler::EndQuery();
-             */
+            commandList->BindImage(texture->image, 3, 0);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, groupCount.z);
+
+            commandList->ImageMemoryBarrier(texture->image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+
+            Graphics::Profiler::EndQuery();
 
 		}
 

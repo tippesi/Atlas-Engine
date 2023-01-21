@@ -33,13 +33,7 @@ namespace Atlas {
 		glyphs.resize(AE_FONT_GLYPH_COUNT);
 		glyphInfo.resize(AE_FONT_GLYPH_COUNT);
 
-		firstGlyphBuffer = Buffer::Buffer(Buffer::BufferUsageBits::UniformBuffer |
-                                          Buffer::BufferUsageBits::HostAccess, sizeof(GlyphInfo));
-		firstGlyphBuffer.SetSize(AE_GPU_GLYPH_COUNT / 2);
-
-		secondGlyphBuffer = Buffer::Buffer(Buffer::BufferUsageBits::UniformBuffer |
-                                           Buffer::BufferUsageBits::HostAccess, sizeof(GlyphInfo));
-		secondGlyphBuffer.SetSize(AE_GPU_GLYPH_COUNT / 2);
+		glyphBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(GlyphInfo), AE_GPU_GLYPH_COUNT);
 
 		float scale = (float) stbtt_ScaleForPixelHeight(&font, pixelSize);
 
@@ -155,8 +149,7 @@ namespace Atlas {
 
 		}
 
-		firstGlyphBuffer.SetData(&glyphInfo[0], 0, AE_GPU_GLYPH_COUNT / 2);
-		secondGlyphBuffer.SetData(&glyphInfo[AE_GPU_GLYPH_COUNT / 2], 0, AE_GPU_GLYPH_COUNT / 2);
+		glyphBuffer.SetData(&glyphInfo[0], 0, AE_GPU_GLYPH_COUNT);
 
 	}
 

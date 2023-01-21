@@ -171,19 +171,6 @@ namespace Atlas {
 
 	}
 
-	void Window::Update() {
-
-		SDL_GL_SwapWindow(sdlWindow);
-
-	}
-
-	void Window::Clear(vec3 color) {
-
-		// glClearColor(color.r, color.g, color.b, 1.0f);
-		// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	}
-
     bool Window::CreateSurface() {
 
         bool success = false;

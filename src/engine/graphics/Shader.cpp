@@ -6,6 +6,7 @@
 #include "../common/Hash.h"
 #include "../common/Path.h"
 #include "../loader/ShaderLoader.h"
+#include "../loader/AssetLoader.h"
 
 #include <spirv_reflect.h>
 #include <cassert>
@@ -167,6 +168,9 @@ namespace Atlas {
                     nullptr, &modules[i]) == VK_SUCCESS;
                 assert(success && "Error creating shader module");
                 if (!success) {
+                    auto stream = Loader::AssetLoader::WriteFile("dump.txt", std::ios::out | std::ios::binary);
+                    stream.write((char*)spirvBinary.data(), spirvBinary.size() * sizeof(uint32_t));
+                    stream.close();
                     return;
                 }
 

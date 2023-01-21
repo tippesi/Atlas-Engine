@@ -27,7 +27,7 @@ void main() {
 	// Velocity buffer
 	ndcCurrent = vec3(gl_Position.xy, gl_Position.w);
 
-	vec4 last = pvMatrixLast * pos;
+	vec4 last = (pvMatrixLast * pos).xyww;
 	ndcLast = vec3(last.xy, last.w);
 	
 }

@@ -15,7 +15,6 @@ void App::LoadContent() {
 
     auto icon = Atlas::Texture::Texture2D("icon.png");
     window.SetIcon(&icon);
-    window.Update();
 
     font = Atlas::Font("font/roboto.ttf", 22, 5);
 
@@ -143,8 +142,6 @@ void App::Render(float deltaTime) {
     static bool slowMode = false;
 
     static float cloudDepthDebug = 0.0f;
-
-    window.Clear();
 
     if (animateLight) directionalLight->direction = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
 
@@ -622,10 +619,15 @@ void App::Render(float deltaTime) {
 
 void App::DisplayLoadingScreen() {
 
+    auto device = Atlas::Graphics::GraphicsDevice::DefaultDevice;
+    auto commandList = device->GetCommandList();
+
+    commandList->BeginCommands();
+    device->swapChain->colorClearValue.color = {0.0f, 0.0f, 0.0f, 1.0f};
+    commandList->BeginRenderPass(device->swapChain, true);
+
     float textWidth, textHeight;
     font.ComputeDimensions("Loading...", 2.5f, &textWidth, &textHeight);
-
-    window.Clear();
 
     auto windowSize = window.GetDrawableSize();
 
@@ -633,9 +635,15 @@ void App::DisplayLoadingScreen() {
     float y = windowSize.y / 2 - textHeight / 2;
 
     viewport.Set(0, 0, windowSize.x, windowSize.y);
-    // mainRenderer.textRenderer.Render(&viewport, &font, "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+    mainRenderer.textRenderer.Render(commandList, &viewport, &font,
+        "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
-    window.Update();
+    commandList->EndRenderPass();
+    commandList->EndCommands();
+    device->SubmitCommandList(commandList);
+    device->CompleteFrame();
+
+    window.Show();
 
 }
 

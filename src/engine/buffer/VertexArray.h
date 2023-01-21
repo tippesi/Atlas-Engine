@@ -21,7 +21,6 @@ namespace Atlas {
 			/**
              *
              * @param buffer
-             * @note The object takes the ownership of the buffer.
              */
 			void AddIndexComponent(IndexBuffer buffer);
 
@@ -30,9 +29,15 @@ namespace Atlas {
              * @param attribArray
              * @param buffer
              * @param normalized
-             * @note The object takes the ownership of the buffer.
              */
 			void AddComponent(uint32_t attribArray, VertexBuffer buffer);
+
+            /**
+             *
+             * @param attribArray
+             * @param buffer
+             */
+            void AddInstancedComponent(uint32_t attribArray, VertexBuffer buffer);
 
 			/**
              *

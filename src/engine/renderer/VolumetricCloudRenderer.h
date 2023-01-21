@@ -12,25 +12,31 @@ namespace Atlas {
 		class VolumetricCloudRenderer : public Renderer {
 
 		public:
-			VolumetricCloudRenderer();
+			VolumetricCloudRenderer() = default;
+
+            void Init(Graphics::GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene) final;
+				Camera* camera, Scene::Scene* scene) final {};
 
-			void GenerateTextures(Scene::Scene* scene);
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
+
+			void GenerateTextures(Scene::Scene* scene, Graphics::CommandList* commandList);
 
 		private:
-			void GenerateShapeTexture(Texture::Texture3D* texture, float baseScale);
+			void GenerateShapeTexture(Graphics::CommandList* commandList,
+                Texture::Texture3D* texture, float baseScale);
 			
-			void GenerateDetailTexture(Texture::Texture3D* texture, float baseScale);
+			void GenerateDetailTexture(Graphics::CommandList* commandList,
+                Texture::Texture3D* texture, float baseScale);
 
-            /*
-			OldShader::OldShader shapeNoiseShader;
-			OldShader::OldShader detailNoiseShader;
-			OldShader::OldShader integrateShader;
-			OldShader::OldShader temporalShader;
-            */
-			
+            PipelineConfig shapeNoisePipelineConfig;
+            PipelineConfig detailNoisePipelineConfig;
+
+            PipelineConfig integratePipelineConfig;
+            PipelineConfig temporalPipelineConfig;
+
 			Texture::Texture2D blueNoiseTexture;
 
 		};

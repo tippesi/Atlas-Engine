@@ -24,6 +24,20 @@ namespace Atlas {
 
 		}
 
+        void VertexArray::AddInstancedComponent(uint32_t attribArray, VertexBuffer buffer) {
+
+            VertexComponent component;
+            component.vertexBuffer = buffer;
+            component.attributeDescription = Graphics::Initializers::InitVertexInputAttributeDescription(
+                attribArray, buffer.format);
+            component.bindingDescription = Graphics::Initializers::InitVertexInputBindingDescription(
+                attribArray, buffer.elementSize);
+            component.bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+            vertexComponents[attribArray] = component;
+
+        }
+
 		IndexBuffer VertexArray::GetIndexComponent() {
 
 			return indexComponent;

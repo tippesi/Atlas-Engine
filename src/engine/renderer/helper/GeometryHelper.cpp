@@ -8,7 +8,7 @@ namespace Atlas {
 
 			void GeometryHelper::GenerateRectangleVertexArray(Buffer::VertexArray& vertexArray) {
 
-                auto buffer = Buffer::VertexBuffer(VK_FORMAT_R8G8_SINT, 4);
+                auto buffer = Buffer::VertexBuffer(VK_FORMAT_R32G32_SFLOAT, 4);
                 buffer.SetData(&rectangleVertices[0], 0, 4);
                 vertexArray.AddComponent(0, buffer);
 
@@ -189,11 +189,11 @@ namespace Atlas {
 
 			}
 
-			int8_t GeometryHelper::rectangleVertices[] = {
-					-1, -1,
-					1, -1,
-					-1, 1,
-					1, 1
+			float GeometryHelper::rectangleVertices[] = {
+					-1.0f, -1.0f,
+					-1.0f, 1.0f,
+                    1.0f, -1.0f,
+					1.0f, 1.0f
 			};
 
 			float GeometryHelper::cubeVertices[] = {

@@ -25,9 +25,8 @@ namespace Atlas {
                 };
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
                     .swapChain = device->swapChain,
-                    .rasterizer = Graphics::Initializers::InitPipelineRasterizationStateCreateInfo(
-                        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE
-                        )
+                    .rasterizer = Graphics::Initializers::InitPipelineRasterizationStateCreateInfo
+                        (VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE)
                 };
                 auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc);
                 pipeline = PipelineManager::GetPipeline(pipelineConfig);

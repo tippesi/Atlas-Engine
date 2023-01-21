@@ -1,7 +1,10 @@
+#include <globals.hsh>
+#include <common/convert.hsh>
+#include <common/PI.hsh>
+
 layout (location = 0) out vec3 fragColor;
 layout (location = 1) out vec2 velocity;
 
-#define PI 3.141592
 #define iSteps 20
 #define jSteps 10
 
