@@ -643,6 +643,8 @@ void App::DisplayLoadingScreen() {
     device->SubmitCommandList(commandList);
     device->CompleteFrame();
 
+    device->WaitForIdle();
+
     window.Show();
 
 }
@@ -873,7 +875,7 @@ bool App::LoadScene() {
         scene.fog->enable = true;
     }
 
-    scene.sky.probe = std::make_shared<Atlas::Lighting::EnvironmentProbe>(sky);
+    // scene.sky.probe = std::make_shared<Atlas::Lighting::EnvironmentProbe>(sky);
 
     actors.reserve(meshes.size());
     for (auto& mesh : meshes) {

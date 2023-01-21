@@ -20,6 +20,7 @@ namespace Atlas {
 
 			vertexArray.Bind(commandList);
 
+
             auto pipelineConfig = GetPipelineConfig(target);
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 

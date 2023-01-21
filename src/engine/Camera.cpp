@@ -13,6 +13,8 @@ namespace Atlas {
 
 	void Camera::UpdateView() {
 
+        lastViewMatrix = viewMatrix;
+
 		direction = normalize(vec3(cos(rotation.y) * sin(rotation.x),
 			sin(rotation.y), cos(rotation.y) * cos(rotation.x)));
 
@@ -60,7 +62,6 @@ namespace Atlas {
 
 		lastJitteredMatrix = jitteredMatrix;
 		lastJitterVector = jitterVector;
-        lastViewMatrix = viewMatrix;
 
 		auto helper = glm::translate(vec3(jitter, 0.0f));
 		projectionMatrix = helper * unjitterdProjection;

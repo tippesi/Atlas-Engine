@@ -49,6 +49,7 @@ namespace Atlas {
 			directLightRenderer.Init(device);
 			indirectLightRenderer.Init(device);
 			skyboxRenderer.Init(device);
+            atmosphereRenderer.Init(device);
             volumetricRenderer.Init(device);
             taaRenderer.Init(device);
             postProcessRenderer.Init(device);
@@ -113,9 +114,8 @@ namespace Atlas {
                 }
             }
             else if (scene->sky.atmosphere) {
-                //atmosphereRenderer.Render(&scene->sky.atmosphere->probe, scene);
-                //scene->sky.atmosphere->probe.filteredDiffuse.Bind(0);
-                //FilterProbe(&scene->sky.atmosphere->probe);
+                atmosphereRenderer.Render(&scene->sky.atmosphere->probe, scene, commandList);
+                FilterProbe(&scene->sky.atmosphere->probe, commandList);
             }
 
             // Bind before any shadows etc. are rendered, this is a shared buffer for all these passes
@@ -216,11 +216,16 @@ namespace Atlas {
 			}
 
             {
-                commandList->BeginRenderPass(target->lightingRenderPass, target->lightingFrameBuffer);
+                if (scene->sky.probe) {
+                    commandList->BeginRenderPass(target->lightingRenderPass, target->lightingFrameBuffer);
 
-                skyboxRenderer.Render(viewport, target, camera, scene, commandList);
+                    skyboxRenderer.Render(viewport, target, camera, scene, commandList);
 
-                commandList->EndRenderPass();
+                    commandList->EndRenderPass();
+                }
+                else if (scene->sky.atmosphere) {
+                    atmosphereRenderer.Render(viewport, target, camera, scene, commandList);
+                }
             }
 
             {
@@ -854,8 +859,6 @@ namespace Atlas {
 		}
 
 		void MainRenderer::Update() {
-
-			static auto framecounter = 0;
 
 			textRenderer.Update();
 

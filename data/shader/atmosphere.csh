@@ -4,26 +4,40 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
-layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D colorImage;
 #ifndef ENVIRONMENT_PROBE
+layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D colorImage;
 layout(set = 3, binding = 1, rg16f) writeonly uniform image2D velocityImage;
 layout(set = 3, binding = 2) uniform sampler2D depthTexture;
+#else
+layout(set = 3, binding = 0, rgba16f) writeonly uniform imageCube colorImage;
 #endif
 
 #define iSteps 20
 #define jSteps 10
 
-vec2 resolution = vec2(imageSize(colorImage));
+layout(set = 3, binding = 3, std140) uniform UniformBuffer {
+    mat4 ivMatrix;
+    mat4 ipMatrix;
+    vec4 cameraLocation;
+    vec4 planetCenter;
+    vec4 sunDirection;
+    float sunIntensity;
+    float planetRadius;
+    float atmosphereRadius;
+} uniforms;
 
-uniform vec3 sunDirection;
-uniform float sunIntensity;
-uniform float atmosphereRadius;
-uniform float planetRadius;
+#ifdef ENVIRONMENT_PROBE
+layout(set = 3, binding = 4, std140) uniform MatricesBuffer {
+    mat4 data[6];
+} matrices;
+#endif
+
+vec2 resolution = vec2(imageSize(colorImage));
 
 const float rayScaleHeight = 8.0e3;
 const float mieScaleHeight = 1.2e3;
 
-vec3 planetCenter = -vec3(0.0, planetRadius, 0.0);
+vec3 planetCenter = -vec3(0.0, uniforms.planetRadius, 0.0);
 
 void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos,
     vec3 kRlh, float kMie, out vec3 totalRlh, out vec3 totalMie);
@@ -36,7 +50,7 @@ void main() {
         return;
 
 #ifndef ENVIRONMENT_PROBE
-    float depth = texelFetch(depthTexture, pixel, 0);
+    float depth = texelFetch(depthTexture, pixel, 0).r;
     if (depth < 1.0)
         return;
 #else
@@ -45,22 +59,26 @@ void main() {
     vec2 texCoord = (vec2(pixel) + 0.5) / resolution;
 
     // Don't use the global inverse matrices here, since we also render the cubemap with this shader
-	vec3 viewPos = ConvertDepthToViewSpace(texCoord, depth, uniforms.ipMatrix);
+	vec3 viewPos = ConvertDepthToViewSpace(depth, texCoord, uniforms.ipMatrix);
+#ifndef ENVIRONMENT_PROBE
     vec3 worldPos = vec3(uniforms.ivMatrix * vec4(viewPos, 1.0));
+#else
+    vec3 worldPos = vec3(matrices.data[gl_GlobalInvocationID.z] * vec4(viewPos, 1.0));
+#endif
 
     const float g = 0.76;
-    vec3 r = normalize(viewPos);
-    vec3 pSun = normalize(-sunDirection);
+    vec3 r = normalize(worldPos - uniforms.cameraLocation.xyz);
+    vec3 pSun = normalize(-uniforms.sunDirection.xyz);
 
     vec3 totalRlh;
     vec3 totalMie;
 
     atmosphere(
-        normalize(viewPos),           // normalized ray direction
-        globals.cameraLocation.xyz,               // ray origin
-        -sunDirection,                        // position of the sun
-        planetRadius,                         // radius of the planet in meters
-        atmosphereRadius,                         // radius of the atmosphere in meters
+        r,           // normalized ray direction
+        uniforms.cameraLocation.xyz,               // ray origin
+        -uniforms.sunDirection.xyz,                        // position of the sun
+        uniforms.planetRadius,                         // radius of the planet in meters
+        uniforms.atmosphereRadius,                         // radius of the atmosphere in meters
         vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
         21e-6,                          // Mie scattering coefficient
         totalRlh,
@@ -74,28 +92,33 @@ void main() {
     float pRlh = 3.0 / (16.0 * PI) * (1.0 + mumu);
     float pMie = 3.0 / (8.0 * PI) * ((1.0 - gg) * (mumu + 1.0)) / (pow(1.0 + gg - 2.0 * mu * g, 1.5) * (2.0 + gg));
 
-    fragColor = max(pRlh * totalRlh + pMie * totalMie, vec3(0.0));
+    vec3 color = max(pRlh * totalRlh + pMie * totalMie, vec3(0.0));
 
     float LdotV = max(0.0, dot(normalize(pSun), normalize(r)));
     float sunAngle = cos(2.0 * 0.5 * 3.14 / 180.0);
 
     if (LdotV > sunAngle) {
         float sunDisk = clamp(0.5 * (LdotV - sunAngle) / (1.0 - sunAngle), 0.0, 1.0);
-        fragColor += sunIntensity * sunDisk;
+        color += uniforms.sunIntensity * sunDisk;
     }
 
 #ifndef ENVIRONMENT_PROBE
     // Calculate velocity
-    vec3 ndcCurrent = (globals.pMatrix * vec4(viewPos, 1.0)).xyw;
-    vec3 ndcLast = (globals.pvMatrixLast * vec4(worldPos, 1.0)).xyw;
+    vec3 ndcCurrent = (globalData.pMatrix * vec4(viewPos, 1.0)).xyw;
+    vec3 ndcLast = (globalData.pvMatrixLast * vec4(worldPos, 1.0)).xyw;
 
     vec2 ndcL = ndcLast.xy / ndcLast.z;
     vec2 ndcC = ndcCurrent.xy / ndcCurrent.z;
 
-    ndcL -= globals.jitterLast;
-    ndcC -= globals.jitterCurrent;
+    ndcL -= globalData.jitterLast;
+    ndcC -= globalData.jitterCurrent;
 
-    velocity = (ndcL - ndcC) * 0.5;
+    vec2 velocity = (ndcL - ndcC) * 0.5;
+
+    imageStore(velocityImage, pixel, vec4(velocity, 0.0, 1.0));
+    imageStore(colorImage, pixel, vec4(color, 1.0));
+#else
+    imageStore(colorImage, ivec3(pixel, int(gl_GlobalInvocationID.z)), vec4(color, 1.0));
 #endif
 
 }
@@ -125,8 +148,8 @@ vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
 
 void CalculateRayLength(vec3 rayOrigin, vec3 rayDirection, out float minDist, out float maxDist) {
 
-    vec2 planetDist = IntersectSphere(rayOrigin, rayDirection, planetCenter, planetRadius);
-    vec2 atmosDist = IntersectSphere(rayOrigin, rayDirection, planetCenter, atmosphereRadius);
+    vec2 planetDist = IntersectSphere(rayOrigin, rayDirection, planetCenter, uniforms.planetRadius);
+    vec2 atmosDist = IntersectSphere(rayOrigin, rayDirection, planetCenter, uniforms.atmosphereRadius);
 
     // We're in the in the planet
     if (planetDist.x < 0.0 && planetDist.y >= 0.0) {
@@ -248,7 +271,7 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
 
     }
 
-    totalMie = totalMie * sunIntensity * kMie;
-    totalRlh = totalRlh * sunIntensity * kRlh;
+    totalMie = totalMie * uniforms.sunIntensity * kMie;
+    totalRlh = totalRlh * uniforms.sunIntensity * kRlh;
 
 }

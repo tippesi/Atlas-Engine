@@ -30,3 +30,4 @@ CMakeSettings.json
 .vscode/settings.json
 xcode
 bin
+data/dump.txt

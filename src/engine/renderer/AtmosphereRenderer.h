@@ -14,19 +14,38 @@ namespace Atlas {
 		class AtmosphereRenderer : public Renderer {
 
 		public:
-			AtmosphereRenderer();
+			AtmosphereRenderer() = default;
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
+            void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene);
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {};
+
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
+
+			void Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene,
+                Graphics::CommandList* commandList);
 
 			static std::string vertexPath;
 			static std::string fragmentPath;
 
 		private:
-			Buffer::VertexArray vertexArray;
+            struct alignas(16) Uniforms {
+                mat4 ivMatrix;
+                mat4 ipMatrix;
+                vec4 cameraLocation;
+                vec4 planetCenter;
+                vec4 sunDirection;
+                float sunIntensity;
+                float planetRadius;
+                float atmosphereRadius;
+            };
 
-			//OldShader::OldShader shader;
+            PipelineConfig defaultPipelineConfig;
+            PipelineConfig cubeMapPipelineConfig;
+
+            Buffer::Buffer uniformBuffer;
+            Buffer::Buffer probeMatricesBuffer;
 
 		};
 

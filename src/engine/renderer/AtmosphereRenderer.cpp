@@ -7,114 +7,139 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		std::string AtmosphereRenderer::vertexPath = "atmosphere.vsh";
-		std::string AtmosphereRenderer::fragmentPath = "atmosphere.fsh";
+        void AtmosphereRenderer::Init(Graphics::GraphicsDevice *device) {
 
-		AtmosphereRenderer::AtmosphereRenderer() {
+            defaultPipelineConfig = PipelineConfig("atmosphere.csh");
+            cubeMapPipelineConfig = PipelineConfig("atmosphere.csh", {"ENVIRONMENT_PROBE"});
 
-            /*
-			Helper::GeometryHelper::GenerateSphereVertexArray(vertexArray, 50, 50);
-
-			shader.AddStage(AE_VERTEX_STAGE, vertexPath);
-			shader.AddStage(AE_FRAGMENT_STAGE, fragmentPath);
-
-			shader.Compile();
-             */
+            auto bufferUsage = Buffer::BufferUsageBits::UniformBuffer | Buffer::BufferUsageBits::HostAccess
+                               | Buffer::BufferUsageBits::MultiBuffered;
+            // 2 elements of size for default rendering plus one cube map
+            uniformBuffer = Buffer::Buffer(bufferUsage, sizeof(Uniforms), 2);
+            probeMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat4), 6);
 
 		}
 
-		void AtmosphereRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
-
-            /*
-			Profiler::BeginQuery("Atmosphere");
-
-			shader.Bind();
-
-			vertexArray.Bind();
+		void AtmosphereRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            Scene::Scene* scene, Graphics::CommandList* commandList) {
 
 			auto sun = scene->sky.sun;
 			auto atmosphere = scene->sky.atmosphere;
 			if (!sun || !atmosphere) return;
+
+            Graphics::Profiler::BeginQuery("Atmosphere");
+
+            auto pipeline = PipelineManager::GetPipeline(defaultPipelineConfig);
+            commandList->BindPipeline(pipeline);
 
 			auto location = camera->GetLocation();
 
-			shader.GetUniform("vMatrix")->SetValue(camera->viewMatrix);
-			shader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
-			shader.GetUniform("cameraLocation")->SetValue(location);
-			shader.GetUniform("sunDirection")->SetValue(sun->direction);
-			shader.GetUniform("sunIntensity")->SetValue(sun->intensity);
-			shader.GetUniform("planetCenter")->SetValue(scene->sky.planetCenter);
-			shader.GetUniform("planetRadius")->SetValue(scene->sky.planetRadius);
-			shader.GetUniform("atmosphereRadius")->SetValue(scene->sky.planetRadius + atmosphere->height);
-            shader.GetUniform("pvMatrixLast")->SetValue(camera->GetLastJitteredMatrix());
-			shader.GetUniform("jitterLast")->SetValue(camera->GetLastJitter());
-			shader.GetUniform("jitterCurrent")->SetValue(camera->GetJitter());
+            auto rtData = target->GetData(FULL_RES);
+            auto velocityTexture = rtData->velocityTexture;
+            auto depthTexture = rtData->depthTexture;
 
-			glDrawElements(GL_TRIANGLES, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
-				vertexArray.GetIndexComponent()->GetDataType(), nullptr);
+            Uniforms uniforms {
+                .ivMatrix = camera->invViewMatrix,
+                .ipMatrix = camera->invProjectionMatrix,
+                .cameraLocation = vec4(location, 1.0f),
+                .planetCenter = vec4(scene->sky.planetCenter, 1.0f),
+                .sunDirection = vec4(sun->direction, 0.0f),
+                .sunIntensity = sun->intensity,
+                .planetRadius = scene->sky.planetRadius,
+                .atmosphereRadius = scene->sky.planetRadius + atmosphere->height
+            };
 
-			Profiler::EndQuery();
-             */
+            uniformBuffer.SetData(&uniforms, 0, 1);
+
+            std::vector<Graphics::BufferBarrier> bufferBarriers;
+            std::vector<Graphics::ImageBarrier> imageBarriers = {
+                {target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                {velocityTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+            };
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+
+            commandList->BindImage(target->lightingTexture.image, 3, 0);
+            commandList->BindImage(velocityTexture->image, 3, 1);
+
+            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
+            commandList->BindBuffer(uniformBuffer.GetMultiBuffer(), 3, 3);
+
+            auto resolution = ivec2(target->GetWidth(), target->GetHeight());
+            auto groupCount = resolution / 8;
+
+            groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
+            groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+            imageBarriers = {
+                {target->lightingTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {velocityTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+            };
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+			Graphics::Profiler::EndQuery();
 
 		}
 
-		void AtmosphereRenderer::Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene) {
+		void AtmosphereRenderer::Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene,
+            Graphics::CommandList* commandList) {
 
-            /*
-			Profiler::BeginQuery("Atmosphere environment probe");
-
-			glDisable(GL_DEPTH_TEST);
-
-			shader.Bind();
-
-			vertexArray.Bind();
-
-			auto sun = scene->sky.sun;
+            auto sun = scene->sky.sun;
 			auto atmosphere = scene->sky.atmosphere;
 			if (!sun || !atmosphere) return;
 
-			shader.GetUniform("vMatrix")->SetValue(mat4(1.0f));
-			shader.GetUniform("cameraLocation")->SetValue(probe->GetPosition());
-			shader.GetUniform("sunDirection")->SetValue(sun->direction);
-			shader.GetUniform("sunIntensity")->SetValue(sun->intensity);
-			shader.GetUniform("planetCenter")->SetValue(scene->sky.planetCenter);
-			shader.GetUniform("planetRadius")->SetValue(scene->sky.planetRadius);
-			shader.GetUniform("atmosphereRadius")->SetValue(scene->sky.planetRadius + atmosphere->height);
-			shader.GetUniform("pvMatrixLast")->SetValue(mat4(1.0f));
-			shader.GetUniform("jitterLast")->SetValue(vec2(1.0f));
-			shader.GetUniform("jitterCurrent")->SetValue(vec2(1.0f));
+			Graphics::Profiler::BeginQuery("Atmosphere environment probe");
 
-			glViewport(0, 0, probe->cubemap.width, probe->cubemap.height);
+            auto pipeline = PipelineManager::GetPipeline(cubeMapPipelineConfig);
+            commandList->BindPipeline(pipeline);
 
-			framebuffer.Bind();
+			commandList->ImageMemoryBarrier(probe->cubemap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-			Profiler::BeginQuery("Render probe faces");
+            std::vector<mat4> matrices = probe->viewMatrices;
+            for (auto& matrix : matrices) matrix = glm::inverse(matrix);
 
-			for (uint8_t i = 0; i < 6; i++) {
+            Uniforms uniforms {
+                .ipMatrix = glm::inverse(probe->projectionMatrix),
+                .cameraLocation = vec4(probe->GetPosition(), 1.0f),
+                .planetCenter = vec4(scene->sky.planetCenter, 1.0f),
+                .sunDirection = vec4(sun->direction, 0.0f),
+                .sunIntensity = sun->intensity,
+                .planetRadius = scene->sky.planetRadius,
+                .atmosphereRadius = scene->sky.planetRadius + atmosphere->height
+            };
+            uniformBuffer.SetData(&uniforms, 1, 1);
+            probeMatricesBuffer.SetData(matrices.data(), 0, 6);
 
-				shader.GetUniform("pMatrix")->SetValue(probe->matrices[i]);
+            commandList->BindImage(probe->cubemap.image, 3, 0);
+            commandList->BindBufferOffset(uniformBuffer.GetMultiBuffer(), uniformBuffer.GetAlignedOffset(1), 3, 3);
+            commandList->BindBuffer(probeMatricesBuffer.GetMultiBuffer(), 3, 4);
 
-				framebuffer.AddComponentCubemap(GL_COLOR_ATTACHMENT0, &probe->cubemap, i);
+			Graphics::Profiler::BeginQuery("Render probe faces");
 
-				glClear(GL_COLOR_BUFFER_BIT);
+            auto resolution = ivec2(probe->resolution);
+            auto groupCount = resolution / 8;
 
-				glDrawElements(GL_TRIANGLES, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
-					vertexArray.GetIndexComponent()->GetDataType(), nullptr);
+            groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
+            groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
-			}
+            commandList->Dispatch(groupCount.x, groupCount.y, 6);
 
-			glEnable(GL_DEPTH_TEST);
+            Graphics::Profiler::EndAndBeginQuery("Generate mipmaps");
 
-			vertexArray.Unbind();
-			framebuffer.Unbind();
+            commandList->ImageMemoryBarrier(probe->cubemap.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-			Profiler::EndAndBeginQuery("Generate mipmaps");
+            // The cube map generating automatically transforms the image layout to read-only optimal
+            commandList->GenerateMipMap(probe->cubemap.image);
 
 			probe->cubemap.GenerateMipmap();
 
-			Profiler::EndQuery();
-			Profiler::EndQuery();
-            */
+			Graphics::Profiler::EndQuery();
+			Graphics::Profiler::EndQuery();
+
 		}
 
 

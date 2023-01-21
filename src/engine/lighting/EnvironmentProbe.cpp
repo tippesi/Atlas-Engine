@@ -25,7 +25,7 @@ namespace Atlas {
 
 			this->position = position;
 
-			mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+			projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
 			vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
 							 vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
 							 vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
@@ -35,8 +35,7 @@ namespace Atlas {
 						   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
 			for (uint8_t i = 0; i < 6; i++) {
-				matrices.push_back(projectionMatrix *
-					glm::lookAt(position, position + faces[i], ups[i]));
+				viewMatrices.push_back(glm::lookAt(position, position + faces[i], ups[i]));
 			}
 
 		}

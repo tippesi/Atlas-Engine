@@ -70,6 +70,8 @@ int main(int argc, char* argv[]) {
 
         graphicsDevice->CompleteFrame();
 
+        // std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+
 	}
 
     engineInstance->UnloadContent();

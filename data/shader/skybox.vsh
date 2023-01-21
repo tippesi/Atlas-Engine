@@ -22,7 +22,7 @@ void main() {
 	// Velocity buffer
 	ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
 	// For moving objects we need the last matrix
-	vec4 last = (globalData.pvMatrixLast * vec4(vPosition + PushConstants.cameraLocationLast.xyz, 1.0)).xyww;
+	vec4 last = (globalData.pvMatrixLast * vec4(vPosition + PushConstants.cameraLocationLast.xyz, 1.0));
 	ndcLastVS = vec3(last.xy, last.w);
 	
     texCoordVS = vPosition;

@@ -99,6 +99,9 @@ namespace Atlas {
                     additionalUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
                 }
             }
+            else {
+                additionalUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
+            }
 
             auto arrayType = imageType == Graphics::ImageType::Image2DArray ||
                 imageType == Graphics::ImageType::Image1DArray ||

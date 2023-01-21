@@ -15,8 +15,8 @@ void main() {
 	colorFS = vec4(textureLod(skyCubemap, texCoordVS, 0).xyz, 1.0);
 	
 	 // Calculate screen space velocity
-	vec2 ndcL = ndcLastVS.xy;
-	vec2 ndcC = ndcCurrentVS.xy;
+	vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
+	vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
 	ndcL -= globalData.jitterLast;
 	ndcC -= globalData.jitterCurrent;
