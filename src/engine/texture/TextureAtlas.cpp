@@ -15,7 +15,7 @@ namespace Atlas {
 
 		}
 
-		TextureAtlas::TextureAtlas(std::vector<Ref<Texture2D>>& textures, int32_t padding,
+		TextureAtlas::TextureAtlas(const std::vector<Ref<Texture2D>>& textures, int32_t padding,
 			int32_t downscale) : padding(padding), downscale(downscale) {
 
 			Update(textures);
@@ -37,10 +37,10 @@ namespace Atlas {
 
 		}
 
-		void TextureAtlas::Update(std::vector<Ref<Texture2D>>& textures) {
+		void TextureAtlas::Update(const std::vector<Ref<Texture2D>>& textures) {
 
 			if (!textures.size())
-				return;			
+				return;
 
 			std::vector<TextureStructure> textureStructures;
             this->textures = textures;
@@ -137,6 +137,12 @@ namespace Atlas {
             graphicsDevice->FlushCommandList(commandList);
 
 		}
+
+        void TextureAtlas::Clear() {
+
+            textureArray = Texture2DArray();
+
+        }
 
 		std::map<Texture2D*, TextureAtlas::Slice> TextureAtlas::CreateSlicesForAtlasLevel(std::vector<TextureStructure> textures, int32_t level) {
 

@@ -122,6 +122,12 @@ namespace Atlas {
 			rayTracingData.Update();
 
 		}
+
+        void Scene::ClearRTStructures() {
+
+            rayTracingData.Clear();
+
+        }
 	}
 
 }

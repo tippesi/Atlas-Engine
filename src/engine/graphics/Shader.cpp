@@ -169,7 +169,7 @@ namespace Atlas {
                 assert(success && "Error creating shader module");
                 if (!success) {
                     auto stream = Loader::AssetLoader::WriteFile("dump.txt", std::ios::out | std::ios::binary);
-                    stream.write((char*)spirvBinary.data(), spirvBinary.size() * sizeof(uint32_t));
+                    stream.write(reinterpret_cast<char*>(spirvBinary.data()), spirvBinary.size() * sizeof(uint32_t));
                     stream.close();
                     return;
                 }

@@ -256,9 +256,9 @@ namespace Atlas {
 
             // We wait here until the operation is finished
             VK_CHECK(vkWaitForFences(device->device, 1, &fence, true, 9999999999))
-                VK_CHECK(vkResetFences(device->device, 1, &fence))
+            VK_CHECK(vkResetFences(device->device, 1, &fence))
 
-                vkResetCommandPool(device->device, commandPool, 0);
+            vkResetCommandPool(device->device, commandPool, 0);
             DestroyStagingBuffer(stagingAllocation);
 
         }

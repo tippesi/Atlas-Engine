@@ -36,9 +36,9 @@ namespace Atlas {
 
             auto& postProcessing = scene->postProcessing;
 
-            auto& chromaticAberration = postProcessing.chromaticAberration;
-            auto& vignette = postProcessing.vignette;
-            auto& taa = postProcessing.taa;
+            const auto& chromaticAberration = postProcessing.chromaticAberration;
+            const auto& vignette = postProcessing.vignette;
+            const auto& taa = postProcessing.taa;
             auto& sharpen = postProcessing.sharpen;
 
             ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());

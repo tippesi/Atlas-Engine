@@ -455,6 +455,17 @@ namespace Atlas {
 
 		}
 
+        void RTData::Clear() {
+
+            baseColorTextureAtlas.Clear();
+            opacityTextureAtlas.Clear();
+            normalTextureAtlas.Clear();
+            roughnessTextureAtlas.Clear();
+            metalnessTextureAtlas.Clear();
+            aoTextureAtlas.Clear();
+
+        }
+
 		RTData::GPUTexture RTData::CreateGPUTextureStruct(std::vector<Texture::TextureAtlas::Slice> slices) {
 
 			GPUTexture texture;

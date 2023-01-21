@@ -20,7 +20,6 @@ namespace Atlas {
 
 			vertexArray.Bind(commandList);
 
-
             auto pipelineConfig = GetPipelineConfig(target);
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
@@ -30,8 +29,8 @@ namespace Atlas {
             auto constantRange = pipeline->shader->GetPushConstantRange("constants");
             commandList->PushConstants(constantRange, &lastCameraLocation);
 
-            auto& cubemap = scene->sky.probe->cubemap;
-            commandList->BindImage(cubemap.image, cubemap.sampler, 3, 0);
+            const auto& cubeMap = scene->sky.probe->cubemap;
+            commandList->BindImage(cubeMap.image, cubeMap.sampler, 3, 0);
 
             commandList->Draw(36, 1, 0, 0);
 

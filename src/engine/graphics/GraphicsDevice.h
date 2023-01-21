@@ -114,6 +114,8 @@ namespace Atlas {
 
             void WaitForIdle() const;
 
+            void ForceMemoryCleanup();
+
             Instance* instance = nullptr;
             SwapChain* swapChain = nullptr;
             MemoryManager* memoryManager = nullptr;

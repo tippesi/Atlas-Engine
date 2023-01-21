@@ -453,6 +453,15 @@ namespace Atlas {
 
         }
 
+        void GraphicsDevice::ForceMemoryCleanup() {
+
+            // Do before update anything, don't want to do unnecessary work
+            DestroyUnusedGraphicObjects();
+
+            memoryManager->DestroyAllImmediate();
+
+        }
+
         bool GraphicsDevice::SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
             const std::vector<const char*>& requiredExtensions) {
 

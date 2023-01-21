@@ -1083,7 +1083,6 @@ namespace Atlas {
                 VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             uint32_t groupCount = res / 8;
-            groupCount += ((res % groupCount) ? 1 : 0);
 
             commandList->BindImage(dfgPreintegrationTexture.image, 0, 0);
             commandList->Dispatch(groupCount, groupCount, 1);

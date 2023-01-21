@@ -71,8 +71,8 @@ namespace Atlas {
 
             lines = ExtractExtensions(lines, extensions);
 
-            for (auto& line : lines) {
-                shaderCode += line + "\n\r";
+            for (auto& codeLine : lines) {
+                shaderCode += codeLine + "\n\r";
             }
 
             shaderCode = ExtractIncludes(filename, shaderCode, includes, extensions);

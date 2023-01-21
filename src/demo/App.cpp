@@ -18,8 +18,6 @@ void App::LoadContent() {
 
     font = Atlas::Font("font/roboto.ttf", 22, 5);
 
-    DisplayLoadingScreen();
-
     camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f,
         glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
 
@@ -81,7 +79,6 @@ void App::LoadContent() {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     imguiWrapper.Load(&window);
-
 
     //io.Fonts->AddFontFromFileTTF(
     //    Atlas::Loader::AssetLoader::GetFullPath("font/roboto.ttf").c_str(),
@@ -906,6 +903,13 @@ void App::UnloadScene() {
 
     actors.clear();
     meshes.clear();
+
+    scene.ClearRTStructures();
+
+    auto device = Atlas::Graphics::GraphicsDevice::DefaultDevice;
+
+    device->WaitForIdle();
+    device->ForceMemoryCleanup();
 
 }
 

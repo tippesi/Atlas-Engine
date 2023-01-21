@@ -90,7 +90,7 @@ namespace Atlas {
 
         shaderHash = 0;
         std::sort(shaderConfig.begin(), shaderConfig.end(),
-            [](auto& stage0, auto& stage1) {
+            [](const auto& stage0, const auto& stage1) {
                 return stage0.second < stage1.second;
             });
 

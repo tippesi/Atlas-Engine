@@ -31,9 +31,11 @@ namespace Atlas {
 
 			void Update();
 
-			void UpdateMaterials( bool updateTextures = false);
+			void UpdateMaterials(bool updateTextures = false);
 
 			void UpdateTextures();
+
+            void Clear();
 
 		private:
 			struct GPUTriangle {
