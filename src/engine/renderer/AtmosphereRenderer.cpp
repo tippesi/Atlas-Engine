@@ -16,7 +16,7 @@ namespace Atlas {
                                | Buffer::BufferUsageBits::MultiBuffered;
             // 2 elements of size for default rendering plus one cube map
             uniformBuffer = Buffer::Buffer(bufferUsage, sizeof(Uniforms), 2);
-            probeMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat4), 6);
+            probeMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat4) * 6, 1);
 
 		}
 
@@ -110,7 +110,7 @@ namespace Atlas {
                 .atmosphereRadius = scene->sky.planetRadius + atmosphere->height
             };
             uniformBuffer.SetData(&uniforms, 1, 1);
-            probeMatricesBuffer.SetData(matrices.data(), 0, 6);
+            probeMatricesBuffer.SetData(matrices.data(), 0, 1);
 
             commandList->BindImage(probe->cubemap.image, 3, 0);
             commandList->BindBufferOffset(uniformBuffer.GetMultiBuffer(), uniformBuffer.GetAlignedOffset(1), 3, 3);
