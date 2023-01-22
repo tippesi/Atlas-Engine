@@ -126,10 +126,10 @@ namespace Atlas {
 
 		void PostProcessRenderer::SetUniforms(Camera* camera, Scene::Scene* scene) {
 
-            auto& postProcessing = scene->postProcessing;
+            const auto& postProcessing = scene->postProcessing;
 
-            auto& chromaticAberration = postProcessing.chromaticAberration;
-            auto& vignette = postProcessing.vignette;
+            const auto& chromaticAberration = postProcessing.chromaticAberration;
+            const auto& vignette = postProcessing.vignette;
 
             Uniforms uniforms = {
                 .exposure = camera->exposure,

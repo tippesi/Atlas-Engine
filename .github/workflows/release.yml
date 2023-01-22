@@ -73,11 +73,10 @@ jobs:
           path: |
             data
             README.md
-            LICENSE
+            LICENSE.md
+            THIRDPARTY.md
             ${{ github.workspace }}/bin/**/AtlasEngineDemo.exe
             ${{ github.workspace }}/bin/**/*.dll
-            ${{ github.workspace }}/build/**/AtlasEngineDemo.exe
-            ${{ github.workspace }}/build/**/*.dll
             !**/CMakeFiles
 
   linux-build:
@@ -138,11 +137,10 @@ jobs:
           path: |
             data
             README.md
-            LICENSE
+            LICENSE.md
+            THIRDPARTY.md
             ${{ github.workspace }}/bin/**/AtlasEngineDemo
             ${{ github.workspace }}/bin/**/*.so*
-            ${{ github.workspace }}/build/**/AtlasEngineDemo
-            ${{ github.workspace }}/build/**/*.so*
             !**/CMakeFiles
 
   release:

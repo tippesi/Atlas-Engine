@@ -23,6 +23,7 @@ namespace Atlas {
             allocatorInfo.device = device->device;
             allocatorInfo.instance = device->instance->GetNativeInstance();
             allocatorInfo.pVulkanFunctions = &vulkanFunctions;
+            allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
             VK_CHECK(vmaCreateAllocator(&allocatorInfo, &allocator))
 
             vkGetPhysicalDeviceProperties(device->physicalDevice, &deviceProperties);
