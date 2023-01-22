@@ -29,7 +29,7 @@ jobs:
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
-        with: {committish: 59b58fc56de40eaa279ae0208debcf5773a2db77}
+        with: {committish: e69dd972ba64840955f46704ecce6241bf607c0f}
 
       - name: Setup Microsoft Visual C++ CLI
         uses: ilammy/msvc-dev-cmd@v1
@@ -95,7 +95,7 @@ jobs:
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
-        with: {committish: 59b58fc56de40eaa279ae0208debcf5773a2db77}
+        with: {committish: e69dd972ba64840955f46704ecce6241bf607c0f}
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
@@ -161,7 +161,7 @@ jobs:
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
-        with: {committish: 59b58fc56de40eaa279ae0208debcf5773a2db77}
+        with: {committish: e69dd972ba64840955f46704ecce6241bf607c0f}
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
