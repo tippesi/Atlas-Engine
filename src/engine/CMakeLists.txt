@@ -47,8 +47,8 @@ if(WIN32)
 
 	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
 			volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator
-			unofficial::spirv-reflect::spirv-reflect HLSL SPIRV glslang OGLCompiler)
-    set(ATLAS_ENGINE_SYSTEM_LIBS opengl32 user32 Shlwapi)
+			unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
+    set(ATLAS_ENGINE_SYSTEM_LIBS user32 Shlwapi)
 endif()
 
 if (MINGW)
@@ -68,15 +68,15 @@ if(APPLE)
 	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
 			volk::volk volk::volk_headers SPIRV-Tools-opt
 			unofficial::vulkan-memory-allocator::vulkan-memory-allocator
-			unofficial::spirv-reflect::spirv-reflect HLSL SPIRV glslang OGLCompiler)
-	set(ATLAS_ENGINE_SYSTEM_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
+			unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
+	set(ATLAS_ENGINE_SYSTEM_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${CoreVideo_LIBRARY})
 endif()
 
 if(ANDROID)
 	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
 
 	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static hidapi)
-	set(ATLAS_ENGINE_SYSTEM_LIBS android EGL GLESv3 m)
+	set(ATLAS_ENGINE_SYSTEM_LIBS android EGL m)
 endif()
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
@@ -95,8 +95,8 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
 	
 	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
 			volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator
-			unofficial::spirv-reflect::spirv-reflect HLSL SPIRV glslang OGLCompiler SPIRV-Tools-opt)
-	set(ATLAS_ENGINE_SYSTEM_LIBS X11 GL dl pthread)
+			unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
+	set(ATLAS_ENGINE_SYSTEM_LIBS X11 dl pthread)
 endif()
 
 # Add source files ################################################################################

@@ -32,6 +32,6 @@
     "overrides": [
             { "name": "glm", "version": "0.9.8.0" },
             { "name": "assimp", "version": "5.2.5" },
-            { "name": "glslang", "version": "11.8.0" }
+            { "name": "glslang", "version": "11.13.0#0" }
     ]
 }

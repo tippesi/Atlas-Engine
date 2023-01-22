@@ -77,6 +77,7 @@ if (ANDROID)
     add_subdirectory(${HIDAPI_LOCATION})
 endif()
 
+find_package(Threads REQUIRED)
 find_package(volk CONFIG REQUIRED)
 find_package(unofficial-vulkan-memory-allocator CONFIG REQUIRED)
 find_package(glslang CONFIG REQUIRED)
