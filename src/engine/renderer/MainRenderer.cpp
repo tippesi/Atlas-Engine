@@ -50,6 +50,7 @@ namespace Atlas {
 			indirectLightRenderer.Init(device);
 			skyboxRenderer.Init(device);
             atmosphereRenderer.Init(device);
+            volumetricCloudRenderer.Init(device);
             volumetricRenderer.Init(device);
             taaRenderer.Init(device);
             postProcessRenderer.Init(device);
@@ -228,7 +229,14 @@ namespace Atlas {
                 }
             }
 
-            {
+			{
+				auto clouds = scene->sky.clouds;
+				// We need the downscaled velocity from the atmosphere pass
+				if (clouds && clouds->enable) {
+					downscaleRenderer.Downscale(target, commandList);
+				}
+                volumetricCloudRenderer.Render(viewport, target, camera, scene, commandList);
+
                 volumetricRenderer.Render(viewport, target, camera, scene, commandList);
             }
 

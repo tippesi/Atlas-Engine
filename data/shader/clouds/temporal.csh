@@ -7,14 +7,14 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
-layout(binding = 0, rgba16f) writeonly uniform image2D resolveImage;
+layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D resolveImage;
 
-layout(binding = 0) uniform sampler2D currentTexture;
-layout(binding = 1) uniform sampler2D velocityTexture;
-layout(binding = 2) uniform sampler2D depthTexture;
+layout(set = 3, binding = 1) uniform sampler2D currentTexture;
+layout(set = 3, binding = 2) uniform sampler2D velocityTexture;
+layout(set = 3, binding = 3) uniform sampler2D depthTexture;
 
-layout(binding = 3) uniform sampler2D historyTexture;
-layout(binding = 4) uniform sampler2D historyDepthTexture;
+layout(set = 3, binding = 4) uniform sampler2D historyTexture;
+// layout(set = 3, binding = 5) uniform sampler2D historyDepthTexture;
 
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));

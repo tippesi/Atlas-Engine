@@ -9,7 +9,7 @@ layout (location = 3) out vec3 ndcLastVS;
 
 layout(push_constant) uniform constants {
 	vec4 cameraLocationLast;
-} PushConstants;
+} pushConstants;
 
 void main() {
 	
@@ -22,7 +22,7 @@ void main() {
 	// Velocity buffer
 	ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
 	// For moving objects we need the last matrix
-	vec4 last = (globalData.pvMatrixLast * vec4(vPosition + PushConstants.cameraLocationLast.xyz, 1.0));
+	vec4 last = (globalData.pvMatrixLast * vec4(vPosition + pushConstants.cameraLocationLast.xyz, 1.0));
 	ndcLastVS = vec3(last.xy, last.w);
 	
     texCoordVS = vPosition;

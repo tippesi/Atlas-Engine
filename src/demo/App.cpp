@@ -66,7 +66,6 @@ void App::LoadContent() {
     scene.sky.clouds = std::make_shared<Atlas::Lighting::VolumetricClouds>();
     scene.sky.clouds->minHeight = 300.0f;
     scene.sky.clouds->maxHeight = 600.0f;
-    scene.sky.clouds->enable = false;
 
     scene.sky.atmosphere = std::make_shared<Atlas::Lighting::Atmosphere>();
 
@@ -427,6 +426,7 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat("Scattering anisotropy##Fog", &fog->scatteringAnisotropy, -1.0f, 1.0f, "%.3f", 2.0f);
             }
             if (ImGui::CollapsingHeader("Clouds")) {
+                ImGui::Checkbox("Enable##Clouds", &clouds->enable);
                 ImGui::Checkbox("Debug##Clouds", &debugClouds);
                 ImGui::SliderFloat("Density multiplier##Clouds", &clouds->densityMultiplier, 0.0f, 1.0f);
                 ImGui::SliderFloat("Lower height falloff##Clouds", &clouds->lowerHeightFalloff, 0.0f, 1.0f);
@@ -715,7 +715,6 @@ bool App::LoadScene() {
         directionalLight->GetVolumetric()->intensity = 0.28f;
         scene.irradianceVolume->SetRayCount(128, 32);
         scene.irradianceVolume->strength = 1.5f;
-        scene.irradianceVolume->debug = true;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -903,6 +902,9 @@ void App::UnloadScene() {
 
     actors.clear();
     meshes.clear();
+
+    actors.shrink_to_fit();
+    meshes.shrink_to_fit();
 
     scene.ClearRTStructures();
 

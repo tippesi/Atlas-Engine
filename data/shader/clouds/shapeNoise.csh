@@ -2,9 +2,11 @@
 
 layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
-layout(binding = 0, rgba16f) uniform image3D noiseImage;
+layout(set = 3, binding = 0, rgba16f) uniform image3D noiseImage;
 
-uniform float seed;
+layout(push_constant) uniform constants {
+	float seed;
+} pushConstants;
 
 void main() {
 
@@ -17,10 +19,10 @@ void main() {
     vec4 weights = vec4(1.0, 0.5, 0.25, 0.125);
 
     vec4 noise;
-    noise.r = Worley4Octaves(pos, 1.0 * baseScale, seed, weights);
-    noise.g = Worley4Octaves(pos, 2.0 * baseScale, seed, weights);
-    noise.b = Worley4Octaves(pos, 4.0 * baseScale, seed, weights);
-    noise.a = Worley4Octaves(pos, 8.0 * baseScale, seed, weights);
+    noise.r = Worley4Octaves(pos, 1.0 * baseScale, pushConstants.seed, weights);
+    noise.g = Worley4Octaves(pos, 2.0 * baseScale, pushConstants.seed, weights);
+    noise.b = Worley4Octaves(pos, 4.0 * baseScale, pushConstants.seed, weights);
+    noise.a = Worley4Octaves(pos, 8.0 * baseScale, pushConstants.seed, weights);
 
     imageStore(noiseImage, pixel, noise);
 

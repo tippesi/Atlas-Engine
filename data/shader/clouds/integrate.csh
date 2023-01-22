@@ -1,3 +1,4 @@
+#include <../globals.hsh>
 #include <../structures>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
@@ -8,49 +9,47 @@
 
 layout (local_size_x = 8, local_size_y = 4) in;
 
-layout(binding = 0) uniform sampler2D depthTexture;
-layout(binding = 1) uniform sampler3D shapeTexture;
-layout(binding = 2) uniform sampler3D detailTexture;
-layout(binding = 3) uniform sampler2D randomTexture;
-layout(binding = 0) writeonly uniform image2D volumetricCloudImage;
+layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D volumetricCloudImage;
+layout(set = 3, binding = 1) uniform sampler2D depthTexture;
+layout(set = 3, binding = 2) uniform sampler3D shapeTexture;
+layout(set = 3, binding = 3) uniform sampler3D detailTexture;
+layout(set = 3, binding = 4) uniform sampler2D randomTexture;
 
-uniform Light light;
-uniform int sampleCount = 128;
-uniform mat4 vMatrix;
-uniform mat4 ivMatrix;
-uniform vec3 cameraLocation;
-uniform uint frameSeed;
+layout(std140, set = 3, binding = 5) uniform UniformBuffer {
+    Light light;
 
-uniform float densityMultiplier = 5.0;
+    float planetRadius;
+    float innerRadius;
+    float outerRadius;
+    float distanceLimit;
 
-uniform float eccentricity = 0.0;
-uniform float extinctionFactor = 1.0;
-uniform float scatteringFactor = 0.5;
+    float lowerHeightFalloff;
+    float upperHeightFalloff;
 
-uniform float lowerHeightFalloff = 0.2;
-uniform float upperHeightFalloff = 0.25;
+    float shapeScale;
+    float detailScale;
+    float shapeSpeed;
+    float detailSpeed;
+    float detailStrength;
 
-uniform float shapeScale = 1.0;
-uniform float detailScale = 1.0;
-uniform float shapeSpeed = 1.0;
-uniform float detailSpeed = 0.5;
-uniform float detailStrength = 0.3;
+    float eccentricity;
+    float extinctionFactor;
+    float scatteringFactor;
 
-uniform float silverLiningSpread = 0.05;
-uniform float silverLiningIntensity = 1.0;
+    float silverLiningSpread;
+    float silverLiningIntensity;
 
-uniform float time;
+    float densityMultiplier;
 
-uniform vec3 windDirection = normalize(vec3(0.1, -0.4, 0.1));
-uniform float windSpeed = 0.01;
+    float time;
+    uint frameSeed;
+} uniforms;
 
-uniform float planetRadius = 65000.0;
-uniform float innerRadius = 65100.0;
-uniform float outerRadius = 65400.0;
+const int sampleCount = 128;
+const vec3 windDirection = normalize(vec3(0.1, -0.4, 0.1));
+const float windSpeed = 0.01;
 
-uniform float distanceLimit = 2000.0;
-
-vec3 planetCenter = -vec3(0.0, planetRadius, 0.0);
+vec3 planetCenter = -vec3(0.0, uniforms.planetRadius, 0.0);
 
 vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords);
 
@@ -130,12 +129,12 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
         -(1.0 - lowFrequenyFBM), 1.0, 0.0, 1.0);
 
     float heightFraction = shapeTexCoords.y;
-    float densityHeightGradient = exp(-upperHeightFalloff * heightFraction) * 
-        exp(-(1.0 - heightFraction) * lowerHeightFalloff);    
+    float densityHeightGradient = exp(-uniforms.upperHeightFalloff * heightFraction) * 
+        exp(-(1.0 - heightFraction) * uniforms.lowerHeightFalloff);    
     
     baseCloudDensity *= densityHeightGradient;
 
-    const float cloudCoverage = densityMultiplier;
+    const float cloudCoverage = uniforms.densityMultiplier;
     baseCloudDensity = Remap(baseCloudDensity, cloudCoverage,
         1.0, 0.0, 1.0);
     float finalCloudDensity = baseCloudDensity;
@@ -151,7 +150,7 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
             1.0 - highFrequenyFBM, saturate(heightFraction * 10.0));
 
         finalCloudDensity = Remap(baseCloudDensity, 
-            highFrequencyNoiseModifier * detailStrength, 1.0, 0.0, 1.0);
+            highFrequencyNoiseModifier * uniforms.detailStrength, 1.0, 0.0, 1.0);
     }
 
     return saturate(finalCloudDensity);
@@ -162,23 +161,23 @@ void CalculateTexCoords(vec3 pos, out vec3 shapeTexCoords, out vec3 detailTexCoo
 
     float distFromCenter = distance(pos, planetCenter);
 
-    shapeTexCoords.xz = pos.xz * shapeScale * 0.001;
-    shapeTexCoords.y = (distFromCenter - innerRadius) / (outerRadius - innerRadius);
-    shapeTexCoords.xz += windDirection.xz * shapeSpeed * windSpeed * time;
+    shapeTexCoords.xz = pos.xz * uniforms.shapeScale * 0.001;
+    shapeTexCoords.y = (distFromCenter - uniforms.innerRadius) / (uniforms.outerRadius - uniforms.innerRadius);
+    shapeTexCoords.xz += windDirection.xz * uniforms.shapeSpeed * windSpeed * uniforms.time;
 
-    detailTexCoords.xz = pos.xz * shapeScale * 0.001;
-    detailTexCoords.y = (distFromCenter - innerRadius) / (outerRadius - innerRadius);
-    detailTexCoords *= detailScale;
-    detailTexCoords += windDirection * detailSpeed * windSpeed * time;
+    detailTexCoords.xz = pos.xz * uniforms.shapeScale * 0.001;
+    detailTexCoords.y = (distFromCenter - uniforms.innerRadius) / (uniforms.outerRadius - uniforms.innerRadius);
+    detailTexCoords *= uniforms.detailScale;
+    detailTexCoords += windDirection * uniforms.detailSpeed * windSpeed * uniforms.time;
 
 }
 
 void CalculateRayLength(vec3 rayOrigin, vec3 rayDirection, out float minDist, out float maxDist) {
 
     vec3 spherePos = planetCenter;
-    vec2 planetDist = IntersectSphere(rayOrigin, rayDirection, spherePos, planetRadius);
-    vec2 inDist = IntersectSphere(rayOrigin, rayDirection, spherePos, innerRadius);
-    vec2 outDist = IntersectSphere(rayOrigin, rayDirection, spherePos, outerRadius);
+    vec2 planetDist = IntersectSphere(rayOrigin, rayDirection, spherePos, uniforms.planetRadius);
+    vec2 inDist = IntersectSphere(rayOrigin, rayDirection, spherePos, uniforms.innerRadius);
+    vec2 outDist = IntersectSphere(rayOrigin, rayDirection, spherePos, uniforms.outerRadius);
 
     // We're in the inner layer
     if (inDist.x < 0.0 && inDist.y >= 0.0) {
@@ -208,8 +207,8 @@ void CalculateRayLength(vec3 rayOrigin, vec3 rayDirection, out float minDist, ou
 
     // If the distance gets to big, we might undersample near detail which can go missing
     // This is especially the case when we are in between the two radii layers
-    minDist = min(distanceLimit, minDist);
-    maxDist = min(distanceLimit, maxDist);
+    minDist = min(uniforms.distanceLimit, minDist);
+    maxDist = min(uniforms.distanceLimit, maxDist);
 
 }
 
@@ -217,7 +216,7 @@ float GetExtinctionToLight(vec3 pos, int ditherIdx) {
 
     const int lightSampleCount = 8;
 
-    vec3 rayDirection = -normalize(light.direction);
+    vec3 rayDirection = -normalize(uniforms.light.direction.xyz);
 
     float inDist, outDist;
     CalculateRayLength(pos, rayDirection, inDist, outDist);
@@ -234,7 +233,7 @@ float GetExtinctionToLight(vec3 pos, int ditherIdx) {
         CalculateTexCoords(pos, shapeTexCoords, detailTexCoords);
 
         float density = saturate(SampleDensity(pos, shapeTexCoords, detailTexCoords, vec3(1.0)));
-        float extinctionCoefficient = extinctionFactor * density;
+        float extinctionCoefficient = uniforms.extinctionFactor * density;
 
         extinction *= exp(-extinctionCoefficient * stepLength);
         
@@ -259,10 +258,10 @@ vec3 ComputeAmbientColor(vec3 pos, float extinctionCoefficient) {
 
     vec3 isotropicLightTop = vec3(0.2);
     vec3 isotropicLightBottom = vec3(0.2);
-    float Hp = outerRadius - distFromCenter; // Height to the top of the volume
+    float Hp = uniforms.outerRadius - distFromCenter; // Height to the top of the volume
     float a = -extinctionCoefficient * Hp;
     vec3 isotropicScatteringTop = isotropicLightTop * max(0.0, exp(a) - a * Ei(a));
-    float Hb = distFromCenter - innerRadius; // Height to the bottom of the volume
+    float Hb = distFromCenter - uniforms.innerRadius; // Height to the bottom of the volume
     a = -extinctionCoefficient * Hb;
     vec3 isotropicScatteringBottom = isotropicLightBottom * max(0.0, exp(a) - a * Ei(a));
     return isotropicScatteringTop + isotropicScatteringBottom;
@@ -273,8 +272,8 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
-    vec3 rayDirection = normalize(vec3(ivMatrix * vec4(fragPos, 0.0)));
-    vec3 rayOrigin = cameraLocation;
+    vec3 rayDirection = normalize(vec3(globalData.ivMatrix * vec4(fragPos, 0.0)));
+    vec3 rayOrigin = globalData.cameraLocation.xyz;
 
     float inDist, outDist;
     CalculateRayLength(rayOrigin, rayDirection, inDist, outDist);
@@ -286,11 +285,11 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     if (inDist > rayLength && depth < 1.0)
         return vec4(0.0, 0.0, 0.0, 1.0);
 
-    int raySampleCount = max(128, int((rayLength / distanceLimit) * float(sampleCount)));
+    int raySampleCount = max(128, int((rayLength / uniforms.distanceLimit) * float(sampleCount)));
     float stepLength = rayLength / float(raySampleCount);
     vec3 stepVector = rayDirection * stepLength;
 
-    int ditherIdx = ((int(pixel.x) % 4) * 4 + int(pixel.y) % 4 + int(frameSeed)) % 16;
+    int ditherIdx = ((int(pixel.x) % 4) * 4 + int(pixel.y) % 4 + int(uniforms.frameSeed)) % 16;
     float ditherValue = GetDitherOffset(ditherIdx);
 	rayOrigin += stepVector * ditherValue;
  
@@ -308,7 +307,7 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
         float distToPlanetCenter = distance(rayPos, planetCenter);
         // This can happen if we look from inside the cloud layer trough it below the cloud
         // layer. We need to find the next intersection with the inner layer
-        if (distToPlanetCenter < innerRadius) {
+        if (distToPlanetCenter < uniforms.innerRadius) {
             /*
             CalculateRayLength(rayPos, rayDirection, inDist, outDist);
             stepLength = rayLength / float(sampleCount - i);
@@ -322,18 +321,18 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
         float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords, vec3(1.0)));
 
         if (density > 0.0) {
-            float scatteringCoefficient = scatteringFactor * density;
-            float extinctionCoefficient = extinctionFactor * density;
+            float scatteringCoefficient = uniforms.scatteringFactor * density;
+            float extinctionCoefficient = uniforms.extinctionFactor * density;
 
             float stepExtinction = exp(-extinctionCoefficient * stepLength);
             extinction *= stepExtinction;
 
-            float lightDotView = dot(normalize(light.direction), normalize(rayDirection));
-            vec3 lightColor = light.color * light.intensity;
+            float lightDotView = dot(normalize(uniforms.light.direction.xyz), normalize(rayDirection));
+            vec3 lightColor = uniforms.light.color.rgb * uniforms.light.intensity;
             float lightExtinction =  GetExtinctionToLight(rayPos, ditherIdx);
 
-            float standardLightPhase = ComputeScattering(lightDotView, eccentricity);
-            float silverLiningPhase = silverLiningIntensity * ComputeScattering(lightDotView, -1.0 + silverLiningSpread);
+            float standardLightPhase = ComputeScattering(lightDotView, uniforms.eccentricity);
+            float silverLiningPhase = uniforms.silverLiningIntensity * ComputeScattering(lightDotView, -1.0 + uniforms.silverLiningSpread);
             float lightPhase = max(standardLightPhase, silverLiningPhase);
             vec3 stepScattering = scatteringCoefficient  * stepLength * (lightPhase * lightColor * lightExtinction
                 + ComputeAmbientColor(rayPos, extinctionCoefficient));
