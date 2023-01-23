@@ -74,8 +74,8 @@ void main() {
 
     // Compute ray step
     float depthMultiplier = max(10.0, -rayPos.z);
-    float stepLength = depthMultiplier * maxLength / (float(sampleCount));
-    float depthThickness = 0.25 * maxLength * depthMultiplier;
+    float stepLength = maxLength / (float(sampleCount));
+    float depthThickness = 0.25 * maxLength;
 
     float resultDelta = 0.0;
     vec2 resultUV = texCoord;
