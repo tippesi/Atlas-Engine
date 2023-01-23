@@ -95,7 +95,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
 	
 	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
 			volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator
-			unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
+			unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV)
 	set(ATLAS_ENGINE_SYSTEM_LIBS X11 dl pthread)
 endif()
 
