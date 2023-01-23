@@ -9,7 +9,7 @@ namespace Atlas {
         VolumetricRenderer::VolumetricRenderer() {
 
             const int32_t filterSize = 4;
-            blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
+            blurFilter.CalculateBoxFilter(filterSize);
 
             volumetricShader.AddStage(AE_COMPUTE_STAGE, "volumetric/volumetric.csh");
             volumetricShader.Compile();
@@ -45,6 +45,10 @@ namespace Atlas {
             depthTexture->Bind(0);
 
             auto lights = scene->GetLights();
+
+            if (scene->sky.sun) {
+                lights.push_back(scene->sky.sun);
+            }
 
             ivec2 res = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
 

@@ -25,4 +25,5 @@ data/medieval
 .DS_Store
 data/newsponza
 data/emeraldsquare
-data/forest
+bin
+CMakeSettings.json
