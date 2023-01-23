@@ -52,6 +52,7 @@ jobs:
         # Add additional scripting steps here
         run: |
           cd ${{ github.workspace }}
+          vcpkg update
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -117,6 +118,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install libgl1-mesa-dev
           cd ${{ github.workspace }}
+          vcpkg update
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
@@ -181,6 +183,7 @@ jobs:
         # Add additional scripting steps here
         run: |
           cd ${{ github.workspace }}
+          vcpkg update
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
