@@ -9,6 +9,7 @@
 #include "../lighting/Fog.h"
 #include "../lighting/IrradianceVolume.h"
 #include "../lighting/AO.h"
+#include "../lighting/SSS.h"
 #include "../lighting/Reflection.h"
 #include "../lighting/VolumetricClouds.h"
 #include "../ocean/Ocean.h"
@@ -113,6 +114,7 @@ namespace Atlas {
 			Lighting::Fog* fog = nullptr;
 			Lighting::IrradianceVolume* irradianceVolume = nullptr;
 			Lighting::AO* ao = nullptr;
+			Lighting::SSS* sss = nullptr;
 			Lighting::Reflection* reflection = nullptr;
 			PostProcessing::PostProcessing postProcessing;
 

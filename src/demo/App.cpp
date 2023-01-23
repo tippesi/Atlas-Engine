@@ -76,6 +76,8 @@ void App::LoadContent() {
 	scene.postProcessing.sharpen.enable = true;
 	scene.postProcessing.sharpen.factor = 0.15f;
 
+	scene.sss = new Atlas::Lighting::SSS();
+
 	LoadScene();
 
 	ImGui::CreateContext();
@@ -137,6 +139,7 @@ void App::Render(float deltaTime) {
 	static bool debugAo = false;
 	static bool debugReflection = false;
 	static bool debugClouds = false;
+	static bool debugSSS = false;
 	static bool slowMode = false;
 	
 	static float cloudDepthDebug = 0.0f;
@@ -171,6 +174,10 @@ void App::Render(float deltaTime) {
 			mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->volumetricCloudsTexture, 0.0f, 0.0f,
 				float(viewport.width), float(viewport.height), false, true);
 		}
+		if (debugSSS) {
+			mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->sssTexture, 0.0f, 0.0f,
+				viewport.width, viewport.height, false, true);
+		}
 	}
 	
 	float averageFramerate = Atlas::Clock::GetAverage();
@@ -185,6 +192,7 @@ void App::Render(float deltaTime) {
 		auto& fog = scene.fog;
 		auto& reflection = scene.reflection;
 		auto& clouds = scene.sky.clouds;
+		auto& sss = scene.sss;
 
 		bool openSceneNotFoundPopup = false;
 
@@ -219,7 +227,7 @@ void App::Render(float deltaTime) {
 
 			{
 				const char* items[] = { "Cornell box", "Sponza", "San Miguel",
-					"New Sponza", "Bistro", "Medieval", "Pica Pica" };
+					"New Sponza", "Bistro", "Medieval", "Pica Pica", "Forest" };
 				int currentItem = static_cast<int>(sceneSelection);
 				ImGui::Combo("Select scene", &currentItem, items, IM_ARRAYSIZE(items));
 
@@ -366,6 +374,13 @@ void App::Render(float deltaTime) {
 				ImGui::SliderFloat("Intensity##Volumetric", &light.GetVolumetric()->intensity, 0.0f, 1.0f);
 				ImGui::Text("Shadow");
 				ImGui::SliderFloat("Bias##Shadow", &light.GetShadow()->bias, 0.0f, 2.0f);
+			}
+			if (ImGui::CollapsingHeader("Screen-space shadows")) {
+				ImGui::Checkbox("Debug##SSS", &debugSSS);
+				ImGui::Checkbox("Enable##SSS", &sss->enable);
+				ImGui::SliderInt("Sample count##SSS", &sss->sampleCount, 2.0, 16.0);
+				ImGui::SliderFloat("Max length##SSS", &sss->maxLength, 0.01f, 1.0f);
+				ImGui::SliderFloat("Thickness##SSS", &sss->thickness, 0.001f, 1.0f, "%.3f", 2.0f);
 			}
 			if (ImGui::CollapsingHeader("Ambient Occlusion")) {
 				ImGui::Checkbox("Debug##Ao", &debugAo);
@@ -615,6 +630,7 @@ bool App::IsSceneAvailable(SceneSelection selection) {
 		Atlas::Loader::AssetLoader::FileExists("newsponza/PKG_D_Candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf") &&
 		Atlas::Loader::AssetLoader::FileExists("newsponza/PKG_A_Curtains/NewSponza_Curtains_glTF.gltf") && 
 		Atlas::Loader::AssetLoader::FileExists("newsponza/PKG_B_Ivy/NewSponza_IvyGrowth_glTF.gltf");
+	case FOREST: return Atlas::Loader::AssetLoader::FileExists("forest/forest.gltf");
 	default: return false;
 	}
 }
@@ -812,6 +828,33 @@ bool App::LoadScene() {
 		directionalLight.direction = glm::vec3(0.0f, -1.0f, 0.33f);
 		directionalLight.intensity = 100.0f;
 		directionalLight.GetVolumetric()->intensity = 0.28f;
+		scene.irradianceVolume->SetRayCount(128, 32);
+
+		// Setup camera
+		camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
+		camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+
+		scene.fog->enable = true;
+	}
+	else if (sceneSelection == FOREST) {
+		meshes.reserve(1);
+
+		auto meshData = Atlas::Loader::ModelLoader::LoadMesh("forest/forest.gltf", false,
+			glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)));
+		//for (auto& material : meshData.materials) material.twoSided = false;
+
+		meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+
+		auto& mesh = meshes.back();
+		mesh.invertUVs = true;
+
+		scene.irradianceVolume = new Atlas::Lighting::IrradianceVolume(mesh.data.aabb.Scale(1.0f), glm::ivec3(20));
+
+		sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
+
+		// Other scene related settings apart from the mesh
+		directionalLight.intensity = 10.0f;
+		directionalLight.GetVolumetric()->intensity = 0.08f;
 		scene.irradianceVolume->SetRayCount(128, 32);
 
 		// Setup camera

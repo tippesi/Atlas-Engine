@@ -10,13 +10,13 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		class AORenderer {
+		class AORenderer : public Renderer {
 
 		public:
 			AORenderer();
 
 			void Render(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene);
+				Camera* camera, Scene::Scene* scene) final;
 
 		private:
 			Filter blurFilter;
