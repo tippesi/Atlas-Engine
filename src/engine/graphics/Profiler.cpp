@@ -17,7 +17,11 @@ namespace Atlas {
         std::unordered_map<std::string, Profiler::ThreadHistory> Profiler::queryHistory;
         size_t Profiler::frameIdx = -1;
 
+#ifndef AE_OS_MACOS
         bool Profiler::activate = true;
+#else
+        bool Profiler::activate = false;
+#endif
 
         void Profiler::BeginFrame() {
 
