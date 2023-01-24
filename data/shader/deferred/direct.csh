@@ -16,9 +16,14 @@
 layout (local_size_x = 8, local_size_y = 8) in;
 
 layout(set = 3, binding = 0, rgba16f) uniform image2D image;
-layout(set = 3, binding = 2) uniform sampler2DArrayShadow cascadeMaps;
+#ifdef SHADOWS
+layout(set = 3, binding = 1) uniform sampler2DArrayShadow cascadeMaps;
+#endif
+#ifdef SCREEN_SPACE_SHADOWS
+layout(set = 3, binding = 2) uniform sampler2D sssTexture;
+#endif
 
-layout(std140, set = 3, binding = 1) uniform LightBuffer {
+layout(std140, set = 3, binding = 3) uniform LightBuffer {
 	Light light;
 } lightData;
 
@@ -53,6 +58,10 @@ void main() {
             -geometryNormal : geometryNormal : geometryNormal;
         shadowFactor = CalculateCascadedShadow(lightData.light.shadow, cascadeMaps, surface.P,
             shadowNormal, saturate(dot(-lightData.light.direction.xyz, shadowNormal)));
+#endif
+#ifdef SCREEN_SPACE_SHADOWS
+        float sssFactor = textureLod(sssTexture, texCoord, 0).r;
+        shadowFactor = min(sssFactor, shadowFactor);
 #endif
 
         vec3 radiance = lightData.light.color.rgb * lightData.light.intensity;

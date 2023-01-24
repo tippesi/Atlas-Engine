@@ -46,6 +46,7 @@ namespace Atlas {
             ddgiRenderer.Init(device);
             aoRenderer.Init(device);
             rtrRenderer.Init(device);
+            sssRenderer.Init(device);
 			directLightRenderer.Init(device);
 			indirectLightRenderer.Init(device);
 			skyboxRenderer.Init(device);
@@ -206,6 +207,8 @@ namespace Atlas {
 
 			rtrRenderer.Render(viewport, target, camera, scene, commandList);
 
+            sssRenderer.Render(viewport, target, camera, scene, commandList);
+
 			{
                 Graphics::Profiler::BeginQuery("Lighting pass");
 
@@ -246,206 +249,6 @@ namespace Atlas {
 
             commandList->EndCommands();
             device->SubmitCommandList(commandList);
-
-            /*
-			if (scene->sky.probe) {
-				if (scene->sky.probe->update) {
-					scene->sky.probe->filteredDiffuse.Bind(0);
-					FilterProbe(scene->sky.probe);
-					scene->sky.probe->update = false;
-				}
-			}
-			else if (scene->sky.atmosphere) {
-				atmosphereRenderer.Render(&scene->sky.atmosphere->probe, scene);
-				scene->sky.atmosphere->probe.filteredDiffuse.Bind(0);
-				FilterProbe(&scene->sky.atmosphere->probe);
-			}
-
-			glEnable(GL_DEPTH_TEST);
-			glDepthMask(GL_TRUE);
-
-			// Clear the lights depth maps
-			depthFramebuffer.Bind();
-
-			auto lights = scene->GetLights();
-
-			if (scene->sky.sun) {
-				lights.push_back(scene->sky.sun);
-			}
-
-			for (auto light : lights) {
-
-				if (!light->GetShadow())
-					continue;
-				if (!light->GetShadow()->update)
-					continue;
-
-				for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
-					if (light->GetShadow()->useCubemap) {
-						depthFramebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT,
-							&light->GetShadow()->cubemap, i);
-					}
-					else {
-						depthFramebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT,
-							&light->GetShadow()->maps, i);
-					}
-
-					glClear(GL_DEPTH_BUFFER_BIT);
-				}
-			}
-
-			shadowRenderer.Render(viewport, target, camera, scene);
-			
-			glEnable(GL_CULL_FACE);
-
-			terrainShadowRenderer.Render(viewport, target, camera, scene);
-
-			glCullFace(GL_BACK);
-
-			// Shadows have been updated
-			for (auto light : lights) {
-				if (!light->GetShadow())
-					continue;
-				light->GetShadow()->update = false;
-			}
-
-			ddgiRenderer.TraceAndUpdateProbes(scene);
-
-			materialBuffer.BindBase(16);
-
-			target->geometryFramebuffer.Bind(true);
-			target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-				GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,
-				GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6 });
-
-			glEnable(GL_CULL_FACE);
-
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-			opaqueRenderer.Render(viewport, target, camera, scene, materialMap);
-
-			ddgiRenderer.DebugProbes(viewport, target, camera, scene, materialMap);
-
-			vegetationRenderer.Render(viewport, target, camera, scene, materialMap);
-
-			terrainRenderer.Render(viewport, target, camera, scene, materialMap);
-
-			glEnable(GL_CULL_FACE);
-			glDepthMask(GL_FALSE);
-			glDisable(GL_DEPTH_TEST);
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-			downscaleRenderer.Downscale(target);
-
-			target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-				GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
-
-			decalRenderer.Render(viewport, target, camera, scene);
-
-			glDisable(GL_BLEND);
-
-			aoRenderer.Render(viewport, target, camera, scene);
-			rtrRenderer.Render(viewport, target, camera, scene);
-			sssRenderer.Render(viewport, target, camera, scene);
-
-			vertexArray.Bind();
-
-			target->lightingFramebuffer.Bind(true);
-			target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
-
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
-
-			directionalLightRenderer.Render(viewport, target, camera, scene);
-
-			indirectLightRenderer.Render(viewport, target, camera, scene);
-
-			glEnable(GL_DEPTH_TEST);
-
-			target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-				GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
-
-			if (batch) {
-				glDepthMask(GL_TRUE);
-				RenderBatched(nullptr, camera, batch);
-				glDepthMask(GL_FALSE);
-			}
-
-			if (scene->sky.probe) {
-				skyboxRenderer.Render(viewport, target, camera, scene);
-			}
-			else if (scene->sky.atmosphere) {
-				atmosphereRenderer.Render(viewport, target, camera, scene);
-			}
-
-			glDepthMask(GL_TRUE);
-
-			if (scene->ocean) {
-				oceanRenderer.Render(viewport, target, camera, scene);
-			}
-
-			downscaleRenderer.Downscale(target);
-
-			glDisable(GL_DEPTH_TEST);
-
-			glDisable(GL_CULL_FACE);
-			glCullFace(GL_BACK);
-			glDepthMask(GL_FALSE);
-			glDisable(GL_DEPTH_TEST);
-
-			vertexArray.Bind();
-
-			volumetricCloudRenderer.Render(viewport, target, camera, scene);
-
-			volumetricRenderer.Render(viewport, target, camera, scene);
-
-			if (taa.enable) {
-				taaRenderer.Render(viewport, target, camera, scene);
-
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-			}
-			else {
-				target->lightingFramebuffer.Unbind();
-			}
-
-			// Swap history and current textures
-			target->Swap();
-
-			vertexArray.Bind();
-
-			if (texture) {
-				framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, texture);
-				framebuffer.Bind();
-			}
-
-			postProcessRenderer.Render(viewport, target, camera, scene);
-
-			Atlas::Texture::Texture2D* postTex;
-
-			auto& sharpen = scene->postProcessing.sharpen;
-			if (sharpen.enable) {
-				postTex = &target->postProcessTexture;
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-			}
-			else {
-				postTex = target->postProcessFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0);
-			}
-
-			if (texture) {
-				framebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT0, texture);
-				textureRenderer.RenderTexture2D(viewport, postTex, 0.0f, 0.0f,
-					(float)viewport->width, (float)viewport->height,
-					false, false, &framebuffer);
-			}
-			else {
-				textureRenderer.RenderTexture2D(viewport, postTex, 0.0f, 0.0f,
-					(float)viewport->width, (float)viewport->height);
-			}
-
-			Profiler::EndQuery();
-            */
 
 		}
 
@@ -865,6 +668,7 @@ namespace Atlas {
 			textRenderer.Update();
 
 			haltonIndex = (haltonIndex + 1) % haltonSequence.size();
+            frameCount++;
 
 		}
 
@@ -882,7 +686,8 @@ namespace Atlas {
                 .cameraLocation = vec4(camera->location, 0.0f),
                 .cameraDirection = vec4(camera->direction, 0.0f),
                 .time = Clock::Get(),
-                .deltaTime = Clock::GetDelta()
+                .deltaTime = Clock::GetDelta(),
+                .frameCount = frameCount
             };
 
             globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));

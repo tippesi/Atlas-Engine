@@ -11,6 +11,7 @@
 #include "../lighting/AO.h"
 #include "../lighting/Reflection.h"
 #include "../lighting/VolumetricClouds.h"
+#include "../lighting/SSS.h"
 #include "../ocean/Ocean.h"
 #include "../postprocessing/PostProcessing.h"
 #include "../Decal.h"
@@ -119,6 +120,7 @@ namespace Atlas {
 			Ref<Lighting::IrradianceVolume> irradianceVolume = nullptr;
 			Ref<Lighting::AO> ao = nullptr;
 			Ref<Lighting::Reflection> reflection = nullptr;
+            Ref<Lighting::SSS> sss = nullptr;
 			PostProcessing::PostProcessing postProcessing;
 
 		private:

@@ -10,16 +10,18 @@ namespace Atlas {
 
 		LockFramerate();
 
+        graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
+
 		// Only create swap chain after the engine instance window was created and
 		// it's surface was assigned to the default graphics device
-		Graphics::GraphicsDevice::DefaultDevice->surface = window.surface;
-		Graphics::GraphicsDevice::DefaultDevice->CreateSwapChain();
+        graphicsDevice->surface = window.surface;
+        graphicsDevice->CreateSwapChain();
 
 		// Clean up old invisible default window and assign this one
 		delete Engine::DefaultWindow;
 		Engine::DefaultWindow = &window;
 
-        mainRenderer.Init(Graphics::GraphicsDevice::DefaultDevice);
+        mainRenderer.Init(graphicsDevice);
 
 	}
 

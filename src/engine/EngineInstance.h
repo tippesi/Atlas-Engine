@@ -105,6 +105,7 @@ namespace Atlas {
 		 */
 		void Exit();
 
+        Graphics::GraphicsDevice* graphicsDevice = nullptr;
 		Renderer::MainRenderer mainRenderer;
 
         /**

@@ -73,6 +73,8 @@ void App::LoadContent() {
     scene.postProcessing.sharpen.enable = true;
     scene.postProcessing.sharpen.factor = 0.15f;
 
+    scene.sss = std::make_shared<Atlas::Lighting::SSS>();
+
     LoadScene();
 
     ImGui::CreateContext();
@@ -135,57 +137,49 @@ void App::Render(float deltaTime) {
     static bool debugAo = false;
     static bool debugReflection = false;
     static bool debugClouds = false;
+    static bool debugSSS = false;
     static bool slowMode = false;
 
     static float cloudDepthDebug = 0.0f;
 
     if (animateLight) directionalLight->direction = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
 
-    /*
-    if (pathTrace) {
-        viewport.Set(0, 0, pathTraceTarget.GetWidth(), pathTraceTarget.GetHeight());
-        pathTracingRenderer.Render(&viewport, &pathTraceTarget, glm::ivec2(1, 1), &camera, &scene);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
-                        GL_SHADER_STORAGE_BARRIER_BIT);
-
-        viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
-        mainRenderer.textureRenderer.RenderTexture2D(&viewport, &pathTraceTarget.texture, 0.0f, 0.0f,
-            float(viewport.width), float(viewport.height));
-    }
-    else {
-        viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
-        mainRenderer.RenderScene(&viewport, renderTarget, &camera, &scene);
-
-        if (debugAo) {
-            mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
-                float(viewport.width), float(viewport.height), false, true);
-        }
-        if (debugReflection) {
-            mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
-                float(viewport.width), float(viewport.height), false, true);
-        }
-        if (debugClouds) {
-            mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->volumetricCloudsTexture, 0.0f, 0.0f,
-                float(viewport.width), float(viewport.height), false, true);
-        }
-    }
-    */
-
     if (pathTrace) {
         viewport.Set(0, 0, pathTraceTarget.GetWidth(), pathTraceTarget.GetHeight());
         mainRenderer.PathTraceScene(&viewport, &pathTraceTarget, &camera, &scene);
-
-        /*
-        viewport.Set(0, 0, window.GetWidth(), window.GetHeight());
-        mainRenderer.textureRenderer.RenderTexture2D(&viewport, &pathTraceTarget.texture, 0.0f, 0.0f,
-            float(viewport.width), float(viewport.height));
-        */
     }
     else {
         mainRenderer.RenderScene(&viewport, &renderTarget, &camera, &scene);
-    }
 
-    // testRenderer.Render(&camera);
+        auto debug = debugAo || debugReflection || debugClouds;
+
+        /*
+        if (debug) {
+            auto commandList = graphicsDevice->GetCommandList();
+            commandList->BeginCommands();
+
+            if (debugAo) {
+                mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
+                    float(viewport.width), float(viewport.height), false, true);
+            }
+            else if (debugReflection) {
+                mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
+                    float(viewport.width), float(viewport.height), false, true);
+            }
+            else if (debugClouds) {
+                mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->volumetricCloudsTexture, 0.0f, 0.0f,
+                    float(viewport.width), float(viewport.height), false, true);
+            }
+            else if (debugSSS) {
+                mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->sssTexture, 0.0f, 0.0f,
+                    viewport.width, viewport.height, false, true);
+		    }
+
+            commandList->EndCommands();
+            graphicsDevice->SubmitCommandList(commandList);
+        }
+        */
+    }
 
     float averageFramerate = Atlas::Clock::GetAverage();
 
@@ -193,12 +187,13 @@ void App::Render(float deltaTime) {
     if (renderUI) {
         ImGui::NewFrame();
 
-        auto& light = directionalLight;
-        auto& volume = scene.irradianceVolume;
-        auto& ao = scene.ao;
-        auto& fog = scene.fog;
-        auto& reflection = scene.reflection;
-        auto& clouds = scene.sky.clouds;
+        const auto& light = directionalLight;
+        const auto& volume = scene.irradianceVolume;
+        const auto& ao = scene.ao;
+        const auto& fog = scene.fog;
+        const auto& reflection = scene.reflection;
+        const auto& clouds = scene.sky.clouds;
+        const auto& sss = scene.sss;
 
         bool openSceneNotFoundPopup = false;
 
@@ -380,6 +375,13 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat("Intensity##Volumetric", &light->GetVolumetric()->intensity, 0.0f, 1.0f);
                 ImGui::Text("Shadow");
                 ImGui::SliderFloat("Bias##Shadow", &light->GetShadow()->bias, 0.0f, 2.0f);
+            }
+            if (ImGui::CollapsingHeader("Screen-space shadows (preview)")) {
+                ImGui::Checkbox("Debug##SSS", &debugSSS);
+                ImGui::Checkbox("Enable##SSS", &sss->enable);
+                ImGui::SliderInt("Sample count##SSS", &sss->sampleCount, 2.0, 16.0);
+                ImGui::SliderFloat("Max length##SSS", &sss->maxLength, 0.01f, 1.0f);
+                ImGui::SliderFloat("Thickness##SSS", &sss->thickness, 0.001f, 1.0f, "%.3f", 2.0f);
             }
             if (ImGui::CollapsingHeader("Ambient Occlusion")) {
                 ImGui::Checkbox("Debug##Ao", &debugAo);
@@ -616,12 +618,11 @@ void App::Render(float deltaTime) {
 
 void App::DisplayLoadingScreen() {
 
-    auto device = Atlas::Graphics::GraphicsDevice::DefaultDevice;
-    auto commandList = device->GetCommandList();
+    auto commandList = graphicsDevice->GetCommandList();
 
     commandList->BeginCommands();
-    device->swapChain->colorClearValue.color = {0.0f, 0.0f, 0.0f, 1.0f};
-    commandList->BeginRenderPass(device->swapChain, true);
+    graphicsDevice->swapChain->colorClearValue.color = {0.0f, 0.0f, 0.0f, 1.0f};
+    commandList->BeginRenderPass(graphicsDevice->swapChain, true);
 
     float textWidth, textHeight;
     font.ComputeDimensions("Loading...", 2.5f, &textWidth, &textHeight);
@@ -637,10 +638,10 @@ void App::DisplayLoadingScreen() {
 
     commandList->EndRenderPass();
     commandList->EndCommands();
-    device->SubmitCommandList(commandList);
-    device->CompleteFrame();
+    graphicsDevice->SubmitCommandList(commandList);
+    graphicsDevice->CompleteFrame();
 
-    device->WaitForIdle();
+    graphicsDevice->WaitForIdle();
 
     window.Show();
 
@@ -908,10 +909,8 @@ void App::UnloadScene() {
 
     scene.ClearRTStructures();
 
-    auto device = Atlas::Graphics::GraphicsDevice::DefaultDevice;
-
-    device->WaitForIdle();
-    device->ForceMemoryCleanup();
+    graphicsDevice->WaitForIdle();
+    graphicsDevice->ForceMemoryCleanup();
 
 }
 

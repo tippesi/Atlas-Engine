@@ -4,26 +4,26 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		SSSRenderer::SSSRenderer() {
-            /*
-			sssShader.AddStage(AE_COMPUTE_STAGE, "deferred/sss.csh");
-			sssShader.Compile();
-            */
+        void SSSRenderer::Init(Graphics::GraphicsDevice *device) {
+
+            this->device = device;
+
+            pipelineConfig = PipelineConfig("deferred/sss.csh");
+
 		}
 
 		void SSSRenderer::Render(Viewport* viewport, RenderTarget* target,
-			Camera* camera, Scene::Scene* scene) {
+			Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-            /*
 			auto sss = scene->sss;
 			auto sun = scene->sky.sun;
 
 			if (!sss || !sss->enable || !sun) return;
 
-			Profiler::BeginQuery("Screen space shadows");
+			Graphics::Profiler::BeginQuery("Screen space shadows");
 
 			ivec2 res = ivec2(target->sssTexture.width, target->sssTexture.height);
-			auto downsampledTarget = target->GetDownsampledTextures(RenderResolution::FULL_RES);
+			auto downsampledTarget = target->GetData(RenderResolution::FULL_RES);
 
 			auto depthTexture = downsampledTarget->depthTexture;
 			auto normalTexture = downsampledTarget->geometryNormalTexture;
@@ -37,32 +37,38 @@ namespace Atlas {
 
 				auto lightDirection = glm::normalize(vec3(camera->viewMatrix * vec4(sun->direction, 0.0f)));
 
-				sssShader.Bind();
+                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+				commandList->BindPipeline(pipeline);
 
-				depthTexture->Bind(0);
-				normalTexture->Bind(1);
+                commandList->ImageMemoryBarrier(target->sssTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-				target->sssTexture.Bind(GL_WRITE_ONLY, 0);
+                commandList->BindImage(target->sssTexture.image, 3, 0);
+                commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 1);
+                commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 2);
 
-				sssShader.GetUniform("vMatrix")->SetValue(camera->viewMatrix);
-				sssShader.GetUniform("pMatrix")->SetValue(camera->projectionMatrix);
-				sssShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
-				sssShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
-				sssShader.GetUniform("lightDirection")->SetValue(lightDirection);
-				sssShader.GetUniform("frameCount")->SetValue(frameCount++);
+				PushConstants constants = {
+                    .lightDirection = vec4(lightDirection, 0.0),
+                    .sampleCount = sss->sampleCount,
+                    .maxLength = sss->maxLength,
+                    .thickness = sss->thickness
+                };
 
-				sssShader.GetUniform("sampleCount")->SetValue(sss->sampleCount);
-				sssShader.GetUniform("maxLength")->SetValue(sss->maxLength);
-				sssShader.GetUniform("thickness")->SetValue(sss->thickness);
+                auto constantRange = pipeline->shader->GetPushConstantRange("constants");
+                commandList->PushConstants(constantRange, &constants);
 
-				glMemoryBarrier(GL_ALL_BARRIER_BITS);
-				glDispatchCompute(groupCount.x, groupCount.y, 1);
-				glMemoryBarrier(GL_ALL_BARRIER_BITS);
+				commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
+                commandList->ImageMemoryBarrier(target->sssTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 			}
 
-			Profiler::EndQuery();
-            */
+            // Possible blur pass to get rid of noise
+            {
+
+            }
+
+			Graphics::Profiler::EndQuery();
 
 		}
 

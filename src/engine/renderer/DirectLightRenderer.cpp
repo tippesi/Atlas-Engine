@@ -32,6 +32,7 @@ namespace Atlas {
             if (!scene->sky.sun) return;
 
             auto light = scene->sky.sun;
+            auto sss = scene->sss;
 
             vec3 direction = normalize(vec3(camera->viewMatrix * vec4(light->direction, 0.0f)));
 
@@ -53,10 +54,10 @@ namespace Atlas {
                 shadowUniform.resolution = vec2(shadow->resolution);
 
                 if (shadow->useCubemap) {
-                    commandList->BindImage(shadow->cubemap.image, shadowSampler, 3, 2);
+                    commandList->BindImage(shadow->cubemap.image, shadowSampler, 3, 1);
                 }
                 else {
-                    commandList->BindImage(shadow->maps.image, shadowSampler, 3, 2);
+                    commandList->BindImage(shadow->maps.image, shadowSampler, 3, 1);
                 }
 
                 auto componentCount = shadow->componentCount;
@@ -81,11 +82,16 @@ namespace Atlas {
 
             uniformBuffer->SetData(&lightUniform, 0, sizeof(lightUniform));
 
+            pipelineConfig.ManageMacro("SCREEN_SPACE_SHADOWS", sss && sss->enable);
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
-            commandList->BindBuffer(uniformBuffer, 3, 1);
+            commandList->BindBuffer(uniformBuffer, 3, 3);
+
+            if (sss && sss->enable) {
+                commandList->BindImage(target->sssTexture.image, target->sssTexture.sampler, 3, 2);
+            }
 
             ivec2 res = ivec2(target->GetWidth(), target->GetHeight());
             int32_t groupSize = 8;

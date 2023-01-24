@@ -116,6 +116,9 @@ namespace Atlas {
 		SetVolumetricResolution(HALF_RES);
 		SetReflectionResolution(HALF_RES);
 
+        sssTexture = Texture::Texture2D(width, height, VK_FORMAT_R16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
 	}
 
 	void RenderTarget::Resize(int32_t width, int32_t height) {
@@ -131,6 +134,7 @@ namespace Atlas {
         lightingTexture.Resize(width, height);
         hdrTexture.Resize(width, height);
 		postProcessTexture.Resize(width, height);
+		sssTexture.Resize(width, height);
 
 		SetAOResolution(aoResolution);
 		SetVolumetricResolution(volumetricResolution);

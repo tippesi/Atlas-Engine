@@ -24,6 +24,7 @@
 #include "DDGIRenderer.h"
 #include "AORenderer.h"
 #include "RTReflectionRenderer.h"
+#include "SSSRenderer.h"
 #include "VolumetricRenderer.h"
 #include "VolumetricCloudRenderer.h"
 #include "VegetationRenderer.h"
@@ -158,8 +159,7 @@ namespace Atlas {
                 vec4 cameraDirection;
                 float time;
                 float deltaTime;
-                // We need to align the struct to 16 bytes
-                vec2 alignment0;
+                uint32_t frameCount;
             };
 
             struct alignas(16) DDGIUniforms {
@@ -223,6 +223,7 @@ namespace Atlas {
 			DDGIRenderer ddgiRenderer;
 			AORenderer aoRenderer;
 			RTReflectionRenderer rtrRenderer;
+            SSSRenderer sssRenderer;
 			VolumetricRenderer volumetricRenderer;
 			VolumetricCloudRenderer volumetricCloudRenderer;
 
@@ -230,6 +231,7 @@ namespace Atlas {
 
 			std::vector<vec2> haltonSequence;
 			size_t haltonIndex = 0;
+            uint32_t frameCount = 0;
 
 		};
 

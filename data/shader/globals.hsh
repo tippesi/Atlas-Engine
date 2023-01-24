@@ -11,8 +11,7 @@ layout(std140, set = 0, binding = 0) uniform GlobalBuffer {
     vec4 cameraDirection;
     float time;
     float deltaTime;
-    // We need to align the struct to 16 bytes
-    vec2 alignment0;
+    uint frameCount;
 } globalData;
 
 layout(set = 0, binding = 1) uniform sampler2D dfgTexture;
