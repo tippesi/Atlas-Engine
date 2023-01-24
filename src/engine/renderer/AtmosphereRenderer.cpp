@@ -48,7 +48,6 @@ namespace Atlas {
                 .planetRadius = scene->sky.planetRadius,
                 .atmosphereRadius = scene->sky.planetRadius + atmosphere->height
             };
-
             uniformBuffer.SetData(&uniforms, 0, 1);
 
             std::vector<Graphics::BufferBarrier> bufferBarriers;
@@ -62,7 +61,7 @@ namespace Atlas {
             commandList->BindImage(velocityTexture->image, 3, 1);
 
             commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
-            commandList->BindBuffer(uniformBuffer.GetMultiBuffer(), 3, 3);
+            commandList->BindBufferOffset(uniformBuffer.GetMultiBuffer(), uniformBuffer.GetAlignedOffset(0), 3, 3);
 
             auto resolution = ivec2(target->GetWidth(), target->GetHeight());
             auto groupCount = resolution / 8;

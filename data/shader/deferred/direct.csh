@@ -31,7 +31,7 @@ void main() {
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
-    vec3 direct = vec3(0.0);
+    vec3 direct = imageLoad(image, pixel).rgb;
     if (depth < 1.0) {
         vec3 geometryNormal;
         // We don't have any light direction, that's why we use vec3(0.0, -1.0, 0.0) as a placeholder
@@ -74,7 +74,7 @@ void main() {
         }
 
     }
-    
+
     imageStore(image, pixel, vec4(direct, 0.0));
 
 }

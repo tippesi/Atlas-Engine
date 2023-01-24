@@ -401,7 +401,7 @@ namespace Atlas {
                 "Only uniform buffers support dynamic bindings");
 
             // Only indicate a change of the buffer has changed, not just the offset
-            descriptorBindingData.changed[set] =
+            descriptorBindingData.changed[set] |=
                 descriptorBindingData.dynamicBuffers[set][binding].first != buffer.get();
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.dynamicBuffers[set][binding] = {buffer.get(), uint32_t(offset)};
@@ -451,7 +451,7 @@ namespace Atlas {
                    "Only uniform buffers support dynamic bindings");
 
             // Only indicate a change of the buffer has changed, not just the offset
-            descriptorBindingData.changed[set] =
+            descriptorBindingData.changed[set] |=
                 descriptorBindingData.dynamicBuffers[set][binding].first != buffer->GetCurrent();
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.dynamicBuffers[set][binding] = {buffer->GetCurrent(), uint32_t(offset)};

@@ -187,6 +187,19 @@ namespace Atlas {
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
             }
 
+            {
+                if (scene->sky.probe) {
+                    commandList->BeginRenderPass(target->lightingRenderPass, target->lightingFrameBuffer);
+
+                    skyboxRenderer.Render(viewport, target, camera, scene, commandList);
+
+                    commandList->EndRenderPass();
+                }
+                else if (scene->sky.atmosphere) {
+                    atmosphereRenderer.Render(viewport, target, camera, scene, commandList);
+                }
+            }
+
             downscaleRenderer.Downscale(target, commandList);
 
             aoRenderer.Render(viewport, target, camera, scene, commandList);
@@ -196,10 +209,8 @@ namespace Atlas {
 			{
                 Graphics::Profiler::BeginQuery("Lighting pass");
 
-                Graphics::ImageBarrier inBarrier(target->lightingTexture.image,
-                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
-                commandList->ImageMemoryBarrier(inBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+                commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
 				directLightRenderer.Render(viewport, target, camera, scene, commandList);
 
@@ -216,25 +227,7 @@ namespace Atlas {
                 Graphics::Profiler::EndQuery();
 			}
 
-            {
-                if (scene->sky.probe) {
-                    commandList->BeginRenderPass(target->lightingRenderPass, target->lightingFrameBuffer);
-
-                    skyboxRenderer.Render(viewport, target, camera, scene, commandList);
-
-                    commandList->EndRenderPass();
-                }
-                else if (scene->sky.atmosphere) {
-                    atmosphereRenderer.Render(viewport, target, camera, scene, commandList);
-                }
-            }
-
 			{
-				auto clouds = scene->sky.clouds;
-				// We need the downscaled velocity from the atmosphere pass
-				if (clouds && clouds->enable) {
-					downscaleRenderer.Downscale(target, commandList);
-				}
                 volumetricCloudRenderer.Render(viewport, target, camera, scene, commandList);
 
                 volumetricRenderer.Render(viewport, target, camera, scene, commandList);
