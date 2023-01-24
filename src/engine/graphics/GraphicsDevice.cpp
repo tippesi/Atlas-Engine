@@ -163,6 +163,35 @@ namespace Atlas {
 
         }
 
+        SwapChain* GraphicsDevice::CreateSwapChain(VkPresentModeKHR presentMode) {
+
+            auto nativeSurface = surface->GetNativeSurface();
+            auto nativeWindow = surface->GetNativeWindow();
+
+            auto supportDetails = SwapChainSupportDetails(physicalDevice, nativeSurface);
+
+            int32_t width, height;
+            SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
+
+            windowWidth = width;
+            windowHeight = height;
+
+            auto oldSwapChain = swapChain;
+
+            swapChain = new SwapChain(supportDetails, nativeSurface, this,
+                width, height, presentMode, oldSwapChain);
+
+            WaitForIdle();
+            // Clean up old swap chain
+            delete oldSwapChain;
+
+            // Acquire first index since normally these are acquired at completion of frame
+            swapChain->AcquireImageIndex();
+
+            return swapChain;
+
+        }
+
         Ref<RenderPass> GraphicsDevice::CreateRenderPass(RenderPassDesc desc) {
 
             auto renderPass = std::make_shared<RenderPass>(this, desc);
@@ -378,30 +407,31 @@ namespace Atlas {
             assert(allListSubmitted && "Not all command list were submitted before frame completion." &&
                 "Consider using a frame independent command lists for longer executions.");
 
-            std::vector<VkSemaphore> semaphores;
-            // For now, we will only use sequential execution of queue submits,
-            // which means only the latest submit can signal its semaphore here
-            //for (auto cmd : frameData->submittedCommandLists)
-            //    semaphores.push_back(cmd->semaphore);
-            semaphores.push_back(frame->submittedCommandLists.back()->semaphore);
+            if (frame->submittedCommandLists.size()) {
+                std::vector<VkSemaphore> semaphores;
+                // For now, we will only use sequential execution of queue submits,
+                // which means only the latest submit can signal its semaphore here
+                //for (auto cmd : frameData->submittedCommandLists)
+                //    semaphores.push_back(cmd->semaphore);
+                semaphores.push_back(frame->submittedCommandLists.back()->semaphore);
 
-            VkPresentInfoKHR presentInfo = {};
-            presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-            presentInfo.pNext = nullptr;
-            presentInfo.pSwapchains = &swapChain->swapChain;
-            presentInfo.swapchainCount = 1;
-            presentInfo.pWaitSemaphores = semaphores.data();
-            presentInfo.waitSemaphoreCount = uint32_t(semaphores.size());
-            presentInfo.pImageIndices = &swapChain->aquiredImageIndex;
+                VkPresentInfoKHR presentInfo = {};
+                presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+                presentInfo.pNext = nullptr;
+                presentInfo.pSwapchains = &swapChain->swapChain;
+                presentInfo.swapchainCount = 1;
+                presentInfo.pWaitSemaphores = semaphores.data();
+                presentInfo.waitSemaphoreCount = uint32_t(semaphores.size());
+                presentInfo.pImageIndices = &swapChain->aquiredImageIndex;
 
-            VkQueue& presenterQueue = queueFamilyIndices.queues[QueueType::PresentationQueue];
-            auto result = vkQueuePresentKHR(presenterQueue, &presentInfo);
+                VkQueue &presenterQueue = queueFamilyIndices.queues[QueueType::PresentationQueue];
+                auto result = vkQueuePresentKHR(presenterQueue, &presentInfo);
 
-            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-                recreateSwapChain = true;
-            }
-            else {
-                VK_CHECK(result)
+                if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+                    recreateSwapChain = true;
+                } else {
+                    VK_CHECK(result)
+                }
             }
 
             // Delete data that is marked for deletion for this frame
@@ -425,10 +455,8 @@ namespace Atlas {
             }
 
             if (recreateSwapChain || CheckForWindowResize()) {
-                vkDeviceWaitIdle(device);
+                // A new image index is automatically acquired
                 CreateSwapChain();
-                // Acquire a new image index for new swap chain
-                swapChain->AcquireImageIndex();
             }
 
         }
@@ -636,34 +664,6 @@ namespace Atlas {
             assert(requiredExtensions.empty() && "Not all required extensions were found");
 
             return requiredExtensions.empty();
-
-        }
-
-        void GraphicsDevice::CreateSwapChain() {
-
-            auto nativeSurface = surface->GetNativeSurface();
-            auto nativeWindow = surface->GetNativeWindow();
-
-            auto supportDetails = SwapChainSupportDetails(physicalDevice, nativeSurface);
-
-            int32_t width, height;
-            SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
-
-            windowWidth = width;
-            windowHeight = height;
-
-            auto oldSwapChain = swapChain;
-
-            swapChain = new SwapChain(supportDetails, nativeSurface, this,
-                width, height, VK_PRESENT_MODE_IMMEDIATE_KHR, oldSwapChain);
-
-            // Clean up old swap chain
-            delete oldSwapChain;
-
-            if (!oldSwapChain) {
-                // Acquire first index since normally these are acquired at completion of frame
-                swapChain->AcquireImageIndex();
-            }
 
         }
 

@@ -151,34 +151,32 @@ void App::Render(float deltaTime) {
     else {
         mainRenderer.RenderScene(&viewport, &renderTarget, &camera, &scene);
 
-        auto debug = debugAo || debugReflection || debugClouds;
+        auto debug = debugAo || debugReflection || debugClouds || debugSSS;
 
-        /*
         if (debug) {
             auto commandList = graphicsDevice->GetCommandList();
             commandList->BeginCommands();
 
             if (debugAo) {
-                mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->aoTexture, 0.0f, 0.0f,
-                    float(viewport.width), float(viewport.height), false, true);
+                mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.aoTexture,
+                    0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
             }
             else if (debugReflection) {
-                mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->reflectionTexture, 0.0f, 0.0f,
-                    float(viewport.width), float(viewport.height), false, true);
+                mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.reflectionTexture,
+                    0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
             }
             else if (debugClouds) {
-                mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->volumetricCloudsTexture, 0.0f, 0.0f,
-                    float(viewport.width), float(viewport.height), false, true);
+                mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.volumetricCloudsTexture,
+                    0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
             }
             else if (debugSSS) {
-                mainRenderer.textureRenderer.RenderTexture2D(&viewport, &renderTarget->sssTexture, 0.0f, 0.0f,
-                    viewport.width, viewport.height, false, true);
+                mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.sssTexture,
+                    0.0f, 0.0f, viewport.width, viewport.height, false, true);
 		    }
 
             commandList->EndCommands();
             graphicsDevice->SubmitCommandList(commandList);
         }
-        */
     }
 
     float averageFramerate = Atlas::Clock::GetAverage();
@@ -260,8 +258,9 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Fullscreen", &fullscreen);
 
                 if (vsync != vsyncMode) {
-                    if (vsync) LockFramerate();
-                    else UnlockFramerate();
+                    graphicsDevice->CompleteFrame();
+                    if (vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_KHR);
+                    else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR);
                     vsyncMode = vsync;
                 }
                 if (fullscreen != fullscreenMode) {

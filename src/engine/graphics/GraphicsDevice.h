@@ -74,7 +74,7 @@ namespace Atlas {
 
             GraphicsDevice& operator=(const GraphicsDevice& that) = delete;
 
-            void CreateSwapChain();
+            SwapChain* CreateSwapChain(VkPresentModeKHR presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR);
 
             Ref<RenderPass> CreateRenderPass(RenderPassDesc desc);
 

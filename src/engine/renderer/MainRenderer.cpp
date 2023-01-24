@@ -56,7 +56,9 @@ namespace Atlas {
             taaRenderer.Init(device);
             postProcessRenderer.Init(device);
             pathTracingRenderer.Init(device);
+
             textRenderer.Init(device);
+            textureRenderer.Init(device);
 
         }
 

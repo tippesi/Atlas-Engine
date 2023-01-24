@@ -5,31 +5,16 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		TextureRenderer::TextureRenderer() {
+        void TextureRenderer::Init(Graphics::GraphicsDevice *device) {
 
-            /*
+            this->device = device;
+
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
-
-			texture2DShader.AddStage(AE_VERTEX_STAGE, "rectangle.vsh");
-			texture2DShader.AddStage(AE_FRAGMENT_STAGE, "rectangle.fsh");
-			texture2DShader.AddMacro("TEXTURE2D");
-			texture2DShader.Compile();
-
-			texture2DArrayShader.AddStage(AE_VERTEX_STAGE, "rectangle.vsh");
-			texture2DArrayShader.AddStage(AE_FRAGMENT_STAGE, "rectangle.fsh");
-			texture2DArrayShader.AddMacro("TEXTURE2D_ARRAY");
-			texture2DArrayShader.Compile();
-
-			texture3DShader.AddStage(AE_VERTEX_STAGE, "rectangle.vsh");
-			texture3DShader.AddStage(AE_FRAGMENT_STAGE, "rectangle.fsh");
-			texture3DShader.AddMacro("TEXTURE3D");
-			texture3DShader.Compile();
-             */
 
 		}
 
-		void TextureRenderer::RenderTexture2D(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
-			bool alphaBlending, bool invert) {
+		void TextureRenderer::RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport,
+            Texture::Texture2D* texture, float x, float y, float width, float height, bool alphaBlending, bool invert) {
 
 
 			float viewportWidth = (float)viewport->width;
@@ -38,12 +23,14 @@ namespace Atlas {
 			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
-			RenderTexture2D(viewport, texture, x, y, width, height, clipArea, blendArea, alphaBlending, invert);
+			RenderTexture2D(commandList, viewport, texture, x, y, width, height,
+                clipArea, blendArea, alphaBlending, invert);
 
 
 		}
 
-		void TextureRenderer::RenderTexture2D(Viewport* viewport, Texture::Texture2D* texture, float x, float y, float width, float height,
+		void TextureRenderer::RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport,
+            Texture::Texture2D* texture, float x, float y, float width, float height,
 			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
             /*
@@ -85,8 +72,9 @@ namespace Atlas {
 
 		}
 
-		void TextureRenderer::RenderTexture2DArray(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x,
-			float y, float width, float height, bool alphaBlending, bool invert) {
+		void TextureRenderer::RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport,
+            Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
+            bool alphaBlending, bool invert) {
 
 			float viewportWidth = (float)(viewport->width);
 			float viewportHeight = (float)(viewport->height);
@@ -94,11 +82,13 @@ namespace Atlas {
 			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
-			RenderTexture2DArray(viewport, texture, depth, x, y, width, height, clipArea, blendArea, alphaBlending, invert);
+			RenderTexture2DArray(commandList, viewport, texture, depth, x, y, width, height,
+                clipArea, blendArea, alphaBlending, invert);
 
 		}
 
-		void TextureRenderer::RenderTexture2DArray(Viewport* viewport, Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
+		void TextureRenderer::RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport,
+            Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
 			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
             /*
@@ -149,8 +139,9 @@ namespace Atlas {
 
 		}
 
-		void TextureRenderer::RenderTexture3D(Viewport* viewport, Texture::Texture3D* texture, float depth, float x,
-			float y, float width, float height, bool alphaBlending, bool invert) {
+		void TextureRenderer::RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport,
+            Texture::Texture3D* texture, float depth, float x, float y, float width, float height,
+            bool alphaBlending, bool invert) {
 
 			float viewportWidth = (float)(viewport->width);
 			float viewportHeight = (float)(viewport->height);
@@ -158,11 +149,13 @@ namespace Atlas {
 			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
-			RenderTexture3D(viewport, texture, depth, x, y, width, height, clipArea, blendArea, alphaBlending, invert);
+			RenderTexture3D(commandList, viewport, texture, depth, x, y, width, height,
+                clipArea, blendArea, alphaBlending, invert);
 
 		}
 
-		void TextureRenderer::RenderTexture3D(Viewport* viewport, Texture::Texture3D* texture, float depth, float x, float y, float width, float height,
+		void TextureRenderer::RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport,
+            Texture::Texture3D* texture, float depth, float x, float y, float width, float height,
 			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
             /*
@@ -212,6 +205,26 @@ namespace Atlas {
              */
 
 		}
+
+        PipelineConfig TextureRenderer::GeneratePipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer,
+            const std::string& macro) {
+
+            auto shaderConfig = ShaderConfig {
+                {"text.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                {"text.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+            };
+            Graphics::GraphicsPipelineDesc pipelineDesc {
+                .swapChain = device->swapChain,
+                .frameBuffer = frameBuffer,
+                .vertexInputInfo = vertexArray.GetVertexInputState(),
+                .assemblyInputInfo = Graphics::Initializers::InitPipelineInputAssemblyStateCreateInfo(
+                    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP),
+                .depthStencilInputInfo = Graphics::Initializers::InitPipelineDepthStencilStateCreateInfo(
+                    false, false, VK_COMPARE_OP_LESS_OR_EQUAL)
+            };
+            return PipelineConfig(shaderConfig, pipelineDesc, {macro});
+
+        }
 
 	}
 
