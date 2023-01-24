@@ -348,6 +348,7 @@ namespace Atlas {
 
 			aoRenderer.Render(viewport, target, camera, scene);
 			rtrRenderer.Render(viewport, target, camera, scene);
+			sssRenderer.Render(viewport, target, camera, scene);
 
 			vertexArray.Bind();
 
