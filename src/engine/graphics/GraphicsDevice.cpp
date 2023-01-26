@@ -176,17 +176,21 @@ namespace Atlas {
             windowWidth = width;
             windowHeight = height;
 
-            auto oldSwapChain = swapChain;
-
-            swapChain = new SwapChain(supportDetails, nativeSurface, this,
-                width, height, presentMode, oldSwapChain);
-
             WaitForIdle();
-            // Clean up old swap chain
-            delete oldSwapChain;
+
+            // Had some issue with passing the old swap chain and then deleting it after x frames.
+            delete swapChain;
+            swapChain = new SwapChain(supportDetails, nativeSurface, this,
+                width, height, presentMode, VK_NULL_HANDLE);
 
             // Acquire first index since normally these are acquired at completion of frame
-            swapChain->AcquireImageIndex();
+            auto frame = GetFrameData();
+
+            VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
+            vkDestroySemaphore(device, frame->semaphore, nullptr);
+            VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &frame->semaphore))
+
+            swapChain->AcquireImageIndex(frame->semaphore);
 
             return swapChain;
 
@@ -335,7 +339,7 @@ namespace Atlas {
             // when we get back to this frames data and start a new frame with it.
             auto frame = GetFrameData();
 
-            std::vector<VkSemaphore> waitSemaphores = { swapChain->semaphore };
+            std::vector<VkSemaphore> waitSemaphores = { frame->semaphore };
             std::vector<VkPipelineStageFlags> waitStages = { waitStage };
             if (frame->submittedCommandLists.size() > 0) {
                 waitSemaphores[0] = frame->submittedCommandLists.back()->semaphore;
@@ -426,7 +430,6 @@ namespace Atlas {
 
                 VkQueue &presenterQueue = queueFamilyIndices.queues[QueueType::PresentationQueue];
                 auto result = vkQueuePresentKHR(presenterQueue, &presentInfo);
-
                 if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
                     recreateSwapChain = true;
                 } else {
@@ -450,7 +453,7 @@ namespace Atlas {
             auto nextFrame = GetFrameData();
             nextFrame->WaitAndReset(device);
 
-            if (swapChain->AcquireImageIndex()) {
+            if (swapChain->AcquireImageIndex(nextFrame->semaphore)) {
                 recreateSwapChain = true;
             }
 
@@ -687,10 +690,13 @@ namespace Atlas {
         void GraphicsDevice::CreateFrameData() {
 
             VkFenceCreateInfo fenceInfo = Initializers::InitFenceCreateInfo();
+            VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
+            
             for (int32_t i = 0; i < FRAME_DATA_COUNT; i++) {
                 // Create secondary fences in a signaled state
                 if (i > 0) fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
                 VK_CHECK(vkCreateFence(device, &fenceInfo, nullptr, &frameData[i].fence))
+                VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &frameData[i].semaphore))
             }
 
         }
@@ -704,6 +710,7 @@ namespace Atlas {
                 }
 
                 vkDestroyFence(device, frameData[i].fence, nullptr);
+                vkDestroySemaphore(device, frameData[i].semaphore, nullptr);
             }
 
         }

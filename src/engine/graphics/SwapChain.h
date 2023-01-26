@@ -41,7 +41,7 @@ namespace Atlas {
 
             ~SwapChain();
 
-            bool AcquireImageIndex();
+            bool AcquireImageIndex(VkSemaphore semaphore);
 
             VkSwapchainKHR swapChain;
             VkSurfaceFormatKHR surfaceFormat;
@@ -59,7 +59,6 @@ namespace Atlas {
             VkImageView depthImageView;
 
             VkRenderPass renderPass;
-            VkSemaphore semaphore;
 
             VkClearValue colorClearValue = { .color = { { 1.0f, 1.0f, 1.0f, 1.0f } } };
             VkClearValue depthClearValue = { .depthStencil = { .depth = 1.0f } };

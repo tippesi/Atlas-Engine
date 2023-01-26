@@ -35,6 +35,7 @@ namespace Atlas {
 
         class FrameData {
         public:
+            VkSemaphore semaphore;
             VkFence fence;
 
             std::mutex commandListsMutex;

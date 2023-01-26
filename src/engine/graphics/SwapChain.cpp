@@ -173,9 +173,6 @@ namespace Atlas {
 
             depthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-            VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
-            VK_CHECK(vkCreateSemaphore(device->device, &semaphoreInfo, nullptr, &semaphore))
-
         }
 
         SwapChain::~SwapChain() {
@@ -192,13 +189,12 @@ namespace Atlas {
             vmaDestroyImage(device->memoryManager->allocator,
                 depthImageAllocation.image, depthImageAllocation.allocation);
 
-            vkDestroySemaphore(device->device, semaphore, nullptr);
             vkDestroyRenderPass(device->device, renderPass, nullptr);
             vkDestroySwapchainKHR(device->device, swapChain, nullptr);
 
         }
 
-        bool SwapChain::AcquireImageIndex() {
+        bool SwapChain::AcquireImageIndex(VkSemaphore semaphore) {
 
             auto result = vkAcquireNextImageKHR(device->device, swapChain, 1000000000,
                 semaphore, nullptr, &aquiredImageIndex);
