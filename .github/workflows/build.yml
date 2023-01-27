@@ -53,7 +53,9 @@ jobs:
         shell: pwsh
         # Add additional scripting steps here
         run: |
+          Remove-Item –path $Env:ANDROID_HOME –recurse
           cd ${{ github.workspace }}
+          Get-Volume
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
