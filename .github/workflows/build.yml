@@ -58,6 +58,7 @@ jobs:
           Get-Volume
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
+        if: ${{  matrix.build-type == 'Debug' }}
         uses: ashutoshvarma/action-cmake-build@master
         with:
           build-dir: ${{ github.workspace }}/build/${{ matrix.build-type }}
@@ -65,7 +66,20 @@ jobs:
           cc: "cl"
           cxx: "cl"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -G Ninja -DVCPKG_BUILD_TYPE=${{ matrix.build-type }}
+            -DATLAS_DEMO=ON -G Ninja -DVCPKG_TARGET_TRIPLET=x64-windows-dbg
+          parallel: 16
+          build-type: ${{ matrix.build-type }}
+          
+      - name: Build ${{ matrix.build-type }} configuration with CMake
+        if: ${{  matrix.build-type == 'Release' }}
+        uses: ashutoshvarma/action-cmake-build@master
+        with:
+          build-dir: ${{ github.workspace }}/build/${{ matrix.build-type }}
+          source-dir: ${{ github.workspace }}
+          cc: "cl"
+          cxx: "cl"
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
+            -DATLAS_DEMO=ON -G Ninja -DVCPKG_TARGET_TRIPLET=x64-windows-rel
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
