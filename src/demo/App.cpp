@@ -44,7 +44,7 @@ void App::LoadContent() {
 
     directionalLight = std::make_shared<Atlas::Lighting::DirectionalLight>(AE_MOVABLE_LIGHT);
     directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
-    directionalLight->color = glm::vec3(253, 194, 109) / 255.0f;
+    directionalLight->color = glm::vec3(255, 236, 209) / 255.0f;
     glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
     directionalLight->AddShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
     directionalLight->AddVolumetric(10, 0.28f);
@@ -880,8 +880,6 @@ bool App::LoadScene() {
         actors.push_back({ &mesh, glm::mat4(1.0f) });
         scene.Add(&actors.back());
     }
-
-    // scene.sky.probe = new Atlas::Lighting::EnvironmentProbe(sky);
 
     camera.Update();
     scene.Update(&camera, 1.0f);

@@ -192,11 +192,7 @@ namespace Atlas {
 
             {
                 if (scene->sky.probe) {
-                    commandList->BeginRenderPass(target->lightingRenderPass, target->lightingFrameBuffer);
-
                     skyboxRenderer.Render(viewport, target, camera, scene, commandList);
-
-                    commandList->EndRenderPass();
                 }
                 else if (scene->sky.atmosphere) {
                     atmosphereRenderer.Render(viewport, target, camera, scene, commandList);

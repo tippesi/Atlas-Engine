@@ -24,9 +24,7 @@ namespace Atlas {
                 Graphics::CommandList* commandList);
 
 		private:
-            PipelineConfig GetPipelineConfig(RenderTarget* target);
-
-			Buffer::VertexArray vertexArray;
+            PipelineConfig pipelineConfig;
 
 		};
 
