@@ -50,9 +50,11 @@ namespace Atlas {
                 vec2 offset;
                 vec2 scale;
                 int invert;
+                float depth;
             };
 
-            PipelineConfig GeneratePipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer, const std::string& macro);
+            PipelineConfig GeneratePipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer,
+                const std::vector<std::string>& macros);
 
 			Buffer::VertexArray vertexArray;
 

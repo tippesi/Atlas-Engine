@@ -1,48 +1,53 @@
-out vec4 color;
+layout(location=0) out vec4 colorFS;
 
-#ifdef TEXTURE2D
-in vec2 texCoordVS;
-layout(binding = 0) uniform sampler2D rectangleTexture;
-#elif defined(TEXTURE2D_ARRAY)
-in vec2 texCoordVS;
-layout(binding = 0) uniform sampler2DArray rectangleTexture;
-#elif defined(TEXTURE3D)
-in vec2 texCoordVS;
-layout(binding = 0) uniform sampler3D rectangleTexture;
-#else
-uniform vec4 rectangleColor;
+layout(location=0) in vec2 screenPositionVS;
+
+#if defined(TEXTURE2D) || defined(TEXTURE2D_ARRAY) || defined(TEXTURE3D)
+layout(location=1) in vec2 texCoordVS;
 #endif
 
-in vec2 screenPositionVS;
-uniform vec4 blendArea;
-uniform vec4 clipArea;
-uniform bool invert = false;
-uniform float depth;
+#ifdef TEXTURE2D
+layout(set = 3, binding = 0) uniform sampler2D rectangleTexture;
+#elif defined(TEXTURE2D_ARRAY)
+layout(set = 3, binding = 0) uniform sampler2DArray rectangleTexture;
+#elif defined(TEXTURE3D)
+layout(set = 3, binding = 0) uniform sampler3D rectangleTexture;
+#endif
+
+layout(push_constant) uniform constants {
+	mat4 pMatrix;
+	vec4 blendArea;
+	vec4 clipArea;
+	vec2 offset;
+	vec2 scale;
+	int invert;
+	float depth;
+} pushConstants;
 
 void main() {
 
-	if (screenPositionVS.x < clipArea.x ||
-		screenPositionVS.y < clipArea.y ||
-		screenPositionVS.x > clipArea.x + clipArea.z ||
-		screenPositionVS.y > clipArea.y + clipArea.w)
+	if (screenPositionVS.x < pushConstants.clipArea.x ||
+		screenPositionVS.y < pushConstants.clipArea.y ||
+		screenPositionVS.x > pushConstants.clipArea.x + pushConstants.clipArea.z ||
+		screenPositionVS.y > pushConstants.clipArea.y + pushConstants.clipArea.w)
 		discard;
 
 #if defined(TEXTURE2D) || defined(TEXTURE2D_ARRAY) || defined(TEXTURE3D)
 	vec2 texCoord = texCoordVS;
 
-	if (invert) {
+	if (pushConstants.invert > 0) {
 		texCoord.y = 1.0 - texCoord.y;
 	}
 #endif
 	
 #ifdef TEXTURE2D
-	color = textureLod(rectangleTexture, vec2(texCoord), 0.0);
+	colorFS = textureLod(rectangleTexture, vec2(texCoord), 0.0);
 #elif defined(TEXTURE2D_ARRAY)
-	color = textureLod(rectangleTexture, vec3(texCoord, depth), 0.0);
+	colorFS = textureLod(rectangleTexture, vec3(texCoord, pushConstants.depth), 0.0);
 #elif defined(TEXTURE3D)
-	color = textureLod(rectangleTexture, vec3(texCoord, depth), 0.0);
+	colorFS = textureLod(rectangleTexture, vec3(texCoord, pushConstants.depth), 0.0);
 #else
-	color = rectangleColor;
+	colorFS = rectangleColor;
 #endif
 
 }

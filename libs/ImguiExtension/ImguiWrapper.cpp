@@ -176,12 +176,14 @@ void ImguiWrapper::MouseButtonHandler(Atlas::Events::MouseButtonEvent event) {
 
 	ImGuiIO& io = ImGui::GetIO();
 
-	switch (event.button) {
-		case AE_MOUSEBUTTON_LEFT: io.MouseDown[0] = (event.state == AE_BUTTON_PRESSED); break;
-		case AE_MOUSEBUTTON_RIGHT: io.MouseDown[1] = (event.state == AE_BUTTON_PRESSED); break;
-		case AE_MOUSEBUTTON_MIDDLE: io.MouseDown[2] = (event.state == AE_BUTTON_PRESSED); break;
-	}
+    int mouseButton = -1;
+    if (event.button == AE_MOUSEBUTTON_LEFT) { mouseButton = 0; }
+    if (event.button == AE_MOUSEBUTTON_RIGHT) { mouseButton = 1; }
+    if (event.button == AE_MOUSEBUTTON_MIDDLE) { mouseButton = 2; }
 
+    if (mouseButton < 0) return;
+
+    io.AddMouseButtonEvent(mouseButton, event.down);
 
 }
 
@@ -208,16 +210,8 @@ void ImguiWrapper::KeyboardHandler(Atlas::Events::KeyboardEvent event) {
 
 	ImGuiIO& io = ImGui::GetIO();
 
-	io.KeysDown[KEYCODE_TO_SCANCODE(event.keycode)] = (event.state == AE_BUTTON_PRESSED);
-	
-	if (event.keycode == AE_KEY_LSHIFT || event.keycode == AE_KEY_RSHIFT)
-		io.KeyShift = (event.state == AE_BUTTON_PRESSED);
-	if (event.keycode == AE_KEY_LCTRL || event.keycode == AE_KEY_RCTRL)
-		io.KeyCtrl = (event.state == AE_BUTTON_PRESSED);
-	if (event.keycode == AE_KEY_LALT || event.keycode == AE_KEY_RALT)
-		io.KeyAlt = (event.state == AE_BUTTON_PRESSED);
-	if (event.keycode == AE_KEY_LGUI || event.keycode == AE_KEY_RGUI)
-		io.KeySuper = (event.state == AE_BUTTON_PRESSED);
+    ImGuiKey key = KEYCODE_TO_SCANCODE(event.keycode);
+    io.AddKeyEvent(key, event.down);
 
 }
 

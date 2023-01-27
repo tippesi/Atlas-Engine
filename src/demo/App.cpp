@@ -156,6 +156,7 @@ void App::Render(float deltaTime) {
         if (debug) {
             auto commandList = graphicsDevice->GetCommandList();
             commandList->BeginCommands();
+            commandList->BeginRenderPass(graphicsDevice->swapChain, true);
 
             if (debugAo) {
                 mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.aoTexture,
@@ -171,9 +172,10 @@ void App::Render(float deltaTime) {
             }
             else if (debugSSS) {
                 mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.sssTexture,
-                    0.0f, 0.0f, viewport.width, viewport.height, false, true);
+                    0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
 		    }
 
+            commandList->EndRenderPass();
             commandList->EndCommands();
             graphicsDevice->SubmitCommandList(commandList);
         }
@@ -259,7 +261,7 @@ void App::Render(float deltaTime) {
 
                 if (vsync != vsyncMode) {
                     graphicsDevice->CompleteFrame();
-                    if (vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_KHR);
+                    if (vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_RELAXED_KHR);
                     else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR);
                     vsyncMode = vsync;
                 }
