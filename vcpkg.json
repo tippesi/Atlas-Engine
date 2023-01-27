@@ -32,6 +32,7 @@
     "overrides": [
             { "name": "glm", "version": "0.9.8.0" },
             { "name": "assimp", "version": "5.2.5" },
+            { "name": "spirv-tools", "version": "2022.1#0" },
             { "name": "glslang", "version": "11.11.0#1" }
     ]
 }

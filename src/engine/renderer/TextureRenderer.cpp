@@ -104,7 +104,8 @@ namespace Atlas {
                 .clipArea = clipArea,
                 .offset = vec2(x, y),
                 .scale = vec2(width, height),
-                .invert = invert ? 1 : 0
+                .invert = invert ? 1 : 0,
+                .depth = float(depth)
             };
 
             auto constantRange = pipeline->shader->GetPushConstantRange("constants");
@@ -155,7 +156,8 @@ namespace Atlas {
                 .clipArea = clipArea,
                 .offset = vec2(x, y),
                 .scale = vec2(width, height),
-                .invert = invert ? 1 : 0
+                .invert = invert ? 1 : 0,
+                .depth = float(depth)
             };
 
             auto constantRange = pipeline->shader->GetPushConstantRange("constants");
