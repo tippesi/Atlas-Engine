@@ -56,7 +56,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           Get-Volume
-          vcpkg install --clean-after-build --triplet=x64-windows
+          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-windows
           Get-Volume
           Remove-Item –path vcpkg_installed –recurse
           Get-Volume
