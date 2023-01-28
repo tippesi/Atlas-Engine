@@ -32,6 +32,7 @@ jobs:
         with: 
           committish: 91dd61bd441a68b4017b61011d0350b2e6aeeccf
           cache: false
+          path: C:\vcpkg
 
       - name: Setup Microsoft Visual C++ CLI
         uses: ilammy/msvc-dev-cmd@v1
