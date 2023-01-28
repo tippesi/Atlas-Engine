@@ -30,7 +30,8 @@ jobs:
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
-        with: {committish: 59b58fc56de40eaa279ae0208debcf5773a2db77}
+        with:
+          committish: 91dd61bd441a68b4017b61011d0350b2e6aeeccf
 
       - name: Setup Microsoft Visual C++ CLI
         uses: ilammy/msvc-dev-cmd@v1
@@ -53,6 +54,8 @@ jobs:
         # Add additional scripting steps here
         run: |
           cd ${{ github.workspace }}
+          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-windows
+          Remove-Item –path vcpkg_installed –recurse
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -95,7 +98,8 @@ jobs:
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
-        with: {committish: 59b58fc56de40eaa279ae0208debcf5773a2db77}
+        with:
+          committish: 91dd61bd441a68b4017b61011d0350b2e6aeeccf
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
@@ -116,6 +120,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install libgl1-mesa-dev
           cd ${{ github.workspace }}
+          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
+          rmdir -r vcpkg_installed
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake

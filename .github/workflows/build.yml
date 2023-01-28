@@ -31,7 +31,6 @@ jobs:
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
           committish: 91dd61bd441a68b4017b61011d0350b2e6aeeccf
-          cache: false
 
       - name: Setup Microsoft Visual C++ CLI
         uses: ilammy/msvc-dev-cmd@v1
@@ -54,11 +53,8 @@ jobs:
         # Add additional scripting steps here
         run: |
           cd ${{ github.workspace }}
-          Get-Volume
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-windows
-          Get-Volume
           Remove-Item –path vcpkg_installed –recurse
-          Get-Volume
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -104,7 +100,6 @@ jobs:
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
           committish: 91dd61bd441a68b4017b61011d0350b2e6aeeccf
-          cache: false
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
@@ -126,6 +121,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install libgl1-mesa-dev
           cd ${{ github.workspace }}
+          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
+          rmdir -r vcpkg_installed
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
@@ -172,7 +169,6 @@ jobs:
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
           committish: 91dd61bd441a68b4017b61011d0350b2e6aeeccf
-          cache: false
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
@@ -192,6 +188,8 @@ jobs:
         # Add additional scripting steps here
         run: |
           cd ${{ github.workspace }}
+          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-osx
+          rmdir -r vcpkg_installed
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
