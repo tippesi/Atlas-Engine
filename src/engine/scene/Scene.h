@@ -9,9 +9,9 @@
 #include "../lighting/Fog.h"
 #include "../lighting/IrradianceVolume.h"
 #include "../lighting/AO.h"
-#include "../lighting/SSS.h"
 #include "../lighting/Reflection.h"
 #include "../lighting/VolumetricClouds.h"
+#include "../lighting/SSS.h"
 #include "../ocean/Ocean.h"
 #include "../postprocessing/PostProcessing.h"
 #include "../Decal.h"
@@ -93,11 +93,16 @@ namespace Atlas {
 			 */
 			std::vector<Material*> GetMaterials();
 
-			/*
+			/**
 			 * Builds the BVH and texture atlases.
 			 * @note The scene needs to be updated first.
 			 */
 			void BuildRTStructures();
+
+            /**
+             *
+             */
+            void ClearRTStructures();
 
 			/**
 			 * To overload the Add and Remove methods we need to specify this
@@ -106,16 +111,16 @@ namespace Atlas {
 			using SceneNode::Add;
 			using SceneNode::Remove;
 
-			Terrain::Terrain* terrain = nullptr;
-			Ocean::Ocean* ocean = nullptr;
-			Vegetation* vegetation = nullptr;
+			Ref<Terrain::Terrain> terrain = nullptr;
+			Ref<Ocean::Ocean> ocean = nullptr;
+			Ref<Vegetation> vegetation = nullptr;
 
 			Lighting::Sky sky;
-			Lighting::Fog* fog = nullptr;
-			Lighting::IrradianceVolume* irradianceVolume = nullptr;
-			Lighting::AO* ao = nullptr;
-			Lighting::SSS* sss = nullptr;
-			Lighting::Reflection* reflection = nullptr;
+			Ref<Lighting::Fog> fog = nullptr;
+			Ref<Lighting::IrradianceVolume> irradianceVolume = nullptr;
+			Ref<Lighting::AO> ao = nullptr;
+			Ref<Lighting::Reflection> reflection = nullptr;
+            Ref<Lighting::SSS> sss = nullptr;
 			PostProcessing::PostProcessing postProcessing;
 
 		private:

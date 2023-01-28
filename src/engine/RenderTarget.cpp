@@ -1,96 +1,151 @@
 #include "RenderTarget.h"
+#include "graphics/GraphicsDevice.h"
 
 namespace Atlas {
 
 	RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height(height) {
 
-		// We want a shared depth and velocity texture across the geometry and lighting framebuffers
-		depthTexture = Texture::Texture2D(width, height, AE_DEPTH32F,
-			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-		normalTexture = Texture::Texture2D(width, height, AE_RGB16F,
-			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+        auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
-		velocityTexture = Texture::Texture2D(width, height, AE_RG16F,
-			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-		swapVelocityTexture = Texture::Texture2D(width, height, AE_RG16F,
-			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+        ivec2 res = GetRelativeResolution(FULL_RES);
+        targetData = RenderTargetData(res, true);
 
-		stencilTexture = Texture::Texture2D(width, height, AE_R8UI,
-			GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+        ivec2 halfRes = GetRelativeResolution(HALF_RES);
+        targetDataDownsampled2x = RenderTargetData(halfRes, false);
+        targetDataSwapDownsampled2x = RenderTargetData(halfRes, false);
 
-		geometryFramebuffer.Resize(width, height);
+        historyTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        swapHistoryTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        lightingTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        hdrTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        postProcessTexture = Texture::Texture2D(width, height, VK_FORMAT_R8G8B8A8_UNORM,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT1, AE_RGB16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT3, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		geometryFramebuffer.AddComponent(GL_COLOR_ATTACHMENT4, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST);
-		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT2, &normalTexture);
-		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &velocityTexture);
-		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT6, &stencilTexture);
-		geometryFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
+        {
+            Graphics::RenderPassAttachment attachments[] = {
+                {.imageFormat = targetData.baseColorTexture->format},
+                {.imageFormat = targetData.normalTexture->format},
+                {.imageFormat = targetData.geometryNormalTexture->format},
+                {.imageFormat = targetData.roughnessMetallicAoTexture->format},
+                {.imageFormat = targetData.materialIdxTexture->format},
+                {.imageFormat = targetData.velocityTexture->format},
+                {.imageFormat = targetData.stencilTexture->format},
+                {.imageFormat = targetData.depthTexture->format}
+            };
 
-		lightingFramebuffer.Resize(width, height);
+            for (auto &attachment: attachments) {
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
 
-		lightingFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, &velocityTexture);
-		lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT2, &stencilTexture);
-		lightingFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
+            auto gBufferRenderPassDesc = Graphics::RenderPassDesc{
+                .colorAttachments = {attachments[0], attachments[1], attachments[2],
+                                     attachments[3], attachments[4], attachments[5], attachments[6]},
+                .depthAttachment = {attachments[7]}
+            };
+            gBufferRenderPass = graphicsDevice->CreateRenderPass(gBufferRenderPassDesc);
 
-		postProcessFramebuffer.Resize(width, height);
+            auto gBufferFrameBufferDesc = Graphics::FrameBufferDesc{
+                .renderPass = gBufferRenderPass,
+                .colorAttachments = {
+                    {targetData.baseColorTexture->image, 0, true},
+                    {targetData.normalTexture->image, 0, true},
+                    {targetData.geometryNormalTexture->image, 0, true},
+                    {targetData.roughnessMetallicAoTexture->image, 0, true},
+                    {targetData.materialIdxTexture->image, 0, true},
+                    {targetData.velocityTexture->image, 0, true},
+                    {targetData.stencilTexture->image, 0, false},
+                },
+                .depthAttachment = {targetData.depthTexture->image, 0, true},
+                .extent = {uint32_t(width), uint32_t(height)}
+            };
+            gBufferFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
+        }
 
-		postProcessFramebuffer.AddComponent(GL_COLOR_ATTACHMENT0, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR);
+        {
+            Graphics::RenderPassAttachment attachments[] = {
+                {.imageFormat = lightingTexture.format},
+                {.imageFormat = targetData.velocityTexture->format},
+                {.imageFormat = targetData.stencilTexture->format},
+                {.imageFormat = targetData.depthTexture->format}
+            };
 
-		historyTexture = Texture::Texture2D(width, height, AE_RGBA16F,
-			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-		swapHistoryTexture = Texture::Texture2D(width, height, AE_RGBA16F,
-				GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+            for (auto &attachment: attachments) {
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
 
-		postProcessTexture = Texture::Texture2D(width, height, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
+            auto lightingRenderPassDesc = Graphics::RenderPassDesc{
+                .colorAttachments = {attachments[0], attachments[1], attachments[2]},
+                .depthAttachment = {attachments[3]}
+            };
+            lightingRenderPass = graphicsDevice->CreateRenderPass(lightingRenderPassDesc);
+
+            auto lightingFrameBufferDesc = Graphics::FrameBufferDesc{
+                .renderPass = lightingRenderPass,
+                .colorAttachments = {
+                    {lightingTexture.image, 0, true},
+                    {targetData.velocityTexture->image, 0, true},
+                    {targetData.stencilTexture->image, 0, false}
+                },
+                .depthAttachment = {targetData.depthTexture->image, 0, true},
+                .extent = {uint32_t(width), uint32_t(height)}
+            };
+            lightingFrameBuffer = graphicsDevice->CreateFrameBuffer(lightingFrameBufferDesc);
+
+            lightingFrameBufferDesc = Graphics::FrameBufferDesc{
+                .renderPass = lightingRenderPass,
+                .colorAttachments = {
+                    {lightingTexture.image, 0, true},
+                    {targetData.velocityTexture->image, 0, true},
+                    {targetData.stencilTexture->image, 0, true}
+                },
+                .depthAttachment = {targetData.depthTexture->image, 0, true},
+                .extent = {uint32_t(width), uint32_t(height)}
+            };
+            lightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(lightingFrameBufferDesc);
+        }
 
 		SetAOResolution(HALF_RES);
 		SetVolumetricResolution(HALF_RES);
 		SetReflectionResolution(HALF_RES);
 
-		ivec2 halfRes = GetRelativeResolution(HALF_RES);
-		downsampledTarget2x = DownsampledRenderTarget(halfRes);
-		downsampledSwapTarget2x = DownsampledRenderTarget(halfRes);
-
-		sssTexture = Texture::Texture2D(width, height, AE_RGBA32F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+        sssTexture = Texture::Texture2D(width, height, VK_FORMAT_R16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
 	}
 
 	void RenderTarget::Resize(int32_t width, int32_t height) {
 
-		geometryFramebuffer.Resize(width, height);
-		lightingFramebuffer.Resize(width, height);
+        this->width = width;
+        this->height = height;
 
-		geometryFramebuffer.AddComponentTexture(GL_DEPTH_ATTACHMENT, &depthTexture);
-		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &velocityTexture);
-		geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT6, &stencilTexture);
+        targetData.Resize(ivec2(width, height));
 
-		postProcessFramebuffer.Resize(width, height);
-
-		// We have to also resize the other part of the history
+        // We have to also resize the other part of the history
 		historyTexture.Resize(width, height);
-		velocityTexture.Resize(width, height);
-
 		swapHistoryTexture.Resize(width, height);
-		swapVelocityTexture.Resize(width, height);
-
+        lightingTexture.Resize(width, height);
+        hdrTexture.Resize(width, height);
 		postProcessTexture.Resize(width, height);
-
-		this->width = width;
-		this->height = height;
+		sssTexture.Resize(width, height);
 
 		SetAOResolution(aoResolution);
 		SetVolumetricResolution(volumetricResolution);
 		SetReflectionResolution(reflectionResolution);
 
 		ivec2 halfRes = GetRelativeResolution(HALF_RES);
-		downsampledTarget2x.Resize(halfRes);
-		downsampledSwapTarget2x.Resize(halfRes);
+		targetDataDownsampled2x.Resize(halfRes);
+		targetDataSwapDownsampled2x.Resize(halfRes);
 
-		sssTexture.Resize(width, height);
+        gBufferFrameBuffer->Refresh();
+        hasHistory = false;
 
 	}
 
@@ -108,15 +163,15 @@ namespace Atlas {
 
 	void RenderTarget::Swap() {
 
-		if (swap) {
-			geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &velocityTexture);
-			lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, &velocityTexture);
-		}
-		else {
-			geometryFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT5, &swapVelocityTexture);
-			lightingFramebuffer.AddComponentTexture(GL_COLOR_ATTACHMENT1, &swapVelocityTexture);
-		}
+        targetData.velocityTexture.swap(targetData.swapVelocityTexture);
 
+        gBufferFrameBuffer->ChangeColorAttachmentImage(targetData.velocityTexture->image, 5);
+        gBufferFrameBuffer->Refresh();
+
+        lightingFrameBuffer->ChangeColorAttachmentImage(targetData.velocityTexture->image, 1);
+        lightingFrameBuffer->Refresh();
+
+        hasHistory = true;
 		swap = !swap;
 
 	}
@@ -139,11 +194,17 @@ namespace Atlas {
 		auto res = GetRelativeResolution(resolution);
 		aoResolution = resolution;
 
-		aoTexture = Texture::Texture2D(res.x, res.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		swapAoTexture = Texture::Texture2D(res.x, res.y, AE_R16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		aoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+		swapAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        historyAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-		aoMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		historyAoMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		aoMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+		historyAoMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
 	}
 
@@ -158,12 +219,15 @@ namespace Atlas {
 		auto res = GetRelativeResolution(resolution);
 		volumetricResolution = resolution;
 
-		volumetricTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
-		swapVolumetricTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F);
+		volumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT);
+		swapVolumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT);
 
-		volumetricCloudsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		swapVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		historyVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		volumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+		swapVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+		historyVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
 	}
 
@@ -178,11 +242,17 @@ namespace Atlas {
 		auto res = GetRelativeResolution(resolution);
 		reflectionResolution = resolution;
 
-		reflectionTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		swapReflectionTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		reflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+		swapReflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        historyReflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-		reflectionMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-		historyReflectionMomentsTexture = Texture::Texture2D(res.x, res.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
+		reflectionMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+		historyReflectionMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 	
 	}
 
@@ -192,33 +262,20 @@ namespace Atlas {
 
 	}
 
-	DownsampledRenderTarget* RenderTarget::GetDownsampledTextures(RenderResolution resolution) {
+	RenderTargetData* RenderTarget::GetData(RenderResolution resolution) {
 
 		switch (resolution) {
-		case FULL_RES:
-			downsampledTarget1x.depthTexture = &depthTexture;
-			downsampledTarget1x.normalTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT1);
-			downsampledTarget1x.geometryNormalTexture = &normalTexture;
-			downsampledTarget1x.velocityTexture = GetLastVelocity();
-			downsampledTarget1x.roughnessMetallicAoTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3);
-			downsampledTarget1x.materialIdxTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT4);
-			return &downsampledTarget1x;
-		default: return swap ? &downsampledTarget2x : &downsampledSwapTarget2x;
+		case FULL_RES: return &targetData;
+		default: return swap ? &targetDataDownsampled2x : &targetDataSwapDownsampled2x;
 		}
 
 	}
 
-	DownsampledRenderTarget* RenderTarget::GetDownsampledHistoryTextures(RenderResolution resolution) {
+	RenderTargetData* RenderTarget::GetHistoryData(RenderResolution resolution) {
 
 		switch (resolution) {
-		case FULL_RES:
-			downsampledTarget1x.depthTexture = &depthTexture;
-			downsampledTarget1x.normalTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT1);
-			downsampledTarget1x.geometryNormalTexture = &normalTexture;
-			downsampledTarget1x.velocityTexture = GetLastVelocity();
-			downsampledTarget1x.roughnessMetallicAoTexture = geometryFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT3);
-			return &downsampledTarget1x;
-		default: return swap ? &downsampledSwapTarget2x : &downsampledTarget2x;
+		case FULL_RES: return &targetData; // This is not correct
+		default: return swap ? &targetDataSwapDownsampled2x : &targetDataDownsampled2x;
 		}
 
 	}
@@ -247,24 +304,20 @@ namespace Atlas {
 
 	Texture::Texture2D* RenderTarget::GetVelocity() {
 
-		if (swap) {
-			return &velocityTexture;
-		}
-		else {
-			return &swapVelocityTexture;
-		}
+		return targetData.velocityTexture.get();
 
 	}
 
 	Texture::Texture2D* RenderTarget::GetLastVelocity() {
 
-		if (swap) {
-			return &swapVelocityTexture;
-		}
-		else {
-			return &velocityTexture;
-		}
+		return targetData.swapVelocityTexture.get();
 
 	}
+
+    bool RenderTarget::HasHistory() const {
+
+        return hasHistory;
+
+    }
 
 }

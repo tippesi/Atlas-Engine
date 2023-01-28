@@ -20,8 +20,8 @@ namespace Atlas {
 
 			bool enable = false;
 
-			float strength;
-			bool colorsReversed;
+			float strength = 1.0f;
+			bool colorsReversed = false;
 
 		};
 

@@ -20,22 +20,24 @@
 #ifdef IRRADIANCE
 layout (local_size_x = 6, local_size_y = 6) in;
 #else
+#ifdef LOWER_RES_MOMENTS
+layout (local_size_x = 6, local_size_y = 6) in;
+#else
 layout (local_size_x = 14, local_size_y = 14) in;
 #endif
+#endif
 
-layout(std430, binding = 0) buffer RayHits {
+layout(std430, set = 3, binding = 1) buffer RayHits {
 	PackedRayHit hits[];
 };
 
-const uint sharedSize = 64;
+const uint sharedSize = 32;
 
-layout (binding = 0, rgb10_a2) writeonly uniform image2DArray irradiance;
-layout (binding = 1, rg16f) writeonly uniform image2DArray moment;
-
-uniform int irrProbeRes;
-uniform int momProbeRes;
-uniform float depthSharpness;
-uniform bool optimizeProbes;
+#ifdef IRRADIANCE
+layout (set = 3, binding = 0, rgb10_a2) writeonly uniform image2DArray irradiance;
+#else
+layout (set = 3, binding = 0, rg16f) writeonly uniform image2DArray moment;
+#endif
 
 #ifdef IRRADIANCE
 struct RayData {
@@ -60,15 +62,15 @@ void main() {
     uint probeState = floatBitsToUint(probeStates[baseIdx].x);
     vec4 probeOffset = probeOffsets[baseIdx];
 
-    uint rayBaseIdx = baseIdx * rayCount;
+    uint rayBaseIdx = baseIdx * ddgiData.rayCount;
     uint probeRayCount = GetProbeRayCount(probeState);
 
     uint groupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 
 #ifdef IRRADIANCE
-    ivec2 res = ivec2(irrProbeRes);
+    ivec2 res = ivec2(ddgiData.volumeIrradianceRes);
 #else
-    ivec2 res = ivec2(momProbeRes);
+    ivec2 res = ivec2(ddgiData.volumeMomentsRes);
 #endif
 
     ivec2 pix = ivec2(gl_LocalInvocationID);
@@ -79,7 +81,7 @@ void main() {
     ivec2 resOffset = (res + ivec2(2)) * ivec2(gl_WorkGroupID.xz) + ivec2(1);
     ivec3 volumeCoord = ivec3(resOffset + pix, int(gl_WorkGroupID.y));
 
-    float cellLength = length(cellSize);
+    float cellLength = length(ddgiData.cellSize.xyz);
     float maxDepth = cellLength * 0.75;
 
     vec4 result = vec4(0.0);
@@ -128,12 +130,12 @@ void main() {
             // reduced in each frame to stop them from moving indefinitely
             if (probeOffset.w > 0.0) {
                 float sig = sign(dist);
-                if (abs(dist) < probeOffsetDistance && optimizeProbes) {
+                if (abs(dist) < probeOffsetDistance && ddgiData.optimizeProbes > 0) {
                     newProbeOffset -= rayData[j].direction * (sig * probeOffsetDistance - dist) * 0.1 * probeOffset.w;
                 }
             }
 
-            weight = pow(weight, depthSharpness);
+            weight = pow(weight, ddgiData.depthSharpness);
             if (weight >= 0.00000001) {
                 result += vec4(hitDistance, sqr(hitDistance), 0.0, 1.0) * weight;
             }
@@ -149,9 +151,9 @@ void main() {
     vec3 resultOut = lastResult;
     if (result.w > 0.0) {
         result.xyz /= result.w;
-        result.xyz = pow(result.xyz, vec3(1.0 / volumeGamma));
+        result.xyz = pow(result.xyz, vec3(1.0 / ddgiData.volumeGamma));
 
-        float probeHysteresis = hysteresis;
+        float probeHysteresis = ddgiData.hysteresis;
 
         if (probeState == PROBE_STATE_NEW) {
             resultOut = result.xyz;
@@ -169,13 +171,13 @@ void main() {
             resultOut = result.xy / result.w;
         }
         else {
-            resultOut = mix(result.xy / result.w, lastResult, hysteresis);
+            resultOut = mix(result.xy / result.w, lastResult, ddgiData.hysteresis);
         }
     }
 
     imageStore(moment, volumeCoord, vec4(resultOut, 0.0, 0.0));
-    if (gl_LocalInvocationIndex == 0 && optimizeProbes) {
-        vec3 maxOffset = cellSize * 0.5;
+    if (gl_LocalInvocationIndex == 0 && ddgiData.optimizeProbes > 0) {
+        vec3 maxOffset = ddgiData.cellSize.xyz * 0.5;
         probeOffset.xyz = clamp(newProbeOffset, -maxOffset, maxOffset);
         probeOffset.w = max(0.0, probeOffset.w - 0.01);
         probeOffsets[baseIdx] = probeOffset;

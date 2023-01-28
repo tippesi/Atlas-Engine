@@ -2,7 +2,7 @@
 #define AE_MAINRENDERER_H
 
 #include "../System.h"
-#include "buffer/VertexArray.h"
+#include "../graphics/GraphicsDevice.h"
 
 #include "RenderBatch.h"
 
@@ -12,7 +12,7 @@
 #include "ShadowRenderer.h"
 #include "TerrainShadowRenderer.h"
 #include "DecalRenderer.h"
-#include "DirectionalLightRenderer.h"
+#include "DirectLightRenderer.h"
 #include "PointLightRenderer.h"
 #include "IndirectLightRenderer.h"
 #include "TemporalAARenderer.h"
@@ -24,11 +24,12 @@
 #include "DDGIRenderer.h"
 #include "AORenderer.h"
 #include "RTReflectionRenderer.h"
+#include "SSSRenderer.h"
 #include "VolumetricRenderer.h"
 #include "VolumetricCloudRenderer.h"
 #include "VegetationRenderer.h"
 #include "TextureRenderer.h"
-#include "SSSRenderer.h"
+#include "PathTracingRenderer.h"
 
 namespace Atlas {
 
@@ -37,9 +38,9 @@ namespace Atlas {
 		class MainRenderer {
 
 		public:
-			MainRenderer();
+			MainRenderer() = default;
 
-			~MainRenderer();
+			void Init(Graphics::GraphicsDevice* device);
 
 			/**
              *
@@ -51,6 +52,16 @@ namespace Atlas {
 			void RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera,
 				Scene::Scene* scene, Texture::Texture2D* texture = nullptr, 
 				RenderBatch* batch = nullptr);
+
+            /**
+             *
+             * @param window
+             * @param target
+             * @param camera
+             * @param scene
+             */
+            void PathTraceScene(Viewport* viewport, PathTracerRenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Texture::Texture2D* texture = nullptr);
 
 			/**
              *
@@ -64,7 +75,7 @@ namespace Atlas {
              * @param framebuffer
              */
 			void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-								 bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+								 bool alphaBlending = false);
 
 			/**
              *
@@ -80,7 +91,7 @@ namespace Atlas {
              * @param framebuffer
              */
 			void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-								 vec4 clipArea, vec4 blendArea, bool alphaBlending = false, Framebuffer* framebuffer = nullptr);
+								 vec4 clipArea, vec4 blendArea, bool alphaBlending = false);
 
 			/**
 			 *
@@ -104,7 +115,7 @@ namespace Atlas {
 			 * @param probe The environment probe.
 			 * @note A probe has to be filtered to support image based lighting
 			 */
-			void FilterProbe(Lighting::EnvironmentProbe* probe);
+			void FilterProbe(Lighting::EnvironmentProbe* probe, Graphics::CommandList* commandList);
 
 			/**
              * Update of the renderer
@@ -116,6 +127,7 @@ namespace Atlas {
 			TextureRenderer textureRenderer;
 			OceanRenderer oceanRenderer;
 			AtmosphereRenderer atmosphereRenderer;
+            PathTracingRenderer pathTracingRenderer;
 
 		private:
 			struct PackedMaterial {
@@ -134,38 +146,66 @@ namespace Atlas {
 
 			};
 
-			void GetUniforms();
+            struct alignas(16) GlobalUniforms {
+                mat4 vMatrix;
+                mat4 pMatrix;
+                mat4 ivMatrix;
+                mat4 ipMatrix;
+                mat4 pvMatrixLast;
+                mat4 pvMatrixCurrent;
+                vec2 jitterLast;
+                vec2 jitterCurrent;
+                vec4 cameraLocation;
+                vec4 cameraDirection;
+                float time;
+                float deltaTime;
+                uint32_t frameCount;
+            };
+
+            struct alignas(16) DDGIUniforms {
+                vec4 volumeMin;
+                vec4 volumeMax;
+                ivec4 volumeProbeCount;
+                vec4 cellSize;
+
+                float volumeBias;
+
+                int32_t volumeIrradianceRes;
+                int32_t volumeMomentsRes;
+
+                uint32_t rayCount;
+                uint32_t inactiveRayCount;
+
+                float hysteresis;
+
+                float volumeGamma;
+                float volumeStrength;
+
+                float depthSharpness;
+                int optimizeProbes;
+
+                int32_t volumeEnabled;
+            };
+
+            void SetUniforms(Scene::Scene* scene, Camera* camera);
 
 			void PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
 				std::unordered_map<void*, uint16_t>& materialMap);
 
+            void FillRenderList(Scene::Scene* scene, Camera* camera);
+
 			void PreintegrateBRDF();
 
-			Framebuffer framebuffer;
-			Framebuffer depthFramebuffer;
+            Graphics::GraphicsDevice* device = nullptr;
 
 			Texture::Texture2D dfgPreintegrationTexture;
 
+            Ref<Graphics::MultiBuffer> globalUniformBuffer;
+            Ref<Graphics::MultiBuffer> pathTraceGlobalUniformBuffer;
+            Ref<Graphics::MultiBuffer> ddgiUniformBuffer;
+
 			Buffer::VertexArray vertexArray;
 			Buffer::VertexArray cubeVertexArray;
-
-			Shader::Shader rectangleShader;
-
-			Shader::Shader lineShader;
-
-			Shader::Shader createProbeFaceShader;
-			Shader::Shader filterDiffuseShader;
-			Shader::Shader filterSpecularShader;
-
-			Shader::Uniform* rectangleProjectionMatrix = nullptr;
-			Shader::Uniform* rectangleOffset = nullptr;
-			Shader::Uniform* rectangleScale = nullptr;
-			Shader::Uniform* rectangleColor = nullptr;
-			Shader::Uniform* rectangleClipArea = nullptr;
-			Shader::Uniform* rectangleBlendArea = nullptr;
-
-			Shader::Uniform* lineViewMatrix = nullptr;
-			Shader::Uniform* lineProjectionMatrix = nullptr;
 
 			OpaqueRenderer opaqueRenderer;
 			TerrainRenderer terrainRenderer;
@@ -173,7 +213,7 @@ namespace Atlas {
 			VegetationRenderer vegetationRenderer;
 			TerrainShadowRenderer terrainShadowRenderer;
 			DecalRenderer decalRenderer;
-			DirectionalLightRenderer directionalLightRenderer;
+			DirectLightRenderer directLightRenderer;
 			IndirectLightRenderer indirectLightRenderer;
 
 			TemporalAARenderer taaRenderer;
@@ -183,12 +223,15 @@ namespace Atlas {
 			DDGIRenderer ddgiRenderer;
 			AORenderer aoRenderer;
 			RTReflectionRenderer rtrRenderer;
+            SSSRenderer sssRenderer;
 			VolumetricRenderer volumetricRenderer;
 			VolumetricCloudRenderer volumetricCloudRenderer;
-			SSSRenderer sssRenderer;
+
+            RenderList renderList;
 
 			std::vector<vec2> haltonSequence;
 			size_t haltonIndex = 0;
+            uint32_t frameCount = 0;
 
 		};
 

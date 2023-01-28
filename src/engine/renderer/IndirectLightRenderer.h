@@ -11,13 +11,27 @@ namespace Atlas {
 		class IndirectLightRenderer : public Renderer {
 
 		public:
-			IndirectLightRenderer();
+			IndirectLightRenderer() = default;
+
+            void Init(Graphics::GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene);
+				Camera* camera, Scene::Scene* scene) final {};
+
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
 
 		private:
-			Shader::Shader shader;
+            struct Uniforms {
+                int aoEnabled;
+                int aoDownsampled2x;
+                int reflectionEnabled;
+                float aoStrength;
+            };
+
+			PipelineConfig pipelineConfig;
+
+            Buffer::Buffer uniformBuffer;
 
 		};
 

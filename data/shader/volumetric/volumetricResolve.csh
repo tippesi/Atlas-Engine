@@ -1,3 +1,4 @@
+#include <../globals.hsh>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 #include <../common/flatten.hsh>
@@ -5,16 +6,21 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
-layout(binding = 0) uniform sampler2D lowResVolumetricTexture;
-layout(binding = 1) uniform sampler2D lowResDepthTexture;
-layout(binding = 2) uniform sampler2D lowResVolumetricCloudsTexture;
-layout(binding = 3) uniform sampler2D depthTexture;
-layout(binding = 0, rgba16f) uniform image2D resolveImage;
+layout(set = 3, binding = 0, rgba16f) uniform image2D resolveImage;
+layout(set = 3, binding = 1) uniform sampler2D lowResVolumetricTexture;
+layout(set = 3, binding = 2) uniform sampler2D lowResDepthTexture;
+layout(set = 3, binding = 4) uniform sampler2D depthTexture;
 
-uniform mat4 ivMatrix;
-uniform vec3 cameraLocation;
-uniform bool downsampled2x;
-uniform bool cloudsEnabled = true;
+#ifdef CLOUDS
+layout(set = 3, binding = 3) uniform sampler2D lowResVolumetricCloudsTexture;
+#endif
+
+layout(set = 3, binding = 5) uniform  UniformBuffer {
+    Fog fog;
+	int downsampled2x;
+    int cloudsEnabled;
+    int fogEnabled;
+} uniforms;
 
 // (localSize / 2 + 2)^2
 shared float depths[36];
@@ -87,7 +93,7 @@ vec4 Upsample2x(float referenceDepth) {
 
 void main() {
 
-    if (downsampled2x) LoadGroupSharedData();
+    if (uniforms.downsampled2x > 0) LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
     if (pixel.x > imageSize(resolveImage).x ||
@@ -99,7 +105,7 @@ void main() {
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     vec4 volumetric;
-    if (downsampled2x) {
+    if (uniforms.downsampled2x > 0) {
         volumetric = Upsample2x(depth);
     }
     else {
@@ -107,18 +113,20 @@ void main() {
     }
 
 	vec3 viewPosition = ConvertDepthToViewSpace(depth, texCoord);
-	vec3 worldPosition = vec3(ivMatrix * vec4(viewPosition, 1.0));
+	vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
 
-    vec4 resolve = imageLoad(resolveImage, pixel);	
+    vec4 resolve = imageLoad(resolveImage, pixel);
 
-	float fogAmount = fogEnabled ? saturate(ComputeVolumetricFog(cameraLocation, worldPosition)) : 0.0;
-    resolve = fogEnabled ? mix(vec4(fogColor, 1.0), resolve, fogAmount) + volumetric : resolve + volumetric;
+	float fogAmount = uniforms.fogEnabled > 0 ? saturate(ComputeVolumetricFog(uniforms.fog, globalData.cameraLocation.xyz, worldPosition)) : 0.0;
+    resolve = uniforms.fogEnabled > 0 ? mix(uniforms.fog.color, resolve, fogAmount) + volumetric : resolve + volumetric;
 
-    if (cloudsEnabled) {
+#ifdef CLOUDS
+    if (uniforms.cloudsEnabled > 0) {
         vec4 cloudScattering = texture(lowResVolumetricCloudsTexture, texCoord);
         float alpha = cloudScattering.a;
         resolve = alpha * resolve + cloudScattering;
     }
+#endif
 
     imageStore(resolveImage, pixel, resolve);
 

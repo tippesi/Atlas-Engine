@@ -12,6 +12,7 @@ namespace Atlas {
 			cells.resize(LoDCount);
 			LoDSideLengths = new int32_t[LoDCount];
 
+            /*
 			baseColorMaps = Atlas::Texture::Texture2DArray(materialResolution,
 				materialResolution, materialCount, AE_RGB8, GL_REPEAT, GL_LINEAR, true, true);
 			roughnessMaps = Atlas::Texture::Texture2DArray(materialResolution,
@@ -22,6 +23,7 @@ namespace Atlas {
 				materialResolution, materialCount, AE_RGB8, GL_REPEAT, GL_LINEAR, true, true);
 			displacementMaps = Atlas::Texture::Texture2DArray(materialResolution,
 				materialResolution, materialCount, AE_R8, GL_REPEAT, GL_LINEAR, true, true);
+            */
 
 			materials.resize(materialCount);
 
@@ -64,6 +66,7 @@ namespace Atlas {
 
 			materials[slot] = material;
 
+            /*
 			if (material->HasBaseColorMap()) {
 				baseColorMaps.Copy(*material->baseColorMap, 0, 0, 0, 0, 0, slot,
 					baseColorMaps.width, baseColorMaps.height, 1);
@@ -99,6 +102,7 @@ namespace Atlas {
 
 			displacementMaps.Bind();
 			displacementMaps.GenerateMipmap();
+             */
 
 		}
 

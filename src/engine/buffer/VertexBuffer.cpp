@@ -1,74 +1,59 @@
 #include "VertexBuffer.h"
 
+#include "../graphics/Format.h"
+#include "../graphics/GraphicsDevice.h"
+
 namespace Atlas {
 
 	namespace Buffer {
 
-		VertexBuffer::VertexBuffer(const VertexBuffer& that) : Buffer(that) {
 
-			dataType = that.dataType;
-			stride = that.stride;
+		VertexBuffer::VertexBuffer(VkFormat format, size_t elementCount, void* data)
+            : format(format), elementSize(Graphics::GetFormatSize(format)) {
 
-		}
-
-		VertexBuffer::VertexBuffer(uint32_t dataType, int32_t stride, size_t elementSize,
-			size_t elementCount, void* data, uint32_t flags) :
-			Buffer(AE_VERTEX_BUFFER, elementSize, flags, elementCount, data),
-			dataType(dataType), stride(stride) {
-
-
+            if (elementCount) {
+                SetSize(elementCount, data);
+            }
 
 		}
 
-		VertexBuffer::~VertexBuffer() {
+        void VertexBuffer::SetSize(size_t elementCount, void *data) {
 
+            // If the element count is the same we can reuse the old buffer
+            if (this->elementCount == elementCount) {
+                if (!data)
+                    return;
+                SetData(data, 0, elementCount);
+                return;
+            }
 
+            this->elementCount = elementCount;
 
-		}
+            Reallocate(data);
 
-		VertexBuffer& VertexBuffer::operator=(const VertexBuffer& that) {
-
-			if (this != &that) {
-
-				Buffer::operator=(that);
-
-				dataType = that.dataType;
-				stride = that.stride;
-
-			}
-
-			return *this;
-
-		}
+        }
 
 		void VertexBuffer::SetData(void *data, size_t offset, size_t length) {
 
-			if (!dynamicStorage && immutable) {
-				Buffer stagingBuffer(AE_STAGING_BUFFER, elementSize, AE_BUFFER_DYNAMIC_STORAGE);
-				stagingBuffer.SetSize(length);
-
-				// We don't need to bind because it is already bound by previous operations
-				stagingBuffer.SetData(data, 0, length);
-
-				Copy(&stagingBuffer, 0, offset * elementSize, length * elementSize);
-			}
-			else {
-				Buffer::SetData(data, offset, length);
-			}
+            buffer->SetData(data, offset * elementSize, length * elementSize);
 
 		}
 
-		uint32_t VertexBuffer::GetDataType() {
+        void VertexBuffer::Reallocate(void *data) {
 
-			return dataType;
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
 
-		}
+            auto sizeInBytes = elementCount * elementSize;
 
-		int32_t VertexBuffer::GetStride() {
+            Graphics::BufferDesc desc {
+                .usageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                .domain = Graphics::BufferDomain::Device,
+                .data = data,
+                .size = sizeInBytes
+            };
+            buffer = device->CreateBuffer(desc);
 
-			return stride;
-
-		}
+        }
 
 	}
 

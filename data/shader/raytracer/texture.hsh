@@ -1,13 +1,13 @@
 #include <structures.hsh>
 #include <../common/sample.hsh>
 
-layout (binding = 0) uniform sampler2DArray baseColorTextures;
-layout (binding = 1) uniform sampler2DArray opacityTextures;
-layout (binding = 2) uniform sampler2DArray normalTextures;
-layout (binding = 3) uniform sampler2DArray roughnessTextures;
-layout (binding = 4) uniform sampler2DArray metalnessTextures;
-layout (binding = 5) uniform sampler2DArray aoTextures;
-layout (binding = 6) uniform samplerCube environmentMap;
+layout (set = 2, binding = 0) uniform sampler2DArray baseColorTextures;
+layout (set = 2, binding = 1) uniform sampler2DArray opacityTextures;
+layout (set = 2, binding = 2) uniform sampler2DArray normalTextures;
+layout (set = 2, binding = 3) uniform sampler2DArray roughnessTextures;
+layout (set = 2, binding = 4) uniform sampler2DArray metalnessTextures;
+layout (set = 2, binding = 5) uniform sampler2DArray aoTextures;
+layout (set = 2, binding = 6) uniform samplerCube environmentMap;
 
 vec2 GetTexCoord(vec2 texCoord, TextureLevel level, vec2 size) {
 	
@@ -125,5 +125,11 @@ float SampleAoBilinear(TextureLevel level, vec2 texCoord) {
 vec4 SampleEnvironmentMap(vec3 v) {
 
 	return textureLod(environmentMap, v, 0);
+
+}
+
+vec4 SampleEnvironmentMap(vec3 v, float lod) {
+
+	return textureLod(environmentMap, v, lod);
 
 }

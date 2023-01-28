@@ -10,7 +10,7 @@ namespace Atlas {
 
 		AO::AO(int32_t sampleCount) : sampleCount(sampleCount) {
 
-			noiseTexture = Texture::Texture2D(8, 8, GL_RG16F, GL_REPEAT, GL_NEAREST);
+            noiseTexture = Texture::Texture2D(8, 8, VK_FORMAT_R16G16_SFLOAT);
 
 			// Generate vec2 noise (4 * 4 * 2 floats)
 			std::vector<float> noise;
@@ -42,7 +42,7 @@ namespace Atlas {
 				scale = glm::mix(0.1f, 1.0f, scale * scale);
 				sample *= scale;
 
-				samples.push_back(sample);
+				samples.push_back(vec4(sample, 0.0f));
 
 			}
 		}

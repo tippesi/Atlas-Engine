@@ -2,7 +2,9 @@
 #define AE_RENDERTARGET_H
 
 #include "System.h"
-#include "Framebuffer.h"
+#include "texture/Texture2D.h"
+#include "graphics/RenderPass.h"
+#include "graphics/Framebuffer.h"
 
 namespace Atlas {
 
@@ -11,37 +13,61 @@ namespace Atlas {
 		HALF_RES
 	};
 
-	class DownsampledRenderTarget {
+	class RenderTargetData {
 	public:
-		DownsampledRenderTarget() = default;
+		RenderTargetData() = default;
 
-		DownsampledRenderTarget(ivec2 resolution) {
-			depthTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R32F, GL_CLAMP_TO_EDGE, GL_NEAREST);
-			normalTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-			geometryNormalTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR);
-			roughnessMetallicAoTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR);
-			velocityTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_NEAREST);
-			offsetTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R8I, GL_CLAMP_TO_EDGE, GL_LINEAR);
-			materialIdxTexture = new Texture::Texture2D(resolution.x, resolution.y, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST);
-		}
+		explicit RenderTargetData(ivec2 resolution, bool useDepthFormat) {
+            baseColorTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
+                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            if (useDepthFormat) {
+                depthTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_D32_SFLOAT,
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+            }
+            else {
+                depthTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R32_SFLOAT,
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+            }
+			normalTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
+                VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+			geometryNormalTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
+                VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+			roughnessMetallicAoTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
+                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+			offsetTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R8_SINT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+			materialIdxTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R16_UINT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+            stencilTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R8_UINT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+            velocityTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
+                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            swapVelocityTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
+                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        }
 
 		void Resize(ivec2 resolution) {
 			depthTexture->Resize(resolution.x, resolution.y);
 			normalTexture->Resize(resolution.x, resolution.y);
 			geometryNormalTexture->Resize(resolution.x, resolution.y);
 			roughnessMetallicAoTexture->Resize(resolution.x, resolution.y);
-			velocityTexture->Resize(resolution.x, resolution.y);
 			offsetTexture->Resize(resolution.x, resolution.y);
 			materialIdxTexture->Resize(resolution.x, resolution.y);
+            stencilTexture->Resize(resolution.x, resolution.y);
+            velocityTexture->Resize(resolution.x, resolution.y);
+            swapVelocityTexture->Resize(resolution.x, resolution.y);
 		}
 
-		Texture::Texture2D* depthTexture = nullptr;
-		Texture::Texture2D* normalTexture = nullptr;
-		Texture::Texture2D* geometryNormalTexture = nullptr;
-		Texture::Texture2D* roughnessMetallicAoTexture = nullptr;
-		Texture::Texture2D* velocityTexture = nullptr;
-		Texture::Texture2D* offsetTexture = nullptr;
-		Texture::Texture2D* materialIdxTexture = nullptr;
+		Ref<Texture::Texture2D> baseColorTexture = nullptr;
+		Ref<Texture::Texture2D> depthTexture = nullptr;
+        Ref<Texture::Texture2D> normalTexture = nullptr;
+        Ref<Texture::Texture2D> geometryNormalTexture = nullptr;
+        Ref<Texture::Texture2D> roughnessMetallicAoTexture = nullptr;
+        Ref<Texture::Texture2D> offsetTexture = nullptr;
+        Ref<Texture::Texture2D> materialIdxTexture = nullptr;
+        Ref<Texture::Texture2D> stencilTexture = nullptr;
+        Ref<Texture::Texture2D> velocityTexture = nullptr;
+        Ref<Texture::Texture2D> swapVelocityTexture = nullptr;
 	};
 
 	class RenderTarget {
@@ -58,16 +84,6 @@ namespace Atlas {
 		 * @param height The height of the render target
 		 */
 		explicit RenderTarget(int32_t width, int32_t height);
-
-		/**
-		 * The render target doesn't support copy due to framebuffers
-		 */
-		explicit RenderTarget(const RenderTarget& that) = delete;
-
-		/**
-		 * The render target doesn't support copy due to framebuffers
-		 */
-		RenderTarget& operator=(const RenderTarget& that) = delete;
 
 		/**
 		 * Resizes the render target.
@@ -130,9 +146,9 @@ namespace Atlas {
 		 */
 		RenderResolution GetReflectionResolution();
 
-		DownsampledRenderTarget* GetDownsampledTextures(RenderResolution resolution);
+		RenderTargetData* GetData(RenderResolution resolution);
 
-		DownsampledRenderTarget* GetDownsampledHistoryTextures(RenderResolution resolution);
+		RenderTargetData* GetHistoryData(RenderResolution resolution);
 
 		Texture::Texture2D* GetHistory();
 
@@ -142,9 +158,14 @@ namespace Atlas {
 
 		Texture::Texture2D* GetLastVelocity();
 
-		Framebuffer geometryFramebuffer;
-		Framebuffer lightingFramebuffer;
-		Framebuffer postProcessFramebuffer;
+        bool HasHistory() const;
+
+        Ref<Graphics::RenderPass> gBufferRenderPass;
+        Ref<Graphics::FrameBuffer> gBufferFrameBuffer;
+
+        Ref<Graphics::RenderPass> lightingRenderPass;
+        Ref<Graphics::FrameBuffer> lightingFrameBuffer;
+        Ref<Graphics::FrameBuffer> lightingFrameBufferWithStencil;
 
 		Texture::Texture2D postProcessTexture;
 
@@ -169,20 +190,16 @@ namespace Atlas {
 		Texture::Texture2D reflectionMomentsTexture;
 		Texture::Texture2D historyReflectionMomentsTexture;
 
+        Texture::Texture2D lightingTexture;
+        Texture::Texture2D hdrTexture;
+
 	private:
-		Texture::Texture2D depthTexture;
-		Texture::Texture2D normalTexture;
-		Texture::Texture2D stencilTexture;
-
-		Texture::Texture2D velocityTexture;
-		Texture::Texture2D swapVelocityTexture;
-
 		Texture::Texture2D historyTexture;
 		Texture::Texture2D swapHistoryTexture;
 
-		DownsampledRenderTarget downsampledTarget1x;
-		DownsampledRenderTarget downsampledTarget2x;
-		DownsampledRenderTarget downsampledSwapTarget2x;
+        RenderTargetData targetData;
+		RenderTargetData targetDataDownsampled2x;
+		RenderTargetData targetDataSwapDownsampled2x;
 
 		int32_t width = 0;
 		int32_t height = 0;
@@ -192,6 +209,7 @@ namespace Atlas {
 		RenderResolution reflectionResolution;
 
 		bool swap = false;
+        bool hasHistory = false;
 
 	};
 

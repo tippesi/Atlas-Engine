@@ -3,10 +3,10 @@
 //Light struct has to be implemented like this
 struct Light {
 
-    vec3 location;
-	vec3 direction;
+    vec4 location;
+	vec4 direction;
 	
-    vec3 color;
+    vec4 color;
 	float intensity;
 	
 	float scatteringFactor;

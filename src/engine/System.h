@@ -18,12 +18,6 @@
 
 #if defined(AE_OS_ANDROID)
 
-#define GL_GLEXT_PROTOTYPES
-
-#include <EGL/egl.h>
-#include <GLES3/gl32.h>
-#include <GLES2/gl2ext.h>
-
 #include <jni.h>
 #include <android/log.h>
 #include <android/asset_manager.h>
@@ -32,9 +26,6 @@
 #define AtlasLog(...) __android_log_print(ANDROID_LOG_INFO, "ATLAS_LOG", __VA_ARGS__)
 
 #elif defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
-
-// GLAD
-#include <glad/glad.h>
 
 #define AtlasLog(...) printf(__VA_ARGS__); printf("\n");
 
@@ -51,6 +42,8 @@
 #include <glm/gtx/common.hpp>
 #include <glm/gtx/transform.hpp>
 
+#include "common/Ref.h"
+
 namespace Atlas {
 
 	// Important definitions
@@ -65,12 +58,6 @@ namespace Atlas {
 	using glm::mat3;
 
 	typedef short float16;
-
-	template<typename T>
-	using Ref = std::shared_ptr<T>;
-
-	template<typename T>
-	using Scope = std::unique_ptr<T>;
 
 }
 

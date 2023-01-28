@@ -14,45 +14,56 @@ namespace Atlas {
 		class TextRenderer : public Renderer {
 
 		public:
-			TextRenderer();
+			TextRenderer() = default;
+
+            void Init(Graphics::GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
-			void Render(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color = vec4(1.0f),
-					float scale = 1.0f, Framebuffer* framebuffer = nullptr);
+			void Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font, const std::string& text,
+                float x, float y, vec4 color = vec4(1.0f), float scale = 1.0f,
+                const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
 
-			void Render(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 clipArea,
-					vec4 blendArea, float scale = 1.0f, Framebuffer* framebuffer = nullptr);
+			void Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font, const std::string& text,
+                float x, float y, vec4 color, vec4 clipArea, vec4 blendArea, float scale = 1.0f,
+                const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
 
-			void RenderOutlined(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor,
-					float outlineScale, float scale = 1.0f, Framebuffer* framebuffer = nullptr);
+			void RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+                const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
+                float scale = 1.0f, const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
 
-			void RenderOutlined(Viewport* viewport, Font* font, std::string text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
-					vec4 clipArea, vec4 blendArea, float scale = 1.0f, Framebuffer* framebuffer = nullptr);
+			void RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+                const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
+                vec4 clipArea, vec4 blendArea, float scale = 1.0f, const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
 
 			void Update();
 
 		private:
-			void GetUniforms();
+            struct alignas(16) Uniforms {
+                mat4 pMatrix;
+                vec4 clipArea;
+                vec4 blendArea;
+                vec4 characterColor;
+                vec4 outlineColor;
+                vec2 textOffset;
+                float textScale;
+                float outlineScale;
+                float edgeValue;
+                float smoothness;
+            };
 
-			std::vector<vec3> CalculateCharacterInstances(Font* font, std::string text, int32_t* characterCount);
+			std::vector<vec4> CalculateCharacterInstances(Font* font, const std::string& text, int32_t* characterCount);
+
+            PipelineConfig GeneratePipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer);
 
 			Buffer::VertexArray vertexArray;
 
-			Shader::Shader shader;
+            Buffer::Buffer instanceBuffer;
+            Buffer::Buffer uniformBuffer;
 
-			Shader::Uniform* projectionMatrix = nullptr;
-			Shader::Uniform* characterScales = nullptr;
-			Shader::Uniform* characterSizes = nullptr;
-			Shader::Uniform* textOffset = nullptr;
-			Shader::Uniform* textScale = nullptr;
-			Shader::Uniform* textColor = nullptr;
-			Shader::Uniform* outlineColor = nullptr;
-			Shader::Uniform* outlineScale = nullptr;
-			Shader::Uniform* edgeValue = nullptr;
-			Shader::Uniform* smoothness = nullptr;
-			Shader::Uniform* clipArea = nullptr;
-			Shader::Uniform* blendArea = nullptr;
+            Ref<Graphics::RenderPass> renderPass;
+
+            uint32_t frameCharacterCount = 0;
 
 		};
 

@@ -4,14 +4,12 @@ namespace Atlas {
 
     namespace Renderer {
 
-        GBufferDownscaleRenderer::GBufferDownscaleRenderer() {
+        void GBufferDownscaleRenderer::Init(Graphics::GraphicsDevice *device) {
 
-            downscale.AddStage(AE_COMPUTE_STAGE, "downsampleGBuffer2x.csh");
-            downscale.Compile();
+            this->device = device;
 
-            downscaleDepthOnly.AddStage(AE_COMPUTE_STAGE, "downsampleGBuffer2x.csh");
-            downscaleDepthOnly.AddMacro("DEPTH_ONLY");
-            downscaleDepthOnly.Compile();
+            downscalePipelineConfig = PipelineConfig("downsampleGBuffer2x.csh");
+            downscaleDepthOnlyPipelineConfig = PipelineConfig("downsampleGBuffer2x.csh", {"DEPTH_ONLY"});
 
         }
 
@@ -22,37 +20,40 @@ namespace Atlas {
             
         }
 
-        void GBufferDownscaleRenderer::Downscale(RenderTarget* target) {
+        void GBufferDownscaleRenderer::Downscale(RenderTarget* target, Graphics::CommandList* commandList) {
 
-            Profiler::BeginQuery("Downsample GBuffer");
+            Graphics::Profiler::BeginQuery("Downsample GBuffer");
 
-            downscale.Bind();
+            auto pipeline = PipelineManager::GetPipeline(downscalePipelineConfig);
+            commandList->BindPipeline(pipeline);
 
-            auto rt = target->GetDownsampledTextures(RenderResolution::FULL_RES);
-            auto downsampledRt = target->GetDownsampledTextures(RenderResolution::HALF_RES);
+            auto rt = target->GetData(RenderResolution::FULL_RES);
+            auto downsampledRt = target->GetData(RenderResolution::HALF_RES);
 
-            Downscale(rt, downsampledRt);
+            Downscale(rt, downsampledRt, commandList);
 
-            Profiler::EndQuery();
-
-        }
-
-        void GBufferDownscaleRenderer::DownscaleDepthOnly(RenderTarget* target) {
-
-            Profiler::BeginQuery("Downsample GBuffer depth only");
-
-            downscaleDepthOnly.Bind();
-
-            auto rt = target->GetDownsampledTextures(RenderResolution::FULL_RES);
-            auto downsampledRt = target->GetDownsampledTextures(RenderResolution::HALF_RES);
-
-            Downscale(rt, downsampledRt);
-
-            Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
         }
 
-        void GBufferDownscaleRenderer::Downscale(DownsampledRenderTarget* rt, DownsampledRenderTarget* downsampledRt) {
+        void GBufferDownscaleRenderer::DownscaleDepthOnly(RenderTarget* target, Graphics::CommandList* commandList) {
+
+            Graphics::Profiler::BeginQuery("Downsample GBuffer depth only");
+
+            auto pipeline = PipelineManager::GetPipeline(downscaleDepthOnlyPipelineConfig);
+            commandList->BindPipeline(pipeline);
+
+            auto rt = target->GetData(RenderResolution::FULL_RES);
+            auto downsampledRt = target->GetData(RenderResolution::HALF_RES);
+
+            Downscale(rt, downsampledRt, commandList);
+
+            Graphics::Profiler::EndQuery();
+
+        }
+
+        void GBufferDownscaleRenderer::Downscale(RenderTargetData* rt,
+            RenderTargetData* downsampledRt, Graphics::CommandList* commandList) {
 
             auto depthIn = rt->depthTexture;
             auto normalIn = rt->normalTexture;
@@ -75,23 +76,46 @@ namespace Atlas {
             groupCount.x += ((res.x % 8 == 0) ? 0 : 1);
             groupCount.y += ((res.y % 8 == 0) ? 0 : 1);
 
-            depthIn->Bind(0);
-            normalIn->Bind(1);
-            geometryNormalIn->Bind(2);
-            roughnessMetallicAoIn->Bind(3);
-            velocityIn->Bind(4);
-            materialIdxIn->Bind(5);
+            // These are framebuffer attachments and should be in the right layout
+            commandList->BindImage(depthIn->image, depthIn->sampler, 3 , 0);
+            commandList->BindImage(normalIn->image, normalIn->sampler, 3 , 1);
+            commandList->BindImage(geometryNormalIn->image, geometryNormalIn->sampler, 3 , 2);
+            commandList->BindImage(roughnessMetallicAoIn->image, roughnessMetallicAoIn->sampler, 3 , 3);
+            commandList->BindImage(velocityIn->image, velocityIn->sampler, 3 , 4);
+            commandList->BindImage(materialIdxIn->image, materialIdxIn->sampler, 3 , 5);
 
-            depthOut->Bind(GL_WRITE_ONLY, 0);
-            normalOut->Bind(GL_WRITE_ONLY, 1);
-            geometryNormalOut->Bind(GL_WRITE_ONLY, 2);
-            roughnessMetallicAoOut->Bind(GL_WRITE_ONLY, 3);
-            velocityOut->Bind(GL_WRITE_ONLY, 4);
-            materialIdxOut->Bind(GL_WRITE_ONLY, 5);
-            offsetOut->Bind(GL_WRITE_ONLY, 6);
+            std::vector<Graphics::ImageBarrier> imageBarriers;
+            std::vector<Graphics::BufferBarrier> bufferBarriers;
+            imageBarriers.push_back({depthOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
+            imageBarriers.push_back({normalOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
+            imageBarriers.push_back({geometryNormalOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
+            imageBarriers.push_back({roughnessMetallicAoOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
+            imageBarriers.push_back({velocityOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
+            imageBarriers.push_back({materialIdxOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
+            imageBarriers.push_back({offsetOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT});
 
-            glDispatchCompute(groupCount.x, groupCount.y, 1);
-            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+
+            commandList->BindImage(depthOut->image, 3 , 6);
+            commandList->BindImage(normalOut->image, 3 , 7);
+            commandList->BindImage(geometryNormalOut->image, 3 , 8);
+            commandList->BindImage(roughnessMetallicAoOut->image, 3 , 9);
+            commandList->BindImage(velocityOut->image, 3 , 10);
+            commandList->BindImage(materialIdxOut->image, 3 , 11);
+            commandList->BindImage(offsetOut->image, 3 , 12);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+            imageBarriers.clear();
+            imageBarriers.push_back({depthOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
+            imageBarriers.push_back({normalOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
+            imageBarriers.push_back({geometryNormalOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
+            imageBarriers.push_back({roughnessMetallicAoOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
+            imageBarriers.push_back({velocityOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
+            imageBarriers.push_back({materialIdxOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
+            imageBarriers.push_back({offsetOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT});
+
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
         }
 

@@ -2,12 +2,13 @@
 #define AE_DATACOMPONENT_H
 
 #include "../System.h"
-#include "../TypeFormat.h"
 #include "../common/Packing.h"
+#include "../graphics/Common.h"
 
 #include <type_traits>
 #include <cstddef>
 #include <algorithm>
+#include <cassert>
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -16,11 +17,11 @@ namespace Atlas {
 	namespace Mesh {
 
         enum class ComponentFormat {
-            UnsignedInt = AE_UINT,
-            UnsignedShort = AE_USHORT,
-            Float = AE_FLOAT,
-            HalfFloat = AE_HALF_FLOAT,
-            PackedFloat = AE_INT_2_10_10_10
+            UnsignedInt = 0,
+            UnsignedShort = 1,
+            Float = 2,
+            HalfFloat = 3,
+            PackedFloat = 4
         };
 
 		/**
@@ -59,6 +60,12 @@ namespace Atlas {
              * @note The type is equivalent to an OpenGL type.
              */
             int32_t GetType();
+
+            /**
+             * Returns the format of the data as a Vulkan format type
+             * @return
+             */
+            VkFormat GetFormat() const;
 
 			/**
              * Sets the data for the component and converts it into data of component type.
@@ -138,6 +145,46 @@ namespace Atlas {
 
             return static_cast<int32_t>(format);
 
+        }
+
+        template<class T>
+        VkFormat DataComponent<T>::GetFormat() const {
+            if constexpr(std::is_same_v<T, uint32_t>) {
+                switch(format) {
+                    case ComponentFormat::UnsignedInt: return VK_FORMAT_R32_UINT;
+                    case ComponentFormat::UnsignedShort: return VK_FORMAT_R16_UINT;
+                    default: assert(0 && "Invalid combination of formats");
+                }
+            }
+            if constexpr(std::is_same_v<T, float>) {
+                switch(format) {
+                    case ComponentFormat::Float: return VK_FORMAT_R32_SFLOAT;
+                    case ComponentFormat::HalfFloat: return VK_FORMAT_R16_SFLOAT;
+                    default: assert(0 && "Invalid combination of formats");
+                }
+            }
+            if constexpr(std::is_same_v<T, vec2>) {
+                switch(format) {
+                    case ComponentFormat::Float: return VK_FORMAT_R32G32_SFLOAT;
+                    case ComponentFormat::HalfFloat: return VK_FORMAT_R16G16_SFLOAT;
+                    default: assert(0 && "Invalid combination of formats");
+                }
+            }
+            if constexpr(std::is_same_v<T, vec3>) {
+                switch(format) {
+                    case ComponentFormat::Float: return VK_FORMAT_R32G32B32_SFLOAT;
+                    case ComponentFormat::HalfFloat: return VK_FORMAT_R16G16B16_SFLOAT;
+                    default: assert(0 && "Invalid combination of formats");
+                }
+            }
+            if constexpr(std::is_same_v<T, vec4>) {
+                switch(format) {
+                    case ComponentFormat::Float: return VK_FORMAT_R32G32B32A32_SFLOAT;
+                    case ComponentFormat::HalfFloat: return VK_FORMAT_R16G16B16A16_SFLOAT;
+                    case ComponentFormat::PackedFloat: return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
+                    default: assert(0 && "Invalid combination of formats");
+                }
+            }
         }
 
 		template <class T>

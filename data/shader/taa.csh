@@ -5,22 +5,23 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
-layout(binding = 0, rgba16f) writeonly uniform image2D resolveImage;
+layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D resolveImage;
 
-layout(binding = 0) uniform sampler2D historyTexture;
-layout(binding = 1) uniform sampler2D currentTexture;
-layout(binding = 2) uniform sampler2D velocityTexture;
-layout(binding = 3) uniform sampler2D depthTexture;
-layout(binding = 4) uniform sampler2D lastVelocityTexture;
-layout(binding = 5) uniform usampler2D stencilTexture;
+layout(set = 3, binding = 1) uniform sampler2D historyTexture;
+layout(set = 3, binding = 2) uniform sampler2D currentTexture;
+layout(set = 3, binding = 3) uniform sampler2D velocityTexture;
+layout(set = 3, binding = 4) uniform sampler2D depthTexture;
+layout(set = 3, binding = 5) uniform sampler2D lastVelocityTexture;
+layout(set = 3, binding = 6) uniform usampler2D stencilTexture;
 
-uniform vec2 invResolution;
-uniform vec2 resolution;
+layout(push_constant) uniform constants {
+	vec2 resolution;
+    vec2 invResolution;
+    vec2 jitter;
+} PushConstants;
 
-uniform vec2 jitter;
-
-uniform float minVelocityBlend = 0.05;
-uniform float maxVelocityBlend = 0.5;
+const float minVelocityBlend = 0.05;
+const float maxVelocityBlend = 0.5;
 
 #define TAA_YCOCG
 //#define TAA_CLIP // Use clip instead of clamping for better ghosting prevention, introduces more flickering
@@ -112,7 +113,7 @@ void LoadGroupSharedData() {
         ivec2 localOffset = Unflatten2D(int(i), unflattenedSharedDataSize);
         ivec2 texel = localOffset + workGroupOffset;
 
-        texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
+        texel = clamp(texel, ivec2(0), ivec2(PushConstants.resolution) - ivec2(1));
 
         float depth = texelFetch(depthTexture, texel, 0).r;
         sharedNeighbourhood[i] = vec4(FetchTexel(texel), depth);
@@ -179,7 +180,7 @@ vec4 SampleCatmullRom(vec2 uv) {
     // Credit: Jorge Jimenez (SIGGRAPH 2016)
     // Ignores the 4 corners of the 4x4 grid
     // Learn more: http://vec3.ca/bicubic-filtering-in-fewer-taps/
-    vec2 position = uv * resolution;
+    vec2 position = uv * PushConstants.resolution;
 
     vec2 center = floor(position - 0.5) + 0.5;
     vec2 f = position - center;
@@ -193,9 +194,9 @@ vec4 SampleCatmullRom(vec2 uv) {
 
     vec2 w12 = w1 + w2;
 
-    vec2 tc0 = (center - 1.0) * invResolution;
-    vec2 tc12 = (center + w2 / w12) * invResolution;
-    vec2 tc3 = (center + 2.0) * invResolution;
+    vec2 tc0 = (center - 1.0) * PushConstants.invResolution;
+    vec2 tc12 = (center + w2 / w12) * PushConstants.invResolution;
+    vec2 tc3 = (center + 2.0) * PushConstants.invResolution;
 
     vec2 uv0 = clamp(vec2(tc12.x, tc0.y), vec2(0.0), vec2(1.0));
     vec2 uv1 = clamp(vec2(tc0.x, tc12.y), vec2(0.0), vec2(1.0));
@@ -340,13 +341,13 @@ void main() {
 
     ComputeVarianceMinMax(localNeighbourhoodMin, localNeighbourhoodMax);
 
-    ivec2 velocityPixel = clamp(pixel + offset, ivec2(0), ivec2(resolution) - ivec2(1));
+    ivec2 velocityPixel = clamp(pixel + offset, ivec2(0), ivec2(PushConstants.resolution) - ivec2(1));
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
     vec2 lastVelocity = texelFetch(lastVelocityTexture, velocityPixel, 0).rg;
 
     float velocityBlend = saturate(600.0 * max(length(velocity), length(lastVelocity)));
 
-    vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
+    vec2 uv = (vec2(pixel) + vec2(0.5)) * PushConstants.invResolution + velocity;
 
     // Maybe we might want to filter the current input pixel
     vec4 history = SampleHistory(uv);

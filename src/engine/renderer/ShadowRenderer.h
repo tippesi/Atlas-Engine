@@ -5,9 +5,9 @@
 #include "../RenderList.h"
 #include "Renderer.h"
 #include "ImpostorShadowRenderer.h"
-#include "../shader/ShaderBatch.h"
 
 #include <mutex>
+#include <map>
 
 namespace Atlas {
 
@@ -16,35 +16,29 @@ namespace Atlas {
 		class ShadowRenderer : public Renderer {
 
 		public:
-			ShadowRenderer();
+			ShadowRenderer() = default;
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
+            void Init(Graphics::GraphicsDevice* device);
 
-			static void InitShaderBatch();
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
 
-			static void AddConfig(Shader::ShaderConfig* config);
-
-			static void RemoveConfig(Shader::ShaderConfig* config);
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList);
 
 		private:
-			void AdjustFaceCulling(bool cullFaces, bool& state);
+            using LightMap = std::map<Lighting::Light*, Ref<Graphics::FrameBuffer>>;
 
-			RenderList renderList;
+            struct PushConstants {
+                mat4 lightSpaceMatrix;
+                uint32_t vegetation;
+                uint32_t invertUVs;
+            };
+
+            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);
+
+            LightMap lightMap;
 
 			ImpostorShadowRenderer impostorRenderer;
-
-			Framebuffer framebuffer;
-
-			Shader::Uniform* lightSpaceMatrixUniform = nullptr;
-			Shader::Uniform* modelMatrixUniform = nullptr;
-
-			Shader::Uniform* timeUniform = nullptr;
-
-			Shader::Uniform* vegetationUniform = nullptr;
-			Shader::Uniform* invertUVsUniform = nullptr;
-
-			static Shader::ShaderBatch shaderBatch;
-			static std::mutex shaderBatchMutex;
 
 		};
 

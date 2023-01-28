@@ -5,77 +5,60 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		SkyboxRenderer::SkyboxRenderer() {
+        void SkyboxRenderer::Init(Graphics::GraphicsDevice *device) {
 
-			Helper::GeometryHelper::GenerateCubeVertexArray(vertexArray);
+            this->device = device;
 
-			shader.AddStage(AE_VERTEX_STAGE, "skybox.vsh");
-			shader.AddStage(AE_FRAGMENT_STAGE, "skybox.fsh");
+            pipelineConfig = PipelineConfig("skybox.csh");
 
-			shader.Compile();
+        }
 
-			GetUniforms();
+		void SkyboxRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-		}
+			Graphics::Profiler::BeginQuery("Skybox");
 
-		void SkyboxRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+            auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+            commandList->BindPipeline(pipeline);
 
-			Profiler::BeginQuery("Skybox");
+            auto rtData = target->GetData(FULL_RES);
+            auto velocityTexture = rtData->velocityTexture;
+            auto depthTexture = rtData->depthTexture;
 
-			shader.Bind();
+            std::vector<Graphics::BufferBarrier> bufferBarriers;
+            std::vector<Graphics::ImageBarrier> imageBarriers = {
+                {target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                {velocityTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+            };
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
-			mat4 matrix = camera->projectionMatrix * camera->viewMatrix;
+            vec4 lastCameraLocation = vec4(camera->GetLastLocation(), 1.0f);
+            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
+            commandList->PushConstants(constantRange, &lastCameraLocation);
 
-			vec3 lastCameraLocation = vec3(0.0f);
-			auto key = cameraMap.find(camera);
-			if (key != cameraMap.end()) {
-				lastCameraLocation = key->second;
-			}
-			else {
-				cameraMap[camera] = camera->GetLocation();
-				key = cameraMap.find(camera);
-			}
+            const auto& cubeMap = scene->sky.probe->cubemap;
 
-			mvpMatrix->SetValue(matrix);
-			ivMatrix->SetValue(camera->invViewMatrix);
-			ipMatrix->SetValue(camera->invProjectionMatrix);
-			
-			cameraLocation->SetValue(camera->GetLocation());
-			cameraLocationLast->SetValue(lastCameraLocation);
+            commandList->BindImage(target->lightingTexture.image, 3, 0);
+            commandList->BindImage(velocityTexture->image, 3, 1);
+            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
+            commandList->BindImage(cubeMap.image, cubeMap.sampler, 3, 3);
 
-			cameraMap[camera] = camera->GetLocation();
+            auto resolution = ivec2(target->GetWidth(), target->GetHeight());
+            auto groupCount = resolution / 8;
 
-			pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
-			jitterLast->SetValue(camera->GetLastJitter());
-			jitterCurrent->SetValue(camera->GetJitter());
+            groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
+            groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
-			vertexArray.Bind();
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-			scene->sky.probe->cubemap.Bind(0);
+            imageBarriers = {
+                {target->lightingTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {velocityTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+            };
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-
-			Profiler::EndQuery();
-
-		}
-
-		void SkyboxRenderer::GetUniforms() {
-
-			mvpMatrix = shader.GetUniform("mvpMatrix");
-			ivMatrix = shader.GetUniform("ivMatrix");
-			ipMatrix = shader.GetUniform("ipMatrix");
-			cameraLocation = shader.GetUniform("cameraLocation");
-			cameraLocationLast = shader.GetUniform("cameraLocationLast");
-
-			pvMatrixLast = shader.GetUniform("pvMatrixLast");
-			jitterLast = shader.GetUniform("jitterLast");
-			jitterCurrent = shader.GetUniform("jitterCurrent");
-
-			fogScale = shader.GetUniform("fogScale");
-			fogDistanceScale = shader.GetUniform("fogDistanceScale");
-			fogHeight = shader.GetUniform("fogHeight");
-			fogColor = shader.GetUniform("fogColor");
-			fogScatteringPower = shader.GetUniform("fogScatteringPower");
+            Graphics::Profiler::EndQuery();
 
 		}
 

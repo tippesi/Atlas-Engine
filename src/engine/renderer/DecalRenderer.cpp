@@ -12,6 +12,7 @@ namespace Atlas {
 
         DecalRenderer::DecalRenderer() {
 
+            /*
             Helper::GeometryHelper::GenerateCubeVertexArray(vertexArray);
 
             shader.AddStage(AE_VERTEX_STAGE, vertexPath);
@@ -22,11 +23,13 @@ namespace Atlas {
             shader.Compile();
 
             GetUniforms();
+             */
 
         }
 
         void DecalRenderer::Render(Viewport *viewport, RenderTarget *target, Camera *camera, Scene::Scene *scene) {
 
+            /*
             vertexArray.Bind();
 
             shader.Bind();
@@ -69,11 +72,13 @@ namespace Atlas {
 
             target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
 				GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
+             */
 
         }
 
         void DecalRenderer::GetUniforms() {
 
+            /*
             modelMatrix = shader.GetUniform("mMatrix");
             viewMatrix = shader.GetUniform("vMatrix");
             projectionMatrix = shader.GetUniform("pMatrix");
@@ -84,6 +89,7 @@ namespace Atlas {
             rowCount = shader.GetUniform("rowCount");
             columnCount = shader.GetUniform("columnCount");
             color = shader.GetUniform("color");
+             */
 
         }
 

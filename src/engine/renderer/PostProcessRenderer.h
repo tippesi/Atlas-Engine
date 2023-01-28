@@ -3,7 +3,6 @@
 
 #include "../System.h"
 #include "Renderer.h"
-#include "../shader/Shader.h"
 
 namespace Atlas {
 
@@ -12,28 +11,40 @@ namespace Atlas {
 		class PostProcessRenderer : public Renderer {
 
 		public:
-			PostProcessRenderer();
+			PostProcessRenderer() = default;
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
+            void Init(Graphics::GraphicsDevice* device);
+
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
+
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
 
 		private:
-			void GetUniforms();
+            struct alignas(16) Uniforms {
+                float exposure;
+                float saturation;
+                float timeInMilliseconds;
+                int32_t bloomPasses;
+                float aberrationStrength;
+                float aberrationReversed;
+                float vignetteOffset;
+                float vignettePower;
+                float vignetteStrength;
+                vec4 vignetteColor;
+            };
 
-			Shader::Shader shader;
-			Shader::Shader sharpenShader;
+			void SetUniforms(Camera* camera, Scene::Scene* scene);
 
-			Shader::Uniform* hdrTextureResolution = nullptr;
-			Shader::Uniform* exposure = nullptr;
-			Shader::Uniform* saturation = nullptr;
-			Shader::Uniform* bloomPassses = nullptr;
-			Shader::Uniform* aberrationStrength = nullptr;
-			Shader::Uniform* aberrationReversed = nullptr;
-			Shader::Uniform* vignetteOffset = nullptr;
-			Shader::Uniform* vignettePower = nullptr;
-			Shader::Uniform* vignetteStrength = nullptr;
-			Shader::Uniform* vignetteColor = nullptr;
-			Shader::Uniform* sharpenFactor = nullptr;
-			Shader::Uniform* timeInMilliseconds = nullptr;
+            PipelineConfig GetMainPipelineConfig();
+
+            PipelineConfig GetMainPipelineConfig(const Ref<Graphics::FrameBuffer> frameBuffer);
+
+            PipelineConfig mainPipelineSwapChainConfig;
+            PipelineConfig mainPipelineFrameBufferConfig;
+            PipelineConfig sharpenPipelineConfig;
+
+            Ref<Graphics::MultiBuffer> uniformBuffer;
 
 		};
 

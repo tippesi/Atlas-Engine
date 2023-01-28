@@ -2,13 +2,14 @@
 #define AE_ENGINEINSTANCE_H
 
 #include "Engine.h"
-#include "Context.h"
 
 #include <vector>
 
 namespace Atlas {
 
 	class EngineInstance {
+
+        friend class Engine;
 
 	public:
 	    /**
@@ -20,8 +21,14 @@ namespace Atlas {
 	     * @note The constructors of derived classes shouldn't do anything,
 	     * except calling this. For everything else use LoadContent().
 	     */
-		EngineInstance(std::string windowTitle, int32_t windowWidth,
+		EngineInstance(const std::string& windowTitle, int32_t windowWidth,
 			int32_t windowHeight, int32_t flags = AE_WINDOW_RESIZABLE);
+
+        EngineInstance(const EngineInstance& that) = delete;
+
+        virtual ~EngineInstance();
+
+        EngineInstance& operator=(const EngineInstance& that) = delete;
 
 		/**
 		 * Derived classes should load their content and data.
@@ -67,16 +74,13 @@ namespace Atlas {
 		 */
 		Window window;
 
-		/**
-		 * A default context which needs to be used for rendering.
-		 */
-		Context context;
-
         /**
          * Command line arguments.
          * @note This member will be first available when LoadContent() is called.
          */
 		std::vector<std::string> args;
+
+        static EngineInstance* GetInstance();
 
 	protected:
 		/**
@@ -101,7 +105,13 @@ namespace Atlas {
 		 */
 		void Exit();
 
+        Graphics::GraphicsDevice* graphicsDevice = nullptr;
 		Renderer::MainRenderer mainRenderer;
+
+        /**
+         * The main instance, needs to be implemented by user
+         */
+        static EngineInstance* instance;
 
 	};
 

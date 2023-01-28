@@ -7,6 +7,7 @@ namespace Atlas {
 		Impostor::Impostor(int32_t views, int32_t resolution) : 
 			views(views), resolution(resolution) {
 
+            /*
 			baseColorTexture = Atlas::Texture::Texture2DArray(resolution,
 				resolution, views * views, AE_RGBA8, GL_CLAMP_TO_EDGE,
 				GL_LINEAR, true, true);
@@ -16,6 +17,7 @@ namespace Atlas {
 			normalTexture = Atlas::Texture::Texture2DArray(resolution,
 				resolution, views * views, AE_RGB8, GL_CLAMP_TO_EDGE,
 				GL_LINEAR, true, true);
+             */
 
 		}
 
@@ -34,8 +36,8 @@ namespace Atlas {
 
 			}
 
-			viewPlaneBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(ViewPlane),
-				0, viewPlanes.size(), viewPlanes.data());
+			//viewPlaneBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(ViewPlane),
+			//	0, viewPlanes.size(), viewPlanes.data());
 
 		}
 

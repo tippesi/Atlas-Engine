@@ -17,15 +17,17 @@
 
 layout (local_size_x = 32) in;
 
-uniform mat3 randomRotation;
-
-layout(std430, binding = 4) buffer RayDirs {
+layout(std430, set = 3, binding = 0) buffer RayDirs {
 	vec4 rayDirs[];
 };
 
-layout(std430, binding = 5) buffer RayDirsInactiveProbes {
+layout(std430, set = 3, binding = 1) buffer RayDirsInactiveProbes {
 	vec4 rayDirsInactiveProbes[];
 };
+
+layout(std140, set = 3, binding = 2) uniform UniformBuffer {
+    mat4 randomRotation;
+} Uniforms;
 
 shared uint probeState;
 shared vec3 probeOffset;
@@ -41,7 +43,7 @@ void main() {
 
     barrier();
 
-    uint rayBaseIdx = baseIdx * rayCount;
+    uint rayBaseIdx = baseIdx * ddgiData.rayCount;
     uint probeRayCount = GetProbeRayCount(probeState);
 
     uint workGroupOffset = gl_WorkGroupSize.x;
@@ -50,7 +52,7 @@ void main() {
 
         ray.ID = int(rayBaseIdx + i);
 		ray.origin = GetProbePosition(ivec3(gl_WorkGroupID)) + probeOffset;
-		ray.direction = normalize(randomRotation * 
+		ray.direction = normalize(mat3(Uniforms.randomRotation) *
             (probeState == PROBE_STATE_INACTIVE ? rayDirsInactiveProbes[i].xyz : rayDirs[i].xyz));
 
 		WriteRay(ray);

@@ -38,8 +38,8 @@ namespace Atlas {
 					auto image = ImageLoader::LoadImage<uint8_t>(material->baseColorMapPath, true, 3);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-					material->baseColorMap = new Texture::Texture2D(image.width,
-						image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    // material->baseColorMap = new Texture::Texture2D(image.width,
+                    // 	image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 					material->baseColorMap->SetData(image.GetData());
 				}
 				if (prefix == "OMP") {
@@ -47,8 +47,8 @@ namespace Atlas {
 					auto image = ImageLoader::LoadImage<uint8_t>(material->opacityMapPath, false, 1);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-					material->baseColorMap = new Texture::Texture2D(image.width,
-						image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    // material->baseColorMap = new Texture::Texture2D(image.width,
+                    // 	image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 					material->baseColorMap->SetData(image.GetData());
 				}
 				else if (prefix == "NMP") {
@@ -56,8 +56,8 @@ namespace Atlas {
 					auto image = ImageLoader::LoadImage<uint8_t>(material->normalMapPath, false, 3);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-					material->normalMap = new Texture::Texture2D(image.width,
-						image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    // material->normalMap = new Texture::Texture2D(image.width,
+                    // 	image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 					material->normalMap->SetData(image.GetData());
 				}
 				else if (prefix == "RMP") {
@@ -65,8 +65,8 @@ namespace Atlas {
 					auto image = ImageLoader::LoadImage<uint8_t>(material->roughnessMapPath, false, 1);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-					material->roughnessMap = new Texture::Texture2D(image.width,
-						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    // material->roughnessMap = new Texture::Texture2D(image.width,
+                    // 	image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 					material->roughnessMap->SetData(image.GetData());
 				}
 				else if (prefix == "MMP") {
@@ -74,8 +74,8 @@ namespace Atlas {
 					auto image = ImageLoader::LoadImage<uint8_t>(material->metalnessMapPath, false, 1);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-					material->metalnessMap = new Texture::Texture2D(image.width,
-						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    // material->metalnessMap = new Texture::Texture2D(image.width,
+                    // 	image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 					material->metalnessMap->SetData(image.GetData());
 				}
 				else if (prefix == "AMP") {
@@ -83,8 +83,8 @@ namespace Atlas {
 					auto image = ImageLoader::LoadImage<uint8_t>(material->aoMapPath, false, 1);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-					material->aoMap = new Texture::Texture2D(image.width,
-						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    // material->aoMap = new Texture::Texture2D(image.width,
+                    // 	image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 					material->aoMap->SetData(image.GetData());
 				}
 				else if (prefix == "DMP") {
@@ -92,8 +92,8 @@ namespace Atlas {
 					auto image = ImageLoader::LoadImage<uint8_t>(material->displacementMapPath, false, 1);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-					material->displacementMap = new Texture::Texture2D(image.width,
-						image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    // material->displacementMap = new Texture::Texture2D(image.width,
+                    // 	image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 					material->displacementMap->SetData(image.GetData());
 				}
 			}

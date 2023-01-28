@@ -7,6 +7,7 @@ namespace Atlas {
 
 		ImpostorRenderer::ImpostorRenderer() {
 
+            /*
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
 			shaderBatch.AddStage(AE_VERTEX_STAGE, "impostor/impostor.vsh");
@@ -18,12 +19,14 @@ namespace Atlas {
 			shaderBatch.AddConfig(&interpolationConfig);
 
 			GetUniforms();
+             */
 
 		}
 
 		void ImpostorRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
 			RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap) {
 
+            /*
 			Profiler::BeginQuery("Impostors");
 
 			glDisable(GL_CULL_FACE);
@@ -87,11 +90,13 @@ namespace Atlas {
 			glEnable(GL_CULL_FACE);
 
 			Profiler::EndQuery();
+             */
 
 		}
 
 		void ImpostorRenderer::GetUniforms() {
 
+            /*
 			pMatrix = shaderBatch.GetUniform("pMatrix");
 			vMatrix = shaderBatch.GetUniform("vMatrix");
 			cameraLocation = shaderBatch.GetUniform("cameraLocation");
@@ -109,6 +114,7 @@ namespace Atlas {
 			pvMatrixLast = shaderBatch.GetUniform("pvMatrixLast");
 			jitterLast = shaderBatch.GetUniform("jitterLast");
 			jitterCurrent = shaderBatch.GetUniform("jitterCurrent");
+             */
 
 		}
 

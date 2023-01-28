@@ -4,8 +4,6 @@
 #include "../System.h"
 #include "Renderer.h"
 
-#include "../shader/ShaderBatch.h"
-
 namespace Atlas {
 
 	namespace Renderer {
@@ -25,30 +23,34 @@ namespace Atlas {
 
 			void GetInterpolationUniforms();
 
-			Shader::ShaderBatch shaderBatch;
+            /*
+			OldShader::ShaderBatch shaderBatch;
 
-			Shader::ShaderConfig normalConfig;
-			Shader::ShaderConfig interpolationConfig;
+			OldShader::ShaderConfig normalConfig;
+			OldShader::ShaderConfig interpolationConfig;
+             */
 
 			Buffer::VertexArray vertexArray;
 
-			Shader::Uniform* vMatrix = nullptr;
-			Shader::Uniform* pMatrix = nullptr;
-			Shader::Uniform* cameraLocation = nullptr;
+            /*
+			OldShader::Uniform* vMatrix = nullptr;
+			OldShader::Uniform* pMatrix = nullptr;
+			OldShader::Uniform* cameraLocation = nullptr;
 
-			Shader::Uniform* center = nullptr;
-			Shader::Uniform* radius = nullptr;
+			OldShader::Uniform* center = nullptr;
+			OldShader::Uniform* radius = nullptr;
 
-			Shader::Uniform* cameraRight = nullptr;
-			Shader::Uniform* cameraUp = nullptr;
+			OldShader::Uniform* cameraRight = nullptr;
+			OldShader::Uniform* cameraUp = nullptr;
 
-			Shader::Uniform* views = nullptr;
-			Shader::Uniform* cutoff = nullptr;
-			Shader::Uniform* materialIdx = nullptr;
+			OldShader::Uniform* views = nullptr;
+			OldShader::Uniform* cutoff = nullptr;
+			OldShader::Uniform* materialIdx = nullptr;
 
-			Shader::Uniform* pvMatrixLast = nullptr;
-			Shader::Uniform* jitterCurrent = nullptr;
-			Shader::Uniform* jitterLast = nullptr;
+			OldShader::Uniform* pvMatrixLast = nullptr;
+			OldShader::Uniform* jitterCurrent = nullptr;
+			OldShader::Uniform* jitterLast = nullptr;
+             */
 
 		};
 

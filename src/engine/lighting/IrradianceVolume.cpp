@@ -4,8 +4,8 @@ namespace Atlas {
 
 	namespace Lighting {
 
-		IrradianceVolume::IrradianceVolume(Volume::AABB aabb, ivec3 probeCount) :
-			aabb(aabb), probeCount(probeCount) {
+		IrradianceVolume::IrradianceVolume(Volume::AABB aabb, ivec3 probeCount, bool lowerResMoments) :
+			aabb(aabb), probeCount(probeCount), momRes(lowerResMoments ? 6 : 14), lowerResMoments(lowerResMoments) {
 
 			auto irrRes = ivec2(this->irrRes + 2);
 			irrRes.x *= probeCount.x;
@@ -103,26 +103,24 @@ namespace Atlas {
 
 		InternalIrradianceVolume::InternalIrradianceVolume(ivec2 irrRes, ivec2 momRes, ivec3 probeCount) {
 
-			rayDirBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
-				AE_BUFFER_DYNAMIC_STORAGE);
-			rayDirInactiveBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
-				AE_BUFFER_DYNAMIC_STORAGE);
-			probeStateBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
-				AE_BUFFER_DYNAMIC_STORAGE, probeCount.x * probeCount.y * probeCount.z);
-			probeOffsetBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4),
-				AE_BUFFER_DYNAMIC_STORAGE, probeCount.x * probeCount.y * probeCount.z);
+			rayDirBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(vec4));
+			rayDirInactiveBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(vec4));
+			probeStateBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(vec4),
+				probeCount.x * probeCount.y * probeCount.z);
+			probeOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(vec4),
+				probeCount.x * probeCount.y * probeCount.z);
 
-			irradianceArray0 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y, AE_RGB10A2,
-				GL_CLAMP_TO_EDGE, GL_LINEAR);
+			irradianceArray0 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y,
+                VK_FORMAT_A2B10G10R10_UNORM_PACK32, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-			momentsArray0 = Texture::Texture2DArray(momRes.x, momRes.y, probeCount.y, AE_RG16F,
-				GL_CLAMP_TO_EDGE, GL_LINEAR);
+			momentsArray0 = Texture::Texture2DArray(momRes.x, momRes.y, probeCount.y, VK_FORMAT_R16G16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-			irradianceArray1 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y, AE_RGB10A2,
-				GL_CLAMP_TO_EDGE, GL_LINEAR);
+			irradianceArray1 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y,
+                VK_FORMAT_A2B10G10R10_UNORM_PACK32, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-			momentsArray1 = Texture::Texture2DArray(momRes.x, momRes.y, probeCount.y, AE_RG16F,
-				GL_CLAMP_TO_EDGE, GL_LINEAR);
+			momentsArray1 = Texture::Texture2DArray(momRes.x, momRes.y, probeCount.y, VK_FORMAT_R16G16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
 			SwapTextures();
 			ClearProbes(irrRes, momRes, probeCount);
@@ -238,7 +236,6 @@ namespace Atlas {
 				momentsArray1.SetData(momVector, i);
 
 			}
-
 
 			// Fill probe state buffer with values of 0 (indicates a new probe)
 			uint32_t zero = 0;

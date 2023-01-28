@@ -8,6 +8,7 @@ namespace Atlas {
 
 		ImpostorShadowRenderer::ImpostorShadowRenderer() {
 
+            /*
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
 			shader.AddStage(AE_VERTEX_STAGE, "impostor/impostorShadow.vsh");
@@ -16,12 +17,14 @@ namespace Atlas {
 			shader.Compile();
 
 			GetUniforms();
+             */
 
 		}
 
 		void ImpostorShadowRenderer::Render(Viewport* viewport, RenderTarget* target, RenderList* renderList,
 			mat4 viewMatrix, mat4 projectionMatrix, vec3 location) {
 
+            /*
 			shader.Bind();
 
 			vertexArray.Bind();
@@ -60,11 +63,13 @@ namespace Atlas {
 			}
 
 			glEnable(GL_CULL_FACE);
+             */
 
 		}
 
 		void ImpostorShadowRenderer::GetUniforms() {
 
+            /*
 			pMatrix = shader.GetUniform("pMatrix");
 			vMatrix = shader.GetUniform("vMatrix");
 			cameraLocation = shader.GetUniform("cameraLocation");
@@ -74,6 +79,7 @@ namespace Atlas {
 
 			views = shader.GetUniform("views");
 			cutoff = shader.GetUniform("cutoff");
+             */
 
 		}
 

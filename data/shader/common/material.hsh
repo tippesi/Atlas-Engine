@@ -41,7 +41,7 @@ struct PackedMaterial {
 	vec4 data1;
 };
 
-layout (std430, binding = 16) buffer PackedMaterials {
+layout (std430, set = 0, binding = 2) buffer PackedMaterials {
 	PackedMaterial packedMaterials[];
 };
 

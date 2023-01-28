@@ -22,11 +22,11 @@ namespace Atlas {
 			vec3 planetCenter = vec3(0.0f, -650000.0f, 0.0f);
 			float planetRadius = 650000.0f;
 
-			DirectionalLight* sun = nullptr;
-			Atmosphere* atmosphere = nullptr;
-			VolumetricClouds* clouds = nullptr;
+			Ref<DirectionalLight> sun = nullptr;
+			Ref<Atmosphere> atmosphere = nullptr;
+			Ref<VolumetricClouds> clouds = nullptr;
 
-			EnvironmentProbe* probe = nullptr;
+			Ref<EnvironmentProbe> probe = nullptr;
 
 		};
 

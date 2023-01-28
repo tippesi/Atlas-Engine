@@ -90,7 +90,7 @@ namespace Atlas {
 			std::vector<Material> materials;
 			std::vector<MeshSubData> subData;
 
-			int32_t primitiveType = AE_PRIMITIVE_TRIANGLES;
+			int32_t primitiveType = 0;
 
 			Volume::AABB aabb;
 

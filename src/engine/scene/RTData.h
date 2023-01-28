@@ -7,6 +7,7 @@
 #include "../texture/TextureAtlas.h"
 
 #include <vector>
+#include <unordered_map>
 
 namespace Atlas {
 
@@ -30,9 +31,11 @@ namespace Atlas {
 
 			void Update();
 
-			void UpdateMaterials( bool updateTextures = false);
+			void UpdateMaterials(bool updateTextures = false);
 
 			void UpdateTextures();
+
+            void Clear();
 
 		private:
 			struct GPUTriangle {
@@ -125,8 +128,6 @@ namespace Atlas {
 			GPUTextureLevel CreateGPUTextureLevelStruct(Texture::TextureAtlas::Slice slice);
 
 			Scene* scene;
-
-			int32_t shaderStorageLimit;
 
 			Buffer::Buffer triangleBuffer;
 			Buffer::Buffer bvhTriangleBuffer;

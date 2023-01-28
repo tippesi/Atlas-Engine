@@ -33,11 +33,7 @@ namespace Atlas {
 		glyphs.resize(AE_FONT_GLYPH_COUNT);
 		glyphInfo.resize(AE_FONT_GLYPH_COUNT);
 
-		firstGlyphBuffer = Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
-		firstGlyphBuffer.SetSize(AE_GPU_GLYPH_COUNT / 2);
-
-		secondGlyphBuffer = Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(GlyphInfo), AE_BUFFER_DYNAMIC_STORAGE);
-		secondGlyphBuffer.SetSize(AE_GPU_GLYPH_COUNT / 2);
+		glyphBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(GlyphInfo), AE_GPU_GLYPH_COUNT);
 
 		float scale = (float) stbtt_ScaleForPixelHeight(&font, pixelSize);
 
@@ -111,8 +107,8 @@ namespace Atlas {
 		depth = AE_GPU_GLYPH_COUNT < depth ? AE_GPU_GLYPH_COUNT : depth;
 
 		// Create texture and process texture data
-		glyphTexture = Texture::Texture2DArray(width, height, depth, AE_R8, 
-			GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
+		glyphTexture = Texture::Texture2DArray(width, height, depth, VK_FORMAT_R8_UNORM,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
 		std::vector<uint8_t> glyphData(width * height);
 
@@ -153,8 +149,7 @@ namespace Atlas {
 
 		}
 
-		firstGlyphBuffer.SetData(&glyphInfo[0], 0, AE_GPU_GLYPH_COUNT / 2);
-		secondGlyphBuffer.SetData(&glyphInfo[AE_GPU_GLYPH_COUNT / 2], 0, AE_GPU_GLYPH_COUNT / 2);
+		glyphBuffer.SetData(&glyphInfo[0], 0, AE_GPU_GLYPH_COUNT);
 
 	}
 

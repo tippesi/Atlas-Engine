@@ -9,205 +9,190 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		Shader::ShaderBatch ShadowRenderer::shaderBatch;
-		std::mutex ShadowRenderer::shaderBatchMutex;
+        void ShadowRenderer::Init(Graphics::GraphicsDevice* device) {
 
-		ShadowRenderer::ShadowRenderer() {
+            this->device = device;
 
-			renderList = RenderList(AE_SHADOW_CONFIG);
+        }
 
-			modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
-			lightSpaceMatrixUniform = shaderBatch.GetUniform("lightSpaceMatrix");
+		void ShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList) {
 
-			timeUniform = shaderBatch.GetUniform("time");
+            Graphics::Profiler::BeginQuery("Shadows");
 
-			vegetationUniform = shaderBatch.GetUniform("vegetation");
-			invertUVsUniform = shaderBatch.GetUniform("invertUVs");
+            auto lights = scene->GetLights();
+            if (scene->sky.sun) {
+                lights.push_back(scene->sky.sun.get());
+            }
 
-		}
+            LightMap usedLightMap;
 
-		void ShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+            for (auto& light : lights) {
 
-			Profiler::BeginQuery("Shadows");
+                if (!light->GetShadow()) {
+                    continue;
+                }
 
-			std::lock_guard<std::mutex> guard(shaderBatchMutex);
+                if (!light->GetShadow()->update) {
+                    continue;
+                }
 
-			framebuffer.Bind();
+                auto shadow = light->GetShadow();
+                auto frameBuffer = GetOrCreateFrameBuffer(light);
+                usedLightMap[light] = frameBuffer;
 
-			auto lights = scene->GetLights();
+                if (frameBuffer->depthAttachment.layer != 0) {
+                    frameBuffer->depthAttachment.layer = 0;
+                    frameBuffer->Refresh();
+                }
 
-			if (scene->sky.sun) {
-				lights.push_back(scene->sky.sun);
-			}
+                // We don't want to render to the long range component if it exists
+                auto componentCount = light->GetShadow()->longRange ?
+                    light->GetShadow()->componentCount - 1 :
+                    light->GetShadow()->componentCount;
 
-			for (auto& light : lights) {
+                bool isDirectionalLight = false;
+                vec3 lightLocation;
 
-				if (!light->GetShadow()) {
-					continue;
-				}
+                if (light->type == AE_DIRECTIONAL_LIGHT) {
+                    auto directionLight = static_cast<Lighting::DirectionalLight*>(light);
+                    lightLocation = 1000000.0f * -normalize(directionLight->direction);
+                    isDirectionalLight = true;
+                }
+                else if (light->type == AE_POINT_LIGHT) {
+                    auto pointLight = static_cast<Lighting::PointLight*>(light);
+                    lightLocation = pointLight->location;
+                }
 
-				if (!light->GetShadow()->update) {
-					continue;
-				}
+                for (uint32_t i = 0; i < uint32_t(componentCount); i++) {
 
-				// We expect every cascade to have the same resolution
-				glViewport(0, 0, light->GetShadow()->resolution, light->GetShadow()->resolution);
+                    auto component = &shadow->components[i];
 
-				// We don't want to render to the long range component if it exists
-				auto componentCount = light->GetShadow()->longRange ? 
-					light->GetShadow()->componentCount - 1 : 
-					light->GetShadow()->componentCount;
+                    if (frameBuffer->depthAttachment.layer != i) {
+                        frameBuffer->depthAttachment.layer = i;
+                        frameBuffer->Refresh();
+                    }
 
-				bool isDirectionalLight = false;
-				vec3 lightLocation;
+                    auto shadowPass = renderList->GetShadowPass(light, i);
 
-				if (light->type == AE_DIRECTIONAL_LIGHT) {
-					auto directionLight = static_cast<Lighting::DirectionalLight*>(light);
-					lightLocation = 1000000.0f * -normalize(directionLight->direction);
-					isDirectionalLight = true;
-				}
-				else if (light->type == AE_POINT_LIGHT) {
-					auto pointLight = static_cast<Lighting::PointLight*>(light);
-					lightLocation = pointLight->location;
-				}
+                    commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
 
-				for (int32_t i = 0; i < componentCount; i++) {
+                    // Retrieve all possible materials
+                    std::vector<std::pair<Mesh::MeshSubData*, Mesh::Mesh*>> subDatas;
+                    for (auto& [mesh, _] : shadowPass->meshToInstancesMap) {
+                        for (auto& subData : mesh->data.subData) {
+                            subDatas.push_back({ &subData, mesh });
+                        }
+                    }
 
-					// We need to reset the culling since the impostor renderer can
-					// change the culling up
-					bool backFaceCulling = true;
-					glEnable(GL_CULL_FACE);
+                    // Check whether materials have pipeline configs
+                    for (auto [subData, mesh] : subDatas) {
+                        auto material = subData->material;
+                        if (material->shadowConfig.IsValid()) continue;
 
-					auto component = &light->GetShadow()->components[i];
+                        auto shaderConfig = ShaderConfig {
+                            {"shadowMapping.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                            {"shadowMapping.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+                        };
+                        auto pipelineDesc = Graphics::GraphicsPipelineDesc {
+                            .frameBuffer = frameBuffer,
+                            .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
+                        };
 
-					if (light->GetShadow()->useCubemap) {
-						framebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT, &light->GetShadow()->cubemap, i);
-					}
-					else {
-						framebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT, &light->GetShadow()->maps, i);
-					}
+                        if (!mesh->cullBackFaces) {
+                            pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
+                        }
 
-					auto frustum = Volume::Frustum(component->frustumMatrix);
+                        std::vector<std::string> macros;
+                        if (material->HasOpacityMap()) {
+                            macros.push_back("OPACITY_MAP");
+                        }
 
-					scene->GetRenderList(frustum, renderList);
-					renderList.UpdateBuffers(camera);
+                        material->shadowConfig = PipelineConfig(shaderConfig, pipelineDesc, macros);
+                    }
 
-					for (auto& renderListBatchesKey : renderList.orderedRenderBatches) {
+                    // Sort materials by hash
+                    std::sort(subDatas.begin(), subDatas.end(),
+                        [](auto subData0, auto subData1) {
+                            return subData0.first->material->shadowConfig.variantHash <
+                                   subData1.first->material->shadowConfig.variantHash;
+                        });
 
-						int32_t shaderID = renderListBatchesKey.first;
-						auto renderListBatches = renderListBatchesKey.second;
+                    size_t prevHash = 0;
+                    Ref<Graphics::Pipeline> currentPipeline = nullptr;
+                    Mesh::Mesh* prevMesh = nullptr;
+                    for (auto [subData, mesh] : subDatas) {
+                        auto material = subData->material;
+                        if (material->shadowConfig.variantHash != prevHash) {
+                            currentPipeline = PipelineManager::GetPipeline(material->shadowConfig);
+                            commandList->BindPipeline(currentPipeline);
+                            prevHash = material->shadowConfig.variantHash;
+                        }
 
-						shaderBatch.Bind(shaderID);
+                        if (mesh != prevMesh) {
+                            mesh->vertexArray.Bind(commandList);
+                            prevMesh = mesh;
+                        }
 
-						mat4 lightSpace = component->projectionMatrix * component->viewMatrix;
+                        auto& instance = shadowPass->meshToInstancesMap[mesh];
 
-						lightSpaceMatrixUniform->SetValue(lightSpace);
+                        if (material->HasOpacityMap())
+                            commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 0);
 
-						for (auto renderListBatch : renderListBatches) {
+                        auto pushConstants = PushConstants {
+                            .lightSpaceMatrix = component->projectionMatrix * component->viewMatrix,
+                            .vegetation = mesh->vegetation ? 1u : 0u,
+                            .invertUVs = mesh->invertUVs ? 1u : 0u
+                        };
 
-							auto actorBatch = renderListBatch.actorBatch;
+                        auto constantRange = currentPipeline->shader->GetPushConstantRange("constants");
+                        commandList->PushConstants(constantRange, &pushConstants);
 
-							// If there is no actor of that mesh visible we discard it.
-							if (!actorBatch->GetSize()) {
-								continue;
-							}
+                        commandList->DrawIndexed(subData->indicesCount, instance.count, subData->indicesOffset,
+                            0, instance.offset);
 
-							auto mesh = actorBatch->GetObject();
-							auto key = renderList.actorBatchBuffers.find(mesh);
+                    }
 
-							if (key == renderList.actorBatchBuffers.end())
-								continue;
+                    commandList->EndRenderPass();
 
-							auto buffers = key->second;
+                }
 
-							if (!buffers.currentMatrices)
-								continue;
+            }
 
-							auto actorCount = buffers.currentMatrices->GetElementCount();
+            lightMap = usedLightMap;
 
-							mesh->Bind();
-							buffers.currentMatrices->BindBase(2);
-
-							timeUniform->SetValue(Clock::Get());
-
-							vegetationUniform->SetValue(mesh->vegetation);
-							invertUVsUniform->SetValue(mesh->invertUVs);
-
-							// Prepare uniform buffer here
-							// Generate all drawing commands
-							// We could also batch several materials together because the share the same shader
-
-							// Render the sub data of the mesh that use this specific shader
-							for (auto& subData : renderListBatch.subData) {
-
-								auto material = subData->material;
-
-								AdjustFaceCulling(!material->twoSided && mesh->cullBackFaces,
-									backFaceCulling);
-
-								if (material->HasOpacityMap()) {
-									material->opacityMap->Bind(0);
-								}
-
-								glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
-									(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), GLsizei(actorCount));
-
-							}
-
-						}
-
-					}
-
-					impostorRenderer.Render(viewport, target, &renderList, component->viewMatrix,
-						component->projectionMatrix, lightLocation);
-
-					renderList.Clear();
-
-				}
-
-			}
-
-			Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
 		}
 
-		void ShadowRenderer::InitShaderBatch() {
+        Ref<Graphics::FrameBuffer> ShadowRenderer::GetOrCreateFrameBuffer(Lighting::Light* light) {
 
-			std::lock_guard<std::mutex> guard(shaderBatchMutex);
+            auto shadow = light->GetShadow();
+            if (lightMap.contains(light)) {
+                return lightMap[light];
+            }
+            else {
+                Graphics::RenderPassAttachment attachment = {
+                    .imageFormat = shadow->useCubemap ? shadow->cubemap.format :
+                                   shadow->maps.format,
+                    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                    .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                    .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                };
+                Graphics::RenderPassDesc renderPassDesc = {
+                    .depthAttachment = { attachment }
+                };
+                auto renderPass = device->CreateRenderPass(renderPassDesc);
 
-			shaderBatch.AddStage(AE_VERTEX_STAGE, "shadowmapping.vsh");
-			shaderBatch.AddStage(AE_FRAGMENT_STAGE, "shadowmapping.fsh");
+                Graphics::FrameBufferDesc frameBufferDesc = {
+                    .renderPass = renderPass,
+                    .depthAttachment = { shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, 0, true},
+                    .extent = { uint32_t(shadow->resolution), uint32_t(shadow->resolution) }
+                };
+                return device->CreateFrameBuffer(frameBufferDesc);
+            }
 
-		}
-
-		void ShadowRenderer::AddConfig(Shader::ShaderConfig* config) {
-
-			std::lock_guard<std::mutex> guard(shaderBatchMutex);
-
-			shaderBatch.AddConfig(config);
-
-		}
-
-		void ShadowRenderer::RemoveConfig(Shader::ShaderConfig* config) {
-
-			std::lock_guard<std::mutex> guard(shaderBatchMutex);
-
-			shaderBatch.RemoveConfig(config);
-
-		}
-
-		void ShadowRenderer::AdjustFaceCulling(bool cullFaces, bool& state) {
-
-			if (!cullFaces && state) {
-				glDisable(GL_CULL_FACE);
-				state = false;
-			}
-			else if (cullFaces && !state) {
-				glEnable(GL_CULL_FACE);
-				state = true;
-			}
-
-		}
+        }
 
 	}
 

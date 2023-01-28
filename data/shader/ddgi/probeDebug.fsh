@@ -1,3 +1,4 @@
+#include <../globals.hsh>
 #include <ddgi.hsh>
 
 layout (location = 0) out vec3 baseColorFS;
@@ -7,29 +8,25 @@ layout (location = 3) out vec3 roughnessMetalnessAoFS;
 layout (location = 4) out uint materialIdxFS;
 layout (location = 5) out vec2 velocityFS;
 
-in vec3 positionVS;
-in vec3 normalVS;
+layout(location=0) in vec3 normalVS;
 
-in vec3 ndcCurrentVS;
-in vec3 ndcLastVS;
+layout(location=1) in vec3 ndcCurrentVS;
+layout(location=2) in vec3 ndcLastVS;
 
-in flat uint instanceID;
-in vec3 worldSpaceNormal;
+layout(location=3) in flat uint instanceID;
+layout(location=4) in vec3 worldSpaceNormal;
 
-uniform mat4 vMatrix;
-
-uniform vec2 jitterLast;
-uniform vec2 jitterCurrent;
-
-uniform uint probeMaterialIdx;
-uniform uint probeActiveMaterialIdx;
-uniform uint probeInactiveMaterialIdx;
-uniform uint probeOffsetMaterialIdx;
+layout(push_constant) uniform constants {
+	uint probeMaterialIdx;
+	uint probeActiveMaterialIdx;
+	uint probeInactiveMaterialIdx;
+	uint probeOffsetMaterialIdx;
+} pushConstants;
 
 void main() {
 
-	vec2 momRes = vec2(16);
-	vec2 totalResolution = vec2(volumeProbeCount.xz) * momRes;
+	vec2 momRes = vec2(ddgiData.volumeMomentsRes) + 2.0;
+	vec2 totalResolution = vec2(ddgiData.volumeProbeCount.xz) * momRes;
 	vec2 momTexelSize = 1.0 / totalResolution;
 
 	ivec3 probeCoord = GetProbeGridCoord(instanceID);
@@ -40,7 +37,7 @@ void main() {
 	vec3 momCoord = GetProbeCoord(probeCoord, momOctCoord, momRes, momTexelSize, 14);
 	vec2 moments = textureLod(momentsVolume, momCoord, 0).rg;
 
-	baseColorFS = vec3(moments.x) / length(cellSize);
+	baseColorFS = vec3(moments.x) / length(ddgiData.cellSize.xyz);
 	
 	geometryNormalFS = normalize(normalVS);
 	geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
@@ -53,12 +50,13 @@ void main() {
 	vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
 	vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
-	ndcL -= jitterLast;
-	ndcC -= jitterCurrent;
+	ndcL -= globalData.jitterLast;
+	ndcC -= globalData.jitterCurrent;
 
 	velocityFS = (ndcL - ndcC) * 0.5;
 
-	materialIdxFS = GetProbeState(instanceID) == PROBE_STATE_ACTIVE ? probeActiveMaterialIdx : probeInactiveMaterialIdx;
-	materialIdxFS = moments.x < 0.6 ? probeOffsetMaterialIdx : materialIdxFS;
+	materialIdxFS = GetProbeState(instanceID) == PROBE_STATE_ACTIVE ?
+		pushConstants.probeActiveMaterialIdx : pushConstants.probeInactiveMaterialIdx;
+	materialIdxFS = moments.x < 0.6 ? pushConstants.probeOffsetMaterialIdx : materialIdxFS;
 	
 }

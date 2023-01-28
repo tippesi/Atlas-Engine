@@ -1,18 +1,11 @@
 #include "Cubemap.h"
 #include "../loader/ImageLoader.h"
-#include "../Framebuffer.h"
 #include "../Log.h"
 #include "../volume/Frustum.h"
 
 namespace Atlas {
 
    namespace Texture {
-
-	   Cubemap::Cubemap(const Cubemap& that) {
-
-		   DeepCopy(that);
-
-	   }
 
        Cubemap::Cubemap(std::string right, std::string left, std::string top,
                         std::string bottom, std::string front, std::string back) {
@@ -30,12 +23,12 @@ namespace Atlas {
 
 		   }
 
-		   this->width = images[0].width;
-		   this->height = images[0].height;
-		   this->depth = 6;
+           format = VK_FORMAT_R16G16B16A16_SFLOAT;
+           filtering = Filtering::MipMapLinear;
+           wrapping = Wrapping::ClampToEdge;
 
-		   Generate(GL_TEXTURE_CUBE_MAP, AE_RGBA8, GL_CLAMP_TO_EDGE, GL_LINEAR_MIPMAP_LINEAR,
-			   false, true);
+           Reallocate(Graphics::ImageType::ImageCube, images[0].width, images[0].height, 6, filtering, wrapping);
+           RecreateSampler(filtering, wrapping);
 
 		   for (int32_t i = 0; i < 6; i++)
 			   SetData(images[i].GetData(), i);
@@ -44,19 +37,19 @@ namespace Atlas {
 
 	   Cubemap::Cubemap(std::string filename, int32_t resolution) {
 
-		   auto image = Loader::ImageLoader::LoadImage<float>(filename, false, 3);
+		   auto image = Loader::ImageLoader::LoadImage<float>(filename, false, 4);
 
 		   if (image.GetData().size() == 0) {
 			   Log::Error("Failed to load cubemap image " + filename);
 			   return;
 		   }
 
-		   this->width = resolution;
-		   this->height = resolution;
-		   this->depth = 6;
+           format = VK_FORMAT_R16G16B16A16_SFLOAT;
+           filtering = Filtering::MipMapLinear;
+           wrapping = Wrapping::ClampToEdge;
 
-		   Generate(GL_TEXTURE_CUBE_MAP, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR_MIPMAP_LINEAR,
-			   false, true);
+           Reallocate(Graphics::ImageType::ImageCube, resolution, resolution, 6, filtering, wrapping);
+           RecreateSampler(filtering, wrapping);
 
 		   mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
 		   vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
@@ -104,45 +97,29 @@ namespace Atlas {
 				   }
 			   }
 
-			   SetData(faceImage.GetData(), i);
+               std::vector<float16> halfFloatData;
+               for (auto data : faceImage.GetData()) {
+                   halfFloatData.push_back(glm::detail::toFloat16(data));
+               }
+
+			   SetData(halfFloatData, i);
 		
 		   }
 
 	   }
 
-       Cubemap::Cubemap(int32_t width, int32_t height, int32_t sizedFormat,
-                        int32_t wrapping, int32_t filtering, bool generateMipmaps) {
+       Cubemap::Cubemap(int32_t width, int32_t height, VkFormat format,
+           Wrapping wrapping, Filtering filtering) {
 
-		   this->width = width;
-		   this->height = height;
-		   this->depth = 6;
-
-		   Generate(GL_TEXTURE_CUBE_MAP, sizedFormat, wrapping, filtering,
-			   anisotropicFiltering, generateMipmaps);
-
-		   glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapping);
-		   glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
-		   glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapping);
+           this->format = format;
+           Reallocate(Graphics::ImageType::ImageCube, width, height, 6, filtering, wrapping);
+           RecreateSampler(filtering, wrapping);
 
        }
 
-       Cubemap& Cubemap::operator=(const Atlas::Texture::Cubemap &that) {
-
-	   		if (this != &that) {
-
-				Texture::operator=(that);
-
-	   		}
-
-	   		return *this;
-
-	   }
-
 	   void Cubemap::SetData(std::vector<uint8_t> &data, int32_t layer) {
 
-		   Bind();
-		   glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, 0, 0, 0, width, height,
-			   TextureFormat::GetBaseFormat(sizedFormat), AE_UBYTE, data.data());
+           Texture::SetData(data.data(), 0, 0, layer, width, height, 1);
 
 		   GenerateMipmap();
 
@@ -150,34 +127,34 @@ namespace Atlas {
 
 	   void Cubemap::SetData(std::vector<float>& data, int32_t layer) {
 
-		   Bind();
-		   glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, 0, 0, 0, width, height,
-			   TextureFormat::GetBaseFormat(sizedFormat), AE_FLOAT, data.data());
+           Texture::SetData(data.data(), 0, 0, layer, width, height, 1);
 
 		   GenerateMipmap();
 
 	   }
 
+       void Cubemap::SetData(std::vector<float16>& data, int32_t layer) {
+
+           Texture::SetData(data.data(), 0, 0, layer, width, height, 1);
+
+           GenerateMipmap();
+
+       }
+
 	   std::vector<uint8_t> Cubemap::GetData(int32_t layer) {
 
-		   auto framebuffer = Framebuffer(width, height);
+		   // auto framebuffer = Framebuffer(width, height);
 
-		   std::vector<uint8_t> data(width * height * channels * TypeFormat::GetSize(dataType));
+           // std::vector<uint8_t> data(width * height * channels * TypeFormat::GetSize(dataType));
 
-		   framebuffer.AddComponentCubemap(GL_COLOR_ATTACHMENT0, this, layer);
+           // framebuffer.AddComponentCubemap(GL_COLOR_ATTACHMENT0, this, layer);
 
-		   glReadPixels(0, 0, width, height,
-			   TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
+           // glReadPixels(0, 0, width, height,
+           //    TextureFormat::GetBaseFormat(sizedFormat), dataType, data.data());
 
-		   framebuffer.Unbind();
+		   // framebuffer.Unbind();
 
-		   return data;
-
-	   }
-
-	   void Cubemap::ReserveStorage(int32_t mipCount) {
-
-		   glTexStorage2D(GL_TEXTURE_CUBE_MAP, mipCount, sizedFormat, width, height);
+		   return std::vector<uint8_t>();
 
 	   }
 

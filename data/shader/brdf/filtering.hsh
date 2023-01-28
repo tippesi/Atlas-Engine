@@ -3,9 +3,7 @@
 #include <importanceSample.hsh>
 #include <preintegrate.hsh>
 
-layout(binding = 0) uniform samplerCube probe;
-
-vec4 Irradiance(vec3 N) {
+vec4 Irradiance(vec3 N, samplerCube probe) {
 
     uint sampleCount = 256u;
     vec4 acc = vec4(0.0);
@@ -19,27 +17,21 @@ vec4 Irradiance(vec3 N) {
         vec3 L;
         float NdotL;
         float pdf;
-
         ImportanceSampleCosDir(N, Xi, L, NdotL, pdf);
 
         NdotL = saturate(NdotL);
         if (NdotL > 0.0) {
-
+            /*
+            // Only works for specular
             // https://developer.nvidia.com/gpugems/gpugems3/part-iii-rendering/chapter-20-gpu-based-importance-sampling
             float pdf = max(0.0, dot(N, L) / PI);
             
             float solidAngleTexel = 4.0 * PI / (6.0 * float(size.x * size.y));
             float solidAngleSample = 1.0 / (float(sampleCount) * pdf);
-            float lod = 0.5 * log2(float(solidAngleSample / solidAngleTexel));            
+            float lod = clamp(0.5 * log2(float(solidAngleSample / solidAngleTexel)), 0.0, 7.0);
+            */
             
-            acc.xyz += textureLod(probe, L, lod).rgb;
-
-            // Alpha represents depth information
-            float depth = textureLod(probe, L, lod).a;
-            
-            // Sky mask
-            acc.w += depth < 1.0 ? 0.0 : 1.0;
-
+            acc.xyz += textureLod(probe, L, 2.0).rgb;
         }
 
     }

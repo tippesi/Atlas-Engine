@@ -1,4 +1,5 @@
 #include <../common/random.hsh>
+#include <../globals.hsh>
 
 #ifdef GENERATE_IMPOSTOR
 layout (location = 0) out vec4 baseColorFS;
@@ -12,36 +13,38 @@ layout (location = 4) out uint materialIdxFS;
 layout (location = 5) out vec2 velocityFS;
 
 #ifdef BASE_COLOR_MAP
-layout(binding = 0) uniform sampler2D baseColorMap;
+layout(set = 3, binding = 0) uniform sampler2D baseColorMap;
 #endif
 #ifdef OPACITY_MAP
-layout(binding = 1) uniform sampler2D opacityMap;
+layout(set = 3, binding = 1) uniform sampler2D opacityMap;
 #endif
 #ifdef NORMAL_MAP
-layout(binding = 2) uniform sampler2D normalMap;
+layout(set = 3, binding = 2) uniform sampler2D normalMap;
 #endif
 #ifdef ROUGHNESS_MAP
-layout(binding = 3) uniform sampler2D roughnessMap;
+layout(set = 3, binding = 3) uniform sampler2D roughnessMap;
 #endif
 #ifdef METALNESS_MAP
-layout(binding = 4) uniform sampler2D metalnessMap;
+layout(set = 3, binding = 4) uniform sampler2D metalnessMap;
 #endif
 #ifdef AO_MAP
-layout(binding = 5) uniform sampler2D aoMap;
+layout(set = 3, binding = 5) uniform sampler2D aoMap;
 #endif
 #ifdef HEIGHT_MAP
-layout(binding = 6) uniform sampler2D heightMap;
+layout(set = 3, binding = 6) uniform sampler2D heightMap;
 #endif
 
-in vec3 positionVS;
-in vec3 normalVS;
-in vec2 texCoordVS;
+layout(location=0) in vec3 positionVS;
+layout(location=1) in vec3 normalVS;
+#ifdef TEX_COORDS
+layout(location=2) in vec2 texCoordVS;
+#endif
 
-in vec3 ndcCurrentVS;
-in vec3 ndcLastVS;
+layout(location=3) in vec3 ndcCurrentVS;
+layout(location=4) in vec3 ndcLastVS;
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
-in mat3 TBN;
+layout(location=5) in mat3 TBN;
 #endif
 
 #ifdef GENERATE_IMPOSTOR
@@ -51,16 +54,15 @@ uniform float metalness;
 uniform float ao;
 #endif
 
-uniform float normalScale;
-uniform float displacementScale;
-
-uniform mat4 vMatrix;
-
-uniform vec2 jitterLast;
-uniform vec2 jitterCurrent;
-
-uniform uint materialIdx;
-uniform bool twoSided;
+layout(push_constant) uniform constants {
+	uint vegetation;
+	uint invertUVs;
+	uint twoSided;
+	uint staticMesh;
+	uint materialIdx;
+	float normalScale;
+	float displacementScale;
+} PushConstants;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) { 
 #ifdef HEIGHT_MAP
@@ -73,7 +75,7 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
     // depth of current layer
     float currentLayerDepth = 0.0;
     // the amount to shift the texture coordinates per layer (from vector P)
-    vec2 P = viewDir.xy / viewDir.z * displacementScale; 
+    vec2 P = viewDir.xy / viewDir.z * PushConstants.displacementScale;
     vec2 deltaTexCoords = P / numLayers;
 	vec2  currentTexCoords = texCoords;
 	
@@ -109,8 +111,10 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 }
 
 void main() {
-	
+
+#ifdef TEX_COORDS
 	vec2 texCoords = texCoordVS;
+#endif
 	
 	// Check if usage is valid (otherwise texCoords won't be used)
 #if defined(HEIGHT_MAP) && (defined(BASE_COLOR_MAP) || defined(NORMAL_MAP) || defined(ROUGHNESS_MAP) || defined(METALNESS_MAP) || defined(AO_MAP)) 
@@ -145,13 +149,13 @@ void main() {
 
 #ifdef NORMAL_MAP
 	vec3 normalColor = texture(normalMap, texCoords).rgb;
-	normalFS = mix(geometryNormalFS, normalize(TBN * (2.0 * normalColor - 1.0)), normalScale);
+	normalFS = mix(geometryNormalFS, normalize(TBN * (2.0 * normalColor - 1.0)), PushConstants.normalScale);
 	// We want the normal always to face the camera for two sided materials
-	geometryNormalFS *= twoSided ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
+	geometryNormalFS *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
 	normalFS = 0.5 * normalFS + 0.5;
 #else
 	// We want the normal always to face the camera for two sided materials
-	geometryNormalFS *= twoSided ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
+	geometryNormalFS *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
 #endif
 	
 	geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
@@ -187,11 +191,11 @@ void main() {
 	vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
 	vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
-	ndcL -= jitterLast;
-	ndcC -= jitterCurrent;
+	ndcL -= globalData.jitterLast;
+	ndcC -= globalData.jitterCurrent;
 
 	velocityFS = (ndcL - ndcC) * 0.5;
 
-	materialIdxFS = materialIdx;
+	materialIdxFS = PushConstants.materialIdx;
 	
 }

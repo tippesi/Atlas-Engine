@@ -1,21 +1,20 @@
 {
     "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
     "name": "atlas-engine",
-    "version-string": "0.1.7",
+    "version-string": "0.1.8",
     "port-version": 0,
     "builtin-baseline": "59b58fc56de40eaa279ae0208debcf5773a2db77",
     "homepage": "https://github.com/tippesi/Atlas-Engine",
     "description": "Cross platform toy render engine supporting physically based rendering and software ray tracing",
     "dependencies": [
-        "sdl2",
-        "glm",
-        "stb",
         {
-            "name": "glad",
+            "name": "sdl2",
             "features": [
-                "gl-api-46"
+                "vulkan"
             ]
         },
+        "glm",
+        "stb",
         {
             "name": "imgui",
             "version>=": "1.88",
@@ -23,10 +22,17 @@
                 "docking-experimental"
             ]
         },
-        "assimp"
+        "assimp",
+        "vulkan-memory-allocator",
+        "volk",
+        "glslang",
+        "spirv-reflect",
+        "spirv-tools"
     ],
     "overrides": [
             { "name": "glm", "version": "0.9.8.0" },
-            { "name": "assimp", "version": "5.2.5" }
-        ]
+            { "name": "assimp", "version": "5.2.5" },
+            { "name": "spirv-tools", "version": "2022.1#0" },
+            { "name": "glslang", "version": "11.11.0#1" }
+    ]
 }

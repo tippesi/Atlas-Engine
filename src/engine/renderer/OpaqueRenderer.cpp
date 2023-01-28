@@ -8,182 +8,145 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		Shader::ShaderBatch OpaqueRenderer::shaderBatch;
-		std::mutex OpaqueRenderer::shaderBatchMutex;
+        void OpaqueRenderer::Init(Graphics::GraphicsDevice *device) {
 
-		OpaqueRenderer::OpaqueRenderer() {
-
-			renderList = RenderList(AE_OPAQUE_CONFIG);
-
-			modelMatrixUniform = shaderBatch.GetUniform("mMatrix");
-			viewMatrixUniform = shaderBatch.GetUniform("vMatrix");
-			projectionMatrixUniform = shaderBatch.GetUniform("pMatrix");
-
-			cameraLocationUniform = shaderBatch.GetUniform("cameraLocation");
-			baseColorUniform = shaderBatch.GetUniform("baseColor");
-			roughnessUniform = shaderBatch.GetUniform("roughness");
-			metalnessUniform = shaderBatch.GetUniform("metalness");
-			aoUniform = shaderBatch.GetUniform("ao");
-			normalScaleUniform = shaderBatch.GetUniform("normalScale");
-			displacementScaleUniform = shaderBatch.GetUniform("displacementScale");
-
-			materialIdxUniform = shaderBatch.GetUniform("materialIdx");
-
-			timeUniform = shaderBatch.GetUniform("time");
-			deltaTimeUniform = shaderBatch.GetUniform("deltaTime");
-
-			vegetationUniform = shaderBatch.GetUniform("vegetation");
-			invertUVsUniform = shaderBatch.GetUniform("invertUVs");
-			staticMeshUniform = shaderBatch.GetUniform("staticMesh");
-			twoSidedUniform = shaderBatch.GetUniform("twoSided");
-
-			pvMatrixLast = shaderBatch.GetUniform("pvMatrixLast");
-
-			jitterLast = shaderBatch.GetUniform("jitterLast");
-			jitterCurrent = shaderBatch.GetUniform("jitterCurrent");
+            this->device = device;
 
 		}
 
 		void OpaqueRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-			Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap) {
+			Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList,
+            std::unordered_map<void*, uint16_t> materialMap) {
 
-			Profiler::BeginQuery("Opaque geometry");
+            Graphics::Profiler::BeginQuery("Opaque geometry");
 
-			std::lock_guard<std::mutex> guard(shaderBatchMutex);
+            auto mainPass = renderList->GetMainPass();
 
-			bool backFaceCulling = true;
-			bool depthTest = true;
+            // Retrieve all possible materials
+            std::vector<std::pair<Mesh::MeshSubData*, Mesh::Mesh*>> subDatas;
+            for (auto& [mesh, _] : mainPass->meshToInstancesMap) {
+                for (auto& subData : mesh->data.subData) {
+                    subDatas.push_back({ &subData, mesh });
+                }
+            }
 
-			Profiler::BeginQuery("Main pass");
+            // Check whether materials have pipeline configs
+            for (auto [subData, mesh] : subDatas) {
+                auto material = subData->material;
+                if (material->mainConfig.IsValid()) continue;
 
-			scene->GetRenderList(camera->frustum, renderList);
-			renderList.UpdateBuffers(camera);
+                auto shaderConfig = ShaderConfig {
+                    {"deferred/geometry.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                    {"deferred/geometry.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+                };
+                auto pipelineDesc = Graphics::GraphicsPipelineDesc{
+                    .frameBuffer = target->gBufferFrameBuffer,
+                    .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
+                };
 
-			for (auto& renderListBatchesKey : renderList.orderedRenderBatches) {
+                if (!mesh->cullBackFaces) {
+                    pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
+                }
 
-				auto shaderID = renderListBatchesKey.first;
-				auto renderListBatches = renderListBatchesKey.second;
+                std::vector<std::string> macros;
+                if (material->HasBaseColorMap()) {
+                    macros.push_back("BASE_COLOR_MAP");
+                }
+                if (material->HasOpacityMap()) {
+                    macros.push_back("OPACITY_MAP");
+                }
+                if (material->HasNormalMap()) {
+                    macros.push_back("NORMAL_MAP");
+                }
+                if (material->HasRoughnessMap()) {
+                    macros.push_back("ROUGHNESS_MAP");
+                }
+                if (material->HasMetalnessMap()) {
+                    macros.push_back("METALNESS_MAP");
+                }
+                if (material->HasAoMap()) {
+                    macros.push_back("AO_MAP");
+                }
+                if (material->HasDisplacementMap()) {
+                    macros.push_back("HEIGHT_MAP");
+                }
+                // This is a check if we have any maps at all (no macros, no maps)
+                if (macros.size()) {
+                    macros.push_back("TEX_COORDS");
+                }
+                if (glm::length(material->emissiveColor) > 0.0f) {
+                    macros.push_back("EMISSIVE");
+                }
 
-				shaderBatch.Bind(shaderID);
+                material->mainConfig = PipelineConfig(shaderConfig, pipelineDesc, macros);
+            }
 
-				viewMatrixUniform->SetValue(camera->viewMatrix);
-				projectionMatrixUniform->SetValue(camera->projectionMatrix);
+            // Sort materials by hash
+            std::sort(subDatas.begin(), subDatas.end(),
+                [](auto subData0, auto subData1) {
+                return subData0.first->material->mainConfig.variantHash <
+                    subData1.first->material->mainConfig.variantHash;
+            });
 
-				jitterLast->SetValue(camera->GetLastJitter());
-				jitterCurrent->SetValue(camera->GetJitter());
+            size_t prevHash = 0;
+            Ref<Graphics::Pipeline> currentPipeline = nullptr;
+            Mesh::Mesh* prevMesh = nullptr;
+            for (auto [subData, mesh] : subDatas) {
+                auto material = subData->material;
+                if (material->mainConfig.variantHash != prevHash) {
+                    currentPipeline = PipelineManager::GetPipeline(material->mainConfig);
+                    commandList->BindPipeline(currentPipeline);
+                    prevHash = material->mainConfig.variantHash;
+                }
 
-				pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
+                if (mesh != prevMesh) {
+                    mesh->vertexArray.Bind(commandList);
+                    prevMesh = mesh;
+                }
 
-				for (auto renderListBatch : renderListBatches) {
+                auto& instance = mainPass->meshToInstancesMap[mesh];
 
-					auto actorBatch = renderListBatch.actorBatch;
+                if (material->HasBaseColorMap())
+                    commandList->BindImage(material->baseColorMap->image, material->baseColorMap->sampler, 3, 0);
+                if (material->HasOpacityMap())
+                    commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 1);
+                if (material->HasNormalMap())
+                    commandList->BindImage(material->normalMap->image, material->normalMap->sampler, 3, 2);
+                if (material->HasRoughnessMap())
+                    commandList->BindImage(material->roughnessMap->image, material->roughnessMap->sampler, 3, 3);
+                if (material->HasMetalnessMap())
+                    commandList->BindImage(material->metalnessMap->image, material->metalnessMap->sampler, 3, 4);
+                if (material->HasAoMap())
+                    commandList->BindImage(material->aoMap->image, material->aoMap->sampler, 3, 5);
+                if (material->HasDisplacementMap())
+                    commandList->BindImage(material->displacementMap->image, material->displacementMap->sampler, 3, 6);
 
-					// If there is no actor of that mesh visible we discard it.
-					if (!actorBatch->GetSize()) {
-						continue;
-					}
+                auto pushConstants = PushConstants {
+                    .vegetation = mesh->vegetation ? 1u : 0u,
+                    .invertUVs = mesh->invertUVs ? 1u : 0u,
+                    .twoSided = material->twoSided ? 1u : 0u,
+                    .staticMesh = mesh->mobility == Mesh::MeshMobility::Stationary ? 1u : 0u,
+                    .materialIdx = uint32_t(materialMap[material]),
+                    .normalScale = material->normalScale,
+                    .displacementScale = material->displacementScale
+                };
 
-					auto mesh = actorBatch->GetObject();
-					auto key = renderList.actorBatchBuffers.find(mesh);
+                auto constantRange = currentPipeline->shader->GetPushConstantRange("constants");
+                commandList->PushConstants(constantRange, &pushConstants);
 
-					if (key == renderList.actorBatchBuffers.end())
-						continue;
+                commandList->DrawIndexed(subData->indicesCount, instance.count, subData->indicesOffset,
+                    0, instance.offset);
 
-					auto buffers = key->second;
+            }
 
-					if (!buffers.currentMatrices)
-						continue;
-
-					auto actorCount = buffers.currentMatrices->GetElementCount();
-
-					if (!actorCount) {
-						continue;
-					}
-
-					auto staticMesh = mesh->mobility == AE_STATIONARY_MESH;
-
-					mesh->Bind();
-					buffers.currentMatrices->BindBase(2);
-					if (!staticMesh) buffers.lastMatrices->BindBase(3);
-
-					if (!mesh->depthTest && depthTest) {
-						// Allows for most objects to have
-						// depth test in themselves but are always
-						// drawn no matter if something else is nearer
-						glDepthRangef(0.0f, 0.001f);
-						depthTest = false;
-					}
-					else if (mesh->depthTest && !depthTest) {
-						glDepthRangef(0.0f, 1.0f);
-						depthTest = true;
-					}
-
-					timeUniform->SetValue(Clock::Get());
-					deltaTimeUniform->SetValue(Clock::GetDelta());
-
-					staticMeshUniform->SetValue(staticMesh);
-					vegetationUniform->SetValue(mesh->vegetation);
-					invertUVsUniform->SetValue(mesh->invertUVs);
-
-					// Prepare uniform buffer here
-					// Generate all drawing commands
-					// We could also batch several materials together because they share the same shader
-
-					// Render the sub data of the mesh that use this specific shader
-					for (auto& subData : renderListBatch.subData) {
-
-						auto material = subData->material;
-
-						AdjustFaceCulling(!material->twoSided && mesh->cullBackFaces,
-							backFaceCulling);
-
-						if (material->HasBaseColorMap())
-							material->baseColorMap->Bind(0);
-						if (material->HasOpacityMap())
-							material->opacityMap->Bind(1);
-						if (material->HasNormalMap())
-							material->normalMap->Bind(2);
-						if (material->HasRoughnessMap())
-							material->roughnessMap->Bind(3);
-						if (material->HasMetalnessMap())
-							material->metalnessMap->Bind(4);
-						if (material->HasAoMap())
-							material->aoMap->Bind(5);
-						if (material->HasDisplacementMap())
-							material->displacementMap->Bind(6);
-
-						cameraLocationUniform->SetValue(camera->GetLocation());
-						normalScaleUniform->SetValue(material->normalScale);
-						displacementScaleUniform->SetValue(material->displacementScale);
-
-						twoSidedUniform->SetValue(material->twoSided);
-						materialIdxUniform->SetValue((uint32_t)materialMap[material]);
-
-						glDrawElementsInstanced(mesh->data.primitiveType, subData->indicesCount, mesh->data.indices.GetType(),
-							(void*)((uint64_t)(subData->indicesOffset * mesh->data.indices.GetElementSize())), GLsizei(actorCount));
-
-					}
-
-				}
-
-			}
-
-			Profiler::EndQuery();
-
-			glEnable(GL_CULL_FACE);
-			glDepthRangef(0.0f, 1.0f);
-
-			impostorRenderer.Render(viewport, target, camera, &renderList, materialMap);
-
-			renderList.Clear();
-
-			Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
 		}
 
-		void OpaqueRenderer::RenderImpostor(Viewport* viewport, Framebuffer* framebuffer, std::vector<mat4> viewMatrices,
+		void OpaqueRenderer::RenderImpostor(Viewport* viewport, const std::vector<mat4>& viewMatrices,
 			mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor) {
 
+            /*
 			if (!viewMatrices.size())
 				return;
 
@@ -326,44 +289,7 @@ namespace Atlas {
 			framebuffer->Unbind();
 
 			glEnable(GL_CULL_FACE);
-
-		}
-
-		void OpaqueRenderer::InitShaderBatch() {
-
-			std::lock_guard<std::mutex> guard(shaderBatchMutex);
-
-			shaderBatch.AddStage(AE_VERTEX_STAGE, "deferred/geometry.vsh");
-			shaderBatch.AddStage(AE_FRAGMENT_STAGE, "deferred/geometry.fsh");
-
-		}
-
-		void OpaqueRenderer::AddConfig(Shader::ShaderConfig* config) {
-
-			std::lock_guard<std::mutex> guard(shaderBatchMutex);
-
-			shaderBatch.AddConfig(config);
-
-		}
-
-		void OpaqueRenderer::RemoveConfig(Shader::ShaderConfig* config) {
-
-			std::lock_guard<std::mutex> guard(shaderBatchMutex);
-
-			shaderBatch.RemoveConfig(config);
-
-		}
-
-		void OpaqueRenderer::AdjustFaceCulling(bool cullFaces, bool& state) {
-
-			if (!cullFaces && state) {
-				glDisable(GL_CULL_FACE);
-				state = false;
-			}
-			else if (cullFaces && !state) {
-				glEnable(GL_CULL_FACE);
-				state = true;
-			}
+             */
 
 		}
 

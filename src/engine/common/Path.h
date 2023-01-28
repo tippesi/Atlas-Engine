@@ -52,7 +52,7 @@ namespace Atlas {
 			 * @return The absolute path.
 			 * @note It is assumed that the path is relative to the working directory.
 			 */
-			static std::string GetAbsolute(std::string path);
+			static std::string GetAbsolute(const std::string& path);
 
 			/**
 			 * Checks whether a path is absolute.

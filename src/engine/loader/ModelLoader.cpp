@@ -3,6 +3,7 @@
 #include "AssetLoader.h"
 #include "../Log.h"
 #include "../common/Path.h"
+#include "../graphics/Instance.h"
 
 #include <vector>
 #include <limits>
@@ -126,6 +127,10 @@ namespace Atlas {
             std::vector<vec4> normals(vertexCount);
             std::vector<vec4> tangents(hasTangents ? vertexCount : 0);
 
+            auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
+            auto rgbSupport = graphicsDevice->CheckFormatSupport(VK_FORMAT_R8G8B8_UNORM,
+                VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
+
 			std::atomic_int32_t counter = 0;
 			std::vector<MaterialImages> materialImages(scene->mNumMaterials);
 			auto loadImagesLambda = [&]() {
@@ -135,8 +140,8 @@ namespace Atlas {
 
 					auto& images = materialImages[i]; 
 
-					LoadMaterialImages(scene->mMaterials[i], images,
-						directoryPath, isObj, hasTangents, maxTextureResolution);
+					LoadMaterialImages(scene->mMaterials[i], images, directoryPath,
+                        isObj, hasTangents, maxTextureResolution, rgbSupport);
 
 					i = counter++;
 				}
@@ -162,6 +167,7 @@ namespace Atlas {
 				auto& images = materialImages[i];
 				auto& subData = meshData.subData[i];
 
+                // No material loading for now
 				LoadMaterial(scene->mMaterials[i], images, material);
 
 				subData.material = &material;
@@ -293,27 +299,27 @@ namespace Atlas {
 			material.twoSided = twoSided;
 			
 			if (images.baseColorImage.HasData()) {
-				material.baseColorMap = new Texture::Texture2D(images.baseColorImage);
+				material.baseColorMap = std::make_shared<Texture::Texture2D>(images.baseColorImage);
 				material.baseColorMapPath = images.baseColorImage.fileName;
 			}
 			if (images.opacityImage.HasData()) {
-				material.opacityMap = new Texture::Texture2D(images.opacityImage);
+				material.opacityMap = std::make_shared<Texture::Texture2D>(images.opacityImage);
 				material.opacityMapPath = images.opacityImage.fileName;
 			}
 			if (images.roughnessImage.HasData()) {
-				material.roughnessMap = new Texture::Texture2D(images.roughnessImage);
+				material.roughnessMap = std::make_shared<Texture::Texture2D>(images.roughnessImage);
 				material.roughnessMapPath = images.roughnessImage.fileName;
 			}
 			if (images.metallicImage.HasData()) {
-				material.metalnessMap = new Texture::Texture2D(images.metallicImage);
+				material.metalnessMap = std::make_shared<Texture::Texture2D>(images.metallicImage);
 				material.metalnessMapPath = images.metallicImage.fileName;
 			}
 			if (images.normalImage.HasData()) {
-				material.normalMap = new Texture::Texture2D(images.normalImage);
+				material.normalMap = std::make_shared<Texture::Texture2D>(images.normalImage);
 				material.normalMapPath = images.normalImage.fileName;
 			}
 			if (images.displacementImage.HasData()) {
-				material.displacementMap = new Texture::Texture2D(images.displacementImage);
+				material.displacementMap = std::make_shared<Texture::Texture2D>(images.displacementImage);
 				material.displacementMapPath = images.displacementImage.fileName;
 			}
 			
@@ -325,8 +331,8 @@ namespace Atlas {
 			
 		}
 
-		void ModelLoader::LoadMaterialImages(aiMaterial* material, MaterialImages& images,
-			std::string directory, bool isObj, bool hasTangents, int32_t maxTextureResolution) {
+		void ModelLoader::LoadMaterialImages(aiMaterial* material, MaterialImages& images, const std::string& directory,
+            bool isObj, bool hasTangents, int32_t maxTextureResolution, bool rgbSupport) {
 			if (material->GetTextureCount(aiTextureType_BASE_COLOR) > 0 ||
 				material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 				aiString aiPath;
@@ -352,6 +358,11 @@ namespace Atlas {
 					images.opacityImage = images.baseColorImage.GetChannelImage(3, 1);
 					images.baseColorImage = images.baseColorImage.GetChannelImage(0, 3);
 				}
+
+                // Some device e.g. Mac M1 don't support the necessary format
+                if (!rgbSupport) {
+                    images.baseColorImage.ExpandToChannelCount(4, 255);
+                }
 			}
 			if (material->GetTextureCount(aiTextureType_OPACITY) > 0) {
 				aiString aiPath;
@@ -377,6 +388,10 @@ namespace Atlas {
 				if (images.normalImage.channels == 4) {
 					images.normalImage = images.normalImage.GetChannelImage(0, 3);
 				}
+                // Some device e.g. Mac M1 don't support the necessary format
+                if (!rgbSupport) {
+                    images.normalImage.ExpandToChannelCount(4, 255);
+                }
 			}
 			if (material->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
 				aiString aiPath;

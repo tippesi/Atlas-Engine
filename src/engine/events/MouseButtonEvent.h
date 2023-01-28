@@ -27,6 +27,7 @@ namespace Atlas {
 				button = event.button;
 				x = event.x;
 				y = event.y;
+                down = event.type == SDL_MOUSEBUTTONDOWN;
 
 			}
 
@@ -54,6 +55,11 @@ namespace Atlas {
              * The y coordinate relative to the window where the button event occurred
              */
 			int32_t y;
+
+            /**
+             * Whether this event is triggered by the button going down or up
+             */
+            bool down;
 
 		};
 

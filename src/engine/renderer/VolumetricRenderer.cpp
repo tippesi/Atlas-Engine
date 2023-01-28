@@ -6,58 +6,63 @@ namespace Atlas {
 
     namespace Renderer {
 
-        VolumetricRenderer::VolumetricRenderer() {
+        void VolumetricRenderer::Init(Graphics::GraphicsDevice *device) {
+
+            this->device = device;
 
             const int32_t filterSize = 4;
             blurFilter.CalculateBoxFilter(filterSize);
 
-            volumetricShader.AddStage(AE_COMPUTE_STAGE, "volumetric/volumetric.csh");
-            volumetricShader.Compile();
+            volumetricPipelineConfig = PipelineConfig("volumetric/volumetric.csh");
 
-            horizontalBlurShader.AddStage(AE_COMPUTE_STAGE, "bilateralBlur.csh");
-            horizontalBlurShader.AddMacro("HORIZONTAL");
-            horizontalBlurShader.AddMacro("BLUR_RGB");
-            horizontalBlurShader.AddMacro("DEPTH_WEIGHT");
-            horizontalBlurShader.Compile();
+            horizontalBlurPipelineConfig = PipelineConfig("bilateralBlur.csh",
+                {"HORIZONTAL", "BLUR_RGB", "DEPTH_WEIGHT"});
+            verticalBlurPipelineConfig = PipelineConfig("bilateralBlur.csh",
+                {"VERTICAL", "BLUR_RGB", "DEPTH_WEIGHT"});
 
-            verticalBlurShader.AddStage(AE_COMPUTE_STAGE, "bilateralBlur.csh");
-            verticalBlurShader.AddMacro("VERTICAL");
-            verticalBlurShader.AddMacro("BLUR_RGB");
-            verticalBlurShader.AddMacro("DEPTH_WEIGHT");
-            verticalBlurShader.Compile();
+            resolvePipelineConfig = PipelineConfig("volumetric/volumetricResolve.csh");
 
-            volumetricResolveShader.AddStage(AE_COMPUTE_STAGE, "volumetric/volumetricResolve.csh");
-            volumetricResolveShader.Compile();
+            auto bufferUsage = Buffer::BufferUsageBits::UniformBuffer | Buffer::BufferUsageBits::HostAccess
+                               | Buffer::BufferUsageBits::MultiBuffered;
+            volumetricUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(VolumetricUniforms), 1);
+            resolveUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(ResolveUniforms), 1);
+            blurWeightsUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(vec4) * (size_t(filterSize / 4) + 1), 1);
+
+            auto samplerDesc = Graphics::SamplerDesc {
+                .filter = VK_FILTER_NEAREST,
+                .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                .compareEnabled = true
+            };
+            shadowSampler = device->CreateSampler(samplerDesc);
 
         }
 
         void VolumetricRenderer::Render(Viewport* viewport, RenderTarget* target,
-            Camera* camera, Scene::Scene* scene) {
+            Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-            Profiler::BeginQuery("Render volumetric");
+            Graphics::Profiler::BeginQuery("Render volumetric");
 
-            volumetricShader.Bind();
+            auto volumetricPipeline = PipelineManager::GetPipeline(volumetricPipelineConfig);
+            commandList->BindPipeline(volumetricPipeline);
 
-            volumetricShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
-            volumetricShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
+            auto lowResDepthTexture = target->GetData(target->GetVolumetricResolution())->depthTexture;
+            auto depthTexture = target->GetData(FULL_RES)->depthTexture;
 
-            auto depthTexture = target->GetDownsampledTextures(target->GetVolumetricResolution())->depthTexture;
-            depthTexture->Bind(0);
+            commandList->ImageMemoryBarrier(target->volumetricTexture.image,
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+
+            commandList->BindImage(target->volumetricTexture.image, 3, 0);
+            commandList->BindImage(lowResDepthTexture->image, lowResDepthTexture->sampler, 3, 1);
 
             auto lights = scene->GetLights();
-
             if (scene->sky.sun) {
-                lights.push_back(scene->sky.sun);
+                lights.push_back(scene->sky.sun.get());
             }
 
             ivec2 res = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
 
-            target->volumetricTexture.Bind(GL_WRITE_ONLY, 2);
+            Graphics::Profiler::BeginQuery("Ray marching");
 
-            Profiler::BeginQuery("Raymarching");
-
-            // This loop doesn't really work, we only support one directional light for now.
-            // Later we want to process most of the lights all at once using tiled deferred shading
             for (auto& light : lights) {
                 const int32_t groupSize = 8;
 
@@ -75,54 +80,61 @@ namespace Atlas {
                 auto directionalLight = (Lighting::DirectionalLight*)light;
                 vec3 direction = normalize(vec3(camera->viewMatrix * vec4(directionalLight->direction, 0.0f)));
 
-                volumetricShader.GetUniform("light.direction")->SetValue(direction);
-                volumetricShader.GetUniform("light.color")->SetValue(light->color);
-                volumetricShader.GetUniform("light.shadow.cascadeCount")->SetValue(shadow->componentCount);
-                volumetricShader.GetUniform("sampleCount")->SetValue(volumetric->sampleCount);
-                volumetricShader.GetUniform("framebufferResolution")->SetValue(vec2(res));
-                volumetricShader.GetUniform("intensity")->SetValue(volumetric->intensity * light->intensity);
-                volumetricShader.GetUniform("seed")->SetValue(Common::Random::SampleFastUniformFloat());
+                VolumetricUniforms uniforms;
+                uniforms.sampleCount = volumetric->sampleCount;
+                uniforms.intensity = volumetric->intensity * light->intensity;
+                uniforms.seed = Common::Random::SampleFastUniformFloat();
+
+                uniforms.light.direction = vec4(direction, 0.0);
+                uniforms.light.color = vec4(light->color, 0.0);
+                uniforms.light.shadow.cascadeCount = shadow->componentCount;
+
+                commandList->BindImage(shadow->maps.image, shadowSampler, 3, 2);
+
+                auto& shadowUniform = uniforms.light.shadow;
+                for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
+                    auto& cascadeUniform = shadowUniform.cascades[i];
+                    auto cascadeString = "light.shadow.cascades[" + std::to_string(i) + "]";
+                    if (i < shadow->componentCount) {
+                        auto cascade = &shadow->components[i];
+                        cascadeUniform.distance = cascade->farDistance;
+                        cascadeUniform.cascadeSpace = cascade->projectionMatrix *
+                            cascade->viewMatrix * camera->invViewMatrix;
+                    }
+                    else {
+                        cascadeUniform.distance = camera->farPlane;
+                    }
+                }
 
                 auto fog = scene->fog;
                 bool fogEnabled = fog && fog->enable;
 
+                uniforms.fogEnabled = fogEnabled ? 1 : 0;
+
                 if (fogEnabled) {
-                    volumetricShader.GetUniform("fogEnabled")->SetValue(true);
-                    volumetricShader.GetUniform("fogDensity")->SetValue(fog->density);
-                    volumetricShader.GetUniform("fogHeightFalloff")->SetValue(fog->heightFalloff);
-                    volumetricShader.GetUniform("fogHeight")->SetValue(fog->height);
-                    volumetricShader.GetUniform("fogScatteringAnisotropy")->SetValue(glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f));
-                }
-                else {
-                    volumetricShader.GetUniform("fogEnabled")->SetValue(false);
+                    auto& fogUniform = uniforms.fog;
+                    fogUniform.color = vec4(fog->color, 0.0f);
+                    fogUniform.density = fog->density;
+                    fogUniform.heightFalloff = fog->heightFalloff;
+                    fogUniform.height = fog->height;
+                    fogUniform.scatteringAnisotropy = glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f);
                 }
 
-                light->GetShadow()->maps.Bind(1);
+                volumetricUniformBuffer.SetData(&uniforms, 0, 1);
+                commandList->BindBuffer(volumetricUniformBuffer.GetMultiBuffer(), 3, 3);
 
-                for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
-                    auto cascadeString = "light.shadow.cascades[" + std::to_string(i) + "]";
-                    if (i < shadow->componentCount) {
-                        auto cascade = &shadow->components[i];
-                        volumetricShader.GetUniform(cascadeString + ".distance")->SetValue(cascade->farDistance);
-                        volumetricShader.GetUniform(cascadeString + ".cascadeSpace")->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->invViewMatrix);
-                    }
-                    else {
-                        volumetricShader.GetUniform(cascadeString + ".distance")->SetValue(camera->farPlane);
-                    }
-                }
-
-                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-                glDispatchCompute(groupCount.x, groupCount.y, 1);
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }
 
-            Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
+
+            std::vector<Graphics::BufferBarrier> bufferBarriers;
+            std::vector<Graphics::ImageBarrier> imageBarriers;
 
             {
-                Profiler::BeginQuery("Bilateral blur");
+                Graphics::Profiler::BeginQuery("Bilateral blur");
 
                 const int32_t groupSize = 256;
-
-                depthTexture->Bind(1);
 
                 std::vector<float> kernelWeights;
                 std::vector<float> kernelOffsets;
@@ -133,41 +145,63 @@ namespace Atlas {
                 kernelWeights = std::vector<float>(kernelWeights.begin() + mean, kernelWeights.end());
                 kernelOffsets = std::vector<float>(kernelOffsets.begin() + mean, kernelOffsets.end());
 
+                auto kernelSize = int32_t(kernelWeights.size() - 1);
+
+                auto horizontalBlurPipeline = PipelineManager::GetPipeline(horizontalBlurPipelineConfig);
+                auto verticalBlurPipeline = PipelineManager::GetPipeline(verticalBlurPipelineConfig);
+
+                auto horizontalConstRange = horizontalBlurPipeline->shader->GetPushConstantRange("constants");
+                auto verticalConstRange = verticalBlurPipeline->shader->GetPushConstantRange("constants");
+
+                blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0, 1);
+
+                commandList->BindImage(lowResDepthTexture->image, lowResDepthTexture->sampler, 3, 2);
+                commandList->BindBuffer(blurWeightsUniformBuffer.GetMultiBuffer(), 3, 4);
+
                 ivec2 groupCount = ivec2(res.x / groupSize, res.y);
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
+                imageBarriers = {
+                    {target->volumetricTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->swapVolumetricTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
-                horizontalBlurShader.Bind();
+                commandList->BindPipeline(horizontalBlurPipeline);
+                commandList->PushConstants(horizontalConstRange, &kernelSize);
 
-                horizontalBlurShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
-                horizontalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
-                horizontalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
+                commandList->BindImage(target->swapVolumetricTexture.image, 3, 0);
+                commandList->BindImage(target->volumetricTexture.image, target->volumetricTexture.sampler, 3, 1);
 
-                target->volumetricTexture.Bind(0);
-                target->swapVolumetricTexture.Bind(GL_WRITE_ONLY, 0);
-
-                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-                glDispatchCompute(groupCount.x, groupCount.y, 1);
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
                 groupCount = ivec2(res.x, res.y / groupSize);
                 groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                verticalBlurShader.Bind();
+                imageBarriers = {
+                    {target->swapVolumetricTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->volumetricTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
-                verticalBlurShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
-                verticalBlurShader.GetUniform("weights")->SetValue(kernelWeights.data(), (int32_t)kernelWeights.size());
-                verticalBlurShader.GetUniform("kernelSize")->SetValue((int32_t)kernelWeights.size() - 1);
+                commandList->BindPipeline(verticalBlurPipeline);
+                commandList->PushConstants(verticalConstRange, &kernelSize);
 
-                target->swapVolumetricTexture.Bind(0);
-                target->volumetricTexture.Bind(GL_WRITE_ONLY, 0);
+                commandList->BindImage(target->volumetricTexture.image, 3, 0);
+                commandList->BindImage(target->swapVolumetricTexture.image, target->swapVolumetricTexture.sampler, 3, 1);
 
-                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-                glDispatchCompute(groupCount.x, groupCount.y, 1);
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-                Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
             }
 
+            imageBarriers = {
+                {target->volumetricTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT},
+            };
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+
             {
-                Profiler::BeginQuery("Resolve");
+                Graphics::Profiler::BeginQuery("Resolve");
 
                 const int32_t groupSize = 8;
 
@@ -177,55 +211,53 @@ namespace Atlas {
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                 groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                volumetricResolveShader.Bind();
-
-                // We keep the depth texture binding from blur pass and only bind volumetric texture
-                target->volumetricTexture.Bind(0);
-                target->GetDownsampledTextures(target->GetVolumetricResolution())->depthTexture->Bind(1);
-                target->volumetricCloudsTexture.Bind(2);
-                target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(3);
+                auto clouds = scene->sky.clouds;
+                auto cloudsEnabled = clouds && clouds->enable;
 
                 auto fog = scene->fog;
                 bool fogEnabled = fog && fog->enable;
 
-                if (fogEnabled) {
-                    volumetricResolveShader.GetUniform("fogEnabled")->SetValue(true);
-                    volumetricResolveShader.GetUniform("fogColor")->SetValue(fog->color);
-                    volumetricResolveShader.GetUniform("fogDensity")->SetValue(fog->density);
-                    volumetricResolveShader.GetUniform("fogHeightFalloff")->SetValue(fog->heightFalloff);
-                    volumetricResolveShader.GetUniform("fogHeight")->SetValue(fog->height);
-                    volumetricResolveShader.GetUniform("fogScatteringAnisotropy")->SetValue(glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f));
-                }
-                else {
-                    volumetricResolveShader.GetUniform("fogEnabled")->SetValue(false);
-                }
+                resolvePipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
+                resolvePipelineConfig.ManageMacro("FOG", fogEnabled);
 
-                auto clouds = scene->sky.clouds;
-                auto cloudsEnabled = clouds && clouds->enable;
+                auto resolvePipeline = PipelineManager::GetPipeline(resolvePipelineConfig);
+                commandList->BindPipeline(resolvePipeline);
+
+                commandList->BindImage(target->lightingTexture.image, 3, 0);
+                commandList->BindImage(target->volumetricTexture.image, target->volumetricTexture.sampler, 3, 1);
+                commandList->BindImage(lowResDepthTexture->image, lowResDepthTexture->sampler, 3, 2);
+                commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 4);
+
+                ResolveUniforms uniforms;
+                uniforms.cloudsEnabled = cloudsEnabled ? 1 : 0;
+                uniforms.fogEnabled = fogEnabled ? 1 : 0;
+                uniforms.downsampled2x = target->GetVolumetricResolution() == RenderResolution::HALF_RES ? 1 : 0;
+
+                if (fogEnabled) {
+                    auto& fogUniform = uniforms.fog;
+                    fogUniform.color = vec4(fog->color, 0.0f);
+                    fogUniform.density = fog->density;
+                    fogUniform.heightFalloff = fog->heightFalloff;
+                    fogUniform.height = fog->height;
+                    fogUniform.scatteringAnisotropy = glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f);
+                }
 
                 if (cloudsEnabled) {
-                    volumetricResolveShader.GetUniform("cloudsEnabled")->SetValue(true);
-                }
-                else {
-                    volumetricResolveShader.GetUniform("cloudsEnabled")->SetValue(false);
+                    commandList->BindImage(target->volumetricCloudsTexture.image, target->volumetricCloudsTexture.sampler, 3, 3);
                 }
 
-                volumetricResolveShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
-                volumetricResolveShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
-                volumetricResolveShader.GetUniform("cameraLocation")->SetValue(camera->location);
-                volumetricResolveShader.GetUniform("downsampled2x")->SetValue(target->GetVolumetricResolution() == RenderResolution::HALF_RES);
+                resolveUniformBuffer.SetData(&uniforms, 0, 1);
+                commandList->BindBuffer(resolveUniformBuffer.GetMultiBuffer(), 3, 5);
 
-                target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_READ_WRITE, 0);
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-                glDispatchCompute(groupCount.x, groupCount.y, 1);
-
-                Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
             }
 
-            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            commandList->ImageMemoryBarrier(target->lightingTexture.image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
-            Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
         }
 

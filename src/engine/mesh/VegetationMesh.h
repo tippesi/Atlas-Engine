@@ -20,7 +20,7 @@ namespace Atlas {
 			 * @param filename
 			 * @param mobility
 			 */
-			explicit VegetationMesh(MeshData data, int32_t mobility = AE_STATIONARY_MESH);
+			explicit VegetationMesh(MeshData data, MeshMobility mobility = MeshMobility::Stationary);
 
 		private:
 

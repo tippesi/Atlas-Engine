@@ -14,10 +14,6 @@
 // Also note that the payload offset is different from the ray offset
 // as rays are written two times per bounce or execution, while payloads
 // are just written by the shader of the user
-uniform uint rayBufferSize;
-uniform uint rayBufferOffset;
-uniform uint rayPayloadBufferOffset;
-uniform bool useRayBinning;
 
 uint DetermineRayBin(Ray ray) {
 	ivec2 coord = ivec2(UnitVectorToOctahedron(ray.direction) * 8.0);
@@ -25,7 +21,7 @@ uint DetermineRayBin(Ray ray) {
 }
 
 Ray AddRayToBin(Ray ray) {
-	if (!useRayBinning) return ray;
+	if (PushConstants.useRayBinning == 0) return ray;
 	uint bin = DetermineRayBin(ray);
 	atomicAdd(rayBinCounters[bin], 1u);
 	ray.hitID = int(bin);
@@ -41,36 +37,36 @@ bool IsRayIndexValid(uint idx) {
 }
 
 Ray ReadRay() {
-	uint idx = (1u - rayBufferOffset) * rayBufferSize + gl_GlobalInvocationID.x;
+	uint idx = (1u - PushConstants.rayBufferOffset) * PushConstants.rayBufferSize + gl_GlobalInvocationID.x;
     return UnpackRay(rays[idx]);
 }
 
 RayPayload ReadRayPayload() {
-	uint idx = (1u - rayPayloadBufferOffset) * rayBufferSize + gl_GlobalInvocationID.x;
+	uint idx = (1u - PushConstants.rayPayloadBufferOffset) * PushConstants.rayBufferSize + gl_GlobalInvocationID.x;
 	return UnpackRayPayload(rayPayloads[idx]);
 }
 
 Ray ReadRay(uint idx) {
-	idx += (1u - rayBufferOffset) * rayBufferSize;
+	idx += (1u - PushConstants.rayBufferOffset) * PushConstants.rayBufferSize;
     return UnpackRay(rays[idx]);
 }
 
 RayPayload ReadRayPayload(uint idx) {
-	idx += (1u - rayPayloadBufferOffset) * rayBufferSize;
+	idx += (1u - PushConstants.rayPayloadBufferOffset) * PushConstants.rayBufferSize;
 	return UnpackRayPayload(rayPayloads[idx]);
 }
 
 void WriteRay(Ray ray) {
 	ray = AddRayToBin(ray);
-	uint offset = rayBufferOffset * rayBufferSize;
+	uint offset = PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
     uint idx = atomicAdd(writeAtomic[0], uint(1)) + offset;
 	rays[idx] = PackRay(ray);
 }
 
 void WriteRay(Ray ray, RayPayload payload) {
 	ray = AddRayToBin(ray);
-	uint rayOffset = rayBufferOffset * rayBufferSize;
-	uint payloadOffset = rayPayloadBufferOffset * rayBufferSize;
+	uint rayOffset = PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
+	uint payloadOffset = PushConstants.rayPayloadBufferOffset * PushConstants.rayBufferSize;
     uint idx = atomicAdd(writeAtomic[0], uint(1));
 	rays[idx + rayOffset] = PackRay(ray);
 	rayPayloads[idx + payloadOffset] = PackRayPayload(payload);
@@ -78,15 +74,15 @@ void WriteRay(Ray ray, RayPayload payload) {
 
 void WriteRay(Ray ray, uint idx) {
 	ray = AddRayToBin(ray);
-	idx += rayBufferOffset * rayBufferSize;
+	idx += PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
 	atomicAdd(writeAtomic[0], uint(1));
 	rays[idx] = PackRay(ray);
 }
 
 void WriteRay(Ray ray, RayPayload payload, uint idx) {
 	ray = AddRayToBin(ray);
-	uint rayOffset = rayBufferOffset * rayBufferSize;
-	uint payloadOffset = rayPayloadBufferOffset * rayBufferSize;
+	uint rayOffset = PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
+	uint payloadOffset = PushConstants.rayPayloadBufferOffset * PushConstants.rayBufferSize;
     atomicAdd(writeAtomic[0], uint(1));
 	rays[idx + rayOffset] = PackRay(ray);
 	rayPayloads[idx + payloadOffset] = PackRayPayload(payload);

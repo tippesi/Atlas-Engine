@@ -9,16 +9,10 @@ namespace Atlas {
 
 		RTData::RTData(Scene* scene) : scene(scene) {
 
-			glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &shaderStorageLimit);
-
-			triangleBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUTriangle),
-				AE_BUFFER_DYNAMIC_STORAGE);
-			bvhTriangleBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(BVHTriangle),
-				AE_BUFFER_DYNAMIC_STORAGE);
-			materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUMaterial),
-				AE_BUFFER_DYNAMIC_STORAGE);
-			nodeBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(GPUBVHNode),
-				AE_BUFFER_DYNAMIC_STORAGE);
+			triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(GPUTriangle));
+			bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(BVHTriangle));
+			materialBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(GPUMaterial));
+			nodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(GPUBVHNode));
 
 		}
 
@@ -33,8 +27,6 @@ namespace Atlas {
 
 			std::vector<GPUMaterial> materials;
 			auto materialAccess = UpdateMaterials(materials, true);
-			// Finish OpenGL commands instantly to free RAM
-			glFinish();
 
 			for (auto& actor : actors) {
 				if (!actor->visible)
@@ -42,14 +34,6 @@ namespace Atlas {
 
 				indexCount += actor->mesh->data.GetIndexCount();
 				vertexCount += actor->mesh->data.GetVertexCount();
-			}
-
-			auto vertexByteCount = vertexCount * sizeof(GPUTriangle);
-
-			if (vertexByteCount > shaderStorageLimit) {
-				Log::Error("Scene has to many data for shader storage buffer objects\n\
-					Limit is " + std::to_string(shaderStorageLimit) + " bytes");
-				return;
 			}
 
 			int32_t triangleCount = indexCount / 3;
@@ -259,8 +243,6 @@ namespace Atlas {
 			bvhTriangleBuffer.SetSize(gpuBvhTriangles.size());
 			bvhTriangleBuffer.SetData(gpuBvhTriangles.data(), 0, gpuBvhTriangles.size());
 
-			glFinish();
-
 			auto& nodes = bvh.GetTree();
 			auto gpuNodes = std::vector<GPUBVHNode>(nodes.size());
 			// Copy to GPU format
@@ -282,7 +264,6 @@ namespace Atlas {
 			// Upload nodes instantly
 			nodeBuffer.SetSize(gpuNodes.size());
 			nodeBuffer.SetData(gpuNodes.data(), 0, gpuNodes.size());
-			glFinish();
 
 			triangleLights.clear();
 
@@ -382,37 +363,37 @@ namespace Atlas {
 						gpuMaterial.twoSided = material.twoSided ? 1 : 0;
 
 						if (material.HasBaseColorMap()) {
-							auto& slices = baseColorTextureAtlas.slices[material.baseColorMap];
+							auto& slices = baseColorTextureAtlas.slices[material.baseColorMap.get()];
 
 							gpuMaterial.baseColorTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasOpacityMap()) {
-							auto& slices = opacityTextureAtlas.slices[material.opacityMap];
+							auto& slices = opacityTextureAtlas.slices[material.opacityMap.get()];
 
 							gpuMaterial.opacityTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasNormalMap()) {
-							auto& slices = normalTextureAtlas.slices[material.normalMap];
+							auto& slices = normalTextureAtlas.slices[material.normalMap.get()];
 
 							gpuMaterial.normalTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasRoughnessMap()) {
-							auto& slices = roughnessTextureAtlas.slices[material.roughnessMap];
+							auto& slices = roughnessTextureAtlas.slices[material.roughnessMap.get()];
 
 							gpuMaterial.roughnessTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasMetalnessMap()) {
-							auto& slices = metalnessTextureAtlas.slices[material.metalnessMap];
+							auto& slices = metalnessTextureAtlas.slices[material.metalnessMap.get()];
 
 							gpuMaterial.metalnessTexture = CreateGPUTextureStruct(slices);
 						}
 
 						if (material.HasAoMap()) {
-							auto& slices = aoTextureAtlas.slices[material.aoMap];
+							auto& slices = aoTextureAtlas.slices[material.aoMap.get()];
 
 							gpuMaterial.aoTexture = CreateGPUTextureStruct(slices);
 						}
@@ -436,12 +417,12 @@ namespace Atlas {
 			auto actors = scene->GetMeshActors();
 
 			std::unordered_set<Mesh::Mesh*> meshes;
-			std::vector<Texture::Texture2D*> baseColorTextures;
-			std::vector<Texture::Texture2D*> opacityTextures;
-			std::vector<Texture::Texture2D*> normalTextures;
-			std::vector<Texture::Texture2D*> roughnessTextures;
-			std::vector<Texture::Texture2D*> metalnessTextures;
-			std::vector<Texture::Texture2D*> aoTextures;
+			std::vector<Ref<Texture::Texture2D>> baseColorTextures;
+			std::vector<Ref<Texture::Texture2D>> opacityTextures;
+			std::vector<Ref<Texture::Texture2D>> normalTextures;
+			std::vector<Ref<Texture::Texture2D>> roughnessTextures;
+			std::vector<Ref<Texture::Texture2D>> metalnessTextures;
+			std::vector<Ref<Texture::Texture2D>> aoTextures;
 
 			for (auto& actor : actors) {
 				if (meshes.find(actor->mesh) == meshes.end()) {
@@ -473,6 +454,17 @@ namespace Atlas {
 			aoTextureAtlas = Texture::TextureAtlas(aoTextures, 1, textureDownscale);
 
 		}
+
+        void RTData::Clear() {
+
+            baseColorTextureAtlas.Clear();
+            opacityTextureAtlas.Clear();
+            normalTextureAtlas.Clear();
+            roughnessTextureAtlas.Clear();
+            metalnessTextureAtlas.Clear();
+            aoTextureAtlas.Clear();
+
+        }
 
 		RTData::GPUTexture RTData::CreateGPUTextureStruct(std::vector<Texture::TextureAtlas::Slice> slices) {
 

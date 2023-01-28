@@ -10,14 +10,27 @@ namespace Atlas {
 		class SSSRenderer : public Renderer {
 
 		public:
-			SSSRenderer();
+			SSSRenderer() = default;
+
+            void Init(Graphics::GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene) final;
+				Camera* camera, Scene::Scene* scene) final {};
+
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
 
 		private:
+            struct alignas(16) PushConstants {
+                vec4 lightDirection;
+                int sampleCount;
+                float maxLength;
+                float thickness;
+            };
+
 			Filter blurFilter;
-			Shader::Shader sssShader;
+
+            PipelineConfig pipelineConfig;
 
 		};
 

@@ -7,6 +7,7 @@ namespace Atlas {
 
 		VegetationRenderer::VegetationRenderer() {
 
+            /*
 			shader.AddStage(AE_VERTEX_STAGE, "vegetation/vegetation.vsh");
 			shader.AddStage(AE_FRAGMENT_STAGE, "vegetation/vegetation.fsh");
 
@@ -19,12 +20,14 @@ namespace Atlas {
 
 			depthShader.AddMacro("OPACITY_MAP");
 			depthShader.Compile();
+             */
 
 		}
 
 		void VegetationRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
 			Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap) {
 
+            /*
 			if (!scene->vegetation) return;
 
 			Profiler::BeginQuery("Vegetation");
@@ -54,6 +57,7 @@ namespace Atlas {
 			glDepthFunc(GL_EQUAL);
 			*/
 
+            /*
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LEQUAL);
 			
@@ -114,12 +118,14 @@ namespace Atlas {
 			glDepthFunc(GL_LEQUAL);
 
 			Profiler::EndQuery();
+            */
 
 		}
 
 		void VegetationRenderer::DepthPrepass(Scene::Vegetation& vegetation, std::vector<Mesh::VegetationMesh*>& meshes, 
 			Camera* camera, float time, float deltaTime) {
 
+            /*
 			glColorMask(false, false, false, false);
 
 			depthShader.Bind();
@@ -155,6 +161,7 @@ namespace Atlas {
 			}
 
 			glColorMask(true, true, true, true);
+             */
 
 		}
 

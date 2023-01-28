@@ -5,12 +5,11 @@
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-layout(binding = 0) uniform sampler2D inputTexture;
-layout(binding = 1) uniform sampler2D depthTexture;
-layout(binding = 2) uniform sampler2D normalTexture;
-layout(binding = 3) uniform sampler2D roughnessTexture;
-
-layout(binding = 0) writeonly uniform image2D outputImage;
+layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D outputImage;
+layout(set = 3, binding = 1) uniform sampler2D inputTexture;
+layout(set = 3, binding = 2) uniform sampler2D depthTexture;
+layout(set = 3, binding = 3) uniform sampler2D normalTexture;
+layout(set = 3, binding = 4) uniform sampler2D roughnessTexture;
 
 #ifdef STEP_SIZE1
 const int kernelRadius = 2;
@@ -40,8 +39,10 @@ struct PackedPixelData {
 
 shared PackedPixelData pixelData[sharedDataSize];
 
-uniform int stepSize;
-uniform float strength;
+layout(push_constant) uniform constants {
+	int stepSize;
+    float strength;
+} pushConstants;
 
 const float kernelWeights[3] = { 1.0, 2.0 / 3.0, 1.0 / 6.0 };
 
@@ -190,13 +191,13 @@ void main() {
     const int radius = 2;
     for (int x = -radius; x <= radius; x++) {
         for (int y = -radius; y <= radius; y++) {            
-            ivec2 samplePixel = pixel + ivec2(x, y) * stepSize;
+            ivec2 samplePixel = pixel + ivec2(x, y) * pushConstants.stepSize;
 
             if (samplePixel.x >= resolution.x || samplePixel.y >= resolution.y
                 || (x == 0 && y == 0))
                 continue;
 
-            PixelData samplePixelData = GetPixel(ivec2(x, y) * stepSize);
+            PixelData samplePixelData = GetPixel(ivec2(x, y) * pushConstants.stepSize);
 
             // if (sampleDepth == 1.0)
             //    continue;
@@ -215,7 +216,7 @@ void main() {
                                     centerNormal, sampleNormal,
                                     centerLinearDepth, sampleLinearDepth,
                                     centerRoughness, sampleRoughness,
-                                    stdDeviation * strength, 32.0, 
+                                    stdDeviation * pushConstants.strength, 32.0, 
                                     1.0, 0.05);
 
             float weight = kernelWeight * edgeStoppingWeight;

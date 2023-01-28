@@ -4,7 +4,6 @@
 #include "../System.h"
 #include "../common/NoiseGenerator.h"
 #include "../texture/Texture2D.h"
-#include "../shader/Shader.h"
 
 #include <vector>
 
@@ -63,13 +62,15 @@ namespace Atlas {
 
 			float time = 0.0f;
 
-			Shader::Shader h0;
-			Shader::Shader ht;
-			Shader::Shader twiddle;
-			Shader::Shader horizontalButterfly;
-			Shader::Shader verticalButterfly;
-			Shader::Shader inversion;
-			Shader::Shader normal;
+            /*
+			OldShader::OldShader h0;
+			OldShader::OldShader ht;
+			OldShader::OldShader twiddle;
+			OldShader::OldShader horizontalButterfly;
+			OldShader::OldShader verticalButterfly;
+			OldShader::OldShader inversion;
+			OldShader::OldShader normal;
+            */
 
 			// Precomputed noise textures
 			Texture::Texture2D noise0;
@@ -82,26 +83,28 @@ namespace Atlas {
 			Texture::Texture2D hTD;
 			Texture::Texture2D hTDPingpong;
 
-			Shader::Uniform* htNUniform;
-			Shader::Uniform* htLUniform;
-			Shader::Uniform* htTimeUniform;
+            /*
+			OldShader::Uniform* htNUniform;
+			OldShader::Uniform* htLUniform;
+			OldShader::Uniform* htTimeUniform;
 
-			Shader::Uniform* butterflyStageUniform;
-			Shader::Uniform* butterflyPingpongUniform;
-			Shader::Uniform* butterflyNUniform;
-			Shader::Uniform* butterflyPreTwiddleUniform;
+			OldShader::Uniform* butterflyStageUniform;
+			OldShader::Uniform* butterflyPingpongUniform;
+			OldShader::Uniform* butterflyNUniform;
+			OldShader::Uniform* butterflyPreTwiddleUniform;
 
-			Shader::Uniform* inversionNUniform;
-			Shader::Uniform* inversionPingpongUniform;
+			OldShader::Uniform* inversionNUniform;
+			OldShader::Uniform* inversionPingpongUniform;
 
-			Shader::Uniform* normalNUniform;
-			Shader::Uniform* normalLUniform;
-			Shader::Uniform* normalChoppyScaleUniform;
-			Shader::Uniform* normalDisplacementScaleUniform;
-			Shader::Uniform* normalTilingUniform;
-			Shader::Uniform* normalFoamTemporalWeightUniform;
-			Shader::Uniform* normalFoamTemporalThresholdUniform;
-			Shader::Uniform* normalFoamOffsetUniform;
+			OldShader::Uniform* normalNUniform;
+			OldShader::Uniform* normalLUniform;
+			OldShader::Uniform* normalChoppyScaleUniform;
+			OldShader::Uniform* normalDisplacementScaleUniform;
+			OldShader::Uniform* normalTilingUniform;
+			OldShader::Uniform* normalFoamTemporalWeightUniform;
+			OldShader::Uniform* normalFoamTemporalThresholdUniform;
+			OldShader::Uniform* normalFoamOffsetUniform;
+            */
 
 		};
 

@@ -4,8 +4,6 @@
 #include "../System.h"
 #include "Renderer.h"
 
-#include "../shader/ShaderBatch.h"
-
 namespace Atlas {
 
 	namespace Renderer {
@@ -36,43 +34,45 @@ namespace Atlas {
 				float padding1;
 			};
 
-			Shader::ShaderBatch shaderBatch;
+            /*
+			OldShader::ShaderBatch shaderBatch;
 
-			Shader::ShaderConfig detailConfig;
-			Shader::ShaderConfig distanceConfig;
+			OldShader::ShaderConfig detailConfig;
+			OldShader::ShaderConfig distanceConfig;
 
 			Buffer::Buffer terrainMaterialBuffer;
 
-			Shader::Uniform* heightScale = nullptr;
-			Shader::Uniform* offset = nullptr;
-			Shader::Uniform* tileScale = nullptr;
-			Shader::Uniform* viewMatrix = nullptr;
-			Shader::Uniform* projectionMatrix = nullptr;
-			Shader::Uniform* nodeSideLength = nullptr;
-			Shader::Uniform* nodeLocation = nullptr;
+			OldShader::Uniform* heightScale = nullptr;
+			OldShader::Uniform* offset = nullptr;
+			OldShader::Uniform* tileScale = nullptr;
+			OldShader::Uniform* viewMatrix = nullptr;
+			OldShader::Uniform* projectionMatrix = nullptr;
+			OldShader::Uniform* nodeSideLength = nullptr;
+			OldShader::Uniform* nodeLocation = nullptr;
 
-			Shader::Uniform* leftLoD = nullptr;
-			Shader::Uniform* topLoD = nullptr;
-			Shader::Uniform* rightLoD = nullptr;
-			Shader::Uniform* bottomLoD = nullptr;
+			OldShader::Uniform* leftLoD = nullptr;
+			OldShader::Uniform* topLoD = nullptr;
+			OldShader::Uniform* rightLoD = nullptr;
+			OldShader::Uniform* bottomLoD = nullptr;
 
-			Shader::Uniform* patchSize = nullptr;
+			OldShader::Uniform* patchSize = nullptr;
 
-			Shader::Uniform* tessellationFactor = nullptr;
-			Shader::Uniform* tessellationSlope = nullptr;
-			Shader::Uniform* tessellationShift = nullptr;
-			Shader::Uniform* maxTessellationLevel = nullptr;
+			OldShader::Uniform* tessellationFactor = nullptr;
+			OldShader::Uniform* tessellationSlope = nullptr;
+			OldShader::Uniform* tessellationShift = nullptr;
+			OldShader::Uniform* maxTessellationLevel = nullptr;
 
-			Shader::Uniform* displacementDistance = nullptr;
+			OldShader::Uniform* displacementDistance = nullptr;
 
-			Shader::Uniform* cameraLocation = nullptr;
-			Shader::Uniform* frustumPlanes = nullptr;
+			OldShader::Uniform* cameraLocation = nullptr;
+			OldShader::Uniform* frustumPlanes = nullptr;
 
-			Shader::Uniform* normalTexelSize = nullptr;
+			OldShader::Uniform* normalTexelSize = nullptr;
 
-			Shader::Uniform* pvMatrixLast = nullptr;
-			Shader::Uniform* jitterLast = nullptr;
-			Shader::Uniform* jitterCurrent = nullptr;
+			OldShader::Uniform* pvMatrixLast = nullptr;
+			OldShader::Uniform* jitterLast = nullptr;
+			OldShader::Uniform* jitterCurrent = nullptr;
+            */
 
 		};
 

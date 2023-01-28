@@ -5,6 +5,8 @@
 #include "buffer/VertexArray.h"
 #include "buffer/VertexBuffer.h"
 
+#include <vector>
+
 namespace Atlas {
 
 	namespace Renderer {

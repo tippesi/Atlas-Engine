@@ -9,18 +9,23 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		class DDGIRenderer {
+		class DDGIRenderer : public Renderer {
 
 		public:
-			DDGIRenderer();
+			DDGIRenderer() = default;
+
+            void Init(Graphics::GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene);
+				Camera* camera, Scene::Scene* scene) final {};
 
-			void TraceAndUpdateProbes(Scene::Scene* scene);
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
+
+			void TraceAndUpdateProbes(Scene::Scene* scene, Graphics::CommandList* commandList);
 
 			void DebugProbes(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene, 
+				Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList,
 				std::unordered_map<void*, uint16_t>& materialMap);
 
 			// Used for debugging
@@ -30,25 +35,66 @@ namespace Atlas {
 			Material probeDebugOffsetMaterial;
 
 		private:
-			Framebuffer irradianceFramebuffer;
-			Framebuffer momentsFramebuffer;
+            struct alignas(16) RayGenUniforms {
+                mat4 rotationMatrix;
+            };
+
+            struct alignas(16) Cascade {
+                float distance;
+                float texelSize;
+                float aligment0;
+                float aligment1;
+                mat4 cascadeSpace;
+            };
+
+            struct alignas(16) Shadow {
+                float distance;
+                float bias;
+
+                float cascadeBlendDistance;
+
+                int cascadeCount;
+                vec2 resolution;
+
+                Cascade cascades[6];
+            };
+
+            struct alignas(16) RayHitUniforms {
+                float seed;
+                Shadow shadow;
+            };
+
+            struct alignas(16) ProbeDebugConstants {
+                uint32_t probeMaterialIdx;
+                uint32_t probeActiveMaterialIdx;
+                uint32_t probeInactiveMaterialIdx;
+                uint32_t probeOffsetMaterialIdx;
+            };
 
 			Buffer::Buffer rayHitBuffer;
+
+			Buffer::Buffer rayGenUniformBuffer;
+			Buffer::Buffer rayHitUniformBuffer;
 
 			Buffer::VertexArray vertexArray;
 			Buffer::VertexArray sphereArray;
 
 			Helper::RayTracingHelper helper;
 
-			Shader::Shader probeDebugShader;
+            PipelineConfig probeDebugPipelineConfig;
 
-			Shader::Shader rayGenShader;
-			Shader::Shader rayHitShader;
+            PipelineConfig rayGenPipelineConfig;
+            PipelineConfig rayHitPipelineConfig;
 
-			Shader::Shader probeStateShader;
-			Shader::Shader probeIrradianceUpdateShader;
-			Shader::Shader probeMomentsUpdateShader;
-			Shader::Shader copyEdgeShader;
+            PipelineConfig probeStatePipelineConfig;
+            PipelineConfig probeIrradianceUpdatePipelineConfig;
+            PipelineConfig probeMomentsUpdatePipelineConfig;
+
+            PipelineConfig irradianceCopyEdgePipelineConfig;
+            PipelineConfig momentsCopyEdgePipelineConfig;
+
+            Ref<Graphics::Sampler> shadowSampler;
+
 
 		};
 

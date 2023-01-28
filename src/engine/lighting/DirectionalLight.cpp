@@ -12,7 +12,7 @@ namespace Atlas {
 
         DirectionalLight::~DirectionalLight() {
 
-            
+			if (shadow) delete shadow;
 
         }
 
@@ -41,11 +41,16 @@ namespace Atlas {
 
 			shadow->allowTerrain = true;
 
+			const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, -1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 0.5f, 0.0f,
+				0.0f, 0.0f, 0.5f, 1.0f);
+
             shadow->components[0].nearDistance = 0.0f;
             shadow->components[0].farDistance = distance;
-            shadow->components[0].projectionMatrix = orthoProjection;
-            shadow->components[0].frustumMatrix = orthoProjection;
-            shadow->components[0].terrainFrustumMatrix = orthoProjection;
+            shadow->components[0].projectionMatrix = clip * orthoProjection;
+            shadow->components[0].frustumMatrix = clip * orthoProjection;
+            shadow->components[0].terrainFrustumMatrix = clip * orthoProjection;
             shadow->components[0].viewMatrix = glm::lookAt(centerPoint, centerPoint + direction, vec3(0.0f, 1.0f, 0.0f));
 
         }
@@ -54,11 +59,6 @@ namespace Atlas {
 
 			shadow->maps.Resize(shadow->resolution, shadow->resolution,
                                 shadow->maps.depth + 1);
-
-			shadow->maps.Bind(0);
-
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
 			shadow->componentCount += 1;
 
@@ -170,15 +170,20 @@ namespace Atlas {
                 minProj.z = glm::min(minProj.z, corner.z);
             }
 
+			const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, -1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 0.5f, 0.5f,
+				0.0f, 0.0f, 0.0f, 1.0f);
+
 			// Tighter frustum for normal meshes
-            cascade->frustumMatrix = glm::ortho(minProj.x, 
+            cascade->frustumMatrix = clip * glm::ortho(minProj.x, 
 				maxProj.x,
 				minProj.y,
 				maxProj.y,
 				-maxProj.z - 300.0f, // We need to render stuff behind the camera
 				-minProj.z + 10.0f) * cascade->viewMatrix; // We need to extend a bit to hide seams at cascade splits
 
-			cascade->terrainFrustumMatrix = glm::ortho(minProj.x,
+			cascade->terrainFrustumMatrix = clip * glm::ortho(minProj.x,
 				maxProj.x,
 				minProj.y,
 				maxProj.y,
@@ -187,14 +192,14 @@ namespace Atlas {
 
 			maxLength = glm::ceil(maxLength);
 
-			cascade->projectionMatrix = glm::ortho(-maxLength,
+			cascade->projectionMatrix = clip * glm::ortho(-maxLength,
 				maxLength,
 				-maxLength,
 				maxLength,
 				-maxLength - 1250.0f, // We need to render stuff behind the camera
 				maxLength + 10.0f); // We need to extend a bit to hide seams at cascade splits
 
-			glm::mat4 shadowMatrix = cascade->projectionMatrix * cascade->viewMatrix;
+			glm::mat4 shadowMatrix = clip * cascade->projectionMatrix * cascade->viewMatrix;
 			glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 			shadowOrigin = shadowMatrix * shadowOrigin;
 			shadowOrigin = shadowOrigin * (float)shadow->resolution / 2.0f;

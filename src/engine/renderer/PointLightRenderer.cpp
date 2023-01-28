@@ -8,6 +8,7 @@ namespace Atlas {
 
 		PointLightRenderer::PointLightRenderer() {
 
+            /*
 			Helper::GeometryHelper::GenerateSphereVertexArray(vertexArray, 16, 16);
 
 			shader.AddStage(AE_VERTEX_STAGE, "deferred/point.vsh");
@@ -16,11 +17,13 @@ namespace Atlas {
 			shader.Compile();
 
 			GetUniforms();
+             */
 
 		}
 
 		void PointLightRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+            /*
 			shader.Bind();
 
 			vertexArray.Bind();
@@ -70,11 +73,13 @@ namespace Atlas {
 				}
 
 			}
+             */
 
 		}
 
 		void PointLightRenderer::GetUniforms() {
 
+            /*
 			viewMatrix = shader.GetUniform("vMatrix");
 			projectionMatrix = shader.GetUniform("pMatrix");
 			inverseProjectionMatrix = shader.GetUniform("ipMatrix");
@@ -86,6 +91,7 @@ namespace Atlas {
 			lightAmbient = shader.GetUniform("light.ambient");
 			lightRadius = shader.GetUniform("light.radius");
 			shadowEnabled = shader.GetUniform("shadowEnabled");
+             */
 
 		}
 

@@ -7,8 +7,8 @@ struct Cascade {
 	
 	float distance;
 	float texelSize;
-	mat4 cascadeSpace;	
-	
+	mat4 cascadeSpace;
+
 };
 
 //Shadow struct has to be implemented like this
@@ -51,7 +51,7 @@ float cascadeLookup(Shadow shadow, sampler2DArrayShadow cascadeMaps, float casca
 	
 	float fadeout = fade ? clamp((-fragmentPosition.z + 2.0 - shadow.distance) * 0.5, 0.0, 1.0) : 0.0;
 	
-	shadowCoords.z = shadowCoords.z * 0.5 + 0.5;
+	//shadowCoords.z = shadowCoords.z * 0.5 + 0.5;
 	
 	if (abs(fadeout - 1.0) < 1e-6)
 		return 1.0;

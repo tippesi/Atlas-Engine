@@ -18,12 +18,6 @@ namespace Atlas {
 			 */
             Cubemap() = default;
 
-			/**
-             * Constructs a Cubemap object.
-			 * @param that Another Cubemap object.
-             */
-            Cubemap(const Cubemap& that);
-
             /**
              * Constructs a Cubemap object.
              * @param right
@@ -49,22 +43,12 @@ namespace Atlas {
 			 * Construct a Cubemap object.
 			 * @param width The width of the texture.
 			 * @param height The height of the texture.
-			 * @param sizedFormat The sized texture format. See {@link TextureFormat.h} for more.
+			 * @param format The texture format.
 			 * @param wrapping The wrapping of the texture. Controls texture border behaviour.
 			 * @param filtering The filtering of the texture.
-			 * @param generateMipMaps Whether or not mipmap can be used. Generate using GenerateMipmap()
 			 */
-            Cubemap(int32_t width, int32_t height, int32_t sizedFormat,
-				int32_t wrapping = GL_CLAMP_TO_EDGE, int32_t filtering = GL_LINEAR,
-				bool generateMipmaps = false);
-
-			/**
-             * Copies the data from another Cubemap object to the Cubemap object.
-             * @param that Another Cubemap object.
-             * @return A reference to the texture.
-             * @note The graphics API object will be changed.
-             */
-            Cubemap& operator=(const Cubemap &that);
+            Cubemap(int32_t width, int32_t height, VkFormat format,
+                Wrapping wrapping = Wrapping::ClampToEdge, Filtering filtering = Filtering::Linear);
 
 			/**
 			 * Sets the data of the texture
@@ -83,14 +67,19 @@ namespace Atlas {
             void SetData(std::vector<float>& data, int32_t layer);
 
             /**
+             * Sets the data of the texture
+             * @param data A vector holding the new data.
+             * @param layer The layer where the data should be set.
+             * @note The data has to have the size of width * height * channels.
+             */
+            void SetData(std::vector<float16>& data, int32_t layer);
+
+            /**
              *
              * @param layer
              * @return
              */
 			std::vector<uint8_t> GetData(int32_t layer);
-
-		protected:
-			void ReserveStorage(int32_t mipCount) override;
 
         };
 

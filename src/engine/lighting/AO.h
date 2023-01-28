@@ -25,7 +25,7 @@ namespace Atlas {
 			bool rt = false;
 
 			Texture::Texture2D noiseTexture;
-			std::vector<vec3> samples;
+			std::vector<vec4> samples;
 
 		};
 

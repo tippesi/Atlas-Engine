@@ -25,5 +25,9 @@ data/medieval
 .DS_Store
 data/newsponza
 data/emeraldsquare
-bin
+data/forest
 CMakeSettings.json
+.vscode/settings.json
+xcode
+bin
+data/dump.txt

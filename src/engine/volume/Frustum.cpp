@@ -98,15 +98,16 @@ namespace Atlas {
 
 		void Frustum::CalculateCorners(mat4 matrix) {
 
+			// Somehow far and near points are reversed
 			vec3 vectors[8] = {
+				vec3(-1.0f, 1.0f, 0.0f),
+				vec3(1.0f, 1.0f, 0.0f),
+				vec3(-1.0f, -1.0f, 0.0f),
+				vec3(1.0f, -1.0f, 0.0f),
 				vec3(-1.0f, 1.0f, 1.0f),
 				vec3(1.0f, 1.0f, 1.0f),
 				vec3(-1.0f, -1.0f, 1.0f),
-				vec3(1.0f, -1.0f, 1.0f),
-				vec3(-1.0f, 1.0f, -1.0f),
-				vec3(1.0f, 1.0f, -1.0f),
-				vec3(-1.0f, -1.0f, -1.0f),
-				vec3(1.0f, -1.0f, -1.0f)
+				vec3(1.0f, -1.0f, 1.0f)
 			};
 
 			corners.clear();

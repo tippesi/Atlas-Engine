@@ -1,292 +1,172 @@
 #include "Texture.h"
-#include "../Extensions.h"
 
-#include <stb_image_resize.h>
+#include "../graphics/Instance.h"
+#include "../graphics/Format.h"
 
 namespace Atlas {
 
     namespace Texture {
 
-        int32_t Texture::anisotropyLevel = 0;
+        Texture::Texture(int32_t width, int32_t height, int32_t depth, VkFormat format,
+            Wrapping wrapping, Filtering filtering) : width(width), height(height), depth(depth),
+            wrapping(wrapping), filtering(filtering), format(format) {
 
-        Texture::Texture() {
-
-            glGenTextures(1, &ID);
-
-        }
-
-        Texture::~Texture() {
-
-            glDeleteTextures(1, &ID);
+            Reallocate(Graphics::ImageType::Image2D, width, height, depth, filtering, wrapping);
+            RecreateSampler(filtering, wrapping);
 
         }
-
-        Texture& Texture::operator=(const Texture &that) {
-
-            if (this != &that) {
-
-                // Remember that we have persistent texture memory.
-                // We can't just change the format, but are required to
-                // retrieve a new texture ID.
-                glDeleteTextures(1, &ID);
-                glGenTextures(1, &ID);
-
-				DeepCopy(that);
-
-            }
-
-            return *this;
-
-        }
-
-		void Texture::Bind() const {
-
-			if (!target)
-				return;
-
-			glBindTexture(target, ID);
-
-		}
-
-		void Texture::Bind(uint32_t unit) const {
-
-			if (!target)
-				return;
-
-			glActiveTexture(GL_TEXTURE0 + unit);
-			Bind();
-
-		}
-
-		void Texture::Bind(uint32_t access, uint32_t unit, int32_t level) const {
-
-			glBindImageTexture(unit, ID, level, depth > 1, 0, access, sizedFormat);
-
-		}
-
-		void Texture::Unbind() const {
-
-			if (!target)
-				return;
-
-			glBindTexture(target, 0);
-
-		}
-
-		void Texture::Unbind(uint32_t unit) const {
-
-			if (!target)
-				return;
-
-			glActiveTexture(unit);
-			Unbind();
-
-		}
 
         bool Texture::IsValid() const {
 
             return width > 0 && height > 0 &&
-                channels > 0 && depth > 0;
+                   channels > 0 && depth > 0;
 
         }
 
-		void Texture::SetBias(float bias) {
+        void Texture::SetData(std::vector<uint8_t> &data) {
 
-#ifdef AE_API_GL
-			Bind();
-			glTexParameterf(target, GL_TEXTURE_LOD_BIAS, bias);
-			this->bias = bias;
-#endif
-
-		}
-
-		float Texture::GetBias() const {
-
-			return bias;
-
-		}
-
-        uint32_t Texture::GetID() const {
-
-            return ID;
+            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
 
         }
 
-        uint32_t Texture::GetDataType() const {
+        void Texture::SetData(std::vector<uint16_t> &data) {
 
-            return dataType;
-
-        }
-
-        int32_t Texture::GetSizedFormat() const {
-
-            return sizedFormat;
+            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
 
         }
 
-        void Texture::Copy(const Texture &texture) {
+        void Texture::SetData(std::vector<float16> &data) {
 
-            if (width != texture.width || height != texture.height ||
-                depth != texture.depth || channels != texture.channels)
-                return;
-
-			Copy(texture, 0, 0, 0, 0, 0, 0, width, height, depth);
+            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
 
         }
 
-		void Texture::Copy(const Texture& texture, int32_t srcX, int32_t srcY,
-			int32_t srcZ, int32_t destX, int32_t destY, int32_t destZ,
-			int32_t width, int32_t height, int32_t depth) {
+        void Texture::SetData(std::vector<float> &data) {
 
-			if (width <= 0 || height <= 0 || depth <= 0 || texture.channels != channels ||
-				srcX + width > texture.width || srcY + height > texture.height ||
-				srcZ + depth > texture.depth || destX + width > this->width ||
-				destY + height > this->height || destZ + depth > this->depth )
-				return;
-
-			Bind();
-
-			glCopyImageSubData(texture.ID, texture.target, 
-				0, srcX, srcY, srcZ, ID, target,
-				0, destX, destY, destZ,
-				width, height, depth);
-
-			GenerateMipmap();
-
-		}
-
-		void Texture::GenerateMipmap() {
-
-            Bind();
-			if (mipmaps)
-				glGenerateMipmap(target);
-
-		}
-
-		int32_t Texture::GetMipMapLevel() const {
-
-			return (int32_t)floor(log2(glm::max((float)width, (float)height))) + 1;
-
-		}
-
-        int32_t Texture::GetMaxAnisotropyLevel() {
-
-            float maxAnisotropy;
-            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
-
-            if (!anisotropyLevel)
-                anisotropyLevel = (int32_t)maxAnisotropy;
-            else
-                anisotropyLevel = glm::min(anisotropyLevel, (int32_t)maxAnisotropy);
-
-            return int32_t(maxAnisotropy);
-
+            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
 
         }
 
-        void Texture::SetAnisotropyLevel(int32_t anisotropyLevel) {
+        void Texture::GenerateMipmap() {
 
-            if (!Texture::anisotropyLevel)
-                GetMaxAnisotropyLevel();
-
-            if (Texture::anisotropyLevel) {
-                float maxAnisotropy;
-                glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
-
-                Texture::anisotropyLevel = glm::min(anisotropyLevel, (int32_t)maxAnisotropy);
-            }
+            // TODO...
 
         }
 
-        int32_t Texture::GetChannelCount(int32_t baseFormat) {
+        void Texture::SetData(void* data, int32_t x, int32_t y, int32_t z,
+            int32_t width, int32_t height, int32_t depth) {
 
-            switch(baseFormat) {
-                case AE_RGBA: return 4;
-				case AE_RGBA_INT: return 4;
-                case AE_RG: return 2;
-				case AE_RG_INT: return 2;
-                case AE_R: return 1;
-				case AE_R_INT: return 1;
-                case AE_DEPTH: return 1;
-                default: return 3;
-            }
-
-        }
-
-        int32_t Texture::GetSuggestedFormat(int32_t channelCount) {
-
-            switch(channelCount) {
-                case 1: return AE_R8;
-                case 2: return AE_RG8;
-                case 4: return AE_RGBA8;
-                default: return AE_RGB8;
-            }
-
-        }
-
-        void Texture::Unbind(uint32_t target, uint32_t unit) {
-
-            glActiveTexture(GL_TEXTURE0 + unit);
-            glBindTexture(target, 0);
-
-        }
-
-        void Texture::Generate(uint32_t target, int32_t sizedFormat, int32_t wrapping,
-                               int32_t filtering, bool anisotropicFiltering, bool generateMipMaps) {
-
-			if (!target || !ID)
-				return;
-
-            this->target = target;
-            this->channels = GetChannelCount(TextureFormat::GetBaseFormat(sizedFormat));
-            this->dataType = TextureFormat::GetType(sizedFormat);
-            this->sizedFormat = sizedFormat;
-            this->wrapping = wrapping;
-            this->filtering = filtering;
-            this->anisotropicFiltering = anisotropicFiltering;
-            this->mipmaps = generateMipMaps;
-
-            glBindTexture(target, ID);
-
-            int32_t mipCount = mipmaps ? GetMipMapLevel() : 1;
-
-			glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
-
-            if (generateMipMaps) {
-                if (anisotropicFiltering) {
-                    glTexParameteri(target, GL_TEXTURE_MAX_ANISOTROPY, anisotropyLevel);
-                }
-                glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            if (image->type == Graphics::ImageType::Image1DArray ||
+                image->type == Graphics::ImageType::Image2DArray ||
+                image->type == Graphics::ImageType::ImageCube)   {
+                image->SetData(data, uint32_t(x), uint32_t(y), 0,
+                    uint32_t(width), uint32_t(height), 1,
+                    uint32_t(z), uint32_t(depth));
             }
             else {
-                glTexParameteri(target, GL_TEXTURE_MIN_FILTER, filtering);
-                glTexParameteri(target, GL_TEXTURE_MAG_FILTER, filtering);
+                image->SetData(data, uint32_t(x), uint32_t(y), uint32_t(z),
+                    uint32_t(width), uint32_t(height), uint32_t(depth));
             }
-
-            glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapping);
-            glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapping);
-            glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapping);
-
-			if (width > 0 && height > 0 && depth > 0)
-				ReserveStorage(mipCount);
-
-			Unbind();
 
         }
 
-		void Texture::DeepCopy(const Texture& that) {
+        void Texture::Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height, int32_t depth,
+            Filtering filtering, Wrapping wrapping) {
 
-			width = that.width;
-			height = that.height;
-            depth = that.depth;
+            auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
-			Generate(that.target, that.sizedFormat, that.wrapping, that.filtering,
-				that.anisotropicFiltering, that.mipmaps);
+            this->width = width;
+            this->height = height;
+            this->depth = depth;
+            channels = int32_t(Graphics::GetFormatChannels(format));
 
-			Copy(that);
+            bool generateMipMaps = filtering == Filtering::MipMapLinear ||
+                filtering == Filtering::MipMapNearest || filtering == Filtering::Anisotropic;
+            bool depthFormat = format == VK_FORMAT_D32_SFLOAT || format == VK_FORMAT_D16_UNORM ||
+                format == VK_FORMAT_D16_UNORM_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 
-		}
+            VkImageUsageFlags additionalUsageFlags = {};
+            if (generateMipMaps) {
+                additionalUsageFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            }
+            // We assume this texture was generated not for exclusive, but e.g. as framebuffer/storage texture
+            if (!generateMipMaps) {
+                if (depthFormat) {
+                    additionalUsageFlags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+                }
+                else {
+                    additionalUsageFlags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                    additionalUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
+                }
+            }
+            else {
+                additionalUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
+            }
+
+            auto arrayType = imageType == Graphics::ImageType::Image2DArray ||
+                imageType == Graphics::ImageType::Image1DArray ||
+                imageType == Graphics::ImageType::ImageCube;
+
+            VkImageAspectFlags aspectFlag = depthFormat ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+
+            auto imageDesc = Graphics::ImageDesc {
+                .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                              VK_IMAGE_USAGE_TRANSFER_DST_BIT | additionalUsageFlags,
+                .type = imageType,
+                .aspectFlags = aspectFlag,
+                .width = uint32_t(width),
+                .height = uint32_t(height),
+                .depth = arrayType ? 1 : uint32_t(depth),
+                .layers = arrayType ? uint32_t(depth) : 1,
+                .format = format,
+                .mipMapping = generateMipMaps,
+            };
+            image = graphicsDevice->CreateImage(imageDesc);
+
+        }
+
+        void Texture::RecreateSampler(Filtering filtering, Wrapping wrapping) {
+
+            auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
+
+            this->filtering = filtering;
+            this->wrapping = wrapping;
+
+            bool generateMipMaps = filtering == Filtering::MipMapLinear ||
+                filtering == Filtering::MipMapNearest || filtering == Filtering::Anisotropic;
+            bool anisotropicFiltering = filtering == Filtering::Anisotropic;
+
+            VkFilter filter;
+            switch (filtering) {
+                case Filtering::Nearest: filter = VK_FILTER_NEAREST; break;
+                case Filtering::MipMapNearest: filter = VK_FILTER_NEAREST; break;
+                default: filter = VK_FILTER_LINEAR; break;
+            }
+
+            VkSamplerAddressMode mode;
+            switch(wrapping) {
+                case Wrapping::Repeat: mode = VK_SAMPLER_ADDRESS_MODE_REPEAT; break;
+                case Wrapping::ClampToEdge: mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE; break;
+                default: mode = VK_SAMPLER_ADDRESS_MODE_REPEAT; break;
+            }
+
+            VkSamplerMipmapMode mipmapMode;
+            switch(filtering) {
+                case Filtering::MipMapLinear: mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR; break;
+                case Filtering::Anisotropic: mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR; break;
+                default: mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST; break;
+            }
+
+            auto samplerDesc = Graphics::SamplerDesc {
+                .filter = filter,
+                .mode = mode,
+                .mipmapMode = mipmapMode,
+                .maxLod = float(this->image->mipLevels),
+                .anisotropicFiltering = generateMipMaps && anisotropicFiltering
+            };
+            sampler = graphicsDevice->CreateSampler(samplerDesc);
+
+        }
 
     }
 

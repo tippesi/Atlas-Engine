@@ -25,7 +25,8 @@ namespace Atlas {
 
 			int32_t resolution;
 
-			std::vector<mat4> matrices;
+			std::vector<mat4> viewMatrices;
+            mat4 projectionMatrix;
 
 			Texture::Cubemap cubemap;
 			Texture::Cubemap depth;

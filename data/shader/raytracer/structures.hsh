@@ -150,3 +150,11 @@ struct LightSample {
 
 	float pdf;
 };
+
+layout(push_constant) uniform constants {
+	int lightCount;
+    uint rayBufferOffset;
+    uint rayPayloadBufferOffset;
+    uint rayBufferSize;
+    int useRayBinning;
+} PushConstants;

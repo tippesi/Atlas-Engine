@@ -1,7 +1,7 @@
 #include "OceanSimulation.h"
 #include "../Clock.h"
 #include "../buffer/Buffer.h"
-#include "../Profiler.h"
+#include "../graphics/Profiler.h"
 
 #include <vector>
 
@@ -13,10 +13,12 @@ namespace Atlas {
 
 		OceanSimulation::OceanSimulation(int32_t N, int32_t L) : N(N), L(L) {
 
+            /*
 			noise0 = Texture::Texture2D(N, N, AE_R8);
 			noise1 = Texture::Texture2D(N, N, AE_R8);
 			noise2 = Texture::Texture2D(N, N, AE_R8);
-			noise3 = Texture::Texture2D(N, N, AE_R8);			
+			noise3 = Texture::Texture2D(N, N, AE_R8);
+            */
 
 			Common::Image<uint8_t> image0(N, N, 1);
 			Common::Image<uint8_t> image1(N, N, 1);
@@ -33,6 +35,7 @@ namespace Atlas {
 			noise2.SetData(image2.GetData());
 			noise3.SetData(image3.GetData());
 
+            /*
 			displacementMap = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);
 			normalMap = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);
 
@@ -51,6 +54,7 @@ namespace Atlas {
 			verticalButterfly.AddStage(AE_COMPUTE_STAGE, "ocean/butterfly.csh");
 			inversion.AddStage(AE_COMPUTE_STAGE, "ocean/inversion.csh");
 			normal.AddStage(AE_COMPUTE_STAGE, "ocean/normal.csh");
+
 
 			horizontalButterfly.AddMacro("HORIZONTAL");
 			verticalButterfly.AddMacro("VERTICAL");
@@ -75,7 +79,7 @@ namespace Atlas {
 			normalFoamTemporalWeightUniform = normal.GetUniform("temporalWeight");
 			normalFoamTemporalThresholdUniform = normal.GetUniform("temporalThreshold");
 			normalFoamOffsetUniform = normal.GetUniform("foamOffset");
-
+            */
 			ComputeTwiddleIndices();
 			ComputeSpectrum();
 
@@ -83,8 +87,9 @@ namespace Atlas {
 
 		void OceanSimulation::ComputeSpectrum() {
 
-			Profiler::BeginQuery("Compute ocean spectrum");
+			Graphics::Profiler::BeginQuery("Compute ocean spectrum");
 
+            /*
 			h0.Bind();
 
 			h0.GetUniform("N")->SetValue(N);
@@ -94,6 +99,7 @@ namespace Atlas {
 			h0.GetUniform("windspeed")->SetValue(windSpeed);
 			h0.GetUniform("windDependency")->SetValue(windDependency);
 			h0.GetUniform("waveSurpression")->SetValue(waveSurpression);
+
 
 			noise0.Bind(2);
 			noise1.Bind(3);
@@ -106,13 +112,15 @@ namespace Atlas {
 				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			glDispatchCompute(N / 16, N / 16, 1);
+             */
 
-			Profiler::EndQuery();
+			Graphics::Profiler::EndQuery();
 
 		}
 
 		void OceanSimulation::ComputeTwiddleIndices() {
 
+            /*
 			auto nUniform = twiddle.GetUniform("N");
 
 			auto bitCount = (int32_t)log2f((float)N);
@@ -135,20 +143,22 @@ namespace Atlas {
 				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			glDispatchCompute(bitCount, N / 16, 1);
+             */
 
 		}
 
 		void OceanSimulation::Compute(float deltaTime) {
 
-			Profiler::BeginQuery("Compute ocean simulation");
+            Graphics::Profiler::BeginQuery("Compute ocean simulation");
 
 			time += deltaTime;
 
 			if (!update) return;
 
-			displacementMapPrev.Copy(displacementMap);
+            /*
+			// displacementMapPrev.Copy(displacementMap);
 
-			Profiler::BeginQuery("Compute h(t)");
+            Graphics::Profiler::BeginQuery("Compute h(t)");
 
 			ht.Bind();
 
@@ -164,6 +174,7 @@ namespace Atlas {
 
 			glDispatchCompute(N / 16, N / 16, 1);
 
+
 			Profiler::EndQuery();
 
 			int32_t pingpong = 0;
@@ -171,7 +182,7 @@ namespace Atlas {
 
 			Profiler::BeginQuery("Perform iFFT");
 
-			twiddleIndices.Bind(GL_READ_ONLY, 0);
+            // twiddleIndices.Bind(GL_READ_ONLY, 0);
 
 			for (uint8_t j = 0; j < 2; j++) {
 
@@ -266,6 +277,7 @@ namespace Atlas {
 			Profiler::EndQuery();
 			Profiler::EndQuery();
 			Profiler::EndQuery();
+             */
 
 		}
 

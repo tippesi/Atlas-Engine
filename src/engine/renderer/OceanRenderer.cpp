@@ -9,6 +9,7 @@ namespace Atlas {
 
 		OceanRenderer::OceanRenderer() {
 
+            /*
 			Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 129, 1.0f / 128.0f);
 
 			causticsShader.AddStage(AE_COMPUTE_STAGE, "ocean/caustics.csh");
@@ -19,11 +20,13 @@ namespace Atlas {
 			shader.Compile();
 
 			GetUniforms();
+             */
 
 		}
 
 		void OceanRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
+            /*
 			if (!scene->ocean || !scene->ocean->enable)
 				return;
 
@@ -272,11 +275,13 @@ namespace Atlas {
 			}
 
 			Profiler::EndQuery();
+             */
 
 		}
 
 		void OceanRenderer::GetUniforms() {
 
+            /*
 			nodeLocation = shader.GetUniform("nodeLocation");
 			nodeSideLength = shader.GetUniform("nodeSideLength");
 
@@ -337,6 +342,7 @@ namespace Atlas {
 			pvMatrixLast = shader.GetUniform("pvMatrixLast");
 			jitterLast = shader.GetUniform("jitterLast");
 			jitterCurrent = shader.GetUniform("jitterCurrent");
+             */
 
 		}
 

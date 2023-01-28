@@ -3,7 +3,7 @@
 
 layout (local_size_x = 1) in;
 
-layout (std430, binding = 4) buffer IndirectCommands {
+layout (std430, set = 2, binding = 12) buffer IndirectCommands {
 	DispatchIndirectCommand indirectCommands[];
 };
 

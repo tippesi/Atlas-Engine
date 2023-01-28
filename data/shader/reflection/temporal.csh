@@ -8,25 +8,24 @@
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-layout(binding = 0, rgba16f) writeonly uniform image2D resolveImage;
-layout(binding = 1, rgba16f) writeonly uniform image2D momentsImage;
+layout(set = 3, binding = 0, r16f) writeonly uniform image2D resolveImage;
+layout(set = 3, binding = 1, r16f) writeonly uniform image2D momentsImage;
 
-layout(binding = 0) uniform sampler2D currentTexture;
-layout(binding = 1) uniform sampler2D velocityTexture;
-layout(binding = 2) uniform sampler2D depthTexture;
-layout(binding = 3) uniform sampler2D roughnessMetallicAoTexture;
-layout(binding = 4) uniform sampler2D normalTexture;
-layout(binding = 5) uniform usampler2D materialIdxTexture;
+layout(set = 3, binding = 2) uniform sampler2D currentTexture;
+layout(set = 3, binding = 3) uniform sampler2D velocityTexture;
+layout(set = 3, binding = 4) uniform sampler2D depthTexture;
+layout(set = 3, binding = 5) uniform sampler2D roughnessMetallicAoTexture;
+layout(set = 3, binding = 6) uniform sampler2D normalTexture;
+layout(set = 3, binding = 7) uniform usampler2D materialIdxTexture;
 
-layout(binding = 6) uniform sampler2D historyTexture;
-layout(binding = 7) uniform sampler2D historyMomentsTexture;
-layout(binding = 8) uniform sampler2D historyDepthTexture;
-layout(binding = 9) uniform sampler2D historyNormalTexture;
-layout(binding = 10) uniform usampler2D historyMaterialIdxTexture;
+layout(set = 3, binding = 8) uniform sampler2D historyTexture;
+layout(set = 3, binding = 9) uniform sampler2D historyMomentsTexture;
+layout(set = 3, binding = 10) uniform sampler2D historyDepthTexture;
+layout(set = 3, binding = 11) uniform sampler2D historyNormalTexture;
+layout(set = 3, binding = 12) uniform usampler2D historyMaterialIdxTexture;
 
-
-uniform vec2 invResolution;
-uniform vec2 resolution;
+vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
+vec2 resolution = vec2(imageSize(resolveImage));
 
 const int kernelRadius = 7;
 

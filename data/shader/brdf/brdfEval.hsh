@@ -1,10 +1,9 @@
 #include <surface.hsh>
 #include <brdf.hsh>
 
+#include <../globals.hsh>
 #include <../common/PI.hsh>
 #include <../common/utility.hsh>
-
-layout(binding = 31) uniform sampler2D dfgTexture;
 
 vec3 EvaluateDiffuseBRDF(Surface surface) {
 

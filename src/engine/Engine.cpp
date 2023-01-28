@@ -1,13 +1,22 @@
 #include "Engine.h"
-#include "Extensions.h"
-#include "Profiler.h"
+#include "graphics/Extensions.h"
+#include "graphics/Profiler.h"
+#include "EngineInstance.h"
+#include "loader/ShaderLoader.h"
+#include "graphics/Instance.h"
+#include "pipeline/PipelineManager.h"
+
+#include "graphics/ShaderCompiler.h"
+
+#include <SDL_vulkan.h>
+
+extern Atlas::EngineInstance* GetEngineInstance();
 
 namespace Atlas {
 
-	SDL_Window* Engine::defaultWindow = nullptr;
-	Context* Engine::defaultContext = nullptr;
+    Window* Engine::DefaultWindow = nullptr;
 
-	Context* Engine::Init(std::string assetDirectory, std::string shaderDirectory) {
+	void Engine::Init(std::string assetDirectory, std::string shaderDirectory) {
 
 #ifdef AE_NO_APP
         SDL_SetMainReady();
@@ -16,77 +25,55 @@ namespace Atlas {
 			SDL_Init(SDL_INIT_EVERYTHING);
 		}
 
-		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+        Loader::AssetLoader::SetAssetDirectory(assetDirectory);
+        Loader::ShaderLoader::SetSourceDirectory(shaderDirectory);
 
-		defaultWindow = SDL_CreateWindow("", 0, 0, 1, 1, AE_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
+        Graphics::ShaderCompiler::Init();
 
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
-		SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+        // First need to get a window to retrieve the title
+        DefaultWindow = new Window("Default window", AE_WINDOWPOSITION_UNDEFINED,
+            AE_WINDOWPOSITION_UNDEFINED, 100, 100,
+            SDL_WINDOW_VULKAN | AE_WINDOW_HIDDEN, false);
 
-		SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
-
-#ifdef AE_SHOW_API_DEBUG_LOG
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+        // Then create graphics instance
+#ifdef AE_BUILDTYPE_RELEASE
+        Graphics::Instance::DefaultInstance = new Graphics::Instance("AtlasEngineInstance", false);
+#else
+        Graphics::Instance::DefaultInstance = new Graphics::Instance("AtlasEngineInstance", true);
 #endif
+        // Initialize window surface
+        DefaultWindow->CreateSurface();
+        // Initialize device
+        Graphics::Instance::DefaultInstance->InitializeGraphicsDevice(DefaultWindow->surface);
+        Graphics::GraphicsDevice::DefaultDevice = Graphics::Instance::DefaultInstance->GetGraphicsDevice();
 
-		auto setupContext = SDL_GL_CreateContext(defaultWindow);
+        Graphics::Extensions::Process();
 
-#if defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
-		if (!gladLoadGL()) {
-			Log::Error("Error initializing OpenGL");
-			return nullptr;
-		}
-#endif
-
-		SDL_GL_DeleteContext(setupContext);
-		defaultContext = new Context(defaultWindow);
-
-		int value;
-
-#ifdef AE_SHOW_LOG
-		Log::Message("OpenGL Version: " + std::string((const char*)glGetString(GL_VERSION)));
-		SDL_GL_GetAttribute(SDL_GL_RED_SIZE, &value);
-		Log::Message("Native colorbuffer red component precision " + std::to_string(value) + " bits");
-		SDL_GL_GetAttribute(SDL_GL_GREEN_SIZE, &value);
-		Log::Message("Native colorbuffer green component precision " + std::to_string(value) + " bits");
-		SDL_GL_GetAttribute(SDL_GL_BLUE_SIZE, &value);
-		Log::Message("Native colorbuffer blue component precision " + std::to_string(value) + " bits");
-		SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE, &value);
-		Log::Message("Native depthbuffer precision " + std::to_string(value) + " bits");
-#endif
-
-		// Do the setup for all the classes that need static setup
-		Extensions::Process();
-		Texture::Texture::GetMaxAnisotropyLevel();
-
+        // Do the setup for all the classes that need static setup
 		Loader::AssetLoader::Init();
 		Common::Random::Init();
+        PipelineManager::Init();
 
 		Audio::AudioManager::Configure(48000, 2, 1024);
 
-		Loader::AssetLoader::SetAssetDirectory(assetDirectory);
-		Shader::ShaderStage::SetSourceDirectory(shaderDirectory);
-
-		Renderer::OpaqueRenderer::InitShaderBatch();
-		Renderer::ShadowRenderer::InitShaderBatch();
+		// Renderer::OpaqueRenderer::InitShaderBatch();
+		// Renderer::ShadowRenderer::InitShaderBatch();
 
 		Clock::Update();
 
-		return defaultContext;
+        // Only then create engine instance. This makes sure that the engine instance already
+        // has access to all graphics functionality and all other functionality on construction
+        auto engineInstance = GetEngineInstance();
+        EngineInstance::instance = engineInstance;
 
-	}
+
+    }
 
     void Engine::Shutdown() {
 
-        Shader::ShaderManager::Clear();
-
-		if (defaultWindow)
-			SDL_DestroyWindow(defaultWindow);
+        Graphics::ShaderCompiler::Shutdown();
+        Graphics::Profiler::Shutdown();
+        PipelineManager::Shutdown();
 
 #ifdef AE_NO_APP
         SDL_Quit();
@@ -96,7 +83,7 @@ namespace Atlas {
     void Engine::Update() {
 
         Clock::Update();
-		Profiler::Update();
+		Graphics::Profiler::BeginFrame();
         Events::EventManager::Update();
 
     }
@@ -112,13 +99,13 @@ namespace Atlas {
 
     void Engine::LockFramerate() {
 
-        SDL_GL_SetSwapInterval(1);
+        //SDL_GL_SetSwapInterval(1);
 
     }
 
     void Engine::UnlockFramerate() {
 
-        SDL_GL_SetSwapInterval(0);
+        // SDL_GL_SetSwapInterval(0);
 
     }
 

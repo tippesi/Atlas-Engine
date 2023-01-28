@@ -5,16 +5,17 @@ namespace Atlas {
 	namespace Lighting {
 
 		EnvironmentProbe::EnvironmentProbe(const Texture::Cubemap& cubemap) : resolution(cubemap.width),
-			cubemap(cubemap), depth(cubemap.width, cubemap.height, AE_R16F),
-			filteredDiffuse(8, 8, AE_RGBA16F) {
+			cubemap(cubemap), depth(cubemap.width, cubemap.height, VK_FORMAT_D16_UNORM),
+			filteredDiffuse(8, 8, VK_FORMAT_R16G16B16A16_SFLOAT) {
 
 			SetPosition(position);
 
 		}
 
 		EnvironmentProbe::EnvironmentProbe(int32_t res, vec3 position) : resolution(res),
-			cubemap(res, res, AE_RGBA16F, GL_CLAMP_TO_EDGE, GL_LINEAR_MIPMAP_LINEAR, true),
-			depth(res, res, AE_R16F), filteredDiffuse(8, 8, AE_RGBA16F) {
+            cubemap(res, res, VK_FORMAT_R16G16B16A16_SFLOAT, Texture::Wrapping::ClampToEdge,
+                Texture::Filtering::MipMapLinear), depth(res, res, VK_FORMAT_D16_UNORM),
+            filteredDiffuse(8, 8, VK_FORMAT_R16G16B16A16_SFLOAT) {
 
 			SetPosition(position);
 
@@ -24,7 +25,12 @@ namespace Atlas {
 
 			this->position = position;
 
-			mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+			const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 0.5f, 0.0f,
+				0.0f, 0.0f, 0.5f, 1.0f);
+
+			projectionMatrix = clip * glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
 			vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
 							 vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
 							 vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
@@ -34,8 +40,7 @@ namespace Atlas {
 						   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
 			for (uint8_t i = 0; i < 6; i++) {
-				matrices.push_back(projectionMatrix *
-					glm::lookAt(position, position + faces[i], ups[i]));
+				viewMatrices.push_back(glm::lookAt(position, position + faces[i], ups[i]));
 			}
 
 		}

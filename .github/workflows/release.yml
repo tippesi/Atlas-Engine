@@ -30,7 +30,8 @@ jobs:
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
-        with: {committish: 59b58fc56de40eaa279ae0208debcf5773a2db77}
+        with:
+          committish: 91dd61bd441a68b4017b61011d0350b2e6aeeccf
 
       - name: Setup Microsoft Visual C++ CLI
         uses: ilammy/msvc-dev-cmd@v1
@@ -41,11 +42,20 @@ jobs:
           # ninja version to download. Default: 1.10.0
           version: 1.10.0
 
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
+
       - name: Run scripts
         shell: pwsh
         # Add additional scripting steps here
         run: |
           cd ${{ github.workspace }}
+          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-windows
+          Remove-Item –path vcpkg_installed –recurse
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -66,9 +76,10 @@ jobs:
           path: |
             data
             README.md
-            LICENSE
-            ${{ github.workspace }}/build/**/AtlasEngineDemo.exe
-            ${{ github.workspace }}/build/**/*.dll
+            LICENSE.md
+            THIRDPARTY.md
+            ${{ github.workspace }}/bin/**/AtlasEngineDemo.exe
+            ${{ github.workspace }}/bin/**/*.dll
             !**/CMakeFiles
 
   linux-build:
@@ -87,7 +98,8 @@ jobs:
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
-        with: {committish: 59b58fc56de40eaa279ae0208debcf5773a2db77}
+        with:
+          committish: 91dd61bd441a68b4017b61011d0350b2e6aeeccf
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
@@ -95,12 +107,21 @@ jobs:
           # ninja version to download. Default: 1.10.0
           version: 1.10.0
 
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
+
       - name: Run scripts
         shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install libgl1-mesa-dev
           cd ${{ github.workspace }}
+          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
+          rm -r vcpkg_installed
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
@@ -122,9 +143,10 @@ jobs:
           path: |
             data
             README.md
-            LICENSE
-            ${{ github.workspace }}/build/**/AtlasEngineDemo
-            ${{ github.workspace }}/build/**/*.so*
+            LICENSE.md
+            THIRDPARTY.md
+            ${{ github.workspace }}/bin/**/AtlasEngineDemo
+            ${{ github.workspace }}/bin/**/*.so*
             !**/CMakeFiles
 
   release:

@@ -20,19 +20,21 @@ namespace Atlas {
 
 			Buffer::VertexArray vertexArray;
 
-			Shader::Shader shader;
+            /*
+			OldShader::OldShader shader;
 
-			Shader::Uniform* viewMatrix = nullptr;
-			Shader::Uniform* projectionMatrix = nullptr;
-			Shader::Uniform* inverseProjectionMatrix = nullptr;
-			Shader::Uniform* lightViewMatrix = nullptr;
-			Shader::Uniform* lightProjectionMatrix = nullptr;
-			Shader::Uniform* viewSpaceLightLocation = nullptr;
-			Shader::Uniform* lightLocation = nullptr;
-			Shader::Uniform* lightColor = nullptr;
-			Shader::Uniform* lightAmbient = nullptr;
-			Shader::Uniform* lightRadius = nullptr;
-			Shader::Uniform* shadowEnabled = nullptr;
+			OldShader::Uniform* viewMatrix = nullptr;
+			OldShader::Uniform* projectionMatrix = nullptr;
+			OldShader::Uniform* inverseProjectionMatrix = nullptr;
+			OldShader::Uniform* lightViewMatrix = nullptr;
+			OldShader::Uniform* lightProjectionMatrix = nullptr;
+			OldShader::Uniform* viewSpaceLightLocation = nullptr;
+			OldShader::Uniform* lightLocation = nullptr;
+			OldShader::Uniform* lightColor = nullptr;
+			OldShader::Uniform* lightAmbient = nullptr;
+			OldShader::Uniform* lightRadius = nullptr;
+			OldShader::Uniform* shadowEnabled = nullptr;
+            */
 
 		};
 

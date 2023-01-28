@@ -10,7 +10,7 @@ if(COMMAND cmake_policy)
     cmake_policy(SET CMP0042 NEW)
 endif(COMMAND cmake_policy)
 
-project(AtlasEngine VERSION 0.1.7)
+project(AtlasEngine VERSION 0.1.8)
 cmake_minimum_required(VERSION 3.7)
 
 # Only 64 bit is supported
@@ -33,7 +33,8 @@ if (ATLAS_DEMO)
     set (ATLAS_IMGUI ON)
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_BINARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
@@ -64,7 +65,7 @@ endif()
 # Set dependencies location #######################################################################
 set (ATLAS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/engine)
 set (DEMO_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/demo)
-set(IMGUI_EXTENSION_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/ImguiExtension)
+set (IMGUI_EXTENSION_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/ImguiExtension)
 
 # Add dependencies ################################################################################
 find_package(SDL2 CONFIG REQUIRED)
@@ -74,9 +75,14 @@ if(ATLAS_ASSIMP)
 endif()
 if (ANDROID)
     add_subdirectory(${HIDAPI_LOCATION})
-else()
-    find_package(glad CONFIG REQUIRED)
 endif()
+
+find_package(Threads REQUIRED)
+find_package(volk CONFIG REQUIRED)
+find_package(unofficial-vulkan-memory-allocator CONFIG REQUIRED)
+find_package(glslang CONFIG REQUIRED)
+find_package(unofficial-spirv-reflect CONFIG REQUIRED)
+find_package(SPIRV-Tools-opt CONFIG REQUIRED)
 
 add_subdirectory(${ATLAS_LOCATION})
 

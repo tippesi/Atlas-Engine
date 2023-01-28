@@ -5,7 +5,10 @@
 #include "Texture2D.h"
 #include "Texture2DArray.h"
 
+#include "../graphics/CommandList.h"
+
 #include <map>
+#include <vector>
 
 namespace Atlas {
 
@@ -32,7 +35,7 @@ namespace Atlas {
 			 * @param that Another TextureAtlas object.
 			 * @note Texture atlases are only available as AE_RGBA8.
 			 */
-			explicit TextureAtlas(std::vector<Texture2D*>& textures, 
+			explicit TextureAtlas(const std::vector<Ref<Texture2D>>& textures,
 				int32_t padding = 1, int32_t downscale = 1);
 
 			/**
@@ -43,7 +46,9 @@ namespace Atlas {
 			 */
 			TextureAtlas& operator=(const TextureAtlas& that);
 
-			void Update(std::vector<Texture2D*>& textures);
+			void Update(const std::vector<Ref<Texture2D>>& textures);
+
+            void Clear();
 
 			struct Slice {
 
@@ -54,6 +59,7 @@ namespace Atlas {
 			};
 
 			Texture2DArray textureArray;
+            std::vector<Ref<Texture2D>> textures;
 			std::map<Texture2D*, std::vector<Slice>> slices;
 
 		private:
@@ -66,7 +72,7 @@ namespace Atlas {
 
 			std::map<Texture2D*, TextureAtlas::Slice> CreateSlicesForAtlasLevel(std::vector<TextureStructure> textures, int32_t level);
 
-			void FillAtlas(std::map<Texture2D*, TextureAtlas::Slice> levelSlices);
+			void FillAtlas(Graphics::CommandList* commandList, std::map<Texture2D*, TextureAtlas::Slice> levelSlices);
 
 			int32_t padding = 1;
 			int32_t downscale = 1;

@@ -7,45 +7,66 @@
 #include "actor/DecalActor.h"
 #include "lighting/Light.h"
 
+#include "graphics/Buffer.h"
+
 #include <map>
+#include <vector>
 
 namespace Atlas {
-
-	struct RenderListBatch {
-
-		Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>* actorBatch;
-		std::vector<Mesh::MeshSubData*> subData;
-
-	};
 
 	class RenderList {
 
 	public:
-		RenderList(int32_t type = AE_OPAQUE_CONFIG);
+        struct MeshInstances {
+            size_t offset;
+            size_t count;
+
+            size_t impostorOffset;
+            size_t impostorCount;
+        };
+
+        enum class RenderPassType {
+            Main = 0,
+            Shadow = 1
+        };
+
+        struct Pass {
+            RenderPassType type;
+
+            Lighting::Light* light;
+            uint32_t layer;
+
+            std::map<Mesh::Mesh*, std::vector<Actor::MeshActor*>> meshToActorMap;
+            std::map<Mesh::Mesh*, MeshInstances> meshToInstancesMap;
+        };
+
+		RenderList();
+
+        void NewFrame();
+
+        void NewMainPass();
+
+        void NewShadowPass(Lighting::Light* light, uint32_t layer);
+
+        Pass* GetMainPass();
+
+        Pass* GetShadowPass(const Lighting::Light* light, const uint32_t layer);
 
 		void Add(Actor::MeshActor *actor);
 
-		/*
-		 * Adds a range of actors of the same mesh
-		 */
-		void AddRange(std::vector<Actor::MeshActor*>& actors);
+		void Update(Camera* camera);
 
-		void UpdateBuffers(Camera* camera);
+		void FillBuffers();
 
-		void Clear();
+        std::vector<mat4> currentActorMatrices;
+        std::vector<mat4> lastActorMatrices;
+        std::vector<mat4> impostorMatrices;
 
-		struct Buffers {
-			Buffer::Buffer* currentMatrices = nullptr;
-			Buffer::Buffer* lastMatrices = nullptr;
-		};
+        Ref<Graphics::MultiBuffer> currentMatricesBuffer;
+        Ref<Graphics::MultiBuffer> lastMatricesBuffer;
+        Ref<Graphics::MultiBuffer> impostorMatricesBuffer;
 
-		std::map<Mesh::Mesh*, Actor::ActorBatch<Mesh::Mesh*, Actor::MeshActor*>*> actorBatches;
-		std::map<Mesh::Mesh*, Buffers> actorBatchBuffers;
-		std::map<Mesh::Mesh*, Buffer::Buffer*> impostorBuffers;
-		std::map<int32_t, std::vector<RenderListBatch>> orderedRenderBatches;
-
-	private:
-		int32_t type;
+        std::vector<Pass> passes;
 
 	};
 

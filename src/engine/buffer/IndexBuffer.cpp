@@ -1,63 +1,60 @@
 #include "IndexBuffer.h"
 
+#include "../graphics/GraphicsDevice.h"
+
 namespace Atlas {
 
     namespace Buffer {
 
-		IndexBuffer::IndexBuffer(const IndexBuffer& that) : Buffer(that) {
+        IndexBuffer::IndexBuffer(VkIndexType type, size_t elementCount, void* data) : type(type) {
 
-			dataType = that.dataType;
+            switch(type) {
+                case VK_INDEX_TYPE_UINT16: elementSize = 2; break;
+                case VK_INDEX_TYPE_UINT32: elementSize = 4; break;
+                default: elementSize = 4; break;
+            }
 
-		}
-
-        IndexBuffer::IndexBuffer(uint32_t dataType, size_t elementSize, size_t elementCount,
-			void* data, uint32_t flags) : 
-			Buffer(AE_INDEX_BUFFER, elementSize, flags, elementCount, data), dataType(dataType) {
-
-
-
-        }
-
-        IndexBuffer::~IndexBuffer() {
-
-
+            if (elementCount) {
+                SetSize(elementCount, data);
+            }
 
         }
 
-		IndexBuffer& IndexBuffer::operator=(const IndexBuffer& that) {
+        void IndexBuffer::SetSize(size_t elementCount, void *data) {
 
-			if (this != &that) {
+            // If the element count is the same we can reuse the old buffer
+            if (this->elementCount == elementCount) {
+                if (!data)
+                    return;
+                SetData(data, 0, elementCount);
+                return;
+            }
 
-				Buffer::operator=(that);
+            this->elementCount = elementCount;
 
-				dataType = that.dataType;
+            Reallocate(data);
 
-			}
-
-			return *this;
-
-		}
+        }
 
         void IndexBuffer::SetData(void *data, size_t offset, size_t length) {
 
-			if (!dynamicStorage && immutable) {
-				Buffer stagingBuffer(AE_STAGING_BUFFER, elementSize, AE_BUFFER_DYNAMIC_STORAGE);
-				stagingBuffer.SetSize(length);
-
-				// We don't need to bind because it is already bound by previous operations
-				stagingBuffer.SetData(data, 0, length);
-
-				Copy(&stagingBuffer, 0, offset * elementSize, length * elementSize);
-			}
-			else {
-				Buffer::SetData(data, offset, length);
-			}
+            buffer->SetData(data, offset * elementSize, length * elementSize);
 
         }
 
-        uint32_t IndexBuffer::GetDataType() {
+        void IndexBuffer::Reallocate(void *data) {
 
-            return dataType;
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+
+            auto sizeInBytes = elementCount * elementSize;
+
+            Graphics::BufferDesc desc {
+                .usageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                .domain = Graphics::BufferDomain::Device,
+                .data = data,
+                .size = sizeInBytes
+            };
+            buffer = device->CreateBuffer(desc);
 
         }
 

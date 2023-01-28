@@ -13,6 +13,8 @@ namespace Atlas {
 
 	void Camera::UpdateView() {
 
+        lastViewMatrix = viewMatrix;
+
 		direction = normalize(vec3(cos(rotation.y) * sin(rotation.x),
 			sin(rotation.y), cos(rotation.y) * cos(rotation.x)));
 
@@ -34,7 +36,12 @@ namespace Atlas {
 
 	void Camera::UpdateProjection() {
 
-		projectionMatrix = glm::perspective(glm::radians(fieldOfView), aspectRatio, nearPlane, farPlane);
+		const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, -1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.5f, 0.0f,
+			0.0f, 0.0f, 0.5f, 1.0f);
+
+		projectionMatrix = clip * glm::perspective(glm::radians(fieldOfView), aspectRatio, nearPlane, farPlane);
 		invProjectionMatrix = inverse(projectionMatrix);
 
 		unjitterdProjection = projectionMatrix;
@@ -88,9 +95,15 @@ namespace Atlas {
 
 	vec3 Camera::GetLocation() {
 
-		return  thirdPerson ? location - direction * thirdPersonDistance : location;
+		return vec3(invViewMatrix[3]);
 
 	}
+
+    vec3 Camera::GetLastLocation() {
+
+        return vec3(glm::inverse(lastViewMatrix)[3]);
+
+    }
 
 	std::vector<vec3> Camera::GetFrustumCorners(float nearPlane, float farPlane) {
 

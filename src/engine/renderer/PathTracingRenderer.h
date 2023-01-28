@@ -19,12 +19,11 @@ namespace Atlas {
 			PathTracerRenderTarget() {}
 
 			PathTracerRenderTarget(int32_t width, int32_t height) : width(width), height(height) {
-				texture = Texture::Texture2D(width, height, AE_RGBA8,
-					GL_CLAMP_TO_EDGE, GL_LINEAR);
+				texture = Texture::Texture2D(width, height, VK_FORMAT_R8G8B8A8_UNORM,
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-				accumTexture0 = Texture::Texture2D(width, height, AE_RGBA32F);
-				accumTexture1 = Texture::Texture2D(width, height, AE_RGBA32F);
-
+				accumTexture0 = Texture::Texture2D(width, height, VK_FORMAT_R32G32B32A32_SFLOAT);
+				accumTexture1 = Texture::Texture2D(width, height, VK_FORMAT_R32G32B32A32_SFLOAT);
 			}
 
 			void Resize(int32_t width, int32_t height) {
@@ -56,12 +55,14 @@ namespace Atlas {
 		class PathTracingRenderer : public Renderer {
 
 		public:
-			PathTracingRenderer();
+			PathTracingRenderer() = default;
+
+            void Init(Graphics::GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
 
 			void Render(Viewport* viewport, PathTracerRenderTarget* renderTarget,
-				ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene);
+				ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList);
 
 			bool UpdateData(Scene::Scene* scene);
 
@@ -76,8 +77,24 @@ namespace Atlas {
 			int32_t lightCount = 512;
 
 		private:
-			void GetRayGenUniforms();
-			void GetRayHitUniforms();
+            struct alignas(16) RayGenUniforms {
+                vec4 origin;
+                vec4 right;
+                vec4 bottom;
+                ivec2 pixelOffset;
+                ivec2 resolution;
+                ivec2 tileSize;
+                int32_t sampleCount;
+            };
+
+            struct alignas(16) RayHitUniforms {
+                ivec2 resolution;
+                int32_t maxBounces;
+                int32_t sampleCount;
+                int32_t bounceCount;
+                float seed;
+                float exposure;
+            };
 
 			Helper::RayTracingHelper helper;
 
@@ -87,29 +104,11 @@ namespace Atlas {
 			int32_t sampleCount = 0;
 			ivec2 imageOffset = ivec2(0);
 
-			Shader::Shader rayGenShader;
+            PipelineConfig rayGenPipelineConfig;
+            PipelineConfig rayHitPipelineConfig;
 
-			Shader::Uniform* cameraLocationRayGenUniform = nullptr;
-			Shader::Uniform* originRayGenUniform = nullptr;
-			Shader::Uniform* rightRayGenUniform = nullptr;
-			Shader::Uniform* bottomRayGenUniform = nullptr;
-
-			Shader::Uniform* sampleCountRayGenUniform = nullptr;
-			Shader::Uniform* pixelOffsetRayGenUniform = nullptr;
-
-			Shader::Uniform* tileSizeRayGenUniform = nullptr;
-			Shader::Uniform* resolutionRayGenUniform = nullptr;
-
-			Shader::Shader rayHitShader;
-
-			Shader::Uniform* maxBouncesRayHitUniform = nullptr;
-
-			Shader::Uniform* sampleCountRayHitUniform = nullptr;
-			Shader::Uniform* bounceCountRayHitUniform = nullptr;
-
-			Shader::Uniform* resolutionRayHitUniform = nullptr;
-
-			Shader::Uniform* seedRayHitUniform = nullptr;
+            Buffer::Buffer rayGenUniformBuffer;
+            Buffer::Buffer rayHitUniformBuffer;
 
 		};
 

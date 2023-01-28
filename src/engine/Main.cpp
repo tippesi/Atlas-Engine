@@ -1,5 +1,6 @@
 #include "Engine.h"
 #include "EngineInstance.h"
+#include "graphics/Instance.h"
 #include "common/Path.h"
 
 #if defined(AE_OS_ANDROID) || defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
@@ -9,8 +10,6 @@
 #ifdef AE_OS_WINDOWS
 #include <direct.h>
 #endif
-
-extern Atlas::EngineInstance* GetEngineInstance();
 
 int main(int argc, char* argv[]) {
 
@@ -25,24 +24,29 @@ int main(int argc, char* argv[]) {
 #endif
 	}
 
-	auto context = Atlas::Engine::Init(Atlas::EngineInstance::assetDirectory,
-		Atlas::EngineInstance::shaderDirectory);
+    Atlas::Engine::Init(Atlas::EngineInstance::assetDirectory,
+                        Atlas::EngineInstance::shaderDirectory);
 
-	if (!context) {
-		Atlas::Log::Warning("Shutdown of application");
-		Atlas::Engine::Shutdown();
-		return 0;
-	}
+    auto graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;
 
-	auto instance = GetEngineInstance();
+    if (!graphicsInstance->isComplete) {
+        Atlas::Log::Error("Couldn't initialize graphics instance");
+        Atlas::Engine::Shutdown();
+        return 0;
+    }
 
-	// No need to clean the context up, will be released
-	// when the instance is being deleted.
-	instance->context = *context;
+    auto engineInstance = Atlas::EngineInstance::GetInstance();
+    if (!engineInstance) {
+        Atlas::Log::Warning("Shutdown of application");
+        Atlas::Engine::Shutdown();
+        return 0;
+    }
+
+    auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
 
 	// We need to pass the command line arguments
 	for (int32_t i = 0; i < argc; i++)
-	    instance->args.push_back(std::string(argv[i]));
+        engineInstance->args.push_back(std::string(argv[i]));
 
 	bool quit = false;
 
@@ -51,7 +55,7 @@ int main(int argc, char* argv[]) {
 			quit = true;
 	});
 
-	instance->LoadContent();
+    engineInstance->LoadContent();
 
 	while (!quit) {
 
@@ -59,18 +63,22 @@ int main(int argc, char* argv[]) {
 		
 		auto deltaTime = Atlas::Clock::GetDelta();
 
-		instance->Update();
+        engineInstance->Update();
 
-		instance->Update(deltaTime);
-		instance->Render(deltaTime);
+        engineInstance->Update(deltaTime);
+        engineInstance->Render(deltaTime);
 
-		instance->window.Update();
+        graphicsDevice->CompleteFrame();
+
+        // std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
 	}
 
-	instance->UnloadContent();
+    engineInstance->UnloadContent();
+    delete engineInstance;
 
-	Atlas::Engine::Shutdown();
+    Atlas::Engine::Shutdown();
+    delete graphicsInstance;
 
 	return 0;
 

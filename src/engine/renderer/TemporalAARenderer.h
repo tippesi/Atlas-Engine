@@ -11,15 +11,24 @@ namespace Atlas {
 		class TemporalAARenderer : public Renderer {
 
 		public:
-			TemporalAARenderer();
+			TemporalAARenderer() = default;
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
+            void Init(Graphics::GraphicsDevice* device);
+
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene) final {};
+
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
 
 		private:
+            struct PushConstants {
+                vec2 resolution;
+                vec2 invResolution;
+                vec2 jitter;
+            };
 
-			Shader::Shader shader;
-
-			Buffer::VertexArray vertexArray;
+            PipelineConfig pipelineConfig;
 
 			mat4 pvMatrixPrev = mat4(1.0f);
 

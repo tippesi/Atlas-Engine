@@ -5,7 +5,7 @@
 
 layout (local_size_x = 32) in;
 
-uniform float offset = 0.0;
+const float offset = 0.0;
 
 void main() {
 	
@@ -14,7 +14,7 @@ void main() {
 	Ray ray;
 	
 	if (index < readAtomic[0]) {
-		uint readOffset = (1u - rayBufferOffset) * rayBufferSize;
+		uint readOffset = (1u - PushConstants.rayBufferOffset) * PushConstants.rayBufferSize;
 		ray = UnpackRay(rays[index + readOffset]);
 
         ray.hitID = -1;
@@ -22,7 +22,7 @@ void main() {
         // Find any triangle in the BVH
         HitClosest(ray, offset, INF);
 
-		uint writeOffset = rayBufferOffset * rayBufferSize;
+		uint writeOffset = PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
 	    rays[index + writeOffset] = PackRay(ray);
 	}
 

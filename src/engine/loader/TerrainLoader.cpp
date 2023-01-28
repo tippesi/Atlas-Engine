@@ -254,21 +254,21 @@ namespace Atlas {
 
 			std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
             fileStream.read((char*)heightFieldData.data(), heightFieldData.size() * 2);
-			cell->heightField = new Texture::Texture2D(tileResolution,
-				tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+            // cell->heightField = new Texture::Texture2D(tileResolution,
+            // 	tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
 			cell->heightField->SetData(heightFieldData);
 
 			std::vector<uint8_t> normalMapData(normalDataResolution * 
 				normalDataResolution * 3);
             fileStream.read((char*)normalMapData.data(), normalMapData.size());
-			cell->normalMap = new Texture::Texture2D(normalDataResolution,
-				normalDataResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+            // cell->normalMap = new Texture::Texture2D(normalDataResolution,
+            // 	normalDataResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
 			cell->normalMap->SetData(normalMapData);
 
 			std::vector<uint8_t> splatMapData(heightFieldData.size());
 			fileStream.read((char*)splatMapData.data(), splatMapData.size());
-			cell->splatMap = new Texture::Texture2D(tileResolution,
-					tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+            // cell->splatMap = new Texture::Texture2D(tileResolution,
+            // 		tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
 			cell->splatMap->SetData(splatMapData);
 			
 			if (initWithHeightData) {

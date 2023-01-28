@@ -3,15 +3,12 @@
 
 #include "System.h"
 #include "Window.h"
-#include "Context.h"
 #include "Camera.h"
 #include "Clock.h"
 #include "Log.h"
 #include "ResourceManager.h"
 #include "scene/Scene.h"
 #include "RenderTarget.h"
-#include "shader/Shader.h"
-#include "shader/ShaderManager.h"
 #include "renderer/MainRenderer.h"
 #include "events/EventManager.h"
 #include "audio/AudioManager.h"
@@ -31,7 +28,7 @@ namespace Atlas {
          * @param shaderDirectory The directory where all the shader files are located relative to the asset directory
          * @note All file paths handed over to the engine should be relative the asset directory
          */
-		static Context* Init(std::string assetDirectory, std::string shaderDirectory);
+		static void Init(std::string assetDirectory, std::string shaderDirectory);
 
 		/**
 		 * Shuts down the engine
@@ -61,11 +58,7 @@ namespace Atlas {
          */
         static void UnlockFramerate();
 
-		/**
-		 * This window is there by default and is not visible.
-		 */
-		static SDL_Window* defaultWindow;
-		static Context* defaultContext;
+        static Window* DefaultWindow;
 
 	};
 

@@ -21,6 +21,7 @@ namespace Atlas {
 				keycode = event.keysym.sym;
 				state = event.state;
 				repeat = event.repeat > 0 ? true : false;
+                down = event.type == SDL_KEYDOWN;
 
 			}
 
@@ -43,6 +44,11 @@ namespace Atlas {
              * True if the key was pressed for longer. False otherwise.
              */
 			bool repeat;
+
+            /**
+             * Whether this event is triggered by the button going down or up
+             */
+            bool down;
 
 		};
 

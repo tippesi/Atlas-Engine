@@ -1,9 +1,11 @@
 #include "ImguiWrapper.h"
-#include "ImguiOpenGL.h"
 
+#define VK_NO_PROTOTYPES
 #include <SDL2/SDL_mouse.h>
+#include <graphics/Instance.h>
+#include <ImguiVulkan.h>
 
-ImguiWrapper::ImguiWrapper(Atlas::Window* window, Atlas::Context* context) {
+void ImguiWrapper::Load(Atlas::Window* window) {
 
 	 // Setup back-end capabilities flags
     ImGuiIO& io = ImGui::GetIO();
@@ -69,14 +71,43 @@ ImguiWrapper::ImguiWrapper(Atlas::Window* window, Atlas::Context* context) {
 	auto textInputEventHandler = std::bind(&ImguiWrapper::TextInputHandler, this, std::placeholders::_1);
 	textInputID = Atlas::Events::EventManager::TextInputEventDelegate.Subscribe(textInputEventHandler);
 
-	ImGui_ImplOpenGL3_Init("#version 410");
+    auto instance = Atlas::Graphics::Instance::DefaultInstance;
+	auto device = instance->GetGraphicsDevice();
+    pool = device->CreateDescriptorPool();
+
+    //this initializes imgui for Vulkan
+    ImGui_ImplVulkan_InitInfo init_info = {};
+    init_info.Instance = instance->GetNativeInstance();
+    init_info.PhysicalDevice = device->physicalDevice;
+    init_info.Device = device->device;
+    init_info.Queue = device->GetQueue(Atlas::Graphics::GraphicsQueue);
+    init_info.DescriptorPool = pool->GetNativePool();
+    init_info.MinImageCount = 3;
+    init_info.ImageCount = 3;
+    init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+    ImGui_ImplVulkan_Init(&init_info, device->swapChain->renderPass);
+
+    //execute a gpu command to upload imgui font textures
+    device->memoryManager->transferManager->ImmediateSubmit(
+        [&](VkCommandBuffer cmd) {
+        ImGui_ImplVulkan_CreateFontsTexture(cmd);
+    });
+
+    //clear font textures from cpu data
+    ImGui_ImplVulkan_DestroyFontUploadObjects();
 
 }
 
-ImguiWrapper::~ImguiWrapper() {
+void ImguiWrapper::Unload() {
 
-	// Unsubscribe from all events
+    auto instance = Atlas::Graphics::Instance::DefaultInstance;
+    auto device = instance->GetGraphicsDevice();
 
+    device->WaitForIdle();
+
+    // Unsubscribe from all events
+    ImGui_ImplVulkan_Shutdown();
 
 }
 
@@ -99,8 +130,7 @@ void ImguiWrapper::Update(Atlas::Window* window, float deltaTime) {
 		Atlas::Events::EventManager::DisableTextInput();
 
 	UpdateMouseCursor();
-
-	ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplVulkan_NewFrame();
 
 }
 
@@ -108,8 +138,27 @@ void ImguiWrapper::Render() {
 
 	ImGuiIO& io = ImGui::GetIO();
 
-	glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    auto instance = Atlas::Graphics::Instance::DefaultInstance;
+    auto device = instance->GetGraphicsDevice();
+
+    auto commandList = device->GetCommandList(Atlas::Graphics::GraphicsQueue);
+    auto swapChain = device->swapChain;
+
+    commandList->BeginCommands();
+
+    Atlas::Graphics::Profiler::BeginThread("ImGui thread", commandList);
+    Atlas::Graphics::Profiler::BeginQuery("ImGui");
+
+    commandList->BeginRenderPass(swapChain, false);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandList->commandBuffer);
+    commandList->EndRenderPass();
+
+    Atlas::Graphics::Profiler::EndQuery();
+    Atlas::Graphics::Profiler::EndThread();
+
+    commandList->EndCommands();
+
+    device->SubmitCommandList(commandList, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
 }
 
@@ -127,12 +176,14 @@ void ImguiWrapper::MouseButtonHandler(Atlas::Events::MouseButtonEvent event) {
 
 	ImGuiIO& io = ImGui::GetIO();
 
-	switch (event.button) {
-		case AE_MOUSEBUTTON_LEFT: io.MouseDown[0] = (event.state == AE_BUTTON_PRESSED); break;
-		case AE_MOUSEBUTTON_RIGHT: io.MouseDown[1] = (event.state == AE_BUTTON_PRESSED); break;
-		case AE_MOUSEBUTTON_MIDDLE: io.MouseDown[2] = (event.state == AE_BUTTON_PRESSED); break;
-	}
+    int mouseButton = -1;
+    if (event.button == AE_MOUSEBUTTON_LEFT) { mouseButton = 0; }
+    if (event.button == AE_MOUSEBUTTON_RIGHT) { mouseButton = 1; }
+    if (event.button == AE_MOUSEBUTTON_MIDDLE) { mouseButton = 2; }
 
+    if (mouseButton < 0) return;
+
+    io.AddMouseButtonEvent(mouseButton, event.down);
 
 }
 
@@ -159,16 +210,8 @@ void ImguiWrapper::KeyboardHandler(Atlas::Events::KeyboardEvent event) {
 
 	ImGuiIO& io = ImGui::GetIO();
 
-	io.KeysDown[KEYCODE_TO_SCANCODE(event.keycode)] = (event.state == AE_BUTTON_PRESSED);
-	
-	if (event.keycode == AE_KEY_LSHIFT || event.keycode == AE_KEY_RSHIFT)
-		io.KeyShift = (event.state == AE_BUTTON_PRESSED);
-	if (event.keycode == AE_KEY_LCTRL || event.keycode == AE_KEY_RCTRL)
-		io.KeyCtrl = (event.state == AE_BUTTON_PRESSED);
-	if (event.keycode == AE_KEY_LALT || event.keycode == AE_KEY_RALT)
-		io.KeyAlt = (event.state == AE_BUTTON_PRESSED);
-	if (event.keycode == AE_KEY_LGUI || event.keycode == AE_KEY_RGUI)
-		io.KeySuper = (event.state == AE_BUTTON_PRESSED);
+    ImGuiKey key = KEYCODE_TO_SCANCODE(event.keycode);
+    io.AddKeyEvent(key, event.down);
 
 }
 
