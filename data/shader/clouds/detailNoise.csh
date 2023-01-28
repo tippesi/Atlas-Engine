@@ -2,7 +2,7 @@
 
 layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
-layout(set = 3, binding = 0, rgba16f) uniform image3D noiseImage;
+layout(set = 3, binding = 0, r16f) uniform image3D noiseImage;
 
 layout(push_constant) uniform constants {
 	float seed;
@@ -24,6 +24,10 @@ void main() {
     noise.b = Worley4Octaves(pos, 4.0 * baseScale, pushConstants.seed, weights);
     noise.a = Worley4Octaves(pos, 8.0 * baseScale, pushConstants.seed, weights);
 
-    imageStore(noiseImage, pixel, noise);
+    float highFrequenyFBM = noise.r * 0.625
+                            + noise.g * 0.250
+                            + noise.b * 0.125;
+
+    imageStore(noiseImage, pixel, vec4(highFrequenyFBM, 0.0, 0.0, 0.0));
 
 }
