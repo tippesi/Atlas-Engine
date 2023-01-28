@@ -33,35 +33,8 @@ namespace Atlas {
             Texture::Texture2D* texture, float x, float y, float width, float height,
 			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
-            std::vector<std::string> macros = {"TEXTURE2D"};
-
-            // Not supported right now
-			if (alphaBlending) {
-				macros.push_back("ALPHA_BLENDING");
-			}
-
-            auto pipelineConfig = GeneratePipelineConfig(nullptr, macros);
-            auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
-            commandList->BindPipeline(pipeline);
-
-            vertexArray.Bind(commandList);
-
-            auto projectionMatrix = glm::ortho(0.0f, (float)viewport->width, 0.0f, (float)viewport->height);
-            PushConstants constants = {
-                .pMatrix = projectionMatrix,
-                .blendArea = blendArea,
-                .clipArea = clipArea,
-                .offset = vec2(x, y),
-                .scale = vec2(width, height),
-                .invert = invert ? 1 : 0
-            };
-
-            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-            commandList->PushConstants(constantRange, &constants);
-
-			commandList->BindImage(texture->image, texture->sampler, 3, 0);
-
-            commandList->Draw(4);
+            Draw(commandList, viewport, texture, 0.0f, x, y, width, height,
+                clipArea, blendArea, alphaBlending, invert, "TEXTURE2D");
 
 		}
 
@@ -84,36 +57,8 @@ namespace Atlas {
             Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
 			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
-            std::vector<std::string> macros = {"TEXTURE2D_ARRAY"};
-
-            // Not supported right now
-            if (alphaBlending) {
-                macros.push_back("ALPHA_BLENDING");
-            }
-
-            auto pipelineConfig = GeneratePipelineConfig(nullptr, macros);
-            auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
-            commandList->BindPipeline(pipeline);
-
-            vertexArray.Bind(commandList);
-
-            auto projectionMatrix = glm::ortho(0.0f, (float)viewport->width, 0.0f, (float)viewport->height);
-            PushConstants constants = {
-                .pMatrix = projectionMatrix,
-                .blendArea = blendArea,
-                .clipArea = clipArea,
-                .offset = vec2(x, y),
-                .scale = vec2(width, height),
-                .invert = invert ? 1 : 0,
-                .depth = float(depth)
-            };
-
-            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-            commandList->PushConstants(constantRange, &constants);
-
-            commandList->BindImage(texture->image, texture->sampler, 3, 0);
-
-            commandList->Draw(4);
+            Draw(commandList, viewport, texture, depth, x, y, width, height,
+                clipArea, blendArea, alphaBlending, invert, "TEXTURE2D_ARRAY");
 
 		}
 
@@ -136,7 +81,16 @@ namespace Atlas {
             Texture::Texture3D* texture, float depth, float x, float y, float width, float height,
 			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
-            std::vector<std::string> macros = {"TEXTURE3D"};
+            Draw(commandList, viewport, texture, depth, x, y, width, height,
+                clipArea, blendArea, alphaBlending, invert, "TEXTURE3D");
+
+		}
+
+        void TextureRenderer::Draw(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture* texture,
+            float depth, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea,
+            bool alphaBlending, bool invert, const std::string& macro) {
+
+            std::vector<std::string> macros = { macro };
 
             // Not supported right now
             if (alphaBlending) {
@@ -167,7 +121,7 @@ namespace Atlas {
 
             commandList->Draw(4);
 
-		}
+        }
 
         PipelineConfig TextureRenderer::GeneratePipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer,
             const std::vector<std::string>& macros) {

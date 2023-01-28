@@ -53,6 +53,10 @@ namespace Atlas {
                 float depth;
             };
 
+            void Draw(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture* texture,
+                float depth, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea,
+                bool alphaBlending, bool invert, const std::string& macro);
+
             PipelineConfig GeneratePipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer,
                 const std::vector<std::string>& macros);
 
