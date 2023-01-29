@@ -10,6 +10,7 @@
 #include <../common/flatten.hsh>
 #include <../common/convert.hsh>
 #include <../common/PI.hsh>
+#include <../common/bluenoise.hsh>
 
 #include <../brdf/brdfEval.hsh>
 #include <../brdf/importanceSample.hsh>
@@ -27,8 +28,10 @@ layout(set = 3, binding = 2) uniform sampler2D depthTexture;
 layout(set = 3, binding = 3) uniform sampler2D roughnessMetallicAoTexture;
 layout(set = 3, binding = 4) uniform isampler2D offsetTexture;
 layout(set = 3, binding = 5) uniform usampler2D materialIdxTexture;
-layout(set = 3, binding = 6) uniform sampler2D randomTexture;
-layout(set = 3, binding = 7) uniform sampler2DArrayShadow cascadeMaps;
+layout(set = 3, binding = 6) uniform sampler2DArrayShadow cascadeMaps;
+
+layout(set = 3, binding = 7) uniform sampler2D scramblingRankingTexture;
+layout(set = 3, binding = 8) uniform sampler2D sobolSequenceTexture;
 
 const ivec2 offsets[4] = ivec2[4](
     ivec2(0, 0),
@@ -37,7 +40,7 @@ const ivec2 offsets[4] = ivec2[4](
     ivec2(1, 1)
 );
 
-layout(std140, set = 3, binding = 8) uniform UniformBuffer {
+layout(std140, set = 3, binding = 9) uniform UniformBuffer {
 	float radianceLimit;
 	uint frameSeed;
 	float bias;
@@ -70,11 +73,12 @@ void main() {
 	    vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
         vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0, 0.0)));
-		
-		ivec2 noiseOffset = Unflatten2D(int(uniforms.frameSeed), ivec2(16)) * ivec2(8);
-        vec2 blueNoiseVec = texelFetch(randomTexture, (pixel + noiseOffset) % ivec2(128), 0).xy * 256.0;
-		blueNoiseVec = clamp(blueNoiseVec, 0.0, 255.0);
-		blueNoiseVec = (blueNoiseVec + 0.5) / 256.0;
+
+		int sampleIdx = int(uniforms.frameSeed);
+		vec2 blueNoiseVec = vec2(
+			SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
+			SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)
+			);
 
         uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 	    Material material = UnpackMaterial(materialIdx);

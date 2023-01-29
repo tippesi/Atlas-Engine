@@ -26,7 +26,7 @@ namespace Atlas {
 		private:
             struct alignas(16) RTUniforms {
                 float radius;
-                uint32_t frameSeed;
+                int32_t frameSeed;
             };
 
             struct alignas(16) SSUniforms {
@@ -38,7 +38,8 @@ namespace Atlas {
 			Filter blurFilter;
 			Helper::RayTracingHelper helper;
 
-			Texture::Texture2D blueNoiseTexture;
+            Texture::Texture2D scramblingRankingTexture;
+            Texture::Texture2D sobolSequenceTexture;
 
             PipelineConfig ssaoPipelineConfig;
             PipelineConfig rtaoPipelineConfig;

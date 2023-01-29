@@ -140,7 +140,7 @@ namespace Atlas {
 				commandList->BindImage(velocityTexture->image, velocityTexture->sampler, 3, 2);
 				commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 3);
 				commandList->BindImage(target->historyVolumetricCloudsTexture.image, target->historyVolumetricCloudsTexture.sampler, 3, 4);
-				commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 4);
+				commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 5);
 
 				commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
