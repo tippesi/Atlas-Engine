@@ -223,7 +223,7 @@ void main() {
          || uv.y > 1.0) ? 0.0 : factor;
 
     ivec2 historyPixel = ivec2(vec2(pixel) + velocity * resolution);
-    float maxConfidence = 0.0;
+    float minConfidence = 1.0;
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges
     for (int i = 0; i < 9; i++) {
@@ -233,10 +233,10 @@ void main() {
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         confidence *= historyDepth < 1.0 ? 0.0 : 1.0;
 
-        maxConfidence = max(maxConfidence, confidence);
+        minConfidence = min(minConfidence, confidence);
     }
     
-    factor *= maxConfidence;
+    factor *= minConfidence;
 
     vec4 resolve = mix(currentValue, historyValue, factor);
 
