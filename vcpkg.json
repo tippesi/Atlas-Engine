@@ -25,7 +25,10 @@
         "assimp",
         "vulkan-memory-allocator",
         "volk",
-        "glslang",
+        {
+            "name": "glslang",
+            "features": []
+        },
         "spirv-reflect",
         "spirv-tools"
     ],
