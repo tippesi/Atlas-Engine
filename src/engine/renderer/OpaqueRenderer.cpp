@@ -44,7 +44,7 @@ namespace Atlas {
                     .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
                 };
 
-                if (!mesh->cullBackFaces) {
+                if (material->twoSided || !mesh->cullBackFaces) {
                     pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
                 }
 

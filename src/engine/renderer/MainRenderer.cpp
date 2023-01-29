@@ -285,29 +285,13 @@ namespace Atlas {
             pathTracingRenderer.Render(viewport, target, ivec2(1, 1), camera, scene, commandList);
 
             Graphics::Profiler::BeginQuery("Post processing");
+
+            commandList->BeginRenderPass(device->swapChain, true);
 			
-            {
-                auto swapChain = device->swapChain;
-                swapChain->colorClearValue.color = {0.0f, 0.0f, 0.0f, 1.0f};
-                commandList->BeginRenderPass(swapChain, true);
+            textureRenderer.RenderTexture2D(commandList, viewport, &target->texture,
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), false, true);
 
-                auto shaderConfig = ShaderConfig {
-                    {"test.vsh", VK_SHADER_STAGE_VERTEX_BIT},
-                    {"test.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
-                };
-                auto pipelineDesc = Graphics::GraphicsPipelineDesc{
-                    .swapChain = device->swapChain
-                };
-                auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc);
-                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
-                commandList->BindPipeline(pipeline);
-
-                commandList->BindImage(target->texture.image, target->texture.sampler, 0, 0);
-
-                commandList->Draw(6, 1, 0, 0);
-
-                commandList->EndRenderPass();
-            }
+            commandList->EndRenderPass();
 
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndThread();
