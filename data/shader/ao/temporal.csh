@@ -5,7 +5,7 @@
 #include <../common/flatten.hsh>
 #include <../common/random.hsh>
 
-layout (local_size_x = 8, local_size_y = 8) in;
+layout (local_size_x = 16, local_size_y = 16) in;
 
 layout(set = 3, binding = 0, r16f) writeonly uniform image2D resolveImage;
 layout(set = 3, binding = 1, r16f) writeonly uniform image2D momentsImage;

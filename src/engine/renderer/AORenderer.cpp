@@ -150,9 +150,9 @@ namespace Atlas {
                 std::vector<Graphics::ImageBarrier> imageBarriers;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;
 
-                ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
-                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
+                ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
+                groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
 
                 auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
                 commandList->BindPipeline(pipeline);
@@ -236,7 +236,7 @@ namespace Atlas {
                 std::vector<Graphics::ImageBarrier> imageBarriers;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;
 
-                int32_t blurRounds = ao->rt ? 5 : 3;
+                int32_t blurRounds = ao->rt ? 3 : 3;
 
                 for (int32_t i = 0; i < blurRounds; i++) {
                     ivec2 groupCount = ivec2(res.x / groupSize, res.y);
