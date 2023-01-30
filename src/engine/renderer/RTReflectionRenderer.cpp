@@ -191,29 +191,6 @@ namespace Atlas {
                 commandList->BindImage(historyMaterialIdxTexture->image, historyMaterialIdxTexture->sampler, 3, 12);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
-
-                // Need barriers for all four images
-                imageBarriers = {
-                    {target->swapReflectionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                    {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                    {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                    {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-                commandList->CopyImage(target->swapReflectionTexture.image, target->historyReflectionTexture.image);
-                commandList->CopyImage(target->reflectionMomentsTexture.image, target->historyReflectionMomentsTexture.image);
-
-                // Need barriers for all four images
-                imageBarriers = {
-                    {target->swapReflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
             }
 
             Graphics::Profiler::EndAndBeginQuery("Spatial filter");
@@ -267,6 +244,31 @@ namespace Atlas {
 
                     commandList->Dispatch(groupCount.x, groupCount.y, 1);
                     Graphics::Profiler::EndQuery();
+
+                    if (i == 1) {
+                        // Need barriers for all four images
+                        imageBarriers = {
+                            {target->reflectionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
+                            {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
+                            {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+                            {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+                        };
+                        commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+                        commandList->CopyImage(target->reflectionTexture.image, target->historyReflectionTexture.image);
+                        commandList->CopyImage(target->reflectionMomentsTexture.image, target->historyReflectionMomentsTexture.image);
+
+                        // Need barriers for all four images
+                        imageBarriers = {
+                            {target->reflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                            {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                            {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                            {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                        };
+                        commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+                    }
                 }
 
                 // Transition to final layout, the loop won't do that

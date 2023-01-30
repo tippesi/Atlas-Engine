@@ -236,9 +236,7 @@ namespace Atlas {
                 std::vector<Graphics::ImageBarrier> imageBarriers;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;
 
-                int32_t blurRounds = ao->rt ? 3 : 3;
-
-                for (int32_t i = 0; i < blurRounds; i++) {
+                for (int32_t i = 0; i < 3; i++) {
                     ivec2 groupCount = ivec2(res.x / groupSize, res.y);
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                     imageBarriers = {
