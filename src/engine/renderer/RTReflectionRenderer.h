@@ -56,7 +56,8 @@ namespace Atlas {
 
 			Helper::RayTracingHelper helper;
 
-			Texture::Texture2D blueNoiseTexture;
+			Texture::Texture2D scramblingRankingTexture;
+			Texture::Texture2D sobolSequenceTexture;
 
 			PipelineConfig rtrPipelineConfig;
 			PipelineConfig temporalPipelineConfig;

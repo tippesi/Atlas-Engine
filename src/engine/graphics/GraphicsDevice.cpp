@@ -313,6 +313,7 @@ namespace Atlas {
                     commandLists, true);
 
                 commandList->isSubmitted = false;
+                commandList->dependencies.clear();
 
                 return commandList;
             }
@@ -323,6 +324,7 @@ namespace Atlas {
                     currentFrameData->commandLists, false);
 
                 commandList->isSubmitted = false;
+                commandList->dependencies.clear();
 
                 return commandList;
             }
@@ -339,10 +341,15 @@ namespace Atlas {
             // when we get back to this frames data and start a new frame with it.
             auto frame = GetFrameData();
 
+            cmd->executionOrder = order;
+
             std::vector<VkSemaphore> waitSemaphores = { frame->semaphore };
             std::vector<VkPipelineStageFlags> waitStages = { waitStage };
-            if (frame->submittedCommandLists.size() > 0) {
+            if (frame->submittedCommandLists.size() > 0 && order == ExecutionOrder::Sequential) {
                 waitSemaphores[0] = frame->submittedCommandLists.back()->semaphore;
+            }
+            else if (order == ExecutionOrder::Parallel) {
+
             }
 
             VkSubmitInfo submit = {};

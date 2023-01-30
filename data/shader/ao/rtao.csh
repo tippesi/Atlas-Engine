@@ -7,6 +7,7 @@
 #include <../common/random.hsh>
 #include <../common/flatten.hsh>
 #include <../common/convert.hsh>
+#include <../common/bluenoise.hsh>
 #include <../brdf/brdfSample.hsh>
 
 layout (local_size_x = 8, local_size_y = 4) in;
@@ -15,8 +16,9 @@ layout (set = 3, binding = 0, r16f) writeonly uniform image2D rtaoImage;
 
 layout(set = 3, binding = 1) uniform sampler2D normalTexture;
 layout(set = 3, binding = 2) uniform sampler2D shadowMap;
-layout(set = 3, binding = 3) uniform sampler2D randomTexture;
-layout(set = 3, binding = 4) uniform isampler2D offsetTexture;
+layout(set = 3, binding = 3) uniform isampler2D offsetTexture;
+layout(set = 3, binding = 4) uniform sampler2D scramblingRankingTexture;
+layout(set = 3, binding = 5) uniform sampler2D sobolSequenceTexture;
 
 const ivec2 offsets[4] = ivec2[4](
     ivec2(0, 0),
@@ -25,9 +27,9 @@ const ivec2 offsets[4] = ivec2[4](
     ivec2(1, 1)
 );
 
-layout(set = 3, binding = 5) uniform UniformBuffer {
+layout(set = 3, binding = 6) uniform UniformBuffer {
     float radius;
-    uint frameSeed;
+    int frameSeed;
 } uniforms;
 
 void main() {
@@ -62,25 +64,19 @@ void main() {
         vec2 recontructTexCoord = (2.0 * vec2(pixel) + offset + vec2(0.5)) / (2.0 * vec2(resolution));
 	    vec3 worldPos = vec3(globalData.ivMatrix * vec4(ConvertDepthToViewSpace(depth, recontructTexCoord), 1.0));
         vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0, 0.0)));
-        float seed = texelFetch(randomTexture, pixel % ivec2(4), 0).r;
 
         float ao = 0.0;
 
-        float raySeed = float(seed);
-        float curSeed = float(0);
-
-        ivec2 noiseOffset = Unflatten2D(int(uniforms.frameSeed), ivec2(16)) * ivec2(8);
-        vec2 blueNoiseVec = texelFetch(randomTexture, (pixel + noiseOffset) % ivec2(128), 0).xy * 256.0;
-		blueNoiseVec = clamp(blueNoiseVec, 0.0, 255.0);
-		blueNoiseVec = (blueNoiseVec + 0.5) / 256.0;
+        int sampleIdx = int(uniforms.frameSeed);
+		vec2 blueNoiseVec = vec2(
+			SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
+			SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)
+			);
 
         const int sampleCount = 1;
         for (uint i = 0; i < sampleCount; i++) {
             Ray ray;
             Surface surface;
-
-            float u0 = random(raySeed, curSeed);
-    	    float u1 = random(raySeed, curSeed);
 
             surface.N = worldNorm;
             surface.P = worldPos;

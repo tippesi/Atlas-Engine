@@ -14,9 +14,13 @@ namespace Atlas {
             const int32_t filterSize = 4;
             blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
 
-            auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("noise.png");
-            blueNoiseTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, VK_FORMAT_R8G8B8A8_UNORM);
-            blueNoiseTexture.SetData(noiseImage.GetData());
+            auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("scrambling_ranking.png", false, 4);
+            scramblingRankingTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, VK_FORMAT_R8G8B8A8_UNORM);
+            scramblingRankingTexture.SetData(noiseImage.GetData());
+
+            noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("sobol.png");
+            sobolSequenceTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, VK_FORMAT_R8G8B8A8_UNORM);
+            sobolSequenceTexture.SetData(noiseImage.GetData());
 
             ssaoPipelineConfig = PipelineConfig("ao/ssao.csh");
             rtaoPipelineConfig = PipelineConfig("ao/rtao.csh");
@@ -40,6 +44,8 @@ namespace Atlas {
 		void AORenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
             Scene::Scene* scene, Graphics::CommandList* commandList) {
 
+            static int32_t frameCount = 0;
+
             auto ao = scene->ao;
             if (!ao || !ao->enable) return;
 
@@ -59,7 +65,6 @@ namespace Atlas {
             auto offsetTexture = downsampledRT->offsetTexture;
             auto velocityTexture = downsampledRT->velocityTexture;
             auto materialIdxTexture = downsampledRT->materialIdxTexture;
-            auto randomTexture = &scene->ao->noiseTexture;
 
             auto historyDepthTexture = downsampledHistoryRT->depthTexture;
             auto historyMaterialIdxTexture = downsampledHistoryRT->materialIdxTexture;
@@ -77,7 +82,7 @@ namespace Atlas {
 
                 auto uniforms = RTUniforms {
                     .radius = ao->radius,
-                    .frameSeed = Common::Random::SampleUniformInt(0, 255),
+                    .frameSeed = frameCount++,
                 };
                 rtUniformBuffer.SetData(&uniforms, 0, 1);
 
@@ -90,10 +95,12 @@ namespace Atlas {
 
                         commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
                         commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
-                        commandList->BindImage(blueNoiseTexture.image, blueNoiseTexture.sampler, 3, 3);
-                        commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 4);
+                        commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 3);
 
-                        commandList->BindBuffer(rtUniformBuffer.GetMultiBuffer(), 3, 5);
+                        commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 4);
+                        commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 5);
+
+                        commandList->BindBuffer(rtUniformBuffer.GetMultiBuffer(), 3, 6);
                     });
 
                 commandList->ImageMemoryBarrier(target->swapAoTexture.image,
@@ -143,9 +150,9 @@ namespace Atlas {
                 std::vector<Graphics::ImageBarrier> imageBarriers;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;
 
-                ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
-                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
+                ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
+                groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
 
                 auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
                 commandList->BindPipeline(pipeline);
@@ -229,7 +236,7 @@ namespace Atlas {
                 std::vector<Graphics::ImageBarrier> imageBarriers;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;
 
-                for (int32_t i = 0; i < 5; i++) {
+                for (int32_t i = 0; i < 3; i++) {
                     ivec2 groupCount = ivec2(res.x / groupSize, res.y);
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                     imageBarriers = {

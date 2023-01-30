@@ -39,6 +39,12 @@ namespace Atlas {
 
         }
 
+        void CommandList::DependsOn(CommandList *commandList) {
+
+            dependencies.push_back(commandList);
+
+        }
+
         void CommandList::BeginCommands() {
 
             // Here we assume the command buffer is free to write and not used

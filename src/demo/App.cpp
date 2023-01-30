@@ -832,6 +832,7 @@ bool App::LoadScene() {
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
         camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+        camera.exposure = 1.0f;
 
         scene.fog->enable = true;
     }

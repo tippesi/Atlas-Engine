@@ -14,7 +14,7 @@ layout(set = 3, binding = 2) uniform sampler2D velocityTexture;
 layout(set = 3, binding = 3) uniform sampler2D depthTexture;
 
 layout(set = 3, binding = 4) uniform sampler2D historyTexture;
-// layout(set = 3, binding = 5) uniform sampler2D historyDepthTexture;
+layout(set = 3, binding = 5) uniform sampler2D historyDepthTexture;
 
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
@@ -221,6 +221,22 @@ void main() {
     float factor = 0.875;
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
+
+    ivec2 historyPixel = ivec2(vec2(pixel) + velocity * resolution);
+    float minConfidence = 1.0;
+    // Calculate confidence over 2x2 bilinear neighborhood
+    // Note that 3x3 neighborhoud could help on edges
+    for (int i = 0; i < 9; i++) {
+        ivec2 offsetPixel = historyPixel + offsets[i];
+        float confidence = 1.0;
+
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+        confidence *= historyDepth < 1.0 ? 0.0 : 1.0;
+
+        minConfidence = min(minConfidence, confidence);
+    }
+    
+    factor *= minConfidence;
 
     vec4 resolve = mix(currentValue, historyValue, factor);
 

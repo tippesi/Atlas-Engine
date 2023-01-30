@@ -21,6 +21,11 @@ namespace Atlas {
 
     namespace Graphics {
 
+        enum class ExecutionOrder {
+            Sequential = 0,
+            Parallel = 1
+        };
+
         enum QueueType {
             GraphicsQueue = 0,
             PresentationQueue,
@@ -44,6 +49,8 @@ namespace Atlas {
             ~CommandList();
 
             CommandList& operator=(const CommandList& that) = delete;
+
+            void DependsOn(CommandList* commandList);
 
             void BeginCommands();
 
@@ -159,6 +166,9 @@ namespace Atlas {
             Ref<RenderPass> renderPassInUse = nullptr;
             Ref<Pipeline> pipelineInUse = nullptr;
             Ref<FrameBuffer> frameBufferInUse = nullptr;
+
+            std::vector<CommandList*> dependencies;
+            ExecutionOrder executionOrder = ExecutionOrder::Sequential;
 
         private:
             struct DescriptorBindingData {

@@ -236,7 +236,7 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
             vec3 sampleRadiance = FetchCurrentRadiance(sharedMemoryIdx);
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
 
-            float depthPhi = max(1.0, abs(0.25 * linearDepth));
+            float depthPhi = max(1.0, abs(0.025 * linearDepth));
             float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) / depthPhi));
 
             sampleRadiance *= weight;

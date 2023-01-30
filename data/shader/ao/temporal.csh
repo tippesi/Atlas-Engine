@@ -5,7 +5,7 @@
 #include <../common/flatten.hsh>
 #include <../common/random.hsh>
 
-layout (local_size_x = 8, local_size_y = 8) in;
+layout (local_size_x = 16, local_size_y = 16) in;
 
 layout(set = 3, binding = 0, r16f) writeonly uniform image2D resolveImage;
 layout(set = 3, binding = 1, r16f) writeonly uniform image2D momentsImage;
@@ -207,7 +207,7 @@ void ComputeVarianceMinMax(out float aabbMin, out float aabbMax) {
             float sampleAo = FetchCurrentAo(sharedMemoryIdx);
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
 
-            float depthPhi = max(1.0, abs(0.125 * linearDepth));
+            float depthPhi = max(1.0, abs(0.025 * linearDepth));
             float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) / depthPhi));
 
             sampleAo *= weight;

@@ -28,11 +28,6 @@ namespace Atlas {
         class Instance;
         class ImguiWrapper;
 
-        enum class ExecutionOrder {
-            Sequential = 0,
-            Parallel = 1
-        };
-
         class FrameData {
         public:
             VkSemaphore semaphore;

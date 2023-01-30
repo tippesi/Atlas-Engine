@@ -42,11 +42,14 @@ namespace Atlas {
 			}
 
 			auto downsampledRT = target->GetData(target->GetVolumetricResolution());
+			auto downsampledHistoryRT = target->GetHistoryData(target->GetReflectionResolution());
 
 			ivec2 res = ivec2(target->volumetricCloudsTexture.width, target->volumetricCloudsTexture.height);
 
 			auto depthTexture = downsampledRT->depthTexture;
 			auto velocityTexture = downsampledRT->velocityTexture;
+
+			auto historyDepthTexture = downsampledHistoryRT->depthTexture;
 
 			std::vector<Graphics::BufferBarrier> bufferBarriers;
 			std::vector<Graphics::ImageBarrier> imageBarriers;
@@ -137,6 +140,7 @@ namespace Atlas {
 				commandList->BindImage(velocityTexture->image, velocityTexture->sampler, 3, 2);
 				commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 3);
 				commandList->BindImage(target->historyVolumetricCloudsTexture.image, target->historyVolumetricCloudsTexture.sampler, 3, 4);
+				commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 5);
 
 				commandList->Dispatch(groupCount.x, groupCount.y, 1);
 

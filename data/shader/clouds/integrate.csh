@@ -119,14 +119,13 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
 
     float lod = 0.0;
 
-    vec4 lowFrequencyNoise = textureLod(shapeTexture, shapeTexCoords, lod);
+    vec2 lowFrequencyNoise = textureLod(shapeTexture, shapeTexCoords, lod).rg;
 
-    float lowFrequenyFBM = lowFrequencyNoise.g * 0.625
-                         + lowFrequencyNoise.b * 0.250
-                         + lowFrequencyNoise.a * 0.125;
+    float lowFrequencyBaseNoise = lowFrequencyNoise.r;
+    float lowFrequencyFBM = lowFrequencyNoise.g;
 
-    float baseCloudDensity = Remap(lowFrequencyNoise.r, 
-        -(1.0 - lowFrequenyFBM), 1.0, 0.0, 1.0);
+    float baseCloudDensity = Remap(lowFrequencyBaseNoise,
+        -(1.0 - lowFrequencyFBM), 1.0, 0.0, 1.0);
 
     float heightFraction = shapeTexCoords.y;
     float densityHeightGradient = exp(-uniforms.upperHeightFalloff * heightFraction) * 
@@ -140,14 +139,10 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
     float finalCloudDensity = baseCloudDensity;
 
     if (baseCloudDensity > 0.0) {
-        vec4 highFrequencyNoise = textureLod(detailTexture, detailTexCoords, lod);
-    
-        float highFrequenyFBM = highFrequencyNoise.r * 0.625
-                              + highFrequencyNoise.g * 0.250
-                              + highFrequencyNoise.b * 0.125;
+        float highFrequencyFBM = textureLod(detailTexture, detailTexCoords, lod).r;
 
-        float highFrequencyNoiseModifier = mix(highFrequenyFBM,
-            1.0 - highFrequenyFBM, saturate(heightFraction * 10.0));
+        float highFrequencyNoiseModifier = mix(highFrequencyFBM,
+            1.0 - highFrequencyFBM, saturate(heightFraction * 10.0));
 
         finalCloudDensity = Remap(baseCloudDensity, 
             highFrequencyNoiseModifier * uniforms.detailStrength, 1.0, 0.0, 1.0);
