@@ -2,7 +2,7 @@
 
 layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
-layout(set = 3, binding = 0, rg16f) uniform image3D noiseImage;
+layout(set = 3, binding = 0, r16f) uniform image3D noiseImage;
 
 layout(push_constant) uniform constants {
 	float seed;
@@ -24,10 +24,14 @@ void main() {
     noise.b = Worley4Octaves(pos, 4.0 * baseScale, pushConstants.seed, weights);
     noise.a = Worley4Octaves(pos, 8.0 * baseScale, pushConstants.seed, weights);
 
-    float lowFrequenyFBM = noise.g * 0.625
+    float lowFrequencyFBM = noise.g * 0.625
                             + noise.b * 0.250
                             + noise.a * 0.125;
 
-    imageStore(noiseImage, pixel, vec4(noise.r, lowFrequenyFBM, 0.0, 0.0));
+    float lowFrequencyBaseNoise = Perlin2Octaves(pos, baseScale, vec2(1.0, 0.5));
+
+    float shapeDensity = Remap(lowFrequencyBaseNoise, -(1.0 - lowFrequencyFBM), 1.0, 0.0, 1.0);
+
+    imageStore(noiseImage, pixel, vec4(shapeDensity, 0.0, 0.0, 0.0));
 
 }

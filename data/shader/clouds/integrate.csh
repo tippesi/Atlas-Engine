@@ -45,6 +45,7 @@ layout(std140, set = 3, binding = 5) uniform UniformBuffer {
     uint frameSeed;
 } uniforms;
 
+const float epsilon = 0.001;
 const int sampleCount = 128;
 const vec3 windDirection = normalize(vec3(0.1, -0.4, 0.1));
 const float windSpeed = 0.01;
@@ -119,13 +120,7 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
 
     float lod = 0.0;
 
-    vec2 lowFrequencyNoise = textureLod(shapeTexture, shapeTexCoords, lod).rg;
-
-    float lowFrequencyBaseNoise = lowFrequencyNoise.r;
-    float lowFrequencyFBM = lowFrequencyNoise.g;
-
-    float baseCloudDensity = Remap(lowFrequencyBaseNoise,
-        -(1.0 - lowFrequencyFBM), 1.0, 0.0, 1.0);
+    float baseCloudDensity = textureLod(shapeTexture, shapeTexCoords, lod).r;
 
     float heightFraction = shapeTexCoords.y;
     float densityHeightGradient = exp(-uniforms.upperHeightFalloff * heightFraction) * 
@@ -223,7 +218,12 @@ float GetExtinctionToLight(vec3 pos, int ditherIdx) {
     pos += stepVector * GetDitherOffset(ditherIdx);
 
     float extinction = 1.0;
-    for (int i = 0; i < lightSampleCount; i++) {        
+    for (int i = 0; i < lightSampleCount; i++) {       
+        if (extinction <= epsilon) {
+            extinction = 0.0;
+            break;
+        }
+
         vec3 shapeTexCoords, detailTexCoords;
         CalculateTexCoords(pos, shapeTexCoords, detailTexCoords);
 
@@ -280,7 +280,7 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     if (inDist > rayLength && depth < 1.0)
         return vec4(0.0, 0.0, 0.0, 1.0);
 
-    int raySampleCount = max(128, int((rayLength / uniforms.distanceLimit) * float(sampleCount)));
+    int raySampleCount = max(sampleCount, int((rayLength / uniforms.distanceLimit) * float(sampleCount)));
     float stepLength = rayLength / float(raySampleCount);
     vec3 stepVector = rayDirection * stepLength;
 
@@ -295,6 +295,10 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     vec3 scattering = vec3(0.0);
 
     for (int i = 0; i < raySampleCount; i++) {
+
+        if (extinction <= epsilon) {
+            break;
+        }
         
         vec3 shapeTexCoords, detailTexCoords;
         CalculateTexCoords(rayPos, shapeTexCoords, detailTexCoords);
