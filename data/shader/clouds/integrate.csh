@@ -251,15 +251,10 @@ vec3 ComputeAmbientColor(vec3 pos, float extinctionCoefficient) {
 
     float distFromCenter = distance(pos, planetCenter);
 
-    vec3 isotropicLightTop = vec3(0.2);
-    vec3 isotropicLightBottom = vec3(0.2);
-    float Hp = uniforms.outerRadius - distFromCenter; // Height to the top of the volume
-    float a = -extinctionCoefficient * Hp;
-    vec3 isotropicScatteringTop = isotropicLightTop * max(0.0, exp(a) - a * Ei(a));
-    float Hb = distFromCenter - uniforms.innerRadius; // Height to the bottom of the volume
-    a = -extinctionCoefficient * Hb;
-    vec3 isotropicScatteringBottom = isotropicLightBottom * max(0.0, exp(a) - a * Ei(a));
-    return isotropicScatteringTop + isotropicScatteringBottom;
+    vec3 isotropicLightTop = vec3(0.1, 0.1, 0.2);
+    float heightFraction = (distFromCenter - uniforms.innerRadius) / (uniforms.outerRadius - uniforms.innerRadius);
+    float ambientContribution = saturate(heightFraction + 0.1);
+    return isotropicLightTop * ambientContribution;
 
 }
 
@@ -323,8 +318,8 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
             float scatteringCoefficient = uniforms.scatteringFactor * density;
             float extinctionCoefficient = uniforms.extinctionFactor * density;
 
+            float clampedExtinction = max(extinctionCoefficient, 0.0000001);
             float stepExtinction = exp(-extinctionCoefficient * stepLength);
-            extinction *= stepExtinction;
 
             float lightDotView = dot(normalize(uniforms.light.direction.xyz), normalize(rayDirection));
             vec3 lightColor = uniforms.light.color.rgb * uniforms.light.intensity;
@@ -333,18 +328,17 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
             float standardLightPhase = ComputeScattering(lightDotView, uniforms.eccentricity);
             float silverLiningPhase = uniforms.silverLiningIntensity * ComputeScattering(lightDotView, -1.0 + uniforms.silverLiningSpread);
             float lightPhase = max(standardLightPhase, silverLiningPhase);
-            vec3 stepScattering = scatteringCoefficient  * stepLength * (lightPhase * lightColor * lightExtinction
+            vec3 stepScattering = scatteringCoefficient * (lightPhase * lightColor * lightExtinction
                 + ComputeAmbientColor(rayPos, extinctionCoefficient));
 
-            vec3 luminanceIntegral = stepScattering * stepExtinction;
+            vec3 luminanceIntegral = (stepScattering - stepScattering * stepExtinction) / clampedExtinction;
             scattering += luminanceIntegral * extinction;
+            extinction *= stepExtinction;
         }
 
         rayPos += stepVector;
     }
 
-    // Workaround for now
-    vec3 ambient = vec3(0.2) * (1.0 - dot(scattering, vec3(0.333))) * (1.0 - extinction);
-    return vec4(scattering + ambient, extinction);
+    return vec4(scattering, extinction);
 
 }

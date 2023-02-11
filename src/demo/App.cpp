@@ -472,6 +472,7 @@ void App::Render(float deltaTime) {
                 ImGui::Text("Image effects");
                 ImGui::Checkbox("Filmic tonemapping", &scene.postProcessing.filmicTonemapping);
                 ImGui::SliderFloat("Saturation##Postprocessing", &scene.postProcessing.saturation, 0.0f, 2.0f);
+                ImGui::SliderFloat("White point##Postprocessing", &scene.postProcessing.whitePoint, 0.0f, 100.0f, "%.3f", 2.0f);
             }
             if (ImGui::CollapsingHeader("Materials")) {
                 int32_t id = 0;

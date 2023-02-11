@@ -43,6 +43,10 @@ namespace Atlas {
 
             bool AcquireImageIndex(VkSemaphore semaphore);
 
+            bool IsHDR() const;
+
+            bool NeedsGammaCorrection() const;
+
             VkSwapchainKHR swapChain;
             VkSurfaceFormatKHR surfaceFormat;
             VkPresentModeKHR presentMode;

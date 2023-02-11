@@ -133,6 +133,7 @@ namespace Atlas {
 
             Uniforms uniforms = {
                 .exposure = camera->exposure,
+                .whitePoint = postProcessing.whitePoint,
                 .saturation = postProcessing.saturation,
                 .timeInMilliseconds = Clock::Get() * 1000.0f,
             };
@@ -165,7 +166,16 @@ namespace Atlas {
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
                 .swapChain = device->swapChain
             };
-            return PipelineConfig(shaderConfig, pipelineDesc);
+
+            std::vector<std::string> macros;
+            if (device->swapChain->IsHDR()) {
+                macros.push_back("HDR");
+            }
+            if (device->swapChain->NeedsGammaCorrection()) {
+                macros.push_back("GAMMA_CORRECTION");
+            }
+
+            return PipelineConfig(shaderConfig, pipelineDesc, macros);
 
         }
 

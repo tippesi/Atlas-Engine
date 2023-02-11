@@ -206,13 +206,46 @@ namespace Atlas {
 
         }
 
+        bool SwapChain::IsHDR() const {
+
+            switch(surfaceFormat.colorSpace) {
+                case VK_COLOR_SPACE_HDR10_HLG_EXT:
+                case VK_COLOR_SPACE_DOLBYVISION_EXT:
+                case VK_COLOR_SPACE_HDR10_ST2084_EXT:
+                    return true;
+                default:
+                    return false;
+            }
+
+        }
+
+        bool SwapChain::NeedsGammaCorrection() const {
+
+            switch(surfaceFormat.colorSpace) {
+                case VK_COLOR_SPACE_DCI_P3_LINEAR_EXT:
+                case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
+                    return false;
+                default:
+                    return true;
+            }
+
+        }
+
         VkSurfaceFormatKHR SwapChain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats) {
 
             for (const auto& availableFormat : formats) {
+
                 if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM &&
                     availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                     return availableFormat;
                 }
+
+                /*
+                if (availableFormat.format == VK_FORMAT_R16G16B16A16_SFLOAT &&
+                    availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_HLG_EXT) {
+                    return availableFormat;
+                }
+                 */
             }
 
             return formats.front();
@@ -233,7 +266,7 @@ namespace Atlas {
         }
 
         VkExtent2D SwapChain::ChooseExtent(VkSurfaceCapabilitiesKHR capabilities,
-                                           int32_t desiredWidth, int32_t desiredHeight) {
+            int32_t desiredWidth, int32_t desiredHeight) {
 
             if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
                 return capabilities.currentExtent;
