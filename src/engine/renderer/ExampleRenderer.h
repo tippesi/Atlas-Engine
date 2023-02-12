@@ -16,8 +16,6 @@ namespace Atlas {
 
             void Render(Camera* camera);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
-
         private:
             Ref<Graphics::Shader> shader = nullptr;
             Ref<Graphics::Shader> meshShader = nullptr;
@@ -34,11 +32,6 @@ namespace Atlas {
             Ref<Graphics::Image> dstImage = nullptr;
 
             Ref<Graphics::QueryPool> queryPool = nullptr;
-
-            Graphics::ImageBarrier renderPassToComputeBarrier;
-            Graphics::ImageBarrier attachmentToTransferBarrier;
-            Graphics::ImageBarrier dstToTransferBarrier;
-            Graphics::ImageBarrier dstToShaderReadBarrier;
 
             Ref<Mesh::Mesh> mesh = nullptr;
 
