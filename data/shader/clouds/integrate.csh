@@ -32,12 +32,12 @@ layout(std140, set = 3, binding = 5) uniform UniformBuffer {
     float detailSpeed;
     float detailStrength;
 
-    float eccentricity;
     float extinctionFactor;
     float scatteringFactor;
 
-    float silverLiningSpread;
-    float silverLiningIntensity;
+    float eccentricityFirstPhase;
+    float eccentricitySecondPhase;
+    float phaseAlpha;
 
     float densityMultiplier;
 
@@ -46,9 +46,11 @@ layout(std140, set = 3, binding = 5) uniform UniformBuffer {
 } uniforms;
 
 const float epsilon = 0.001;
-const int sampleCount = 128;
+const int sampleCount = 64;
 const vec3 windDirection = normalize(vec3(0.1, -0.4, 0.1));
 const float windSpeed = 0.01;
+
+const vec3 coefficient = vec3(0.71 * 0.05, 0.86 * 0.05, 1.0 * 0.05);
 
 vec3 planetCenter = -vec3(0.0, uniforms.planetRadius, 0.0);
 
@@ -239,22 +241,20 @@ float GetExtinctionToLight(vec3 pos, int ditherIdx) {
 
 }
 
-// Based on http://patapom.com/topics/Revision2013/Revision%202013%20-%20Real-time%20Volumetric%20Rendering%20Course%20Notes.pdf
-float Ei(float z) {
-
-    return 0.5772156649015328606065 + log(1e-4 + abs(z)) + z * (1.0 + z * (0.25 + z * ((1.0/18.0)
-         + z * ((1.0/96.0) + z * (1.0/600.0))))); // For x!=0
-
-}
-
 vec3 ComputeAmbientColor(vec3 pos, float extinctionCoefficient) {
 
     float distFromCenter = distance(pos, planetCenter);
 
-    vec3 isotropicLightTop = vec3(0.1, 0.1, 0.2);
+    vec3 isotropicLightTop = vec3(0.3, 0.4, 0.6);
     float heightFraction = (distFromCenter - uniforms.innerRadius) / (uniforms.outerRadius - uniforms.innerRadius);
     float ambientContribution = saturate(heightFraction + 0.1);
     return isotropicLightTop * ambientContribution;
+
+}
+
+float DualPhaseFunction(float g0, float g1, float alpha, float LDotV) {
+
+    return mix(ComputeScattering(LDotV, g0), ComputeScattering(LDotV, g1), alpha);
 
 }
 
@@ -325,10 +325,9 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
             vec3 lightColor = uniforms.light.color.rgb * uniforms.light.intensity;
             float lightExtinction =  GetExtinctionToLight(rayPos, ditherIdx);
 
-            float standardLightPhase = ComputeScattering(lightDotView, uniforms.eccentricity);
-            float silverLiningPhase = uniforms.silverLiningIntensity * ComputeScattering(lightDotView, -1.0 + uniforms.silverLiningSpread);
-            float lightPhase = max(standardLightPhase, silverLiningPhase);
-            vec3 stepScattering = scatteringCoefficient * (lightPhase * lightColor * lightExtinction
+            float phaseFunction = DualPhaseFunction(uniforms.eccentricityFirstPhase, 
+                uniforms.eccentricitySecondPhase, uniforms.phaseAlpha, lightDotView);
+            vec3 stepScattering = scatteringCoefficient * (phaseFunction * lightColor * lightExtinction
                 + ComputeAmbientColor(rayPos, extinctionCoefficient));
 
             vec3 luminanceIntegral = (stepScattering - stepScattering * stepExtinction) / clampedExtinction;

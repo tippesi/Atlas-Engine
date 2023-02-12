@@ -12,7 +12,7 @@ namespace Atlas {
 
         class Surface {
         public:
-            Surface(SDL_Window* window, bool& success);
+            Surface(Instance* instance, SDL_Window* window, bool& success);
 
             ~Surface();
 
@@ -21,8 +21,10 @@ namespace Atlas {
             SDL_Window* GetNativeWindow() const;
 
         private:
+            Instance* instance = nullptr;
+
             VkSurfaceKHR surface;
-            SDL_Window* window;
+            SDL_Window* window = nullptr;
 
         };
 

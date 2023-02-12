@@ -76,12 +76,12 @@ namespace Atlas {
                 float detailSpeed;
                 float detailStrength;
 
-                float eccentricity;
                 float extinctionFactor;
                 float scatteringFactor;
 
-                float silverLiningSpread;
-                float silverLiningIntensity;
+                float eccentricityFirstPhase;
+                float eccentricitySecondPhase;
+                float phaseAlpha;
 
                 float densityMultiplier;
 

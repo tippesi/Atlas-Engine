@@ -82,12 +82,12 @@ namespace Atlas {
 					.detailSpeed = clouds->detailSpeed,
 					.detailStrength = clouds->detailStrength,
 
-					.eccentricity = clouds->scattering.eccentricity,
 					.extinctionFactor = clouds->scattering.extinctionFactor,
 					.scatteringFactor = clouds->scattering.scatteringFactor,
 
-					.silverLiningSpread = clouds->silverLiningSpread,
-					.silverLiningIntensity = clouds->silverLiningIntensity,
+                    .eccentricityFirstPhase = clouds->scattering.eccentricityFirstPhase,
+                    .eccentricitySecondPhase = clouds->scattering.eccentricitySecondPhase,
+                    .phaseAlpha = clouds->scattering.phaseAlpha,
 
 					.densityMultiplier = clouds->densityMultiplier,
 
