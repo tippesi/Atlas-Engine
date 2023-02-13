@@ -33,7 +33,7 @@ namespace Atlas {
 		glyphs.resize(AE_FONT_GLYPH_COUNT);
 		glyphInfo.resize(AE_FONT_GLYPH_COUNT);
 
-		glyphBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(GlyphInfo), AE_GPU_GLYPH_COUNT);
+		glyphBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GlyphInfo), AE_GPU_GLYPH_COUNT);
 
 		float scale = (float) stbtt_ScaleForPixelHeight(&font, pixelSize);
 

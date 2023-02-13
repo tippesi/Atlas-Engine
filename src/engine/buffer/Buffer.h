@@ -12,13 +12,13 @@ namespace Atlas {
         typedef uint32_t BufferUsage;
 
         typedef enum BufferUsageBits {
-            StorageBuffer = (1 << 0),
-            UniformBuffer = (1 << 1),
-            IndirectBuffer = (1 << 2),
-            MultiBuffered = (1 << 3),
-            HostAccess = (1 << 4),
-            MemoryTransfers = (1 << 5)
-        }BufferUsageBits;
+            StorageBufferBit = (1 << 0),
+            UniformBufferBit = (1 << 1),
+            IndirectBufferBit = (1 << 2),
+            MultiBufferedBit = (1 << 3),
+            HostAccessBit = (1 << 4),
+            MemoryTransfersBit = (1 << 5)
+        } BufferUsageBits;
 
 		/**
          * Base class for all other buffer classes. Can be used as standalone class.

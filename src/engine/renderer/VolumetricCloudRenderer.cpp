@@ -20,8 +20,8 @@ namespace Atlas {
             integratePipelineConfig = PipelineConfig("clouds/integrate.csh");
             temporalPipelineConfig = PipelineConfig("clouds/temporal.csh");
 
-			auto bufferUsage = Buffer::BufferUsageBits::UniformBuffer | Buffer::BufferUsageBits::HostAccess
-				| Buffer::BufferUsageBits::MultiBuffered;
+			auto bufferUsage = Buffer::BufferUsageBits::UniformBufferBit | Buffer::BufferUsageBits::HostAccessBit
+                               | Buffer::BufferUsageBits::MultiBufferedBit;
 			volumetricUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(VolumetricCloudUniforms), 1);
 
 		}

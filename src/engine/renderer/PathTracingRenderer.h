@@ -107,8 +107,8 @@ namespace Atlas {
             PipelineConfig rayGenPipelineConfig;
             PipelineConfig rayHitPipelineConfig;
 
-            Buffer::Buffer rayGenUniformBuffer;
-            Buffer::Buffer rayHitUniformBuffer;
+            Buffer::UniformBuffer rayGenUniformBuffer;
+            Buffer::UniformBuffer rayHitUniformBuffer;
 
 		};
 

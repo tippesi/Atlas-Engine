@@ -44,8 +44,8 @@ namespace Atlas {
             PipelineConfig defaultPipelineConfig;
             PipelineConfig cubeMapPipelineConfig;
 
-            Buffer::Buffer uniformBuffer;
-            Buffer::Buffer probeMatricesBuffer;
+            Buffer::UniformBuffer uniformBuffer;
+            Buffer::UniformBuffer probeMatricesBuffer;
 
 		};
 

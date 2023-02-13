@@ -22,11 +22,9 @@ namespace Atlas {
 
             resolvePipelineConfig = PipelineConfig("volumetric/volumetricResolve.csh");
 
-            auto bufferUsage = Buffer::BufferUsageBits::UniformBuffer | Buffer::BufferUsageBits::HostAccess
-                               | Buffer::BufferUsageBits::MultiBuffered;
-            volumetricUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(VolumetricUniforms), 1);
-            resolveUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(ResolveUniforms), 1);
-            blurWeightsUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(vec4) * (size_t(filterSize / 4) + 1), 1);
+            volumetricUniformBuffer = Buffer::UniformBuffer(sizeof(VolumetricUniforms));
+            resolveUniformBuffer = Buffer::UniformBuffer(sizeof(ResolveUniforms));
+            blurWeightsUniformBuffer = Buffer::UniformBuffer(sizeof(vec4) * (size_t(filterSize / 4) + 1));
 
             auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_NEAREST,
@@ -121,7 +119,7 @@ namespace Atlas {
                 }
 
                 volumetricUniformBuffer.SetData(&uniforms, 0, 1);
-                commandList->BindBuffer(volumetricUniformBuffer.GetMultiBuffer(), 3, 3);
+                commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 3);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }
@@ -156,7 +154,7 @@ namespace Atlas {
                 blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0, 1);
 
                 commandList->BindImage(lowResDepthTexture->image, lowResDepthTexture->sampler, 3, 2);
-                commandList->BindBuffer(blurWeightsUniformBuffer.GetMultiBuffer(), 3, 4);
+                commandList->BindBuffer(blurWeightsUniformBuffer.Get(), 3, 4);
 
                 ivec2 groupCount = ivec2(res.x / groupSize, res.y);
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
@@ -247,7 +245,7 @@ namespace Atlas {
                 }
 
                 resolveUniformBuffer.SetData(&uniforms, 0, 1);
-                commandList->BindBuffer(resolveUniformBuffer.GetMultiBuffer(), 3, 5);
+                commandList->BindBuffer(resolveUniformBuffer.Get(), 3, 5);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 

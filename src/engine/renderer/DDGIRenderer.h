@@ -4,6 +4,7 @@
 #include "../System.h"
 #include "Renderer.h"
 #include "helper/RayTracingHelper.h"
+#include "../buffer/UniformBuffer.h"
 
 namespace Atlas {
 
@@ -73,8 +74,8 @@ namespace Atlas {
 
 			Buffer::Buffer rayHitBuffer;
 
-			Buffer::Buffer rayGenUniformBuffer;
-			Buffer::Buffer rayHitUniformBuffer;
+			Buffer::UniformBuffer rayGenUniformBuffer;
+			Buffer::UniformBuffer rayHitUniformBuffer;
 
 			Buffer::VertexArray vertexArray;
 			Buffer::VertexArray sphereArray;

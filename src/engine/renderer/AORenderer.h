@@ -48,10 +48,10 @@ namespace Atlas {
             PipelineConfig horizontalBlurPipelineConfig;
             PipelineConfig verticalBlurPipelineConfig;
 
-            Buffer::Buffer rtUniformBuffer;
-            Buffer::Buffer ssUniformBuffer;
-            Buffer::Buffer ssSamplesUniformBuffer;
-            Buffer::Buffer blurWeightsUniformBuffer;
+            Buffer::UniformBuffer rtUniformBuffer;
+            Buffer::UniformBuffer ssUniformBuffer;
+            Buffer::UniformBuffer ssSamplesUniformBuffer;
+            Buffer::UniformBuffer blurWeightsUniformBuffer;
 
 		};
 

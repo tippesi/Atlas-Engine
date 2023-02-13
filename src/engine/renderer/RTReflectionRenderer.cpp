@@ -25,9 +25,7 @@ namespace Atlas {
             atrousPipelineConfig[1] = PipelineConfig("reflection/atrous.csh", { "STEP_SIZE2" });
             atrousPipelineConfig[2] = PipelineConfig("reflection/atrous.csh", { "STEP_SIZE4" });
 
-            auto bufferUsage = Buffer::BufferUsageBits::UniformBuffer | Buffer::BufferUsageBits::HostAccess
-                | Buffer::BufferUsageBits::MultiBuffered;
-            rtrUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(RTRUniforms), 1);
+            rtrUniformBuffer = Buffer::UniformBuffer(sizeof(RTRUniforms));
 
             auto samplerDesc = Graphics::SamplerDesc{
                 .filter = VK_FILTER_NEAREST,
@@ -147,7 +145,7 @@ namespace Atlas {
                             }
                         }
                         rtrUniformBuffer.SetData(&uniforms, 0, 1);
-                        commandList->BindBuffer(rtrUniformBuffer.GetMultiBuffer(), 3, 9);
+                        commandList->BindBuffer(rtrUniformBuffer.Get(), 3, 9);
 
                     });
 

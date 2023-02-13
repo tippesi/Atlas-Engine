@@ -93,9 +93,9 @@ namespace Atlas {
 
             PipelineConfig resolvePipelineConfig;
 
-            Buffer::Buffer volumetricUniformBuffer;
-            Buffer::Buffer blurWeightsUniformBuffer;
-            Buffer::Buffer resolveUniformBuffer;
+            Buffer::UniformBuffer volumetricUniformBuffer;
+            Buffer::UniformBuffer blurWeightsUniformBuffer;
+            Buffer::UniformBuffer resolveUniformBuffer;
 
             Ref<Graphics::Sampler> shadowSampler;
 

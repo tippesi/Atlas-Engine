@@ -14,13 +14,9 @@ namespace Atlas {
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 			Helper::GeometryHelper::GenerateSphereVertexArray(sphereArray, 10, 10);
 
-			rayHitBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(vec4));
-            rayGenUniformBuffer = Buffer::Buffer(Buffer::BufferUsageBits::UniformBuffer |
-                Buffer::BufferUsageBits::HostAccess | Buffer::BufferUsageBits::MultiBuffered,
-                sizeof(RayGenUniforms), 1);
-            rayHitUniformBuffer = Buffer::Buffer(Buffer::BufferUsageBits::UniformBuffer |
-                Buffer::BufferUsageBits::HostAccess | Buffer::BufferUsageBits::MultiBuffered,
-                sizeof(RayHitUniforms), 1);
+			rayHitBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
+            rayGenUniformBuffer = Buffer::UniformBuffer(sizeof(RayGenUniforms));
+            rayHitUniformBuffer = Buffer::UniformBuffer(sizeof(RayHitUniforms));
 
             rayGenPipelineConfig = PipelineConfig("ddgi/rayGen.csh");
             rayHitPipelineConfig = PipelineConfig("ddgi/rayHit.csh");
@@ -124,7 +120,7 @@ namespace Atlas {
 
                     commandList->BindBuffer(rayDirBuffer.Get(), 3, 0);
                     commandList->BindBuffer(rayDirInactiveBuffer.Get(), 3, 1);
-                    commandList->BindBuffer(rayGenUniformBuffer.GetMultiBuffer(), 3, 2);
+                    commandList->BindBuffer(rayGenUniformBuffer.Get(), 3, 2);
 				}
 			);
 
@@ -171,7 +167,7 @@ namespace Atlas {
 
 					// Use this buffer instead of the default writeRays buffer of the helper
                     commandList->BindBuffer(rayHitBuffer.Get(), 3, 1);
-                    commandList->BindBuffer(rayHitUniformBuffer.GetMultiBuffer(), 3, 2);
+                    commandList->BindBuffer(rayHitUniformBuffer.Get(), 3, 2);
 				}
 			);
 

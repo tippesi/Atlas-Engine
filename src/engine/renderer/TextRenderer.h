@@ -59,7 +59,7 @@ namespace Atlas {
 			Buffer::VertexArray vertexArray;
 
             Buffer::Buffer instanceBuffer;
-            Buffer::Buffer uniformBuffer;
+            Buffer::UniformBuffer uniformBuffer;
 
             Ref<Graphics::RenderPass> renderPass;
 

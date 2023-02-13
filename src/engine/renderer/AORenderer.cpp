@@ -31,13 +31,11 @@ namespace Atlas {
             verticalBlurPipelineConfig = PipelineConfig("bilateralBlur.csh",
                 {"VERTICAL", "DEPTH_WEIGHT","NORMAL_WEIGHT" });
 
-            auto bufferUsage = Buffer::BufferUsageBits::UniformBuffer | Buffer::BufferUsageBits::HostAccess
-                               | Buffer::BufferUsageBits::MultiBuffered;
-            rtUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(RTUniforms), 1);
-            ssUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(SSUniforms), 1);
+            rtUniformBuffer = Buffer::UniformBuffer(sizeof(RTUniforms));
+            ssUniformBuffer = Buffer::UniformBuffer(sizeof(SSUniforms));
             // If we don't set the element size to the whole thing, otherwise uniform buffer element alignment kicks in
-            ssSamplesUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(vec4) * 64, 1);
-            blurWeightsUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(vec4) * (size_t(filterSize / 4) + 1), 1);
+            ssSamplesUniformBuffer = Buffer::UniformBuffer(sizeof(vec4) * 64);
+            blurWeightsUniformBuffer = Buffer::UniformBuffer(sizeof(vec4) * (size_t(filterSize / 4) + 1));
 
 		}
 
@@ -100,7 +98,7 @@ namespace Atlas {
                         commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 4);
                         commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 5);
 
-                        commandList->BindBuffer(rtUniformBuffer.GetMultiBuffer(), 3, 6);
+                        commandList->BindBuffer(rtUniformBuffer.Get(), 3, 6);
                     });
 
                 commandList->ImageMemoryBarrier(target->swapAoTexture.image,
@@ -131,8 +129,8 @@ namespace Atlas {
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
                 commandList->BindImage(ao->noiseTexture.image, ao->noiseTexture.sampler, 3, 3);
 
-                commandList->BindBuffer(ssUniformBuffer.GetMultiBuffer(), 3, 4);
-                commandList->BindBuffer(ssSamplesUniformBuffer.GetMultiBuffer(), 3, 5);
+                commandList->BindBuffer(ssUniformBuffer.Get(), 3, 4);
+                commandList->BindBuffer(ssSamplesUniformBuffer.Get(), 3, 5);
 
                 commandList->ImageMemoryBarrier(target->aoTexture.image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
@@ -231,7 +229,7 @@ namespace Atlas {
 
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
-                commandList->BindBuffer(blurWeightsUniformBuffer.GetMultiBuffer(), 3, 4);
+                commandList->BindBuffer(blurWeightsUniformBuffer.Get(), 3, 4);
 
                 std::vector<Graphics::ImageBarrier> imageBarriers;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;

@@ -18,11 +18,11 @@ namespace Atlas {
 
 				const size_t lightCount = 512;
 
-				indirectDispatchBuffer = Buffer::Buffer(Buffer::BufferUsageBits::IndirectBuffer, 3 *
+				indirectDispatchBuffer = Buffer::Buffer(Buffer::BufferUsageBits::IndirectBufferBit,
+                    3 * sizeof(uint32_t), 0);
+				counterBuffer0 = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
 					sizeof(uint32_t), 0);
-				counterBuffer0 = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer,
-					sizeof(uint32_t), 0);
-				counterBuffer1 = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer,
+				counterBuffer1 = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
 					sizeof(uint32_t), 0);
 
 				indirectDispatchBuffer.SetSize(1);
@@ -30,13 +30,13 @@ namespace Atlas {
 				counterBuffer1.SetSize(1);
 
 				// Create dynamic resizable shader storage buffers
-				lightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer |
-                    Buffer::BufferUsageBits::HostAccess | Buffer::BufferUsageBits::MultiBuffered,
+				lightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
+                    Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit,
                     sizeof(Scene::RTData::GPULight), lightCount);
-				rayBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, 2 * sizeof(vec4));
-				rayPayloadBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(vec4));
-				rayBinCounterBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(uint32_t));
-				rayBinOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(uint32_t));
+				rayBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, 2 * sizeof(vec4));
+				rayPayloadBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
+				rayBinCounterBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
+				rayBinOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
 
 				rayBinCounterBuffer.SetSize(1024);
 				rayBinOffsetBuffer.SetSize(1024);

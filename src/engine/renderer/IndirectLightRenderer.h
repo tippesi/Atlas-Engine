@@ -31,7 +31,7 @@ namespace Atlas {
 
 			PipelineConfig pipelineConfig;
 
-            Buffer::Buffer uniformBuffer;
+            Buffer::UniformBuffer uniformBuffer;
 
 		};
 

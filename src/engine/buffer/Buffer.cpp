@@ -9,8 +9,8 @@ namespace Atlas {
         Buffer::Buffer(BufferUsage bufferUsage, size_t elementSize, size_t elementCount,
             void* data) : usage(bufferUsage), elementSize(elementSize) {
 
-            multiBuffered = bufferUsage & MultiBuffered;
-            hostAccessible = bufferUsage & HostAccess;
+            multiBuffered = bufferUsage & MultiBufferedBit;
+            hostAccessible = bufferUsage & HostAccessBit;
 
 			if (elementCount) {
 				SetSize(elementCount, data);
@@ -65,7 +65,7 @@ namespace Atlas {
 
         void Buffer::SetData(void *data, size_t offset, size_t length) {
 
-            if (usage & BufferUsageBits::UniformBuffer) {
+            if (usage & BufferUsageBits::UniformBufferBit) {
                 auto alignedSize = Graphics::Buffer::GetAlignedSize(elementSize);
                 // If the buffer is host accessible we can speed the writes up by just mapping once
                 if (hostAccessible) {
@@ -151,20 +151,20 @@ namespace Atlas {
             sizeInBytes = elementCount * elementSize;
 
             VkBufferUsageFlags usageFlags = {};
-            if (usage & BufferUsageBits::UniformBuffer) {
+            if (usage & BufferUsageBits::UniformBufferBit) {
                 usageFlags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
                 // Adjust size for uniform buffers to be aligned. This way we can use
                 // them with dynamic offsets
                 sizeInBytes = Graphics::Buffer::GetAlignedSize(elementSize) * elementCount;
             }
-            if (usage & BufferUsageBits::StorageBuffer) {
+            if (usage & BufferUsageBits::StorageBufferBit) {
                 usageFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             }
-            if (usage & BufferUsageBits::IndirectBuffer) {
+            if (usage & BufferUsageBits::IndirectBufferBit) {
                 usageFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
             }
 
-            if (usage & BufferUsageBits::MemoryTransfers) {
+            if (usage & BufferUsageBits::MemoryTransfersBit) {
                 usageFlags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             }
 

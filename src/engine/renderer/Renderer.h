@@ -7,6 +7,7 @@
 #include "../scene/Scene.h"
 #include "../Viewport.h"
 #include "../pipeline/PipelineManager.h"
+#include "../buffer/UniformBuffer.h"
 
 #include "../graphics/Profiler.h"
 #include "../graphics/GraphicsDevice.h"
