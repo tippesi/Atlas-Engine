@@ -21,8 +21,8 @@ namespace Atlas {
             {
                 // Example for pipeline setup
                 auto shaderConfig = ShaderConfig {
-                    {"test.vsh", VK_SHADER_STAGE_VERTEX_BIT},
-                    {"test.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+                    {"exampleTriangleShader.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                    {"exampleTriangleShader.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
                 };
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc {
                     .swapChain = device->swapChain,
@@ -128,8 +128,8 @@ namespace Atlas {
                 mesh = std::make_shared<Mesh::Mesh>(meshData);
 
                 auto shaderConfig = ShaderConfig {
-                    {"testmesh.vsh", VK_SHADER_STAGE_VERTEX_BIT},
-                    {"testmesh.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+                    {"exampleMeshShader.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                    {"exampleMeshShader.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
                 };
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
                     .frameBuffer = mainFrameBuffer,
@@ -149,7 +149,7 @@ namespace Atlas {
             }
             {
                 // Compute pipeline usage
-                auto pipelineConfig = PipelineConfig("test.csh");
+                auto pipelineConfig = PipelineConfig("exampleComputeShader.csh");
                 computePipeline = PipelineManager::GetPipeline(pipelineConfig);
             }
             {
