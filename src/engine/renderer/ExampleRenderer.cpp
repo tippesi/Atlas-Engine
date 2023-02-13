@@ -21,8 +21,8 @@ namespace Atlas {
             {
                 // Example for pipeline setup
                 auto shaderConfig = ShaderConfig {
-                    {"exampleTriangleShader.vsh", VK_SHADER_STAGE_VERTEX_BIT},
-                    {"exampleTriangleShader.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+                    {"example/triangle.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                    {"example/triangle.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
                 };
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc {
                     .swapChain = device->swapChain,
@@ -72,7 +72,7 @@ namespace Atlas {
                 // Create images for attachments
                 auto colorImage = device->CreateImage(colorImageDesc);
                 auto dummyImage = device->CreateImage(colorImageDesc);
-                dstImage = device->CreateImage(colorImageDesc);
+                destinationImage = device->CreateImage(colorImageDesc);
                 auto depthImage = device->CreateImage(depthImageDesc);
 
                 // Define attachments
@@ -113,13 +113,6 @@ namespace Atlas {
                     .extent = {1920, 1080}
                 };
                 mainFrameBuffer = device->CreateFrameBuffer(frameBufferDesc);
-
-                // Create a sampler to sample render pass attachments
-                auto samplerDesc = Graphics::SamplerDesc {
-                    .filter = VK_FILTER_LINEAR,
-                    .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT
-                };
-                mainRenderPassSampler = device->CreateSampler(samplerDesc);
             }
             {
                 // Loading a mesh and setup pipeline
@@ -128,8 +121,8 @@ namespace Atlas {
                 mesh = std::make_shared<Mesh::Mesh>(meshData);
 
                 auto shaderConfig = ShaderConfig {
-                    {"exampleMeshShader.vsh", VK_SHADER_STAGE_VERTEX_BIT},
-                    {"exampleMeshShader.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+                    {"example/mesh.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                    {"example/mesh.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
                 };
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
                     .frameBuffer = mainFrameBuffer,
@@ -149,8 +142,16 @@ namespace Atlas {
             }
             {
                 // Compute pipeline usage
-                auto pipelineConfig = PipelineConfig("exampleComputeShader.csh");
+                auto pipelineConfig = PipelineConfig("example/compute.csh");
                 computePipeline = PipelineManager::GetPipeline(pipelineConfig);
+            }
+            {
+                // Create linear sampler
+                auto samplerDesc = Graphics::SamplerDesc {
+                    .filter = VK_FILTER_LINEAR,
+                    .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT
+                };
+                linearSampler = device->CreateSampler(samplerDesc);
             }
             {
                 // Query pool usage
@@ -218,10 +219,6 @@ namespace Atlas {
             Graphics::Profiler::EndAndBeginQuery("Compute pass");
 
             {
-                commandList->ImageMemoryBarrier(mainFrameBuffer->GetColorImage(0),
-                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
                 commandList->BindPipeline(computePipeline);
 
                 auto randomPushConstants = computePipeline->shader->GetPushConstantRange("randomConstant");
@@ -239,7 +236,7 @@ namespace Atlas {
 
             {
                 auto imageBarriers = std::vector<Graphics::ImageBarrier> {
-                    {dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+                    {destinationImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                     {mainFrameBuffer->GetColorImage(0), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT}
                 };
                 auto bufferBarriers = std::vector<Graphics::BufferBarrier>();
@@ -247,9 +244,9 @@ namespace Atlas {
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 // Copy to other image
-                commandList->CopyImage(mainFrameBuffer->GetColorImage(0), dstImage);
+                commandList->CopyImage(mainFrameBuffer->GetColorImage(0), destinationImage);
 
-                commandList->ImageMemoryBarrier(dstImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                commandList->ImageMemoryBarrier(destinationImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
             }
@@ -261,7 +258,7 @@ namespace Atlas {
                 commandList->BeginRenderPass(swapChain, true);
                 commandList->BindPipeline(pipeline);
 
-                commandList->BindImage(dstImage, mainRenderPassSampler, 0, 0);
+                commandList->BindImage(destinationImage, linearSampler, 0, 0);
 
                 commandList->Draw(6, 1, 0, 0);
 

@@ -7,7 +7,7 @@ namespace Atlas {
 
     namespace Renderer {
 
-        class ExampleRenderer : public Renderer {
+        class ExampleRenderer {
 
         public:
             ExampleRenderer() = default;
@@ -17,9 +17,8 @@ namespace Atlas {
             void Render(Camera* camera);
 
         private:
-            Ref<Graphics::Shader> shader = nullptr;
-            Ref<Graphics::Shader> meshShader = nullptr;
-            Ref<Graphics::Shader> computeShader = nullptr;
+            Graphics::GraphicsDevice* device = nullptr;
+
             Ref<Graphics::Pipeline> pipeline = nullptr;
             Ref<Graphics::Pipeline> meshPipeline = nullptr;
             Ref<Graphics::Pipeline> computePipeline = nullptr;
@@ -28,8 +27,8 @@ namespace Atlas {
 
             Ref<Graphics::MultiBuffer> uniformBuffer = nullptr;
             Ref<Graphics::RenderPass> mainRenderPass = nullptr;
-            Ref<Graphics::Sampler> mainRenderPassSampler = nullptr;
-            Ref<Graphics::Image> dstImage = nullptr;
+            Ref<Graphics::Sampler> linearSampler = nullptr;
+            Ref<Graphics::Image> destinationImage = nullptr;
 
             Ref<Graphics::QueryPool> queryPool = nullptr;
 
