@@ -77,7 +77,7 @@ namespace Atlas {
 
             void ClearAttachments();
 
-            void PushConstants(PushConstantRange* pushConstantRange, void* data);
+            void PushConstants(const std::string& pushConstantRangeName, void* data);
 
             void BindIndexBuffer(const Ref<Buffer>& buffer, VkIndexType type);
 

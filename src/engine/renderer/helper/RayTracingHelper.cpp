@@ -165,11 +165,7 @@ namespace Atlas {
 
                     PushConstants constants;
                     constants.lightCount = int32_t(selectedLights.size());
-
-                    auto constRange = dispatchAndHitPipeline->shader->GetPushConstantRange("constants");
-                    if (constRange != nullptr) {
-                        commandList->PushConstants(constRange, &constants);
-                    }
+                    commandList->PushConstants("constants", &constants);
 
 					prepare();
 
@@ -247,10 +243,7 @@ namespace Atlas {
                 constants.rayBufferSize = uint32_t(rayBuffer.GetElementCount() / 2);
                 constants.useRayBinning = binning ? 1 : 0;
 
-                auto constRange = rayGenPipeline->shader->GetPushConstantRange("constants");
-                if (constRange != nullptr) {
-                    commandList->PushConstants(constRange, &constants);
-                }
+				commandList->PushConstants("constants", &constants);
 
 				prepare();
                 commandList->Dispatch(dimensions.x, dimensions.y, dimensions.z);
@@ -405,10 +398,7 @@ namespace Atlas {
                     constants.rayBufferOffset = uint32_t(rayOffsetCounter++ % 2);
                     constants.rayBufferSize = uint32_t(rayBuffer.GetElementCount() / 2);
 
-					auto constRange = hitPipeline->shader->GetPushConstantRange("constants");
-                    if (constRange != nullptr) {
-                        commandList->PushConstants(constRange, &constants);
-                    }
+					commandList->PushConstants("constants", &constants);
 
                     commandList->DispatchIndirect(indirectDispatchBuffer.Get());
 				}
@@ -440,10 +430,7 @@ namespace Atlas {
                     constants.rayBufferSize = uint32_t(rayBuffer.GetElementCount() / 2);
                     constants.useRayBinning = binning ? 1 : 0;
 
-					auto constRange = hitPipeline->shader->GetPushConstantRange("constants");
-                    if (constRange != nullptr) {
-                        commandList->PushConstants(constRange, &constants);
-                    }
+					commandList->PushConstants("constants", &constants);
 					//rayBinCounterBuffer.BindBase(11);
 
 					prepare();

@@ -148,9 +148,6 @@ namespace Atlas {
                 auto horizontalBlurPipeline = PipelineManager::GetPipeline(horizontalBlurPipelineConfig);
                 auto verticalBlurPipeline = PipelineManager::GetPipeline(verticalBlurPipelineConfig);
 
-                auto horizontalConstRange = horizontalBlurPipeline->shader->GetPushConstantRange("constants");
-                auto verticalConstRange = verticalBlurPipeline->shader->GetPushConstantRange("constants");
-
                 blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0, 1);
 
                 commandList->BindImage(lowResDepthTexture->image, lowResDepthTexture->sampler, 3, 2);
@@ -165,7 +162,7 @@ namespace Atlas {
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                 commandList->BindPipeline(horizontalBlurPipeline);
-                commandList->PushConstants(horizontalConstRange, &kernelSize);
+                commandList->PushConstants("constants", &kernelSize);
 
                 commandList->BindImage(target->swapVolumetricTexture.image, 3, 0);
                 commandList->BindImage(target->volumetricTexture.image, target->volumetricTexture.sampler, 3, 1);
@@ -182,7 +179,7 @@ namespace Atlas {
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                 commandList->BindPipeline(verticalBlurPipeline);
-                commandList->PushConstants(verticalConstRange, &kernelSize);
+                commandList->PushConstants("constants", &kernelSize);
 
                 commandList->BindImage(target->volumetricTexture.image, 3, 0);
                 commandList->BindImage(target->swapVolumetricTexture.image, target->swapVolumetricTexture.sampler, 3, 1);

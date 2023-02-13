@@ -213,12 +213,11 @@ namespace Atlas {
                     auto pipeline = PipelineManager::GetPipeline(atrousPipelineConfig[i]);
                     commandList->BindPipeline(pipeline);
 
-                    auto constantRange = pipeline->shader->GetPushConstantRange("constants");
                     AtrousConstants constants = {
                         .stepSize = 1 << i,
                         .strength = reflection->spatialFilterStrength
                     };
-                    commandList->PushConstants(constantRange, &constants);
+                    commandList->PushConstants("constants", &constants);
 
                     if (pingpong) {
                         imageBarriers = {

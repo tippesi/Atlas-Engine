@@ -113,9 +113,7 @@ namespace Atlas {
                 .invert = invert ? 1 : 0,
                 .depth = float(depth)
             };
-
-            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-            commandList->PushConstants(constantRange, &constants);
+            commandList->PushConstants("constants", &constants);
 
             commandList->BindImage(texture->image, texture->sampler, 3, 0);
 

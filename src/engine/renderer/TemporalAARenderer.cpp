@@ -61,8 +61,7 @@ namespace Atlas {
                 .invResolution = 1.0f / vec2((float)target->GetWidth(), (float)target->GetHeight()),
                 .jitter = camera->GetJitter()
             };
-            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-            commandList->PushConstants(constantRange, &constants);
+            commandList->PushConstants("constants", &constants);
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 

@@ -186,7 +186,7 @@ namespace Atlas {
                 // Viewport and scissor are set to a default when binding a pipeline
                 commandList->BindPipeline(meshPipeline);
 
-                auto pushConstants = PushConstants{
+                auto pushConstants = PushConstants {
                     .vMatrix = camera->viewMatrix,
                     .pMatrix = camera->projectionMatrix
                 };
@@ -197,8 +197,7 @@ namespace Atlas {
                 };
                 uniformBuffer->SetData(&uniforms, 0, sizeof(Uniforms));
 
-                auto pushConstantRange = meshPipeline->shader->GetPushConstantRange("constants");
-                commandList->PushConstants(pushConstantRange, &pushConstants);
+                commandList->PushConstants("constants", &pushConstants);
 
                 mesh->vertexArray.Bind(commandList);
 
@@ -221,12 +220,11 @@ namespace Atlas {
             {
                 commandList->BindPipeline(computePipeline);
 
-                auto randomPushConstants = computePipeline->shader->GetPushConstantRange("randomConstant");
                 auto randomConstants = ComputeConstants{
                     .randomSeed = Common::Random::SampleFastUniformFloat(),
                     .time = Clock::Get()
                 };
-                commandList->PushConstants(randomPushConstants, &randomConstants);
+                commandList->PushConstants("randomConstant", &randomConstants);
 
                 commandList->BindImage(mainFrameBuffer->GetColorImage(0), 0, 0);
                 commandList->Dispatch(1920 / 8, 1080 / 8, 1);
