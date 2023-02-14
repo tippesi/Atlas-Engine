@@ -47,17 +47,6 @@ namespace Atlas {
          */
 		static ivec2 GetScreenSize();
 
-        /**
-         * Locks the frame rate to the next available target frame rate of the monitor
-         * like min(availableTargetFramerate, possibleFramerate).
-         */
-        static void LockFramerate();
-
-        /**
-         * Unlocks the framerate.
-         */
-        static void UnlockFramerate();
-
         static Window* DefaultWindow;
 
 	};

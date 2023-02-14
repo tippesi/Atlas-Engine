@@ -8,8 +8,6 @@ const std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
 
-    UnlockFramerate();
-
     renderTarget = Atlas::RenderTarget(1920, 1080);
     pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
 
@@ -28,16 +26,16 @@ void App::LoadContent() {
 
     Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(
         [this](Atlas::Events::KeyboardEvent event) {
-            if (event.keycode == AE_KEY_ESCAPE) {
+            if (event.keyCode == AE_KEY_ESCAPE) {
                 Exit();
             }
-            if (event.keycode == AE_KEY_F11 && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == AE_KEY_F11 && event.state == AE_BUTTON_RELEASED) {
                 renderUI = !renderUI;
             }
-            if (event.keycode == AE_KEY_LSHIFT && event.state == AE_BUTTON_PRESSED) {
+            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_PRESSED) {
                 keyboardHandler.speed = cameraSpeed * 4.0f;
             }
-            if (event.keycode == AE_KEY_LSHIFT && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_RELEASED) {
                 keyboardHandler.speed = cameraSpeed;
             }
         });
@@ -80,12 +78,6 @@ void App::LoadContent() {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     imguiWrapper.Load(&window);
-
-    //io.Fonts->AddFontFromFileTTF(
-    //    Atlas::Loader::AssetLoader::GetFullPath("font/roboto.ttf").c_str(),
-    //    20.0f);
-
-    // testRenderer.Init(Atlas::Graphics::GraphicsDevice::DefaultDevice);
 
 }
 

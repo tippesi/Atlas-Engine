@@ -56,9 +56,6 @@ namespace Atlas {
 
 		Audio::AudioManager::Configure(48000, 2, 1024);
 
-		// Renderer::OpaqueRenderer::InitShaderBatch();
-		// Renderer::ShadowRenderer::InitShaderBatch();
-
 		Clock::Update();
 
         // Only then create engine instance. This makes sure that the engine instance already
@@ -95,18 +92,6 @@ namespace Atlas {
         SDL_GetCurrentDisplayMode(0, &displayMode);
 
         return ivec2(displayMode.w, displayMode.h);
-
-    }
-
-    void Engine::LockFramerate() {
-
-        //SDL_GL_SetSwapInterval(1);
-
-    }
-
-    void Engine::UnlockFramerate() {
-
-        // SDL_GL_SetSwapInterval(0);
 
     }
 

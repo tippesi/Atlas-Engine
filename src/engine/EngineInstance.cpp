@@ -8,8 +8,6 @@ namespace Atlas {
 		int32_t windowHeight, int32_t flags, bool createMainRenderer) : window(instanceName, AE_WINDOWPOSITION_UNDEFINED,
         AE_WINDOWPOSITION_UNDEFINED, windowWidth, windowHeight, flags) {
 
-		LockFramerate();
-
         graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
 		// Only create swap chain after the engine instance window was created and
@@ -44,18 +42,6 @@ namespace Atlas {
 	ivec2 EngineInstance::GetScreenSize() {
 
 		return Engine::GetScreenSize();
-
-	}
-
-	void EngineInstance::LockFramerate() {
-
-		Engine::LockFramerate();
-
-	}
-
-	void EngineInstance::UnlockFramerate() {
-
-		Engine::UnlockFramerate();
 
 	}
 
