@@ -84,8 +84,7 @@ namespace Atlas {
                  *
                  */
 
-                auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-                commandList->PushConstants(constantRange, &sharpen.factor);
+                commandList->PushConstants("constants", &sharpen.factor);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 

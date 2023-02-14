@@ -228,7 +228,6 @@ namespace Atlas {
                 commandList->BindPipeline(pipeline);
 
                 auto probeRes = volume->irrRes;
-                auto constantRange = pipeline->shader->GetPushConstantRange("constants");
 
                 auto res = ivec2(irradianceArray.width, irradianceArray.height);
                 auto groupCount = res / 8;
@@ -236,7 +235,7 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
 
-                commandList->PushConstants(constantRange, &probeRes);
+                commandList->PushConstants("constants", &probeRes);
                 commandList->BindImage(irradianceArray.image, 3, 0);
                 commandList->Dispatch(groupCount.x, groupCount.y, probeCount.z);
 
@@ -247,7 +246,6 @@ namespace Atlas {
                 commandList->BindPipeline(pipeline);
 
                 probeRes = volume->momRes;
-                constantRange = pipeline->shader->GetPushConstantRange("constants");
 
                 res = ivec2(momentsArray.width, momentsArray.height);
                 groupCount = res / 8;
@@ -255,7 +253,7 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
 
-                commandList->PushConstants(constantRange, &probeRes);
+                commandList->PushConstants("constants", &probeRes);
                 commandList->BindImage(momentsArray.image, 3, 0);
                 commandList->Dispatch(groupCount.x, groupCount.y, probeCount.z);
 
@@ -310,8 +308,7 @@ namespace Atlas {
                 .probeInactiveMaterialIdx = uint32_t(materialMap[&probeDebugInactiveMaterial]),
                 .probeOffsetMaterialIdx = uint32_t(materialMap[&probeDebugOffsetMaterial])
             };
-            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-            commandList->PushConstants(constantRange, &constants);
+            commandList->PushConstants("constants", &constants);
 
 			auto instanceCount = volume->probeCount.x * volume->probeCount.y * volume->probeCount.z;
             commandList->DrawIndexed(sphereArray.GetIndexComponent().elementCount, uint32_t(instanceCount));
