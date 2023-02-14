@@ -146,10 +146,10 @@ void App::Render(float deltaTime) {
 
     if (pathTrace) {
         viewport.Set(0, 0, pathTraceTarget.GetWidth(), pathTraceTarget.GetHeight());
-        mainRenderer.PathTraceScene(&viewport, &pathTraceTarget, &camera, &scene);
+        mainRenderer->PathTraceScene(&viewport, &pathTraceTarget, &camera, &scene);
     }
     else {
-        mainRenderer.RenderScene(&viewport, &renderTarget, &camera, &scene);
+        mainRenderer->RenderScene(&viewport, &renderTarget, &camera, &scene);
 
         auto debug = debugAo || debugReflection || debugClouds || debugSSS;
 
@@ -159,19 +159,19 @@ void App::Render(float deltaTime) {
             commandList->BeginRenderPass(graphicsDevice->swapChain, true);
 
             if (debugAo) {
-                mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.aoTexture,
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.aoTexture,
                     0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
             }
             else if (debugReflection) {
-                mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.reflectionTexture,
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.reflectionTexture,
                     0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
             }
             else if (debugClouds) {
-                mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.volumetricCloudsTexture,
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.volumetricCloudsTexture,
                     0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
             }
             else if (debugSSS) {
-                mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.sssTexture,
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.sssTexture,
                     0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
 		    }
 
@@ -219,7 +219,7 @@ void App::Render(float deltaTime) {
         }
 
         if (ImGui::Begin("Settings", (bool*)0, ImGuiWindowFlags_HorizontalScrollbar)) {
-            if(pathTrace) ImGui::Text(("Samples: " + std::to_string(mainRenderer.pathTracingRenderer.GetSampleCount())).c_str());
+            if(pathTrace) ImGui::Text(("Samples: " + std::to_string(mainRenderer->pathTracingRenderer.GetSampleCount())).c_str());
             ImGui::Text(("Average frametime: " + std::to_string(averageFramerate * 1000.0f) + " ms").c_str());
             ImGui::Text(("Current frametime: " + std::to_string(deltaTime * 1000.0f) + " ms").c_str());
             ImGui::Text(("Camera location: " + vecToString(camera.location)).c_str());
@@ -247,7 +247,7 @@ void App::Render(float deltaTime) {
 
             ImGui::Checkbox("Pathtrace", &pathTrace);
 
-            if (pathTrace) ImGui::SliderInt("Pathtrace bounces", &mainRenderer.pathTracingRenderer.bounces, 0, 100);
+            if (pathTrace) ImGui::SliderInt("Pathtrace bounces", &mainRenderer->pathTracingRenderer.bounces, 0, 100);
 
             if (ImGui::CollapsingHeader("General")) {
                 static bool fullscreenMode = false;
@@ -634,7 +634,7 @@ void App::DisplayLoadingScreen() {
     float y = windowSize.y / 2 - textHeight / 2;
 
     viewport.Set(0, 0, windowSize.x, windowSize.y);
-    mainRenderer.textRenderer.Render(commandList, &viewport, &font,
+    mainRenderer->textRenderer.Render(commandList, &viewport, &font,
         "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
     commandList->EndRenderPass();
