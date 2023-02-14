@@ -52,8 +52,6 @@ namespace Atlas {
                 createInfo.enabledLayerCount = 0;
             }
 
-            createInfo.pNext = &features;
-
 #ifdef AE_OS_MACOS
             VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
             // This is hacked since I can't get it to work otherwise
