@@ -121,6 +121,10 @@ namespace Atlas {
             VkDevice device;
             VkPhysicalDeviceProperties deviceProperties;
 
+            VkPhysicalDeviceFeatures2 features;
+            VkPhysicalDeviceVulkan11Features features11;
+            VkPhysicalDeviceVulkan12Features features12;
+
             bool isComplete = false;
 
             static GraphicsDevice* DefaultDevice;
@@ -149,6 +153,8 @@ namespace Atlas {
 
             bool CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice,
                 const std::vector<const char*>& extensionNames);
+
+            void BuildPhysicalDeviceFeatures(VkPhysicalDevice device);
 
             bool CheckForWindowResize();
 
