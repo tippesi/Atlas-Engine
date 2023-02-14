@@ -60,9 +60,12 @@ namespace Atlas {
             // See VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR in vulkan_core.h
             portabilityFeatures.sType = static_cast<VkStructureType>(1000163000);
             portabilityFeatures.mutableComparisonSamplers = VK_TRUE;
+            portabilityFeatures.pNext = &features;
 
             // This feature struct is the last one in the pNext chain for now
-            features12.pNext = &portabilityFeatures;
+            createInfo.pNext = &portabilityFeatures;
+#else
+            createInfo.pNext = &features;
 #endif
 
             VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device))

@@ -85,6 +85,7 @@ namespace Atlas {
         Clock::Update();
 		Graphics::Profiler::BeginFrame();
         Events::EventManager::Update();
+        PipelineManager::Update();
 
     }
 

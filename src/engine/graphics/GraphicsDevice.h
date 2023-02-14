@@ -121,9 +121,9 @@ namespace Atlas {
             VkDevice device;
             VkPhysicalDeviceProperties deviceProperties;
 
-            VkPhysicalDeviceFeatures2 features;
-            VkPhysicalDeviceVulkan11Features features11;
-            VkPhysicalDeviceVulkan12Features features12;
+            VkPhysicalDeviceFeatures2 features = {};
+            VkPhysicalDeviceVulkan11Features features11 = {};
+            VkPhysicalDeviceVulkan12Features features12 = {};
 
             bool isComplete = false;
 
