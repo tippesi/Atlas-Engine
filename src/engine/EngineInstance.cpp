@@ -5,7 +5,7 @@ namespace Atlas {
     EngineInstance* EngineInstance::instance;
 
 	EngineInstance::EngineInstance(const std::string& instanceName, int32_t windowWidth,
-		int32_t windowHeight, int32_t flags) : window(instanceName, AE_WINDOWPOSITION_UNDEFINED,
+		int32_t windowHeight, int32_t flags, bool createMainRenderer) : window(instanceName, AE_WINDOWPOSITION_UNDEFINED,
         AE_WINDOWPOSITION_UNDEFINED, windowWidth, windowHeight, flags) {
 
 		LockFramerate();
@@ -21,7 +21,10 @@ namespace Atlas {
 		delete Engine::DefaultWindow;
 		Engine::DefaultWindow = &window;
 
-        mainRenderer.Init(graphicsDevice);
+        if(createMainRenderer) {
+            mainRenderer = std::make_unique<Renderer::MainRenderer>();
+            mainRenderer->Init(graphicsDevice);
+        }
 
 	}
 
@@ -33,7 +36,8 @@ namespace Atlas {
 
 	void EngineInstance::Update() {
 
-        mainRenderer.Update();
+        if(mainRenderer)
+            mainRenderer->Update();
 
 	}
 
