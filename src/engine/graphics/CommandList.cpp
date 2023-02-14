@@ -339,7 +339,6 @@ namespace Atlas {
             if (!pipelineInUse) return;
 
             auto pushConstantRange = pipelineInUse->shader->GetPushConstantRange(pushConstantRangeName);
-            assert(pushConstantRange != nullptr && "Push constant range should not be null");
             if (!pushConstantRange) return;
 
             vkCmdPushConstants(commandBuffer, pipelineInUse->layout, pushConstantRange->range.stageFlags,

@@ -346,11 +346,11 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat3("Max", (float*)&volume->aabb.max, -200.0f, 200.0f);
                 volume->SetAABB(volume->aabb);
                 ImGui::Separator();
-                ImGui::SliderFloat("Hysteresis", &volume->hysteresis, 0.0f, 1.0f, "%.3f", 0.5f);
-                ImGui::SliderFloat("Sharpness", &volume->sharpness, 0.01f, 200.0f, "%.3f", 2.0f);
+                ImGui::SliderFloat("Hysteresis", &volume->hysteresis, 0.0f, 1.0f, "%.3f");
+                ImGui::SliderFloat("Sharpness", &volume->sharpness, 0.01f, 200.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 ImGui::SliderFloat("Bias", &volume->bias, 0.0f, 1.0f);
                 auto prevGamma = volume->gamma;
-                ImGui::SliderFloat("Gamma exponent", &volume->gamma, 0.0f, 10.0f, "%.3f", 2.0f);
+                ImGui::SliderFloat("Gamma exponent", &volume->gamma, 0.0f, 10.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 if (prevGamma != volume->gamma) volume->ClearProbes();
                 ImGui::Separator();
                 if (ImGui::Button("Reset probe offsets")) {
@@ -362,7 +362,7 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Animate", &animateLight);
                 ImGui::SliderFloat3("Direction", (float*)&light->direction, -1.0f, 1.0f);
                 ImGui::ColorEdit3("Color", (float*)&light->color);
-                ImGui::SliderFloat("Intensity##Light", &light->intensity, 0.0, 1000.0f, "%.3f", 2.0f);
+                ImGui::SliderFloat("Intensity##Light", &light->intensity, 0.0, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 ImGui::Separator();
                 ImGui::Text("Volumetric");
                 ImGui::SliderFloat("Intensity##Volumetric", &light->GetVolumetric()->intensity, 0.0f, 1.0f);
@@ -374,14 +374,14 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Enable##SSS", &sss->enable);
                 ImGui::SliderInt("Sample count##SSS", &sss->sampleCount, 2.0, 16.0);
                 ImGui::SliderFloat("Max length##SSS", &sss->maxLength, 0.01f, 1.0f);
-                ImGui::SliderFloat("Thickness##SSS", &sss->thickness, 0.001f, 1.0f, "%.3f", 2.0f);
+                ImGui::SliderFloat("Thickness##SSS", &sss->thickness, 0.001f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
             }
             if (ImGui::CollapsingHeader("Ambient Occlusion")) {
                 ImGui::Checkbox("Debug##Ao", &debugAo);
                 ImGui::Checkbox("Enable ambient occlusion##Ao", &ao->enable);
                 ImGui::Checkbox("Enable raytracing (preview)##Ao", &ao->rt);
                 ImGui::SliderFloat("Radius##Ao", &ao->radius, 0.0f, 10.0f);
-                ImGui::SliderFloat("Strength##Ao", &ao->strength, 0.0f, 20.0f, "%.3f", 2.0f);
+                ImGui::SliderFloat("Strength##Ao", &ao->strength, 0.0f, 20.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 //ImGui::SliderInt("Sample count##Ao", &ao->s, 0.0f, 20.0f, "%.3f", 2.0f);
             }
             if (ImGui::CollapsingHeader("Reflection (preview)")) {
@@ -417,8 +417,10 @@ void App::Render(float deltaTime) {
 
                 ImGui::SliderFloat("Density##Fog", &fog->density, 0.0f, 0.5f, "%.4f", 4.0f);
                 ImGui::SliderFloat("Height##Fog", &fog->height, 0.0f, 300.0f, "%.3f", 4.0f);
-                ImGui::SliderFloat("Height falloff##Fog", &fog->heightFalloff, 0.0f, 0.5f, "%.4f", 4.0f);
-                ImGui::SliderFloat("Scattering anisotropy##Fog", &fog->scatteringAnisotropy, -1.0f, 1.0f, "%.3f", 2.0f);
+                ImGui::SliderFloat("Height falloff##Fog", &fog->heightFalloff, 0.0f, 0.5f,
+                    "%.4f", ImGuiSliderFlags_Logarithmic);
+                ImGui::SliderFloat("Scattering anisotropy##Fog", &fog->scatteringAnisotropy, -1.0f, 1.0f,
+                    "%.3f", ImGuiSliderFlags_Logarithmic);
             }
             if (ImGui::CollapsingHeader("Clouds")) {
                 ImGui::Checkbox("Enable##Clouds", &clouds->enable);
