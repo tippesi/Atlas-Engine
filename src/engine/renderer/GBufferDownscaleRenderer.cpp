@@ -13,13 +13,6 @@ namespace Atlas {
 
         }
 
-        void GBufferDownscaleRenderer::Render(Viewport *viewport, RenderTarget *target, 
-            Camera *camera, Scene::Scene *scene) {
-
-
-            
-        }
-
         void GBufferDownscaleRenderer::Downscale(RenderTarget* target, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Downsample GBuffer");

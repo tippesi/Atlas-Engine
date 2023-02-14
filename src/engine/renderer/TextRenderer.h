@@ -18,7 +18,7 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
 			void Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font, const std::string& text,
                 float x, float y, vec4 color = vec4(1.0f), float scale = 1.0f,

@@ -27,8 +27,6 @@ namespace Atlas {
 
 			Renderer& operator=(const Renderer&) = delete;
 
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) = 0;
-
         protected:
             Graphics::GraphicsDevice* device = nullptr;
 

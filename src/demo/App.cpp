@@ -253,7 +253,7 @@ void App::Render(float deltaTime) {
 
                 if (vsync != vsyncMode) {
                     graphicsDevice->CompleteFrame();
-                    if (vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_RELAXED_KHR);
+                    if (vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_KHR);
                     else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR);
                     vsyncMode = vsync;
                 }

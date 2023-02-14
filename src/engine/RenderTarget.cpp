@@ -49,24 +49,7 @@ namespace Atlas {
                 .depthAttachment = {attachments[7]}
             };
             gBufferRenderPass = graphicsDevice->CreateRenderPass(gBufferRenderPassDesc);
-
-            auto gBufferFrameBufferDesc = Graphics::FrameBufferDesc{
-                .renderPass = gBufferRenderPass,
-                .colorAttachments = {
-                    {targetData.baseColorTexture->image, 0, true},
-                    {targetData.normalTexture->image, 0, true},
-                    {targetData.geometryNormalTexture->image, 0, true},
-                    {targetData.roughnessMetallicAoTexture->image, 0, true},
-                    {targetData.materialIdxTexture->image, 0, true},
-                    {targetData.velocityTexture->image, 0, true},
-                    {targetData.stencilTexture->image, 0, false},
-                },
-                .depthAttachment = {targetData.depthTexture->image, 0, true},
-                .extent = {uint32_t(width), uint32_t(height)}
-            };
-            gBufferFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
         }
-
         {
             Graphics::RenderPassAttachment attachments[] = {
                 {.imageFormat = lightingTexture.format},
@@ -85,32 +68,10 @@ namespace Atlas {
                 .colorAttachments = {attachments[0], attachments[1], attachments[2]},
                 .depthAttachment = {attachments[3]}
             };
-            lightingRenderPass = graphicsDevice->CreateRenderPass(lightingRenderPassDesc);
-
-            auto lightingFrameBufferDesc = Graphics::FrameBufferDesc{
-                .renderPass = lightingRenderPass,
-                .colorAttachments = {
-                    {lightingTexture.image, 0, true},
-                    {targetData.velocityTexture->image, 0, true},
-                    {targetData.stencilTexture->image, 0, false}
-                },
-                .depthAttachment = {targetData.depthTexture->image, 0, true},
-                .extent = {uint32_t(width), uint32_t(height)}
-            };
-            lightingFrameBuffer = graphicsDevice->CreateFrameBuffer(lightingFrameBufferDesc);
-
-            lightingFrameBufferDesc = Graphics::FrameBufferDesc{
-                .renderPass = lightingRenderPass,
-                .colorAttachments = {
-                    {lightingTexture.image, 0, true},
-                    {targetData.velocityTexture->image, 0, true},
-                    {targetData.stencilTexture->image, 0, true}
-                },
-                .depthAttachment = {targetData.depthTexture->image, 0, true},
-                .extent = {uint32_t(width), uint32_t(height)}
-            };
-            lightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(lightingFrameBufferDesc);
+            lightingRenderPass = graphicsDevice->CreateRenderPass(lightingRenderPassDesc);          
         }
+
+        CreateFrameBuffers();
 
 		SetAOResolution(HALF_RES);
 		SetVolumetricResolution(HALF_RES);
@@ -144,7 +105,8 @@ namespace Atlas {
 		targetDataDownsampled2x.Resize(halfRes);
 		targetDataSwapDownsampled2x.Resize(halfRes);
 
-        gBufferFrameBuffer->Refresh();
+        CreateFrameBuffers();
+
         hasHistory = false;
 
 	}
@@ -317,6 +279,52 @@ namespace Atlas {
     bool RenderTarget::HasHistory() const {
 
         return hasHistory;
+
+    }
+
+    void RenderTarget::CreateFrameBuffers() {
+
+        auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
+
+        auto gBufferFrameBufferDesc = Graphics::FrameBufferDesc{
+               .renderPass = gBufferRenderPass,
+               .colorAttachments = {
+                   {targetData.baseColorTexture->image, 0, true},
+                   {targetData.normalTexture->image, 0, true},
+                   {targetData.geometryNormalTexture->image, 0, true},
+                   {targetData.roughnessMetallicAoTexture->image, 0, true},
+                   {targetData.materialIdxTexture->image, 0, true},
+                   {targetData.velocityTexture->image, 0, true},
+                   {targetData.stencilTexture->image, 0, false},
+               },
+               .depthAttachment = {targetData.depthTexture->image, 0, true},
+               .extent = {uint32_t(width), uint32_t(height)}
+        };
+        gBufferFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
+
+        auto lightingFrameBufferDesc = Graphics::FrameBufferDesc{
+               .renderPass = lightingRenderPass,
+               .colorAttachments = {
+                   {lightingTexture.image, 0, true},
+                   {targetData.velocityTexture->image, 0, true},
+                   {targetData.stencilTexture->image, 0, false}
+               },
+               .depthAttachment = {targetData.depthTexture->image, 0, true},
+               .extent = {uint32_t(width), uint32_t(height)}
+        };
+        lightingFrameBuffer = graphicsDevice->CreateFrameBuffer(lightingFrameBufferDesc);
+
+        lightingFrameBufferDesc = Graphics::FrameBufferDesc{
+            .renderPass = lightingRenderPass,
+            .colorAttachments = {
+                {lightingTexture.image, 0, true},
+                {targetData.velocityTexture->image, 0, true},
+                {targetData.stencilTexture->image, 0, true}
+            },
+            .depthAttachment = {targetData.depthTexture->image, 0, true},
+            .extent = {uint32_t(width), uint32_t(height)}
+        };
+        lightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(lightingFrameBufferDesc);
 
     }
 

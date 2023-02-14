@@ -47,6 +47,7 @@ namespace Atlas {
         }
 
 		void Resize(ivec2 resolution) {
+			baseColorTexture->Resize(resolution.x, resolution.y);
 			depthTexture->Resize(resolution.x, resolution.y);
 			normalTexture->Resize(resolution.x, resolution.y);
 			geometryNormalTexture->Resize(resolution.x, resolution.y);
@@ -194,6 +195,8 @@ namespace Atlas {
         Texture::Texture2D hdrTexture;
 
 	private:
+		void CreateFrameBuffers();
+
 		Texture::Texture2D historyTexture;
 		Texture::Texture2D swapHistoryTexture;
 

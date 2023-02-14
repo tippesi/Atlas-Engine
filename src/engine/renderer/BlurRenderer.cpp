@@ -35,12 +35,6 @@ namespace Atlas {
 
         }
 
-        void BlurRenderer::Render(Viewport *viewport, RenderTarget *target, Camera *camera, Scene::Scene *scene) {
-
-            return;
-
-        }
-
         void BlurRenderer::Render(Texture::Texture2D *texture, Texture::Texture2D *swapTexture,
                 Texture::Texture2D* depthTexture) {
 
