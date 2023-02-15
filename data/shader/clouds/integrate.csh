@@ -4,6 +4,7 @@
 #include <../common/utility.hsh>
 #include <../common/random.hsh>
 #include <../common/flatten.hsh>
+#include <../common/bluenoise.hsh>
 
 #include <clouds.hsh>
 
@@ -13,9 +14,11 @@ layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D volumetricCloudI
 layout(set = 3, binding = 1) uniform sampler2D depthTexture;
 layout(set = 3, binding = 2) uniform sampler3D shapeTexture;
 layout(set = 3, binding = 3) uniform sampler3D detailTexture;
-layout(set = 3, binding = 4) uniform sampler2D randomTexture;
 
-layout(std140, set = 3, binding = 5) uniform UniformBuffer {
+layout(set = 3, binding = 4) uniform sampler2D scramblingRankingTexture;
+layout(set = 3, binding = 5) uniform sampler2D sobolSequenceTexture;
+
+layout(std140, set = 3, binding = 6) uniform UniformBuffer {
     Light light;
 
     float planetRadius;
@@ -46,13 +49,14 @@ layout(std140, set = 3, binding = 5) uniform UniformBuffer {
 } uniforms;
 
 const float epsilon = 0.001;
-const int sampleCount = 64;
+const int sampleCount = 32;
 const vec3 windDirection = normalize(vec3(0.1, -0.4, 0.1));
 const float windSpeed = 0.01;
 
 const vec3 coefficient = vec3(0.71 * 0.05, 0.86 * 0.05, 1.0 * 0.05);
 
 vec3 planetCenter = -vec3(0.0, uniforms.planetRadius, 0.0);
+vec4 blueNoiseVec = vec4(0.0);
 
 vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords);
 
@@ -67,6 +71,16 @@ void main() {
 
     float depth = textureLod(depthTexture, texCoord, 0.0).r;
     vec3 pixelPos = ConvertDepthToViewSpace(depth, texCoord);
+
+    int sampleIdx = int(uniforms.frameSeed);
+	blueNoiseVec = vec4(
+			SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
+			SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture),
+            SampleBlueNoise(pixel, sampleIdx, 2, scramblingRankingTexture, sobolSequenceTexture),
+            SampleBlueNoise(pixel, sampleIdx, 3, scramblingRankingTexture, sobolSequenceTexture)
+			);
+
+    
 
     vec4 scattering = ComputeVolumetricClouds(pixelPos, depth, texCoord);
     imageStore(volumetricCloudImage, pixel, scattering);
@@ -84,13 +98,7 @@ float GetDitherOffset(int idx) {
 
 float GetNoiseOffset(int idx) {
 
-    ivec2 pixel = ivec2(gl_GlobalInvocationID);
-
-    ivec2 noiseOffset = Unflatten2D(idx % 256, ivec2(16)) * ivec2(16);
-    float blueNoise = texelFetch(randomTexture, (pixel + noiseOffset) % ivec2(128), 0).r * 256.0;
-	blueNoise = clamp(blueNoise, 0.0, 255.0);
-	blueNoise = (blueNoise + 0.5) / 256.0;
-    return blueNoise;
+   return blueNoiseVec[idx % 4];
 
 }
 
@@ -118,9 +126,7 @@ vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
 }
 
 float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
-     vec3 weatherData) {
-
-    float lod = 0.0;
+     vec3 weatherData, float lod) {
 
     float baseCloudDensity = textureLod(shapeTexture, shapeTexCoords, lod).r;
 
@@ -206,38 +212,44 @@ void CalculateRayLength(vec3 rayOrigin, vec3 rayDirection, out float minDist, ou
 
 float GetExtinctionToLight(vec3 pos, int ditherIdx) {
 
-    const int lightSampleCount = 8;
+    const int lightSampleCount = 5;
 
     vec3 rayDirection = -normalize(uniforms.light.direction.xyz);
 
     float inDist, outDist;
     CalculateRayLength(pos, rayDirection, inDist, outDist);
 
-    float stepLength = 0.25 * (outDist - inDist)  / float(lightSampleCount);
+    float rayLength = 0.25 * (outDist - inDist);
+    float stepLength = rayLength / float(lightSampleCount);
     vec3 stepVector = rayDirection * stepLength;
 
     // Dither secondary rays
-    pos += stepVector * GetDitherOffset(ditherIdx);
+    pos += stepVector * GetNoiseOffset(ditherIdx);
 
-    float extinction = 1.0;
-    for (int i = 0; i < lightSampleCount; i++) {       
+    float lod = 0.5;
+
+    float extinctionAccumulation = 0.0;
+    for (int i = 0; i < lightSampleCount; i++) {
+        /*
         if (extinction <= epsilon) {
             extinction = 0.0;
             break;
         }
+        */
 
         vec3 shapeTexCoords, detailTexCoords;
         CalculateTexCoords(pos, shapeTexCoords, detailTexCoords);
 
-        float density = saturate(SampleDensity(pos, shapeTexCoords, detailTexCoords, vec3(1.0)));
+        float density = saturate(SampleDensity(pos, shapeTexCoords, detailTexCoords, vec3(1.0), floor(0.0)));
         float extinctionCoefficient = uniforms.extinctionFactor * density;
 
-        extinction *= exp(-extinctionCoefficient * stepLength);
+        extinctionAccumulation += extinctionCoefficient * stepLength;
         
         pos += stepVector;
+        // lod += 0.5;
     }
 
-    return extinction;
+    return exp(-extinctionAccumulation);
 
 }
 
@@ -279,9 +291,9 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     float stepLength = rayLength / float(raySampleCount);
     vec3 stepVector = rayDirection * stepLength;
 
-    int ditherIdx = ((int(pixel.x) % 4) * 4 + int(pixel.y) % 4 + int(uniforms.frameSeed)) % 16;
-    float ditherValue = GetDitherOffset(ditherIdx);
-	rayOrigin += stepVector * ditherValue;
+    int noiseIdx = 0;
+    float noiseValue = GetNoiseOffset(noiseIdx);
+	rayOrigin += stepVector * noiseValue;
  
     vec3 integration = vec3(0.0);
 	vec3 rayPos = rayOrigin + rayDirection * inDist;
@@ -312,7 +324,7 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
             continue;
         }
 
-        float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords, vec3(1.0)));
+        float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords, vec3(1.0), 0.0));
 
         if (density > 0.0) {
             float scatteringCoefficient = uniforms.scatteringFactor * density;
@@ -323,7 +335,7 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
 
             float lightDotView = dot(normalize(uniforms.light.direction.xyz), normalize(rayDirection));
             vec3 lightColor = uniforms.light.color.rgb * uniforms.light.intensity;
-            float lightExtinction =  GetExtinctionToLight(rayPos, ditherIdx);
+            float lightExtinction =  GetExtinctionToLight(rayPos, noiseIdx++);
 
             float phaseFunction = DualPhaseFunction(uniforms.eccentricityFirstPhase, 
                 uniforms.eccentricitySecondPhase, uniforms.phaseAlpha, lightDotView);

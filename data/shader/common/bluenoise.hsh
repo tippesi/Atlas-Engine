@@ -26,4 +26,5 @@ float SampleBlueNoise(ivec2 pixel, int sampleIndex, int sampleDimension,
 	// convert to float and return
 	float v = (0.5 + value) / 256.0;
 	return v;
+	
 }

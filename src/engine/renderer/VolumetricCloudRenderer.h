@@ -101,7 +101,8 @@ namespace Atlas {
             PipelineConfig integratePipelineConfig;
             PipelineConfig temporalPipelineConfig;
 
-			Texture::Texture2D blueNoiseTexture;
+            Texture::Texture2D scramblingRankingTexture;
+            Texture::Texture2D sobolSequenceTexture;
             Buffer::Buffer volumetricUniformBuffer;
 
 		};

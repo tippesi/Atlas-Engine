@@ -11,9 +11,13 @@ namespace Atlas {
 
             this->device = device;
 
-            auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("noise.png");
-            blueNoiseTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, VK_FORMAT_R8G8B8A8_UNORM);
-            blueNoiseTexture.SetData(noiseImage.GetData());
+            auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("scrambling_ranking.png", false, 4);
+            scramblingRankingTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, VK_FORMAT_R8G8B8A8_UNORM);
+            scramblingRankingTexture.SetData(noiseImage.GetData());
+
+            noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("sobol.png");
+            sobolSequenceTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, VK_FORMAT_R8G8B8A8_UNORM);
+            sobolSequenceTexture.SetData(noiseImage.GetData());
 
             shapeNoisePipelineConfig = PipelineConfig("clouds/shapeNoise.csh");
             detailNoisePipelineConfig = PipelineConfig("clouds/detailNoise.csh");
@@ -29,6 +33,7 @@ namespace Atlas {
 		void VolumetricCloudRenderer::Render(Viewport* viewport, RenderTarget* target,
 			Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
+            static uint32_t frameCount = 0;
 
 			auto clouds = scene->sky.clouds;
 			auto sun = scene->sky.sun;
@@ -92,7 +97,7 @@ namespace Atlas {
 					.densityMultiplier = clouds->densityMultiplier,
 
 					.time = Clock::Get(),
-					.frameSeed = Common::Random::SampleUniformInt(0, 255)
+					.frameSeed = frameCount++
 				};
 
 				if (sun) {
@@ -110,8 +115,9 @@ namespace Atlas {
 				commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 1);
 				commandList->BindImage(clouds->shapeTexture.image, clouds->shapeTexture.sampler, 3, 2);
 				commandList->BindImage(clouds->detailTexture.image, clouds->detailTexture.sampler, 3, 3);
-				commandList->BindImage(blueNoiseTexture.image, blueNoiseTexture.sampler, 3, 4);
-				commandList->BindBuffer(volumetricUniformBuffer.GetMultiBuffer(), 3, 5);
+				commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 4);
+				commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 5);
+				commandList->BindBuffer(volumetricUniformBuffer.GetMultiBuffer(), 3, 6);
 
 				commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
