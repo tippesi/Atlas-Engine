@@ -211,12 +211,12 @@ void App::Render(float deltaTime) {
         }
 
         if (ImGui::Begin("Settings", (bool*)0, ImGuiWindowFlags_HorizontalScrollbar)) {
-            if(pathTrace) ImGui::Text(("Samples: " + std::to_string(mainRenderer->pathTracingRenderer.GetSampleCount())).c_str());
-            ImGui::Text(("Average frametime: " + std::to_string(averageFramerate * 1000.0f) + " ms").c_str());
-            ImGui::Text(("Current frametime: " + std::to_string(deltaTime * 1000.0f) + " ms").c_str());
-            ImGui::Text(("Camera location: " + vecToString(camera.location)).c_str());
-            ImGui::Text(("Scene dimensions: " + vecToString(sceneAABB.min) + " to " + vecToString(sceneAABB.max)).c_str());
-            ImGui::Text(("Scene triangle count: " + std::to_string(triangleCount)).c_str());
+            if(pathTrace) ImGui::Text("Samples: %d", mainRenderer->pathTracingRenderer.GetSampleCount());
+            ImGui::Text("Average frametime: %.3f ms", averageFramerate * 1000.0f);
+            ImGui::Text("Current frametime: %.3f ms", deltaTime * 1000.0f);
+            ImGui::Text("Camera location: %s", vecToString(camera.location).c_str());
+            ImGui::Text("Scene dimensions: %s to %s", vecToString(sceneAABB.min).c_str(),vecToString(sceneAABB.max).c_str());
+            ImGui::Text("Scene triangle count: %d", triangleCount);
 
             {
                 const char* items[] = { "Cornell box", "Sponza", "San Miguel",
@@ -289,8 +289,8 @@ void App::Render(float deltaTime) {
             }
 
             if (ImGui::CollapsingHeader("DDGI")) {
-                ImGui::Text(("Probe count: " + vecToString(volume->probeCount)).c_str());
-                ImGui::Text(("Cell size: " + vecToString(volume->cellSize)).c_str());
+                ImGui::Text("Probe count: %s", vecToString(volume->probeCount).c_str());
+                ImGui::Text("Cell size: %s", vecToString(volume->cellSize).c_str());
                 ImGui::Checkbox("Enable volume##DDGI", &volume->enable);
                 ImGui::Checkbox("Update volume##DDGI", &volume->update);
                 ImGui::Checkbox("Visualize probes##DDGI", &volume->debug);
