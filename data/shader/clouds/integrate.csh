@@ -45,7 +45,8 @@ layout(std140, set = 3, binding = 6) uniform UniformBuffer {
     float densityMultiplier;
 
     float time;
-    uint frameSeed;
+    uint frameSeed1;
+    uint frameSeed2;
 } uniforms;
 
 const float epsilon = 0.001;
@@ -72,15 +73,13 @@ void main() {
     float depth = textureLod(depthTexture, texCoord, 0.0).r;
     vec3 pixelPos = ConvertDepthToViewSpace(depth, texCoord);
 
-    int sampleIdx = int(uniforms.frameSeed);
+    int sampleIdx = int(uniforms.frameSeed1);
 	blueNoiseVec = vec4(
 			SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
 			SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture),
             SampleBlueNoise(pixel, sampleIdx, 2, scramblingRankingTexture, sobolSequenceTexture),
             SampleBlueNoise(pixel, sampleIdx, 3, scramblingRankingTexture, sobolSequenceTexture)
 			);
-
-    
 
     vec4 scattering = ComputeVolumetricClouds(pixelPos, depth, texCoord);
     imageStore(volumetricCloudImage, pixel, scattering);
@@ -92,7 +91,9 @@ const float ditherPattern[16] = float[](0.0, 0.5, 0.125, 0.625, 0.75, 0.22, 0.87
 
 float GetDitherOffset(int idx) {
 
-    return ditherPattern[idx];
+    ivec2 pixel = ivec2(gl_GlobalInvocationID);
+    int ditherIdx = ((int(pixel.x) % 4) * 4 + int(pixel.y) % 4 + idx) % 16;
+    return ditherPattern[ditherIdx];
 
 }
 
@@ -259,7 +260,7 @@ vec3 ComputeAmbientColor(vec3 pos, float extinctionCoefficient) {
 
     vec3 isotropicLightTop = vec3(0.3, 0.4, 0.6);
     float heightFraction = (distFromCenter - uniforms.innerRadius) / (uniforms.outerRadius - uniforms.innerRadius);
-    float ambientContribution = saturate(heightFraction + 0.1);
+    float ambientContribution = saturate(0.1);
     return isotropicLightTop * ambientContribution;
 
 }
@@ -291,8 +292,8 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     float stepLength = rayLength / float(raySampleCount);
     vec3 stepVector = rayDirection * stepLength;
 
-    int noiseIdx = 0;
-    float noiseValue = GetNoiseOffset(noiseIdx);
+    // Primary noise always uses index 0
+    float noiseValue = GetNoiseOffset(int(0));
 	rayOrigin += stepVector * noiseValue;
  
     vec3 integration = vec3(0.0);
@@ -301,6 +302,8 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     float extinction = 1.0;
     vec3 scattering = vec3(0.0);
 
+    // Secondary noise uses frame seed, seems to help banding
+    int noiseIdx = int(uniforms.frameSeed2);
     for (int i = 0; i < raySampleCount; i++) {
 
         if (extinction <= epsilon) {

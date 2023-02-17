@@ -86,7 +86,8 @@ namespace Atlas {
                 float densityMultiplier;
 
                 float time;
-                uint32_t frameSeed;
+                uint32_t frameSeed1;
+                uint32_t frameSeed2;
 			};
 
 			void GenerateShapeTexture(Graphics::CommandList* commandList,

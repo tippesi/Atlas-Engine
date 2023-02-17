@@ -90,14 +90,15 @@ namespace Atlas {
 					.extinctionFactor = clouds->scattering.extinctionFactor,
 					.scatteringFactor = clouds->scattering.scatteringFactor,
 
-                    .eccentricityFirstPhase = clouds->scattering.eccentricityFirstPhase,
-                    .eccentricitySecondPhase = clouds->scattering.eccentricitySecondPhase,
-                    .phaseAlpha = clouds->scattering.phaseAlpha,
+					.eccentricityFirstPhase = clouds->scattering.eccentricityFirstPhase,
+					.eccentricitySecondPhase = clouds->scattering.eccentricitySecondPhase,
+					.phaseAlpha = clouds->scattering.phaseAlpha,
 
 					.densityMultiplier = clouds->densityMultiplier,
 
 					.time = Clock::Get(),
-					.frameSeed = frameCount++
+					.frameSeed1 = frameCount++,
+					.frameSeed2 = Common::Random::SampleUniformInt(0, 255)
 				};
 
 				if (sun) {
