@@ -144,9 +144,7 @@ namespace Atlas {
                             .vegetation = mesh->vegetation ? 1u : 0u,
                             .invertUVs = mesh->invertUVs ? 1u : 0u
                         };
-
-                        auto constantRange = currentPipeline->shader->GetPushConstantRange("constants");
-                        commandList->PushConstants(constantRange, &pushConstants);
+                        commandList->PushConstants("constants", &pushConstants);
 
                         commandList->DrawIndexed(subData->indicesCount, instance.count, subData->indicesOffset,
                             0, instance.offset);

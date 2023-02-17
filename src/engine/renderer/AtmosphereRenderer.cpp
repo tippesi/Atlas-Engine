@@ -12,11 +12,9 @@ namespace Atlas {
             defaultPipelineConfig = PipelineConfig("atmosphere.csh");
             cubeMapPipelineConfig = PipelineConfig("atmosphere.csh", {"ENVIRONMENT_PROBE"});
 
-            auto bufferUsage = Buffer::BufferUsageBits::UniformBuffer | Buffer::BufferUsageBits::HostAccess
-                               | Buffer::BufferUsageBits::MultiBuffered;
             // 2 elements of size for default rendering plus one cube map
-            uniformBuffer = Buffer::Buffer(bufferUsage, sizeof(Uniforms), 2);
-            probeMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat4) * 6, 1);
+            uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms), 2);
+            probeMatricesBuffer = Buffer::UniformBuffer(sizeof(mat4) * 6);
 
 		}
 
@@ -61,7 +59,7 @@ namespace Atlas {
             commandList->BindImage(velocityTexture->image, 3, 1);
 
             commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
-            commandList->BindBufferOffset(uniformBuffer.GetMultiBuffer(), uniformBuffer.GetAlignedOffset(0), 3, 3);
+            commandList->BindBufferOffset(uniformBuffer.Get(), uniformBuffer.GetAlignedOffset(0), 3, 3);
 
             auto resolution = ivec2(target->GetWidth(), target->GetHeight());
             auto groupCount = resolution / 8;
@@ -112,8 +110,8 @@ namespace Atlas {
             probeMatricesBuffer.SetData(matrices.data(), 0, 1);
 
             commandList->BindImage(probe->cubemap.image, 3, 0);
-            commandList->BindBufferOffset(uniformBuffer.GetMultiBuffer(), uniformBuffer.GetAlignedOffset(1), 3, 3);
-            commandList->BindBuffer(probeMatricesBuffer.GetMultiBuffer(), 3, 4);
+            commandList->BindBufferOffset(uniformBuffer.Get(), uniformBuffer.GetAlignedOffset(1), 3, 3);
+            commandList->BindBuffer(probeMatricesBuffer.Get(), 3, 4);
 
 			Graphics::Profiler::BeginQuery("Render probe faces");
 

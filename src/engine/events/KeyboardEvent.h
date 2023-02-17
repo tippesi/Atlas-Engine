@@ -18,7 +18,8 @@ namespace Atlas {
 			explicit KeyboardEvent(SDL_KeyboardEvent event) {
 
 				windowID = event.windowID;
-				keycode = event.keysym.sym;
+                keyCode = event.keysym.sym;
+                keyModifiers = event.keysym.mod;
 				state = event.state;
 				repeat = event.repeat > 0 ? true : false;
                 down = event.type == SDL_KEYDOWN;
@@ -33,7 +34,12 @@ namespace Atlas {
 			/**
              * The code of the key. See {@link Keycodes.h} for more.
              */
-			Keycode keycode;
+			Keycode keyCode;
+
+            /**
+             * The key modifiers
+             */
+            uint16_t keyModifiers;
 
 			/**
              * The state of the button. Might be BUTTON_PRESSED or BUTTON_RELEASED.

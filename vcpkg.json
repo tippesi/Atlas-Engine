@@ -17,7 +17,7 @@
         "stb",
         {
             "name": "imgui",
-            "version>=": "1.88",
+            "version>=": "1.89.2",
             "features": [
                 "docking-experimental"
             ]

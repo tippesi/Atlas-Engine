@@ -20,8 +20,6 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
-
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
 				Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList,
                 std::unordered_map<void*, uint16_t> materialMap);

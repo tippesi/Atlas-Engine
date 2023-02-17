@@ -7,6 +7,7 @@
 #include "../scene/Scene.h"
 #include "../Viewport.h"
 #include "../pipeline/PipelineManager.h"
+#include "../buffer/UniformBuffer.h"
 
 #include "../graphics/Profiler.h"
 #include "../graphics/GraphicsDevice.h"
@@ -25,8 +26,6 @@ namespace Atlas {
 			virtual ~Renderer() {}
 
 			Renderer& operator=(const Renderer&) = delete;
-
-			virtual void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) = 0;
 
         protected:
             Graphics::GraphicsDevice* device = nullptr;

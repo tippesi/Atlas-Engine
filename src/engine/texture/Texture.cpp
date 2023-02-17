@@ -16,6 +16,12 @@ namespace Atlas {
 
         }
 
+        void Texture::Bind(Graphics::CommandList *commandList, uint32_t set, uint32_t binding) {
+
+            commandList->BindImage(image, sampler, set, binding);
+
+        }
+
         bool Texture::IsValid() const {
 
             return width > 0 && height > 0 &&

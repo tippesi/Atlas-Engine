@@ -13,7 +13,7 @@ namespace Atlas {
 		public:
 			TerrainShadowRenderer();
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
 		private:
 			void GetUniforms();

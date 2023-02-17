@@ -333,11 +333,12 @@ namespace Atlas {
 
         }
 
-        void CommandList::PushConstants(PushConstantRange *pushConstantRange, void *data) {
+        void CommandList::PushConstants(const std::string& pushConstantRangeName, void *data) {
 
             assert(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
-            assert(pushConstantRange != nullptr && "Push constant range should not be null");
+
+            auto pushConstantRange = pipelineInUse->shader->GetPushConstantRange(pushConstantRangeName);
             if (!pushConstantRange) return;
 
             vkCmdPushConstants(commandBuffer, pipelineInUse->layout, pushConstantRange->range.stageFlags,

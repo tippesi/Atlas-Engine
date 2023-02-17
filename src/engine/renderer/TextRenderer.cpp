@@ -11,12 +11,10 @@ namespace Atlas {
 
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
-            auto bufferUsage = Buffer::BufferUsageBits::StorageBuffer | Buffer::BufferUsageBits::MultiBuffered
-                | Buffer::BufferUsageBits::HostAccess;
+            auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::MultiBufferedBit
+                               | Buffer::BufferUsageBits::HostAccessBit;
 			instanceBuffer = Buffer::Buffer(bufferUsage, sizeof(vec4), 16384);
-            bufferUsage = Buffer::BufferUsageBits::UniformBuffer | Buffer::BufferUsageBits::MultiBuffered
-              | Buffer::BufferUsageBits::HostAccess;
-            uniformBuffer = Buffer::Buffer(bufferUsage, sizeof(Uniforms), 1);
+            uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
 
 		}
 
@@ -102,7 +100,7 @@ namespace Atlas {
             commandList->BindBuffer(font->glyphBuffer.Get(), 3, 1);
 
             commandList->BindBuffer(instanceBuffer.GetMultiBuffer(), 3, 2);
-            commandList->BindBuffer(uniformBuffer.GetMultiBuffer(), 3, 3);
+            commandList->BindBuffer(uniformBuffer.Get(), 3, 3);
 
 			vertexArray.Bind(commandList);
             commandList->Draw(4, uint32_t(characterCount), 0, frameCharacterCount);

@@ -14,13 +14,9 @@ namespace Atlas {
 			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 			Helper::GeometryHelper::GenerateSphereVertexArray(sphereArray, 10, 10);
 
-			rayHitBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(vec4));
-            rayGenUniformBuffer = Buffer::Buffer(Buffer::BufferUsageBits::UniformBuffer |
-                Buffer::BufferUsageBits::HostAccess | Buffer::BufferUsageBits::MultiBuffered,
-                sizeof(RayGenUniforms), 1);
-            rayHitUniformBuffer = Buffer::Buffer(Buffer::BufferUsageBits::UniformBuffer |
-                Buffer::BufferUsageBits::HostAccess | Buffer::BufferUsageBits::MultiBuffered,
-                sizeof(RayHitUniforms), 1);
+			rayHitBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
+            rayGenUniformBuffer = Buffer::UniformBuffer(sizeof(RayGenUniforms));
+            rayHitUniformBuffer = Buffer::UniformBuffer(sizeof(RayHitUniforms));
 
             rayGenPipelineConfig = PipelineConfig("ddgi/rayGen.csh");
             rayHitPipelineConfig = PipelineConfig("ddgi/rayHit.csh");
@@ -124,7 +120,7 @@ namespace Atlas {
 
                     commandList->BindBuffer(rayDirBuffer.Get(), 3, 0);
                     commandList->BindBuffer(rayDirInactiveBuffer.Get(), 3, 1);
-                    commandList->BindBuffer(rayGenUniformBuffer.GetMultiBuffer(), 3, 2);
+                    commandList->BindBuffer(rayGenUniformBuffer.Get(), 3, 2);
 				}
 			);
 
@@ -171,7 +167,7 @@ namespace Atlas {
 
 					// Use this buffer instead of the default writeRays buffer of the helper
                     commandList->BindBuffer(rayHitBuffer.Get(), 3, 1);
-                    commandList->BindBuffer(rayHitUniformBuffer.GetMultiBuffer(), 3, 2);
+                    commandList->BindBuffer(rayHitUniformBuffer.Get(), 3, 2);
 				}
 			);
 
@@ -232,7 +228,6 @@ namespace Atlas {
                 commandList->BindPipeline(pipeline);
 
                 auto probeRes = volume->irrRes;
-                auto constantRange = pipeline->shader->GetPushConstantRange("constants");
 
                 auto res = ivec2(irradianceArray.width, irradianceArray.height);
                 auto groupCount = res / 8;
@@ -240,7 +235,7 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
 
-                commandList->PushConstants(constantRange, &probeRes);
+                commandList->PushConstants("constants", &probeRes);
                 commandList->BindImage(irradianceArray.image, 3, 0);
                 commandList->Dispatch(groupCount.x, groupCount.y, probeCount.z);
 
@@ -251,7 +246,6 @@ namespace Atlas {
                 commandList->BindPipeline(pipeline);
 
                 probeRes = volume->momRes;
-                constantRange = pipeline->shader->GetPushConstantRange("constants");
 
                 res = ivec2(momentsArray.width, momentsArray.height);
                 groupCount = res / 8;
@@ -259,7 +253,7 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
 
-                commandList->PushConstants(constantRange, &probeRes);
+                commandList->PushConstants("constants", &probeRes);
                 commandList->BindImage(momentsArray.image, 3, 0);
                 commandList->Dispatch(groupCount.x, groupCount.y, probeCount.z);
 
@@ -314,8 +308,7 @@ namespace Atlas {
                 .probeInactiveMaterialIdx = uint32_t(materialMap[&probeDebugInactiveMaterial]),
                 .probeOffsetMaterialIdx = uint32_t(materialMap[&probeDebugOffsetMaterial])
             };
-            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-            commandList->PushConstants(constantRange, &constants);
+            commandList->PushConstants("constants", &constants);
 
 			auto instanceCount = volume->probeCount.x * volume->probeCount.y * volume->probeCount.z;
             commandList->DrawIndexed(sphereArray.GetIndexComponent().elementCount, uint32_t(instanceCount));

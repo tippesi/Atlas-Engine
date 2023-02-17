@@ -8,8 +8,6 @@ const std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
 void App::LoadContent() {
 
-    UnlockFramerate();
-
     renderTarget = Atlas::RenderTarget(1920, 1080);
     pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
 
@@ -28,16 +26,16 @@ void App::LoadContent() {
 
     Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(
         [this](Atlas::Events::KeyboardEvent event) {
-            if (event.keycode == AE_KEY_ESCAPE) {
+            if (event.keyCode == AE_KEY_ESCAPE) {
                 Exit();
             }
-            if (event.keycode == AE_KEY_F11 && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == AE_KEY_F11 && event.state == AE_BUTTON_RELEASED) {
                 renderUI = !renderUI;
             }
-            if (event.keycode == AE_KEY_LSHIFT && event.state == AE_BUTTON_PRESSED) {
+            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_PRESSED) {
                 keyboardHandler.speed = cameraSpeed * 4.0f;
             }
-            if (event.keycode == AE_KEY_LSHIFT && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_RELEASED) {
                 keyboardHandler.speed = cameraSpeed;
             }
         });
@@ -80,12 +78,6 @@ void App::LoadContent() {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     imguiWrapper.Load(&window);
-
-    //io.Fonts->AddFontFromFileTTF(
-    //    Atlas::Loader::AssetLoader::GetFullPath("font/roboto.ttf").c_str(),
-    //    20.0f);
-
-    // testRenderer.Init(Atlas::Graphics::GraphicsDevice::DefaultDevice);
 
 }
 
@@ -146,10 +138,10 @@ void App::Render(float deltaTime) {
 
     if (pathTrace) {
         viewport.Set(0, 0, pathTraceTarget.GetWidth(), pathTraceTarget.GetHeight());
-        mainRenderer.PathTraceScene(&viewport, &pathTraceTarget, &camera, &scene);
+        mainRenderer->PathTraceScene(&viewport, &pathTraceTarget, &camera, &scene);
     }
     else {
-        mainRenderer.RenderScene(&viewport, &renderTarget, &camera, &scene);
+        mainRenderer->RenderScene(&viewport, &renderTarget, &camera, &scene);
 
         auto debug = debugAo || debugReflection || debugClouds || debugSSS;
 
@@ -159,19 +151,19 @@ void App::Render(float deltaTime) {
             commandList->BeginRenderPass(graphicsDevice->swapChain, true);
 
             if (debugAo) {
-                mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.aoTexture,
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.aoTexture,
                     0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
             }
             else if (debugReflection) {
-                mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.reflectionTexture,
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.reflectionTexture,
                     0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
             }
             else if (debugClouds) {
-                mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.volumetricCloudsTexture,
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.volumetricCloudsTexture,
                     0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
             }
             else if (debugSSS) {
-                mainRenderer.textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.sssTexture,
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.sssTexture,
                     0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
 		    }
 
@@ -219,12 +211,12 @@ void App::Render(float deltaTime) {
         }
 
         if (ImGui::Begin("Settings", (bool*)0, ImGuiWindowFlags_HorizontalScrollbar)) {
-            if(pathTrace) ImGui::Text(("Samples: " + std::to_string(mainRenderer.pathTracingRenderer.GetSampleCount())).c_str());
-            ImGui::Text(("Average frametime: " + std::to_string(averageFramerate * 1000.0f) + " ms").c_str());
-            ImGui::Text(("Current frametime: " + std::to_string(deltaTime * 1000.0f) + " ms").c_str());
-            ImGui::Text(("Camera location: " + vecToString(camera.location)).c_str());
-            ImGui::Text(("Scene dimensions: " + vecToString(sceneAABB.min) + " to " + vecToString(sceneAABB.max)).c_str());
-            ImGui::Text(("Scene triangle count: " + std::to_string(triangleCount)).c_str());
+            if(pathTrace) ImGui::Text("Samples: %d", mainRenderer->pathTracingRenderer.GetSampleCount());
+            ImGui::Text("Average frametime: %.3f ms", averageFramerate * 1000.0f);
+            ImGui::Text("Current frametime: %.3f ms", deltaTime * 1000.0f);
+            ImGui::Text("Camera location: %s", vecToString(camera.location).c_str());
+            ImGui::Text("Scene dimensions: %s to %s", vecToString(sceneAABB.min).c_str(),vecToString(sceneAABB.max).c_str());
+            ImGui::Text("Scene triangle count: %d", triangleCount);
 
             {
                 const char* items[] = { "Cornell box", "Sponza", "San Miguel",
@@ -247,7 +239,7 @@ void App::Render(float deltaTime) {
 
             ImGui::Checkbox("Pathtrace", &pathTrace);
 
-            if (pathTrace) ImGui::SliderInt("Pathtrace bounces", &mainRenderer.pathTracingRenderer.bounces, 0, 100);
+            if (pathTrace) ImGui::SliderInt("Pathtrace bounces", &mainRenderer->pathTracingRenderer.bounces, 0, 100);
 
             if (ImGui::CollapsingHeader("General")) {
                 static bool fullscreenMode = false;
@@ -261,7 +253,7 @@ void App::Render(float deltaTime) {
 
                 if (vsync != vsyncMode) {
                     graphicsDevice->CompleteFrame();
-                    if (vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_RELAXED_KHR);
+                    if (vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_KHR);
                     else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR);
                     vsyncMode = vsync;
                 }
@@ -297,8 +289,8 @@ void App::Render(float deltaTime) {
             }
 
             if (ImGui::CollapsingHeader("DDGI")) {
-                ImGui::Text(("Probe count: " + vecToString(volume->probeCount)).c_str());
-                ImGui::Text(("Cell size: " + vecToString(volume->cellSize)).c_str());
+                ImGui::Text("Probe count: %s", vecToString(volume->probeCount).c_str());
+                ImGui::Text("Cell size: %s", vecToString(volume->cellSize).c_str());
                 ImGui::Checkbox("Enable volume##DDGI", &volume->enable);
                 ImGui::Checkbox("Update volume##DDGI", &volume->update);
                 ImGui::Checkbox("Visualize probes##DDGI", &volume->debug);
@@ -354,11 +346,11 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat3("Max", (float*)&volume->aabb.max, -200.0f, 200.0f);
                 volume->SetAABB(volume->aabb);
                 ImGui::Separator();
-                ImGui::SliderFloat("Hysteresis", &volume->hysteresis, 0.0f, 1.0f, "%.3f", 0.5f);
-                ImGui::SliderFloat("Sharpness", &volume->sharpness, 0.01f, 200.0f, "%.3f", 2.0f);
+                ImGui::SliderFloat("Hysteresis", &volume->hysteresis, 0.0f, 1.0f, "%.3f");
+                ImGui::SliderFloat("Sharpness", &volume->sharpness, 0.01f, 200.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 ImGui::SliderFloat("Bias", &volume->bias, 0.0f, 1.0f);
                 auto prevGamma = volume->gamma;
-                ImGui::SliderFloat("Gamma exponent", &volume->gamma, 0.0f, 10.0f, "%.3f", 2.0f);
+                ImGui::SliderFloat("Gamma exponent", &volume->gamma, 0.0f, 10.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 if (prevGamma != volume->gamma) volume->ClearProbes();
                 ImGui::Separator();
                 if (ImGui::Button("Reset probe offsets")) {
@@ -370,7 +362,7 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Animate", &animateLight);
                 ImGui::SliderFloat3("Direction", (float*)&light->direction, -1.0f, 1.0f);
                 ImGui::ColorEdit3("Color", (float*)&light->color);
-                ImGui::SliderFloat("Intensity##Light", &light->intensity, 0.0, 1000.0f, "%.3f", 2.0f);
+                ImGui::SliderFloat("Intensity##Light", &light->intensity, 0.0, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 ImGui::Separator();
                 ImGui::Text("Volumetric");
                 ImGui::SliderFloat("Intensity##Volumetric", &light->GetVolumetric()->intensity, 0.0f, 1.0f);
@@ -382,14 +374,14 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Enable##SSS", &sss->enable);
                 ImGui::SliderInt("Sample count##SSS", &sss->sampleCount, 2.0, 16.0);
                 ImGui::SliderFloat("Max length##SSS", &sss->maxLength, 0.01f, 1.0f);
-                ImGui::SliderFloat("Thickness##SSS", &sss->thickness, 0.001f, 1.0f, "%.3f", 2.0f);
+                ImGui::SliderFloat("Thickness##SSS", &sss->thickness, 0.001f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
             }
             if (ImGui::CollapsingHeader("Ambient Occlusion")) {
                 ImGui::Checkbox("Debug##Ao", &debugAo);
                 ImGui::Checkbox("Enable ambient occlusion##Ao", &ao->enable);
                 ImGui::Checkbox("Enable raytracing (preview)##Ao", &ao->rt);
                 ImGui::SliderFloat("Radius##Ao", &ao->radius, 0.0f, 10.0f);
-                ImGui::SliderFloat("Strength##Ao", &ao->strength, 0.0f, 20.0f, "%.3f", 2.0f);
+                ImGui::SliderFloat("Strength##Ao", &ao->strength, 0.0f, 20.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 //ImGui::SliderInt("Sample count##Ao", &ao->s, 0.0f, 20.0f, "%.3f", 2.0f);
             }
             if (ImGui::CollapsingHeader("Reflection (preview)")) {
@@ -425,8 +417,10 @@ void App::Render(float deltaTime) {
 
                 ImGui::SliderFloat("Density##Fog", &fog->density, 0.0f, 0.5f, "%.4f", 4.0f);
                 ImGui::SliderFloat("Height##Fog", &fog->height, 0.0f, 300.0f, "%.3f", 4.0f);
-                ImGui::SliderFloat("Height falloff##Fog", &fog->heightFalloff, 0.0f, 0.5f, "%.4f", 4.0f);
-                ImGui::SliderFloat("Scattering anisotropy##Fog", &fog->scatteringAnisotropy, -1.0f, 1.0f, "%.3f", 2.0f);
+                ImGui::SliderFloat("Height falloff##Fog", &fog->heightFalloff, 0.0f, 0.5f,
+                    "%.4f", ImGuiSliderFlags_Logarithmic);
+                ImGui::SliderFloat("Scattering anisotropy##Fog", &fog->scatteringAnisotropy, -1.0f, 1.0f,
+                    "%.3f", ImGuiSliderFlags_Logarithmic);
             }
             if (ImGui::CollapsingHeader("Clouds")) {
                 ImGui::Checkbox("Enable##Clouds", &clouds->enable);
@@ -637,7 +631,7 @@ void App::DisplayLoadingScreen() {
     float y = windowSize.y / 2 - textHeight / 2;
 
     viewport.Set(0, 0, windowSize.x, windowSize.y);
-    mainRenderer.textRenderer.Render(commandList, &viewport, &font,
+    mainRenderer->textRenderer.Render(commandList, &viewport, &font,
         "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
 
     commandList->EndRenderPass();

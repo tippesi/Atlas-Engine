@@ -15,9 +15,6 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene) final {};
-
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
@@ -31,7 +28,7 @@ namespace Atlas {
 
 			PipelineConfig pipelineConfig;
 
-            Buffer::Buffer uniformBuffer;
+            Buffer::UniformBuffer uniformBuffer;
 
 		};
 

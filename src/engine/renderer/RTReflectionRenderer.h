@@ -64,7 +64,7 @@ namespace Atlas {
 
 			PipelineConfig atrousPipelineConfig[3];
 
-            Buffer::Buffer rtrUniformBuffer;
+            Buffer::UniformBuffer rtrUniformBuffer;
             Ref<Graphics::Sampler> shadowSampler;
 		};
 

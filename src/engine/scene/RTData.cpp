@@ -9,10 +9,10 @@ namespace Atlas {
 
 		RTData::RTData(Scene* scene) : scene(scene) {
 
-			triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(GPUTriangle));
-			bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(BVHTriangle));
-			materialBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(GPUMaterial));
-			nodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBuffer, sizeof(GPUBVHNode));
+			triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUTriangle));
+			bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(BVHTriangle));
+			materialBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUMaterial));
+			nodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUBVHNode));
 
 		}
 

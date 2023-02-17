@@ -13,8 +13,6 @@ namespace Atlas {
 		public:
 			TerrainRenderer();
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {}
-
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
 				Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap);
 

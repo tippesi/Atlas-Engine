@@ -48,7 +48,6 @@ if(WIN32)
 	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
 			volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator
 			unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
-    set(ATLAS_ENGINE_SYSTEM_LIBS user32 Shlwapi)
 endif()
 
 if (MINGW)
@@ -58,32 +57,21 @@ endif()
 if(APPLE)
 	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_MACOS)
 
-	include_directories(/System/Library/Frameworks)
-	find_library(COCOA_LIBRARY Cocoa)
-	find_library(OpenGL_LIBRARY OpenGL)
-	find_library(IOKit_LIBRARY IOKit)
-	find_library(CoreVideo_LIBRARY CoreVideo)
-	mark_as_advanced(COCOA_LIBRARY OpenGL_LIBRARY)
-
 	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
 			volk::volk volk::volk_headers SPIRV-Tools-opt
 			unofficial::vulkan-memory-allocator::vulkan-memory-allocator
 			unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
-	set(ATLAS_ENGINE_SYSTEM_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${CoreVideo_LIBRARY})
 endif()
 
 if(ANDROID)
 	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
 
 	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static hidapi)
-	set(ATLAS_ENGINE_SYSTEM_LIBS android EGL m)
+	set(ATLAS_ENGINE_SYSTEM_LIBS android m)
 endif()
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
 	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_LINUX)
-	
-    add_definitions(${OPENGL_DEFINITIONS})
-    find_package(X11 REQUIRED)
 	
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
     set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
@@ -96,7 +84,6 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
 	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
 			volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator
 			unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV)
-	set(ATLAS_ENGINE_SYSTEM_LIBS X11 dl pthread)
 endif()
 
 # Add source files ################################################################################

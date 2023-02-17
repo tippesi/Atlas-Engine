@@ -3,6 +3,7 @@
 
 #include "System.h"
 #include "Viewport.h"
+#include "Display.h"
 #include "graphics/Surface.h"
 #include "texture/Texture2D.h"
 
@@ -137,6 +138,12 @@ namespace Atlas {
 		 * @param border True to adds a border, false to remove it.
 		 */
 		void SetBordered(bool border);
+
+        /**
+         * Sets the windows display mode
+         * @param mode The display mode to be set
+         */
+        void SetDisplayMode(const DisplayMode& mode);
 
         /**
          * Creates a surface for the window to render to.

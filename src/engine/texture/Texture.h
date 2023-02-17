@@ -9,6 +9,7 @@
 #include "../common/Ref.h"
 #include "../graphics/Image.h"
 #include "../graphics/Sampler.h"
+#include "../graphics/CommandList.h"
 #include "../graphics/GraphicsDevice.h"
 
 namespace Atlas {
@@ -44,6 +45,14 @@ namespace Atlas {
               */
             Texture(int32_t width, int32_t height, int32_t depth, VkFormat format,
                 Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest);
+
+            /**
+             * Binds the image and sampler of the texture to the specified binding point
+             * @param commandList A command list which has already called BeginCommands()
+             * @param set
+             * @param binding
+             */
+            void Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding);
 
             /**
              * Validates a texture.

@@ -26,6 +26,18 @@ namespace Atlas {
 
     }
 
+    void PipelineManager::Update() {
+
+        // Do check for hot reload only once per frame
+        for (auto& [hash, variants] : shaderToVariantsMap) {
+            if (hotReload && variants->shader->Reload()) {
+                // Clear variants on hot reload
+                variants->variants.clear();
+            }
+        }
+
+    }
+
     void PipelineManager::AddPipeline(PipelineConfig &config) {
 
         GetOrCreatePipeline(config);
@@ -69,11 +81,6 @@ namespace Atlas {
                 };
                 variants->shader = graphicsDevice->CreateShader(shaderDesc);
                 variants->isComplete = true;
-            }
-
-            if (hotReload && variants->shader->Reload()) {
-                // Clear variants on hot reload
-                variants->variants.clear();
             }
 
             Ref<Graphics::Pipeline> pipeline;

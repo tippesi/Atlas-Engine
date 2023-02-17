@@ -29,6 +29,9 @@ private:
 	void TextInputHandler(Atlas::Events::TextInputEvent event);
 	void WindowHandler(Atlas::Events::WindowEvent event);
 
+	ImGuiKey KeycodeToImGuiKey(int keyCode);
+	void UpdateKeyModifiers(uint16_t keyModifier);
+
 	void UpdateMouseCursor();
 
 	SDL_Cursor* mouseCursors[ImGuiMouseCursor_COUNT];
