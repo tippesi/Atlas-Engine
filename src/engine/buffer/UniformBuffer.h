@@ -4,6 +4,7 @@
 #include "../System.h"
 
 #include "../graphics/Buffer.h"
+#include "../graphics/CommandList.h"
 
 namespace Atlas {
 
@@ -24,6 +25,14 @@ namespace Atlas {
 			 * @param hostAccess An optional parameter to specify if the buffer is accessed by the host
              */
             explicit UniformBuffer(size_t elementSize, size_t elementCount = 1, bool hostAccess = true);
+
+            /**
+             * Binds the buffer to the specified binding point
+             * @param commandList A command list which has already called BeginCommands()
+             * @param set
+             * @param binding
+             */
+            void Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding);
 
             /**
              * Sets the size of the buffer

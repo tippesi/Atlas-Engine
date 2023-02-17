@@ -18,6 +18,17 @@ namespace Atlas {
 
         }
 
+        void Buffer::Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding) {
+
+            if (hostAccessible) {
+                commandList->BindBuffer(multiBuffer, set, binding);
+            }
+            else {
+                commandList->BindBuffer(buffer, set, binding);
+            }
+
+        }
+
         Ref<Graphics::Buffer> Buffer::Get() {
 
             return buffer;

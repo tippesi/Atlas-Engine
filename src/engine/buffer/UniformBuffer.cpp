@@ -13,6 +13,12 @@ namespace Atlas {
 
         }
 
+        void UniformBuffer::Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding) {
+
+            commandList->BindBuffer(buffer, set, binding);
+
+        }
+
         void UniformBuffer::SetSize(size_t elementCount, void *data) {
 
             // If the element count is the same we can reuse the old buffer

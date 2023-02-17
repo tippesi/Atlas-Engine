@@ -4,6 +4,7 @@
 #include "../System.h"
 
 #include "../graphics/Buffer.h"
+#include "../graphics/CommandList.h"
 
 namespace Atlas {
 
@@ -41,6 +42,14 @@ namespace Atlas {
              */
 			Buffer(BufferUsage bufferUsage, size_t elementSize,
 				size_t elementCount = 0, void* data = nullptr);
+
+            /**
+             * Binds the buffer to the specified binding point
+             * @param commandList A command list which has already called BeginCommands()
+             * @param set
+             * @param binding
+             */
+            void Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding);
 
             /**
              * Returns an owning pointer to a graphics buffer
