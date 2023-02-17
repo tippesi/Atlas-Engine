@@ -171,7 +171,7 @@ namespace Atlas {
 
 	}
 
-    void Window::SetDisplayMode(const DisplayMode mode) {
+    void Window::SetDisplayMode(const DisplayMode& mode) {
 
         SDL_DisplayMode displayMode {
             .format = mode.rawFormat,

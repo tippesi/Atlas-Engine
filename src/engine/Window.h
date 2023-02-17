@@ -143,7 +143,7 @@ namespace Atlas {
          * Sets the windows display mode
          * @param mode The display mode to be set
          */
-        void SetDisplayMode(const DisplayMode mode);
+        void SetDisplayMode(const DisplayMode& mode);
 
         /**
          * Creates a surface for the window to render to.

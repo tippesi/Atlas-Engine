@@ -34,7 +34,7 @@ namespace Atlas {
     public:
         Display() = default;
 
-        Display(int32_t displayIndex);
+        explicit Display(int32_t displayIndex);
 
         std::vector<DisplayMode> GetModes() const;
 
