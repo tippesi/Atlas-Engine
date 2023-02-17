@@ -4,6 +4,7 @@
 #include "../System.h"
 #include "Renderer.h"
 #include "helper/RayTracingHelper.h"
+#include "../buffer/UniformBuffer.h"
 
 namespace Atlas {
 
@@ -15,9 +16,6 @@ namespace Atlas {
 			DDGIRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
-
-			void Render(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene) final {};
 
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
@@ -73,8 +71,8 @@ namespace Atlas {
 
 			Buffer::Buffer rayHitBuffer;
 
-			Buffer::Buffer rayGenUniformBuffer;
-			Buffer::Buffer rayHitUniformBuffer;
+			Buffer::UniformBuffer rayGenUniformBuffer;
+			Buffer::UniformBuffer rayHitUniformBuffer;
 
 			Buffer::VertexArray vertexArray;
 			Buffer::VertexArray sphereArray;

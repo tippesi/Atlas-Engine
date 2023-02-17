@@ -75,35 +75,35 @@ namespace Atlas {
 
 		void KeyboardHandler::KeyboardEventHandler(Events::KeyboardEvent event) {
 
-			if (event.keycode == AE_KEY_W && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+			if (event.keyCode == AE_KEY_W && event.state == AE_BUTTON_PRESSED && !event.repeat) {
 				movement.x += 1.0f;
 			}
 
-			if (event.keycode == AE_KEY_W && event.state == AE_BUTTON_RELEASED) {
+			if (event.keyCode == AE_KEY_W && event.state == AE_BUTTON_RELEASED) {
 				movement.x -= 1.0f;
 			}
 
-			if (event.keycode == AE_KEY_S && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+			if (event.keyCode == AE_KEY_S && event.state == AE_BUTTON_PRESSED && !event.repeat) {
 				movement.x -= 1.0f;
 			}
 
-			if (event.keycode == AE_KEY_S && event.state == AE_BUTTON_RELEASED) {
+			if (event.keyCode == AE_KEY_S && event.state == AE_BUTTON_RELEASED) {
 				movement.x += 1.0f;
 			}
 
-			if (event.keycode == AE_KEY_D && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+			if (event.keyCode == AE_KEY_D && event.state == AE_BUTTON_PRESSED && !event.repeat) {
 				movement.y += 1.0f;
 			}
 
-			if (event.keycode == AE_KEY_D && event.state == AE_BUTTON_RELEASED) {
+			if (event.keyCode == AE_KEY_D && event.state == AE_BUTTON_RELEASED) {
 				movement.y -= 1.0f;
 			}
 
-			if (event.keycode == AE_KEY_A && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+			if (event.keyCode == AE_KEY_A && event.state == AE_BUTTON_PRESSED && !event.repeat) {
 				movement.y -= 1.0f;
 			}
 
-			if (event.keycode == AE_KEY_A && event.state == AE_BUTTON_RELEASED) {
+			if (event.keyCode == AE_KEY_A && event.state == AE_BUTTON_RELEASED) {
 				movement.y += 1.0f;
 			}
 

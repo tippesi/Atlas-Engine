@@ -21,10 +21,8 @@ namespace Atlas {
             rayGenPipelineConfig = PipelineConfig("pathtracer/rayGen.csh");
             rayHitPipelineConfig = PipelineConfig("pathtracer/rayHit.csh");
 
-            auto bufferUsage = Buffer::BufferUsageBits::UniformBuffer | Buffer::BufferUsageBits::HostAccess
-                | Buffer::BufferUsageBits::MultiBuffered;
-            rayGenUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(RayGenUniforms), 1);
-            rayHitUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(RayHitUniforms), bounces + 1);
+            rayGenUniformBuffer = Buffer::UniformBuffer(sizeof(RayGenUniforms));
+            rayHitUniformBuffer = Buffer::UniformBuffer(sizeof(RayHitUniforms), bounces + 1);
 
 		}
 
@@ -130,7 +128,7 @@ namespace Atlas {
                     uniforms.resolution = resolution;
 
                     rayGenUniformBuffer.SetData(&uniforms, 0, 1);
-                    commandList->BindBuffer(rayGenUniformBuffer.GetMultiBuffer(), 3, 4);
+                    commandList->BindBuffer(rayGenUniformBuffer.Get(), 3, 4);
 				}
 				);
 
@@ -141,7 +139,7 @@ namespace Atlas {
 
 				helper.DispatchHitClosest(commandList, PipelineManager::GetPipeline(rayHitPipelineConfig), false,
 					[=]() {
-                        commandList->BindBufferOffset(rayHitUniformBuffer.GetMultiBuffer(),
+                        commandList->BindBufferOffset(rayHitUniformBuffer.Get(),
                             rayHitUniformBuffer.GetAlignedOffset(i), 3, 4);
 					}
 					);

@@ -18,9 +18,6 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target,
-                Camera* camera, Scene::Scene* scene) final {};
-
 			void RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2D* texture,
                 float x, float y, float width, float height, bool alphaBlending = false, bool invert = false);
 

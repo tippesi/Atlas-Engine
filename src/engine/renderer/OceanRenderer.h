@@ -15,7 +15,7 @@ namespace Atlas {
 		public:
 			OceanRenderer();
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
 		private:
 			void GetUniforms();

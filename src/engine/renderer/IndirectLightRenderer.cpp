@@ -11,9 +11,7 @@ namespace Atlas {
             pipelineConfig = PipelineConfig("deferred/indirect.csh");
             PipelineManager::AddPipeline(pipelineConfig);
 
-            uniformBuffer = Buffer::Buffer(Buffer::BufferUsageBits::UniformBuffer |
-                Buffer::BufferUsageBits::MultiBuffered | Buffer::BufferUsageBits::HostAccess,
-                sizeof(Uniforms), 1);
+            uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
 
         }
 
@@ -52,7 +50,7 @@ namespace Atlas {
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
             commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 3);
-            commandList->BindBuffer(uniformBuffer.GetMultiBuffer(), 3, 4);
+            commandList->BindBuffer(uniformBuffer.Get(), 3, 4);
 
 			auto resolution = ivec2(target->GetWidth(), target->GetHeight());
 			auto groupCount = resolution / 8;

@@ -14,8 +14,6 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
-
             void Downscale(RenderTarget* target, Graphics::CommandList* commandList);
 
             void DownscaleDepthOnly(RenderTarget* target, Graphics::CommandList* commandList);

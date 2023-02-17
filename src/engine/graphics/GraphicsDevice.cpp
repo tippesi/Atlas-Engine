@@ -34,17 +34,14 @@ namespace Atlas {
             float priority = 1.0f;
             auto queueCreateInfos = CreateQueueInfos(&priority);
 
-            VkPhysicalDeviceFeatures deviceFeatures{};
-            deviceFeatures.samplerAnisotropy = VK_TRUE;
-            deviceFeatures.independentBlend = VK_TRUE;
-            deviceFeatures.multiDrawIndirect = VK_TRUE;
+            BuildPhysicalDeviceFeatures(physicalDevice);
 
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
             createInfo.pQueueCreateInfos = queueCreateInfos.data();
             createInfo.queueCreateInfoCount = uint32_t(queueCreateInfos.size());
 
-            createInfo.pEnabledFeatures = &deviceFeatures;
+            createInfo.pEnabledFeatures = nullptr;
             createInfo.enabledExtensionCount = uint32_t(requiredExtensions.size());
             createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
@@ -55,18 +52,18 @@ namespace Atlas {
                 createInfo.enabledLayerCount = 0;
             }
 
-            VkPhysicalDeviceHostQueryResetFeatures resetFeatures = {};
-            resetFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES;
-            resetFeatures.hostQueryReset = VK_TRUE;
-            createInfo.pNext = &resetFeatures;
-
 #ifdef AE_OS_MACOS
             VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
             // This is hacked since I can't get it to work otherwise
             // See VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR in vulkan_core.h
             portabilityFeatures.sType = static_cast<VkStructureType>(1000163000);
             portabilityFeatures.mutableComparisonSamplers = VK_TRUE;
-            resetFeatures.pNext = &portabilityFeatures;
+            portabilityFeatures.pNext = &features;
+
+            // This feature struct is the last one in the pNext chain for now
+            createInfo.pNext = &portabilityFeatures;
+#else
+            createInfo.pNext = &features;
 #endif
 
             VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device))
@@ -674,6 +671,25 @@ namespace Atlas {
             assert(requiredExtensions.empty() && "Not all required extensions were found");
 
             return requiredExtensions.empty();
+
+        }
+
+        void GraphicsDevice::BuildPhysicalDeviceFeatures(VkPhysicalDevice device) {
+
+            // Initialize feature struct appropriately
+            features = {};
+            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+            features11 = {};
+            features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+            features12 = {};
+            features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+
+            // Point to the next features
+            features.pNext = &features11;
+            features11.pNext = &features12;
+
+            // This queries all features in the chain
+            vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
 
         }
 

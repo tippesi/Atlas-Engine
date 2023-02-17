@@ -13,7 +13,7 @@ namespace Atlas {
 		public:
 			DecalRenderer();
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final;
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
 			static std::string vertexPath;
 			static std::string fragmentPath;

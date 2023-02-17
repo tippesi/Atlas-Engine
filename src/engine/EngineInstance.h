@@ -18,11 +18,14 @@ namespace Atlas {
 	     * @param windowWidth The width of the window
 	     * @param windowHeight The height of the window
 	     * @param flags Additional window flags. See {@link Window.h} for more.
+	     * @param createMainRenderer Specifies wether the EngineInstance should create
+	     *                           a default main renderer.
 	     * @note The constructors of derived classes shouldn't do anything,
 	     * except calling this. For everything else use LoadContent().
 	     */
 		EngineInstance(const std::string& windowTitle, int32_t windowWidth,
-			int32_t windowHeight, int32_t flags = AE_WINDOW_RESIZABLE);
+			int32_t windowHeight, int32_t flags = AE_WINDOW_RESIZABLE,
+                         bool createMainRenderer = true);
 
         EngineInstance(const EngineInstance& that) = delete;
 
@@ -90,28 +93,20 @@ namespace Atlas {
 		ivec2 GetScreenSize();
 
 		/**
-		 * Locks the frame rate to the next available target frame rate of the monitor
-		 * like min(availableTargetFramerate, possibleFramerate).
-		 */
-		void LockFramerate();
-
-		/**
-		 * Unlocks the framerate.
-		 */
-		void UnlockFramerate();
-
-		/**
 		 * Closes the application.
 		 */
 		void Exit();
 
         Graphics::GraphicsDevice* graphicsDevice = nullptr;
-		Renderer::MainRenderer mainRenderer;
+
+        Scope<Renderer::MainRenderer> mainRenderer = nullptr;
 
         /**
          * The main instance, needs to be implemented by user
          */
         static EngineInstance* instance;
+
+        std::vector<Display> displays;
 
 	};
 

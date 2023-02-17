@@ -33,8 +33,7 @@ namespace Atlas {
             commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
             vec4 lastCameraLocation = vec4(camera->GetLastLocation(), 1.0f);
-            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-            commandList->PushConstants(constantRange, &lastCameraLocation);
+            commandList->PushConstants("constants", &lastCameraLocation);
 
             const auto& cubeMap = scene->sky.probe->cubemap;
 

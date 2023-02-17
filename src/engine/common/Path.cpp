@@ -5,7 +5,6 @@
 
 #ifdef AE_OS_WINDOWS
 #include <direct.h>
-#include <shlwapi.h>
 #else
 #include <sys/stat.h>
 #include <unistd.h>
@@ -91,11 +90,7 @@ namespace Atlas {
 
 		bool Path::IsAbsolute(std::string path) {
 
-#if defined(AE_OS_ANDROID) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
-			return path[0] == '/';
-#else
-			return !PathIsRelativeA(path.c_str());
-#endif
+			return std::filesystem::path(path).is_absolute();
 
 		}
 

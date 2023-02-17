@@ -20,8 +20,8 @@ namespace Atlas {
             integratePipelineConfig = PipelineConfig("clouds/integrate.csh");
             temporalPipelineConfig = PipelineConfig("clouds/temporal.csh");
 
-			auto bufferUsage = Buffer::BufferUsageBits::UniformBuffer | Buffer::BufferUsageBits::HostAccess
-				| Buffer::BufferUsageBits::MultiBuffered;
+			auto bufferUsage = Buffer::BufferUsageBits::UniformBufferBit | Buffer::BufferUsageBits::HostAccessBit
+                               | Buffer::BufferUsageBits::MultiBufferedBit;
 			volumetricUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(VolumetricCloudUniforms), 1);
 
 		}
@@ -199,9 +199,7 @@ namespace Atlas {
             commandList->BindPipeline(pipeline);
 
             auto randomFloat = Common::Random::SampleUniformFloat() * 10.0f;
-
-            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-            commandList->PushConstants(constantRange, &randomFloat);
+            commandList->PushConstants("constants", &randomFloat);
 
             commandList->ImageMemoryBarrier(texture->image,
                 VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
@@ -229,9 +227,7 @@ namespace Atlas {
             commandList->BindPipeline(pipeline);
 
             auto randomFloat = Common::Random::SampleUniformFloat() * 10.0f;
-
-            auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-            commandList->PushConstants(constantRange, &randomFloat);
+            commandList->PushConstants("constants", &randomFloat);
 
             commandList->ImageMemoryBarrier(texture->image,
                 VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);

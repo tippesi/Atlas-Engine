@@ -16,8 +16,6 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) final {};
-
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
@@ -93,9 +91,9 @@ namespace Atlas {
 
             PipelineConfig resolvePipelineConfig;
 
-            Buffer::Buffer volumetricUniformBuffer;
-            Buffer::Buffer blurWeightsUniformBuffer;
-            Buffer::Buffer resolveUniformBuffer;
+            Buffer::UniformBuffer volumetricUniformBuffer;
+            Buffer::UniformBuffer blurWeightsUniformBuffer;
+            Buffer::UniformBuffer resolveUniformBuffer;
 
             Ref<Graphics::Sampler> shadowSampler;
 

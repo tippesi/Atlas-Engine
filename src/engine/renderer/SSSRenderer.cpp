@@ -53,9 +53,7 @@ namespace Atlas {
                     .maxLength = sss->maxLength,
                     .thickness = sss->thickness
                 };
-
-                auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-                commandList->PushConstants(constantRange, &constants);
+                commandList->PushConstants("constants", &constants);
 
 				commandList->Dispatch(groupCount.x, groupCount.y, 1);
 

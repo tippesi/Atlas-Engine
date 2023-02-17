@@ -21,6 +21,8 @@ namespace Atlas {
 
         static void Shutdown();
 
+        static void Update();
+
         static void EnableHotReload();
 
         static void DisableHotReload();
