@@ -171,6 +171,20 @@ namespace Atlas {
 
 	}
 
+    void Window::SetDisplayMode(const DisplayMode mode) {
+
+        SDL_DisplayMode displayMode {
+            .format = mode.rawFormat,
+            .w = mode.width,
+            .h = mode.height,
+            .refresh_rate = mode.refreshRate,
+            .driverdata = mode.driverData
+        };
+
+        SDL_SetWindowDisplayMode(sdlWindow, &displayMode);
+
+    }
+
     bool Window::CreateSurface() {
 
         bool success = false;

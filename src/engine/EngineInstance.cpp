@@ -24,6 +24,11 @@ namespace Atlas {
             mainRenderer->Init(graphicsDevice);
         }
 
+        auto displayCount = SDL_GetNumVideoDisplays();
+        for (int32_t i = 0; i < displayCount; i++) {
+            displays.push_back(Display(i));
+        }
+
 	}
 
     EngineInstance::~EngineInstance() {

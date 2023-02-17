@@ -106,6 +106,8 @@ namespace Atlas {
          */
         static EngineInstance* instance;
 
+        std::vector<Display> displays;
+
 	};
 
 }
