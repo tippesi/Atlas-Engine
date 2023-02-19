@@ -215,7 +215,7 @@ void main() {
     vec4 historyValue = history;
     vec4 currentValue = texelFetch(currentTexture, pixel, 0);
 
-    //historyValue = clamp(historyValue, localNeighbourhoodMin, localNeighbourhoodMax);
+    historyValue = clamp(historyValue, localNeighbourhoodMin, localNeighbourhoodMax);
 
     // We don't want to do anything fancy here, just a bit of constant accumulation
     float factor = 0.95;
@@ -230,10 +230,13 @@ void main() {
         ivec2 offsetPixel = historyPixel + offsets[i];
         float confidence = 1.0;
 
-        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        confidence *= historyDepth < 1.0 ? 0.0 : 1.0;
+        if (offsetPixel.x < imageSize(resolveImage).x && offsetPixel.y < imageSize(resolveImage).y &&
+            offsetPixel.x >= 0 && offsetPixel.y >= 0) {
+             float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+            confidence *= historyDepth < 1.0 ? 0.0 : 1.0;
 
-        minConfidence = min(minConfidence, confidence);
+            minConfidence = min(minConfidence, confidence);
+        }
     }
     
     factor *= minConfidence;

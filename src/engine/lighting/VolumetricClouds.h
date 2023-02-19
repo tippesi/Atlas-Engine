@@ -19,22 +19,22 @@ namespace Atlas {
 
 			struct Scattering {
 				float extinctionFactor = 0.33f;
-				float scatteringFactor = 1.25;
+				float scatteringFactor = 1.25f;
 
-                float eccentricityFirstPhase = 0.8;
-                float eccentricitySecondPhase = -0.5;
-                float phaseAlpha = 0.5;
+                float eccentricityFirstPhase = 0.0f;
+                float eccentricitySecondPhase = -0.5f;
+                float phaseAlpha = 0.5f;
 			};
 
-			float minHeight = 100.0f;
-			float maxHeight = 400.0f;
+			float minHeight = 300.0f;
+			float maxHeight = 1000.0f;
 			float distanceLimit = 2000.0f;
 
 			float shapeScale = 1.0f;
 			float detailScale = 16.0f;
 			float shapeSpeed = 1.0f;
 			float detailSpeed = 10.0f;
-			float detailStrength = 0.3f;
+			float detailStrength = 0.15f;
 
 			float densityMultiplier = 0.7f;
 

@@ -5,6 +5,7 @@
 #include <../common/random.hsh>
 #include <../common/flatten.hsh>
 #include <../common/bluenoise.hsh>
+#include <../common/PI.hsh>
 
 #include <clouds.hsh>
 
@@ -50,7 +51,7 @@ layout(std140, set = 3, binding = 6) uniform UniformBuffer {
 } uniforms;
 
 const float epsilon = 0.001;
-const int sampleCount = 32;
+const int sampleCount = 64;
 const vec3 windDirection = normalize(vec3(0.1, -0.4, 0.1));
 const float windSpeed = 0.01;
 
@@ -306,48 +307,46 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     int noiseIdx = int(uniforms.frameSeed2);
     for (int i = 0; i < raySampleCount; i++) {
 
-        if (extinction <= epsilon) {
-            break;
-        }
-        
-        vec3 shapeTexCoords, detailTexCoords;
-        CalculateTexCoords(rayPos, shapeTexCoords, detailTexCoords);
+        if (extinction > epsilon) {
+            vec3 shapeTexCoords, detailTexCoords;
+            CalculateTexCoords(rayPos, shapeTexCoords, detailTexCoords);
 
-        float distToPlanetCenter = distance(rayPos, planetCenter);
-        // This can happen if we look from inside the cloud layer trough it below the cloud
-        // layer. We need to find the next intersection with the inner layer
-        if (distToPlanetCenter < uniforms.innerRadius) {
-            /*
-            CalculateRayLength(rayPos, rayDirection, inDist, outDist);
-            stepLength = rayLength / float(sampleCount - i);
-            stepVector = rayDirection * stepLength;
-            rayPos += rayDirection * inDist;
-            */
-            rayPos += stepVector;
-            continue;
-        }
+            float distToPlanetCenter = distance(rayPos, planetCenter);
+            // This can happen if we look from inside the cloud layer trough it below the cloud
+            // layer. We need to find the next intersection with the inner layer
+            if (distToPlanetCenter < uniforms.innerRadius) {
+                /*
+                CalculateRayLength(rayPos, rayDirection, inDist, outDist);
+                stepLength = rayLength / float(sampleCount - i);
+                stepVector = rayDirection * stepLength;
+                rayPos += rayDirection * inDist;
+                */
+                rayPos += stepVector;
+                continue;
+            }
 
-        float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords, vec3(1.0), 0.0));
+            float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords, vec3(1.0), 0.0));
 
-        if (density > 0.0) {
-            float scatteringCoefficient = uniforms.scatteringFactor * density;
-            float extinctionCoefficient = uniforms.extinctionFactor * density;
+            if (density > 0.0) {
+                float scatteringCoefficient = uniforms.scatteringFactor * density;
+                float extinctionCoefficient = uniforms.extinctionFactor * density;
 
-            float clampedExtinction = max(extinctionCoefficient, 0.0000001);
-            float stepExtinction = exp(-extinctionCoefficient * stepLength);
+                float clampedExtinction = max(extinctionCoefficient, 0.0000001);
+                float stepExtinction = exp(-extinctionCoefficient * stepLength);
 
-            float lightDotView = dot(normalize(uniforms.light.direction.xyz), normalize(rayDirection));
-            vec3 lightColor = uniforms.light.color.rgb * uniforms.light.intensity;
-            float lightExtinction =  GetExtinctionToLight(rayPos, noiseIdx++);
+                float lightDotView = dot(normalize(uniforms.light.direction.xyz), normalize(rayDirection));
+                vec3 lightColor = uniforms.light.color.rgb * uniforms.light.intensity;
+                float lightExtinction =  GetExtinctionToLight(rayPos, noiseIdx++);
 
-            float phaseFunction = DualPhaseFunction(uniforms.eccentricityFirstPhase, 
-                uniforms.eccentricitySecondPhase, uniforms.phaseAlpha, lightDotView);
-            vec3 stepScattering = scatteringCoefficient * (phaseFunction * lightColor * lightExtinction
-                + ComputeAmbientColor(rayPos, extinctionCoefficient));
+                float phaseFunction = DualPhaseFunction(uniforms.eccentricityFirstPhase, 
+                    uniforms.eccentricitySecondPhase, uniforms.phaseAlpha, lightDotView);
+                vec3 stepScattering = scatteringCoefficient * (phaseFunction * lightColor * lightExtinction
+                    + ComputeAmbientColor(rayPos, extinctionCoefficient));
 
-            vec3 luminanceIntegral = (stepScattering - stepScattering * stepExtinction) / clampedExtinction;
-            scattering += luminanceIntegral * extinction;
-            extinction *= stepExtinction;
+                vec3 luminanceIntegral = (stepScattering - stepScattering * stepExtinction) / clampedExtinction;
+                scattering += luminanceIntegral * extinction;
+                extinction *= stepExtinction;
+            }
         }
 
         rayPos += stepVector;
