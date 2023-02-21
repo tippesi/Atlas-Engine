@@ -218,7 +218,7 @@ void main() {
     historyValue = clamp(historyValue, localNeighbourhoodMin, localNeighbourhoodMax);
 
     // We don't want to do anything fancy here, just a bit of constant accumulation
-    float factor = 0.95;
+    float factor = 0.875;
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 

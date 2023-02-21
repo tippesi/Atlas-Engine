@@ -64,8 +64,7 @@ namespace Atlas {
                 float outerRadius;
                 float distanceLimit;
 
-                float lowerHeightFalloff;
-                float upperHeightFalloff;
+                float heightStretch;
 
                 float shapeScale;
                 float detailScale;
@@ -83,8 +82,10 @@ namespace Atlas {
                 float densityMultiplier;
 
                 float time;
-                uint32_t frameSeed1;
-                uint32_t frameSeed2;
+                uint32_t frameSeed;
+
+                int32_t sampleCount;
+                int32_t shadowSampleCount;
 			};
 
 			void GenerateShapeTexture(Graphics::CommandList* commandList,

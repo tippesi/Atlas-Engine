@@ -62,8 +62,8 @@ void App::LoadContent() {
     scene.fog->scatteringAnisotropy = 0.0f;
 
     scene.sky.clouds = std::make_shared<Atlas::Lighting::VolumetricClouds>();
-    scene.sky.clouds->minHeight = 300.0f;
-    scene.sky.clouds->maxHeight = 1000.0f;
+    scene.sky.clouds->minHeight = 100.0f;
+    scene.sky.clouds->maxHeight = 600.0f;
 
     scene.sky.atmosphere = std::make_shared<Atlas::Lighting::Atmosphere>();
 
@@ -425,9 +425,12 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("Clouds")) {
                 ImGui::Checkbox("Enable##Clouds", &clouds->enable);
                 ImGui::Checkbox("Debug##Clouds", &debugClouds);
+                ImGui::Text("Quality");
+                ImGui::SliderInt("Sample count##Clouds", &clouds->sampleCount, 1, 128);
+                ImGui::SliderInt("Shadow sample count##Clouds", &clouds->shadowSampleCount, 1, 16);
+                ImGui::Text("Shape");
                 ImGui::SliderFloat("Density multiplier##Clouds", &clouds->densityMultiplier, 0.0f, 1.0f);
-                ImGui::SliderFloat("Lower height falloff##Clouds", &clouds->lowerHeightFalloff, 0.0f, 1.0f);
-                ImGui::SliderFloat("Upper height falloff##Clouds", &clouds->upperHeightFalloff, 0.0f, 1.0f);
+                ImGui::SliderFloat("Height stretch##Clouds", &clouds->heightStretch, 0.0f, 1.0f);
                 if (ImGui::Button("Update noise textures##Clouds")) {
                     clouds->needsNoiseUpdate = true;
                 }

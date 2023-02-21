@@ -19,6 +19,8 @@ layout(set = 3, binding = 3) uniform sampler3D detailTexture;
 layout(set = 3, binding = 4) uniform sampler2D scramblingRankingTexture;
 layout(set = 3, binding = 5) uniform sampler2D sobolSequenceTexture;
 
+layout(set = 1, binding = 10) uniform samplerCube diffuseProbe;
+
 layout(std140, set = 3, binding = 6) uniform UniformBuffer {
     Light light;
 
@@ -27,8 +29,7 @@ layout(std140, set = 3, binding = 6) uniform UniformBuffer {
     float outerRadius;
     float distanceLimit;
 
-    float lowerHeightFalloff;
-    float upperHeightFalloff;
+    float heightStretch;
 
     float shapeScale;
     float detailScale;
@@ -46,12 +47,13 @@ layout(std140, set = 3, binding = 6) uniform UniformBuffer {
     float densityMultiplier;
 
     float time;
-    uint frameSeed1;
-    uint frameSeed2;
+    uint frameSeed;
+
+    int sampleCount;
+    int shadowSampleCount;
 } uniforms;
 
 const float epsilon = 0.001;
-const int sampleCount = 64;
 const vec3 windDirection = normalize(vec3(0.1, -0.4, 0.1));
 const float windSpeed = 0.01;
 
@@ -74,7 +76,7 @@ void main() {
     float depth = textureLod(depthTexture, texCoord, 0.0).r;
     vec3 pixelPos = ConvertDepthToViewSpace(depth, texCoord);
 
-    int sampleIdx = int(uniforms.frameSeed1);
+    int sampleIdx = int(uniforms.frameSeed);
 	blueNoiseVec = vec4(
 			SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
 			SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture),
@@ -133,10 +135,9 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
     float baseCloudDensity = textureLod(shapeTexture, shapeTexCoords, lod).r;
 
     float heightFraction = shapeTexCoords.y;
-    float densityHeightGradient = exp(-uniforms.upperHeightFalloff * heightFraction) * 
-        exp(-(1.0 - heightFraction) * uniforms.lowerHeightFalloff);    
-    
-    baseCloudDensity *= densityHeightGradient;
+    float densityHeightGradient = exp(-sqr(heightFraction * 2.0 - 1.0) / uniforms.heightStretch);
+
+    baseCloudDensity *= saturate(densityHeightGradient);
 
     const float cloudCoverage = uniforms.densityMultiplier;
     baseCloudDensity = Remap(baseCloudDensity, cloudCoverage,
@@ -214,21 +215,21 @@ void CalculateRayLength(vec3 rayOrigin, vec3 rayDirection, out float minDist, ou
 
 float GetExtinctionToLight(vec3 pos, int ditherIdx) {
 
-    const int lightSampleCount = 5;
+    const int lightSampleCount = uniforms.shadowSampleCount;
 
     vec3 rayDirection = -normalize(uniforms.light.direction.xyz);
 
     float inDist, outDist;
     CalculateRayLength(pos, rayDirection, inDist, outDist);
 
-    float rayLength = 0.25 * (outDist - inDist);
+    float sampleSegmnet = 0.5;
+    float rayLength = sampleSegmnet * (outDist - inDist);
     float stepLength = rayLength / float(lightSampleCount);
     vec3 stepVector = rayDirection * stepLength;
 
     // Dither secondary rays
-    pos += stepVector * GetNoiseOffset(ditherIdx);
-
-    float lod = 0.5;
+    float noiseOffset = GetNoiseOffset(ditherIdx);
+    noiseOffset = 0.5;
 
     float extinctionAccumulation = 0.0;
     for (int i = 0; i < lightSampleCount; i++) {
@@ -239,16 +240,24 @@ float GetExtinctionToLight(vec3 pos, int ditherIdx) {
         }
         */
 
-        vec3 shapeTexCoords, detailTexCoords;
-        CalculateTexCoords(pos, shapeTexCoords, detailTexCoords);
+        // Sampling scheme based on: https://github.com/turanszkij/WickedEngine/blob/master/WickedEngine/shaders/volumetricCloud_renderCS.hlsl
+        float t0 = float(i) / float(lightSampleCount);
+        float t1 = float(i + 1) / float(lightSampleCount);
 
-        float density = saturate(SampleDensity(pos, shapeTexCoords, detailTexCoords, vec3(1.0), floor(0.0)));
+        t0 = t0 * t0;
+        t1 = t1 * t1;
+
+        float delta = t1 - t0;
+        float t = t0 + delta * noiseOffset;
+        vec3 samplePoint = pos + rayDirection * t * (outDist - inDist);
+
+        vec3 shapeTexCoords, detailTexCoords;
+        CalculateTexCoords(samplePoint, shapeTexCoords, detailTexCoords);
+
+        float density = saturate(SampleDensity(samplePoint, shapeTexCoords, detailTexCoords, vec3(1.0), floor(0.0)));
         float extinctionCoefficient = uniforms.extinctionFactor * density;
 
         extinctionAccumulation += extinctionCoefficient * stepLength;
-        
-        pos += stepVector;
-        // lod += 0.5;
     }
 
     return exp(-extinctionAccumulation);
@@ -259,9 +268,10 @@ vec3 ComputeAmbientColor(vec3 pos, float extinctionCoefficient) {
 
     float distFromCenter = distance(pos, planetCenter);
 
-    vec3 isotropicLightTop = vec3(0.3, 0.4, 0.6);
+    vec3 isotropicLightTop = textureLod(diffuseProbe, vec3(0.0, 1.0, 0.0), 0.0).rgb;
+
     float heightFraction = (distFromCenter - uniforms.innerRadius) / (uniforms.outerRadius - uniforms.innerRadius);
-    float ambientContribution = saturate(0.1);
+    float ambientContribution = saturate(heightFraction + 0.1);
     return isotropicLightTop * ambientContribution;
 
 }
@@ -289,6 +299,7 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     if (inDist > rayLength && depth < 1.0)
         return vec4(0.0, 0.0, 0.0, 1.0);
 
+    const int sampleCount = uniforms.sampleCount;
     int raySampleCount = max(sampleCount, int((rayLength / uniforms.distanceLimit) * float(sampleCount)));
     float stepLength = rayLength / float(raySampleCount);
     vec3 stepVector = rayDirection * stepLength;
@@ -303,8 +314,7 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     float extinction = 1.0;
     vec3 scattering = vec3(0.0);
 
-    // Secondary noise uses frame seed, seems to help banding
-    int noiseIdx = int(uniforms.frameSeed2);
+    int noiseIdx = 0;
     for (int i = 0; i < raySampleCount; i++) {
 
         if (extinction > epsilon) {

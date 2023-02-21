@@ -78,8 +78,7 @@ namespace Atlas {
 					.outerRadius = scene->sky.planetRadius + clouds->maxHeight,
 					.distanceLimit = clouds->distanceLimit,
 
-					.lowerHeightFalloff = clouds->lowerHeightFalloff,
-					.upperHeightFalloff = clouds->upperHeightFalloff,
+					.heightStretch = clouds->heightStretch,
 
 					.shapeScale = clouds->shapeScale,
 					.detailScale = clouds->detailScale,
@@ -97,8 +96,10 @@ namespace Atlas {
 					.densityMultiplier = clouds->densityMultiplier,
 
 					.time = Clock::Get(),
-					.frameSeed1 = frameCount++,
-					.frameSeed2 = Common::Random::SampleUniformInt(0, 255)
+					.frameSeed = frameCount++,
+
+					.sampleCount = clouds->sampleCount,
+					.shadowSampleCount = clouds->shadowSampleCount,
 				};
 
 				if (sun) {
