@@ -86,6 +86,9 @@ namespace Atlas {
 
                 int32_t sampleCount;
                 int32_t shadowSampleCount;
+
+                float darkEdgeDirect;
+                float darkEdgeDetail;
 			};
 
 			void GenerateShapeTexture(Graphics::CommandList* commandList,

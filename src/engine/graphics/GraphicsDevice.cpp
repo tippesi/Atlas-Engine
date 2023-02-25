@@ -173,6 +173,8 @@ namespace Atlas {
             windowWidth = width;
             windowHeight = height;
 
+            if (width == 0 || height == 0) return nullptr;
+
             WaitForIdle();
 
             // Had some issue with passing the old swap chain and then deleting it after x frames.

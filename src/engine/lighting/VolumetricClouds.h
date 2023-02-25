@@ -43,8 +43,8 @@ namespace Atlas {
 
 			float heightStretch = 0.5f;
 
-			float silverLiningSpread = 0.24f;
-			float silverLiningIntensity = 0.077f;
+			float darkEdgeFocus = 16.0f;
+			float darkEdgeAmbient = 0.3f;
 
 			Scattering scattering;
 

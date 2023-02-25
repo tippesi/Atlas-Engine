@@ -455,8 +455,8 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat("Detail strength##Clouds", &clouds->detailStrength, 0.0f, 1.0f);
                 ImGui::Separator();
                 ImGui::Text("Silver lining");
-                ImGui::SliderFloat("Silver lining spread##Clouds", &clouds->silverLiningSpread, 0.0f, 1.0f);
-                ImGui::SliderFloat("Silver lining intensity##Clouds", &clouds->silverLiningIntensity, 0.0f, 10.0f);
+                ImGui::SliderFloat("Dark edge strength##Clouds", &clouds->darkEdgeFocus, 0.0f, 1025.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+                ImGui::SliderFloat("Dark edge ambient##Clouds", &clouds->darkEdgeAmbient, 0.0f, 1.0f);
             }
             if (ImGui::CollapsingHeader("Postprocessing")) {
                 ImGui::Text("Temporal anti-aliasing");

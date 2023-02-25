@@ -51,11 +51,15 @@ layout(std140, set = 3, binding = 6) uniform UniformBuffer {
 
     int sampleCount;
     int shadowSampleCount;
+
+    float darkEdgeFocus;
+    float darkEdgeAmbient;
 } uniforms;
 
 const float epsilon = 0.001;
-const vec3 windDirection = normalize(vec3(0.1, -0.4, 0.1));
-const float windSpeed = 0.01;
+const vec3 windDirection = normalize(vec3(0.4, -0.2, 0.4));
+const vec3 windDirectionDetail = normalize(vec3(0.1, -0.0, 0.1));
+const float windSpeed = 0.001;
 
 const vec3 coefficient = vec3(0.71 * 0.05, 0.86 * 0.05, 1.0 * 0.05);
 
@@ -134,7 +138,8 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
 
     float baseCloudDensity = textureLod(shapeTexture, shapeTexCoords, lod).r;
 
-    float heightFraction = shapeTexCoords.y;
+    float distFromCenter = distance(pos, planetCenter);
+    float heightFraction = (distFromCenter - uniforms.innerRadius) / (uniforms.outerRadius - uniforms.innerRadius);
     float densityHeightGradient = exp(-sqr(heightFraction * 2.0 - 1.0) / uniforms.heightStretch);
 
     baseCloudDensity *= saturate(densityHeightGradient);
@@ -164,12 +169,12 @@ void CalculateTexCoords(vec3 pos, out vec3 shapeTexCoords, out vec3 detailTexCoo
 
     shapeTexCoords.xz = pos.xz * uniforms.shapeScale * 0.001;
     shapeTexCoords.y = (distFromCenter - uniforms.innerRadius) / (uniforms.outerRadius - uniforms.innerRadius);
-    shapeTexCoords.xz += windDirection.xz * uniforms.shapeSpeed * windSpeed * uniforms.time;
+    shapeTexCoords += windDirection * uniforms.shapeSpeed * windSpeed * uniforms.time;
 
     detailTexCoords.xz = pos.xz * uniforms.shapeScale * 0.001;
     detailTexCoords.y = (distFromCenter - uniforms.innerRadius) / (uniforms.outerRadius - uniforms.innerRadius);
     detailTexCoords *= uniforms.detailScale;
-    detailTexCoords += windDirection * uniforms.detailSpeed * windSpeed * uniforms.time;
+    detailTexCoords += windDirectionDetail * uniforms.shapeSpeed * uniforms.detailSpeed * windSpeed * uniforms.time;
 
 }
 
@@ -341,6 +346,11 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
                 float scatteringCoefficient = uniforms.scatteringFactor * density;
                 float extinctionCoefficient = uniforms.extinctionFactor * density;
 
+                float darkEdgeFactor = exp(-density * uniforms.darkEdgeFocus);
+
+                float directAlbedo = 1.0 - darkEdgeFactor;
+                float ambientAlbedo = 1.0 - darkEdgeFactor * uniforms.darkEdgeAmbient;
+
                 float clampedExtinction = max(extinctionCoefficient, 0.0000001);
                 float stepExtinction = exp(-extinctionCoefficient * stepLength);
 
@@ -350,8 +360,8 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
 
                 float phaseFunction = DualPhaseFunction(uniforms.eccentricityFirstPhase, 
                     uniforms.eccentricitySecondPhase, uniforms.phaseAlpha, lightDotView);
-                vec3 stepScattering = scatteringCoefficient * (phaseFunction * lightColor * lightExtinction
-                    + ComputeAmbientColor(rayPos, extinctionCoefficient));
+                vec3 stepScattering = scatteringCoefficient * (directAlbedo * phaseFunction * lightColor * lightExtinction
+                    + ambientAlbedo * ComputeAmbientColor(rayPos, extinctionCoefficient));
 
                 vec3 luminanceIntegral = (stepScattering - stepScattering * stepExtinction) / clampedExtinction;
                 scattering += luminanceIntegral * extinction;

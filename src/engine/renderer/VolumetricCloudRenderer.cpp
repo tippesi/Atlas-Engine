@@ -100,6 +100,9 @@ namespace Atlas {
 
 					.sampleCount = clouds->sampleCount,
 					.shadowSampleCount = clouds->shadowSampleCount,
+
+					.darkEdgeDirect = clouds->darkEdgeFocus,
+					.darkEdgeDetail = clouds->darkEdgeAmbient,
 				};
 
 				if (sun) {
