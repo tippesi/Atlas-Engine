@@ -111,7 +111,7 @@ namespace Atlas {
 
                 if (fogEnabled) {
                     auto& fogUniform = uniforms.fog;
-                    fogUniform.color = vec4(fog->color, 0.0f);
+                    fogUniform.color = vec4(fog->color, 1.0f);
                     fogUniform.density = fog->density;
                     fogUniform.heightFalloff = fog->heightFalloff;
                     fogUniform.height = fog->height;
@@ -230,7 +230,7 @@ namespace Atlas {
 
                 if (fogEnabled) {
                     auto& fogUniform = uniforms.fog;
-                    fogUniform.color = vec4(fog->color, 0.0f);
+                    fogUniform.color = vec4(fog->color, 1.0f);
                     fogUniform.density = fog->density;
                     fogUniform.heightFalloff = fog->heightFalloff;
                     fogUniform.height = fog->height;

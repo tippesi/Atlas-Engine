@@ -39,6 +39,7 @@ layout(std140, set = 3, binding = 6) uniform UniformBuffer {
 
     float extinctionFactor;
     float scatteringFactor;
+    vec4 extinctionCoefficients;
 
     float eccentricityFirstPhase;
     float eccentricitySecondPhase;
@@ -60,8 +61,6 @@ const float epsilon = 0.001;
 const vec3 windDirection = normalize(vec3(0.4, -0.2, 0.4));
 const vec3 windDirectionDetail = normalize(vec3(0.1, -0.0, 0.1));
 const float windSpeed = 0.001;
-
-const vec3 coefficient = vec3(0.71 * 0.05, 0.86 * 0.05, 1.0 * 0.05);
 
 vec3 planetCenter = -vec3(0.0, uniforms.planetRadius, 0.0);
 vec4 blueNoiseVec = vec4(0.0);
@@ -218,7 +217,7 @@ void CalculateRayLength(vec3 rayOrigin, vec3 rayDirection, out float minDist, ou
 
 }
 
-float GetExtinctionToLight(vec3 pos, int ditherIdx) {
+vec4 GetExtinctionToLight(vec3 pos, int ditherIdx) {
 
     const int lightSampleCount = uniforms.shadowSampleCount;
 
@@ -236,7 +235,7 @@ float GetExtinctionToLight(vec3 pos, int ditherIdx) {
     float noiseOffset = GetNoiseOffset(ditherIdx);
     noiseOffset = 0.5;
 
-    float extinctionAccumulation = 0.0;
+    vec4 extinctionAccumulation = vec4(0.0);
     for (int i = 0; i < lightSampleCount; i++) {
         /*
         if (extinction <= epsilon) {
@@ -260,7 +259,7 @@ float GetExtinctionToLight(vec3 pos, int ditherIdx) {
         CalculateTexCoords(samplePoint, shapeTexCoords, detailTexCoords);
 
         float density = saturate(SampleDensity(samplePoint, shapeTexCoords, detailTexCoords, vec3(1.0), floor(0.0)));
-        float extinctionCoefficient = uniforms.extinctionFactor * density;
+        vec4 extinctionCoefficient = uniforms.extinctionFactor * uniforms.extinctionCoefficients * density;
 
         extinctionAccumulation += extinctionCoefficient * stepLength;
     }
@@ -269,7 +268,7 @@ float GetExtinctionToLight(vec3 pos, int ditherIdx) {
 
 }
 
-vec3 ComputeAmbientColor(vec3 pos, float extinctionCoefficient) {
+vec3 ComputeAmbientColor(vec3 pos) {
 
     float distFromCenter = distance(pos, planetCenter);
 
@@ -316,13 +315,13 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     vec3 integration = vec3(0.0);
 	vec3 rayPos = rayOrigin + rayDirection * inDist;
 
-    float extinction = 1.0;
+    vec4 extinction = vec4(1.0);
     vec3 scattering = vec3(0.0);
 
     int noiseIdx = 0;
     for (int i = 0; i < raySampleCount; i++) {
 
-        if (extinction > epsilon) {
+        if (extinction.a > epsilon) {
             vec3 shapeTexCoords, detailTexCoords;
             CalculateTexCoords(rayPos, shapeTexCoords, detailTexCoords);
 
@@ -343,28 +342,28 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
             float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords, vec3(1.0), 0.0));
 
             if (density > 0.0) {
-                float scatteringCoefficient = uniforms.scatteringFactor * density;
-                float extinctionCoefficient = uniforms.extinctionFactor * density;
+                vec3 scatteringCoefficient = uniforms.scatteringFactor * uniforms.extinctionCoefficients.rgb * density;
+                vec4 extinctionCoefficient = uniforms.extinctionFactor * uniforms.extinctionCoefficients * density;
 
                 float darkEdgeFactor = exp(-density * uniforms.darkEdgeFocus);
 
                 float directAlbedo = 1.0 - darkEdgeFactor;
                 float ambientAlbedo = 1.0 - darkEdgeFactor * uniforms.darkEdgeAmbient;
 
-                float clampedExtinction = max(extinctionCoefficient, 0.0000001);
-                float stepExtinction = exp(-extinctionCoefficient * stepLength);
+                vec4 clampedExtinction = max(extinctionCoefficient, 0.0000001);
+                vec4 stepExtinction = exp(-extinctionCoefficient * stepLength);
 
                 float lightDotView = dot(normalize(uniforms.light.direction.xyz), normalize(rayDirection));
                 vec3 lightColor = uniforms.light.color.rgb * uniforms.light.intensity;
-                float lightExtinction =  GetExtinctionToLight(rayPos, noiseIdx++);
+                vec4 lightExtinction =  GetExtinctionToLight(rayPos, noiseIdx++);
 
                 float phaseFunction = DualPhaseFunction(uniforms.eccentricityFirstPhase, 
                     uniforms.eccentricitySecondPhase, uniforms.phaseAlpha, lightDotView);
-                vec3 stepScattering = scatteringCoefficient * (directAlbedo * phaseFunction * lightColor * lightExtinction
-                    + ambientAlbedo * ComputeAmbientColor(rayPos, extinctionCoefficient));
+                vec3 stepScattering = scatteringCoefficient * (directAlbedo * phaseFunction * lightColor * lightExtinction.rgb
+                    + ambientAlbedo * ComputeAmbientColor(rayPos));
 
-                vec3 luminanceIntegral = (stepScattering - stepScattering * stepExtinction) / clampedExtinction;
-                scattering += luminanceIntegral * extinction;
+                vec3 luminanceIntegral = (stepScattering - stepScattering * stepExtinction.rgb) / clampedExtinction.rgb;
+                scattering += luminanceIntegral * extinction.rgb;
                 extinction *= stepExtinction;
             }
         }
@@ -372,6 +371,6 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
         rayPos += stepVector;
     }
 
-    return vec4(scattering, extinction);
+    return vec4(scattering, extinction.a);
 
 }

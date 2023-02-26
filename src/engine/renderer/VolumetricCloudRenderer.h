@@ -74,6 +74,7 @@ namespace Atlas {
 
                 float extinctionFactor;
                 float scatteringFactor;
+                vec4 extinctionCoefficients;
 
                 float eccentricityFirstPhase;
                 float eccentricitySecondPhase;

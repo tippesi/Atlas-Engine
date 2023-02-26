@@ -111,8 +111,12 @@ void main() {
     else {
         volumetric = vec4(textureLod(lowResVolumetricTexture, texCoord, 0).rgb, 0.0);
     }
-
 	vec3 viewPosition = ConvertDepthToViewSpace(depth, texCoord);
+    // Handle as infinity
+    if (depth == 1.0) {
+        viewPosition *= 1000.0;
+    }
+
 	vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
 
     vec4 resolve = imageLoad(resolveImage, pixel);
@@ -123,6 +127,7 @@ void main() {
 #ifdef CLOUDS
     if (uniforms.cloudsEnabled > 0) {
         vec4 cloudScattering = texture(lowResVolumetricCloudsTexture, texCoord);
+        cloudScattering = uniforms.fogEnabled > 0 ? mix(uniforms.fog.color, cloudScattering, fogAmount) : cloudScattering;
         float alpha = cloudScattering.a;
         resolve = alpha * resolve + cloudScattering;
     }

@@ -88,6 +88,7 @@ namespace Atlas {
 
 					.extinctionFactor = clouds->scattering.extinctionFactor,
 					.scatteringFactor = clouds->scattering.scatteringFactor,
+					.extinctionCoefficients = clouds->scattering.extinctionCoefficients,
 
 					.eccentricityFirstPhase = clouds->scattering.eccentricityFirstPhase,
 					.eccentricitySecondPhase = clouds->scattering.eccentricitySecondPhase,
