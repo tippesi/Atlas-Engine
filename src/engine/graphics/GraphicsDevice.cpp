@@ -417,30 +417,33 @@ namespace Atlas {
             assert(allListSubmitted && "Not all command list were submitted before frame completion." &&
                 "Consider using a frame independent command lists for longer executions.");
 
-            if (frame->submittedCommandLists.size()) {
-                std::vector<VkSemaphore> semaphores;
-                // For now, we will only use sequential execution of queue submits,
-                // which means only the latest submit can signal its semaphore here
-                //for (auto cmd : frameData->submittedCommandLists)
-                //    semaphores.push_back(cmd->semaphore);
-                semaphores.push_back(frame->submittedCommandLists.back()->semaphore);
+            // Nothing was submitted, we need to return
+            if (!frame->submittedCommandLists.size()) {
+                return;
+            }
 
-                VkPresentInfoKHR presentInfo = {};
-                presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-                presentInfo.pNext = nullptr;
-                presentInfo.pSwapchains = &swapChain->swapChain;
-                presentInfo.swapchainCount = 1;
-                presentInfo.pWaitSemaphores = semaphores.data();
-                presentInfo.waitSemaphoreCount = uint32_t(semaphores.size());
-                presentInfo.pImageIndices = &swapChain->aquiredImageIndex;
+            std::vector<VkSemaphore> semaphores;
+            // For now, we will only use sequential execution of queue submits,
+            // which means only the latest submit can signal its semaphore here
+            //for (auto cmd : frameData->submittedCommandLists)
+            //    semaphores.push_back(cmd->semaphore);
+            semaphores.push_back(frame->submittedCommandLists.back()->semaphore);
 
-                VkQueue &presenterQueue = queueFamilyIndices.queues[QueueType::PresentationQueue];
-                auto result = vkQueuePresentKHR(presenterQueue, &presentInfo);
-                if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-                    recreateSwapChain = true;
-                } else {
-                    VK_CHECK(result)
-                }
+            VkPresentInfoKHR presentInfo = {};
+            presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+            presentInfo.pNext = nullptr;
+            presentInfo.pSwapchains = &swapChain->swapChain;
+            presentInfo.swapchainCount = 1;
+            presentInfo.pWaitSemaphores = semaphores.data();
+            presentInfo.waitSemaphoreCount = uint32_t(semaphores.size());
+            presentInfo.pImageIndices = &swapChain->aquiredImageIndex;
+
+            VkQueue &presenterQueue = queueFamilyIndices.queues[QueueType::PresentationQueue];
+            auto result = vkQueuePresentKHR(presenterQueue, &presentInfo);
+            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+                recreateSwapChain = true;
+            } else {
+                VK_CHECK(result)
             }
 
             // Delete data that is marked for deletion for this frame

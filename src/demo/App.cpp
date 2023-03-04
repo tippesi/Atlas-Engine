@@ -134,6 +134,10 @@ void App::Render(float deltaTime) {
 
     static float cloudDepthDebug = 0.0f;
 
+    if (window.GetFlags() & AE_WINDOW_HIDDEN) {
+        return;
+    }
+
     if (animateLight) directionalLight->direction = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
 
     if (pathTrace) {

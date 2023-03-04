@@ -56,6 +56,12 @@ namespace Atlas {
          */
 		uint32_t GetID();
 
+        /**
+         * Returns the window flags as a bitfield
+         * @return An integer with the corresponding bits set
+         */
+        uint32_t GetFlags() const;
+
 		/**
          * Sets the title of the window.
          * @param title The title string
