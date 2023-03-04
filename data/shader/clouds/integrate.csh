@@ -226,10 +226,7 @@ vec4 GetExtinctionToLight(vec3 pos, int ditherIdx) {
     float inDist, outDist;
     CalculateRayLength(pos, rayDirection, inDist, outDist);
 
-    float sampleSegmnet = 0.5;
-    float rayLength = sampleSegmnet * (outDist - inDist);
-    float stepLength = rayLength / float(lightSampleCount);
-    vec3 stepVector = rayDirection * stepLength;
+    float rayLength = (outDist - inDist) * 0.5;
 
     // Dither secondary rays
     float noiseOffset = GetNoiseOffset(ditherIdx);
@@ -253,7 +250,7 @@ vec4 GetExtinctionToLight(vec3 pos, int ditherIdx) {
 
         float delta = t1 - t0;
         float t = t0 + delta * noiseOffset;
-        vec3 samplePoint = pos + rayDirection * t * (outDist - inDist);
+        vec3 samplePoint = pos + rayDirection * t * rayLength;
 
         vec3 shapeTexCoords, detailTexCoords;
         CalculateTexCoords(samplePoint, shapeTexCoords, detailTexCoords);
@@ -261,7 +258,7 @@ vec4 GetExtinctionToLight(vec3 pos, int ditherIdx) {
         float density = saturate(SampleDensity(samplePoint, shapeTexCoords, detailTexCoords, vec3(1.0), floor(0.0)));
         vec4 extinctionCoefficient = uniforms.extinctionFactor * uniforms.extinctionCoefficients * density;
 
-        extinctionAccumulation += extinctionCoefficient * stepLength;
+        extinctionAccumulation += extinctionCoefficient * delta * rayLength;
     }
 
     return exp(-extinctionAccumulation);
@@ -276,7 +273,7 @@ vec3 ComputeAmbientColor(vec3 pos) {
 
     float heightFraction = (distFromCenter - uniforms.innerRadius) / (uniforms.outerRadius - uniforms.innerRadius);
     float ambientContribution = saturate(heightFraction + 0.1);
-    return isotropicLightTop * ambientContribution;
+    return 0.5 * isotropicLightTop * ambientContribution;
 
 }
 
