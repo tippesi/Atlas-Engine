@@ -97,24 +97,27 @@ namespace Atlas {
             {
                 Graphics::Profiler::BeginQuery("Main");
 
-                commandList->BeginRenderPass(device->swapChain, true);
+                // We can't return here because of the queries
+                if (device->swapChain->isComplete) {
+                    commandList->BeginRenderPass(device->swapChain, true);
 
-                auto pipelineConfig = GetMainPipelineConfig();
-                pipelineConfig.ManageMacro("FILMIC_TONEMAPPING", postProcessing.filmicTonemapping);
-                pipelineConfig.ManageMacro("VIGNETTE", postProcessing.vignette.enable);
-                pipelineConfig.ManageMacro("CHROMATIC_ABERRATION", postProcessing.chromaticAberration.enable);
+                    auto pipelineConfig = GetMainPipelineConfig();
+                    pipelineConfig.ManageMacro("FILMIC_TONEMAPPING", postProcessing.filmicTonemapping);
+                    pipelineConfig.ManageMacro("VIGNETTE", postProcessing.vignette.enable);
+                    pipelineConfig.ManageMacro("CHROMATIC_ABERRATION", postProcessing.chromaticAberration.enable);
 
-                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
-                commandList->BindPipeline(pipeline);
+                    auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+                    commandList->BindPipeline(pipeline);
 
-                SetUniforms(camera, scene);
+                    SetUniforms(camera, scene);
 
-                commandList->BindImage(target->hdrTexture.image, target->hdrTexture.sampler, 3, 0);
-                commandList->BindBuffer(uniformBuffer, 3, 4);
+                    commandList->BindImage(target->hdrTexture.image, target->hdrTexture.sampler, 3, 0);
+                    commandList->BindBuffer(uniformBuffer, 3, 4);
 
-                commandList->Draw(6, 1, 0, 0);
+                    commandList->Draw(6, 1, 0, 0);
 
-                commandList->EndRenderPass();
+                    commandList->EndRenderPass();
+                }
 
                 Graphics::Profiler::EndQuery();
             }

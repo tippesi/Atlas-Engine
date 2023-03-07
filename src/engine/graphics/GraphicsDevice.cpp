@@ -173,14 +173,18 @@ namespace Atlas {
             windowWidth = width;
             windowHeight = height;
 
-            if (width == 0 || height == 0) return nullptr;
-
             WaitForIdle();
+
+            // Semaphores can be in an invalid state after swap chain recreation
+            // To prevent this we also recreate the semaphores
+            for (auto& frame : frameData) {
+                frame.RecreateSemaphore(device);
+            }
 
             // Had some issue with passing the old swap chain and then deleting it after x frames.
             delete swapChain;
             swapChain = new SwapChain(supportDetails, nativeSurface, this,
-                width, height, presentMode, VK_NULL_HANDLE);
+                windowWidth, windowHeight, presentMode, VK_NULL_HANDLE);
 
             // Acquire first index since normally these are acquired at completion of frame
             auto frame = GetFrameData();
@@ -335,6 +339,9 @@ namespace Atlas {
             assert(!cmd->frameIndependent && "Submitted command list is frame independent."
                 && "Please use the flush method instead");
 
+            assert(swapChain->isComplete && "Swap chain should be complete."
+                && " The swap chain might have an invalid size due to a window resize");
+
             // After the submission of a command list, we don't unlock it anymore
             // for further use in this frame. Instead, we will unlock it again
             // when we get back to this frames data and start a new frame with it.
@@ -342,13 +349,20 @@ namespace Atlas {
 
             cmd->executionOrder = order;
 
-            std::vector<VkSemaphore> waitSemaphores = { frame->semaphore };
             std::vector<VkPipelineStageFlags> waitStages = { waitStage };
-            if (frame->submittedCommandLists.size() > 0 && order == ExecutionOrder::Sequential) {
-                waitSemaphores[0] = frame->submittedCommandLists.back()->semaphore;
-            }
-            else if (order == ExecutionOrder::Parallel) {
 
+            std::vector<VkSemaphore> waitSemaphores;
+            std::vector<VkSemaphore> submitSemaphores;
+            // Leave out any dependencies if the swap chain isn't complete
+            if (swapChain->isComplete) {
+                waitSemaphores = { frame->semaphore };
+                submitSemaphores = { cmd->semaphore };
+                if (frame->submittedCommandLists.size() > 0 && order == ExecutionOrder::Sequential) {
+                    waitSemaphores[0] = frame->submittedCommandLists.back()->semaphore;
+                }
+                else if (order == ExecutionOrder::Parallel) {
+
+                }
             }
 
             VkSubmitInfo submit = {};
@@ -357,8 +371,8 @@ namespace Atlas {
             submit.pWaitDstStageMask = waitStages.data();
             submit.waitSemaphoreCount = uint32_t(waitSemaphores.size());
             submit.pWaitSemaphores = waitSemaphores.data();
-            submit.signalSemaphoreCount = 1;
-            submit.pSignalSemaphores = &cmd->semaphore;
+            submit.signalSemaphoreCount = uint32_t(submitSemaphores.size());
+            submit.pSignalSemaphores = submitSemaphores.data();
             submit.commandBufferCount = 1;
             submit.pCommandBuffers = &cmd->commandBuffer;
 
@@ -410,40 +424,38 @@ namespace Atlas {
             std::lock_guard<std::mutex> lock(frame->submissionMutex);
 
             bool allListSubmitted = true;
-            for (auto commandList : commandLists) {
+            for (auto commandList : frame->commandLists) {
                 allListSubmitted &= commandList->isSubmitted;
             }
 
             assert(allListSubmitted && "Not all command list were submitted before frame completion." &&
                 "Consider using a frame independent command lists for longer executions.");
 
-            // Nothing was submitted, we need to return
-            if (!frame->submittedCommandLists.size()) {
-                return;
-            }
+            if (frame->submittedCommandLists.size() && swapChain->isComplete) {
+                std::vector<VkSemaphore> semaphores;
+                // For now, we will only use sequential execution of queue submits,
+                // which means only the latest submit can signal its semaphore here
+                //for (auto cmd : frameData->submittedCommandLists)
+                //    semaphores.push_back(cmd->semaphore);
+                semaphores.push_back(frame->submittedCommandLists.back()->semaphore);
 
-            std::vector<VkSemaphore> semaphores;
-            // For now, we will only use sequential execution of queue submits,
-            // which means only the latest submit can signal its semaphore here
-            //for (auto cmd : frameData->submittedCommandLists)
-            //    semaphores.push_back(cmd->semaphore);
-            semaphores.push_back(frame->submittedCommandLists.back()->semaphore);
+                VkPresentInfoKHR presentInfo = {};
+                presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+                presentInfo.pNext = nullptr;
+                presentInfo.pSwapchains = &swapChain->swapChain;
+                presentInfo.swapchainCount = 1;
+                presentInfo.pWaitSemaphores = semaphores.data();
+                presentInfo.waitSemaphoreCount = uint32_t(semaphores.size());
+                presentInfo.pImageIndices = &swapChain->aquiredImageIndex;
 
-            VkPresentInfoKHR presentInfo = {};
-            presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-            presentInfo.pNext = nullptr;
-            presentInfo.pSwapchains = &swapChain->swapChain;
-            presentInfo.swapchainCount = 1;
-            presentInfo.pWaitSemaphores = semaphores.data();
-            presentInfo.waitSemaphoreCount = uint32_t(semaphores.size());
-            presentInfo.pImageIndices = &swapChain->aquiredImageIndex;
-
-            VkQueue &presenterQueue = queueFamilyIndices.queues[QueueType::PresentationQueue];
-            auto result = vkQueuePresentKHR(presenterQueue, &presentInfo);
-            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-                recreateSwapChain = true;
-            } else {
-                VK_CHECK(result)
+                VkQueue& presenterQueue = queueFamilyIndices.queues[QueueType::PresentationQueue];
+                auto result = vkQueuePresentKHR(presenterQueue, &presentInfo);
+                if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+                    recreateSwapChain = true;
+                }
+                else {
+                    VK_CHECK(result)
+                }
             }
 
             // Delete data that is marked for deletion for this frame

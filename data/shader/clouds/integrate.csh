@@ -58,6 +58,7 @@ layout(std140, set = 3, binding = 6) uniform UniformBuffer {
 } uniforms;
 
 const float epsilon = 0.001;
+const float logEpsilon = -log(epsilon);
 const vec3 windDirection = normalize(vec3(0.4, -0.2, 0.4));
 const vec3 windDirectionDetail = normalize(vec3(0.1, -0.0, 0.1));
 const float windSpeed = 0.001;
@@ -234,31 +235,26 @@ vec4 GetExtinctionToLight(vec3 pos, int ditherIdx) {
 
     vec4 extinctionAccumulation = vec4(0.0);
     for (int i = 0; i < lightSampleCount; i++) {
-        /*
-        if (extinction <= epsilon) {
-            extinction = 0.0;
-            break;
+        if (extinctionAccumulation.a < logEpsilon) {
+            // Sampling scheme based on: https://github.com/turanszkij/WickedEngine/blob/master/WickedEngine/shaders/volumetricCloud_renderCS.hlsl
+            float t0 = float(i) / float(lightSampleCount);
+            float t1 = float(i + 1) / float(lightSampleCount);
+
+            t0 = t0 * t0;
+            t1 = t1 * t1;
+
+            float delta = t1 - t0;
+            float t = t0 + delta * noiseOffset;
+            vec3 samplePoint = pos + rayDirection * t * rayLength;
+
+            vec3 shapeTexCoords, detailTexCoords;
+            CalculateTexCoords(samplePoint, shapeTexCoords, detailTexCoords);
+
+            float density = saturate(SampleDensity(samplePoint, shapeTexCoords, detailTexCoords, vec3(1.0), floor(0.0)));
+            vec4 extinctionCoefficient = uniforms.extinctionFactor * uniforms.extinctionCoefficients * density;
+
+            extinctionAccumulation += extinctionCoefficient * delta * rayLength;
         }
-        */
-
-        // Sampling scheme based on: https://github.com/turanszkij/WickedEngine/blob/master/WickedEngine/shaders/volumetricCloud_renderCS.hlsl
-        float t0 = float(i) / float(lightSampleCount);
-        float t1 = float(i + 1) / float(lightSampleCount);
-
-        t0 = t0 * t0;
-        t1 = t1 * t1;
-
-        float delta = t1 - t0;
-        float t = t0 + delta * noiseOffset;
-        vec3 samplePoint = pos + rayDirection * t * rayLength;
-
-        vec3 shapeTexCoords, detailTexCoords;
-        CalculateTexCoords(samplePoint, shapeTexCoords, detailTexCoords);
-
-        float density = saturate(SampleDensity(samplePoint, shapeTexCoords, detailTexCoords, vec3(1.0), floor(0.0)));
-        vec4 extinctionCoefficient = uniforms.extinctionFactor * uniforms.extinctionCoefficients * density;
-
-        extinctionAccumulation += extinctionCoefficient * delta * rayLength;
     }
 
     return exp(-extinctionAccumulation);

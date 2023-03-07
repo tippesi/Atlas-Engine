@@ -67,6 +67,8 @@ namespace Atlas {
             VkClearValue colorClearValue = { .color = { { 1.0f, 1.0f, 1.0f, 1.0f } } };
             VkClearValue depthClearValue = { .depthStencil = { .depth = 1.0f } };
 
+            bool isComplete = false;
+
         private:
             VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats);
             VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& presentModes,

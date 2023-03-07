@@ -134,7 +134,8 @@ void App::Render(float deltaTime) {
 
     static float cloudDepthDebug = 0.0f;
 
-    if (window.GetFlags() & AE_WINDOW_HIDDEN) {
+    auto windowFlags = window.GetFlags();
+    if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
         return;
     }
 

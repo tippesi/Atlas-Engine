@@ -38,7 +38,7 @@ namespace Atlas {
             // Each frame we replace the query history by a new history
             // This is to make sure old thread names are thrown out the window
             std::unordered_map<std::string, ThreadHistory> newHistory;
-            while(unevaluatedThreadContexts.front().frameIdx + FRAME_DATA_COUNT <= frameIdx) {
+            while(unevaluatedThreadContexts.size() && unevaluatedThreadContexts.front().frameIdx + FRAME_DATA_COUNT <= frameIdx) {
                 auto& context = unevaluatedThreadContexts.front();
                 ThreadHistory history;
                 // Check if we can find an old history to fill
@@ -50,8 +50,9 @@ namespace Atlas {
                 }
 
                 std::vector<uint64_t> timeData(context.poolIdx);
+                // Due to fences and multibuffering all queries should be ready for retrievel
                 context.queryPool->GetResult(0, context.poolIdx, context.poolIdx * sizeof(uint64_t),
-                    timeData.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+                    timeData.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT);
 
                 for (auto& query : context.queries)
                     EvaluateQuery(context, query, timeData);

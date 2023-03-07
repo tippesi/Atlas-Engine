@@ -44,6 +44,10 @@ namespace Atlas {
             presentMode = ChoosePresentMode(supportDetails.presentModes, desiredMode);
             extent = ChooseExtent(supportDetails.capabilities, desiredWidth, desiredHeight);
 
+            if (extent.width == 0 || extent.height == 0) {
+                return;
+            }
+
             uint32_t imageCount = supportDetails.capabilities.minImageCount + 1;
             if (supportDetails.capabilities.maxImageCount > 0 &&
                 supportDetails.capabilities.maxImageCount < imageCount) {
@@ -173,9 +177,13 @@ namespace Atlas {
 
             depthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
+            isComplete = true;
+
         }
 
         SwapChain::~SwapChain() {
+
+            if (!isComplete) return;
 
             for (auto& frameBuffer : frameBuffers) {
                 vkDestroyFramebuffer(device->device, frameBuffer, nullptr);
@@ -195,6 +203,8 @@ namespace Atlas {
         }
 
         bool SwapChain::AcquireImageIndex(VkSemaphore semaphore) {
+
+            if (!isComplete) return false;
 
             auto result = vkAcquireNextImageKHR(device->device, swapChain, 1000000000,
                 semaphore, nullptr, &aquiredImageIndex);
