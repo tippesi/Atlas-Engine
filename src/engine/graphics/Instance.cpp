@@ -45,6 +45,7 @@ namespace Atlas {
 #ifdef AE_OS_MACOS
             createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
+
             createInfo.enabledExtensionCount = uint32_t(requiredExtensions.size());
             createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
@@ -53,7 +54,7 @@ namespace Atlas {
                 createInfo.enabledLayerCount = uint32_t(validationLayers.size());
                 createInfo.ppEnabledLayerNames = validationLayers.data();
 
-                createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
+                createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
             }
             else {
                 createInfo.enabledLayerCount = 0;
@@ -117,6 +118,10 @@ namespace Atlas {
             VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensionProperties.data()))
 
             for (auto& extensionProperty : extensionProperties) {
+                // Workaround for issue with Nsight Graphics GPU Profiler
+                // This extensions is given back but not supported by the instance
+                if (std::string(extensionProperty.extensionName) == "VK_EXT_tooling_info")
+                    continue;
                 extensionNames.push_back(extensionProperty.extensionName);
             }
 

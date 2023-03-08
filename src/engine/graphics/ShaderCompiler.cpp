@@ -57,8 +57,10 @@ namespace Atlas {
                 success = false;
                 return spirvBinary;
             }
+            
+            glslang::SpvOptions options;
+            glslang::GlslangToSpv(*program.getIntermediate(stage), spirvBinary, &options);
 
-            glslang::GlslangToSpv(*program.getIntermediate(stage), spirvBinary);
             success = true;
 
             spvtools::Optimizer opt(SPV_ENV_VULKAN_1_2);
