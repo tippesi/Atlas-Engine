@@ -30,8 +30,8 @@ namespace Atlas {
 
         class FrameData {
         public:
-            VkSemaphore semaphore;
-            VkFence fence;
+            VkSemaphore semaphore = VK_NULL_HANDLE;
+            VkFence fence = VK_NULL_HANDLE;
 
             std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;
@@ -54,6 +54,13 @@ namespace Atlas {
                     commandList->isLocked = false;
                 }
                 submittedCommandLists.clear();
+            }
+
+            void RecreateSemaphore(VkDevice device) {
+                vkDestroySemaphore(device, semaphore, nullptr);
+
+                VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
+                VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore))
             }
         };
 

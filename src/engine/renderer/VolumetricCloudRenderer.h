@@ -64,8 +64,7 @@ namespace Atlas {
                 float outerRadius;
                 float distanceLimit;
 
-                float lowerHeightFalloff;
-                float upperHeightFalloff;
+                float heightStretch;
 
                 float shapeScale;
                 float detailScale;
@@ -73,17 +72,24 @@ namespace Atlas {
                 float detailSpeed;
                 float detailStrength;
 
-                float eccentricity;
                 float extinctionFactor;
                 float scatteringFactor;
+                vec4 extinctionCoefficients;
 
-                float silverLiningSpread;
-                float silverLiningIntensity;
+                float eccentricityFirstPhase;
+                float eccentricitySecondPhase;
+                float phaseAlpha;
 
                 float densityMultiplier;
 
                 float time;
                 uint32_t frameSeed;
+
+                int32_t sampleCount;
+                int32_t shadowSampleCount;
+
+                float darkEdgeDirect;
+                float darkEdgeDetail;
 			};
 
 			void GenerateShapeTexture(Graphics::CommandList* commandList,
@@ -98,7 +104,8 @@ namespace Atlas {
             PipelineConfig integratePipelineConfig;
             PipelineConfig temporalPipelineConfig;
 
-			Texture::Texture2D blueNoiseTexture;
+            Texture::Texture2D scramblingRankingTexture;
+            Texture::Texture2D sobolSequenceTexture;
             Buffer::Buffer volumetricUniformBuffer;
 
 		};

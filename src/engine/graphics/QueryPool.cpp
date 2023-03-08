@@ -27,11 +27,13 @@ namespace Atlas {
 
         }
 
-        void QueryPool::GetResult(uint32_t firstQuery, uint32_t queryCount, size_t dataSize,
+        bool QueryPool::GetResult(uint32_t firstQuery, uint32_t queryCount, size_t dataSize,
             void *result, size_t stride, VkQueryResultFlags flags) {
 
-            vkGetQueryPoolResults(device->device, pool, firstQuery,
-                queryCount, dataSize, result, stride, flags);
+            bool success = vkGetQueryPoolResults(device->device, pool, firstQuery,
+                queryCount, dataSize, result, stride, flags) == VK_SUCCESS;
+
+            return success;
 
         }
 

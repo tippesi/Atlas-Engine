@@ -39,7 +39,7 @@ namespace Atlas {
 		void RTReflectionRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
             Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-            static int32_t frameCount = 0;
+            static uint32_t frameCount = 0;
             
             auto reflection = scene->reflection;
             if (!reflection || !reflection->enable) return;

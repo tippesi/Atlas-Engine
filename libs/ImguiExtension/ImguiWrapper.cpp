@@ -118,9 +118,11 @@ void ImguiWrapper::Render() {
 
     auto instance = Atlas::Graphics::Instance::DefaultInstance;
     auto device = instance->GetGraphicsDevice();
+    auto swapChain = device->swapChain;
+
+    if (!device->swapChain->isComplete) return;
 
     auto commandList = device->GetCommandList(Atlas::Graphics::GraphicsQueue);
-    auto swapChain = device->swapChain;
 
     commandList->BeginCommands();
 

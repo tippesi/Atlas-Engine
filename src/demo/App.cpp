@@ -62,7 +62,7 @@ void App::LoadContent() {
     scene.fog->scatteringAnisotropy = 0.0f;
 
     scene.sky.clouds = std::make_shared<Atlas::Lighting::VolumetricClouds>();
-    scene.sky.clouds->minHeight = 300.0f;
+    scene.sky.clouds->minHeight = 100.0f;
     scene.sky.clouds->maxHeight = 600.0f;
 
     scene.sky.atmosphere = std::make_shared<Atlas::Lighting::Atmosphere>();
@@ -133,6 +133,11 @@ void App::Render(float deltaTime) {
     static bool slowMode = false;
 
     static float cloudDepthDebug = 0.0f;
+
+    auto windowFlags = window.GetFlags();
+    if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
+        return;
+    }
 
     if (animateLight) directionalLight->direction = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
 
@@ -425,22 +430,28 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("Clouds")) {
                 ImGui::Checkbox("Enable##Clouds", &clouds->enable);
                 ImGui::Checkbox("Debug##Clouds", &debugClouds);
+                ImGui::Text("Quality");
+                ImGui::SliderInt("Sample count##Clouds", &clouds->sampleCount, 1, 128);
+                ImGui::SliderInt("Shadow sample count##Clouds", &clouds->shadowSampleCount, 1, 16);
+                ImGui::Text("Shape");
                 ImGui::SliderFloat("Density multiplier##Clouds", &clouds->densityMultiplier, 0.0f, 1.0f);
-                ImGui::SliderFloat("Lower height falloff##Clouds", &clouds->lowerHeightFalloff, 0.0f, 1.0f);
-                ImGui::SliderFloat("Upper height falloff##Clouds", &clouds->upperHeightFalloff, 0.0f, 1.0f);
+                ImGui::SliderFloat("Height stretch##Clouds", &clouds->heightStretch, 0.0f, 1.0f);
                 if (ImGui::Button("Update noise textures##Clouds")) {
                     clouds->needsNoiseUpdate = true;
                 }
                 ImGui::Separator();
                 ImGui::Text("Dimensions");
                 ImGui::SliderFloat("Min height##Clouds", &clouds->minHeight, 0.0f, 1000.0f);
-                ImGui::SliderFloat("Max height##Clouds", &clouds->maxHeight, 0.0f, 1000.0f);
+                ImGui::SliderFloat("Max height##Clouds", &clouds->maxHeight, 0.0f, 4000.0f);
                 ImGui::SliderFloat("Distance limit##Clouds", &clouds->distanceLimit, 0.0f, 10000.0f);
                 ImGui::Separator();
                 ImGui::Text("Scattering");
-                ImGui::SliderFloat("Eccentricity", &clouds->scattering.eccentricity, -1.0f, 1.0f);
+                ImGui::ColorPicker3("Extinction coefficients", &clouds->scattering.extinctionCoefficients[0]);
                 ImGui::SliderFloat("Extinction factor", &clouds->scattering.extinctionFactor, 0.0001f, 10.0f);
                 ImGui::SliderFloat("Scattering factor", &clouds->scattering.scatteringFactor, 0.0001f, 10.0f);
+                ImGui::SliderFloat("Eccentricity first phase", &clouds->scattering.eccentricityFirstPhase, -1.0f, 1.0f);
+                ImGui::SliderFloat("Eccentricity second phase", &clouds->scattering.eccentricitySecondPhase, -1.0f, 1.0f);
+                ImGui::SliderFloat("Phase alpha", &clouds->scattering.phaseAlpha, 0.0f, 1.0f);
                 ImGui::Separator();
                 ImGui::Text("Noise texture behaviour");
                 ImGui::SliderFloat("Shape scale##Clouds", &clouds->shapeScale, 0.0f, 100.0f);
@@ -450,8 +461,8 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat("Detail strength##Clouds", &clouds->detailStrength, 0.0f, 1.0f);
                 ImGui::Separator();
                 ImGui::Text("Silver lining");
-                ImGui::SliderFloat("Silver lining spread##Clouds", &clouds->silverLiningSpread, 0.0f, 1.0f);
-                ImGui::SliderFloat("Silver lining intensity##Clouds", &clouds->silverLiningIntensity, 0.0f, 10.0f);
+                ImGui::SliderFloat("Dark edge strength##Clouds", &clouds->darkEdgeFocus, 0.0f, 1025.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+                ImGui::SliderFloat("Dark edge ambient##Clouds", &clouds->darkEdgeAmbient, 0.0f, 1.0f);
             }
             if (ImGui::CollapsingHeader("Postprocessing")) {
                 ImGui::Text("Temporal anti-aliasing");
@@ -466,6 +477,7 @@ void App::Render(float deltaTime) {
                 ImGui::Text("Image effects");
                 ImGui::Checkbox("Filmic tonemapping", &scene.postProcessing.filmicTonemapping);
                 ImGui::SliderFloat("Saturation##Postprocessing", &scene.postProcessing.saturation, 0.0f, 2.0f);
+                ImGui::SliderFloat("White point##Postprocessing", &scene.postProcessing.whitePoint, 0.0f, 100.0f, "%.3f", 2.0f);
             }
             if (ImGui::CollapsingHeader("Materials")) {
                 int32_t id = 0;

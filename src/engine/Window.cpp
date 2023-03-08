@@ -67,6 +67,12 @@ namespace Atlas {
 
 	}
 
+    uint32_t Window::GetFlags() const {
+
+        return SDL_GetWindowFlags(sdlWindow);
+
+    }
+
 	void Window::SetTitle(std::string title) {
 
 		SDL_SetWindowTitle(sdlWindow, title.c_str());

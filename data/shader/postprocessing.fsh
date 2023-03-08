@@ -9,6 +9,7 @@ layout(set = 3, binding = 3) uniform sampler2D bloomThirdTexture;
 
 layout(set = 3, binding = 4) uniform UniformBuffer {
 	float exposure;
+	float whitePoint;
 	float saturation;
 	float timeInMilliseconds;
 	int bloomPasses;
@@ -38,31 +39,31 @@ vec3 ToneMap(vec3 hdrColor) {
 	
 }
 
+float ToneMap(float luminance) {
+
+	return 1.0 - exp(-luminance);
+
+}
+
 vec3 saturate(vec3 color, float factor) {
 	const vec3 luma = vec3(0.299, 0.587, 0.114);
     vec3 pixelLuminance = vec3(dot(color, luma));
 	return mix(pixelLuminance, color, factor);
 }
 
+const mat3 RGBToYCoCgMatrix = mat3(0.25, 0.5, -0.25, 0.5, 0.0, 0.5, 0.25, -0.5, -0.25);
+const mat3 YCoCgToRGBMatrix = mat3(1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, 1.0, -1.0);
 
-//note: uniformly distributed, normalized rand, [0;1[
-float nrand( vec2 n ) {
-	return fract(sin(dot(n.xy, vec2(12.9898, 78.233)))* 43758.5453);
-}
-//note: remaps v to [0;1] in interval [a;b]
-float remap( float a, float b, float v ) {
-	return clamp( (v-a) / (b-a), 0.0, 1.0 );
-}
-//note: quantizes in l levels
-float truncf( float a, float l ) {
-	return floor(a*l)/l;
+vec3 RGBToYCoCg(vec3 RGB) {
+
+	return RGBToYCoCgMatrix * RGB;
+
 }
 
-float n2rand( vec2 n ) {
-	float t = fract(Uniforms.timeInMilliseconds/1000000.0f);
-	float nrnd0 = nrand( n + 0.07*t );
-	float nrnd1 = nrand( n + 0.11*t );
-	return (nrnd0+nrnd1) / 2.0;
+vec3 YCoCgToRGB(vec3 YCoCg) {
+
+	return YCoCgToRGBMatrix * YCoCg;
+
 }
 
 void main() {
@@ -122,13 +123,43 @@ void main() {
 	
 	// Apply the tone mapping because we want the colors to be back in
 	// normal range
+#ifdef HDR
+	color = ToneMap(color);
+
+	// HLG curve: Rec. 2100 (for HLG)
+	float a = 0.17883277;
+	float b = 0.28466892;
+	float c = 0.55991073;
+	float threshold = 1.0 / 12.0;
+	color.r = color.r <= threshold ? sqrt(3.0 * color.r) : a * log(12.0 * color.r - b) + c;
+	color.g = color.g <= threshold ? sqrt(3.0 * color.g) : a * log(12.0 * color.g - b) + c;
+	color.b = color.b <= threshold ? sqrt(3.0 * color.b) : a * log(12.0 * color.b - b) + c;
+
+	/*
+	// PQ curve
+	float m1 = 1305.0 / 8192.0;
+	float m2 = 2523.0 / 32.0;
+	float c1 = 107.0 / 128.0;
+	float c2 = 2413.0 / 128.0;
+	float c3 = 2392.0 / 128.0;
+
+	vec3 Y = color / 10000.0;
+	vec3 Ym1 = pow(Y, vec3(m1));
+
+	color = pow((c1 + c2 * Ym1) / (1 + c3 * Ym1), vec3(m2));
+	*/
+#else
 #ifdef FILMIC_TONEMAPPING
 	color = ACESToneMap(color);
 #else
 	color = ToneMap(color);
 #endif
+
+#ifdef GAMMA_CORRECTION
 	color = pow(color, vec3(gamma));
-	
+#endif
+#endif
+
 	color = clamp(saturate(color, Uniforms.saturation), vec3(0.0), vec3(1.0));
 
 #ifdef VIGNETTE	

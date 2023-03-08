@@ -21,6 +21,7 @@ namespace Atlas {
 		private:
             struct alignas(16) Uniforms {
                 float exposure;
+                float whitePoint;
                 float saturation;
                 float timeInMilliseconds;
                 int32_t bloomPasses;

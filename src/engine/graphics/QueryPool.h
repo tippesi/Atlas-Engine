@@ -20,7 +20,7 @@ namespace Atlas {
 
             ~QueryPool();
 
-            void GetResult(uint32_t firstQuery, uint32_t queryCount, size_t dataSize,
+            bool GetResult(uint32_t firstQuery, uint32_t queryCount, size_t dataSize,
                 void* result, size_t stride, VkQueryResultFlags flags = 0);
 
             void Reset();

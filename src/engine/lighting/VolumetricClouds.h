@@ -18,28 +18,35 @@ namespace Atlas {
 			Texture::Texture3D detailTexture;
 
 			struct Scattering {
-				float extinctionFactor = 0.33f;
-				float scatteringFactor = 1.25;
-				float eccentricity = 0.0f;
+				float extinctionFactor = 0.24f;
+				float scatteringFactor = 2.00f;
+
+				vec4 extinctionCoefficients = vec4(0.93f, 0.965f, 1.0f, 1.0f);
+
+                float eccentricityFirstPhase = 0.0f;
+                float eccentricitySecondPhase = -0.5f;
+                float phaseAlpha = 0.5f;
 			};
 
+			int32_t sampleCount = 64;
+			int32_t shadowSampleCount = 5;
+
 			float minHeight = 100.0f;
-			float maxHeight = 400.0f;
-			float distanceLimit = 2000.0f;
+			float maxHeight = 600.0f;
+			float distanceLimit = 3000.0f;
 
 			float shapeScale = 1.0f;
 			float detailScale = 16.0f;
-			float shapeSpeed = 1.0f;
+			float shapeSpeed = 5.0f;
 			float detailSpeed = 10.0f;
-			float detailStrength = 0.3f;
+			float detailStrength = 0.15f;
 
-			float densityMultiplier = 0.7f;
+			float densityMultiplier = 0.8f;
 
-			float lowerHeightFalloff = 0.1f;
-			float upperHeightFalloff = 0.67f;
+			float heightStretch = 0.5f;
 
-			float silverLiningSpread = 0.24f;
-			float silverLiningIntensity = 0.077f;
+			float darkEdgeFocus = 2.0f;
+			float darkEdgeAmbient = 0.25f;
 
 			Scattering scattering;
 
