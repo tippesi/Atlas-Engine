@@ -65,7 +65,7 @@ const float multiscatterEccentricityAttenuation = 0.5;
 
 const float epsilon = 0.001;
 const float logEpsilon = -log(epsilon);
-const vec3 windDirection = normalize(vec3(0.4, -0.2, 0.4));
+const vec3 windDirection = normalize(vec3(0.4, -0.4, 0.4));
 const vec3 windDirectionDetail = normalize(vec3(0.1, -0.0, 0.1));
 const float windSpeed = 0.001;
 
@@ -275,7 +275,7 @@ vec3 ComputeAmbientColor(vec3 pos) {
 
     float heightFraction = (distFromCenter - uniforms.innerRadius) / (uniforms.outerRadius - uniforms.innerRadius);
     float ambientContribution = saturate(heightFraction + 0.1);
-    return 0.75 * isotropicLightTop * ambientContribution;
+    return 0.5 * isotropicLightTop * ambientContribution;
 
 }
 

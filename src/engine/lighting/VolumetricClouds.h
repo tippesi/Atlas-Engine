@@ -21,7 +21,7 @@ namespace Atlas {
 				float extinctionFactor = 0.24f;
 				float scatteringFactor = 2.00f;
 
-				vec4 extinctionCoefficients = vec4(0.86f, 0.93f, 1.0f, 1.0f);
+				vec4 extinctionCoefficients = vec4(0.93f, 0.965f, 1.0f, 1.0f);
 
                 float eccentricityFirstPhase = 0.0f;
                 float eccentricitySecondPhase = -0.5f;
