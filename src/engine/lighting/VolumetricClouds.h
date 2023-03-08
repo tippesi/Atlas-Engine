@@ -19,7 +19,7 @@ namespace Atlas {
 
 			struct Scattering {
 				float extinctionFactor = 0.24f;
-				float scatteringFactor = 1.00f;
+				float scatteringFactor = 2.00f;
 
 				vec4 extinctionCoefficients = vec4(0.86f, 0.93f, 1.0f, 1.0f);
 
@@ -28,7 +28,7 @@ namespace Atlas {
                 float phaseAlpha = 0.5f;
 			};
 
-			int32_t sampleCount = 32;
+			int32_t sampleCount = 64;
 			int32_t shadowSampleCount = 5;
 
 			float minHeight = 100.0f;

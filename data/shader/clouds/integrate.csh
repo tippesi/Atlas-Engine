@@ -9,6 +9,8 @@
 
 #include <clouds.hsh>
 
+#define MULTISCATTER_OCTAVES 2
+
 layout (local_size_x = 8, local_size_y = 4) in;
 
 layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D volumetricCloudImage;
@@ -56,6 +58,10 @@ layout(std140, set = 3, binding = 6) uniform UniformBuffer {
     float darkEdgeFocus;
     float darkEdgeAmbient;
 } uniforms;
+
+const float multiscatterAttenuation = 0.5;
+const float multiscatterContribution = 0.5;
+const float multiscatterEccentricityAttenuation = 0.5;
 
 const float epsilon = 0.001;
 const float logEpsilon = -log(epsilon);
@@ -269,7 +275,7 @@ vec3 ComputeAmbientColor(vec3 pos) {
 
     float heightFraction = (distFromCenter - uniforms.innerRadius) / (uniforms.outerRadius - uniforms.innerRadius);
     float ambientContribution = saturate(heightFraction + 0.1);
-    return 0.5 * isotropicLightTop * ambientContribution;
+    return 0.75 * isotropicLightTop * ambientContribution;
 
 }
 
