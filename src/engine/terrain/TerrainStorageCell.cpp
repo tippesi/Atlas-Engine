@@ -13,10 +13,10 @@ namespace Atlas {
 
 		bool TerrainStorageCell::IsLoaded() {
 
-			if (heightField == nullptr)
+			if (!heightField.IsValid())
 				return false;
 
-			if (normalMap == nullptr)
+			if (!normalMap.IsValid())
 				return false;
 
 			return true;

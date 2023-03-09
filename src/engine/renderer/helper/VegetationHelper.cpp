@@ -51,9 +51,9 @@ namespace Atlas {
 
 				// Check if the vegetation meshes have changed
 				size_t meshFoundCount = 0;
-				for (auto mesh : meshes) meshFoundCount += meshToIdxMap.find(mesh) != meshToIdxMap.end() ? 1 : 0;
-				if (meshFoundCount != meshToIdxMap.size() || meshFoundCount != meshes.size()) 
-					GenerateBuffers(vegetation);
+				//for (auto mesh : meshes) meshFoundCount += meshToIdxMap.find(mesh) != meshToIdxMap.end() ? 1 : 0;
+				//if (meshFoundCount != meshToIdxMap.size() || meshFoundCount != meshes.size())
+					//GenerateBuffers(vegetation);
 
                 /*
 				meshInformationBuffer.BindBase(0);

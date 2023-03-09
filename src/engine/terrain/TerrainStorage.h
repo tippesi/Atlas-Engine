@@ -16,6 +16,8 @@ namespace Atlas {
 		class TerrainStorage {
 
 		public:
+            TerrainStorage() = default;
+
 			/**
              * Constructs a terrain storage object
              * @param rootNodeCount The root node count of the terrain
@@ -51,21 +53,21 @@ namespace Atlas {
 			 * @param slot
 			 * @param material
 			 */
-			void AddMaterial(int32_t slot, Material* material);
+			void AddMaterial(int32_t slot, Ref<Material> material);
 
 			/**
 			 *
 			 * @param slot
 			 * @param material
 			 */
-			void RemoveMaterial(int32_t slot, Material* material);
+			void RemoveMaterial(int32_t slot, Ref<Material> material);
 
 			/**
 			 *
 			 * @return
 			 * @note Material pointers might be null (empty slots)
 			 */
-			std::vector<Material*> GetMaterials();
+			std::vector<Ref<Material>> GetMaterials();
 
 			/**
              * The storage cells the terrain request to change the level of detail.
@@ -93,7 +95,7 @@ namespace Atlas {
 
 			int32_t* LoDSideLengths;
 
-			std::vector<Material*> materials;
+			std::vector<Ref<Material>> materials;
 
 			std::vector<std::vector<TerrainStorageCell>> cells;
 

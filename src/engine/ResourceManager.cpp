@@ -55,6 +55,7 @@ namespace Atlas {
 
 		std::lock_guard<std::mutex> guard(materialMutex);
 
+        /*
 		for (auto mat : materials) {
 			if (mat->name == path)
 				return mat;
@@ -66,6 +67,8 @@ namespace Atlas {
 			materials.push_back(material);
 
 		return material;
+        */
+        return nullptr;
 
 	}
 
@@ -102,6 +105,7 @@ namespace Atlas {
 
 		auto terrain = Atlas::Loader::TerrainLoader::LoadTerrain(path);
 
+        /*
 		if (terrain) {
 			terrains.push_back(terrain);
 
@@ -114,8 +118,9 @@ namespace Atlas {
 				materials.push_back(mat);
 			}
 		}
+        */
 
-		return terrain;
+		return nullptr;
 
 	}
 

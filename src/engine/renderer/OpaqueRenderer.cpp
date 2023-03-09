@@ -132,6 +132,7 @@ namespace Atlas {
                 };
                 commandList->PushConstants("constants", &pushConstants);
 
+                if(!instance.count) continue;
                 commandList->DrawIndexed(subData->indicesCount, instance.count, subData->indicesOffset,
                     0, instance.offset);
 

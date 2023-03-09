@@ -20,12 +20,10 @@ namespace Atlas {
 			}
 
 			meshToActorMap[actor->mesh] = std::vector<Actor::VegetationActor*>{ actor };
-			meshToBufferMap[actor->mesh] = new Buffers {
-                /*
-				Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4), AE_BUFFER_IMMUTABLE),
-				Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4), AE_BUFFER_IMMUTABLE),
-				Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(vec4), AE_BUFFER_IMMUTABLE)
-                 */
+			meshToBufferMap[actor->mesh] = Buffers {
+				Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4)),
+				Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4)),
+				Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4))
 			};
 
 		}
@@ -56,9 +54,9 @@ namespace Atlas {
 				instanceData.push_back(instance);
 			}
 
-			buffers->culledInstanceData.SetSize(instanceData.size());
-			buffers->binnedInstanceData.SetSize(instanceData.size());
-			buffers->instanceData.SetSize(instanceData.size(), instanceData.data());
+			buffers.culledInstanceData.SetSize(instanceData.size());
+			buffers.binnedInstanceData.SetSize(instanceData.size());
+			buffers.instanceData.SetSize(instanceData.size(), instanceData.data());
 
 		}
 
@@ -73,7 +71,7 @@ namespace Atlas {
 
 		}
 
-		Vegetation::Buffers* Vegetation::GetBuffers(Mesh::VegetationMesh* mesh)
+		Vegetation::Buffers Vegetation::GetBuffers(Mesh::VegetationMesh* mesh)
 		{
 			return meshToBufferMap[mesh];
 		}

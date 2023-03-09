@@ -41,10 +41,14 @@ namespace Atlas {
         void Texture2D::InitializeInternal(Atlas::Common::Image<uint8_t> &image, Wrapping wrapping,
             Filtering filtering) {
 
+            // RGB images are mostly not supported
+            if (image.channels == 3) {
+                image.ExpandToChannelCount(4, 0);
+            }
+
             switch(image.channels) {
                 case 1: format = VK_FORMAT_R8_UNORM; break;
                 case 2: format = VK_FORMAT_R8G8_UNORM; break;
-                case 3: format = VK_FORMAT_R8G8B8_UNORM; break;
                 default: format = VK_FORMAT_R8G8B8A8_UNORM; break;
             }
 

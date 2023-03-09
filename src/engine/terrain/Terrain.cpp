@@ -31,7 +31,7 @@ namespace Atlas {
 						 patchSizeFactor * 8.0f;
 			float ratio = sideLength / (float)rootNodeSideCount;
 
-			storage = new TerrainStorage(rootNodeCount, LoDCount, sideLength, 1024, 32);
+			storage = TerrainStorage(rootNodeCount, LoDCount, sideLength, 1024, 32);
 			LoDDistances = std::vector<float>(LoDCount);
 			LoDImage = Common::Image<uint8_t>(leafNodesSideCount, leafNodesSideCount, 1);
 
@@ -44,10 +44,10 @@ namespace Atlas {
 
 			for (int32_t i = 0; i < rootNodeSideCount; i++) {
 				for (int32_t j = 0; j < rootNodeSideCount; j++) {
-					TerrainStorageCell *cell = storage->GetCell(i, j, 0);
-					storage->requestedCells.push_back(cell);
+					TerrainStorageCell *cell = storage.GetCell(i, j, 0);
+					storage.requestedCells.push_back(cell);
 					rootNodes.push_back(TerrainNode(vec2((float) i * ratio, (float) j * ratio), heightScale,
-						ratio, 0, LoDCount, rootNodeSideCount, ivec2(0, 0), ivec2(i, j), storage, cell));
+						ratio, 0, LoDCount, rootNodeSideCount, ivec2(0, 0), ivec2(i, j), &storage, cell));
 				}
 			}
 
@@ -148,7 +148,7 @@ namespace Atlas {
 			float xPosition = floorf(x);
 			float zPosition = floorf(z);
 
-			auto cell = storage->GetCell(int32_t(xPosition), int32_t(zPosition), LoDCount - 1);
+			auto cell = storage.GetCell(int32_t(xPosition), int32_t(zPosition), LoDCount - 1);
 
 			if (!cell)
 				return 0.0f;
@@ -157,8 +157,8 @@ namespace Atlas {
 			z -= zPosition;
 
 			// Cells have overlapping edges (last pixels are on next cell)
-			x *= float(cell->heightField->width - 1);
-			z *= float(cell->heightField->height - 1);
+			x *= float(cell->heightField.width - 1);
+			z *= float(cell->heightField.height - 1);
 
 			xPosition = floorf(x);
 			zPosition = floorf(z);
@@ -182,15 +182,15 @@ namespace Atlas {
             topLeft is in x direction
             bottomRight is in z direction
             */
-			float heightBottomLeft = cell->heightData[xIndex + cell->heightField->width * zIndex];
+			float heightBottomLeft = cell->heightData[xIndex + cell->heightField.width * zIndex];
 			float heightBottomRight = 0.0f;
 			float heightTopRight = 0.0f;
 			float heightTopLeft = 0.0f;
 
 			// Check if we must sample from a neighbour node (allows for errors while retrieving the height information at the edge of the terrain)
-			if (zIndex + 1 == cell->heightField->height &&
-				xIndex + 1 == cell->heightField->width) {
-				auto neighbourCell = storage->GetCell(xIndex + 1, zIndex + 1, LoDCount - 1);
+			if (zIndex + 1 == cell->heightField.height &&
+				xIndex + 1 == cell->heightField.width) {
+				auto neighbourCell = storage.GetCell(xIndex + 1, zIndex + 1, LoDCount - 1);
 
 				if (!neighbourCell) {
 					heightTopLeft = heightBottomLeft;
@@ -199,15 +199,15 @@ namespace Atlas {
 				}
 				else {
 					heightTopLeft = neighbourCell->heightData[1];
-					heightBottomRight = neighbourCell->heightData[neighbourCell->heightField->width];
-					heightTopRight = neighbourCell->heightData[neighbourCell->heightField->width + 1];
+					heightBottomRight = neighbourCell->heightData[neighbourCell->heightField.width];
+					heightTopRight = neighbourCell->heightData[neighbourCell->heightField.width + 1];
 				}
 			}
-			else if (zIndex + 1 == cell->heightField->height) {
+			else if (zIndex + 1 == cell->heightField.height) {
 
-				heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField->width * zIndex];
+				heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField.width * zIndex];
 
-				auto neighbourCell = storage->GetCell(xIndex, zIndex + 1, LoDCount - 1);
+				auto neighbourCell = storage.GetCell(xIndex, zIndex + 1, LoDCount - 1);
 
 				if (neighbourCell == nullptr) {
 					heightBottomRight = heightBottomLeft;
@@ -219,27 +219,27 @@ namespace Atlas {
 				}
 
 			}
-			else if (xIndex + 1 == cell->heightField->width) {
+			else if (xIndex + 1 == cell->heightField.width) {
 
-				heightBottomRight = cell->heightData[xIndex + cell->heightField->width * (zIndex + 1)];
+				heightBottomRight = cell->heightData[xIndex + cell->heightField.width * (zIndex + 1)];
 
-				auto neighbourCell = storage->GetCell(xIndex + 1, zIndex, LoDCount - 1);
+				auto neighbourCell = storage.GetCell(xIndex + 1, zIndex, LoDCount - 1);
 
 				if (neighbourCell == nullptr) {
 					heightTopLeft = heightBottomLeft;
 					heightTopRight = heightBottomRight;
 				}
 				else {
-					heightTopLeft = neighbourCell->heightData[zIndex * neighbourCell->heightField->width];
+					heightTopLeft = neighbourCell->heightData[zIndex * neighbourCell->heightField.width];
 					heightTopRight = neighbourCell->heightData[(zIndex + 1) *
-						neighbourCell->heightField->width];
+						neighbourCell->heightField.width];
 				}
 
 			}
 			else {
-				heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField->width * zIndex];
-				heightBottomRight = cell->heightData[xIndex + cell->heightField->width * (zIndex + 1)];
-				heightTopRight = cell->heightData[xIndex + 1 + cell->heightField->width * (zIndex + 1)];
+				heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField.width * zIndex];
+				heightBottomRight = cell->heightData[xIndex + cell->heightField.width * (zIndex + 1)];
+				heightTopRight = cell->heightData[xIndex + 1 + cell->heightField.width * (zIndex + 1)];
 			}
 
 			heightBottomLeft *= heightScale;
@@ -297,7 +297,7 @@ namespace Atlas {
 			float xIndex = floorf(x);
 			float zIndex = floorf(z);
 
-			return storage->GetCell((int32_t) xIndex, (int32_t) zIndex, LoD);
+			return storage.GetCell((int32_t) xIndex, (int32_t) zIndex, LoD);
 
 		}
 

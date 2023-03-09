@@ -18,7 +18,6 @@ namespace Atlas {
 			noise1 = Texture::Texture2D(N, N, AE_R8);
 			noise2 = Texture::Texture2D(N, N, AE_R8);
 			noise3 = Texture::Texture2D(N, N, AE_R8);
-            */
 
 			Common::Image<uint8_t> image0(N, N, 1);
 			Common::Image<uint8_t> image1(N, N, 1);
@@ -34,6 +33,7 @@ namespace Atlas {
 			noise1.SetData(image1.GetData());
 			noise2.SetData(image2.GetData());
 			noise3.SetData(image3.GetData());
+             */
 
             /*
 			displacementMap = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);

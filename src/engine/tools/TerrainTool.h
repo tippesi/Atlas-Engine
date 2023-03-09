@@ -26,12 +26,12 @@ namespace Atlas {
              * @warning The input should correspond to the terrain specifications
              */
 			static Terrain::Terrain* GenerateTerrain(Common::Image<uint16_t>& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
-					int32_t patchSize, float resolution, float height, Material* material);
+					int32_t patchSize, float resolution, float height, Ref<Material> material);
 
 
 			static Terrain::Terrain* GenerateTerrain(Common::Image<uint16_t>& heightImage, Common::Image<uint8_t>& splatImage,
 				int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution,
-				float height, std::vector<Material*> materials);
+				float height, std::vector<Ref<Material>> materials);
 
 			/**
              *

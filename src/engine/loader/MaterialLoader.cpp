@@ -10,7 +10,7 @@
 namespace Atlas {
 
     namespace Loader {
-		Material* MaterialLoader::LoadMaterial(std::string filename, int32_t mapResolution) {
+		Ref<Material> MaterialLoader::LoadMaterial(std::string filename, int32_t mapResolution) {
 
 			auto stream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
@@ -35,11 +35,11 @@ namespace Atlas {
 				auto prefix = line.substr(0, 3);
 				if (prefix == "BMP") {
 					material->baseColorMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage<uint8_t>(material->baseColorMapPath, true, 3);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->baseColorMapPath, true, 4);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-                    // material->baseColorMap = new Texture::Texture2D(image.width,
-                    // 	image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    material->baseColorMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                        VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
 					material->baseColorMap->SetData(image.GetData());
 				}
 				if (prefix == "OMP") {
@@ -47,8 +47,8 @@ namespace Atlas {
 					auto image = ImageLoader::LoadImage<uint8_t>(material->opacityMapPath, false, 1);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-                    // material->baseColorMap = new Texture::Texture2D(image.width,
-                    // 	image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    material->baseColorMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                        VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
 					material->baseColorMap->SetData(image.GetData());
 				}
 				else if (prefix == "NMP") {
@@ -56,8 +56,8 @@ namespace Atlas {
 					auto image = ImageLoader::LoadImage<uint8_t>(material->normalMapPath, false, 3);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-                    // material->normalMap = new Texture::Texture2D(image.width,
-                    // 	image.height, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    material->normalMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                        VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
 					material->normalMap->SetData(image.GetData());
 				}
 				else if (prefix == "RMP") {
@@ -65,8 +65,8 @@ namespace Atlas {
 					auto image = ImageLoader::LoadImage<uint8_t>(material->roughnessMapPath, false, 1);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-                    // material->roughnessMap = new Texture::Texture2D(image.width,
-                    // 	image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    material->roughnessMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                        VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
 					material->roughnessMap->SetData(image.GetData());
 				}
 				else if (prefix == "MMP") {
@@ -74,8 +74,8 @@ namespace Atlas {
 					auto image = ImageLoader::LoadImage<uint8_t>(material->metalnessMapPath, false, 1);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-                    // material->metalnessMap = new Texture::Texture2D(image.width,
-                    // 	image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    material->metalnessMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                        VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
 					material->metalnessMap->SetData(image.GetData());
 				}
 				else if (prefix == "AMP") {
@@ -83,8 +83,8 @@ namespace Atlas {
 					auto image = ImageLoader::LoadImage<uint8_t>(material->aoMapPath, false, 1);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-                    // material->aoMap = new Texture::Texture2D(image.width,
-                    // 	image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    material->aoMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                        VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
 					material->aoMap->SetData(image.GetData());
 				}
 				else if (prefix == "DMP") {
@@ -92,8 +92,8 @@ namespace Atlas {
 					auto image = ImageLoader::LoadImage<uint8_t>(material->displacementMapPath, false, 1);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
-                    // material->displacementMap = new Texture::Texture2D(image.width,
-                    // 	image.height, AE_R8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                    material->displacementMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                        VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
 					material->displacementMap->SetData(image.GetData());
 				}
 			}
@@ -104,7 +104,7 @@ namespace Atlas {
 
 		}
 
-        void MaterialLoader::SaveMaterial(Material *material, std::string filename) {
+        void MaterialLoader::SaveMaterial(Ref<Material> material, std::string filename) {
 
             auto stream = AssetLoader::WriteFile(filename, std::ios::out | std::ios::binary);
 
@@ -167,9 +167,9 @@ namespace Atlas {
 
         }
 
-		Material* MaterialLoader::LoadMaterialValues(std::ifstream& stream, int32_t& textureCount) {
+		Ref<Material> MaterialLoader::LoadMaterialValues(std::ifstream& stream, int32_t& textureCount) {
 
-			auto material = new Material();
+			auto material = std::make_shared<Material>();
 			std::string header, line;
 
 			std::getline(stream, header);

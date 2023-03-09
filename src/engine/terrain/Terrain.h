@@ -135,7 +135,7 @@ namespace Atlas {
             */
 			TerrainStorageCell* GetStorageCell(float x, float z, int32_t LoD);
 
-			TerrainStorage* storage;
+			TerrainStorage storage;
 
 			Texture::Texture2D shoreLine;
 

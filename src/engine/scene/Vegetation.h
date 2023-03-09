@@ -32,11 +32,11 @@ namespace Atlas {
 
 			std::vector<Mesh::VegetationMesh*> GetMeshes();
 
-			Buffers* GetBuffers(Mesh::VegetationMesh* mesh);
+			Buffers GetBuffers(Mesh::VegetationMesh* mesh);
 
 		private:
 			std::map<Mesh::VegetationMesh*, std::vector<Actor::VegetationActor*>> meshToActorMap;
-			std::map<Mesh::VegetationMesh*, Buffers*> meshToBufferMap;
+			std::map<Mesh::VegetationMesh*, Buffers> meshToBufferMap;
 
 		};
 

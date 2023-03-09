@@ -62,13 +62,13 @@ namespace Atlas {
 
 		}
 
-		void TerrainStorage::AddMaterial(int32_t slot, Material* material) {
+		void TerrainStorage::AddMaterial(int32_t slot, Ref<Material> material) {
 
 			materials[slot] = material;
 
             /*
 			if (material->HasBaseColorMap()) {
-				baseColorMaps.Copy(*material->baseColorMap, 0, 0, 0, 0, 0, slot,
+				baseColorMaps.Copy(material->baseColorMap->, 0, 0, 0, 0, 0, slot,
 					baseColorMaps.width, baseColorMaps.height, 1);
 			}
 			if (material->HasRoughnessMap()) {
@@ -102,17 +102,17 @@ namespace Atlas {
 
 			displacementMaps.Bind();
 			displacementMaps.GenerateMipmap();
-             */
+            */
 
 		}
 
-		void TerrainStorage::RemoveMaterial(int32_t slot, Material* material) {
+		void TerrainStorage::RemoveMaterial(int32_t slot, Ref<Material> material) {
 
 			materials[slot] = nullptr;
 
 		}
 
-		std::vector<Material*> TerrainStorage::GetMaterials() {
+		std::vector<Ref<Material>> TerrainStorage::GetMaterials() {
 
 			return materials;
 

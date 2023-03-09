@@ -13,12 +13,12 @@ namespace Atlas {
         class MaterialLoader {
 
 		public:
-            static Material* LoadMaterial(std::string filename, int32_t mapResolution = 0);
+            static Ref<Material> LoadMaterial(std::string filename, int32_t mapResolution = 0);
 
-            static void SaveMaterial(Material* material, std::string filename);
+            static void SaveMaterial(Ref<Material> material, std::string filename);
 
 		private:
-			static Material* LoadMaterialValues(std::ifstream& stream, int32_t& textureCount);
+			static Ref<Material> LoadMaterialValues(std::ifstream& stream, int32_t& textureCount);
 
 			static std::string WriteVector(std::string prefix, vec3 vector);
 

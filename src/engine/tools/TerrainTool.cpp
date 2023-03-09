@@ -13,7 +13,7 @@ namespace Atlas {
 	namespace Tools {
 
 		Terrain::Terrain* TerrainTool::GenerateTerrain(Common::Image<uint16_t>&heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
-											  int32_t patchSize, float resolution, float height, Material* material) {
+											  int32_t patchSize, float resolution, float height, Ref<Material> material) {
 
 			// Check if everything is correct
 			int32_t maxNodesPerSide = (int32_t)powf(2.0f, (float)LoDCount - 1.0f) * rootNodeSideCount;
@@ -25,7 +25,7 @@ namespace Atlas {
 
 			auto terrain = new Terrain::Terrain(rootNodeSideCount, LoDCount, patchSize, resolution, height);
 
-			terrain->storage->AddMaterial(0, material);
+			terrain->storage.AddMaterial(0, material);
 
 			// Calculate the number of vertices per tile and resize the height data to map 1:1
 			int32_t tileResolution = 8 * patchSize;
@@ -57,7 +57,7 @@ namespace Atlas {
 			// i is in x direction, j in y direction
 			for (int32_t i = 0; i < maxNodesPerSide; i++) {
 				for (int32_t j = 0; j < maxNodesPerSide; j++) {
-					auto cell = terrain->storage->GetCell(i, j, LoDCount - 1);
+					auto cell = terrain->storage.GetCell(i, j, LoDCount - 1);
 
                     /*
 					// Create the data structures for the cell
@@ -88,8 +88,8 @@ namespace Atlas {
 						}
 					}
 
-					cell->heightField->SetData(cellHeightData);
-					cell->splatMap->SetData(cellSplatData);
+					cell->heightField.SetData(cellHeightData);
+					cell->splatMap.SetData(cellSplatData);
 
 				}
 			}
@@ -102,7 +102,7 @@ namespace Atlas {
 
 		Terrain::Terrain* TerrainTool::GenerateTerrain(Common::Image<uint16_t>& heightImage, Common::Image<uint8_t>& splatImage,
 			int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution,
-			float height, std::vector<Material*> materials) {
+			float height, std::vector<Ref<Material>> materials) {
 
 			// Check if everything is correct
 			int32_t maxNodesPerSide = (int32_t)powf(2.0f, (float)LoDCount - 1.0f) * rootNodeSideCount;
@@ -115,8 +115,8 @@ namespace Atlas {
 			auto terrain = new Terrain::Terrain(rootNodeSideCount, LoDCount, patchSize, resolution, height);
 
 			int32_t count = 0;
-			for (auto material : materials) {
-				terrain->storage->AddMaterial(count++, material);
+			for (auto& material : materials) {
+				terrain->storage.AddMaterial(count++, material);
 			}
 
 			// Calculate the number of vertices per tile and resize the height data to map 1:1
@@ -151,7 +151,7 @@ namespace Atlas {
 			// i is in x direction, j in y direction
 			for (int32_t i = 0; i < maxNodesPerSide; i++) {
 				for (int32_t j = 0; j < maxNodesPerSide; j++) {
-					auto cell = terrain->storage->GetCell(i, j, LoDCount - 1);
+					auto cell = terrain->storage.GetCell(i, j, LoDCount - 1);
 
                     /*
 					// Create the data structures for the cell
@@ -184,8 +184,8 @@ namespace Atlas {
 						}
 					}
 
-					cell->heightField->SetData(cellHeightData);
-					cell->splatMap->SetData(cellSplatData);
+					cell->heightField.SetData(cellHeightData);
+					cell->splatMap.SetData(cellSplatData);
 
 				}
 			}
@@ -201,7 +201,7 @@ namespace Atlas {
 			// Generate one large heightmap (assumes all tiles have the same size)
 			int32_t tileResolution = 8 * terrain->patchSizeFactor;
 			int32_t tileResolutionSquared = tileResolution * tileResolution;
-			int32_t tileCount = terrain->storage->GetCellCount(terrain->LoDCount - 1);
+			int32_t tileCount = terrain->storage.GetCellCount(terrain->LoDCount - 1);
 
 			int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
 
@@ -214,8 +214,8 @@ namespace Atlas {
 			// i is in x direction, j in z direction
 			for (int32_t i = 0; i < tileSideCount; i++) {
 				for (int32_t j = 0; j < tileSideCount; j++) {
-					auto cell = terrain->storage->GetCell(i, j, terrain->LoDCount - 1);
-					auto cellSplatData = cell->splatMap->GetData<uint8_t>();
+					auto cell = terrain->storage.GetCell(i, j, terrain->LoDCount - 1);
+					auto cellSplatData = cell->splatMap.GetData<uint8_t>();
 
 					// Now copy a tile of the original image
 					// We make sure that every tile has the same size
@@ -321,7 +321,7 @@ namespace Atlas {
 				// i is in x direction, j in y direction
 				for (int32_t i = 0; i < tileSideCountLod; i++) {
 					for (int32_t j = 0; j < tileSideCountLod; j++) {
-						auto cell = terrain->storage->GetCell(i, j, Lod);
+						auto cell = terrain->storage.GetCell(i, j, Lod);
 
 						// Now copy a tile of the original image
 						// We make sure that every tile has the same size
@@ -378,9 +378,9 @@ namespace Atlas {
 						}
                         */
 						
-						cell->normalMap->SetData(tileNormalData);
-						cell->heightField->SetData(tileHeightData);
-						cell->splatMap->SetData(tileSplatData);
+						cell->normalMap.SetData(tileNormalData);
+						cell->heightField.SetData(tileHeightData);
+						cell->splatMap.SetData(tileSplatData);
 
 					}
 				}
@@ -402,22 +402,22 @@ namespace Atlas {
 			if (middleMiddle == nullptr)
 				return;
 
-			auto upperLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
-			auto upperMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
-			auto upperRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
-			auto middleLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
-			auto middleRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
-			auto bottomLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
-			auto bottomMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
-			auto bottomRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
+			auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
+			auto upperMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
+			auto upperRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
+			auto middleLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
+			auto middleRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
+			auto bottomLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
+			auto bottomMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
+			auto bottomRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
 
 			Terrain::TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
 										   middleLeft, middleMiddle, middleRight,
 										   bottomLeft, bottomMiddle, bottomRight};
 
 			// Now bring all height data into one array (we assume that all tiles have the same size)
-			int32_t width = middleMiddle->heightField->width - 1;
-			int32_t height = middleMiddle->heightField->height - 1;
+			int32_t width = middleMiddle->heightField.width - 1;
+			int32_t height = middleMiddle->heightField.height - 1;
 
 			std::vector<float> heights(width * height * 9);
 
@@ -511,7 +511,7 @@ namespace Atlas {
 						cellHeightData[k] = (uint16_t)(cell->heightData[k] * 65535.0f);
 					}
 
-					cell->heightField->SetData(cellHeightData);
+					cell->heightField.SetData(cellHeightData);
 
 				}
 
@@ -530,22 +530,22 @@ namespace Atlas {
 			if (middleMiddle == nullptr)
 				return;
 
-			auto upperLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
-			auto upperMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
-			auto upperRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
-			auto middleLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
-			auto middleRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
-			auto bottomLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
-			auto bottomMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
-			auto bottomRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
+			auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
+			auto upperMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
+			auto upperRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
+			auto middleLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
+			auto middleRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
+			auto bottomLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
+			auto bottomMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
+			auto bottomRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
 
 			Terrain::TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
 										   middleLeft, middleMiddle, middleRight,
 										   bottomLeft, bottomMiddle, bottomRight};
 
 			// Now bring all height data into one array (we assume that all tiles have the same size)
-			int32_t width = middleMiddle->heightField->width - 1;
-			int32_t height = middleMiddle->heightField->height - 1;
+			int32_t width = middleMiddle->heightField.width - 1;
+			int32_t height = middleMiddle->heightField.height - 1;
 
 			std::vector<float> heights(width * height * 9);
 
@@ -660,7 +660,7 @@ namespace Atlas {
 						cellHeightData[k] = (uint16_t)(cell->heightData[k] * 65535.0f);
 					}
 
-					cell->heightField->SetData(cellHeightData);
+					cell->heightField.SetData(cellHeightData);
 
 				}
 			}
@@ -677,14 +677,14 @@ namespace Atlas {
 			if (middleMiddle == nullptr)
 				return;
 
-			auto upperLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
-			auto upperMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
-			auto upperRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
-			auto middleLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
-			auto middleRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
-			auto bottomLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
-			auto bottomMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
-			auto bottomRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
+			auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
+			auto upperMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
+			auto upperRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
+			auto middleLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
+			auto middleRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
+			auto bottomLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
+			auto bottomMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
+			auto bottomRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
 
 			Terrain::TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
 													middleLeft, middleMiddle, middleRight,
@@ -693,8 +693,8 @@ namespace Atlas {
 			std::vector<uint8_t> cellDatas[9];
 
 			// Now bring all height data into one array (we assume that all tiles have the same size)
-			int32_t width = middleMiddle->splatMap->width - 1;
-			int32_t height = middleMiddle->splatMap->height - 1;
+			int32_t width = middleMiddle->splatMap.width - 1;
+			int32_t height = middleMiddle->splatMap.height - 1;
 
 			std::vector<uint8_t> combinedSplatMap(width * height * 9);
 
@@ -708,7 +708,7 @@ namespace Atlas {
 					if (cell == nullptr)
 						continue;
 
-					cellDatas[i * 3 + j] = cell->splatMap->GetData<uint8_t>();
+					cellDatas[i * 3 + j] = cell->splatMap.GetData<uint8_t>();
 					auto& splatData = cellDatas[i * 3 + j];
 
 					for (int32_t k = 0; k < height + 1; k++) {
@@ -787,7 +787,7 @@ namespace Atlas {
 						}
 					}
 
-					cell->splatMap->SetData(splatData);
+					cell->splatMap.SetData(splatData);
 
 				}
 
@@ -799,7 +799,7 @@ namespace Atlas {
 
 			int32_t tileResolution = 8 * terrain->patchSizeFactor;
 			int32_t tileResolutionSquared = tileResolution * tileResolution;
-			int32_t tileCount = terrain->storage->GetCellCount(terrain->LoDCount - 1);
+			int32_t tileCount = terrain->storage.GetCellCount(terrain->LoDCount - 1);
 
 			int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
 
@@ -811,8 +811,8 @@ namespace Atlas {
 			// i is in x direction, j in z direction
 			for (int32_t i = 0; i < tileSideCount; i++) {
 				for (int32_t j = 0; j < tileSideCount; j++) {
-					auto cell = terrain->storage->GetCell(i, j, terrain->LoDCount - 1);
-					auto cellSplatData = cell->splatMap->GetData<uint8_t>();
+					auto cell = terrain->storage.GetCell(i, j, terrain->LoDCount - 1);
+					auto cellSplatData = cell->splatMap.GetData<uint8_t>();
 
 					// Now copy a tile of the original image
 					// We make sure that every tile has the same size

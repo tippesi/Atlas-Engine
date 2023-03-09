@@ -90,13 +90,13 @@ namespace Atlas {
 			std::vector<Material*> materials;
 
 			if (terrain) {
-				auto terrainMaterials = terrain->storage->GetMaterials();
+				auto terrainMaterials = terrain->storage.GetMaterials();
 
 				for (auto material : terrainMaterials) {
 					if (!material)
 						continue;
 
-					materials.push_back(material);
+					materials.push_back(material.get());
 				}
 				
 			}
