@@ -53,7 +53,7 @@ namespace Atlas {
 				}
 				else if (prefix == "NMP") {
 					material->normalMapPath = ReadFilePath(line, materialDirectory);
-					auto image = ImageLoader::LoadImage<uint8_t>(material->normalMapPath, false, 3);
+					auto image = ImageLoader::LoadImage<uint8_t>(material->normalMapPath, false, 4);
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
                     material->normalMap = std::make_shared<Texture::Texture2D>(image.width, image.height,

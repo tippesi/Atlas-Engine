@@ -72,6 +72,7 @@ namespace Atlas {
             pipelineInfo.pViewportState = &viewportState;
             pipelineInfo.pRasterizationState = &desc.rasterizer;
             pipelineInfo.pMultisampleState = &desc.multisampling;
+            pipelineInfo.pTessellationState = desc.tessellationInfo.patchControlPoints > 0 ? &desc.tessellationInfo : VK_NULL_HANDLE;
             pipelineInfo.pColorBlendState = &colorBlending;
             pipelineInfo.layout = layout;
             pipelineInfo.renderPass = frameBuffer ? frameBuffer->renderPass->renderPass : desc.swapChain->renderPass;

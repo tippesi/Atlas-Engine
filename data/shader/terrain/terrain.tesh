@@ -1,4 +1,5 @@
 #include <terrainMaterial.hsh>
+#include <../globals.hsh>
 
 #ifndef DISTANCE
 layout(quads, equal_spacing, cw) in;
@@ -6,37 +7,47 @@ layout(quads, equal_spacing, cw) in;
 layout(quads, equal_spacing, cw) in;
 #endif
 
-layout (binding = 1) uniform sampler2D normalMap;
-layout (binding = 2) uniform usampler2D splatMap;
-layout(binding = 7) uniform sampler2DArray displacementMaps;
+layout (set = 3, binding = 1) uniform sampler2D normalMap;
+layout (set = 3, binding = 2) uniform usampler2D splatMap;
+layout(set = 3, binding = 7) uniform sampler2DArray displacementMaps;
 
-layout (binding = 0, std140) uniform UBO {
+layout (set = 3, binding = 8, std140) uniform UBO {
     TerrainMaterial materials[128];
-};
+} Materials;
 
-flat in uvec4 materialIndicesTC[];
+layout (set = 3, binding = 9, std140) uniform UniformBuffer {
+    vec4 frustumPlanes[6];
 
-out vec2 materialTexCoords;
-out vec2 texCoords;
-out vec3 ndcCurrent;
-out vec3 ndcLast;
-flat out uvec4 materialIndicesTE;
+    float heightScale;
+    float displacementDistance;
 
-uniform float normalTexelSize;
+    float tessellationFactor;
+    float tessellationSlope;
+    float tessellationShift;
+    float maxTessellationLevel;
+} Uniforms;
 
-uniform vec2 nodeLocation;
-uniform float nodeSideLength;
-uniform float tileScale;
-uniform float patchSize;
+layout(push_constant) uniform constants {
+    float nodeSideLength;
+    float tileScale;
+    float patchSize;
+    float normalTexelSize;
 
-uniform float displacementDistance;
+    float leftLoD;
+    float topLoD;
+    float rightLoD;
+    float bottomLoD;
 
-uniform mat4 vMatrix;
-uniform mat4 pMatrix;
+    vec2 nodeLocation;
+} PushConstants;
 
-uniform mat4 pvMatrixLast;
+// layout(location=0) flat in uvec4 materialIndicesTC[];
 
-uniform vec3 cameraLocation;
+layout(location=0) out vec2 materialTexCoords;
+layout(location=1) out vec2 texCoords;
+layout(location=2) out vec3 ndcCurrent;
+layout(location=3) out vec3 ndcLast;
+//layout(location=4) flat out uvec4 materialIndicesTE;
 
 float SampleDisplacement(vec2 off, uvec4 indices) {
 
@@ -82,24 +93,25 @@ void main(){
 	u * v * gl_in[1].gl_Position +
 	(1.0 - u) * v * gl_in[2].gl_Position);
 	
-	texCoords = vec2(position.x, position.z) - nodeLocation;
+	texCoords = vec2(position.x, position.z) - PushConstants.nodeLocation;
 
 	materialTexCoords = texCoords;
 	
-	texCoords /= nodeSideLength;	
+	texCoords /= PushConstants.nodeSideLength;
 	
-	materialIndicesTE = materialIndicesTC[0];
+	//materialIndicesTE = materialIndicesTC[0];
 	
 #ifndef DISTANCE
-	float vertexDistance = distance(position.xyz, cameraLocation);
-	float weight = clamp((displacementDistance - vertexDistance), 0.0, 1.0);
+	float vertexDistance = distance(position.xyz, globalData.cameraLocation.xyz);
+	float weight = clamp((Uniforms.displacementDistance - vertexDistance), 0.0, 1.0);
 
-	vec2 tex = vec2(normalTexelSize) + texCoords * (1.0 - 3.0 * normalTexelSize)
-		+ 0.5 * normalTexelSize;
+	vec2 tex = vec2(PushConstants.normalTexelSize) + texCoords *
+        (1.0 - 3.0 * PushConstants.normalTexelSize)
+		+ 0.5 * PushConstants.normalTexelSize;
 	vec3 norm = 2.0 * texture(normalMap, tex).rgb - 1.0;
 	
 	uvec4 indices;
-	float texel = 1.0 / (8.0 * patchSize);
+	float texel = 1.0 / (8.0 * PushConstants.patchSize);
 	tex = floor(texCoords / texel) * texel;
 	indices.x = texture(splatMap, tex).r;
 	indices.y = texture(splatMap, tex + vec2(texel, 0.0)).r;
@@ -107,13 +119,13 @@ void main(){
 	indices.w = texture(splatMap, tex + vec2(texel, texel)).r;
 
 	if (weight > 0.0) {
-		tex = materialTexCoords / tileScale;	
+		tex = materialTexCoords / PushConstants.tileScale;
 		vec2 off = tex - floor(tex);
 		float displacementScale = Interpolate(
-			materials[indices.x].displacementScale,
-			materials[indices.y].displacementScale,
-			materials[indices.z].displacementScale,
-			materials[indices.w].displacementScale,
+			Materials.materials[indices.x].displacementScale,
+            Materials.materials[indices.y].displacementScale,
+            Materials.materials[indices.z].displacementScale,
+            Materials.materials[indices.w].displacementScale,
 			off
 		);
 		float displacement = SampleDisplacement(off, indices)
@@ -123,11 +135,11 @@ void main(){
 	}
 #endif
 	
-	gl_Position = pMatrix * vMatrix * position;
+	gl_Position = globalData.pMatrix * globalData.vMatrix * position;
 	
 	ndcCurrent = vec3(gl_Position.xy, gl_Position.w);
 	
-	vec4 last = pvMatrixLast * position;
+	vec4 last = globalData.pvMatrixLast * position;
 	ndcLast = vec3(last.xy, last.w);
 	
 }

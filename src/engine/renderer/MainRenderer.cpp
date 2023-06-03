@@ -145,6 +145,8 @@ namespace Atlas {
 
                 ddgiRenderer.DebugProbes(viewport, target, camera, scene, commandList, materialMap);
 
+                terrainRenderer.Render(viewport, target, camera, scene, commandList, materialMap);
+
                 commandList->EndRenderPass();
 
                 Graphics::Profiler::EndQuery();

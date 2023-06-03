@@ -48,12 +48,22 @@ namespace Atlas {
              */
 			int32_t GetCellCount(int32_t LoD);
 
+            /**
+             * Makes it possible to write materials afterwards
+             */
+            void BeginMaterialWrite();
+
 			/**
 			 *
 			 * @param slot
 			 * @param material
 			 */
-			void AddMaterial(int32_t slot, Ref<Material> material);
+			void WriteMaterial(int32_t slot, Ref<Material> material);
+
+            /**
+             * Generates all mipmaps after materials have been written
+             */
+            void EndMaterialWrite();
 
 			/**
 			 *
@@ -87,6 +97,9 @@ namespace Atlas {
 			Texture::Texture2DArray displacementMaps;
 
 		private:
+            void BlitImageToImageArray(Ref<Graphics::Image>& srcImage,
+                Ref<Graphics::Image>& dstImage, int32_t slot);
+
 			int32_t rootNodeCount;
 			int32_t LoDCount;
 
@@ -98,6 +111,8 @@ namespace Atlas {
 			std::vector<Ref<Material>> materials;
 
 			std::vector<std::vector<TerrainStorageCell>> cells;
+
+            Graphics::CommandList* commandList = nullptr;
 
 		};
 

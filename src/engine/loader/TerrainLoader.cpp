@@ -169,6 +169,8 @@ namespace Atlas {
 
 			auto terrainDir = Common::Path::GetDirectory(filename);
 
+            terrain->storage.BeginMaterialWrite();
+
 			for (int32_t i = 0; i < materialCount; i++) {
 				std::getline(fileStream, line);
 
@@ -180,8 +182,10 @@ namespace Atlas {
 				auto material = MaterialLoader::LoadMaterial(materialPath, 1024);
 
 				if (material)
-					terrain->storage.AddMaterial(slot, material);
+                    terrain->storage.WriteMaterial(slot, material);
 			}
+
+            terrain->storage.EndMaterialWrite();
 
 			fileStream.close();
 
@@ -258,12 +262,12 @@ namespace Atlas {
                 VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
 			cell->heightField.SetData(heightFieldData);
 
-			std::vector<uint8_t> normalMapData(normalDataResolution * 
-				normalDataResolution * 3);
-            fileStream.read((char*)normalMapData.data(), normalMapData.size());
-            cell->normalMap = Texture::Texture2D(tileResolution, tileResolution,
+            Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, 3);
+            fileStream.read((char*)image.GetData().data(), image.GetData().size());
+            image.ExpandToChannelCount(4, 255);
+            cell->normalMap = Texture::Texture2D(normalDataResolution, normalDataResolution,
                 VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
-			cell->normalMap.SetData(normalMapData);
+			cell->normalMap.SetData(image.GetData());
 
 			std::vector<uint8_t> splatMapData(heightFieldData.size());
 			fileStream.read((char*)splatMapData.data(), splatMapData.size());

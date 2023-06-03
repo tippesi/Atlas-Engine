@@ -12,18 +12,21 @@ namespace Atlas {
 			cells.resize(LoDCount);
 			LoDSideLengths = new int32_t[LoDCount];
 
-            /*
 			baseColorMaps = Atlas::Texture::Texture2DArray(materialResolution,
-				materialResolution, materialCount, AE_RGB8, GL_REPEAT, GL_LINEAR, true, true);
+				materialResolution, materialCount, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::MipMapLinear);
 			roughnessMaps = Atlas::Texture::Texture2DArray(materialResolution,
-				materialResolution, materialCount, AE_R8, GL_REPEAT, GL_LINEAR, true, true);
+                materialResolution, materialCount, VK_FORMAT_R8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::MipMapLinear);
 			aoMaps = Atlas::Texture::Texture2DArray(materialResolution,
-				materialResolution, materialCount, AE_R8, GL_REPEAT, GL_LINEAR, true, true);
+                materialResolution, materialCount, VK_FORMAT_R8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::MipMapLinear);
 			normalMaps = Atlas::Texture::Texture2DArray(materialResolution,
-				materialResolution, materialCount, AE_RGB8, GL_REPEAT, GL_LINEAR, true, true);
+                materialResolution, materialCount, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::MipMapLinear);
 			displacementMaps = Atlas::Texture::Texture2DArray(materialResolution,
-				materialResolution, materialCount, AE_R8, GL_REPEAT, GL_LINEAR, true, true);
-            */
+                materialResolution, materialCount, VK_FORMAT_R8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::MipMapLinear);
 
 			materials.resize(materialCount);
 
@@ -62,49 +65,60 @@ namespace Atlas {
 
 		}
 
-		void TerrainStorage::AddMaterial(int32_t slot, Ref<Material> material) {
+        void TerrainStorage::BeginMaterialWrite() {
+
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            commandList = device->GetCommandList(Graphics::QueueType::TransferQueue, true);
+
+            commandList->BeginCommands();
+
+        }
+
+		void TerrainStorage::WriteMaterial(int32_t slot, Ref<Material> material) {
 
 			materials[slot] = material;
 
-            /*
 			if (material->HasBaseColorMap()) {
-				baseColorMaps.Copy(material->baseColorMap->, 0, 0, 0, 0, 0, slot,
-					baseColorMaps.width, baseColorMaps.height, 1);
+                BlitImageToImageArray(material->baseColorMap->image, baseColorMaps.image, slot);
 			}
 			if (material->HasRoughnessMap()) {
-				roughnessMaps.Copy(*material->roughnessMap, 0, 0, 0, 0, 0, slot,
-					roughnessMaps.width, roughnessMaps.height, 1);
+                BlitImageToImageArray(material->roughnessMap->image, roughnessMaps.image, slot);
 			}
 			if (material->HasAoMap()) {
-				aoMaps.Copy(*material->aoMap, 0, 0, 0, 0, 0, slot,
-					aoMaps.width, aoMaps.height, 1);
+                BlitImageToImageArray(material->aoMap->image, aoMaps.image, slot);
 			}
 			if (material->HasNormalMap()) {
-				normalMaps.Copy(*material->normalMap, 0, 0, 0, 0, 0, slot,
-					normalMaps.width, normalMaps.height, 1);
+                BlitImageToImageArray(material->normalMap->image, normalMaps.image, slot);
 			}
 			if (material->HasDisplacementMap()) {
-				displacementMaps.Copy(*material->displacementMap, 0, 0, 0, 0, 0, slot,
-					displacementMaps.width, displacementMaps.height, 1);
+                BlitImageToImageArray(material->displacementMap->image, displacementMaps.image, slot);
 			}
 
-			baseColorMaps.Bind();
-			baseColorMaps.GenerateMipmap();
-
-			roughnessMaps.Bind();
-			roughnessMaps.GenerateMipmap();
-
-			aoMaps.Bind();
-			aoMaps.GenerateMipmap();
-
-			normalMaps.Bind();
-			normalMaps.GenerateMipmap();
-
-			displacementMaps.Bind();
-			displacementMaps.GenerateMipmap();
-            */
-
 		}
+
+        void TerrainStorage::EndMaterialWrite() {
+
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+
+            commandList->GenerateMipMap(baseColorMaps.image);
+            commandList->GenerateMipMap(roughnessMaps.image);
+            commandList->GenerateMipMap(aoMaps.image);
+            commandList->GenerateMipMap(normalMaps.image);
+            commandList->GenerateMipMap(displacementMaps.image);
+
+            const auto dstLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            const auto dstAccess = VK_ACCESS_SHADER_READ_BIT;
+            commandList->ImageTransition(baseColorMaps.image, dstLayout, dstAccess);
+            commandList->ImageTransition(roughnessMaps.image, dstLayout, dstAccess);
+            commandList->ImageTransition(aoMaps.image, dstLayout, dstAccess);
+            commandList->ImageTransition(normalMaps.image, dstLayout, dstAccess);
+            commandList->ImageTransition(displacementMaps.image, dstLayout, dstAccess);
+
+            commandList->EndCommands();
+
+            device->FlushCommandList(commandList);
+
+        }
 
 		void TerrainStorage::RemoveMaterial(int32_t slot, Ref<Material> material) {
 
@@ -117,6 +131,33 @@ namespace Atlas {
 			return materials;
 
 		}
+
+        void TerrainStorage::BlitImageToImageArray(Ref<Graphics::Image>& srcImage,
+            Ref<Graphics::Image>& dstImage, int32_t slot) {
+
+            VkImageBlit blit = {};
+            blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.srcSubresource.layerCount = 1;
+            blit.srcOffsets[0] = { 0, 0, 0 };
+            blit.srcOffsets[1] = { int32_t(srcImage->width), int32_t(srcImage->height), 1 };
+            blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.dstSubresource.layerCount = 1;
+            blit.dstSubresource.baseArrayLayer = slot;
+            blit.dstOffsets[0] = { 0, 0, 0 };
+            blit.dstOffsets[1] = { int32_t(dstImage->width), int32_t(dstImage->height), 1 };
+
+            auto prevSrcLayout = srcImage->layout;
+            auto prevSrcAccess = srcImage->accessMask;
+
+            commandList->ImageTransition(srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT);
+            commandList->ImageTransition(dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT);
+
+            commandList->BlitImage(srcImage, dstImage, blit);
+
+            if (prevSrcLayout != VK_IMAGE_LAYOUT_UNDEFINED && prevSrcLayout != VK_IMAGE_LAYOUT_PREINITIALIZED)
+                commandList->ImageTransition(srcImage, prevSrcLayout, prevSrcAccess);
+
+        }
 
 	}
 

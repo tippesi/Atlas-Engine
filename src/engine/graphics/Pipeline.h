@@ -34,6 +34,8 @@ namespace Atlas {
                 Initializers::InitPipelineColorBlendAttachmentState();
             VkPipelineMultisampleStateCreateInfo multisampling =
                 Initializers::InitPipelineMultisampleStateCreateInfo();
+            VkPipelineTessellationStateCreateInfo tessellationInfo =
+                Initializers::InitPipelineTessellationStateCreateInfo(0);
 
         };
 

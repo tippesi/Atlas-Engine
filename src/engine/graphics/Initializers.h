@@ -47,6 +47,8 @@ namespace Atlas {
 
             VkPipelineMultisampleStateCreateInfo InitPipelineMultisampleStateCreateInfo();
 
+            VkPipelineTessellationStateCreateInfo InitPipelineTessellationStateCreateInfo(uint32_t controlPoints);
+
             VkPipelineColorBlendAttachmentState InitPipelineColorBlendAttachmentState();
 
             VkPipelineLayoutCreateInfo InitPipelineLayoutCreateInfo();

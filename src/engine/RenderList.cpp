@@ -176,6 +176,7 @@ namespace Atlas {
         if (!currentMatricesBuffer || currentMatricesBuffer->size < sizeof(mat4) * currentActorMatrices.size()) {
             auto newSize = currentMatricesBuffer != nullptr ? currentMatricesBuffer->size * 2 :
                            sizeof(mat4) * currentActorMatrices.size();
+            newSize = std::max(newSize, 1ul);
             auto bufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 .domain = Graphics::BufferDomain::Host,
@@ -188,6 +189,7 @@ namespace Atlas {
         if (!impostorMatricesBuffer || impostorMatricesBuffer->size < sizeof(mat4) * impostorMatrices.size()) {
             auto newSize = impostorMatricesBuffer != nullptr ? impostorMatricesBuffer->size * 2 :
                            sizeof(mat4) * impostorMatrices.size();
+            newSize = std::max(newSize, 1ul);
             auto bufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 .domain = Graphics::BufferDomain::Host,

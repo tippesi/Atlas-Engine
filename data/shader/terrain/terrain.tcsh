@@ -1,35 +1,55 @@
+#include <../globals.hsh>
+
 layout(vertices = 16) out;
 
-flat in uvec4 materialIndicesVS[];
-flat out uvec4 materialIndicesTC[];
+//layout(location=0) flat in uvec4 materialIndicesVS[];
+//layout(location=0) flat out uvec4 materialIndicesTC[];
 
 const int AB = 2;
 const int BC = 3;
 const int CD = 0;
 const int DA = 1;
 
-uniform float tessellationFactor;
-uniform float tessellationSlope;
-uniform float tessellationShift;
-uniform float maxTessellationLevel;
+layout (set = 3, binding = 9, std140) uniform UniformBuffer {
+    vec4 frustumPlanes[6];
 
-uniform vec3 cameraLocation;
-uniform vec4 frustumPlanes[6];
-uniform float heightScale;
+    float heightScale;
+    float displacementDistance;
+
+    float tessellationFactor;
+    float tessellationSlope;
+    float tessellationShift;
+    float maxTessellationLevel;
+} Uniforms;
+
+layout(push_constant) uniform constants {
+    float nodeSideLength;
+    float tileScale;
+    float patchSize;
+    float normalTexelSize;
+
+    float leftLoD;
+    float topLoD;
+    float rightLoD;
+    float bottomLoD;
+
+    vec2 nodeLocation;
+} PushConstants;
 
 // Nvidia frustum culling
 // https://github.com/NVIDIAGameWorks/GraphicsSamples/blob/master/samples/es3aep-kepler/TerrainTessellation/assets/shaders/terrain_control.glsl
 
 float GetTessLevel(float distance) {
 
-	return clamp(tessellationFactor / pow(distance, tessellationSlope) + tessellationShift, 0.0, 1.0);
+	return clamp(Uniforms.tessellationFactor / pow(distance,
+        Uniforms.tessellationSlope) + Uniforms.tessellationShift, 0.0, 1.0);
 
 }
 
 bool IsTileVisible(vec3 min, vec3 max) {
 	for (int i = 0; i < 6; i++) {
-		vec3 normal = frustumPlanes[i].xyz;
-		float distance = frustumPlanes[i].w;
+		vec3 normal = Uniforms.frustumPlanes[i].xyz;
+		float distance = Uniforms.frustumPlanes[i].w;
 		
 		vec3 s;
 		s.x = normal.x >= 0.0 ? max.x : min.x;
@@ -47,7 +67,7 @@ void main() {
 
 	if(gl_InvocationID == 0) {
 	
-		materialIndicesTC[gl_InvocationID] = materialIndicesVS[0];
+		//materialIndicesTC[gl_InvocationID] = materialIndicesVS[0];
 	
 		vec3 minVec = min(gl_in[0].gl_Position.xyz,
 			min(gl_in[1].gl_Position.xyz,
@@ -67,7 +87,7 @@ void main() {
 		maxVec += dir * .25;
 		minVec -= dir * .25;
 
-		if (IsTileVisible(minVec, maxVec)) {
+		if (true) {
 	
 #ifndef DISTANCE
 			vec3 midAB = vec3(gl_in[0].gl_Position + gl_in[1].gl_Position) / 2.0;
@@ -75,15 +95,15 @@ void main() {
 			vec3 midCD = vec3(gl_in[2].gl_Position + gl_in[3].gl_Position) / 2.0;
 			vec3 midDA = vec3(gl_in[3].gl_Position + gl_in[0].gl_Position) / 2.0;
 			
-			float distanceAB = distance(cameraLocation, midAB);
-            float distanceBC = distance(cameraLocation, midBC);
-			float distanceCD = distance(cameraLocation, midCD);
-			float distanceDA = distance(cameraLocation, midDA);
+			float distanceAB = distance(globalData.cameraLocation.xyz, midAB);
+            float distanceBC = distance(globalData.cameraLocation.xyz, midBC);
+			float distanceCD = distance(globalData.cameraLocation.xyz, midCD);
+			float distanceDA = distance(globalData.cameraLocation.xyz, midDA);
 			
-			gl_TessLevelOuter[AB] = mix(1.0, maxTessellationLevel, GetTessLevel(distanceAB));
-			gl_TessLevelOuter[BC] = mix(1.0, maxTessellationLevel, GetTessLevel(distanceBC));
-			gl_TessLevelOuter[CD] = mix(1.0, maxTessellationLevel, GetTessLevel(distanceCD));
-			gl_TessLevelOuter[DA] = mix(1.0, maxTessellationLevel, GetTessLevel(distanceDA));
+			gl_TessLevelOuter[AB] = mix(1.0, Uniforms.maxTessellationLevel, GetTessLevel(distanceAB));
+			gl_TessLevelOuter[BC] = mix(1.0, Uniforms.maxTessellationLevel, GetTessLevel(distanceBC));
+			gl_TessLevelOuter[CD] = mix(1.0, Uniforms.maxTessellationLevel, GetTessLevel(distanceCD));
+			gl_TessLevelOuter[DA] = mix(1.0, Uniforms.maxTessellationLevel, GetTessLevel(distanceDA));
 	
 			gl_TessLevelInner[0] = (gl_TessLevelOuter[BC] + gl_TessLevelOuter[DA]) / 2.0;
 			gl_TessLevelInner[1] = (gl_TessLevelOuter[AB] + gl_TessLevelOuter[CD]) / 2.0;

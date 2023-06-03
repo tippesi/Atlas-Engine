@@ -336,10 +336,9 @@ namespace Atlas {
 				}
 			}
 
-			//auto vertexBuffer = new Buffer::VertexBuffer(AE_FLOAT, 2, sizeof(vec2), patchVertexCount);
-			//vertexBuffer->SetData(&vertices.data()[0], 0, patchVertexCount);
-			//vertexArray.AddComponent(0, vertexBuffer);
-			//glPatchParameteri(GL_PATCH_VERTICES, 4);
+			auto buffer = Buffer::VertexBuffer(VK_FORMAT_R32G32_SFLOAT, patchVertexCount);
+            buffer.SetData(&vertices.data()[0], 0, patchVertexCount);
+			vertexArray.AddComponent(0, buffer);
 
 		}
 
@@ -355,9 +354,9 @@ namespace Atlas {
 				}
 			}
 
-			//auto offsetBuffer = new Buffer::VertexBuffer(AE_FLOAT, 2, sizeof(vec2), 64);
-			//offsetBuffer->SetData(&patchOffsets.data()[0], 0, 64);
-			//vertexArray.AddInstancedComponent(1, offsetBuffer);
+            auto buffer = Buffer::VertexBuffer(VK_FORMAT_R32G32_SFLOAT, 64);
+            buffer.SetData(&vertices.data()[0], 0, 64);
+            vertexArray.AddInstancedComponent(1, buffer);
 
 		}
 
@@ -368,7 +367,6 @@ namespace Atlas {
 			float l2 = ((p3.z - p1.z) * (pos.x - p3.x) + (p1.x - p3.x) * (pos.y - p3.z)) / det;
 			float l3 = 1.0f - l1 - l2;
 			return l1 * p1.y + l2 * p2.y + l3 * p3.y;
-
 
 		}
 

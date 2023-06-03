@@ -6,34 +6,19 @@ namespace Atlas {
 
 		TerrainRenderer::TerrainRenderer() {
 
-            /*
-			shaderBatch.AddStage(AE_VERTEX_STAGE, "terrain/terrain.vsh");
-			shaderBatch.AddStage(AE_TESSELLATION_CONTROL_STAGE, "terrain/terrain.tcsh");
-			shaderBatch.AddStage(AE_TESSELLATION_EVALUATION_STAGE, "terrain/terrain.tesh");
-			shaderBatch.AddStage(AE_FRAGMENT_STAGE, "terrain/terrain.fsh");
-
-			distanceConfig.AddMacro("DISTANCE");
-
-			shaderBatch.AddConfig(&detailConfig);
-			shaderBatch.AddConfig(&distanceConfig);
-
-			GetUniforms();
-
-			terrainMaterialBuffer = Buffer::Buffer(AE_UNIFORM_BUFFER, sizeof(TerrainMaterial),
-				AE_BUFFER_DYNAMIC_STORAGE);
-			terrainMaterialBuffer.SetSize(256);
-             */
+            uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
+			terrainMaterialBuffer = Buffer::UniformBuffer(sizeof(TerrainMaterial), 256);
 
 		}
 
 		void TerrainRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-			Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap) {
+			Scene::Scene* scene, Graphics::CommandList* commandList,
+            std::unordered_map<void*, uint16_t> materialMap) {
 
-            /*
 			if (!scene->terrain)
 				return;
 
-			Profiler::BeginQuery("Terrain");
+			Graphics::Profiler::BeginQuery("Terrain");
 
 			auto terrain = scene->terrain;
 
@@ -45,17 +30,17 @@ namespace Atlas {
 			for (auto node : terrain->renderList) {
 				if (node->cell->LoD >= terrain->LoDCount - terrain->detailNodeIdx)
 					detailNodes.push_back(node);
-				else
+                else
 					distanceNodes.push_back(node);
 			}
 
-			auto materials = terrain->storage->GetMaterials();
+			auto materials = terrain->storage.GetMaterials();
 
 			std::vector<TerrainMaterial> terrainMaterials(materials.size());
 
 			for (size_t i = 0; i < materials.size(); i++) {
 				if (materials[i]) {
-					terrainMaterials[i].idx = (uint32_t)materialMap[materials[i]];
+					terrainMaterials[i].idx = (uint32_t)materialMap[&materials[i]];
 					terrainMaterials[i].roughness = materials[i]->roughness;
 					terrainMaterials[i].metalness = materials[i]->metalness;
 					terrainMaterials[i].ao = materials[i]->ao;
@@ -68,123 +53,120 @@ namespace Atlas {
 
 			terrainMaterialBuffer.SetData(terrainMaterials.data(), 0, terrainMaterials.size());
 
-			terrainMaterialBuffer.BindBase(0);
-			terrain->vertexArray.Bind();
+			terrain->vertexArray.Bind(commandList);
 
-			terrain->storage->baseColorMaps.Bind(3);
-			terrain->storage->roughnessMaps.Bind(4);
-			terrain->storage->aoMaps.Bind(5);
-			terrain->storage->normalMaps.Bind(6);
-			terrain->storage->displacementMaps.Bind(7);
+			terrain->storage.baseColorMaps.Bind(commandList, 3, 3);
+			terrain->storage.roughnessMaps.Bind(commandList, 3, 4);
+			terrain->storage.aoMaps.Bind(commandList, 3, 5);
+			terrain->storage.normalMaps.Bind(commandList, 3, 6);
+			terrain->storage.displacementMaps.Bind(commandList, 3, 7);
 
-			if (terrain->wireframe)
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			//if (terrain->wireframe)
+			//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+            Uniforms uniforms = {
+                .heightScale = terrain->heightScale,
+                .displacementDistance = terrain->displacementDistance,
+
+                .tessellationFactor = terrain->tessellationFactor,
+                .tessellationSlope = terrain->tessellationSlope,
+                .tessellationShift = terrain->tessellationShift,
+                .maxTessellationLevel = terrain->maxTessellationLevel
+            };
+
+            auto frustumPlanes = camera->frustum.GetPlanes();
+            for (int32_t i = 0; i < 6; i++)
+                uniforms.frustumPlanes[i] = frustumPlanes[i];
+
+            uniformBuffer.SetData(&uniforms, 0, 1);
+
+            terrainMaterialBuffer.Bind(commandList, 3, 8);
+            uniformBuffer.Bind(commandList, 3, 9);
 
 			for (uint8_t i = 0; i < 2; i++) {
 
 				std::vector<Terrain::TerrainNode*> nodes;
 
+                PipelineConfig config;
 				switch (i) {
-				case 0: shaderBatch.Bind(&detailConfig);
-					Profiler::BeginQuery("Detail");
+                    case 0: config = GeneratePipelineConfig(target, terrain, true);
+					Graphics::Profiler::BeginQuery("Detail");
 					nodes = detailNodes;
 					break;
-				case 1: shaderBatch.Bind(&distanceConfig);
-					Profiler::BeginQuery("Distance");
+				case 1: config = GeneratePipelineConfig(target, terrain, false);
+                    Graphics::Profiler::BeginQuery("Distance");
 					nodes = distanceNodes;
 					break;
 				default: break;
 				}
 
-				viewMatrix->SetValue(camera->viewMatrix);
-				projectionMatrix->SetValue(camera->projectionMatrix);
-				cameraLocation->SetValue(camera->location);
-				frustumPlanes->SetValue(camera->frustum.GetPlanes().data(), 6);
-
-				heightScale->SetValue(terrain->heightScale);
-
-				tessellationFactor->SetValue(terrain->tessellationFactor);
-				tessellationSlope->SetValue(terrain->tessellationSlope);
-				tessellationShift->SetValue(terrain->tessellationShift);
-				maxTessellationLevel->SetValue(terrain->maxTessellationLevel);
-
-				displacementDistance->SetValue(terrain->displacementDistance);
-
-				pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
-				jitterLast->SetValue(camera->GetLastJitter());
-				jitterCurrent->SetValue(camera->GetJitter());
+                auto pipeline = PipelineManager::GetPipeline(config);
+                commandList->BindPipeline(pipeline);
 
 				for (auto node : nodes) {
 
-					node->cell->heightField->Bind(0);
-					node->cell->normalMap->Bind(1);
-					node->cell->splatMap->Bind(2);
+					node->cell->heightField.Bind(commandList, 3, 0);
+					node->cell->normalMap.Bind(commandList, 3, 1);
+					node->cell->splatMap.Bind(commandList, 3, 2);
 
-					nodeLocation->SetValue(node->location);
-					nodeSideLength->SetValue(node->sideLength);
+                    auto tileScale = terrain->resolution * powf(2.0f,
+                        (float)(terrain->LoDCount - node->cell->LoD) - 1.0f);
 
-					leftLoD->SetValue(node->leftLoDStitch);
-					topLoD->SetValue(node->topLoDStitch);
-					rightLoD->SetValue(node->rightLoDStitch);
-					bottomLoD->SetValue(node->bottomLoDStitch);
+                    PushConstants constants = {
+                        .nodeSideLength = node->sideLength,
+                        .tileScale = tileScale,
+                        .patchSize = float(terrain->patchSizeFactor),
+                        .normalTexelSize = 1.0f / float(node->cell->normalMap.width),
 
-					tileScale->SetValue(terrain->resolution * powf(2.0f, (float)(terrain->LoDCount - node->cell->LoD) - 1.0f));
-					patchSize->SetValue(float(terrain->patchSizeFactor));
+                        .leftLoD = node->leftLoDStitch,
+                        .topLoD = node->topLoDStitch,
+                        .rightLoD = node->rightLoDStitch,
+                        .bottomLoD = node->bottomLoDStitch,
 
-					normalTexelSize->SetValue(1.0f / float(node->cell->normalMap->width));
+                        .nodeLocation = node->location
+                    };
 
-					glDrawArraysInstanced(GL_PATCHES, 0, terrain->patchVertexCount, 64);
+                    commandList->PushConstants("constants", &constants);
+
+                    commandList->Draw(terrain->patchVertexCount, 64);
 
 				}
 
-				Profiler::EndQuery();
+				Graphics::Profiler::EndQuery();
 
 			}
 
-			if (terrain->wireframe)
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			//if (terrain->wireframe)
+			//	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-			Profiler::EndQuery();
-             */
-
-		}
-
-		void TerrainRenderer::GetUniforms() {
-
-            /*
-			heightScale = shaderBatch.GetUniform("heightScale");
-
-			offset = shaderBatch.GetUniform("offset");
-			tileScale = shaderBatch.GetUniform("tileScale");
-			viewMatrix = shaderBatch.GetUniform("vMatrix");
-			projectionMatrix = shaderBatch.GetUniform("pMatrix");
-			nodeSideLength = shaderBatch.GetUniform("nodeSideLength");
-			nodeLocation = shaderBatch.GetUniform("nodeLocation");
-			patchSize = shaderBatch.GetUniform("patchSize");
-
-			leftLoD = shaderBatch.GetUniform("leftLoD");
-			topLoD = shaderBatch.GetUniform("topLoD");
-			rightLoD = shaderBatch.GetUniform("rightLoD");
-			bottomLoD = shaderBatch.GetUniform("bottomLoD");
-
-			tessellationFactor = shaderBatch.GetUniform("tessellationFactor");
-			tessellationSlope = shaderBatch.GetUniform("tessellationSlope");
-			tessellationShift = shaderBatch.GetUniform("tessellationShift");
-			maxTessellationLevel = shaderBatch.GetUniform("maxTessellationLevel");
-
-			displacementDistance = shaderBatch.GetUniform("displacementDistance");
-
-			cameraLocation = shaderBatch.GetUniform("cameraLocation");
-			frustumPlanes = shaderBatch.GetUniform("frustumPlanes");
-
-			normalTexelSize = shaderBatch.GetUniform("normalTexelSize");
-
-			pvMatrixLast = shaderBatch.GetUniform("pvMatrixLast");
-			jitterLast = shaderBatch.GetUniform("jitterLast");
-			jitterCurrent = shaderBatch.GetUniform("jitterCurrent");
-             */
+            Graphics::Profiler::EndQuery();
 
 		}
+
+        PipelineConfig TerrainRenderer::GeneratePipelineConfig(RenderTarget *target,
+            Ref<Terrain::Terrain>& terrain, bool detailConfig) {
+
+            const auto shaderConfig = ShaderConfig {
+                {"terrain/terrain.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                {"terrain/terrain.tcsh", VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT},
+                {"terrain/terrain.tesh", VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT},
+                {"terrain/terrain.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+            };
+
+            auto pipelineDesc = Graphics::GraphicsPipelineDesc {
+                .frameBuffer = target->gBufferFrameBuffer,
+                .vertexInputInfo = terrain->vertexArray.GetVertexInputState(),
+            };
+
+            pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+            pipelineDesc.tessellationInfo.patchControlPoints = 4;
+            pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
+            //pipelineDesc.rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
+
+            return detailConfig ? PipelineConfig(shaderConfig, pipelineDesc) :
+                   PipelineConfig(shaderConfig, pipelineDesc, {"DISTANCE"});
+
+        }
 
 	}
 

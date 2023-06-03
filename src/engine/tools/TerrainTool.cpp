@@ -25,7 +25,7 @@ namespace Atlas {
 
 			auto terrain = new Terrain::Terrain(rootNodeSideCount, LoDCount, patchSize, resolution, height);
 
-			terrain->storage.AddMaterial(0, material);
+            terrain->storage.WriteMaterial(0, material);
 
 			// Calculate the number of vertices per tile and resize the height data to map 1:1
 			int32_t tileResolution = 8 * patchSize;
@@ -116,7 +116,7 @@ namespace Atlas {
 
 			int32_t count = 0;
 			for (auto& material : materials) {
-				terrain->storage.AddMaterial(count++, material);
+                terrain->storage.WriteMaterial(count++, material);
 			}
 
 			// Calculate the number of vertices per tile and resize the height data to map 1:1

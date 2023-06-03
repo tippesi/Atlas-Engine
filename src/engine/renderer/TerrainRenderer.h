@@ -14,7 +14,8 @@ namespace Atlas {
 			TerrainRenderer();
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-				Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap);
+				Scene::Scene* scene, Graphics::CommandList* commandList,
+                std::unordered_map<void*, uint16_t> materialMap);
 
 		private:
 			void GetUniforms();
@@ -32,46 +33,44 @@ namespace Atlas {
 				float padding1;
 			};
 
-            /*
-			OldShader::ShaderBatch shaderBatch;
+            struct alignas(16) Uniforms {
 
-			OldShader::ShaderConfig detailConfig;
-			OldShader::ShaderConfig distanceConfig;
+                vec4 frustumPlanes[6];
 
-			Buffer::Buffer terrainMaterialBuffer;
+                float heightScale;
+                float displacementDistance;
 
-			OldShader::Uniform* heightScale = nullptr;
-			OldShader::Uniform* offset = nullptr;
-			OldShader::Uniform* tileScale = nullptr;
-			OldShader::Uniform* viewMatrix = nullptr;
-			OldShader::Uniform* projectionMatrix = nullptr;
-			OldShader::Uniform* nodeSideLength = nullptr;
-			OldShader::Uniform* nodeLocation = nullptr;
+                float tessellationFactor;
+                float tessellationSlope;
+                float tessellationShift;
+                float maxTessellationLevel;
 
-			OldShader::Uniform* leftLoD = nullptr;
-			OldShader::Uniform* topLoD = nullptr;
-			OldShader::Uniform* rightLoD = nullptr;
-			OldShader::Uniform* bottomLoD = nullptr;
+            };
 
-			OldShader::Uniform* patchSize = nullptr;
+            struct alignas(16) PushConstants {
 
-			OldShader::Uniform* tessellationFactor = nullptr;
-			OldShader::Uniform* tessellationSlope = nullptr;
-			OldShader::Uniform* tessellationShift = nullptr;
-			OldShader::Uniform* maxTessellationLevel = nullptr;
+                float nodeSideLength;
+                float tileScale;
+                float patchSize;
+                float normalTexelSize;
 
-			OldShader::Uniform* displacementDistance = nullptr;
+                float leftLoD;
+                float topLoD;
+                float rightLoD;
+                float bottomLoD;
 
-			OldShader::Uniform* cameraLocation = nullptr;
-			OldShader::Uniform* frustumPlanes = nullptr;
+                vec2 nodeLocation;
 
-			OldShader::Uniform* normalTexelSize = nullptr;
+            };
 
-			OldShader::Uniform* pvMatrixLast = nullptr;
-			OldShader::Uniform* jitterLast = nullptr;
-			OldShader::Uniform* jitterCurrent = nullptr;
-            */
+            PipelineConfig detailConfig;
+            PipelineConfig distanceConfig;
 
+            Buffer::UniformBuffer uniformBuffer;
+            Buffer::UniformBuffer terrainMaterialBuffer;
+
+            PipelineConfig GeneratePipelineConfig(RenderTarget* target,
+                Ref<Terrain::Terrain>& terrain, bool detailConfig);
 		};
 
 	}

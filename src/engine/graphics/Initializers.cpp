@@ -194,6 +194,17 @@ namespace Atlas {
 
             }
 
+            VkPipelineTessellationStateCreateInfo InitPipelineTessellationStateCreateInfo(uint32_t controlPoints) {
+
+                VkPipelineTessellationStateCreateInfo info = {};
+
+                info.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+                info.patchControlPoints = controlPoints;
+
+                return info;
+
+            }
+
             VkPipelineColorBlendAttachmentState InitPipelineColorBlendAttachmentState() {
 
                 VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
