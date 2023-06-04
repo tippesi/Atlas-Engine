@@ -13,84 +13,96 @@ namespace Atlas {
 		class OceanRenderer : public Renderer {
 
 		public:
-			OceanRenderer();
+			OceanRenderer() = default;
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+            void Init(Graphics::GraphicsDevice* device);
+
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
 
 		private:
-			void GetUniforms();
+            struct alignas(16) Uniforms {
+                vec4 translation;
 
-			Buffer::VertexArray vertexArray;
+                float displacementScale;
+                float choppyScale;
+                float tiling;
+                int hasRippleTexture;
 
-			Texture::Texture2D refractionTexture;
-			Texture::Texture2D depthTexture;
+                float shoreWaveDistanceOffset;
+                float shoreWaveDistanceScale;
+                float shoreWaveAmplitude;
+                float shoreWaveSteepness;
 
-            /*
-			OldShader::OldShader causticsShader;
+                float shoreWavePower;
+                float shoreWaveSpeed;
+                float shoreWaveLength;
+                float terrainSideLength;
 
-			OldShader::OldShader shader;
+                vec4 terrainTranslation;
 
-			OldShader::Uniform* nodeLocation = nullptr;
-			OldShader::Uniform* nodeSideLength = nullptr;
+                float terrainHeightScale;
+            };
 
-			OldShader::Uniform* viewMatrix = nullptr;
-			OldShader::Uniform* inverseViewMatrix = nullptr;
-			OldShader::Uniform* projectionMatrix = nullptr;
-			OldShader::Uniform* inverseProjectionMatrix = nullptr;
+            struct alignas(16) Cascade {
+                float distance;
+                float texelSize;
+                float aligment0;
+                float aligment1;
+                mat4 cascadeSpace;
+            };
 
-			OldShader::Uniform* cameraLocation = nullptr;
+            struct alignas(16) Shadow {
+                float distance;
+                float bias;
 
-			OldShader::Uniform* time = nullptr;
+                float cascadeBlendDistance;
 
-			OldShader::Uniform* translation = nullptr;
+                int cascadeCount;
+                vec2 resolution;
 
-			OldShader::Uniform* displacementScale = nullptr;
-			OldShader::Uniform* choppyScale = nullptr;
-			OldShader::Uniform* tiling = nullptr;
+                Cascade cascades[6];
+            };
 
-			OldShader::Uniform* shoreWaveDistanceOffset = nullptr;
-			OldShader::Uniform* shoreWaveDistanceScale = nullptr;
-			OldShader::Uniform* shoreWaveAmplitude = nullptr;
-			OldShader::Uniform* shoreWaveSteepness = nullptr;
-			OldShader::Uniform* shoreWavePower = nullptr;
-			OldShader::Uniform* shoreWaveSpeed = nullptr;
-			OldShader::Uniform* shoreWaveLength = nullptr;
+            struct alignas(16) Light {
+                vec4 location;
+                vec4 direction;
 
-			OldShader::Uniform* leftLoD = nullptr;
-			OldShader::Uniform* topLoD = nullptr;
-			OldShader::Uniform* rightLoD = nullptr;
-			OldShader::Uniform* bottomLoD = nullptr;
+                vec4 color;
+                float intensity;
 
-			OldShader::Uniform* lightDirection = nullptr;
-			OldShader::Uniform* lightColor = nullptr;
-			OldShader::Uniform* lightAmbient = nullptr;
+                float scatteringFactor;
 
-			OldShader::Uniform* shadowDistance = nullptr;
-			OldShader::Uniform* shadowBias = nullptr;
-			OldShader::Uniform* shadowCascadeCount = nullptr;
-			OldShader::Uniform* shadowResolution = nullptr;
+                float radius;
 
-			OldShader::Uniform* terrainTranslation = nullptr;
-			OldShader::Uniform* terrainSideLength = nullptr;
-			OldShader::Uniform* terrainHeightScale = nullptr;
+                Shadow shadow;
+            };
 
-			OldShader::Uniform* hasRippleTexture = nullptr;
+            struct alignas(16) PushConstants {
+                float nodeSideLength;
+                float tileScale;
+                float patchSize;
+                float heightScale;
 
-			OldShader::Uniform* fogScale = nullptr;
-			OldShader::Uniform* fogDistanceScale = nullptr;
-			OldShader::Uniform* fogHeight = nullptr;
-			OldShader::Uniform* fogColor = nullptr;
-			OldShader::Uniform* fogScatteringPower = nullptr;
+                float leftLoD;
+                float topLoD;
+                float rightLoD;
+                float bottomLoD;
 
-			struct ShadowCascadeUniform {
-				OldShader::Uniform* distance = nullptr;
-				OldShader::Uniform* lightSpace = nullptr;
-			}cascades[MAX_SHADOW_CASCADE_COUNT + 1];
+                vec2 nodeLocation;
+            };
 
-			OldShader::Uniform* pvMatrixLast = nullptr;
-			OldShader::Uniform* jitterLast = nullptr;
-			OldShader::Uniform* jitterCurrent = nullptr;
-             */
+            PipelineConfig GeneratePipelineConfig(RenderTarget* target, bool wireframe);
+
+            PipelineConfig causticPipelineConfig;
+
+            Buffer::VertexArray vertexArray;
+
+            Texture::Texture2D refractionTexture;
+            Texture::Texture2D depthTexture;
+
+            Buffer::UniformBuffer uniformBuffer;
+            Buffer::UniformBuffer lightUniformBuffer;
 
 		};
 

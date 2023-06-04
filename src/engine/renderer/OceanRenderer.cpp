@@ -7,34 +7,30 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		OceanRenderer::OceanRenderer() {
+		void OceanRenderer::Init(Graphics::GraphicsDevice* device) {
 
-            /*
+            this->device = device;
+
 			Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 129, 1.0f / 128.0f);
 
-			causticsShader.AddStage(AE_COMPUTE_STAGE, "ocean/caustics.csh");
-			causticsShader.Compile();
+            causticPipelineConfig = PipelineConfig("ocean/caustics.csh");
 
-			shader.AddStage(AE_VERTEX_STAGE, "ocean/ocean.vsh");
-			shader.AddStage(AE_FRAGMENT_STAGE, "ocean/ocean.fsh");
-			shader.Compile();
-
-			GetUniforms();
-             */
+            uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
+            lightUniformBuffer = Buffer::UniformBuffer(sizeof(Light));
 
 		}
 
-		void OceanRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+		void OceanRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-            /*
 			if (!scene->ocean || !scene->ocean->enable)
 				return;
 
-			Profiler::BeginQuery("Ocean");
+			Graphics::Profiler::BeginQuery("Ocean");
 
 			auto ocean = scene->ocean;
 
-			auto sun = scene->sky.sun;
+			auto sun = scene->sky.sun.get();
 			if (!sun) {
 				auto lights = scene->GetLights();
 				for (auto& light : lights) {
@@ -48,8 +44,9 @@ namespace Atlas {
 
 			vec3 direction = normalize(sun->direction);
 
+            /*
 			{
-				Profiler::BeginQuery("Caustics");
+                Graphics::Profiler::BeginQuery("Caustics");
 
 				const int32_t groupSize = 8;
 				auto res = ivec2(target->GetWidth(), target->GetHeight());
@@ -96,255 +93,217 @@ namespace Atlas {
 					causticsShader.GetUniform("light.shadow.distance")->SetValue(0.0f);
 				}
 
-				causticsShader.GetUniform("time")->SetValue(Clock::Get());
-				causticsShader.GetUniform("ipMatrix")->SetValue(camera->invProjectionMatrix);
-				causticsShader.GetUniform("ivMatrix")->SetValue(camera->invViewMatrix);
-
 				glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
 
 				glDispatchCompute(groupCount.x, groupCount.y, 1);
 
 				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			}
+            */
 
 			// Update local texture copies
-			auto texture = target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0);
+            {
+                auto& colorImage = target->lightingFrameBuffer->GetColorImage(0);
+                if (refractionTexture.width != colorImage->width ||
+                    refractionTexture.height != colorImage->height ||
+                    refractionTexture.format != colorImage->format) {
+                    refractionTexture = Texture::Texture2D(colorImage->width, colorImage->height,
+                        colorImage->format);
+                }
 
-			if (refractionTexture.width != texture->width ||
-				refractionTexture.height != texture->height ||
-				refractionTexture.GetSizedFormat() != texture->GetSizedFormat()) {
-				refractionTexture = Texture::Texture2D(*texture);
-			}
-			else {
-				refractionTexture.Copy(*texture);
-			}
+                auto& depthImage = target->lightingFrameBuffer->GetDepthImage();
+                if (depthTexture.width != depthImage->width ||
+                    depthTexture.height != depthImage->height ||
+                    depthTexture.format != depthImage->format) {
+                    depthTexture = Texture::Texture2D(depthImage->width, depthImage->height,
+                        depthImage->format);
+                }
 
-			texture = target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT);
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
 
-			if (depthTexture.width != texture->width ||
-				depthTexture.height != texture->height ||
-				depthTexture.GetSizedFormat() != texture->GetSizedFormat()) {
-				depthTexture = Texture::Texture2D(*texture);
-			}
-			else {
-				depthTexture.Copy(*texture);
-			}
+                imageBarriers = {
+                    {colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
+                    {depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
+                    {refractionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+                    {depthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+                commandList->CopyImage(colorImage, refractionTexture.image);
+                commandList->CopyImage(depthImage, depthTexture.image);
+
+                imageBarriers = {
+                    {colorImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {depthImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {refractionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {depthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+            }
 			
 			{
-				Profiler::EndAndBeginQuery("Surface");
+                Graphics::Profiler::EndAndBeginQuery("Surface");
 
-				shader.Bind();
+                // TODO: Remove when simulation works
+                commandList->ImageMemoryBarrier(ocean->simulation.displacementMap.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+                commandList->ImageMemoryBarrier(ocean->simulation.normalMap.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
-				vertexArray.Bind();
+                commandList->BeginRenderPass(target->lightingFrameBuffer->renderPass, target->lightingFrameBuffer);
 
-				shader.GetUniform("light.intensity")->SetValue(sun->intensity);
-				lightDirection->SetValue(direction);
-				lightColor->SetValue(sun->color);
-				lightAmbient->SetValue(0.0f);
+                auto config = GeneratePipelineConfig(target, ocean->wireframe);
+				auto pipeline = PipelineManager::GetPipeline(config);
+
+                commandList->BindPipeline(pipeline);
+
+				vertexArray.Bind(commandList);
+
+                Light lightUniform;
+                lightUniform.direction = vec4(sun->direction, 0.0);
+                lightUniform.color = vec4(sun->color, 0.0);
+                lightUniform.intensity = sun->intensity;
 
 				if (sun->GetVolumetric()) {
-					ivec2 res = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
-					glViewport(0, 0, res.x, res.x);
-					target->volumetricTexture.Bind(7);
-					glViewport(0, 0, target->lightingFramebuffer.width, target->lightingFramebuffer.height);
+					target->volumetricTexture.Bind(commandList, 3, 7);
 				}
 
-				if (sun->GetShadow()) {
-					auto distance = !sun->GetShadow()->longRange ? sun->GetShadow()->distance :
-						sun->GetShadow()->longRangeDistance;
-					shadowDistance->SetValue(distance);
-					shadowBias->SetValue(sun->GetShadow()->bias);
-					shadowCascadeCount->SetValue(sun->GetShadow()->componentCount);
-					shadowResolution->SetValue(vec2((float)sun->GetShadow()->resolution));
+                auto shadow = sun->GetShadow();
+				if (shadow) {
+					auto distance = !shadow->longRange ? shadow->distance :
+						shadow->longRangeDistance;
+                    auto& shadowUniform = lightUniform.shadow;
+                    shadowUniform.distance = distance;
+                    shadowUniform.bias = shadow->bias;
+                    shadowUniform.cascadeCount = shadow->componentCount;
+                    shadowUniform.resolution = vec2(shadow->resolution);
 
-					sun->GetShadow()->maps.Bind(8);
+					shadow->maps.Bind(commandList, 3, 8);
 
 					for (int32_t i = 0; i < sun->GetShadow()->componentCount; i++) {
-						auto cascade = &sun->GetShadow()->components[i];
-						auto frustum = Volume::Frustum(cascade->frustumMatrix);
+						auto& cascade = shadow->components[i];
+                        auto& cascadeUniform = shadowUniform.cascades[i];
+						auto frustum = Volume::Frustum(cascade.frustumMatrix);
 						auto corners = frustum.GetCorners();
 						auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
 							abs(corners[1].y - corners[3].y)) / (float)sun->GetShadow()->resolution;
-						cascades[i].distance->SetValue(cascade->farDistance);
-						cascades[i].lightSpace->SetValue(cascade->projectionMatrix * cascade->viewMatrix * camera->invViewMatrix);
-						shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].texelSize")->SetValue(texelSize);
+                        cascadeUniform.distance = cascade.farDistance;
+                        cascadeUniform.cascadeSpace = cascade.projectionMatrix * cascade.viewMatrix * camera->invViewMatrix;
+                        cascadeUniform.texelSize = texelSize;
 					}
 				}
 				else {
-					shadowDistance->SetValue(0.0f);
+					shadow->distance = 0.0f;
 				}
 
-				time->SetValue(Clock::Get());
+                lightUniformBuffer.SetData(&lightUniform, 0, 1);
 
-				translation->SetValue(ocean->translation);
+                Uniforms uniforms = {
+                    .translation = vec4(ocean->translation, 1.0f),
 
-				displacementScale->SetValue(ocean->displacementScale);
-				choppyScale->SetValue(ocean->choppynessScale);
-				tiling->SetValue(ocean->tiling);
+                    .displacementScale = ocean->displacementScale,
+                    .choppyScale = ocean->choppynessScale,
+                    .tiling = ocean->tiling,
+                    .hasRippleTexture = ocean->rippleTexture.IsValid() ? 1 : 0,
 
-				shoreWaveDistanceOffset->SetValue(ocean->shoreWaveDistanceOffset);
-				shoreWaveDistanceScale->SetValue(ocean->shoreWaveDistanceScale);
-				shoreWaveAmplitude->SetValue(ocean->shoreWaveAmplitude);
-				shoreWaveSteepness->SetValue(ocean->shoreWaveSteepness);
-				shoreWavePower->SetValue(ocean->shoreWavePower);
-				shoreWaveSpeed->SetValue(ocean->shoreWaveSpeed);
-				shoreWaveLength->SetValue(ocean->shoreWaveLength);
+                    .shoreWaveDistanceOffset = ocean->shoreWaveDistanceOffset,
+                    .shoreWaveDistanceScale = ocean->shoreWaveDistanceScale,
+                    .shoreWaveAmplitude = ocean->shoreWaveAmplitude,
+                    .shoreWaveSteepness = ocean->shoreWaveSteepness,
 
-				ocean->simulation.displacementMap.Bind(0);
-				ocean->simulation.normalMap.Bind(1);
+                    .shoreWavePower = ocean->shoreWavePower,
+                    .shoreWaveSpeed = ocean->shoreWaveSpeed,
+                    .shoreWaveLength = ocean->shoreWaveLength,
+                    .terrainSideLength = -1.0f,
+                };
 
-				ocean->foamTexture.Bind(2);
+				ocean->simulation.displacementMap.Bind(commandList, 3, 0);
+				ocean->simulation.normalMap.Bind(commandList, 3, 1);
 
-				if (scene->sky.GetProbe())
-					scene->sky.GetProbe()->cubemap.Bind(3);
+				ocean->foamTexture.Bind(commandList, 3, 2);
 
-				refractionTexture.Bind(4);
-				depthTexture.Bind(5);
+				if (scene->sky.GetProbe()) {
+                    scene->sky.GetProbe()->cubemap.Bind(commandList, 3, 3);
+                }
 
-				// In case a terrain isn't available
-				terrainSideLength->SetValue(-1.0f);
+				refractionTexture.Bind(commandList, 3, 4);
+				depthTexture.Bind(commandList, 3, 5);
 
 				if (scene->terrain) {
-					if (scene->terrain->shoreLine.width > 0 &&
-						scene->terrain->shoreLine.height > 0) {
+					if (scene->terrain->shoreLine.IsValid()) {
+                        auto terrain = scene->terrain;
 
-						terrainTranslation->SetValue(scene->terrain->translation);
-						terrainHeightScale->SetValue(scene->terrain->heightScale);
-						terrainSideLength->SetValue(scene->terrain->sideLength);
+                        uniforms.terrainTranslation = vec4(terrain->translation, 1.0f);
+                        uniforms.terrainSideLength = scene->terrain->sideLength;
+                        uniforms.terrainHeightScale = scene->terrain->heightScale;
 
-						scene->terrain->shoreLine.Bind(9);
+						scene->terrain->shoreLine.Bind(commandList, 3, 9);
 
 					}
 				}
 
-				if (ocean->rippleTexture.width > 0 &&
-					ocean->rippleTexture.height > 0) {
-					ocean->rippleTexture.Bind(10);
-					hasRippleTexture->SetValue(true);
-				}
-				else {
-					hasRippleTexture->SetValue(false);
+				if (ocean->rippleTexture.IsValid()) {
+					ocean->rippleTexture.Bind(commandList, 3, 10);
 				}
 
-				viewMatrix->SetValue(camera->viewMatrix);
-				projectionMatrix->SetValue(camera->projectionMatrix);
+                uniformBuffer.SetData(&uniforms, 0, 1);
 
-				inverseViewMatrix->SetValue(camera->invViewMatrix);
-				inverseProjectionMatrix->SetValue(camera->invProjectionMatrix);
-
-				jitterLast->SetValue(camera->GetLastJitter());
-				jitterCurrent->SetValue(camera->GetJitter());
-				pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
-
-				cameraLocation->SetValue(camera->GetLocation());
-
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                uniformBuffer.Bind(commandList, 3, 11);
+                lightUniformBuffer.Bind(commandList, 3, 12);
 
 				auto renderList = ocean->GetRenderList();
 
-				glDisable(GL_CULL_FACE);
-
-#ifdef AE_API_GL
-				if (ocean->wireframe)
-					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-#endif
-
 				for (auto node : renderList) {
 
-					nodeLocation->SetValue(node->location);
-					nodeSideLength->SetValue(node->sideLength);
+                    PushConstants constants = {
+                        .nodeSideLength = node->sideLength,
+                        .nodeLocation = node->location,
 
-					leftLoD->SetValue(node->leftLoDStitch);
-					topLoD->SetValue(node->topLoDStitch);
-					rightLoD->SetValue(node->rightLoDStitch);
-					bottomLoD->SetValue(node->bottomLoDStitch);
+                        .leftLoD = node->leftLoDStitch,
+                        .topLoD = node->topLoDStitch,
+                        .rightLoD = node->rightLoDStitch,
+                        .bottomLoD = node->bottomLoDStitch
+                    };
 
-					glDrawElements(GL_TRIANGLE_STRIP, (int32_t)vertexArray.GetIndexComponent()->GetElementCount(),
-						vertexArray.GetIndexComponent()->GetDataType(), nullptr);
+                    commandList->PushConstants("constants", &constants);
+
+                    commandList->DrawIndexed(vertexArray.GetIndexComponent().elementCount);
 
 				}
 
-#ifdef AE_API_GL
-				if (ocean->wireframe)
-					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-#endif
+                commandList->EndRenderPass();
 
-				glEnable(GL_CULL_FACE);
+				Graphics::Profiler::EndQuery();
 
-				Profiler::EndQuery();
 			}
 
-			Profiler::EndQuery();
-             */
+			Graphics::Profiler::EndQuery();
 
 		}
 
-		void OceanRenderer::GetUniforms() {
+        PipelineConfig OceanRenderer::GeneratePipelineConfig(RenderTarget* target, bool wireframe) {
 
-            /*
-			nodeLocation = shader.GetUniform("nodeLocation");
-			nodeSideLength = shader.GetUniform("nodeSideLength");
+            const auto shaderConfig = ShaderConfig {
+                {"ocean/ocean.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                {"ocean/ocean.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+            };
 
-			viewMatrix = shader.GetUniform("vMatrix");
-			inverseViewMatrix = shader.GetUniform("ivMatrix");
-			projectionMatrix = shader.GetUniform("pMatrix");
-			inverseProjectionMatrix = shader.GetUniform("ipMatrix");
+            auto pipelineDesc = Graphics::GraphicsPipelineDesc {
+                .frameBuffer = target->lightingFrameBuffer,
+                .vertexInputInfo = vertexArray.GetVertexInputState(),
+            };
 
-			cameraLocation = shader.GetUniform("cameraLocation");
+            pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
+            pipelineDesc.rasterizer.polygonMode = wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 
-			time = shader.GetUniform("time");
+            return PipelineConfig(shaderConfig, pipelineDesc);
 
-			translation = shader.GetUniform("translation");
+        }
 
-			displacementScale = shader.GetUniform("displacementScale");
-			choppyScale = shader.GetUniform("choppyScale");
-			tiling = shader.GetUniform("tiling");
-
-			shoreWaveDistanceOffset = shader.GetUniform("shoreWaveDistanceOffset");
-			shoreWaveDistanceScale = shader.GetUniform("shoreWaveDistanceScale");
-			shoreWaveAmplitude = shader.GetUniform("shoreWaveAmplitude");
-			shoreWaveSteepness = shader.GetUniform("shoreWaveSteepness");
-			shoreWavePower = shader.GetUniform("shoreWavePower");
-			shoreWaveSpeed = shader.GetUniform("shoreWaveSpeed");
-			shoreWaveLength = shader.GetUniform("shoreWaveLength");
-
-			leftLoD = shader.GetUniform("leftLoD");
-			topLoD = shader.GetUniform("topLoD");
-			rightLoD = shader.GetUniform("rightLoD");
-			bottomLoD = shader.GetUniform("bottomLoD");
-
-			lightDirection = shader.GetUniform("light.direction");
-			lightColor = shader.GetUniform("light.color");
-			lightAmbient = shader.GetUniform("light.ambient");
-
-			shadowDistance = shader.GetUniform("light.shadow.distance");
-			shadowBias = shader.GetUniform("light.shadow.bias");
-			shadowCascadeCount = shader.GetUniform("light.shadow.cascadeCount");
-			shadowResolution = shader.GetUniform("light.shadow.resolution");
-
-			terrainTranslation = shader.GetUniform("terrainTranslation");
-			terrainSideLength = shader.GetUniform("terrainSideLength");
-			terrainHeightScale = shader.GetUniform("terrainHeightScale");
-
-			hasRippleTexture = shader.GetUniform("hasRippleTexture");
-
-			fogScale = shader.GetUniform("fogScale");
-			fogDistanceScale = shader.GetUniform("fogDistanceScale");
-			fogHeight = shader.GetUniform("fogHeight");
-			fogColor = shader.GetUniform("fogColor");
-			fogScatteringPower = shader.GetUniform("fogScatteringPower");
-
-			for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
-				cascades[i].distance = shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].distance");
-				cascades[i].lightSpace = shader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].cascadeSpace");
-			}
-
-			pvMatrixLast = shader.GetUniform("pvMatrixLast");
-			jitterLast = shader.GetUniform("jitterLast");
-			jitterCurrent = shader.GetUniform("jitterCurrent");
-             */
-
-		}
 
 	}
 

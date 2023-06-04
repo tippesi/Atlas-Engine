@@ -1,2 +1,43 @@
-uniform float time;
-uniform vec3 cameraLocation;
+#include <../globals.hsh>
+#include <../structures>
+
+layout (set = 3, binding = 11, std140) uniform UniformBuffer {
+    vec4 translation;
+
+    float displacementScale;
+    float choppyScale;
+    float tiling;
+    int hasRippleTexture;
+
+    float shoreWaveDistanceOffset;
+    float shoreWaveDistanceScale;
+    float shoreWaveAmplitude;
+    float shoreWaveSteepness;
+
+    float shoreWavePower;
+    float shoreWaveSpeed;
+    float shoreWaveLength;
+    float terrainSideLength;
+
+    vec4 terrainTranslation;
+
+    float terrainHeightScale;
+} Uniforms;
+
+layout (set = 3, binding = 12, std140) uniform LightUniformBuffer {
+    Light light;
+} LightUniforms;
+
+layout(push_constant) uniform constants {
+    float nodeSideLength;
+    float tileScale;
+    float patchSize;
+    float heightScale;
+
+    float leftLoD;
+    float topLoD;
+    float rightLoD;
+    float bottomLoD;
+
+    vec2 nodeLocation;
+} PushConstants;

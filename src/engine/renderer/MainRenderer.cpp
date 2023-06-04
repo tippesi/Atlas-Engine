@@ -53,6 +53,7 @@ namespace Atlas {
 			indirectLightRenderer.Init(device);
 			skyboxRenderer.Init(device);
             atmosphereRenderer.Init(device);
+            oceanRenderer.Init(device);
             volumetricCloudRenderer.Init(device);
             volumetricRenderer.Init(device);
             taaRenderer.Init(device);
@@ -233,6 +234,11 @@ namespace Atlas {
 
                 Graphics::Profiler::EndQuery();
 			}
+
+            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
+            commandList->BindBuffer(globalUniformBuffer, 0, 0);
+
+            oceanRenderer.Render(viewport, target, camera, scene, commandList);
 
 			{
                 volumetricCloudRenderer.Render(viewport, target, camera, scene, commandList);

@@ -61,9 +61,6 @@ namespace Atlas {
 			terrain->storage.normalMaps.Bind(commandList, 3, 6);
 			terrain->storage.displacementMaps.Bind(commandList, 3, 7);
 
-			//if (terrain->wireframe)
-			//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
             Uniforms uniforms = {
                 .heightScale = terrain->heightScale,
                 .displacementDistance = terrain->displacementDistance,
@@ -135,9 +132,6 @@ namespace Atlas {
 				Graphics::Profiler::EndQuery();
 
 			}
-
-			//if (terrain->wireframe)
-			//	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
             Graphics::Profiler::EndQuery();
 

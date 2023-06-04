@@ -13,11 +13,10 @@ namespace Atlas {
 
 		OceanSimulation::OceanSimulation(int32_t N, int32_t L) : N(N), L(L) {
 
-            /*
-			noise0 = Texture::Texture2D(N, N, AE_R8);
-			noise1 = Texture::Texture2D(N, N, AE_R8);
-			noise2 = Texture::Texture2D(N, N, AE_R8);
-			noise3 = Texture::Texture2D(N, N, AE_R8);
+			noise0 = Texture::Texture2D(N, N, VK_FORMAT_R8_UNORM);
+			noise1 = Texture::Texture2D(N, N, VK_FORMAT_R8_UNORM);
+			noise2 = Texture::Texture2D(N, N, VK_FORMAT_R8_UNORM);
+			noise3 = Texture::Texture2D(N, N, VK_FORMAT_R8_UNORM);
 
 			Common::Image<uint8_t> image0(N, N, 1);
 			Common::Image<uint8_t> image1(N, N, 1);
@@ -33,12 +32,14 @@ namespace Atlas {
 			noise1.SetData(image1.GetData());
 			noise2.SetData(image2.GetData());
 			noise3.SetData(image3.GetData());
-             */
+
+
+			displacementMap = Texture::Texture2D(N, N, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::Repeat, Texture::Filtering::Linear);
+			normalMap = Texture::Texture2D(N, N, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::Repeat, Texture::Filtering::Linear);
 
             /*
-			displacementMap = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);
-			normalMap = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);
-
 			displacementMapPrev = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);
 
 			h0K = Texture::Texture2D(N, N, AE_RG32F);
