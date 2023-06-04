@@ -39,8 +39,6 @@ namespace Atlas {
 
             PipelineConfig GetMainPipelineConfig(const Ref<Graphics::FrameBuffer> frameBuffer);
 
-            PipelineConfig mainPipelineSwapChainConfig;
-            PipelineConfig mainPipelineFrameBufferConfig;
             PipelineConfig sharpenPipelineConfig;
 
             Ref<Graphics::MultiBuffer> uniformBuffer;

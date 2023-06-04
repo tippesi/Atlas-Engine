@@ -11,7 +11,9 @@ namespace Atlas {
 		class TerrainRenderer : public Renderer {
 
 		public:
-			TerrainRenderer();
+			TerrainRenderer() = default;
+
+            void Init(Graphics::GraphicsDevice* device);
 
 			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
 				Scene::Scene* scene, Graphics::CommandList* commandList,

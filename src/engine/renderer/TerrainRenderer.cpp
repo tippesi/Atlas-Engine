@@ -4,7 +4,7 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		TerrainRenderer::TerrainRenderer() {
+		void TerrainRenderer::Init(Graphics::GraphicsDevice* device) {
 
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
 			terrainMaterialBuffer = Buffer::UniformBuffer(sizeof(TerrainMaterial), 256);
@@ -160,8 +160,8 @@ namespace Atlas {
 
             pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
             pipelineDesc.tessellationInfo.patchControlPoints = 4;
-            pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
-            //pipelineDesc.rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
+            pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+            pipelineDesc.rasterizer.polygonMode = terrain->wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 
             return detailConfig ? PipelineConfig(shaderConfig, pipelineDesc) :
                    PipelineConfig(shaderConfig, pipelineDesc, {"DISTANCE"});

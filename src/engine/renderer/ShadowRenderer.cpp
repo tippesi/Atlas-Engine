@@ -47,9 +47,7 @@ namespace Atlas {
                 }
 
                 // We don't want to render to the long range component if it exists
-                auto componentCount = light->GetShadow()->longRange ?
-                    light->GetShadow()->componentCount - 1 :
-                    light->GetShadow()->componentCount;
+                auto componentCount = light->GetShadow()->componentCount;
 
                 bool isDirectionalLight = false;
                 vec3 lightLocation;
@@ -76,6 +74,13 @@ namespace Atlas {
                     auto shadowPass = renderList->GetShadowPass(light, i);
 
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
+
+                    // For long range we just begin a render pass to clear the texture
+                    // and transition into the correct layout. Kinda dirty
+                    if (light->GetShadow()->longRange && i == light->GetShadow()->componentCount - 1) {
+                        commandList->EndRenderPass();
+                        continue;
+                    }
 
                     // Retrieve all possible materials
                     std::vector<std::pair<Mesh::MeshSubData*, Mesh::Mesh*>> subDatas;
@@ -154,14 +159,6 @@ namespace Atlas {
 
                     commandList->EndRenderPass();
 
-                }
-
-                if (shadow->useCubemap) {
-
-                }
-                else {
-                    commandList->ImageMemoryBarrier(shadow->maps.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                        VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
                 }
 
             }

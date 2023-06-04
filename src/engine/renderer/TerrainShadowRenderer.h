@@ -11,31 +11,42 @@ namespace Atlas {
 		class TerrainShadowRenderer : public Renderer {
 
 		public:
-			TerrainShadowRenderer();
+			TerrainShadowRenderer() = default;
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+            void Init(Graphics::GraphicsDevice* device);
+
+			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
 
 		private:
-			void GetUniforms();
+            using LightMap = std::map<Lighting::Light*, Ref<Graphics::FrameBuffer>>;
 
-            /*
-			OldShader::OldShader shader;
+            struct alignas(16) PushConstants {
 
-			OldShader::Uniform* heightScale = nullptr;
-			OldShader::Uniform* tileScale = nullptr;
-			OldShader::Uniform* patchSize = nullptr;
+                mat4 lightSpaceMatrix;
 
-			OldShader::Uniform* nodeLocation = nullptr;
-			OldShader::Uniform* nodeSideLength = nullptr;
+                float nodeSideLength;
+                float tileScale;
+                float patchSize;
+                float heightScale;
 
-			OldShader::Uniform* leftLoD = nullptr;
-			OldShader::Uniform* topLoD = nullptr;
-			OldShader::Uniform* rightLoD = nullptr;
-			OldShader::Uniform* bottomLoD = nullptr;
+                float leftLoD;
+                float topLoD;
+                float rightLoD;
+                float bottomLoD;
 
-			OldShader::Uniform* lightSpaceMatrix = nullptr;
-            */
+                vec2 nodeLocation;
 
+            };
+
+            PipelineConfig GeneratePipelineConfig(Ref<Graphics::FrameBuffer>& framebuffer,
+                Ref<Terrain::Terrain>& terrain);
+
+            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);
+
+            LightMap lightMap;
+
+            Buffer::UniformBuffer uniformBuffer;
 
 		};
 

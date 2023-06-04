@@ -41,7 +41,9 @@ namespace Atlas {
             ddgiUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
 
             shadowRenderer.Init(device);
+            terrainShadowRenderer.Init(device);
             opaqueRenderer.Init(device);
+            terrainRenderer.Init(device);
             downscaleRenderer.Init(device);
             ddgiRenderer.Init(device);
             aoRenderer.Init(device);
@@ -132,6 +134,8 @@ namespace Atlas {
 
             {
                 shadowRenderer.Render(viewport, target, camera, scene, commandList, &renderList);
+
+                terrainShadowRenderer.Render(viewport, target, camera, scene, commandList);
             }
 
             ddgiRenderer.TraceAndUpdateProbes(scene, commandList);

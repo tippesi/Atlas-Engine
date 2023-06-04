@@ -10,14 +10,6 @@ namespace Atlas {
 
             this->device = device;
 
-            auto mainShaderConfig = ShaderConfig {
-                { "postprocessing.vsh", VK_SHADER_STAGE_VERTEX_BIT },
-                { "postprocessing.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
-            };
-            auto mainPipelineDesc = Graphics::GraphicsPipelineDesc();
-            mainPipelineSwapChainConfig = PipelineConfig(mainShaderConfig, mainPipelineDesc);
-            mainPipelineFrameBufferConfig = PipelineConfig(mainShaderConfig, mainPipelineDesc);
-
             sharpenPipelineConfig = PipelineConfig("sharpen.csh");
 
             Graphics::BufferDesc bufferDesc {

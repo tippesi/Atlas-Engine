@@ -5,38 +5,31 @@ namespace Atlas {
 
 	namespace Renderer {
 
-		TerrainShadowRenderer::TerrainShadowRenderer() {
+		void TerrainShadowRenderer::Init(Graphics::GraphicsDevice* device) {
 
-            /*
-			shader.AddStage(AE_VERTEX_STAGE, "terrain/shadowmapping.vsh");
-			shader.AddStage(AE_FRAGMENT_STAGE, "terrain/shadowmapping.fsh");
-
-			shader.Compile();
-
-			GetUniforms();
-             */
+            this->device = device;
 
 		}
 
-		void TerrainShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+		void TerrainShadowRenderer::Render(Viewport* viewport, RenderTarget* target,
+            Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-            /*
 			if (!scene->terrain)
 				return;
 
-			Profiler::BeginQuery("Terrain shadows");
+            Graphics::Profiler::BeginQuery("Terrain shadows");
 
 			auto terrain = scene->terrain;
 
-			framebuffer.Bind();
-			shader.Bind();
-			terrain->distanceVertexArray.Bind();
+			terrain->distanceVertexArray.Bind(commandList);
 
 			auto lights = scene->GetLights();
 
 			if (scene->sky.sun) {
-				lights.push_back(scene->sky.sun);
+				lights.push_back(scene->sky.sun.get());
 			}
+
+            LightMap usedLightMap;
 
 			for (auto light : lights) {
 
@@ -49,18 +42,33 @@ namespace Atlas {
 					continue;
 				}
 
-				glViewport(0, 0, light->GetShadow()->resolution, light->GetShadow()->resolution);
+                auto shadow = light->GetShadow();
+                auto frameBuffer = GetOrCreateFrameBuffer(light);
+                usedLightMap[light] = frameBuffer;
 
-				for (int32_t i = 0; i < light->GetShadow()->componentCount; i++) {
+                if (frameBuffer->depthAttachment.layer != 0) {
+                    frameBuffer->depthAttachment.layer = 0;
+                    frameBuffer->Refresh();
+                }
 
-					auto component = &light->GetShadow()->components[i];
+                // We don't want to render to the long range component if it exists
+                auto componentCount = light->GetShadow()->componentCount;
 
-					if (light->GetShadow()->useCubemap) {
-						framebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT, &light->GetShadow()->cubemap, i);
-					}
-					else {
-						framebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT, &light->GetShadow()->maps, i);
-					}
+				for (int32_t i = 0; i < componentCount; i++) {
+
+                    auto component = &shadow->components[i];
+
+                    if (frameBuffer->depthAttachment.layer != i) {
+                        frameBuffer->depthAttachment.layer = i;
+                        frameBuffer->Refresh();
+                    }
+
+                    commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer);
+
+                    auto config = GeneratePipelineConfig(frameBuffer, terrain);
+                    auto pipeline = PipelineManager::GetPipeline(config);
+
+                    commandList->BindPipeline(pipeline);
 
 					auto frustum = Volume::Frustum(component->terrainFrustumMatrix);
 
@@ -73,58 +81,94 @@ namespace Atlas {
 
 					terrain->UpdateRenderlist(&frustum, center);
 
-					lightSpaceMatrix->SetValue(lightSpace);
-
-					heightScale->SetValue(terrain->heightScale);
-
 					for (auto node : terrain->renderList) {
 
-						node->cell->heightField->Bind(0);
+						node->cell->heightField.Bind(commandList, 3, 0);
 
-						nodeLocation->SetValue(node->location);
-						nodeSideLength->SetValue(node->sideLength);
+                        auto tileScale = terrain->resolution * powf(2.0f,
+                            (float)(terrain->LoDCount - node->cell->LoD) - 1.0f);
 
-						leftLoD->SetValue(node->leftLoDStitch);
-						topLoD->SetValue(node->topLoDStitch);
-						rightLoD->SetValue(node->rightLoDStitch);
-						bottomLoD->SetValue(node->bottomLoDStitch);
+                        PushConstants constants = {
+                            .nodeSideLength = node->sideLength,
+                            .tileScale = tileScale,
+                            .patchSize = float(terrain->patchSizeFactor),
+                            .heightScale = terrain->heightScale,
 
-						tileScale->SetValue(terrain->resolution * powf(2.0f, (float)(terrain->LoDCount - node->cell->LoD) - 1.0f));
-						patchSize->SetValue((float)terrain->patchSizeFactor);
+                            .leftLoD = node->leftLoDStitch,
+                            .topLoD = node->topLoDStitch,
+                            .rightLoD = node->rightLoDStitch,
+                            .bottomLoD = node->bottomLoDStitch,
 
-						glDrawElements(GL_TRIANGLE_STRIP, (int32_t)terrain->distanceVertexArray.GetIndexComponent()->GetElementCount(),
-							terrain->distanceVertexArray.GetIndexComponent()->GetDataType(), nullptr);
+                            .nodeLocation = node->location,
+                            .lightSpaceMatrix = lightSpace
+                        };
+
+                        commandList->PushConstants("constants", &constants);
+
+                        commandList->DrawIndexed(terrain->distanceVertexArray.GetIndexComponent().elementCount);
 
 					}
+
+                    commandList->EndRenderPass();
 
 				}
 
 			}
 
-			Profiler::EndQuery();
-             */
+            lightMap = usedLightMap;
+
+			Graphics::Profiler::EndQuery();
 
 		}
 
-		void TerrainShadowRenderer::GetUniforms() {
+		PipelineConfig TerrainShadowRenderer::GeneratePipelineConfig(Ref<Graphics::FrameBuffer>& framebuffer,
+            Ref<Terrain::Terrain> &terrain) {
 
-            /*
-			heightScale = shader.GetUniform("heightScale");
-			tileScale = shader.GetUniform("tileScale");
-			patchSize = shader.GetUniform("patchSize");
+            const auto shaderConfig = ShaderConfig {
+                {"terrain/shadowmapping.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                {"terrain/shadowmapping.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+            };
 
-			nodeLocation = shader.GetUniform("nodeLocation");
-			nodeSideLength = shader.GetUniform("nodeSideLength");
+            auto pipelineDesc = Graphics::GraphicsPipelineDesc {
+                .frameBuffer = framebuffer,
+                .vertexInputInfo = terrain->distanceVertexArray.GetVertexInputState(),
+            };
 
-			leftLoD = shader.GetUniform("leftLoD");
-			topLoD = shader.GetUniform("topLoD");
-			rightLoD = shader.GetUniform("rightLoD");
-			bottomLoD = shader.GetUniform("bottomLoD");
+            pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 
-			lightSpaceMatrix = shader.GetUniform("lightSpaceMatrix");
-             */
+            return PipelineConfig(shaderConfig, pipelineDesc);
 
 		}
+
+        Ref<Graphics::FrameBuffer> TerrainShadowRenderer::GetOrCreateFrameBuffer(Lighting::Light *light) {
+
+            auto shadow = light->GetShadow();
+            if (lightMap.contains(light)) {
+                return lightMap[light];
+            }
+            else {
+                Graphics::RenderPassAttachment attachment = {
+                    .imageFormat = shadow->useCubemap ? shadow->cubemap.format :
+                                   shadow->maps.format,
+                    .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+                    .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                };
+                Graphics::RenderPassDesc renderPassDesc = {
+                    .depthAttachment = { attachment }
+                };
+                auto renderPass = device->CreateRenderPass(renderPassDesc);
+
+                Graphics::FrameBufferDesc frameBufferDesc = {
+                    .renderPass = renderPass,
+                    .depthAttachment = { shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, 0, true},
+                    .extent = { uint32_t(shadow->resolution), uint32_t(shadow->resolution) }
+                };
+                return device->CreateFrameBuffer(frameBufferDesc);
+            }
+
+        }
 
 	}
 
