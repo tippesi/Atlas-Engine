@@ -14,19 +14,19 @@ namespace Atlas {
 
 			baseColorMaps = Atlas::Texture::Texture2DArray(materialResolution,
 				materialResolution, materialCount, VK_FORMAT_R8G8B8A8_UNORM,
-                Texture::Wrapping::Repeat, Texture::Filtering::MipMapLinear);
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
 			roughnessMaps = Atlas::Texture::Texture2DArray(materialResolution,
                 materialResolution, materialCount, VK_FORMAT_R8_UNORM,
-                Texture::Wrapping::Repeat, Texture::Filtering::MipMapLinear);
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
 			aoMaps = Atlas::Texture::Texture2DArray(materialResolution,
                 materialResolution, materialCount, VK_FORMAT_R8_UNORM,
-                Texture::Wrapping::Repeat, Texture::Filtering::MipMapLinear);
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
 			normalMaps = Atlas::Texture::Texture2DArray(materialResolution,
                 materialResolution, materialCount, VK_FORMAT_R8G8B8A8_UNORM,
-                Texture::Wrapping::Repeat, Texture::Filtering::MipMapLinear);
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
 			displacementMaps = Atlas::Texture::Texture2DArray(materialResolution,
                 materialResolution, materialCount, VK_FORMAT_R8_UNORM,
-                Texture::Wrapping::Repeat, Texture::Filtering::MipMapLinear);
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
 
 			materials.resize(materialCount);
 

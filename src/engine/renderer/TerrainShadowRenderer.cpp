@@ -89,6 +89,8 @@ namespace Atlas {
                             (float)(terrain->LoDCount - node->cell->LoD) - 1.0f);
 
                         PushConstants constants = {
+                            .lightSpaceMatrix = lightSpace,
+                            
                             .nodeSideLength = node->sideLength,
                             .tileScale = tileScale,
                             .patchSize = float(terrain->patchSizeFactor),
@@ -99,8 +101,7 @@ namespace Atlas {
                             .rightLoD = node->rightLoDStitch,
                             .bottomLoD = node->bottomLoDStitch,
 
-                            .nodeLocation = node->location,
-                            .lightSpaceMatrix = lightSpace
+                            .nodeLocation = node->location
                         };
 
                         commandList->PushConstants("constants", &constants);

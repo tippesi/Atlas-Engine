@@ -266,7 +266,7 @@ namespace Atlas {
             fileStream.read((char*)image.GetData().data(), image.GetData().size());
             image.ExpandToChannelCount(4, 255);
             cell->normalMap = Texture::Texture2D(normalDataResolution, normalDataResolution,
-                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
+                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
 			cell->normalMap.SetData(image.GetData());
 
 			std::vector<uint8_t> splatMapData(heightFieldData.size());

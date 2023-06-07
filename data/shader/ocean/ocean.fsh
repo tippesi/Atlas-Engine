@@ -104,8 +104,8 @@ void main() {
 	reflectionVec.y = max(0.0, reflectionVec.y);
 	
 	// Calculate sun spot
-	float specularFactor = shadowFactor * fresnel * pow(max(dot(reflectionVec,
-	 	-light.direction.xyz), 0.0), specularPower);
+	float specularFactor = shadowFactor * fresnel * pow(max(dot(normalize(reflectionVec),
+	 	-normalize(light.direction.xyz)), 0.0), specularPower);
 
 	// Scattering equations
 	float waveHeight = fModelCoord.y - Uniforms.translation.y;

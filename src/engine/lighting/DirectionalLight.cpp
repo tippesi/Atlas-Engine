@@ -170,20 +170,15 @@ namespace Atlas {
                 minProj.z = glm::min(minProj.z, corner.z);
             }
 
-			const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, -1.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 0.5f, 0.5f,
-				0.0f, 0.0f, 0.0f, 1.0f);
-
 			// Tighter frustum for normal meshes
-            cascade->frustumMatrix = clip * glm::ortho(minProj.x, 
+            cascade->frustumMatrix = glm::ortho(minProj.x,
 				maxProj.x,
 				minProj.y,
 				maxProj.y,
 				-maxProj.z - 300.0f, // We need to render stuff behind the camera
 				-minProj.z + 10.0f) * cascade->viewMatrix; // We need to extend a bit to hide seams at cascade splits
 
-			cascade->terrainFrustumMatrix = clip * glm::ortho(minProj.x,
+			cascade->terrainFrustumMatrix = glm::ortho(minProj.x,
 				maxProj.x,
 				minProj.y,
 				maxProj.y,
@@ -192,14 +187,14 @@ namespace Atlas {
 
 			maxLength = glm::ceil(maxLength);
 
-			cascade->projectionMatrix = clip * glm::ortho(-maxLength,
+			cascade->projectionMatrix = glm::ortho(-maxLength,
 				maxLength,
 				-maxLength,
 				maxLength,
 				-maxLength - 1250.0f, // We need to render stuff behind the camera
 				maxLength + 10.0f); // We need to extend a bit to hide seams at cascade splits
 
-			glm::mat4 shadowMatrix = clip * cascade->projectionMatrix * cascade->viewMatrix;
+			glm::mat4 shadowMatrix = cascade->projectionMatrix * cascade->viewMatrix;
 			glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 			shadowOrigin = shadowMatrix * shadowOrigin;
 			shadowOrigin = shadowOrigin * (float)shadow->resolution / 2.0f;
@@ -210,9 +205,16 @@ namespace Atlas {
 			roundOffset.z = 0.0f;
 			roundOffset.w = 0.0f;
 
+            const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, -1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.5f, 0.5f,
+                0.0f, 0.0f, 0.0f, 1.0f);
+
 			glm::mat4 shadowProj = cascade->projectionMatrix;
-			shadowProj[3] += roundOffset;
-			cascade->projectionMatrix = shadowProj;
+			shadowProj[3] += clip * roundOffset;
+			cascade->projectionMatrix = clip * shadowProj;
+            cascade->frustumMatrix = clip * cascade->frustumMatrix;
+            cascade->terrainFrustumMatrix = clip * cascade->terrainFrustumMatrix;
 
         }
 

@@ -235,10 +235,9 @@ namespace Atlas {
                 Graphics::Profiler::EndQuery();
 			}
 
-            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
-            commandList->BindBuffer(globalUniformBuffer, 0, 0);
-
             oceanRenderer.Render(viewport, target, camera, scene, commandList);
+
+            downscaleRenderer.Downscale(target, commandList);
 
 			{
                 volumetricCloudRenderer.Render(viewport, target, camera, scene, commandList);

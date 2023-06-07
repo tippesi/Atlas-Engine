@@ -39,7 +39,7 @@ namespace Atlas {
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
                     material->baseColorMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
-                        VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
+                        VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
 					material->baseColorMap->SetData(image.GetData());
 				}
 				if (prefix == "OMP") {
@@ -48,7 +48,7 @@ namespace Atlas {
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
                     material->baseColorMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
-                        VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
+                        VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
 					material->baseColorMap->SetData(image.GetData());
 				}
 				else if (prefix == "NMP") {
@@ -57,7 +57,7 @@ namespace Atlas {
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
                     material->normalMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
-                        VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
+                        VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
 					material->normalMap->SetData(image.GetData());
 				}
 				else if (prefix == "RMP") {
@@ -66,7 +66,7 @@ namespace Atlas {
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
                     material->roughnessMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
-                        VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
+                        VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
 					material->roughnessMap->SetData(image.GetData());
 				}
 				else if (prefix == "MMP") {
@@ -75,7 +75,7 @@ namespace Atlas {
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
                     material->metalnessMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
-                        VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
+                        VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
 					material->metalnessMap->SetData(image.GetData());
 				}
 				else if (prefix == "AMP") {
@@ -84,7 +84,7 @@ namespace Atlas {
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
                     material->aoMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
-                        VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
+                        VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
 					material->aoMap->SetData(image.GetData());
 				}
 				else if (prefix == "DMP") {
@@ -93,7 +93,7 @@ namespace Atlas {
 					if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
 						image.Resize(mapResolution, mapResolution);
                     material->displacementMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
-                        VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
+                        VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
 					material->displacementMap->SetData(image.GetData());
 				}
 			}
