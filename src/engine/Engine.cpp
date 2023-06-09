@@ -5,6 +5,7 @@
 #include "loader/ShaderLoader.h"
 #include "graphics/Instance.h"
 #include "pipeline/PipelineManager.h"
+#include "texture/Texture.h"
 
 #include "graphics/ShaderCompiler.h"
 
@@ -71,6 +72,7 @@ namespace Atlas {
         Graphics::ShaderCompiler::Shutdown();
         Graphics::Profiler::Shutdown();
         PipelineManager::Shutdown();
+        Texture::Texture::Shutdown();
 
 #ifdef AE_NO_APP
         SDL_Quit();

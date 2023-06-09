@@ -88,9 +88,9 @@ namespace Atlas {
 
 		void OceanSimulation::ComputeSpectrum() {
 
+			/*
 			Graphics::Profiler::BeginQuery("Compute ocean spectrum");
 
-            /*
 			h0.Bind();
 
 			h0.GetUniform("N")->SetValue(N);
@@ -113,9 +113,9 @@ namespace Atlas {
 				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			glDispatchCompute(N / 16, N / 16, 1);
-             */
 
 			Graphics::Profiler::EndQuery();
+			*/
 
 		}
 
@@ -150,13 +150,13 @@ namespace Atlas {
 
 		void OceanSimulation::Compute(float deltaTime) {
 
+			/*
             Graphics::Profiler::BeginQuery("Compute ocean simulation");
 
 			time += deltaTime;
 
 			if (!update) return;
 
-            /*
 			// displacementMapPrev.Copy(displacementMap);
 
             Graphics::Profiler::BeginQuery("Compute h(t)");

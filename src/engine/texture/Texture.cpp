@@ -3,9 +3,15 @@
 #include "../graphics/Instance.h"
 #include "../graphics/Format.h"
 
+#include "../common/Hash.h"
+
+#include <mutex>
+
 namespace Atlas {
 
     namespace Texture {
+
+        std::unordered_map<size_t, Ref<Graphics::Sampler>> Texture::samplerMap;
 
         Texture::Texture(int32_t width, int32_t height, int32_t depth, VkFormat format,
             Wrapping wrapping, Filtering filtering) : width(width), height(height), depth(depth),
@@ -170,7 +176,40 @@ namespace Atlas {
                 .maxLod = float(this->image->mipLevels),
                 .anisotropicFiltering = generateMipMaps && anisotropicFiltering
             };
-            sampler = graphicsDevice->CreateSampler(samplerDesc);
+            sampler = GetOrCreateSampler(samplerDesc);
+
+        }
+
+        void Texture::Shutdown() {
+
+            samplerMap.clear();
+
+        }
+
+        Ref<Graphics::Sampler> Texture::GetOrCreateSampler(Graphics::SamplerDesc desc) {
+
+            static std::mutex mutex;
+
+            size_t hash = 0;
+
+            // We can only have different variants of samplers up to the device limit (e.g. 4000 on Nvidia cards)
+            HashCombine(hash, desc.filter);
+            HashCombine(hash, desc.mode);
+            HashCombine(hash, desc.mipmapMode);
+            HashCombine(hash, desc.maxLod);
+            HashCombine(hash, desc.anisotropicFiltering);
+
+            std::lock_guard guard(mutex);
+
+            if (samplerMap.contains(hash))
+                return samplerMap[hash];
+
+            auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
+            
+            auto sampler = graphicsDevice->CreateSampler(desc);
+            samplerMap[hash] = sampler;
+
+            return sampler;
 
         }
 

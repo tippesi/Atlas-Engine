@@ -45,6 +45,7 @@ namespace Atlas {
 
 			void VegetationHelper::PrepareInstanceBuffer(Scene::Vegetation& vegetation, Camera* camera) {
 
+				/*
 				Graphics::Profiler::BeginQuery("Culling");
 
 				auto meshes = vegetation.GetMeshes();
@@ -55,17 +56,15 @@ namespace Atlas {
 				//if (meshFoundCount != meshToIdxMap.size() || meshFoundCount != meshes.size())
 					//GenerateBuffers(vegetation);
 
-                /*
 				meshInformationBuffer.BindBase(0);
 				meshSubdataInformationBuffer.BindBase(1);
 				binCounterBuffer.BindBase(2);
 				binOffsetBuffer.BindBase(3);
 				instanceCounterBuffer.BindBase(4);
-                */
+                
 
                 Graphics::Profiler::BeginQuery("Cull and count bins");
 
-                /*
 				// Cull unseen vegetation and count bins
 				{
 					instanceCullingShader.Bind();
@@ -94,11 +93,9 @@ namespace Atlas {
                         // glDispatchCompute(groupCount, 1, 1);
 					}
 				}
-                 */
 
                 Graphics::Profiler::EndAndBeginQuery("Compute bin offsets");
 
-                /*
 				{
 					instanceBinningOffsetShader.Bind();
 
