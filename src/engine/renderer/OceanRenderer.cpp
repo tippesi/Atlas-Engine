@@ -18,6 +18,19 @@ namespace Atlas {
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             lightUniformBuffer = Buffer::UniformBuffer(sizeof(Light));
 
+            auto samplerDesc = Graphics::SamplerDesc{
+                .filter = VK_FILTER_NEAREST,
+                .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+            };
+            nearestSampler = device->CreateSampler(samplerDesc);
+
+            samplerDesc = Graphics::SamplerDesc {
+                .filter = VK_FILTER_LINEAR,
+                .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                .compareEnabled = true
+            };
+            shadowSampler = device->CreateSampler(samplerDesc);
+
 		}
 
 		void OceanRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
@@ -44,7 +57,46 @@ namespace Atlas {
 
 			vec3 direction = normalize(sun->direction);
 
-            /*
+            Light lightUniform;
+            lightUniform.direction = vec4(sun->direction, 0.0);
+            lightUniform.color = vec4(sun->color, 0.0);
+            lightUniform.intensity = sun->intensity;
+
+            if (sun->GetVolumetric()) {
+                target->volumetricTexture.Bind(commandList, 3, 7);
+            }
+
+            auto shadow = sun->GetShadow();
+            if (shadow) {
+                auto distance = !shadow->longRange ? shadow->distance :
+                                shadow->longRangeDistance;
+                auto& shadowUniform = lightUniform.shadow;
+                shadowUniform.distance = distance;
+                shadowUniform.bias = shadow->bias;
+                shadowUniform.cascadeCount = shadow->componentCount;
+                shadowUniform.resolution = vec2(shadow->resolution);
+
+                commandList->BindImage(shadow->maps.image, shadowSampler, 3, 8);
+
+                for (int32_t i = 0; i < sun->GetShadow()->componentCount; i++) {
+                    auto& cascade = shadow->components[i];
+                    auto& cascadeUniform = shadowUniform.cascades[i];
+                    auto frustum = Volume::Frustum(cascade.frustumMatrix);
+                    auto corners = frustum.GetCorners();
+                    auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
+                        abs(corners[1].y - corners[3].y)) / (float)sun->GetShadow()->resolution;
+                    cascadeUniform.distance = cascade.farDistance;
+                    cascadeUniform.cascadeSpace = cascade.projectionMatrix * cascade.viewMatrix * camera->invViewMatrix;
+                    cascadeUniform.texelSize = texelSize;
+                }
+            }
+            else {
+                shadow->distance = 0.0f;
+            }
+
+            lightUniformBuffer.SetData(&lightUniform, 0, 1);
+            lightUniformBuffer.Bind(commandList, 3, 12);
+
 			{
                 Graphics::Profiler::BeginQuery("Caustics");
 
@@ -55,51 +107,22 @@ namespace Atlas {
 				groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
 				groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-				causticsShader.Bind();
+                auto pipeline = PipelineManager::GetPipeline(causticPipelineConfig);
 
-				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(GL_READ_WRITE, 1);
-				target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(0);
+                commandList->BindPipeline(pipeline);
 
-				causticsShader.GetUniform("waterHeight")->SetValue(ocean->translation.y);
+                auto lightingImage = target->lightingFrameBuffer->GetColorImage(0);
+                auto depthImage = target->lightingFrameBuffer->GetDepthImage();
 
-				causticsShader.GetUniform("light.intensity")->SetValue(sun->intensity);
-				causticsShader.GetUniform("light.direction")->SetValue(direction);
-				causticsShader.GetUniform("light.color")->SetValue(sun->color);
+                commandList->BindImage(depthImage, nearestSampler, 3, 0);
+				commandList->BindImage(lightingImage, 3, 1);
 
-				if (sun->GetShadow()) {
-					auto distance = !sun->GetShadow()->longRange ? sun->GetShadow()->distance :
-						sun->GetShadow()->longRangeDistance;
+                commandList->ImageMemoryBarrier(lightingImage, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-					causticsShader.GetUniform("light.shadow.distance")->SetValue(distance);
-					causticsShader.GetUniform("light.shadow.bias")->SetValue(sun->GetShadow()->bias);
-					causticsShader.GetUniform("light.shadow.cascadeCount")->SetValue(sun->GetShadow()->componentCount);
-					causticsShader.GetUniform("light.shadow.resolution")->SetValue(vec2((float)sun->GetShadow()->resolution));
+				commandList->PushConstants("constants", &ocean->translation.y);
 
-					sun->GetShadow()->maps.Bind(8);
-
-					for (int32_t i = 0; i < sun->GetShadow()->componentCount; i++) {
-						auto cascade = &sun->GetShadow()->components[i];
-						auto frustum = Volume::Frustum(cascade->frustumMatrix);
-						auto corners = frustum.GetCorners();
-						auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
-							abs(corners[1].y - corners[3].y)) / (float)sun->GetShadow()->resolution;
-						auto lightSpace = cascade->projectionMatrix * cascade->viewMatrix * camera->invViewMatrix;
-						causticsShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].distance")->SetValue(cascade->farDistance);
-						causticsShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].cascadeSpace")->SetValue(lightSpace);
-						causticsShader.GetUniform("light.shadow.cascades[" + std::to_string(i) + "].texelSize")->SetValue(texelSize);
-					}
-				}
-				else {
-					causticsShader.GetUniform("light.shadow.distance")->SetValue(0.0f);
-				}
-
-				glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
-
-				glDispatchCompute(groupCount.x, groupCount.y, 1);
-
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
 			}
-            */
 
 			// Update local texture copies
             {
@@ -162,45 +185,6 @@ namespace Atlas {
 
 				vertexArray.Bind(commandList);
 
-                Light lightUniform;
-                lightUniform.direction = vec4(sun->direction, 0.0);
-                lightUniform.color = vec4(sun->color, 0.0);
-                lightUniform.intensity = sun->intensity;
-
-				if (sun->GetVolumetric()) {
-					target->volumetricTexture.Bind(commandList, 3, 7);
-				}
-
-                auto shadow = sun->GetShadow();
-				if (shadow) {
-					auto distance = !shadow->longRange ? shadow->distance :
-						shadow->longRangeDistance;
-                    auto& shadowUniform = lightUniform.shadow;
-                    shadowUniform.distance = distance;
-                    shadowUniform.bias = shadow->bias;
-                    shadowUniform.cascadeCount = shadow->componentCount;
-                    shadowUniform.resolution = vec2(shadow->resolution);
-
-					shadow->maps.Bind(commandList, 3, 8);
-
-					for (int32_t i = 0; i < sun->GetShadow()->componentCount; i++) {
-						auto& cascade = shadow->components[i];
-                        auto& cascadeUniform = shadowUniform.cascades[i];
-						auto frustum = Volume::Frustum(cascade.frustumMatrix);
-						auto corners = frustum.GetCorners();
-						auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
-							abs(corners[1].y - corners[3].y)) / (float)sun->GetShadow()->resolution;
-                        cascadeUniform.distance = cascade.farDistance;
-                        cascadeUniform.cascadeSpace = cascade.projectionMatrix * cascade.viewMatrix * camera->invViewMatrix;
-                        cascadeUniform.texelSize = texelSize;
-					}
-				}
-				else {
-					shadow->distance = 0.0f;
-				}
-
-                lightUniformBuffer.SetData(&lightUniform, 0, 1);
-
                 Uniforms uniforms = {
                     .translation = vec4(ocean->translation, 1.0f),
 
@@ -250,9 +234,7 @@ namespace Atlas {
 				}
 
                 uniformBuffer.SetData(&uniforms, 0, 1);
-
                 uniformBuffer.Bind(commandList, 3, 11);
-                lightUniformBuffer.Bind(commandList, 3, 12);
 
 				auto renderList = ocean->GetRenderList();
 
@@ -260,12 +242,13 @@ namespace Atlas {
 
                     PushConstants constants = {
                         .nodeSideLength = node->sideLength,
-                        .nodeLocation = node->location,
 
                         .leftLoD = node->leftLoDStitch,
                         .topLoD = node->topLoDStitch,
                         .rightLoD = node->rightLoDStitch,
-                        .bottomLoD = node->bottomLoDStitch
+                        .bottomLoD = node->bottomLoDStitch,
+
+                        .nodeLocation = node->location,
                     };
 
                     commandList->PushConstants("constants", &constants);

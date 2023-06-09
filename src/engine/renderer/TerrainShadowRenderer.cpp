@@ -90,7 +90,7 @@ namespace Atlas {
 
                         PushConstants constants = {
                             .lightSpaceMatrix = lightSpace,
-                            
+
                             .nodeSideLength = node->sideLength,
                             .tileScale = tileScale,
                             .patchSize = float(terrain->patchSizeFactor),

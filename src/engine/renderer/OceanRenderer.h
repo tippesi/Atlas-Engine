@@ -104,6 +104,9 @@ namespace Atlas {
             Buffer::UniformBuffer uniformBuffer;
             Buffer::UniformBuffer lightUniformBuffer;
 
+            Ref<Graphics::Sampler> nearestSampler;
+            Ref<Graphics::Sampler> shadowSampler;
+
 		};
 
 	}
