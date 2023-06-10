@@ -9,7 +9,7 @@ layout (local_size_x = 8, local_size_y = 8) in;
 #include <../common/utility.hsh>
 
 layout(set = 3, binding = 0) uniform sampler2D depthTexture;
-layout (set = 3, binding = 8) uniform sampler2DArrayShadow cascadeMaps;
+layout(set = 3, binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 layout(set = 3, binding = 1, rgba16f) uniform image2D refractionImage;
 
 layout (set = 3, binding = 12, std140) uniform LightUniformBuffer {
@@ -45,13 +45,14 @@ void main() {
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(refractionImage));
 
     float depth = textureLod(depthTexture, texCoord, 0.0).r;
-    vec3 pixelPos = vec3(globalData.ivMatrix * vec4(ConvertDepthToViewSpace(depth, texCoord), 1.0));
+    vec3 viewSpacePos = ConvertDepthToViewSpace(depth, texCoord);
+    vec3 pixelPos = vec3(globalData.ivMatrix * vec4(viewSpacePos, 1.0));
 
     float waterDepth = PushConstants.waterHeight - pixelPos.y;
     if (waterDepth <= 0.0)
         return;
 
-    float shadowFactor = max(CalculateCascadedShadow(light.shadow, cascadeMaps, pixelPos, vec3(0.0, 1.0, 0.0), 1.0), 0.0);
+    float shadowFactor = max(CalculateCascadedShadow(light.shadow, cascadeMaps, viewSpacePos, vec3(0.0, 1.0, 0.0), 0.0), 0.0);
 
     vec3 pos = vec3(pixelPos.x, globalData.time * 0.5, pixelPos.z);
     pos *= 2.0;
@@ -67,7 +68,7 @@ void main() {
 
     vec3 data = imageLoad(refractionImage, pixel).rgb;
 
-    shadowFactor = saturate(dot(data, vec3(0.333)));
+    shadowFactor = saturate(2.0 * dot(data, vec3(0.333)));
     intensity *= shadowFactor;
 
     imageStore(refractionImage, pixel, vec4(data + intensity, 0.0));
