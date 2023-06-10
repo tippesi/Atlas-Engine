@@ -92,21 +92,30 @@ float UpsampleAo2x(float referenceDepth) {
 
 }
 
-vec3 UpsampleReflection2x(float referenceDepth) {
+vec3 UpsampleReflection2x(float referenceDepth, vec2 texCoords) {
 
     ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
 
     float invocationDepths[9];
 
+    float minWeight = 1.0;
+
     for (uint i = 0; i < 9; i++) {
         int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
-        invocationDepths[i] = depths[sharedMemoryOffset];
+        float depth = depths[sharedMemoryOffset];
+
+        float depthDiff = abs(referenceDepth - depth);
+        float depthWeight = min(exp(-depthDiff * 32.0), 1.0);
+        minWeight = min(minWeight, depthWeight);
+
+        invocationDepths[i] = depth;
     }
 
     int idx = NearestDepth(referenceDepth, invocationDepths);
     int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
 
-    return reflections[offset];
+    vec3 bilinearReflection = textureLod(reflectionTexture, texCoords, 0).rgb;
+    return mix(reflections[offset], bilinearReflection, minWeight);
 
 }
 
@@ -156,7 +165,7 @@ void main() {
     //    * prefilteredDiffuseLocal.a;
 #ifdef REFLECTION
     vec3 indirectSpecular = Uniforms.reflectionEnabled > 0 ? true ? 
-        UpsampleReflection2x(depth) : texture(reflectionTexture, texCoord).rgb : vec3(0.0);
+        UpsampleReflection2x(depth, texCoord) : texture(reflectionTexture, texCoord).rgb : vec3(0.0);
 #else
 #ifdef DDGI
     vec3 indirectSpecular = IsInsideVolume(worldPosition) ? vec3(0.0) : prefilteredSpecular;

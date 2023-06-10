@@ -25,6 +25,7 @@ layout(set = 3, binding = 5) uniform  UniformBuffer {
 // (localSize / 2 + 2)^2
 shared float depths[36];
 shared vec3 volumetrics[36];
+shared vec4 clouds[36];
 
 const uint depthDataSize = (gl_WorkGroupSize.x / 2 + 2) * (gl_WorkGroupSize.y / 2 + 2);
 const ivec2 unflattenedDepthDataSize = ivec2(gl_WorkGroupSize) / 2 + 2;
@@ -40,6 +41,9 @@ void LoadGroupSharedData() {
         offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
         depths[gl_LocalInvocationIndex] = texelFetch(lowResDepthTexture, offset, 0).r;
         volumetrics[gl_LocalInvocationIndex] = texelFetch(lowResVolumetricTexture, offset, 0).rgb;
+#ifdef CLOUDS
+        clouds[gl_LocalInvocationIndex] = texelFetch(lowResVolumetricCloudsTexture, offset, 0);
+#endif
     }
 
     barrier();
@@ -73,22 +77,34 @@ int NearestDepth(float referenceDepth, float[9] depthVec) {
 
 }
 
-vec4 Upsample2x(float referenceDepth) {
+void Upsample2x(float referenceDepth, vec2 texCoord, out vec4 volumetric, out vec4 volumetricClouds) {
 
     ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
 
     float invocationDepths[9];
 
+    float minWeight = 1.0;
+
     for (uint i = 0; i < 9; i++) {
         int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
-        invocationDepths[i] = depths[sharedMemoryOffset];
+
+        float depth = depths[sharedMemoryOffset];
+
+        float depthDiff = abs(referenceDepth - depth);
+        float depthWeight = min(exp(-depthDiff * 32.0), 1.0);
+        minWeight = min(minWeight, depthWeight);
+
+        invocationDepths[i] = depth;
     }
 
     int idx = NearestDepth(referenceDepth, invocationDepths);
     int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
 
-    return vec4(volumetrics[offset], 1.0);
-
+    volumetric = vec4(volumetrics[offset], 1.0);
+#ifdef CLOUDS
+    vec4 bilinearCloudScattering = texture(lowResVolumetricCloudsTexture, texCoord);
+    volumetricClouds = mix(clouds[offset], bilinearCloudScattering, minWeight);
+#endif
 }
 
 void main() {
@@ -105,12 +121,17 @@ void main() {
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     vec4 volumetric;
+    vec4 cloudScattering;
     if (uniforms.downsampled2x > 0) {
-        volumetric = Upsample2x(depth);
+        Upsample2x(depth, texCoord, volumetric, cloudScattering);
     }
     else {
         volumetric = vec4(textureLod(lowResVolumetricTexture, texCoord, 0).rgb, 0.0);
+#ifdef CLOUDS
+        cloudScattering = texture(lowResVolumetricCloudsTexture, texCoord);
+#endif
     }
+
     vec3 viewPosition = ConvertDepthToViewSpace(depth, texCoord);
     // Handle as infinity
     if (depth == 1.0) {
@@ -126,7 +147,6 @@ void main() {
 
 #ifdef CLOUDS
     if (uniforms.cloudsEnabled > 0) {
-        vec4 cloudScattering = texture(lowResVolumetricCloudsTexture, texCoord);
         cloudScattering = uniforms.fogEnabled > 0 ? mix(uniforms.fog.color, cloudScattering, fogAmount) : cloudScattering;
         float alpha = cloudScattering.a;
         resolve = alpha * resolve + cloudScattering;
