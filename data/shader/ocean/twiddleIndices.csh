@@ -7,8 +7,8 @@ layout (set = 3, binding = 0, rg32f) writeonly uniform image2D twiddleIndicesTex
 
 // The first butterfly stage we use bit-reversed indices computed
 // on the CPU.
-layout (set = 3, binding = 1, std140) buffer indices {
-	int index[128];
+layout (set = 3, binding = 1, std430) buffer indices {
+	int index[];
 } bitrevIndices;
 
 // Remember that this is executed into x direction just log_2(N) times.

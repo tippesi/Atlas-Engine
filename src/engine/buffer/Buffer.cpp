@@ -20,7 +20,7 @@ namespace Atlas {
 
         void Buffer::Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding) {
 
-            if (hostAccessible) {
+            if (multiBuffer != nullptr) {
                 commandList->BindBuffer(multiBuffer, set, binding);
             }
             else {

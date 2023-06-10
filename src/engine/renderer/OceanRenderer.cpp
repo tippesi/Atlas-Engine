@@ -93,7 +93,7 @@ namespace Atlas {
                 }
             }
             else {
-                shadow->distance = 0.0f;
+                lightUniform.shadow.distance = 0.0f;
             }
 
             lightUniformBuffer.SetData(&lightUniform, 0, 1);
@@ -172,7 +172,8 @@ namespace Atlas {
 			{
                 Graphics::Profiler::EndAndBeginQuery("Surface");
 
-                commandList->BeginRenderPass(target->lightingFrameBuffer->renderPass, target->lightingFrameBuffer);
+                commandList->BeginRenderPass(target->lightingFrameBufferWithStencil->renderPass,
+                    target->lightingFrameBufferWithStencil);
 
                 auto config = GeneratePipelineConfig(target, ocean->wireframe);
 				auto pipeline = PipelineManager::GetPipeline(config);
@@ -271,7 +272,7 @@ namespace Atlas {
             };
 
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                .frameBuffer = target->lightingFrameBuffer,
+                .frameBuffer = target->lightingFrameBufferWithStencil,
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
             };
 

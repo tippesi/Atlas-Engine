@@ -1,6 +1,6 @@
 #include "OceanSimulation.h"
 #include "../Clock.h"
-#include "../buffer/UniformBuffer.h"
+#include "../buffer/Buffer.h"
 #include "../graphics/Profiler.h"
 #include "../pipeline/PipelineManager.h"
 
@@ -127,8 +127,11 @@ namespace Atlas {
 				indices[i] = ReverseBits(i, bitCount);
 			}
 
-			Buffer::UniformBuffer buffer(sizeof(int32_t), indices.size());
-			buffer.SetData(indices.data(), 0, indices.size());
+            auto usage = Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HostAccessBit;
+            Buffer::Buffer buffer(usage, sizeof(int32_t), indices.size(), indices.data());
+
+            auto pipeline = PipelineManager::GetPipeline(twiddleConfig);
+            commandList->BindPipeline(pipeline);
 
             commandList->ImageMemoryBarrier(twiddleIndices.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 

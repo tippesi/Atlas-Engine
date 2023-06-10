@@ -11,7 +11,7 @@
 
 layout (location = 0) out vec3 color;
 layout (location = 1) out vec2 velocity;
-// layout (location = 2) out uint stencil;
+layout (location = 2) out uint stencil;
 
 layout(set = 3, binding = 1) uniform sampler2D normalMap;
 layout (set = 3, binding = 2) uniform sampler2D foamTexture;
@@ -56,7 +56,6 @@ void main() {
 	
 	// Retrieve precalculated normals and wave folding information
 	vec3 fNormal = normalize(2.0 * texture(normalMap, fTexCoord).rgb - 1.0);
-	fNormal = vec3(0.0, 1.0, 0.0);
 	float fold = texture(normalMap, fTexCoord).a;
 	
 	vec2 ndcCoord = 0.5 * (fClipSpace.xy / fClipSpace.w) + 0.5;
@@ -189,10 +188,8 @@ void main() {
 
 	velocity = (ndcL - ndcC) * 0.5;
 
-	/*
 	StencilFeatures features;
 	features.responsivePixel = true;
 	stencil = EncodeStencilFeatures(features);
-	*/
 
 }
